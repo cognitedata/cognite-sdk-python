@@ -1,6 +1,6 @@
 from setuptools import setup
 
-setup(name='cognite-sdk-sdk',
+setup(name='cognite-sdk',
       version='0.3',
       description='Cognite Python SDK',
       url='https://github.com/cognitedata/cognite-sdk-python',
