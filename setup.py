@@ -1,10 +1,10 @@
 from setuptools import setup
 
 setup(name='cognite',
-      version='0.3',
+      version='0.3.1',
       description='Cognite Python SDK',
       url='https://github.com/cognitedata/cognite-sdk-python',
-      download_url='https://github.com/cognitedata/cognite-sdk-python/cognite/archive/0.3.tar.gz',
+      download_url='https://github.com/cognitedata/cognite-sdk-python/cognite/archive/0.3.1.tar.gz',
       author='Erlend Vollset',
       author_email='erlend.vollset@cognite.com',
       packages=['cognite'],
