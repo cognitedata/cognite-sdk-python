@@ -2,6 +2,8 @@ import cognite.config as config
 import json
 import requests
 
+from cognite.data_objects import TagMatchingObject
+
 def tag_matching(tagIds, fuzzy_threshold=0, platform=None, api_key=None, project=None):
     api_key, project = config.get_config_variables(api_key, project)
     url = 'https://api.cognitedata.com/api/0.3/projects/{}/tagmatching'.format(project)
@@ -18,4 +20,7 @@ def tag_matching(tagIds, fuzzy_threshold=0, platform=None, api_key=None, project
         'accept': 'application/json'
     }
     r = requests.post(url=url, data=json.dumps(body), headers=headers)
-    return r.json()
+    if r.status_code != 200:
+        return r.json()
+    else:
+        return TagMatchingObject(r.json())
