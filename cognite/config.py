@@ -1,14 +1,14 @@
-API_KEY = ''
-PROJECT = ''
+config_api_key = ''
+config_project = ''
 
 def configure_session(api_key='', project=''):
-    global API_KEY, PROJECT
-    API_KEY = api_key
-    PROJECT = project
+    global config_api_key, config_project
+    config_api_key = api_key
+    config_project = project
 
 def get_config_variables(api_key, project):
     if api_key == None:
-        api_key = API_KEY
+        api_key = config_api_key
     if project == None:
-        project = PROJECT
+        project = config_project
     return api_key, project

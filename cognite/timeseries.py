@@ -4,6 +4,8 @@ import json
 import pandas as pd
 import requests
 
+from cognite.data_objects import DatapointsObject, LatestDatapointObject
+
 def get_datapoints(tagId, aggregates=None, granularity=None, start=None, end=None, limit=10000, api_key=None,
                    project=None):
     api_key, project = config.get_config_variables(api_key, project)
@@ -21,7 +23,10 @@ def get_datapoints(tagId, aggregates=None, granularity=None, start=None, end=Non
         'accept': 'application/json'
     }
     r = requests.get(url, params=params, headers=headers)
-    return r.json()
+    if r.status_code != 200:
+        return r.json()
+    else:
+        return DatapointsObject(r.json())
 
 def get_latest(tagId, api_key=None, project=None):
     api_key, project = config.get_config_variables(api_key, project)
@@ -32,7 +37,10 @@ def get_latest(tagId, api_key=None, project=None):
         'accept': 'application/json'
     }
     r = requests.get(url, headers=headers)
-    return r.json()
+    if r.status_code != 200:
+        return r.json()
+    else:
+        return LatestDatapointObject(r.json())
 
 def get_multi_tag_datapoints(tagIds, aggregates=None, granularity=None, start=None, end=None, limit=10000, api_key=None,
                              project=None):
@@ -52,7 +60,10 @@ def get_multi_tag_datapoints(tagIds, aggregates=None, granularity=None, start=No
         'accept': 'application/json'
     }
     r = requests.post(url=url, data=json.dumps(body), headers=headers)
-    return r.json()
+    if r.status_code != 200:
+        return r.json()
+    else:
+        return [DatapointsObject({'data': {'items': [dp]}}) for dp in r.json()['data']['items']]
 
 def get_datapoints_frame(tagIds, aggregates, granularity, start=None, end=None, limit=10000, api_key=None,
                          project=None):

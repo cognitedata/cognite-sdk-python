@@ -1,0 +1,57 @@
+import pandas as pd
+from abc import ABC, abstractmethod
+
+class CogniteDataObject(ABC):
+    def __init__(self, internal_representation):
+        self.internal_representation = internal_representation
+    @abstractmethod
+    def to_pandas(self):
+        pass
+    @abstractmethod
+    def to_json(self):
+        pass
+
+    def to_ndarray(self):
+        return self.to_pandas().values
+
+class TagMatchingObject(CogniteDataObject):
+    def __init__(self, internal_representation):
+        CogniteDataObject.__init__(self, internal_representation)
+
+    def to_pandas(self):
+        matches = []
+        for tag in self.internal_representation['data']['items']:
+            for match in tag['matches']:
+                matches.append({
+                    'tag': tag['tagId'],
+                    'match': match['tagId'],
+                    'score': match['score'],
+                    'platform': match['platform']
+                })
+        return pd.DataFrame(matches)[['tag', 'match', 'platform', 'score']]
+
+    def to_json(self):
+        return self.internal_representation['data']['items']
+
+class DatapointsObject(CogniteDataObject):
+    def __init__(self, internal_representation):
+        CogniteDataObject.__init__(self, internal_representation)
+
+    def to_json(self):
+        return self.internal_representation['data']['items'][0]
+
+    def to_pandas(self):
+        return pd.DataFrame(self.internal_representation['data']['items'][0]['datapoints'])
+
+class LatestDatapointObject(CogniteDataObject):
+    def __init__(self, internal_representation):
+        CogniteDataObject.__init__(self, internal_representation)
+
+    def to_json(self):
+        return self.internal_representation['data']['items'][0]
+
+    def to_pandas(self):
+        return pd.DataFrame([self.internal_representation['data']['items'][0]])
+
+    def to_ndarray(self):
+        return self.to_pandas().values[0]
