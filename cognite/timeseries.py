@@ -87,7 +87,6 @@ def get_datapoints_frame(tagIds, aggregates, granularity, start=None, end=None, 
         return None
     dataframes = [pd.read_csv(io.StringIO(r.content.decode(r.encoding if r.encoding else r.apparent_encoding)))]
     while dataframes[-1].shape[0] == limit:
-        print(len(dataframes))
         start = int(dataframes[-1].iloc[-1,0]) + _granularity_to_ms(granularity)
         body['start'] = start
         r = requests.post(url=url, data=json.dumps(body), headers=headers)
@@ -95,4 +94,3 @@ def get_datapoints_frame(tagIds, aggregates, granularity, start=None, end=None, 
             return r.text()
         dataframes.append(pd.read_csv(io.StringIO(r.content.decode(r.encoding if r.encoding else r.apparent_encoding))))
     return pd.concat(dataframes).reset_index(drop=True)
-
