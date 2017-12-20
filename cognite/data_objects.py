@@ -28,7 +28,10 @@ class TagMatchingObject(CogniteDataObject):
                     'score': match['score'],
                     'platform': match['platform']
                 })
-        return pd.DataFrame(matches)[['tag', 'match', 'platform', 'score']]
+        if len(matches) > 0:
+            return pd.DataFrame(matches)[['tag', 'match', 'platform', 'score']]
+        else:
+            return pd.DataFrame()
 
     def to_json(self):
         return self.internal_representation['data']['items']
