@@ -47,7 +47,7 @@ def get_multi_tag_datapoints(tagIds, aggregates=None, granularity=None, start=No
     api_key, project = config.get_config_variables(api_key, project)
     url = 'https://api.cognitedata.com/api/0.3/projects/{}/timeseries/dataquery'.format(project)
     body = {
-        'items': [{'tagId': '{}'.format(tagId)} for tagId in tagIds],
+        'items': [{'tagId': '{}'.format(tagId)} if type(tagId) == str else {'tagId': '{}'.format(tagId['tagId']), 'aggregates': tagId['aggregates']} for tagId in tagIds],
         'aggregates': aggregates,
         'granularity': granularity,
         'start': start,
@@ -70,13 +70,14 @@ def get_datapoints_frame(tagIds, aggregates, granularity, start=None, end=None, 
     api_key, project = config.get_config_variables(api_key, project)
     url = 'https://api.cognitedata.com/api/0.3/projects/{}/timeseries/dataframe'.format(project)
     body = {
-        'items': [{'tagId': '{}'.format(tagId)} for tagId in tagIds],
+        'items': [{'tagId': '{}'.format(tagId)} if type(tagId) == str else {'tagId': '{}'.format(tagId['tagId']), 'aggregates': tagId['aggregates']} for tagId in tagIds],
         'aggregates': aggregates,
         'granularity': granularity,
         'start': start,
         'end': end,
         'limit': limit
     }
+    print(body)
     headers = {
         'api-key': api_key,
         'content-type': 'application/json',
