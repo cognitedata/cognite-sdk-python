@@ -7,7 +7,7 @@ import requests
 
 from cognite._data_objects import DatapointsObject, LatestDatapointObject
 
-def get_datapoints(tagId, aggregates=None, granularity=None, start=None, end=None, limit=config.LIMIT, api_key=None,
+def get_datapoints(tagId, aggregates=None, granularity=None, start=None, end=None, limit=config._LIMIT, api_key=None,
                    project=None):
     api_key, project = config._get_config_variables(api_key, project)
     tagId = tagId.replace('/', '%2F')
@@ -41,7 +41,7 @@ def get_latest(tagId, api_key=None, project=None):
         raise Exception(r.json()['error'])
     return LatestDatapointObject(r.json())
 
-def get_multi_tag_datapoints(tagIds, aggregates=None, granularity=None, start=None, end=None, limit=config.LIMIT, api_key=None,
+def get_multi_tag_datapoints(tagIds, aggregates=None, granularity=None, start=None, end=None, limit=config._LIMIT, api_key=None,
                              project=None):
     api_key, project = config._get_config_variables(api_key, project)
     url = 'https://api.cognitedata.com/api/0.3/projects/{}/timeseries/dataquery'.format(project)
@@ -72,7 +72,7 @@ def get_datapoints_frame(tagIds, aggregates, granularity, start=None, end=None, 
         'granularity': granularity,
         'start': start,
         'end': end,
-        'limit': config.LIMIT
+        'limit': config._LIMIT
     }
     headers = {
         'api-key': api_key,
@@ -81,7 +81,7 @@ def get_datapoints_frame(tagIds, aggregates, granularity, start=None, end=None, 
     }
     dataframes = []
     p = _ProgressIndicator(tagIds, start, end)
-    while len(dataframes) == 0 or dataframes[-1].shape[0] == config.LIMIT:
+    while len(dataframes) == 0 or dataframes[-1].shape[0] == config._LIMIT:
         r = requests.post(url=url, data=json.dumps(body), headers=headers)
         if r.status_code != 200:
             raise Exception(r.json()['error'])

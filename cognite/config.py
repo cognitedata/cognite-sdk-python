@@ -1,18 +1,18 @@
 # GLOBAL CONSTANTS
-LIMIT = 10000
+_LIMIT = 10000
 
 # GLOBAL VARIABLES
-config_api_key = ''
-config_project = ''
+__config_api_key = ''
+__config_project = ''
 
 def configure_session(api_key='', project=''):
-    global config_api_key, config_project
-    config_api_key = api_key
-    config_project = project
+    global __config_api_key, __config_project
+    __config_api_key = api_key
+    __config_project = project
 
 def _get_config_variables(api_key, project):
     if api_key == None:
-        api_key = config_api_key
+        api_key = __config_api_key
     if project == None:
-        project = config_project
+        project = __config_project
     return api_key, project
