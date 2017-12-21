@@ -36,10 +36,12 @@ class TagMatchingObject(CogniteDataObject):
     def to_json(self):
         return self.internal_representation['data']['items']
 
-    def to_list_of_first_matches(self):
+    def to_list(self, first_matches_only=True):
         if self.to_pandas().empty:
             return []
-        return self.to_pandas().groupby(['tag']).first()['match'].tolist()
+        if first_matches_only:
+            return self.to_pandas().groupby(['tag']).first()['match'].tolist()
+        return self.to_pandas()['match'].tolist()
 
 class DatapointsObject(CogniteDataObject):
     def __init__(self, internal_representation):
