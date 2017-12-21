@@ -1,4 +1,5 @@
 import cognite.config as config
+import cognite._constants as _constants
 import json
 import requests
 
@@ -6,7 +7,7 @@ from cognite._data_objects import TagMatchingObject
 
 def tag_matching(tagIds, fuzzy_threshold=0, platform=None, api_key=None, project=None):
     api_key, project = config._get_config_variables(api_key, project)
-    url = 'https://api.cognitedata.com/api/0.3/projects/{}/tagmatching'.format(project)
+    url = _constants._BASE_URL + '/projects/{}/tagmatching'.format(project)
     body = {
         'tagIds': tagIds,
         'metadata': {
