@@ -35,7 +35,7 @@ class _ProgressIndicator():
             self.end = end
         self.length = self.end - self.start
         self.progress = 0.0
-        print("Loading requested data...")
+        print("Downloading requested data...")
         self._print_progress()
 
 
@@ -50,5 +50,3 @@ class _ProgressIndicator():
         sys.stdout.flush()
         if math.ceil(self.progress) == 100:
             print()
-
-

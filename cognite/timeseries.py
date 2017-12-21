@@ -1,5 +1,5 @@
 import cognite.config as config
-from cognite._helpers import _granularity_to_ms, _ProgressIndicator
+from cognite._utils import _granularity_to_ms, _ProgressIndicator
 import io
 import json
 import pandas as pd

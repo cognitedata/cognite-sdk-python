@@ -26,3 +26,6 @@ wheels/
 
 # DS_Store
 .DS_Store
+
+# Other
+test.py
