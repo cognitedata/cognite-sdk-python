@@ -36,6 +36,11 @@ class TagMatchingObject(CogniteDataObject):
     def to_json(self):
         return self.internal_representation['data']['items']
 
+    def to_list_of_first_matches(self):
+        if self.to_pandas().empty:
+            return []
+        return self.to_pandas().groupby(['tag']).first()['match'].tolist()
+
 class DatapointsObject(CogniteDataObject):
     def __init__(self, internal_representation):
         CogniteDataObject.__init__(self, internal_representation)
@@ -58,3 +63,13 @@ class LatestDatapointObject(CogniteDataObject):
 
     def to_ndarray(self):
         return self.to_pandas().values[0]
+
+class SimilaritySearchObject(CogniteDataObject):
+    def __init__(self, internal_representation):
+        CogniteDataObject.__init__(self, internal_representation)
+
+    def to_json(self):
+        return self.internal_representation['data']['items'][0]
+
+    def to_pandas(self):
+        return pd.DataFrame([self.internal_representation['data']['items'][0]])

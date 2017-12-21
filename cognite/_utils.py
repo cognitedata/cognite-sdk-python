@@ -38,15 +38,14 @@ class _ProgressIndicator():
         print("Downloading requested data...")
         self._print_progress()
 
-
     def _update_progress(self, latest_timestamp):
         self.progress = 100 - (((self.end - latest_timestamp) / self.length) * 100)
         self._print_progress()
 
     def _print_progress(self):
-        prog = int(math.ceil(self.progress / 5))
+        prog = int(math.ceil(self.progress) / 5)
         remainder = 20 - prog
-        sys.stdout.write("\r{:5.1f}% [{}]".format(self.progress, '+' * prog + ' ' * remainder))
+        sys.stdout.write("\r{:5.1f}% |{}|".format(self.progress, '|' * prog + ' ' * remainder))
         sys.stdout.flush()
-        if math.ceil(self.progress) == 100:
+        if int(math.ceil(self.progress)) == 100:
             print()
