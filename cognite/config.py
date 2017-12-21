@@ -1,7 +1,3 @@
-# GLOBAL CONSTANTS
-_LIMIT = 10000
-
-# GLOBAL VARIABLES
 __config_api_key = ''
 __config_project = ''
 

@@ -1,3 +1,4 @@
+import cognite._constants as _constants
 import json
 import requests
 
@@ -6,7 +7,7 @@ from cognite._data_objects import SimilaritySearchObject
 
 def search(input_tags, query_tags, input_interval, query_interval, modes, limit=10, api_key=None, project=None):
     api_key, project = _get_config_variables(api_key, project)
-    url = 'https://api.cognitedata.com/api/0.3/projects/{}/similaritysearch'.format(project)
+    url = _constants._BASE_URL + '/projects/{}/similaritysearch'.format(project)
     body = {
         'inputTags': input_tags,
         'queryTags': query_tags,
