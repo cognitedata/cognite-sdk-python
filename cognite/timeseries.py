@@ -1,11 +1,11 @@
 import cognite.config as config
-from cognite._utils import _granularity_to_ms, _ProgressIndicator
 import io
 import json
 import pandas as pd
 import requests
 
 from cognite._data_objects import DatapointsObject, LatestDatapointObject
+from cognite._utils import _granularity_to_ms, _ProgressIndicator
 
 def get_datapoints(tagId, aggregates=None, granularity=None, start=None, end=None, limit=config._LIMIT, api_key=None,
                    project=None):
