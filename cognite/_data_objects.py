@@ -40,8 +40,8 @@ class TagMatchingObject(CogniteDataObject):
         if self.to_pandas().empty:
             return []
         if first_matches_only:
-            return self.to_pandas().groupby(['tag']).first()['match'].tolist()
-        return self.to_pandas()['match'].tolist()
+            return self.to_pandas().sort_values(['score', 'match']).groupby(['tag']).first()['match'].tolist()
+        return self.to_pandas().sort_values(['score', 'match'])['match'].tolist()
 
 class DatapointsObject(CogniteDataObject):
     def __init__(self, internal_representation):
