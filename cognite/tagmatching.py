@@ -21,5 +21,5 @@ def tag_matching(tagIds, fuzzy_threshold=0, platform=None, api_key=None, project
     }
     r = requests.post(url=url, data=json.dumps(body), headers=headers)
     if r.status_code != 200:
-        return print(r.text)
+        raise Exception(r.json()['error'])
     return TagMatchingObject(r.json())

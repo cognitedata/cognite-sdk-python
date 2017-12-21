@@ -25,7 +25,7 @@ def get_datapoints(tagId, aggregates=None, granularity=None, start=None, end=Non
     }
     r = requests.get(url, params=params, headers=headers)
     if r.status_code != 200:
-        return print(r.text)
+        raise Exception(r.json()['error'])
     return DatapointsObject(r.json())
 
 def get_latest(tagId, api_key=None, project=None):
@@ -38,7 +38,7 @@ def get_latest(tagId, api_key=None, project=None):
     }
     r = requests.get(url, headers=headers)
     if r.status_code != 200:
-        return print(r.text)
+        raise Exception(r.json()['error'])
     return LatestDatapointObject(r.json())
 
 def get_multi_tag_datapoints(tagIds, aggregates=None, granularity=None, start=None, end=None, limit=config.LIMIT, api_key=None,
@@ -60,7 +60,7 @@ def get_multi_tag_datapoints(tagIds, aggregates=None, granularity=None, start=No
     }
     r = requests.post(url=url, data=json.dumps(body), headers=headers)
     if r.status_code != 200:
-        return print(r.text)
+        raise Exception(r.json()['error'])
     return [DatapointsObject({'data': {'items': [dp]}}) for dp in r.json()['data']['items']]
 
 def get_datapoints_frame(tagIds, aggregates, granularity, start=None, end=None, api_key=None, project=None):
@@ -84,7 +84,7 @@ def get_datapoints_frame(tagIds, aggregates, granularity, start=None, end=None, 
     while len(dataframes) == 0 or dataframes[-1].shape[0] == config.LIMIT:
         r = requests.post(url=url, data=json.dumps(body), headers=headers)
         if r.status_code != 200:
-            return print(r.text)
+            raise Exception(r.json()['error'])
         dataframes.append(pd.read_csv(io.StringIO(r.content.decode(r.encoding if r.encoding else r.apparent_encoding))))
         latest_timestamp = int(dataframes[-1].iloc[-1, 0])
         p._update_progress(latest_timestamp)
