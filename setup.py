@@ -1,8 +1,8 @@
 from setuptools import setup
 
-setup(name='cognite',
+setup(name='cognite-sdk',
       version='0.3.1',
-      description='Cognite Python SDK',
+      description='Cognite API SDK for Python',
       url='https://github.com/cognitedata/cognite-sdk-python',
       download_url='https://github.com/cognitedata/cognite-sdk-python/cognite/archive/0.3.1.tar.gz',
       author='Erlend Vollset',
