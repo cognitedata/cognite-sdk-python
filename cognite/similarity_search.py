@@ -15,7 +15,6 @@ def search(input_tags, query_tags, input_interval, query_interval, modes, limit=
         'modes': modes,
         'limit': limit
     }
-    print(body)
     headers = {
         'api-key': api_key,
         'content-type': 'application/json',
