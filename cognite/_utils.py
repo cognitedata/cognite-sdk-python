@@ -1,4 +1,23 @@
-import sys, math, re
+import cognite._constants as _constants
+import json
+import math
+import re
+import requests
+import sys
+
+def _get_request(url, params=None, headers=None):
+    for i in range(_constants._RETRY_LIMIT + 1):
+        res = requests.get(url, params=params, headers=headers)
+        if res.status_code == 200:
+            return res
+    raise APIError(res.json()['error'])
+
+def _post_request(url, body, headers=None):
+    for i in range(_constants._RETRY_LIMIT + 1):
+        res = requests.get(url, data=json.dumps(body), headers=headers)
+        if res.status_code == 200:
+            return res
+    raise APIError(res.json()['error'])
 
 def _granularity_to_ms(time_string):
     magnitude = int(''.join([c for c in time_string if c.isdigit()]))
@@ -15,6 +34,9 @@ def _time_ago_to_ms(time_ago_string):
         unit_in_ms = {'s': 1000, 'm': 60000, 'h': 3600000, 'd': 86400000, 'w': 604800000}
         return magnitude * unit_in_ms[unit]
     return None
+
+class APIError(Exception):
+    pass
 
 class _ProgressIndicator():
     def __init__(self, tagIds, start, end):

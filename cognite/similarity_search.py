@@ -1,7 +1,5 @@
 import cognite._constants as _constants
-import json
-import requests
-
+import cognite._utils as _utils
 from cognite.config import _get_config_variables
 from cognite._data_objects import SimilaritySearchObject
 
@@ -21,7 +19,5 @@ def search(input_tags, query_tags, input_interval, query_interval, modes, limit=
         'content-type': 'application/json',
         'accept': 'application/json'
     }
-    r = requests.post(url=url, data=json.dumps(body), headers=headers)
-    if r.status_code != 200:
-        raise Exception(r.json()['error'])
+    r = _utils._post_request(url=url, body=body, headers=headers)
     return SimilaritySearchObject(r.json())

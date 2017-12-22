@@ -1,7 +1,6 @@
 import cognite.config as config
 import cognite._constants as _constants
-import json
-import requests
+import cognite._utils as _utils
 
 from cognite._data_objects import TagMatchingObject
 
@@ -20,7 +19,5 @@ def tag_matching(tagIds, fuzzy_threshold=0, platform=None, api_key=None, project
         'content-type': '*/*',
         'accept': 'application/json'
     }
-    r = requests.post(url=url, data=json.dumps(body), headers=headers)
-    if r.status_code != 200:
-        raise Exception(r.json()['error'])
+    r = _utils._post_request(url=url, body=body, headers=headers)
     return TagMatchingObject(r.json())
