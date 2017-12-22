@@ -14,7 +14,7 @@ def _get_request(url, params=None, headers=None):
 
 def _post_request(url, body, headers=None):
     for i in range(_constants._RETRY_LIMIT + 1):
-        res = requests.get(url, data=json.dumps(body), headers=headers)
+        res = requests.post(url, data=json.dumps(body), headers=headers)
         if res.status_code == 200:
             return res
     raise APIError(res.json()['error'])
