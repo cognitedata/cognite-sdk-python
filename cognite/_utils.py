@@ -19,8 +19,8 @@ def _time_ago_to_ms(time_ago_string):
 class _ProgressIndicator():
     def __init__(self, tagIds, start, end):
         from cognite.timeseries import get_latest, get_datapoints
-        print("get first")
         first_timestamp = float("inf")
+
         for tag in tagIds:
             if type(tag) == str:
                 tag_start = int(get_datapoints(tag, limit=1).to_json()['datapoints'][0]['timestamp'])
@@ -29,7 +29,7 @@ class _ProgressIndicator():
             if tag_start < first_timestamp:
                 first_timestamp = tag_start
         latest_timestamp = 0
-        print("get last")
+
         for tag in tagIds:
             if type(tag) == str:
                 tag_end = int(get_latest(tag).to_json()['timestamp'])
@@ -37,13 +37,14 @@ class _ProgressIndicator():
                 tag_end = int(get_latest(tag['tagId']).to_json()['timestamp'])
             if tag_end > latest_timestamp:
                 latest_timestamp = tag_end
-        print("init")
+
         if start == None:
             self.start = first_timestamp
         elif _time_ago_to_ms(start):
             self.start = latest_timestamp - _time_ago_to_ms(start)
         else:
             self.start = start
+
         if end == None:
             self.end = latest_timestamp
         elif _time_ago_to_ms(end):
