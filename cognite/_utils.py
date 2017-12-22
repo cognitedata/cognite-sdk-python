@@ -1,4 +1,4 @@
-import sys, math
+import sys, math, re
 
 def _granularity_to_ms(time_string):
     magnitude = int(''.join([c for c in time_string if c.isdigit()]))
@@ -6,33 +6,51 @@ def _granularity_to_ms(time_string):
     unit_in_ms = {'s': 1000, 'second': 1000, 'm': 60000, 'minute': 60000, 'h': 3600000, 'hour': 3600000, 'd': 86400000, 'day': 86400000}
     return magnitude * unit_in_ms[unit]
 
+def _time_ago_to_ms(time_ago_string):
+    pattern = '(\d+)([a-z])-ago'
+    res = re.match(pattern, str(time_ago_string))
+    if res:
+        magnitude = int(res.group(1))
+        unit = res.group(2)
+        unit_in_ms = {'s': 1000, 'm': 60000, 'h': 3600000, 'd': 86400000, 'w': 604800000}
+        return magnitude * unit_in_ms[unit]
+    return None
 
 class _ProgressIndicator():
     def __init__(self, tagIds, start, end):
         from cognite.timeseries import get_latest, get_datapoints
+        print("get first")
+        first_timestamp = float("inf")
+        for tag in tagIds:
+            if type(tag) == str:
+                tag_start = int(get_datapoints(tag, limit=1).to_json()['datapoints'][0]['timestamp'])
+            else:
+                tag_start = int(get_datapoints(tag['tagId'], limit=1).to_json()['datapoints'][0]['timestamp'])
+            if tag_start < first_timestamp:
+                first_timestamp = tag_start
+        latest_timestamp = 0
+        print("get last")
+        for tag in tagIds:
+            if type(tag) == str:
+                tag_end = int(get_latest(tag).to_json()['timestamp'])
+            else:
+                tag_end = int(get_latest(tag['tagId']).to_json()['timestamp'])
+            if tag_end > latest_timestamp:
+                latest_timestamp = tag_end
+        print("init")
         if start == None:
-            self.start = float("inf")
-            for tag in tagIds:
-                if type(tag) == str:
-                    tag_start = int(get_datapoints(tag, limit=1).to_json()['timestamp'])
-                else:
-                    tag_start = int(get_datapoints(tag['tagId'], limit=1).to_json()['timestamp'])
-                if tag_start < self.start:
-                    self.start = tag_start
+            self.start = first_timestamp
+        elif _time_ago_to_ms(start):
+            self.start = latest_timestamp - _time_ago_to_ms(start)
         else:
             self.start = start
-
         if end == None:
-            self.end = 0
-            for tag in tagIds:
-                if type(tag) == str:
-                    tag_end = int(get_latest(tag).to_json()['timestamp'])
-                else:
-                    tag_end = int(get_latest(tag['tagId']).to_json()['timestamp'])
-                if tag_end > self.end:
-                    self.end = tag_end
+            self.end = latest_timestamp
+        elif _time_ago_to_ms(end):
+            self.end = latest_timestamp - _time_ago_to_ms(end)
         else:
             self.end = end
+
         self.length = self.end - self.start
         self.progress = 0.0
         print("Downloading requested data...")

@@ -12,7 +12,7 @@ def get_datapoints(tagId, aggregates=None, granularity=None, start=None, end=Non
                    project=None):
     api_key, project = config._get_config_variables(api_key, project)
     tagId = tagId.replace('/', '%2F')
-    url = _constants._LIMIT + '/projects/{}/timeseries/data/{}'.format(project, tagId)
+    url = _constants._BASE_URL + '/projects/{}/timeseries/data/{}'.format(project, tagId)
     params = {
         'aggregates': aggregates,
         'granularity': granularity,
@@ -32,7 +32,7 @@ def get_datapoints(tagId, aggregates=None, granularity=None, start=None, end=Non
 def get_latest(tagId, api_key=None, project=None):
     api_key, project = config._get_config_variables(api_key, project)
     tagId = tagId.replace('/', '%2F')
-    url = _constants._LIMIT + '/projects/{}/timeseries/latest/{}'.format(project, tagId)
+    url = _constants._BASE_URL + '/projects/{}/timeseries/latest/{}'.format(project, tagId)
     headers = {
         'api-key': api_key,
         'accept': 'application/json'
@@ -45,7 +45,7 @@ def get_latest(tagId, api_key=None, project=None):
 def get_multi_tag_datapoints(tagIds, aggregates=None, granularity=None, start=None, end=None, limit=_constants._LIMIT, api_key=None,
                              project=None):
     api_key, project = config._get_config_variables(api_key, project)
-    url = _constants._LIMIT + '/projects/{}/timeseries/dataquery'.format(project)
+    url = _constants._BASE_URL + '/projects/{}/timeseries/dataquery'.format(project)
     body = {
         'items': [{'tagId': '{}'.format(tagId)} if type(tagId) == str else {'tagId': '{}'.format(tagId['tagId']), 'aggregates': tagId['aggregates']} for tagId in tagIds],
         'aggregates': aggregates,
@@ -66,7 +66,7 @@ def get_multi_tag_datapoints(tagIds, aggregates=None, granularity=None, start=No
 
 def get_datapoints_frame(tagIds, aggregates, granularity, start=None, end=None, api_key=None, project=None):
     api_key, project = config._get_config_variables(api_key, project)
-    url = _constants._LIMIT + '/projects/{}/timeseries/dataframe'.format(project)
+    url = _constants._BASE_URL + '/projects/{}/timeseries/dataframe'.format(project)
     body = {
         'items': [{'tagId': '{}'.format(tagId)} if type(tagId) == str else {'tagId': '{}'.format(tagId['tagId']), 'aggregates': tagId['aggregates']} for tagId in tagIds],
         'aggregates': aggregates,
