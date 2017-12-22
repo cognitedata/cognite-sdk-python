@@ -74,4 +74,6 @@ class SimilaritySearchObject(CogniteDataObject):
         return self.internal_representation['data']['items']
 
     def to_pandas(self):
-        return pd.DataFrame([self.internal_representation['data']['items']])
+        if len(self.to_json()) > 1:
+            return pd.DataFrame(self.internal_representation['data']['items'])
+        return pd.DataFrame()
