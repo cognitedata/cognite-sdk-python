@@ -1,11 +1,9 @@
 import cognite.config as config
 import cognite._constants as _constants
+import cognite._utils as _utils
 import io
-import json
 import pandas as pd
-import requests
 
-from cognite._utils import _granularity_to_ms, _ProgressIndicator
 from cognite._data_objects import DatapointsObject, LatestDatapointObject
 
 def get_datapoints(tagId, aggregates=None, granularity=None, start=None, end=None, limit=_constants._LIMIT, api_key=None,
@@ -24,9 +22,7 @@ def get_datapoints(tagId, aggregates=None, granularity=None, start=None, end=Non
         'api-key': api_key,
         'accept': 'application/json'
     }
-    r = requests.get(url, params=params, headers=headers)
-    if r.status_code != 200:
-        raise Exception(r.json()['error'])
+    r = _utils._get_request(url, params=params, headers=headers)
     return DatapointsObject(r.json())
 
 def get_latest(tagId, api_key=None, project=None):
@@ -37,9 +33,7 @@ def get_latest(tagId, api_key=None, project=None):
         'api-key': api_key,
         'accept': 'application/json'
     }
-    r = requests.get(url, headers=headers)
-    if r.status_code != 200:
-        raise Exception(r.json()['error'])
+    r = _utils._get_request(url, headers=headers)
     return LatestDatapointObject(r.json())
 
 def get_multi_tag_datapoints(tagIds, aggregates=None, granularity=None, start=None, end=None, limit=_constants._LIMIT, api_key=None,
@@ -59,9 +53,7 @@ def get_multi_tag_datapoints(tagIds, aggregates=None, granularity=None, start=No
         'content-type': 'application/json',
         'accept': 'application/json'
     }
-    r = requests.post(url=url, data=json.dumps(body), headers=headers)
-    if r.status_code != 200:
-        raise Exception(r.json()['error'])
+    r = _utils._post_request(url=url, body=body, headers=headers)
     return [DatapointsObject({'data': {'items': [dp]}}) for dp in r.json()['data']['items']]
 
 def get_datapoints_frame(tagIds, aggregates, granularity, start=None, end=None, api_key=None, project=None):
@@ -81,13 +73,11 @@ def get_datapoints_frame(tagIds, aggregates, granularity, start=None, end=None, 
         'accept': 'text/csv'
     }
     dataframes = []
-    p = _ProgressIndicator(tagIds, start, end)
+    p = _utils._ProgressIndicator(tagIds, start, end)
     while len(dataframes) == 0 or dataframes[-1].shape[0] == _constants._LIMIT:
-        r = requests.post(url=url, data=json.dumps(body), headers=headers)
-        if r.status_code != 200:
-            raise Exception(r.json()['error'])
+        r = _utils._post_request(url=url, body=body, headers=headers)
         dataframes.append(pd.read_csv(io.StringIO(r.content.decode(r.encoding if r.encoding else r.apparent_encoding))))
         latest_timestamp = int(dataframes[-1].iloc[-1, 0])
         p._update_progress(latest_timestamp)
-        body['start'] = latest_timestamp + _granularity_to_ms(granularity)
+        body['start'] = latest_timestamp + _utils._granularity_to_ms(granularity)
     return pd.concat(dataframes).reset_index(drop=True)
