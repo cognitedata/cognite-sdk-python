@@ -1,6 +1,7 @@
 import pandas as pd
 from abc import ABC, abstractmethod
 
+# Author: Erlend Vollset
 class CogniteDataObject(ABC):
     def __init__(self, internal_representation):
         self.internal_representation = internal_representation
@@ -14,6 +15,7 @@ class CogniteDataObject(ABC):
     def to_ndarray(self):
         return self.to_pandas().values
 
+# Author: Erlend Vollset
 class TagMatchingObject(CogniteDataObject):
     def __init__(self, internal_representation):
         CogniteDataObject.__init__(self, internal_representation)
@@ -43,6 +45,8 @@ class TagMatchingObject(CogniteDataObject):
             return self.to_pandas().sort_values(['score', 'match']).groupby(['tag']).first()['match'].tolist()
         return self.to_pandas().sort_values(['score', 'match'])['match'].tolist()
 
+
+# Author: Erlend Vollset
 class DatapointsObject(CogniteDataObject):
     def __init__(self, internal_representation):
         CogniteDataObject.__init__(self, internal_representation)
@@ -53,6 +57,8 @@ class DatapointsObject(CogniteDataObject):
     def to_pandas(self):
         return pd.DataFrame(self.internal_representation['data']['items'][0]['datapoints'])
 
+
+# Author: Erlend Vollset
 class LatestDatapointObject(CogniteDataObject):
     def __init__(self, internal_representation):
         CogniteDataObject.__init__(self, internal_representation)
@@ -66,7 +72,27 @@ class LatestDatapointObject(CogniteDataObject):
     def to_ndarray(self):
         return self.to_pandas().values[0]
 
+
+# Author: Erlend Vollset
 class SimilaritySearchObject(CogniteDataObject):
+    def __init__(self, internal_representation):
+        CogniteDataObject.__init__(self, internal_representation)
+
+    def to_json(self):
+        return self.internal_representation['data']['items']
+
+    def to_pandas(self):
+        if len(self.to_json()) > 1:
+            return pd.DataFrame(self.internal_representation['data']['items'])
+        return pd.DataFrame()
+
+
+
+#
+#   For now just a copy of SimilaritySearchObject
+#   T.K
+#
+class AssetSearchObject(CogniteDataObject):
     def __init__(self, internal_representation):
         CogniteDataObject.__init__(self, internal_representation)
 
