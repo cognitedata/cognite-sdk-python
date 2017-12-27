@@ -3,7 +3,8 @@ sys.path.append('../')
 from cognite.assets import *
 import cognite.config as config
 
-config.configure_session(api_key='3pbGeyjv4hnnzo0SpPmtvCApbaTKAQcv', project='akerbp')
+key = sys.argv[1]
+config.configure_session(api_key=key, project='akerbp')
 
 Search_results = searchAssets('xmas').to_pandas()
 first = Search_results.ix[0]
