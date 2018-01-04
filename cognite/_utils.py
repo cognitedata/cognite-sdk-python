@@ -6,18 +6,20 @@ import requests
 import sys
 
 def _get_request(url, params=None, headers=None):
+    '''Perform a GET request with a predetermined number of retries.'''
     for i in range(_constants._RETRY_LIMIT + 1):
         res = requests.get(url, params=params, headers=headers)
         if res.status_code == 200:
             return res
-    raise APIError(res.json()['error'])
+    raise _APIError(res.json()['error'])
 
 def _post_request(url, body, headers=None):
+    '''Perform a POST request with a predetermined number of retries.'''
     for i in range(_constants._RETRY_LIMIT + 1):
         res = requests.post(url, data=json.dumps(body), headers=headers)
         if res.status_code == 200:
             return res
-    raise APIError(res.json()['error'])
+    raise _APIError(res.json()['error'])
 
 def _granularity_to_ms(time_string):
     magnitude = int(''.join([c for c in time_string if c.isdigit()]))
@@ -35,7 +37,7 @@ def _time_ago_to_ms(time_ago_string):
         return magnitude * unit_in_ms[unit]
     return None
 
-class APIError(Exception):
+class _APIError(Exception):
     pass
 
 class _ProgressIndicator():
