@@ -1,1 +1,1 @@
-__all__ = ['timeseries', 'tagmatching', 'config', 'assets']
+__all__ = ['assets', 'config', 'similarity_search', 'tagmatching', 'timeseries']
