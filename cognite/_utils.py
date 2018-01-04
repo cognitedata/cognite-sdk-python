@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+"""Utilites for Cognite API SDK
+
+This module provides helper methods and different utilities for the Cognite API Python SDK.
+
+This module is protected and should not used by end-users
+
+"""
 import cognite._constants as _constants
 import json
 import math
@@ -22,12 +30,14 @@ def _post_request(url, body, headers=None):
     raise _APIError(res.json()['error'])
 
 def _granularity_to_ms(time_string):
+    '''Returns millisecond representation of granularity time string'''
     magnitude = int(''.join([c for c in time_string if c.isdigit()]))
     unit = ''.join([c for c in time_string if c.isalpha()])
     unit_in_ms = {'s': 1000, 'second': 1000, 'm': 60000, 'minute': 60000, 'h': 3600000, 'hour': 3600000, 'd': 86400000, 'day': 86400000}
     return magnitude * unit_in_ms[unit]
 
 def _time_ago_to_ms(time_ago_string):
+    '''Returns millisecond representation of time-ago string'''
     pattern = '(\d+)([a-z])-ago'
     res = re.match(pattern, str(time_ago_string))
     if res:
@@ -41,6 +51,7 @@ class _APIError(Exception):
     pass
 
 class _ProgressIndicator():
+    '''This class let's the system give the user and indication of how much data remains to be downloaded in the request'''
     def __init__(self, tagIds, start, end):
         from cognite.timeseries import get_latest, get_datapoints
         
@@ -88,7 +99,7 @@ class _ProgressIndicator():
     def _print_progress(self):
         prog = int(math.ceil(self.progress) / 5)
         remainder = 20 - prog
-        sys.stdout.write("\r{:5.1f}% |{}|".format(self.progress, '|' * prog + ' ' * remainder))
+        sys.stdout.write("\r{:5.1f}% |{}|".format(int(math.ceil(self.progress)), '|' * prog + ' ' * remainder))
         sys.stdout.flush()
         if int(math.ceil(self.progress)) == 100:
             print()
