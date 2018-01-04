@@ -6,8 +6,8 @@ import pandas as pd
 
 from cognite._data_objects import DatapointsObject, LatestDatapointObject
 
-def get_datapoints(tagId, aggregates=None, granularity=None, start=None, end=None, limit=_constants._LIMIT, api_key=None,
-                   project=None):
+def get_datapoints(tagId, aggregates=None, granularity=None, start=None, end=None, limit=_constants._LIMIT,
+                   api_key=None, project=None):
     api_key, project = config._get_config_variables(api_key, project)
     tagId = tagId.replace('/', '%2F')
     url = _constants._BASE_URL + '/projects/{}/timeseries/data/{}'.format(project, tagId)
@@ -36,12 +36,14 @@ def get_latest(tagId, api_key=None, project=None):
     r = _utils._get_request(url, headers=headers)
     return LatestDatapointObject(r.json())
 
-def get_multi_tag_datapoints(tagIds, aggregates=None, granularity=None, start=None, end=None, limit=_constants._LIMIT, api_key=None,
-                             project=None):
+def get_multi_tag_datapoints(tagIds, aggregates=None, granularity=None, start=None, end=None, limit=_constants._LIMIT,
+                             api_key=None, project=None):
     api_key, project = config._get_config_variables(api_key, project)
     url = _constants._BASE_URL + '/projects/{}/timeseries/dataquery'.format(project)
     body = {
-        'items': [{'tagId': '{}'.format(tagId)} if type(tagId) == str else {'tagId': '{}'.format(tagId['tagId']), 'aggregates': tagId['aggregates']} for tagId in tagIds],
+        'items': [{'tagId': '{}'.format(tagId)}
+                  if type(tagId) == str
+                  else {'tagId': '{}'.format(tagId['tagId']), 'aggregates': tagId['aggregates']} for tagId in tagIds],
         'aggregates': aggregates,
         'granularity': granularity,
         'start': start,
@@ -60,7 +62,9 @@ def get_datapoints_frame(tagIds, aggregates, granularity, start=None, end=None, 
     api_key, project = config._get_config_variables(api_key, project)
     url = _constants._BASE_URL + '/projects/{}/timeseries/dataframe'.format(project)
     body = {
-        'items': [{'tagId': '{}'.format(tagId)} if type(tagId) == str else {'tagId': '{}'.format(tagId['tagId']), 'aggregates': tagId['aggregates']} for tagId in tagIds],
+        'items': [{'tagId': '{}'.format(tagId)}
+                  if type(tagId) == str
+                  else {'tagId': '{}'.format(tagId['tagId']), 'aggregates': tagId['aggregates']} for tagId in tagIds],
         'aggregates': aggregates,
         'granularity': granularity,
         'start': start,
