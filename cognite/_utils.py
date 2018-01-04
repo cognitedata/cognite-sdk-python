@@ -42,10 +42,9 @@ class _ProgressIndicator():
     def __init__(self, tagIds, start, end):
         from cognite.timeseries import get_latest, get_datapoints
         first_timestamp = float("inf")
-
         for tag in tagIds:
             if type(tag) == str:
-                tag_start = int(get_datapoints(tag, limit=1).to_json()['datapoints'][0]['timestamp'])
+                tag_start = int(get_datapoints(tag, limit=1, start=start, end=end).to_json()['datapoints'][0]['timestamp'])
             else:
                 tag_start = int(get_datapoints(tag['tagId'], limit=1).to_json()['datapoints'][0]['timestamp'])
             if tag_start < first_timestamp:
@@ -62,14 +61,14 @@ class _ProgressIndicator():
 
         if start == None:
             self.start = first_timestamp
-        elif _time_ago_to_ms(start):
+        elif _time_ago_to_ms(start): # start is specified as string of format '1d-ago'
             self.start = latest_timestamp - _time_ago_to_ms(start)
         else:
             self.start = start
 
         if end == None:
             self.end = latest_timestamp
-        elif _time_ago_to_ms(end):
+        elif _time_ago_to_ms(end): # end is specified as string of format '1d-ago'
             self.end = latest_timestamp - _time_ago_to_ms(end)
         else:
             self.end = end
