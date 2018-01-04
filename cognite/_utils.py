@@ -41,6 +41,7 @@ class APIError(Exception):
 class _ProgressIndicator():
     def __init__(self, tagIds, start, end):
         from cognite.timeseries import get_latest, get_datapoints
+        
         first_timestamp = float("inf")
         for tag in tagIds:
             if type(tag) == str:
