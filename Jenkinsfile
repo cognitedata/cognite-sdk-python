@@ -29,7 +29,7 @@ podTemplate(
                 sh("pipenv install")
             }
             stage('Test') {
-                sh("pipenv run python3 unit_tests/run_tests.py")
+                sh("cd unit_tests && pipenv run python3 run_tests.py")
             }
             stage('Build') {
                 sh("pipenv run python3 setup.py sdist")
