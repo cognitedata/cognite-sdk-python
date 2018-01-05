@@ -18,4 +18,21 @@ Alternativley integrate pylint in your editor or IDE by following the instructio
 ### Unit testing
 Set up unit tests for all new functionality
 Run unit tests by running the following command from the root directory:
+
 `$ python3 unit_tests/run_tests.py`
+
+### Deployment to Pypi
+1. Update version number in setup.py
+2. Create new tag on github
+	$ git tag <version> -m <message>
+	$ git push --tags origin master
+3. Check unit tests and lint code
+4. build
+```bash
+	$ python3 setup.py sdist
+	$ python3 setup.py bdist_wheel
+```
+5. Upload using twine
+
+`twine upload dist/*`
+
