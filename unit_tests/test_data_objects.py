@@ -5,7 +5,7 @@ import cognite.timeseries as timeseries
 import cognite.similarity_search as ss
 
 from cognite.config import configure_session
-from unit_tests.config import TEST_API_KEY, TEST_PROJECT
+from unit_tests.constants import TEST_API_KEY, TEST_PROJECT
 
 class TagMatchingTestCase(unittest.TestCase):
 
@@ -96,10 +96,10 @@ class SimilaritySearchTestCase(unittest.TestCase):
         ss_input_tag = 'SKAP_18PI2117/Y/10sSAMP'
         ss_query_tag = 'SKAP_18PI2317/Y/10sSAMP'
         self.response = ss.search(input_tags=[ss_input_tag],
-                        query_tags=[ss_query_tag],
-                        input_interval=(1360969200000, 1360969300000),
-                        query_interval=(1360969200000, 1360991300000),
-                        modes=["pattern"])
+                                  query_tags=[ss_query_tag],
+                                  input_interval=(1360969200000, 1360969300000),
+                                  query_interval=(1360969200000, 1360991300000),
+                                  modes=["pattern"])
 
     def test_object(self):
         from cognite._data_objects import SimilaritySearchObject
