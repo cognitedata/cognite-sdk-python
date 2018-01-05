@@ -1,14 +1,20 @@
+# -*- coding: utf-8 -*-
+"""Tag Matching Module
+
+This module mirrors the Tag Matching API. It allows you to enter an arbitrary string and a fuzzy matching with
+a user defined threshold will be performed toward tag_ids in the system.
+"""
 import cognite.config as config
 import cognite._constants as _constants
 import cognite._utils as _utils
 
 from cognite._data_objects import TagMatchingObject
 
-def tag_matching(tagIds, fuzzy_threshold=0, platform=None, api_key=None, project=None):
+def tag_matching(tag_ids, fuzzy_threshold=0, platform=None, api_key=None, project=None):
     '''Returns a TagMatchingObject containing a list of matched tags for the given query.
 
     Args:
-        tagIds (list):          The tagIds to retrieve matches for.
+        tag_ids (list):          The tag_ids to retrieve matches for.
 
         fuzzy_threshold (int):  The threshold to use when searching for matches. A fuzzy threshold of 0 means you only
                                 want to accept perfect matches. Must be >= 0.
@@ -26,10 +32,10 @@ def tag_matching(tagIds, fuzzy_threshold=0, platform=None, api_key=None, project
             to_ndarray(): Returns the data as a numpy array.
             to_list(): Returns the data as a list.
     '''
-    api_key, project = config._get_config_variables(api_key, project)
-    url = _constants._BASE_URL + '/projects/{}/tagmatching'.format(project)
+    api_key, project = config.get_config_variables(api_key, project)
+    url = _constants.BASE_URL + '/projects/{}/tagmatching'.format(project)
     body = {
-        'tagIds': tagIds,
+        'tag_ids': tag_ids,
         'metadata': {
             'fuzzyThreshold': fuzzy_threshold,
             'platform': platform
@@ -40,5 +46,5 @@ def tag_matching(tagIds, fuzzy_threshold=0, platform=None, api_key=None, project
         'content-type': '*/*',
         'accept': 'application/json'
     }
-    r = _utils._post_request(url=url, body=body, headers=headers)
-    return TagMatchingObject(r.json())
+    res = _utils.post_request(url=url, body=body, headers=headers)
+    return TagMatchingObject(res.json())

@@ -1,17 +1,22 @@
+# -*- coding: utf-8 -*-
+"""Timeseries Module
+
+This module mirrors the Timeseries API. It allows you to fetch data from the api and output it in various formats.
+"""
+import io
+import pandas as pd
 import cognite.config as config
 import cognite._constants as _constants
 import cognite._utils as _utils
-import io
-import pandas as pd
 
 from cognite._data_objects import DatapointsObject, LatestDatapointObject
 
-def get_datapoints(tagId, aggregates=None, granularity=None, start=None, end=None, limit=_constants._LIMIT,
+def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=None, limit=_constants.LIMIT,
                    api_key=None, project=None):
     '''Returns a DatapointsObject containing a list of datapoints for the given query.
 
     Args:
-        tagId (str):            The tagId to retrieve data for.
+        tag_id (str):            The tag_id to retrieve data for.
 
         aggregates (list):      The list of aggregate functions you wish to apply to the data. Valid aggregate functions
                                 are: 'average/avg, max, min, count, sum, interpolation/int, stepinterpolation/step'.
@@ -40,9 +45,9 @@ def get_datapoints(tagId, aggregates=None, granularity=None, start=None, end=Non
             to_pandas(): Returns the data as a pandas dataframe.
             to_ndarray(): Returns the data as a numpy array.
     '''
-    api_key, project = config._get_config_variables(api_key, project)
-    tagId = tagId.replace('/', '%2F')
-    url = _constants._BASE_URL + '/projects/{}/timeseries/data/{}'.format(project, tagId)
+    api_key, project = config.get_config_variables(api_key, project)
+    tag_id = tag_id.replace('/', '%2F')
+    url = _constants.BASE_URL + '/projects/{}/timeseries/data/{}'.format(project, tag_id)
     params = {
         'aggregates': aggregates,
         'granularity': granularity,
@@ -54,14 +59,14 @@ def get_datapoints(tagId, aggregates=None, granularity=None, start=None, end=Non
         'api-key': api_key,
         'accept': 'application/json'
     }
-    r = _utils._get_request(url, params=params, headers=headers)
-    return DatapointsObject(r.json())
+    res = _utils.get_request(url, params=params, headers=headers)
+    return DatapointsObject(res.json())
 
-def get_latest(tagId, api_key=None, project=None):
+def get_latest(tag_id, api_key=None, project=None):
     '''Returns a LatestDatapointObject containing a list of datapoints for the given query.
 
     Args:
-        tagId (str):            The tagId to retrieve data for.
+        tag_id (str):            The tag_id to retrieve data for.
 
         api_key (str):          Your api-key.
 
@@ -73,22 +78,22 @@ def get_latest(tagId, api_key=None, project=None):
             to_pandas(): Returns the data as a pandas dataframe.
             to_ndarray(): Returns the data as a numpy array.
     '''
-    api_key, project = config._get_config_variables(api_key, project)
-    tagId = tagId.replace('/', '%2F')
-    url = _constants._BASE_URL + '/projects/{}/timeseries/latest/{}'.format(project, tagId)
+    api_key, project = config.get_config_variables(api_key, project)
+    tag_id = tag_id.replace('/', '%2F')
+    url = _constants.BASE_URL + '/projects/{}/timeseries/latest/{}'.format(project, tag_id)
     headers = {
         'api-key': api_key,
         'accept': 'application/json'
     }
-    r = _utils._get_request(url, headers=headers)
-    return LatestDatapointObject(r.json())
+    res = _utils.get_request(url, headers=headers)
+    return LatestDatapointObject(res.json())
 
-def get_multi_tag_datapoints(tagIds, aggregates=None, granularity=None, start=None, end=None, limit=_constants._LIMIT,
+def get_multi_tag_datapoints(tag_ids, aggregates=None, granularity=None, start=None, end=None, limit=_constants.LIMIT,
                              api_key=None, project=None):
-    '''Returns a list of DatapointsObjects each of which contains a list of datapoints for the given tagId.
+    '''Returns a list of DatapointsObjects each of which contains a list of datapoints for the given tag_id.
 
     Args:
-        tagIds (list):          The list of tagIds to retrieve data for.
+        tag_ids (list):          The list of tag_ids to retrieve data for.
 
         aggregates (list):      The list of aggregate functions you wish to apply to the data. Valid aggregate functions
                                 are: 'average/avg, max, min, count, sum, interpolation/int, stepinterpolation/step'.
@@ -117,12 +122,12 @@ def get_multi_tag_datapoints(tagIds, aggregates=None, granularity=None, start=No
             to_pandas(): Returns the data as a pandas dataframe.
             to_ndarray(): Returns the data as a numpy array.
     '''
-    api_key, project = config._get_config_variables(api_key, project)
-    url = _constants._BASE_URL + '/projects/{}/timeseries/dataquery'.format(project)
+    api_key, project = config.get_config_variables(api_key, project)
+    url = _constants.BASE_URL + '/projects/{}/timeseries/dataquery'.format(project)
     body = {
-        'items': [{'tagId': '{}'.format(tagId)}
-                  if type(tagId) == str
-                  else {'tagId': '{}'.format(tagId['tagId']), 'aggregates': tagId['aggregates']} for tagId in tagIds],
+        'items': [{'tagId': '{}'.format(tag_id)}
+                  if isinstance(tag_id, str)
+                  else {'tagId': '{}'.format(tag_id['tagId']), 'aggregates': tag_id['aggregates']} for tag_id in tag_ids],
         'aggregates': aggregates,
         'granularity': granularity,
         'start': start,
@@ -134,21 +139,21 @@ def get_multi_tag_datapoints(tagIds, aggregates=None, granularity=None, start=No
         'content-type': 'application/json',
         'accept': 'application/json'
     }
-    r = _utils._post_request(url=url, body=body, headers=headers)
-    return [DatapointsObject({'data': {'items': [dp]}}) for dp in r.json()['data']['items']]
+    res = _utils.post_request(url=url, body=body, headers=headers)
+    return [DatapointsObject({'data': {'items': [dp]}}) for dp in res.json()['data']['items']]
 
-def get_datapoints_frame(tagIds, aggregates, granularity, start=None, end=None, api_key=None, project=None):
-    '''Returns a pandas dataframe of datapoints for the given tagIds all on the same timestamps.
+def get_datapoints_frame(tag_ids, aggregates, granularity, start=None, end=None, api_key=None, project=None):
+    '''Returns a pandas dataframe of datapoints for the given tag_ids all on the same timestamps.
 
     Args:
-        tagIds (list):          The list of tagIds to retrieve data for. Each tagId can be either a string containing
-                                the tagId or a dictionary containing the tagId and a list of specific aggregate
+        tag_ids (list):          The list of tag_ids to retrieve data for. Each tag_id can be either a string containing
+                                the tag_id or a dictionary containing the tag_id and a list of specific aggregate
                                 functions.
 
-                                    Example option 1: ['<tagId1>', '<tagId2>'].
+                                    Example option 1: ['<tag_id1>', '<tag_id2>'].
 
-                                    Example option 2: [{'tagId': '<tagId1>', 'aggregates': ['avg', 'max']},
-                                                    {'tagId': '<tagId2>', 'aggregates': ['step']}]
+                                    Example option 2: [{'tagId': '<tag_id1>', 'aggregates': ['avg', 'max']},
+                                                    {'tagId': '<tag_id2>', 'aggregates': ['step']}]
 
         aggregates (list):      The list of aggregate functions you wish to apply to the data for which you have not
                                 specified an aggregate function. Valid aggregate functions are: 'average/avg, max, min,
@@ -171,20 +176,20 @@ def get_datapoints_frame(tagIds, aggregates, granularity, start=None, end=None, 
         project (str):          Project name.
 
     Returns:
-        pandas dataframe: A pandas dataframe containing the datapoints for the given tagIds. The datapoints for all the
-                        tagIds will all be on the same timestamps.
+        pandas dataframe: A pandas dataframe containing the datapoints for the given tag_ids. The datapoints for all the
+                        tag_ids will all be on the same timestamps.
     '''
-    api_key, project = config._get_config_variables(api_key, project)
-    url = _constants._BASE_URL + '/projects/{}/timeseries/dataframe'.format(project)
+    api_key, project = config.get_config_variables(api_key, project)
+    url = _constants.BASE_URL + '/projects/{}/timeseries/dataframe'.format(project)
     body = {
-        'items': [{'tagId': '{}'.format(tagId)}
-                  if type(tagId) == str
-                  else {'tagId': '{}'.format(tagId['tagId']), 'aggregates': tagId['aggregates']} for tagId in tagIds],
+        'items': [{'tagId': '{}'.format(tag_id)}
+                  if isinstance(tag_id, str)
+                  else {'tagId': '{}'.format(tag_id['tagId']), 'aggregates': tag_id['aggregates']} for tag_id in tag_ids],
         'aggregates': aggregates,
         'granularity': granularity,
         'start': start,
         'end': end,
-        'limit': _constants._LIMIT
+        'limit': _constants.LIMIT
     }
     headers = {
         'api-key': api_key,
@@ -192,11 +197,12 @@ def get_datapoints_frame(tagIds, aggregates, granularity, start=None, end=None, 
         'accept': 'text/csv'
     }
     dataframes = []
-    p = _utils._ProgressIndicator(tagIds, start, end)
-    while len(dataframes) == 0 or dataframes[-1].shape[0] == _constants._LIMIT:
-        r = _utils._post_request(url=url, body=body, headers=headers)
-        dataframes.append(pd.read_csv(io.StringIO(r.content.decode(r.encoding if r.encoding else r.apparent_encoding))))
+    prog_ind = _utils.ProgressIndicator(tag_ids, start, end)
+    while not dataframes or dataframes[-1].shape[0] == _constants.LIMIT:
+        res = _utils.post_request(url=url, body=body, headers=headers)
+        dataframes.append(
+            pd.read_csv(io.StringIO(res.content.decode(res.encoding if res.encoding else res.apparent_encoding))))
         latest_timestamp = int(dataframes[-1].iloc[-1, 0])
-        p._update_progress(latest_timestamp)
-        body['start'] = latest_timestamp + _utils._granularity_to_ms(granularity)
+        prog_ind.update_progress(latest_timestamp)
+        body['start'] = latest_timestamp + _utils.granularity_to_ms(granularity)
     return pd.concat(dataframes).reset_index(drop=True)
