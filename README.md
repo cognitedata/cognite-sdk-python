@@ -23,13 +23,13 @@ Run unit tests by running the following command from the root directory:
 `$ python3 unit_tests/run_tests.py`
 
 ### Deployment to Pypi
-1. Update version number in setup.py
-2. Create new tag on github
+1. Check unit tests and lint code
+2. Update version number in setup.py
+3. Create new tag on github
 ```bash
 $ git tag <version> -m <message>
 $ git push --tags origin master
 ```
-3. Check unit tests and lint code
 4. Build
 ```bash
 $ python3 setup.py sdist
