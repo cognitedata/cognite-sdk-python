@@ -35,6 +35,7 @@ $ python3 setup.py sdist
 $ python3 setup.py bdist_wheel
 ```
 5. Upload using twine
-
-`$ twine upload dist/*`
+```bash
+$ twine upload dist/*
+```
 
