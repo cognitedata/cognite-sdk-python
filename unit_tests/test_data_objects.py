@@ -5,11 +5,12 @@ import cognite.timeseries as timeseries
 import cognite.similarity_search as ss
 
 from cognite.config import configure_session
+from unit_tests.config import TEST_API_KEY, TEST_PROJECT
 
 class TagMatchingTestCase(unittest.TestCase):
 
     def setUp(self):
-        configure_session('m7SSQZ8ug72b1cUWCLMfc3uy9lkHBeyO', 'akerbp')
+        configure_session(TEST_API_KEY, TEST_PROJECT)
         self.response = tm.tag_matching(['18pi2317'])
 
     def test_object(self):
@@ -36,10 +37,10 @@ class TagMatchingTestCase(unittest.TestCase):
 class AssetsTestCase(unittest.TestCase):
 
     def setUp(self):
-        configure_session('m7SSQZ8ug72b1cUWCLMfc3uy9lkHBeyO', 'akerbp')
-        search_results = assets.searchAssets('xmas').to_pandas()
+        configure_session(TEST_API_KEY, TEST_PROJECT)
+        search_results = assets.search_assets('xmas').to_pandas()
         first = search_results.ix[0]
-        self.response = assets.getAssets(tagId=first.id)
+        self.response = assets.get_assets(asset_id=first.id)
 
     def test_object(self):
         from cognite._data_objects import AssetSearchObject
@@ -62,7 +63,7 @@ class AssetsTestCase(unittest.TestCase):
 class TimeseriesTestCase(unittest.TestCase):
 
     def setUp(self):
-        configure_session('m7SSQZ8ug72b1cUWCLMfc3uy9lkHBeyO', 'akerbp')
+        configure_session(TEST_API_KEY, TEST_PROJECT)
         self.response = timeseries.get_multi_tag_datapoints(['SKAP_18PI2117/Y/10sSAMP'],
                                                             aggregates=['avg'],
                                                             granularity='1h',
@@ -91,7 +92,7 @@ class TimeseriesTestCase(unittest.TestCase):
 class SimilaritySearchTestCase(unittest.TestCase):
 
     def setUp(self):
-        configure_session('m7SSQZ8ug72b1cUWCLMfc3uy9lkHBeyO', 'akerbp')
+        configure_session(TEST_API_KEY, TEST_PROJECT)
         ss_input_tag = 'SKAP_18PI2117/Y/10sSAMP'
         ss_query_tag = 'SKAP_18PI2317/Y/10sSAMP'
         self.response = ss.search(input_tags=[ss_input_tag],
