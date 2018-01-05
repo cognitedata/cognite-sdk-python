@@ -1,21 +1,22 @@
 import unittest
 
-from cognite.config import configure_session, _get_config_variables
+from cognite.config import configure_session, get_config_variables
+from unit_tests.config import TEST_API_KEY, TEST_PROJECT
 
 class ConfigTestCase(unittest.TestCase):
 
-    def test_get_config_variables_when_not_set(self):
-        result = _get_config_variables(None, None)
+    def testget_config_variables_when_not_set(self):
+        result = get_config_variables(None, None)
         self.assertEquals(result, ('', ''))
 
-    def test_get_config_variables_when_set(self):
-        configure_session('m7SSQZ8ug72b1cUWCLMfc3uy9lkHBeyO', 'akerbp')
-        result = _get_config_variables(None, None)
-        self.assertEquals(result, ('m7SSQZ8ug72b1cUWCLMfc3uy9lkHBeyO', 'akerbp'))
+    def testget_config_variables_when_set(self):
+        configure_session(TEST_API_KEY, TEST_PROJECT)
+        result = get_config_variables(None, None)
+        self.assertEquals(result, (TEST_API_KEY, TEST_PROJECT))
 
-    def test_get_config_variables_when_set_explicitly(self):
-        configure_session('m7SSQZ8ug72b1cUWCLMfc3uy9lkHBeyO', 'akerbp')
-        result = _get_config_variables('some_key', 'some_project')
+    def testget_config_variables_when_set_explicitly(self):
+        configure_session(TEST_API_KEY, TEST_PROJECT)
+        result = get_config_variables('some_key', 'some_project')
         self.assertEquals(result, ('some_key', 'some_project'))
 
     def tearDown(self):
