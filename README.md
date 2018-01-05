@@ -29,7 +29,7 @@ $ git tag <version> -m <message>
 $ git push --tags origin master
 ```
 3. Check unit tests and lint code
-4. build
+4. Build
 ```bash
 $ python3 setup.py sdist
 $ python3 setup.py bdist_wheel
