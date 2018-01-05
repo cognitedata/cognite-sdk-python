@@ -11,13 +11,10 @@ def get_all_test_suites():
 def run():
     suites = get_all_test_suites()
     alltests = unittest.TestSuite(suites)
-
     runner = unittest.TextTestRunner()
+    return runner.run(alltests)
 
-    result = runner.run(alltests)
-    return result
 
 if __name__ == '__main__':
     result = run()
     print("{}/{} tests passed.".format(result.testsRun - len(result.errors), result.testsRun))
-
