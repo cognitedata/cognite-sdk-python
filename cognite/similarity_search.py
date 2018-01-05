@@ -9,7 +9,7 @@ from cognite.config import get_config_variables
 from cognite._data_objects import SimilaritySearchObject
 
 def search(input_tags, query_tags, input_interval, query_interval, modes, limit=10, api_key=None, project=None):
-    '''Returns intervals in query similar to your input.
+    '''Returns patterns within query interval which are similar to input pattern.
 
     This method allows you to enter an input interval (the desired interval of a timeseries to use as input) and a
     query interval (the desired interval to search for similarities in) and will return the list of intervals which

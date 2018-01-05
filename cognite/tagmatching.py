@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 """Tag Matching Module
 
-This module mirrors the Tag Matching API. It allows you to enter an arbitrary string and a fuzzy matching with
-a user defined threshold will be performed toward tag_ids in the system.
+This module mirrors the Tag Matching API. It allows the user to search for tag id matches.
 """
 import cognite.config as config
 import cognite._constants as _constants
@@ -12,6 +11,9 @@ from cognite._data_objects import TagMatchingObject
 
 def tag_matching(tag_ids, fuzzy_threshold=0, platform=None, api_key=None, project=None):
     '''Returns a TagMatchingObject containing a list of matched tags for the given query.
+
+    This method takes an arbitrary string as argument and performs fuzzy matching with a user defined threshold
+    toward tag ids in the system.
 
     Args:
         tag_ids (list):          The tag_ids to retrieve matches for.
@@ -35,7 +37,7 @@ def tag_matching(tag_ids, fuzzy_threshold=0, platform=None, api_key=None, projec
     api_key, project = config.get_config_variables(api_key, project)
     url = _constants.BASE_URL + '/projects/{}/tagmatching'.format(project)
     body = {
-        'tag_ids': tag_ids,
+        'tagIds': tag_ids,
         'metadata': {
             'fuzzyThreshold': fuzzy_threshold,
             'platform': platform

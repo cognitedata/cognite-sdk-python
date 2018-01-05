@@ -4,8 +4,8 @@
 This module allows you to set an api-key and a project for your python project.
 
 Attributes:
-    __config_api_key (str): Api-key for current project.
-    __config_project (str): Project name for current project.
+    _CONFIG_API_KEY (str): Api-key for current project.
+    _CONFIG_PROJECT (str): Project name for current project.
 '''
 
 _CONFIG_API_KEY = ''
