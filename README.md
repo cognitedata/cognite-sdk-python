@@ -6,7 +6,8 @@ Python Package to ensure excellent CDP user experience for data scientists.
 ### Setup
 ```python
 $ git clone https://github.com/cognitedata/cognite-sdk-python.git
-$ pip install```
+$ pip install
+```
 
 ### Linting
 #### Command line
