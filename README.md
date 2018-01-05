@@ -4,7 +4,8 @@ Python Package to ensure excellent CDP user experience for data scientists.
 
 ## Development instructions
 ### Setup
-```$ git clone https://github.com/cognitedata/cognite-sdk-python.git
+```python
+$ git clone https://github.com/cognitedata/cognite-sdk-python.git
 $ pip install```
 
 ### Linting
