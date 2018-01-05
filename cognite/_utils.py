@@ -51,7 +51,7 @@ class _APIError(Exception):
     pass
 
 class ProgressIndicator():
-    '''This class let's the system give the user and indication of how much data remains to be downloaded in the request'''
+    '''This class lets the system give the user and indication of how much data remains to be downloaded in the request'''
     def __init__(self, tag_ids, start, end):
         self.start, self.end = self._get_start_end(tag_ids, start, end)
         self.length = self.end - self.start

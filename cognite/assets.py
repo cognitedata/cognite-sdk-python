@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-"""Similarity Search Module.
+"""Assets Module.
 
-This module mirrors the Similarity Search API.
+This module mirrors the Assets API.
 """
 import cognite.config as config
 import cognite._constants as _constants
