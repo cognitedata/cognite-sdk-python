@@ -8,11 +8,14 @@ name = "pypi"
 [packages]
 
 
+
 [dev-packages]
 
 pylint = "*"
 pandas = "*"
 requests = "*"
+twine = "*"
+
 
 [requires]
 
