@@ -24,15 +24,17 @@ Run unit tests by running the following command from the root directory:
 ### Deployment to Pypi
 1. Update version number in setup.py
 2. Create new tag on github
-	$ git tag <version> -m <message>
-	$ git push --tags origin master
+```bash
+$ git tag <version> -m <message>
+$ git push --tags origin master
+```
 3. Check unit tests and lint code
 4. build
 ```bash
-	$ python3 setup.py sdist
-	$ python3 setup.py bdist_wheel
+$ python3 setup.py sdist
+$ python3 setup.py bdist_wheel
 ```
 5. Upload using twine
 
-`twine upload dist/*`
+`$ twine upload dist/*`
 
