@@ -19,10 +19,10 @@ def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=No
         tag_id (str):            The tag_id to retrieve data for.
 
         aggregates (list):      The list of aggregate functions you wish to apply to the data. Valid aggregate functions
-                                are: 'average/avg, max, min, count, sum, interpolation/int, stepinterpolation/step'.
+        are: 'average/avg, max, min, count, sum, interpolation/int, stepinterpolation/step'.
 
         granularity (str):      The granularity of the aggregate values. Valid entries are : 'day/d, hour/h, minute/m,
-                                second/s', or a multiple of these indicated by a number as a prefix.
+        second/s', or a multiple of these indicated by a number as a prefix.
 
                                     Example: '12hour'.
 
@@ -66,7 +66,7 @@ def get_latest(tag_id, api_key=None, project=None):
     '''Returns a LatestDatapointObject containing a list of datapoints for the given query.
 
     Args:
-        tag_id (str):            The tag_id to retrieve data for.
+        tag_id (str):           The tag_id to retrieve data for.
 
         api_key (str):          Your api-key.
 
@@ -93,13 +93,13 @@ def get_multi_tag_datapoints(tag_ids, aggregates=None, granularity=None, start=N
     '''Returns a list of DatapointsObjects each of which contains a list of datapoints for the given tag_id.
 
     Args:
-        tag_ids (list):          The list of tag_ids to retrieve data for.
+        tag_ids (list):         The list of tag_ids to retrieve data for.
 
         aggregates (list):      The list of aggregate functions you wish to apply to the data. Valid aggregate functions
-                                are: 'average/avg, max, min, count, sum, interpolation/int, stepinterpolation/step'.
+        are: 'average/avg, max, min, count, sum, interpolation/int, stepinterpolation/step'.
 
         granularity (str):      The granularity of the aggregate values. Valid entries are : 'day/d, hour/h, minute/m,
-                                second/s', or a multiple of these indicated by a number as a prefix.
+        second/s', or a multiple of these indicated by a number as a prefix.
 
                                     Example: '12h'.
 
@@ -146,9 +146,8 @@ def get_datapoints_frame(tag_ids, aggregates, granularity, start=None, end=None,
     '''Returns a pandas dataframe of datapoints for the given tag_ids all on the same timestamps.
 
     Args:
-        tag_ids (list):          The list of tag_ids to retrieve data for. Each tag_id can be either a string containing
-                                the tag_id or a dictionary containing the tag_id and a list of specific aggregate
-                                functions.
+        tag_ids (list):         The list of tag_ids to retrieve data for. Each tag_id can be either a string containing
+        the tag_id or a dictionary containing the tag_id and a list of specific aggregate functions.
 
                                     Example option 1: ['<tag_id1>', '<tag_id2>'].
 
@@ -156,8 +155,8 @@ def get_datapoints_frame(tag_ids, aggregates, granularity, start=None, end=None,
                                                     {'tagId': '<tag_id2>', 'aggregates': ['step']}]
 
         aggregates (list):      The list of aggregate functions you wish to apply to the data for which you have not
-                                specified an aggregate function. Valid aggregate functions are: 'average/avg, max, min,
-                                count, sum, interpolation/int, stepinterpolation/step'.
+        specified an aggregate function. Valid aggregate functions are: 'average/avg, max, min, count, sum,
+        interpolation/int, stepinterpolation/step'.
 
         granularity (str):      The granularity of the aggregate values. Valid entries are : 'day/d, hour/h, minute/m,
                                 second/s', or a multiple of these indicated by a number as a prefix.
