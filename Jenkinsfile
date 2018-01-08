@@ -25,7 +25,7 @@ podTemplate(
             stage('Install pipenv') {
                 sh("pip3 install pipenv")
             }
-            stage('Build') {
+            stage('Install dependencies') {
                 sh("pipenv install")
             }
             stage('Test') {
