@@ -189,15 +189,12 @@ to_list(): Returns the data as a list.</dd>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><p class="first">tag_id (str):            The tag_id to retrieve data for.</p>
-<dl class="docutils">
-<dt>aggregates (list):      The list of aggregate functions you wish to apply to the data. Valid aggregate functions</dt>
-<dd>are: ‘average/avg, max, min, count, sum, interpolation/int, stepinterpolation/step’.</dd>
-<dt>granularity (str):      The granularity of the aggregate values. Valid entries are <span class="classifier-delimiter">:</span> <span class="classifier">‘day/d, hour/h, minute/m,</span></dt>
-<dd><p class="first">second/s’, or a multiple of these indicated by a number as a prefix.</p>
-<blockquote class="last">
+<p>aggregates (list):      The list of aggregate functions you wish to apply to the data. Valid aggregate functions
+are: ‘average/avg, max, min, count, sum, interpolation/int, stepinterpolation/step’.</p>
+<p>granularity (str):      The granularity of the aggregate values. Valid entries are : ‘day/d, hour/h, minute/m,
+second/s’, or a multiple of these indicated by a number as a prefix.</p>
+<blockquote>
 <div>Example: ‘12hour’.</div></blockquote>
-</dd>
-</dl>
 <p>start (str):            Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s.</p>
 <blockquote>
 <div>Example: ‘2d-ago’ will get everything that is up to 2 days old. Can also send time in
@@ -224,21 +221,19 @@ to_ndarray(): Returns the data as a numpy array.</dd>
 <dd><p>Returns a pandas dataframe of datapoints for the given tag_ids all on the same timestamps.</p>
 <dl class="docutils">
 <dt>Args:</dt>
-<dd><dl class="first docutils">
-<dt>tag_ids (list):          The list of tag_ids to retrieve data for. Each tag_id can be either a string containing</dt>
-<dd><p class="first">the tag_id or a dictionary containing the tag_id and a list of specific aggregate
-functions.</p>
-<blockquote class="last">
+<dd><p class="first">tag_ids (list):         The list of tag_ids to retrieve data for. Each tag_id can be either a string containing
+the tag_id or a dictionary containing the tag_id and a list of specific aggregate functions.</p>
+<blockquote>
 <div><p>Example option 1: [‘&lt;tag_id1&gt;’, ‘&lt;tag_id2&gt;’].</p>
 <dl class="docutils">
 <dt>Example option 2: [{‘tagId’: ‘&lt;tag_id1&gt;’, ‘aggregates’: [‘avg’, ‘max’]},</dt>
 <dd>{‘tagId’: ‘&lt;tag_id2&gt;’, ‘aggregates’: [‘step’]}]</dd>
 </dl>
 </div></blockquote>
-</dd>
-<dt>aggregates (list):      The list of aggregate functions you wish to apply to the data for which you have not</dt>
-<dd>specified an aggregate function. Valid aggregate functions are: ‘average/avg, max, min,
-count, sum, interpolation/int, stepinterpolation/step’.</dd>
+<p>aggregates (list):      The list of aggregate functions you wish to apply to the data for which you have not
+specified an aggregate function. Valid aggregate functions are: ‘average/avg, max, min, count, sum,
+interpolation/int, stepinterpolation/step’.</p>
+<dl class="docutils">
 <dt>granularity (str):      The granularity of the aggregate values. Valid entries are <span class="classifier-delimiter">:</span> <span class="classifier">‘day/d, hour/h, minute/m,</span></dt>
 <dd><p class="first">second/s’, or a multiple of these indicated by a number as a prefix.</p>
 <blockquote class="last">
@@ -254,11 +249,8 @@ ms since epoch.</div></blockquote>
 <p class="last">project (str):          Project name.</p>
 </dd>
 <dt>Returns:</dt>
-<dd><dl class="first last docutils">
-<dt>pandas dataframe: A pandas dataframe containing the datapoints for the given tag_ids. The datapoints for all the</dt>
-<dd>tag_ids will all be on the same timestamps.</dd>
-</dl>
-</dd>
+<dd>pandas dataframe: A pandas dataframe containing the datapoints for the given tag_ids. The datapoints for all the
+tag_ids will all be on the same timestamps.</dd>
 </dl>
 </dd></dl>
 
@@ -268,7 +260,7 @@ ms since epoch.</div></blockquote>
 <dd><p>Returns a LatestDatapointObject containing a list of datapoints for the given query.</p>
 <dl class="docutils">
 <dt>Args:</dt>
-<dd><p class="first">tag_id (str):            The tag_id to retrieve data for.</p>
+<dd><p class="first">tag_id (str):           The tag_id to retrieve data for.</p>
 <p>api_key (str):          Your api-key.</p>
 <p class="last">project (str):          Project name.</p>
 </dd>
@@ -289,16 +281,13 @@ to_ndarray(): Returns the data as a numpy array.</dd>
 <dd><p>Returns a list of DatapointsObjects each of which contains a list of datapoints for the given tag_id.</p>
 <dl class="docutils">
 <dt>Args:</dt>
-<dd><p class="first">tag_ids (list):          The list of tag_ids to retrieve data for.</p>
-<dl class="docutils">
-<dt>aggregates (list):      The list of aggregate functions you wish to apply to the data. Valid aggregate functions</dt>
-<dd>are: ‘average/avg, max, min, count, sum, interpolation/int, stepinterpolation/step’.</dd>
-<dt>granularity (str):      The granularity of the aggregate values. Valid entries are <span class="classifier-delimiter">:</span> <span class="classifier">‘day/d, hour/h, minute/m,</span></dt>
-<dd><p class="first">second/s’, or a multiple of these indicated by a number as a prefix.</p>
-<blockquote class="last">
+<dd><p class="first">tag_ids (list):         The list of tag_ids to retrieve data for.</p>
+<p>aggregates (list):      The list of aggregate functions you wish to apply to the data. Valid aggregate functions
+are: ‘average/avg, max, min, count, sum, interpolation/int, stepinterpolation/step’.</p>
+<p>granularity (str):      The granularity of the aggregate values. Valid entries are : ‘day/d, hour/h, minute/m,
+second/s’, or a multiple of these indicated by a number as a prefix.</p>
+<blockquote>
 <div>Example: ‘12h’.</div></blockquote>
-</dd>
-</dl>
 <p>start (str):            Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s.</p>
 <blockquote>
 <div>Example: ‘2d-ago’ will get everything that is up to 2 days old. Can also send time in
