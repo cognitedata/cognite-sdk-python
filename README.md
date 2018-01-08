@@ -24,8 +24,7 @@ Run unit tests by running the following command from the root directory:
 ### Documentation
 Autogenerate documentation by running the following commands:
 ```bash
-$ sphinx-apidoc -f -o source/ ../cognite/
-$ make html
+$ cd docs && make html
 ```
 
 ### Deployment to Pypi
