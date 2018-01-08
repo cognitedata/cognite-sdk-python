@@ -176,7 +176,7 @@ def get_datapoints_frame(tag_ids, aggregates, granularity, start=None, end=None,
 
     Returns:
         pandas dataframe: A pandas dataframe containing the datapoints for the given tag_ids. The datapoints for all the
-                        tag_ids will all be on the same timestamps.
+        tag_ids will all be on the same timestamps.
     '''
     api_key, project = config.get_config_variables(api_key, project)
     url = _constants.BASE_URL + '/projects/{}/timeseries/dataframe'.format(project)
