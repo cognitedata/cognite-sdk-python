@@ -1,5 +1,4 @@
 import unittest
-
 from cognite.config import configure_session, get_config_variables
 from unit_tests.constants import TEST_API_KEY, TEST_PROJECT
 

@@ -1,4 +1,7 @@
 import unittest
+import os, sys
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+
 from unit_tests.test_data_objects import suites as do_suites
 from unit_tests.test_config import suites as c_suites
 
