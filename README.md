@@ -32,17 +32,18 @@ $ make html
 ### Deployment to Pypi
 1. Check unit tests, lint code, and generate documentation
 2. Update version number in setup.py
-3. Create new tag on github
+3. Push code to master
+4. Create new tag on github
 ```bash
 $ git tag <version> -m <message>
 $ git push --tags origin master
 ```
-4. Build
+5. Build
 ```bash
 $ python3 setup.py sdist
 $ python3 setup.py bdist_wheel
 ```
-5. Upload using twine
+6. Upload using twine
 ```bash
 $ twine upload dist/*
 ```
