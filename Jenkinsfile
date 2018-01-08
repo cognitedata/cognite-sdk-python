@@ -32,9 +32,6 @@ podTemplate(
             stage('Test') {
                 sh("cd unit_tests && pipenv run python3 run_tests.py")
             }
-            stage('Build docs') {
-                sh("cd docs && pipenv run make html")
-            }
             stage('Build') {
                 sh("pipenv run python3 setup.py sdist")
                 sh("pipenv run python3 setup.py bdist_wheel")
