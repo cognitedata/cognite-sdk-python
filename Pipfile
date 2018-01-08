@@ -7,16 +7,14 @@ name = "pypi"
 
 [packages]
 
-
+twine = "*"
+Sphinx = "*"
 
 [dev-packages]
 
 pylint = "*"
 pandas = "*"
 requests = "*"
-twine = "*"
-Sphinx = "*"
-
 
 [requires]
 
