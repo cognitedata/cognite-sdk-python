@@ -15,6 +15,7 @@ pylint = "*"
 pandas = "*"
 requests = "*"
 twine = "*"
+Sphinx = "*"
 
 
 [requires]
