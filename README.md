@@ -21,9 +21,15 @@ Set up unit tests for all new functionality
 Run unit tests by running the following command from the root directory:
 
 `$ python3 unit_tests/run_tests.py`
+### Documentation
+Autogenerate documentation by running the following commands:
+```bash
+$ sphinx-apidoc -f -o source/ ../cognite/
+$ make html
+```
 
 ### Deployment to Pypi
-1. Check unit tests and lint code
+1. Check unit tests, lint code, and generate documentation
 2. Update version number in setup.py
 3. Create new tag on github
 ```bash
