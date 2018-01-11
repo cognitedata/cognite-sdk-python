@@ -45,7 +45,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'cognite-sdk-python'
+project = 'cognite-sdk'
 copyright = '2018, Erlend Vollset'
 author = 'Erlend Vollset'
 
