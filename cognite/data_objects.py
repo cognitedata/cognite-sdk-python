@@ -7,8 +7,6 @@ the following output formats:
     * to_pandas():    Returns pandas dataframe
     * to_ndarray():   Numpy array
     * to_json():      Json format
-
-This module is protected and should not used by end-users.
 '''
 from abc import ABC, abstractmethod
 import pandas as pd
@@ -46,6 +44,7 @@ class TagMatchingObject(CogniteDataObject):
         CogniteDataObject.__init__(self, internal_representation)
 
     def to_pandas(self):
+        '''Returns data as a pandas dataframe'''
         matches = []
         for tag in self.internal_representation['data']['items']:
             for match in tag['matches']:
@@ -60,6 +59,7 @@ class TagMatchingObject(CogniteDataObject):
         return pd.DataFrame()
 
     def to_json(self):
+        '''Returns data as a json object'''
         return self.internal_representation['data']['items']
 
     def to_list(self, first_matches_only=True):
@@ -86,9 +86,11 @@ class DatapointsObject(CogniteDataObject):
         CogniteDataObject.__init__(self, internal_representation)
 
     def to_json(self):
+        '''Returns data as a json object'''
         return self.internal_representation['data']['items'][0]
 
     def to_pandas(self):
+        '''Returns data as a pandas dataframe'''
         return pd.DataFrame(self.internal_representation['data']['items'][0]['datapoints'])
 
 
@@ -99,12 +101,15 @@ class LatestDatapointObject(CogniteDataObject):
         CogniteDataObject.__init__(self, internal_representation)
 
     def to_json(self):
+        '''Returns data as a json object'''
         return self.internal_representation['data']['items'][0]
 
     def to_pandas(self):
+        '''Returns data as a pandas dataframe'''
         return pd.DataFrame([self.internal_representation['data']['items'][0]])
 
     def to_ndarray(self):
+        '''Returns data as a numpy array'''
         return self.to_pandas().values[0]
 
 
@@ -115,9 +120,11 @@ class SimilaritySearchObject(CogniteDataObject):
         CogniteDataObject.__init__(self, internal_representation)
 
     def to_json(self):
+        '''Returns data as a json object'''
         return self.internal_representation['data']['items']
 
     def to_pandas(self):
+        '''Returns data as a pandas dataframe'''
         if len(self.to_json()) > 1:
             return pd.DataFrame(self.internal_representation['data']['items'])
         return pd.DataFrame()
@@ -134,9 +141,11 @@ class AssetSearchObject(CogniteDataObject):
         CogniteDataObject.__init__(self, internal_representation)
 
     def to_json(self):
+        '''Returns data as a json object'''
         return self.internal_representation['data']['items']
 
     def to_pandas(self):
+        '''Returns data as a pandas dataframe'''
         if len(self.to_json()) > 1:
             return pd.DataFrame(self.internal_representation['data']['items'])
         return pd.DataFrame()
