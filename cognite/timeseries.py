@@ -40,10 +40,8 @@ def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=No
         project (str):          Project name.
 
     Returns:
-        DatapointsObject: The data can be retrieved from this object with the following methods:
-            to_json(): Returns the data in Json format.
-            to_pandas(): Returns the data as a pandas dataframe.
-            to_ndarray(): Returns the data as a numpy array.
+        DatapointsObject: A data object containing the requested data with several getter methods with different
+        output formats.
     '''
     api_key, project = config.get_config_variables(api_key, project)
     tag_id = tag_id.replace('/', '%2F')
@@ -73,10 +71,8 @@ def get_latest(tag_id, api_key=None, project=None):
         project (str):          Project name.
 
     Returns:
-        DatapointsObject: The data can be retrieved from this object with the following methods:
-            to_json(): Returns the data in Json format.
-            to_pandas(): Returns the data as a pandas dataframe.
-            to_ndarray(): Returns the data as a numpy array.
+        DatapointsObject: A data object containing the requested data with several getter methods with different
+        output formats.
     '''
     api_key, project = config.get_config_variables(api_key, project)
     tag_id = tag_id.replace('/', '%2F')
@@ -117,10 +113,8 @@ def get_multi_tag_datapoints(tag_ids, aggregates=None, granularity=None, start=N
         project (str):          Project name.
 
     Returns:
-        list of DatapointsObjects: The data can be retrieved from these object with the following methods:
-            to_json(): Returns the data in Json format.
-            to_pandas(): Returns the data as a pandas dataframe.
-            to_ndarray(): Returns the data as a numpy array.
+        list(DatapointsObjects): A list of data objects containing the requested data with several getter methods
+        with different output formats.
     '''
     api_key, project = config.get_config_variables(api_key, project)
     url = _constants.BASE_URL + '/projects/{}/timeseries/dataquery'.format(project)
@@ -174,7 +168,7 @@ def get_datapoints_frame(tag_ids, aggregates, granularity, start=None, end=None,
         project (str):          Project name.
 
     Returns:
-        pandas dataframe: A pandas dataframe containing the datapoints for the given tag_ids. The datapoints for all the
+        pandas.DataFrame: A pandas dataframe containing the datapoints for the given tag_ids. The datapoints for all the
         tag_ids will all be on the same timestamps.
     '''
     api_key, project = config.get_config_variables(api_key, project)
