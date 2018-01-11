@@ -159,7 +159,7 @@ def get_datapoints_frame(tag_ids, aggregates, granularity, start=None, end=None,
         interpolation/int, stepinterpolation/step'.
 
         granularity (str):      The granularity of the aggregate values. Valid entries are : 'day/d, hour/h, minute/m,
-                                second/s', or a multiple of these indicated by a number as a prefix.
+        second/s', or a multiple of these indicated by a number as a prefix.
 
                                     Example: '12hour'.
 
