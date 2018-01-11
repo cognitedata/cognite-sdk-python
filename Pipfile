@@ -8,13 +8,16 @@ name = "pypi"
 [packages]
 
 twine = "*"
-Sphinx = "*"
+sphinx = "*"
+"yolk3k" = "*"
+
 
 [dev-packages]
 
 pylint = "*"
 pandas = "*"
 requests = "*"
+
 
 [requires]
 
