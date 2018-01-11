@@ -1,10 +1,10 @@
-.. cognite-sdk-python documentation master file, created by
-   sphinx-quickstart on Mon Jan  8 14:36:34 2018.
+.. cognite-sdk documentation master file, created by
+   sphinx-quickstart on Thu Jan 11 15:57:44 2018.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to cognite-sdk-python's documentation!
-==============================================
+Welcome to cognite-sdk's documentation!
+=======================================
 
 .. toctree::
    :maxdepth: 2

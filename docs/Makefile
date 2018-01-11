@@ -4,7 +4,7 @@
 # You can set these variables from the command line.
 SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
-SPHINXPROJ    = cognite-sdk-python
+SPHINXPROJ    = cognite-sdk
 SOURCEDIR     = source
 BUILDDIR      = build
 
