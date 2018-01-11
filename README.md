@@ -6,6 +6,7 @@ Python Package to ensure excellent CDP user experience for data scientists.
 ### Setup
 ```bash
 $ git clone https://github.com/cognitedata/cognite-sdk-python.git
+$ cd cognite-sdk-python
 $ pipenv install
 $ pipenv shell
 ```
