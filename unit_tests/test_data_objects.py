@@ -7,7 +7,7 @@ class TagMatchingTestCase(unittest.TestCase):
     def setUp(self):
         self.response = tag_matching_response
     def test_object(self):
-        from cognite._data_objects import TagMatchingObject
+        from cognite.data_objects import TagMatchingObject
         self.assertIsInstance(self.response, TagMatchingObject)
 
     def test_json(self):
@@ -27,7 +27,7 @@ class AssetsTestCase(unittest.TestCase):
         self.response = assets_response
 
     def test_object(self):
-        from cognite._data_objects import AssetSearchObject
+        from cognite.data_objects import AssetSearchObject
         self.assertIsInstance(self.response, AssetSearchObject)
 
     def test_json(self):
@@ -49,7 +49,7 @@ class TimeseriesTestCase(unittest.TestCase):
         self.assertIsInstance(self.response, list)
 
     def test_object(self):
-        from cognite._data_objects import DatapointsObject
+        from cognite.data_objects import DatapointsObject
         self.assertIsInstance(self.response[0], DatapointsObject)
 
     def test_multi_tag_element_json(self):
@@ -69,7 +69,7 @@ class SimilaritySearchTestCase(unittest.TestCase):
         self.response = similarity_search_response
 
     def test_object(self):
-        from cognite._data_objects import SimilaritySearchObject
+        from cognite.data_objects import SimilaritySearchObject
         self.assertIsInstance(self.response, SimilaritySearchObject)
 
     def test_json(self):

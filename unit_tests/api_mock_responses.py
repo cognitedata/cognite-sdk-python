@@ -3,7 +3,7 @@
 # TEST_PROJECT = 'akerbp'
 
 import json
-from cognite._data_objects import *
+from cognite.data_objects import *
 
 
 tag_matching_response = {
