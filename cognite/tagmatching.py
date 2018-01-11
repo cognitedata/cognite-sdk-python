@@ -7,7 +7,7 @@ import cognite.config as config
 import cognite._constants as _constants
 import cognite._utils as _utils
 
-from cognite._data_objects import TagMatchingObject
+from cognite.data_objects import TagMatchingObject
 
 def tag_matching(tag_ids, fuzzy_threshold=0, platform=None, api_key=None, project=None):
     '''Returns a TagMatchingObject containing a list of matched tags for the given query.

@@ -9,7 +9,7 @@ import cognite.config as config
 import cognite._constants as _constants
 import cognite._utils as _utils
 
-from cognite._data_objects import DatapointsObject, LatestDatapointObject
+from cognite.data_objects import DatapointsObject, LatestDatapointObject
 
 def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=None, limit=_constants.LIMIT,
                    api_key=None, project=None):
