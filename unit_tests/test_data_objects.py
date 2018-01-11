@@ -1,18 +1,11 @@
 import unittest
-import cognite.tagmatching as tm
-import cognite.assets as assets
-import cognite.timeseries as timeseries
-import cognite.similarity_search as ss
 
-from cognite.config import configure_session
-from unit_tests.constants import TEST_API_KEY, TEST_PROJECT
+from unit_tests.api_mock_responses import *
 
 class TagMatchingTestCase(unittest.TestCase):
 
     def setUp(self):
-        configure_session(TEST_API_KEY, TEST_PROJECT)
-        self.response = tm.tag_matching(['18pi2317'])
-
+        self.response = tag_matching_response
     def test_object(self):
         from cognite._data_objects import TagMatchingObject
         self.assertIsInstance(self.response, TagMatchingObject)
@@ -28,19 +21,10 @@ class TagMatchingTestCase(unittest.TestCase):
         import numpy as np
         self.assertIsInstance(self.response.to_ndarray(), np.ndarray)
 
-    def test_response_length(self):
-        self.assertGreater(len(self.response.to_json()), 0)
-
-    def tearDown(self):
-        configure_session('', '')
-
 class AssetsTestCase(unittest.TestCase):
 
     def setUp(self):
-        configure_session(TEST_API_KEY, TEST_PROJECT)
-        search_results = assets.search_assets('xmas').to_pandas()
-        first = search_results.ix[0]
-        self.response = assets.get_assets(asset_id=first.id)
+        self.response = assets_response
 
     def test_object(self):
         from cognite._data_objects import AssetSearchObject
@@ -57,17 +41,10 @@ class AssetsTestCase(unittest.TestCase):
         import numpy as np
         self.assertIsInstance(self.response.to_ndarray(), np.ndarray)
 
-    def tearDown(self):
-        configure_session('', '')
-
 class TimeseriesTestCase(unittest.TestCase):
 
     def setUp(self):
-        configure_session(TEST_API_KEY, TEST_PROJECT)
-        self.response = timeseries.get_multi_tag_datapoints(['SKAP_18PI2117/Y/10sSAMP'],
-                                                            aggregates=['avg'],
-                                                            granularity='1h',
-                                                            start='2w-ago')
+        self.response = timeseries_response
     def test_multi_tag(self):
         self.assertIsInstance(self.response, list)
 
@@ -86,20 +63,10 @@ class TimeseriesTestCase(unittest.TestCase):
         import numpy as np
         self.assertIsInstance(self.response[0].to_ndarray(), np.ndarray)
 
-    def tearDown(self):
-        configure_session('', '')
-
 class SimilaritySearchTestCase(unittest.TestCase):
 
     def setUp(self):
-        configure_session(TEST_API_KEY, TEST_PROJECT)
-        ss_input_tag = 'SKAP_18PI2117/Y/10sSAMP'
-        ss_query_tag = 'SKAP_18PI2317/Y/10sSAMP'
-        self.response = ss.search(input_tags=[ss_input_tag],
-                                  query_tags=[ss_query_tag],
-                                  input_interval=(1360969200000, 1360969300000),
-                                  query_interval=(1360969200000, 1360991300000),
-                                  modes=["pattern"])
+        self.response = similarity_search_response
 
     def test_object(self):
         from cognite._data_objects import SimilaritySearchObject
@@ -118,9 +85,6 @@ class SimilaritySearchTestCase(unittest.TestCase):
 
     def test_response_length(self):
         self.assertGreater(len(self.response.to_json()), 0)
-
-    def tearDown(self):
-        configure_session('', '')
 
 def suites():
     suite1 = unittest.TestLoader().loadTestsFromTestCase(TagMatchingTestCase)
