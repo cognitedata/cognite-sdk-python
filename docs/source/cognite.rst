@@ -20,6 +20,14 @@ cognite\.config module
     :undoc-members:
     :show-inheritance:
 
+cognite\.data\_objects module
+-----------------------------
+
+.. automodule:: cognite.data_objects
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 cognite\.similarity\_search module
 ----------------------------------
 
