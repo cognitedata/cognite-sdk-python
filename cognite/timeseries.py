@@ -155,8 +155,7 @@ def get_datapoints_frame(tag_ids, aggregates, granularity, start=None, end=None,
                                                     {'tagId': '<tag_id2>', 'aggregates': ['step']}]
 
         aggregates (list):      The list of aggregate functions you wish to apply to the data for which you have not
-        specified an aggregate function. Valid aggregate functions are: 'average/avg, max, min, count, sum,
-        interpolation/int, stepinterpolation/step'.
+        specified an aggregate function. Valid aggregate functions are: 'average/avg, max, min, count, sum, interpolation/int, stepinterpolation/step'.
 
         granularity (str):      The granularity of the aggregate values. Valid entries are : 'day/d, hour/h, minute/m,
         second/s', or a multiple of these indicated by a number as a prefix.
