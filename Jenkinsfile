@@ -37,7 +37,7 @@ podTemplate(
                 sh("pipenv run python3 setup.py bdist_wheel")
             }
             def gitTag = sh(returnStdout: true, script: "git tag --sort version:refname | tail -1").trim()
-            def pipVersion = sh(returnStdout: true, script: 'pipenv run yolk -V cognite-sdk | sort -n | tail -1 | cut -d\  -f 1').trim()
+            def pipVersion = sh(returnStdout: true, script: 'pipenv run yolk -V cognite-sdk | sort -n | tail -1 | cut -d\\  -f 1').trim()
             if (env.BRANCH_NAME == 'master' && gitTag != pipVersion) {
                 stage('Release') {
                     sh("pipenv run twine upload dist/*")
