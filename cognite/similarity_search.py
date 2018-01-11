@@ -33,10 +33,8 @@ def search(input_tags, query_tags, input_interval, query_interval, modes, limit=
         limit (int):            Number of matches to retrieve.
 
     Returns:
-        SimilaritySearchObject: The data can be retrieved from this object with the following methods:
-            to_json(): Returns the data in Json format.
-            to_pandas(): Returns the data as a pandas dataframe.
-            to_ndarray(): Returns the data as a numpy array.
+        SimilaritySearchObject: A data object containing the requested data with several getter methods with different
+        output formats.
     '''
     api_key, project = get_config_variables(api_key, project)
     url = _constants.BASE_URL + '/projects/{}/similaritysearch'.format(project)
