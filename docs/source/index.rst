@@ -15,14 +15,14 @@ To install this package run the following command
    pip install cognite-sdk
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 4
    :caption: Contents:
 
    cognite
-
 
 Indices and tables
 ==================
 
 * :ref:`genindex`
 * :ref:`modindex`
+
