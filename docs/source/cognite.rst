@@ -1,10 +1,14 @@
 cognite package
 ===============
+.. automodule:: cognite
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 Submodules
 ----------
 
-cognite\.assets module
+assets module
 ----------------------
 
 .. automodule:: cognite.assets
@@ -12,7 +16,7 @@ cognite\.assets module
     :undoc-members:
     :show-inheritance:
 
-cognite\.config module
+config module
 ----------------------
 
 .. automodule:: cognite.config
@@ -20,7 +24,7 @@ cognite\.config module
     :undoc-members:
     :show-inheritance:
 
-cognite\.data\_objects module
+data\_objects module
 -----------------------------
 
 .. automodule:: cognite.data_objects
@@ -28,7 +32,7 @@ cognite\.data\_objects module
     :undoc-members:
     :show-inheritance:
 
-cognite\.similarity\_search module
+similarity\_search module
 ----------------------------------
 
 .. automodule:: cognite.similarity_search
@@ -36,7 +40,7 @@ cognite\.similarity\_search module
     :undoc-members:
     :show-inheritance:
 
-cognite\.tagmatching module
+tagmatching module
 ---------------------------
 
 .. automodule:: cognite.tagmatching
@@ -44,19 +48,10 @@ cognite\.tagmatching module
     :undoc-members:
     :show-inheritance:
 
-cognite\.timeseries module
+timeseries module
 --------------------------
 
 .. automodule:: cognite.timeseries
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
-Module contents
----------------
-
-.. automodule:: cognite
     :members:
     :undoc-members:
     :show-inheritance:
