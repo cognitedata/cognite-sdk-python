@@ -10,6 +10,8 @@ Welcome to cognite-sdk's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   cognite
+
 
 
 Indices and tables
