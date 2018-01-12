@@ -5,9 +5,6 @@ cognite package
     :undoc-members:
     :show-inheritance:
 
-Submodules
-----------
-
 assets module
 ----------------------
 
