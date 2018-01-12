@@ -6,7 +6,7 @@
 Welcome to the Cognite API Python SDK documentation!
 ====================================================
 
-This package has been created to ensure excellent excellent user experience for data scientists using the Cognite Data Platform (CDP).
+This package has been created to ensure excellent user experience for data scientists using the Cognite Data Platform (CDP).
 
 To install this package run the following command
 
