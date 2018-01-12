@@ -58,7 +58,7 @@ def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=No
     return DatapointsObject(res.json())
 
 def get_latest(tag_id, api_key=None, project=None):
-    '''Returns a LatestDatapointObject containing a list of datapoints for the given query.
+    '''Returns a LatestDatapointObject containing the latest datapoint for the given tag_id.
 
     Args:
         tag_id (str):           The tag_id to retrieve data for.

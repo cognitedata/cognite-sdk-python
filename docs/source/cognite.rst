@@ -1,5 +1,6 @@
 cognite
 =======
+
 .. automodule:: cognite
     :members:
     :undoc-members:
@@ -52,3 +53,4 @@ timeseries
     :members:
     :undoc-members:
     :show-inheritance:
+
