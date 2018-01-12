@@ -16,20 +16,17 @@ def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=No
     '''Returns a DatapointsObject containing a list of datapoints for the given query.
 
     Args:
-        tag_id (str):            The tag_id to retrieve data for.
+        tag_id (str):           The tag_id to retrieve data for.
 
         aggregates (list):      The list of aggregate functions you wish to apply to the data. Valid aggregate functions
-        are: 'average/avg, max, min, count, sum, interpolation/int, stepinterpolation/step'.
+                                are: 'average/avg, max, min, count, sum, interpolation/int, stepinterpolation/step'.
 
         granularity (str):      The granularity of the aggregate values. Valid entries are : 'day/d, hour/h, minute/m,
-        second/s', or a multiple of these indicated by a number as a prefix.
-
-                                    Example: '12hour'.
+                                second/s', or a multiple of these indicated by a number as a prefix e.g. '12hour'.
 
         start (str):            Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s.
-
-                                    Example: '2d-ago' will get everything that is up to 2 days old. Can also send time in
-                                    ms since epoch.
+                                E.g. '2d-ago' will get everything that is up to 2 days old. Can also send time in ms
+                                since epoch.
 
         end (str):              Get datapoints up to this time. Same format as for start.
 
@@ -89,31 +86,30 @@ def get_multi_tag_datapoints(tag_ids, aggregates=None, granularity=None, start=N
     '''Returns a list of DatapointsObjects each of which contains a list of datapoints for the given tag_id.
 
     Args:
-        tag_ids (list):         The list of tag_ids to retrieve data for.
+        tag_ids (list):                 The list of tag_ids to retrieve data for.
 
-        aggregates (list):      The list of aggregate functions you wish to apply to the data. Valid aggregate functions
-        are: 'average/avg, max, min, count, sum, interpolation/int, stepinterpolation/step'.
+        aggregates (list, optional):    The list of aggregate functions you wish to apply to the data. Valid aggregate
+                                        functions are: 'average/avg, max, min, count, sum, interpolation/int,
+                                        stepinterpolation/step'.
 
-        granularity (str):      The granularity of the aggregate values. Valid entries are : 'day/d, hour/h, minute/m,
-        second/s', or a multiple of these indicated by a number as a prefix.
+        granularity (str):              The granularity of the aggregate values. Valid entries are : 'day/d, hour/h,
+                                        minute/m, second/s', or a multiple of these indicated by a number as a prefix
+                                        e.g. '12hour'.
 
-                                    Example: '12h'.
+        start (str):                    Get datapoints after this time. Format is N[timeunit]-ago where timeunit is
+                                        w,d,h,m,s. E.g. '2d-ago' will get everything that is up to 2 days old. Can also
+                                        send time in ms since epoch.
 
-        start (str):            Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s.
+        end (str):                      Get datapoints up to this time. Same format as for start.
 
-                                    Example: '2d-ago' will get everything that is up to 2 days old. Can also send time in
-                                    ms since epoch.
+        limit (int):                    Return up to this number of datapoints.
 
-        end (str):              Get datapoints up to this time. Same format as for start.
+        api_key (str):                  Your api-key.
 
-        limit (int):            Return up to this number of datapoints.
-
-        api_key (str):          Your api-key.
-
-        project (str):          Project name.
+        project (str):                  Project name.
 
     Returns:
-        list(DatapointsObjects): A list of data objects containing the requested data with several getter methods
+        list(DatapointsObject): A list of data objects containing the requested data with several getter methods
         with different output formats.
     '''
     api_key, project = config.get_config_variables(api_key, project)
@@ -140,36 +136,42 @@ def get_datapoints_frame(tag_ids, aggregates, granularity, start=None, end=None,
     '''Returns a pandas dataframe of datapoints for the given tag_ids all on the same timestamps.
 
     Args:
-        tag_ids (list):         The list of tag_ids to retrieve data for. Each tag_id can be either a string containing
-        the tag_id or a dictionary containing the tag_id and a list of specific aggregate functions.
+        tag_ids (list):     The list of tag_ids to retrieve data for. Each tag_id can be either a string containing the
+                            tag_id or a dictionary containing the tag_id and a list of specific aggregate functions.
 
-                                    Example option 1: ['<tag_id1>', '<tag_id2>'].
+        aggregates (list):  The list of aggregate functions you wish to apply to the data for which you have not
+                            specified an aggregate function. Valid aggregate functions are: 'average/avg, max, min,
+                            count, sum, interpolation/int, stepinterpolation/step'.
 
-                                    Example option 2: [{'tagId': '<tag_id1>', 'aggregates': ['avg', 'max']},
-                                                    {'tagId': '<tag_id2>', 'aggregates': ['step']}]
+        granularity (str):  The granularity of the aggregate values. Valid entries are : 'day/d, hour/h, minute/m,
+                            second/s', or a multiple of these indicated by a number as a prefix e.g. '12hour'.
 
-        aggregates (list):      The list of aggregate functions you wish to apply to the data for which you have not
-        specified an aggregate function. Valid aggregate functions are: 'average/avg, max, min, count, sum, interpolation/int, stepinterpolation/step'.
+        start (str):        Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s.
+                            E.g. '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since
+                            epoch.
 
-        granularity (str):      The granularity of the aggregate values. Valid entries are : 'day/d, hour/h, minute/m,
-        second/s', or a multiple of these indicated by a number as a prefix.
+        end (str): Get datapoints up to this time. Same format as for start.
 
-                                    Example: '12hour'.
+        api_key (str): Your api-key.
 
-        start (str):            Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s.
-
-                                    Example: '2d-ago' will get everything that is up to 2 days old. Can also send time in
-                                    ms since epoch.
-
-        end (str):              Get datapoints up to this time. Same format as for start.
-
-        api_key (str):          Your api-key.
-
-        project (str):          Project name.
+        project (str): Project name.
 
     Returns:
         pandas.DataFrame: A pandas dataframe containing the datapoints for the given tag_ids. The datapoints for all the
         tag_ids will all be on the same timestamps.
+
+    Note:
+        The ``tag_ids`` parameter can take a list of strings and/or dicts on the following formats::
+
+            Using strings:
+                ['<tag_id1>', '<tag_id2>']
+
+            Using dicts:
+                [{'tagId': '<tag_id1>', 'aggregates': ['<aggfunc1>', '<aggfunc2>']},
+                {'tagId': '<tag_id2>', 'aggregates': []}]
+
+            Using both:
+                ['<tagid1>', {'tagId': '<tag_id2>', 'aggregates': ['<aggfunc1>', '<aggfunc2>']}]
     '''
     api_key, project = config.get_config_variables(api_key, project)
     url = _constants.BASE_URL + '/projects/{}/timeseries/dataframe'.format(project)
