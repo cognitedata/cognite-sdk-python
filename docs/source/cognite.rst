@@ -1,52 +1,52 @@
-cognite package
-===============
+cognite
+=======
 .. automodule:: cognite
     :members:
     :undoc-members:
     :show-inheritance:
 
-assets module
-----------------------
+assets
+------
 
 .. automodule:: cognite.assets
     :members:
     :undoc-members:
     :show-inheritance:
 
-config module
-----------------------
+config
+------
 
 .. automodule:: cognite.config
     :members:
     :undoc-members:
     :show-inheritance:
 
-data\_objects module
------------------------------
+data\_objects
+-------------
 
 .. automodule:: cognite.data_objects
     :members:
     :undoc-members:
     :show-inheritance:
 
-similarity\_search module
-----------------------------------
+similarity\_search
+------------------
 
 .. automodule:: cognite.similarity_search
     :members:
     :undoc-members:
     :show-inheritance:
 
-tagmatching module
----------------------------
+tagmatching
+-----------
 
 .. automodule:: cognite.tagmatching
     :members:
     :undoc-members:
     :show-inheritance:
 
-timeseries module
---------------------------
+timeseries
+----------
 
 .. automodule:: cognite.timeseries
     :members:
