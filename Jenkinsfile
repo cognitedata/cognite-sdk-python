@@ -12,11 +12,15 @@ podTemplate(
                                    ttyEnabled: true)],
     volumes: [secretVolume(secretName: 'jenkins-docker-builder',
                            mountPath: '/jenkins-docker-builder',
+                           readOnly: true),
+              secretVolume(secretName: 'pypi-credentials',
+                           mountPath: '/root',
                            readOnly: true)]) {
     node('jnlp-cognite-sdk-python') {
         def gitCommit
         container('jnlp') {
             stage('Checkout') {
+                sh('git config core.sparsecheckout false')
                 checkout(scm)
                 gitCommit = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
             }
@@ -42,7 +46,9 @@ podTemplate(
             println("Latest git tag: " + gitTag)
             if (env.BRANCH_NAME == 'master' && gitTag != pipVersion) {
                 stage('Release') {
-                    sh("pipenv run twine upload dist/*")
+                    timeout(1) {
+                        sh("pipenv run twine upload dist/*")
+                    }
                 }
             }
         }
