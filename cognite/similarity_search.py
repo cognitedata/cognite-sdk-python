@@ -20,13 +20,9 @@ def search(input_tags, query_tags, input_interval, query_interval, modes, limit=
 
         query_tags (list):      List of tags of time-series that we want to search similar patterns on.
 
-        input_interval (tuple): Start and end of input interval.
+        input_interval (tuple): Start and end of input interval. e.g. {'start': 0, 'end: 100}.
 
-                                    Example: {'start': 0, 'end: 100}.
-
-        query_interval (tuple): Start and end of input interval.
-
-                                    Example: {'start': 0, 'end: 100}.
+        query_interval (tuple): Start and end of input interval. e.g. {'start': 0, 'end: 100}.
 
         modes (list):           List of modes of searching. Modes could be 'value' or 'pattern'.
 
