@@ -2,10 +2,6 @@
 '''Project Configuration Module.
 
 This module allows you to set an api-key and a project for your python project.
-
-Attributes:
-    _CONFIG_API_KEY (str): Api-key for current project.
-    _CONFIG_PROJECT (str): Project name for current project.
 '''
 
 _CONFIG_API_KEY = ''
