@@ -11,7 +11,7 @@ This package has been created to ensure excellent excellent user experience for 
 
 To install this package run the following command
 
-.. code-block:: python
+.. code:: python
    pip install cognite-sdk
 
 .. toctree::
