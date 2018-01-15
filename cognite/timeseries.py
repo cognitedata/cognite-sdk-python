@@ -24,11 +24,11 @@ def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=No
         granularity (str):      The granularity of the aggregate values. Valid entries are : 'day/d, hour/h, minute/m,
                                 second/s', or a multiple of these indicated by a number as a prefix e.g. '12hour'.
 
-        start (str):            Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s.
-                                E.g. '2d-ago' will get everything that is up to 2 days old. Can also send time in ms
-                                since epoch.
+        start (Union[str, int]):    Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s.
+                                    E.g. '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since
+                                    epoch.
 
-        end (str):              Get datapoints up to this time. Same format as for start.
+        end (Union[str, int]):      Get datapoints up to this time. Same format as for start.
 
         limit (int):            Return up to this number of datapoints.
 
@@ -96,11 +96,11 @@ def get_multi_tag_datapoints(tag_ids, aggregates=None, granularity=None, start=N
                                         minute/m, second/s', or a multiple of these indicated by a number as a prefix
                                         e.g. '12hour'.
 
-        start (str):                    Get datapoints after this time. Format is N[timeunit]-ago where timeunit is
-                                        w,d,h,m,s. E.g. '2d-ago' will get everything that is up to 2 days old. Can also
-                                        send time in ms since epoch.
+        start (Union[str, int]):    Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s.
+                                    E.g. '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since
+                                    epoch.
 
-        end (str):                      Get datapoints up to this time. Same format as for start.
+        end (Union[str, int]):      Get datapoints up to this time. Same format as for start.
 
         limit (int):                    Return up to this number of datapoints.
 
@@ -146,11 +146,11 @@ def get_datapoints_frame(tag_ids, aggregates, granularity, start=None, end=None,
         granularity (str):  The granularity of the aggregate values. Valid entries are : 'day/d, hour/h, minute/m,
                             second/s', or a multiple of these indicated by a number as a prefix e.g. '12hour'.
 
-        start (str):        Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s.
-                            E.g. '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since
-                            epoch.
+        start (Union[str, int]):    Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s.
+                                    E.g. '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since
+                                    epoch.
 
-        end (str): Get datapoints up to this time. Same format as for start.
+        end (Union[str, int]):      Get datapoints up to this time. Same format as for start.
 
         api_key (str): Your api-key.
 
@@ -196,7 +196,11 @@ def get_datapoints_frame(tag_ids, aggregates, granularity, start=None, end=None,
         res = _utils.post_request(url=url, body=body, headers=headers)
         dataframes.append(
             pd.read_csv(io.StringIO(res.content.decode(res.encoding if res.encoding else res.apparent_encoding))))
+        if dataframes[-1].empty and len(dataframes) == 1:
+            prog_ind.terminate()
+            return pd.DataFrame()
         latest_timestamp = int(dataframes[-1].iloc[-1, 0])
         prog_ind.update_progress(latest_timestamp)
         body['start'] = latest_timestamp + _utils.granularity_to_ms(granularity)
+    prog_ind.terminate()
     return pd.concat(dataframes).reset_index(drop=True)
