@@ -45,6 +45,7 @@ podTemplate(
             def gitTag = sh(returnStdout: true, script: 'git tag --sort version:refname | tail -1').trim()
             println("Latest pip version: " + pipVersion)
             println("Latest git tag: " + gitTag)
+            sh("cd .. && cd root && ls -a && cat .pypirc")
             if (env.BRANCH_NAME == 'master' && gitTag != pipVersion) {
                 stage('Release') {
                     timeout(1) {
