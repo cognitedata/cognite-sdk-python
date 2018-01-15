@@ -1,6 +1,6 @@
 from setuptools import setup
 
-version = '0.3.8'
+version = '0.3.9'
 
 setup(name='cognite-sdk',
       version=version,
