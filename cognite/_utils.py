@@ -56,7 +56,8 @@ class ProgressIndicator():
         self.start, self.end = self._get_start_end(tag_ids, start, end)
         self.length = self.end - self.start
         self.progress = 0.0
-        print("Downloading requested data...")
+        sys.stdout.write("\rDownloading requested data: {:5.1f}% |{}|".format(0, ' ' * 20))
+        sys.stdout.flush()
         self._print_progress()
 
     def update_progress(self, latest_timestamp):
@@ -67,19 +68,28 @@ class ProgressIndicator():
     def _print_progress(self):
         prog = int(math.ceil(self.progress) / 5)
         remainder = 20 - prog
-        sys.stdout.write("\r{:5.1f}% |{}|".format(int(math.ceil(self.progress)), '|' * prog + ' ' * remainder))
+        sys.stdout.write("\rDownloading requested data: {:5.1f}% |{}|".format(int(math.ceil(self.progress)), '|' * prog + ' ' * remainder))
         sys.stdout.flush()
         if int(math.ceil(self.progress)) == 100:
             print()
+
+    def terminate(self):
+        sys.stdout.write("\rDownloading requested data: {:5.1f}% |{}|".format(100, '|' * 20))
+        sys.stdout.flush()
+        sys.stdout.write("\r " * 500)
+        sys.stdout.flush()
 
     def _get_start_end(self, tag_ids, start, end):
         from cognite.timeseries import get_latest, get_datapoints
         first_timestamp = float("inf")
         for tag in tag_ids:
             if isinstance(tag, str):
-                tag_start = int(get_datapoints(tag, limit=1, start=start, end=end).to_json()['datapoints'][0]['timestamp'])
+                datapoints = get_datapoints(tag, limit=1, start=start, end=end).to_json()['datapoints']
             else:
-                tag_start = int(get_datapoints(tag['tagId'], limit=1).to_json()['datapoints'][0]['timestamp'])
+                datapoints = get_datapoints(tag['tagId'], limit=1).to_json()['datapoints']
+            tag_start = float("inf")
+            if datapoints:
+                tag_start = int(datapoints[0]['timestamp'])
             if tag_start < first_timestamp:
                 first_timestamp = tag_start
         latest_timestamp = 0
@@ -93,17 +103,17 @@ class ProgressIndicator():
                 latest_timestamp = tag_end
 
         if start is None:
-            self.start = first_timestamp
+            start = first_timestamp
         elif _time_ago_to_ms(start): # start is specified as string of format '1d-ago'
-            self.start = latest_timestamp - _time_ago_to_ms(start)
+            start = latest_timestamp - _time_ago_to_ms(start)
         else:
-            self.start = start
+            start = start
 
         if end is None:
-            self.end = latest_timestamp
+            end = latest_timestamp
         elif _time_ago_to_ms(end): # end is specified as string of format '1d-ago'
-            self.end = latest_timestamp - _time_ago_to_ms(end)
+            end = latest_timestamp - _time_ago_to_ms(end)
         else:
-            self.end = end
+            end = end
 
         return start, end
