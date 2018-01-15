@@ -14,7 +14,7 @@ podTemplate(
                            mountPath: '/jenkins-docker-builder',
                            readOnly: true),
               secretVolume(secretName: 'pypi-credentials',
-                           mountPath: '/root/.pypirc',
+                           mountPath: '~/.pypirc',
                            subPath: '.pypirc',
                            readOnly: true)]) {
     node('jnlp-cognite-sdk-python') {
