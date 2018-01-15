@@ -15,7 +15,7 @@ podTemplate(
                            readOnly: true),
               secretVolume(secretName: 'pypi-credentials',
                            mountPath: '/root/.pypirc',
-                           subPath: '.pypirc'
+                           subPath: '.pypirc',
                            readOnly: true)]) {
     node('jnlp-cognite-sdk-python') {
         def gitCommit
