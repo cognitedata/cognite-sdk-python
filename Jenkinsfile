@@ -14,7 +14,8 @@ podTemplate(
                            mountPath: '/jenkins-docker-builder',
                            readOnly: true),
               secretVolume(secretName: 'pypi-credentials',
-                           mountPath: '/root',
+                           mountPath: '/root/.pypirc',
+                           subPath: '.pypirc'
                            readOnly: true)]) {
     node('jnlp-cognite-sdk-python') {
         def gitCommit
