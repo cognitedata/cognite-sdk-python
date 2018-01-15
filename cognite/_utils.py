@@ -70,13 +70,11 @@ class ProgressIndicator():
         remainder = 20 - prog
         sys.stdout.write("\rDownloading requested data: {:5.1f}% |{}|".format(int(math.ceil(self.progress)), '|' * prog + ' ' * remainder))
         sys.stdout.flush()
-        if int(math.ceil(self.progress)) == 100:
-            print()
 
     def terminate(self):
         sys.stdout.write("\rDownloading requested data: {:5.1f}% |{}|".format(100, '|' * 20))
         sys.stdout.flush()
-        sys.stdout.write("\r " * 500)
+        sys.stdout.write("\r" + " " * 500)
         sys.stdout.flush()
 
     def _get_start_end(self, tag_ids, start, end):
