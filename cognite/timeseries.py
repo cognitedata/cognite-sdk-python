@@ -79,6 +79,7 @@ def get_latest(tag_id, api_key=None, project=None):
         'accept': 'application/json'
     }
     res = _utils.get_request(url, headers=headers)
+    
     return LatestDatapointObject(res.json())
 
 def get_multi_tag_datapoints(tag_ids, aggregates=None, granularity=None, start=None, end=None, limit=_constants.LIMIT,
