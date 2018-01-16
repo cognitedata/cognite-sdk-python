@@ -14,8 +14,7 @@ podTemplate(
                            mountPath: '/jenkins-docker-builder',
                            readOnly: true),
               secretVolume(secretName: 'pypi-credentials',
-                           mountPath: '/root/.pypirc',
-                           subPath: '.pypirc',
+                           mountPath: '/pypi',
                            readOnly: true)]) {
     node('jnlp-cognite-sdk-python') {
         def gitCommit
@@ -45,11 +44,10 @@ podTemplate(
             def gitTag = sh(returnStdout: true, script: 'git tag --sort version:refname | tail -1').trim()
             println("Latest pip version: " + pipVersion)
             println("Latest git tag: " + gitTag)
-            sh('ls && pwd && cd ~ && ls -a && cat .pypirc')
             if (env.BRANCH_NAME == 'master' && gitTag != pipVersion) {
                 stage('Release') {
                     timeout(1) {
-                        sh("pipenv run twine upload dist/*")
+                        sh("pipenv run twine --config-file /pypi/.pypirc upload dist/*")
                     }
                 }
             }
