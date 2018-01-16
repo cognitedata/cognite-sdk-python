@@ -12,6 +12,12 @@ $ pipenv shell
 ```
 
 Any changes, bug fixes, additions, or improvements you wish to make should be done on a development branch. A pull request should be created to have your code reviewed.
+### Deployment to Pypi
+1. Lint code by following the instructions below.
+2. Create new release on github following the release conventions shown below.
+2. Update version/release number in setup.py.
+3. Merge pull request into master.
+4. Jenkins takes care of the rest :)
 
 ### Linting
 We follow the PEP8 standard and use pylint to enforce it.
@@ -32,12 +38,6 @@ $ cd docs
 $ make html
 ```
 Documentation will be automatically generated from the google-style docstrings in the source code. It is then built and released when changes are merged into master.
-
-### Deployment to Pypi
-1. Lint code.
-2. Create new release on github following the release conventions shown below.
-2. Update version/release number in setup.py.
-3. Merge pull request into master.
 
 ### Release conventions
 Format: 
