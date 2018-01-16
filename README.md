@@ -40,7 +40,11 @@ Documentation will be automatically generated from the google-style docstrings i
 3. Merge pull request into master.
 
 ### Release conventions
-Format: MAJOR.MINOR[.MICRO][PRE-RELEASE IDENTIFIER]
+Format: 
+``` 
+MAJOR.MINOR[.MICRO][PRE-RELEASE IDENTIFIER]
+```
+
 Valid pre-release identifiers are: a (alpha), b (beta), rc (release candidate)
 
 Example: 0.4.1a1
