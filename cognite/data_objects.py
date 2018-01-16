@@ -10,6 +10,7 @@ the following output formats:
 '''
 from abc import ABC, abstractmethod
 import pandas as pd
+import json
 
 # Author: Erlend Vollset
 class CogniteDataObject(ABC):
@@ -32,6 +33,34 @@ class CogniteDataObject(ABC):
     def to_ndarray(self):
         '''Returns data as a numpy array'''
         return self.to_pandas().values
+
+
+class RawRowDTO(object):
+    """DTO for a row in a raw database."""
+    def __init__(self, key, columns):
+        self.key = key
+        self.columns = columns
+
+    def __repr__(self):
+        return json.dumps(self.repr_json())
+
+    def repr_json(self):
+        return self.__dict__
+
+
+class RawObject(CogniteDataObject):
+    """Raw Data Object."""
+    def __init__(self, internal_representation):
+        CogniteDataObject.__init__(self, internal_representation)
+
+    def to_json(self):
+        """Returns data as a json object"""
+        return self.internal_representation['data']['items']
+
+    def to_pandas(self):
+        """Returns data as a pandas dataframe"""
+        return pd.DataFrame(self.internal_representation['data']['items'])
+
 
 # Author: Erlend Vollset
 class TagMatchingObject(CogniteDataObject):
