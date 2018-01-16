@@ -11,7 +11,16 @@ $ pipenv install
 $ pipenv shell
 ```
 
+Any changes, bug fixes, additions, or improvements you wish to make should be done on a development branch. A pull request should be created to have your code reviewed.
+### Deployment to Pypi
+1. Lint code by following the instructions below.
+2. Create new release on github following the release conventions shown below.
+2. Update version/release number in setup.py.
+3. Merge pull request into master.
+4. Jenkins takes care of the rest :)
+
 ### Linting
+We follow the PEP8 standard and use pylint to enforce it.
 #### Command line
 `$ pylint <module>`
 #### Editor and IDE Integration
@@ -23,29 +32,34 @@ Run unit tests by running the following command from the root directory:
 
 `$ python3 unit_tests/run_tests.py`
 ### Documentation
-Autogenerate documentation by running the following commands:
+Build html files of documentation locally by running
 ```bash
 $ cd docs 
-$ sphinx-apidoc -f -o source/ ../cognite/
 $ make html
 ```
+Documentation will be automatically generated from the google-style docstrings in the source code. It is then built and released when changes are merged into master.
 
-### Deployment to Pypi
-1. Check unit tests, lint code, and generate documentation
-2. Update version number in setup.py
-3. Push code to master
-4. Create new tag on github
-```bash
-$ git tag <version> -m <message>
-$ git push --tags origin master
+### Release conventions
+Format: 
+``` 
+MAJOR.MINOR[.MICRO][PRE-RELEASE IDENTIFIER]
 ```
-5. Build
-```bash
-$ python3 setup.py sdist
-$ python3 setup.py bdist_wheel
-```
-6. Upload using twine
-```bash
-$ twine upload dist/*
-```
+
+Valid pre-release identifiers are: a (alpha), b (beta), rc (release candidate)
+
+Example: 0.4.1a1
+
+#### Release numbering
+| **Release**   | **Description** |
+| ------------- |-----------------|
+| **Major**     | Major revision number for the software like 2 or 3 for Python |
+| **Minor**     | Groups moderate changes to the software like bug fixes or minor improvements |
+| **Micro**     | Releases dedicated to bug fixes |
+
+#### Pre-Releases
+| **Release**   | **Description** |
+| ------------- |-----------------|
+| **alpha (a)** | Early pre-releases. A lot of changes can occur between alphas and the final release, like feature additions or refactorings. But they are minor changes and the software should stay pretty unchanged by the time the first beta is reached. |
+| **beta (b)**  | At this stage, no new features are added and developers are tracking remaning bugs. |
+| **release candidate (rc)** | A release candidate is an ultimate release before the final release. Unless something bad happens, nothing is changed. |
 
