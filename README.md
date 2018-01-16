@@ -23,29 +23,39 @@ Run unit tests by running the following command from the root directory:
 
 `$ python3 unit_tests/run_tests.py`
 ### Documentation
-Autogenerate documentation by running the following commands:
+Build html files of documentation locally by running
 ```bash
 $ cd docs 
-$ sphinx-apidoc -f -o source/ ../cognite/
 $ make html
 ```
+These will be automatically built and released when docs are pushed to master.
 
 ### Deployment to Pypi
-1. Check unit tests, lint code, and generate documentation
+1. Lint code
+2. Create new release on github following the release numbering conventions shown below
 2. Update version number in setup.py
-3. Push code to master
-4. Create new tag on github
-```bash
-$ git tag <version> -m <message>
-$ git push --tags origin master
-```
-5. Build
-```bash
-$ python3 setup.py sdist
-$ python3 setup.py bdist_wheel
-```
-6. Upload using twine
-```bash
-$ twine upload dist/*
-```
+3. Merge pull request into master
 
+### Release numbering conventions
+Format: MAJOR.MINOR[.MICRO][PRE-RELEASE IDENTIFIER]
+
+Example: 0.4.1a1
+
+#### Major
+Major revision number for the software like 2 or 3 for Python
+#### Minor
+Groups moderate changes to the software like bug fixes or minor improvements
+#### Micro
+Releases dedicated to bug fixes
+
+#### Pre-Releases
+Valid pre-release identifiers are: a (alpha), b (beta), rc (release candidate)
+
+##### alpha
+Early pre-releases. A lot of changes can occur between alphas and the final release, like feature additions or refactorings. But they are minor changes and the software should stay pretty unchanged by the time the first beta is reached.
+
+##### beta
+At this stage, no new features are added and developers are tracking remaning bugs.
+
+##### release candidate
+A release candidate is an ultimate release before the final release. Unless something bad happens, nothing is changed.
