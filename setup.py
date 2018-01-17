@@ -21,7 +21,7 @@ from setuptools import setup
 # bad happens, nothing is changed.
 
 
-version = '0.4.21'
+version = '0.4.3'
 
 setup(name='cognite-sdk',
       version=version,
