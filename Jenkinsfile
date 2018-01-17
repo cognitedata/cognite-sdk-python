@@ -40,8 +40,8 @@ podTemplate(
                 sh("pipenv run python3 setup.py bdist_wheel")
             }
             def pipVersion = sh(returnStdout: true, script: 'pipenv run yolk -V cognite-sdk | sort -n | tail -1 | cut -d\\  -f 2').trim()
-            sh('git pull --tags')
-            def gitTag = sh(returnStdout: true, script: 'git tag --sort version:refname | tail -1').trim()
+            sh('git fetch --tags')
+            def gitTag = sh(returnStdout: true, script: 'git tag | sort | tail -1').trim()
             println("Latest pip version: " + pipVersion)
             println("Latest git tag: " + gitTag)
             if (env.BRANCH_NAME == 'master' && gitTag != pipVersion) {
