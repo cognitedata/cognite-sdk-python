@@ -54,3 +54,10 @@ timeseries
     :undoc-members:
     :show-inheritance:
 
+raw
+----------
+
+.. automodule:: cognite.raw
+    :members:
+    :undoc-members:
+    :show-inheritance:

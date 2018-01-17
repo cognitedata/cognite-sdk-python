@@ -35,7 +35,6 @@ tag_matching_response = {
 tag_matching_response = TagMatchingObject(tag_matching_response)
 
 
-
 assets_response = {
     'data': {
         'items': [
@@ -111,6 +110,7 @@ timeseries_response = {
 
 timeseries_response = [DatapointsObject(timeseries_response)]
 
+
 similarity_search_response = {
     'data': {
         'items': [
@@ -121,3 +121,15 @@ similarity_search_response = {
 }
 
 similarity_search_response = SimilaritySearchObject(similarity_search_response)
+
+
+raw_response = {
+    'data': {
+        'items': [
+            {'dbName': 'db1'},
+            {'dbName': 'db2'}
+        ]
+    }
+}
+
+raw_response = RawObject(raw_response)

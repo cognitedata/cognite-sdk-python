@@ -10,6 +10,7 @@ the following output formats:
 '''
 from abc import ABC, abstractmethod
 import pandas as pd
+import json
 
 # Author: Erlend Vollset
 class CogniteDataObject(ABC):
@@ -32,6 +33,44 @@ class CogniteDataObject(ABC):
     def to_ndarray(self):
         '''Returns data as a numpy array'''
         return self.to_pandas().values
+
+
+class RawRowDTO(object):
+    """DTO for a row in a raw database.
+
+    The Raw API is a simple key/value-store. Each row in a table in a raw database consists of a
+    unique row key and a set of columns.
+
+    Attributes:
+
+        key (str):      Unique key for the row.
+        columns (int):  A key/value-map consisting of the values in the row.
+
+    """
+    def __init__(self, key, columns):
+        self.key = key
+        self.columns = columns
+
+    def __repr__(self):
+        return json.dumps(self.repr_json())
+
+    def repr_json(self):
+        return self.__dict__
+
+
+class RawObject(CogniteDataObject):
+    """Raw Data Object."""
+    def __init__(self, internal_representation):
+        CogniteDataObject.__init__(self, internal_representation)
+
+    def to_json(self):
+        """Returns data as a json object"""
+        return self.internal_representation['data']['items']
+
+    def to_pandas(self):
+        """Returns data as a pandas dataframe"""
+        return pd.DataFrame(self.internal_representation['data']['items'])
+
 
 # Author: Erlend Vollset
 class TagMatchingObject(CogniteDataObject):
