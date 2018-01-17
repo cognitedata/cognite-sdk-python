@@ -40,7 +40,7 @@ podTemplate(
                 sh("pipenv run python3 setup.py bdist_wheel")
             }
             def pipVersion = sh(returnStdout: true, script: 'pipenv run yolk -V cognite-sdk | sort -n | tail -1 | cut -d\\  -f 2').trim()
-            sh('git fetch --tags')
+            sh('git pull --tags')
             def gitTag = sh(returnStdout: true, script: 'git tag --sort version:refname | tail -1').trim()
             println("Latest pip version: " + pipVersion)
             println("Latest git tag: " + gitTag)
