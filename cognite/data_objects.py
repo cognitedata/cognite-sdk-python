@@ -36,7 +36,17 @@ class CogniteDataObject(ABC):
 
 
 class RawRowDTO(object):
-    """DTO for a row in a raw database."""
+    """DTO for a row in a raw database.
+
+    The Raw API is a simple key/value-store. Each row in a table in a raw database consists of a
+    unique row key and a set of columns.
+
+    Attributes:
+
+        key (str):      Unique key for the row.
+        columns (int):  A key/value-map consisting of the values in the row.
+
+    """
     def __init__(self, key, columns):
         self.key = key
         self.columns = columns
