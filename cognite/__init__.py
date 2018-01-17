@@ -4,4 +4,4 @@ This package has been created to ensure excellent excellent user experience for 
 Data Platform (CDP).
 '''
 
-__all__ = ['assets', 'config', 'similarity_search', 'tagmatching', 'timeseries']
+__all__ = ['assets', 'config', 'similarity_search', 'tagmatching', 'timeseries', 'raw']

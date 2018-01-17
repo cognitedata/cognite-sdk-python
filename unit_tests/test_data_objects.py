@@ -86,9 +86,35 @@ class SimilaritySearchTestCase(unittest.TestCase):
     def test_response_length(self):
         self.assertGreater(len(self.response.to_json()), 0)
 
+
+class RawTestCase(unittest.TestCase):
+
+    def setUp(self):
+        self.response = raw_response
+
+    def test_object(self):
+        from cognite.data_objects import RawObject
+        self.assertIsInstance(self.response, RawObject)
+
+    def test_json(self):
+        self.assertIsInstance(self.response.to_json(), list)
+
+    def test_pandas(self):
+        import pandas as pd
+        self.assertIsInstance(self.response.to_pandas(), pd.DataFrame)
+
+    def test_ndarray(self):
+        import numpy as np
+        self.assertIsInstance(self.response.to_ndarray(), np.ndarray)
+
+    def test_response_length(self):
+        self.assertGreater(len(self.response.to_json()), 0)
+
+
 def suites():
     suite1 = unittest.TestLoader().loadTestsFromTestCase(TagMatchingTestCase)
     suite2 = unittest.TestLoader().loadTestsFromTestCase(AssetsTestCase)
     suite4 = unittest.TestLoader().loadTestsFromTestCase(TimeseriesTestCase)
     suite3 = unittest.TestLoader().loadTestsFromTestCase(SimilaritySearchTestCase)
-    return [suite1, suite2, suite3, suite4]
+    suite5 = unittest.TestLoader().loadTestsFromTestCase(RawTestCase)
+    return [suite1, suite2, suite3, suite4, suite5]
