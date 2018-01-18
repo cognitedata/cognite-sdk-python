@@ -14,6 +14,8 @@ from cognite.data_objects import DatapointsObject, LatestDatapointObject
 def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=None, api_key=None, project=None):
     '''Returns a DatapointsObject containing a list of datapoints for the given query.
 
+    This method will automate paging for the user and return all data for the given time period.
+
     Args:
         tag_id (str):           The tag_id to retrieve data for.
 
