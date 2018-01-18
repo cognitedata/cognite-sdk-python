@@ -72,10 +72,7 @@ class ProgressIndicator():
         sys.stdout.flush()
 
     def terminate(self):
-        sys.stdout.write("\rDownloading requested data: {:5.1f}% |{}|".format(100, '|' * 20))
-        sys.stdout.flush()
-        sys.stdout.write("\r" + " " * 500)
-        sys.stdout.flush()
+        sys.stdout.write("\r")
 
     def _get_start_end(self, tag_ids, start, end):
         from cognite.timeseries import get_latest, get_datapoints
