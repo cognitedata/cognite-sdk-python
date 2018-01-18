@@ -52,6 +52,7 @@ def _get_first_datapoint(tag, start, end):
     '''Returns the first datapoint of a timeseries in the given interval. If no start is specified, the default is 1 week ago
     '''
     api_key, project = config.get_config_variables(None, None)
+    tag = tag.replace('/', '%2F')
     url = config.get_base_url() + '/projects/{}/timeseries/data/{}'.format(project, tag)
     params = {
         'limit': 1,

@@ -4,7 +4,7 @@
 This module mirrors the Similarity Search API.
 """
 import cognite._utils as _utils
-from cognite.config import get_config_variables
+from cognite.config import get_config_variables, get_base_url
 from cognite.data_objects import SimilaritySearchObject
 
 def search(input_tags, query_tags, input_interval, query_interval, modes, limit=10, api_key=None, project=None):
@@ -32,7 +32,7 @@ def search(input_tags, query_tags, input_interval, query_interval, modes, limit=
         output formats.
     '''
     api_key, project = get_config_variables(api_key, project)
-    url = config.get_base_url() + '/projects/{}/similaritysearch'.format(project)
+    url = get_base_url() + '/projects/{}/similaritysearch'.format(project)
     body = {
         'inputTags': input_tags,
         'queryTags': query_tags,
