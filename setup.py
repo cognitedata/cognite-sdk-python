@@ -35,5 +35,6 @@ setup(name='cognite-sdk',
           'requests',
           'pandas'
       ],
+      python_requires='>=3',
       zip_safe=False,
       include_package_data=True)
