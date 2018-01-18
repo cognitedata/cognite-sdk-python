@@ -18,7 +18,7 @@ def tag_matching(tag_ids, fuzzy_threshold=0, platform=None, api_key=None, projec
         tag_ids (list):         The tag_ids to retrieve matches for.
 
         fuzzy_threshold (int):  The threshold to use when searching for matches. A fuzzy threshold of 0 means you only
-        want to accept perfect matches. Must be >= 0.
+                                want to accept perfect matches. Must be >= 0.
 
         platform (str):         The platform to search on.
 
