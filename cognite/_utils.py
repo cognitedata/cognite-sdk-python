@@ -48,7 +48,7 @@ def _time_ago_to_ms(time_ago_string):
         return magnitude * unit_in_ms[unit]
     return None
 
-def get_first_datapoint(tag, start, end):
+def _get_first_datapoint(tag, start, end):
     api_key, project = config.get_config_variables(None, None)
     url = config.get_base_url() + '/projects/{}/timeseries/data/{}'.format(project, tag)
     params = {
@@ -93,13 +93,13 @@ class ProgressIndicator():
         sys.stdout.write("\r")
 
     def _get_start_end(self, tag_ids, start, end):
-        from cognite.timeseries import get_latest, get_datapoints
+        from cognite.timeseries import get_latest
         first_timestamp = float("inf")
         for tag in tag_ids:
             if isinstance(tag, str):
-                first_datapoint = get_first_datapoint(tag, start, end)
+                first_datapoint = _get_first_datapoint(tag, start, end)
             else:
-                first_datapoint = get_first_datapoint(tag['tagId'], start, end)
+                first_datapoint = _get_first_datapoint(tag['tagId'], start, end)
             tag_start = float("inf")
             if first_datapoint:
                 tag_start = first_datapoint
