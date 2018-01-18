@@ -11,6 +11,7 @@ import re
 import sys
 import requests
 import cognite._constants as _constants
+import cognite.config as config
 
 def get_request(url, params=None, headers=None):
     '''Perform a GET request with a predetermined number of retries.'''
@@ -47,6 +48,23 @@ def _time_ago_to_ms(time_ago_string):
         return magnitude * unit_in_ms[unit]
     return None
 
+def get_first_datapoint(tag, start, end):
+    api_key, project = config.get_config_variables(None, None)
+    url = config.get_base_url() + '/projects/{}/timeseries/data/{}'.format(project, tag)
+    params = {
+        'limit': 1,
+        'start': start,
+        'end': end
+    }
+    headers = {
+        'api-key': api_key,
+        'accept': 'application/json'
+    }
+    res = get_request(url, params=params, headers=headers).json()['data']['items'][0]['datapoints']
+    if res:
+        return int(res[0]['timestamp'])
+    return None
+
 class _APIError(Exception):
     pass
 
@@ -79,12 +97,12 @@ class ProgressIndicator():
         first_timestamp = float("inf")
         for tag in tag_ids:
             if isinstance(tag, str):
-                datapoints = get_datapoints(tag, limit=1, start=start, end=end).to_json()['datapoints']
+                first_datapoint = get_first_datapoint(tag, start, end)
             else:
-                datapoints = get_datapoints(tag['tagId'], limit=1).to_json()['datapoints']
+                first_datapoint = get_first_datapoint(tag['tagId'], start, end)
             tag_start = float("inf")
-            if datapoints:
-                tag_start = int(datapoints[0]['timestamp'])
+            if first_datapoint:
+                tag_start = first_datapoint
             if tag_start < first_timestamp:
                 first_timestamp = tag_start
         latest_timestamp = 0

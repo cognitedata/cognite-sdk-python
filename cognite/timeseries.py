@@ -11,8 +11,7 @@ import cognite._utils as _utils
 
 from cognite.data_objects import DatapointsObject, LatestDatapointObject
 
-def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=None, limit=_constants.LIMIT,
-                   api_key=None, project=None):
+def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=None, api_key=None, project=None):
     '''Returns a DatapointsObject containing a list of datapoints for the given query.
 
     Args:
@@ -46,7 +45,7 @@ def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=No
     params = {
         'aggregates': aggregates,
         'granularity': granularity,
-        'limit': limit,
+        'limit': _constants.LIMIT,
         'start': start,
         'end': end,
     }
@@ -54,8 +53,21 @@ def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=No
         'api-key': api_key,
         'accept': 'application/json'
     }
-    res = _utils.get_request(url, params=params, headers=headers)
-    return DatapointsObject(res.json())
+    prog_ind = _utils.ProgressIndicator([tag_id], start, end)
+    datapoints = []
+    while not datapoints or len(datapoints[-1]) == _constants.LIMIT:
+        res = _utils.get_request(url, params=params, headers=headers).json()['data']['items'][0]['datapoints']
+        if not res and not datapoints:
+            prog_ind.terminate()
+            return DatapointsObject({'data': {'items': [{'tagId': tag_id, 'datapoints': []}]}})
+        datapoints.append(res)
+        latest_timestamp = int(datapoints[-1][-1]['timestamp'])
+        prog_ind.update_progress(latest_timestamp)
+        params['start'] = latest_timestamp + (_utils.granularity_to_ms(granularity) if granularity else 0)
+    prog_ind.terminate()
+    dps = []
+    [ dps.extend(el) for el in datapoints ]
+    return DatapointsObject({'data': {'items': [{'tagId': tag_id, 'datapoints': dps}]}})
 
 def get_latest(tag_id, api_key=None, project=None):
     '''Returns a LatestDatapointObject containing the latest datapoint for the given tag_id.
