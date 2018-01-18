@@ -13,11 +13,9 @@ $ pipenv shell
 
 Any changes, bug fixes, additions, or improvements you wish to make should be done on a development branch. A pull request should be created to have your code reviewed.
 ### Deployment to Pypi
-1. Lint code by following the instructions below.
-2. Create new release on github following the release conventions shown below.
-2. Update version/release number in setup.py.
-3. Merge pull request into master.
-4. Jenkins takes care of the rest :)
+1. Create new release/tag on github following the release conventions shown below.
+2. Update version/release number in setup.py to match that of the new release/tag.
+3. Push to master
 
 ### Linting
 We follow the PEP8 standard and use pylint to enforce it.
@@ -39,27 +37,10 @@ $ make html
 ```
 Documentation will be automatically generated from the google-style docstrings in the source code. It is then built and released when changes are merged into master.
 
-### Release conventions
+### Release version conventions
 Format: 
 ``` 
-MAJOR.MINOR[.MICRO][PRE-RELEASE IDENTIFIER]
+MAJOR.MINOR[.MICRO]
 ```
 
-Valid pre-release identifiers are: a (alpha), b (beta), rc (release candidate)
-
-Example: 0.4.1a1
-
-#### Release numbering
-| **Release**   | **Description** |
-| ------------- |-----------------|
-| **Major**     | Major revision number for the software like 2 or 3 for Python |
-| **Minor**     | Groups moderate changes to the software like bug fixes or minor improvements |
-| **Micro**     | Releases dedicated to bug fixes |
-
-#### Pre-Releases
-| **Release**   | **Description** |
-| ------------- |-----------------|
-| **alpha (a)** | Early pre-releases. A lot of changes can occur between alphas and the final release, like feature additions or refactorings. But they are minor changes and the software should stay pretty unchanged by the time the first beta is reached. |
-| **beta (b)**  | At this stage, no new features are added and developers are tracking remaning bugs. |
-| **release candidate (rc)** | A release candidate is an ultimate release before the final release. Unless something bad happens, nothing is changed. |
-
+The major and minor version numbers should mirror the Cognite API. Micro releases are dedicated to bug fixes, improvements, and additions.
