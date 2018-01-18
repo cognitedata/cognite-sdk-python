@@ -10,14 +10,11 @@ name = "pypi"
 twine = "*"
 sphinx = "*"
 "yolk3k" = "*"
-
-
-[dev-packages]
-
 pylint = "*"
 pandas = "*"
 requests = "*"
 
+[dev-packages]
 
 [requires]
 
