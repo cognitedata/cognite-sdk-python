@@ -42,7 +42,7 @@ def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=No
     '''
     api_key, project = config.get_config_variables(api_key, project)
     tag_id = tag_id.replace('/', '%2F')
-    url = _constants.BASE_URL + '/projects/{}/timeseries/data/{}'.format(project, tag_id)
+    url = config.get_base_url() + '/projects/{}/timeseries/data/{}'.format(project, tag_id)
     params = {
         'aggregates': aggregates,
         'granularity': granularity,
@@ -73,7 +73,7 @@ def get_latest(tag_id, api_key=None, project=None):
     '''
     api_key, project = config.get_config_variables(api_key, project)
     tag_id = tag_id.replace('/', '%2F')
-    url = _constants.BASE_URL + '/projects/{}/timeseries/latest/{}'.format(project, tag_id)
+    url = config.get_base_url() + '/projects/{}/timeseries/latest/{}'.format(project, tag_id)
     headers = {
         'api-key': api_key,
         'accept': 'application/json'
@@ -113,7 +113,7 @@ def get_multi_tag_datapoints(tag_ids, aggregates=None, granularity=None, start=N
         with different output formats.
     '''
     api_key, project = config.get_config_variables(api_key, project)
-    url = _constants.BASE_URL + '/projects/{}/timeseries/dataquery'.format(project)
+    url = config.get_base_url() + '/projects/{}/timeseries/dataquery'.format(project)
     body = {
         'items': [{'tagId': '{}'.format(tag_id)}
                   if isinstance(tag_id, str)
@@ -174,7 +174,7 @@ def get_datapoints_frame(tag_ids, aggregates, granularity, start=None, end=None,
                 ['<tagid1>', {'tagId': '<tag_id2>', 'aggregates': ['<aggfunc1>', '<aggfunc2>']}]
     '''
     api_key, project = config.get_config_variables(api_key, project)
-    url = _constants.BASE_URL + '/projects/{}/timeseries/dataframe'.format(project)
+    url = config.get_base_url() + '/projects/{}/timeseries/dataframe'.format(project)
     body = {
         'items': [{'tagId': '{}'.format(tag_id)}
                   if isinstance(tag_id, str)

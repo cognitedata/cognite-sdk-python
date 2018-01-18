@@ -4,7 +4,6 @@
 This module mirrors the Assets API.
 """
 import cognite.config as config
-import cognite._constants as _constants
 import cognite._utils as _utils
 from cognite.data_objects import AssetSearchObject
 
@@ -16,7 +15,7 @@ def search_assets(description, api_key=None, project=None):
         * TK: Enter description, args, and returns
     '''
     api_key, project = config.get_config_variables(api_key, project)
-    url = _constants.BASE_URL + '/projects/{}/assets'.format(project)
+    url = config.get_base_url() + '/projects/{}/assets'.format(project)
     params = {
         'description': description,
     }
@@ -37,7 +36,7 @@ def get_assets(asset_id=None, depth=None, api_key=None, project=None):
         * TK: Enter description, args, and returns
     '''
     api_key, project = config.get_config_variables(api_key, project)
-    url = _constants.BASE_URL + '/projects/{}/assets/{}'.format(project, asset_id)
+    url = config.get_base_url() + '/projects/{}/assets/{}'.format(project, asset_id)
     params = {
         'depth': depth,
     }

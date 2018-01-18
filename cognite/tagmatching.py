@@ -4,7 +4,6 @@
 This module mirrors the Tag Matching API. It allows the user to search for tag id matches.
 """
 import cognite.config as config
-import cognite._constants as _constants
 import cognite._utils as _utils
 
 from cognite.data_objects import TagMatchingObject
@@ -32,7 +31,7 @@ def tag_matching(tag_ids, fuzzy_threshold=0, platform=None, api_key=None, projec
         output formats.
     '''
     api_key, project = config.get_config_variables(api_key, project)
-    url = _constants.BASE_URL + '/projects/{}/tagmatching'.format(project)
+    url = config.get_base_url() + '/projects/{}/tagmatching'.format(project)
     body = {
         'tagIds': tag_ids,
         'metadata': {
