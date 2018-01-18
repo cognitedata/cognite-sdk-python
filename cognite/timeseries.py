@@ -135,6 +135,8 @@ def get_multi_tag_datapoints(tag_ids, aggregates=None, granularity=None, start=N
 def get_datapoints_frame(tag_ids, aggregates, granularity, start=None, end=None, api_key=None, project=None):
     '''Returns a pandas dataframe of datapoints for the given tag_ids all on the same timestamps.
 
+    This method will automate paging for the user and return all data for the given time period.
+
     Args:
         tag_ids (list):     The list of tag_ids to retrieve data for. Each tag_id can be either a string containing the
                             tag_id or a dictionary containing the tag_id and a list of specific aggregate functions.
