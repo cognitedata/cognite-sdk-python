@@ -41,13 +41,16 @@ def get_config_variables(api_key, project):
 def set_base_url(url):
     '''Sets the base url for the requests made from the SDK.
 
-        Args:
-            url (str):  URL to set. Set this to None to use default url.
-        '''
+    Args:
+        url (str):  URL to set. Set this to None to use default url.
+    '''
     global _CONFIG_BASE_URL
     _CONFIG_BASE_URL = url
 
 def get_base_url():
-    if _CONFIG_BASE_URL == None:
-        return BASE_URL
-    return _CONFIG_BASE_URL
+    '''Returns the current base url for requeust made from the SDK.
+
+    Returns:
+        str: current base url.
+    '''
+    return BASE_URL if _CONFIG_BASE_URL is None else _CONFIG_BASE_URL
