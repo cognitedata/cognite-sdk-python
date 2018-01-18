@@ -31,8 +31,6 @@ def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=No
 
         end (Union[str, int]):      Get datapoints up to this time. Same format as for start.
 
-        limit (int):            Return up to this number of datapoints.
-
         api_key (str):          Your api-key.
 
         project (str):          Project name.
