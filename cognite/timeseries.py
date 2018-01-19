@@ -121,8 +121,8 @@ def get_multi_tag_datapoints(tag_ids, aggregates=None, granularity=None, start=N
         project (str):                  Project name.
 
     Returns:
-        :obj:list of :obj:DatapointsObject: A list of data objects containing the requested data with several getter
-        methods with different output formats.
+        list(DatapointsObject): A list of data objects containing the requested data with several getter methods
+        with different output formats.
     '''
     api_key, project = config.get_config_variables(api_key, project)
     url = config.get_base_url() + '/projects/{}/timeseries/dataquery'.format(project)
