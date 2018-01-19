@@ -42,9 +42,12 @@ podTemplate(
             def pipVersion = sh(returnStdout: true, script: 'pipenv run yolk -V cognite-sdk | sort -n | tail -1 | cut -d\\  -f 2').trim()
             sh('git fetch --tags')
             def gitTag = sh(returnStdout: true, script: 'git tag --sort version:refname | tail -1').trim()
-            println("Latest pip version: " + pipVersion)
+            def currentVersion = sh(returnStdout: true, script: 'python3 -c "import cognite; print(cognite.__version__)"')
+
+            println("This version: " + currentVersion)
             println("Latest git tag: " + gitTag)
-            if (env.BRANCH_NAME == 'master' && gitTag != pipVersion) {
+            println("Latest pip version: " + pipVersion)
+            if (env.BRANCH_NAME == 'master' && currentVersion != pipVersion && gitTag == currentVersion) {
                 stage('Release') {
                     sh("pipenv run twine upload --config-file /pypi/.pypirc dist/*")
                 }
