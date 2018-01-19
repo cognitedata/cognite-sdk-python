@@ -19,8 +19,8 @@
 #
 import os
 import sys
-import cognite
 sys.path.insert(0, os.path.abspath('../..'))
+import cognite
 
 # -- General configuration ------------------------------------------------
 
