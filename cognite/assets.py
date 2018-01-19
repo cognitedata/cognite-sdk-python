@@ -11,8 +11,14 @@ from cognite.data_objects import AssetSearchObject
 def search_assets(description, api_key=None, project=None):
     '''Returns assets matching provided description.
 
-    TODO:
-        * TK: Enter description, args, and returns
+    Args:
+        description (str): Search query.
+
+        api_key (str):          Your api-key.
+
+        project (str):          Project name.
+    Returns:
+        AssetSearchObject
     '''
     api_key, project = config.get_config_variables(api_key, project)
     url = config.get_base_url() + '/projects/{}/assets'.format(project)
