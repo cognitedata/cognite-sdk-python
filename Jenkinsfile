@@ -47,7 +47,7 @@ podTemplate(
             println("This version: " + currentVersion)
             println("Latest git tag: " + gitTag)
             println("Latest pip version: " + pipVersion)
-            if (env.BRANCH_NAME == 'master' && currentVersion != pipVersion && gitTag == currentVersion) {
+            if (env.BRANCH_NAME == 'master' && currentVersion != pipVersion) {
                 stage('Release') {
                     sh("pipenv run twine upload --config-file /pypi/.pypirc dist/*")
                 }
