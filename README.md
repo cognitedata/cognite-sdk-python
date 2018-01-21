@@ -13,10 +13,9 @@ $ pipenv shell
 
 Any changes, bug fixes, additions, or improvements you wish to make should be done on a development branch. A pull request should be created to have your code reviewed.
 ### Deployment to Pypi
-1. Create new tag on github following the release conventions shown below.
-2. Update version/release number in cognite/__init__.py to match that of the new release/tag.
-3. Push to master
-4. Jenkins takes care of the rest
+1. Update version/release number in cognite/__init__.py following the release conventions shown below.
+2. Create a pull request, have it reviewed and merged. (This will trigger a Jenkins build and automatic release to PyPi).
+3. Create new tag on github to match the updated version number.
 
 ### Linting
 We follow the PEP8 standard and use pylint to enforce it.
