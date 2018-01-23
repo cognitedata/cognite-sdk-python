@@ -1,7 +1,3 @@
-# CONSTANTS
-# TEST_API_KEY = 'm7SSQZ8ug72b1cUWCLMfc3uy9lkHBeyO'
-# TEST_PROJECT = 'akerbp'
-
 import json
 from cognite.data_objects import *
 
