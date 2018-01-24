@@ -15,7 +15,6 @@ import cognite.config as config
 
 def get_request(url, params=None, headers=None):
     '''Perform a GET request with a predetermined number of retries.'''
-    res = None
     for _ in range(_constants.RETRY_LIMIT + 1):
         try:
             res = requests.get(url, params=params, headers=headers)
@@ -31,7 +30,6 @@ def get_request(url, params=None, headers=None):
 
 def post_request(url, body, headers=None):
     '''Perform a POST request with a predetermined number of retries.'''
-    res = None
     for _ in range(_constants.RETRY_LIMIT + 1):
         try:
             res = requests.post(url, data=json.dumps(body), headers=headers)
