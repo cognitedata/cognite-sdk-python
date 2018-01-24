@@ -216,11 +216,8 @@ def get_datapoints_frame(tag_ids, aggregates, granularity, start=None, end=None,
     prog_ind = _utils.ProgressIndicator(tag_ids, start, end)
     while not dataframes or dataframes[-1].shape[0] == per_tag_limit:
         res = _utils.post_request(url=url, body=body, headers=headers)
-        try:
-            dataframes.append(
-                pd.read_csv(io.StringIO(res.content.decode(res.encoding if res.encoding else res.apparent_encoding))))
-        except:
-            return res.content
+        dataframes.append(
+            pd.read_csv(io.StringIO(res.content.decode(res.encoding if res.encoding else res.apparent_encoding))))
         if dataframes[-1].empty and len(dataframes) == 1:
             prog_ind.terminate()
             return pd.DataFrame()
