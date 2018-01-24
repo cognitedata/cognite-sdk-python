@@ -15,19 +15,35 @@ import cognite.config as config
 
 def get_request(url, params=None, headers=None):
     '''Perform a GET request with a predetermined number of retries.'''
+    res = None
     for _ in range(_constants.RETRY_LIMIT + 1):
-        res = requests.get(url, params=params, headers=headers)
+        try:
+            res = requests.get(url, params=params, headers=headers)
+        except Exception as e:
+            raise _APIError(e)
         if res.status_code == 200:
             return res
-    raise _APIError(res.json()['error'])
+    try:
+        err_mess = res.json()['error']
+    except:
+        err_mess = res.content
+    raise _APIError(err_mess)
 
 def post_request(url, body, headers=None):
     '''Perform a POST request with a predetermined number of retries.'''
+    res = None
     for _ in range(_constants.RETRY_LIMIT + 1):
-        res = requests.post(url, data=json.dumps(body), headers=headers)
+        try:
+            res = requests.post(url, data=json.dumps(body), headers=headers)
+        except Exception as e:
+            raise _APIError(e)
         if res.status_code == 200:
             return res
-    raise _APIError(res.json()['error'])
+    try:
+        err_mess = res.json()['error']
+    except:
+        err_mess = res.content
+    raise _APIError(err_mess)
 
 def granularity_to_ms(time_string):
     '''Returns millisecond representation of granularity time string'''
