@@ -189,14 +189,14 @@ def get_datapoints_frame(tag_ids, aggregates, granularity, start=None, end=None,
     '''
     api_key, project = config.get_config_variables(api_key, project)
     url = config.get_base_url() + '/projects/{}/timeseries/dataframe'.format(project)
-    no_agg = 0
-    no_agg_per_tag = len(aggregates)
+    num_aggregates = 0
+    num_agg_per_tag = len(aggregates)
     for tag_id in tag_ids:
         if isinstance(tag_id, str):
-            no_agg += no_agg_per_tag
+            num_aggregates += num_agg_per_tag
         else:
-            no_agg += len(tag_id['aggregates'])
-    per_tag_limit = int(_constants.LIMIT / no_agg)
+            num_aggregates += len(tag_id['aggregates'])
+    per_tag_limit = int(_constants.LIMIT / num_aggregates)
     body = {
         'items': [{'tagId': '{}'.format(tag_id)}
                   if isinstance(tag_id, str)
