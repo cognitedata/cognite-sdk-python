@@ -189,7 +189,14 @@ def get_datapoints_frame(tag_ids, aggregates, granularity, start=None, end=None,
     '''
     api_key, project = config.get_config_variables(api_key, project)
     url = config.get_base_url() + '/projects/{}/timeseries/dataframe'.format(project)
-    per_tag_limit = int(_constants.LIMIT / len(tag_ids))
+    no_agg = 0
+    no_agg_per_tag = len(aggregates)
+    for tag_id in tag_ids:
+        if isinstance(tag_id, str):
+            no_agg += no_agg_per_tag
+        else:
+            no_agg += len(tag_id['aggregates'])
+    per_tag_limit = int(_constants.LIMIT / no_agg)
     body = {
         'items': [{'tagId': '{}'.format(tag_id)}
                   if isinstance(tag_id, str)
@@ -209,8 +216,11 @@ def get_datapoints_frame(tag_ids, aggregates, granularity, start=None, end=None,
     prog_ind = _utils.ProgressIndicator(tag_ids, start, end)
     while not dataframes or dataframes[-1].shape[0] == per_tag_limit:
         res = _utils.post_request(url=url, body=body, headers=headers)
-        dataframes.append(
-            pd.read_csv(io.StringIO(res.content.decode(res.encoding if res.encoding else res.apparent_encoding))))
+        try:
+            dataframes.append(
+                pd.read_csv(io.StringIO(res.content.decode(res.encoding if res.encoding else res.apparent_encoding))))
+        except:
+            return res.content
         if dataframes[-1].empty and len(dataframes) == 1:
             prog_ind.terminate()
             return pd.DataFrame()
