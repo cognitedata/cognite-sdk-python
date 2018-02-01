@@ -30,6 +30,22 @@ data\_objects
     :undoc-members:
     :show-inheritance:
 
+preprocessing
+-------------
+
+.. automodule:: cognite.preprocessing
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+raw
+---
+
+.. automodule:: cognite.raw
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 similarity\_search
 ------------------
 
@@ -50,14 +66,6 @@ timeseries
 ----------
 
 .. automodule:: cognite.timeseries
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-raw
-----------
-
-.. automodule:: cognite.raw
     :members:
     :undoc-members:
     :show-inheritance:
