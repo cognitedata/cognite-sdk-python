@@ -9,9 +9,12 @@ import json
 import math
 import re
 import sys
+
 import requests
+
 import cognite._constants as _constants
 import cognite.config as config
+
 
 def get_request(url, params=None, headers=None):
     '''Perform a GET request with a predetermined number of retries.'''
@@ -28,6 +31,7 @@ def get_request(url, params=None, headers=None):
         err_mess = res.content
     raise _APIError(err_mess)
 
+
 def post_request(url, body, headers=None):
     '''Perform a POST request with a predetermined number of retries.'''
     for _ in range(_constants.RETRY_LIMIT + 1):
@@ -43,6 +47,7 @@ def post_request(url, body, headers=None):
         err_mess = res.content
     raise _APIError(err_mess)
 
+
 def granularity_to_ms(time_string):
     '''Returns millisecond representation of granularity time string'''
     magnitude = int(''.join([c for c in time_string if c.isdigit()]))
@@ -50,6 +55,7 @@ def granularity_to_ms(time_string):
     unit_in_ms = {'s': 1000, 'second': 1000, 'm': 60000, 'minute': 60000,
                   'h': 3600000, 'hour': 3600000, 'd': 86400000, 'day': 86400000}
     return magnitude * unit_in_ms[unit]
+
 
 def _time_ago_to_ms(time_ago_string):
     '''Returns millisecond representation of time-ago string'''
@@ -61,6 +67,7 @@ def _time_ago_to_ms(time_ago_string):
         unit_in_ms = {'s': 1000, 'm': 60000, 'h': 3600000, 'd': 86400000, 'w': 604800000}
         return magnitude * unit_in_ms[unit]
     return None
+
 
 def _get_first_datapoint(tag, start, end):
     '''Returns the first datapoint of a timeseries in the given interval. If no start is specified, the default is 1 week ago
@@ -82,11 +89,14 @@ def _get_first_datapoint(tag, start, end):
         return int(res[0]['timestamp'])
     return None
 
+
 class _APIError(Exception):
     pass
 
+
 class ProgressIndicator():
     '''This class lets the system give the user and indication of how much data remains to be downloaded in the request'''
+
     def __init__(self, tag_ids, start, end):
         self.start, self.end = self._get_start_end(tag_ids, start, end)
         self.length = self.end - self.start
@@ -103,11 +113,12 @@ class ProgressIndicator():
     def _print_progress(self):
         prog = int(math.ceil(self.progress) / 5)
         remainder = 20 - prog
-        sys.stdout.write("\rDownloading requested data: {:5.1f}% |{}|".format(int(math.ceil(self.progress)), '|' * prog + ' ' * remainder))
+        sys.stdout.write("\rDownloading requested data: {:5.1f}% |{}|".format(int(math.ceil(self.progress)),
+                                                                              '|' * prog + ' ' * remainder))
         sys.stdout.flush()
 
     def terminate(self):
-        sys.stdout.write("\r")
+        sys.stdout.write('\r'' + '' ' * 500 + '\r')
 
     def _get_start_end(self, tag_ids, start, end):
         from cognite.timeseries import get_latest
@@ -134,14 +145,14 @@ class ProgressIndicator():
 
         if start is None:
             start = first_timestamp
-        elif _time_ago_to_ms(start): # start is specified as string of format '1d-ago'
+        elif _time_ago_to_ms(start):  # start is specified as string of format '1d-ago'
             start = latest_timestamp - _time_ago_to_ms(start)
         else:
             start = start
 
         if end is None:
             end = latest_timestamp
-        elif _time_ago_to_ms(end): # end is specified as string of format '1d-ago'
+        elif _time_ago_to_ms(end):  # end is specified as string of format '1d-ago'
             end = latest_timestamp - _time_ago_to_ms(end)
         else:
             end = end
