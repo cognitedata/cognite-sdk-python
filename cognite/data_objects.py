@@ -60,9 +60,6 @@ class RawRowDTO(object):
 
 class RawObject(CogniteDataObject):
     """Raw Data Object."""
-    def __init__(self, internal_representation):
-        CogniteDataObject.__init__(self, internal_representation)
-
     def to_json(self):
         """Returns data as a json object"""
         return self.internal_representation['data']['items']
@@ -79,9 +76,6 @@ class TagMatchingObject(CogniteDataObject):
     In addition to the standard output formats this data object also has a to_list() method which returns a list of
     names of the tag matches.
     '''
-    def __init__(self, internal_representation):
-        CogniteDataObject.__init__(self, internal_representation)
-
     def to_pandas(self):
         '''Returns data as a pandas dataframe'''
         matches = []
@@ -121,9 +115,6 @@ class TagMatchingObject(CogniteDataObject):
 # Author: Erlend Vollset
 class DatapointsObject(CogniteDataObject):
     '''Datapoints Object.'''
-    def __init__(self, internal_representation):
-        CogniteDataObject.__init__(self, internal_representation)
-
     def to_json(self):
         '''Returns data as a json object'''
         return self.internal_representation['data']['items'][0]
@@ -136,9 +127,6 @@ class DatapointsObject(CogniteDataObject):
 # Author: Erlend Vollset
 class LatestDatapointObject(CogniteDataObject):
     '''Latest Datapoint Object.'''
-    def __init__(self, internal_representation):
-        CogniteDataObject.__init__(self, internal_representation)
-
     def to_json(self):
         '''Returns data as a json object'''
         return self.internal_representation['data']['items'][0]
@@ -155,9 +143,6 @@ class LatestDatapointObject(CogniteDataObject):
 # Author: Erlend Vollset
 class SimilaritySearchObject(CogniteDataObject):
     '''Similarity Search Data Object.'''
-    def __init__(self, internal_representation):
-        CogniteDataObject.__init__(self, internal_representation)
-
     def to_json(self):
         '''Returns data as a json object'''
         return self.internal_representation['data']['items']
@@ -176,9 +161,6 @@ class AssetSearchObject(CogniteDataObject):
     TODO:
         * For now just a copy of SimilaritySearchObject. Implement correct formatting for this data.
     '''
-    def __init__(self, internal_representation):
-        CogniteDataObject.__init__(self, internal_representation)
-
     def to_json(self):
         '''Returns data as a json object'''
         return self.internal_representation['data']['items']
