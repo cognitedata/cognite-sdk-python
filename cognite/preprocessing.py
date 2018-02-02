@@ -19,8 +19,8 @@ def _merge_dataframes(df1, df2):
     if df2 is None:
         return df1
 
-    return pd.merge(df1, df2, on='timestamp', how='outer')\
-        .sort_values(by='timestamp')\
+    return pd.merge(df1, df2, on='timestamp', how='outer') \
+        .sort_values(by='timestamp') \
         .reset_index(drop=True)
 
 
