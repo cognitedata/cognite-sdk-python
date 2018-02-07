@@ -14,5 +14,5 @@ Attributes:
 
 # GLOBAL CONSTANTS
 BASE_URL = 'https://api.cognitedata.com/api/0.4'
-LIMIT = 100000
+LIMIT = 10000
 RETRY_LIMIT = 1
