@@ -53,7 +53,7 @@ def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=No
         'api-key': api_key,
         'accept': 'application/json'
     }
-    prog_ind = _utils.ProgressIndicator([tag_id], start, end)
+    prog_ind = _utils.ProgressIndicator([tag_id], start, end, api_key, project)
     datapoints = []
     while not datapoints or len(datapoints[-1]) == _constants.LIMIT:
         res = _utils.get_request(url, params=params, headers=headers).json()['data']['items'][0]['datapoints']
@@ -213,7 +213,7 @@ def get_datapoints_frame(tag_ids, aggregates, granularity, start=None, end=None,
         'accept': 'text/csv'
     }
     dataframes = []
-    prog_ind = _utils.ProgressIndicator(tag_ids, start, end)
+    prog_ind = _utils.ProgressIndicator(tag_ids, start, end, api_key, project)
     while not dataframes or dataframes[-1].shape[0] == per_tag_limit:
         res = _utils.post_request(url=url, body=body, headers=headers)
         dataframes.append(
