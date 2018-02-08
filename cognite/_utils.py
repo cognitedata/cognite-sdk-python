@@ -29,6 +29,7 @@ def get_request(url, params=None, headers=None):
         err_mess = res.json()['error']
     except:
         err_mess = res.content
+    err_mess.update({'X-Request-Id': res.headers['X-Request-Id']})
     raise _APIError(err_mess)
 
 
@@ -45,6 +46,7 @@ def post_request(url, body, headers=None):
         err_mess = res.json()['error']
     except:
         err_mess = res.content
+    err_mess.update({'X-Request-Id': res.headers['X-Request-Id']})
     raise _APIError(err_mess)
 
 
