@@ -26,10 +26,10 @@ def get_request(url, params=None, headers=None):
         if res.status_code == 200:
             return res
     try:
-        err_mess = res.json()['error']
+        err_mess = res.json()['error'].__str__()
     except:
-        err_mess = res.content
-    err_mess.update({'X-Request-Id': res.headers['X-Request-Id']})
+        err_mess = res.content.__str__()
+    err_mess += '\nX-Request_id: {}'.format(res.headers['X-Request-Id'])
     raise _APIError(err_mess)
 
 
@@ -43,10 +43,10 @@ def post_request(url, body, headers=None):
         if res.status_code == 200:
             return res
     try:
-        err_mess = res.json()['error']
+        err_mess = res.json()['error'].__str__()
     except:
-        err_mess = res.content
-    err_mess.update({'X-Request-Id': res.headers['X-Request-Id']})
+        err_mess = res.content.__str__()
+    err_mess += '\nX-Request_id: {}'.format(res.headers['X-Request-Id'])
     raise _APIError(err_mess)
 
 
