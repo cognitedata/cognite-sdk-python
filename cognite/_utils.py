@@ -29,7 +29,7 @@ def get_request(url, params=None, headers=None):
         err_mess = res.json()['error'].__str__()
     except:
         err_mess = res.content.__str__()
-    err_mess += '\nX-Request_id: {}'.format(res.headers['X-Request-Id'])
+    err_mess += '\nX-Request_id: {}'.format(res.headers.get('X-Request-Id'))
     raise _APIError(err_mess)
 
 
@@ -46,7 +46,7 @@ def post_request(url, body, headers=None, params=None):
         err_mess = res.json()['error'].__str__()
     except:
         err_mess = res.content.__str__()
-    err_mess += '\nX-Request_id: {}'.format(res.headers['X-Request-Id'])
+    err_mess += '\nX-Request_id: {}'.format(res.headers.get('X-Request-Id'))
     raise _APIError(err_mess)
 
 
