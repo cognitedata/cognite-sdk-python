@@ -272,7 +272,8 @@ def create_rows(
         table_name: str=None,
         rows: List[RawRowDTO]=None,
         api_key=None,
-        project=None
+        project=None,
+        ensure_parent=False
 ):
     """Creates tables in the given Raw API database.
 
@@ -286,6 +287,8 @@ def create_rows(
         api_key (str):          Your api-key.
 
         project (str):          Project name.
+
+        ensure_parent (bool):   Create database/table if it doesn't exist already
 
     Returns:
         RawObject: A data object containing the requested data with several getter methods with different
@@ -308,7 +311,11 @@ def create_rows(
         'content-type': '*/*',
         'accept': 'application/json'
     }
-    res = _utils.post_request(url=url, body=body, headers=headers)
+    if ensure_parent:
+        params = {'ensureParent': 'true'}
+    else:
+        params = {}
+    res = _utils.post_request(url=url, body=body, headers=headers, params=params)
     return RawObject(res.json())
 
 

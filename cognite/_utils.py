@@ -33,11 +33,11 @@ def get_request(url, params=None, headers=None):
     raise _APIError(err_mess)
 
 
-def post_request(url, body, headers=None):
+def post_request(url, body, headers=None, params=None):
     '''Perform a POST request with a predetermined number of retries.'''
     for _ in range(_constants.RETRY_LIMIT + 1):
         try:
-            res = requests.post(url, data=json.dumps(body), headers=headers)
+            res = requests.post(url, data=json.dumps(body), headers=headers, params=params)
         except Exception as e:
             raise _APIError(e)
         if res.status_code == 200:
