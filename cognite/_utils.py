@@ -10,6 +10,8 @@ import math
 import re
 import sys
 
+import gzip
+
 import requests
 
 import cognite._constants as _constants
@@ -33,11 +35,26 @@ def get_request(url, params=None, headers=None):
     raise _APIError(err_mess)
 
 
-def post_request(url, body, headers=None, params=None):
+def post_request(url, body, headers=None, params=None, use_gzip=False):
     '''Perform a POST request with a predetermined number of retries.'''
     for _ in range(_constants.RETRY_LIMIT + 1):
         try:
-            res = requests.post(url, data=json.dumps(body), headers=headers, params=params)
+            if use_gzip:
+                if headers:
+                    headers['Content-Encoding'] = 'gzip'
+                else:
+                    headers = {'Content-Encoding': 'gzip'}
+                res = requests.post(url,
+                                    data=gzip.compress(json.dumps(body).encode('utf-8')),
+                                    headers=headers,
+                                    params=params
+                                    )
+            else:
+                res = requests.post(url,
+                                    data=json.dumps(body),
+                                    headers=headers,
+                                    params=params
+                                    )
         except Exception as e:
             raise _APIError(e)
         if res.status_code == 200:

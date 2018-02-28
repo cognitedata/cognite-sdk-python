@@ -273,7 +273,8 @@ def create_rows(
         rows: List[RawRowDTO]=None,
         api_key=None,
         project=None,
-        ensure_parent=False
+        ensure_parent=False,
+        use_gzip=False
 ):
     """Creates tables in the given Raw API database.
 
@@ -289,6 +290,8 @@ def create_rows(
         project (str):          Project name.
 
         ensure_parent (bool):   Create database/table if it doesn't exist already
+
+        use_gzip (bool):        Compress content using gzip
 
     Returns:
         RawObject: A data object containing the requested data with several getter methods with different
@@ -315,7 +318,7 @@ def create_rows(
         params = {'ensureParent': 'true'}
     else:
         params = {}
-    res = _utils.post_request(url=url, body=body, headers=headers, params=params)
+    res = _utils.post_request(url=url, body=body, headers=headers, params=params, use_gzip=use_gzip)
     return RawObject(res.json())
 
 
