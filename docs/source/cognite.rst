@@ -14,6 +14,13 @@ assets
     :undoc-members:
     :show-inheritance:
 
+cloud\_storage
+--------------
+.. automodule:: cognite.cloud_storage
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 config
 ------
 

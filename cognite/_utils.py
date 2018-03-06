@@ -17,7 +17,6 @@ import requests
 import cognite._constants as _constants
 import cognite.config as config
 
-
 def get_request(url, params=None, headers=None):
     '''Perform a GET request with a predetermined number of retries.'''
     for _ in range(_constants.RETRY_LIMIT + 1):
@@ -65,7 +64,6 @@ def post_request(url, body, headers=None, params=None, use_gzip=False):
         err_mess = res.content.__str__()
     err_mess += '\nX-Request_id: {}'.format(res.headers.get('X-Request-Id'))
     raise _APIError(err_mess)
-
 
 def granularity_to_ms(time_string):
     '''Returns millisecond representation of granularity time string'''
