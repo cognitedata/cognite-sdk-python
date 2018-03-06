@@ -87,6 +87,7 @@ def upload_file(file_name, file_path=None, directory=None, source=None, file_typ
         result.pop('uploadURL')
     return result
 
+
 def list_files(id=None, name=None, directory=None, file_type=None, source=None, api_key=None, project=None, **kwargs):
     '''Get list of files matching query.
 
@@ -142,6 +143,7 @@ def list_files(id=None, name=None, directory=None, file_type=None, source=None, 
         return [file for file in file_list if file['id'] == int(id)]
     return file_list
 
+
 def download_file(id, get_contents=False, project=None, api_key=None):
     '''Get list of files matching query.
 
@@ -170,4 +172,3 @@ def download_file(id, get_contents=False, project=None, api_key=None):
         res = requests.get(dl_link)
         return res.content
     return res.json()['data']
-
