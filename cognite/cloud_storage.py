@@ -148,14 +148,14 @@ def download_file(id, get_contents=False, project=None, api_key=None):
     '''Get list of files matching query.
 
     Args:
-        id (int):                       Path to file to upload, if omitted a upload link will be returned.
+        id (int):                           Path to file to upload, if omitted a upload link will be returned.
 
-        get_contents (bool, optional):    Boolean to determince whether or not to return file contents as string.
-        Default is False and download url is returned.
+        get_contents (bool, optional):      Boolean to determince whether or not to return file contents as string.
+                                            Default is False and download url is returned.
 
-        api_key (str, optional):        Your api-key.
+        api_key (str, optional):            Your api-key.
 
-        project (str, optional):        Project name.
+        project (str, optional):            Project name.
 
     Returns:
         str: Download link if get_contents is False else file contents.
