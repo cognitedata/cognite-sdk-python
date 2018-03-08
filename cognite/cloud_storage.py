@@ -91,6 +91,9 @@ def upload_file(file_name, file_path=None, directory=None, source=None, file_typ
 def list_files(id=None, name=None, directory=None, file_type=None, source=None, api_key=None, project=None, **kwargs):
     '''Get list of files matching query.
 
+    This method will automate paging for the user and return info about all files for the given query. If limit is
+    specified the method will not page and return that many results.
+
     Args:
         file_name (str, optional):      List all files with this name.
 
@@ -111,6 +114,8 @@ def list_files(id=None, name=None, directory=None, file_type=None, source=None, 
 
         sort (str):                     Sort descending or ascending. 'ASC' or 'DESC'.
 
+        limit (int):                    Number of results to return.
+
     Returns:
         list: A list of files with file info.
     '''
@@ -128,13 +133,14 @@ def list_files(id=None, name=None, directory=None, file_type=None, source=None, 
         'source': source,
         'isUploaded': kwargs.get('is_uploaded', None),
         'sort': kwargs.get('sort', None),
-        'limit': 100
+        'limit': kwargs.get('limit', 100)
     }
     file_list = []
     res = _utils.get_request(url=url, headers=headers, params=params)
     file_list.extend(res.json()['data']['items'])
     next_cursor = res.json()['data'].get('nextCursor', None)
-    while next_cursor is not None:
+    limit = kwargs.get('limit', float('inf'))
+    while next_cursor is not None and len(file_list) < limit:
         params['cursor'] = next_cursor
         res = _utils.get_request(url=url, headers=headers, params=params)
         file_list.extend(res.json()['data']['items'])
