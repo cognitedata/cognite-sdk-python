@@ -8,12 +8,13 @@ the following output formats:
     * to_ndarray():   Numpy array
     * to_json():      Json format
 '''
-from abc import ABC, abstractmethod
+import abc, six
 import pandas as pd
 import json
 
 # Author: Erlend Vollset
-class CogniteDataObject(ABC):
+@six.add_metaclass(abc.ABCMeta)
+class CogniteDataObject():
     '''Abstract Cognite Data Object
 
     This abstract class provides a skeleton for all data objects in this module. All data objects should inherit
@@ -21,11 +22,11 @@ class CogniteDataObject(ABC):
     '''
     def __init__(self, internal_representation):
         self.internal_representation = internal_representation
-    @abstractmethod
+    @abc.abstractmethod
     def to_pandas(self):
         '''Returns data as a pandas dataframe'''
         pass
-    @abstractmethod
+    @abc.abstractmethod
     def to_json(self):
         '''Returns data as a json object'''
         pass
