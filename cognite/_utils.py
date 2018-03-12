@@ -5,17 +5,18 @@ This module provides helper methods and different utilities for the Cognite API 
 
 This module is protected and should not used by end-users.
 """
+import gzip
 import json
 import math
 import re
 import sys
-
-import gzip
+from datetime import datetime
 
 import requests
 
 import cognite._constants as _constants
 import cognite.config as config
+
 
 def get_request(url, params=None, headers=None):
     '''Perform a GET request with a predetermined number of retries.'''
@@ -64,6 +65,12 @@ def post_request(url, body, headers=None, params=None, use_gzip=False):
         err_mess = res.content.__str__()
     err_mess += '\nX-Request_id: {}'.format(res.headers.get('X-Request-Id'))
     raise _APIError(err_mess)
+
+
+def datetime_to_ms(dt):
+    epoch = datetime.utcfromtimestamp(0)
+    return int((dt - epoch).total_seconds() * 1000)
+
 
 def granularity_to_ms(time_string):
     '''Returns millisecond representation of granularity time string'''
@@ -116,7 +123,7 @@ class ProgressIndicator():
 
     def __init__(self, tag_ids, start, end, api_key=None, project=None):
         self.api_key = api_key
-        self.project=project
+        self.project = project
         self.start, self.end = self._get_start_end(tag_ids, start, end)
         self.length = self.end - self.start
         self.progress = 0.0
