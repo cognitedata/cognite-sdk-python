@@ -20,11 +20,12 @@ import cognite.config as config
 
 def get_request(url, params=None, headers=None):
     '''Perform a GET request with a predetermined number of retries.'''
-    for _ in range(config.get_number_of_retries() + 1):
+    for number_of_tries in range(config.get_number_of_retries() + 1):
         try:
             res = requests.get(url, params=params, headers=headers)
         except Exception as e:
-            raise _APIError(e)
+            if number_of_tries == config.get_number_of_retries():
+                raise _APIError(e)
         if res.status_code == 200:
             return res
     try:
@@ -37,7 +38,7 @@ def get_request(url, params=None, headers=None):
 
 def post_request(url, body, headers=None, params=None, use_gzip=False):
     '''Perform a POST request with a predetermined number of retries.'''
-    for _ in range(config.get_number_of_retries() + 1):
+    for number_of_tries in range(config.get_number_of_retries() + 1):
         try:
             if use_gzip:
                 if headers:
@@ -56,7 +57,8 @@ def post_request(url, body, headers=None, params=None, use_gzip=False):
                                     params=params
                                     )
         except Exception as e:
-            raise _APIError(e)
+            if number_of_tries == config.get_number_of_retries():
+                raise _APIError(e)
         if res.status_code == 200:
             return res
     try:
