@@ -20,7 +20,7 @@ import cognite.config as config
 
 def get_request(url, params=None, headers=None):
     '''Perform a GET request with a predetermined number of retries.'''
-    for _ in range(_constants.RETRY_LIMIT + 1):
+    for _ in range(config.get_number_of_retries() + 1):
         try:
             res = requests.get(url, params=params, headers=headers)
         except Exception as e:
@@ -37,7 +37,7 @@ def get_request(url, params=None, headers=None):
 
 def post_request(url, body, headers=None, params=None, use_gzip=False):
     '''Perform a POST request with a predetermined number of retries.'''
-    for _ in range(_constants.RETRY_LIMIT + 1):
+    for _ in range(config.get_number_of_retries() + 1):
         try:
             if use_gzip:
                 if headers:
