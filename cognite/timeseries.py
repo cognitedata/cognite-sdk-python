@@ -4,6 +4,7 @@
 This module mirrors the Timeseries API. It allows you to fetch data from the api and output it in various formats.
 """
 import io
+from datetime import datetime
 import pandas as pd
 import cognite.config as config
 import cognite._constants as _constants
@@ -25,11 +26,11 @@ def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=No
         granularity (str):      The granularity of the aggregate values. Valid entries are : 'day/d, hour/h, minute/m,
                                 second/s', or a multiple of these indicated by a number as a prefix e.g. '12hour'.
 
-        start (Union[str, int]):    Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s.
+        start (Union[str, int, datetime]):    Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s.
                                     E.g. '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since
-                                    epoch.
+                                    epoch or a datetime object which will be converted to ms since epoch UTC.
 
-        end (Union[str, int]):      Get datapoints up to this time. Same format as for start.
+        end (Union[str, int, datetime]):      Get datapoints up to this time. Same format as for start.
 
         api_key (str):          Your api-key.
 
@@ -42,6 +43,12 @@ def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=No
     api_key, project = config.get_config_variables(api_key, project)
     tag_id = tag_id.replace('/', '%2F')
     url = config.get_base_url() + '/projects/{}/timeseries/data/{}'.format(project, tag_id)
+
+    if isinstance(start, datetime):
+        start = _utils.datetime_to_ms(start)
+    if isinstance(end, datetime):
+        end = _utils.datetime_to_ms(end)
+
     params = {
         'aggregates': aggregates,
         'granularity': granularity,
@@ -108,11 +115,11 @@ def get_multi_tag_datapoints(tag_ids, aggregates=None, granularity=None, start=N
                                         minute/m, second/s', or a multiple of these indicated by a number as a prefix
                                         e.g. '12hour'.
 
-        start (Union[str, int]):    Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s.
+        start (Union[str, int, datetime]):    Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s.
                                     E.g. '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since
-                                    epoch.
+                                    epoch or a datetime object which will be converted to ms since epoch UTC.
 
-        end (Union[str, int]):      Get datapoints up to this time. Same format as for start.
+        end (Union[str, int, datetime]):      Get datapoints up to this time. Same format as for start.
 
         limit (int):                    Return up to this number of datapoints.
 
@@ -126,6 +133,12 @@ def get_multi_tag_datapoints(tag_ids, aggregates=None, granularity=None, start=N
     '''
     api_key, project = config.get_config_variables(api_key, project)
     url = config.get_base_url() + '/projects/{}/timeseries/dataquery'.format(project)
+
+    if isinstance(start, datetime):
+        start = _utils.datetime_to_ms(start)
+    if isinstance(end, datetime):
+        end = _utils.datetime_to_ms(end)
+
     body = {
         'items': [{'tagId': '{}'.format(tag_id)}
                   if isinstance(tag_id, str)
@@ -160,11 +173,11 @@ def get_datapoints_frame(tag_ids, aggregates, granularity, start=None, end=None,
         granularity (str):  The granularity of the aggregate values. Valid entries are : 'day/d, hour/h, minute/m,
                             second/s', or a multiple of these indicated by a number as a prefix e.g. '12hour'.
 
-        start (Union[str, int]):    Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s.
+        start (Union[str, int, datetime]):    Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s.
                                     E.g. '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since
-                                    epoch.
+                                    epoch or a datetime object which will be converted to ms since epoch UTC.
 
-        end (Union[str, int]):      Get datapoints up to this time. Same format as for start.
+        end (Union[str, int, datetime]):      Get datapoints up to this time. Same format as for start.
 
         api_key (str): Your api-key.
 
@@ -189,6 +202,12 @@ def get_datapoints_frame(tag_ids, aggregates, granularity, start=None, end=None,
     '''
     api_key, project = config.get_config_variables(api_key, project)
     url = config.get_base_url() + '/projects/{}/timeseries/dataframe'.format(project)
+
+    if isinstance(start, datetime):
+        start = _utils.datetime_to_ms(start)
+    if isinstance(end, datetime):
+        end = _utils.datetime_to_ms(end)
+
     num_aggregates = 0
     num_agg_per_tag = len(aggregates)
     for tag_id in tag_ids:
