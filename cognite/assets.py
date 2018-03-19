@@ -3,10 +3,11 @@
 
 This module mirrors the Assets API.
 """
-import cognite.config as config
 import cognite._constants as _constants
 import cognite._utils as _utils
+import cognite.config as config
 from cognite.data_objects import AssetSearchObject
+
 
 # Author: TK
 def search_assets(description, api_key=None, project=None):

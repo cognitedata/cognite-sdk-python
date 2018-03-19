@@ -14,7 +14,6 @@ from datetime import datetime
 
 import requests
 
-import cognite._constants as _constants
 import cognite.config as config
 
 
