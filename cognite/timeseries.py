@@ -72,21 +72,23 @@ def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=No
     prog_ind = _utils.ProgressIndicator([tag_id], start, end, api_key, project)
     datapoints = []
     while not datapoints or len(datapoints[-1]) == limit:
+        res = _utils.get_request(url, params=params, headers=headers)
         if use_protobuf:
-            res = _utils.get_request(url, params=params, headers=headers)#.json()['data']['items'][0]['datapoints']
             ts_data = _api_timeseries_data_v1_pb2.TimeseriesData()
             ts_data.ParseFromString(res.content)
             res = [{'timestamp': p.timestamp, 'value': p.value} for p in ts_data.numericData.points]
         else:
-            res = _utils.get_request(url, params=params, headers=headers).json()['data']['items'][0]['datapoints']
+            res = res['data']['items'][0]['datapoints']
 
         if not res and not datapoints:
             prog_ind.terminate()
             return DatapointsObject({'data': {'items': [{'tagId': tag_id, 'datapoints': []}]}})
+
         datapoints.append(res)
         latest_timestamp = int(datapoints[-1][-1]['timestamp'])
         prog_ind.update_progress(latest_timestamp)
         params['start'] = latest_timestamp + (_utils.granularity_to_ms(granularity) if granularity else 0)
+
     prog_ind.terminate()
     dps = []
     [ dps.extend(el) for el in datapoints ]
