@@ -8,11 +8,13 @@ the following output formats:
     * to_ndarray():   Numpy array
     * to_json():      Json format
 '''
-import abc, six
-import pandas as pd
+import abc
 import json
 
-# Author: Erlend Vollset
+import pandas as pd
+import six
+
+
 @six.add_metaclass(abc.ABCMeta)
 class CogniteDataObject():
     '''Abstract Cognite Data Object
@@ -20,12 +22,15 @@ class CogniteDataObject():
     This abstract class provides a skeleton for all data objects in this module. All data objects should inherit
     this class.
     '''
+
     def __init__(self, internal_representation):
         self.internal_representation = internal_representation
+
     @abc.abstractmethod
     def to_pandas(self):
         '''Returns data as a pandas dataframe'''
         pass
+
     @abc.abstractmethod
     def to_json(self):
         '''Returns data as a json object'''
@@ -48,6 +53,7 @@ class RawRowDTO(object):
         columns (int):  A key/value-map consisting of the values in the row.
 
     """
+
     def __init__(self, key, columns):
         self.key = key
         self.columns = columns
@@ -61,6 +67,7 @@ class RawRowDTO(object):
 
 class RawObject(CogniteDataObject):
     """Raw Data Object."""
+
     def to_json(self):
         """Returns data as a json object"""
         return self.internal_representation['data']['items']
@@ -70,13 +77,13 @@ class RawObject(CogniteDataObject):
         return pd.DataFrame(self.internal_representation['data']['items'])
 
 
-# Author: Erlend Vollset
 class TagMatchingObject(CogniteDataObject):
     '''Tag Matching Data Object.
 
     In addition to the standard output formats this data object also has a to_list() method which returns a list of
     names of the tag matches.
     '''
+
     def to_pandas(self):
         '''Returns data as a pandas dataframe'''
         matches = []
@@ -113,9 +120,9 @@ class TagMatchingObject(CogniteDataObject):
         return self.to_pandas().sort_values(['score', 'match'])['match'].tolist()
 
 
-# Author: Erlend Vollset
 class DatapointsObject(CogniteDataObject):
     '''Datapoints Object.'''
+
     def to_json(self):
         '''Returns data as a json object'''
         return self.internal_representation['data']['items'][0]
@@ -125,9 +132,9 @@ class DatapointsObject(CogniteDataObject):
         return pd.DataFrame(self.internal_representation['data']['items'][0]['datapoints'])
 
 
-# Author: Erlend Vollset
 class LatestDatapointObject(CogniteDataObject):
     '''Latest Datapoint Object.'''
+
     def to_json(self):
         '''Returns data as a json object'''
         return self.internal_representation['data']['items'][0]
@@ -141,9 +148,9 @@ class LatestDatapointObject(CogniteDataObject):
         return self.to_pandas().values[0]
 
 
-# Author: Erlend Vollset
 class SimilaritySearchObject(CogniteDataObject):
     '''Similarity Search Data Object.'''
+
     def to_json(self):
         '''Returns data as a json object'''
         return self.internal_representation['data']['items']
@@ -155,13 +162,13 @@ class SimilaritySearchObject(CogniteDataObject):
         return pd.DataFrame()
 
 
-# Author: T.K
 class AssetSearchObject(CogniteDataObject):
     '''Assets Search Data Object
 
     TODO:
         * For now just a copy of SimilaritySearchObject. Implement correct formatting for this data.
     '''
+
     def to_json(self):
         '''Returns data as a json object'''
         return self.internal_representation['data']['items']
