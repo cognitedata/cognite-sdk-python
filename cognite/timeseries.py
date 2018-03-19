@@ -5,12 +5,14 @@ This module mirrors the Timeseries API. It allows you to fetch data from the api
 """
 import io
 from datetime import datetime
+
 import pandas as pd
-import cognite.config as config
+
 import cognite._constants as _constants
 import cognite._utils as _utils
-
+import cognite.config as config
 from cognite.data_objects import DatapointsObject, LatestDatapointObject
+
 
 def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=None, api_key=None, project=None):
     '''Returns a DatapointsObject containing a list of datapoints for the given query.
@@ -73,8 +75,9 @@ def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=No
         params['start'] = latest_timestamp + (_utils.granularity_to_ms(granularity) if granularity else 0)
     prog_ind.terminate()
     dps = []
-    [ dps.extend(el) for el in datapoints ]
+    [dps.extend(el) for el in datapoints]
     return DatapointsObject({'data': {'items': [{'tagId': tag_id, 'datapoints': dps}]}})
+
 
 def get_latest(tag_id, api_key=None, project=None):
     '''Returns a LatestDatapointObject containing the latest datapoint for the given tag_id.
@@ -99,6 +102,7 @@ def get_latest(tag_id, api_key=None, project=None):
     }
     res = _utils.get_request(url, headers=headers)
     return LatestDatapointObject(res.json())
+
 
 def get_multi_tag_datapoints(tag_ids, aggregates=None, granularity=None, start=None, end=None, limit=_constants.LIMIT,
                              api_key=None, project=None):
@@ -142,7 +146,8 @@ def get_multi_tag_datapoints(tag_ids, aggregates=None, granularity=None, start=N
     body = {
         'items': [{'tagId': '{}'.format(tag_id)}
                   if isinstance(tag_id, str)
-                  else {'tagId': '{}'.format(tag_id['tagId']), 'aggregates': tag_id['aggregates']} for tag_id in tag_ids],
+                  else {'tagId': '{}'.format(tag_id['tagId']), 'aggregates': tag_id['aggregates']} for tag_id in
+                  tag_ids],
         'aggregates': aggregates,
         'granularity': granularity,
         'start': start,
@@ -156,6 +161,7 @@ def get_multi_tag_datapoints(tag_ids, aggregates=None, granularity=None, start=N
     }
     res = _utils.post_request(url=url, body=body, headers=headers)
     return [DatapointsObject({'data': {'items': [dp]}}) for dp in res.json()['data']['items']]
+
 
 def get_datapoints_frame(tag_ids, aggregates, granularity, start=None, end=None, api_key=None, project=None):
     '''Returns a pandas dataframe of datapoints for the given tag_ids all on the same timestamps.
@@ -219,7 +225,8 @@ def get_datapoints_frame(tag_ids, aggregates, granularity, start=None, end=None,
     body = {
         'items': [{'tagId': '{}'.format(tag_id)}
                   if isinstance(tag_id, str)
-                  else {'tagId': '{}'.format(tag_id['tagId']), 'aggregates': tag_id['aggregates']} for tag_id in tag_ids],
+                  else {'tagId': '{}'.format(tag_id['tagId']), 'aggregates': tag_id['aggregates']} for tag_id in
+                  tag_ids],
         'aggregates': aggregates,
         'granularity': granularity,
         'start': start,

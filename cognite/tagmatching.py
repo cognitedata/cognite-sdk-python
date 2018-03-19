@@ -3,10 +3,10 @@
 
 This module mirrors the Tag Matching API. It allows the user to search for tag id matches.
 """
-import cognite.config as config
 import cognite._utils as _utils
-
+import cognite.config as config
 from cognite.data_objects import TagMatchingObject
+
 
 def tag_matching(tag_ids, fuzzy_threshold=0, platform=None, api_key=None, project=None):
     '''Returns a TagMatchingObject containing a list of matched tags for the given query.

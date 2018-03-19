@@ -4,16 +4,16 @@
 This module mirrors the Raw API. It allows the user to handle raw data.
 """
 
-import cognite.config as config
-import cognite._utils as _utils
-
 from typing import List
+
+import cognite._utils as _utils
+import cognite.config as config
 from cognite.data_objects import RawObject, RawRowDTO
 
 
 def get_databases(
-        limit: int=None,
-        cursor: str=None,
+        limit: int = None,
+        cursor: str = None,
         api_key=None,
         project=None
 ):
@@ -110,13 +110,13 @@ def delete_databases(
         'accept': 'application/json'
     }
     res = _utils.post_request(url=url, body=body, headers=headers)
-    return res # todo: return something else? Returning RawObject(res.json()) doesn't work
+    return res  # todo: return something else? Returning RawObject(res.json()) doesn't work
 
 
 def get_tables(
-        database_name: str=None,
-        limit: int=None,
-        cursor: str=None,
+        database_name: str = None,
+        limit: int = None,
+        cursor: str = None,
         api_key=None,
         project=None
 ):
@@ -154,8 +154,8 @@ def get_tables(
 
 
 def create_tables(
-        database_name: str=None,
-        table_names: list=None,
+        database_name: str = None,
+        table_names: list = None,
         api_key=None,
         project=None
 ):
@@ -190,8 +190,8 @@ def create_tables(
 
 
 def delete_tables(
-        database_name: str=None,
-        table_names: list=None,
+        database_name: str = None,
+        table_names: list = None,
         api_key=None,
         project=None
 ):
@@ -221,14 +221,14 @@ def delete_tables(
         'accept': 'application/json'
     }
     res = _utils.post_request(url=url, body=body, headers=headers)
-    return res # todo: return something else? Returning RawObject(res.json()) doesn't work
+    return res  # todo: return something else? Returning RawObject(res.json()) doesn't work
 
 
 def get_rows(
-        database_name: str=None,
-        table_name: str=None,
-        limit: int=None,
-        cursor: str=None,
+        database_name: str = None,
+        table_name: str = None,
+        limit: int = None,
+        cursor: str = None,
         api_key=None,
         project=None
 ):
@@ -268,9 +268,9 @@ def get_rows(
 
 
 def create_rows(
-        database_name: str=None,
-        table_name: str=None,
-        rows: List[RawRowDTO]=None,
+        database_name: str = None,
+        table_name: str = None,
+        rows: List[RawRowDTO] = None,
         api_key=None,
         project=None,
         ensure_parent=False,
@@ -323,9 +323,9 @@ def create_rows(
 
 
 def delete_rows(
-        database_name: str=None,
-        table_name: str=None,
-        rows: List[RawRowDTO]=None,
+        database_name: str = None,
+        table_name: str = None,
+        rows: List[RawRowDTO] = None,
         api_key=None,
         project=None
 ):
@@ -363,13 +363,13 @@ def delete_rows(
         'accept': 'application/json'
     }
     res = _utils.post_request(url=url, body=body, headers=headers)
-    return res # todo: return something else? Returning RawObject(res.json()) doesn't work
+    return res  # todo: return something else? Returning RawObject(res.json()) doesn't work
 
 
 def get_row(
-        database_name: str=None,
-        table_name: str=None,
-        row_key: str=None,
+        database_name: str = None,
+        table_name: str = None,
+        row_key: str = None,
         api_key=None,
         project=None
 ):
