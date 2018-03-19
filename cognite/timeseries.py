@@ -11,8 +11,10 @@ import cognite._constants as _constants
 import cognite._utils as _utils
 
 from cognite.data_objects import DatapointsObject, LatestDatapointObject
+from cognite._protobuf_descriptors import _api_timeseries_data_v1_pb2
 
-def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=None, api_key=None, project=None):
+
+def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=None, **kwargs):
     '''Returns a DatapointsObject containing a list of datapoints for the given query.
 
     This method will automate paging for the user and return all data for the given time period.
@@ -32,6 +34,10 @@ def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=No
 
         end (Union[str, int, datetime]):      Get datapoints up to this time. Same format as for start.
 
+    Keyword Arguments:
+        protobuf (bool):        Download the data using the binary protobuf format. Only applicable when getting raw data.
+                                Defaults to False.
+
         api_key (str):          Your api-key.
 
         project (str):          Project name.
@@ -40,7 +46,7 @@ def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=No
         DatapointsObject: A data object containing the requested data with several getter methods with different
         output formats.
     '''
-    api_key, project = config.get_config_variables(api_key, project)
+    api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
     tag_id = tag_id.replace('/', '%2F')
     url = config.get_base_url() + '/projects/{}/timeseries/data/{}'.format(project, tag_id)
 
@@ -49,21 +55,31 @@ def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=No
     if isinstance(end, datetime):
         end = _utils.datetime_to_ms(end)
 
+    use_protobuf = kwargs.get('protobuf', False)
+    limit = _constants.LIMIT if aggregates is None else _constants.LIMIT_AGG
+
     params = {
         'aggregates': aggregates,
         'granularity': granularity,
-        'limit': _constants.LIMIT,
+        'limit': limit,
         'start': start,
         'end': end,
     }
     headers = {
         'api-key': api_key,
-        'accept': 'application/json'
+        'accept': 'application/protobuf' if use_protobuf else 'application/json'
     }
     prog_ind = _utils.ProgressIndicator([tag_id], start, end, api_key, project)
     datapoints = []
-    while not datapoints or len(datapoints[-1]) == _constants.LIMIT:
-        res = _utils.get_request(url, params=params, headers=headers).json()['data']['items'][0]['datapoints']
+    while not datapoints or len(datapoints[-1]) == limit:
+        if use_protobuf:
+            res = _utils.get_request(url, params=params, headers=headers)#.json()['data']['items'][0]['datapoints']
+            ts_data = _api_timeseries_data_v1_pb2.TimeseriesData()
+            ts_data.ParseFromString(res.content)
+            res = [{'timestamp': p.timestamp, 'value': p.value} for p in ts_data.numericData.points]
+        else:
+            res = _utils.get_request(url, params=params, headers=headers).json()['data']['items'][0]['datapoints']
+
         if not res and not datapoints:
             prog_ind.terminate()
             return DatapointsObject({'data': {'items': [{'tagId': tag_id, 'datapoints': []}]}})
@@ -76,12 +92,13 @@ def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=No
     [ dps.extend(el) for el in datapoints ]
     return DatapointsObject({'data': {'items': [{'tagId': tag_id, 'datapoints': dps}]}})
 
-def get_latest(tag_id, api_key=None, project=None):
+def get_latest(tag_id, **kwargs):
     '''Returns a LatestDatapointObject containing the latest datapoint for the given tag_id.
 
     Args:
         tag_id (str):           The tag_id to retrieve data for.
 
+    Keyword Arguments:
         api_key (str):          Your api-key.
 
         project (str):          Project name.
@@ -90,7 +107,7 @@ def get_latest(tag_id, api_key=None, project=None):
         DatapointsObject: A data object containing the requested data with several getter methods with different
         output formats.
     '''
-    api_key, project = config.get_config_variables(api_key, project)
+    api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
     tag_id = tag_id.replace('/', '%2F')
     url = config.get_base_url() + '/projects/{}/timeseries/latest/{}'.format(project, tag_id)
     headers = {
@@ -100,8 +117,7 @@ def get_latest(tag_id, api_key=None, project=None):
     res = _utils.get_request(url, headers=headers)
     return LatestDatapointObject(res.json())
 
-def get_multi_tag_datapoints(tag_ids, aggregates=None, granularity=None, start=None, end=None, limit=_constants.LIMIT,
-                             api_key=None, project=None):
+def get_multi_tag_datapoints(tag_ids, aggregates=None, granularity=None, start=None, end=None, limit=None, **kwargs):
     '''Returns a list of DatapointsObjects each of which contains a list of datapoints for the given tag_id.
 
     Args:
@@ -123,6 +139,7 @@ def get_multi_tag_datapoints(tag_ids, aggregates=None, granularity=None, start=N
 
         limit (int):                    Return up to this number of datapoints.
 
+    Keyword Arguments:
         api_key (str):                  Your api-key.
 
         project (str):                  Project name.
@@ -131,13 +148,16 @@ def get_multi_tag_datapoints(tag_ids, aggregates=None, granularity=None, start=N
         list(DatapointsObject): A list of data objects containing the requested data with several getter methods
         with different output formats.
     '''
-    api_key, project = config.get_config_variables(api_key, project)
+    api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
     url = config.get_base_url() + '/projects/{}/timeseries/dataquery'.format(project)
 
     if isinstance(start, datetime):
         start = _utils.datetime_to_ms(start)
     if isinstance(end, datetime):
         end = _utils.datetime_to_ms(end)
+
+    if limit is None:
+        limit = _constants.LIMIT if aggregates is not None else _constants.LIMIT_AGG
 
     body = {
         'items': [{'tagId': '{}'.format(tag_id)}
@@ -157,7 +177,7 @@ def get_multi_tag_datapoints(tag_ids, aggregates=None, granularity=None, start=N
     res = _utils.post_request(url=url, body=body, headers=headers)
     return [DatapointsObject({'data': {'items': [dp]}}) for dp in res.json()['data']['items']]
 
-def get_datapoints_frame(tag_ids, aggregates, granularity, start=None, end=None, api_key=None, project=None):
+def get_datapoints_frame(tag_ids, aggregates, granularity, start=None, end=None, **kwargs):
     '''Returns a pandas dataframe of datapoints for the given tag_ids all on the same timestamps.
 
     This method will automate paging for the user and return all data for the given time period.
@@ -179,6 +199,7 @@ def get_datapoints_frame(tag_ids, aggregates, granularity, start=None, end=None,
 
         end (Union[str, int, datetime]):      Get datapoints up to this time. Same format as for start.
 
+    Keyword Arguments:
         api_key (str): Your api-key.
 
         project (str): Project name.
@@ -200,7 +221,7 @@ def get_datapoints_frame(tag_ids, aggregates, granularity, start=None, end=None,
             Using both:
                 ['<tagid1>', {'tagId': '<tag_id2>', 'aggregates': ['<aggfunc1>', '<aggfunc2>']}]
     '''
-    api_key, project = config.get_config_variables(api_key, project)
+    api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
     url = config.get_base_url() + '/projects/{}/timeseries/dataframe'.format(project)
 
     if isinstance(start, datetime):
