@@ -13,8 +13,12 @@ sphinx = "*"
 pylint = "*"
 pandas = "*"
 requests = "*"
+protobuf = "*"
+
 
 [dev-packages]
+
+
 
 [requires]
 
