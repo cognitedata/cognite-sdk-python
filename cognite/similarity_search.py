@@ -7,6 +7,7 @@ import cognite._utils as _utils
 from cognite.config import get_config_variables, get_base_url
 from cognite.data_objects import SimilaritySearchObject
 
+
 def search(input_tags, query_tags, input_interval, query_interval, modes, limit=10, api_key=None, project=None):
     '''Returns patterns within query interval which are similar to input pattern.
 
