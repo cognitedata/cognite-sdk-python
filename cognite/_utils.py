@@ -17,14 +17,14 @@ import requests
 import cognite.config as config
 
 
-def get_request(url, params=None, headers=None):
+def get_request(url, params=None, headers=None, cookies=None):
     '''Perform a GET request with a predetermined number of retries.'''
     for number_of_tries in range(config.get_number_of_retries() + 1):
         try:
-            res = requests.get(url, params=params, headers=headers)
+            res = requests.get(url, params=params, headers=headers, cookies=cookies)
         except Exception as e:
             if number_of_tries == config.get_number_of_retries():
-                raise _APIError(e)
+                raise APIError(e)
         if res.status_code == 200:
             return res
     try:
@@ -32,10 +32,10 @@ def get_request(url, params=None, headers=None):
     except:
         err_mess = res.content.__str__()
     err_mess += '\nX-Request_id: {}'.format(res.headers.get('X-Request-Id'))
-    raise _APIError(err_mess)
+    raise APIError(err_mess)
 
 
-def post_request(url, body, headers=None, params=None, use_gzip=False):
+def post_request(url, body, headers=None, params=None, cookies=None, use_gzip=False):
     '''Perform a POST request with a predetermined number of retries.'''
     for number_of_tries in range(config.get_number_of_retries() + 1):
         try:
@@ -47,17 +47,19 @@ def post_request(url, body, headers=None, params=None, use_gzip=False):
                 res = requests.post(url,
                                     data=gzip.compress(json.dumps(body).encode('utf-8')),
                                     headers=headers,
-                                    params=params
+                                    params=params,
+                                    cookies=cookies
                                     )
             else:
                 res = requests.post(url,
                                     data=json.dumps(body),
                                     headers=headers,
-                                    params=params
+                                    params=params,
+                                    cookies=cookies
                                     )
         except Exception as e:
             if number_of_tries == config.get_number_of_retries():
-                raise _APIError(e)
+                raise APIError(e)
         if res.status_code == 200:
             return res
     try:
@@ -65,7 +67,7 @@ def post_request(url, body, headers=None, params=None, use_gzip=False):
     except:
         err_mess = res.content.__str__()
     err_mess += '\nX-Request_id: {}'.format(res.headers.get('X-Request-Id'))
-    raise _APIError(err_mess)
+    raise APIError(err_mess)
 
 
 def datetime_to_ms(dt):
@@ -95,7 +97,9 @@ def _time_ago_to_ms(time_ago_string):
 
 
 def _get_first_datapoint(tag, start, end, api_key, project):
-    '''Returns the first datapoint of a timeseries in the given interval. If no start is specified, the default is 1 week ago
+    '''Returns the first datapoint of a timeseries in the given interval.
+
+    If no start is specified, the default is 1 week ago
     '''
     api_key, project = config.get_config_variables(api_key, project)
     tag = tag.replace('/', '%2F')
@@ -109,13 +113,18 @@ def _get_first_datapoint(tag, start, end, api_key, project):
         'api-key': api_key,
         'accept': 'application/json'
     }
-    res = get_request(url, params=params, headers=headers).json()['data']['items'][0]['datapoints']
+    res = get_request(
+        url,
+        params=params,
+        headers=headers,
+        cookies=config.get_cookies()
+    ).json()['data']['items'][0]['datapoints']
     if res:
         return int(res[0]['timestamp'])
     return None
 
 
-class _APIError(Exception):
+class APIError(Exception):
     pass
 
 
