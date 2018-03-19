@@ -65,7 +65,12 @@ def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=No
     prog_ind = _utils.ProgressIndicator([tag_id], start, end, api_key, project)
     datapoints = []
     while not datapoints or len(datapoints[-1]) == _constants.LIMIT:
-        res = _utils.get_request(url, params=params, headers=headers).json()['data']['items'][0]['datapoints']
+        res = _utils.get_request(
+            url,
+            params=params,
+            headers=headers,
+            cookies=config.get_cookies()
+        ).json()['data']['items'][0]['datapoints']
         if not res and not datapoints:
             prog_ind.terminate()
             return DatapointsObject({'data': {'items': [{'tagId': tag_id, 'datapoints': []}]}})
@@ -100,7 +105,7 @@ def get_latest(tag_id, api_key=None, project=None):
         'api-key': api_key,
         'accept': 'application/json'
     }
-    res = _utils.get_request(url, headers=headers)
+    res = _utils.get_request(url, headers=headers, cookies=config.get_cookies())
     return LatestDatapointObject(res.json())
 
 
@@ -159,7 +164,7 @@ def get_multi_tag_datapoints(tag_ids, aggregates=None, granularity=None, start=N
         'content-type': 'application/json',
         'accept': 'application/json'
     }
-    res = _utils.post_request(url=url, body=body, headers=headers)
+    res = _utils.post_request(url=url, body=body, headers=headers, cookies=config.get_cookies())
     return [DatapointsObject({'data': {'items': [dp]}}) for dp in res.json()['data']['items']]
 
 
@@ -241,7 +246,7 @@ def get_datapoints_frame(tag_ids, aggregates, granularity, start=None, end=None,
     dataframes = []
     prog_ind = _utils.ProgressIndicator(tag_ids, start, end, api_key, project)
     while not dataframes or dataframes[-1].shape[0] == per_tag_limit:
-        res = _utils.post_request(url=url, body=body, headers=headers)
+        res = _utils.post_request(url=url, body=body, headers=headers, cookies=config.get_cookies())
         dataframes.append(
             pd.read_csv(io.StringIO(res.content.decode(res.encoding if res.encoding else res.apparent_encoding))))
         if dataframes[-1].empty and len(dataframes) == 1:
