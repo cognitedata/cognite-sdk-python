@@ -49,5 +49,5 @@ def search(input_tags, query_tags, input_interval, query_interval, modes, limit=
         'content-type': 'application/json',
         'accept': 'application/json'
     }
-    res = _utils.post_request(url=url, body=body, headers=headers)
+    res = _utils.post_request(url=url, body=body, headers=headers, cookies=config.get_cookies())
     return SimilaritySearchObject(res.json())

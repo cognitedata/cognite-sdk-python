@@ -44,5 +44,5 @@ def tag_matching(tag_ids, fuzzy_threshold=0, platform=None, api_key=None, projec
         'content-type': '*/*',
         'accept': 'application/json'
     }
-    res = _utils.post_request(url=url, body=body, headers=headers)
+    res = _utils.post_request(url=url, body=body, headers=headers, cookies=config.get_cookies())
     return TagMatchingObject(res.json())
