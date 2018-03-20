@@ -98,7 +98,9 @@ def _time_ago_to_ms(time_ago_string):
 
 
 def get_first_datapoint_ts(tag, start, end, api_key, project):
-    '''Returns the first datapoint of a timeseries in the given interval. If no start is specified, the default is 1 week ago
+    '''Returns the timestamp of the first datapoint of a timeseries in the given interval.
+
+    If no start is specified, the default is 1 week ago
     '''
     api_key, project = config.get_config_variables(api_key, project)
     tag = tag.replace('/', '%2F')
@@ -118,6 +120,7 @@ def get_first_datapoint_ts(tag, start, end, api_key, project):
     return None
 
 def get_last_datapoint_ts(tag, api_key, project):
+    '''Returns the timestamp of the last datapoint of a timeseries.'''
     from cognite.timeseries import get_latest
     return int(get_latest(tag, api_key=api_key, project=project).to_json()['timestamp'])
 
