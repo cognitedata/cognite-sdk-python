@@ -65,12 +65,14 @@ def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=No
     steps = min(num_of_processes, max(1, int(diff / granularity_ms)))
     step_size = _utils.round_to_nearest(int(diff / steps), base=granularity_ms)
 
+    use_protobuf = kwargs.get('protobuf', True) and aggregates is None
+
     partial_get_dps = partial(
         _get_datapoints_helper_wrapper,
         tag_id=tag_id,
         aggregates=aggregates,
         granularity=granularity,
-        protobuf=True,
+        protobuf=use_protobuf,
         api_key=api_key,
         project=project
     )
@@ -146,7 +148,7 @@ def _get_datapoints_helper(tag_id, aggregates=None, granularity=None, start=None
     tag_id = tag_id.replace('/', '%2F')
     url = config.get_base_url() + '/projects/{}/timeseries/data/{}'.format(project, tag_id)
 
-    use_protobuf = kwargs.get('protobuf', True) and aggregates is None
+    use_protobuf = kwargs.get('protobuf', True)
     limit = _constants.LIMIT if aggregates is None else _constants.LIMIT_AGG
 
     params = {
