@@ -173,9 +173,9 @@ class ProgressIndicator():
 
         for tag in tag_ids:
             if isinstance(tag, str):
-                tag_end = int(get_latest(tag, self.api_key, self.project).to_json()['timestamp'])
+                tag_end = int(get_latest(tag, api_key=self.api_key, project=self.project).to_json()['timestamp'])
             else:
-                tag_end = int(get_latest(tag['tagId'], self.api_key, self.project).to_json()['timestamp'])
+                tag_end = int(get_latest(tag['tagId'], api_key=self.api_key, project=self.project).to_json()['timestamp'])
             if tag_end > latest_timestamp:
                 latest_timestamp = tag_end
 
