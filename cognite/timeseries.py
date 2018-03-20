@@ -450,9 +450,11 @@ def _get_datapoints_frame_helper(tag_ids, aggregates, granularity, start=None, e
         res = _utils.post_request(url=url, body=body, headers=headers)
         dataframes.append(
             pd.read_csv(io.StringIO(res.content.decode(res.encoding if res.encoding else res.apparent_encoding))))
-        if dataframes[-1].empty and len(dataframes) == 1:
-            prog_ind.terminate()
-            return pd.DataFrame()
+        if dataframes[-1].empty:
+            warning = "An interval with no data has been requested ({}, {})." \
+                .format(body['start'], body['end'])
+            warnings.warn(warning)
+            break
         latest_timestamp = int(dataframes[-1].iloc[-1, 0])
         prog_ind.update_progress(latest_timestamp)
         body['start'] = latest_timestamp + _utils.granularity_to_ms(granularity)
