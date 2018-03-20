@@ -79,7 +79,7 @@ def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=No
             ts_data.ParseFromString(res.content)
             res = [{'timestamp': p.timestamp, 'value': p.value} for p in ts_data.numericData.points]
         else:
-            res = res['data']['items'][0]['datapoints']
+            res = res.json()['data']['items'][0]['datapoints']
 
         if not res and not datapoints:
             prog_ind.terminate()
