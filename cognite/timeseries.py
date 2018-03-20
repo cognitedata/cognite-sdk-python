@@ -185,7 +185,8 @@ def _get_datapoints_helper(tag_id, aggregates=None, granularity=None, start=None
         latest_timestamp = int(datapoints[-1][-1]['timestamp'])
         prog_ind.update_progress(latest_timestamp)
         params['start'] = latest_timestamp + (_utils.granularity_to_ms(granularity) if granularity else 1)
-    prog_ind.terminate()
+    if display_progress:
+        prog_ind.terminate()
     dps = []
     [dps.extend(el) for el in datapoints]
     return dps
@@ -452,8 +453,9 @@ def _get_datapoints_frame_helper(tag_ids, aggregates, granularity, start=None, e
         'accept': 'text/csv'
     }
     dataframes = []
+    display_progress = kwargs.get('display_progress', True)
     prog_ind = _utils.ProgressIndicator(tag_ids, start, end, api_key, project,
-                                        display_progress=kwargs.get('display_progress', True))
+                                        display_progress=display_progress)
     while not dataframes or dataframes[-1].shape[0] == per_tag_limit:
         res = _utils.post_request(url=url, body=body, headers=headers)
         dataframes.append(
@@ -466,5 +468,6 @@ def _get_datapoints_frame_helper(tag_ids, aggregates, granularity, start=None, e
         latest_timestamp = int(dataframes[-1].iloc[-1, 0])
         prog_ind.update_progress(latest_timestamp)
         body['start'] = latest_timestamp + _utils.granularity_to_ms(granularity)
-    prog_ind.terminate()
+    if display_progress:
+        prog_ind.terminate()
     return pd.concat(dataframes).reset_index(drop=True)
