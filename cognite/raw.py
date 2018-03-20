@@ -44,7 +44,7 @@ def get_databases(
         'content-type': '*/*',
         'accept': 'application/json'
     }
-    res = _utils.get_request(url=url, params=params, headers=headers)
+    res = _utils.get_request(url=url, params=params, headers=headers, cookies=config.get_cookies())
     return RawObject(res.json())
 
 
@@ -77,7 +77,7 @@ def create_databases(
         'content-type': '*/*',
         'accept': 'application/json'
     }
-    res = _utils.post_request(url=url, body=body, headers=headers)
+    res = _utils.post_request(url=url, body=body, headers=headers, cookies=config.get_cookies())
     return RawObject(res.json())
 
 
@@ -109,7 +109,7 @@ def delete_databases(
         'content-type': '*/*',
         'accept': 'application/json'
     }
-    res = _utils.post_request(url=url, body=body, headers=headers)
+    res = _utils.post_request(url=url, body=body, headers=headers, cookies=config.get_cookies())
     return res  # todo: return something else? Returning RawObject(res.json()) doesn't work
 
 
@@ -149,7 +149,7 @@ def get_tables(
         'content-type': '*/*',
         'accept': 'application/json'
     }
-    res = _utils.get_request(url=url, params=params, headers=headers)
+    res = _utils.get_request(url=url, params=params, headers=headers, cookies=config.get_cookies())
     return RawObject(res.json())
 
 
@@ -185,7 +185,7 @@ def create_tables(
         'content-type': '*/*',
         'accept': 'application/json'
     }
-    res = _utils.post_request(url=url, body=body, headers=headers)
+    res = _utils.post_request(url=url, body=body, headers=headers, cookies=config.get_cookies())
     return RawObject(res.json())
 
 
@@ -220,7 +220,7 @@ def delete_tables(
         'content-type': '*/*',
         'accept': 'application/json'
     }
-    res = _utils.post_request(url=url, body=body, headers=headers)
+    res = _utils.post_request(url=url, body=body, headers=headers, cookies=config.get_cookies())
     return res  # todo: return something else? Returning RawObject(res.json()) doesn't work
 
 
@@ -263,7 +263,7 @@ def get_rows(
         'content-type': '*/*',
         'accept': 'application/json'
     }
-    res = _utils.get_request(url=url, params=params, headers=headers)
+    res = _utils.get_request(url=url, params=params, headers=headers, cookies=config.get_cookies())
     return RawObject(res.json())
 
 
@@ -318,7 +318,8 @@ def create_rows(
         params = {'ensureParent': 'true'}
     else:
         params = {}
-    res = _utils.post_request(url=url, body=body, headers=headers, params=params, use_gzip=use_gzip)
+    res = _utils.post_request(url=url, body=body, headers=headers, params=params, cookies=config.get_cookies(),
+                              use_gzip=use_gzip)
     return RawObject(res.json())
 
 
@@ -362,7 +363,7 @@ def delete_rows(
         'content-type': '*/*',
         'accept': 'application/json'
     }
-    res = _utils.post_request(url=url, body=body, headers=headers)
+    res = _utils.post_request(url=url, body=body, headers=headers, cookies=config.get_cookies())
     return res  # todo: return something else? Returning RawObject(res.json()) doesn't work
 
 
@@ -398,5 +399,5 @@ def get_row(
         'content-type': '*/*',
         'accept': 'application/json'
     }
-    res = _utils.get_request(url=url, params=params, headers=headers)
+    res = _utils.get_request(url=url, params=params, headers=headers, cookies=config.get_cookies())
     return RawObject(res.json())
