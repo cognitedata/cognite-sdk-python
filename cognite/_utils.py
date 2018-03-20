@@ -127,19 +127,20 @@ def get_last_datapoint_ts(tag, api_key, project):
 
 def interval_to_ms(start, end):
     '''Returns the ms representation of start-end-interval whether it is time-ago, datetime or None.'''
+    time_now = int(round(time.time() * 1000))
     if isinstance(start, datetime):
         start = datetime_to_ms(start)
     elif isinstance(start, str):
-        start = int(round(time.time() * 1000)) - _time_ago_to_ms(start)
+        start = time_now - _time_ago_to_ms(start)
     elif start is None:
-        start = int(round(time.time() * 1000)) - _time_ago_to_ms('1w-ago')
+        start = time_now - _time_ago_to_ms('1w-ago')
 
     if isinstance(end, datetime):
         end = datetime_to_ms(end)
     elif isinstance(end, str):
-        end = _time_ago_to_ms(end)
+        end = time_now - _time_ago_to_ms(end)
     elif end is None:
-        end = int(round(time.time() * 1000))
+        end = time_now
 
     return start, end
 
