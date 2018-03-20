@@ -159,8 +159,8 @@ def _get_datapoints_helper(tag_id, aggregates=None, granularity=None, start=None
         'api-key': api_key,
         'accept': 'application/protobuf' if use_protobuf else 'application/json'
     }
-    if kwargs.get('display_progress', True):
-        prog_ind = _utils.ProgressIndicator([tag_id], start, end, api_key, project)
+    display_progress = kwargs.get('display_progress', True)
+    prog_ind = _utils.ProgressIndicator([tag_id], start, end, api_key, project, display_progress=display_progress)
     datapoints = []
     while not datapoints or len(datapoints[-1]) == limit:
         res = _utils.get_request(url, params=params, headers=headers)
@@ -179,11 +179,9 @@ def _get_datapoints_helper(tag_id, aggregates=None, granularity=None, start=None
 
         datapoints.append(res)
         latest_timestamp = int(datapoints[-1][-1]['timestamp'])
-        if kwargs.get('display_progress', True):
-            prog_ind.update_progress(latest_timestamp)
+        prog_ind.update_progress(latest_timestamp)
         params['start'] = latest_timestamp + (_utils.granularity_to_ms(granularity) if granularity else 1)
-    if kwargs.get('display_progress', True):
-        prog_ind.terminate()
+    prog_ind.terminate()
     dps = []
     [dps.extend(el) for el in datapoints]
     return dps
