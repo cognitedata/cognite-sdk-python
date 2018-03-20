@@ -153,6 +153,7 @@ class ProgressIndicator():
         self.start, self.end = self._get_start_end(tag_ids, start, end)
         self.length = self.end - self.start
         self.progress = 0.0
+        self.display_progress = display_progress
         if not display_progress:
             sys.stdout.write("\rDownloading requested data...")
         else:
@@ -161,7 +162,8 @@ class ProgressIndicator():
     def update_progress(self, latest_timestamp):
         '''Update progress based on latest timestamp'''
         self.progress = 100 - (((self.end - latest_timestamp) / self.length) * 100)
-        self._print_progress()
+        if self.display_progress:
+            self._print_progress()
 
     def terminate(self):
         sys.stdout.write('\r' + ' ' * 500 + '\r')

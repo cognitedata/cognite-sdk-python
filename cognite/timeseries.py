@@ -86,10 +86,12 @@ def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=No
     p = Pool(steps)
 
     datapoints = p.map(partial_get_dps, args)
-    if not display_progress:
-        prog_ind.terminate()
     concat_dps = []
     [concat_dps.extend(el) for el in datapoints]
+
+    if not display_progress:
+        prog_ind.terminate()
+
     return DatapointsObject({'data': {'items': [{'tagId': tag_id, 'datapoints': concat_dps}]}})
 
 
@@ -351,9 +353,11 @@ def get_datapoints_frame(tag_ids, aggregates, granularity, start=None, end=None,
     p = Pool(steps)
 
     dataframes = p.map(partial_get_dpsf, args)
+    df = pd.concat(dataframes).drop_duplicates(subset='timestamp').reset_index(drop=True)
+
     if not display_progress:
         prog_ind.terminate()
-    df = pd.concat(dataframes).drop_duplicates(subset='timestamp').reset_index(drop=True)
+
     return df
 
 
