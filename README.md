@@ -17,13 +17,6 @@ Any changes, bug fixes, additions, or improvements you wish to make should be do
 2. Create a pull request, have it reviewed and merged. (This will trigger a Jenkins build and automatic release to PyPi).
 3. Create new tag on github to match the updated version number.
 
-### Linting
-We follow the PEP8 standard and use pylint to enforce it.
-#### Command line
-`$ pylint <module>`
-#### Editor and IDE Integration
-Alternativley integrate pylint in your editor or IDE by following the instructions [here](https://docs.pylint.org/en/1.6.0/ide-integration.html)
-
 ### Unit testing
 Set up unit tests for all new functionality
 Run unit tests by running the following command from the root directory:
