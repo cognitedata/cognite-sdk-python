@@ -57,12 +57,22 @@ def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=No
 
 
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
+
+    if isinstance(start, datetime):
+        start = _utils.datetime_to_ms(start)
+    if isinstance(end, datetime):
+        end = _utils.datetime_to_ms(end)
     if end is None:
         end = _utils.get_last_datapoint_ts(tag_id, api_key=api_key, project=project)
+
     diff = end - start
     num_of_processes = kwargs.get('processes', os.cpu_count())
-    steps = min(num_of_processes, max(1, int(diff / _utils.granularity_to_ms(granularity))))
-    step_size = _utils.round_to_nearest(int(diff / steps), base=_utils.granularity_to_ms(granularity))
+
+    granularity_ms = 1
+    if granularity:
+        granularity_ms = _utils.granularity_to_ms(granularity)
+    steps = min(num_of_processes, max(1, int(diff / granularity_ms)))
+    step_size = _utils.round_to_nearest(int(diff / steps), base=granularity_ms)
 
     partial_get_dps = partial(
         _get_datapoints_helper_wrapper,
@@ -134,11 +144,6 @@ def _get_datapoints_helper(tag_id, aggregates=None, granularity=None, start=None
     api_key, project = kwargs.get('api_key'), kwargs.get('project')
     tag_id = tag_id.replace('/', '%2F')
     url = config.get_base_url() + '/projects/{}/timeseries/data/{}'.format(project, tag_id)
-
-    if isinstance(start, datetime):
-        start = _utils.datetime_to_ms(start)
-    if isinstance(end, datetime):
-        end = _utils.datetime_to_ms(end)
 
     use_protobuf = kwargs.get('protobuf', True) and aggregates is None
     limit = _constants.LIMIT if aggregates is None else _constants.LIMIT_AGG
