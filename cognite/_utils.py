@@ -10,6 +10,7 @@ import json
 import math
 import re
 import sys
+import time
 from datetime import datetime
 
 import requests
@@ -120,6 +121,25 @@ def get_last_datapoint_ts(tag, api_key, project):
     from cognite.timeseries import get_latest
     return int(get_latest(tag, api_key=api_key, project=project).to_json()['timestamp'])
 
+
+def interval_to_ms(start, end):
+    '''Returns the ms representation of start-end-interval whether it is time-ago, datetime or None.'''
+    if isinstance(start, datetime):
+        start = datetime_to_ms(start)
+    elif isinstance(start, str):
+        start = int(round(time.time() * 1000)) - _time_ago_to_ms(start)
+    elif start is None:
+        start = int(round(time.time() * 1000)) - _time_ago_to_ms('1w-ago')
+
+    if isinstance(end, datetime):
+        end = datetime_to_ms(end)
+    elif isinstance(end, str):
+        end = _time_ago_to_ms(end)
+    elif end is None:
+        end = int(round(time.time() * 1000))
+
+    return start, end
+
 class _APIError(Exception):
     pass
 
@@ -127,15 +147,16 @@ class _APIError(Exception):
 class ProgressIndicator():
     '''This class lets the system give the user and indication of how much data remains to be downloaded in the request'''
 
-    def __init__(self, tag_ids, start, end, api_key=None, project=None):
+    def __init__(self, tag_ids, start, end, api_key=None, project=None, display_progress=True):
         self.api_key = api_key
         self.project = project
         self.start, self.end = self._get_start_end(tag_ids, start, end)
         self.length = self.end - self.start
         self.progress = 0.0
-        sys.stdout.write("\rDownloading requested data: {:5.1f}% |{}|".format(0, ' ' * 20))
-        sys.stdout.flush()
-        self._print_progress()
+        if not display_progress:
+            sys.stdout.write("\rDownloading requested data...")
+        else:
+            self._print_progress()
 
     def update_progress(self, latest_timestamp):
         '''Update progress based on latest timestamp'''
@@ -153,7 +174,6 @@ class ProgressIndicator():
         sys.stdout.flush()
 
     def _get_start_end(self, tag_ids, start, end):
-
         first_timestamp = float("inf")
         for tag in tag_ids:
             if isinstance(tag, str):
