@@ -304,6 +304,8 @@ def get_datapoints_frame(tag_ids, aggregates, granularity, start=None, end=None,
 
         project (str): Project name.
 
+        processes (int):    Number of download processes to run in parallell. Defaults to number returned by cpu_count().
+
     Returns:
         pandas.DataFrame: A pandas dataframe containing the datapoints for the given tag_ids. The datapoints for all the
         tag_ids will all be on the same timestamps.
@@ -400,8 +402,6 @@ def _get_datapoints_frame_helper(tag_ids, aggregates, granularity, start=None, e
         api_key (str): Your api-key.
 
         project (str): Project name.
-
-        processes (int):    Number of download processes to run in parallell. Defaults to number returned by cpu_count().
 
         display_progress (bool): Whether or not to display progress indicator.
 
