@@ -10,19 +10,20 @@ from cognite.data_objects import AssetSearchObject
 
 
 # Author: TK
-def search_assets(description, api_key=None, project=None):
+def search_assets(description, **kwargs):
     '''Returns assets matching provided description.
 
     Args:
         description (str):      Search query.
 
+    Keyword Arguments:
         api_key (str):          Your api-key.
 
         project (str):          Project name.
     Returns:
         AssetSearchObject
     '''
-    api_key, project = config.get_config_variables(api_key, project)
+    api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
     url = config.get_base_url() + '/projects/{}/assets'.format(project)
     params = {
         'description': description,
@@ -31,13 +32,13 @@ def search_assets(description, api_key=None, project=None):
         'api-key': api_key,
         'accept': 'application/json'
     }
-    res = _utils.get_request(url, params=params, headers=headers)
+    res = _utils.get_request(url, params=params, headers=headers, cookies=config.get_cookies())
 
     return AssetSearchObject(res.json())
 
 
 # Author: TK
-def get_assets(tag_id=None, depth=None, limit=_constants.LIMIT, api_key=None, project=None):
+def get_assets(tag_id=None, depth=None, limit=_constants.LIMIT, **kwargs):
     '''Returns assets with provided assetId.
 
     Args:
@@ -45,13 +46,14 @@ def get_assets(tag_id=None, depth=None, limit=_constants.LIMIT, api_key=None, pr
 
         depth (int):            Get subassets this many levels below the top asset.
 
+    Keyword Arguments:
         api_key (str):          Your api-key.
 
         project (str):          Project name.
     Returns:
         AssetSearchObject
     '''
-    api_key, project = config.get_config_variables(api_key, project)
+    api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
     url = config.get_base_url() + '/projects/{}/assets/{}'.format(project, tag_id)
     params = {
         'depth': depth,
@@ -61,5 +63,5 @@ def get_assets(tag_id=None, depth=None, limit=_constants.LIMIT, api_key=None, pr
         'api-key': api_key,
         'accept': 'application/json'
     }
-    res = _utils.get_request(url, params=params, headers=headers)
+    res = _utils.get_request(url, params=params, headers=headers, cookies=config.get_cookies())
     return AssetSearchObject(res.json())

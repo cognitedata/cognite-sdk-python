@@ -65,14 +65,12 @@ def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=No
     steps = min(num_of_processes, max(1, int(diff / granularity_ms)))
     step_size = _utils.round_to_nearest(int(diff / steps), base=granularity_ms)
 
-    use_protobuf = kwargs.get('protobuf', True) and aggregates is None
-
     partial_get_dps = partial(
         _get_datapoints_helper_wrapper,
         tag_id=tag_id,
         aggregates=aggregates,
         granularity=granularity,
-        protobuf=use_protobuf,
+        protobuf=True,
         api_key=api_key,
         project=project
     )
@@ -148,7 +146,7 @@ def _get_datapoints_helper(tag_id, aggregates=None, granularity=None, start=None
     tag_id = tag_id.replace('/', '%2F')
     url = config.get_base_url() + '/projects/{}/timeseries/data/{}'.format(project, tag_id)
 
-    use_protobuf = kwargs.get('protobuf', True)
+    use_protobuf = kwargs.get('protobuf', True) and aggregates is None
     limit = _constants.LIMIT if aggregates is None else _constants.LIMIT_AGG
 
     params = {
@@ -214,7 +212,7 @@ def get_latest(tag_id, **kwargs):
         'api-key': api_key,
         'accept': 'application/json'
     }
-    res = _utils.get_request(url, headers=headers)
+    res = _utils.get_request(url, headers=headers, cookies=config.get_cookies())
     return LatestDatapointObject(res.json())
 
 
@@ -276,7 +274,7 @@ def get_multi_tag_datapoints(tag_ids, aggregates=None, granularity=None, start=N
         'content-type': 'application/json',
         'accept': 'application/json'
     }
-    res = _utils.post_request(url=url, body=body, headers=headers)
+    res = _utils.post_request(url=url, body=body, headers=headers, cookies=config.get_cookies())
     return [DatapointsObject({'data': {'items': [dp]}}) for dp in res.json()['data']['items']]
 
 
@@ -457,7 +455,7 @@ def _get_datapoints_frame_helper(tag_ids, aggregates, granularity, start=None, e
     prog_ind = _utils.ProgressIndicator(tag_ids, start, end, api_key, project,
                                         display_progress=display_progress)
     while not dataframes or dataframes[-1].shape[0] == per_tag_limit:
-        res = _utils.post_request(url=url, body=body, headers=headers)
+        res = _utils.post_request(url=url, body=body, headers=headers, cookies=config.get_cookies())
         dataframes.append(
             pd.read_csv(io.StringIO(res.content.decode(res.encoding if res.encoding else res.apparent_encoding))))
         if dataframes[-1].empty:

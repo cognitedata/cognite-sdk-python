@@ -12,8 +12,7 @@ import cognite._utils as _utils
 import cognite.config as config
 
 
-def upload_file(file_name, file_path=None, directory=None, source=None, file_type=None, content_type=None, api_key=None,
-                project=None, **kwargs):
+def upload_file(file_name, file_path=None, directory=None, source=None, file_type=None, content_type=None, **kwargs):
     '''Upload metadata about a file and get an upload link.
 
     The link will expire after 30 seconds if not resumable. A resumable upload link is default. Such a link is one-time
@@ -26,7 +25,7 @@ def upload_file(file_name, file_path=None, directory=None, source=None, file_typ
 
         file_path (str, optional):     Path to file to upload, if omitted a upload link will be returned.
 
-        content-type (str, optional):   MIME type of your file. Required if file_path is specified.
+        content_type (str, optional):   MIME type of your file. Required if file_path is specified.
 
         directory (str, optional):      Directory containing the file. Max length is 512.
 
@@ -34,11 +33,11 @@ def upload_file(file_name, file_path=None, directory=None, source=None, file_typ
 
         file_type (str, optional):      File type. E.g. pdf, css, spreadsheet, .. Max length is 64.
 
+    Keyword Args:
         api_key (str, optional):        Your api-key.
 
         project (str, optional):        Project name.
 
-    Keyword Args:
         metadata (dict):      Customized data about the file.
 
         tag_ids (list):       IDs (tagIds) of equipment related to this file.
@@ -50,7 +49,7 @@ def upload_file(file_name, file_path=None, directory=None, source=None, file_typ
     Returns:
         dict: A dictionary containing the field fileId and optionally also uploadURL if file_path is omitted.
     '''
-    api_key, project = config.get_config_variables(api_key, project)
+    api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
     url = config.get_base_url() + '/projects/{}/storage/metadata'.format(project)
 
     headers = {
@@ -74,7 +73,7 @@ def upload_file(file_name, file_path=None, directory=None, source=None, file_typ
         'tagIds': kwargs.get('tagIds', None)
     }
 
-    res_storage = _utils.post_request(url=url, body=body, headers=headers, params=params)
+    res_storage = _utils.post_request(url=url, body=body, headers=headers, params=params, cookies=config.get_cookies())
     result = res_storage.json()['data']
     if file_path:
         if not content_type:
@@ -88,14 +87,14 @@ def upload_file(file_name, file_path=None, directory=None, source=None, file_typ
     return result
 
 
-def list_files(id=None, name=None, directory=None, file_type=None, source=None, api_key=None, project=None, **kwargs):
+def list_files(id=None, name=None, directory=None, file_type=None, source=None, **kwargs):
     '''Get list of files matching query.
 
     This method will automate paging for the user and return info about all files for the given query. If limit is
     specified the method will not page and return that many results.
 
     Args:
-        file_name (str, optional):      List all files with this name.
+        name (str, optional):      List all files with this name.
 
         id (int, optional):             List only the file with this id.
 
@@ -105,11 +104,11 @@ def list_files(id=None, name=None, directory=None, file_type=None, source=None, 
 
         file_type (str, optional):      Type of files to list.
 
+    Keyword Args:
         api_key (str, optional):        Your api-key.
 
         project (str, optional):        Project name.
 
-    Keyword Args:
         tag_id (list):                  Returns all files associated with this tagId.
 
         sort (str):                     Sort descending or ascending. 'ASC' or 'DESC'.
@@ -119,7 +118,7 @@ def list_files(id=None, name=None, directory=None, file_type=None, source=None, 
     Returns:
         list: A list of files with file info.
     '''
-    api_key, project = config.get_config_variables(api_key, project)
+    api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
     url = config.get_base_url() + '/projects/{}/storage'.format(project)
     headers = {
         'api-key': api_key,
@@ -136,13 +135,13 @@ def list_files(id=None, name=None, directory=None, file_type=None, source=None, 
         'limit': kwargs.get('limit', 100)
     }
     file_list = []
-    res = _utils.get_request(url=url, headers=headers, params=params)
+    res = _utils.get_request(url=url, headers=headers, params=params, cookies=config.get_cookies())
     file_list.extend(res.json()['data']['items'])
     next_cursor = res.json()['data'].get('nextCursor', None)
     limit = kwargs.get('limit', float('inf'))
     while next_cursor is not None and len(file_list) < limit:
         params['cursor'] = next_cursor
-        res = _utils.get_request(url=url, headers=headers, params=params)
+        res = _utils.get_request(url=url, headers=headers, params=params, cookies=config.get_cookies())
         file_list.extend(res.json()['data']['items'])
         next_cursor = res.json()['data'].get('nextCursor', None)
     if id is not None:
@@ -150,7 +149,7 @@ def list_files(id=None, name=None, directory=None, file_type=None, source=None, 
     return file_list
 
 
-def download_file(id, get_contents=False, project=None, api_key=None):
+def download_file(id, get_contents=False, **kwargs):
     '''Get list of files matching query.
 
     Args:
@@ -159,6 +158,7 @@ def download_file(id, get_contents=False, project=None, api_key=None):
         get_contents (bool, optional):      Boolean to determince whether or not to return file contents as string.
                                             Default is False and download url is returned.
 
+    Keyword Args:
         api_key (str, optional):            Your api-key.
 
         project (str, optional):            Project name.
@@ -166,13 +166,13 @@ def download_file(id, get_contents=False, project=None, api_key=None):
     Returns:
         str: Download link if get_contents is False else file contents.
     '''
-    api_key, project = config.get_config_variables(api_key, project)
+    api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
     url = config.get_base_url() + '/projects/{}/storage/{}'.format(project, id)
     headers = {
         'api-key': api_key,
         'accept': 'application/json'
     }
-    res = _utils.get_request(url=url, headers=headers)
+    res = _utils.get_request(url=url, headers=headers, cookies=config.get_cookies())
     if get_contents:
         dl_link = res.json()['data']
         res = requests.get(dl_link)
