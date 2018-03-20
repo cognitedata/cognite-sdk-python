@@ -72,6 +72,8 @@ def datetime_to_ms(dt):
     epoch = datetime.utcfromtimestamp(0)
     return int((dt - epoch).total_seconds() * 1000)
 
+def round_to_nearest(x, base):
+    return int(base * round(float(x)/base))
 
 def granularity_to_ms(time_string):
     '''Returns millisecond representation of granularity time string'''
@@ -94,7 +96,7 @@ def _time_ago_to_ms(time_ago_string):
     return None
 
 
-def _get_first_datapoint(tag, start, end, api_key, project):
+def get_first_datapoint_ts(tag, start, end, api_key, project):
     '''Returns the first datapoint of a timeseries in the given interval. If no start is specified, the default is 1 week ago
     '''
     api_key, project = config.get_config_variables(api_key, project)
@@ -114,6 +116,9 @@ def _get_first_datapoint(tag, start, end, api_key, project):
         return int(res[0]['timestamp'])
     return None
 
+def get_last_datapoint_ts(tag, api_key, project):
+    from cognite.timeseries import get_latest
+    return int(get_latest(tag, api_key=api_key, project=project).to_json()['timestamp'])
 
 class _APIError(Exception):
     pass
@@ -148,13 +153,13 @@ class ProgressIndicator():
         sys.stdout.flush()
 
     def _get_start_end(self, tag_ids, start, end):
-        from cognite.timeseries import get_latest
+
         first_timestamp = float("inf")
         for tag in tag_ids:
             if isinstance(tag, str):
-                first_datapoint = _get_first_datapoint(tag, start, end, self.api_key, self.project)
+                first_datapoint = get_first_datapoint_ts(tag, start, end, self.api_key, self.project)
             else:
-                first_datapoint = _get_first_datapoint(tag['tagId'], start, end, self.api_key, self.project)
+                first_datapoint = get_first_datapoint_ts(tag['tagId'], start, end, self.api_key, self.project)
             tag_start = float("inf")
             if first_datapoint:
                 tag_start = first_datapoint
@@ -164,9 +169,9 @@ class ProgressIndicator():
 
         for tag in tag_ids:
             if isinstance(tag, str):
-                tag_end = int(get_latest(tag, api_key=self.api_key, project=self.project).to_json()['timestamp'])
+                tag_end = get_last_datapoint_ts(tag, api_key=self.api_key, project=self.project)
             else:
-                tag_end = int(get_latest(tag['tagId'], api_key=self.api_key, project=self.project).to_json()['timestamp'])
+                tag_end = get_last_datapoint_ts(tag['tagId'], api_key=self.api_key, project=self.project)
             if tag_end > latest_timestamp:
                 latest_timestamp = tag_end
 
