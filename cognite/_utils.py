@@ -23,11 +23,11 @@ def get_request(url, params=None, headers=None, cookies=None):
     for number_of_tries in range(config.get_number_of_retries() + 1):
         try:
             res = requests.get(url, params=params, headers=headers, cookies=cookies)
+            if res.status_code == 200:
+                return res
         except Exception as e:
             if number_of_tries == config.get_number_of_retries():
                 raise APIError(e)
-        if res.status_code == 200:
-            return res
     try:
         err_mess = res.json()['error'].__str__()
     except:
@@ -58,11 +58,11 @@ def post_request(url, body, headers=None, params=None, cookies=None, use_gzip=Fa
                                     params=params,
                                     cookies=cookies
                                     )
+            if res.status_code == 200:
+                return res
         except Exception as e:
             if number_of_tries == config.get_number_of_retries():
                 raise APIError(e)
-        if res.status_code == 200:
-            return res
     try:
         err_mess = res.json()['error'].__str__()
     except:
