@@ -27,7 +27,7 @@ podTemplate(
         }
         container('python') {
             stage('Install pipenv') {
-                sh("pip3 install pipenv==9.0.1")
+                sh("pip3 install pipenv")
             }
             stage('Install dependencies') {
                 sh("pipenv install")
