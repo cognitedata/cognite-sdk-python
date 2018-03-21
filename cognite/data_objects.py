@@ -147,6 +147,19 @@ class LatestDatapointObject(CogniteDataObject):
         '''Returns data as a numpy array'''
         return self.to_pandas().values[0]
 
+class TimeseriesObject(CogniteDataObject):
+    '''Timeseries Object'''
+
+    def to_json(self):
+        '''Returns data as a json object'''
+        return self.internal_representation
+
+    def to_pandas(self):
+        '''Returns data as a pandas dataframe'''
+        if self.internal_representation[0].get('metadata') is None:
+            return pd.DataFrame(self.internal_representation)
+        [d.update(d.pop('metadata')) for d in self.internal_representation]
+        return pd.DataFrame(self.internal_representation)
 
 class SimilaritySearchObject(CogniteDataObject):
     '''Similarity Search Data Object.'''
