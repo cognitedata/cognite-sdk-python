@@ -16,8 +16,64 @@ import cognite._constants as _constants
 import cognite._utils as _utils
 import cognite.config as config
 from cognite._protobuf_descriptors import _api_timeseries_data_v1_pb2
-from cognite.data_objects import DatapointsObject, LatestDatapointObject
+from cognite.data_objects import DatapointsObject, LatestDatapointObject, TimeseriesObject
 
+def get_timeseries(prefix=None, description=None, include_metadata=False, asset_id=None, path=None, **kwargs):
+    '''Returns a TimeseriesObject containing the requested timeseries.
+
+    This method will automate paging for the user and return info about all files for the given query. If limit is
+    specified the method will not page and return that many results.
+
+    Args:
+        prefix (str):           List timeseries with this prefix in the name.
+
+        description (str):      Filter timeseries taht contains this string in its description.
+
+        include_metadata (bool):    Decide if teh metadata field should be returned or not. Defaults to False.
+
+        asset_id (int):        Get timeseries related to this asset.
+
+        path (str):             Get timeseries under this asset path branch.
+
+    Keyword Arguments:
+        limit (int):            Number of results to return.
+
+        api_key (str):          Your api-key.
+
+        project (str):          Project name.
+
+    Returns:
+        TimeseriesObject: A data object containing the requested timeseries with several getter methods with different
+        output formats.
+    '''
+    api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
+    url = config.get_base_url() + '/projects/{}/timeseries'.format(project)
+    headers = {
+        'api-key': api_key,
+        'accept': 'application/json'
+    }
+    params = {
+        'q': prefix,
+        'description': description,
+        'includeMetadata': include_metadata,
+        'assetId': asset_id,
+        'path': path,
+        'limit': kwargs.get('limit', 10000)
+    }
+    timeseries = []
+
+    res = _utils.get_request(url=url, headers=headers, params=params, cookies=config.get_cookies())
+    timeseries.extend(res.json()['data']['items'])
+    next_cursor = res.json()['data'].get('nextCursor', None)
+    limit = kwargs.get('limit', float('inf'))
+
+    while next_cursor is not None and len(timeseries) < limit:
+        params['cursor'] = next_cursor
+        res = _utils.get_request(url=url, headers=headers, params=params, cookies=config.get_cookies())
+        timeseries.extend(res.json()['data']['items'])
+        next_cursor = res.json()['data'].get('nextCursor', None)
+
+    return TimeseriesObject(timeseries)
 
 def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=None, **kwargs):
     '''Returns a DatapointsObject containing a list of datapoints for the given query.
