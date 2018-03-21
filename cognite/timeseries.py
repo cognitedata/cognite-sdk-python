@@ -62,8 +62,14 @@ def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=No
     granularity_ms = 1
     if granularity:
         granularity_ms = _utils.granularity_to_ms(granularity)
+
+    # Ensure that number of steps is not greater than the number data points that will be returned
     steps = min(num_of_processes, max(1, int(diff / granularity_ms)))
+    # Make step size a multiple of the granularity requested in order to ensure evenly spaced results
     step_size = _utils.round_to_nearest(int(diff / steps), base=granularity_ms)
+    # Create list of where each of the parallelized intervals will begin
+    step_starts = [start + (i * step_size) for i in range(steps)]
+    args = [{'start': start, 'end': start + step_size, 'display_progress': False} for start in step_starts]
 
     partial_get_dps = partial(
         _get_datapoints_helper_wrapper,
@@ -75,8 +81,6 @@ def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=No
         project=project
     )
 
-    step_starts = [start + (i * step_size) for i in range(steps)]
-    args = [{'start': start, 'end': start + step_size, 'display_progress': False} for start in step_starts]
     display_progress = len(args) <= 2
     if display_progress:
         args[-1]['display_progress'] = True
@@ -261,7 +265,7 @@ def get_multi_tag_datapoints(tag_ids, aggregates=None, granularity=None, start=N
     body = {
         'items': [{'tagId': '{}'.format(tag_id)}
                   if isinstance(tag_id, str)
-                  else {'tagId': '{}'.format(tag_id['tagId']), 'aggregates': tag_id['aggregates']} for tag_id in
+                  else {'tagId': '{}'.format(tag_id['tagId']), 'aggregates': tag_id.get('aggregates', [])} for tag_id in
                   tag_ids],
         'aggregates': aggregates,
         'granularity': granularity,
@@ -334,8 +338,14 @@ def get_datapoints_frame(tag_ids, aggregates, granularity, start=None, end=None,
     granularity_ms = 1
     if granularity:
         granularity_ms = _utils.granularity_to_ms(granularity)
+
+    # Ensure that number of steps is not greater than the number data points that will be returned
     steps = min(num_of_processes, max(1, int(diff / granularity_ms)))
+    # Make step size a multiple of the granularity requested in order to ensure evenly spaced results
     step_size = _utils.round_to_nearest(int(diff / steps), base=granularity_ms)
+    # Create list of where each of the parallelized intervals will begin
+    step_starts = [start + (i * step_size) for i in range(steps)]
+    args = [{'start': start, 'end': start + step_size, 'display_progress': False} for start in step_starts]
 
     partial_get_dpsf = partial(
         _get_datapoints_frame_helper_wrapper,
@@ -346,8 +356,6 @@ def get_datapoints_frame(tag_ids, aggregates, granularity, start=None, end=None,
         project=project
     )
 
-    step_starts = [start + (i * step_size) for i in range(steps)]
-    args = [{'start': start, 'end': start + step_size, 'display_progress': False} for start in step_starts]
     display_progress = len(args) <= 2
     if display_progress:
         args[-1]['display_progress'] = True
@@ -437,7 +445,7 @@ def _get_datapoints_frame_helper(tag_ids, aggregates, granularity, start=None, e
     body = {
         'items': [{'tagId': '{}'.format(tag_id)}
                   if isinstance(tag_id, str)
-                  else {'tagId': '{}'.format(tag_id['tagId']), 'aggregates': tag_id['aggregates']} for tag_id in
+                  else {'tagId': '{}'.format(tag_id['tagId']), 'aggregates': tag_id.get('aggregates', [])} for tag_id in
                   tag_ids],
         'aggregates': aggregates,
         'granularity': granularity,
