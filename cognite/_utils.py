@@ -10,6 +10,7 @@ import json
 import math
 import re
 import sys
+import time
 from datetime import datetime
 
 import requests
@@ -74,6 +75,8 @@ def datetime_to_ms(dt):
     epoch = datetime.utcfromtimestamp(0)
     return int((dt - epoch).total_seconds() * 1000)
 
+def round_to_nearest(x, base):
+    return int(base * round(float(x)/base))
 
 def granularity_to_ms(time_string):
     '''Returns millisecond representation of granularity time string'''
@@ -96,8 +99,8 @@ def _time_ago_to_ms(time_ago_string):
     return None
 
 
-def _get_first_datapoint(tag, start, end, api_key, project):
-    '''Returns the first datapoint of a timeseries in the given interval.
+def get_first_datapoint_ts(tag, start, end, api_key, project):
+    '''Returns the timestamp of the first datapoint of a timeseries in the given interval.
 
     If no start is specified, the default is 1 week ago
     '''
@@ -123,6 +126,30 @@ def _get_first_datapoint(tag, start, end, api_key, project):
         return int(res[0]['timestamp'])
     return None
 
+def get_last_datapoint_ts(tag, api_key, project):
+    '''Returns the timestamp of the last datapoint of a timeseries.'''
+    from cognite.timeseries import get_latest
+    return int(get_latest(tag, api_key=api_key, project=project).to_json()['timestamp'])
+
+
+def interval_to_ms(start, end):
+    '''Returns the ms representation of start-end-interval whether it is time-ago, datetime or None.'''
+    time_now = int(round(time.time() * 1000))
+    if isinstance(start, datetime):
+        start = datetime_to_ms(start)
+    elif isinstance(start, str):
+        start = time_now - _time_ago_to_ms(start)
+    elif start is None:
+        start = time_now - _time_ago_to_ms('1w-ago')
+
+    if isinstance(end, datetime):
+        end = datetime_to_ms(end)
+    elif isinstance(end, str):
+        end = time_now - _time_ago_to_ms(end)
+    elif end is None:
+        end = time_now
+
+    return start, end
 
 class APIError(Exception):
     pass
@@ -131,20 +158,23 @@ class APIError(Exception):
 class ProgressIndicator():
     '''This class lets the system give the user and indication of how much data remains to be downloaded in the request'''
 
-    def __init__(self, tag_ids, start, end, api_key=None, project=None):
+    def __init__(self, tag_ids, start, end, api_key=None, project=None, display_progress=True):
         self.api_key = api_key
         self.project = project
         self.start, self.end = self._get_start_end(tag_ids, start, end)
         self.length = self.end - self.start
         self.progress = 0.0
-        sys.stdout.write("\rDownloading requested data: {:5.1f}% |{}|".format(0, ' ' * 20))
-        sys.stdout.flush()
-        self._print_progress()
+        self.display_progress = display_progress
+        if not display_progress:
+            sys.stdout.write("\rDownloading requested data...")
+        else:
+            self._print_progress()
 
     def update_progress(self, latest_timestamp):
         '''Update progress based on latest timestamp'''
         self.progress = 100 - (((self.end - latest_timestamp) / self.length) * 100)
-        self._print_progress()
+        if self.display_progress:
+            self._print_progress()
 
     def terminate(self):
         sys.stdout.write('\r' + ' ' * 500 + '\r')
@@ -157,13 +187,12 @@ class ProgressIndicator():
         sys.stdout.flush()
 
     def _get_start_end(self, tag_ids, start, end):
-        from cognite.timeseries import get_latest
         first_timestamp = float("inf")
         for tag in tag_ids:
             if isinstance(tag, str):
-                first_datapoint = _get_first_datapoint(tag, start, end, self.api_key, self.project)
+                first_datapoint = get_first_datapoint_ts(tag, start, end, self.api_key, self.project)
             else:
-                first_datapoint = _get_first_datapoint(tag['tagId'], start, end, self.api_key, self.project)
+                first_datapoint = get_first_datapoint_ts(tag['tagId'], start, end, self.api_key, self.project)
             tag_start = float("inf")
             if first_datapoint:
                 tag_start = first_datapoint
@@ -173,9 +202,9 @@ class ProgressIndicator():
 
         for tag in tag_ids:
             if isinstance(tag, str):
-                tag_end = int(get_latest(tag, api_key=self.api_key, project=self.project).to_json()['timestamp'])
+                tag_end = get_last_datapoint_ts(tag, api_key=self.api_key, project=self.project)
             else:
-                tag_end = int(get_latest(tag['tagId'], api_key=self.api_key, project=self.project).to_json()['timestamp'])
+                tag_end = get_last_datapoint_ts(tag['tagId'], api_key=self.api_key, project=self.project)
             if tag_end > latest_timestamp:
                 latest_timestamp = tag_end
 
