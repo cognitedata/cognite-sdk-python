@@ -31,7 +31,7 @@ def get_timeseries(prefix=None, description=None, include_metadata=False, asset_
 
         include_metadata (bool):    Decide if teh metadata field should be returned or not. Defaults to False.
 
-        assted_id (int):        Get timeseries related to this asset.
+        assed_id (int):        Get timeseries related to this asset.
 
         path (str):             Get timeseries under this asset path branch.
 
