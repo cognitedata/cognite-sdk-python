@@ -6,6 +6,14 @@ cognite
     :undoc-members:
     :show-inheritance:
 
+timeseries
+----------
+
+.. automodule:: cognite.timeseries
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 assets
 ------
 
@@ -69,10 +77,4 @@ tagmatching
     :undoc-members:
     :show-inheritance:
 
-timeseries
-----------
 
-.. automodule:: cognite.timeseries
-    :members:
-    :undoc-members:
-    :show-inheritance:
