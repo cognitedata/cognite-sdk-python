@@ -18,6 +18,7 @@ import cognite.config as config
 from cognite._protobuf_descriptors import _api_timeseries_data_v1_pb2
 from cognite.data_objects import DatapointsObject, LatestDatapointObject, TimeseriesObject
 
+
 def get_timeseries(prefix=None, description=None, include_metadata=False, asset_id=None, path=None, **kwargs):
     '''Returns a TimeseriesObject containing the requested timeseries.
 
@@ -74,6 +75,7 @@ def get_timeseries(prefix=None, description=None, include_metadata=False, asset_
         next_cursor = res.json()['data'].get('nextCursor', None)
 
     return TimeseriesObject(timeseries)
+
 
 def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=None, **kwargs):
     '''Returns a DatapointsObject containing a list of datapoints for the given query.
