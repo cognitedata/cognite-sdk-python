@@ -110,7 +110,7 @@ def delete_databases(
         'accept': 'application/json'
     }
     res = _utils.post_request(url=url, body=body, headers=headers, cookies=config.get_cookies())
-    return res  # todo: return something else? Returning RawObject(res.json()) doesn't work
+    return res.json()
 
 
 def get_tables(
@@ -221,7 +221,7 @@ def delete_tables(
         'accept': 'application/json'
     }
     res = _utils.post_request(url=url, body=body, headers=headers, cookies=config.get_cookies())
-    return res  # todo: return something else? Returning RawObject(res.json()) doesn't work
+    return res.json()
 
 
 def get_rows(
@@ -254,10 +254,8 @@ def get_rows(
     api_key, project = config.get_config_variables(api_key, project)
     url = config.get_base_url() + '/projects/{}/raw/{}/{}'.format(project, database_name, table_name)
     params = dict()
-    if not limit:
-        params['limit'] = limit
-    if not cursor:
-        params['cursor'] = cursor
+    params['limit'] = limit
+    params['cursor'] = cursor
     headers = {
         'api-key': api_key,
         'content-type': '*/*',
@@ -294,21 +292,12 @@ def create_rows(
         use_gzip (bool):        Compress content using gzip
 
     Returns:
-        RawObject: A data object containing the requested data with several getter methods with different
-        output formats.
+        An empty response
 
     """
     api_key, project = config.get_config_variables(api_key, project)
     url = config.get_base_url() + '/projects/{}/raw/{}/{}/create'.format(project, database_name, table_name)
-    body = {
-        'items': [
-            {
-                'key': '{}'.format(row.key),
-                'columns': row.columns
-            }
-            for row in rows
-        ]
-    }
+
     headers = {
         'api-key': api_key,
         'content-type': '*/*',
@@ -318,9 +307,15 @@ def create_rows(
         params = {'ensureParent': 'true'}
     else:
         params = {}
-    res = _utils.post_request(url=url, body=body, headers=headers, params=params, cookies=config.get_cookies(),
-                              use_gzip=use_gzip)
-    return RawObject(res.json())
+
+    ul_row_limit = 1000
+    i = 0
+    while i < len(rows):
+        body = {'items': [{'key': '{}'.format(row.key),'columns': row.columns} for row in rows[i:i+ul_row_limit]]}
+        res = _utils.post_request(url=url, body=body, headers=headers, params=params, cookies=config.get_cookies(),
+                                  use_gzip=use_gzip)
+        i+=ul_row_limit
+    return res.json()
 
 
 def delete_rows(
@@ -364,7 +359,7 @@ def delete_rows(
         'accept': 'application/json'
     }
     res = _utils.post_request(url=url, body=body, headers=headers, cookies=config.get_cookies())
-    return res  # todo: return something else? Returning RawObject(res.json()) doesn't work
+    return res.json()
 
 
 def get_row(
