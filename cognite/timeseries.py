@@ -16,8 +16,64 @@ import cognite._constants as _constants
 import cognite._utils as _utils
 import cognite.config as config
 from cognite._protobuf_descriptors import _api_timeseries_data_v1_pb2
-from cognite.data_objects import DatapointsObject, LatestDatapointObject
+from cognite.data_objects import DatapointsObject, LatestDatapointObject, TimeseriesObject
 
+def get_timeseries(prefix=None, description=None, include_metadata=False, asset_id=None, path=None, **kwargs):
+    '''Returns a TimeseriesObject containing the requested timeseries.
+
+    This method will automate paging for the user and return info about all files for the given query. If limit is
+    specified the method will not page and return that many results.
+
+    Args:
+        prefix (str):           List timeseries with this prefix in the name.
+
+        description (str):      Filter timeseries taht contains this string in its description.
+
+        include_metadata (bool):    Decide if teh metadata field should be returned or not. Defaults to False.
+
+        asset_id (int):        Get timeseries related to this asset.
+
+        path (str):             Get timeseries under this asset path branch.
+
+    Keyword Arguments:
+        limit (int):            Number of results to return.
+
+        api_key (str):          Your api-key.
+
+        project (str):          Project name.
+
+    Returns:
+        TimeseriesObject: A data object containing the requested timeseries with several getter methods with different
+        output formats.
+    '''
+    api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
+    url = config.get_base_url() + '/projects/{}/timeseries'.format(project)
+    headers = {
+        'api-key': api_key,
+        'accept': 'application/json'
+    }
+    params = {
+        'q': prefix,
+        'description': description,
+        'includeMetadata': include_metadata,
+        'assetId': asset_id,
+        'path': path,
+        'limit': kwargs.get('limit', 10000)
+    }
+    timeseries = []
+
+    res = _utils.get_request(url=url, headers=headers, params=params, cookies=config.get_cookies())
+    timeseries.extend(res.json()['data']['items'])
+    next_cursor = res.json()['data'].get('nextCursor', None)
+    limit = kwargs.get('limit', float('inf'))
+
+    while next_cursor is not None and len(timeseries) < limit:
+        params['cursor'] = next_cursor
+        res = _utils.get_request(url=url, headers=headers, params=params, cookies=config.get_cookies())
+        timeseries.extend(res.json()['data']['items'])
+        next_cursor = res.json()['data'].get('nextCursor', None)
+
+    return TimeseriesObject(timeseries)
 
 def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=None, **kwargs):
     '''Returns a DatapointsObject containing a list of datapoints for the given query.
@@ -62,8 +118,14 @@ def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=No
     granularity_ms = 1
     if granularity:
         granularity_ms = _utils.granularity_to_ms(granularity)
+
+    # Ensure that number of steps is not greater than the number data points that will be returned
     steps = min(num_of_processes, max(1, int(diff / granularity_ms)))
+    # Make step size a multiple of the granularity requested in order to ensure evenly spaced results
     step_size = _utils.round_to_nearest(int(diff / steps), base=granularity_ms)
+    # Create list of where each of the parallelized intervals will begin
+    step_starts = [start + (i * step_size) for i in range(steps)]
+    args = [{'start': start, 'end': start + step_size, 'display_progress': False} for start in step_starts]
 
     partial_get_dps = partial(
         _get_datapoints_helper_wrapper,
@@ -75,8 +137,6 @@ def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=No
         project=project
     )
 
-    step_starts = [start + (i * step_size) for i in range(steps)]
-    args = [{'start': start, 'end': start + step_size, 'display_progress': False} for start in step_starts]
     display_progress = len(args) <= 2
     if display_progress:
         args[-1]['display_progress'] = True
@@ -261,7 +321,7 @@ def get_multi_tag_datapoints(tag_ids, aggregates=None, granularity=None, start=N
     body = {
         'items': [{'tagId': '{}'.format(tag_id)}
                   if isinstance(tag_id, str)
-                  else {'tagId': '{}'.format(tag_id['tagId']), 'aggregates': tag_id['aggregates']} for tag_id in
+                  else {'tagId': '{}'.format(tag_id['tagId']), 'aggregates': tag_id.get('aggregates', [])} for tag_id in
                   tag_ids],
         'aggregates': aggregates,
         'granularity': granularity,
@@ -334,8 +394,14 @@ def get_datapoints_frame(tag_ids, aggregates, granularity, start=None, end=None,
     granularity_ms = 1
     if granularity:
         granularity_ms = _utils.granularity_to_ms(granularity)
+
+    # Ensure that number of steps is not greater than the number data points that will be returned
     steps = min(num_of_processes, max(1, int(diff / granularity_ms)))
+    # Make step size a multiple of the granularity requested in order to ensure evenly spaced results
     step_size = _utils.round_to_nearest(int(diff / steps), base=granularity_ms)
+    # Create list of where each of the parallelized intervals will begin
+    step_starts = [start + (i * step_size) for i in range(steps)]
+    args = [{'start': start, 'end': start + step_size, 'display_progress': False} for start in step_starts]
 
     partial_get_dpsf = partial(
         _get_datapoints_frame_helper_wrapper,
@@ -346,8 +412,6 @@ def get_datapoints_frame(tag_ids, aggregates, granularity, start=None, end=None,
         project=project
     )
 
-    step_starts = [start + (i * step_size) for i in range(steps)]
-    args = [{'start': start, 'end': start + step_size, 'display_progress': False} for start in step_starts]
     display_progress = len(args) <= 2
     if display_progress:
         args[-1]['display_progress'] = True
@@ -437,7 +501,7 @@ def _get_datapoints_frame_helper(tag_ids, aggregates, granularity, start=None, e
     body = {
         'items': [{'tagId': '{}'.format(tag_id)}
                   if isinstance(tag_id, str)
-                  else {'tagId': '{}'.format(tag_id['tagId']), 'aggregates': tag_id['aggregates']} for tag_id in
+                  else {'tagId': '{}'.format(tag_id['tagId']), 'aggregates': tag_id.get('aggregates', [])} for tag_id in
                   tag_ids],
         'aggregates': aggregates,
         'granularity': granularity,
