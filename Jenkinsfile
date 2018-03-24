@@ -33,8 +33,8 @@ podTemplate(
                 sh("pipenv install --system")
                 sh("pip3 install .")
             }
-            stage('Test') {
-                sh("cd unit_tests && python3 run_tests.py")
+            stage('Test and coverage report') {
+                sh("coverage run --source cognite unit_tests/run_tests.py")
             }
             stage('Build') {
                 sh("python3 setup.py sdist")
