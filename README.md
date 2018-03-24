@@ -7,7 +7,7 @@ To view the documentation for this package click [here](http://cognite-sdk-pytho
 ```bash
 $ git clone https://github.com/cognitedata/cognite-sdk-python.git
 $ cd cognite-sdk-python
-$ pipenv install
+$ pipenv install -d
 $ pipenv shell
 ```
 
@@ -22,6 +22,16 @@ Set up unit tests for all new functionality
 Run unit tests by running the following command from the root directory:
 
 `$ python3 unit_tests/run_tests.py`
+
+If you want to generate code coverage reports run:
+
+```
+coverage run --source cognite unit_tests/run_tests.py
+coverage html
+```
+
+Open `htmlcov/index.html` in the browser to navigate through the report.
+
 ### Documentation
 Build html files of documentation locally by running
 ```bash
