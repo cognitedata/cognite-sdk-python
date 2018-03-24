@@ -14,10 +14,9 @@ pylint = "*"
 pandas = "*"
 requests = "*"
 protobuf = "*"
-
+coverage = "*"
 
 [dev-packages]
-coverage = "*"
 
 
 [requires]

@@ -34,7 +34,7 @@ podTemplate(
                 sh("pip3 install .")
             }
             stage('Test and coverage report') {
-                sh("coverage run --source cognite unit_tests/run_tests.py")
+                sh("pipenv run coverage run --source cognite unit_tests/run_tests.py")
             }
             stage('Build') {
                 sh("python3 setup.py sdist")
