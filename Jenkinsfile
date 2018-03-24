@@ -40,9 +40,7 @@ podTemplate(
                 sh("python3 setup.py sdist")
                 sh("python3 setup.py bdist_wheel")
             }
-            stage() {
 
-            }
             def pipVersion = sh(returnStdout: true, script: 'pipenv run yolk -V cognite-sdk | sort -n | tail -1 | cut -d\\  -f 2').trim()
             def currentVersion = sh(returnStdout: true, script: 'pipenv run python3 -c "import cognite; print(cognite.__version__)"').trim()
 
