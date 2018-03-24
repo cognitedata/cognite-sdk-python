@@ -38,7 +38,7 @@ podTemplate(
                 sh("pipenv run coverage xml")
             }
             stage('Upload coverage reports') {
-                step([$class: 'CoberturaPublisher', coberturaReportFile: './coverage.xml'])
+                step([$class: 'CoberturaPublisher', coberturaReportFile: 'coverage.xml'])
             }
             stage('Build') {
                 sh("python3 setup.py sdist")
