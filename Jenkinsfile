@@ -30,7 +30,7 @@ podTemplate(
                 sh("pip3 install pipenv")
             }
             stage('Install dependencies') {
-                sh("pipenv install")
+                sh("pipenv install -d")
                 sh("pip3 install .")
             }
             stage('Test and coverage report') {
