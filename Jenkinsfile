@@ -2,21 +2,25 @@
 
 podTemplate(
     label: 'jnlp-cognite-sdk-python',
-    containers: [containerTemplate(name: 'python',
-                                   image: 'python:3.6.4',
-                                   command: '/bin/cat -',
-                                   resourceRequestCpu: '1000m',
-                                   resourceRequestMemory: '500Mi',
-                                   resourceLimitCpu: '1000m',
-                                   resourceLimitMemory: '500Mi',
-                                   envVars: [envVar(key: 'PYTHONPATH', value: '/usr/local/bin')],
-                                   ttyEnabled: true)],
-    volumes: [secretVolume(secretName: 'jenkins-docker-builder',
-                           mountPath: '/jenkins-docker-builder',
-                           readOnly: true),
-              secretVolume(secretName: 'pypi-credentials',
-                           mountPath: '/pypi',
-                           readOnly: true)]) {
+    containers: [
+        containerTemplate(name: 'python',
+            image: 'python:3.6.4',
+            command: '/bin/cat -',
+            resourceRequestCpu: '1000m',
+            resourceRequestMemory: '500Mi',
+            resourceLimitCpu: '1000m',
+            resourceLimitMemory: '500Mi',
+            envVars: [envVar(key: 'PYTHONPATH', value: '/usr/local/bin')],
+            ttyEnabled: true),
+    ],
+    volumes: [
+        secretVolume(secretName: 'jenkins-docker-builder', mountPath: '/jenkins-docker-builder', readOnly: true),
+        secretVolume(secretName: 'pypi-credentials', mountPath: '/pypi', readOnly: true),
+        configMapVolume(configMapName: 'codecov-script-configmap', mountPath: '/codecov-script'),
+    ],
+    envVars: [
+        secretEnvVar(key: 'CODECOV_TOKEN', secretName: 'codecov-token-cognite-sdk-python', secretKey: 'token.txt'),
+    ]) {
     node('jnlp-cognite-sdk-python') {
         def gitCommit
         container('jnlp') {
@@ -38,6 +42,7 @@ podTemplate(
                 sh("pipenv run coverage xml")
             }
             stage('Upload coverage reports') {
+                sh 'bash </codecov-script/upload-report.sh'
                 step([$class: 'CoberturaPublisher', coberturaReportFile: 'coverage.xml'])
             }
             stage('Build') {
