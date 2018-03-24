@@ -33,3 +33,4 @@ test.py
 # Coverage
 .coverage
 htmlcov
+coverage.xml

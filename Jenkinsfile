@@ -35,6 +35,10 @@ podTemplate(
             }
             stage('Test and coverage report') {
                 sh("pipenv run coverage run --source cognite unit_tests/run_tests.py")
+                sh("pipenv run coverage xml")
+            }
+            stage('Upload coverage reports') {
+                step([$class: 'CoberturaPublisher', coberturaReportFile: './coverage.xml'])
             }
             stage('Build') {
                 sh("python3 setup.py sdist")
