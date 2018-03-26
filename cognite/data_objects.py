@@ -147,6 +147,7 @@ class LatestDatapointObject(CogniteDataObject):
         '''Returns data as a numpy array'''
         return self.to_pandas().values[0]
 
+
 class TimeseriesObject(CogniteDataObject):
     '''Timeseries Object'''
 
@@ -160,6 +161,34 @@ class TimeseriesObject(CogniteDataObject):
             return pd.DataFrame(self.internal_representation)
         [d.update(d.pop('metadata')) for d in self.internal_representation]
         return pd.DataFrame(self.internal_representation)
+
+
+class TimeSeriesDTO(object):
+    """Data Transfer Object for a timeseries.
+
+    Attributes:
+        tag_id (str):       Unique ID of time series.
+        is_string (bool):    Whether the time series is string valued or not.
+        metadata (dict):    Metadata.
+        unit (str):         Physical unit of the time series.
+        asset_id (str):     Asset that this time series belongs to.
+        description (str):  Description of the time series.
+        securityCategories (list(int)): Security categories required in order to access this time series.
+        step (bool):        Whether or not the time series is a step series.
+
+    """
+
+    def __init__(self, tag_id, is_string=False, metadata=None, unit=None, asset_id=None, description=None,
+                 security_categories=None, step=None):
+        self.tagId = tag_id
+        self.isString = is_string
+        self.metadata = metadata
+        self.unit = unit
+        self.assetId = asset_id
+        self.description = description
+        self.security_categories = security_categories
+        self.step = step
+
 
 class SimilaritySearchObject(CogniteDataObject):
     '''Similarity Search Data Object.'''
