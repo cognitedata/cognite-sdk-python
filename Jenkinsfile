@@ -63,7 +63,7 @@ podTemplate(
             println("Latest pip version: " + pipVersion)
             if (env.BRANCH_NAME == 'master' && currentVersion != pipVersion) {
                 stage('Release') {
-                    sh("twine upload --config-file /pypi/.pypirc dist/*")
+                    sh("pipenv run twine upload --config-file /pypi/.pypirc dist/*")
                 }
             }
         }
