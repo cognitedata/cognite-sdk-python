@@ -124,6 +124,6 @@ def post_assets(assets: List[AssetDTO], **kwargs):
         'content-type': 'application/json',
         'accept': 'application/json'
     }
-    print(body)
+
     res = utils.post_request(url, body=body, headers=headers, cookies=config.get_cookies())
     return AssetSearchObject(res.json())
