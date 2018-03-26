@@ -20,6 +20,12 @@ podTemplate(
     ],
     envVars: [
         secretEnvVar(key: 'CODECOV_TOKEN', secretName: 'codecov-token-cognite-sdk-python', secretKey: 'token.txt'),
+        // /codecov-script/upload-report.sh relies on the following
+        // Jenkins and Github environment variables.
+        envVar(key: 'BRANCH_NAME', value: env.BRANCH_NAME),
+        envVar(key: 'BUILD_NUMBER', value: env.BUILD_NUMBER),
+        envVar(key: 'BUILD_URL', value: env.BUILD_URL),
+        envVar(key: 'CHANGE_ID', value: env.CHANGE_ID),
     ]) {
     node('jnlp-cognite-sdk-python') {
         def gitCommit
