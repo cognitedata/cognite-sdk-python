@@ -72,7 +72,7 @@ def post_request(url, body, headers=None, params=None, cookies=None, use_gzip=Fa
 
 
 def put_request(url, body=None, headers=None, cookies=None):
-    '''Perform a GET request with a predetermined number of retries.'''
+    '''Perform a PUT request with a predetermined number of retries.'''
     for number_of_tries in range(config.get_number_of_retries() + 1):
         try:
             res = requests.put(url, data=json.dumps(body), headers=headers, cookies=cookies)
