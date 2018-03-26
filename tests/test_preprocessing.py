@@ -1,0 +1,101 @@
+import pytest
+
+from cognite.preprocessing import *
+
+
+@pytest.fixture(scope='module')
+def dfs_no_nan():
+    df1 = pd.DataFrame([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]])
+    df2 = pd.DataFrame([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]])
+    df3 = pd.DataFrame([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]])
+    df1['timestamp'] = df1.index * 2000
+    df2['timestamp'] = df2.index * 5000
+    df3['timestamp'] = df3.index * 10000
+    return df1, df2, df3
+
+
+@pytest.fixture(scope='module')
+def df_with_zero_var_column():
+    return pd.DataFrame([[1, 2, 3], [1, 4, 5], [1, 6, 7]])
+
+
+@pytest.fixture(scope='module')
+def df_with_nan():
+    return pd.DataFrame([[1, 2, 3, 4], [5, 6, None, 8], [None, 10, 11, 12]])
+
+
+@pytest.fixture(scope='module')
+def df_with_leading_nan():
+    return pd.DataFrame([[None, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]])
+
+
+class TestMergeDataframes:
+    def test_num_columns(self, dfs_no_nan):
+        dataframes = list(dfs_no_nan)
+        merged_df = merge_list_of_dataframes(dataframes)
+        actual_num_columns = dataframes[0].shape[1] + dataframes[1].shape[1] + dataframes[2].shape[1] - 2
+        num_columns = merged_df.shape[1]
+        assert num_columns == actual_num_columns
+
+    def test_correct_timestamps(self, dfs_no_nan):
+        dataframes = list(dfs_no_nan)
+        merged_df = merge_list_of_dataframes(dataframes)
+        timestamps = merged_df.timestamp.values
+        deltas = np.diff(timestamps, 1)
+        actual_deltas = np.full((20,), 1000)
+        assert np.array_equal(deltas, actual_deltas)
+
+
+class TestEvenIndex:
+    def test_even_index(self, dfs_no_nan):
+        df = dfs_no_nan[0]
+        df['timestamp'] = [1000, 3000, 8000]
+        even_index_df = make_index_even(df)
+        timestamps = even_index_df.timestamp.values
+        even_deltas = np.diff(timestamps, 1) == 1000
+        assert np.all(even_deltas)
+
+
+class TestFillNan:
+    def test_nans_filled(self, df_with_nan):
+        filled_df = fill_nan(df_with_nan)
+        has_nan = filled_df.isna().any().any()
+        assert not has_nan, "NaNs not filled"
+
+    def test_has_leading_nan(self, df_with_leading_nan):
+        has_leading_nan = df_with_leading_nan.isna().any()[0]
+        assert has_leading_nan, "Leading Nans removed"
+
+
+class TestRemoveNanColumns():
+    @pytest.fixture
+    def df_nan_col_removed(self, df_with_nan):
+        df = df_with_nan
+        df['timestamp'] = df.index * 1000
+        col_removed_df, mask = remove_nan_columns(df)
+        return col_removed_df, mask
+
+    def test_correct_mask(self, df_nan_col_removed):
+        mask = df_nan_col_removed[1]
+        correct_mask = not (mask[0] + mask[2]).any() and (mask[1] + mask[3]).all()
+        assert correct_mask
+
+    def test_correct_column_removed(self, df_nan_col_removed):
+        assert 0 not in df_nan_col_removed[0].columns
+
+
+class TestRemoveZeroVarColumns():
+    @pytest.fixture
+    def df_zero_var_removed(self, df_with_zero_var_column):
+        df = df_with_zero_var_column
+        df['timestamp'] = df.index * 1000
+        col_removed_df, mask = remove_zero_variance_columns(df)
+        return col_removed_df, mask
+
+    def test_correct_mask(self, df_zero_var_removed):
+        mask = df_zero_var_removed[1]
+        correct_mask = not mask[0] and mask[1:].all()
+        assert correct_mask
+
+    def test_correct_column_removed(self, df_zero_var_removed):
+        assert 0 not in df_zero_var_removed[0].columns
