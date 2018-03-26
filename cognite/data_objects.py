@@ -147,6 +147,7 @@ class LatestDatapointObject(CogniteDataObject):
         '''Returns data as a numpy array'''
         return self.to_pandas().values[0]
 
+
 class TimeseriesObject(CogniteDataObject):
     '''Timeseries Object'''
 
@@ -161,26 +162,17 @@ class TimeseriesObject(CogniteDataObject):
         [d.update(d.pop('metadata')) for d in self.internal_representation]
         return pd.DataFrame(self.internal_representation)
 
-class SimilaritySearchObject(CogniteDataObject):
-    '''Similarity Search Data Object.'''
-
-    def to_json(self):
-        '''Returns data as a json object'''
-        return self.internal_representation['data']['items']
-
-    def to_pandas(self):
-        '''Returns data as a pandas dataframe'''
-        if len(self.to_json()) > 1:
-            return pd.DataFrame(self.internal_representation['data']['items'])
-        return pd.DataFrame()
-
 
 class AssetSearchObject(CogniteDataObject):
-    '''Assets Search Data Object
+    '''Assets Search Data Object'''
 
-    TODO:
-        * For now just a copy of SimilaritySearchObject. Implement correct formatting for this data.
-    '''
+    def next_cursor(self):
+        '''Returns next cursor to use for paging through results'''
+        return self.internal_representation['data'].get('nextCursor')
+
+    def previous_cursor(self):
+        '''Returns previous cursor'''
+        return self.internal_representation['data'].get('previousCursor')
 
     def to_json(self):
         '''Returns data as a json object'''

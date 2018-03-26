@@ -3,20 +3,34 @@
 
 This module mirrors the Assets API.
 """
-import cognite._constants as _constants
-import cognite._utils as _utils
+import cognite._constants as constants
+import cognite._utils as utils
 import cognite.config as config
 from cognite.data_objects import AssetSearchObject
 
 
 # Author: TK
-def search_assets(description, **kwargs):
+def get_assets(name=None, path=None, description=None, metadata=None, depth=None, fuzziness=None, **kwargs):
     '''Returns assets matching provided description.
 
     Args:
+        name (str):             The name of the asset(s) to get.
+
+        path (str):             The path of the subtree tos earch in.
+
         description (str):      Search query.
 
+        metadata (str):         The metadata values used to filter the results.
+
+        depth (str):            Get sub assets up oto this many levels below the specified path.
+
+        fuzziness (int):        The degree of fuzziness in the name matching.
+
     Keyword Arguments:
+        limit (int):            The maximum number of assets to be returned.
+
+        cursor (str):           Cursor to use for paging through results.
+
         api_key (str):          Your api-key.
 
         project (str):          Project name.
@@ -26,27 +40,38 @@ def search_assets(description, **kwargs):
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
     url = config.get_base_url() + '/projects/{}/assets'.format(project)
     params = {
+        'name': name,
         'description': description,
+        'path': path,
+        'metadata': metadata,
+        'depth': depth,
+        'fuzziness': fuzziness,
+        'cursor': kwargs.get('cursor'),
+        'limit': kwargs.get('limit', constants.LIMIT)
     }
     headers = {
         'api-key': api_key,
         'accept': 'application/json'
     }
-    res = _utils.get_request(url, params=params, headers=headers, cookies=config.get_cookies())
+    res = utils.get_request(url, params=params, headers=headers, cookies=config.get_cookies())
 
     return AssetSearchObject(res.json())
 
 
 # Author: TK
-def get_assets(tag_id=None, depth=None, limit=_constants.LIMIT, **kwargs):
+def get_asset_subtree(asset_id='', depth=None, **kwargs):
     '''Returns assets with provided assetId.
 
     Args:
-        tag_id (str):         The tag ID of the top asset to get.
+        asset_id (str):         The asset id of the top asset to get.
 
         depth (int):            Get subassets this many levels below the top asset.
 
     Keyword Arguments:
+        limit (int):            The maximum nuber of assets to be returned.
+
+        cursor (str):           Cursor to use for paging through results.
+
         api_key (str):          Your api-key.
 
         project (str):          Project name.
@@ -54,14 +79,15 @@ def get_assets(tag_id=None, depth=None, limit=_constants.LIMIT, **kwargs):
         AssetSearchObject
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
-    url = config.get_base_url() + '/projects/{}/assets/{}'.format(project, tag_id)
+    url = config.get_base_url() + '/projects/{}/assets/{}'.format(project, asset_id)
     params = {
         'depth': depth,
-        'limit': limit
+        'limit': kwargs.get('limit', constants.LIMIT),
+        'cursor': kwargs.get('cursor')
     }
     headers = {
         'api-key': api_key,
         'accept': 'application/json'
     }
-    res = _utils.get_request(url, params=params, headers=headers, cookies=config.get_cookies())
+    res = utils.get_request(url, params=params, headers=headers, cookies=config.get_cookies())
     return AssetSearchObject(res.json())
