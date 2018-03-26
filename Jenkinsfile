@@ -22,13 +22,15 @@ podTemplate(
         secretEnvVar(key: 'CODECOV_TOKEN', secretName: 'codecov-token-cognite-sdk-python', secretKey: 'token.txt'),
     ]) {
     node('jnlp-cognite-sdk-python') {
-        sh('env')
         def gitCommit
-        stage('Checkout') {
-            checkout(scm)
-            gitCommit = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
-            sh('env')
+        container('jnlp') {
+            stage('Checkout') {
+                checkout(scm)
+                gitCommit = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+            }
         }
+        // /codecov-script/upload-report.sh relies on the following
+        // Jenkins and Github environment variables.
         withEnv([
             "BRANCH_NAME=${env.BRANCH_NAME}",
             "BUILD_NUMBER=${env.BUILD_NUMBER}",
@@ -48,7 +50,6 @@ podTemplate(
                     sh("pipenv run coverage xml")
                 }
                 stage('Upload coverage reports') {
-                    sh('env')
                     sh 'bash </codecov-script/upload-report.sh'
                     step([$class: 'CoberturaPublisher', coberturaReportFile: 'coverage.xml'])
                 }
