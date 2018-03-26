@@ -2,21 +2,25 @@
 
 podTemplate(
     label: 'jnlp-cognite-sdk-python',
-    containers: [containerTemplate(name: 'python',
-                                   image: 'python:3.6.4',
-                                   command: '/bin/cat -',
-                                   resourceRequestCpu: '1000m',
-                                   resourceRequestMemory: '500Mi',
-                                   resourceLimitCpu: '1000m',
-                                   resourceLimitMemory: '500Mi',
-                                   envVars: [envVar(key: 'PYTHONPATH', value: '/usr/local/bin')],
-                                   ttyEnabled: true)],
-    volumes: [secretVolume(secretName: 'jenkins-docker-builder',
-                           mountPath: '/jenkins-docker-builder',
-                           readOnly: true),
-              secretVolume(secretName: 'pypi-credentials',
-                           mountPath: '/pypi',
-                           readOnly: true)]) {
+    containers: [
+        containerTemplate(name: 'python',
+            image: 'python:3.6.4',
+            command: '/bin/cat -',
+            resourceRequestCpu: '1000m',
+            resourceRequestMemory: '500Mi',
+            resourceLimitCpu: '1000m',
+            resourceLimitMemory: '500Mi',
+            envVars: [envVar(key: 'PYTHONPATH', value: '/usr/local/bin')],
+            ttyEnabled: true),
+    ],
+    volumes: [
+        secretVolume(secretName: 'jenkins-docker-builder', mountPath: '/jenkins-docker-builder', readOnly: true),
+        secretVolume(secretName: 'pypi-credentials', mountPath: '/pypi', readOnly: true),
+        configMapVolume(configMapName: 'codecov-script-configmap', mountPath: '/codecov-script'),
+    ],
+    envVars: [
+        secretEnvVar(key: 'CODECOV_TOKEN', secretName: 'codecov-token-cognite-sdk-python', secretKey: 'token.txt'),
+    ]) {
     node('jnlp-cognite-sdk-python') {
         def gitCommit
         container('jnlp') {
@@ -30,18 +34,24 @@ podTemplate(
                 sh("pip3 install pipenv")
             }
             stage('Install dependencies') {
-                sh("pipenv install --system")
+                sh("pipenv install -d")
                 sh("pip3 install .")
             }
-            stage('Test') {
-                sh("cd unit_tests && python3 run_tests.py")
+            stage('Test and coverage report') {
+                sh("pipenv run coverage run --source cognite unit_tests/run_tests.py")
+                sh("pipenv run coverage xml")
+            }
+            stage('Upload coverage reports') {
+                sh 'bash </codecov-script/upload-report.sh'
+                step([$class: 'CoberturaPublisher', coberturaReportFile: 'coverage.xml'])
             }
             stage('Build') {
                 sh("python3 setup.py sdist")
                 sh("python3 setup.py bdist_wheel")
             }
-            def pipVersion = sh(returnStdout: true, script: 'yolk -V cognite-sdk | sort -n | tail -1 | cut -d\\  -f 2').trim()
-            def currentVersion = sh(returnStdout: true, script: 'python3 -c "import cognite; print(cognite.__version__)"').trim()
+
+            def pipVersion = sh(returnStdout: true, script: 'pipenv run yolk -V cognite-sdk | sort -n | tail -1 | cut -d\\  -f 2').trim()
+            def currentVersion = sh(returnStdout: true, script: 'pipenv run python3 -c "import cognite; print(cognite.__version__)"').trim()
 
             println("This version: " + currentVersion)
             println("Latest pip version: " + pipVersion)
