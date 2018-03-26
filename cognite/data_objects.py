@@ -14,6 +14,8 @@ import json
 import pandas as pd
 import six
 
+from cognite import _utils
+
 
 @six.add_metaclass(abc.ABCMeta)
 class CogniteDataObject():
@@ -39,6 +41,16 @@ class CogniteDataObject():
     def to_ndarray(self):
         '''Returns data as a numpy array'''
         return self.to_pandas().values
+
+    def next_cursor(self):
+        '''Returns next cursor to use for paging through results'''
+        if self.internal_representation.get('data'):
+            return self.internal_representation.get('data').get('nextCursor')
+
+    def previous_cursor(self):
+        '''Returns previous cursor'''
+        if self.internal_representation.get('data'):
+            return self.internal_representation.get('data').get('previousCursor')
 
 
 class RawRowDTO(object):
@@ -190,6 +202,21 @@ class TimeSeriesDTO(object):
         self.step = step
 
 
+class DatapointDTO(object):
+    '''Data transfer object for datapoints.
+
+    Attributes:
+        timestamp (int, datetime):    The data timestamp in milliseconds since the epoch (Jan 1, 1970) or as a
+        datetime object.
+
+        value (string):     The data value, Can be string or numeric depending on the metric.
+    '''
+
+    def __init__(self, timestamp, value):
+        self.timestamp = timestamp if isinstance(timestamp, int) else _utils.datetime_to_ms(timestamp)
+        self.value = value
+
+
 class SimilaritySearchObject(CogniteDataObject):
     '''Similarity Search Data Object.'''
 
@@ -207,14 +234,6 @@ class SimilaritySearchObject(CogniteDataObject):
 class AssetSearchObject(CogniteDataObject):
     '''Assets Search Data Object'''
 
-    def next_cursor(self):
-        '''Returns next cursor to use for paging through results'''
-        return self.internal_representation['data'].get('nextCursor')
-
-    def previous_cursor(self):
-        '''Returns previous cursor'''
-        return self.internal_representation['data'].get('previousCursor')
-
     def to_json(self):
         '''Returns data as a json object'''
         return self.internal_representation['data']['items']
@@ -224,3 +243,28 @@ class AssetSearchObject(CogniteDataObject):
         if len(self.to_json()) > 1:
             return pd.DataFrame(self.internal_representation['data']['items'])
         return pd.DataFrame()
+
+
+class AssetDTO(object):
+    '''Data transfer object for assets.
+
+    Attributes:
+        name (str):                 Name of asset. Often referred to as tag.
+        parent_id (int):            ID of parent asset, if any.
+        description (str):          Description of asset.
+        metadata (dict):            Custom , application specific metadata. String key -> String Value.
+        ref_id (str):               Reference ID used only in post request to disambiguate references to duplicate
+                                    names.
+        parent_name (str):          Name of parent, this parent must exist in the same POST request.
+        parent_ref_id (list(int)):  Reference ID of parent, to disambiguate if multiple nodes have the same name.
+    '''
+
+    def __init__(self, name, parent_id=None, description=None, metadata=None, ref_id=None, parent_name=None,
+                 parent_ref_id=None):
+        self.name = name
+        self.parentId = parent_id
+        self.description = description
+        self.metadata = metadata
+        self.refId = ref_id
+        self.parentName = parent_name
+        self.parentRefId = parent_ref_id
