@@ -7,7 +7,7 @@ coverage:
     project:
       default:
         target: auto
-        threshold: 0.5%
+        threshold: 0.01%
         base: auto
     patch: off
     changes: off
@@ -19,6 +19,4 @@ comment:
 codecov:
   notify:
     require_ci_to_pass: false
-    # countdown: 15
-    # delay: 15
     after_n_builds: 1  # send notifications and complete cc build after 1 upload
