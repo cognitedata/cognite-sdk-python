@@ -223,3 +223,30 @@ class ProgressIndicator():
             end = end
 
         return start, end
+
+def get_first_datapoint_ts_v2(tag, start, end, api_key, project):
+    '''Returns the timestamp of the first datapoint of a timeseries in the given interval.
+
+    If no start is specified, the default is 1 week ago
+    '''
+    api_key, project = config.get_config_variables(api_key, project)
+    tag = tag.replace('/', '%2F')
+    url = config.get_base_url() + '/projects/{}/timeseries/data/{}'.format(project, tag)
+    params = {
+        'limit': 1,
+        'start': start,
+        'end': end
+    }
+    headers = {
+        'api-key': api_key,
+        'accept': 'application/json'
+    }
+    res = get_request(
+        url,
+        params=params,
+        headers=headers,
+        cookies=config.get_cookies()
+    ).json()['data']['items'][0]['datapoints']
+    if res:
+        return int(res[0]['timestamp'])
+    return None
