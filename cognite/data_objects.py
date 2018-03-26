@@ -206,9 +206,7 @@ class DatapointDTO(object):
     '''Data transfer object for datapoints.
 
     Attributes:
-        timestamp (int, datetime):    The data timestamp in milliseconds since the epoch (Jan 1, 1970) or as a
-        datetime object.
-
+        timestamp (int, datetime): The data timestamp in milliseconds since the epoch (Jan 1, 1970) or as a datetime object.
         value (string):     The data value, Can be string or numeric depending on the metric.
     '''
 
