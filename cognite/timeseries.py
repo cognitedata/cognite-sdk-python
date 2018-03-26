@@ -17,7 +17,7 @@ import cognite._constants as _constants
 import cognite._utils as _utils
 import cognite.config as config
 from cognite._protobuf_descriptors import _api_timeseries_data_v1_pb2
-from cognite.data_objects import DatapointsObject, LatestDatapointObject, TimeseriesObject, TimeSeriesDTO
+from cognite.data_objects import DatapointsObject, LatestDatapointObject, TimeseriesObject, TimeSeriesDTO, DatapointDTO
 
 
 def get_timeseries(prefix=None, description=None, include_metadata=False, asset_id=None, path=None, **kwargs):
@@ -552,7 +552,7 @@ def post_time_series(time_series: List[TimeSeriesDTO], **kwargs):
         An empty response.
     '''
 
-    api_key, project = config.get_config_variables(kwargs.get('api-key'), kwargs.get('project'))
+    api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
     url = config.get_base_url() + '/projects/{}/timeseries'.format(project)
 
     body = {
@@ -586,7 +586,7 @@ def update_time_series(time_series: List[TimeSeriesDTO], **kwargs):
         An empty response.
     '''
 
-    api_key, project = config.get_config_variables(kwargs.get('api-key'), kwargs.get('project'))
+    api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
     url = config.get_base_url() + '/projects/{}/timeseries'.format(project)
 
     body = {
@@ -603,3 +603,35 @@ def update_time_series(time_series: List[TimeSeriesDTO], **kwargs):
     return res.json()
 
 
+def post_datapoints(tag_id, datapoints: List[DatapointDTO], **kwargs):
+    '''Insert a list of datapoints.
+
+    Args:
+        tag_id (str):       ID of timeseries to insert to.
+
+        datapoints (list[DatapointDTO): List of datapoint data transfer objects to insert.
+
+    Keyword Args:
+        api_key (str): Your api-key.
+
+        project (str): Project name.
+
+    Returns:
+        An empty response.
+    '''
+    api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
+    tag_id = tag_id.replace('/', '%2F')
+    url = config.get_base_url() + '/projects/{}/timeseries/data/{}'.format(project, tag_id)
+
+    body = {
+        'items': [dp.__dict__ for dp in datapoints]
+    }
+
+    headers = {
+        'api-key': api_key,
+        'content-type': 'application/json',
+        'accept': 'application/json'
+    }
+
+    res = _utils.post_request(url, body=body, headers=headers)
+    return res.json()
