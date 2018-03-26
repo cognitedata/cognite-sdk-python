@@ -22,11 +22,13 @@ podTemplate(
         secretEnvVar(key: 'CODECOV_TOKEN', secretName: 'codecov-token-cognite-sdk-python', secretKey: 'token.txt'),
     ]) {
     node('jnlp-cognite-sdk-python') {
+        sh('env')
         def gitCommit
         container('jnlp') {
             stage('Checkout') {
                 checkout(scm)
                 gitCommit = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+                sh('env')
             }
         }
         container('python') {
