@@ -9,6 +9,7 @@ import warnings
 from datetime import datetime
 from functools import partial
 from multiprocessing import Pool
+from typing import List
 
 import pandas as pd
 
@@ -16,7 +17,7 @@ import cognite._constants as _constants
 import cognite._utils as _utils
 import cognite.config as config
 from cognite._protobuf_descriptors import _api_timeseries_data_v1_pb2
-from cognite.data_objects import DatapointsObject, LatestDatapointObject, TimeseriesObject
+from cognite.data_objects import DatapointsObject, LatestDatapointObject, TimeseriesObject, TimeSeriesDTO
 
 
 def get_timeseries(prefix=None, description=None, include_metadata=False, asset_id=None, path=None, **kwargs):
@@ -535,3 +536,70 @@ def _get_datapoints_frame_helper(tag_ids, aggregates, granularity, start=None, e
     if display_progress:
         prog_ind.terminate()
     return pd.concat(dataframes).reset_index(drop=True)
+
+
+def post_time_series(time_series: List[TimeSeriesDTO], **kwargs):
+    '''Create a new time series.
+
+    Args:
+        timeseries (list[TimeSeriesDTO]):   List of time series data transfer objects to create.
+
+    Keyword Args:
+        api_key (str): Your api-key.
+
+        project (str): Project name.
+    Returns:
+        An empty response.
+    '''
+
+    api_key, project = config.get_config_variables(kwargs.get('api-key'), kwargs.get('project'))
+    url = config.get_base_url() + '/projects/{}/timeseries'.format(project)
+
+    body = {
+        'items': [ts.__dict__ for ts in time_series]
+    }
+
+    headers = {
+        'api-key': api_key,
+        'content-type': 'application/json',
+        'accept': 'application/json'
+    }
+
+    res = _utils.post_request(url, body=body, headers=headers)
+    return res.json()
+
+
+def update_time_series(time_series: List[TimeSeriesDTO], **kwargs):
+    '''Update an existing time series.
+
+    For each field that can be updated, a null value indicates that nothing should be done.
+
+    Args:
+        timeseries (list[TimeSeriesDTO]):   List of time series data transfer objects to create.
+
+    Keyword Args:
+        api_key (str): Your api-key.
+
+        project (str): Project name.
+
+    Returns:
+        An empty response.
+    '''
+
+    api_key, project = config.get_config_variables(kwargs.get('api-key'), kwargs.get('project'))
+    url = config.get_base_url() + '/projects/{}/timeseries'.format(project)
+
+    body = {
+        'items': [ts.__dict__ for ts in time_series]
+    }
+
+    headers = {
+        'api-key': api_key,
+        'content-type': 'application/json',
+        'accept': 'application/json'
+    }
+
+    res = _utils.put_request(url, body=body, headers=headers)
+    return res.json()
+
+
