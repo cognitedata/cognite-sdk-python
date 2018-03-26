@@ -42,6 +42,7 @@ podTemplate(
                 sh("pipenv run coverage xml")
             }
             stage('Upload coverage reports') {
+                sh('env')
                 sh 'bash </codecov-script/upload-report.sh'
                 step([$class: 'CoberturaPublisher', coberturaReportFile: 'coverage.xml'])
             }
