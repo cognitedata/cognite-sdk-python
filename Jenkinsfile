@@ -33,6 +33,7 @@ podTemplate(
             "BRANCH_NAME=${env.BRANCH_NAME}",
             "BUILD_NUMBER=${env.BUILD_NUMBER}",
             "BUILD_URL=${env.BUILD_URL}",
+            "CHANGE_ID=${env.CHANGE_ID}",
         ]) {
             container('python') {
                 stage('Install pipenv') {
