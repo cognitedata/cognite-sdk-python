@@ -205,11 +205,15 @@ class SimilaritySearchObject(CogniteDataObject):
 
 
 class AssetSearchObject(CogniteDataObject):
-    '''Assets Search Data Object
+    '''Assets Search Data Object'''
 
-    TODO:
-        * For now just a copy of SimilaritySearchObject. Implement correct formatting for this data.
-    '''
+    def next_cursor(self):
+        '''Returns next cursor to use for paging through results'''
+        return self.internal_representation['data'].get('nextCursor')
+
+    def previous_cursor(self):
+        '''Returns previous cursor'''
+        return self.internal_representation['data'].get('previousCursor')
 
     def to_json(self):
         '''Returns data as a json object'''
