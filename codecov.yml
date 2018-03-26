@@ -9,7 +9,6 @@ coverage:
         target: auto
         threshold: 0.5%
         base: auto
-        only_pulls: true
     patch: off
     changes: off
 
