@@ -16,7 +16,7 @@ def get_assets(name=None, path=None, description=None, metadata=None, depth=None
     Args:
         name (str):             The name of the asset(s) to get.
 
-        path (str):             The path of the subtree tos earch in.
+        path (str):             The path of the subtree to search in.
 
         description (str):      Search query.
 
