@@ -1,12 +1,23 @@
-import os
+# Temporary mock setup while waiting for a better way to do integration tests
+from unittest.mock import patch
 
 import pytest
 
 
+def mocked_post_request():
+    return {'cucoo': 'haha'}
+
+
+@patch('requests.post')
 @pytest.fixture(scope='module')
-def tagmatching_result():
+def tagmatching_result(mock_post):
     from cognite.tagmatching import tag_matching
-    return tag_matching(tag_ids=['skap18pi2317'], api_key=os.getenv('COGNITE_API_KEY'), project='akerbp')
+    mock_post.return_value.status_code = 200
+    mock_post.return_value.json.return_value = {'data': {'items': [{'matches': [
+        {'platform': 'a_platform', 'score': 0, 'tagId': 'a_match'},
+        {'platform': 'a_platform', 'score': 0, 'tagId': 'a_match1'},
+        {'platform': 'a_platform', 'score': 0, 'tagId': 'a_match2'}], 'tagId': 'a_tag'}]}}
+    return tag_matching(tag_ids=['a_tag'])
 
 
 def test_object(tagmatching_result):
@@ -36,32 +47,3 @@ def test_list_len_first_matches(tagmatching_result):
 def test_list_len_all_matches(tagmatching_result):
     l = tagmatching_result.to_list()
     assert len(l) == 1
-
-# class TimeseriesTestCase(unittest.TestCase):
-#     def setUp(self):
-#         self.response = timeseries_response
-#
-#     def test_multi_tag(self):
-#         self.assertIsInstance(self.response, list)
-#
-#     def test_object(self):
-#         from cognite.data_objects import DatapointsObject
-#         self.assertIsInstance(self.response[0], DatapointsObject)
-#
-#     def test_multi_tag_element_json(self):
-#         self.assertIsInstance(self.response[0].to_json(), dict)
-#
-#     def test_pandas(self):
-#         import pandas as pd
-#         self.assertIsInstance(self.response[0].to_pandas(), pd.DataFrame)
-#
-#     def test_ndarray(self):
-#         import numpy as np
-#         self.assertIsInstance(self.response[0].to_ndarray(), np.ndarray)
-#
-#
-
-#
-#
-
-#
