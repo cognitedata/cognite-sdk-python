@@ -27,6 +27,8 @@ def mock_response(
         mock_resp.raise_for_status.side_effect = raise_for_status
     # set status code and content
     mock_resp.status_code = status
+    # requests.models.Response.ok mock
+    mock_resp.ok = True if status < 400 else False
     mock_resp.content = content
     mock_resp.headers = headers
     # add json data if provided

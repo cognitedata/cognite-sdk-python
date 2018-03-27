@@ -143,6 +143,63 @@ class RequestsTestCase(unittest.TestCase):
                 use_gzip=False)
             self.assertEqual(response.status_code, 200)
 
+    def test_put_request_ok(self):
+        with mock.patch('cognite._utils.requests.put') as mock_request:
+            mock_request.return_value = mock_response(json_data=assets_response)
+
+            response = utils.put_request(self.ASSETS_URL, body=assets_response)
+            response_json = response.json()
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(len(response_json["data"]["items"]), len(assets_response))
+
+    def test_put_request_failed(self):
+        with mock.patch('cognite._utils.requests.put') as mock_request:
+            mock_request.return_value = mock_response(status=400, json_data={"error": "Client error"})
+
+            self.assertRaisesRegex(utils.APIError, "Client error[\n]X-Request_id",
+                                   utils.put_request, self.ASSETS_URL, assets_response)
+
+            mock_request.return_value = mock_response(status=500, content="Server error")
+
+            self.assertRaisesRegex(utils.APIError, "Server error[\n]X-Request_id",
+                                   utils.put_request, self.ASSETS_URL, assets_response)
+
+            mock_request.return_value = mock_response(status=500, json_data={"error": "Server error"})
+
+            self.assertRaisesRegex(utils.APIError, "Server error[\n]X-Request_id",
+                                   utils.put_request, self.ASSETS_URL, assets_response)
+
+    def test_put_request_exception(self):
+        with mock.patch('cognite._utils.requests.put') as mock_request:
+            mock_request.return_value = mock_response(status=500)
+            mock_request.side_effect = Exception("Custom error")
+
+            self.assertRaisesRegex(utils.APIError, "Custom error",
+                                   utils.put_request, self.ASSETS_URL, assets_response)
+
+    def test_put_request_args(self):
+        with mock.patch('cognite._utils.requests.put') as mock_request:
+
+            def check_args_to_put_and_return_mock(url, data=None, headers=None, params=None, cookies=None):
+                # URL is sent as is
+                self.assertEqual(url, self.ASSETS_URL)
+                # data is json encoded
+                self.assertEqual(len(json.loads(data)["data"]["items"]), len(assets_response))
+                # cookies should be the same
+                self.assertEqual(cookies, {"a-cookie": "a-cookie-val"})
+                # Return the mock response
+                return mock_response(json_data=assets_response)
+            mock_request.side_effect = check_args_to_put_and_return_mock
+
+            response = utils.put_request(
+                self.ASSETS_URL, assets_response,
+                headers={"Existing-Header": "SomeValue"},
+                cookies={"a-cookie": "a-cookie-val"},
+            )
+
+            self.assertEqual(response.status_code, 200)
+
     def tearDown(self):
         cleanup_test_session()
         self.RANDOM_API_URL = None
