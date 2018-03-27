@@ -15,4 +15,4 @@ Data Platform (CDP).
 
 
 __all__ = ['assets', 'config', 'data_objects', 'tagmatching', 'timeseries', 'raw', 'preprocessing']
-__version__ = '0.4.26'
+__version__ = '0.4.28'
