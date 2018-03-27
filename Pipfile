@@ -8,7 +8,7 @@ name = "pypi"
 [packages]
 
 twine = "*"
-sphinx = "*"
+Sphinx = "*"
 "yolk3k" = "*"
 pylint = "*"
 pandas = "*"
@@ -19,7 +19,7 @@ pytest = "*"
 
 [dev-packages]
 
-coverage = "*"
+pytest-cov = "*"
 
 
 [requires]
