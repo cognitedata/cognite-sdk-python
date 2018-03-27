@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import setup
 
 import cognite
 
@@ -9,7 +9,7 @@ setup(name='cognite-sdk',
       download_url='https://github.com/cognitedata/cognite-sdk-python/archive/{}.tar.gz'.format(cognite.__version__),
       author='Erlend Vollset',
       author_email='erlend.vollset@cognite.com',
-      packages=find_packages(),
+      packages=['cognite', 'cognite._protobuf_descriptors'],
       install_requires=[
           'requests',
           'pandas',

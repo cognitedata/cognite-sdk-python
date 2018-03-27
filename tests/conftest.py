@@ -19,7 +19,7 @@ def configure_test_session():
 class MockReturnValue(mock.Mock):
     """Helper class for building mock request responses.
 
-    Should be assigned to mock.return_value
+    Should be assigned to MagicMock.return_value
     """
 
     def __init__(self, status=200, content="CONTENT", json_data=None, raise_for_status=None,
