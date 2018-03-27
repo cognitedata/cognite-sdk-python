@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from datetime import datetime
 import gzip
 import json
 import unittest
@@ -86,7 +87,6 @@ class RequestsTestCase(unittest.TestCase):
 
     def test_post_request_args(self):
         with mock.patch('cognite._utils.requests.post') as mock_request:
-
             def check_args_to_post_and_return_mock(url, data=None, headers=None, params=None, cookies=None):
                 # URL is sent as is
                 self.assertEqual(url, self.ASSETS_URL)
@@ -99,6 +99,7 @@ class RequestsTestCase(unittest.TestCase):
                 self.assertEqual(len(decompressed_assets["data"]["items"]), len(assets_response))
                 # Return the mock response
                 return mock_response(json_data=assets_response)
+
             mock_request.side_effect = check_args_to_post_and_return_mock
 
             response = utils.post_request(
@@ -111,7 +112,6 @@ class RequestsTestCase(unittest.TestCase):
 
     def test_post_request_gzip(self):
         with mock.patch('cognite._utils.requests.post') as mock_request:
-
             def check_gzip_enabled_and_return_mock(url, data=None, headers=None, params=None, cookies=None):
                 # gzip is added as Content-Encoding header
                 self.assertEqual(headers["Content-Encoding"], "gzip")
@@ -120,6 +120,7 @@ class RequestsTestCase(unittest.TestCase):
                 self.assertEqual(len(decompressed_assets["data"]["items"]), len(assets_response))
                 # Return the mock response
                 return mock_response(json_data=assets_response)
+
             mock_request.side_effect = check_gzip_enabled_and_return_mock
 
             response = utils.post_request(
@@ -135,6 +136,7 @@ class RequestsTestCase(unittest.TestCase):
                 self.assertEqual(len(json.loads(data)["data"]["items"]), len(assets_response))
                 # Return the mock response
                 return mock_response(json_data=assets_response)
+
             mock_request.side_effect = check_gzip_disabled_and_return_mock
 
             response = utils.post_request(
@@ -180,7 +182,6 @@ class RequestsTestCase(unittest.TestCase):
 
     def test_put_request_args(self):
         with mock.patch('cognite._utils.requests.put') as mock_request:
-
             def check_args_to_put_and_return_mock(url, data=None, headers=None, params=None, cookies=None):
                 # URL is sent as is
                 self.assertEqual(url, self.ASSETS_URL)
@@ -190,6 +191,7 @@ class RequestsTestCase(unittest.TestCase):
                 self.assertEqual(cookies, {"a-cookie": "a-cookie-val"})
                 # Return the mock response
                 return mock_response(json_data=assets_response)
+
             mock_request.side_effect = check_args_to_put_and_return_mock
 
             response = utils.put_request(
@@ -205,5 +207,14 @@ class RequestsTestCase(unittest.TestCase):
         self.RANDOM_API_URL = None
 
 
+class ConversionsTestCase(unittest.TestCase):
+
+    def test_datetime_to_ms(self):
+        self.assertEqual(utils.datetime_to_ms(datetime(2018, 1, 31)), 1517356800000)
+        self.assertEqual(utils.datetime_to_ms(datetime(2018, 1, 31, 11, 11, 11)), 1517397071000)
+        self.assertEqual(utils.datetime_to_ms(datetime(100, 1, 31)), -59008867200000)
+        self.assertRaises(TypeError, utils.datetime_to_ms, None)
+
 def suites():
-    return [unittest.TestLoader().loadTestsFromTestCase(RequestsTestCase)]
+    return [unittest.TestLoader().loadTestsFromTestCase(RequestsTestCase),
+            unittest.TestLoader().loadTestsFromTestCase(ConversionsTestCase)]
