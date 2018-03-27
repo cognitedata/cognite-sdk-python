@@ -127,32 +127,29 @@ def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=No
     step_size = _utils.round_to_nearest(int(diff / steps), base=granularity_ms)
     # Create list of where each of the parallelized intervals will begin
     step_starts = [start + (i * step_size) for i in range(steps)]
-    args = [{'start': start, 'end': start + step_size, 'display_progress': False} for start in step_starts]
+    args = [{'start': start, 'end': start + step_size} for start in step_starts]
 
     partial_get_dps = partial(
         _get_datapoints_helper_wrapper,
         tag_id=tag_id,
         aggregates=aggregates,
         granularity=granularity,
-        protobuf=True,
+        protobuf=kwargs.get('protobuf', True),
         api_key=api_key,
         project=project
     )
 
-    display_progress = len(args) <= 2
-    if display_progress:
-        args[-1]['display_progress'] = True
-    else:
-        prog_ind = _utils.ProgressIndicator([tag_id], start, end, display_progress=False)
+    prog_ind = _utils.ProgressIndicator([tag_id])
 
     p = Pool(steps)
 
     datapoints = p.map(partial_get_dps, args)
+    p.close()
+    p.join()
     concat_dps = []
     [concat_dps.extend(el) for el in datapoints]
 
-    if not display_progress:
-        prog_ind.terminate()
+    prog_ind.terminate()
 
     return DatapointsObject({'data': {'items': [{'tagId': tag_id, 'datapoints': concat_dps}]}})
 
@@ -167,7 +164,6 @@ def _get_datapoints_helper_wrapper(args, tag_id, aggregates, granularity, protob
         protobuf=protobuf,
         api_key=api_key,
         project=project,
-        display_progress=args['display_progress']
     )
 
 
@@ -195,8 +191,6 @@ def _get_datapoints_helper(tag_id, aggregates=None, granularity=None, start=None
         protobuf (bool):        Download the data using the binary protobuf format. Only applicable when getting raw data.
                                 Defaults to True.
 
-        display_progress (bool):   Whether or not to display progress indicator. Defaults to True.
-
         api_key (str):          Your api-key.
 
         project (str):          Project name.
@@ -223,8 +217,6 @@ def _get_datapoints_helper(tag_id, aggregates=None, granularity=None, start=None
         'api-key': api_key,
         'accept': 'application/protobuf' if use_protobuf else 'application/json'
     }
-    display_progress = kwargs.get('display_progress', True)
-    prog_ind = _utils.ProgressIndicator([tag_id], start, end, api_key, project, display_progress=display_progress)
     datapoints = []
     while not datapoints or len(datapoints[-1]) == limit:
         res = _utils.get_request(url, params=params, headers=headers)
@@ -243,10 +235,7 @@ def _get_datapoints_helper(tag_id, aggregates=None, granularity=None, start=None
 
         datapoints.append(res)
         latest_timestamp = int(datapoints[-1][-1]['timestamp'])
-        prog_ind.update_progress(latest_timestamp)
         params['start'] = latest_timestamp + (_utils.granularity_to_ms(granularity) if granularity else 1)
-    if display_progress:
-        prog_ind.terminate()
     dps = []
     [dps.extend(el) for el in datapoints]
     return dps
@@ -403,7 +392,7 @@ def get_datapoints_frame(tag_ids, aggregates, granularity, start=None, end=None,
     step_size = _utils.round_to_nearest(int(diff / steps), base=granularity_ms)
     # Create list of where each of the parallelized intervals will begin
     step_starts = [start + (i * step_size) for i in range(steps)]
-    args = [{'start': start, 'end': start + step_size, 'display_progress': False} for start in step_starts]
+    args = [{'start': start, 'end': start + step_size} for start in step_starts]
 
     partial_get_dpsf = partial(
         _get_datapoints_frame_helper_wrapper,
@@ -414,18 +403,15 @@ def get_datapoints_frame(tag_ids, aggregates, granularity, start=None, end=None,
         project=project
     )
 
-    display_progress = len(args) <= 2
-    if display_progress:
-        args[-1]['display_progress'] = True
-    else:
-        prog_ind = _utils.ProgressIndicator(tag_ids, start, end, display_progress=False)
+    prog_ind = _utils.ProgressIndicator(tag_ids)
     p = Pool(steps)
 
     dataframes = p.map(partial_get_dpsf, args)
+    p.close()
+    p.join()
     df = pd.concat(dataframes).drop_duplicates(subset='timestamp').reset_index(drop=True)
 
-    if not display_progress:
-        prog_ind.terminate()
+    prog_ind.terminate()
 
     return df
 
@@ -438,8 +424,7 @@ def _get_datapoints_frame_helper_wrapper(args, tag_ids, aggregates, granularity,
         args['start'],
         args['end'],
         api_key=api_key,
-        project=project,
-        display_progress=args['display_progress']
+        project=project
     )
 
 
@@ -469,8 +454,6 @@ def _get_datapoints_frame_helper(tag_ids, aggregates, granularity, start=None, e
         api_key (str): Your api-key.
 
         project (str): Project name.
-
-        display_progress (bool): Whether or not to display progress indicator.
 
     Returns:
         pandas.DataFrame: A pandas dataframe containing the datapoints for the given tag_ids. The datapoints for all the
@@ -517,9 +500,6 @@ def _get_datapoints_frame_helper(tag_ids, aggregates, granularity, start=None, e
         'accept': 'text/csv'
     }
     dataframes = []
-    display_progress = kwargs.get('display_progress', True)
-    prog_ind = _utils.ProgressIndicator(tag_ids, start, end, api_key, project,
-                                        display_progress=display_progress)
     while not dataframes or dataframes[-1].shape[0] == per_tag_limit:
         res = _utils.post_request(url=url, body=body, headers=headers, cookies=config.get_cookies())
         dataframes.append(
@@ -530,8 +510,5 @@ def _get_datapoints_frame_helper(tag_ids, aggregates, granularity, start=None, e
             warnings.warn(warning)
             break
         latest_timestamp = int(dataframes[-1].iloc[-1, 0])
-        prog_ind.update_progress(latest_timestamp)
         body['start'] = latest_timestamp + _utils.granularity_to_ms(granularity)
-    if display_progress:
-        prog_ind.terminate()
     return pd.concat(dataframes).reset_index(drop=True)
