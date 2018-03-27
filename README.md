@@ -29,7 +29,7 @@ Run unit tests by running the following command from the root directory:
 If you want to generate code coverage reports run:
 
 ```
-coverage run --source cognite unit_tests/run_tests.py
+pytest --cov
 coverage html
 ```
 
