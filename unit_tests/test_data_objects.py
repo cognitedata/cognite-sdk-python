@@ -24,7 +24,7 @@ class TagMatchingTestCase(unittest.TestCase):
 class AssetsTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.response = assets_response
+        self.response = assets_response_obj
 
     def test_object(self):
         from cognite.data_objects import AssetSearchObject

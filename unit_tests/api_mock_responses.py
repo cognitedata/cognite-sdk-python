@@ -1,5 +1,42 @@
-import json
+import unittest.mock as mock
+
+from requests.structures import CaseInsensitiveDict
+
 from cognite.data_objects import *
+
+
+def mock_response(
+        status=200,
+        content="CONTENT",
+        json_data=None,
+        raise_for_status=None,
+        headers=CaseInsensitiveDict(),):
+    """
+    since we typically test a bunch of different
+    requests calls for a service, we are going to do
+    a lot of mock responses, so its usually a good idea
+    to have a helper function that builds these things
+    """
+
+    if "X-Request-Id" not in headers:
+        headers["X-Request-Id"] = "1234567890"
+    mock_resp = mock.Mock()
+    # mock raise_for_status call w/optional error
+    mock_resp.raise_for_status = mock.Mock()
+    if raise_for_status:
+        mock_resp.raise_for_status.side_effect = raise_for_status
+    # set status code and content
+    mock_resp.status_code = status
+    # requests.models.Response.ok mock
+    mock_resp.ok = True if status < 400 else False
+    mock_resp.content = content
+    mock_resp.headers = headers
+    # add json data if provided
+    if json_data:
+        mock_resp.json = mock.Mock(
+            return_value=json_data
+        )
+    return mock_resp
 
 
 tag_matching_response = {
@@ -80,7 +117,7 @@ assets_response = {
         ]
     }
 }
-assets_response = AssetSearchObject(assets_response)
+assets_response_obj = AssetSearchObject(assets_response)
 
 
 timeseries_response = {
