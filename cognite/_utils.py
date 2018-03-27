@@ -7,7 +7,6 @@ This module is protected and should not used by end-users.
 """
 import gzip
 import json
-import math
 import re
 import sys
 import time
@@ -75,8 +74,10 @@ def datetime_to_ms(dt):
     epoch = datetime.utcfromtimestamp(0)
     return int((dt - epoch).total_seconds() * 1000)
 
+
 def round_to_nearest(x, base):
-    return int(base * round(float(x)/base))
+    return int(base * round(float(x) / base))
+
 
 def granularity_to_ms(time_string):
     '''Returns millisecond representation of granularity time string'''
@@ -99,39 +100,6 @@ def _time_ago_to_ms(time_ago_string):
     return None
 
 
-def get_first_datapoint_ts(tag, start, end, api_key, project):
-    '''Returns the timestamp of the first datapoint of a timeseries in the given interval.
-
-    If no start is specified, the default is 1 week ago
-    '''
-    api_key, project = config.get_config_variables(api_key, project)
-    tag = tag.replace('/', '%2F')
-    url = config.get_base_url() + '/projects/{}/timeseries/data/{}'.format(project, tag)
-    params = {
-        'limit': 1,
-        'start': start,
-        'end': end
-    }
-    headers = {
-        'api-key': api_key,
-        'accept': 'application/json'
-    }
-    res = get_request(
-        url,
-        params=params,
-        headers=headers,
-        cookies=config.get_cookies()
-    ).json()['data']['items'][0]['datapoints']
-    if res:
-        return int(res[0]['timestamp'])
-    return None
-
-def get_last_datapoint_ts(tag, api_key, project):
-    '''Returns the timestamp of the last datapoint of a timeseries.'''
-    from cognite.timeseries import get_latest
-    return int(get_latest(tag, api_key=api_key, project=project).to_json()['timestamp'])
-
-
 def interval_to_ms(start, end):
     '''Returns the ms representation of start-end-interval whether it is time-ago, datetime or None.'''
     time_now = int(round(time.time() * 1000))
@@ -151,75 +119,16 @@ def interval_to_ms(start, end):
 
     return start, end
 
+
 class APIError(Exception):
     pass
 
 
 class ProgressIndicator():
-    '''This class lets the system give the user and indication of how much data remains to be downloaded in the request'''
+    '''This class lets the system give the user that data is being downloaded'''
 
-    def __init__(self, tag_ids, start, end, api_key=None, project=None, display_progress=True):
-        self.api_key = api_key
-        self.project = project
-        self.start, self.end = self._get_start_end(tag_ids, start, end)
-        self.length = self.end - self.start
-        self.progress = 0.0
-        self.display_progress = display_progress
-        if not display_progress:
-            sys.stdout.write("\rDownloading requested data...")
-        else:
-            self._print_progress()
-
-    def update_progress(self, latest_timestamp):
-        '''Update progress based on latest timestamp'''
-        self.progress = 100 - (((self.end - latest_timestamp) / self.length) * 100)
-        if self.display_progress:
-            self._print_progress()
+    def __init__(self, tag_ids):
+        sys.stdout.write("\rDownloading data for tags {}...".format(tag_ids))
 
     def terminate(self):
         sys.stdout.write('\r' + ' ' * 500 + '\r')
-
-    def _print_progress(self):
-        prog = int(math.ceil(self.progress) / 5)
-        remainder = 20 - prog
-        sys.stdout.write("\rDownloading requested data: {:5.1f}% |{}|".format(int(math.ceil(self.progress)),
-                                                                              '|' * prog + ' ' * remainder))
-        sys.stdout.flush()
-
-    def _get_start_end(self, tag_ids, start, end):
-        first_timestamp = float("inf")
-        for tag in tag_ids:
-            if isinstance(tag, str):
-                first_datapoint = get_first_datapoint_ts(tag, start, end, self.api_key, self.project)
-            else:
-                first_datapoint = get_first_datapoint_ts(tag['tagId'], start, end, self.api_key, self.project)
-            tag_start = float("inf")
-            if first_datapoint:
-                tag_start = first_datapoint
-            if tag_start < first_timestamp:
-                first_timestamp = tag_start
-        latest_timestamp = 0
-
-        for tag in tag_ids:
-            if isinstance(tag, str):
-                tag_end = get_last_datapoint_ts(tag, api_key=self.api_key, project=self.project)
-            else:
-                tag_end = get_last_datapoint_ts(tag['tagId'], api_key=self.api_key, project=self.project)
-            if tag_end > latest_timestamp:
-                latest_timestamp = tag_end
-
-        if start is None:
-            start = first_timestamp
-        elif _time_ago_to_ms(start):  # start is specified as string of format '1d-ago'
-            start = latest_timestamp - _time_ago_to_ms(start)
-        else:
-            start = start
-
-        if end is None:
-            end = latest_timestamp
-        elif _time_ago_to_ms(end):  # end is specified as string of format '1d-ago'
-            end = latest_timestamp - _time_ago_to_ms(end)
-        else:
-            end = end
-
-        return start, end
