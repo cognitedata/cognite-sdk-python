@@ -175,69 +175,67 @@ class TestRequests:
             use_gzip=False)
         assert response.status_code == 200
 
+    @mock.patch('cognite._utils.requests.put')
+    def test_put_request_ok(self, mock_request):
+        mock_request.return_value = MockReturnValue(json_data=RESPONSE)
 
-        # TODO: uncomment these tests when merged into master, put_request does not exist in this branch.
-        # @mock.patch('cognite._utils.requests.put')
-        # def test_put_request_ok(self, mock_request):
-        #     mock_request.return_value = MockReturnValue(json_data=RESPONSE)
-        #
-        #     response = utils.put_request(url, body=RESPONSE)
-        #     response_json = response.json()
-        #
-        #     assert response.status_code == 200
-        #     assert len(response_json["data"]["items"]) == len(RESPONSE)
-        #
-        # @mock.patch('cognite._utils.requests.put')
-        # def test_put_request_failed(self, mock_request):
-        #     mock_request.return_value = MockReturnValue(status=400, json_data={"error": "Client error"})
-        #
-        #     with pytest.raises(utils.APIError) as e:
-        #         utils.put_request(url)
-        #     assert re.match("Client error[\n]X-Request_id", str(e.value))
-        #
-        #     mock_request.return_value = MockReturnValue(status=500, content="Server error")
-        #
-        #     with pytest.raises(utils.APIError) as e:
-        #         utils.put_request(url)
-        #     assert re.match("Server error[\n]X-Request_id", str(e.value))
-        #
-        #     mock_request.return_value = MockReturnValue(status=500, json_data={"error": "Server error"})
-        #
-        #     with pytest.raises(utils.APIError) as e:
-        #         utils.put_request(url)
-        #     assert re.match("Server error[\n]X-Request_id", str(e.value))
-        #
-        # @mock.patch('cognite._utils.requests.put')
-        # def test_put_request_exception(self, mock_request):
-        #     mock_request.return_value = MockReturnValue(status=500)
-        #     mock_request.side_effect = Exception("Custom error")
-        #
-        #     with pytest.raises(utils.APIError) as e:
-        #         utils.put_request(url)
-        #     assert re.match("Custom error", str(e.value))
-        #
-        # @mock.patch('cognite._utils.requests.put')
-        # def test_put_request_args(self, mock_request):
-        #     import json
-        #     def check_args_to_put_and_return_mock(arg_url, data=None, headers=None, params=None, cookies=None):
-        #         # URL is sent as is
-        #         assert arg_url == url
-        #         # data is json encoded
-        #         assert len(json.loads(data)["data"]["items"]) == len(RESPONSE)
-        #         # cookies should be the same
-        #         assert cookies == {"a-cookie": "a-cookie-val"}
-        #         # Return the mock response
-        #         return MockReturnValue(json_data=RESPONSE)
-        #
-        #     mock_request.side_effect = check_args_to_put_and_return_mock
-        #
-        #     response = utils.put_request(
-        #         url, RESPONSE,
-        #         headers={"Existing-Header": "SomeValue"},
-        #         cookies={"a-cookie": "a-cookie-val"},
-        #     )
-        #
-        #     assert response.status_code == 200
+        response = utils.put_request(url, body=RESPONSE)
+        response_json = response.json()
+
+        assert response.status_code == 200
+        assert len(response_json["data"]["items"]) == len(RESPONSE)
+
+    @mock.patch('cognite._utils.requests.put')
+    def test_put_request_failed(self, mock_request):
+        mock_request.return_value = MockReturnValue(status=400, json_data={"error": "Client error"})
+
+        with pytest.raises(utils.APIError) as e:
+            utils.put_request(url)
+        assert re.match("Client error[\n]X-Request_id", str(e.value))
+
+        mock_request.return_value = MockReturnValue(status=500, content="Server error")
+
+        with pytest.raises(utils.APIError) as e:
+            utils.put_request(url)
+        assert re.match("Server error[\n]X-Request_id", str(e.value))
+
+        mock_request.return_value = MockReturnValue(status=500, json_data={"error": "Server error"})
+
+        with pytest.raises(utils.APIError) as e:
+            utils.put_request(url)
+        assert re.match("Server error[\n]X-Request_id", str(e.value))
+
+    @mock.patch('cognite._utils.requests.put')
+    def test_put_request_exception(self, mock_request):
+        mock_request.return_value = MockReturnValue(status=500)
+        mock_request.side_effect = Exception("Custom error")
+
+        with pytest.raises(utils.APIError) as e:
+            utils.put_request(url)
+        assert re.match("Custom error", str(e.value))
+
+    @mock.patch('cognite._utils.requests.put')
+    def test_put_request_args(self, mock_request):
+        import json
+        def check_args_to_put_and_return_mock(arg_url, data=None, headers=None, params=None, cookies=None):
+            # URL is sent as is
+            assert arg_url == url
+            # data is json encoded
+            assert len(json.loads(data)["data"]["items"]) == len(RESPONSE)
+            # cookies should be the same
+            assert cookies == {"a-cookie": "a-cookie-val"}
+            # Return the mock response
+            return MockReturnValue(json_data=RESPONSE)
+
+        mock_request.side_effect = check_args_to_put_and_return_mock
+
+        response = utils.put_request(
+            url, RESPONSE,
+            headers={"Existing-Header": "SomeValue"},
+            cookies={"a-cookie": "a-cookie-val"},
+        )
+
+        assert response.status_code == 200
 
 
 class TestConversions:
@@ -262,4 +260,8 @@ class TestConversions:
         assert isinstance(utils.interval_to_ms(None, None)[1], int)
 
     def test_time_ago_to_ms(self):
+        assert utils._time_ago_to_ms('3w-ago') == 1814400000
+        assert utils._time_ago_to_ms('1d-ago') == 86400000
+        assert utils._time_ago_to_ms('1s-ago') == 1000
+        assert utils
         assert utils._time_ago_to_ms('not_correctly_formatted') is None
