@@ -70,6 +70,24 @@ def post_request(url, body, headers=None, params=None, cookies=None, use_gzip=Fa
     raise APIError(err_mess)
 
 
+def put_request(url, body=None, headers=None, cookies=None):
+    '''Perform a PUT request with a predetermined number of retries.'''
+    for number_of_tries in range(config.get_number_of_retries() + 1):
+        try:
+            res = requests.put(url, data=json.dumps(body), headers=headers, cookies=cookies)
+            if res.ok:
+                return res
+        except Exception as e:
+            if number_of_tries == config.get_number_of_retries():
+                raise APIError(e)
+    try:
+        err_mess = res.json()['error'].__str__()
+    except:
+        err_mess = res.content.__str__()
+    err_mess += '\nX-Request_id: {}'.format(res.headers.get('X-Request-Id'))
+    raise APIError(err_mess)
+
+
 def datetime_to_ms(dt):
     epoch = datetime.utcfromtimestamp(0)
     return int((dt - epoch).total_seconds() * 1000)
