@@ -24,13 +24,14 @@ Any changes, bug fixes, additions, or improvements you wish to make should be do
 Set up unit tests for all new functionality
 Run unit tests by running the following command from the root directory:
 
-`$ python3 unit_tests/run_tests.py`
+`$ pytest tests`
 
 If you want to generate code coverage reports run:
 
 ```
-pytest --cov
-coverage html
+pytest --cov-report html \
+       --cov-report xml \
+       --cov cognite
 ```
 
 Open `htmlcov/index.html` in the browser to navigate through the report.

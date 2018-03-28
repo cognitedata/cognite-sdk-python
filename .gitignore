@@ -34,4 +34,6 @@ test.py
 .coverage
 htmlcov
 coverage.xml
+
+# pytest
 .pytest_cache

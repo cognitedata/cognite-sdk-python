@@ -20,6 +20,12 @@ podTemplate(
     ],
     envVars: [
         secretEnvVar(key: 'CODECOV_TOKEN', secretName: 'codecov-token-cognite-sdk-python', secretKey: 'token.txt'),
+        // /codecov-script/upload-report.sh relies on the following
+        // Jenkins and Github environment variables.
+        envVar(key: 'BRANCH_NAME', value: env.BRANCH_NAME),
+        envVar(key: 'BUILD_NUMBER', value: env.BUILD_NUMBER),
+        envVar(key: 'BUILD_URL', value: env.BUILD_URL),
+        envVar(key: 'CHANGE_ID', value: env.CHANGE_ID),
     ]) {
     node('jnlp-cognite-sdk-python') {
         def gitCommit
@@ -38,8 +44,7 @@ podTemplate(
                 sh("pip3 install .")
             }
             stage('Test and coverage report') {
-                sh("pipenv run pytest --cov=cognite")
-                sh("pipenv run coverage xml")
+                sh("pipenv run pytest --cov-report xml:coverage.xml --cov=cognite")
             }
             stage('Upload coverage reports') {
                 sh 'bash </codecov-script/upload-report.sh'
@@ -57,7 +62,7 @@ podTemplate(
             println("Latest pip version: " + pipVersion)
             if (env.BRANCH_NAME == 'master' && currentVersion != pipVersion) {
                 stage('Release') {
-                    sh("twine upload --config-file /pypi/.pypirc dist/*")
+                    sh("pipenv run twine upload --config-file /pypi/.pypirc dist/*")
                 }
             }
         }

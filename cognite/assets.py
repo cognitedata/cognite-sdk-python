@@ -5,10 +5,12 @@ This module mirrors the Assets API.
 
 https://doc.cognitedata.com/#Cognite-API-Assets
 """
+from typing import List
+
 import cognite._constants as constants
 import cognite._utils as utils
 import cognite.config as config
-from cognite.data_objects import AssetSearchObject
+from cognite.data_objects import AssetSearchObject, AssetDTO
 
 
 # Author: TK
@@ -37,7 +39,8 @@ def get_assets(name=None, path=None, description=None, metadata=None, depth=None
 
         project (str):          Project name.
     Returns:
-        AssetSearchObject
+        AssetSearchObject: A data object containing the requested assets with several getter methods with different
+        output formats.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
     url = config.get_base_url() + '/projects/{}/assets'.format(project)
@@ -56,7 +59,6 @@ def get_assets(name=None, path=None, description=None, metadata=None, depth=None
         'accept': 'application/json'
     }
     res = utils.get_request(url, params=params, headers=headers, cookies=config.get_cookies())
-
     return AssetSearchObject(res.json())
 
 
@@ -78,7 +80,8 @@ def get_asset_subtree(asset_id='', depth=None, **kwargs):
 
         project (str):          Project name.
     Returns:
-        AssetSearchObject
+        AssetSearchObject: A data object containing the requested assets with several getter methods with different
+        output formats.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
     url = config.get_base_url() + '/projects/{}/assets/{}'.format(project, asset_id)
@@ -92,4 +95,36 @@ def get_asset_subtree(asset_id='', depth=None, **kwargs):
         'accept': 'application/json'
     }
     res = utils.get_request(url, params=params, headers=headers, cookies=config.get_cookies())
+    return AssetSearchObject(res.json())
+
+
+def post_assets(assets: List[AssetDTO], **kwargs):
+    '''Insert a list of assets.
+
+    Args:
+        assets (list[AssetDTO]): List of asset data transfer objects.
+
+    Keyword Args:
+        api_key (str): Your api-key.
+
+        project (str): Project name.
+
+    Returns:
+        AssetSearchObject: A data object containing the posted assets with several getter methods with different
+        output formats.
+    '''
+    api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
+    url = config.get_base_url() + '/projects/{}/assets'.format(project)
+
+    body = {
+        'items': [asset.__dict__ for asset in assets]
+    }
+
+    headers = {
+        'api-key': api_key,
+        'content-type': 'application/json',
+        'accept': 'application/json'
+    }
+
+    res = utils.post_request(url, body=body, headers=headers, cookies=config.get_cookies())
     return AssetSearchObject(res.json())
