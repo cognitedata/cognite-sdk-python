@@ -1,2 +1,8 @@
 [run]
 source=cognite
+
+[report]
+exclude_lines =
+    pragma: no cover
+    raise AssertionError
+    raise NotImplementedError
