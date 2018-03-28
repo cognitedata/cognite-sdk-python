@@ -19,65 +19,7 @@ import cognite._constants as _constants
 import cognite._utils as _utils
 import cognite.config as config
 from cognite._protobuf_descriptors import _api_timeseries_data_v1_pb2
-from cognite.data_objects import DatapointsObject, LatestDatapointObject, TimeseriesObject, TimeSeriesDTO, DatapointDTO
-
-
-def get_timeseries(prefix=None, description=None, include_metadata=False, asset_id=None, path=None, **kwargs):
-    '''Returns a TimeseriesObject containing the requested timeseries.
-
-    This method will automate paging for the user and return info about all files for the given query. If limit is
-    specified the method will not page and return that many results.
-
-    Args:
-        prefix (str):           List timeseries with this prefix in the name.
-
-        description (str):      Filter timeseries taht contains this string in its description.
-
-        include_metadata (bool):    Decide if teh metadata field should be returned or not. Defaults to False.
-
-        asset_id (int):        Get timeseries related to this asset.
-
-        path (str):             Get timeseries under this asset path branch.
-
-    Keyword Arguments:
-        limit (int):            Number of results to return.
-
-        api_key (str):          Your api-key.
-
-        project (str):          Project name.
-
-    Returns:
-        TimeseriesObject: A data object containing the requested timeseries with several getter methods with different
-        output formats.
-    '''
-    api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
-    url = config.get_base_url() + '/projects/{}/timeseries'.format(project)
-    headers = {
-        'api-key': api_key,
-        'accept': 'application/json'
-    }
-    params = {
-        'q': prefix,
-        'description': description,
-        'includeMetadata': include_metadata,
-        'assetId': asset_id,
-        'path': path,
-        'limit': kwargs.get('limit', 10000)
-    }
-    timeseries = []
-
-    res = _utils.get_request(url=url, headers=headers, params=params, cookies=config.get_cookies())
-    timeseries.extend(res.json()['data']['items'])
-    next_cursor = res.json()['data'].get('nextCursor', None)
-    limit = kwargs.get('limit', float('inf'))
-
-    while next_cursor is not None and len(timeseries) < limit:
-        params['cursor'] = next_cursor
-        res = _utils.get_request(url=url, headers=headers, params=params, cookies=config.get_cookies())
-        timeseries.extend(res.json()['data']['items'])
-        next_cursor = res.json()['data'].get('nextCursor', None)
-
-    return TimeseriesObject(timeseries)
+from cognite.data_objects import DatapointsObject, LatestDatapointObject, TimeSeriesDTO, DatapointDTO
 
 
 def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=None, **kwargs):
@@ -131,7 +73,7 @@ def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=No
     # Create list of where each of the parallelized intervals will begin
     step_starts = [start + (i * step_size) for i in range(steps)]
     args = [{'start': start, 'end': start + step_size} for start in step_starts]
-
+    
     partial_get_dps = partial(
         _get_datapoints_helper_wrapper,
         tag_id=tag_id,
@@ -242,6 +184,40 @@ def _get_datapoints_helper(tag_id, aggregates=None, granularity=None, start=None
     dps = []
     [dps.extend(el) for el in datapoints]
     return dps
+
+
+def post_datapoints(tag_id, datapoints: List[DatapointDTO], **kwargs):
+    '''Insert a list of datapoints.
+
+    Args:
+        tag_id (str):       ID of timeseries to insert to.
+
+        datapoints (list[DatapointDTO): List of datapoint data transfer objects to insert.
+
+    Keyword Args:
+        api_key (str): Your api-key.
+
+        project (str): Project name.
+
+    Returns:
+        An empty response.
+    '''
+    api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
+    tag_id = tag_id.replace('/', '%2F')
+    url = config.get_base_url() + '/projects/{}/timeseries/data/{}'.format(project, tag_id)
+
+    body = {
+        'items': [dp.__dict__ for dp in datapoints]
+    }
+
+    headers = {
+        'api-key': api_key,
+        'content-type': 'application/json',
+        'accept': 'application/json'
+    }
+
+    res = _utils.post_request(url, body=body, headers=headers)
+    return res.json()
 
 
 def get_latest(tag_id, **kwargs):
@@ -517,6 +493,64 @@ def _get_datapoints_frame_helper(tag_ids, aggregates, granularity, start=None, e
     return pd.concat(dataframes).reset_index(drop=True)
 
 
+def get_timeseries(prefix=None, description=None, include_metadata=False, asset_id=None, path=None, **kwargs):
+    '''Returns a TimeseriesObject containing the requested timeseries.
+
+    This method will automate paging for the user and return info about all files for the given query. If limit is
+    specified the method will not page and return that many results.
+
+    Args:
+        prefix (str):           List timeseries with this prefix in the name.
+
+        description (str):      Filter timeseries taht contains this string in its description.
+
+        include_metadata (bool):    Decide if teh metadata field should be returned or not. Defaults to False.
+
+        asset_id (int):        Get timeseries related to this asset.
+
+        path (str):             Get timeseries under this asset path branch.
+
+    Keyword Arguments:
+        limit (int):            Number of results to return.
+
+        api_key (str):          Your api-key.
+
+        project (str):          Project name.
+
+    Returns:
+        TimeseriesObject: A data object containing the requested timeseries with several getter methods with different
+        output formats.
+    '''
+    api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
+    url = config.get_base_url() + '/projects/{}/timeseries'.format(project)
+    headers = {
+        'api-key': api_key,
+        'accept': 'application/json'
+    }
+    params = {
+        'q': prefix,
+        'description': description,
+        'includeMetadata': include_metadata,
+        'assetId': asset_id,
+        'path': path,
+        'limit': kwargs.get('limit', 10000)
+    }
+    timeseries = []
+
+    res = _utils.get_request(url=url, headers=headers, params=params, cookies=config.get_cookies())
+    timeseries.extend(res.json()['data']['items'])
+    next_cursor = res.json()['data'].get('nextCursor', None)
+    limit = kwargs.get('limit', float('inf'))
+
+    while next_cursor is not None and len(timeseries) < limit:
+        params['cursor'] = next_cursor
+        res = _utils.get_request(url=url, headers=headers, params=params, cookies=config.get_cookies())
+        timeseries.extend(res.json()['data']['items'])
+        next_cursor = res.json()['data'].get('nextCursor', None)
+
+    return TimeseriesObject(timeseries)
+
+
 def post_time_series(time_series: List[TimeSeriesDTO], **kwargs):
     '''Create a new time series.
 
@@ -579,38 +613,4 @@ def update_time_series(time_series: List[TimeSeriesDTO], **kwargs):
     }
 
     res = _utils.put_request(url, body=body, headers=headers)
-    return res.json()
-
-
-def post_datapoints(tag_id, datapoints: List[DatapointDTO], **kwargs):
-    '''Insert a list of datapoints.
-
-    Args:
-        tag_id (str):       ID of timeseries to insert to.
-
-        datapoints (list[DatapointDTO): List of datapoint data transfer objects to insert.
-
-    Keyword Args:
-        api_key (str): Your api-key.
-
-        project (str): Project name.
-
-    Returns:
-        An empty response.
-    '''
-    api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
-    tag_id = tag_id.replace('/', '%2F')
-    url = config.get_base_url() + '/projects/{}/timeseries/data/{}'.format(project, tag_id)
-
-    body = {
-        'items': [dp.__dict__ for dp in datapoints]
-    }
-
-    headers = {
-        'api-key': api_key,
-        'content-type': 'application/json',
-        'accept': 'application/json'
-    }
-
-    res = _utils.post_request(url, body=body, headers=headers)
     return res.json()
