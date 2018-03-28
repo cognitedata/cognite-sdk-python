@@ -5,16 +5,12 @@ from unittest.mock import patch
 import pytest
 
 from cognite.timeseries import get_datapoints
+from tests.conftest import MockReturnValue
 
 
-@patch('requests.get')
-@pytest.fixture(scope='module', params=[
-    {'start': 0, 'end': 1},
-    {'start': '1w-ago', 'end': '1d-ago'},
-    {'start': datetime(2018, 3, 26), 'end': datetime(2018, 3, 27)}])
-def get_datapoints_response_obj(mock_get, request):
-    mock_get.return_value.status_code = 200
-    mock_get.return_value.json.return_value = {
+@pytest.fixture(scope='module')
+def get_dps_json():
+    return {
         'data': {
             'items': [
                 {'tagId': 'a_tag',
@@ -30,24 +26,39 @@ def get_datapoints_response_obj(mock_get, request):
         }
     }
 
+
+@patch('requests.get')
+@pytest.fixture(scope='module', params=[
+    {'start': 0, 'end': 3},
+    {'start': '1w-ago', 'end': '1d-ago'},
+    {'start': datetime(2018, 3, 26), 'end': datetime(2018, 3, 27)}])
+def get_dps_response_obj(mock_get, request, get_dps_json):
+    mock_get.return_value = MockReturnValue(status=200, json_data=get_dps_json)
+    print(request.param)
     return get_datapoints(tag_id='SKAP_18PI2317/Y/10sSAMP', start=request.param['start'], end=request.param['end'],
-                          protobuf=False)
+                          protobuf=False, processes=1)
 
 
-def test_get_datapoints(get_datapoints_response_obj):
+def test_get_datapoints(get_dps_response_obj):
     from cognite.data_objects import DatapointsObject
-    assert isinstance(get_datapoints_response_obj, DatapointsObject)
+    assert isinstance(get_dps_response_obj, DatapointsObject)
 
 
-def test_multi_tag_element_json(get_datapoints_response_obj):
-    assert isinstance(get_datapoints_response_obj.to_json(), dict)
+def test_multi_tag_element_json(get_dps_response_obj):
+    assert isinstance(get_dps_response_obj.to_json(), dict)
 
 
-def test_pandas(get_datapoints_response_obj):
+def test_pandas(get_dps_response_obj):
     import pandas as pd
-    assert isinstance(get_datapoints_response_obj.to_pandas(), pd.DataFrame)
+    assert isinstance(get_dps_response_obj.to_pandas(), pd.DataFrame)
 
 
-def test_ndarray(get_datapoints_response_obj):
+def test_ndarray(get_dps_response_obj):
     import numpy as np
-    assert isinstance(get_datapoints_response_obj.to_ndarray(), np.ndarray)
+    assert isinstance(get_dps_response_obj.to_ndarray(), np.ndarray)
+
+
+def test_length_of_get_dps_response(get_dps_response_obj, get_dps_json):
+    res = get_dps_response_obj.to_json()['datapoints']
+    expected_res = get_dps_json['data']['items'][0]['datapoints']
+    assert len(res) == len(expected_res)

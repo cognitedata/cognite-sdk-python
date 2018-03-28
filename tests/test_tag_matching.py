@@ -3,20 +3,18 @@ from unittest.mock import patch
 
 import pytest
 
-
-def mocked_post_request():
-    return {'cucoo': 'haha'}
+from tests.conftest import MockReturnValue
 
 
 @patch('requests.post')
 @pytest.fixture(scope='module')
 def tagmatching_result(mock_post):
     from cognite.tagmatching import tag_matching
-    mock_post.return_value.status_code = 200
-    mock_post.return_value.json.return_value = {'data': {'items': [{'matches': [
+    response = {'data': {'items': [{'matches': [
         {'platform': 'a_platform', 'score': 0, 'tagId': 'a_match'},
         {'platform': 'a_platform', 'score': 0, 'tagId': 'a_match1'},
         {'platform': 'a_platform', 'score': 0, 'tagId': 'a_match2'}], 'tagId': 'a_tag'}]}}
+    mock_post.return_value = MockReturnValue(status=200, json_data=response)
     return tag_matching(tag_ids=['a_tag'])
 
 
