@@ -45,14 +45,6 @@ raw
     :undoc-members:
     :show-inheritance:
 
-similarity\_search
-==================
-
-.. automodule:: cognite.similarity_search
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 tagmatching
 ===========
 

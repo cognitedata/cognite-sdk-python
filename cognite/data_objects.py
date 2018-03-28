@@ -174,7 +174,6 @@ class TimeseriesObject(CogniteDataObject):
         [d.update(d.pop('metadata')) for d in self.internal_representation]
         return pd.DataFrame(self.internal_representation)
 
-
 class TimeSeriesDTO(object):
     """Data Transfer Object for a timeseries.
 
@@ -213,24 +212,18 @@ class DatapointDTO(object):
     def __init__(self, timestamp, value):
         self.timestamp = timestamp if isinstance(timestamp, int) else _utils.datetime_to_ms(timestamp)
         self.value = value
-
-
-class SimilaritySearchObject(CogniteDataObject):
-    '''Similarity Search Data Object.'''
-
-    def to_json(self):
-        '''Returns data as a json object'''
-        return self.internal_representation['data']['items']
-
-    def to_pandas(self):
-        '''Returns data as a pandas dataframe'''
-        if len(self.to_json()) > 1:
-            return pd.DataFrame(self.internal_representation['data']['items'])
-        return pd.DataFrame()
-
+        
 
 class AssetSearchObject(CogniteDataObject):
     '''Assets Search Data Object'''
+
+    def next_cursor(self):
+        '''Returns next cursor to use for paging through results'''
+        return self.internal_representation['data'].get('nextCursor')
+
+    def previous_cursor(self):
+        '''Returns previous cursor'''
+        return self.internal_representation['data'].get('previousCursor')
 
     def to_json(self):
         '''Returns data as a json object'''
