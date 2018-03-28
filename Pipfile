@@ -1,19 +1,27 @@
 [[source]]
+
 url = "https://pypi.python.org/simple"
 verify_ssl = true
 name = "pypi"
 
+
 [packages]
-twine = "*"
-Sphinx = "*"
-"yolk3k" = "*"
-pylint = "*"
+
+sphinx = "*"
 pandas = "*"
 requests = "*"
 protobuf = "*"
 
+
 [dev-packages]
-coverage = "*"
+
+pytest-cov = "*"
+twine = "*"
+"yolk3k" = "*"
+pytest = "*"
+pylint = "*"
+
 
 [requires]
+
 python_version = "3.6"

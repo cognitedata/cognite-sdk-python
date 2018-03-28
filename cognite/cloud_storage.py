@@ -2,6 +2,8 @@
 """Cloud Storage Module
 
 This module mirrors the Cloud Storage API. It allows you to manage files in cloud storage.
+
+https://doc.cognitedata.com/#Cognite-API-Cloud-Storage
 """
 
 import os
@@ -72,7 +74,6 @@ def upload_file(file_name, file_path=None, directory=None, source=None, file_typ
         'metadata': kwargs.get('metadata', None),
         'tagIds': kwargs.get('tagIds', None)
     }
-
     res_storage = _utils.post_request(url=url, body=body, headers=headers, params=params, cookies=config.get_cookies())
     result = res_storage.json()['data']
     if file_path:

@@ -2,6 +2,8 @@
 """Raw Module
 
 This module mirrors the Raw API. It allows the user to handle raw data.
+
+https://doc.cognitedata.com/#Cognite-API-Cloud-Raw
 """
 
 from typing import List
@@ -311,10 +313,10 @@ def create_rows(
     ul_row_limit = 1000
     i = 0
     while i < len(rows):
-        body = {'items': [{'key': '{}'.format(row.key),'columns': row.columns} for row in rows[i:i+ul_row_limit]]}
+        body = {'items': [{'key': '{}'.format(row.key), 'columns': row.columns} for row in rows[i:i + ul_row_limit]]}
         res = _utils.post_request(url=url, body=body, headers=headers, params=params, cookies=config.get_cookies(),
                                   use_gzip=use_gzip)
-        i+=ul_row_limit
+        i += ul_row_limit
     return res.json()
 
 

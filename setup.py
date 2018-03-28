@@ -1,4 +1,5 @@
 from setuptools import setup
+
 import cognite
 
 setup(name='cognite-sdk',

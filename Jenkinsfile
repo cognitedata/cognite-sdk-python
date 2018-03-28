@@ -44,8 +44,7 @@ podTemplate(
                 sh("pip3 install .")
             }
             stage('Test and coverage report') {
-                sh("pipenv run coverage run --source cognite unit_tests/run_tests.py")
-                sh("pipenv run coverage xml")
+                sh("pipenv run pytest --cov-report xml:coverage.xml --cov=cognite")
             }
             stage('Upload coverage reports') {
                 sh 'bash </codecov-script/upload-report.sh'
