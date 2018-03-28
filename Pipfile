@@ -7,19 +7,19 @@ name = "pypi"
 
 [packages]
 
-twine = "*"
-Sphinx = "*"
-"yolk3k" = "*"
-pylint = "*"
+sphinx = "*"
 pandas = "*"
 requests = "*"
 protobuf = "*"
-pytest = "*"
 
 
 [dev-packages]
 
 pytest-cov = "*"
+twine = "*"
+"yolk3k" = "*"
+pytest = "*"
+pylint = "*"
 
 
 [requires]
