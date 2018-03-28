@@ -2,6 +2,8 @@
 """Assets Module.
 
 This module mirrors the Assets API.
+
+https://doc.cognitedata.com/#Cognite-API-Assets
 """
 import cognite._constants as constants
 import cognite._utils as utils

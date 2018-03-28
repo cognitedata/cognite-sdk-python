@@ -2,6 +2,8 @@
 """Cloud Storage Module
 
 This module mirrors the Cloud Storage API. It allows you to manage files in cloud storage.
+
+https://doc.cognitedata.com/#Cognite-API-Cloud-Storage
 """
 
 import os

@@ -2,6 +2,8 @@
 """Timeseries Module
 
 This module mirrors the Timeseries API. It allows you to fetch data from the api and output it in various formats.
+
+https://doc.cognitedata.com/#Cognite-API-Time-series
 """
 import io
 import os
