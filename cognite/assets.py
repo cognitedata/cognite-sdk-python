@@ -26,7 +26,7 @@ def get_assets(name=None, path=None, description=None, metadata=None, depth=None
 
         metadata (str):         The metadata values used to filter the results.
 
-        depth (str):            Get sub assets up oto this many levels below the specified path.
+        depth (int):            Get sub assets up oto this many levels below the specified path.
 
         fuzziness (int):        The degree of fuzziness in the name matching.
 
@@ -115,16 +115,41 @@ def post_assets(assets: List[AssetDTO], **kwargs):
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
     url = config.get_base_url() + '/projects/{}/assets'.format(project)
-
     body = {
         'items': [asset.__dict__ for asset in assets]
     }
-
     headers = {
         'api-key': api_key,
         'content-type': 'application/json',
         'accept': 'application/json'
     }
-
     res = utils.post_request(url, body=body, headers=headers, cookies=config.get_cookies())
     return AssetSearchObject(res.json())
+
+
+def delete_assets(asset_ids: List[int], **kwargs):
+    '''Delete a list of assets.
+
+    Args:
+        asset_ids (list[AssetDTO]): List of IDs of assets to delete.
+
+    Keyword Args:
+        api_key (str): Your api-key.
+
+        project (str): Project name.
+
+    Returns:
+        An empty response.
+    '''
+    api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
+    url = config.get_base_url() + '/projects/{}/assets/delete'.format(project)
+    body = {
+        'items': asset_ids
+    }
+    headers = {
+        'api-key': api_key,
+        'content-type': 'application/json',
+        'accept': 'application/json'
+    }
+    res = utils.post_request(url, body=body, headers=headers, cookies=config.get_cookies())
+    return res.json()

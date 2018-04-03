@@ -1,3 +1,4 @@
+import os
 from unittest import mock
 
 import pytest
@@ -5,13 +6,13 @@ from requests.structures import CaseInsensitiveDict
 
 from cognite.config import configure_session
 
-MOCK_API_KEY = 'SOME_KEY'
-MOCK_PROJECT = 'SOME_PROJECT'
+TEST_API_KEY = os.getenv('COGNITE_TEST_API_KEY')
+TEST_PROJECT = 'mltest'
 
 
-@pytest.fixture
+@pytest.fixture(scope='session', autouse=True)
 def configure_test_session():
-    configure_session(MOCK_API_KEY, MOCK_PROJECT)
+    configure_session(TEST_API_KEY, TEST_PROJECT)
     yield
     configure_session('', '')  # teardown
 

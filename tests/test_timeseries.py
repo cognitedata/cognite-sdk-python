@@ -1,42 +1,22 @@
-# TODO: Temporary mock setup while waiting for a better way to do integration tests
 from datetime import datetime
-from unittest.mock import patch
 
+import numpy as np
+import pandas as pd
 import pytest
 
-from cognite.timeseries import get_datapoints
-from tests.conftest import MockReturnValue
+from cognite import timeseries
+
+dps_params = [
+    {'start': 1522188000000, 'end': 1522620000000},
+    {'start': '3d-ago', 'end': '1d-ago'},
+    {'start': datetime(2018, 4, 1), 'end': datetime(2018, 4, 2)},
+    {'start': datetime(2018, 4, 1), 'end': datetime(2018, 4, 2), 'protobuf': True}]
 
 
-@pytest.fixture(scope='module')
-def get_dps_json():
-    return {
-        'data': {
-            'items': [
-                {'tagId': 'a_tag',
-                 'datapoints': [
-                     {'timestamp': 0, 'value': 10},
-                     {'timestamp': 1, 'value': 20},
-                     {'timestamp': 2, 'value': 30},
-                     {'timestamp': 3, 'value': 40},
-                     {'timestamp': 4, 'value': 50},
-                 ]
-                 }
-            ]
-        }
-    }
-
-
-@patch('requests.get')
-@pytest.fixture(scope='module', params=[
-    {'start': 0, 'end': 3},
-    {'start': '1w-ago', 'end': '1d-ago'},
-    {'start': datetime(2018, 3, 26), 'end': datetime(2018, 3, 27)}])
-def get_dps_response_obj(mock_get, request, get_dps_json):
-    mock_get.return_value = MockReturnValue(status=200, json_data=get_dps_json)
-    print(request.param)
-    return get_datapoints(tag_id='SKAP_18PI2317/Y/10sSAMP', start=request.param['start'], end=request.param['end'],
-                          protobuf=False, processes=1)
+@pytest.fixture(scope='module', params=dps_params)
+def get_dps_response_obj(request):
+    yield timeseries.get_datapoints(tag_id='constant', start=request.param['start'], end=request.param['end'],
+                                    protobuf=request.param.get('protobuf', False))
 
 
 def test_get_datapoints(get_dps_response_obj):
@@ -44,21 +24,63 @@ def test_get_datapoints(get_dps_response_obj):
     assert isinstance(get_dps_response_obj, DatapointsObject)
 
 
-def test_multi_tag_element_json(get_dps_response_obj):
+def test_get_dps_output_formats(get_dps_response_obj):
+    assert isinstance(get_dps_response_obj.to_ndarray(), np.ndarray)
+    assert isinstance(get_dps_response_obj.to_pandas(), pd.DataFrame)
     assert isinstance(get_dps_response_obj.to_json(), dict)
 
 
-def test_pandas(get_dps_response_obj):
-    import pandas as pd
-    assert isinstance(get_dps_response_obj.to_pandas(), pd.DataFrame)
+def test_get_dps_correctly_spaced(get_dps_response_obj):
+    timestamps = get_dps_response_obj.to_pandas().timestamp.values
+    deltas = np.diff(timestamps, 1)
+    assert (deltas != 0).all()
+    assert (deltas % 10000 == 0).all()
 
 
-def test_ndarray(get_dps_response_obj):
-    import numpy as np
-    assert isinstance(get_dps_response_obj.to_ndarray(), np.ndarray)
+@pytest.fixture(scope='module', params=dps_params[:3])
+def get_datapoints_frame_response_obj(request):
+    yield timeseries.get_datapoints_frame(tag_ids=['constant'], start=request.param['start'], end=request.param['end'],
+                                          aggregates=['avg'], granularity='1m')
 
 
-def test_length_of_get_dps_response(get_dps_response_obj, get_dps_json):
-    res = get_dps_response_obj.to_json()['datapoints']
-    expected_res = get_dps_json['data']['items'][0]['datapoints']
-    assert len(res) == len(expected_res)
+def test_get_dps_frame_output_format(get_datapoints_frame_response_obj):
+    assert isinstance(get_datapoints_frame_response_obj, pd.DataFrame)
+
+
+def test_get_dps_frame_correctly_spaced(get_datapoints_frame_response_obj):
+    timestamps = get_datapoints_frame_response_obj.timestamp.values
+    deltas = np.diff(timestamps, 1)
+    assert (deltas != 0).all()
+    assert (deltas % 60000 == 0).all()
+
+
+@pytest.fixture(scope='module', params=dps_params[:3])
+def get_multitag_dps_response_obj(request):
+    yield timeseries.get_multi_tag_datapoints(tag_ids=['constant', 'sinus'], start=request.param['start'],
+                                              end=request.param['end'])
+
+
+def test_get_multitag_dps_output_format(get_multitag_dps_response_obj):
+    from cognite.data_objects import DatapointsObject
+    assert isinstance(get_multitag_dps_response_obj, list)
+    assert isinstance(get_multitag_dps_response_obj[0], DatapointsObject)
+
+
+def test_get_multitag_dps_correctly_spaced(get_multitag_dps_response_obj):
+    timestamps = get_multitag_dps_response_obj[0].to_pandas().timestamp.values
+    deltas = np.diff(timestamps, 1)
+    assert (deltas != 0).all()
+    assert (deltas % 10000 == 0).all()
+
+
+@pytest.fixture(scope='module')
+def get_timeseries_response_obj():
+    yield timeseries.get_timeseries(prefix='sinus', limit=1)
+
+
+def test_get_timeseries_output_format(get_timeseries_response_obj):
+    from cognite.data_objects import TimeseriesObject
+    assert isinstance(get_timeseries_response_obj, TimeseriesObject)
+    assert isinstance(get_timeseries_response_obj.to_ndarray(), np.ndarray)
+    assert isinstance(get_timeseries_response_obj.to_pandas(), pd.DataFrame)
+    assert isinstance(get_timeseries_response_obj.to_json()[0], dict)

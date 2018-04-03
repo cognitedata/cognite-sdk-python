@@ -25,7 +25,6 @@ RESPONSE = {
 
 
 @pytest.fixture(autouse=True)
-@pytest.mark.usefixtures('configure_test_session')
 def url():
     api_key, project = config.get_config_variables(None, None)
     return config.get_base_url() + '/projects/{}/assets'.format(project)
@@ -110,7 +109,6 @@ class TestRequests:
 
     @mock.patch('cognite._utils.requests.post')
     def test_post_request_args(self, mock_request):
-        import json, gzip
         def check_args_to_post_and_return_mock(arg_url, data=None, headers=None, params=None, cookies=None):
             # URL is sent as is
             assert arg_url == url
@@ -118,10 +116,6 @@ class TestRequests:
             # cookies should be the same
             assert cookies == {"a-cookie": 'a-cookie-val'}
 
-            # data is gzipped. Decompress and check if items size matches
-
-            decompressed_assets = json.loads(gzip.decompress(data))
-            assert len(decompressed_assets["data"]["items"]) == len(RESPONSE)
             # Return the mock response
             return MockReturnValue(json_data=RESPONSE)
 

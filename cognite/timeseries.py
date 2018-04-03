@@ -590,7 +590,7 @@ def update_time_series(time_series: List[TimeSeriesDTO], **kwargs):
     For each field that can be updated, a null value indicates that nothing should be done.
 
     Args:
-        timeseries (list[TimeSeriesDTO]):   List of time series data transfer objects to create.
+        timeseries (list[TimeSeriesDTO]):   List of time series data transfer objects to update.
 
     Keyword Args:
         api_key (str): Your api-key.
