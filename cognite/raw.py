@@ -36,16 +36,18 @@ def get_databases(
     """
     api_key, project = config.get_config_variables(api_key, project)
     url = config.get_base_url() + '/projects/{}/raw'.format(project)
-    params = dict()
-    if not limit:
-        params['limit'] = limit
-    if not cursor:
-        params['cursor'] = cursor
+
+    params = {
+        'limit': limit,
+        'cursor': cursor
+    }
+
     headers = {
         'api-key': api_key,
         'content-type': '*/*',
         'accept': 'application/json'
     }
+
     res = _utils.get_request(url=url, params=params, headers=headers, cookies=config.get_cookies())
     return RawObject(res.json())
 
@@ -85,6 +87,7 @@ def create_databases(
 
 def delete_databases(
         database_names: list,
+        recursive: bool = False,
         api_key=None,
         project=None
 ):
@@ -106,12 +109,15 @@ def delete_databases(
     body = {
         'items': [{'dbName': '{}'.format(database_name)} for database_name in database_names]
     }
+    params = {
+        'recursive': recursive
+    }
     headers = {
         'api-key': api_key,
         'content-type': '*/*',
         'accept': 'application/json'
     }
-    res = _utils.post_request(url=url, body=body, headers=headers, cookies=config.get_cookies())
+    res = _utils.post_request(url=url, body=body, params=params, headers=headers, cookies=config.get_cookies())
     return res.json()
 
 
