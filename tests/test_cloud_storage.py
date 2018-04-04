@@ -28,7 +28,7 @@ def test_list_files():
 
 @pytest.fixture(scope='module')
 def file_id():
-    return cloud_storage.list_files(limit=1)[0]['id']
+    return cloud_storage.list_files(name='test_file', limit=1)[0]['id']
 
 
 def test_get_file_info(file_id):

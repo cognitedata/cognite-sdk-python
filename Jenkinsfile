@@ -38,6 +38,7 @@ podTemplate(
         }
         container('python') {
             stage('Install pipenv') {
+                sh("env")
                 sh("pip3 install pipenv")
             }
             stage('Install dependencies') {
