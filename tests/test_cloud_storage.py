@@ -43,6 +43,8 @@ def test_get_file_info(file_id):
 
 @pytest.mark.parametrize('get_contents', [True, False])
 def test_download_files(file_id, get_contents):
+    res = cloud_storage.get_file_info(file_id)
+    print("cs file info: ", res.to_json())
     response = cloud_storage.download_file(file_id, get_contents)
     if get_contents:
         assert isinstance(response, bytes)
