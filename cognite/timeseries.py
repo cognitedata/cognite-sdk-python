@@ -218,7 +218,6 @@ def post_datapoints(tag_id, datapoints: List[DatapointDTO], **kwargs):
         body = {'items': [dp.__dict__ for dp in datapoints[i:i + ul_dps_limit]]}
         res = _utils.post_request(url, body=body, headers=headers)
         i += ul_dps_limit
-        print(i)
     return res.json()
 
 

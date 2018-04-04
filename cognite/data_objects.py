@@ -171,8 +171,11 @@ class TimeseriesObject(CogniteDataObject):
         '''Returns data as a pandas dataframe'''
         if self.internal_representation[0].get('metadata') is None:
             return pd.DataFrame(self.internal_representation)
-        [d.update(d.pop('metadata')) for d in self.internal_representation]
+        for d in self.internal_representation:
+            if d.get('metadata'):
+                d.update(d.pop('metadata'))
         return pd.DataFrame(self.internal_representation)
+
 
 class TimeSeriesDTO(object):
     """Data Transfer Object for a timeseries.
@@ -212,18 +215,10 @@ class DatapointDTO(object):
     def __init__(self, timestamp, value):
         self.timestamp = timestamp if isinstance(timestamp, int) else _utils.datetime_to_ms(timestamp)
         self.value = value
-        
 
-class AssetSearchObject(CogniteDataObject):
-    '''Assets Search Data Object'''
 
-    def next_cursor(self):
-        '''Returns next cursor to use for paging through results'''
-        return self.internal_representation['data'].get('nextCursor')
-
-    def previous_cursor(self):
-        '''Returns previous cursor'''
-        return self.internal_representation['data'].get('previousCursor')
+class AssetObject(CogniteDataObject):
+    '''Assets Data Object'''
 
     def to_json(self):
         '''Returns data as a json object'''
@@ -259,3 +254,37 @@ class AssetDTO(object):
         self.refId = ref_id
         self.parentName = parent_name
         self.parentRefId = parent_ref_id
+
+
+class FileInfoObject(CogniteDataObject):
+    '''File info Data Object.
+
+    Attributes:
+        id (int):               ID given by the API to the file.
+        file_name (str):        File name. Max length is 256.
+        directory (str):        Directory containing the file. Max length is 512.
+        source (dict):          Source that this file comes from. Max length is 256.
+        file_type (str):        File type. E.g. pdf, css, spreadsheet, .. Max length is 64.
+        metadata (dict):        Customizd data about the file.
+        tag_ids (list[str]):    IDs of equipment related to this file.
+        uploaded (bool):        Whether or not the file is uploaded.
+        uploaded_at (int):      Epoc thime (ms) when the file was uploaded succesfully.
+    '''
+
+    def __init__(self, internal_representation):
+        super().__init__(internal_representation)
+        self.id = self.internal_representation['data'].get('id')
+        self.file_name = self.internal_representation['data'].get('fileName')
+        self.directory = self.internal_representation['data'].get('directory')
+        self.source = self.internal_representation['data'].get('source')
+        self.file_type = self.internal_representation['data'].get('fileType')
+        self.metadata = self.internal_representation['data'].get('metadata')
+        self.tag_ids = self.internal_representation['data'].get('tagIds')
+        self.uploaded = self.internal_representation['data'].get('uploaded')
+        self.uploaded_at = self.internal_representation['data'].get('uploadedAt')
+
+    def to_json(self):
+        return self.internal_representation['data']
+
+    def to_pandas(self):
+        return pd.DataFrame([self.to_json()], columns=self.to_json().keys())

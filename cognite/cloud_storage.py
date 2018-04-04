@@ -7,11 +7,13 @@ https://doc.cognitedata.com/#Cognite-API-Cloud-Storage
 """
 
 import os
+import warnings
 
 import requests
 
 import cognite._utils as _utils
 import cognite.config as config
+from cognite.data_objects import FileInfoObject
 
 
 def upload_file(file_name, file_path=None, directory=None, source=None, file_type=None, content_type=None, **kwargs):
@@ -19,13 +21,15 @@ def upload_file(file_name, file_path=None, directory=None, source=None, file_typ
 
     The link will expire after 30 seconds if not resumable. A resumable upload link is default. Such a link is one-time
     use and expires after one week. For more information, check this link:
-    https://cloud.google.com/storage/docs/json_api/v1/how-tos/resumable-upload.Use PUT request to upload file with the
+    https://cloud.google.com/storage/docs/json_api/v1/how-tos/resumable-upload. Use PUT request to upload file with the
     link returned.
+
+    If file_path is specified, the file will be uploaded directly by the SDK.
 
     Args:
         file_name (str):      File name. Max length is 256.
 
-        file_path (str, optional):     Path to file to upload, if omitted a upload link will be returned.
+        file_path (str, optional):     Path of file to upload, if omitted a upload link will be returned.
 
         content_type (str, optional):   MIME type of your file. Required if file_path is specified.
 
@@ -78,7 +82,8 @@ def upload_file(file_name, file_path=None, directory=None, source=None, file_typ
     result = res_storage.json()['data']
     if file_path:
         if not content_type:
-            return {'message': 'content-type must be specified'}
+            warning = "content_type should be specified when directly uploading the file."
+            warnings.warn(warning)
         headers = {
             'content-length': str(os.path.getsize(file_path))
         }
@@ -88,7 +93,66 @@ def upload_file(file_name, file_path=None, directory=None, source=None, file_typ
     return result
 
 
-def list_files(id=None, name=None, directory=None, file_type=None, source=None, **kwargs):
+def download_file(id, get_contents=False, **kwargs):
+    '''Get list of files matching query.
+
+    Args:
+        id (int):                           Path to file to upload, if omitted a upload link will be returned.
+
+        get_contents (bool, optional):      Boolean to determince whether or not to return file contents as string.
+                                            Default is False and download url is returned.
+
+    Keyword Args:
+        api_key (str, optional):            Your api-key.
+
+        project (str, optional):            Project name.
+
+    Returns:
+        str: Download link if get_contents is False else file contents.
+    '''
+    api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
+    url = config.get_base_url() + '/projects/{}/storage/{}'.format(project, id)
+    headers = {
+        'api-key': api_key,
+        'accept': 'application/json'
+    }
+    res = _utils.get_request(url=url, headers=headers, cookies=config.get_cookies())
+    if get_contents:
+        dl_link = res.json()['data']
+        res = requests.get(dl_link)
+        return res.content
+    return res.json()['data']
+
+
+def delete_files(file_ids, **kwargs):
+    '''Delete
+
+    Args:
+        file_ids (list[int]):   List of IDs of files to delete.
+
+    Keyword Args:
+        api_key (str):          Your api key.
+
+        project (str):          Your project.
+
+    Returns:
+        List of files deleted and files that failed to delete.
+    '''
+    api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
+    url = config.get_base_url() + '/projects/{}/storage/delete'.format(project)
+    headers = {
+        'api-key': api_key,
+        'content-type': 'application/json',
+        'accept': 'application/json'
+    }
+    body = {
+        'items': file_ids
+    }
+    res = _utils.post_request(url, body=body, headers=headers)
+    return res.json()['data']
+
+
+def list_files(name=None, directory=None, file_type=None, source=None, **kwargs):
     '''Get list of files matching query.
 
     This method will automate paging for the user and return info about all files for the given query. If limit is
@@ -96,8 +160,6 @@ def list_files(id=None, name=None, directory=None, file_type=None, source=None, 
 
     Args:
         name (str, optional):      List all files with this name.
-
-        id (int, optional):             List only the file with this id.
 
         directory (str, optional):      Directory to list files from.
 
@@ -145,37 +207,28 @@ def list_files(id=None, name=None, directory=None, file_type=None, source=None, 
         res = _utils.get_request(url=url, headers=headers, params=params, cookies=config.get_cookies())
         file_list.extend(res.json()['data']['items'])
         next_cursor = res.json()['data'].get('nextCursor', None)
-    if id is not None:
-        return [file for file in file_list if file['id'] == int(id)]
     return file_list
 
 
-def download_file(id, get_contents=False, **kwargs):
-    '''Get list of files matching query.
+def get_file_info(id, **kwargs):
+    '''Returns information about a file.
 
     Args:
-        id (int):                           Path to file to upload, if omitted a upload link will be returned.
-
-        get_contents (bool, optional):      Boolean to determince whether or not to return file contents as string.
-                                            Default is False and download url is returned.
+        id (int):                   Id of the file.
 
     Keyword Args:
-        api_key (str, optional):            Your api-key.
+        api_key (str, optional):    Your api-key.
 
-        project (str, optional):            Project name.
+        project (str, optional):    Project name.
 
     Returns:
-        str: Download link if get_contents is False else file contents.
+        FileInfoObject: A data object containing the requested file information.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
-    url = config.get_base_url() + '/projects/{}/storage/{}'.format(project, id)
+    url = config.get_base_url() + '/projects/{}/storage/{}/info'.format(project, id)
     headers = {
         'api-key': api_key,
         'accept': 'application/json'
     }
-    res = _utils.get_request(url=url, headers=headers, cookies=config.get_cookies())
-    if get_contents:
-        dl_link = res.json()['data']
-        res = requests.get(dl_link)
-        return res.content
-    return res.json()['data']
+    res = _utils.get_request(url, headers=headers)
+    return FileInfoObject(res.json())
