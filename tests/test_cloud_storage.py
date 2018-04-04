@@ -7,14 +7,15 @@ import pytest
 from cognite import cloud_storage
 
 
-# def test_upload_file_metadata():
-#     response = cloud_storage.upload_file('test_file', source='sdk-tests', overwrite=True)
-#     assert response.get('uploadURL') is not None
-#     assert response.get('fileId') is not None
+def test_upload_file_metadata():
+    response = cloud_storage.upload_file('test_file', source='sdk-tests', overwrite=True)
+    assert response.get('uploadURL') is not None
+    assert response.get('fileId') is not None
 
 
-def test_upload_file():
-    file_path = os.path.abspath(__file__)
+def test_upload_file(tmpdir):
+    file_path = os.path.join(tmpdir, 'test_file.txt')
+    tmpdir.join('test_file.txt').write("This is a test file.")
     with pytest.warns(UserWarning):
         response = cloud_storage.upload_file('test_file', file_path, source='sdk-tests', overwrite=True)
     assert response.get('uploadURL') is None
@@ -29,7 +30,6 @@ def test_list_files():
 @pytest.fixture(scope='module')
 def file_id():
     res = cloud_storage.list_files(name='test_file', source='sdk-tests', limit=1)
-    print("cs file info before dl: ", res)
     return res[0]['id']
 
 
@@ -46,7 +46,6 @@ def test_get_file_info(file_id):
 @pytest.mark.parametrize('get_contents', [True, False])
 def test_download_files(file_id, get_contents):
     res = cloud_storage.get_file_info(file_id)
-    print("cs file info: ", res.to_json())
     response = cloud_storage.download_file(file_id, get_contents)
     if get_contents:
         assert isinstance(response, bytes)
