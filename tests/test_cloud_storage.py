@@ -8,7 +8,7 @@ from cognite import cloud_storage
 
 
 def test_upload_file_metadata():
-    response = cloud_storage.upload_file('test_file')
+    response = cloud_storage.upload_file('test_file', source='sdk-tests', overwrite=True)
     assert response.get('uploadURL') is not None
     assert response.get('fileId') is not None
 
@@ -16,7 +16,7 @@ def test_upload_file_metadata():
 def test_upload_file():
     file_path = os.path.abspath(__file__)
     with pytest.warns(UserWarning):
-        response = cloud_storage.upload_file('test_file', file_path, overwrite=True)
+        response = cloud_storage.upload_file('test_file', file_path, source='sdk-tests', overwrite=True)
     assert response.get('uploadURL') is None
     assert response.get('fileId') is not None
 
@@ -28,7 +28,7 @@ def test_list_files():
 
 @pytest.fixture(scope='module')
 def file_id():
-    return cloud_storage.list_files(name='test_file', limit=1)[0]['id']
+    return cloud_storage.list_files(name='test_file', source='sdk-tests', limit=1)[0]['id']
 
 
 def test_get_file_info(file_id):
