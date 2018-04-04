@@ -37,6 +37,15 @@ def test_get_dps_correctly_spaced(get_dps_response_obj):
     assert (deltas % 10000 == 0).all()
 
 
+def test_get_latest():
+    from cognite.data_objects import LatestDatapointObject
+    response = timeseries.get_latest('constant')
+    assert isinstance(response, LatestDatapointObject)
+    assert isinstance(response.to_ndarray(), np.ndarray)
+    assert isinstance(response.to_pandas(), pd.DataFrame)
+    assert isinstance(response.to_json(), dict)
+
+
 @pytest.fixture(scope='module', params=dps_params[:3])
 def get_datapoints_frame_response_obj(request):
     yield timeseries.get_datapoints_frame(tag_ids=['constant'], start=request.param['start'], end=request.param['end'],
@@ -73,9 +82,9 @@ def test_get_multitag_dps_correctly_spaced(get_multitag_dps_response_obj):
     assert (deltas % 10000 == 0).all()
 
 
-@pytest.fixture(scope='module')
-def get_timeseries_response_obj():
-    yield timeseries.get_timeseries(prefix='sinus', limit=1)
+@pytest.fixture(scope='module', params=[True, False])
+def get_timeseries_response_obj(request):
+    yield timeseries.get_timeseries(prefix='constant', limit=1, include_metadata=request.param)
 
 
 def test_get_timeseries_output_format(get_timeseries_response_obj):

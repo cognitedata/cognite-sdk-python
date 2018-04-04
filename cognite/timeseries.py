@@ -222,7 +222,7 @@ def post_datapoints(tag_id, datapoints: List[DatapointDTO], **kwargs):
 
 
 def get_latest(tag_id, **kwargs):
-    '''Returns a LatestDatapointObject containing the latest datapoint for the given tag_id.
+    '''Returns a LatestDatapadointObject containing the latest datapoint for the given tag_id.
 
     Args:
         tag_id (str):           The tag_id to retrieve data for.

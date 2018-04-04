@@ -1,7 +1,7 @@
 import pytest
 
 from cognite import assets
-from cognite.data_objects import AssetDTO, AssetSearchObject
+from cognite.data_objects import AssetDTO, AssetObject
 
 ASSET_NAME = 'test_asset'
 
@@ -17,15 +17,15 @@ def get_assets_response():
 
 
 def test_get_assets_response_object(get_assets_response):
-    from cognite.data_objects import AssetSearchObject
-    assert isinstance(get_assets_response, AssetSearchObject)
+    from cognite.data_objects import AssetObject
+    assert isinstance(get_assets_response, AssetObject)
     assert get_assets_response.next_cursor() is not None
     assert get_assets_response.previous_cursor() is None
 
 
 def test_asset_subtree_object(get_asset_subtree_response):
-    from cognite.data_objects import AssetSearchObject
-    assert isinstance(get_asset_subtree_response, AssetSearchObject)
+    from cognite.data_objects import AssetObject
+    assert isinstance(get_asset_subtree_response, AssetObject)
     assert get_asset_subtree_response.next_cursor() is not None
     assert get_asset_subtree_response.previous_cursor() is None
 
@@ -47,7 +47,7 @@ def test_ndarray(get_asset_subtree_response):
 def test_post_assets():
     a1 = AssetDTO(name=ASSET_NAME)
     res = assets.post_assets([a1])
-    assert isinstance(res, AssetSearchObject)
+    assert isinstance(res, AssetObject)
     assert res.to_json()[0]['name'] == ASSET_NAME
     assert res.to_json()[0].get('id') != None
 
