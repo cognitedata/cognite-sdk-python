@@ -19,7 +19,7 @@ import cognite._constants as _constants
 import cognite._utils as _utils
 import cognite.config as config
 from cognite._protobuf_descriptors import _api_timeseries_data_v1_pb2
-from cognite.data_objects import DatapointsObject, LatestDatapointObject, TimeSeriesDTO, DatapointDTO
+from cognite.data_objects import DatapointsObject, LatestDatapointObject, DatapointDTO, TimeSeriesDTO, TimeseriesObject
 
 
 def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=None, **kwargs):
@@ -73,7 +73,7 @@ def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=No
     # Create list of where each of the parallelized intervals will begin
     step_starts = [start + (i * step_size) for i in range(steps)]
     args = [{'start': start, 'end': start + step_size} for start in step_starts]
-    
+
     partial_get_dps = partial(
         _get_datapoints_helper_wrapper,
         tag_id=tag_id,
@@ -206,17 +206,19 @@ def post_datapoints(tag_id, datapoints: List[DatapointDTO], **kwargs):
     tag_id = tag_id.replace('/', '%2F')
     url = config.get_base_url() + '/projects/{}/timeseries/data/{}'.format(project, tag_id)
 
-    body = {
-        'items': [dp.__dict__ for dp in datapoints]
-    }
-
     headers = {
         'api-key': api_key,
         'content-type': 'application/json',
         'accept': 'application/json'
     }
 
-    res = _utils.post_request(url, body=body, headers=headers)
+    ul_dps_limit = 100000
+    i = 0
+    while i < len(datapoints):
+        body = {'items': [dp.__dict__ for dp in datapoints[i:i + ul_dps_limit]]}
+        res = _utils.post_request(url, body=body, headers=headers)
+        i += ul_dps_limit
+        print(i)
     return res.json()
 
 
