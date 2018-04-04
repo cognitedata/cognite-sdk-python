@@ -28,7 +28,9 @@ def test_list_files():
 
 @pytest.fixture(scope='module')
 def file_id():
-    return cloud_storage.list_files(name='test_file', source='sdk-tests', limit=1)[0]['id']
+    res = cloud_storage.list_files(name='test_file', source='sdk-tests', limit=1)
+    print("cs file info before dl: ", res)
+    return res[0]['id']
 
 
 def test_get_file_info(file_id):
