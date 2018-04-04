@@ -40,7 +40,7 @@ class TestDatabases:
             raw.delete_databases([DB_NAME])
             assert re.match("Database named {} not found".format(DB_NAME), str(e.value))
 
-# TODO: Tables endpoints are yielding a lot of 500s. Omitting these tests for the time being. Platform team has been notified.
+# TODO: Caching issues in Raw API causing a lot of 500s. Omitting these tests for the time being.
 # class TestTables:
 #     @pytest.fixture(autouse=True)
 #     def create_database(self):
