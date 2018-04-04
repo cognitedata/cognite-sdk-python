@@ -3,7 +3,7 @@ Python SDK for Cognite API
 Python Package to ensure excellent CDP user experience for data scientists.
 To view the documentation for this package click [here](http://cognite-sdk-python.readthedocs.io/ "SDK Documentation").
 
-[]([![codecov](https://codecov.io/gh/cognitedata/cognite-sdk-python/branch/master/graph/badge.svg)](https://codecov.io/gh/cognitedata/cognite-sdk-python)) 
+[![codecov](https://codecov.io/gh/cognitedata/cognite-sdk-python/branch/master/graph/badge.svg)](https://codecov.io/gh/cognitedata/cognite-sdk-python)
 
 ## Development instructions
 ### Setup
