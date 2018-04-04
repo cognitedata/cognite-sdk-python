@@ -7,10 +7,10 @@ import pytest
 from cognite import cloud_storage
 
 
-def test_upload_file_metadata():
-    response = cloud_storage.upload_file('test_file', source='sdk-tests', overwrite=True)
-    assert response.get('uploadURL') is not None
-    assert response.get('fileId') is not None
+# def test_upload_file_metadata():
+#     response = cloud_storage.upload_file('test_file', source='sdk-tests', overwrite=True)
+#     assert response.get('uploadURL') is not None
+#     assert response.get('fileId') is not None
 
 
 def test_upload_file():
