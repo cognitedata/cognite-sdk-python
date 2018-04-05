@@ -10,7 +10,7 @@ from typing import List
 import cognite._constants as constants
 import cognite._utils as utils
 import cognite.config as config
-from cognite.data_objects import AssetObject, AssetDTO
+from cognite.data_objects import AssetResponse, AssetDTO
 
 
 # Author: TK
@@ -39,7 +39,7 @@ def get_assets(name=None, path=None, description=None, metadata=None, depth=None
 
         project (str):          Project name.
     Returns:
-        AssetObject: A data object containing the requested assets with several getter methods with different
+        AssetResponse: A data object containing the requested assets with several getter methods with different
         output formats.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
@@ -59,7 +59,7 @@ def get_assets(name=None, path=None, description=None, metadata=None, depth=None
         'accept': 'application/json'
     }
     res = utils.get_request(url, params=params, headers=headers, cookies=config.get_cookies())
-    return AssetObject(res.json())
+    return AssetResponse(res.json())
 
 
 # Author: TK
@@ -80,7 +80,7 @@ def get_asset_subtree(asset_id='', depth=None, **kwargs):
 
         project (str):          Project name.
     Returns:
-        AssetObject: A data object containing the requested assets with several getter methods with different
+        AssetResponse: A data object containing the requested assets with several getter methods with different
         output formats.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
@@ -95,7 +95,7 @@ def get_asset_subtree(asset_id='', depth=None, **kwargs):
         'accept': 'application/json'
     }
     res = utils.get_request(url, params=params, headers=headers, cookies=config.get_cookies())
-    return AssetObject(res.json())
+    return AssetResponse(res.json())
 
 
 def post_assets(assets: List[AssetDTO], **kwargs):
@@ -110,7 +110,7 @@ def post_assets(assets: List[AssetDTO], **kwargs):
         project (str): Project name.
 
     Returns:
-        AssetObject: A data object containing the posted assets with several getter methods with different
+        AssetResponse: A data object containing the posted assets with several getter methods with different
         output formats.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
@@ -124,7 +124,7 @@ def post_assets(assets: List[AssetDTO], **kwargs):
         'accept': 'application/json'
     }
     res = utils.post_request(url, body=body, headers=headers, cookies=config.get_cookies())
-    return AssetObject(res.json())
+    return AssetResponse(res.json())
 
 
 def delete_assets(asset_ids: List[int], **kwargs):

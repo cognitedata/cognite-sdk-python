@@ -60,10 +60,9 @@ class RawRowDTO(object):
     unique row key and a set of columns.
 
     Attributes:
-
         key (str):      Unique key for the row.
-        columns (int):  A key/value-map consisting of the values in the row.
 
+        columns (int):  A key/value-map consisting of the values in the row.
     """
 
     def __init__(self, key, columns):
@@ -77,8 +76,8 @@ class RawRowDTO(object):
         return self.__dict__
 
 
-class RawObject(CogniteDataObject):
-    """Raw Data Object."""
+class RawResponse(CogniteDataObject):
+    """Raw Response Object."""
 
     def to_json(self):
         """Returns data as a json object"""
@@ -89,8 +88,8 @@ class RawObject(CogniteDataObject):
         return pd.DataFrame(self.internal_representation['data']['items'])
 
 
-class TagMatchingObject(CogniteDataObject):
-    '''Tag Matching Data Object.
+class TagMatchingResponse(CogniteDataObject):
+    '''Tag Matching Response Object.
 
     In addition to the standard output formats this data object also has a to_list() method which returns a list of
     names of the tag matches.
@@ -132,8 +131,30 @@ class TagMatchingObject(CogniteDataObject):
         return self.to_pandas().sort_values(['score', 'match'])['match'].tolist()
 
 
-class DatapointsObject(CogniteDataObject):
-    '''Datapoints Object.'''
+class DatapointsQuery():
+    """Data Query Object for Datapoints.
+
+    Attributes:
+        tag_id (str):               Unique ID of time series.
+        aggregates (list):          The aggregate functions to be returned. Use default if null. An empty string must
+                                    be sent to get raw data if the default is a set of aggregate functions.
+        granularity (str):          The granularity size and granularity of the aggregates.
+        start (str, int, datetime): Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s.
+                                    Example: '2d-ago' will get everything that is up to 2 days old. Can also send time in
+                                    ms since epoch or as a datetime object.
+        end (str, int, datetime):   Get datapoints up to this time. The format is the same as for start.
+    """
+
+    def __init__(self, tag_id, aggregates=None, granularity=None, start=None, end=None, limit=None):
+        self.tagId = tag_id
+        self.aggregateFunctions = ','.join(aggregates) if aggregates is not None else None
+        self.granularity = granularity
+        self.start, self.end = _utils.interval_to_ms(start, end)
+        self.limit = limit
+
+
+class DatapointsResponse(CogniteDataObject):
+    '''Datapoints Response Object.'''
 
     def to_json(self):
         '''Returns data as a json object'''
@@ -144,8 +165,26 @@ class DatapointsObject(CogniteDataObject):
         return pd.DataFrame(self.internal_representation['data']['items'][0]['datapoints'])
 
 
-class LatestDatapointObject(CogniteDataObject):
-    '''Latest Datapoint Object.'''
+class DatapointsResponseIterator():
+    '''Iterator for Datapoints Response Objects.'''
+
+    def __init__(self, datapoints_objects):
+        self.datapoints_objects = datapoints_objects
+        self.counter = 0
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.counter > len(self.datapoints_objects) - 1:
+            raise StopIteration
+        else:
+            self.counter += 1
+            return self.datapoints_objects[self.counter - 1]
+
+
+class LatestDatapointResponse(CogniteDataObject):
+    '''Latest Datapoint Response Object.'''
 
     def to_json(self):
         '''Returns data as a json object'''
@@ -160,8 +199,8 @@ class LatestDatapointObject(CogniteDataObject):
         return self.to_pandas().values[0]
 
 
-class TimeseriesObject(CogniteDataObject):
-    '''Timeseries Object'''
+class TimeseriesResponse(CogniteDataObject):
+    '''Timeseries Response Object'''
 
     def to_json(self):
         '''Returns data as a json object'''
@@ -217,8 +256,8 @@ class DatapointDTO(object):
         self.value = value
 
 
-class AssetObject(CogniteDataObject):
-    '''Assets Data Object'''
+class AssetResponse(CogniteDataObject):
+    '''Assets Response Object'''
 
     def to_json(self):
         '''Returns data as a json object'''
@@ -256,8 +295,8 @@ class AssetDTO(object):
         self.parentRefId = parent_ref_id
 
 
-class FileInfoObject(CogniteDataObject):
-    '''File info Data Object.
+class FileInfoResponse(CogniteDataObject):
+    '''File Info Response Object.
 
     Attributes:
         id (int):               ID given by the API to the file.

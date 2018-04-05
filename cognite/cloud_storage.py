@@ -13,7 +13,7 @@ import requests
 
 import cognite._utils as _utils
 import cognite.config as config
-from cognite.data_objects import FileInfoObject
+from cognite.data_objects import FileInfoResponse
 
 
 def upload_file(file_name, file_path=None, directory=None, source=None, file_type=None, content_type=None, **kwargs):
@@ -222,7 +222,7 @@ def get_file_info(id, **kwargs):
         project (str, optional):    Project name.
 
     Returns:
-        FileInfoObject: A data object containing the requested file information.
+        FileInfoResponse: A data object containing the requested file information.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
     url = config.get_base_url() + '/projects/{}/storage/{}/info'.format(project, id)
@@ -231,4 +231,4 @@ def get_file_info(id, **kwargs):
         'accept': 'application/json'
     }
     res = _utils.get_request(url, headers=headers)
-    return FileInfoObject(res.json())
+    return FileInfoResponse(res.json())
