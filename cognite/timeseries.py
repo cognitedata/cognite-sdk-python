@@ -8,7 +8,6 @@ https://doc.cognitedata.com/#Cognite-API-Time-series
 import io
 import os
 import warnings
-from datetime import datetime
 from functools import partial
 from multiprocessing import Pool
 from typing import List
@@ -19,7 +18,8 @@ import cognite._constants as _constants
 import cognite._utils as _utils
 import cognite.config as config
 from cognite._protobuf_descriptors import _api_timeseries_data_v1_pb2
-from cognite.data_objects import DatapointsObject, LatestDatapointObject, DatapointDTO, TimeSeriesDTO, TimeseriesObject
+from cognite.data_objects import DatapointsResponse, DatapointsResponseIterator, LatestDatapointResponse, DatapointDTO, \
+    TimeSeriesDTO, TimeseriesResponse
 
 
 def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=None, **kwargs):
@@ -53,7 +53,7 @@ def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=No
         project (str):          Project name.
 
     Returns:
-        DatapointsObject: A data object containing the requested data with several getter methods with different
+        DatapointsResponse: A data object containing the requested data with several getter methods with different
         output formats.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
@@ -96,7 +96,7 @@ def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=No
 
     prog_ind.terminate()
 
-    return DatapointsObject({'data': {'items': [{'tagId': tag_id, 'datapoints': concat_dps}]}})
+    return DatapointsResponse({'data': {'items': [{'tagId': tag_id, 'datapoints': concat_dps}]}})
 
 
 def _get_datapoints_helper_wrapper(args, tag_id, aggregates, granularity, protobuf, api_key, project):
@@ -233,7 +233,7 @@ def get_latest(tag_id, **kwargs):
         project (str):          Project name.
 
     Returns:
-        DatapointsObject: A data object containing the requested data with several getter methods with different
+        DatapointsResponse: A data object containing the requested data with several getter methods with different
         output formats.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
@@ -244,14 +244,17 @@ def get_latest(tag_id, **kwargs):
         'accept': 'application/json'
     }
     res = _utils.get_request(url, headers=headers, cookies=config.get_cookies())
-    return LatestDatapointObject(res.json())
+    return LatestDatapointResponse(res.json())
 
 
-def get_multi_tag_datapoints(tag_ids, aggregates=None, granularity=None, start=None, end=None, limit=None, **kwargs):
-    '''Returns a list of DatapointsObjects each of which contains a list of datapoints for the given tag_id.
+def get_multi_tag_datapoints(datapoints_queries, aggregates=None, granularity=None, start=None, end=None, **kwargs):
+    '''Returns a list of DatapointsObjects each of which contains a list of datapoints for the given timeseries.
+
+    This method will automate paging for the user and return all data for the given time period(s).
 
     Args:
-        tag_ids (list):                 The list of tag_ids to retrieve data for.
+        datapoints_queries (list[DatapointsQuery]): The list of DatapointsQuery objects specifying which timeseries
+                                                    to retrieve data for.
 
         aggregates (list, optional):    The list of aggregate functions you wish to apply to the data. Valid aggregate
                                         functions are: 'average/avg, max, min, count, sum, interpolation/int,
@@ -267,46 +270,69 @@ def get_multi_tag_datapoints(tag_ids, aggregates=None, granularity=None, start=N
 
         end (Union[str, int, datetime]):      Get datapoints up to this time. Same format as for start.
 
-        limit (int):                    Return up to this number of datapoints.
-
     Keyword Arguments:
         api_key (str):                  Your api-key.
 
         project (str):                  Project name.
 
     Returns:
-        list(DatapointsObject): A list of data objects containing the requested data with several getter methods
+        list(DatapointsResponse): A list of data objects containing the requested data with several getter methods
         with different output formats.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
     url = config.get_base_url() + '/projects/{}/timeseries/dataquery'.format(project)
 
-    if isinstance(start, datetime):
-        start = _utils.datetime_to_ms(start)
-    if isinstance(end, datetime):
-        end = _utils.datetime_to_ms(end)
+    start, end = _utils.interval_to_ms(start, end)
 
-    if limit is None:
-        limit = _constants.LIMIT if aggregates is not None else _constants.LIMIT_AGG
+    num_of_dpqs_with_agg = 0
+    num_of_dpqs_raw = 0
+    for dpq in datapoints_queries:
+        if (dpq.aggregateFunctions is None and aggregates is None) or dpq.aggregateFunctions == '':
+            num_of_dpqs_raw += 1
+        else:
+            num_of_dpqs_with_agg += 1
 
+    items = []
+    for dpq in datapoints_queries:
+        if dpq.aggregateFunctions is None and aggregates is None:
+            dpq.limit = int(_constants.LIMIT / num_of_dpqs_raw)
+        else:
+            dpq.limit = int(_constants.LIMIT_AGG / num_of_dpqs_with_agg)
+        items.append(dpq.__dict__)
     body = {
-        'items': [{'tagId': '{}'.format(tag_id)}
-                  if isinstance(tag_id, str)
-                  else {'tagId': '{}'.format(tag_id['tagId']), 'aggregates': tag_id.get('aggregates', [])} for tag_id in
-                  tag_ids],
-        'aggregates': aggregates,
+        'items': items,
+        'aggregateFunctions': ','.join(aggregates) if aggregates is not None else None,
         'granularity': granularity,
         'start': start,
-        'end': end,
-        'limit': limit
+        'end': end
     }
     headers = {
         'api-key': api_key,
         'content-type': 'application/json',
         'accept': 'application/json'
     }
-    res = _utils.post_request(url=url, body=body, headers=headers, cookies=config.get_cookies())
-    return [DatapointsObject({'data': {'items': [dp]}}) for dp in res.json()['data']['items']]
+    datapoints_responses = []
+    has_incomplete_requests = True
+    while has_incomplete_requests:
+        res = _utils.post_request(url=url, body=body, headers=headers, cookies=config.get_cookies()).json()['data'][
+            'items']
+        datapoints_responses.append(res)
+        has_incomplete_requests = False
+        for i, dpr in enumerate(res):
+            dpq = datapoints_queries[i]
+            if len(dpr['datapoints']) == dpq.limit:
+                has_incomplete_requests = True
+                latest_timestamp = dpr['datapoints'][-1]['timestamp']
+                next_start = latest_timestamp + (_utils.granularity_to_ms(dpq.granularity) if dpq.granularity else 1)
+            else:
+                next_start = datapoints_queries[i].end - 1
+            datapoints_queries[i].start = next_start
+
+    results = [{'data': {'items': [{'tagId': dpq.tagId, 'datapoints': []}]}} for dpq in datapoints_queries]
+    for res in datapoints_responses:
+        for i, ts in enumerate(res):
+            results[i]['data']['items'][0]['datapoints'].extend(ts['datapoints'])
+    return DatapointsResponseIterator([DatapointsResponse(result) for result in results])
 
 
 def get_datapoints_frame(tag_ids, aggregates, granularity, start=None, end=None, **kwargs):
@@ -519,7 +545,7 @@ def get_timeseries(prefix=None, description=None, include_metadata=False, asset_
         project (str):          Project name.
 
     Returns:
-        TimeseriesObject: A data object containing the requested timeseries with several getter methods with different
+        TimeseriesResponse: A data object containing the requested timeseries with several getter methods with different
         output formats.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
@@ -549,7 +575,7 @@ def get_timeseries(prefix=None, description=None, include_metadata=False, asset_
         timeseries.extend(res.json()['data']['items'])
         next_cursor = res.json()['data'].get('nextCursor', None)
 
-    return TimeseriesObject(timeseries)
+    return TimeseriesResponse(timeseries)
 
 
 def post_time_series(time_series: List[TimeSeriesDTO], **kwargs):
