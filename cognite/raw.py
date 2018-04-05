@@ -10,7 +10,7 @@ from typing import List
 
 import cognite._utils as _utils
 import cognite.config as config
-from cognite.data_objects import RawObject, RawRowDTO
+from cognite.data_objects import RawResponse, RawRowDTO
 
 
 def get_databases(
@@ -31,7 +31,7 @@ def get_databases(
         project (str):  Project name.
 
     Returns:
-        RawObject: A data object containing the requested data with several getter methods with different
+        RawResponse: A data object containing the requested data with several getter methods with different
         output formats.
     """
     api_key, project = config.get_config_variables(api_key, project)
@@ -49,7 +49,7 @@ def get_databases(
     }
 
     res = _utils.get_request(url=url, params=params, headers=headers, cookies=config.get_cookies())
-    return RawObject(res.json())
+    return RawResponse(res.json())
 
 
 def create_databases(
@@ -67,7 +67,7 @@ def create_databases(
         project (str):          Project name.
 
     Returns:
-        RawObject: A data object containing the requested data with several getter methods with different
+        RawResponse: A data object containing the requested data with several getter methods with different
         output formats.
 
     """
@@ -82,7 +82,7 @@ def create_databases(
         'accept': 'application/json'
     }
     res = _utils.post_request(url=url, body=body, headers=headers, cookies=config.get_cookies())
-    return RawObject(res.json())
+    return RawResponse(res.json())
 
 
 def delete_databases(
@@ -142,7 +142,7 @@ def get_tables(
         project (str):  Project name.
 
     Returns:
-        RawObject: A data object containing the requested data with several getter methods with different
+        RawResponse: A data object containing the requested data with several getter methods with different
         output formats.
     """
     api_key, project = config.get_config_variables(api_key, project)
@@ -158,7 +158,7 @@ def get_tables(
         'accept': 'application/json'
     }
     res = _utils.get_request(url=url, params=params, headers=headers, cookies=config.get_cookies())
-    return RawObject(res.json())
+    return RawResponse(res.json())
 
 
 def create_tables(
@@ -179,7 +179,7 @@ def create_tables(
         project (str):          Project name.
 
     Returns:
-        RawObject: A data object containing the requested data with several getter methods with different
+        RawResponse: A data object containing the requested data with several getter methods with different
         output formats.
 
     """
@@ -194,7 +194,7 @@ def create_tables(
         'accept': 'application/json'
     }
     res = _utils.post_request(url=url, body=body, headers=headers, cookies=config.get_cookies())
-    return RawObject(res.json())
+    return RawResponse(res.json())
 
 
 def delete_tables(
@@ -256,7 +256,7 @@ def get_rows(
         project (str):          Project name.
 
     Returns:
-        RawObject: A data object containing the requested data with several getter methods with different
+        RawResponse: A data object containing the requested data with several getter methods with different
         output formats.
     """
     api_key, project = config.get_config_variables(api_key, project)
@@ -270,7 +270,7 @@ def get_rows(
         'accept': 'application/json'
     }
     res = _utils.get_request(url=url, params=params, headers=headers, cookies=config.get_cookies())
-    return RawObject(res.json())
+    return RawResponse(res.json())
 
 
 def create_rows(
@@ -391,7 +391,7 @@ def get_row(
         project (str):          Project name.
 
     Returns:
-        RawObject: A data object containing the requested data with several getter methods with different
+        RawResponse: A data object containing the requested data with several getter methods with different
         output formats.
     """
     api_key, project = config.get_config_variables(api_key, project)
@@ -403,4 +403,4 @@ def get_row(
         'accept': 'application/json'
     }
     res = _utils.get_request(url=url, params=params, headers=headers, cookies=config.get_cookies())
-    return RawObject(res.json())
+    return RawResponse(res.json())

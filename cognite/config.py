@@ -45,6 +45,7 @@ def get_config_variables(api_key, project):
         project = _CONFIG_PROJECT
     return api_key, project
 
+
 def get_cookies():
     '''Returns cookies set for the current session.
 
@@ -53,7 +54,8 @@ def get_cookies():
     '''
     return _CONFIG_COOKIES
 
-def set_base_url(url):
+
+def set_base_url(url=None):
     '''Sets the base url for requests made from the SDK.
 
     Args:
@@ -72,11 +74,11 @@ def get_base_url():
     return BASE_URL if _CONFIG_BASE_URL is None else _CONFIG_BASE_URL
 
 
-def set_number_of_retries(retries: int):
+def set_number_of_retries(retries: int = None):
     '''Sets the number of retries attempted for requests made from the SDK.
 
     Args:
-        retries (int):  Number of retries to attempt.
+        retries (int):  Number of retries to attempt. Set this to None to use default num of retries.
     '''
     global _CONFIG_RETRIES
     _CONFIG_RETRIES = retries

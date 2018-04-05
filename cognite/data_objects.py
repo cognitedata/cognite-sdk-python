@@ -60,10 +60,9 @@ class RawRowDTO(object):
     unique row key and a set of columns.
 
     Attributes:
-
         key (str):      Unique key for the row.
-        columns (int):  A key/value-map consisting of the values in the row.
 
+        columns (int):  A key/value-map consisting of the values in the row.
     """
 
     def __init__(self, key, columns):
@@ -77,8 +76,8 @@ class RawRowDTO(object):
         return self.__dict__
 
 
-class RawObject(CogniteDataObject):
-    """Raw Data Object."""
+class RawResponse(CogniteDataObject):
+    """Raw Response Object."""
 
     def to_json(self):
         """Returns data as a json object"""
@@ -89,8 +88,8 @@ class RawObject(CogniteDataObject):
         return pd.DataFrame(self.internal_representation['data']['items'])
 
 
-class TagMatchingObject(CogniteDataObject):
-    '''Tag Matching Data Object.
+class TagMatchingResponse(CogniteDataObject):
+    '''Tag Matching Response Object.
 
     In addition to the standard output formats this data object also has a to_list() method which returns a list of
     names of the tag matches.
@@ -132,8 +131,30 @@ class TagMatchingObject(CogniteDataObject):
         return self.to_pandas().sort_values(['score', 'match'])['match'].tolist()
 
 
-class DatapointsObject(CogniteDataObject):
-    '''Datapoints Object.'''
+class DatapointsQuery():
+    """Data Query Object for Datapoints.
+
+    Attributes:
+        tag_id (str):               Unique ID of time series.
+        aggregates (list):          The aggregate functions to be returned. Use default if null. An empty string must
+                                    be sent to get raw data if the default is a set of aggregate functions.
+        granularity (str):          The granularity size and granularity of the aggregates.
+        start (str, int, datetime): Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s.
+                                    Example: '2d-ago' will get everything that is up to 2 days old. Can also send time in
+                                    ms since epoch or as a datetime object.
+        end (str, int, datetime):   Get datapoints up to this time. The format is the same as for start.
+    """
+
+    def __init__(self, tag_id, aggregates=None, granularity=None, start=None, end=None, limit=None):
+        self.tagId = tag_id
+        self.aggregateFunctions = ','.join(aggregates) if aggregates is not None else None
+        self.granularity = granularity
+        self.start, self.end = _utils.interval_to_ms(start, end)
+        self.limit = limit
+
+
+class DatapointsResponse(CogniteDataObject):
+    '''Datapoints Response Object.'''
 
     def to_json(self):
         '''Returns data as a json object'''
@@ -144,8 +165,26 @@ class DatapointsObject(CogniteDataObject):
         return pd.DataFrame(self.internal_representation['data']['items'][0]['datapoints'])
 
 
-class LatestDatapointObject(CogniteDataObject):
-    '''Latest Datapoint Object.'''
+class DatapointsResponseIterator():
+    '''Iterator for Datapoints Response Objects.'''
+
+    def __init__(self, datapoints_objects):
+        self.datapoints_objects = datapoints_objects
+        self.counter = 0
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.counter > len(self.datapoints_objects) - 1:
+            raise StopIteration
+        else:
+            self.counter += 1
+            return self.datapoints_objects[self.counter - 1]
+
+
+class LatestDatapointResponse(CogniteDataObject):
+    '''Latest Datapoint Response Object.'''
 
     def to_json(self):
         '''Returns data as a json object'''
@@ -160,8 +199,8 @@ class LatestDatapointObject(CogniteDataObject):
         return self.to_pandas().values[0]
 
 
-class TimeseriesObject(CogniteDataObject):
-    '''Timeseries Object'''
+class TimeseriesResponse(CogniteDataObject):
+    '''Timeseries Response Object'''
 
     def to_json(self):
         '''Returns data as a json object'''
@@ -171,8 +210,11 @@ class TimeseriesObject(CogniteDataObject):
         '''Returns data as a pandas dataframe'''
         if self.internal_representation[0].get('metadata') is None:
             return pd.DataFrame(self.internal_representation)
-        [d.update(d.pop('metadata')) for d in self.internal_representation]
+        for d in self.internal_representation:
+            if d.get('metadata'):
+                d.update(d.pop('metadata'))
         return pd.DataFrame(self.internal_representation)
+
 
 class TimeSeriesDTO(object):
     """Data Transfer Object for a timeseries.
@@ -212,18 +254,10 @@ class DatapointDTO(object):
     def __init__(self, timestamp, value):
         self.timestamp = timestamp if isinstance(timestamp, int) else _utils.datetime_to_ms(timestamp)
         self.value = value
-        
 
-class AssetSearchObject(CogniteDataObject):
-    '''Assets Search Data Object'''
 
-    def next_cursor(self):
-        '''Returns next cursor to use for paging through results'''
-        return self.internal_representation['data'].get('nextCursor')
-
-    def previous_cursor(self):
-        '''Returns previous cursor'''
-        return self.internal_representation['data'].get('previousCursor')
+class AssetResponse(CogniteDataObject):
+    '''Assets Response Object'''
 
     def to_json(self):
         '''Returns data as a json object'''
@@ -259,3 +293,37 @@ class AssetDTO(object):
         self.refId = ref_id
         self.parentName = parent_name
         self.parentRefId = parent_ref_id
+
+
+class FileInfoResponse(CogniteDataObject):
+    '''File Info Response Object.
+
+    Attributes:
+        id (int):               ID given by the API to the file.
+        file_name (str):        File name. Max length is 256.
+        directory (str):        Directory containing the file. Max length is 512.
+        source (dict):          Source that this file comes from. Max length is 256.
+        file_type (str):        File type. E.g. pdf, css, spreadsheet, .. Max length is 64.
+        metadata (dict):        Customizd data about the file.
+        tag_ids (list[str]):    IDs of equipment related to this file.
+        uploaded (bool):        Whether or not the file is uploaded.
+        uploaded_at (int):      Epoc thime (ms) when the file was uploaded succesfully.
+    '''
+
+    def __init__(self, internal_representation):
+        super().__init__(internal_representation)
+        self.id = self.internal_representation['data'].get('id')
+        self.file_name = self.internal_representation['data'].get('fileName')
+        self.directory = self.internal_representation['data'].get('directory')
+        self.source = self.internal_representation['data'].get('source')
+        self.file_type = self.internal_representation['data'].get('fileType')
+        self.metadata = self.internal_representation['data'].get('metadata')
+        self.tag_ids = self.internal_representation['data'].get('tagIds')
+        self.uploaded = self.internal_representation['data'].get('uploaded')
+        self.uploaded_at = self.internal_representation['data'].get('uploadedAt')
+
+    def to_json(self):
+        return self.internal_representation['data']
+
+    def to_pandas(self):
+        return pd.DataFrame([self.to_json()], columns=self.to_json().keys())
