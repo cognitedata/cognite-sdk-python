@@ -126,7 +126,7 @@ def interval_to_ms(start, end):
     elif isinstance(start, str):
         start = time_now - _time_ago_to_ms(start)
     elif start is None:
-        start = time_now - _time_ago_to_ms('1w-ago')
+        start = time_now - _time_ago_to_ms('2w-ago')
 
     if isinstance(end, datetime):
         end = datetime_to_ms(end)
