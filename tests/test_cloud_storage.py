@@ -34,9 +34,9 @@ def file_id():
 
 
 def test_get_file_info(file_id):
-    from cognite.data_objects import FileInfoObject
+    from cognite.data_objects import FileInfoResponse
     response = cloud_storage.get_file_info(file_id)
-    assert isinstance(response, FileInfoObject)
+    assert isinstance(response, FileInfoResponse)
     assert isinstance(response.to_json(), dict)
     assert isinstance(response.to_ndarray(), np.ndarray)
     assert isinstance(response.to_pandas(), pd.DataFrame)

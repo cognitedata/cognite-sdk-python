@@ -6,7 +6,7 @@ import pytest
 
 from cognite import raw
 from cognite._utils import APIError
-from cognite.data_objects import RawObject
+from cognite.data_objects import RawResponse
 
 DB_NAME = 'test_db'
 TABLE_NAME = 'test_table'
@@ -21,14 +21,14 @@ class TestDatabases:
 
     def test_create_databases(self):
         response = raw.create_databases([DB_NAME])
-        assert isinstance(response, RawObject)
+        assert isinstance(response, RawResponse)
         assert response.to_json()[0]['dbName'] == DB_NAME
 
     def test_databases_response_length(self, databases):
         assert len(databases.to_json()) > 0
 
     def test_get_databases_output_formats(self, databases):
-        assert isinstance(databases, RawObject)
+        assert isinstance(databases, RawResponse)
         assert isinstance(databases.to_json(), list)
         assert isinstance(databases.to_ndarray(), np.ndarray)
         assert isinstance(databases.to_pandas(), pd.DataFrame)
