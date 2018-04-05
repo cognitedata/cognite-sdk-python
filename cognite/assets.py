@@ -26,7 +26,7 @@ def get_assets(name=None, path=None, description=None, metadata=None, depth=None
 
         metadata (str):         The metadata values used to filter the results.
 
-        depth (intq):            Get sub assets up oto this many levels below the specified path.
+        depth (int):            Get sub assets up oto this many levels below the specified path.
 
         fuzziness (int):        The degree of fuzziness in the name matching.
 
