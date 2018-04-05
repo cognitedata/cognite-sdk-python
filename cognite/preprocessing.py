@@ -154,7 +154,6 @@ def preprocess(dataframe, remove_leading_nan_rows=False, center_and_scale=False)
     _, selected_columns_mask_zero_var = remove_zero_variance_columns(dataframe)
     selected_columns_mask = np.logical_and(selected_columns_mask_nan, selected_columns_mask_zero_var)
     dataframe = dataframe.set_index('timestamp').loc[:, selected_columns_mask].reset_index()
-
     if center_and_scale:
         dataframe = normalize(dataframe)
 

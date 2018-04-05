@@ -113,3 +113,30 @@ class TestRemoveZeroVarColumns():
 
     def test_correct_column_removed(self, df_zero_var_removed):
         assert 0 not in df_zero_var_removed[0].columns
+
+
+class TestPreprocess():
+    @pytest.fixture(scope='class')
+    def df_nans_uneven(self):
+        df = pd.DataFrame([[None, 2, 3, 4], [5, None, 7, 8], [9, 10, 11, 12]])
+        df['timestamp'] = [1000, 3000, 8000]
+        return df
+
+    def test_preprocess(self, df_nans_uneven):
+        with pytest.warns(UserWarning):
+            pp_df, mask = preprocessing.preprocess(df_nans_uneven)
+        timestamps = pp_df.timestamp.values
+        even_deltas = np.diff(timestamps, 1) == 1000
+        assert not pp_df.isnull().values.any()
+        assert np.all(even_deltas)
+        assert mask[0] == False
+        assert mask[1:].all()
+
+    def test_preprocess_remove_leading_nan(self, df_nans_uneven):
+        pp_df, mask = preprocessing.preprocess(df_nans_uneven, remove_leading_nan_rows=True)
+        assert mask.all()
+        assert not pp_df.isnull().values.any()
+
+    def test_preprocess_center_and_scale(self, df_nans_uneven):
+        pp_df, mask = preprocessing.preprocess(df_nans_uneven, center_and_scale=True, remove_leading_nan_rows=True)
+        assert (pp_df.drop('timestamp', axis=1).mean().round() == 0).all()

@@ -19,8 +19,8 @@ def tagmatching_result(mock_post):
 
 
 def test_object(tagmatching_result):
-    from cognite.data_objects import TagMatchingObject
-    assert isinstance(tagmatching_result, TagMatchingObject)
+    from cognite.data_objects import TagMatchingResponse
+    assert isinstance(tagmatching_result, TagMatchingResponse)
 
 
 def test_json(tagmatching_result):
