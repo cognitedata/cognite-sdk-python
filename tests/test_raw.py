@@ -34,7 +34,7 @@ class TestDatabases:
         assert isinstance(databases.to_pandas(), pd.DataFrame)
 
     def test_delete_databases(self):
-        response = raw.delete_databases([DB_NAME])
+        response = raw.delete_databases([DB_NAME], recursive=True)
         assert response == {}
         with pytest.raises(APIError) as e:
             raw.delete_databases([DB_NAME])

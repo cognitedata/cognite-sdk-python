@@ -1,7 +1,13 @@
-@Library('jenkins-helpers@v0.1.8') _
+@Library('jenkins-helpers@v0.1.10') _
+
+def label = "cognite-sdk-python-${UUID.randomUUID().toString()}"
 
 podTemplate(
-    label: 'jnlp-cognite-sdk-python',
+    label: label,
+    annotations: [
+            podAnnotation(key: "jenkins/build-url", value: env.BUILD_URL),
+            podAnnotation(key: "jenkins/github-pr-url", value: env.CHANGE_URL),
+    ],
     containers: [
         containerTemplate(name: 'python',
             image: 'python:3.6.4',
@@ -28,7 +34,7 @@ podTemplate(
         envVar(key: 'BUILD_URL', value: env.BUILD_URL),
         envVar(key: 'CHANGE_ID', value: env.CHANGE_ID),
     ]) {
-    node('jnlp-cognite-sdk-python') {
+    node(label) {
         def gitCommit
         container('jnlp') {
             stage('Checkout') {
