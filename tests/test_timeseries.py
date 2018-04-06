@@ -8,7 +8,6 @@ from cognite import timeseries
 
 dps_params = [
     {'start': 1522188000000, 'end': 1522620000000},
-    {'start': '3d-ago', 'end': '1d-ago'},
     {'start': datetime(2018, 4, 1), 'end': datetime(2018, 4, 2)},
     {'start': datetime(2018, 4, 1), 'end': datetime(2018, 4, 2), 'protobuf': True}]
 
@@ -46,7 +45,7 @@ def test_get_latest():
     assert isinstance(response.to_json(), dict)
 
 
-@pytest.fixture(scope='module', params=dps_params[:3])
+@pytest.fixture(scope='module', params=dps_params[:2])
 def get_datapoints_frame_response_obj(request):
     yield timeseries.get_datapoints_frame(tag_ids=['constant'], start=request.param['start'], end=request.param['end'],
                                           aggregates=['avg'], granularity='1m')
@@ -63,7 +62,7 @@ def test_get_dps_frame_correctly_spaced(get_datapoints_frame_response_obj):
     assert (deltas % 60000 == 0).all()
 
 
-@pytest.fixture(scope='module', params=dps_params[:3])
+@pytest.fixture(scope='module', params=dps_params[:2])
 def get_multitag_dps_response_obj(request):
     from cognite.data_objects import DatapointsQuery
     dq1 = DatapointsQuery('constant', aggregates=['avg'], granularity='30m')
