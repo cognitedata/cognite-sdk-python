@@ -4,7 +4,7 @@ Python Package to ensure excellent CDP user experience for data scientists.
 To view the documentation for this package click [here](http://cognite-sdk-python.readthedocs.io/ "SDK Documentation").
 
 [![codecov](https://codecov.io/gh/cognitedata/cognite-sdk-python/branch/master/graph/badge.svg)](https://codecov.io/gh/cognitedata/cognite-sdk-python)
-![docs](https://readthedocs.org/projects/pip/badge/)
+![docs](https://readthedocs.org/projects/cognite-sdk-python/badge/)
 
 ## Development instructions
 ### Setup
