@@ -32,7 +32,6 @@ if __name__ == '__main__':
     parser.add_argument('--suppress-warning', action='store_true')
 
     args = parser.parse_args()
-    print(args)
 
     dirs = [os.path.abspath(os.path.join(os.path.dirname(__file__), 'cognite', file)) for file in
             os.listdir('./cognite') if
