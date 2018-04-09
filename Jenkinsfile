@@ -5,8 +5,8 @@ def label = "cognite-sdk-python-${UUID.randomUUID().toString()}"
 podTemplate(
     label: label,
     annotations: [
-            podAnnotation(key: "jenkins/build-url", value: env.BUILD_URL),
-            podAnnotation(key: "jenkins/github-pr-url", value: env.CHANGE_URL),
+            podAnnotation(key: "jenkins/build-url", value: env.BUILD_URL ?: ""),
+            podAnnotation(key: "jenkins/github-pr-url", value: env.CHANGE_URL ?: ""),
     ],
     containers: [
         containerTemplate(name: 'python',
