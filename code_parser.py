@@ -5,6 +5,8 @@ import os
 import re
 import sys
 
+import astunparse
+
 
 class TypeHintRemover(ast.NodeTransformer):
     def visit_FunctionDef(self, node):
@@ -50,5 +52,5 @@ if __name__ == '__main__':
             # and import statements from 'typing'
             transformed = TypeHintRemover().visit(parsed_source)
 
-            # with open(dir, 'w') as f:
-            #     f.write(astunparse.unparse(transformed))
+            with open(dir, 'w') as f:
+                f.write(astunparse.unparse(transformed))
