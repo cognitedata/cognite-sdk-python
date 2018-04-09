@@ -44,15 +44,17 @@ if __name__ == '__main__':
 
     for dir in dirs:
         print(dir)
+
+        # parse the source code into an AST
+        with open(dir, 'r') as f:
+            parsed_source = ast.parse(f.read())
+
         if args.remove_type_hints:
             print("*****Removing type hints")
-            # parse the source code into an AST
-            with open(dir, 'r') as f:
-                parsed_source = ast.parse(f.read())
             # remove all type annotations, function return type definitions
             # and import statements from 'typing'
             transformed = TypeHintRemover().visit(parsed_source)
 
-            with open(dir, 'w') as f:
-                f.write(astunparse.unparse(transformed))
+        with open(dir, 'w') as f:
+            f.write(astunparse.unparse(transformed))
         print()
