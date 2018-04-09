@@ -43,7 +43,9 @@ if __name__ == '__main__':
             sys.exit(0)
 
     for dir in dirs:
+        print(dir)
         if args.remove_type_hints:
+            print("*****Removing type hints")
             # parse the source code into an AST
             with open(dir, 'r') as f:
                 parsed_source = ast.parse(f.read())
@@ -53,3 +55,4 @@ if __name__ == '__main__':
 
             with open(dir, 'w') as f:
                 f.write(astunparse.unparse(transformed))
+        print()
