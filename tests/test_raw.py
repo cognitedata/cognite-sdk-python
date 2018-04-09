@@ -62,10 +62,8 @@ class TestDatabases:
         assert response == {}
         with pytest.raises(APIError) as e:
             raw.delete_databases([DB_NAME])
-            # print(str(e.value))
-            # assert re.match("{'code': 404, 'message': 'Did not find any dbs with the given names'}", str(e.value))
 
-
+            
 class TestTables:
     @pytest.fixture(autouse=True, scope='class')
     def create_database(self):
