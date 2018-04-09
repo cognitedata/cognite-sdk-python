@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import re
+from datetime import datetime
 from unittest import mock
 
 import pytest
@@ -252,6 +253,10 @@ class TestConversions:
     def test_interval_to_ms(self):
         assert isinstance(utils.interval_to_ms(None, None)[0], int)
         assert isinstance(utils.interval_to_ms(None, None)[1], int)
+        assert isinstance(utils.interval_to_ms('1w-ago', '1d-ago')[0], int)
+        assert isinstance(utils.interval_to_ms('1w-ago', '1d-ago')[1], int)
+        assert isinstance(utils.interval_to_ms(datetime(2018, 2, 1), datetime(2018, 3, 1))[0], int)
+        assert isinstance(utils.interval_to_ms(datetime(2018, 2, 1), datetime(2018, 3, 1))[1], int)
 
     def test_time_ago_to_ms(self):
         assert utils._time_ago_to_ms('3w-ago') == 1814400000
