@@ -1,4 +1,4 @@
-import re
+from random import randint
 
 import numpy as np
 import pandas as pd
@@ -6,12 +6,36 @@ import pytest
 
 from cognite import raw
 from cognite._utils import APIError
-from cognite.data_objects import RawResponse
+from cognite.data_objects import RawResponse, RawRowDTO
 
-DB_NAME = 'test_db'
-TABLE_NAME = 'test_table'
-ROW_KEY = 'test_key'
-ROW_COLUMNS = {'col1': 'val1'}
+DB_NAME = None
+TABLE_NAME = None
+ROW_KEY = None
+ROW_COLUMNS = None
+
+
+@pytest.fixture(autouse=True, scope='class')
+def db_name():
+    global DB_NAME
+    DB_NAME = 'test_db_{}'.format(randint(1, 2 ** 53 - 1))
+
+
+@pytest.fixture(autouse=True, scope='class')
+def table_name():
+    global TABLE_NAME
+    TABLE_NAME = 'test_table_{}'.format(randint(1, 2 ** 53 - 1))
+
+
+@pytest.fixture(autouse=True, scope='class')
+def row_key():
+    global ROW_KEY
+    ROW_KEY = 'test_key_{}'.format(randint(1, 2 ** 53 - 1))
+
+
+@pytest.fixture(autouse=True, scope='class')
+def row_columns():
+    global ROW_COLUMNS
+    ROW_COLUMNS = {'col1': 'val1'}
 
 
 class TestDatabases:
@@ -38,77 +62,67 @@ class TestDatabases:
         assert response == {}
         with pytest.raises(APIError) as e:
             raw.delete_databases([DB_NAME])
-            assert re.match("Database named {} not found".format(DB_NAME), str(e.value))
+            # print(str(e.value))
+            # assert re.match("{'code': 404, 'message': 'Did not find any dbs with the given names'}", str(e.value))
 
-# TODO: Caching issues in Raw API causing a lot of 500s. Omitting these tests for the time being.
-# class TestTables:
-#     @pytest.fixture(autouse=True)
-#     def create_database(self):
-#         print('creatin table')
-#         print(raw.create_databases([DB_NAME]).to_json())
-#         yield
-#         print('deletein table')
-#         raw.delete_databases([DB_NAME], recursive=True)
-#
-#     @pytest.fixture(scope='class')
-#     def tables(self):
-#         yield raw.get_tables(database_name=DB_NAME)
-#
-#     def test_create_tables(self):
-#         response = raw.create_tables(DB_NAME, [TABLE_NAME])
-#         # assert isinstance(response, RawObject)
-#         assert response.to_json()[0]['tableName'] == TABLE_NAME
-#
-#     def test_tables_response_length(self, tables):
-#         print(tables.to_json())
-#         assert len(tables.to_json()) > 0
-#
-#     def test_tables_object_output_formats(self, tables):
-#         assert isinstance(tables, RawResponse)
-#         assert isinstance(tables.to_json(), list)
-#         assert isinstance(tables.to_ndarray(), np.ndarray)
-#         assert isinstance(tables.to_pandas(), pd.DataFrame)
-#
-#     def test_delete_tables(self):
-#         response = raw.delete_tables(database_name=DB_NAME, table_names=[TABLE_NAME])
-#         assert response == {}
-#         with pytest.raises(APIError) as e:
-#             raw.delete_tables(DB_NAME, [TABLE_NAME])
-#             print(e.code)
-#             assert 0
 
-#
-#
-# @pytest.fixture(scope='module')
-# def rows():
-#     return raw.get_rows(database_name=DB_NAME, table_name=TABLE_NAME, limit=1)
-#
-#
-# def test_create_rows():
-#     response = raw.create_rows(DB_NAME, TABLE_NAME, rows=[RawRowDTO(key=ROW_KEY, columns=ROW_COLUMNS)])
-#     assert response == {}
-#
-#
-# # Test getting rows and their resulting output formats
-# def test_databases_output_formats(databases):
-#
-#
+class TestTables:
+    @pytest.fixture(autouse=True, scope='class')
+    def create_database(self):
+        raw.create_databases([DB_NAME])
+        yield
+        raw.delete_databases([DB_NAME], recursive=True)
 
-#
-#
+    @pytest.fixture(scope='class')
+    def tables(self):
+        yield raw.get_tables(DB_NAME)
 
-#
-#
+    def test_create_tables(self):
+        response = raw.create_tables(DB_NAME, [TABLE_NAME])
+        # assert isinstance(response, RawObject)
+        assert response.to_json()[0]['tableName'] == TABLE_NAME
 
-#
-#
-# def test_rows_response_length(rows):
-#
-#
-#
-#
-# def test_rows_object_output_formats(rows):
-#     assert isinstance(rows, RawObject)
-#     assert isinstance(rows.to_json(), list)
-#     assert isinstance(rows.to_ndarray(), np.ndarray)
-#     assert isinstance(rows.to_pandas(), pd.DataFrame)
+    def test_tables_response_length(self, tables):
+        assert len(tables.to_json()) > 0
+
+    def test_tables_object_output_formats(self, tables):
+        assert isinstance(tables, RawResponse)
+        assert isinstance(tables.to_json(), list)
+        assert isinstance(tables.to_ndarray(), np.ndarray)
+        assert isinstance(tables.to_pandas(), pd.DataFrame)
+
+    def test_delete_tables(self):
+        response = raw.delete_tables(database_name=DB_NAME, table_names=[TABLE_NAME])
+        assert response == {}
+        with pytest.raises(APIError) as e:
+            raw.delete_tables(DB_NAME, [TABLE_NAME])
+            # assert re.match("{'code': 404, 'message': 'Did not find any dbs with the given names'}", str(e.value))
+            # assert re.match("{'code': 404, 'message': 'No tables named test_table'}")
+
+
+class TestRows:
+    @pytest.fixture(autouse=True, scope='class')
+    def create_database(self):
+        raw.create_databases([DB_NAME]).to_json()
+        raw.create_tables(DB_NAME, [TABLE_NAME]).to_json()
+        yield
+        raw.delete_databases([DB_NAME], recursive=True)
+
+    def test_create_rows(self):
+        response = raw.create_rows(DB_NAME, TABLE_NAME, rows=[RawRowDTO(key=ROW_KEY, columns=ROW_COLUMNS)])
+        assert response == {}
+
+    def test_rows_response_length(self):
+        rows = raw.get_rows(database_name=DB_NAME, table_name=TABLE_NAME).to_json()
+        assert len(rows) == 1
+
+    def test_rows_object_output_formats(self):
+        row = raw.get_row(DB_NAME, TABLE_NAME, ROW_KEY)
+        assert isinstance(row, RawResponse)
+        assert isinstance(row.to_json(), list)
+        assert isinstance(row.to_ndarray(), np.ndarray)
+        assert isinstance(row.to_pandas(), pd.DataFrame)
+
+    def test_delete_rows(self):
+        response = raw.delete_rows(DB_NAME, TABLE_NAME, [RawRowDTO(key=ROW_KEY, columns=ROW_COLUMNS)])
+        assert response == {}
