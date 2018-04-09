@@ -48,7 +48,7 @@ class TestDatabases:
 #         print(raw.create_databases([DB_NAME]).to_json())
 #         yield
 #         print('deletein table')
-#         raw.delete_databases([DB_NAME])
+#         raw.delete_databases([DB_NAME], recursive=True)
 #
 #     @pytest.fixture(scope='class')
 #     def tables(self):
@@ -64,7 +64,7 @@ class TestDatabases:
 #         assert len(tables.to_json()) > 0
 #
 #     def test_tables_object_output_formats(self, tables):
-#         assert isinstance(tables, RawObject)
+#         assert isinstance(tables, RawResponse)
 #         assert isinstance(tables.to_json(), list)
 #         assert isinstance(tables.to_ndarray(), np.ndarray)
 #         assert isinstance(tables.to_pandas(), pd.DataFrame)
