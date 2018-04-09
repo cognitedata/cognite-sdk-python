@@ -11,6 +11,7 @@ sphinx = "*"
 pandas = "*"
 requests = "*"
 protobuf = "*"
+sphinx-rtd-theme = "*"
 
 
 [dev-packages]
@@ -20,6 +21,7 @@ twine = "*"
 "yolk3k" = "*"
 pytest = "*"
 pylint = "*"
+astunparse = "*"
 
 
 [requires]
