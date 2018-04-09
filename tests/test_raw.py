@@ -63,7 +63,7 @@ class TestDatabases:
         with pytest.raises(APIError) as e:
             raw.delete_databases([DB_NAME])
 
-            
+
 class TestTables:
     @pytest.fixture(autouse=True, scope='class')
     def create_database(self):
@@ -101,8 +101,8 @@ class TestTables:
 class TestRows:
     @pytest.fixture(autouse=True, scope='class')
     def create_database(self):
-        raw.create_databases([DB_NAME]).to_json()
-        raw.create_tables(DB_NAME, [TABLE_NAME]).to_json()
+        raw.create_databases([DB_NAME])
+        raw.create_tables(DB_NAME, [TABLE_NAME])
         yield
         raw.delete_databases([DB_NAME], recursive=True)
 
