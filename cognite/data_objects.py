@@ -208,7 +208,7 @@ class TimeseriesResponse(CogniteDataObject):
 
     def to_pandas(self):
         '''Returns data as a pandas dataframe'''
-        if self.internal_representation[0].get('metadata') is None:
+        if self.internal_representation and self.internal_representation[0].get('metadata') is None:
             return pd.DataFrame(self.internal_representation)
         for d in self.internal_representation:
             if d.get('metadata'):
