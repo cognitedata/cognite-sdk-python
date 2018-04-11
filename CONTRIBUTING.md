@@ -8,8 +8,11 @@ $ pipenv shell
 ```
 
 ### Unit testing
-Set up unit tests for all new functionality
-Run unit tests by running the following command from the root directory:
+Set up unit tests for all new functionality.
+
+Initiate unit tests by running the following command from the root directory:
+
+Running the tests will require setting the environment variable 'COGNITE_TEST_API_KEY'.
 
 `$ pytest`
 
@@ -32,6 +35,7 @@ $ make html
 Documentation will be automatically generated from the google-style docstrings in the source code. It is then built and released when changes are merged into master.
 
 ### Release version conventions
+TODO: Add more detailed instructions on releasing
 Format:
 ```
 MAJOR.MINOR[.MICRO]
