@@ -38,6 +38,6 @@ dataframe.plot(x='timestamp')
 plt.show()
 ```
 
-## Docmentation
+## Documentation
 * [SDK Documentation](http://cognite-sdk-python.readthedocs.io/en/latest/)
 * [API Documentation](https://doc.cognitedata.com/)
