@@ -41,3 +41,7 @@ plt.show()
 ## Documentation
 * [SDK Documentation](http://cognite-sdk-python.readthedocs.io/en/latest/)
 * [API Documentation](https://doc.cognitedata.com/)
+
+
+## License
+Apache 2.0
