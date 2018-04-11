@@ -1,5 +1,5 @@
 <a href="https://cognite.com/">
-    <img src="https://github.com/cognitedata/cognite-sdk-python/blob/readme/cognite_logo.png" alt="Cognite logo" title="Cognite" align="right" height="80" />
+    <img src="https://github.com/cognitedata/cognite-sdk-python/blob/master/cognite_logo.png" alt="Cognite logo" title="Cognite" align="right" height="80" />
 </a>
 
 Cognite Python SDK
@@ -37,6 +37,9 @@ dataframe = datapoints.to_pandas()
 dataframe.plot(x='timestamp')
 plt.show()
 ```
+
+## Contributing
+Want to contribute? Check out [CONTRIBUTING](https://github.com/cognitedata/cognite-sdk-python/blob/master/CONTRIBUTING.md).
 
 ## Documentation
 * [SDK Documentation](http://cognite-sdk-python.readthedocs.io/en/latest/)
