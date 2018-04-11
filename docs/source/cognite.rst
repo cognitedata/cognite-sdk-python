@@ -1,4 +1,4 @@
-assets
+Assets
 ======
 
 .. automodule:: cognite.assets
@@ -6,14 +6,14 @@ assets
     :undoc-members:
     :show-inheritance:
 
-cloud\_storage
+Cloud Storage
 ==============
 .. automodule:: cognite.cloud_storage
     :members:
     :undoc-members:
     :show-inheritance:
 
-config
+Config
 ======
 
 .. automodule:: cognite.config
@@ -21,7 +21,7 @@ config
     :undoc-members:
     :show-inheritance:
 
-data\_objects
+Data Objects
 =============
 
 .. automodule:: cognite.data_objects
@@ -29,7 +29,7 @@ data\_objects
     :undoc-members:
     :show-inheritance:
 
-preprocessing
+Preprocessing
 =============
 
 .. automodule:: cognite.preprocessing
@@ -37,7 +37,7 @@ preprocessing
     :undoc-members:
     :show-inheritance:
 
-raw
+Raw
 ===
 
 .. automodule:: cognite.raw
@@ -45,7 +45,7 @@ raw
     :undoc-members:
     :show-inheritance:
 
-tagmatching
+Tagmatching
 ===========
 
 .. automodule:: cognite.tagmatching
@@ -53,7 +53,7 @@ tagmatching
     :undoc-members:
     :show-inheritance:
 
-timeseries
+Timeseries
 ==========
 
 .. automodule:: cognite.timeseries
