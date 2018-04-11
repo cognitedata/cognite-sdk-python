@@ -1,55 +1,43 @@
-Python SDK for Cognite API
+<a href="https://cognite.com/">
+    <img src="https://github.com/cognitedata/cognite-sdk-python/blob/readme/cognite_logo.png" alt="Cognite logo" title="Cognite" align="right" height="80" />
+</a>
+
+Cognite Python SDK
 ==========================
-Python Package to ensure excellent CDP user experience for data scientists.
-To view the documentation for this package click [here](http://cognite-sdk-python.readthedocs.io/ "SDK Documentation").
+Python SDK to ensure excellent user experience for developers and data scientists working with the Cognite Data Platform.
 
 [![build](https://webhooks.dev.cognite.ai/build/buildStatus/icon?job=github-builds/cognite-sdk-python/master)](https://build.dev.cognite.ai/job/github-builds/job/cognite-sdk-python/job/master/)
 [![codecov](https://codecov.io/gh/cognitedata/cognite-sdk-python/branch/master/graph/badge.svg)](https://codecov.io/gh/cognitedata/cognite-sdk-python)
 [![Documentation Status](https://readthedocs.org/projects/cognite-sdk-python/badge/?version=latest)](http://cognite-sdk-python.readthedocs.io/en/latest/?badge=latest)
 
-## Development instructions
-### Setup
+## Installation
 ```bash
-$ git clone https://github.com/cognitedata/cognite-sdk-python.git
-$ cd cognite-sdk-python
-$ pipenv install -d
-$ pipenv shell
+$ pip install cognite-sdk
 ```
 
-Any changes, bug fixes, additions, or improvements you wish to make should be done on a development branch. A pull request should be created to have your code reviewed.
-### Deployment to Pypi
-1. Update version/release number in cognite/__init__.py following the release conventions shown below.
-2. Create a pull request, have it reviewed and merged. (This will trigger a Jenkins build and automatic release to PyPi).
-3. Create new tag on github to match the updated version number.
+## Usage
+Simple script to download and plot one year of hourly aggregates.
+```python
+import os
+from cognite.config import configure_session
+from cognite.timeseries import get_datapoints
+import matplotlib.pyplot as plt
 
-### Unit testing
-Set up unit tests for all new functionality
-Run unit tests by running the following command from the root directory:
+# Set API key and project for current session
+configure_session(api_key=os.getenv('COGNITE_API_KEY'), project='akerbp')
 
-`$ pytest tests`
+# Retrieve one year of hourly aggreagets for timeseries 'equipment_x'
+tag_id = 'equipment_x'
+datapoints = get_datapoints(tag_id, start='52w-ago', aggregates=['avg'], granularity='1h')
 
-If you want to generate code coverage reports run:
+# Convert to pandas dataframe
+dataframe = datapoints.to_pandas()
 
-```
-pytest --cov-report html \
-       --cov-report xml \
-       --cov cognite
-```
-
-Open `htmlcov/index.html` in the browser to navigate through the report.
-
-### Documentation
-Build html files of documentation locally by running
-```bash
-$ cd docs 
-$ make html
-```
-Documentation will be automatically generated from the google-style docstrings in the source code. It is then built and released when changes are merged into master.
-
-### Release version conventions
-Format: 
-``` 
-MAJOR.MINOR[.MICRO]
+# Plot the dataframe
+dataframe.plot(x='timestamp')
+plt.show()
 ```
 
-The major and minor version numbers should mirror the Cognite API. Micro releases are dedicated to bug fixes, improvements, and additions.
+## Documentation
+* [SDK Documentation](http://cognite-sdk-python.readthedocs.io/en/latest/)
+* [API Documentation](https://doc.cognitedata.com/)
