@@ -2,7 +2,7 @@
     <img src="https://github.com/cognitedata/cognite-sdk-python/blob/readme/cognite_logo.png" alt="Cognite logo" title="Cognite" align="right" height="80" />
 </a>
 
-Cognite API Python SDK
+Cognite Python SDK
 ==========================
 Python SDK to ensure excellent user experience for developers and data scientists working with the Cognite Data Platform.
 
@@ -23,13 +23,21 @@ from cognite.config import configure_session
 from cognite.timeseries import get_datapoints
 import matplotlib.pyplot as plt
 
-configure_session(api_key=os.environ.get('COGNITE_API_KEY'), project='akerbp')
+# Set API key and project for current session
+configure_session(api_key=os.getenv('COGNITE_API_KEY'), project='akerbp')
 
-tag_id = 'a_tag'
+# Retrieve one year of hourly aggreagets for timeseries 'equipment_x'
+tag_id = 'equipment_x'
 datapoints = get_datapoints(tag_id, start='52w-ago', aggregates=['avg'], granularity='1h')
 
+# Convert to pandas dataframe
 dataframe = datapoints.to_pandas()
 
+# Plot the dataframe
 dataframe.plot(x='timestamp')
 plt.show()
 ```
+
+## Docmentation
+* [SDK Documentation](http://cognite-sdk-python.readthedocs.io/en/latest/)
+* [API Documentation](https://doc.cognitedata.com/)
