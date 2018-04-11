@@ -1,6 +1,7 @@
 <a href="https://cognite.com/">
     <img src="https://github.com/cognitedata/cognite-sdk-python/blob/readme/cognite_logo.png" alt="Cognite logo" title="Cognite" align="right" height="60" />
 </a>
+
 Python SDK for Cognite API
 ==========================
 Python Package to ensure excellent CDP user experience for data scientists.
