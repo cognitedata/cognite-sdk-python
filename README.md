@@ -4,7 +4,7 @@
 
 Cognite API Python SDK
 ==========================
-Python SDK to ensure excellent CDP user experience for developers and data scientists.
+Python SDK to ensure excellent user experience for developers and data scientists working with the Cognite Data Platform.
 
 [![build](https://webhooks.dev.cognite.ai/build/buildStatus/icon?job=github-builds/cognite-sdk-python/master)](https://build.dev.cognite.ai/job/github-builds/job/cognite-sdk-python/job/master/)
 [![codecov](https://codecov.io/gh/cognitedata/cognite-sdk-python/branch/master/graph/badge.svg)](https://codecov.io/gh/cognitedata/cognite-sdk-python)
