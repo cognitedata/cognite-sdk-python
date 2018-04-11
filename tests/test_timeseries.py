@@ -101,3 +101,9 @@ def test_get_timeseries_output_format(get_timeseries_response_obj):
     assert isinstance(get_timeseries_response_obj.to_ndarray(), np.ndarray)
     assert isinstance(get_timeseries_response_obj.to_pandas(), pd.DataFrame)
     assert isinstance(get_timeseries_response_obj.to_json()[0], dict)
+
+
+def test_get_timeseries_no_results():
+    result = timeseries.get_timeseries(prefix='not_a_timeseries_prefix')
+    assert result.to_pandas().empty
+    assert len(result.to_json()) == 0
