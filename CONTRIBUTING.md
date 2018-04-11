@@ -7,12 +7,10 @@ $ pipenv install -d
 $ pipenv shell
 ```
 
-### Unit testing
-Set up unit tests for all new functionality.
+### Testing
+Set up tests for all new functionality. Running the tests will require setting the environment variable 'COGNITE_TEST_API_KEY'.
 
 Initiate unit tests by running the following command from the root directory:
-
-Running the tests will require setting the environment variable 'COGNITE_TEST_API_KEY'.
 
 `$ pytest`
 
