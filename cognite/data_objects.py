@@ -266,7 +266,7 @@ class AssetResponse(CogniteDataObject):
 
     def to_pandas(self):
         '''Returns data as a pandas dataframe'''
-        if len(self.to_json()) > 1:
+        if len(self.to_json()) > 0:
             return pd.DataFrame(self.internal_representation['data']['items'])
         return pd.DataFrame()
 
