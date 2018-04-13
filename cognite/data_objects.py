@@ -204,16 +204,17 @@ class TimeseriesResponse(CogniteDataObject):
 
     def to_json(self):
         '''Returns data as a json object'''
-        return self.internal_representation
+        return self.internal_representation['data']['items']
 
     def to_pandas(self):
         '''Returns data as a pandas dataframe'''
-        if self.internal_representation and self.internal_representation[0].get('metadata') is None:
-            return pd.DataFrame(self.internal_representation)
-        for d in self.internal_representation:
+        items = self.internal_representation['data']['items']
+        if items and items[0].get('metadata') is None:
+            return pd.DataFrame(items)
+        for d in items:
             if d.get('metadata'):
                 d.update(d.pop('metadata'))
-        return pd.DataFrame(self.internal_representation)
+        return pd.DataFrame(items)
 
 
 class TimeSeriesDTO(object):
@@ -293,6 +294,14 @@ class AssetDTO(object):
         self.refId = ref_id
         self.parentName = parent_name
         self.parentRefId = parent_ref_id
+
+
+class FileListResponse(CogniteDataObject):
+    def to_json(self):
+        return self.internal_representation['data']['items']
+
+    def to_pandas(self):
+        return pd.DataFrame(self.internal_representation['data']['items'])
 
 
 class FileInfoResponse(CogniteDataObject):

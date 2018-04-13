@@ -13,7 +13,7 @@ import requests
 
 import cognite._utils as _utils
 import cognite.config as config
-from cognite.data_objects import FileInfoResponse
+from cognite.data_objects import FileInfoResponse, FileListResponse
 
 
 def upload_file(file_name, file_path=None, directory=None, source=None, file_type=None, content_type=None, **kwargs):
@@ -155,9 +155,6 @@ def delete_files(file_ids, **kwargs):
 def list_files(name=None, directory=None, file_type=None, source=None, **kwargs):
     '''Get list of files matching query.
 
-    This method will automate paging for the user and return info about all files for the given query. If limit is
-    specified the method will not page and return that many results.
-
     Args:
         name (str, optional):      List all files with this name.
 
@@ -178,6 +175,9 @@ def list_files(name=None, directory=None, file_type=None, source=None, **kwargs)
 
         limit (int):                    Number of results to return.
 
+        autopaging (bool):              Whether or to automatically page through results. If set to true, limit will be
+                                        disregarded.
+
     Returns:
         list: A list of files with file info.
     '''
@@ -195,19 +195,23 @@ def list_files(name=None, directory=None, file_type=None, source=None, **kwargs)
         'source': source,
         'isUploaded': kwargs.get('is_uploaded', None),
         'sort': kwargs.get('sort', None),
-        'limit': kwargs.get('limit', 100)
+        'limit': kwargs.get('limit', 100) if not kwargs.get('autopaging') else 10000
     }
+
     file_list = []
     res = _utils.get_request(url=url, headers=headers, params=params, cookies=config.get_cookies())
     file_list.extend(res.json()['data']['items'])
     next_cursor = res.json()['data'].get('nextCursor', None)
-    limit = kwargs.get('limit', float('inf'))
-    while next_cursor is not None and len(file_list) < limit:
+
+    while next_cursor and kwargs.get('autopaging'):
+        print("hello")
         params['cursor'] = next_cursor
         res = _utils.get_request(url=url, headers=headers, params=params, cookies=config.get_cookies())
         file_list.extend(res.json()['data']['items'])
         next_cursor = res.json()['data'].get('nextCursor', None)
-    return file_list
+    return FileListResponse({'data': {'nextCursor': next_cursor,
+                                      'previousCursor': res.json()['data'].get('previousCursor'),
+                                      'items': file_list}})
 
 
 def get_file_info(id, **kwargs):
