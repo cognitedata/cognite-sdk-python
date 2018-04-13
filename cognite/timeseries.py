@@ -523,15 +523,12 @@ def _get_datapoints_frame_helper(tag_ids, aggregates, granularity, start=None, e
 def get_timeseries(prefix=None, description=None, include_metadata=False, asset_id=None, path=None, **kwargs):
     '''Returns a TimeseriesObject containing the requested timeseries.
 
-    This method will automate paging for the user and return info about all files for the given query. If limit is
-    specified the method will not page and return that many results.
-
     Args:
         prefix (str):           List timeseries with this prefix in the name.
 
         description (str):      Filter timeseries taht contains this string in its description.
 
-        include_metadata (bool):    Decide if teh metadata field should be returned or not. Defaults to False.
+        include_metadata (bool):    Decide if the metadata field should be returned or not. Defaults to False.
 
         asset_id (int):        Get timeseries related to this asset.
 
@@ -543,6 +540,9 @@ def get_timeseries(prefix=None, description=None, include_metadata=False, asset_
         api_key (str):          Your api-key.
 
         project (str):          Project name.
+
+        autopaging (bool):      Whether or not to automatically page through results. If set to true, limit will be
+                                disregarded. Defaults to False.
 
     Returns:
         TimeseriesResponse: A data object containing the requested timeseries with several getter methods with different
@@ -560,22 +560,23 @@ def get_timeseries(prefix=None, description=None, include_metadata=False, asset_
         'includeMetadata': include_metadata,
         'assetId': asset_id,
         'path': path,
-        'limit': kwargs.get('limit', 10000)
+        'limit': kwargs.get('limit', 10000) if not kwargs.get('autopaging') else 10000
     }
-    timeseries = []
 
+    timeseries = []
     res = _utils.get_request(url=url, headers=headers, params=params, cookies=config.get_cookies())
     timeseries.extend(res.json()['data']['items'])
-    next_cursor = res.json()['data'].get('nextCursor', None)
-    limit = kwargs.get('limit', float('inf'))
+    next_cursor = res.json()['data'].get('nextCursor')
 
-    while next_cursor is not None and len(timeseries) < limit:
+    while next_cursor and kwargs.get('autopaging'):
         params['cursor'] = next_cursor
         res = _utils.get_request(url=url, headers=headers, params=params, cookies=config.get_cookies())
         timeseries.extend(res.json()['data']['items'])
-        next_cursor = res.json()['data'].get('nextCursor', None)
+        next_cursor = res.json()['data'].get('nextCursor')
 
-    return TimeseriesResponse(timeseries)
+    return TimeseriesResponse(
+        {'data': {'nextCursor': next_cursor, 'previousCursor': res.json()['data'].get('previousCursor'),
+                  'items': timeseries}})
 
 
 def post_time_series(time_series: List[TimeSeriesDTO], **kwargs):
