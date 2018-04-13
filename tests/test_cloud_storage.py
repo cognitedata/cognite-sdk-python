@@ -23,14 +23,25 @@ def test_upload_file(tmpdir):
 
 
 def test_list_files():
+    from cognite.data_objects import FileListResponse
     response = cloud_storage.list_files(limit=3)
-    assert len(response) > 0 and len(response) <= 3
+    assert isinstance(response, FileListResponse)
+    assert isinstance(response.to_pandas(), pd.DataFrame)
+    assert isinstance(response.to_json(), list)
+    assert isinstance(response.to_ndarray(), np.ndarray)
+    assert len(response.to_json()) > 0 and len(response.to_json()) <= 3
+
+
+def test_list_files_empty():
+    response = cloud_storage.list_files(source='not_a_source')
+    assert response.to_pandas().empty
+    assert len(response.to_json()) == 0
 
 
 @pytest.fixture(scope='module')
 def file_id():
     res = cloud_storage.list_files(name='test_file', source='sdk-tests', limit=1)
-    return res[0]['id']
+    return res.to_json()[0]['id']
 
 
 def test_get_file_info(file_id):
