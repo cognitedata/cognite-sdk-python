@@ -204,7 +204,6 @@ def list_files(name=None, directory=None, file_type=None, source=None, **kwargs)
     next_cursor = res.json()['data'].get('nextCursor', None)
 
     while next_cursor and kwargs.get('autopaging'):
-        print("hello")
         params['cursor'] = next_cursor
         res = _utils.get_request(url=url, headers=headers, params=params, cookies=config.get_cookies())
         file_list.extend(res.json()['data']['items'])
