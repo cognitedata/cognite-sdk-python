@@ -541,8 +541,8 @@ def get_timeseries(prefix=None, description=None, include_metadata=False, asset_
 
         project (str):          Project name.
 
-        autopaging (bool):      Whether or to automatically page through results. If set to true, limit will be
-                                disregarded.
+        autopaging (bool):      Whether or not to automatically page through results. If set to true, limit will be
+                                disregarded. Defaults to False.
 
     Returns:
         TimeseriesResponse: A data object containing the requested timeseries with several getter methods with different

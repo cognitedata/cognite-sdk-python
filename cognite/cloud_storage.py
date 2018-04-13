@@ -175,8 +175,8 @@ def list_files(name=None, directory=None, file_type=None, source=None, **kwargs)
 
         limit (int):                    Number of results to return.
 
-        autopaging (bool):              Whether or to automatically page through results. If set to true, limit will be
-                                        disregarded.
+        autopaging (bool):              Whether or not to automatically page through results. If set to true, limit will be
+                                        disregarded. Defaults to False.
 
     Returns:
         list: A list of files with file info.
