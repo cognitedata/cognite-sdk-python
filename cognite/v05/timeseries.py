@@ -254,8 +254,8 @@ def get_multi_tag_datapoints(datapoints_queries, aggregates=None, granularity=No
     This method will automate paging for the user and return all data for the given time period(s).
 
     Args:
-        datapoints_queries (list[v05.data_objects.DatapointsQuery]): The list of DatapointsQuery objects specifying which timeseries
-                                                    to retrieve data for.
+        datapoints_queries (list[v05.data_objects.DatapointsQuery]): The list of DatapointsQuery objects specifying which
+                                                                    timeseries to retrieve data for.
 
         aggregates (list, optional):    The list of aggregate functions you wish to apply to the data. Valid aggregate
                                         functions are: 'average/avg, max, min, count, sum, interpolation/int,
@@ -282,7 +282,6 @@ def get_multi_tag_datapoints(datapoints_queries, aggregates=None, granularity=No
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
     url = config.get_base_url() + '/projects/{}/timeseries/dataquery'.format(project)
-
     start, end = _utils.interval_to_ms(start, end)
 
     num_of_dpqs_with_agg = 0
@@ -299,6 +298,10 @@ def get_multi_tag_datapoints(datapoints_queries, aggregates=None, granularity=No
             dpq.limit = int(_constants.LIMIT / num_of_dpqs_raw)
         else:
             dpq.limit = int(_constants.LIMIT_AGG / num_of_dpqs_with_agg)
+        if dpq.start is None:
+            dpq.start = start
+        if dpq.end is None:
+            dpq.end = end
         items.append(dpq.__dict__)
     body = {
         'items': items,
@@ -324,7 +327,8 @@ def get_multi_tag_datapoints(datapoints_queries, aggregates=None, granularity=No
             if len(dpr['datapoints']) == dpq.limit:
                 has_incomplete_requests = True
                 latest_timestamp = dpr['datapoints'][-1]['timestamp']
-                next_start = latest_timestamp + (_utils.granularity_to_ms(dpq.granularity) if dpq.granularity else 1)
+                ts_granularity = granularity if dpq.granularity is None else dpq.granularity
+                next_start = latest_timestamp + (_utils.granularity_to_ms(ts_granularity) if ts_granularity else 1)
             else:
                 next_start = datapoints_queries[i].end - 1
             datapoints_queries[i].start = next_start
