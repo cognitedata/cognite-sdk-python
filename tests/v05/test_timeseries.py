@@ -14,7 +14,7 @@ dps_params = [
 
 @pytest.fixture(scope='module', params=dps_params)
 def get_dps_response_obj(request):
-    yield timeseries.get_datapoints(tag_id='constant', start=request.param['start'], end=request.param['end'],
+    yield timeseries.get_datapoints(timeseries='constant', start=request.param['start'], end=request.param['end'],
                                     protobuf=request.param.get('protobuf', False))
 
 
@@ -47,7 +47,8 @@ def test_get_latest():
 
 @pytest.fixture(scope='module', params=dps_params[:2])
 def get_datapoints_frame_response_obj(request):
-    yield timeseries.get_datapoints_frame(tag_ids=['constant'], start=request.param['start'], end=request.param['end'],
+    yield timeseries.get_datapoints_frame(timeseries=['constant'], start=request.param['start'],
+                                          end=request.param['end'],
                                           aggregates=['avg'], granularity='1m')
 
 
@@ -63,27 +64,28 @@ def test_get_dps_frame_correctly_spaced(get_datapoints_frame_response_obj):
 
 
 @pytest.fixture(scope='module', params=dps_params[:2])
-def get_multitag_dps_response_obj(request):
+def get_multi_time_series_dps_response_obj(request):
     from cognite.v05.data_objects import DatapointsQuery
     dq1 = DatapointsQuery('constant')
     dq2 = DatapointsQuery('sinus', aggregates=['avg'], granularity='30s')
-    yield list(timeseries.get_multi_tag_datapoints(datapoints_queries=[dq1, dq2], start=request.param['start'],
-                                                   end=request.param['end'], aggregates=['avg'], granularity='60s'))
+    yield list(timeseries.get_multi_time_series_datapoints(datapoints_queries=[dq1, dq2], start=request.param['start'],
+                                                           end=request.param['end'], aggregates=['avg'],
+                                                           granularity='60s'))
 
 
-def test_get_multitag_dps_output_format(get_multitag_dps_response_obj):
+def test_get_multi_time_series_dps_output_format(get_multi_time_series_dps_response_obj):
     from cognite.v05.data_objects import DatapointsResponse
-    assert isinstance(get_multitag_dps_response_obj, list)
-    for dpr in get_multitag_dps_response_obj:
+    assert isinstance(get_multi_time_series_dps_response_obj, list)
+    for dpr in get_multi_time_series_dps_response_obj:
         assert isinstance(dpr, DatapointsResponse)
 
 
-def test_get_multitag_dps_response_length(get_multitag_dps_response_obj):
-    assert len(list(get_multitag_dps_response_obj)) == 2
+def test_get_multi_time_series_dps_response_length(get_multi_time_series_dps_response_obj):
+    assert len(list(get_multi_time_series_dps_response_obj)) == 2
 
 
-def test_get_multitag_dps_correctly_spaced(get_multitag_dps_response_obj):
-    m = list(get_multitag_dps_response_obj)
+def test_get_multi_timeseries_dps_correctly_spaced(get_multi_time_series_dps_response_obj):
+    m = list(get_multi_time_series_dps_response_obj)
     timestamps = m[0].to_pandas().timestamp.values
     deltas = np.diff(timestamps, 1)
     assert (deltas != 0).all()

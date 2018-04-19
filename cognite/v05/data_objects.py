@@ -135,7 +135,7 @@ class DatapointsQuery():
     """Data Query Object for Datapoints.
 
     Attributes:
-        tag_id (str):               Unique ID of time series.
+        timeseries (str):           Unique name of the time series.
         aggregates (list):          The aggregate functions to be returned. Use default if null. An empty string must
                                     be sent to get raw data if the default is a set of aggregate functions.
         granularity (str):          The granularity size and granularity of the aggregates.
@@ -145,11 +145,15 @@ class DatapointsQuery():
         end (str, int, datetime):   Get datapoints up to this time. The format is the same as for start.
     """
 
-    def __init__(self, tag_id, aggregates=None, granularity=None, start=None, end=None, limit=None):
-        self.tagId = tag_id
-        self.aggregateFunctions = ','.join(aggregates) if aggregates is not None else None
+    def __init__(self, timeseries, aggregates=None, granularity=None, start=None, end=None, limit=None):
+        self.name = timeseries
+        self.aggregates = ','.join(aggregates) if aggregates is not None else None
         self.granularity = granularity
         self.start, self.end = _utils.interval_to_ms(start, end)
+        if start is None:
+            self.start = None
+        if end is None:
+            self.end = None
         self.limit = limit
 
 
@@ -221,7 +225,7 @@ class TimeSeriesDTO(object):
     """Data Transfer Object for a timeseries.
 
     Attributes:
-        tag_id (str):       Unique ID of time series.
+        timeseries (str):       Unique name of time series.
         is_string (bool):    Whether the time series is string valued or not.
         metadata (dict):    Metadata.
         unit (str):         Physical unit of the time series.
@@ -232,9 +236,9 @@ class TimeSeriesDTO(object):
 
     """
 
-    def __init__(self, tag_id, is_string=False, metadata=None, unit=None, asset_id=None, description=None,
+    def __init__(self, timeseries, is_string=False, metadata=None, unit=None, asset_id=None, description=None,
                  security_categories=None, step=None):
-        self.tagId = tag_id
+        self.name = timeseries
         self.isString = is_string
         self.metadata = metadata
         self.unit = unit
@@ -314,7 +318,7 @@ class FileInfoResponse(CogniteDataObject):
         source (dict):          Source that this file comes from. Max length is 256.
         file_type (str):        File type. E.g. pdf, css, spreadsheet, .. Max length is 64.
         metadata (dict):        Customizd data about the file.
-        tag_ids (list[str]):    IDs of equipment related to this file.
+        asset_ids (list[str]):  Names of assets related to this file.
         uploaded (bool):        Whether or not the file is uploaded.
         uploaded_at (int):      Epoc thime (ms) when the file was uploaded succesfully.
     '''
@@ -327,7 +331,7 @@ class FileInfoResponse(CogniteDataObject):
         self.source = self.internal_representation['data'].get('source')
         self.file_type = self.internal_representation['data'].get('fileType')
         self.metadata = self.internal_representation['data'].get('metadata')
-        self.tag_ids = self.internal_representation['data'].get('tagIds')
+        self.asset_ids = self.internal_representation['data'].get('assetIds')
         self.uploaded = self.internal_representation['data'].get('uploaded')
         self.uploaded_at = self.internal_representation['data'].get('uploadedAt')
 
