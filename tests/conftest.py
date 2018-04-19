@@ -13,10 +13,8 @@ TEST_PROJECT = 'mltest'
 @pytest.fixture(scope='session', autouse=True)
 def configure_test_session():
     configure_session(TEST_API_KEY, TEST_PROJECT)
-    print("CONFTEST START")
     yield
     configure_session('', '')  # teardown
-    print("CONFTEST END")
 
 
 class MockReturnValue(mock.Mock):
