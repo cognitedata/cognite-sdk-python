@@ -19,10 +19,3 @@ To install this package run the following command
    :caption: Contents:
 
    cognite
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-
