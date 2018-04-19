@@ -3,11 +3,11 @@
 
 This module mirrors the Tag Matching API. It allows the user to search for tag id matches.
 
-https://doc.cognitedata.com/#Cognite-API-Tag-Matching
+https://doc.cognitedata.com/0.5/#Cognite-API-Tag-Matching
 """
 import cognite._utils as _utils
 import cognite.config as config
-from cognite.data_objects import TagMatchingResponse
+from cognite.v05.data_objects import TagMatchingResponse
 
 
 def tag_matching(tag_ids, fuzzy_threshold=0, platform=None, **kwargs):
@@ -30,7 +30,7 @@ def tag_matching(tag_ids, fuzzy_threshold=0, platform=None, **kwargs):
         project (str):          Project name.
 
     Returns:
-        TagMatchingResponse: A data object containing the requested data with several getter methods with different
+        v05.data_objects.TagMatchingResponse: A data object containing the requested data with several getter methods with different
         output formats.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))

@@ -4,9 +4,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from cognite import raw
 from cognite._utils import APIError
-from cognite.data_objects import RawResponse, RawRowDTO
+from cognite.v04 import raw
+from cognite.v04.data_objects import RawResponse, RawRowDTO
 
 DB_NAME = None
 TABLE_NAME = None

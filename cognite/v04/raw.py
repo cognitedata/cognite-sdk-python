@@ -3,14 +3,14 @@
 
 This module mirrors the Raw API. It allows the user to handle raw data.
 
-https://doc.cognitedata.com/#Cognite-API-Cloud-Raw
+https://doc.cognitedata.com/0.4/#Cognite-API-Cloud-Raw
 """
 
 from typing import List
 
 import cognite._utils as _utils
 import cognite.config as config
-from cognite.data_objects import RawResponse, RawRowDTO
+from cognite.v04.data_objects import RawResponse, RawRowDTO
 
 
 def get_databases(
@@ -31,7 +31,7 @@ def get_databases(
         project (str):  Project name.
 
     Returns:
-        RawResponse: A data object containing the requested data with several getter methods with different
+        v04.data_objects.RawResponse: A data object containing the requested data with several getter methods with different
         output formats.
     """
     api_key, project = config.get_config_variables(api_key, project)
@@ -67,7 +67,7 @@ def create_databases(
         project (str):          Project name.
 
     Returns:
-        RawResponse: A data object containing the requested data with several getter methods with different
+        v04.data_objects.RawResponse: A data object containing the requested data with several getter methods with different
         output formats.
 
     """
@@ -142,7 +142,7 @@ def get_tables(
         project (str):  Project name.
 
     Returns:
-        RawResponse: A data object containing the requested data with several getter methods with different
+        v04.data_objects.RawResponse: A data object containing the requested data with several getter methods with different
         output formats.
     """
     api_key, project = config.get_config_variables(api_key, project)
@@ -179,7 +179,7 @@ def create_tables(
         project (str):          Project name.
 
     Returns:
-        RawResponse: A data object containing the requested data with several getter methods with different
+        v04.data_objects.RawResponse: A data object containing the requested data with several getter methods with different
         output formats.
 
     """
@@ -240,7 +240,7 @@ def get_rows(
         api_key=None,
         project=None
 ):
-    """Returns a RawObject containing a list of rows.
+    """Returns a RawResponse Object containing a list of rows.
 
     Args:
         database_name (str):    The database name to retrieve rows from.
@@ -256,7 +256,7 @@ def get_rows(
         project (str):          Project name.
 
     Returns:
-        RawResponse: A data object containing the requested data with several getter methods with different
+        v04.data_objects.RawResponse: A data object containing the requested data with several getter methods with different
         output formats.
     """
     api_key, project = config.get_config_variables(api_key, project)
@@ -377,7 +377,7 @@ def get_row(
         api_key=None,
         project=None
 ):
-    """Returns a RawObject containing a list of rows.
+    """Returns a RawResponse Object containing a list of rows.
 
     Args:
         database_name (str):    The database name to retrieve rows from.
@@ -391,7 +391,7 @@ def get_row(
         project (str):          Project name.
 
     Returns:
-        RawResponse: A data object containing the requested data with several getter methods with different
+        v04.data_objects.RawResponse: A data object containing the requested data with several getter methods with different
         output formats.
     """
     api_key, project = config.get_config_variables(api_key, project)

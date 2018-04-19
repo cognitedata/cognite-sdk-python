@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from cognite import timeseries
+from cognite.v04 import timeseries
 
 dps_params = [
     {'start': 1522188000000, 'end': 1522620000000},
@@ -19,7 +19,7 @@ def get_dps_response_obj(request):
 
 
 def test_get_datapoints(get_dps_response_obj):
-    from cognite.data_objects import DatapointsResponse
+    from cognite.v04.data_objects import DatapointsResponse
     assert isinstance(get_dps_response_obj, DatapointsResponse)
 
 
@@ -37,7 +37,7 @@ def test_get_dps_correctly_spaced(get_dps_response_obj):
 
 
 def test_get_latest():
-    from cognite.data_objects import LatestDatapointResponse
+    from cognite.v04.data_objects import LatestDatapointResponse
     response = timeseries.get_latest('constant')
     assert isinstance(response, LatestDatapointResponse)
     assert isinstance(response.to_ndarray(), np.ndarray)
@@ -64,15 +64,15 @@ def test_get_dps_frame_correctly_spaced(get_datapoints_frame_response_obj):
 
 @pytest.fixture(scope='module', params=dps_params[:2])
 def get_multitag_dps_response_obj(request):
-    from cognite.data_objects import DatapointsQuery
-    dq1 = DatapointsQuery('constant', aggregates=['avg'], granularity='30m')
-    dq2 = DatapointsQuery('sinus')
+    from cognite.v04.data_objects import DatapointsQuery
+    dq1 = DatapointsQuery('constant')
+    dq2 = DatapointsQuery('sinus', aggregates=['avg'], granularity='30s')
     yield list(timeseries.get_multi_tag_datapoints(datapoints_queries=[dq1, dq2], start=request.param['start'],
-                                                   end=request.param['end'], aggregates=['avg'], granularity='1h'))
+                                                   end=request.param['end'], aggregates=['avg'], granularity='60s'))
 
 
 def test_get_multitag_dps_output_format(get_multitag_dps_response_obj):
-    from cognite.data_objects import DatapointsResponse
+    from cognite.v04.data_objects import DatapointsResponse
     assert isinstance(get_multitag_dps_response_obj, list)
     for dpr in get_multitag_dps_response_obj:
         assert isinstance(dpr, DatapointsResponse)
@@ -87,7 +87,11 @@ def test_get_multitag_dps_correctly_spaced(get_multitag_dps_response_obj):
     timestamps = m[0].to_pandas().timestamp.values
     deltas = np.diff(timestamps, 1)
     assert (deltas != 0).all()
-    assert (deltas % 10000 == 0).all()
+    assert (deltas % 60000 == 0).all()
+    timestamps = m[1].to_pandas().timestamp.values
+    deltas = np.diff(timestamps, 1)
+    assert (deltas != 0).all()
+    assert (deltas % 30000 == 0).all()
 
 
 @pytest.fixture(scope='module', params=[True, False])
@@ -96,7 +100,7 @@ def get_timeseries_response_obj(request):
 
 
 def test_get_timeseries_output_format(get_timeseries_response_obj):
-    from cognite.data_objects import TimeseriesResponse
+    from cognite.v04.data_objects import TimeseriesResponse
     assert isinstance(get_timeseries_response_obj, TimeseriesResponse)
     assert isinstance(get_timeseries_response_obj.to_ndarray(), np.ndarray)
     assert isinstance(get_timeseries_response_obj.to_pandas(), pd.DataFrame)

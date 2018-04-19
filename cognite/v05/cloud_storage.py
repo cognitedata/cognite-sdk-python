@@ -3,7 +3,7 @@
 
 This module mirrors the Cloud Storage API. It allows you to manage files in cloud storage.
 
-https://doc.cognitedata.com/#Cognite-API-Cloud-Storage
+https://doc.cognitedata.com/0.5/#Cognite-API-Cloud-Storage
 """
 
 import os
@@ -13,7 +13,7 @@ import requests
 
 import cognite._utils as _utils
 import cognite.config as config
-from cognite.data_objects import FileInfoResponse, FileListResponse
+from cognite.v05.data_objects import FileInfoResponse, FileListResponse
 
 
 def upload_file(file_name, file_path=None, directory=None, source=None, file_type=None, content_type=None, **kwargs):
@@ -179,7 +179,7 @@ def list_files(name=None, directory=None, file_type=None, source=None, **kwargs)
                                         disregarded. Defaults to False.
 
     Returns:
-        list: A list of files with file info.
+        v05.data_objects.FileListResponse: A data object containing the requested files information.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
     url = config.get_base_url() + '/projects/{}/storage'.format(project)
@@ -225,7 +225,7 @@ def get_file_info(id, **kwargs):
         project (str, optional):    Project name.
 
     Returns:
-        FileInfoResponse: A data object containing the requested file information.
+        v05.data_objects.FileInfoResponse: A data object containing the requested file information.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
     url = config.get_base_url() + '/projects/{}/storage/{}/info'.format(project, id)
