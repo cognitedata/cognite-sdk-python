@@ -20,15 +20,15 @@ Simple script to download and plot one year of hourly aggregates.
 ```python
 import os
 from cognite.config import configure_session
-from cognite.timeseries import get_datapoints
+from cognite.v05.timeseries import get_datapoints
 import matplotlib.pyplot as plt
 
 # Set API key and project for current session
 configure_session(api_key=os.getenv('COGNITE_API_KEY'), project='akerbp')
 
 # Retrieve one year of hourly aggreagets for timeseries 'equipment_x'
-tag_id = 'equipment_x'
-datapoints = get_datapoints(tag_id, start='52w-ago', aggregates=['avg'], granularity='1h')
+ts = 'equipment_x'
+datapoints = get_datapoints(ts, start='52w-ago', aggregates=['avg'], granularity='1h')
 
 # Convert to pandas dataframe
 dataframe = datapoints.to_pandas()
