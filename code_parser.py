@@ -33,20 +33,26 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    dirs = [os.path.abspath(os.path.join(os.path.dirname(__file__), 'cognite', file)) for file in
-            os.listdir('./cognite') if
-            re.match('.+\.py$', file)]
+    files = [os.path.abspath(os.path.join(os.path.dirname(__file__), 'cognite', file)) for file in
+             os.listdir('./cognite') if re.match('.+\.py$', file)]
+
+    version_dirs = [os.path.abspath(os.path.join(os.path.dirname(__file__), 'cognite', file)) for file in
+                    os.listdir('./cognite') if re.match('^v\d\d$', file)]
+    for dir in version_dirs:
+        version_files = [os.path.abspath(os.path.join(dir, file)) for file in os.listdir(dir) if
+                         re.match('.+\.py$', file)]
+        files.extend(version_files)
 
     if not args.suppress_warning:
         if input("This will alter the source code of your project and should not be run without knowing what you're "
                  "doing. Enter 'PEACOCK' to continue: ") != 'PEACOCK':
             sys.exit(0)
 
-    for dir in dirs:
-        print(dir)
+    for file_path in files:
+        print(file_path)
 
         # parse the source code into an AST
-        with open(dir, 'r') as f:
+        with open(file_path, 'r') as f:
             parsed_source = ast.parse(f.read())
 
         if args.remove_type_hints:
@@ -55,6 +61,6 @@ if __name__ == '__main__':
             # and import statements from 'typing'
             transformed = TypeHintRemover().visit(parsed_source)
 
-        with open(dir, 'w') as f:
+        with open(file_path, 'w') as f:
             f.write(astunparse.unparse(transformed))
         print()
