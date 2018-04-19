@@ -36,7 +36,11 @@ Documentation will be automatically generated from the google-style docstrings i
 TODO: Add more detailed instructions on releasing
 Format:
 ```
-MAJOR.MINOR[.MICRO]
+MAJOR.MINOR[.PATCH]
 ```
+Increment the:
+* MAJOR version when you make incompatible API changes,
+* MINOR version when you add functionality in a backwards-compatible manner, and
+* PATCH version when you make backwards-compatible bug fixes.
 
-The major and minor version numbers should mirror the Cognite API. Micro releases are dedicated to bug fixes, improvements, and additions.
+For more information on versioning see https://semver.org/
