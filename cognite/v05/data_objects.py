@@ -53,6 +53,18 @@ class CogniteDataObject():
             return self.internal_representation.get('data').get('previousCursor')
 
 
+class RawResponse(CogniteDataObject):
+    """Raw Response Object."""
+
+    def to_json(self):
+        """Returns data as a json object"""
+        return self.internal_representation['data']['items']
+
+    def to_pandas(self):
+        """Returns data as a pandas dataframe"""
+        return pd.DataFrame(self.internal_representation['data']['items'])
+
+
 class RawRowDTO(object):
     """DTO for a row in a raw database.
 
@@ -74,18 +86,6 @@ class RawRowDTO(object):
 
     def repr_json(self):
         return self.__dict__
-
-
-class RawResponse(CogniteDataObject):
-    """Raw Response Object."""
-
-    def to_json(self):
-        """Returns data as a json object"""
-        return self.internal_representation['data']['items']
-
-    def to_pandas(self):
-        """Returns data as a pandas dataframe"""
-        return pd.DataFrame(self.internal_representation['data']['items'])
 
 
 class TagMatchingResponse(CogniteDataObject):
@@ -187,6 +187,19 @@ class DatapointsResponseIterator():
             return self.datapoints_objects[self.counter - 1]
 
 
+class DatapointDTO(object):
+    '''Data transfer object for datapoints.
+
+    Attributes:
+        timestamp (int, datetime): The data timestamp in milliseconds since the epoch (Jan 1, 1970) or as a datetime object.
+        value (string):     The data value, Can be string or numeric depending on the metric.
+    '''
+
+    def __init__(self, timestamp, value):
+        self.timestamp = timestamp if isinstance(timestamp, int) else _utils.datetime_to_ms(timestamp)
+        self.value = value
+
+
 class LatestDatapointResponse(CogniteDataObject):
     '''Latest Datapoint Response Object.'''
 
@@ -248,19 +261,6 @@ class TimeSeriesDTO(object):
         self.step = step
 
 
-class DatapointDTO(object):
-    '''Data transfer object for datapoints.
-
-    Attributes:
-        timestamp (int, datetime): The data timestamp in milliseconds since the epoch (Jan 1, 1970) or as a datetime object.
-        value (string):     The data value, Can be string or numeric depending on the metric.
-    '''
-
-    def __init__(self, timestamp, value):
-        self.timestamp = timestamp if isinstance(timestamp, int) else _utils.datetime_to_ms(timestamp)
-        self.value = value
-
-
 class AssetResponse(CogniteDataObject):
     '''Assets Response Object'''
 
@@ -300,14 +300,6 @@ class AssetDTO(object):
         self.parentRefId = parent_ref_id
 
 
-class FileListResponse(CogniteDataObject):
-    def to_json(self):
-        return self.internal_representation['data']['items']
-
-    def to_pandas(self):
-        return pd.DataFrame(self.internal_representation['data']['items'])
-
-
 class FileInfoResponse(CogniteDataObject):
     '''File Info Response Object.
 
@@ -317,7 +309,7 @@ class FileInfoResponse(CogniteDataObject):
         directory (str):        Directory containing the file. Max length is 512.
         source (dict):          Source that this file comes from. Max length is 256.
         file_type (str):        File type. E.g. pdf, css, spreadsheet, .. Max length is 64.
-        metadata (dict):        Customizd data about the file.
+        metadata (dict):        Customized data about the file.
         asset_ids (list[str]):  Names of assets related to this file.
         uploaded (bool):        Whether or not the file is uploaded.
         uploaded_at (int):      Epoc thime (ms) when the file was uploaded succesfully.
@@ -339,4 +331,86 @@ class FileInfoResponse(CogniteDataObject):
         return self.internal_representation['data']
 
     def to_pandas(self):
-        return pd.DataFrame([self.to_json()], columns=self.to_json().keys())
+        file_info = self.to_json()
+        if file_info.get('metadata'):
+            file_info.update(file_info.pop('metadata'))
+        return pd.DataFrame.from_dict(file_info, orient='index')
+
+
+class FileListResponse(CogniteDataObject):
+    '''File List Response Object'''
+
+    def to_json(self):
+        return self.internal_representation['data']['items']
+
+    def to_pandas(self):
+        return pd.DataFrame(self.internal_representation['data']['items'])
+
+
+class EventResponse(CogniteDataObject):
+    '''Event Response Object.'''
+
+    def __init__(self, internal_representation):
+        super().__init__(internal_representation)
+        self.id = self.internal_representation['data'].get('id')
+        self.asset_ids = self.internal_representation['data'].get('assetIds')
+
+    def to_json(self):
+        return self.internal_representation['data']
+
+    def to_pandas(self):
+        event = self.to_json()
+        if event.get('metadata'):
+            event.update(event.pop('metadata'))
+        return pd.DataFrame.from_dict(self.to_json(), orient='index')
+
+
+class EventListResponse(CogniteDataObject):
+    '''Event List Response Object.'''
+
+    def __init__(self, internal_representation):
+        super().__init__(internal_representation)
+        self.counter = 0
+
+    def to_json(self):
+        return self.internal_representation['data']['items']
+
+    def to_pandas(self):
+        items = self.to_json()
+        for d in items:
+            if d.get('metadata'):
+                d.update(d.pop('metadata'))
+        return pd.DataFrame(items)
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.counter > len(self.to_json()) - 1:
+            raise StopIteration
+        else:
+            self.counter += 1
+            return EventResponse({'data': self.to_json()[self.counter - 1]})
+
+
+class EventDTO(object):
+    '''Data transfer object for events.
+    Attributes:
+        start_time (int):       Start time of the event in ms since epoch.
+        end_time (int):         End time of the event in ms since epoch.
+        description (str):      Textual description of the event.
+        type (str):             Type of the event, e.g. 'failure'.
+        sub_type (str):          Subtype of the event, e.g. 'electrical'.
+        metadata (dict):        Customizable extra data about the event.
+        asset_ids (list[int]):  List of Asset IDs of related equipments that this event relates to.
+    '''
+
+    def __init__(self, start_time=None, end_time=None, description=None, type=None, sub_type=None, metadata=None,
+                 asset_ids=None):
+        self.startTime = start_time
+        self.endTime = end_time
+        self.description = description
+        self.type = type
+        self.subtype = sub_type
+        self.metadata = metadata
+        self.assetIds = asset_ids
