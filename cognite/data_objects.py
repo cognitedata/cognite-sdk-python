@@ -150,6 +150,10 @@ class DatapointsQuery():
         self.aggregateFunctions = ','.join(aggregates) if aggregates is not None else None
         self.granularity = granularity
         self.start, self.end = _utils.interval_to_ms(start, end)
+        if not start:
+            self.start = None
+        if not end:
+            self.end = None
         self.limit = limit
 
 

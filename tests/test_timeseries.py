@@ -65,10 +65,10 @@ def test_get_dps_frame_correctly_spaced(get_datapoints_frame_response_obj):
 @pytest.fixture(scope='module', params=dps_params[:2])
 def get_multitag_dps_response_obj(request):
     from cognite.data_objects import DatapointsQuery
-    dq1 = DatapointsQuery('constant', aggregates=['avg'], granularity='30m')
-    dq2 = DatapointsQuery('sinus')
+    dq1 = DatapointsQuery('constant')
+    dq2 = DatapointsQuery('sinus', aggregates=['avg'], granularity='30s')
     yield list(timeseries.get_multi_tag_datapoints(datapoints_queries=[dq1, dq2], start=request.param['start'],
-                                                   end=request.param['end'], aggregates=['avg'], granularity='1h'))
+                                                   end=request.param['end'], aggregates=['avg'], granularity='60s'))
 
 
 def test_get_multitag_dps_output_format(get_multitag_dps_response_obj):
@@ -87,7 +87,11 @@ def test_get_multitag_dps_correctly_spaced(get_multitag_dps_response_obj):
     timestamps = m[0].to_pandas().timestamp.values
     deltas = np.diff(timestamps, 1)
     assert (deltas != 0).all()
-    assert (deltas % 10000 == 0).all()
+    assert (deltas % 60000 == 0).all()
+    timestamps = m[1].to_pandas().timestamp.values
+    deltas = np.diff(timestamps, 1)
+    assert (deltas != 0).all()
+    assert (deltas % 30000 == 0).all()
 
 
 @pytest.fixture(scope='module', params=[True, False])
