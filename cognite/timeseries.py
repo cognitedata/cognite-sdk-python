@@ -326,10 +326,10 @@ def get_multi_tag_datapoints(datapoints_queries, aggregates=None, granularity=No
                 ts_granularity = granularity if dpq.granularity is None else dpq.granularity
                 next_start = latest_timestamp + (_utils.granularity_to_ms(ts_granularity) if ts_granularity else 1)
             else:
+                next_start = end - 1
                 if datapoints_queries[i].end:
                     next_start = datapoints_queries[i].end - 1
-                else:
-                    next_start = end - 1
+
             datapoints_queries[i].start = next_start
 
     results = [{'data': {'items': [{'tagId': dpq.tagId, 'datapoints': []}]}} for dpq in datapoints_queries]
