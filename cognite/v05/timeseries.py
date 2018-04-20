@@ -299,10 +299,6 @@ def get_multi_time_series_datapoints(datapoints_queries, aggregates=None, granul
             dpq.limit = int(_constants.LIMIT / num_of_dpqs_raw)
         else:
             dpq.limit = int(_constants.LIMIT_AGG / num_of_dpqs_with_agg)
-        if dpq.start is None:
-            dpq.start = start
-        if dpq.end is None:
-            dpq.end = end
         items.append(dpq.__dict__)
     body = {
         'items': items,
@@ -331,7 +327,9 @@ def get_multi_time_series_datapoints(datapoints_queries, aggregates=None, granul
                 ts_granularity = granularity if dpq.granularity is None else dpq.granularity
                 next_start = latest_timestamp + (_utils.granularity_to_ms(ts_granularity) if ts_granularity else 1)
             else:
-                next_start = datapoints_queries[i].end - 1
+                next_start = end - 1
+                if datapoints_queries[i].end:
+                    next_start = datapoints_queries[i].end - 1
             datapoints_queries[i].start = next_start
 
     results = [{'data': {'items': [{'name': dpq.name, 'datapoints': []}]}} for dpq in datapoints_queries]
