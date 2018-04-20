@@ -88,6 +88,10 @@ def test_get_multitag_dps_correctly_spaced(get_multitag_dps_response_obj):
     deltas = np.diff(timestamps, 1)
     assert (deltas != 0).all()
     assert (deltas % 60000 == 0).all()
+    timestamps = m[1].to_pandas().timestamp.values
+    deltas = np.diff(timestamps, 1)
+    assert (deltas != 0).all()
+    assert (deltas % 30000 == 0).all()
 
 
 @pytest.fixture(scope='module', params=[True, False])
