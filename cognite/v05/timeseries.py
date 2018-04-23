@@ -656,3 +656,29 @@ def update_time_series(time_series: List[TimeSeriesDTO], **kwargs):
 
     res = _utils.put_request(url, body=body, headers=headers)
     return res.json()
+
+
+def delete_time_series(timeseries, **kwargs):
+    '''Delete a timeseries.
+
+    Args:
+        timeseries (str):   Name of timeseries to delete.
+
+    Keyword Args:
+        api_key (str): Your api-key.
+
+        project (str): Project name.
+
+    Returns:
+        An empty response.
+    '''
+    api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
+    url = config.get_base_url() + '/projects/{}/timeseries/{}'.format(project, timeseries)
+
+    headers = {
+        'api-key': api_key,
+        'accept': 'application/json'
+    }
+
+    res = _utils.delete_request(url, headers=headers)
+    return res.json()
