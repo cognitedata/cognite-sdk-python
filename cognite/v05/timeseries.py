@@ -85,6 +85,11 @@ def get_datapoints(timeseries, aggregates=None, granularity=None, start=None, en
         project=project
     )
 
+    if steps == 1:
+        dps = _get_datapoints_helper(timeseries, aggregates, granularity, start, end,
+                                     protobuf=kwargs.get('protobuf', True), api_key=api_key, project=project)
+        return DatapointsResponse({'data': {'items': [{'tagId': timeseries, 'datapoints': dps}]}})
+
     prog_ind = _utils.ProgressIndicator([timeseries])
 
     p = Pool(steps)
@@ -413,6 +418,10 @@ def get_datapoints_frame(timeseries, aggregates, granularity, start=None, end=No
         api_key=api_key,
         project=project
     )
+
+    if steps == 1:
+        return _get_datapoints_frame_helper(timeseries, aggregates, granularity, start, end, api_key=api_key,
+                                            project=project)
 
     prog_ind = _utils.ProgressIndicator(timeseries)
     p = Pool(steps)
