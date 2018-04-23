@@ -1,7 +1,7 @@
 import pytest
 
-from cognite import assets
-from cognite.data_objects import AssetDTO, AssetResponse
+from cognite.v04 import assets
+from cognite.v04.data_objects import AssetDTO, AssetResponse
 
 ASSET_NAME = 'test_asset'
 
@@ -17,14 +17,14 @@ def get_assets_response():
 
 
 def test_get_assets_response_object(get_assets_response):
-    from cognite.data_objects import AssetResponse
+    from cognite.v04.data_objects import AssetResponse
     assert isinstance(get_assets_response, AssetResponse)
     assert get_assets_response.next_cursor() is not None
     assert get_assets_response.previous_cursor() is None
 
 
 def test_asset_subtree_object(get_asset_subtree_response):
-    from cognite.data_objects import AssetResponse
+    from cognite.v04.data_objects import AssetResponse
     assert isinstance(get_asset_subtree_response, AssetResponse)
     assert get_asset_subtree_response.next_cursor() is not None
     assert get_asset_subtree_response.previous_cursor() is None

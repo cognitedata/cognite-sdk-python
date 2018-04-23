@@ -3,6 +3,9 @@
 
 This module allows you to set an api-key and a project for your python project.
 '''
+import inspect
+import re
+
 from cognite._constants import BASE_URL, RETRY_LIMIT
 
 _CONFIG_API_KEY = ''
@@ -71,7 +74,12 @@ def get_base_url():
     Returns:
         str: current base url.
     '''
-    return BASE_URL if _CONFIG_BASE_URL is None else _CONFIG_BASE_URL
+    frm = inspect.stack()[1]
+    package_version = frm.filename.split('/')[-2]
+    version = package_version[1] + '.' + package_version[2]
+    if not re.match(r'^v\d\d$', package_version):
+        version = '<version>'
+    return BASE_URL + version if _CONFIG_BASE_URL is None else _CONFIG_BASE_URL
 
 
 def set_number_of_retries(retries: int = None):
