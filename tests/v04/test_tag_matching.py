@@ -9,7 +9,7 @@ from tests.conftest import MockReturnValue
 @patch('requests.post')
 @pytest.fixture(scope='module')
 def tagmatching_result(mock_post):
-    from cognite.tagmatching import tag_matching
+    from cognite.v04.tagmatching import tag_matching
     response = {'data': {'items': [{'matches': [
         {'platform': 'a_platform', 'score': 0, 'tagId': 'a_match'},
         {'platform': 'a_platform', 'score': 0, 'tagId': 'a_match1'},
@@ -19,7 +19,7 @@ def tagmatching_result(mock_post):
 
 
 def test_object(tagmatching_result):
-    from cognite.data_objects import TagMatchingResponse
+    from cognite.v04.data_objects import TagMatchingResponse
     assert isinstance(tagmatching_result, TagMatchingResponse)
 
 

@@ -3,7 +3,7 @@
 
 This module mirrors the Cloud Storage API. It allows you to manage files in cloud storage.
 
-https://doc.cognitedata.com/#Cognite-API-Cloud-Storage
+https://doc.cognitedata.com/0.5/#Cognite-API-Cloud-Storage
 """
 
 import os
@@ -13,7 +13,7 @@ import requests
 
 import cognite._utils as _utils
 import cognite.config as config
-from cognite.data_objects import FileInfoResponse, FileListResponse
+from cognite.v05.data_objects import FileInfoResponse, FileListResponse
 
 
 def upload_file(file_name, file_path=None, directory=None, source=None, file_type=None, content_type=None, **kwargs):
@@ -46,7 +46,7 @@ def upload_file(file_name, file_path=None, directory=None, source=None, file_typ
 
         metadata (dict):      Customized data about the file.
 
-        tag_ids (list):       IDs (tagIds) of equipment related to this file.
+        asset_ids (list):       IDs of assets related to this file.
 
         resumable (bool):     Whether to generate a resumable URL or not. Default is true.
 
@@ -56,7 +56,7 @@ def upload_file(file_name, file_path=None, directory=None, source=None, file_typ
         dict: A dictionary containing the field fileId and optionally also uploadURL if file_path is omitted.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
-    url = config.get_base_url() + '/projects/{}/storage/metadata'.format(project)
+    url = config.get_base_url() + '/projects/{}/storage/initupload'.format(project)
 
     headers = {
         'api-key': api_key,
@@ -76,7 +76,7 @@ def upload_file(file_name, file_path=None, directory=None, source=None, file_typ
         'source': source,
         'fileType': file_type,
         'metadata': kwargs.get('metadata', None),
-        'tagIds': kwargs.get('tagIds', None)
+        'assetIds': kwargs.get('asset_ids', None)
     }
     res_storage = _utils.post_request(url=url, body=body, headers=headers, params=params, cookies=config.get_cookies())
     result = res_storage.json()['data']
@@ -169,17 +169,22 @@ def list_files(name=None, directory=None, file_type=None, source=None, **kwargs)
 
         project (str, optional):        Project name.
 
-        tag_id (list):                  Returns all files associated with this tagId.
+        asset_id (list):                Returns all files associated with this asset id.
 
         sort (str):                     Sort descending or ascending. 'ASC' or 'DESC'.
 
         limit (int):                    Number of results to return.
 
-        autopaging (bool):              Whether or not to automatically page through results. If set to true, limit will be
-                                        disregarded. Defaults to False.
+        is_uploaded (bool):             List only uploaded files if true. If false, list only other files. If not set,
+                                        list all files without considering whether they are uploaded or not.
+
+        autopaging (bool):              Whether or not to automatically page through results. If set to true, limit will
+                                        be disregarded. Defaults to False.
+
+        cursor (str):                   Cursor to use for paging through results.
 
     Returns:
-        list: A list of files with file info.
+        v05.data_objects.FileListResponse: A data object containing the requested files information.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
     url = config.get_base_url() + '/projects/{}/storage'.format(project)
@@ -188,14 +193,15 @@ def list_files(name=None, directory=None, file_type=None, source=None, **kwargs)
         'accept': 'application/json'
     }
     params = {
-        'tagId': kwargs.get('tag_id', None),
+        'assetId': kwargs.get('asset_id'),
         'dir': directory,
         'name': name,
         'type': file_type,
         'source': source,
-        'isUploaded': kwargs.get('is_uploaded', None),
-        'sort': kwargs.get('sort', None),
-        'limit': kwargs.get('limit', 100) if not kwargs.get('autopaging') else 10000
+        'isUploaded': kwargs.get('is_uploaded'),
+        'sort': kwargs.get('sort'),
+        'limit': kwargs.get('limit', 100) if not kwargs.get('autopaging') else 10000,
+        'cursor': kwargs.get('cursor')
     }
 
     file_list = []
@@ -225,7 +231,7 @@ def get_file_info(id, **kwargs):
         project (str, optional):    Project name.
 
     Returns:
-        FileInfoResponse: A data object containing the requested file information.
+        v05.data_objects.FileInfoResponse: A data object containing the requested file information.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
     url = config.get_base_url() + '/projects/{}/storage/{}/info'.format(project, id)

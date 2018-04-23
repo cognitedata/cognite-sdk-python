@@ -136,7 +136,7 @@ class DatapointsQuery():
 
     Attributes:
         tag_id (str):               Unique ID of time series.
-        aggregates (list):          The aggregate functions to be returned. Use default if null. An empty string must
+        aggregates (list):          The aggregate functions to be returned. Use default if null. An empty list must
                                     be sent to get raw data if the default is a set of aggregate functions.
         granularity (str):          The granularity size and granularity of the aggregates.
         start (str, int, datetime): Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s.
