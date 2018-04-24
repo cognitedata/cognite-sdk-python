@@ -18,7 +18,7 @@ import cognite.config as config
 
 
 def delete_request(url, params=None, headers=None, cookies=None):
-    '''Perform a DELETE request witha predetermined number of retries.'''
+    '''Perform a DELETE request with a predetermined number of retries.'''
     for number_of_tries in range(config.get_number_of_retries() + 1):
         try:
             res = requests.delete(url, params=params, headers=headers, cookies=cookies)
