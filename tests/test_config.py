@@ -47,6 +47,7 @@ def test_get_config_variables_when_set_explicitly():
 @pytest.mark.usefixtures('change_url')
 def test_set_base_url():
     assert config.get_base_url(api_version=0.5) == MOCK_URL
+    assert config.get_base_url() == MOCK_URL
 
 
 @pytest.mark.usefixtures('change_number_of_retries')
