@@ -25,7 +25,7 @@ def get_event(event_id, **kwargs):
         v05.data_objects.EventResponse: A data object containing the requested event.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
-    url = config.get_base_url() + '/projects/{}/events/{}'.format(project, event_id)
+    url = config.get_base_url(api_version=0.5) + '/projects/{}/events/{}'.format(project, event_id)
     headers = {
         'api-key': api_key,
         'content-type': 'application/json',
@@ -59,7 +59,7 @@ def get_events(type=None, sub_type=None, asset_id=None, **kwargs):
         v05.data_objects.EventListResponse: A data object containing the requested event.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
-    url = config.get_base_url() + '/projects/{}/events'.format(project)
+    url = config.get_base_url(api_version=0.5) + '/projects/{}/events'.format(project)
 
     headers = {
         'api-key': api_key,
@@ -108,7 +108,7 @@ def post_events(events, **kwargs):
         v05.data_objects.EventListResponse
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
-    url = config.get_base_url() + '/projects/{}/events'.format(project)
+    url = config.get_base_url(api_version=0.5) + '/projects/{}/events'.format(project)
 
     headers = {
         'api-key': api_key,
@@ -138,7 +138,7 @@ def delete_events(event_ids, **kwargs):
         An empty response.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
-    url = config.get_base_url() + '/projects/{}/events/delete'.format(project)
+    url = config.get_base_url(api_version=0.5) + '/projects/{}/events/delete'.format(project)
 
     headers = {
         'api-key': api_key,

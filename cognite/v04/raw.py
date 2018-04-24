@@ -35,7 +35,7 @@ def get_databases(
         output formats.
     """
     api_key, project = config.get_config_variables(api_key, project)
-    url = config.get_base_url() + '/projects/{}/raw'.format(project)
+    url = config.get_base_url(api_version=0.4) + '/projects/{}/raw'.format(project)
 
     params = {
         'limit': limit,
@@ -72,7 +72,7 @@ def create_databases(
 
     """
     api_key, project = config.get_config_variables(api_key, project)
-    url = config.get_base_url() + '/projects/{}/raw/create'.format(project)
+    url = config.get_base_url(api_version=0.4) + '/projects/{}/raw/create'.format(project)
     body = {
         'items': [{'dbName': '{}'.format(database_name)} for database_name in database_names]
     }
@@ -105,7 +105,7 @@ def delete_databases(
 
     """
     api_key, project = config.get_config_variables(api_key, project)
-    url = config.get_base_url() + '/projects/{}/raw/delete'.format(project)
+    url = config.get_base_url(api_version=0.4) + '/projects/{}/raw/delete'.format(project)
     body = {
         'items': [{'dbName': '{}'.format(database_name)} for database_name in database_names]
     }
@@ -146,7 +146,7 @@ def get_tables(
         output formats.
     """
     api_key, project = config.get_config_variables(api_key, project)
-    url = config.get_base_url() + '/projects/{}/raw/{}'.format(project, database_name)
+    url = config.get_base_url(api_version=0.4) + '/projects/{}/raw/{}'.format(project, database_name)
     params = dict()
     if not limit:
         params['limit'] = limit
@@ -184,7 +184,7 @@ def create_tables(
 
     """
     api_key, project = config.get_config_variables(api_key, project)
-    url = config.get_base_url() + '/projects/{}/raw/{}/create'.format(project, database_name)
+    url = config.get_base_url(api_version=0.4) + '/projects/{}/raw/{}/create'.format(project, database_name)
     body = {
         'items': [{'tableName': '{}'.format(table_name)} for table_name in table_names]
     }
@@ -219,7 +219,7 @@ def delete_tables(
 
     """
     api_key, project = config.get_config_variables(api_key, project)
-    url = config.get_base_url() + '/projects/{}/raw/{}/delete'.format(project, database_name)
+    url = config.get_base_url(api_version=0.4) + '/projects/{}/raw/{}/delete'.format(project, database_name)
     body = {
         'items': [{'tableName': '{}'.format(table_name)} for table_name in table_names]
     }
@@ -260,7 +260,7 @@ def get_rows(
         output formats.
     """
     api_key, project = config.get_config_variables(api_key, project)
-    url = config.get_base_url() + '/projects/{}/raw/{}/{}'.format(project, database_name, table_name)
+    url = config.get_base_url(api_version=0.4) + '/projects/{}/raw/{}/{}'.format(project, database_name, table_name)
     params = dict()
     params['limit'] = limit
     params['cursor'] = cursor
@@ -304,7 +304,8 @@ def create_rows(
 
     """
     api_key, project = config.get_config_variables(api_key, project)
-    url = config.get_base_url() + '/projects/{}/raw/{}/{}/create'.format(project, database_name, table_name)
+    url = config.get_base_url(api_version=0.4) + '/projects/{}/raw/{}/{}/create'.format(project, database_name,
+                                                                                        table_name)
 
     headers = {
         'api-key': api_key,
@@ -351,7 +352,8 @@ def delete_rows(
 
     """
     api_key, project = config.get_config_variables(api_key, project)
-    url = config.get_base_url() + '/projects/{}/raw/{}/{}/delete'.format(project, database_name, table_name)
+    url = config.get_base_url(api_version=0.4) + '/projects/{}/raw/{}/{}/delete'.format(project, database_name,
+                                                                                        table_name)
     body = {
         'items': [
             {
@@ -395,7 +397,8 @@ def get_row(
         output formats.
     """
     api_key, project = config.get_config_variables(api_key, project)
-    url = config.get_base_url() + '/projects/{}/raw/{}/{}/{}'.format(project, database_name, table_name, row_key)
+    url = config.get_base_url(api_version=0.4) + '/projects/{}/raw/{}/{}/{}'.format(project, database_name, table_name,
+                                                                                    row_key)
     params = dict()
     headers = {
         'api-key': api_key,

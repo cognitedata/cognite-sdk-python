@@ -34,7 +34,7 @@ def tag_matching(tag_ids, fuzzy_threshold=0, platform=None, **kwargs):
         output formats.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
-    url = config.get_base_url() + '/projects/{}/tagmatching'.format(project)
+    url = config.get_base_url(api_version=0.4) + '/projects/{}/tagmatching'.format(project)
     body = {
         'tagIds': tag_ids,
         'metadata': {

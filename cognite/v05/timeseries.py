@@ -151,7 +151,7 @@ def _get_datapoints_helper(timeseries, aggregates=None, granularity=None, start=
     '''
     api_key, project = kwargs.get('api_key'), kwargs.get('project')
     timeseries = timeseries.replace('/', '%2F')
-    url = config.get_base_url() + '/projects/{}/timeseries/data/{}'.format(project, timeseries)
+    url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/data/{}'.format(project, timeseries)
 
     use_protobuf = kwargs.get('protobuf', True) and aggregates is None
     limit = _constants.LIMIT if aggregates is None else _constants.LIMIT_AGG
@@ -210,7 +210,7 @@ def post_datapoints(timeseries, datapoints: List[DatapointDTO], **kwargs):
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
     timeseries = timeseries.replace('/', '%2F')
-    url = config.get_base_url() + '/projects/{}/timeseries/data/{}'.format(project, timeseries)
+    url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/data/{}'.format(project, timeseries)
 
     headers = {
         'api-key': api_key,
@@ -244,7 +244,7 @@ def get_latest(timeseries, **kwargs):
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
     timeseries = timeseries.replace('/', '%2F')
-    url = config.get_base_url() + '/projects/{}/timeseries/latest/{}'.format(project, timeseries)
+    url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/latest/{}'.format(project, timeseries)
     headers = {
         'api-key': api_key,
         'accept': 'application/json'
@@ -287,7 +287,7 @@ def get_multi_time_series_datapoints(datapoints_queries, aggregates=None, granul
         with different output formats.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
-    url = config.get_base_url() + '/projects/{}/timeseries/dataquery'.format(project)
+    url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/dataquery'.format(project)
     start, end = _utils.interval_to_ms(start, end)
 
     num_of_dpqs_with_agg = 0
@@ -493,7 +493,7 @@ def _get_datapoints_frame_helper(timeseries, aggregates, granularity, start=None
                 ['<timeseries1>', {'name': '<timeseries2>', 'aggregates': ['<aggfunc1>', '<aggfunc2>']}]
     '''
     api_key, project = kwargs.get('api_key'), kwargs.get('project')
-    url = config.get_base_url() + '/projects/{}/timeseries/dataframe'.format(project)
+    url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/dataframe'.format(project)
 
     num_aggregates = 0
     num_agg_per_tag = len(aggregates)
@@ -563,7 +563,7 @@ def get_timeseries(prefix=None, description=None, include_metadata=False, asset_
         output formats.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
-    url = config.get_base_url() + '/projects/{}/timeseries'.format(project)
+    url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries'.format(project)
     headers = {
         'api-key': api_key,
         'accept': 'application/json'
@@ -608,7 +608,7 @@ def post_time_series(time_series: List[TimeSeriesDTO], **kwargs):
     '''
 
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
-    url = config.get_base_url() + '/projects/{}/timeseries'.format(project)
+    url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries'.format(project)
 
     body = {
         'items': [ts.__dict__ for ts in time_series]
@@ -642,7 +642,7 @@ def update_time_series(time_series: List[TimeSeriesDTO], **kwargs):
     '''
 
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
-    url = config.get_base_url() + '/projects/{}/timeseries'.format(project)
+    url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries'.format(project)
 
     body = {
         'items': [ts.__dict__ for ts in time_series]
@@ -673,7 +673,7 @@ def delete_time_series(timeseries, **kwargs):
         An empty response.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
-    url = config.get_base_url() + '/projects/{}/timeseries/{}'.format(project, timeseries)
+    url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/{}'.format(project, timeseries)
 
     headers = {
         'api-key': api_key,
