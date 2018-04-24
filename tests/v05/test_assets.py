@@ -17,14 +17,12 @@ def get_assets_response():
 
 
 def test_get_assets_response_object(get_assets_response):
-    from cognite.v05.data_objects import AssetResponse
     assert isinstance(get_assets_response, AssetResponse)
     assert get_assets_response.next_cursor() is not None
     assert get_assets_response.previous_cursor() is None
 
 
 def test_asset_subtree_object(get_asset_subtree_response):
-    from cognite.v05.data_objects import AssetResponse
     assert isinstance(get_asset_subtree_response, AssetResponse)
     assert get_asset_subtree_response.next_cursor() is not None
     assert get_asset_subtree_response.previous_cursor() is None

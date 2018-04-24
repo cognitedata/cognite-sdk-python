@@ -32,6 +32,42 @@ def url():
 
 
 class TestRequests:
+    @mock.patch('cognite._utils.requests.delete')
+    def test_delete_request_ok(self, mock_request):
+        mock_request.return_value = MockReturnValue(json_data=RESPONSE)
+        response = utils.delete_request(url)
+        assert response.status_code == 200
+        assert len(response.json()['data']['items']) == len(RESPONSE)
+
+    @mock.patch('cognite._utils.requests.delete')
+    def test_delete_request_failed(self, mock_request):
+        mock_request.return_value = MockReturnValue(status=400, json_data={"error": "Client error"})
+
+        with pytest.raises(utils.APIError) as e:
+            utils.delete_request(url)
+        assert re.match("Client error[\n]X-Request_id", str(e.value))
+
+        mock_request.return_value = MockReturnValue(status=500, content="Server error")
+
+        with pytest.raises(utils.APIError) as e:
+            utils.delete_request(url)
+        assert re.match("Server error[\n]X-Request_id", str(e.value))
+
+        mock_request.return_value = MockReturnValue(status=500, json_data={"error": "Server error"})
+
+        with pytest.raises(utils.APIError) as e:
+            utils.delete_request(url)
+        assert re.match("Server error[\n]X-Request_id", str(e.value))
+
+    @mock.patch('cognite._utils.requests.delete')
+    def test_delete_request_exception(self, mock_request):
+        mock_request.return_value = MockReturnValue(status=500)
+        mock_request.side_effect = Exception("Custom error")
+
+        with pytest.raises(utils.APIError) as e:
+            utils.delete_request(url)
+        assert re.match("Custom error", str(e.value))
+
     @mock.patch('cognite._utils.requests.get')
     def test_get_request(self, mock_request):
         mock_request.return_value = MockReturnValue(json_data=RESPONSE)
