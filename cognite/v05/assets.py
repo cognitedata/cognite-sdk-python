@@ -43,7 +43,7 @@ def get_assets(name=None, path=None, description=None, metadata=None, depth=None
         output formats.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
-    url = config.get_base_url() + '/projects/{}/assets'.format(project)
+    url = config.get_base_url(api_version=0.5) + '/projects/{}/assets'.format(project)
     params = {
         'name': name,
         'description': description,
@@ -84,7 +84,7 @@ def get_asset_subtree(asset_id='', depth=None, **kwargs):
         output formats.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
-    url = config.get_base_url() + '/projects/{}/assets/{}'.format(project, asset_id)
+    url = config.get_base_url(api_version=0.5) + '/projects/{}/assets/{}'.format(project, asset_id)
     params = {
         'depth': depth,
         'limit': kwargs.get('limit', constants.LIMIT),
@@ -114,7 +114,7 @@ def post_assets(assets: List[AssetDTO], **kwargs):
         output formats.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
-    url = config.get_base_url() + '/projects/{}/assets'.format(project)
+    url = config.get_base_url(api_version=0.5) + '/projects/{}/assets'.format(project)
     body = {
         'items': [asset.__dict__ for asset in assets]
     }
@@ -142,7 +142,7 @@ def delete_assets(asset_ids: List[int], **kwargs):
         An empty response.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
-    url = config.get_base_url() + '/projects/{}/assets/delete'.format(project)
+    url = config.get_base_url(api_version=0.5) + '/projects/{}/assets/delete'.format(project)
     body = {
         'items': asset_ids
     }
