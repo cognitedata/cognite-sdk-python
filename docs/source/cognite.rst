@@ -38,6 +38,13 @@ Data Objects
     :undoc-members:
     :show-inheritance:
 
+Events
+^^^^^^
+.. automodule:: cognite.v05.events
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Raw
 ^^^^
 .. automodule:: cognite.v05.raw

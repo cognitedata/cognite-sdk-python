@@ -94,20 +94,42 @@ def test_get_multitag_dps_correctly_spaced(get_multitag_dps_response_obj):
     assert (deltas % 30000 == 0).all()
 
 
-@pytest.fixture(scope='module', params=[True, False])
-def get_timeseries_response_obj(request):
-    yield timeseries.get_timeseries(prefix='constant', limit=1, include_metadata=request.param)
+@pytest.fixture(scope='class')
+def timeseries_fixture():
+    from cognite.v05 import timeseries
+    yield
+    timeseries.delete_time_series('new_ts')
 
 
-def test_get_timeseries_output_format(get_timeseries_response_obj):
-    from cognite.v04.data_objects import TimeseriesResponse
-    assert isinstance(get_timeseries_response_obj, TimeseriesResponse)
-    assert isinstance(get_timeseries_response_obj.to_ndarray(), np.ndarray)
-    assert isinstance(get_timeseries_response_obj.to_pandas(), pd.DataFrame)
-    assert isinstance(get_timeseries_response_obj.to_json()[0], dict)
+@pytest.mark.usefixtures('timeseries_fixture')
+class TestTimeseries:
+    @pytest.fixture(scope='class', params=[True, False])
+    def get_timeseries_response_obj(self, request):
+        yield timeseries.get_timeseries(prefix='new_ts', limit=1, include_metadata=request.param)
 
+    def test_post_timeseries(self):
+        from cognite.v04 import data_objects
+        tso = data_objects.TimeSeriesDTO('new_ts')
+        res = timeseries.post_time_series([tso])
+        assert res == {}
 
-def test_get_timeseries_no_results():
-    result = timeseries.get_timeseries(prefix='not_a_timeseries_prefix')
-    assert result.to_pandas().empty
-    assert len(result.to_json()) == 0
+    def test_update_timeseries(self):
+        from cognite.v04 import data_objects
+        tso = data_objects.TimeSeriesDTO('new_ts', unit='celsius')
+        res = timeseries.update_time_series([tso])
+        assert res == {}
+
+    def test_timeseries_unit_correct(self, get_timeseries_response_obj):
+        assert get_timeseries_response_obj.to_json()[0]['unit'] == 'celsius'
+
+    def test_get_timeseries_output_format(self, get_timeseries_response_obj):
+        from cognite.v04.data_objects import TimeseriesResponse
+        assert isinstance(get_timeseries_response_obj, TimeseriesResponse)
+        assert isinstance(get_timeseries_response_obj.to_ndarray(), np.ndarray)
+        assert isinstance(get_timeseries_response_obj.to_pandas(), pd.DataFrame)
+        assert isinstance(get_timeseries_response_obj.to_json()[0], dict)
+
+    def test_get_timeseries_no_results(self):
+        result = timeseries.get_timeseries(prefix='not_a_timeseries_prefix')
+        assert result.to_pandas().empty
+        assert len(result.to_json()) == 0

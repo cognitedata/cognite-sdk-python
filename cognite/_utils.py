@@ -17,6 +17,24 @@ import requests
 import cognite.config as config
 
 
+def delete_request(url, params=None, headers=None, cookies=None):
+    '''Perform a DELETE request with a predetermined number of retries.'''
+    for number_of_tries in range(config.get_number_of_retries() + 1):
+        try:
+            res = requests.delete(url, params=params, headers=headers, cookies=cookies)
+            if res.status_code == 200:
+                return res
+        except Exception as e:
+            if number_of_tries == config.get_number_of_retries():
+                raise APIError(e)
+    try:
+        err_mess = res.json()['error'].__str__()
+    except:
+        err_mess = res.content.__str__()
+    err_mess += '\nX-Request_id: {}'.format(res.headers.get('X-Request-Id'))
+    raise APIError(err_mess)
+
+
 def get_request(url, params=None, headers=None, cookies=None):
     '''Perform a GET request with a predetermined number of retries.'''
     for number_of_tries in range(config.get_number_of_retries() + 1):
