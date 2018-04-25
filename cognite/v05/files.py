@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-"""Cloud Storage Module
+"""Files Module
 
-This module mirrors the Cloud Storage API. It allows you to manage files in cloud storage.
+This module mirrors the Files API. It allows you to manage files in GCP.
 
-https://doc.cognitedata.com/0.5/#Cognite-API-Cloud-Storage
+https://doc.cognitedata.com/0.5/#Cognite-API-Files
 """
 
 import os
@@ -56,7 +56,7 @@ def upload_file(file_name, file_path=None, directory=None, source=None, file_typ
         dict: A dictionary containing the field fileId and optionally also uploadURL if file_path is omitted.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
-    url = config.get_base_url(api_version=0.5) + '/projects/{}/storage/initupload'.format(project)
+    url = config.get_base_url(api_version=0.5) + '/projects/{}/files/initupload'.format(project)
 
     headers = {
         'api-key': api_key,
@@ -111,7 +111,7 @@ def download_file(id, get_contents=False, **kwargs):
         str: Download link if get_contents is False else file contents.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
-    url = config.get_base_url(api_version=0.5) + '/projects/{}/storage/{}'.format(project, id)
+    url = config.get_base_url(api_version=0.5) + '/projects/{}/files/{}/downloadlink'.format(project, id)
     headers = {
         'api-key': api_key,
         'accept': 'application/json'
@@ -139,7 +139,7 @@ def delete_files(file_ids, **kwargs):
         List of files deleted and files that failed to delete.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
-    url = config.get_base_url(api_version=0.5) + '/projects/{}/storage/delete'.format(project)
+    url = config.get_base_url(api_version=0.5) + '/projects/{}/files/delete'.format(project)
     headers = {
         'api-key': api_key,
         'content-type': 'application/json',
@@ -187,7 +187,7 @@ def list_files(name=None, directory=None, file_type=None, source=None, **kwargs)
         v05.data_objects.FileListResponse: A data object containing the requested files information.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
-    url = config.get_base_url(api_version=0.5) + '/projects/{}/storage'.format(project)
+    url = config.get_base_url(api_version=0.5) + '/projects/{}/files'.format(project)
     headers = {
         'api-key': api_key,
         'accept': 'application/json'
@@ -234,7 +234,7 @@ def get_file_info(id, **kwargs):
         v05.data_objects.FileInfoResponse: A data object containing the requested file information.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
-    url = config.get_base_url(api_version=0.5) + '/projects/{}/storage/{}/info'.format(project, id)
+    url = config.get_base_url(api_version=0.5) + '/projects/{}/files/{}'.format(project, id)
     headers = {
         'api-key': api_key,
         'accept': 'application/json'

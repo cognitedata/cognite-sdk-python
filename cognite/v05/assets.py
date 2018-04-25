@@ -10,7 +10,7 @@ from typing import List
 import cognite._constants as constants
 import cognite._utils as utils
 import cognite.config as config
-from cognite.v05.data_objects import AssetResponse, AssetDTO
+from cognite.v05.data_objects import AssetResponse, AssetListResponse, AssetDTO
 
 
 # Author: TK
@@ -59,15 +59,39 @@ def get_assets(name=None, path=None, description=None, metadata=None, depth=None
         'accept': 'application/json'
     }
     res = utils.get_request(url, params=params, headers=headers, cookies=config.get_cookies())
+    return AssetListResponse(res.json())
+
+
+def get_asset(asset_id, **kwargs):
+    '''Returns the asset with the provided assetId.
+
+    Args:
+        asset_id (int):         The asset id of the top asset to get.
+
+    Keyword Arguments:
+        api_key (str):          Your api-key.
+
+        project (str):          Project name.
+    Returns:
+        v05.data_objects.AssetResponse: A data object containing the requested assets with several getter methods with different
+        output formats.
+    '''
+    api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
+    url = config.get_base_url(api_version=0.5) + '/projects/{}/assets/{}/subtree'.format(project, asset_id)
+    headers = {
+        'api-key': api_key,
+        'accept': 'application/json'
+    }
+    res = utils.get_request(url, headers=headers, cookies=config.get_cookies())
     return AssetResponse(res.json())
 
 
 # Author: TK
-def get_asset_subtree(asset_id='', depth=None, **kwargs):
-    '''Returns assets with provided assetId.
+def get_asset_subtree(asset_id, depth=None, **kwargs):
+    '''Returns asset subtree of asset with provided assetId.
 
     Args:
-        asset_id (str):         The asset id of the top asset to get.
+        asset_id (int):         The asset id of the top asset to get.
 
         depth (int):            Get subassets this many levels below the top asset.
 
@@ -84,7 +108,7 @@ def get_asset_subtree(asset_id='', depth=None, **kwargs):
         output formats.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
-    url = config.get_base_url(api_version=0.5) + '/projects/{}/assets/{}'.format(project, asset_id)
+    url = config.get_base_url(api_version=0.5) + '/projects/{}/assets/{}/subtree'.format(project, asset_id)
     params = {
         'depth': depth,
         'limit': kwargs.get('limit', constants.LIMIT),
@@ -95,7 +119,7 @@ def get_asset_subtree(asset_id='', depth=None, **kwargs):
         'accept': 'application/json'
     }
     res = utils.get_request(url, params=params, headers=headers, cookies=config.get_cookies())
-    return AssetResponse(res.json())
+    return AssetListResponse(res.json())
 
 
 def post_assets(assets: List[AssetDTO], **kwargs):
@@ -124,14 +148,14 @@ def post_assets(assets: List[AssetDTO], **kwargs):
         'accept': 'application/json'
     }
     res = utils.post_request(url, body=body, headers=headers, cookies=config.get_cookies())
-    return AssetResponse(res.json())
+    return AssetListResponse(res.json())
 
 
 def delete_assets(asset_ids: List[int], **kwargs):
     '''Delete a list of assets.
 
     Args:
-        asset_ids (list[v05.data_objects.AssetDTO]): List of IDs of assets to delete.
+        asset_ids (list[int]): List of IDs of assets to delete.
 
     Keyword Args:
         api_key (str): Your api-key.

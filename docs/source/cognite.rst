@@ -23,14 +23,6 @@ Assets
     :undoc-members:
     :show-inheritance:
 
-Cloud Storage
-^^^^^^^^^^^^^^
-.. automodule:: cognite.v05.cloud_storage
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
 Data Objects
 ^^^^^^^^^^^^
 .. automodule:: cognite.v05.data_objects
@@ -41,6 +33,13 @@ Data Objects
 Events
 ^^^^^^
 .. automodule:: cognite.v05.events
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+Files
+^^^^^
+.. automodule:: cognite.v05.files
     :members:
     :undoc-members:
     :show-inheritance:
