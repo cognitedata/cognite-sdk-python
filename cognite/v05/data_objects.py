@@ -261,8 +261,12 @@ class TimeSeriesDTO(object):
         self.step = step
 
 
-class AssetResponse(CogniteDataObject):
+class AssetListResponse(CogniteDataObject):
     '''Assets Response Object'''
+
+    def __init__(self, internal_representation):
+        super().__init__(internal_representation)
+        self.counter = 0
 
     def to_json(self):
         '''Returns data as a json object'''
@@ -272,6 +276,28 @@ class AssetResponse(CogniteDataObject):
         '''Returns data as a pandas dataframe'''
         if len(self.to_json()) > 0:
             return pd.DataFrame(self.internal_representation['data']['items'])
+        return pd.DataFrame()
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.counter > len(self.to_json()) - 1:
+            raise StopIteration
+        else:
+            self.counter += 1
+            return AssetResponse({'data': {'items': [self.to_json()[self.counter - 1]]}})
+
+
+class AssetResponse(CogniteDataObject):
+    def to_json(self):
+        '''Returns data as a json object'''
+        return self.internal_representation['data']['items'][0]
+
+    def to_pandas(self):
+        '''Returns data as a pandas dataframe'''
+        if len(self.to_json()) > 0:
+            return pd.DataFrame.from_dict(self.to_json(), orient='index')
         return pd.DataFrame()
 
 
@@ -317,18 +343,19 @@ class FileInfoResponse(CogniteDataObject):
 
     def __init__(self, internal_representation):
         super().__init__(internal_representation)
-        self.id = self.internal_representation['data'].get('id')
-        self.file_name = self.internal_representation['data'].get('fileName')
-        self.directory = self.internal_representation['data'].get('directory')
-        self.source = self.internal_representation['data'].get('source')
-        self.file_type = self.internal_representation['data'].get('fileType')
-        self.metadata = self.internal_representation['data'].get('metadata')
-        self.asset_ids = self.internal_representation['data'].get('assetIds')
-        self.uploaded = self.internal_representation['data'].get('uploaded')
-        self.uploaded_at = self.internal_representation['data'].get('uploadedAt')
+        item = self.internal_representation['data']['items'][0]
+        self.id = item.get('id')
+        self.file_name = item.get('fileName')
+        self.directory = item.get('directory')
+        self.source = item.get('source')
+        self.file_type = item.get('fileType')
+        self.metadata = item.get('metadata')
+        self.asset_ids = item.get('assetIds')
+        self.uploaded = item.get('uploaded')
+        self.uploaded_at = item.get('uploadedAt')
 
     def to_json(self):
-        return self.internal_representation['data']
+        return self.internal_representation['data']['items'][0]
 
     def to_pandas(self):
         file_info = self.to_json()
@@ -352,11 +379,12 @@ class EventResponse(CogniteDataObject):
 
     def __init__(self, internal_representation):
         super().__init__(internal_representation)
-        self.id = self.internal_representation['data'].get('id')
-        self.asset_ids = self.internal_representation['data'].get('assetIds')
+        item = self.internal_representation['data']['items'][0]
+        self.id = item.get('id')
+        self.asset_ids = item.get('assetIds')
 
     def to_json(self):
-        return self.internal_representation['data']
+        return self.internal_representation['data']['items'][0]
 
     def to_pandas(self):
         event = self.to_json()
@@ -390,7 +418,7 @@ class EventListResponse(CogniteDataObject):
             raise StopIteration
         else:
             self.counter += 1
-            return EventResponse({'data': self.to_json()[self.counter - 1]})
+            return EventResponse({'data': {'items': [self.to_json()[self.counter - 1]]}})
 
 
 class EventDTO(object):
