@@ -169,7 +169,7 @@ def _get_datapoints_helper(timeseries, aggregates=None, granularity=None, start=
         'accept': 'application/protobuf' if use_protobuf else 'application/json'
     }
     datapoints = []
-    while not datapoints or len(datapoints[-1]) == limit:
+    while (not datapoints or len(datapoints[-1]) == limit) and params['end'] > params['start']:
         res = _utils.get_request(url, params=params, headers=headers)
         if use_protobuf:
             ts_data = _api_timeseries_data_v2_pb2.TimeseriesData()
@@ -520,7 +520,7 @@ def _get_datapoints_frame_helper(timeseries, aggregates, granularity, start=None
         'accept': 'text/csv'
     }
     dataframes = []
-    while not dataframes or dataframes[-1].shape[0] == per_tag_limit:
+    while (not dataframes or dataframes[-1].shape[0] == per_tag_limit) and body['end'] > body['start']:
         res = _utils.post_request(url=url, body=body, headers=headers, cookies=config.get_cookies())
         dataframes.append(
             pd.read_csv(io.StringIO(res.content.decode(res.encoding if res.encoding else res.apparent_encoding))))
