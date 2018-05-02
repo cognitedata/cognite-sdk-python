@@ -496,12 +496,14 @@ def _get_datapoints_frame_helper(timeseries, aggregates, granularity, start=None
     url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/dataframe'.format(project)
 
     num_aggregates = 0
-    num_agg_per_tag = len(aggregates)
     for ts in timeseries:
         if isinstance(ts, str):
-            num_aggregates += num_agg_per_tag
+            num_aggregates += len(aggregates)
         else:
-            num_aggregates += len(ts['aggregates'])
+            per_ts_aggregates = 1
+            if ts.get('aggregates'):
+                per_ts_aggregates = len(ts['aggregates'])
+            num_aggregates += per_ts_aggregates
     per_tag_limit = int(_constants.LIMIT / num_aggregates)
     body = {
         'items': [{'name': '{}'.format(ts)}
