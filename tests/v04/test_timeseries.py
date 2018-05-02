@@ -1,10 +1,13 @@
 from datetime import datetime
+from random import randint
 
 import numpy as np
 import pandas as pd
 import pytest
 
 from cognite.v04 import timeseries
+
+TS_NAME = None
 
 dps_params = [
     {'start': 1522188000000, 'end': 1522620000000},
@@ -94,28 +97,34 @@ def test_get_multitag_dps_correctly_spaced(get_multitag_dps_response_obj):
     assert (deltas % 30000 == 0).all()
 
 
+@pytest.fixture(autouse=True, scope='class')
+def ts_name():
+    global TS_NAME
+    TS_NAME = 'test_ts_{}'.format(randint(1, 2 ** 53 - 1))
+
+
 @pytest.fixture(scope='class')
 def timeseries_fixture():
     from cognite.v05 import timeseries
     yield
-    timeseries.delete_time_series('new_ts')
+    timeseries.delete_time_series(TS_NAME)
 
 
 @pytest.mark.usefixtures('timeseries_fixture')
 class TestTimeseries:
     @pytest.fixture(scope='class', params=[True, False])
     def get_timeseries_response_obj(self, request):
-        yield timeseries.get_timeseries(prefix='new_ts', limit=1, include_metadata=request.param)
+        yield timeseries.get_timeseries(prefix=TS_NAME, limit=1, include_metadata=request.param)
 
     def test_post_timeseries(self):
         from cognite.v04 import data_objects
-        tso = data_objects.TimeSeriesDTO('new_ts')
+        tso = data_objects.TimeSeriesDTO(TS_NAME)
         res = timeseries.post_time_series([tso])
         assert res == {}
 
     def test_update_timeseries(self):
         from cognite.v04 import data_objects
-        tso = data_objects.TimeSeriesDTO('new_ts', unit='celsius')
+        tso = data_objects.TimeSeriesDTO(TS_NAME, unit='celsius')
         res = timeseries.update_time_series([tso])
         assert res == {}
 

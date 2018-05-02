@@ -1,4 +1,5 @@
 from datetime import datetime
+from random import randint
 
 import numpy as np
 import pandas as pd
@@ -6,24 +7,32 @@ import pytest
 
 from cognite.v05 import timeseries, data_objects
 
+TS_NAME = None
+
 dps_params = [
     {'start': 1522188000000, 'end': 1522620000000},
     {'start': datetime(2018, 4, 1), 'end': datetime(2018, 4, 2)},
     {'start': datetime(2018, 4, 1), 'end': datetime(2018, 4, 2), 'protobuf': True}]
 
 
+@pytest.fixture(autouse=True, scope='class')
+def ts_name():
+    global TS_NAME
+    TS_NAME = 'test_ts_{}'.format(randint(1, 2 ** 53 - 1))
+
+
 class TestTimeseries:
     @pytest.fixture(scope='class', params=[True, False])
     def get_timeseries_response_obj(self, request):
-        yield timeseries.get_timeseries(prefix='new_ts', limit=1, include_metadata=request.param)
+        yield timeseries.get_timeseries(prefix=TS_NAME, limit=1, include_metadata=request.param)
 
     def test_post_timeseries(self):
-        tso = data_objects.TimeSeriesDTO('new_ts')
+        tso = data_objects.TimeSeriesDTO(TS_NAME)
         res = timeseries.post_time_series([tso])
         assert res == {}
 
     def test_update_timeseries(self):
-        tso = data_objects.TimeSeriesDTO('new_ts', unit='celsius')
+        tso = data_objects.TimeSeriesDTO(TS_NAME, unit='celsius')
         res = timeseries.update_time_series([tso])
         assert res == {}
 
@@ -44,16 +53,16 @@ class TestTimeseries:
         assert len(result.to_json()) == 0
 
     def test_delete_timeseries(self):
-        res = timeseries.delete_time_series('new_ts')
+        res = timeseries.delete_time_series(TS_NAME)
         assert res == {}
 
 
 @pytest.fixture(scope='class')
 def datapoints_fixture():
-    tso = data_objects.TimeSeriesDTO('new_ts')
+    tso = data_objects.TimeSeriesDTO(TS_NAME)
     timeseries.post_time_series([tso])
     yield
-    timeseries.delete_time_series('new_ts')
+    timeseries.delete_time_series(TS_NAME)
 
 
 @pytest.mark.usefixtures('datapoints_fixture')
@@ -65,7 +74,7 @@ class TestDatapoints:
 
     def test_post_datapoints(self):
         dps = [data_objects.DatapointDTO(i, i * 100) for i in range(10)]
-        res = timeseries.post_datapoints('new_ts', datapoints=dps)
+        res = timeseries.post_datapoints(TS_NAME, datapoints=dps)
         assert res == {}
 
     def test_get_datapoints(self, get_dps_response_obj):
