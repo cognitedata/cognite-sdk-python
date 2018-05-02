@@ -497,13 +497,10 @@ def _get_datapoints_frame_helper(timeseries, aggregates, granularity, start=None
 
     num_aggregates = 0
     for ts in timeseries:
-        if isinstance(ts, str):
+        if isinstance(ts, str) or ts.get('aggregates') is None:
             num_aggregates += len(aggregates)
         else:
-            per_ts_aggregates = 1
-            if ts.get('aggregates'):
-                per_ts_aggregates = len(ts['aggregates'])
-            num_aggregates += per_ts_aggregates
+            num_aggregates += len(ts['aggregates'])
     per_tag_limit = int(_constants.LIMIT / num_aggregates)
     body = {
         'items': [{'name': '{}'.format(ts)}

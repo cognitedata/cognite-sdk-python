@@ -496,13 +496,10 @@ def _get_datapoints_frame_helper(tag_ids, aggregates, granularity, start=None, e
 
     num_aggregates = 0
     for tag in tag_ids:
-        if isinstance(tag, str):
+        if isinstance(tag, str) or tag.get('aggregates') is None:
             num_aggregates += len(aggregates)
         else:
-            per_tag_aggregates = 1
-            if tag.get('aggregates'):
-                per_tag_aggregates = len(tag['aggregates'])
-            num_aggregates += per_tag_aggregates
+            num_aggregates += len(tag['aggregates'])
     per_tag_limit = int(_constants.LIMIT / num_aggregates)
     body = {
         'items': [{'tagId': '{}'.format(tag_id)}
