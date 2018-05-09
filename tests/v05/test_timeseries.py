@@ -69,7 +69,7 @@ def datapoints_fixture():
 class TestDatapoints:
     @pytest.fixture(scope='class', params=dps_params)
     def get_dps_response_obj(self, request):
-        yield timeseries.get_datapoints(timeseries='constant', start=request.param['start'], end=request.param['end'],
+        yield timeseries.get_datapoints(name='constant', start=request.param['start'], end=request.param['end'],
                                         protobuf=request.param.get('protobuf', False))
 
     def test_post_datapoints(self):
@@ -106,7 +106,7 @@ class TestLatest:
 class TestDatapointsFrame:
     @pytest.fixture(scope='class', params=dps_params[:2])
     def get_datapoints_frame_response_obj(self, request):
-        yield timeseries.get_datapoints_frame(timeseries=['constant'], start=request.param['start'],
+        yield timeseries.get_datapoints_frame(time_series=['constant'], start=request.param['start'],
                                               end=request.param['end'],
                                               aggregates=['avg'], granularity='1m')
 
