@@ -204,8 +204,8 @@ class LatestDatapointResponse(CogniteDataObject):
         return self.to_pandas().values[0]
 
 
-class TimeseriesResponse(CogniteDataObject):
-    '''Timeseries Response Object'''
+class TimeSeriesResponse(CogniteDataObject):
+    '''Time series Response Object'''
 
     def to_json(self):
         '''Returns data as a json object'''

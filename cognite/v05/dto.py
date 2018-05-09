@@ -136,7 +136,7 @@ class DatapointsQuery():
     """Data Query Object for Datapoints.
 
     Attributes:
-        timeseries (str):           Unique name of the time series.
+        name (str):           Unique name of the time series.
         aggregates (list):          The aggregate functions to be returned. Use default if null. An empty string must
                                     be sent to get raw data if the default is a set of aggregate functions.
         granularity (str):          The granularity size and granularity of the aggregates.
@@ -146,8 +146,8 @@ class DatapointsQuery():
         end (str, int, datetime):   Get datapoints up to this time. The format is the same as for start.
     """
 
-    def __init__(self, timeseries, aggregates=None, granularity=None, start=None, end=None, limit=None):
-        self.name = timeseries
+    def __init__(self, name, aggregates=None, granularity=None, start=None, end=None, limit=None):
+        self.name = name
         self.aggregates = ','.join(aggregates) if aggregates is not None else None
         self.granularity = granularity
         self.start, self.end = _utils.interval_to_ms(start, end)
@@ -217,8 +217,8 @@ class LatestDatapointResponse(CogniteDataObject):
         return self.to_pandas().values[0]
 
 
-class TimeseriesResponse(CogniteDataObject):
-    '''Timeseries Response Object'''
+class TimeSeriesResponse(CogniteDataObject):
+    '''Time series Response Object'''
 
     def to_json(self):
         '''Returns data as a json object'''
@@ -236,10 +236,10 @@ class TimeseriesResponse(CogniteDataObject):
 
 
 class TimeSeries(object):
-    """Data Transfer Object for a timeseries.
+    """Data Transfer Object for a time series.
 
     Attributes:
-        timeseries (str):       Unique name of time series.
+        name (str):       Unique name of time series.
         is_string (bool):    Whether the time series is string valued or not.
         metadata (dict):    Metadata.
         unit (str):         Physical unit of the time series.
@@ -250,9 +250,9 @@ class TimeSeries(object):
 
     """
 
-    def __init__(self, timeseries, is_string=False, metadata=None, unit=None, asset_id=None, description=None,
+    def __init__(self, name, is_string=False, metadata=None, unit=None, asset_id=None, description=None,
                  security_categories=None, step=None):
-        self.name = timeseries
+        self.name = name
         self.isString = is_string
         self.metadata = metadata
         self.unit = unit
