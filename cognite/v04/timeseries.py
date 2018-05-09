@@ -18,9 +18,9 @@ import cognite._constants as _constants
 import cognite._utils as _utils
 import cognite.config as config
 from cognite._protobuf_descriptors import _api_timeseries_data_v1_pb2
-from cognite.v04.data_objects import DatapointsResponse, DatapointsResponseIterator, LatestDatapointResponse, \
-    DatapointDTO, \
-    TimeSeriesDTO, TimeseriesResponse
+from cognite.v04.dto import DatapointsResponse, DatapointsResponseIterator, LatestDatapointResponse, \
+    Datapoint, \
+    TimeSeries, TimeseriesResponse
 
 
 def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=None, **kwargs):
@@ -54,7 +54,7 @@ def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=No
         project (str):          Project name.
 
     Returns:
-        v04.data_objects.DatapointsResponse: A data object containing the requested data with several getter methods with different
+        v04.dto.DatapointsResponse: A data object containing the requested data with several getter methods with different
         output formats.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
@@ -191,13 +191,13 @@ def _get_datapoints_helper(tag_id, aggregates=None, granularity=None, start=None
     return dps
 
 
-def post_datapoints(tag_id, datapoints: List[DatapointDTO], **kwargs):
+def post_datapoints(tag_id, datapoints: List[Datapoint], **kwargs):
     '''Insert a list of datapoints.
 
     Args:
         tag_id (str):       ID of timeseries to insert to.
 
-        datapoints (list[v04.data_objects.DatapointDTO): List of datapoint data transfer objects to insert.
+        datapoints (list[v04.dto.Datapoint): List of datapoint data transfer objects to insert.
 
     Keyword Args:
         api_key (str): Your api-key.
@@ -238,7 +238,7 @@ def get_latest(tag_id, **kwargs):
         project (str):          Project name.
 
     Returns:
-        v04.data_objects.LatestDatapointsResponse: A data object containing the requested data with several getter methods with different
+        v04.dto.LatestDatapointsResponse: A data object containing the requested data with several getter methods with different
         output formats.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
@@ -258,7 +258,7 @@ def get_multi_tag_datapoints(datapoints_queries, aggregates=None, granularity=No
     This method will automate paging for the user and return all data for the given time period(s).
 
     Args:
-        datapoints_queries (list[v04.data_objects.DatapointsQuery]): The list of DatapointsQuery objects specifying which
+        datapoints_queries (list[v04.dto.DatapointsQuery]): The list of DatapointsQuery objects specifying which
                                                                     timeseries to retrieve data for.
 
         aggregates (list, optional):    The list of aggregate functions you wish to apply to the data. Valid aggregate
@@ -281,7 +281,7 @@ def get_multi_tag_datapoints(datapoints_queries, aggregates=None, granularity=No
         project (str):                  Project name.
 
     Returns:
-        list(v04.data_objects.DatapointsResponse): A list of data objects containing the requested data with several getter methods
+        list(v04.dto.DatapointsResponse): A list of data objects containing the requested data with several getter methods
         with different output formats.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
@@ -557,7 +557,7 @@ def get_timeseries(prefix=None, description=None, include_metadata=False, asset_
                                 disregarded. Defaults to False.
 
     Returns:
-        v04.data_objects.TimeseriesResponse: A data object containing the requested timeseries with several getter methods with different
+        v04.dto.TimeseriesResponse: A data object containing the requested timeseries with several getter methods with different
         output formats.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
@@ -591,11 +591,11 @@ def get_timeseries(prefix=None, description=None, include_metadata=False, asset_
                   'items': timeseries}})
 
 
-def post_time_series(time_series: List[TimeSeriesDTO], **kwargs):
+def post_time_series(time_series: List[TimeSeries], **kwargs):
     '''Create a new time series.
 
     Args:
-        timeseries (list[v04.data_objects.TimeSeriesDTO]):   List of time series data transfer objects to create.
+        timeseries (list[v04.dto.TimeSeries]):   List of time series data transfer objects to create.
 
     Keyword Args:
         api_key (str): Your api-key.
@@ -622,13 +622,13 @@ def post_time_series(time_series: List[TimeSeriesDTO], **kwargs):
     return res.json()
 
 
-def update_time_series(time_series: List[TimeSeriesDTO], **kwargs):
+def update_time_series(time_series: List[TimeSeries], **kwargs):
     '''Update an existing time series.
 
     For each field that can be updated, a null value indicates that nothing should be done.
 
     Args:
-        timeseries (list[v04.data_objects.TimeSeriesDTO]):   List of time series data transfer objects to update.
+        timeseries (list[v04.dto.TimeSeries]):   List of time series data transfer objects to update.
 
     Keyword Args:
         api_key (str): Your api-key.

@@ -66,7 +66,7 @@ class RawResponse(CogniteDataObject):
         return pd.DataFrame(self.internal_representation['data']['items'])
 
 
-class RawRowDTO(object):
+class RawRow(object):
     """DTO for a row in a raw database.
 
     The Raw API is a simple key/value-store. Each row in a table in a raw database consists of a
@@ -188,7 +188,7 @@ class DatapointsResponseIterator():
             return self.datapoints_objects[self.counter - 1]
 
 
-class DatapointDTO(object):
+class Datapoint(object):
     '''Data transfer object for datapoints.
 
     Attributes:
@@ -235,7 +235,7 @@ class TimeseriesResponse(CogniteDataObject):
         return pd.DataFrame(items)
 
 
-class TimeSeriesDTO(object):
+class TimeSeries(object):
     """Data Transfer Object for a timeseries.
 
     Attributes:
@@ -302,7 +302,7 @@ class AssetResponse(CogniteDataObject):
         return pd.DataFrame()
 
 
-class AssetDTO(object):
+class Asset(object):
     '''Data transfer object for assets.
 
     Attributes:
@@ -422,7 +422,7 @@ class EventListResponse(CogniteDataObject):
             return EventResponse({'data': {'items': [self.to_json()[self.counter - 1]]}})
 
 
-class EventDTO(object):
+class Event(object):
     '''Data transfer object for events.
     Attributes:
         start_time (int):       Start time of the event in ms since epoch.

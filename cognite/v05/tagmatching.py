@@ -7,7 +7,7 @@ https://doc.cognitedata.com/0.5/#Cognite-API-Tag-Matching
 """
 import cognite._utils as _utils
 import cognite.config as config
-from cognite.v05.data_objects import TagMatchingResponse
+from cognite.v05.dto import TagMatchingResponse
 
 
 def tag_matching(tag_ids, fuzzy_threshold=0, platform=None, **kwargs):
@@ -30,7 +30,7 @@ def tag_matching(tag_ids, fuzzy_threshold=0, platform=None, **kwargs):
         project (str):          Project name.
 
     Returns:
-        v05.data_objects.TagMatchingResponse: A data object containing the requested data with several getter methods with different
+        v05.dto.TagMatchingResponse: A data object containing the requested data with several getter methods with different
         output formats.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))

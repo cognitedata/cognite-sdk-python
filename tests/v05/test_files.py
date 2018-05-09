@@ -23,7 +23,7 @@ def test_upload_file(tmpdir):
 
 
 def test_list_files():
-    from cognite.v05.data_objects import FileListResponse
+    from cognite.v05.dto import FileListResponse
     response = files.list_files(limit=3)
     assert isinstance(response, FileListResponse)
     assert isinstance(response.to_pandas(), pd.DataFrame)
@@ -45,7 +45,7 @@ def file_id():
 
 
 def test_get_file_info(file_id):
-    from cognite.v05.data_objects import FileInfoResponse
+    from cognite.v05.dto import FileInfoResponse
     response = files.get_file_info(file_id)
     assert isinstance(response, FileInfoResponse)
     assert isinstance(response.to_json(), dict)

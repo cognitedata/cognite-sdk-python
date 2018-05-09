@@ -10,7 +10,7 @@ from typing import List
 import cognite._constants as constants
 import cognite._utils as utils
 import cognite.config as config
-from cognite.v05.data_objects import AssetResponse, AssetListResponse, AssetDTO
+from cognite.v05.dto import AssetResponse, AssetListResponse, Asset
 
 
 # Author: TK
@@ -39,7 +39,7 @@ def get_assets(name=None, path=None, description=None, metadata=None, depth=None
 
         project (str):          Project name.
     Returns:
-        v05.data_objects.AssetResponse: A data object containing the requested assets with several getter methods with different
+        v05.dto.AssetResponse: A data object containing the requested assets with several getter methods with different
         output formats.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
@@ -73,7 +73,7 @@ def get_asset(asset_id, **kwargs):
 
         project (str):          Project name.
     Returns:
-        v05.data_objects.AssetResponse: A data object containing the requested assets with several getter methods with different
+        v05.dto.AssetResponse: A data object containing the requested assets with several getter methods with different
         output formats.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
@@ -104,7 +104,7 @@ def get_asset_subtree(asset_id, depth=None, **kwargs):
 
         project (str):          Project name.
     Returns:
-        v05.data_objects.AssetResponse: A data object containing the requested assets with several getter methods with different
+        v05.dto.AssetResponse: A data object containing the requested assets with several getter methods with different
         output formats.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
@@ -122,11 +122,11 @@ def get_asset_subtree(asset_id, depth=None, **kwargs):
     return AssetListResponse(res.json())
 
 
-def post_assets(assets: List[AssetDTO], **kwargs):
+def post_assets(assets: List[Asset], **kwargs):
     '''Insert a list of assets.
 
     Args:
-        assets (list[v05.data_objects.AssetDTO]): List of asset data transfer objects.
+        assets (list[v05.dto.Asset]): List of asset data transfer objects.
 
     Keyword Args:
         api_key (str): Your api-key.
@@ -134,7 +134,7 @@ def post_assets(assets: List[AssetDTO], **kwargs):
         project (str): Project name.
 
     Returns:
-        v05.data_objects.AssetResponse: A data object containing the posted assets with several getter methods with different
+        v05.dto.AssetResponse: A data object containing the posted assets with several getter methods with different
         output formats.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
