@@ -10,6 +10,7 @@ the following output formats:
 '''
 import abc
 import json
+from copy import deepcopy
 
 import pandas as pd
 import six
@@ -53,19 +54,7 @@ class CogniteDataObject():
             return self.internal_representation.get('data').get('previousCursor')
 
 
-class RawResponse(CogniteDataObject):
-    """Raw Response Object."""
-
-    def to_json(self):
-        """Returns data as a json object"""
-        return self.internal_representation['data']['items']
-
-    def to_pandas(self):
-        """Returns data as a pandas dataframe"""
-        return pd.DataFrame(self.internal_representation['data']['items'])
-
-
-class RawRowDTO(object):
+class RawRow(object):
     """DTO for a row in a raw database.
 
     The Raw API is a simple key/value-store. Each row in a table in a raw database consists of a
@@ -86,6 +75,18 @@ class RawRowDTO(object):
 
     def repr_json(self):
         return self.__dict__
+
+
+class RawResponse(CogniteDataObject):
+    """Raw Response Object."""
+
+    def to_json(self):
+        """Returns data as a json object"""
+        return self.internal_representation['data']['items']
+
+    def to_pandas(self):
+        """Returns data as a pandas dataframe"""
+        return pd.DataFrame(self.internal_representation['data']['items'])
 
 
 class TagMatchingResponse(CogniteDataObject):
@@ -135,8 +136,8 @@ class DatapointsQuery():
     """Data Query Object for Datapoints.
 
     Attributes:
-        timeseries (str):           Unique name of the time series.
-        aggregates (list):          The aggregate functions to be returned. Use default if null. An empty string must
+        tag_id (str):               Unique ID of time series.
+        aggregates (list):          The aggregate functions to be returned. Use default if null. An empty list must
                                     be sent to get raw data if the default is a set of aggregate functions.
         granularity (str):          The granularity size and granularity of the aggregates.
         start (str, int, datetime): Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s.
@@ -145,9 +146,9 @@ class DatapointsQuery():
         end (str, int, datetime):   Get datapoints up to this time. The format is the same as for start.
     """
 
-    def __init__(self, timeseries, aggregates=None, granularity=None, start=None, end=None, limit=None):
-        self.name = timeseries
-        self.aggregates = ','.join(aggregates) if aggregates is not None else None
+    def __init__(self, tag_id, aggregates=None, granularity=None, start=None, end=None, limit=None):
+        self.tagId = tag_id
+        self.aggregateFunctions = ','.join(aggregates) if aggregates is not None else None
         self.granularity = granularity
         self.start, self.end = _utils.interval_to_ms(start, end)
         if not start:
@@ -187,19 +188,6 @@ class DatapointsResponseIterator():
             return self.datapoints_objects[self.counter - 1]
 
 
-class DatapointDTO(object):
-    '''Data transfer object for datapoints.
-
-    Attributes:
-        timestamp (int, datetime): The data timestamp in milliseconds since the epoch (Jan 1, 1970) or as a datetime object.
-        value (string):     The data value, Can be string or numeric depending on the metric.
-    '''
-
-    def __init__(self, timestamp, value):
-        self.timestamp = timestamp if isinstance(timestamp, int) else _utils.datetime_to_ms(timestamp)
-        self.value = value
-
-
 class LatestDatapointResponse(CogniteDataObject):
     '''Latest Datapoint Response Object.'''
 
@@ -225,7 +213,7 @@ class TimeseriesResponse(CogniteDataObject):
 
     def to_pandas(self):
         '''Returns data as a pandas dataframe'''
-        items = self.internal_representation['data']['items']
+        items = deepcopy(self.internal_representation['data']['items'])
         if items and items[0].get('metadata') is None:
             return pd.DataFrame(items)
         for d in items:
@@ -234,11 +222,11 @@ class TimeseriesResponse(CogniteDataObject):
         return pd.DataFrame(items)
 
 
-class TimeSeriesDTO(object):
+class TimeSeries(object):
     """Data Transfer Object for a timeseries.
 
     Attributes:
-        timeseries (str):       Unique name of time series.
+        tag_id (str):       Unique ID of time series.
         is_string (bool):    Whether the time series is string valued or not.
         metadata (dict):    Metadata.
         unit (str):         Physical unit of the time series.
@@ -249,9 +237,9 @@ class TimeSeriesDTO(object):
 
     """
 
-    def __init__(self, timeseries, is_string=False, metadata=None, unit=None, asset_id=None, description=None,
+    def __init__(self, tag_id, is_string=False, metadata=None, unit=None, asset_id=None, description=None,
                  security_categories=None, step=None):
-        self.name = timeseries
+        self.tagId = tag_id
         self.isString = is_string
         self.metadata = metadata
         self.unit = unit
@@ -261,12 +249,21 @@ class TimeSeriesDTO(object):
         self.step = step
 
 
-class AssetListResponse(CogniteDataObject):
-    '''Assets Response Object'''
+class Datapoint(object):
+    '''Data transfer object for datapoints.
 
-    def __init__(self, internal_representation):
-        super().__init__(internal_representation)
-        self.counter = 0
+    Attributes:
+        timestamp (int, datetime): The data timestamp in milliseconds since the epoch (Jan 1, 1970) or as a datetime object.
+        value (string):     The data value, Can be string or numeric depending on the metric.
+    '''
+
+    def __init__(self, timestamp, value):
+        self.timestamp = timestamp if isinstance(timestamp, int) else _utils.datetime_to_ms(timestamp)
+        self.value = value
+
+
+class AssetResponse(CogniteDataObject):
+    '''Assets Response Object'''
 
     def to_json(self):
         '''Returns data as a json object'''
@@ -278,30 +275,8 @@ class AssetListResponse(CogniteDataObject):
             return pd.DataFrame(self.internal_representation['data']['items'])
         return pd.DataFrame()
 
-    def __iter__(self):
-        return self
 
-    def __next__(self):
-        if self.counter > len(self.to_json()) - 1:
-            raise StopIteration
-        else:
-            self.counter += 1
-            return AssetResponse({'data': {'items': [self.to_json()[self.counter - 1]]}})
-
-
-class AssetResponse(CogniteDataObject):
-    def to_json(self):
-        '''Returns data as a json object'''
-        return self.internal_representation['data']['items'][0]
-
-    def to_pandas(self):
-        '''Returns data as a pandas dataframe'''
-        if len(self.to_json()) > 0:
-            return pd.DataFrame.from_dict(self.to_json(), orient='index')
-        return pd.DataFrame()
-
-
-class AssetDTO(object):
+class Asset(object):
     '''Data transfer object for assets.
 
     Attributes:
@@ -326,6 +301,14 @@ class AssetDTO(object):
         self.parentRefId = parent_ref_id
 
 
+class FileListResponse(CogniteDataObject):
+    def to_json(self):
+        return self.internal_representation['data']['items']
+
+    def to_pandas(self):
+        return pd.DataFrame(self.internal_representation['data']['items'])
+
+
 class FileInfoResponse(CogniteDataObject):
     '''File Info Response Object.
 
@@ -335,110 +318,26 @@ class FileInfoResponse(CogniteDataObject):
         directory (str):        Directory containing the file. Max length is 512.
         source (dict):          Source that this file comes from. Max length is 256.
         file_type (str):        File type. E.g. pdf, css, spreadsheet, .. Max length is 64.
-        metadata (dict):        Customized data about the file.
-        asset_ids (list[str]):  Names of assets related to this file.
+        metadata (dict):        Customizd data about the file.
+        tag_ids (list[str]):    IDs of equipment related to this file.
         uploaded (bool):        Whether or not the file is uploaded.
         uploaded_at (int):      Epoc thime (ms) when the file was uploaded succesfully.
     '''
 
     def __init__(self, internal_representation):
         super().__init__(internal_representation)
-        item = self.internal_representation['data']['items'][0]
-        self.id = item.get('id')
-        self.file_name = item.get('fileName')
-        self.directory = item.get('directory')
-        self.source = item.get('source')
-        self.file_type = item.get('fileType')
-        self.metadata = item.get('metadata')
-        self.asset_ids = item.get('assetIds')
-        self.uploaded = item.get('uploaded')
-        self.uploaded_at = item.get('uploadedAt')
+        self.id = self.internal_representation['data'].get('id')
+        self.file_name = self.internal_representation['data'].get('fileName')
+        self.directory = self.internal_representation['data'].get('directory')
+        self.source = self.internal_representation['data'].get('source')
+        self.file_type = self.internal_representation['data'].get('fileType')
+        self.metadata = self.internal_representation['data'].get('metadata')
+        self.tag_ids = self.internal_representation['data'].get('tagIds')
+        self.uploaded = self.internal_representation['data'].get('uploaded')
+        self.uploaded_at = self.internal_representation['data'].get('uploadedAt')
 
     def to_json(self):
-        return self.internal_representation['data']['items'][0]
+        return self.internal_representation['data']
 
     def to_pandas(self):
-        file_info = self.to_json()
-        if file_info.get('metadata'):
-            file_info.update(file_info.pop('metadata'))
-        return pd.DataFrame.from_dict(file_info, orient='index')
-
-
-class FileListResponse(CogniteDataObject):
-    '''File List Response Object'''
-
-    def to_json(self):
-        return self.internal_representation['data']['items']
-
-    def to_pandas(self):
-        return pd.DataFrame(self.internal_representation['data']['items'])
-
-
-class EventResponse(CogniteDataObject):
-    '''Event Response Object.'''
-
-    def __init__(self, internal_representation):
-        super().__init__(internal_representation)
-        item = self.internal_representation['data']['items'][0]
-        self.id = item.get('id')
-        self.asset_ids = item.get('assetIds')
-
-    def to_json(self):
-        return self.internal_representation['data']['items'][0]
-
-    def to_pandas(self):
-        event = self.to_json()
-        if event.get('metadata'):
-            event.update(event.pop('metadata'))
-        return pd.DataFrame.from_dict(self.to_json(), orient='index')
-
-
-class EventListResponse(CogniteDataObject):
-    '''Event List Response Object.'''
-
-    def __init__(self, internal_representation):
-        super().__init__(internal_representation)
-        self.counter = 0
-
-    def to_json(self):
-        return self.internal_representation['data']['items']
-
-    def to_pandas(self):
-        items = self.to_json()
-        for d in items:
-            if d.get('metadata'):
-                d.update(d.pop('metadata'))
-        return pd.DataFrame(items)
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        if self.counter > len(self.to_json()) - 1:
-            raise StopIteration
-        else:
-            self.counter += 1
-            return EventResponse({'data': {'items': [self.to_json()[self.counter - 1]]}})
-
-
-class EventDTO(object):
-    '''Data transfer object for events.
-    Attributes:
-        start_time (int):       Start time of the event in ms since epoch.
-        end_time (int):         End time of the event in ms since epoch.
-        description (str):      Textual description of the event.
-        type (str):             Type of the event, e.g. 'failure'.
-        sub_type (str):          Subtype of the event, e.g. 'electrical'.
-        metadata (dict):        Customizable extra data about the event.
-        asset_ids (list[int]):  List of Asset IDs of related equipments that this event relates to.
-    '''
-
-    def __init__(self, start_time=None, end_time=None, description=None, type=None, sub_type=None, metadata=None,
-                 asset_ids=None):
-        self.startTime = start_time
-        self.endTime = end_time
-        self.description = description
-        self.type = type
-        self.subtype = sub_type
-        self.metadata = metadata
-        self.assetIds = asset_ids
+        return pd.DataFrame([self.to_json()], columns=self.to_json().keys())
