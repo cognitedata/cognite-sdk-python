@@ -18,4 +18,4 @@ Data Platform (CDP).
 #
 
 __all__ = ['v04', 'v05', 'preprocessing', 'config']
-__version__ = '0.7.0'
+__version__ = '0.7.1'

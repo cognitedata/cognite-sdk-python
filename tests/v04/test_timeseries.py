@@ -132,8 +132,8 @@ class TestTimeseries:
         assert get_timeseries_response_obj.to_json()[0]['unit'] == 'celsius'
 
     def test_get_timeseries_output_format(self, get_timeseries_response_obj):
-        from cognite.v04.dto import TimeseriesResponse
-        assert isinstance(get_timeseries_response_obj, TimeseriesResponse)
+        from cognite.v04.dto import TimeSeriesResponse
+        assert isinstance(get_timeseries_response_obj, TimeSeriesResponse)
         assert isinstance(get_timeseries_response_obj.to_ndarray(), np.ndarray)
         assert isinstance(get_timeseries_response_obj.to_pandas(), pd.DataFrame)
         assert isinstance(get_timeseries_response_obj.to_json()[0], dict)
