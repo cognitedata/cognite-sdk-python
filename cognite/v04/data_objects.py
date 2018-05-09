@@ -10,6 +10,7 @@ the following output formats:
 '''
 import abc
 import json
+from copy import deepcopy
 
 import pandas as pd
 import six
@@ -212,7 +213,7 @@ class TimeseriesResponse(CogniteDataObject):
 
     def to_pandas(self):
         '''Returns data as a pandas dataframe'''
-        items = self.internal_representation['data']['items']
+        items = deepcopy(self.internal_representation['data']['items'])
         if items and items[0].get('metadata') is None:
             return pd.DataFrame(items)
         for d in items:
