@@ -7,7 +7,7 @@ https://doc.cognitedata.com/0.5/#Cognite-API-Events
 """
 
 from cognite import _utils, config, _constants
-from cognite.v05.data_objects import EventResponse, EventListResponse
+from cognite.v05.dto import EventResponse, EventListResponse
 
 
 def get_event(event_id, **kwargs):
@@ -22,7 +22,7 @@ def get_event(event_id, **kwargs):
         project (str):          Project name.
 
     Returns:
-        v05.data_objects.EventResponse: A data object containing the requested event.
+        v05.dto.EventResponse: A data object containing the requested event.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
     url = config.get_base_url(api_version=0.5) + '/projects/{}/events/{}'.format(project, event_id)
@@ -56,7 +56,7 @@ def get_events(type=None, sub_type=None, asset_id=None, **kwargs):
                                 disregarded. Defaults to False.
 
     Returns:
-        v05.data_objects.EventListResponse: A data object containing the requested event.
+        v05.dto.EventListResponse: A data object containing the requested event.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
     url = config.get_base_url(api_version=0.5) + '/projects/{}/events'.format(project)
@@ -98,14 +98,14 @@ def post_events(events, **kwargs):
     '''Adds a list of events and returns an EventListResponse object containing created events.
 
     Args:
-        events (List[v05.data_objects.EventDTO]):    List of events to create.
+        events (List[v05.dto.Event]):    List of events to create.
 
     Keyword Args:
         api_key (str):          Your api-key.
         project (str):          Project name.
 
     Returns:
-        v05.data_objects.EventListResponse
+        v05.dto.EventListResponse
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
     url = config.get_base_url(api_version=0.5) + '/projects/{}/events'.format(project)
