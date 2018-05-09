@@ -2,7 +2,7 @@ from copy import deepcopy
 
 import pytest
 
-from cognite.v05.dto import EventResponse, EventListResponse, TimeseriesResponse, FileInfoResponse
+from cognite.v05.dto import EventResponse, EventListResponse, TimeSeriesResponse, FileInfoResponse
 
 
 @pytest.fixture(scope='module', params=['ts', 'file', 'event', 'eventlist'])
@@ -14,7 +14,7 @@ def get_response_obj(request):
 
     response = None
     if request.param == 'ts':
-        response = TimeseriesResponse(TS_INTERNAL_REPR)
+        response = TimeSeriesResponse(TS_INTERNAL_REPR)
     elif request.param == 'file':
         response = FileInfoResponse(FILE_INFO_INTERNAL_REPR)
     elif request.param == 'eventlist':

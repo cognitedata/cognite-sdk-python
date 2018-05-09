@@ -21,7 +21,7 @@ import cognite.config as config
 from cognite._protobuf_descriptors import _api_timeseries_data_v1_pb2
 from cognite.v04.dto import DatapointsResponse, DatapointsResponseIterator, LatestDatapointResponse, \
     Datapoint, \
-    TimeSeries, TimeseriesResponse
+    TimeSeries, TimeSeriesResponse
 
 
 def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=None, **kwargs):
@@ -555,7 +555,7 @@ def get_timeseries(prefix=None, description=None, include_metadata=False, asset_
                                 disregarded. Defaults to False.
 
     Returns:
-        v04.dto.TimeseriesResponse: A data object containing the requested timeseries with several getter methods with different
+        v04.dto.TimeSeriesResponse: A data object containing the requested timeseries with several getter methods with different
         output formats.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
@@ -584,7 +584,7 @@ def get_timeseries(prefix=None, description=None, include_metadata=False, asset_
         timeseries.extend(res.json()['data']['items'])
         next_cursor = res.json()['data'].get('nextCursor')
 
-    return TimeseriesResponse(
+    return TimeSeriesResponse(
         {'data': {'nextCursor': next_cursor, 'previousCursor': res.json()['data'].get('previousCursor'),
                   'items': timeseries}})
 
