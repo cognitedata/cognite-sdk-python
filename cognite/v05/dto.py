@@ -187,7 +187,7 @@ class DatapointsResponseIterator():
             self.counter += 1
             return self.datapoints_objects[self.counter - 1]
 
-class DatapointDepthDTO(object):
+class DatapointDepth(object):
     '''Data transfer object for Depth datapoints.
 
        Attributes:
