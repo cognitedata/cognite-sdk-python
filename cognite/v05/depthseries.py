@@ -17,20 +17,20 @@ import cognite.config as config
 
 from cognite.v05 import timeseries
 from cognite.v05.dto import  LatestDatapointResponse, \
-    DatapointDepthDTO, \
-    TimeSeriesDTO, TimeseriesResponse, DatapointDTO
+    DatapointDepth, \
+    TimeSeries, TimeseriesResponse, Datapoint
 
 
 
 
 
-def post_datapoints(depthseries, depthdatapoints: List[DatapointDepthDTO], **kwargs):
+def post_datapoints(depthseries, depthdatapoints: List[DatapointDepth], **kwargs):
     '''Insert a list of datapoints.
 
     Args:
         timeseries (str):       Name of timeseries to insert to.
 
-        datapoints (list[v05.data_objects.DatapointDTO): List of datapoint data transfer objects to insert.
+        datapoints (list[v05.data_objects.Datapoint): List of datapoint data transfer objects to insert.
 
         offset(int): Offset of index. -1 means append to existsing series, 0 means start at first index
     Keyword Args:
@@ -61,8 +61,8 @@ def post_datapoints(depthseries, depthdatapoints: List[DatapointDepthDTO], **kwa
     datapoints=[]
     depthpoints=[]
     for datapoint in depthdatapoints:
-        datapoints.append(DatapointDTO(offset,datapoint.value))
-        depthpoints.append(DatapointDTO(offset,datapoint.depth))
+        datapoints.append(Datapoint(offset,datapoint.value))
+        depthpoints.append(Datapoint(offset,datapoint.depth))
         offset += msIncrement
 
     ul_dps_limit = 100000
@@ -167,11 +167,11 @@ def get_depthseries(prefix=None, description=None, include_metadata=False, asset
 def _generateIndexName(depthSeriesName):
     return depthSeriesName+"_DepthIndex"
 
-def post_depth_series(depth_series: List[TimeSeriesDTO], **kwargs):
+def post_depth_series(depth_series: List[TimeSeries], **kwargs):
     '''Create a new depth series.
 
     Args:
-        depthseries (list[v05.data_objects.TimeSeriesDTO]):   List of time series data transfer objects to create.
+        depthseries (list[v05.data_objects.TimeSeries]):   List of time series data transfer objects to create.
         Corresponding depth series used for indexing will be created automatically, with unit of m(meter)
 
     Keyword Args:
@@ -204,13 +204,13 @@ def post_depth_series(depth_series: List[TimeSeriesDTO], **kwargs):
     return res.json()
 
 
-def update_depth_series(depth_series: List[TimeSeriesDTO], **kwargs):
+def update_depth_series(depth_series: List[TimeSeries], **kwargs):
     '''Update an existing time series.
 
     For each field that can be updated, a null value indicates that nothing should be done.
 
     Args:
-        timeseries (list[v05.data_objects.TimeSeriesDTO]):   List of time series data transfer objects to update.
+        timeseries (list[v05.data_objects.TimeSeries]):   List of time series data transfer objects to update.
 
     Keyword Args:
         api_key (str): Your api-key.
