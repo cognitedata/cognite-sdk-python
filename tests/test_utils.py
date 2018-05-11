@@ -300,3 +300,38 @@ class TestConversions:
         assert utils._time_ago_to_ms('1s-ago') == 1000
         assert utils
         assert utils._time_ago_to_ms('not_correctly_formatted') is None
+
+
+class TestFirstFit:
+    @staticmethod
+    def test_with_timeserieswithdatapoints():
+        from cognite.v04.dto import TimeseriesWithDatapoints
+        from cognite.v04.dto import Datapoint
+        from typing import List
+
+        timeseries_with_100_datapoints: TimeseriesWithDatapoints = TimeseriesWithDatapoints(
+            tagId="test",
+            datapoints=[Datapoint(x, x) for x in range(100)]
+        )
+        timeseries_with_200_datapoints: TimeseriesWithDatapoints = TimeseriesWithDatapoints(
+            tagId="test",
+            datapoints=[Datapoint(x, x) for x in range(200)]
+        )
+        timeseries_with_300_datapoints: TimeseriesWithDatapoints = TimeseriesWithDatapoints(
+            tagId="test",
+            datapoints=[Datapoint(x, x) for x in range(300)]
+        )
+
+        all_timeseries: List[TimeseriesWithDatapoints] = [
+            timeseries_with_100_datapoints,
+            timeseries_with_200_datapoints,
+            timeseries_with_300_datapoints
+        ]
+
+        result: List[List[TimeseriesWithDatapoints]] = utils.first_fit(
+            list_items=all_timeseries,
+            max_size=300,
+            get_count=lambda x: len(x.datapoints)
+        )
+
+        assert len(result) == 2
