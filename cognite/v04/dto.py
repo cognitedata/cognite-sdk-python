@@ -10,6 +10,7 @@ the following output formats:
 '''
 import abc
 import json
+from copy import deepcopy
 
 import pandas as pd
 import six
@@ -53,7 +54,7 @@ class CogniteDataObject():
             return self.internal_representation.get('data').get('previousCursor')
 
 
-class RawRowDTO(object):
+class RawRow(object):
     """DTO for a row in a raw database.
 
     The Raw API is a simple key/value-store. Each row in a table in a raw database consists of a
@@ -203,8 +204,8 @@ class LatestDatapointResponse(CogniteDataObject):
         return self.to_pandas().values[0]
 
 
-class TimeseriesResponse(CogniteDataObject):
-    '''Timeseries Response Object'''
+class TimeSeriesResponse(CogniteDataObject):
+    '''Time series Response Object'''
 
     def to_json(self):
         '''Returns data as a json object'''
@@ -212,7 +213,7 @@ class TimeseriesResponse(CogniteDataObject):
 
     def to_pandas(self):
         '''Returns data as a pandas dataframe'''
-        items = self.internal_representation['data']['items']
+        items = deepcopy(self.internal_representation['data']['items'])
         if items and items[0].get('metadata') is None:
             return pd.DataFrame(items)
         for d in items:
@@ -221,7 +222,7 @@ class TimeseriesResponse(CogniteDataObject):
         return pd.DataFrame(items)
 
 
-class TimeSeriesDTO(object):
+class TimeSeries(object):
     """Data Transfer Object for a timeseries.
 
     Attributes:
@@ -248,7 +249,7 @@ class TimeSeriesDTO(object):
         self.step = step
 
 
-class DatapointDTO(object):
+class Datapoint(object):
     '''Data transfer object for datapoints.
 
     Attributes:
@@ -275,7 +276,7 @@ class AssetResponse(CogniteDataObject):
         return pd.DataFrame()
 
 
-class AssetDTO(object):
+class Asset(object):
     '''Data transfer object for assets.
 
     Attributes:

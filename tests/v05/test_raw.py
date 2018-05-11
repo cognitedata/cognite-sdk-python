@@ -6,7 +6,7 @@ import pytest
 
 from cognite._utils import APIError
 from cognite.v05 import raw
-from cognite.v05.data_objects import RawResponse, RawRowDTO
+from cognite.v05.dto import RawResponse, RawRow
 
 DB_NAME = None
 TABLE_NAME = None
@@ -107,7 +107,7 @@ class TestRows:
         raw.delete_databases([DB_NAME], recursive=True)
 
     def test_create_rows(self):
-        response = raw.create_rows(DB_NAME, TABLE_NAME, rows=[RawRowDTO(key=ROW_KEY, columns=ROW_COLUMNS)])
+        response = raw.create_rows(DB_NAME, TABLE_NAME, rows=[RawRow(key=ROW_KEY, columns=ROW_COLUMNS)])
         assert response == {}
 
     def test_rows_response_length(self):
@@ -122,5 +122,5 @@ class TestRows:
         assert isinstance(row.to_pandas(), pd.DataFrame)
 
     def test_delete_rows(self):
-        response = raw.delete_rows(DB_NAME, TABLE_NAME, [RawRowDTO(key=ROW_KEY, columns=ROW_COLUMNS)])
+        response = raw.delete_rows(DB_NAME, TABLE_NAME, [RawRow(key=ROW_KEY, columns=ROW_COLUMNS)])
         assert response == {}

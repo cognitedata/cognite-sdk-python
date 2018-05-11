@@ -19,7 +19,7 @@ def tagmatching_result(mock_post):
 
 
 def test_object(tagmatching_result):
-    from cognite.v04.data_objects import TagMatchingResponse
+    from cognite.v04.dto import TagMatchingResponse
     assert isinstance(tagmatching_result, TagMatchingResponse)
 
 

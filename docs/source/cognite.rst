@@ -23,9 +23,9 @@ Assets
     :undoc-members:
     :show-inheritance:
 
-Data Objects
-^^^^^^^^^^^^
-.. automodule:: cognite.v05.data_objects
+Data Transfer Objects
+^^^^^^^^^^^^^^^^^^^^^
+.. automodule:: cognite.v05.dto
     :members:
     :undoc-members:
     :show-inheritance:
@@ -82,9 +82,9 @@ Cloud Storage
     :undoc-members:
     :show-inheritance:
 
-Data Objects
-^^^^^^^^^^^^
-.. automodule:: cognite.v04.data_objects
+Data Transfer Objects
+^^^^^^^^^^^^^^^^^^^^^
+.. automodule:: cognite.v04.dto
     :members:
     :undoc-members:
     :show-inheritance:
