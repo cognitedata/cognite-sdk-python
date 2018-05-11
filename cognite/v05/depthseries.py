@@ -24,15 +24,14 @@ from cognite.v05.dto import  LatestDatapointResponse, \
 
 
 
-def post_datapoints(depthseries, depthdatapoints: List[DatapointDepth], **kwargs):
+def post_datapoints(name, depthdatapoints: List[DatapointDepth], **kwargs):
     '''Insert a list of datapoints.
 
     Args:
-        timeseries (str):       Name of timeseries to insert to.
+        name (str):       Name of timeseries to insert to.
 
         datapoints (list[v05.data_objects.Datapoint): List of datapoint data transfer objects to insert.
 
-        offset(int): Offset of index. -1 means append to existsing series, 0 means start at first index
     Keyword Args:
         api_key (str): Your api-key.
 
@@ -41,17 +40,17 @@ def post_datapoints(depthseries, depthdatapoints: List[DatapointDepth], **kwargs
     Returns:
         An empty response.
     '''
-    depthseries = depthseries.replace('/', '%2F')
+    name = name.replace('/', '%2F')
     msIncrement=1000
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
     try:
-        res = timeseries.get_latest(depthseries)
+        res = timeseries.get_latest(name)
         offset = res.to_json()['timestamp']+msIncrement
     except:
         offset = 0 #Random timestamp to start the time series
 
-    url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/data/{}'.format(project, depthseries)
-    urldepth = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/data/{}'.format(project, _generateIndexName(depthseries))
+    url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/data/{}'.format(project, name)
+    urldepth = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/data/{}'.format(project, _generateIndexName(name))
 
     headers = {
         'api-key': api_key,
@@ -77,11 +76,11 @@ def post_datapoints(depthseries, depthdatapoints: List[DatapointDepth], **kwargs
     return res.json()
 
 
-def get_latest(depthseries, **kwargs):
-    '''Returns a LatestDatapointObject containing the latest datapoint for the given timeseries.
+def get_latest(name, **kwargs):
+    '''Returns a LatestDatapointObject containing the latest datapoint for the given depthseries.
 
     Args:
-        timeseries (str):       The name of the timeseries to retrieve data for.
+        name (str):       The name of the depthseries to retrieve data for.
 
     Keyword Arguments:
         api_key (str):          Your api-key.
@@ -93,8 +92,8 @@ def get_latest(depthseries, **kwargs):
         output formats.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
-    timeseries = timeseries.replace('/', '%2F')
-    url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/latest/{}'.format(project, timeseries)
+    name = name.replace('/', '%2F')
+    url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/latest/{}'.format(project, name)
     headers = {
         'api-key': api_key,
         'accept': 'application/json'
@@ -107,7 +106,7 @@ def get_latest(depthseries, **kwargs):
 
 
 def get_depthseries(prefix=None, description=None, include_metadata=False, asset_id=None, path=None, **kwargs):
-    '''Returns a TimeSeriesObject containing the requested timeseries.
+    '''Returns a TimeSeriesObject containing the requested series.
 
     Args:
         prefix (str):           List timeseries with this prefix in the name.
@@ -171,7 +170,7 @@ def post_depth_series(depth_series: List[TimeSeries], **kwargs):
     '''Create a new depth series.
 
     Args:
-        depthseries (list[v05.data_objects.TimeSeries]):   List of time series data transfer objects to create.
+        depth_series (list[v05.dto.TimeSeries]):   List of time series data transfer objects to create.
         Corresponding depth series used for indexing will be created automatically, with unit of m(meter)
 
     Keyword Args:
@@ -210,7 +209,7 @@ def update_depth_series(depth_series: List[TimeSeries], **kwargs):
     For each field that can be updated, a null value indicates that nothing should be done.
 
     Args:
-        timeseries (list[v05.data_objects.TimeSeries]):   List of time series data transfer objects to update.
+        depth_series (list[v05.dto.TimeSeries]):   List of time series data transfer objects to update.
 
     Keyword Args:
         api_key (str): Your api-key.
@@ -247,11 +246,11 @@ def update_depth_series(depth_series: List[TimeSeries], **kwargs):
     return res.json()
 
 
-def delete_depth_series(depthseries, **kwargs):
+def delete_depth_series(name, **kwargs):
     '''Delete a depthseries.
 
     Args:
-        depthseries (str):   Name of depthseries to delete.
+        name (str):   Name of depthseries to delete.
 
     Keyword Args:
         api_key (str): Your api-key.
@@ -262,7 +261,7 @@ def delete_depth_series(depthseries, **kwargs):
         An empty response.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
-    url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/{}'.format(project, depthseries)
+    url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/{}'.format(project, name)
 
     headers = {
         'api-key': api_key,
@@ -271,16 +270,16 @@ def delete_depth_series(depthseries, **kwargs):
 
     res = _utils.delete_request(url, headers=headers)
     if res == {}:
-        url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/{}'.format(project, _generateIndexName(depthseries))
+        url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/{}'.format(project, _generateIndexName(name))
         res = _utils.delete_request(url, headers=headers)
 
     return res.json()
 
-def reset_depth_series(depthseries, **kwargs):
+def reset_depth_series(name, **kwargs):
     '''Delete all datapoints for a depthseries.
 
        Args:
-           depthseries (str):   Name of depthseries to delete.
+           name (str):   Name of depthseries to delete.
 
        Keyword Args:
            api_key (str): Your api-key.
@@ -293,7 +292,7 @@ def reset_depth_series(depthseries, **kwargs):
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
     url = config.get_base_url(
         api_version=0.5) + '/projects/{}/timeseries/{}?timestampInclusiveBegin=0?timestampInclusiveEnd={}'.format(
-        project, depthseries, sys.maxsize)
+        project, name, sys.maxsize)
 
     headers = {
         'api-key': api_key,
@@ -303,7 +302,7 @@ def reset_depth_series(depthseries, **kwargs):
     if res == {}:
         url = config.get_base_url(
             api_version=0.5) + '/projects/{}/timeseries/{}?timestampInclusiveBegin=0?timestampInclusiveEnd={}'.format(
-            project, _generateIndexName(depthseries), sys.maxsize)
+            project, _generateIndexName(name), sys.maxsize)
         res = _utils.delete_request(url, headers=headers)
 
     return res.json()
