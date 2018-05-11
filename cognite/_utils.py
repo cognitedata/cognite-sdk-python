@@ -205,7 +205,7 @@ def first_fit(
     '''Returns list of bins with input items inside.'''
 
     # Sort the input list in decreasing order
-    list_items = sorted(list_items, key=lambda x: len(x.datapoints), reverse=True)
+    list_items = sorted(list_items, key=get_count, reverse=True)
 
     list_bins = [Bin(get_count=get_count)]
 
