@@ -262,6 +262,19 @@ class Datapoint(object):
         self.value = value
 
 
+class TimeseriesWithDatapoints(object):
+    '''Data transfer object for a timeseries with datapoints.
+
+    Attributes:
+        tag_id (str):       Unique ID of time series.
+        datapoints (List[Datapoint]): List of datapoints in the timeseries.
+    '''
+
+    def __init__(self, tagId, datapoints):
+        self.tagId = tagId
+        self.datapoints = datapoints
+
+
 class AssetResponse(CogniteDataObject):
     '''Assets Response Object'''
 
