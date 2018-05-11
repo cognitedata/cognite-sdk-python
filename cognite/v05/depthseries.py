@@ -18,7 +18,7 @@ import cognite.config as config
 from cognite.v05 import timeseries
 from cognite.v05.dto import  LatestDatapointResponse, \
     DatapointDepth, \
-    TimeSeries, TimeseriesResponse, Datapoint
+    TimeSeries, TimeSeriesResponse, Datapoint
 
 
 
@@ -107,7 +107,7 @@ def get_latest(depthseries, **kwargs):
 
 
 def get_depthseries(prefix=None, description=None, include_metadata=False, asset_id=None, path=None, **kwargs):
-    '''Returns a TimeseriesObject containing the requested timeseries.
+    '''Returns a TimeSeriesObject containing the requested timeseries.
 
     Args:
         prefix (str):           List timeseries with this prefix in the name.
@@ -131,7 +131,7 @@ def get_depthseries(prefix=None, description=None, include_metadata=False, asset
                                 disregarded. Defaults to False.
 
     Returns:
-        v05.data_objects.TimeseriesResponse: A data object containing the requested timeseries with several getter methods with different
+        v05.data_objects.TimeSeriesResponse: A data object containing the requested timeseries with several getter methods with different
         output formats.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
@@ -160,7 +160,7 @@ def get_depthseries(prefix=None, description=None, include_metadata=False, asset
         timeseries.extend([ts for ts in res.json()['data']['items'] if not ts.name.endswith(_generateIndexName(""))])
         next_cursor = res.json()['data'].get('nextCursor')
 
-    return TimeseriesResponse(
+    return TimeSeriesResponse(
         {'data': {'nextCursor': next_cursor, 'previousCursor': res.json()['data'].get('previousCursor'),
                   'items': timeseries}})
 
