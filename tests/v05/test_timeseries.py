@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from cognite.v05 import timeseries, data_objects
+from cognite.v05 import timeseries, dto
 
 TS_NAME = None
 
@@ -27,12 +27,12 @@ class TestTimeseries:
         yield timeseries.get_timeseries(prefix=TS_NAME, limit=1, include_metadata=request.param)
 
     def test_post_timeseries(self):
-        tso = data_objects.TimeSeriesDTO(TS_NAME)
+        tso = dto.TimeSeries(TS_NAME)
         res = timeseries.post_time_series([tso])
         assert res == {}
 
     def test_update_timeseries(self):
-        tso = data_objects.TimeSeriesDTO(TS_NAME, unit='celsius')
+        tso = dto.TimeSeries(TS_NAME, unit='celsius')
         res = timeseries.update_time_series([tso])
         assert res == {}
 
@@ -41,8 +41,8 @@ class TestTimeseries:
 
     def test_get_timeseries_output_format(self, get_timeseries_response_obj):
         print(get_timeseries_response_obj.to_pandas())
-        from cognite.v05.data_objects import TimeseriesResponse
-        assert isinstance(get_timeseries_response_obj, TimeseriesResponse)
+        from cognite.v05.dto import TimeSeriesResponse
+        assert isinstance(get_timeseries_response_obj, TimeSeriesResponse)
         assert isinstance(get_timeseries_response_obj.to_ndarray(), np.ndarray)
         assert isinstance(get_timeseries_response_obj.to_pandas(), pd.DataFrame)
         assert isinstance(get_timeseries_response_obj.to_json()[0], dict)
@@ -59,7 +59,7 @@ class TestTimeseries:
 
 @pytest.fixture(scope='class')
 def datapoints_fixture():
-    tso = data_objects.TimeSeriesDTO(TS_NAME)
+    tso = dto.TimeSeries(TS_NAME)
     timeseries.post_time_series([tso])
     yield
     timeseries.delete_time_series(TS_NAME)
@@ -69,16 +69,16 @@ def datapoints_fixture():
 class TestDatapoints:
     @pytest.fixture(scope='class', params=dps_params)
     def get_dps_response_obj(self, request):
-        yield timeseries.get_datapoints(timeseries='constant', start=request.param['start'], end=request.param['end'],
+        yield timeseries.get_datapoints(name='constant', start=request.param['start'], end=request.param['end'],
                                         protobuf=request.param.get('protobuf', False))
 
     def test_post_datapoints(self):
-        dps = [data_objects.DatapointDTO(i, i * 100) for i in range(10)]
+        dps = [dto.Datapoint(i, i * 100) for i in range(10)]
         res = timeseries.post_datapoints(TS_NAME, datapoints=dps)
         assert res == {}
 
     def test_get_datapoints(self, get_dps_response_obj):
-        from cognite.v05.data_objects import DatapointsResponse
+        from cognite.v05.dto import DatapointsResponse
         assert isinstance(get_dps_response_obj, DatapointsResponse)
 
     def test_get_dps_output_formats(self, get_dps_response_obj):
@@ -95,7 +95,7 @@ class TestDatapoints:
 
 class TestLatest:
     def test_get_latest(self):
-        from cognite.v05.data_objects import LatestDatapointResponse
+        from cognite.v05.dto import LatestDatapointResponse
         response = timeseries.get_latest('constant')
         assert isinstance(response, LatestDatapointResponse)
         assert isinstance(response.to_ndarray(), np.ndarray)
@@ -106,7 +106,7 @@ class TestLatest:
 class TestDatapointsFrame:
     @pytest.fixture(scope='class', params=dps_params[:2])
     def get_datapoints_frame_response_obj(self, request):
-        yield timeseries.get_datapoints_frame(timeseries=['constant'], start=request.param['start'],
+        yield timeseries.get_datapoints_frame(time_series=['constant'], start=request.param['start'],
                                               end=request.param['end'],
                                               aggregates=['avg'], granularity='1m')
 
@@ -123,7 +123,7 @@ class TestDatapointsFrame:
 class TestMultiTimeseriesDatapoints:
     @pytest.fixture(scope='class', params=dps_params[:2])
     def get_multi_time_series_dps_response_obj(self, request):
-        from cognite.v05.data_objects import DatapointsQuery
+        from cognite.v05.dto import DatapointsQuery
         dq1 = DatapointsQuery('constant')
         dq2 = DatapointsQuery('sinus', aggregates=['avg'], granularity='30s')
         yield list(
@@ -132,7 +132,7 @@ class TestMultiTimeseriesDatapoints:
                                                         granularity='60s'))
 
     def test_get_multi_time_series_dps_output_format(self, get_multi_time_series_dps_response_obj):
-        from cognite.v05.data_objects import DatapointsResponse
+        from cognite.v05.dto import DatapointsResponse
         assert isinstance(get_multi_time_series_dps_response_obj, list)
         for dpr in get_multi_time_series_dps_response_obj:
             assert isinstance(dpr, DatapointsResponse)

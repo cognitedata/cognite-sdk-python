@@ -10,7 +10,7 @@ from typing import List
 
 import cognite._utils as _utils
 import cognite.config as config
-from cognite.v05.data_objects import RawResponse, RawRowDTO
+from cognite.v05.dto import RawResponse, RawRow
 
 
 def get_databases(
@@ -31,7 +31,7 @@ def get_databases(
         project (str):  Project name.
 
     Returns:
-        v05.data_objects.RawResponse: A data object containing the requested data with several getter methods with different
+        v05.dto.RawResponse: A data object containing the requested data with several getter methods with different
         output formats.
     """
     api_key, project = config.get_config_variables(api_key, project)
@@ -67,7 +67,7 @@ def create_databases(
         project (str):          Project name.
 
     Returns:
-        v05.data_objects.RawResponse: A data object containing the requested data with several getter methods with different
+        v05.dto.RawResponse: A data object containing the requested data with several getter methods with different
         output formats.
 
     """
@@ -142,7 +142,7 @@ def get_tables(
         project (str):  Project name.
 
     Returns:
-        v05.data_objects.RawResponse: A data object containing the requested data with several getter methods with different
+        v05.dto.RawResponse: A data object containing the requested data with several getter methods with different
         output formats.
     """
     api_key, project = config.get_config_variables(api_key, project)
@@ -179,7 +179,7 @@ def create_tables(
         project (str):          Project name.
 
     Returns:
-        v05.data_objects.RawResponse: A data object containing the requested data with several getter methods with different
+        v05.dto.RawResponse: A data object containing the requested data with several getter methods with different
         output formats.
 
     """
@@ -256,7 +256,7 @@ def get_rows(
         project (str):          Project name.
 
     Returns:
-        v05.data_objects.RawResponse: A data object containing the requested data with several getter methods with different
+        v05.dto.RawResponse: A data object containing the requested data with several getter methods with different
         output formats.
     """
     api_key, project = config.get_config_variables(api_key, project)
@@ -276,7 +276,7 @@ def get_rows(
 def create_rows(
         database_name: str = None,
         table_name: str = None,
-        rows: List[RawRowDTO] = None,
+        rows: List[RawRow] = None,
         api_key=None,
         project=None,
         ensure_parent=False,
@@ -289,7 +289,7 @@ def create_rows(
 
         table_name (str):       The table names to create rows in.
 
-        rows (list):            The rows to create.
+        rows (list[v05.dto.RawRow]):            The rows to create.
 
         api_key (str):          Your api-key.
 
@@ -330,7 +330,7 @@ def create_rows(
 def delete_rows(
         database_name: str = None,
         table_name: str = None,
-        rows: List[RawRowDTO] = None,
+        rows: List[RawRow] = None,
         api_key=None,
         project=None
 ):
@@ -393,7 +393,7 @@ def get_row(
         project (str):          Project name.
 
     Returns:
-        v05.data_objects.RawResponse: A data object containing the requested data with several getter methods with different
+        v05.dto.RawResponse: A data object containing the requested data with several getter methods with different
         output formats.
     """
     api_key, project = config.get_config_variables(api_key, project)

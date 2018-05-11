@@ -13,7 +13,7 @@ import requests
 
 import cognite._utils as _utils
 import cognite.config as config
-from cognite.v05.data_objects import FileInfoResponse, FileListResponse
+from cognite.v05.dto import FileInfoResponse, FileListResponse
 
 
 def upload_file(file_name, file_path=None, directory=None, source=None, file_type=None, content_type=None, **kwargs):
@@ -184,7 +184,7 @@ def list_files(name=None, directory=None, file_type=None, source=None, **kwargs)
         cursor (str):                   Cursor to use for paging through results.
 
     Returns:
-        v05.data_objects.FileListResponse: A data object containing the requested files information.
+        v05.dto.FileListResponse: A data object containing the requested files information.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
     url = config.get_base_url(api_version=0.5) + '/projects/{}/files'.format(project)
@@ -231,7 +231,7 @@ def get_file_info(id, **kwargs):
         project (str, optional):    Project name.
 
     Returns:
-        v05.data_objects.FileInfoResponse: A data object containing the requested file information.
+        v05.dto.FileInfoResponse: A data object containing the requested file information.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
     url = config.get_base_url(api_version=0.5) + '/projects/{}/files/{}'.format(project, id)

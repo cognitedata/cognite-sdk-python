@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 
 from cognite.v05 import assets
-from cognite.v05.data_objects import AssetDTO, AssetResponse, AssetListResponse
+from cognite.v05.dto import Asset, AssetResponse, AssetListResponse
 
 ASSET_NAME = 'test_asset'
 
@@ -51,7 +51,7 @@ def test_ndarray(get_asset_subtree_response):
 
 
 def test_post_assets():
-    a1 = AssetDTO(name=ASSET_NAME)
+    a1 = Asset(name=ASSET_NAME)
     res = assets.post_assets([a1])
     assert isinstance(res, AssetListResponse)
     assert res.to_json()[0]['name'] == ASSET_NAME

@@ -22,7 +22,7 @@ def get_dps_response_obj(request):
 
 
 def test_get_datapoints(get_dps_response_obj):
-    from cognite.v04.data_objects import DatapointsResponse
+    from cognite.v04.dto import DatapointsResponse
     assert isinstance(get_dps_response_obj, DatapointsResponse)
 
 
@@ -40,7 +40,7 @@ def test_get_dps_correctly_spaced(get_dps_response_obj):
 
 
 def test_get_latest():
-    from cognite.v04.data_objects import LatestDatapointResponse
+    from cognite.v04.dto import LatestDatapointResponse
     response = timeseries.get_latest('constant')
     assert isinstance(response, LatestDatapointResponse)
     assert isinstance(response.to_ndarray(), np.ndarray)
@@ -67,7 +67,7 @@ def test_get_dps_frame_correctly_spaced(get_datapoints_frame_response_obj):
 
 @pytest.fixture(scope='module', params=dps_params[:2])
 def get_multitag_dps_response_obj(request):
-    from cognite.v04.data_objects import DatapointsQuery
+    from cognite.v04.dto import DatapointsQuery
     dq1 = DatapointsQuery('constant')
     dq2 = DatapointsQuery('sinus', aggregates=['avg'], granularity='30s')
     yield list(timeseries.get_multi_tag_datapoints(datapoints_queries=[dq1, dq2], start=request.param['start'],
@@ -75,7 +75,7 @@ def get_multitag_dps_response_obj(request):
 
 
 def test_get_multitag_dps_output_format(get_multitag_dps_response_obj):
-    from cognite.v04.data_objects import DatapointsResponse
+    from cognite.v04.dto import DatapointsResponse
     assert isinstance(get_multitag_dps_response_obj, list)
     for dpr in get_multitag_dps_response_obj:
         assert isinstance(dpr, DatapointsResponse)
@@ -117,14 +117,14 @@ class TestTimeseries:
         yield timeseries.get_timeseries(prefix=TS_NAME, limit=1, include_metadata=request.param)
 
     def test_post_timeseries(self):
-        from cognite.v04 import data_objects
-        tso = data_objects.TimeSeriesDTO(TS_NAME)
+        from cognite.v04 import dto
+        tso = dto.TimeSeries(TS_NAME)
         res = timeseries.post_time_series([tso])
         assert res == {}
 
     def test_update_timeseries(self):
-        from cognite.v04 import data_objects
-        tso = data_objects.TimeSeriesDTO(TS_NAME, unit='celsius')
+        from cognite.v04 import dto
+        tso = dto.TimeSeries(TS_NAME, unit='celsius')
         res = timeseries.update_time_series([tso])
         assert res == {}
 
@@ -132,8 +132,8 @@ class TestTimeseries:
         assert get_timeseries_response_obj.to_json()[0]['unit'] == 'celsius'
 
     def test_get_timeseries_output_format(self, get_timeseries_response_obj):
-        from cognite.v04.data_objects import TimeseriesResponse
-        assert isinstance(get_timeseries_response_obj, TimeseriesResponse)
+        from cognite.v04.dto import TimeSeriesResponse
+        assert isinstance(get_timeseries_response_obj, TimeSeriesResponse)
         assert isinstance(get_timeseries_response_obj.to_ndarray(), np.ndarray)
         assert isinstance(get_timeseries_response_obj.to_pandas(), pd.DataFrame)
         assert isinstance(get_timeseries_response_obj.to_json()[0], dict)

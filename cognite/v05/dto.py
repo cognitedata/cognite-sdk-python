@@ -10,6 +10,7 @@ the following output formats:
 '''
 import abc
 import json
+from copy import deepcopy
 
 import pandas as pd
 import six
@@ -65,7 +66,7 @@ class RawResponse(CogniteDataObject):
         return pd.DataFrame(self.internal_representation['data']['items'])
 
 
-class RawRowDTO(object):
+class RawRow(object):
     """DTO for a row in a raw database.
 
     The Raw API is a simple key/value-store. Each row in a table in a raw database consists of a
@@ -135,7 +136,7 @@ class DatapointsQuery():
     """Data Query Object for Datapoints.
 
     Attributes:
-        timeseries (str):           Unique name of the time series.
+        name (str):           Unique name of the time series.
         aggregates (list):          The aggregate functions to be returned. Use default if null. An empty string must
                                     be sent to get raw data if the default is a set of aggregate functions.
         granularity (str):          The granularity size and granularity of the aggregates.
@@ -145,8 +146,8 @@ class DatapointsQuery():
         end (str, int, datetime):   Get datapoints up to this time. The format is the same as for start.
     """
 
-    def __init__(self, timeseries, aggregates=None, granularity=None, start=None, end=None, limit=None):
-        self.name = timeseries
+    def __init__(self, name, aggregates=None, granularity=None, start=None, end=None, limit=None):
+        self.name = name
         self.aggregates = ','.join(aggregates) if aggregates is not None else None
         self.granularity = granularity
         self.start, self.end = _utils.interval_to_ms(start, end)
@@ -197,7 +198,7 @@ class DatapointDepthDTO(object):
         self.depth = depth
         self.value = value
 
-class DatapointDTO(object):
+class Datapoint(object):
     '''Data transfer object for datapoints.
 
     Attributes:
@@ -226,8 +227,8 @@ class LatestDatapointResponse(CogniteDataObject):
         return self.to_pandas().values[0]
 
 
-class TimeseriesResponse(CogniteDataObject):
-    '''Timeseries Response Object'''
+class TimeSeriesResponse(CogniteDataObject):
+    '''Time series Response Object'''
 
     def to_json(self):
         '''Returns data as a json object'''
@@ -235,7 +236,7 @@ class TimeseriesResponse(CogniteDataObject):
 
     def to_pandas(self):
         '''Returns data as a pandas dataframe'''
-        items = self.internal_representation['data']['items']
+        items = deepcopy(self.internal_representation['data']['items'])
         if items and items[0].get('metadata') is None:
             return pd.DataFrame(items)
         for d in items:
@@ -244,11 +245,11 @@ class TimeseriesResponse(CogniteDataObject):
         return pd.DataFrame(items)
 
 
-class TimeSeriesDTO(object):
-    """Data Transfer Object for a timeseries.
+class TimeSeries(object):
+    """Data Transfer Object for a time series.
 
     Attributes:
-        timeseries (str):       Unique name of time series.
+        name (str):       Unique name of time series.
         is_string (bool):    Whether the time series is string valued or not.
         metadata (dict):    Metadata.
         unit (str):         Physical unit of the time series.
@@ -259,9 +260,9 @@ class TimeSeriesDTO(object):
 
     """
 
-    def __init__(self, timeseries, is_string=False, metadata=None, unit=None, asset_id=None, description=None,
+    def __init__(self, name, is_string=False, metadata=None, unit=None, asset_id=None, description=None,
                  security_categories=None, step=None):
-        self.name = timeseries
+        self.name = name
         self.isString = is_string
         self.metadata = metadata
         self.unit = unit
@@ -311,7 +312,7 @@ class AssetResponse(CogniteDataObject):
         return pd.DataFrame()
 
 
-class AssetDTO(object):
+class Asset(object):
     '''Data transfer object for assets.
 
     Attributes:
@@ -368,7 +369,7 @@ class FileInfoResponse(CogniteDataObject):
         return self.internal_representation['data']['items'][0]
 
     def to_pandas(self):
-        file_info = self.to_json()
+        file_info = deepcopy(self.to_json())
         if file_info.get('metadata'):
             file_info.update(file_info.pop('metadata'))
         return pd.DataFrame.from_dict(file_info, orient='index')
@@ -397,10 +398,10 @@ class EventResponse(CogniteDataObject):
         return self.internal_representation['data']['items'][0]
 
     def to_pandas(self):
-        event = self.to_json()
+        event = deepcopy(self.to_json())
         if event.get('metadata'):
             event.update(event.pop('metadata'))
-        return pd.DataFrame.from_dict(self.to_json(), orient='index')
+        return pd.DataFrame.from_dict(event, orient='index')
 
 
 class EventListResponse(CogniteDataObject):
@@ -414,7 +415,7 @@ class EventListResponse(CogniteDataObject):
         return self.internal_representation['data']['items']
 
     def to_pandas(self):
-        items = self.to_json()
+        items = deepcopy(self.to_json())
         for d in items:
             if d.get('metadata'):
                 d.update(d.pop('metadata'))
@@ -431,7 +432,7 @@ class EventListResponse(CogniteDataObject):
             return EventResponse({'data': {'items': [self.to_json()[self.counter - 1]]}})
 
 
-class EventDTO(object):
+class Event(object):
     '''Data transfer object for events.
     Attributes:
         start_time (int):       Start time of the event in ms since epoch.
