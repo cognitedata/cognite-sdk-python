@@ -16,7 +16,7 @@ import cognite._utils as _utils
 import cognite.config as config
 
 from cognite.v05 import timeseries
-from cognite.v05.data_objects import  LatestDatapointResponse, \
+from cognite.v05.dto import  LatestDatapointResponse, \
     DatapointDepthDTO, \
     TimeSeriesDTO, TimeseriesResponse, DatapointDTO
 
