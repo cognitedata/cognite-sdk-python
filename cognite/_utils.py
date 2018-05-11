@@ -177,7 +177,9 @@ class Bin:
 
     def __init__(self, get_count):
         '''
-        :param get_count: A function that will take an element and get the count of something in it.
+
+        Args:
+            get_count: A function that will take an element and get the count of something in it.
         '''
         self.entries = []
         self.get_count = get_count
