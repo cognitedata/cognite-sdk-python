@@ -150,13 +150,13 @@ def get_depthseries(prefix=None, description=None, include_metadata=False, asset
 
     timeseries = []
     res = _utils.get_request(url=url, headers=headers, params=params, cookies=config.get_cookies())
-    timeseries.extend([ts for ts in res.json()['data']['items'] if not ts.name.endswith(_generateIndexName(""))])
+    timeseries.extend([ts for ts in res.json()['data']['items'] if not ts['name'].endswith(_generateIndexName(""))])
     next_cursor = res.json()['data'].get('nextCursor')
 
     while next_cursor and kwargs.get('autopaging'):
         params['cursor'] = next_cursor
         res = _utils.get_request(url=url, headers=headers, params=params, cookies=config.get_cookies())
-        timeseries.extend([ts for ts in res.json()['data']['items'] if not ts.name.endswith(_generateIndexName(""))])
+        timeseries.extend([ts for ts in res.json()['data']['items'] if not ts['name'].endswith(_generateIndexName(""))])
         next_cursor = res.json()['data'].get('nextCursor')
 
     return TimeSeriesResponse(
@@ -203,6 +203,11 @@ def post_depth_series(depth_series: List[TimeSeries], **kwargs):
     return res.json()
 
 
+def _has_depth_index_changes(ds: TimeSeries) -> bool:
+    if ds.metadata is None and ds.assetId is  None and ds.description is  None and ds.security_categories is None and ds.step is None:
+        return False
+    return True
+
 def update_depth_series(depth_series: List[TimeSeries], **kwargs):
     '''Update an existing time series.
 
@@ -224,7 +229,7 @@ def update_depth_series(depth_series: List[TimeSeries], **kwargs):
     url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries'.format(project)
 
     body = {
-        'items': [ts.__dict__ for ts in depth_series]
+        'items': [ts.__dict__ for ts in depth_series ]
     }
 
     headers = {
@@ -239,10 +244,12 @@ def update_depth_series(depth_series: List[TimeSeries], **kwargs):
             dsdto.name=_generateIndexName(dsdto.name)
             dsdto.isString = None
             dsdto.unit = None
+        items = [ts.__dict__ for ts in depth_series if _has_depth_index_changes(ts)]
         body = {
-            'items': [ts.__dict__ for ts in depth_series]
+            'items': items
         }
-        res = _utils.put_request(url, body=body, headers=headers)
+        if len(items) > 0:
+            res = _utils.put_request(url, body=body, headers=headers)
     return res.json()
 
 
