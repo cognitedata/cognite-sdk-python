@@ -11,6 +11,7 @@ the following output formats:
 import abc
 import json
 from copy import deepcopy
+from typing import List
 
 import pandas as pd
 import six

@@ -75,7 +75,7 @@ def get_base_url(api_version=None):
     '''
     if not api_version:
         api_version = '<version>'
-    return BASE_URL + str(api_version) if _CONFIG_BASE_URL is None else _CONFIG_BASE_URL
+    return BASE_URL + str(api_version) if _CONFIG_BASE_URL is None else _CONFIG_BASE_URL + str(api_version)
 
 
 def set_number_of_retries(retries: int = None):
