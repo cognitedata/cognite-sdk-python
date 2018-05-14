@@ -3,7 +3,7 @@ import pytest
 from cognite import config
 from tests.conftest import TEST_API_KEY, TEST_PROJECT
 
-MOCK_URL = 'http://another.url'
+MOCK_URL = 'http://another.url/'
 NUM_OF_RETRIES = 5
 
 
@@ -46,8 +46,8 @@ def test_get_config_variables_when_set_explicitly():
 
 @pytest.mark.usefixtures('change_url')
 def test_set_base_url():
-    assert config.get_base_url(api_version=0.5) == MOCK_URL
-    assert config.get_base_url() == MOCK_URL
+    assert config.get_base_url(api_version=0.5) == MOCK_URL + "0.5"
+    assert config.get_base_url() == MOCK_URL + "<version>"
 
 
 @pytest.mark.usefixtures('change_number_of_retries')
