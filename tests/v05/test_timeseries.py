@@ -131,6 +131,37 @@ class TestMultiTimeseriesDatapoints:
                                                         end=request.param['end'], aggregates=['avg'],
                                                         granularity='60s'))
 
+    @staticmethod
+    def test_post_multitag_datapoints():
+        from cognite.v05 import dto
+        from cognite.v05.dto import TimeseriesWithDatapoints
+        from unittest import mock
+        import cognite._utils as utils
+
+        timeseries_with_too_many_datapoints: TimeseriesWithDatapoints = TimeseriesWithDatapoints(
+            name="test",
+            datapoints=[dto.Datapoint(x, x) for x in range(100001)]
+        )
+        timeseries_with_99999_datapoints: TimeseriesWithDatapoints = TimeseriesWithDatapoints(
+            name="test",
+            datapoints=[dto.Datapoint(x, x) for x in range(99999)]
+        )
+
+        with mock.patch.object(utils, 'post_request') as post_request_mock:
+            post_request_mock: mock.MagicMock = post_request_mock
+
+            timeseries.post_multi_tag_datapoints([timeseries_with_too_many_datapoints])
+            assert post_request_mock.call_count == 2
+
+        with mock.patch.object(utils, 'post_request') as post_request_mock:
+            post_request_mock: mock.MagicMock = post_request_mock
+
+            timeseries.post_multi_tag_datapoints([
+                timeseries_with_99999_datapoints,
+                timeseries_with_too_many_datapoints
+            ])
+            assert post_request_mock.call_count == 2
+
     def test_get_multi_time_series_dps_output_format(self, get_multi_time_series_dps_response_obj):
         from cognite.v05.dto import DatapointsResponse
         assert isinstance(get_multi_time_series_dps_response_obj, list)
@@ -150,3 +181,31 @@ class TestMultiTimeseriesDatapoints:
         deltas = np.diff(timestamps, 1)
         assert (deltas != 0).all()
         assert (deltas % 30000 == 0).all()
+
+
+def test_split_TimeseriesWithDatapoints_if_over_limit():
+    from cognite.v05.dto import TimeseriesWithDatapoints
+    from cognite.v05.dto import Datapoint
+    from cognite.v05.timeseries import _split_TimeseriesWithDatapoints_if_over_limit
+    from typing import List
+
+    timeseries_with_datapoints_over_limit: TimeseriesWithDatapoints = TimeseriesWithDatapoints(
+        name="test",
+        datapoints=[Datapoint(x, x) for x in range(1000)]
+    )
+
+    result: List[TimeseriesWithDatapoints] = _split_TimeseriesWithDatapoints_if_over_limit(
+        timeseries_with_datapoints_over_limit,
+        100
+    )
+
+    assert isinstance(result[0], TimeseriesWithDatapoints)
+    assert len(result) == 10
+
+    result = _split_TimeseriesWithDatapoints_if_over_limit(
+        timeseries_with_datapoints_over_limit,
+        1000
+    )
+
+    assert isinstance(result[0], TimeseriesWithDatapoints)
+    assert len(result) == 1
