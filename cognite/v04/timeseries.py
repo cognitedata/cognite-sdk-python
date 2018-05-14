@@ -259,7 +259,7 @@ def post_multi_tag_datapoints(timeseries_with_datapoints: List[TimeseriesWithDat
 
     for bin in timeseries_to_upload_binned:
         body = {
-            'items': [ts_with_data.__dict__ for ts_with_data in bin]
+            'items': [{"tagId": ts_with_data.tagId, "datapoints": [dp.__dict__ for dp in ts_with_data.datapoints]} for ts_with_data in bin]
         }
         res = _utils.post_request(url, body=body, headers=headers)
 
