@@ -193,17 +193,18 @@ def _get_datapoints_helper(name, aggregates=None, granularity=None, start=None, 
     return dps
 
 
-def _split_TimeseriesWithDatapoints_if_over_limit(timeseries_with_datapoints: TimeseriesWithDatapoints, limit: int) -> List[TimeseriesWithDatapoints]:
+def _split_TimeseriesWithDatapoints_if_over_limit(timeseries_with_datapoints: TimeseriesWithDatapoints, limit: int) -> \
+        List[TimeseriesWithDatapoints]:
     '''Takes a TimeseriesWithDatapoints and splits it into multiple so that each has a max number of datapoints equal
     to the limit given.
 
     Args:
-        timeseries_with_datapoints (TimeseriesWithDatapoints): The timeseries with data to potentially split up.
+        timeseries_with_datapoints (v05.dto.TimeseriesWithDatapoints): The timeseries with data to potentially split up.
 
     Returns:
-        A list of TimeSeriesWithDatapoints where each has a maximum number of datapoints equal to the limit given.
+        A list of v05.dto.TimeSeriesWithDatapoints where each has a maximum number of datapoints equal to the limit given.
     '''
-    timeseries_with_datapoints_list: List[TimeseriesWithDatapoints] = []
+    timeseries_with_datapoints_list = []
     if len(timeseries_with_datapoints.datapoints) > limit:
         i = 0
         while i < len(timeseries_with_datapoints.datapoints):
@@ -224,7 +225,7 @@ def post_multi_tag_datapoints(timeseries_with_datapoints: List[TimeseriesWithDat
     '''Insert data into multiple timeseries.
 
     Args:
-        timeseries_with_datapoints (List[TimeseriesWithDatapoints]): The timeseries with data to insert.
+        timeseries_with_datapoints (List[v05.dto.TimeseriesWithDatapoints]): The timeseries with data to insert.
 
     Keyword Args:
         api_key (str): Your api-key.
@@ -246,14 +247,14 @@ def post_multi_tag_datapoints(timeseries_with_datapoints: List[TimeseriesWithDat
     ul_dps_limit = 100000
 
     # Make sure we only work with TimeseriesWithDatapoints objects that has a max number of datapoints
-    timeseries_with_datapoints_limited: List[TimeseriesWithDatapoints] = []
+    timeseries_with_datapoints_limited = []
     for entry in timeseries_with_datapoints:
         timeseries_with_datapoints_limited.extend(
             _split_TimeseriesWithDatapoints_if_over_limit(entry, ul_dps_limit)
         )
 
     # Group these TimeseriesWithDatapoints if possible so that we upload as much as possible in each call to the API
-    timeseries_to_upload_binned: List[List[TimeseriesWithDatapoints]] = _utils.first_fit(
+    timeseries_to_upload_binned = _utils.first_fit(
         list_items=timeseries_with_datapoints_limited,
         max_size=ul_dps_limit,
         get_count=lambda x: len(x.datapoints)
@@ -261,7 +262,8 @@ def post_multi_tag_datapoints(timeseries_with_datapoints: List[TimeseriesWithDat
 
     for bin in timeseries_to_upload_binned:
         body = {
-            'items': [{"tagId": ts_with_data.name, "datapoints": [dp.__dict__ for dp in ts_with_data.datapoints]} for ts_with_data in bin]
+            'items': [{"tagId": ts_with_data.name, "datapoints": [dp.__dict__ for dp in ts_with_data.datapoints]} for
+                      ts_with_data in bin]
         }
         res = _utils.post_request(url, body=body, headers=headers)
 
