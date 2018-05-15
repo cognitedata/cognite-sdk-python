@@ -11,6 +11,7 @@ import re
 import sys
 import time
 from datetime import datetime
+from typing import List, Callable
 
 import requests
 
@@ -168,3 +169,66 @@ class ProgressIndicator():
 
     def terminate(self):
         sys.stdout.write('\r' + ' ' * 500 + '\r')
+
+
+class Bin:
+    entries: []
+    get_count: Callable
+
+    def __init__(self, get_count):
+        '''
+
+        Args:
+            get_count: A function that will take an element and get the count of something in it.
+        '''
+        self.entries = []
+        self.get_count = get_count
+
+    def add_item(self, item):
+        self.entries.append(item)
+
+    def sum(self):
+        total = 0
+        for elem in self.entries:
+            total += self.get_count(elem)
+        return total
+
+    def show(self):
+        return self.entries
+
+
+def first_fit(
+        list_items: List,
+        max_size,
+        get_count: Callable
+) -> List[List]:
+    '''Returns list of bins with input items inside.'''
+
+    # Sort the input list in decreasing order
+    list_items = sorted(list_items, key=get_count, reverse=True)
+
+    list_bins = [Bin(get_count=get_count)]
+
+    for item in list_items:
+        # Go through bins and try to allocate
+        alloc_flag = False
+
+        for bin in list_bins:
+            if bin.sum() + get_count(item) <= max_size:
+                bin.add_item(item)
+                alloc_flag = True
+                break
+
+        # If item not allocated in bins in list, create new bin
+        # and allocate it to it.
+        if not alloc_flag:
+            new_bin = Bin(get_count=get_count)
+            new_bin.add_item(item)
+            list_bins.append(new_bin)
+
+    # Turn bins into list of items and return
+    list_items = []
+    for bin in list_bins:
+        list_items.append(bin.show())
+
+    return list_items

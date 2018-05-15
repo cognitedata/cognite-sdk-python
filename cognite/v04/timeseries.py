@@ -21,7 +21,7 @@ import cognite.config as config
 from cognite._protobuf_descriptors import _api_timeseries_data_v1_pb2
 from cognite.v04.dto import DatapointsResponse, DatapointsResponseIterator, LatestDatapointResponse, \
     Datapoint, \
-    TimeSeries, TimeSeriesResponse
+    TimeSeries, TimeSeriesResponse, TimeseriesWithDatapoints
 
 
 def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=None, **kwargs):
@@ -189,6 +189,81 @@ def _get_datapoints_helper(tag_id, aggregates=None, granularity=None, start=None
     dps = []
     [dps.extend(el) for el in datapoints]
     return dps
+
+
+def _split_TimeseriesWithDatapoints_if_over_limit(timeseries_with_datapoints: TimeseriesWithDatapoints, limit: int) -> List[TimeseriesWithDatapoints]:
+    '''Takes a TimeseriesWithDatapoints and splits it into multiple so that each has a max number of datapoints equal
+    to the limit given.
+
+    Args:
+        timeseries_with_datapoints (TimeseriesWithDatapoints): The timeseries with data to potentially split up.
+
+    Returns:
+        A list of TimeSeriesWithDatapoints where each has a maximum number of datapoints equal to the limit given.
+    '''
+    timeseries_with_datapoints_list: List[TimeseriesWithDatapoints] = []
+    if len(timeseries_with_datapoints.datapoints) > limit:
+        i = 0
+        while i < len(timeseries_with_datapoints.datapoints):
+            timeseries_with_datapoints_list.append(
+                TimeseriesWithDatapoints(
+                    tagId=timeseries_with_datapoints.tagId,
+                    datapoints=timeseries_with_datapoints.datapoints[i:i + limit]
+                )
+            )
+            i += limit
+    else:
+        timeseries_with_datapoints_list.append(timeseries_with_datapoints)
+
+    return timeseries_with_datapoints_list
+
+
+def post_multi_tag_datapoints(timeseries_with_datapoints: List[TimeseriesWithDatapoints], **kwargs):
+    '''Insert data into multiple timeseries.
+
+    Args:
+        timeseries_with_datapoints (List[TimeseriesWithDatapoints]): The timeseries with data to insert.
+
+    Keyword Args:
+        api_key (str): Your api-key.
+
+        project (str): Project name.
+
+    Returns:
+        An empty response.
+    '''
+    api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
+    url = config.get_base_url(api_version=0.4) + '/projects/{}/timeseries/data'.format(project)
+
+    headers = {
+        'api-key': api_key,
+        'content-type': 'application/json',
+        'accept': 'application/json'
+    }
+
+    ul_dps_limit = 100000
+
+    # Make sure we only work with TimeseriesWithDatapoints objects that has a max number of datapoints
+    timeseries_with_datapoints_limited: List[TimeseriesWithDatapoints] = []
+    for entry in timeseries_with_datapoints:
+        timeseries_with_datapoints_limited.extend(
+            _split_TimeseriesWithDatapoints_if_over_limit(entry, ul_dps_limit)
+        )
+
+    # Group these TimeseriesWithDatapoints if possible so that we upload as much as possible in each call to the API
+    timeseries_to_upload_binned: List[List[TimeseriesWithDatapoints]] = _utils.first_fit(
+        list_items=timeseries_with_datapoints_limited,
+        max_size=ul_dps_limit,
+        get_count=lambda x: len(x.datapoints)
+    )
+
+    for bin in timeseries_to_upload_binned:
+        body = {
+            'items': [{"tagId": ts_with_data.tagId, "datapoints": [dp.__dict__ for dp in ts_with_data.datapoints]} for ts_with_data in bin]
+        }
+        res = _utils.post_request(url, body=body, headers=headers)
+
+    return res.json()
 
 
 def post_datapoints(tag_id, datapoints: List[Datapoint], **kwargs):
