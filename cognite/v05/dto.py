@@ -187,6 +187,16 @@ class DatapointsResponseIterator():
             self.counter += 1
             return self.datapoints_objects[self.counter - 1]
 
+class DatapointDepth(object):
+    '''Data transfer object for Depth datapoints.
+
+       Attributes:
+           depth (double): The depth (in m) of the datapoint 
+           value (string):     The data value, Can be string or numeric depending on the metric.
+       '''
+    def __init__(self, depth, value):
+        self.depth = depth
+        self.value = value
 
 class Datapoint(object):
     '''Data transfer object for datapoints.
