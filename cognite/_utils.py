@@ -172,12 +172,14 @@ class ProgressIndicator():
 
 
 class Bin:
-    entries: []
-    get_count: Callable
+    '''
+    Attributes:
+        entries (List): List of entries.
+        get_count (Callable): Callable function to get count.
+    '''
 
     def __init__(self, get_count):
         '''
-
         Args:
             get_count: A function that will take an element and get the count of something in it.
         '''
