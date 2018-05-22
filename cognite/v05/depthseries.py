@@ -84,7 +84,6 @@ def get_latest(name, **kwargs):
 
     Keyword Arguments:
         api_key (str):          Your api-key.
-
         project (str):          Project name.
 
     Returns:
