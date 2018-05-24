@@ -60,10 +60,11 @@ class TestDepthseries:
         assert result.to_pandas().empty
         assert len(result.to_json()) == 0
 
+    def test_reset_depthseries(self):
+        res = depthseries.reset_depth_series(DS_NAME)
+        assert res == {}
+
     def test_delete_depthseries(self):
         res = depthseries.delete_depth_series(DS_NAME)
         assert res == {}
 
-    def test_reset_depthseries(self):
-        res = depthseries.reset_depth_series(DS_NAME)
-        assert res == {}

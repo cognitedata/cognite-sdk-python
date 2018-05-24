@@ -11,6 +11,7 @@ import sys
 from typing import List
 import copy
 import itertools
+from urllib.parse import quote_plus
 
 import cognite._utils as _utils
 import cognite.config as config
@@ -40,7 +41,6 @@ def post_datapoints(name, depthdatapoints: List[DatapointDepth], **kwargs):
     Returns:
         An empty response.
     '''
-    name = name.replace('/', '%2F')
     msIncrement=1000
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
     try:
@@ -49,8 +49,8 @@ def post_datapoints(name, depthdatapoints: List[DatapointDepth], **kwargs):
     except:
         offset = 0 #Random timestamp to start the time series
 
-    url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/data/{}'.format(project, name)
-    urldepth = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/data/{}'.format(project, _generateIndexName(name))
+    url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/data/{}'.format(project, quote_plus(name))
+    urldepth = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/data/{}'.format(project, quote_plus(_generateIndexName(name)))
 
     headers = {
         'api-key': api_key,
@@ -84,7 +84,6 @@ def get_latest(name, **kwargs):
 
     Keyword Arguments:
         api_key (str):          Your api-key.
-
         project (str):          Project name.
 
     Returns:
@@ -92,8 +91,7 @@ def get_latest(name, **kwargs):
         output formats.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
-    name = name.replace('/', '%2F')
-    url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/latest/{}'.format(project, name)
+    url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/latest/{}'.format(project, quote_plus(name))
     headers = {
         'api-key': api_key,
         'accept': 'application/json'
@@ -299,7 +297,7 @@ def reset_depth_series(name, **kwargs):
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
     url = config.get_base_url(
         api_version=0.5) + '/projects/{}/timeseries/{}?timestampInclusiveBegin=0?timestampInclusiveEnd={}'.format(
-        project, name, sys.maxsize)
+        project, quote_plus(name), sys.maxsize)
 
     headers = {
         'api-key': api_key,
@@ -309,7 +307,7 @@ def reset_depth_series(name, **kwargs):
     if res == {}:
         url = config.get_base_url(
             api_version=0.5) + '/projects/{}/timeseries/{}?timestampInclusiveBegin=0?timestampInclusiveEnd={}'.format(
-            project, _generateIndexName(name), sys.maxsize)
+            project, quote_plus(_generateIndexName(name)), sys.maxsize)
         res = _utils.delete_request(url, headers=headers)
 
     return res.json()
