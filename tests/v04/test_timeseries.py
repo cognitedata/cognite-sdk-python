@@ -122,18 +122,17 @@ class TestTimeseries:
         res = timeseries.post_time_series([tso])
         assert res == {}
 
-    @staticmethod
-    def test_post_multitag_datapoints():
+    def test_post_multitag_datapoints(self):
         from cognite.v04 import dto
         from cognite.v04.dto import TimeseriesWithDatapoints
         from unittest import mock
         import cognite._utils as utils
 
-        timeseries_with_too_many_datapoints: TimeseriesWithDatapoints = TimeseriesWithDatapoints(
+        timeseries_with_too_many_datapoints = TimeseriesWithDatapoints(
             tagId="test",
             datapoints=[dto.Datapoint(x, x) for x in range(100001)]
         )
-        timeseries_with_99999_datapoints: TimeseriesWithDatapoints = TimeseriesWithDatapoints(
+        timeseries_with_99999_datapoints = TimeseriesWithDatapoints(
             tagId="test",
             datapoints=[dto.Datapoint(x, x) for x in range(99999)]
         )
