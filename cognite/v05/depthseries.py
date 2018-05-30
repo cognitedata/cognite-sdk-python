@@ -197,7 +197,33 @@ def post_depth_series(depth_series: List[TimeSeries], **kwargs):
         'accept': 'application/json'
     }
 
-    res = _utils.post_request(url, body=body, headers=headers)
+    try:
+        res = _utils.post_request(url, body=body, headers=headers)
+    except _utils.APIError as e:
+        # Are we getting this error because some metrics already exist? If so, then we still want to create the rest
+        if "Some metrics already exist" in str(e):
+            # To avoid parsing the error to figure out which metrics are missing, naively create each one in turn and
+            # ignore the "Some metrics already exist" error if it happens again
+            for ts in depth_indexes:
+                body = {
+                    'items': ts.__dict__
+                }
+
+                headers = {
+                    'api-key': api_key,
+                    'content-type': 'application/json',
+                    'accept': 'application/json'
+                }
+
+                try:
+                    res = _utils.post_request(url, body=body, headers=headers)
+                except _utils.APIError as e:
+                    if "Some metrics already exist" in str(e):
+                        continue
+                    else:
+                        raise e
+        else:
+            raise e
     return res.json()
 
 
