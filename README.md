@@ -6,7 +6,7 @@ Cognite Python SDK
 ==========================
 Python SDK to ensure excellent user experience for developers and data scientists working with the Cognite Data Platform.
 
-[![build](https://webhooks.dev.cognite.ai/build/buildStatus/icon?job=github-builds/cognite-sdk-python/master)](https://build.dev.cognite.ai/job/github-builds/job/cognite-sdk-python/job/master/)
+[![build](https://webhooks.dev.cognite.ai/build/buildStatus/icon?job=github-builds/cognite-sdk-python/master)](https://jenkins.cognite.ai/job/github-builds/job/cognite-sdk-python/job/master/)
 [![codecov](https://codecov.io/gh/cognitedata/cognite-sdk-python/branch/master/graph/badge.svg)](https://codecov.io/gh/cognitedata/cognite-sdk-python)
 [![Documentation Status](https://readthedocs.org/projects/cognite-sdk-python/badge/?version=latest)](http://cognite-sdk-python.readthedocs.io/en/latest/?badge=latest)
 
