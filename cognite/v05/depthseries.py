@@ -148,7 +148,7 @@ def get_depthseries(prefix=None, description=None, include_metadata=False, asset
 
     timeseries = []
     res = _utils.get_request(url=url, headers=headers, params=params, cookies=config.get_cookies())
-    timeseries.extend([ts for ts in res.json()['data']['items'] if not ts['name'].endswith(_generateIndexName(""))])
+    timeseries.extend([ts for ts in res.json()['data']['items']])
     next_cursor = res.json()['data'].get('nextCursor')
 
     while next_cursor and kwargs.get('autopaging'):
@@ -197,7 +197,33 @@ def post_depth_series(depth_series: List[TimeSeries], **kwargs):
         'accept': 'application/json'
     }
 
-    res = _utils.post_request(url, body=body, headers=headers)
+    try:
+        res = _utils.post_request(url, body=body, headers=headers)
+    except _utils.APIError as e:
+        # Are we getting this error because some metrics already exist? If so, then we still want to create the rest
+        if "Some metrics already exist" in str(e):
+            # To avoid parsing the error to figure out which metrics are missing, naively create each one in turn and
+            # ignore the "Some metrics already exist" error if it happens again
+            for ts in depth_indexes:
+                body = {
+                    'items': ts.__dict__
+                }
+
+                headers = {
+                    'api-key': api_key,
+                    'content-type': 'application/json',
+                    'accept': 'application/json'
+                }
+
+                try:
+                    res = _utils.post_request(url, body=body, headers=headers)
+                except _utils.APIError as e:
+                    if "Some metrics already exist" in str(e):
+                        continue
+                    else:
+                        raise e
+        else:
+            raise e
     return res.json()
 
 
@@ -274,7 +300,7 @@ def delete_depth_series(name, **kwargs):
     }
 
     res = _utils.delete_request(url, headers=headers)
-    if res == {}:
+    if res.json() == {}:
         url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/{}'.format(project, _generateIndexName(name))
         res = _utils.delete_request(url, headers=headers)
 
