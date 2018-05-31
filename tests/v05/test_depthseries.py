@@ -46,14 +46,19 @@ class TestDepthseries:
 
     def test_depthseries_unit_correct(self, get_depthseries_response_obj):
         assert get_depthseries_response_obj.to_json()[0]['unit'] == 'celsius'
+        assert get_depthseries_response_obj.to_json()[1]['unit'] == 'm'
 
     def test_get_depthseries_output_format(self, get_depthseries_response_obj):
-        print(get_depthseries_response_obj.to_pandas())
         from cognite.v05.dto import TimeSeriesResponse
         assert isinstance(get_depthseries_response_obj, TimeSeriesResponse)
         assert isinstance(get_depthseries_response_obj.to_ndarray(), np.ndarray)
         assert isinstance(get_depthseries_response_obj.to_pandas(), pd.DataFrame)
         assert isinstance(get_depthseries_response_obj.to_json()[0], dict)
+
+    def test_get_depthseries_confirm_names(self, get_depthseries_response_obj):
+        df = get_depthseries_response_obj.to_pandas()
+        assert df.loc[df.index[0], 'name'] == DS_NAME
+        assert df.loc[df.index[1], 'name'] == DS_NAME + "_DepthIndex"
 
     def test_get_depthseries_no_results(self):
         result = depthseries.get_depthseries(prefix='not_a_depthseries_prefix')
