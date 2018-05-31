@@ -300,7 +300,7 @@ def delete_depth_series(name, **kwargs):
     }
 
     res = _utils.delete_request(url, headers=headers)
-    if res == {}:
+    if res.json() == {}:
         url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/{}'.format(project, _generateIndexName(name))
         res = _utils.delete_request(url, headers=headers)
 
