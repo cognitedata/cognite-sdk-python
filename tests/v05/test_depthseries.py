@@ -17,9 +17,9 @@ def ts_name():
 
 
 class TestDepthseries:
-    @pytest.fixture(scope='class', params=[True, False])
-    def get_depthseries_response_obj(self ):
-        yield depthseries.get_depthseries(prefix=DS_NAME, limit=1)
+    @pytest.fixture(scope='class')
+    def get_depthseries_response_obj(self):
+        yield depthseries.get_depthseries(prefix=DS_NAME)
 
     def test_post_depthseries(self):
         tso = dto.TimeSeries(DS_NAME)
