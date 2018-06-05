@@ -149,7 +149,7 @@ def get_depthseries(prefix=None, description=None, include_metadata=False, asset
     while next_cursor and kwargs.get('autopaging'):
         params['cursor'] = next_cursor
         res = _utils.get_request(url=url, headers=headers, params=params, cookies=config.get_cookies())
-        timeseries.extend([ts for ts in res.json()['data']['items'] if not ts['name'].endswith(_generateIndexName(""))])
+        timeseries.extend([ts for ts in res.json()['data']['items'] ])
         next_cursor = res.json()['data'].get('nextCursor')
 
     return TimeSeriesResponse(
