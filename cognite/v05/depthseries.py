@@ -17,12 +17,9 @@ import cognite._utils as _utils
 import cognite.config as config
 
 from cognite.v05 import timeseries
-from cognite.v05.dto import  LatestDatapointResponse, \
+from cognite.v05.dto import LatestDatapointResponse, \
     DatapointDepth, \
     TimeSeries, TimeSeriesResponse, Datapoint
-
-
-
 
 
 def post_datapoints(name, depthdatapoints: List[DatapointDepth], **kwargs):
@@ -41,27 +38,28 @@ def post_datapoints(name, depthdatapoints: List[DatapointDepth], **kwargs):
     Returns:
         An empty response.
     '''
-    msIncrement=1000
+    msIncrement = 1000
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
     try:
         res = timeseries.get_latest(name)
-        offset = res.to_json()['timestamp']+msIncrement
+        offset = res.to_json()['timestamp'] + msIncrement
     except:
-        offset = 0 #Random timestamp to start the time series
+        offset = 0  # Random timestamp to start the time series
 
     url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/data/{}'.format(project, quote_plus(name))
-    urldepth = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/data/{}'.format(project, quote_plus(_generateIndexName(name)))
+    urldepth = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/data/{}'.format(project, quote_plus(
+        _generateIndexName(name)))
 
     headers = {
         'api-key': api_key,
         'content-type': 'application/json',
         'accept': 'application/json'
     }
-    datapoints=[]
-    depthpoints=[]
+    datapoints = []
+    depthpoints = []
     for datapoint in depthdatapoints:
-        datapoints.append(Datapoint(offset,datapoint.value))
-        depthpoints.append(Datapoint(offset,datapoint.depth))
+        datapoints.append(Datapoint(offset, datapoint.value))
+        depthpoints.append(Datapoint(offset, datapoint.depth))
         offset += msIncrement
 
     ul_dps_limit = 100000
@@ -98,9 +96,6 @@ def get_latest(name, **kwargs):
     }
     res = _utils.get_request(url, headers=headers, cookies=config.get_cookies())
     return LatestDatapointResponse(res.json())
-
-
-
 
 
 def get_depthseries(prefix=None, description=None, include_metadata=False, asset_id=None, path=None, **kwargs):
@@ -154,15 +149,17 @@ def get_depthseries(prefix=None, description=None, include_metadata=False, asset
     while next_cursor and kwargs.get('autopaging'):
         params['cursor'] = next_cursor
         res = _utils.get_request(url=url, headers=headers, params=params, cookies=config.get_cookies())
-        timeseries.extend([ts for ts in res.json()['data']['items'] if not ts['name'].endswith(_generateIndexName(""))])
+        timeseries.extend([ts for ts in res.json()['data']['items'] ])
         next_cursor = res.json()['data'].get('nextCursor')
 
     return TimeSeriesResponse(
         {'data': {'nextCursor': next_cursor, 'previousCursor': res.json()['data'].get('previousCursor'),
                   'items': timeseries}})
 
+
 def _generateIndexName(depthSeriesName):
-    return depthSeriesName+"_DepthIndex"
+    return depthSeriesName + "_DepthIndex"
+
 
 def post_depth_series(depth_series: List[TimeSeries], **kwargs):
     '''Create a new depth series.
@@ -181,14 +178,14 @@ def post_depth_series(depth_series: List[TimeSeries], **kwargs):
 
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
     url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries'.format(project)
-    depth_indexes=copy.deepcopy(depth_series)
+    depth_indexes = copy.deepcopy(depth_series)
     for ts in depth_indexes:
-        ts.name=_generateIndexName(ts.name)
-        ts.unit="m"
-        ts.isString=False
+        ts.name = _generateIndexName(ts.name)
+        ts.unit = "m"
+        ts.isString = False
 
     body = {
-        'items': [ts.__dict__ for ts in itertools.chain(depth_series,depth_indexes)]
+        'items': [ts.__dict__ for ts in itertools.chain(depth_series, depth_indexes)]
     }
 
     headers = {
@@ -196,27 +193,19 @@ def post_depth_series(depth_series: List[TimeSeries], **kwargs):
         'content-type': 'application/json',
         'accept': 'application/json'
     }
-
     try:
-        res = _utils.post_request(url, body=body, headers=headers)
+        _utils.post_request(url, body=body, headers=headers)
     except _utils.APIError as e:
         # Are we getting this error because some metrics already exist? If so, then we still want to create the rest
         if "Some metrics already exist" in str(e):
             # To avoid parsing the error to figure out which metrics are missing, naively create each one in turn and
             # ignore the "Some metrics already exist" error if it happens again
-            for ts in depth_indexes:
+            for ts in itertools.chain(depth_series, depth_indexes):
                 body = {
-                    'items': ts.__dict__
+                    'items': [ts.__dict__]
                 }
-
-                headers = {
-                    'api-key': api_key,
-                    'content-type': 'application/json',
-                    'accept': 'application/json'
-                }
-
                 try:
-                    res = _utils.post_request(url, body=body, headers=headers)
+                    _utils.post_request(url, body=body, headers=headers)
                 except _utils.APIError as e:
                     if "Some metrics already exist" in str(e):
                         continue
@@ -224,13 +213,14 @@ def post_depth_series(depth_series: List[TimeSeries], **kwargs):
                         raise e
         else:
             raise e
-    return res.json()
+    return {}
 
 
 def _has_depth_index_changes(ds: TimeSeries) -> bool:
-    if ds.metadata is None and ds.assetId is  None and ds.description is  None and ds.security_categories is None and ds.step is None:
+    if ds.metadata is None and ds.assetId is None and ds.description is None and ds.security_categories is None and ds.step is None:
         return False
     return True
+
 
 def update_depth_series(depth_series: List[TimeSeries], **kwargs):
     '''Update an existing time series.
@@ -253,7 +243,7 @@ def update_depth_series(depth_series: List[TimeSeries], **kwargs):
     url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries'.format(project)
 
     body = {
-        'items': [ts.__dict__ for ts in depth_series ]
+        'items': [ts.__dict__ for ts in depth_series]
     }
 
     headers = {
@@ -265,7 +255,7 @@ def update_depth_series(depth_series: List[TimeSeries], **kwargs):
     res = _utils.put_request(url, body=body, headers=headers)
     if res.json() == {}:
         for dsdto in depth_series:
-            dsdto.name=_generateIndexName(dsdto.name)
+            dsdto.name = _generateIndexName(dsdto.name)
             dsdto.isString = None
             dsdto.unit = None
         items = [ts.__dict__ for ts in depth_series if _has_depth_index_changes(ts)]
@@ -301,10 +291,12 @@ def delete_depth_series(name, **kwargs):
 
     res = _utils.delete_request(url, headers=headers)
     if res.json() == {}:
-        url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/{}'.format(project, _generateIndexName(name))
+        url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/{}'.format(project,
+                                                                                         _generateIndexName(name))
         res = _utils.delete_request(url, headers=headers)
 
     return res.json()
+
 
 def reset_depth_series(name, **kwargs):
     '''Delete all datapoints for a depthseries.
@@ -337,4 +329,3 @@ def reset_depth_series(name, **kwargs):
         res = _utils.delete_request(url, headers=headers)
 
     return res.json()
-
