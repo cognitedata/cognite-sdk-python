@@ -27,13 +27,11 @@ class TestDepthseries:
     def create_depthseries(self):
         tso = dto.TimeSeries(DS_NAME)
         try:
-            print("Calling setup")
             res = depthseries.post_depth_series([tso])
         except:
             pass
         yield depthseries.get_depthseries(prefix=DS_NAME)
         try:
-            print("Calling teardown")
             depthseries.delete_depth_series(DS_NAME)
         except:
             pass
