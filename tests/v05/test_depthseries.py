@@ -16,15 +16,27 @@ def ts_name():
     DS_NAME = 'test_ds_{}'.format(randint(1, 2 ** 53 - 1))
 
 
-class TestDepthseries:
-    @pytest.fixture(scope='class')
-    def get_depthseries_response_obj(self):
-        yield depthseries.get_depthseries(prefix=DS_NAME)
 
+class TestDepthseries:
     def test_post_depthseries(self):
         tso = dto.TimeSeries(DS_NAME)
         res = depthseries.post_depth_series([tso])
         assert res == {}
+
+    @pytest.fixture(scope='class')
+    def create_depthseries(self):
+        tso = dto.TimeSeries(DS_NAME)
+        try:
+            print("Calling setup")
+            res = depthseries.post_depth_series([tso])
+        except:
+            pass
+        yield depthseries.get_depthseries(prefix=DS_NAME)
+        try:
+            print("Calling teardown")
+            depthseries.delete_depth_series(DS_NAME)
+        except:
+            pass
 
     def test_post_datapoints(self):
         dps = [dto.DatapointDepth(i, i * 100) for i in range(10)]
@@ -44,19 +56,23 @@ class TestDepthseries:
         res = depthseries.update_depth_series([tso])
         assert res == {}
 
-    def test_depthseries_unit_correct(self, get_depthseries_response_obj):
-        assert get_depthseries_response_obj.to_json()[0]['unit'] == 'celsius'
-        assert get_depthseries_response_obj.to_json()[1]['unit'] == 'm'
+    def test_depthseries_unit_correct(self):
+        tso = dto.TimeSeries(DS_NAME, unit='celsius')
+        res = depthseries.update_depth_series([tso])
+        series = depthseries.get_depthseries(prefix=DS_NAME)
+        assert series.to_json()[0]['unit'] == 'celsius'
+        assert series.to_json()[1]['unit'] == 'm'
 
-    def test_get_depthseries_output_format(self, get_depthseries_response_obj):
+    def test_get_depthseries_output_format(self):
         from cognite.v05.dto import TimeSeriesResponse
-        assert isinstance(get_depthseries_response_obj, TimeSeriesResponse)
-        assert isinstance(get_depthseries_response_obj.to_ndarray(), np.ndarray)
-        assert isinstance(get_depthseries_response_obj.to_pandas(), pd.DataFrame)
-        assert isinstance(get_depthseries_response_obj.to_json()[0], dict)
+        series = depthseries.get_depthseries(prefix=DS_NAME)
+        assert isinstance(series, TimeSeriesResponse)
+        assert isinstance(series.to_ndarray(), np.ndarray)
+        assert isinstance(series.to_pandas(), pd.DataFrame)
+        assert isinstance(series.to_json()[0], dict)
 
-    def test_get_depthseries_confirm_names(self, get_depthseries_response_obj):
-        df = get_depthseries_response_obj.to_pandas()
+    def test_get_depthseries_confirm_names(self):
+        df = depthseries.get_depthseries(prefix=DS_NAME).to_pandas()
         assert df.loc[df.index[0], 'name'] == DS_NAME
         assert df.loc[df.index[1], 'name'] == DS_NAME + "_DepthIndex"
 
@@ -67,9 +83,5 @@ class TestDepthseries:
 
     def test_reset_depthseries(self):
         res = depthseries.reset_depth_series(DS_NAME)
-        assert res == {}
-
-    def test_delete_depthseries(self):
-        res = depthseries.delete_depth_series(DS_NAME)
         assert res == {}
 
