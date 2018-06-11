@@ -10,6 +10,12 @@ Python SDK to ensure excellent user experience for developers and data scientist
 [![codecov](https://codecov.io/gh/cognitedata/cognite-sdk-python/branch/master/graph/badge.svg)](https://codecov.io/gh/cognitedata/cognite-sdk-python)
 [![Documentation Status](https://readthedocs.org/projects/cognite-sdk-python/badge/?version=latest)](http://cognite-sdk-python.readthedocs.io/en/latest/?badge=latest)
 
+## Prerequisites
+In order to start using the Python SDK, you need
+- Python3 and pip3
+- An API key. Never include the API key directly in the code or upload the key to github. Instead, set the API key as an environment variable. See the usage example for how to authenticate with the API key.
+
+
 ## Installation
 ```bash
 $ pip install cognite-sdk
