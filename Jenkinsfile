@@ -1,4 +1,4 @@
-@Library('jenkins-helpers@v0.1.10') _
+@Library('jenkins-helpers@v0.1.12') _
 
 def label = "cognite-sdk-python-${UUID.randomUUID().toString()}"
 
@@ -51,7 +51,9 @@ podTemplate(
                 sh("pip3 install .")
             }
             stage('Test and coverage report') {
-                sh("pipenv run pytest --cov-report xml:coverage.xml --cov=cognite")
+                sh("pipenv run pytest --cov-report xml:coverage.xml --cov=cognite --junitxml=test-report.xml || true")
+                junit(allowEmptyResults: true, testResults: '**/test-report.xml')
+                summarizeTestResults()
             }
             stage('Upload coverage reports') {
                 sh 'bash </codecov-script/upload-report.sh'
