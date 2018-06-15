@@ -204,6 +204,9 @@ def _split_TimeseriesWithDatapoints_if_over_limit(timeseries_with_datapoints: Ti
     Returns:
         A list of v05.dto.TimeSeriesWithDatapoints where each has a maximum number of datapoints equal to the limit given.
     '''
+    if limit<1:
+        return [timeseries_with_datapoints]
+
     timeseries_with_datapoints_list = []
     if len(timeseries_with_datapoints.datapoints) > limit:
         i = 0
@@ -232,6 +235,8 @@ def post_multi_tag_datapoints(timeseries_with_datapoints: List[TimeseriesWithDat
 
         project (str): Project name.
 
+        limit (int): max number of datapoints to post. 0 or less means post all in one call
+
     Returns:
         An empty response.
     '''
@@ -244,21 +249,23 @@ def post_multi_tag_datapoints(timeseries_with_datapoints: List[TimeseriesWithDat
         'accept': 'application/json'
     }
 
-    ul_dps_limit = 100000
+    ul_dps_limit = kwargs.get('limit', 100000)
 
-    # Make sure we only work with TimeseriesWithDatapoints objects that has a max number of datapoints
-    timeseries_with_datapoints_limited = []
-    for entry in timeseries_with_datapoints:
-        timeseries_with_datapoints_limited.extend(
-            _split_TimeseriesWithDatapoints_if_over_limit(entry, ul_dps_limit)
+    timeseries_to_upload_binned = [timeseries_with_datapoints]
+
+    if ul_dps_limit > 0:
+        timeseries_with_datapoints_limited = []
+       # Make sure we only work with TimeseriesWithDatapoints objects that has a max number of datapoints
+        for entry in timeseries_with_datapoints:
+            timeseries_with_datapoints_limited.extend(
+                _split_TimeseriesWithDatapoints_if_over_limit(entry, ul_dps_limit)
+            )
+        # Group these TimeseriesWithDatapoints if possible so that we upload as much as possible in each call to the API
+        timeseries_to_upload_binned = _utils.first_fit(
+            list_items=timeseries_with_datapoints_limited,
+            max_size=ul_dps_limit,
+            get_count=lambda x: len(x.datapoints)
         )
-
-    # Group these TimeseriesWithDatapoints if possible so that we upload as much as possible in each call to the API
-    timeseries_to_upload_binned = _utils.first_fit(
-        list_items=timeseries_with_datapoints_limited,
-        max_size=ul_dps_limit,
-        get_count=lambda x: len(x.datapoints)
-    )
 
     for bin in timeseries_to_upload_binned:
         body = {
