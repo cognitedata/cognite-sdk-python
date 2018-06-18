@@ -21,6 +21,8 @@ from cognite.v05.dto import LatestDatapointResponse, \
     DatapointDepth, \
     TimeSeries, TimeSeriesResponse, Datapoint, TimeseriesWithDatapoints
 
+MS_INCREMENT = 1000
+
 
 def post_multitag_datapoints(depthseries_with_datapoints: List[TimeseriesWithDatapoints],**kwargs):
     '''Insert data into multiple depthseries.
@@ -36,7 +38,6 @@ def post_multitag_datapoints(depthseries_with_datapoints: List[TimeseriesWithDat
         Returns:
             An empty response.
         '''
-    msIncrement: int = 1000
     timeseries = []
     for depthseries in depthseries_with_datapoints:
         valueseries = TimeseriesWithDatapoints(depthseries.name,[])
@@ -45,11 +46,11 @@ def post_multitag_datapoints(depthseries_with_datapoints: List[TimeseriesWithDat
         for datapoint in depthseries.datapoints:
             valueseries.datapoints.append(Datapoint(offset,datapoint.value))
             indexseries.datapoints.append(Datapoint(offset,datapoint.depth))
-            offset = offset + msIncrement
+            offset += MS_INCREMENT
         timeseries.append(valueseries)
         timeseries.append(indexseries)
 
-    return ts.post_multi_tag_datapoints(timeseries,limit=-1)
+    return ts.post_multi_tag_datapoints(timeseries)
 
 def post_datapoints(name, depthdatapoints: List[DatapointDepth], **kwargs):
     '''Insert a list of datapoints.
@@ -67,7 +68,6 @@ def post_datapoints(name, depthdatapoints: List[DatapointDepth], **kwargs):
     Returns:
         An empty response.
     '''
-    msIncrement = 1000
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
     offset = 0  # Random timestamp to start the time series
 
@@ -83,7 +83,7 @@ def post_datapoints(name, depthdatapoints: List[DatapointDepth], **kwargs):
     for datapoint in depthdatapoints:
         datapoints.append(Datapoint(offset, datapoint.value))
         depthpoints.append(Datapoint(offset, datapoint.depth))
-        offset += msIncrement
+        offset += MS_INCREMENT
 
     ul_dps_limit = 100000
     i = 0
