@@ -16,11 +16,41 @@ from urllib.parse import quote_plus
 import cognite._utils as _utils
 import cognite.config as config
 
-from cognite.v05 import timeseries
+import cognite.v05.timeseries as ts
 from cognite.v05.dto import LatestDatapointResponse, \
     DatapointDepth, \
-    TimeSeries, TimeSeriesResponse, Datapoint
+    TimeSeries, TimeSeriesResponse, Datapoint, TimeseriesWithDatapoints
 
+MS_INCREMENT = 1000
+
+
+def post_multitag_datapoints(depthseries_with_datapoints: List[TimeseriesWithDatapoints],**kwargs):
+    '''Insert data into multiple depthseries.
+
+        Args:
+            depthseries_with_datapoints (List[v05.dto.DepthseriesWithDatapoints]): The depthseries with data to insert.
+
+        Keyword Args:
+            api_key (str): Your api-key.
+
+            project (str): Project name.
+
+        Returns:
+            An empty response.
+        '''
+    timeseries = []
+    for depthseries in depthseries_with_datapoints:
+        valueseries = TimeseriesWithDatapoints(depthseries.name,[])
+        indexseries = TimeseriesWithDatapoints(_generateIndexName(depthseries.name),[])
+        offset:int = 0
+        for datapoint in depthseries.datapoints:
+            valueseries.datapoints.append(Datapoint(offset,datapoint.value))
+            indexseries.datapoints.append(Datapoint(offset,datapoint.depth))
+            offset += MS_INCREMENT
+        timeseries.append(valueseries)
+        timeseries.append(indexseries)
+
+    return ts.post_multi_tag_datapoints(timeseries)
 
 def post_datapoints(name, depthdatapoints: List[DatapointDepth], **kwargs):
     '''Insert a list of datapoints.
@@ -38,17 +68,10 @@ def post_datapoints(name, depthdatapoints: List[DatapointDepth], **kwargs):
     Returns:
         An empty response.
     '''
-    msIncrement = 1000
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
-    try:
-        res = timeseries.get_latest(name)
-        offset = res.to_json()['timestamp'] + msIncrement
-    except:
-        offset = 0  # Random timestamp to start the time series
+    offset = 0  # Random timestamp to start the time series
 
-    url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/data/{}'.format(project, quote_plus(name))
-    urldepth = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/data/{}'.format(project, quote_plus(
-        _generateIndexName(name)))
+    url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/data'.format(project)
 
     headers = {
         'api-key': api_key,
@@ -60,18 +83,19 @@ def post_datapoints(name, depthdatapoints: List[DatapointDepth], **kwargs):
     for datapoint in depthdatapoints:
         datapoints.append(Datapoint(offset, datapoint.value))
         depthpoints.append(Datapoint(offset, datapoint.depth))
-        offset += msIncrement
+        offset += MS_INCREMENT
 
     ul_dps_limit = 100000
     i = 0
     while i < len(datapoints):
-        body = {'items': [dp.__dict__ for dp in datapoints[i:i + ul_dps_limit]]}
+        body = {'items': [{'name': name,
+                           'datapoints': [dp.__dict__ for dp in datapoints[i:i + ul_dps_limit]]},
+                          {'name': _generateIndexName(name),
+                           'datapoints': [dp.__dict__ for dp in depthpoints[i:i + ul_dps_limit]]}]}
         _utils.post_request(url, body=body, headers=headers)
-        body = {'items': [dp.__dict__ for dp in depthpoints[i:i + ul_dps_limit]]}
-        res = _utils.post_request(urldepth, body=body, headers=headers)
         i += ul_dps_limit
 
-    return res.json()
+    return {}
 
 
 def get_latest(name, **kwargs):
@@ -149,7 +173,7 @@ def get_depthseries(prefix=None, description=None, include_metadata=False, asset
     while next_cursor and kwargs.get('autopaging'):
         params['cursor'] = next_cursor
         res = _utils.get_request(url=url, headers=headers, params=params, cookies=config.get_cookies())
-        timeseries.extend([ts for ts in res.json()['data']['items'] ])
+        timeseries.extend([ts for ts in res.json()['data']['items']])
         next_cursor = res.json()['data'].get('nextCursor')
 
     return TimeSeriesResponse(
@@ -164,17 +188,17 @@ def _generateIndexName(depthSeriesName):
 def post_depth_series(depth_series: List[TimeSeries], **kwargs):
     '''Create a new depth series.
 
-    Args:
-        depth_series (list[v05.dto.TimeSeries]):   List of time series data transfer objects to create.
-        Corresponding depth series used for indexing will be created automatically, with unit of m(meter)
+        Args:
+            depth_series (list[v05.dto.TimeSeries]):   List of time series data transfer objects to create.
+            Corresponding depth series used for indexing will be created automatically, with unit of m(meter)
 
-    Keyword Args:
-        api_key (str): Your api-key.
+        Keyword Args:
+            api_key (str): Your api-key.
 
-        project (str): Project name.
-    Returns:
-        An empty response.
-    '''
+            project (str): Project name.
+        Returns:
+            An empty response.
+        '''
 
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
     url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries'.format(project)
