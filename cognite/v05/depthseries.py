@@ -5,10 +5,10 @@ This module mirrors the Timeseries API, but handles pairs of timeseries to emula
 
 https://doc.cognitedata.com/0.5/#Cognite-API-Time-series
 """
-
+import re
 import sys
 
-from typing import List
+from typing import List, Set
 import copy
 import itertools
 from urllib.parse import quote_plus
@@ -185,6 +185,15 @@ def _generateIndexName(depthSeriesName):
     return depthSeriesName + "_DepthIndex"
 
 
+def _parse_exists_exception(exception: str) -> Set[str]:
+    names: Set[str] = set()
+    match = re.search(r"Some metrics already exist:\s+(\S+)(\s|$)",exception)
+    if match:
+        names = set(re.split(',',match.group(1)))
+    return names
+
+
+
 def post_depth_series(depth_series: List[TimeSeries], **kwargs):
     '''Create a new depth series.
 
@@ -203,6 +212,7 @@ def post_depth_series(depth_series: List[TimeSeries], **kwargs):
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
     url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries'.format(project)
     depth_indexes = copy.deepcopy(depth_series)
+
     for ts in depth_indexes:
         ts.name = _generateIndexName(ts.name)
         ts.unit = "m"
@@ -217,26 +227,40 @@ def post_depth_series(depth_series: List[TimeSeries], **kwargs):
         'content-type': 'application/json',
         'accept': 'application/json'
     }
+    retry_list: Set(str) = set()
     try:
         _utils.post_request(url, body=body, headers=headers)
     except _utils.APIError as e:
         # Are we getting this error because some metrics already exist? If so, then we still want to create the rest
+        # First try to do all the ones that does not exist in one go
         if "Some metrics already exist" in str(e):
-            # To avoid parsing the error to figure out which metrics are missing, naively create each one in turn and
-            # ignore the "Some metrics already exist" error if it happens again
-            for ts in itertools.chain(depth_series, depth_indexes):
-                body = {
-                    'items': [ts.__dict__]
-                }
-                try:
-                    _utils.post_request(url, body=body, headers=headers)
-                except _utils.APIError as e:
-                    if "Some metrics already exist" in str(e):
-                        continue
-                    else:
-                        raise e
+            retry_list=_parse_exists_exception(str(e))
         else:
             raise e
+
+    if len(retry_list)>0:
+        body = {
+            'items': [ts.__dict__ for ts in itertools.chain(depth_series, depth_indexes) if ts.name in retry_list]
+        }
+        try:
+            _utils.post_request(url, body=body, headers=headers)
+        except _utils.APIError as e:
+            # Are we getting this error because some metrics already exist? If so, then we still want to create the rest
+            # OK, now try one by one...
+            if "Some metrics already exist" in str(e):
+                for ts in itertools.chain(depth_series, depth_indexes):
+                    body = {
+                        'items': [ts.__dict__]
+                    }
+                    try:
+                        _utils.post_request(url, body=body, headers=headers)
+                    except _utils.APIError as e:
+                        if "Some metrics already exist" in str(e):
+                            continue
+                        else:
+                            raise e
+            else:
+                raise e
     return {}
 
 
