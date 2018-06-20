@@ -75,6 +75,7 @@ Want to contribute? Check out [CONTRIBUTING](https://github.com/cognitedata/cogn
 ## Documentation
 * [SDK Documentation](http://cognite-sdk-python.readthedocs.io/en/latest/)
 * [API Documentation](https://doc.cognitedata.com/)
+* [API Guide](https://doc.cognitedata.com/guides/api-guide.html)
 
 
 ## License
