@@ -21,6 +21,16 @@ In order to start using the Python SDK, you need
 $ pip install cognite-sdk
 ```
 
+## Setup
+First, ensure that you have access to an API key with permission to access the relevant data.
+
+Then set the API key as an environment variable. This let's you access the API key in the code and authenticate. Never write the API key directly in the code.
+
+This is how you set the API key:
+```bash
+$ export COGNITE_API_KEY=<your API key>
+
+```
 ## Usage
 Simple script to download and plot one year of hourly aggregates.
 ```python
@@ -43,6 +53,17 @@ dataframe = datapoints.to_pandas()
 dataframe.plot(x='timestamp')
 plt.show()
 ```
+
+## Learn more
+See more examples in the examples folder in this repository. This includes examples for:
+- Retrieval of timeseries data, using aggregates, granularity, etc.
+- Different methods for retrieving data and navigating the data set
+- How to get events and why events are useful
+- How to use functionality which is in the public API, but not yet incorporated into the SDK, using requests
+
+
+Check out the documentation below, including the public API guide.
+
 
 ## Contributing
 Want to contribute? Check out [CONTRIBUTING](https://github.com/cognitedata/cognite-sdk-python/blob/master/CONTRIBUTING.md).
