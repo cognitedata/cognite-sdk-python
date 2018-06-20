@@ -25,16 +25,6 @@ $ export COGNITE_API_KEY=<your API key>
 $ pip install cognite-sdk
 ```
 
-## Setup
-First, ensure that you have access to an API key with permission to access the relevant data.
-
-Then set the API key as an environment variable. This let's you access the API key in the code and authenticate. Never write the API key directly in the code.
-
-This is how you set the API key:
-```bash
-$ export COGNITE_API_KEY=<your API key>
-
-```
 ## Usage
 Simple script to download and plot one year of hourly aggregates.
 ```python
@@ -59,7 +49,7 @@ plt.show()
 ```
 
 ## Learn more
-See more examples in the examples folder in this repository. This includes examples for:
+Public examples will come in the examples folder in this repository. This will include examples for:
 - Retrieval of timeseries data, using aggregates, granularity, etc.
 - Different methods for retrieving data and navigating the data set
 - How to get events and why events are useful
@@ -67,6 +57,8 @@ See more examples in the examples folder in this repository. This includes examp
 
 
 Check out the documentation below, including the public API guide.
+
+If you work at Cognite, you can find examples of code use in the repository ML-examples.
 
 
 ## Contributing
