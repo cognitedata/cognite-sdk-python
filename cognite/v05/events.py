@@ -66,17 +66,25 @@ def get_events(type=None, sub_type=None, asset_id=None, **kwargs):
         'content-type': 'application/json',
         'accept': 'application/json'
     }
-    params = {
-        'type': type,
-        'subtype': sub_type,
-        'assetId': asset_id,
-        'sort': kwargs.get('sort'),
-        'cursor': kwargs.get('cursor'),
-        'limit': kwargs.get('limit', 25) if not kwargs.get('autopaging') else _constants.LIMIT_AGG,
-        'hasDescription': kwargs.get('has_description'),
-        'minStartTime': kwargs.get('min_start_time'),
-        'maxStartTime': kwargs.get('max_start_time')
-    }
+    if asset_id:
+        params = {
+            'assetId': asset_id,
+            'sort': kwargs.get('sort'),
+            'cursor': kwargs.get('cursor'),
+            'limit': kwargs.get('limit', 25) if not kwargs.get('autopaging') else _constants.LIMIT_AGG
+        }
+    else:
+        params = {
+            'type': type,
+            'subtype': sub_type,
+            'assetId': asset_id,
+            'sort': kwargs.get('sort'),
+            'cursor': kwargs.get('cursor'),
+            'limit': kwargs.get('limit', 25) if not kwargs.get('autopaging') else _constants.LIMIT_AGG,
+            'hasDescription': kwargs.get('has_description'),
+            'minStartTime': kwargs.get('min_start_time'),
+            'maxStartTime': kwargs.get('max_start_time')
+        }
 
     res = _utils.get_request(url, headers=headers, params=params, cookies=config.get_cookies())
     events = []
