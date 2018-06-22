@@ -152,7 +152,7 @@ def _get_datapoints_helper(name, aggregates=None, granularity=None, start=None, 
         list of datapoints: A list containing datapoint dicts.
     '''
     api_key, project = kwargs.get('api_key'), kwargs.get('project')
-    url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/data/{}'.format(project, name)
+    url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/data/{}'.format(project, quote(name, safe=''))
 
     use_protobuf = kwargs.get('protobuf', True) and aggregates is None
     limit = _constants.LIMIT if aggregates is None else _constants.LIMIT_AGG
@@ -320,7 +320,7 @@ def get_latest(name, **kwargs):
         output formats.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
-    url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/latest/{}'.format(project, name)
+    url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/latest/{}'.format(project, quote(name, safe=''))
     headers = {
         'api-key': api_key,
         'accept': 'application/json'
