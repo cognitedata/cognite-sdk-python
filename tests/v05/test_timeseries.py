@@ -18,7 +18,7 @@ dps_params = [
 @pytest.fixture(autouse=True, scope='class')
 def ts_name():
     global TS_NAME
-    TS_NAME = 'test_ts_{}'.format(randint(1, 2 ** 53 - 1))
+    TS_NAME = 'test_ ts_{}'.format(randint(1, 2 ** 53 - 1))
 
 
 class TestTimeseries:
