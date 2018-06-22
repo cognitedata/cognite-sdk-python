@@ -12,7 +12,7 @@ import warnings
 from functools import partial
 from multiprocessing import Pool
 from typing import List
-from urllib.parse import quote_plus
+from urllib.parse import quote
 
 import pandas as pd
 
@@ -152,7 +152,7 @@ def _get_datapoints_helper(name, aggregates=None, granularity=None, start=None, 
         list of datapoints: A list containing datapoint dicts.
     '''
     api_key, project = kwargs.get('api_key'), kwargs.get('project')
-    url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/data/{}'.format(project, quote_plus(name))
+    url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/data/{}'.format(project, quote(name, safe=''))
 
     use_protobuf = kwargs.get('protobuf', True) and aggregates is None
     limit = _constants.LIMIT if aggregates is None else _constants.LIMIT_AGG
@@ -262,7 +262,7 @@ def post_multi_tag_datapoints(timeseries_with_datapoints: List[TimeseriesWithDat
 
     for bin in timeseries_to_upload_binned:
         body = {
-            'items': [{"tagId": quote_plus(ts_with_data.name), "datapoints": [dp.__dict__ for dp in ts_with_data.datapoints]} for
+            'items': [{"tagId": ts_with_data.name, "datapoints": [dp.__dict__ for dp in ts_with_data.datapoints]} for
                       ts_with_data in bin]
         }
         res = _utils.post_request(url, body=body, headers=headers)
@@ -287,7 +287,7 @@ def post_datapoints(name, datapoints: List[Datapoint], **kwargs):
         An empty response.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
-    url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/data/{}'.format(project, quote_plus(name))
+    url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/data/{}'.format(project, quote(name, safe=''))
 
     headers = {
         'api-key': api_key,
@@ -320,7 +320,7 @@ def get_latest(name, **kwargs):
         output formats.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
-    url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/latest/{}'.format(project, quote_plus(name))
+    url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/latest/{}'.format(project, quote(name, safe=''))
     headers = {
         'api-key': api_key,
         'accept': 'application/json'
@@ -646,7 +646,7 @@ def get_timeseries(prefix=None, description=None, include_metadata=False, asset_
         'accept': 'application/json'
     }
     params = {
-        'q': quote_plus(prefix),
+        'q': prefix,
         'description': description,
         'includeMetadata': include_metadata,
         'assetId': asset_id,
@@ -687,10 +687,6 @@ def post_time_series(time_series: List[TimeSeries], **kwargs):
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
     url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries'.format(project)
 
-    # Quote the time series names
-    for ts in time_series:
-        ts.name = quote_plus(ts.name)
-
     body = {
         'items': [ts.__dict__ for ts in time_series]
     }
@@ -725,10 +721,6 @@ def update_time_series(time_series: List[TimeSeries], **kwargs):
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
     url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries'.format(project)
 
-    # Quote the time series names
-    for ts in time_series:
-        ts.name = quote_plus(ts.name)
-
     body = {
         'items': [ts.__dict__ for ts in time_series]
     }
@@ -758,7 +750,7 @@ def delete_time_series(name, **kwargs):
         An empty response.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
-    url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/{}'.format(project, quote_plus(name))
+    url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/{}'.format(project, quote(name, safe=''))
 
     headers = {
         'api-key': api_key,
