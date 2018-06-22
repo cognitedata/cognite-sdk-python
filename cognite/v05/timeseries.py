@@ -646,7 +646,7 @@ def get_timeseries(prefix=None, description=None, include_metadata=False, asset_
         'accept': 'application/json'
     }
     params = {
-        'q': prefix,
+        'q': quote_plus(prefix),
         'description': description,
         'includeMetadata': include_metadata,
         'assetId': asset_id,
@@ -725,6 +725,10 @@ def update_time_series(time_series: List[TimeSeries], **kwargs):
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
     url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries'.format(project)
 
+    # Quote the time series names
+    for ts in time_series:
+        ts.name = quote_plus(ts.name)
+
     body = {
         'items': [ts.__dict__ for ts in time_series]
     }
@@ -754,7 +758,7 @@ def delete_time_series(name, **kwargs):
         An empty response.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
-    url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/{}'.format(project, name)
+    url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/{}'.format(project, quote_plus(name))
 
     headers = {
         'api-key': api_key,
