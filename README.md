@@ -12,13 +12,15 @@ Python SDK to ensure excellent user experience for developers and data scientist
 
 ## Prerequisites
 In order to start using the Python SDK, you need
-- Python3 and pip3
+- Python3 and pip
 - An API key. Never include the API key directly in the code or upload the key to github. Instead, set the API key as an environment variable. See the usage example for how to authenticate with the API key.
 
-This is how you set the API key:
+This is how you set the API key as an environment variable on Mac OS and Linux:
 ```bash
 $ export COGNITE_API_KEY=<your API key>
 ```
+
+On Windows, you can follows [these instructions](https://www.computerhope.com/issues/ch000549.htm) to set the API key as an environment variable.
 
 ## Installation
 ```bash
