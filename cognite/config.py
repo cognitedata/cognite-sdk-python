@@ -68,8 +68,10 @@ def set_base_url(url=None):
 
 def get_base_url(api_version=None):
     '''Returns the current base url for requests made from the SDK.
+
     Args:
         api_version (float): Version of API to use for base_url
+        
     Returns:
         str: current base url.
     '''
