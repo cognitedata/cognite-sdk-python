@@ -11,7 +11,6 @@ def get_post_event_obj():
     event = dto.Event(start_time=1521500400000, end_time=1521586800000)
     res = events.post_events([event])
     yield res
-    res = events.get_events()
     ids = list(ev['id'] for ev in res.to_json())
     events.delete_events(ids)
 
@@ -52,7 +51,7 @@ def test_get_events():
 
 
 def test_get_events_empty():
-    res = events.get_events(max_start_time=1)
+    res = events.get_events(limit=0)
     assert res.to_pandas().empty
     assert len(res.to_json()) == 0
 
