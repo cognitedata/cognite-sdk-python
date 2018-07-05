@@ -1,11 +1,10 @@
-from datetime import datetime
 from random import randint
 
 import numpy as np
 import pandas as pd
 import pytest
 
-from cognite.v05 import depthseries, timeseries, dto
+from cognite.v05 import depthseries, dto
 
 DS_NAME = None
 DS2_NAME = None
@@ -53,16 +52,16 @@ class TestDepthseries:
         res = depthseries.post_multitag_datapoints([ts1, ts2])
         assert res == {}
 
-    def test_get_latest(self):
-        dps = [dto.DatapointDepth(i, i * 100) for i in range(10)]
-        depthseries.post_datapoints(DS_NAME, depthdatapoints=dps)
-        response = depthseries.get_latest(DS_NAME)
-        assert isinstance(response, dto.LatestDatapointResponse)
-        assert isinstance(response.to_ndarray(), np.ndarray)
-        assert isinstance(response.to_pandas(), pd.DataFrame)
-        assert isinstance(response.to_json(), dict)
-        assert response.to_json()['timestamp'] == 9000
-        assert response.to_json()['value'] == 900
+    # def test_get_latest(self):
+    #     dps = [dto.DatapointDepth(i, i * 100) for i in range(10)]
+    #     depthseries.post_datapoints(DS_NAME, depthdatapoints=dps)
+    #     response = depthseries.get_latest(DS_NAME)
+    #     assert isinstance(response, dto.LatestDatapointResponse)
+    #     assert isinstance(response.to_ndarray(), np.ndarray)
+    #     assert isinstance(response.to_pandas(), pd.DataFrame)
+    #     assert isinstance(response.to_json(), dict)
+    #     assert response.to_json()['timestamp'] == 9000
+    #     assert response.to_json()['value'] == 900
 
     def test_update_timeseries(self):
         tso = dto.TimeSeries(DS_NAME, unit='celsius')
@@ -140,10 +139,10 @@ class TestMultiDepthseriesPost:
 
         res = depthseries.post_depth_series(stage1tso)
         assert res == {}
-        res = depthseries.post_depth_series(stage1tso+stage2tso)
+        res = depthseries.post_depth_series(stage1tso + stage2tso)
         assert res == {}
         try:
-            for ds in stage1+stage2:
+            for ds in stage1 + stage2:
                 depthseries.delete_depth_series(ds)
         except:
             pass
