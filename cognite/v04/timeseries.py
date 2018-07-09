@@ -90,7 +90,6 @@ def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=No
         dps = _get_datapoints_helper(tag_id, aggregates, granularity, start, end,
                                      protobuf=kwargs.get('protobuf', True), api_key=api_key, project=project)
         return DatapointsResponse({'data': {'items': [{'tagId': tag_id, 'datapoints': dps}]}})
-    prog_ind = _utils.ProgressIndicator([tag_id])
 
     p = Pool(steps)
 
@@ -99,8 +98,6 @@ def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=No
     p.join()
     concat_dps = []
     [concat_dps.extend(el) for el in datapoints]
-
-    prog_ind.terminate()
 
     return DatapointsResponse({'data': {'items': [{'tagId': tag_id, 'datapoints': concat_dps}]}})
 
@@ -495,17 +492,13 @@ def get_datapoints_frame(tag_ids, aggregates, granularity, start=None, end=None,
     if steps == 1:
         return _get_datapoints_frame_helper(tag_ids, aggregates, granularity, start, end, api_key=api_key,
                                             project=project)
-
-    prog_ind = _utils.ProgressIndicator(tag_ids)
-
+    
     p = Pool(steps)
 
     dataframes = p.map(partial_get_dpsf, args)
     p.close()
     p.join()
     df = pd.concat(dataframes).drop_duplicates(subset='timestamp').reset_index(drop=True)
-
-    prog_ind.terminate()
 
     return df
 

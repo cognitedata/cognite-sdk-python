@@ -4,6 +4,8 @@
 This module allows you to set an api-key and a project for your python project.
 '''
 
+from cognite_logger import cognite_logger
+
 from cognite._constants import BASE_URL, RETRY_LIMIT
 
 _CONFIG_API_KEY = ''
@@ -13,7 +15,7 @@ _CONFIG_BASE_URL = None
 _CONFIG_RETRIES = None
 
 
-def configure_session(api_key='', project='', cookies=None):
+def configure_session(api_key='', project='', cookies=None, debug=False):
     '''Sets session variables.
 
     Args:
@@ -22,11 +24,15 @@ def configure_session(api_key='', project='', cookies=None):
         cookies (dict): Cookies to pass with requests.
 
         project (str):  Project name for current project.
+
+        debug (strr): Whether or not to ouptut a debug log.
     '''
     global _CONFIG_API_KEY, _CONFIG_COOKIES, _CONFIG_PROJECT
     _CONFIG_API_KEY = api_key
     _CONFIG_PROJECT = project
     _CONFIG_COOKIES = {} if cookies is None else cookies
+
+    cognite_logger.configure_logger(logger_name="cognite-sdk", log_json=True, log_level="DEBUG" if debug else "INFO")
 
 
 def get_config_variables(api_key, project):
