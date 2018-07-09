@@ -25,7 +25,7 @@ def configure_session(api_key='', project='', cookies=None, debug=False):
 
         project (str):  Project name for current project.
 
-        debug (strr): Whether or not to ouptut a debug log.
+        debug (str): Whether or not to ouptut a debug log.
     '''
     global _CONFIG_API_KEY, _CONFIG_COOKIES, _CONFIG_PROJECT
     _CONFIG_API_KEY = api_key
