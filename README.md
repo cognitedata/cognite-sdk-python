@@ -12,9 +12,15 @@ Python SDK to ensure excellent user experience for developers and data scientist
 
 ## Prerequisites
 In order to start using the Python SDK, you need
-- Python3 and pip3
+- Python3 and pip
 - An API key. Never include the API key directly in the code or upload the key to github. Instead, set the API key as an environment variable. See the usage example for how to authenticate with the API key.
 
+This is how you set the API key as an environment variable on Mac OS and Linux:
+```bash
+$ export COGNITE_API_KEY=<your API key>
+```
+
+On Windows, you can follows [these instructions](https://www.computerhope.com/issues/ch000549.htm) to set the API key as an environment variable.
 
 ## Installation
 ```bash
@@ -44,12 +50,26 @@ dataframe.plot(x='timestamp')
 plt.show()
 ```
 
+## Learn more
+Public examples will come in the examples folder in this repository. This will include examples for:
+- Retrieval of timeseries data, using aggregates, granularity, etc.
+- Different methods for retrieving data and navigating the data set
+- How to get events and why events are useful
+- How to use functionality which is in the public API, but not yet incorporated into the SDK, using requests
+
+
+Check out the documentation below, including the public API guide.
+
+If you work at Cognite, you can find examples of code use in the repository ML-examples.
+
+
 ## Contributing
 Want to contribute? Check out [CONTRIBUTING](https://github.com/cognitedata/cognite-sdk-python/blob/master/CONTRIBUTING.md).
 
 ## Documentation
 * [SDK Documentation](http://cognite-sdk-python.readthedocs.io/en/latest/)
 * [API Documentation](https://doc.cognitedata.com/)
+* [API Guide](https://doc.cognitedata.com/guides/api-guide.html)
 
 
 ## License
