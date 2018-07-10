@@ -92,8 +92,6 @@ def get_datapoints(name, aggregates=None, granularity=None, start=None, end=None
                                      protobuf=kwargs.get('protobuf', True), api_key=api_key, project=project)
         return DatapointsResponse({'data': {'items': [{'name': name, 'datapoints': dps}]}})
 
-    prog_ind = _utils.ProgressIndicator([name])
-
     p = Pool(steps)
 
     datapoints = p.map(partial_get_dps, args)
@@ -101,8 +99,6 @@ def get_datapoints(name, aggregates=None, granularity=None, start=None, end=None
     p.join()
     concat_dps = []
     [concat_dps.extend(el) for el in datapoints]
-
-    prog_ind.terminate()
 
     return DatapointsResponse({'data': {'items': [{'name': name, 'datapoints': concat_dps}]}})
 
@@ -320,7 +316,8 @@ def get_latest(name, **kwargs):
         output formats.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
-    url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/latest/{}'.format(project, quote(name, safe=''))
+    url = config.get_base_url(api_version=0.5) + '/projects/{}/timeseries/latest/{}'.format(project,
+                                                                                            quote(name, safe=''))
     headers = {
         'api-key': api_key,
         'accept': 'application/json'
@@ -498,16 +495,12 @@ def get_datapoints_frame(time_series, aggregates, granularity, start=None, end=N
     if steps == 1:
         return _get_datapoints_frame_helper(time_series, aggregates, granularity, start, end, api_key=api_key,
                                             project=project)
-
-    prog_ind = _utils.ProgressIndicator(time_series)
     p = Pool(steps)
 
     dataframes = p.map(partial_get_dpsf, args)
     p.close()
     p.join()
     df = pd.concat(dataframes).drop_duplicates(subset='timestamp').reset_index(drop=True)
-
-    prog_ind.terminate()
 
     return df
 
