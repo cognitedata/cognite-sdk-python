@@ -11,7 +11,7 @@ import warnings
 from functools import partial
 from multiprocessing import Pool
 from typing import List
-from urllib.parse import quote_plus
+from urllib.parse import quote
 
 import pandas as pd
 
@@ -147,7 +147,7 @@ def _get_datapoints_helper(tag_id, aggregates=None, granularity=None, start=None
         list of datapoints: A list containing datapoint dicts.
     '''
     api_key, project = kwargs.get('api_key'), kwargs.get('project')
-    url = config.get_base_url(api_version=0.4) + '/projects/{}/timeseries/data/{}'.format(project, quote_plus(tag_id))
+    url = config.get_base_url(api_version=0.4) + '/projects/{}/timeseries/data/{}'.format(project, quote(tag_id, safe=''))
 
     use_protobuf = kwargs.get('protobuf', True) and aggregates is None
     limit = _constants.LIMIT if aggregates is None else _constants.LIMIT_AGG
@@ -282,7 +282,7 @@ def post_datapoints(tag_id, datapoints: List[Datapoint], **kwargs):
         An empty response.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
-    url = config.get_base_url(api_version=0.4) + '/projects/{}/timeseries/data/{}'.format(project, quote_plus(tag_id))
+    url = config.get_base_url(api_version=0.4) + '/projects/{}/timeseries/data/{}'.format(project, quote(tag_id, safe=''))
 
     headers = {
         'api-key': api_key,
@@ -315,7 +315,7 @@ def get_latest(tag_id, **kwargs):
         output formats.
     '''
     api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
-    url = config.get_base_url(api_version=0.4) + '/projects/{}/timeseries/latest/{}'.format(project, quote_plus(tag_id))
+    url = config.get_base_url(api_version=0.4) + '/projects/{}/timeseries/latest/{}'.format(project, quote(tag_id, safe=''))
     headers = {
         'api-key': api_key,
         'accept': 'application/json'
