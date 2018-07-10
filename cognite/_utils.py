@@ -7,8 +7,8 @@ This module is protected and should not used by end-users.
 """
 import gzip
 import json
+import logging
 import re
-import sys
 import time
 from datetime import datetime
 from typing import List, Callable
@@ -17,9 +17,12 @@ import requests
 
 import cognite.config as config
 
+log = logging.getLogger("cognite-sdk")
+
 
 def delete_request(url, params=None, headers=None, cookies=None):
     '''Perform a DELETE request with a predetermined number of retries.'''
+    _log_request('DELETE', url, params=params, headers=headers, cookies=cookies)
     for number_of_tries in range(config.get_number_of_retries() + 1):
         try:
             res = requests.delete(url, params=params, headers=headers, cookies=cookies)
@@ -38,6 +41,7 @@ def delete_request(url, params=None, headers=None, cookies=None):
 
 def get_request(url, params=None, headers=None, cookies=None):
     '''Perform a GET request with a predetermined number of retries.'''
+    _log_request('GET', url, params=params, headers=headers, cookies=cookies)
     for number_of_tries in range(config.get_number_of_retries() + 1):
         try:
             res = requests.get(url, params=params, headers=headers, cookies=cookies)
@@ -56,6 +60,8 @@ def get_request(url, params=None, headers=None, cookies=None):
 
 def post_request(url, body, headers=None, params=None, cookies=None, use_gzip=False):
     '''Perform a POST request with a predetermined number of retries.'''
+    _log_request('POST', url, body=body, params=params, headers=headers, cookies=cookies)
+
     for number_of_tries in range(config.get_number_of_retries() + 1):
         try:
             if use_gzip:
@@ -91,6 +97,7 @@ def post_request(url, body, headers=None, params=None, cookies=None, use_gzip=Fa
 
 def put_request(url, body=None, headers=None, cookies=None):
     '''Perform a PUT request with a predetermined number of retries.'''
+    _log_request('PUT', url, body=body, headers=headers, cookies=cookies)
     for number_of_tries in range(config.get_number_of_retries() + 1):
         try:
             res = requests.put(url, data=json.dumps(body), headers=headers, cookies=cookies)
@@ -105,6 +112,10 @@ def put_request(url, body=None, headers=None, cookies=None):
         err_mess = res.content.__str__()
     err_mess += '\nX-Request_id: {}'.format(res.headers.get('X-Request-Id'))
     raise APIError(err_mess)
+
+
+def _log_request(method, url, **kwargs):
+    log.debug(f'HTTP/1.1 {method} {url}', extra=kwargs)
 
 
 def datetime_to_ms(dt):
@@ -159,16 +170,6 @@ def interval_to_ms(start, end):
 
 class APIError(Exception):
     pass
-
-
-class ProgressIndicator():
-    '''This class lets the system give the user that data is being downloaded'''
-
-    def __init__(self, tag_ids):
-        sys.stdout.write("\rDownloading data for tags {}...".format(tag_ids))
-
-    def terminate(self):
-        sys.stdout.write('\r' + ' ' * 500 + '\r')
 
 
 class Bin:

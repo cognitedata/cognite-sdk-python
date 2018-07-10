@@ -16,7 +16,8 @@ setup(name='cognite-sdk',
       install_requires=[
           'requests',
           'pandas',
-          'protobuf'
+          'protobuf',
+          'cognite-logger'
       ],
       zip_safe=False,
       include_package_data=True)
