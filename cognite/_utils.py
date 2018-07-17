@@ -115,7 +115,7 @@ def put_request(url, body=None, headers=None, cookies=None):
 
 
 def _log_request(method, url, **kwargs):
-    log.debug(f'HTTP/1.1 {method} {url}', extra=kwargs)
+    log.debug('HTTP/1.1 {} {}'.format(method, url), extra=kwargs)
 
 
 def datetime_to_ms(dt):
