@@ -835,13 +835,16 @@ def delete_time_series(name, **kwargs):
     return res.json()
 
 
-def live_data_generator(name, **kwargs):
-    """Generator function which continously polls latest datapoint of a timeseries and yields new datapoints.
+def live_data_generator(name, update_frequency=1, **kwargs):
+    '''Generator function which continously polls latest datapoint of a timeseries and yields new datapoints.
 
     Args:
         name (str): Name of timeseries to get latest datapoints for.
+	
+	update_frequency (float): Frequency to pull for data in seconds.
 
     Keyword Args:
+
         api_key (str): Your api-key.
 
         project (str): Project name.
@@ -853,8 +856,8 @@ def live_data_generator(name, **kwargs):
     last_timestamp = get_latest(name, api_key=api_key, project=project).to_json()["timestamp"]
     while True:
         latest = get_latest(name, api_key=api_key, project=project).to_json()
-        if last_timestamp == latest["timestamp"]:
-            time.sleep(1)
+        if last_timestamp == latest['timestamp']:
+            time.sleep(update_frequency)
         else:
             yield latest
         last_timestamp = latest["timestamp"]
