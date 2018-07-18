@@ -18,15 +18,10 @@ import cognite._utils as _utils
 import cognite.config as config
 import pandas as pd
 from cognite._protobuf_descriptors import _api_timeseries_data_v2_pb2
-from cognite.v05.dto import (
-    Datapoint,
-    DatapointsResponse,
-    DatapointsResponseIterator,
-    LatestDatapointResponse,
-    TimeSeries,
-    TimeSeriesResponse,
-    TimeseriesWithDatapoints,
-)
+from cognite.v05.dto import (Datapoint, DatapointsResponse,
+                             DatapointsResponseIterator,
+                             LatestDatapointResponse, TimeSeries,
+                             TimeSeriesResponse, TimeseriesWithDatapoints)
 
 
 def get_datapoints(name, aggregates=None, granularity=None, start=None, end=None, **kwargs):
@@ -790,7 +785,7 @@ def update_time_series(time_series: List[TimeSeries], **kwargs):
     For each field that can be updated, a null value indicates that nothing should be done.
 
     Args:
-        timeseries (list[v05.dto.TimeSeries]):   List of time series data transfer objects to update.
+        time_series (list[v05.dto.TimeSeries]):   List of time series data transfer objects to update.
 
     Keyword Args:
         api_key (str): Your api-key.
@@ -836,12 +831,12 @@ def delete_time_series(name, **kwargs):
 
 
 def live_data_generator(name, update_frequency=1, **kwargs):
-    '''Generator function which continously polls latest datapoint of a timeseries and yields new datapoints.
+    """Generator function which continously polls latest datapoint of a timeseries and yields new datapoints.
 
     Args:
         name (str): Name of timeseries to get latest datapoints for.
-	
-	update_frequency (float): Frequency to pull for data in seconds.
+
+        update_frequency (float): Frequency to pull for data in seconds.
 
     Keyword Args:
 
@@ -856,7 +851,7 @@ def live_data_generator(name, update_frequency=1, **kwargs):
     last_timestamp = get_latest(name, api_key=api_key, project=project).to_json()["timestamp"]
     while True:
         latest = get_latest(name, api_key=api_key, project=project).to_json()
-        if last_timestamp == latest['timestamp']:
+        if last_timestamp == latest["timestamp"]:
             time.sleep(update_frequency)
         else:
             yield latest
