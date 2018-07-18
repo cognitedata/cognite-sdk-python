@@ -10,10 +10,9 @@ from typing import List
 import cognite._constants as constants
 import cognite._utils as utils
 import cognite.config as config
-from cognite.v05.dto import AssetResponse, AssetListResponse, Asset
+from cognite.v05.dto import Asset, AssetListResponse, AssetResponse
 
 
-# Author: TK
 def get_assets(name=None, path=None, description=None, metadata=None, depth=None, fuzziness=None, **kwargs):
     """Returns assets matching provided description.
 
@@ -24,7 +23,7 @@ def get_assets(name=None, path=None, description=None, metadata=None, depth=None
 
         description (str):      Search query.
 
-        metadata (str):         The metadata values used to filter the results.
+        metadata (dict):         The metadata values used to filter the results.
 
         depth (int):            Get sub assets up oto this many levels below the specified path.
 
@@ -39,7 +38,7 @@ def get_assets(name=None, path=None, description=None, metadata=None, depth=None
 
         project (str):          Project name.
     Returns:
-        v05.dto.AssetResponse: A data object containing the requested assets with several getter methods with different
+        v05.dto.AssetListResponse: A data object containing the requested assets with several getter methods with different
         output formats.
     """
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
@@ -48,7 +47,7 @@ def get_assets(name=None, path=None, description=None, metadata=None, depth=None
         "name": name,
         "description": description,
         "path": path,
-        "metadata": metadata,
+        "metadata": str(metadata) if metadata else None,
         "depth": depth,
         "fuzziness": fuzziness,
         "cursor": kwargs.get("cursor"),
@@ -80,7 +79,6 @@ def get_asset(asset_id, **kwargs):
     return AssetResponse(res.json())
 
 
-# Author: TK
 def get_asset_subtree(asset_id, depth=None, **kwargs):
     """Returns asset subtree of asset with provided assetId.
 
@@ -98,7 +96,7 @@ def get_asset_subtree(asset_id, depth=None, **kwargs):
 
         project (str):          Project name.
     Returns:
-        v05.dto.AssetResponse: A data object containing the requested assets with several getter methods with different
+        v05.dto.AssetListResponse: A data object containing the requested assets with several getter methods with different
         output formats.
     """
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
@@ -121,7 +119,7 @@ def post_assets(assets: List[Asset], **kwargs):
         project (str): Project name.
 
     Returns:
-        v05.dto.AssetResponse: A data object containing the posted assets with several getter methods with different
+        v05.dto.AssetListResponse: A data object containing the posted assets with several getter methods with different
         output formats.
     """
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
