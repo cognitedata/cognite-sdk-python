@@ -11,7 +11,7 @@ from cognite.v05.dto import EventResponse, EventListResponse
 
 
 def get_event(event_id, **kwargs):
-    '''Returns a EventResponse containing an event matching the id.
+    """Returns a EventResponse containing an event matching the id.
 
     Args:
         event_id (int):         The event id.
@@ -23,20 +23,16 @@ def get_event(event_id, **kwargs):
 
     Returns:
         v05.dto.EventResponse: A data object containing the requested event.
-    '''
-    api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
-    url = config.get_base_url(api_version=0.5) + '/projects/{}/events/{}'.format(project, event_id)
-    headers = {
-        'api-key': api_key,
-        'content-type': 'application/json',
-        'accept': 'application/json'
-    }
+    """
+    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    url = config.get_base_url(api_version=0.5) + "/projects/{}/events/{}".format(project, event_id)
+    headers = {"api-key": api_key, "content-type": "application/json", "accept": "application/json"}
     res = _utils.get_request(url, headers=headers, cookies=config.get_cookies())
     return EventResponse(res.json())
 
 
 def get_events(type=None, sub_type=None, asset_id=None, **kwargs):
-    '''Returns an EventListReponse object containing events matching the query.
+    """Returns an EventListReponse object containing events matching the query.
 
     Args:
         type (str):             Type (class) of event, e.g. 'failure'.
@@ -57,53 +53,55 @@ def get_events(type=None, sub_type=None, asset_id=None, **kwargs):
 
     Returns:
         v05.dto.EventListResponse: A data object containing the requested event.
-    '''
-    api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
-    url = config.get_base_url(api_version=0.5) + '/projects/{}/events'.format(project)
+    """
+    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    url = config.get_base_url(api_version=0.5) + "/projects/{}/events".format(project)
 
-    headers = {
-        'api-key': api_key,
-        'content-type': 'application/json',
-        'accept': 'application/json'
-    }
+    headers = {"api-key": api_key, "content-type": "application/json", "accept": "application/json"}
     if asset_id:
         params = {
-            'assetId': asset_id,
-            'sort': kwargs.get('sort'),
-            'cursor': kwargs.get('cursor'),
-            'limit': kwargs.get('limit', 25) if not kwargs.get('autopaging') else _constants.LIMIT_AGG
+            "assetId": asset_id,
+            "sort": kwargs.get("sort"),
+            "cursor": kwargs.get("cursor"),
+            "limit": kwargs.get("limit", 25) if not kwargs.get("autopaging") else _constants.LIMIT_AGG,
         }
     else:
         params = {
-            'type': type,
-            'subtype': sub_type,
-            'assetId': asset_id,
-            'sort': kwargs.get('sort'),
-            'cursor': kwargs.get('cursor'),
-            'limit': kwargs.get('limit', 25) if not kwargs.get('autopaging') else _constants.LIMIT_AGG,
-            'hasDescription': kwargs.get('has_description'),
-            'minStartTime': kwargs.get('min_start_time'),
-            'maxStartTime': kwargs.get('max_start_time')
+            "type": type,
+            "subtype": sub_type,
+            "assetId": asset_id,
+            "sort": kwargs.get("sort"),
+            "cursor": kwargs.get("cursor"),
+            "limit": kwargs.get("limit", 25) if not kwargs.get("autopaging") else _constants.LIMIT_AGG,
+            "hasDescription": kwargs.get("has_description"),
+            "minStartTime": kwargs.get("min_start_time"),
+            "maxStartTime": kwargs.get("max_start_time"),
         }
 
     res = _utils.get_request(url, headers=headers, params=params, cookies=config.get_cookies())
     events = []
-    events.extend(res.json()['data']['items'])
-    next_cursor = res.json()['data'].get('nextCursor')
+    events.extend(res.json()["data"]["items"])
+    next_cursor = res.json()["data"].get("nextCursor")
 
-    while next_cursor and kwargs.get('autopaging'):
-        params['cursor'] = next_cursor
+    while next_cursor and kwargs.get("autopaging"):
+        params["cursor"] = next_cursor
         res = _utils.get_request(url=url, headers=headers, params=params, cookies=config.get_cookies())
-        events.extend(res.json()['data']['items'])
-        next_cursor = res.json()['data'].get('nextCursor')
+        events.extend(res.json()["data"]["items"])
+        next_cursor = res.json()["data"].get("nextCursor")
 
     return EventListResponse(
-        {'data': {'nextCursor': next_cursor, 'previousCursor': res.json()['data'].get('previousCursor'),
-                  'items': events}})
+        {
+            "data": {
+                "nextCursor": next_cursor,
+                "previousCursor": res.json()["data"].get("previousCursor"),
+                "items": events,
+            }
+        }
+    )
 
 
 def post_events(events, **kwargs):
-    '''Adds a list of events and returns an EventListResponse object containing created events.
+    """Adds a list of events and returns an EventListResponse object containing created events.
 
     Args:
         events (List[v05.dto.Event]):    List of events to create.
@@ -114,26 +112,20 @@ def post_events(events, **kwargs):
 
     Returns:
         v05.dto.EventListResponse
-    '''
-    api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
-    url = config.get_base_url(api_version=0.5) + '/projects/{}/events'.format(project)
+    """
+    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    url = config.get_base_url(api_version=0.5) + "/projects/{}/events".format(project)
 
-    headers = {
-        'api-key': api_key,
-        'content-type': 'application/json',
-        'accept': 'application/json'
-    }
+    headers = {"api-key": api_key, "content-type": "application/json", "accept": "application/json"}
 
-    body = {
-        'items': [event.__dict__ for event in events]
-    }
+    body = {"items": [event.__dict__ for event in events]}
 
     res = _utils.post_request(url, body=body, headers=headers)
     return EventListResponse(res.json())
 
 
 def delete_events(event_ids, **kwargs):
-    '''Deletes a list of events.
+    """Deletes a list of events.
 
     Args:
         event_ids (List[int]):    List of ids of events to delete.
@@ -144,19 +136,13 @@ def delete_events(event_ids, **kwargs):
 
     Returns:
         An empty response.
-    '''
-    api_key, project = config.get_config_variables(kwargs.get('api_key'), kwargs.get('project'))
-    url = config.get_base_url(api_version=0.5) + '/projects/{}/events/delete'.format(project)
+    """
+    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    url = config.get_base_url(api_version=0.5) + "/projects/{}/events/delete".format(project)
 
-    headers = {
-        'api-key': api_key,
-        'content-type': 'application/json',
-        'accept': 'application/json'
-    }
+    headers = {"api-key": api_key, "content-type": "application/json", "accept": "application/json"}
 
-    body = {
-        'items': event_ids
-    }
+    body = {"items": event_ids}
 
     res = _utils.post_request(url, body=body, headers=headers)
     return res.json()

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-'''Constants
+"""Constants
 
 This module contains constants used in the Cognite Python SDK.
 
@@ -10,10 +10,10 @@ Attributes:
     LIMIT (int):       Limit on how many datapoints should be returned from the API when fetching data using the
                         timeseries module.
     RETRY_LIMIT (int): Number of retries to perform if a request to the API should fail.
-'''
+"""
 
 # GLOBAL CONSTANTS
-BASE_URL = 'https://api.cognitedata.com/api/'
+BASE_URL = "https://api.cognitedata.com/api/"
 LIMIT = 100000
 LIMIT_AGG = 10000
 RETRY_LIMIT = 0

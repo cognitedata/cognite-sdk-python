@@ -1,8 +1,8 @@
-'''Cognite API SDK
+"""Cognite API SDK
 
 This package has been created to ensure excellent excellent user experience for data scientists using the Cognite
 Data Platform (CDP).
-'''
+"""
 
 # RELEASE CONVENTIONS
 #
@@ -17,5 +17,5 @@ Data Platform (CDP).
 # For more information on versioning see https://semver.org/
 #
 
-__all__ = ['v04', 'v05', 'preprocessing', 'config']
-__version__ = '0.8.10'
+__all__ = ["v04", "v05", "preprocessing", "config"]
+__version__ = "0.8.10"
