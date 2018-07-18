@@ -8,7 +8,6 @@ https://doc.cognitedata.com/0.5/#Cognite-API-Time-series
 import io
 import os
 import time
-import warnings
 from functools import partial
 from multiprocessing import Pool
 from typing import List
@@ -60,12 +59,19 @@ def get_datapoints(name, aggregates=None, granularity=None, start=None, end=None
 
         project (str):          Project name.
 
+        limit (str):            Max number of datapoints to return.
+
     Returns:
         v05.dto.DatapointsResponse: A data object containing the requested data with several getter methods with different
         output formats.
     """
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     start, end = _utils.interval_to_ms(start, end)
+
+    if kwargs.get("limit"):
+        return _get_datapoints_user_defined_limit(
+            name, aggregates, granularity, start, end, limit=kwargs.get("limit"), protobuf=kwargs.get("protobuf")
+        )
 
     diff = end - start
     num_of_processes = kwargs.get("processes", os.cpu_count())
@@ -173,8 +179,6 @@ def _get_datapoints_helper(name, aggregates=None, granularity=None, start=None, 
             res = res.json()["data"]["items"][0]["datapoints"]
 
         if not res:
-            warning = "An interval with no data has been requested ({}, {}).".format(params["start"], params["end"])
-            warnings.warn(warning)
             break
 
         datapoints.append(res)
@@ -183,6 +187,58 @@ def _get_datapoints_helper(name, aggregates=None, granularity=None, start=None, 
     dps = []
     [dps.extend(el) for el in datapoints]
     return dps
+
+
+def _get_datapoints_user_defined_limit(name, aggregates, granularity, start, end, limit, **kwargs):
+    """Returns a DatapointsResponse object with the requested data.
+
+    No paging or parallelizing is done.
+
+    Args:
+        name (str):       The name of the timeseries to retrieve data for.
+
+        aggregates (list):      The list of aggregate functions you wish to apply to the data. Valid aggregate functions
+                                are: 'average/avg, max, min, count, sum, interpolation/int, stepinterpolation/step'.
+
+        granularity (str):      The granularity of the aggregate values. Valid entries are : 'day/d, hour/h, minute/m,
+                                second/s', or a multiple of these indicated by a number as a prefix e.g. '12hour'.
+
+        start (Union[str, int, datetime]):    Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s.
+                                    E.g. '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since
+                                    epoch or a datetime object which will be converted to ms since epoch UTC.
+
+        end (Union[str, int, datetime]):      Get datapoints up to this time. Same format as for start.
+
+        limit (int):            Max number of dps to retrieve.
+
+    Keyword Arguments:
+        protobuf (bool):        Download the data using the binary protobuf format. Only applicable when getting raw data.
+                                Defaults to True.
+
+        api_key (str):          Your api-key.
+
+        project (str):          Project name.
+    Returns:
+        v05.dto.DatapointsResponse: A data object containing the requested data with several getter methods with different
+        output formats.
+    """
+    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    url = config.get_base_url(api_version=0.5) + "/projects/{}/timeseries/data/{}".format(project, quote(name, safe=""))
+
+    use_protobuf = kwargs.get("protobuf", True) and aggregates is None
+
+    params = {"aggregates": aggregates, "granularity": granularity, "limit": limit, "start": start, "end": end}
+
+    headers = {"api-key": api_key, "accept": "application/protobuf" if use_protobuf else "application/json"}
+    res = _utils.get_request(url, params=params, headers=headers)
+    if use_protobuf:
+        ts_data = _api_timeseries_data_v2_pb2.TimeseriesData()
+        ts_data.ParseFromString(res.content)
+        res = [{"timestamp": p.timestamp, "value": p.value} for p in ts_data.numericData.points]
+    else:
+        res = res.json()["data"]["items"][0]["datapoints"]
+
+    return DatapointsResponse({"data": {"items": [{"name": name, "datapoints": res}]}})
 
 
 def _split_TimeseriesWithDatapoints_if_over_limit(
@@ -428,6 +484,8 @@ def get_datapoints_frame(time_series, aggregates, granularity, start=None, end=N
 
         project (str): Project name.
 
+        limit (str): Max number of rows to return.
+        
         processes (int):    Number of download processes to run in parallell. Defaults to number returned by cpu_count().
 
     Returns:
@@ -447,9 +505,16 @@ def get_datapoints_frame(time_series, aggregates, granularity, start=None, end=N
             Using both:
                 ['<timeseries1>', {'name': '<timeseries2>', 'aggregates': ['<aggfunc1>', '<aggfunc2>']}]
     """
+    if not isinstance(time_series, list):
+        raise _utils.InputError("time_series should be a list")
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
 
     start, end = _utils.interval_to_ms(start, end)
+
+    if kwargs.get("limit"):
+        return _get_datapoints_frame_user_defined_limit(
+            time_series, aggregates, granularity, start, end, limit=kwargs.get("limit")
+        )
 
     diff = end - start
     num_of_processes = kwargs.get("processes", os.cpu_count())
@@ -572,12 +637,64 @@ def _get_datapoints_frame_helper(time_series, aggregates, granularity, start=Non
             pd.read_csv(io.StringIO(res.content.decode(res.encoding if res.encoding else res.apparent_encoding)))
         )
         if dataframes[-1].empty:
-            warning = "An interval with no data has been requested ({}, {}).".format(body["start"], body["end"])
-            warnings.warn(warning)
             break
         latest_timestamp = int(dataframes[-1].iloc[-1, 0])
         body["start"] = latest_timestamp + _utils.granularity_to_ms(granularity)
     return pd.concat(dataframes).reset_index(drop=True)
+
+
+def _get_datapoints_frame_user_defined_limit(time_series, aggregates, granularity, start, end, limit, **kwargs):
+    """Returns a DatapointsResponse object with the requested data.
+
+    No paging or parallelizing is done.
+
+    Args:
+        time_series (str):       The list of timeseries names to retrieve data for. Each timeseries can be either a string containing the
+                            ts name or a dictionary containing the ts name and a list of specific aggregate functions.
+
+        aggregates (list):      The list of aggregate functions you wish to apply to the data. Valid aggregate functions
+                                are: 'average/avg, max, min, count, sum, interpolation/int, stepinterpolation/step'.
+
+        granularity (str):      The granularity of the aggregate values. Valid entries are : 'day/d, hour/h, minute/m,
+                                second/s', or a multiple of these indicated by a number as a prefix e.g. '12hour'.
+
+        start (Union[str, int, datetime]):    Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s.
+                                    E.g. '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since
+                                    epoch or a datetime object which will be converted to ms since epoch UTC.
+
+        end (Union[str, int, datetime]):      Get datapoints up to this time. Same format as for start.
+
+        limit (int):            Max number of dps to retrieve.
+
+    Keyword Arguments:
+        api_key (str):          Your api-key.
+
+        project (str):          Project name.
+    Returns:
+        v05.dto.DatapointsResponse: A data object containing the requested data with several getter methods with different
+        output formats.
+    """
+    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    url = config.get_base_url(api_version=0.5) + "/projects/{}/timeseries/dataframe".format(project)
+    body = {
+        "items": [
+            {"name": "{}".format(ts)}
+            if isinstance(ts, str)
+            else {"name": "{}".format(ts["name"]), "aggregates": ts.get("aggregates", [])}
+            for ts in time_series
+        ],
+        "aggregates": aggregates,
+        "granularity": granularity,
+        "start": start,
+        "end": end,
+        "limit": limit,
+    }
+    headers = {"api-key": api_key, "content-type": "application/json", "accept": "text/csv"}
+
+    res = _utils.post_request(url=url, body=body, headers=headers, cookies=config.get_cookies())
+    df = pd.read_csv(io.StringIO(res.content.decode(res.encoding if res.encoding else res.apparent_encoding)))
+
+    return df
 
 
 def get_timeseries(prefix=None, description=None, include_metadata=False, asset_id=None, path=None, **kwargs):
