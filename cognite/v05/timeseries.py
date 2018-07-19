@@ -54,7 +54,8 @@ def get_datapoints(name, aggregates=None, granularity=None, start=None, end=None
 
         project (str):          Project name.
 
-        limit (str):            Max number of datapoints to return.
+        limit (str):            Max number of datapoints to return. If limit is specified, this method will not automate
+                                paging and will return a maximum of 100,000 dps.
 
     Returns:
         v05.dto.DatapointsResponse: A data object containing the requested data with several getter methods with different
@@ -204,7 +205,7 @@ def _get_datapoints_user_defined_limit(name, aggregates, granularity, start, end
 
         end (Union[str, int, datetime]):      Get datapoints up to this time. Same format as for start.
 
-        limit (int):            Max number of dps to retrieve.
+        limit (str):            Max number of datapoints to return. Max is 100,000.
 
     Keyword Arguments:
         protobuf (bool):        Download the data using the binary protobuf format. Only applicable when getting raw data.
@@ -479,7 +480,8 @@ def get_datapoints_frame(time_series, aggregates, granularity, start=None, end=N
 
         project (str): Project name.
 
-        limit (str): Max number of rows to return.
+        limit (str): Max number of rows to return. If limit is specified, this method will not automate
+                        paging and will return a maximum of 100,000 rows.
         
         processes (int):    Number of download processes to run in parallell. Defaults to number returned by cpu_count().
 
@@ -659,7 +661,7 @@ def _get_datapoints_frame_user_defined_limit(time_series, aggregates, granularit
 
         end (Union[str, int, datetime]):      Get datapoints up to this time. Same format as for start.
 
-        limit (int):            Max number of dps to retrieve.
+        limit (int):            Max number of rows to retrieve. Max is 100,000.
 
     Keyword Arguments:
         api_key (str):          Your api-key.
