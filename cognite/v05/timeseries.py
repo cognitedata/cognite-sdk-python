@@ -66,7 +66,8 @@ def get_datapoints(name, aggregates=None, granularity=None, start=None, end=None
 
     if kwargs.get("limit"):
         return _get_datapoints_user_defined_limit(
-            name, aggregates, granularity, start, end, limit=kwargs.get("limit"), protobuf=kwargs.get("protobuf")
+            name, aggregates, granularity, start, end, limit=kwargs.get("limit"), protobuf=kwargs.get("protobuf"),
+            api_key=api_key, project=project
         )
 
     diff = end - start
@@ -155,7 +156,7 @@ def _get_datapoints_helper(name, aggregates=None, granularity=None, start=None, 
     Returns:
         list of datapoints: A list containing datapoint dicts.
     """
-    api_key, project = kwargs.get("api_key"), kwargs.get("project")
+    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url(api_version=0.5) + "/projects/{}/timeseries/data/{}".format(project, quote(name, safe=""))
 
     use_protobuf = kwargs.get("protobuf", True) and aggregates is None
