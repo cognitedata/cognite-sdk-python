@@ -13,12 +13,7 @@ import cognite.config as config
 from cognite.v05.dto import RawResponse, RawRow
 
 
-def get_databases(
-        limit: int = None,
-        cursor: str = None,
-        api_key=None,
-        project=None
-):
+def get_databases(limit: int = None, cursor: str = None, api_key=None, project=None):
     """Returns a RawObject containing a list of raw databases.
 
     Args:
@@ -35,28 +30,17 @@ def get_databases(
         output formats.
     """
     api_key, project = config.get_config_variables(api_key, project)
-    url = config.get_base_url(api_version=0.5) + '/projects/{}/raw'.format(project)
+    url = config.get_base_url(api_version=0.5) + "/projects/{}/raw".format(project)
 
-    params = {
-        'limit': limit,
-        'cursor': cursor
-    }
+    params = {"limit": limit, "cursor": cursor}
 
-    headers = {
-        'api-key': api_key,
-        'content-type': '*/*',
-        'accept': 'application/json'
-    }
+    headers = {"api-key": api_key, "content-type": "*/*", "accept": "application/json"}
 
     res = _utils.get_request(url=url, params=params, headers=headers, cookies=config.get_cookies())
     return RawResponse(res.json())
 
 
-def create_databases(
-        database_names: list,
-        api_key=None,
-        project=None
-):
+def create_databases(database_names: list, api_key=None, project=None):
     """Creates databases in the Raw API and returns the created databases.
 
     Args:
@@ -72,25 +56,14 @@ def create_databases(
 
     """
     api_key, project = config.get_config_variables(api_key, project)
-    url = config.get_base_url(api_version=0.5) + '/projects/{}/raw/create'.format(project)
-    body = {
-        'items': [{'dbName': '{}'.format(database_name)} for database_name in database_names]
-    }
-    headers = {
-        'api-key': api_key,
-        'content-type': '*/*',
-        'accept': 'application/json'
-    }
+    url = config.get_base_url(api_version=0.5) + "/projects/{}/raw/create".format(project)
+    body = {"items": [{"dbName": "{}".format(database_name)} for database_name in database_names]}
+    headers = {"api-key": api_key, "content-type": "*/*", "accept": "application/json"}
     res = _utils.post_request(url=url, body=body, headers=headers, cookies=config.get_cookies())
     return RawResponse(res.json())
 
 
-def delete_databases(
-        database_names: list,
-        recursive: bool = False,
-        api_key=None,
-        project=None
-):
+def delete_databases(database_names: list, recursive: bool = False, api_key=None, project=None):
     """Deletes databases in the Raw API.
 
     Args:
@@ -105,29 +78,15 @@ def delete_databases(
 
     """
     api_key, project = config.get_config_variables(api_key, project)
-    url = config.get_base_url(api_version=0.5) + '/projects/{}/raw/delete'.format(project)
-    body = {
-        'items': [{'dbName': '{}'.format(database_name)} for database_name in database_names]
-    }
-    params = {
-        'recursive': recursive
-    }
-    headers = {
-        'api-key': api_key,
-        'content-type': '*/*',
-        'accept': 'application/json'
-    }
+    url = config.get_base_url(api_version=0.5) + "/projects/{}/raw/delete".format(project)
+    body = {"items": [{"dbName": "{}".format(database_name)} for database_name in database_names]}
+    params = {"recursive": recursive}
+    headers = {"api-key": api_key, "content-type": "*/*", "accept": "application/json"}
     res = _utils.post_request(url=url, body=body, params=params, headers=headers, cookies=config.get_cookies())
     return res.json()
 
 
-def get_tables(
-        database_name: str = None,
-        limit: int = None,
-        cursor: str = None,
-        api_key=None,
-        project=None
-):
+def get_tables(database_name: str = None, limit: int = None, cursor: str = None, api_key=None, project=None):
     """Returns a RawObject containing a list of tables in a raw database.
 
     Args:
@@ -146,27 +105,18 @@ def get_tables(
         output formats.
     """
     api_key, project = config.get_config_variables(api_key, project)
-    url = config.get_base_url(api_version=0.5) + '/projects/{}/raw/{}'.format(project, database_name)
+    url = config.get_base_url(api_version=0.5) + "/projects/{}/raw/{}".format(project, database_name)
     params = dict()
     if not limit:
-        params['limit'] = limit
+        params["limit"] = limit
     if not cursor:
-        params['cursor'] = cursor
-    headers = {
-        'api-key': api_key,
-        'content-type': '*/*',
-        'accept': 'application/json'
-    }
+        params["cursor"] = cursor
+    headers = {"api-key": api_key, "content-type": "*/*", "accept": "application/json"}
     res = _utils.get_request(url=url, params=params, headers=headers, cookies=config.get_cookies())
     return RawResponse(res.json())
 
 
-def create_tables(
-        database_name: str = None,
-        table_names: list = None,
-        api_key=None,
-        project=None
-):
+def create_tables(database_name: str = None, table_names: list = None, api_key=None, project=None):
     """Creates tables in the given Raw API database.
 
     Args:
@@ -184,25 +134,14 @@ def create_tables(
 
     """
     api_key, project = config.get_config_variables(api_key, project)
-    url = config.get_base_url(api_version=0.5) + '/projects/{}/raw/{}/create'.format(project, database_name)
-    body = {
-        'items': [{'tableName': '{}'.format(table_name)} for table_name in table_names]
-    }
-    headers = {
-        'api-key': api_key,
-        'content-type': '*/*',
-        'accept': 'application/json'
-    }
+    url = config.get_base_url(api_version=0.5) + "/projects/{}/raw/{}/create".format(project, database_name)
+    body = {"items": [{"tableName": "{}".format(table_name)} for table_name in table_names]}
+    headers = {"api-key": api_key, "content-type": "*/*", "accept": "application/json"}
     res = _utils.post_request(url=url, body=body, headers=headers, cookies=config.get_cookies())
     return RawResponse(res.json())
 
 
-def delete_tables(
-        database_name: str = None,
-        table_names: list = None,
-        api_key=None,
-        project=None
-):
+def delete_tables(database_name: str = None, table_names: list = None, api_key=None, project=None):
     """Deletes databases in the Raw API.
 
     Args:
@@ -219,26 +158,15 @@ def delete_tables(
 
     """
     api_key, project = config.get_config_variables(api_key, project)
-    url = config.get_base_url(api_version=0.5) + '/projects/{}/raw/{}/delete'.format(project, database_name)
-    body = {
-        'items': [{'tableName': '{}'.format(table_name)} for table_name in table_names]
-    }
-    headers = {
-        'api-key': api_key,
-        'content-type': '*/*',
-        'accept': 'application/json'
-    }
+    url = config.get_base_url(api_version=0.5) + "/projects/{}/raw/{}/delete".format(project, database_name)
+    body = {"items": [{"tableName": "{}".format(table_name)} for table_name in table_names]}
+    headers = {"api-key": api_key, "content-type": "*/*", "accept": "application/json"}
     res = _utils.post_request(url=url, body=body, headers=headers, cookies=config.get_cookies())
     return res.json()
 
 
 def get_rows(
-        database_name: str = None,
-        table_name: str = None,
-        limit: int = None,
-        cursor: str = None,
-        api_key=None,
-        project=None
+    database_name: str = None, table_name: str = None, limit: int = None, cursor: str = None, api_key=None, project=None
 ):
     """Returns a RawObject containing a list of rows.
 
@@ -260,27 +188,23 @@ def get_rows(
         output formats.
     """
     api_key, project = config.get_config_variables(api_key, project)
-    url = config.get_base_url(api_version=0.5) + '/projects/{}/raw/{}/{}'.format(project, database_name, table_name)
+    url = config.get_base_url(api_version=0.5) + "/projects/{}/raw/{}/{}".format(project, database_name, table_name)
     params = dict()
-    params['limit'] = limit
-    params['cursor'] = cursor
-    headers = {
-        'api-key': api_key,
-        'content-type': '*/*',
-        'accept': 'application/json'
-    }
+    params["limit"] = limit
+    params["cursor"] = cursor
+    headers = {"api-key": api_key, "content-type": "*/*", "accept": "application/json"}
     res = _utils.get_request(url=url, params=params, headers=headers, cookies=config.get_cookies())
     return RawResponse(res.json())
 
 
 def create_rows(
-        database_name: str = None,
-        table_name: str = None,
-        rows: List[RawRow] = None,
-        api_key=None,
-        project=None,
-        ensure_parent=False,
-        use_gzip=False
+    database_name: str = None,
+    table_name: str = None,
+    rows: List[RawRow] = None,
+    api_key=None,
+    project=None,
+    ensure_parent=False,
+    use_gzip=False,
 ):
     """Creates tables in the given Raw API database.
 
@@ -304,35 +228,29 @@ def create_rows(
 
     """
     api_key, project = config.get_config_variables(api_key, project)
-    url = config.get_base_url(api_version=0.5) + '/projects/{}/raw/{}/{}/create'.format(project, database_name,
-                                                                                        table_name)
+    url = config.get_base_url(api_version=0.5) + "/projects/{}/raw/{}/{}/create".format(
+        project, database_name, table_name
+    )
 
-    headers = {
-        'api-key': api_key,
-        'content-type': '*/*',
-        'accept': 'application/json'
-    }
+    headers = {"api-key": api_key, "content-type": "*/*", "accept": "application/json"}
     if ensure_parent:
-        params = {'ensureParent': 'true'}
+        params = {"ensureParent": "true"}
     else:
         params = {}
 
     ul_row_limit = 1000
     i = 0
     while i < len(rows):
-        body = {'items': [{'key': '{}'.format(row.key), 'columns': row.columns} for row in rows[i:i + ul_row_limit]]}
-        res = _utils.post_request(url=url, body=body, headers=headers, params=params, cookies=config.get_cookies(),
-                                  use_gzip=use_gzip)
+        body = {"items": [{"key": "{}".format(row.key), "columns": row.columns} for row in rows[i : i + ul_row_limit]]}
+        res = _utils.post_request(
+            url=url, body=body, headers=headers, params=params, cookies=config.get_cookies(), use_gzip=use_gzip
+        )
         i += ul_row_limit
     return res.json()
 
 
 def delete_rows(
-        database_name: str = None,
-        table_name: str = None,
-        rows: List[RawRow] = None,
-        api_key=None,
-        project=None
+    database_name: str = None, table_name: str = None, rows: List[RawRow] = None, api_key=None, project=None
 ):
     """Deletes rows in the Raw API.
 
@@ -352,33 +270,16 @@ def delete_rows(
 
     """
     api_key, project = config.get_config_variables(api_key, project)
-    url = config.get_base_url(api_version=0.5) + '/projects/{}/raw/{}/{}/delete'.format(project, database_name,
-                                                                                        table_name)
-    body = {
-        'items': [
-            {
-                'key': '{}'.format(row.key),
-                'columns': row.columns
-            }
-            for row in rows
-        ]
-    }
-    headers = {
-        'api-key': api_key,
-        'content-type': '*/*',
-        'accept': 'application/json'
-    }
+    url = config.get_base_url(api_version=0.5) + "/projects/{}/raw/{}/{}/delete".format(
+        project, database_name, table_name
+    )
+    body = {"items": [{"key": "{}".format(row.key), "columns": row.columns} for row in rows]}
+    headers = {"api-key": api_key, "content-type": "*/*", "accept": "application/json"}
     res = _utils.post_request(url=url, body=body, headers=headers, cookies=config.get_cookies())
     return res.json()
 
 
-def get_row(
-        database_name: str = None,
-        table_name: str = None,
-        row_key: str = None,
-        api_key=None,
-        project=None
-):
+def get_row(database_name: str = None, table_name: str = None, row_key: str = None, api_key=None, project=None):
     """Returns a RawObject containing a list of rows.
 
     Args:
@@ -397,13 +298,10 @@ def get_row(
         output formats.
     """
     api_key, project = config.get_config_variables(api_key, project)
-    url = config.get_base_url(api_version=0.5) + '/projects/{}/raw/{}/{}/{}'.format(project, database_name, table_name,
-                                                                                    row_key)
+    url = config.get_base_url(api_version=0.5) + "/projects/{}/raw/{}/{}/{}".format(
+        project, database_name, table_name, row_key
+    )
     params = dict()
-    headers = {
-        'api-key': api_key,
-        'content-type': '*/*',
-        'accept': 'application/json'
-    }
+    headers = {"api-key": api_key, "content-type": "*/*", "accept": "application/json"}
     res = _utils.get_request(url=url, params=params, headers=headers, cookies=config.get_cookies())
     return RawResponse(res.json())

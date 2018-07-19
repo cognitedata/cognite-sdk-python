@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-'''Preprocessing module.
+"""Preprocessing module.
 
 This module provides a number of preprocessing methods to further clean the data retrieved from the Cognite API.
-'''
+"""
 
 import math
 import warnings
@@ -19,9 +19,7 @@ def _merge_dataframes(df1, df2):
     if df2 is None:
         return df1
 
-    return pd.merge(df1, df2, on='timestamp', how='outer') \
-        .sort_values(by='timestamp') \
-        .reset_index(drop=True)
+    return pd.merge(df1, df2, on="timestamp", how="outer").sort_values(by="timestamp").reset_index(drop=True)
 
 
 def merge_list_of_dataframes(dataframes):
@@ -55,8 +53,8 @@ def make_index_even(dataframe):
     deltas = np.diff(timestamps, 1)
     delta = reduce(lambda x, y: math.gcd(x, y), deltas)  # gcd of deltas
     t_new = np.arange(start_time, end_time + delta, delta)
-    new_df = pd.DataFrame(t_new, columns=['timestamp'])
-    return new_df.merge(dataframe, on='timestamp', how='outer').sort_values(by='timestamp').reset_index(drop=True)
+    new_df = pd.DataFrame(t_new, columns=["timestamp"])
+    return new_df.merge(dataframe, on="timestamp", how="outer").sort_values(by="timestamp").reset_index(drop=True)
 
 
 def fill_nan(dataframe):
@@ -68,7 +66,7 @@ def fill_nan(dataframe):
     Returns:
         pandas.DataFrame: Input dataframe with NaN values removed by forward fill.
     """
-    return dataframe.fillna(method='ffill')
+    return dataframe.fillna(method="ffill")
 
 
 def remove_nan_columns(dataframe):
@@ -82,9 +80,9 @@ def remove_nan_columns(dataframe):
             pandas.DataFrame: Dataframe with columns containing NaN values removed.
             numpy.array: Array of bools indicating which columns were kept.
     """
-    df_copy = dataframe.set_index('timestamp')
+    df_copy = dataframe.set_index("timestamp")
     selected_columns_mask = df_copy.notnull().all().values
-    return dataframe.dropna(axis=1, how='any'), selected_columns_mask
+    return dataframe.dropna(axis=1, how="any"), selected_columns_mask
 
 
 def normalize(dataframe):
@@ -96,7 +94,7 @@ def normalize(dataframe):
     Returns:
         pandas.DataFrame: Normalized dataframe.
     """
-    dataframe = dataframe.set_index('timestamp')
+    dataframe = dataframe.set_index("timestamp")
     dataframe = (dataframe - dataframe.mean()) / dataframe.std()
     return dataframe.reset_index()
 
@@ -112,7 +110,7 @@ def remove_zero_variance_columns(dataframe):
             pandas.DataFrame: Dataframe with zero-variance columns removed.
             numpy.array: Array of bools indicating which columns were kept.
     """
-    dataframe = dataframe.set_index('timestamp')
+    dataframe = dataframe.set_index("timestamp")
     selected_columns_mask = dataframe.var().values > 0
     dataframe = dataframe.loc[:, selected_columns_mask].reset_index()
     return dataframe, selected_columns_mask
@@ -141,19 +139,20 @@ def preprocess(dataframe, remove_leading_nan_rows=False, center_and_scale=False)
     dataframe = fill_nan(dataframe)
 
     if remove_leading_nan_rows:
-        dataframe.dropna(axis=0, how='any', inplace=True)
+        dataframe.dropna(axis=0, how="any", inplace=True)
 
     if dataframe.isnull().sum().values.sum():
-        warning = 'Some columns contain leading NaN-values after forward-fill. Columns {} will be removed.\n' \
-                  'Consider setting the skip_leading_nan_rows parameter to True in order to remove leading rows with ' \
-                  'NaN values.' \
-            .format(dataframe.columns[dataframe.isnull().any().values].values)
+        warning = (
+            "Some columns contain leading NaN-values after forward-fill. Columns {} will be removed.\n"
+            "Consider setting the skip_leading_nan_rows parameter to True in order to remove leading rows with "
+            "NaN values.".format(dataframe.columns[dataframe.isnull().any().values].values)
+        )
         warnings.warn(warning)
 
     _, selected_columns_mask_nan = remove_nan_columns(dataframe)
     _, selected_columns_mask_zero_var = remove_zero_variance_columns(dataframe)
     selected_columns_mask = np.logical_and(selected_columns_mask_nan, selected_columns_mask_zero_var)
-    dataframe = dataframe.set_index('timestamp').loc[:, selected_columns_mask].reset_index()
+    dataframe = dataframe.set_index("timestamp").loc[:, selected_columns_mask].reset_index()
     if center_and_scale:
         dataframe = normalize(dataframe)
 
