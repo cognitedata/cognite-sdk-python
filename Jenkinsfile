@@ -47,8 +47,7 @@ podTemplate(
                 sh("pip3 install pipenv")
             }
             stage('Install dependencies') {
-                sh("pipenv install -d")
-                sh("pip3 install .")
+                sh("pipenv sync --dev")
             }
             stage('Test and coverage report') {
                 sh("pipenv run pytest --cov-report xml:coverage.xml --cov=cognite --junitxml=test-report.xml || true")
@@ -66,7 +65,7 @@ podTemplate(
             }
 
             def pipVersion = sh(returnStdout: true, script: 'pipenv run yolk -V cognite-sdk | sort -n | tail -1 | cut -d\\  -f 2').trim()
-            def currentVersion = sh(returnStdout: true, script: 'pipenv run python3 -c "import cognite; print(cognite.__version__)"').trim()
+            def currentVersion = sh(returnStdout: true, script: 'sed -n -e "/^__version__/p" cognite/__init__.py | cut -d\\" -f2').trim()
 
             println("This version: " + currentVersion)
             println("Latest pip version: " + pipVersion)
