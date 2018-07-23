@@ -57,6 +57,11 @@ class TestTimeseries:
         res = timeseries.delete_time_series(TS_NAME)
         assert res == {}
 
+    def test_get_timeseries_with_config_variables_from_argument(self, unset_config_variables):
+        ts = timeseries.get_timeseries(prefix=TS_NAME, limit=1,
+                                       api_key=unset_config_variables[0], project=unset_config_variables[1])
+        assert ts
+
 
 @pytest.fixture(scope="class")
 def datapoints_fixture():
@@ -102,6 +107,22 @@ class TestDatapoints:
         res = timeseries.get_datapoints(name="constant", start=0, limit=1)
         assert len(res.to_json().get("datapoints")) == 1
 
+    def test_get_dps_with_limit_with_config_variables_from_argument(self, unset_config_variables):
+        res = timeseries.get_datapoints(name="constant",
+                                        start=0,
+                                        limit=1,
+                                        api_key=unset_config_variables[0],
+                                        project=unset_config_variables[1])
+        assert len(res.to_json().get("datapoints")) == 1
+
+    def test_get_dps_with_config_variables_from_argument(self, unset_config_variables):
+        res = timeseries.get_datapoints(name="constant",
+                                        start=1522188000000,
+                                        end=1522620000000,
+                                        api_key=unset_config_variables[0],
+                                        project=unset_config_variables[1])
+        assert res
+
 
 class TestLatest:
     def test_get_latest(self):
@@ -139,6 +160,30 @@ class TestDatapointsFrame:
             time_series=["constant"], aggregates=["avg"], granularity="1m", start=0, limit=1
         )
         assert df.shape[0] == 1
+
+    def test_get_dps_frame_with_limit_with_config_values_from_argument(self, unset_config_variables):
+        df = timeseries.get_datapoints_frame(
+            time_series=["constant"],
+            aggregates=["avg"],
+            granularity="1m",
+            start=0,
+            limit=1,
+            api_key=unset_config_variables[0],
+            project=unset_config_variables[1]
+        )
+        assert df.shape[0] == 1
+
+    def test_get_dps_frame_with_config_values_from_argument(self, unset_config_variables):
+        res = timeseries.get_datapoints_frame(
+            time_series=["constant"],
+            start=1522188000000,
+            end=1522620000000,
+            aggregates=["avg"],
+            granularity="1m",
+            api_key=unset_config_variables[0],
+            project=unset_config_variables[1]
+        )
+        assert res
 
 
 class TestMultiTimeseriesDatapoints:
