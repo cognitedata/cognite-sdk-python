@@ -13,17 +13,16 @@ from multiprocessing import Pool
 from typing import List
 from urllib.parse import quote
 
-import pandas as pd
-
 import cognite._constants as _constants
 import cognite._utils as _utils
 import cognite.config as config
+import pandas as pd
 from cognite._protobuf_descriptors import _api_timeseries_data_v1_pb2
 from cognite.v04.dto import (
+    Datapoint,
     DatapointsResponse,
     DatapointsResponseIterator,
     LatestDatapointResponse,
-    Datapoint,
     TimeSeries,
     TimeSeriesResponse,
     TimeseriesWithDatapoints,
@@ -107,8 +106,7 @@ def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=No
 
     with Pool(steps) as p:
         datapoints = p.map(partial_get_dps, args)
-        p.close()
-        p.join()
+
     concat_dps = []
     [concat_dps.extend(el) for el in datapoints]
 
@@ -483,8 +481,6 @@ def get_datapoints_frame(tag_ids, aggregates, granularity, start=None, end=None,
 
     with Pool(steps) as p:
         dataframes = p.map(partial_get_dpsf, args)
-        p.close()
-        p.join()
 
     df = pd.concat(dataframes).drop_duplicates(subset="timestamp").reset_index(drop=True)
 
