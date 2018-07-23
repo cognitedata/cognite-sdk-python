@@ -20,9 +20,7 @@ def configure_test_session():
 @pytest.fixture
 def unset_config_variables():
     configure_session('', '')
-    print('SETUP unset_config_variables')
     yield (TEST_API_KEY, TEST_PROJECT)
-    print('TEARDOWN unset_config_variables')
     configure_session(TEST_API_KEY, TEST_PROJECT)
 
 
