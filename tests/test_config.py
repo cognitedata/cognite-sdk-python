@@ -8,13 +8,6 @@ NUM_OF_RETRIES = 5
 
 
 @pytest.fixture
-def unset_config_variables():
-    config.configure_session('', '')
-    yield
-    config.configure_session(TEST_API_KEY, TEST_PROJECT)
-
-
-@pytest.fixture
 def change_url():
     config.set_base_url(MOCK_URL)
     yield

@@ -66,7 +66,8 @@ def get_datapoints(name, aggregates=None, granularity=None, start=None, end=None
 
     if kwargs.get("limit"):
         return _get_datapoints_user_defined_limit(
-            name, aggregates, granularity, start, end, limit=kwargs.get("limit"), protobuf=kwargs.get("protobuf")
+            name, aggregates, granularity, start, end, limit=kwargs.get("limit"), protobuf=kwargs.get("protobuf"),
+            api_key=api_key, project=project
         )
 
     diff = end - start
@@ -146,9 +147,9 @@ def _get_datapoints_helper(name, aggregates=None, granularity=None, start=None, 
         protobuf (bool):        Download the data using the binary protobuf format. Only applicable when getting raw data.
                                 Defaults to True.
 
-        api_key (str):          Your api-key.
+        api_key (str):          Your api-key. Obligatory in this helper method.
 
-        project (str):          Project name.
+        project (str):          Project name. Obligatory in this helper method.
 
     Returns:
         list of datapoints: A list containing datapoint dicts.
@@ -209,14 +210,14 @@ def _get_datapoints_user_defined_limit(name, aggregates, granularity, start, end
         protobuf (bool):        Download the data using the binary protobuf format. Only applicable when getting raw data.
                                 Defaults to True.
 
-        api_key (str):          Your api-key.
+        api_key (str):          Your api-key. Obligatory in this helper method.
 
-        project (str):          Project name.
+        project (str):          Project name. Obligatory in this helper method.
     Returns:
         v05.dto.DatapointsResponse: A data object containing the requested data with several getter methods with different
         output formats.
     """
-    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    api_key, project = kwargs.get("api_key"), kwargs.get("project")
     url = config.get_base_url(api_version=0.5) + "/projects/{}/timeseries/data/{}".format(project, quote(name, safe=""))
 
     use_protobuf = kwargs.get("protobuf", True) and aggregates is None
@@ -508,7 +509,8 @@ def get_datapoints_frame(time_series, aggregates, granularity, start=None, end=N
 
     if kwargs.get("limit"):
         return _get_datapoints_frame_user_defined_limit(
-            time_series, aggregates, granularity, start, end, limit=kwargs.get("limit")
+            time_series, aggregates, granularity, start, end, limit=kwargs.get("limit"),
+            api_key=api_key, project=project
         )
 
     diff = end - start
@@ -577,9 +579,9 @@ def _get_datapoints_frame_helper(time_series, aggregates, granularity, start=Non
         end (Union[str, int, datetime]):      Get datapoints up to this time. Same format as for start.
 
     Keyword Arguments:
-        api_key (str): Your api-key.
+        api_key (str):                  Your api-key.
 
-        project (str): Project name.
+        project (str):                  Project name.
 
     Returns:
         pandas.DataFrame: A pandas dataframe containing the datapoints for the given timeseries. The datapoints for all the
@@ -661,14 +663,14 @@ def _get_datapoints_frame_user_defined_limit(time_series, aggregates, granularit
         limit (int):            Max number of rows to retrieve. Max is 100,000.
 
     Keyword Arguments:
-        api_key (str):          Your api-key.
+        api_key (str):          Your api-key. Obligatory in this helper method.
 
-        project (str):          Project name.
+        project (str):          Project name. Obligatory in this helper method.
     Returns:
         v05.dto.DatapointsResponse: A data object containing the requested data with several getter methods with different
         output formats.
     """
-    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    api_key, project = kwargs.get("api_key"), kwargs.get("project")
     url = config.get_base_url(api_version=0.5) + "/projects/{}/timeseries/dataframe".format(project)
     body = {
         "items": [
