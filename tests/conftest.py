@@ -17,6 +17,13 @@ def configure_test_session():
     configure_session('', '')  # teardown
 
 
+@pytest.fixture
+def unset_config_variables():
+    configure_session('', '')
+    yield (TEST_API_KEY, TEST_PROJECT)
+    configure_session(TEST_API_KEY, TEST_PROJECT)
+
+
 class MockReturnValue(mock.Mock):
     """Helper class for building mock request responses.
 
