@@ -183,7 +183,7 @@ class TestDatapointsFrame:
             api_key=unset_config_variables[0],
             project=unset_config_variables[1]
         )
-        assert res
+        assert isinstance(res, pd.DataFrame)
 
 
 class TestMultiTimeseriesDatapoints:
