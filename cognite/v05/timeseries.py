@@ -18,10 +18,15 @@ import cognite._utils as _utils
 import cognite.config as config
 import pandas as pd
 from cognite._protobuf_descriptors import _api_timeseries_data_v2_pb2
-from cognite.v05.dto import (Datapoint, DatapointsResponse,
-                             DatapointsResponseIterator,
-                             LatestDatapointResponse, TimeSeries,
-                             TimeSeriesResponse, TimeseriesWithDatapoints)
+from cognite.v05.dto import (
+    Datapoint,
+    DatapointsResponse,
+    DatapointsResponseIterator,
+    LatestDatapointResponse,
+    TimeSeries,
+    TimeSeriesResponse,
+    TimeseriesWithDatapoints,
+)
 
 
 def get_datapoints(name, aggregates=None, granularity=None, start=None, end=None, **kwargs):
@@ -66,8 +71,15 @@ def get_datapoints(name, aggregates=None, granularity=None, start=None, end=None
 
     if kwargs.get("limit"):
         return _get_datapoints_user_defined_limit(
-            name, aggregates, granularity, start, end, limit=kwargs.get("limit"), protobuf=kwargs.get("protobuf"),
-            api_key=api_key, project=project
+            name,
+            aggregates,
+            granularity,
+            start,
+            end,
+            limit=kwargs.get("limit"),
+            protobuf=kwargs.get("protobuf"),
+            api_key=api_key,
+            project=project,
         )
 
     diff = end - start
@@ -509,8 +521,14 @@ def get_datapoints_frame(time_series, aggregates, granularity, start=None, end=N
 
     if kwargs.get("limit"):
         return _get_datapoints_frame_user_defined_limit(
-            time_series, aggregates, granularity, start, end, limit=kwargs.get("limit"),
-            api_key=api_key, project=project
+            time_series,
+            aggregates,
+            granularity,
+            start,
+            end,
+            limit=kwargs.get("limit"),
+            api_key=api_key,
+            project=project,
         )
 
     diff = end - start
