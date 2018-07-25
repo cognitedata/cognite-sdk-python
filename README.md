@@ -8,7 +8,7 @@ Python SDK to ensure excellent user experience for developers and data scientist
 
 [![build](https://webhooks.dev.cognite.ai/build/buildStatus/icon?job=github-builds/cognite-sdk-python/master)](https://jenkins.cognite.ai/job/github-builds/job/cognite-sdk-python/job/master/)
 [![codecov](https://codecov.io/gh/cognitedata/cognite-sdk-python/branch/master/graph/badge.svg)](https://codecov.io/gh/cognitedata/cognite-sdk-python)
-[![Documentation Status](https://readthedocs.org/projects/cognite-sdk-python/badge/?version=latest)](http://cognite-sdk-python.readthedocs.io/en/latest/?badge=latest)
+[![Documentation Status](//readthedocs.com/projects/cognite-cognite-python-sdk/badge/?version=latest)](https://cognite-cognite-python-sdk.readthedocs-hosted.com/en/latest/?badge=latest)
 
 ## Prerequisites
 In order to start using the Python SDK, you need
@@ -31,9 +31,10 @@ $ pip install cognite-sdk
 Simple script to download and plot one year of hourly aggregates.
 ```python
 import os
+
+import matplotlib.pyplot as plt
 from cognite.config import configure_session
 from cognite.v05.timeseries import get_datapoints
-import matplotlib.pyplot as plt
 
 # Set API key and project for current session
 configure_session(api_key=os.getenv('COGNITE_API_KEY'), project='akerbp')
@@ -67,7 +68,7 @@ If you work at Cognite, you can find examples of code use in the repository ML-e
 Want to contribute? Check out [CONTRIBUTING](https://github.com/cognitedata/cognite-sdk-python/blob/master/CONTRIBUTING.md).
 
 ## Documentation
-* [SDK Documentation](http://cognite-sdk-python.readthedocs.io/en/latest/)
+* [SDK Documentation](https://cognite-cognite-python-sdk.readthedocs-hosted.com/en/latest/)
 * [API Documentation](https://doc.cognitedata.com/)
 * [API Guide](https://doc.cognitedata.com/guides/api-guide.html)
 
