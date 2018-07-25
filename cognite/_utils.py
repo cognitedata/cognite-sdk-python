@@ -175,8 +175,10 @@ def interval_to_ms(start, end):
 class APIError(Exception):
     pass
 
+
 class InputError(Exception):
     pass
+
 
 class Bin:
     """

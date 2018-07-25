@@ -1,12 +1,9 @@
 [[source]]
-
 url = "https://pypi.python.org/simple"
 verify_ssl = true
 name = "pypi"
 
-
 [packages]
-
 sphinx = "*"
 pandas = "*"
 requests = "*"
@@ -14,17 +11,14 @@ protobuf = "*"
 sphinx-rtd-theme = "*"
 cognite-logger = "*"
 
-
 [dev-packages]
-
 pytest-cov = "*"
 twine = "*"
 "yolk3k" = "*"
 pytest = "*"
 pylint = "*"
 astunparse = "*"
-
+black = "*"
 
 [requires]
-
 python_version = "3.6"

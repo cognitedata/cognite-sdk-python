@@ -60,6 +60,7 @@ podTemplate(
             }
             stage('Build') {
                 sh("pipenv run python3 code_parser.py --remove-type-hints --suppress-warning")
+                sh("pipenv run black ./cognite -l 120")
                 sh("python3 setup.py sdist")
                 sh("python3 setup.py bdist_wheel")
             }
