@@ -1,9 +1,7 @@
 import cognite
 from setuptools import find_packages, setup
 
-packages = find_packages()
-if "tests" in packages:
-    packages.remove("tests")
+packages = find_packages(exclude=["tests*"])
 
 setup(
     name="cognite-sdk",
