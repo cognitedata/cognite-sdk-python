@@ -6,7 +6,7 @@ Cognite Python SDK
 ==========================
 [![build](https://webhooks.dev.cognite.ai/build/buildStatus/icon?job=github-builds/cognite-sdk-python/master)](https://jenkins.cognite.ai/job/github-builds/job/cognite-sdk-python/job/master/)
 [![codecov](https://codecov.io/gh/cognitedata/cognite-sdk-python/branch/master/graph/badge.svg)](https://codecov.io/gh/cognitedata/cognite-sdk-python)
-[![Documentation Status](//readthedocs.com/projects/cognite-sdk-python/badge/?version=latest)](https://cognite-sdk-python.readthedocs-hosted.com/en/latest/?badge=latest)
+[![Documentation Status](https://readthedocs.com/projects/cognite-sdk-python/badge/?version=latest)](https://cognite-sdk-python.readthedocs-hosted.com/en/latest/?badge=latest)
 
 Python SDK to ensure excellent user experience for developers and data scientists working with the Cognite Data Platform.
 
@@ -68,7 +68,7 @@ If you work at Cognite, you can find examples of code use in the repository ML-e
 Want to contribute? Check out [CONTRIBUTING](https://github.com/cognitedata/cognite-sdk-python/blob/master/CONTRIBUTING.md).
 
 ## Documentation
-* [SDK Documentation](https://cognite-python-sdk.readthedocs-hosted.com/en/latest/)
+* [SDK Documentation](https://cognite-sdk-python.readthedocs-hosted.com/en/latest/)
 * [API Documentation](https://doc.cognitedata.com/)
 * [API Guide](https://doc.cognitedata.com/guides/api-guide.html)
 
