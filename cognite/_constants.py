@@ -17,3 +17,13 @@ BASE_URL = "https://api.cognitedata.com/api/"
 LIMIT = 100000
 LIMIT_AGG = 10000
 RETRY_LIMIT = 0
+
+
+# DATA TRANSFER SERVICE
+TIMESERIES = "timeSeries"
+AGGREGATES = "aggregates"
+GRANULARITY = "granularity"
+START = "start"
+END = "end"
+MISSING_DATA_STRATEGY = "missingDataStrategy"
+LABEL = "label"
