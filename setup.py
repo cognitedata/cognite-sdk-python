@@ -1,14 +1,17 @@
-import cognite
+import re
+
 from setuptools import find_packages, setup
 
 packages = find_packages(exclude=["tests*"])
 
+version = version = re.search('^__version__\s*=\s*"(.*)"', open("cognite/__init__.py").read(), re.M).group(1)
+
 setup(
     name="cognite-sdk",
-    version=cognite.__version__,
+    version=version,
     description="Cognite API SDK for Python",
     url="http://cognite-sdk-python.readthedocs.io/",
-    download_url="https://github.com/cognitedata/cognite-sdk-python/archive/{}.tar.gz".format(cognite.__version__),
+    download_url="https://github.com/cognitedata/cognite-sdk-python/archive/{}.tar.gz".format(version),
     author="Erlend Vollset",
     author_email="erlend.vollset@cognite.com",
     packages=packages,
