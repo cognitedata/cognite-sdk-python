@@ -875,3 +875,4 @@ def live_data_generator(name, update_frequency=1, **kwargs):
         else:
             yield latest
         last_timestamp = latest["timestamp"]
+
