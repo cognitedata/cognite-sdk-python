@@ -1,6 +1,7 @@
 import pandas as pd
+from cognite.data_transfer_service import DataSpec, DataTransferService, TimeSeries, TimeSeriesDataSpec
+
 import pytest
-from cognite.data_transfer_service import DataTransferService, TimeSeries, TimeSeriesDataSpec
 
 
 @pytest.fixture
@@ -54,22 +55,26 @@ def ts_data_spec_dicts():
 
 class TestDataTransferService:
     def test_get_dataframes_dto_spec(self, ts_data_spec_dtos):
-        service = DataTransferService(ts_data_specs=ts_data_spec_dtos)
+        data_spec = DataSpec(time_series_data_specs=ts_data_spec_dtos)
+        service = DataTransferService(data_spec)
         dataframes = service.get_dataframes()
 
         assert isinstance(dataframes.get("ds1"), pd.DataFrame)
         assert isinstance(dataframes.get("ds2"), pd.DataFrame)
 
     def test_get_dataframes_dict_spec(self, ts_data_spec_dicts):
-        service = DataTransferService(ts_data_specs=ts_data_spec_dicts)
+        data_spec = DataSpec(time_series_data_specs=ts_data_spec_dicts)
+        service = DataTransferService(data_spec)
         dataframes = service.get_dataframes()
 
         assert isinstance(dataframes.get("ds1"), pd.DataFrame)
         assert isinstance(dataframes.get("ds2"), pd.DataFrame)
 
     def test_dict_dto_equal(self, ts_data_spec_dicts, ts_data_spec_dtos):
-        service = DataTransferService(ts_data_specs=ts_data_spec_dicts)
-        service2 = DataTransferService(ts_data_specs=ts_data_spec_dtos)
+        data_spec_dtos = DataSpec(time_series_data_specs=ts_data_spec_dtos)
+        data_spec_dicts = DataSpec(time_series_data_specs=ts_data_spec_dicts)
+        service = DataTransferService(data_spec_dicts)
+        service2 = DataTransferService(data_spec_dtos)
         dataframes_by_dicts = service.get_dataframes()
         dataframes_by_dtos = service2.get_dataframes()
 

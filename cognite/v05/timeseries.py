@@ -491,6 +491,8 @@ def get_datapoints_frame(time_series, aggregates, granularity, start=None, end=N
 
         project (str): Project name.
 
+        cookies (dict): Cookies.
+
         limit (str): Max number of rows to return. If limit is specified, this method will not automate
                         paging and will return a maximum of 100,000 rows.
         
@@ -516,7 +518,7 @@ def get_datapoints_frame(time_series, aggregates, granularity, start=None, end=N
     if not isinstance(time_series, list):
         raise _utils.InputError("time_series should be a list")
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
-
+    cookies = config.get_cookies(kwargs.get("cookies"))
     start, end = _utils.interval_to_ms(start, end)
 
     if kwargs.get("limit"):
@@ -529,6 +531,7 @@ def get_datapoints_frame(time_series, aggregates, granularity, start=None, end=N
             limit=kwargs.get("limit"),
             api_key=api_key,
             project=project,
+            cookies=cookies,
         )
 
     diff = end - start
@@ -553,11 +556,12 @@ def get_datapoints_frame(time_series, aggregates, granularity, start=None, end=N
         granularity=granularity,
         api_key=api_key,
         project=project,
+        cookies=cookies,
     )
 
     if steps == 1:
         return _get_datapoints_frame_helper(
-            time_series, aggregates, granularity, start, end, api_key=api_key, project=project
+            time_series, aggregates, granularity, start, end, api_key=api_key, project=project, cookies=cookies
         )
 
     with Pool(steps) as p:
@@ -568,9 +572,16 @@ def get_datapoints_frame(time_series, aggregates, granularity, start=None, end=N
     return df
 
 
-def _get_datapoints_frame_helper_wrapper(args, time_series, aggregates, granularity, api_key, project):
+def _get_datapoints_frame_helper_wrapper(args, time_series, aggregates, granularity, api_key, project, cookies):
     return _get_datapoints_frame_helper(
-        time_series, aggregates, granularity, args["start"], args["end"], api_key=api_key, project=project
+        time_series,
+        aggregates,
+        granularity,
+        args["start"],
+        args["end"],
+        api_key=api_key,
+        project=project,
+        cookies=cookies,
     )
 
 
@@ -619,6 +630,7 @@ def _get_datapoints_frame_helper(time_series, aggregates, granularity, start=Non
                 ['<timeseries1>', {'name': '<timeseries2>', 'aggregates': ['<aggfunc1>', '<aggfunc2>']}]
     """
     api_key, project = kwargs.get("api_key"), kwargs.get("project")
+    cookies = kwargs.get("cookies")
     url = config.get_base_url(api_version=0.5) + "/projects/{}/timeseries/dataframe".format(project)
 
     num_aggregates = 0
@@ -646,7 +658,7 @@ def _get_datapoints_frame_helper(time_series, aggregates, granularity, start=Non
     headers = {"api-key": api_key, "content-type": "application/json", "accept": "text/csv"}
     dataframes = []
     while (not dataframes or dataframes[-1].shape[0] == per_tag_limit) and body["end"] > body["start"]:
-        res = _utils.post_request(url=url, body=body, headers=headers, cookies=config.get_cookies())
+        res = _utils.post_request(url=url, body=body, headers=headers, cookies=cookies)
         dataframes.append(
             pd.read_csv(io.StringIO(res.content.decode(res.encoding if res.encoding else res.apparent_encoding)))
         )
@@ -689,6 +701,7 @@ def _get_datapoints_frame_user_defined_limit(time_series, aggregates, granularit
         output formats.
     """
     api_key, project = kwargs.get("api_key"), kwargs.get("project")
+    cookies = kwargs.get("cookies")
     url = config.get_base_url(api_version=0.5) + "/projects/{}/timeseries/dataframe".format(project)
     body = {
         "items": [
@@ -705,7 +718,7 @@ def _get_datapoints_frame_user_defined_limit(time_series, aggregates, granularit
     }
     headers = {"api-key": api_key, "content-type": "application/json", "accept": "text/csv"}
 
-    res = _utils.post_request(url=url, body=body, headers=headers, cookies=config.get_cookies())
+    res = _utils.post_request(url=url, body=body, headers=headers, cookies=cookies)
     df = pd.read_csv(io.StringIO(res.content.decode(res.encoding if res.encoding else res.apparent_encoding)))
 
     return df
@@ -875,4 +888,3 @@ def live_data_generator(name, update_frequency=1, **kwargs):
         else:
             yield latest
         last_timestamp = latest["timestamp"]
-
