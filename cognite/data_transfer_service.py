@@ -11,21 +11,24 @@ class DataTransferService:
     Fetch timeseries from the api.
     """
 
-    def __init__(self, ts_data_specs, project=None, api_key=None):
+    def __init__(self, data_spec, project=None, api_key=None, cookies=None):
         """
         Args:
-            ts_data_specs (list):   List of Time Series Data Specs.
+            data_spec (data_transfer_service.DataSpec):   Data Spec.
             project (str):          Project name.
             api_key (str):          Api key.
             cookies (dict):         Cookies.
         """
         config_api_key, config_project = config.get_config_variables(api_key, project)
 
-        if not isinstance(ts_data_specs, list):
-            raise InputError("DataTransferService accepts list of dataspecs")
-        self.ts_data_specs = ts_data_specs
+        if not isinstance(data_spec, DataSpec):
+            raise InputError("DataTransferService accepts a DataSpec instance.")
+        self.data_spec = data_spec
+        self.ts_data_specs = data_spec.time_series_data_specs
+        self.files_data_spec = data_spec.files_data_spec
         self.api_key = api_key or config_api_key
         self.project = project or config_project
+        self.cookies = cookies
 
     def get_dataframes(self):
         """Return a dictionary of dataframes indexed by label - one per data spec."""
@@ -48,7 +51,16 @@ class DataTransferService:
                 else:
                     raise InputError("time_series parameter must be a dict or TimeSeries object")
 
-            df = timeseries.get_datapoints_frame(ts_list, tsds.aggregates, tsds.granularity, tsds.start, tsds.end)
+            df = timeseries.get_datapoints_frame(
+                ts_list,
+                tsds.aggregates,
+                tsds.granularity,
+                tsds.start,
+                tsds.end,
+                api_key=self.api_key,
+                project=self.project,
+                cookies=self.cookies,
+            )
             df = self.__apply_missing_data_strategies(df, ts_list, tsds.missing_data_strategy)
             if dataframes.get(tsds.label) is not None:
                 raise InputError("Unique labels for each dataspec must be used")
@@ -66,7 +78,16 @@ class DataTransferService:
             missing_data_strategy = data_spec.get(constants.MISSING_DATA_STRATEGY)
             label = data_spec.get(constants.LABEL, "default")
 
-            df = timeseries.get_datapoints_frame(ts, aggregates, granularity, start, end)
+            df = timeseries.get_datapoints_frame(
+                ts,
+                aggregates,
+                granularity,
+                start,
+                end,
+                api_key=self.api_key,
+                project=self.project,
+                cookies=self.cookies,
+            )
             df = self.__apply_missing_data_strategies(df, ts, missing_data_strategy)
 
             dataframes[label] = df
@@ -114,3 +135,9 @@ class TimeSeriesDataSpec:
         self.start = start
         self.end = end
         self.label = label or "default"
+
+
+class DataSpec:
+    def __init__(self, time_series_data_specs=None, files_data_spec=None):
+        self.time_series_data_specs = time_series_data_specs
+        self.files_data_spec = files_data_spec
