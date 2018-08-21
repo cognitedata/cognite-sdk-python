@@ -1,3 +1,5 @@
+import json
+
 import pandas as pd
 from cognite.data_transfer_service import DataSpec, DataTransferService, TimeSeries, TimeSeriesDataSpec
 
@@ -6,7 +8,7 @@ import pytest
 
 @pytest.fixture
 def ts_data_spec_dtos():
-    time_series = [TimeSeries(name="constant", aggregates=["step"], missing_data_strategy="ffill"), {"name": "sinus"}]
+    time_series = [TimeSeries(name="constant", aggregates=["step"], missing_data_strategy="ffill"), TimeSeries(name="sinus")]
 
     ts_data_spec1 = TimeSeriesDataSpec(
         time_series=time_series,
@@ -80,3 +82,9 @@ class TestDataTransferService:
 
         for df1, df2 in zip(dataframes_by_dtos.values(), dataframes_by_dicts.values()):
             pd.testing.assert_frame_equal(df1, df2)
+
+    def test_json_dumps_loads(self, ts_data_spec_dtos, ts_data_spec_dicts):
+        data_spec = DataSpec(time_series_data_specs=ts_data_spec_dtos)
+        json_repr = data_spec.to_JSON()
+        ds = DataSpec.from_JSON(json_repr)
+        assert ds.__eq__(data_spec)
