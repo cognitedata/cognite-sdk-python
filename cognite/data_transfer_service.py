@@ -15,7 +15,7 @@ class DataTransferService:
 
     # TODO:  Support files_data_spec and events_data_spec
 
-    def __init__(self, data_spec, project=None, api_key=None, cookies=None):
+    def __init__(self, data_spec, project=None, api_key=None, cookies=None, num_of_processes=None):
         """
         Args:
             data_spec (data_transfer_service.DataSpec):   Data Spec.
@@ -33,6 +33,7 @@ class DataTransferService:
         self.api_key = api_key or config_api_key
         self.project = project or config_project
         self.cookies = cookies
+        self.num_of_processes = num_of_processes
 
     def get_dataframes(self):
         """Return a dictionary of dataframes indexed by label - one per data spec."""
@@ -64,6 +65,7 @@ class DataTransferService:
                 api_key=self.api_key,
                 project=self.project,
                 cookies=self.cookies,
+                processes=self.num_of_processes,
             )
             df = self.__apply_missing_data_strategies(df, ts_list, tsds.missing_data_strategy)
             if dataframes.get(tsds.label) is not None:
@@ -91,6 +93,7 @@ class DataTransferService:
                 api_key=self.api_key,
                 project=self.project,
                 cookies=self.cookies,
+                processes=self.num_of_processes,
             )
             df = self.__apply_missing_data_strategies(df, ts, missing_data_strategy)
 
