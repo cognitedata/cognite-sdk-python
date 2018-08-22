@@ -1,3 +1,5 @@
+import json
+
 import pandas as pd
 from cognite import _constants as constants
 from cognite import config
@@ -10,6 +12,8 @@ class DataTransferService:
 
     Fetch timeseries from the api.
     """
+
+    # TODO:  Support files_data_spec and events_data_spec
 
     def __init__(self, data_spec, project=None, api_key=None, cookies=None):
         """
@@ -141,3 +145,33 @@ class DataSpec:
     def __init__(self, time_series_data_specs=None, files_data_spec=None):
         self.time_series_data_specs = time_series_data_specs
         self.files_data_spec = files_data_spec
+
+    def to_JSON(self):
+        return json.dumps(self.__dict__, cls=DataSpecEncoder)
+
+    @classmethod
+    def from_JSON(cls, json_repr):
+        ds = cls(**json.loads(json_repr, cls=DataSpecDecoder))
+        for i, tsds in enumerate(ds.time_series_data_specs):
+            ds.time_series_data_specs[i] = TimeSeriesDataSpec(**tsds)
+            for j, ts in enumerate(ds.time_series_data_specs[i].time_series):
+                ds.time_series_data_specs[i].time_series[j] = TimeSeries(**ts)
+        return ds
+
+
+class DataSpecEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, (TimeSeries, TimeSeriesDataSpec, DataSpec)):
+            return obj.__dict__
+        return super(DataSpecEncoder, self).default(obj)
+
+
+class DataSpecDecoder(json.JSONDecoder):
+    def object_hook(self, obj):
+        for key, value in obj.items():
+            if isinstance(value, str):
+                try:
+                    obj[key] = json.loads(value)
+                except ValueError:
+                    pass
+        return obj
