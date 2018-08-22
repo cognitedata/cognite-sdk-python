@@ -13,6 +13,8 @@ class DataTransferService:
     Fetch timeseries from the api.
     """
 
+    # TODO:  Support files_data_spec and events_data_spec
+
     def __init__(self, data_spec, project=None, api_key=None, cookies=None):
         """
         Args:
