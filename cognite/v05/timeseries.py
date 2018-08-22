@@ -535,7 +535,7 @@ def get_datapoints_frame(time_series, aggregates, granularity, start=None, end=N
         )
 
     diff = end - start
-    num_of_processes = kwargs.get("processes", os.cpu_count())
+    num_of_processes = kwargs.get("processes") or os.cpu_count()
 
     granularity_ms = 1
     if granularity:
