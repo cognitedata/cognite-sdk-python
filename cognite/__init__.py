@@ -20,4 +20,4 @@ Data Platform (CDP).
 from cognite.data_transfer_service import DataTransferService
 
 __all__ = ["v04", "v05", "preprocessing", "config", "data_transfer_service"]
-__version__ = "0.9.2"
+__version__ = "0.9.3"
