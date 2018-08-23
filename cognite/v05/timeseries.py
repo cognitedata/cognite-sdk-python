@@ -296,9 +296,7 @@ def post_multi_tag_datapoints(timeseries_with_datapoints: List[TimeseriesWithDat
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url(api_version=0.4) + "/projects/{}/timeseries/data".format(project)
 
-    use_gzip: bool = False
-    if "use_gzip" in kwargs:
-        use_gzip = kwargs.get("use_gzip")
+    use_gzip = kwargs.get("use_gzip", False)
 
     headers = {"api-key": api_key, "content-type": "application/json", "accept": "application/json"}
 
