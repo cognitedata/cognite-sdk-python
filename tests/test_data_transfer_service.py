@@ -8,7 +8,10 @@ import pytest
 
 @pytest.fixture
 def ts_data_spec_dtos():
-    time_series = [TimeSeries(name="constant", aggregates=["step"], missing_data_strategy="ffill"), TimeSeries(name="sinus")]
+    time_series = [
+        TimeSeries(name="constant", aggregates=["step"], missing_data_strategy="ffill"),
+        TimeSeries(name="sinus"),
+    ]
 
     ts_data_spec1 = TimeSeriesDataSpec(
         time_series=time_series,
