@@ -10,6 +10,7 @@ requests = "*"
 protobuf = "*"
 sphinx-rtd-theme = "*"
 cognite-logger = "*"
+pyyaml = "*"
 
 [dev-packages]
 pytest-cov = "*"
