@@ -50,7 +50,6 @@ The available Cognite ML commands are:
     create      Create resource
 """
         parser = argparse.ArgumentParser(description="Access CDP machine learning services.", usage=usage_msg)
-        # prefixing the argument with -- means it's optional
         parser.add_argument("command", help="Command to run", choices=["create", "get"])
         parser.add_argument("resource", help="Resource to run command on", choices=["model", "version" "source"])
         # now that we're inside a subcommand, ignore the first

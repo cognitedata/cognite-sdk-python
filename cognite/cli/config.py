@@ -18,8 +18,14 @@ class CogniteConfigCLI:
         )
 
         args = parser.parse_args(sys.argv[3:])
-        config = {"cognite": {"api-key": args.api_key, "project": args.project}}
-        with open(os.getenv("HOME") + "/.cognite.conf", "w") as f:
+        config = {"cognite": {"api_key": args.api_key, "project": args.project}}
+        path = os.getenv("HOME") + "/.cognite.conf"
+        if os.path.isfile(path):
+            with open(path, "r") as f:
+                config = yaml.load(f)
+        with open(path, "w+") as f:
+            for arg, val in args.__dict__.items():
+                config["cognite"][arg] = val
             dump = yaml.dump(config)
             f.write(dump)
 
@@ -29,4 +35,4 @@ class CogniteConfigCLI:
         _ = parser.parse_args(sys.argv[3:])
 
         with open(os.getenv("HOME") + "/.cognite.conf", "r") as f:
-            print(f.read())
+            print(yaml.load(f))
