@@ -13,10 +13,12 @@ class CogniteMLCLI:
             models = hosting.get_models()
         else:
             raise AssertionError
+
         if not models:
             print("No models yet :(")
             return
-        tabular_data = [
+
+        models_tabular = [
             [
                 m.get("id"),
                 m.get("name"),
@@ -28,7 +30,7 @@ class CogniteMLCLI:
             for m in models
         ]
         headers = ["ID", "Name", "Description", "Active Version", "Created Time", "Is Deprecated"]
-        print(tabulate(tabular_data, headers=headers))
+        print(tabulate(models_tabular, headers=headers))
 
     def create(self, resource, next_arg_index):
         usage_msg = """cognite ml create {} [<args>]""".format(resource)
