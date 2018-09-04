@@ -5,6 +5,7 @@ This module mirrors the Events API. It allows you to get, post, update, and dele
 
 https://doc.cognitedata.com/0.5/#Cognite-API-Events
 """
+import json
 
 from cognite import _constants, _utils, config
 from cognite.v05.dto import EventListResponse, EventResponse
@@ -212,7 +213,7 @@ def search_for_events(
         "maxCreatedTime": max_created_time,
         "minLastUpdatedTime": min_last_updated_time,
         "maxLastUpdatedTime": max_last_updated_time,
-        "metadata": metadata,
+        "metadata": json.dumps(metadata),
         "assetIds": asset_ids,
         "assetSubtrees": asset_subtrees,
         "sort": kwargs.get("sort"),
