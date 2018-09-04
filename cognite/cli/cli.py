@@ -52,12 +52,12 @@ The available Cognite ML commands are:
 """
         parser = argparse.ArgumentParser(description="Access CDP machine learning services.", usage=usage_msg)
         parser.add_argument("command", help="Command to run", choices=["create", "get"])
-        parser.add_argument("resource", help="Resource to run command on", choices=["model", "version" "source"])
+        parser.add_argument("resource", help="Resource to run command on", choices=["model", "version", "source"])
         # now that we're inside a subcommand, ignore the first
         # TWO argvs, ie the command (cognite) and the subcommand (ml)
         args = parser.parse_args(sys.argv[next_arg_index : next_arg_index + 2])
         ml_cli = CogniteMLCLI()
-        getattr(ml_cli, args.command)(args.resource)
+        getattr(ml_cli, args.command)(args.resource, next_arg_index + 2)
 
 
 def main():
