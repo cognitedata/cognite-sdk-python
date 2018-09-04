@@ -5,9 +5,10 @@ This module mirrors the Events API. It allows you to get, post, update, and dele
 
 https://doc.cognitedata.com/0.5/#Cognite-API-Events
 """
+import json
 
-from cognite import _utils, config, _constants
-from cognite.v05.dto import EventResponse, EventListResponse
+from cognite import _constants, _utils, config
+from cognite.v05.dto import EventListResponse, EventResponse
 
 
 def get_event(event_id, **kwargs):
@@ -146,3 +147,81 @@ def delete_events(event_ids, **kwargs):
 
     res = _utils.post_request(url, body=body, headers=headers)
     return res.json()
+
+
+def search_for_events(
+    description=None,
+    type=None,
+    subtype=None,
+    min_start_time=None,
+    max_start_time=None,
+    min_end_time=None,
+    max_end_time=None,
+    min_created_time=None,
+    max_created_time=None,
+    min_last_updated_time=None,
+    max_last_updated_time=None,
+    metadata=None,
+    asset_ids=None,
+    asset_subtrees=None,
+    **kwargs
+):
+    """Search for events.
+
+        Args:
+            description str:   Prefix and fuzzy search on description.
+
+        Keyword Args:
+            api_key (str):          Your api-key.
+            project (str):          Project name.
+            type (str):             Filter on type (case-sensitive).
+            subtype (str):          Filter on subtype (case-sensitive).
+            min_start_time (str):   Filter out events with startTime before this. Format is milliseconds since epoch.
+            max_start_time (str):   Filter out events with startTime after this. Format is milliseconds since epoch.
+            min_end_time (str):     Filter out events with endTime before this. Format is milliseconds since epoch.
+            max_end_time (str):     Filter out events with endTime after this. Format is milliseconds since epoch.
+            min_created_time(str):  Filter out events with createdTime before this. Format is milliseconds since epoch.
+            max_created_time (str): Filter out events with createdTime after this. Format is milliseconds since epoch.
+            min_last_updated_time(str):  Filter out events with lastUpdatedtime before this. Format is milliseconds since epoch.
+            max_last_updated_time(str): Filter out events with lastUpdatedtime after this. Format is milliseconds since epoch.
+            metadata (dict):        Filter out events that do not match these metadata fields and values (case-sensitive).
+                                    Format is {"key1":"value1","key2":"value2"}.
+            asset_ids (List[int]):  Filter out events that are not linked to any of these assets. Format is [12,345,6,7890].
+            asset_subtrees (List[int]): Filter out events that are not linked to assets in the subtree rooted at these assets.
+                                        Format is [12,345,6,7890].
+
+        Keyword Args:
+            sort (str):             Field to be sorted.
+            dir (str):              Sort direction (desc or asc)
+            limit (int):            Return up to this many results. Max is 1000, default is 25.
+            offset (int):           Offset from the first result. Sum of limit and offset must not exceed 1000. Default is 0.
+        Returns:
+            v05.dto.EventListResponse.
+        """
+    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    url = config.get_base_url(api_version=0.5) + "/projects/{}/events/search".format(project)
+    headers = {"api-key": api_key, "content-type": "application/json", "accept": "application/json"}
+    params = {
+        "description": description,
+        "type": type,
+        "subtype": subtype,
+        "minStartTime": min_start_time,
+        "maxStartTime": max_start_time,
+        "minEndTime": min_end_time,
+        "maxEndTime": max_end_time,
+        "minCreatedTime": min_created_time,
+        "maxCreatedTime": max_created_time,
+        "minLastUpdatedTime": min_last_updated_time,
+        "maxLastUpdatedTime": max_last_updated_time,
+        "metadata": json.dumps(metadata),
+        "assetIds": asset_ids,
+        "assetSubtrees": asset_subtrees,
+        "sort": kwargs.get("sort"),
+        "dir": kwargs.get("dir"),
+        "limit": kwargs.get("limit", 1000),
+        "offset": kwargs.get("offset"),
+    }
+
+    res = _utils.get_request(url, headers=headers, params=params)
+
+    return EventListResponse(res.json())

@@ -1,17 +1,18 @@
 import numpy as np
 import pandas as pd
+
 import pytest
-
 from cognite import _utils
-from cognite.v05 import events, dto
+from cognite._utils import APIError
+from cognite.v05 import dto, events
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def get_post_event_obj():
-    event = dto.Event(start_time=1521500400000, end_time=1521586800000)
+    event = dto.Event(start_time=1521500400000, end_time=1521586800000, description="hahaha")
     res = events.post_events([event])
     yield res
-    ids = list(ev['id'] for ev in res.to_json())
+    ids = list(ev["id"] for ev in res.to_json())
     events.delete_events(ids)
 
 
@@ -27,7 +28,7 @@ def test_post_events_length(get_post_event_obj):
 
 
 def test_get_event(get_post_event_obj):
-    id = get_post_event_obj.to_json()[0]['id']
+    id = get_post_event_obj.to_json()[0]["id"]
     res = events.get_event(event_id=id)
     assert isinstance(res, dto.EventResponse)
     assert isinstance(res.to_pandas(), pd.DataFrame)
@@ -64,6 +65,11 @@ def post_event():
 
 
 def test_delete_event(post_event):
-    id = post_event.to_json()[0]['id']
+    id = post_event.to_json()[0]["id"]
     res = events.delete_events([id])
     assert res == {}
+
+
+def test_search_for_events(get_post_event_obj):
+    with pytest.raises(APIError):
+        evs = events.search_for_events(description="hahaha")
