@@ -11,13 +11,14 @@ Attributes:
                         timeseries module.
     RETRY_LIMIT (int): Number of retries to perform if a request to the API should fail.
 """
+import os
 
 # GLOBAL CONSTANTS
 BASE_URL = "https://api.cognitedata.com/api/"
 LIMIT = 100000
 LIMIT_AGG = 10000
 RETRY_LIMIT = 0
-
+CONFIG_PATH = os.getenv("HOME") + "/.cognite.conf.json"
 
 # DATA TRANSFER SERVICE
 TIMESERIES = "timeSeries"

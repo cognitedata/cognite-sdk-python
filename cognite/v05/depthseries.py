@@ -74,7 +74,7 @@ def post_datapoints(name, depthdatapoints: List[DatapointDepth], **kwargs):
     Returns:
         An empty response.
     """
-    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    api_key, project = config.get_session_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     offset = 0  # Random timestamp to start the time series
 
     url = config.get_base_url(api_version=0.5) + "/projects/{}/timeseries/data".format(project)
@@ -119,7 +119,7 @@ def get_latest(name, **kwargs):
         v05.data_objects.LatestDatapointsResponse: A data object containing the requested data with several getter methods with different
         output formats.
     """
-    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    api_key, project = config.get_session_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url(api_version=0.5) + "/projects/{}/timeseries/latest/{}".format(project, quote_plus(name))
     headers = {"api-key": api_key, "accept": "application/json"}
     res = _utils.get_request(url, headers=headers, cookies=config.get_cookies())
@@ -154,7 +154,7 @@ def get_depthseries(prefix=None, description=None, include_metadata=False, asset
         v05.data_objects.TimeSeriesResponse: A data object containing the requested timeseries with several getter methods with different
         output formats.
     """
-    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    api_key, project = config.get_session_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url(api_version=0.5) + "/projects/{}/timeseries".format(project)
     headers = {"api-key": api_key, "accept": "application/json"}
     params = {
@@ -215,7 +215,7 @@ def post_depth_series(depth_series: List[TimeSeries], **kwargs):
             An empty response.
         """
 
-    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    api_key, project = config.get_session_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url(api_version=0.5) + "/projects/{}/timeseries".format(project)
     depth_indexes = copy.deepcopy(depth_series)
 
@@ -289,7 +289,7 @@ def update_depth_series(depth_series: List[TimeSeries], **kwargs):
         An empty response.
     """
 
-    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    api_key, project = config.get_session_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url(api_version=0.5) + "/projects/{}/timeseries".format(project)
 
     body = {"items": [ts.__dict__ for ts in depth_series]}
@@ -323,7 +323,7 @@ def delete_depth_series(name, **kwargs):
     Returns:
         An empty response.
     """
-    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    api_key, project = config.get_session_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url(api_version=0.5) + "/projects/{}/timeseries/{}".format(project, name)
 
     headers = {"api-key": api_key, "accept": "application/json"}
@@ -352,7 +352,7 @@ def reset_depth_series(name, **kwargs):
        Returns:
            An empty response.
        """
-    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    api_key, project = config.get_session_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url(
         api_version=0.5
     ) + "/projects/{}/timeseries/{}?timestampInclusiveBegin=0?timestampInclusiveEnd={}".format(

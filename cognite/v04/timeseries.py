@@ -63,7 +63,7 @@ def get_datapoints(tag_id, aggregates=None, granularity=None, start=None, end=No
         v04.dto.DatapointsResponse: A data object containing the requested data with several getter methods with different
         output formats.
     """
-    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    api_key, project = config.get_session_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     start, end = _utils.interval_to_ms(start, end)
 
     diff = end - start
@@ -227,7 +227,7 @@ def post_multi_tag_datapoints(timeseries_with_datapoints: List[TimeseriesWithDat
     Returns:
         An empty response.
     """
-    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    api_key, project = config.get_session_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url(api_version=0.4) + "/projects/{}/timeseries/data".format(project)
 
     headers = {"api-key": api_key, "content-type": "application/json", "accept": "application/json"}
@@ -272,7 +272,7 @@ def post_datapoints(tag_id, datapoints: List[Datapoint], **kwargs):
     Returns:
         An empty response.
     """
-    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    api_key, project = config.get_session_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url(api_version=0.4) + "/projects/{}/timeseries/data/{}".format(
         project, quote(tag_id, safe="")
     )
@@ -303,7 +303,7 @@ def get_latest(tag_id, **kwargs):
         v04.dto.LatestDatapointsResponse: A data object containing the requested data with several getter methods with different
         output formats.
     """
-    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    api_key, project = config.get_session_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url(api_version=0.4) + "/projects/{}/timeseries/latest/{}".format(
         project, quote(tag_id, safe="")
     )
@@ -344,7 +344,7 @@ def get_multi_tag_datapoints(datapoints_queries, aggregates=None, granularity=No
         list(v04.dto.DatapointsResponse): A list of data objects containing the requested data with several getter methods
         with different output formats.
     """
-    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    api_key, project = config.get_session_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url(api_version=0.4) + "/projects/{}/timeseries/dataquery".format(project)
     start, end = _utils.interval_to_ms(start, end)
 
@@ -446,7 +446,7 @@ def get_datapoints_frame(tag_ids, aggregates, granularity, start=None, end=None,
             Using both:
                 ['<tagid1>', {'tagId': '<tag_id2>', 'aggregates': ['<aggfunc1>', '<aggfunc2>']}]
     """
-    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    api_key, project = config.get_session_config_variables(kwargs.get("api_key"), kwargs.get("project"))
 
     start, end = _utils.interval_to_ms(start, end)
 
@@ -604,7 +604,7 @@ def get_timeseries(prefix=None, description=None, include_metadata=False, asset_
         v04.dto.TimeSeriesResponse: A data object containing the requested timeseries with several getter methods with different
         output formats.
     """
-    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    api_key, project = config.get_session_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url(api_version=0.4) + "/projects/{}/timeseries".format(project)
     headers = {"api-key": api_key, "accept": "application/json"}
     params = {
@@ -652,7 +652,7 @@ def post_time_series(time_series: List[TimeSeries], **kwargs):
         An empty response.
     """
 
-    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    api_key, project = config.get_session_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url(api_version=0.4) + "/projects/{}/timeseries".format(project)
 
     body = {"items": [ts.__dict__ for ts in time_series]}
@@ -680,7 +680,7 @@ def update_time_series(time_series: List[TimeSeries], **kwargs):
         An empty response.
     """
 
-    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    api_key, project = config.get_session_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url(api_version=0.4) + "/projects/{}/timeseries".format(project)
 
     body = {"items": [ts.__dict__ for ts in time_series]}

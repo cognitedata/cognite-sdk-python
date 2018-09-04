@@ -55,7 +55,7 @@ def upload_file(file_name, file_path=None, directory=None, source=None, file_typ
     Returns:
         dict: A dictionary containing the field fileId and optionally also uploadURL if file_path is omitted.
     """
-    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    api_key, project = config.get_session_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url(api_version=0.4) + "/projects/{}/storage/metadata".format(project)
 
     headers = {
@@ -105,7 +105,7 @@ def download_file(id, get_contents=False, **kwargs):
     Returns:
         str: Download link if get_contents is False else file contents.
     """
-    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    api_key, project = config.get_session_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url(api_version=0.4) + "/projects/{}/storage/{}".format(project, id)
     headers = {"api-key": api_key, "accept": "application/json"}
     res = _utils.get_request(url=url, headers=headers, cookies=config.get_cookies())
@@ -130,7 +130,7 @@ def delete_files(file_ids, **kwargs):
     Returns:
         list: List of files deleted and files that failed to delete.
     """
-    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    api_key, project = config.get_session_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url(api_version=0.4) + "/projects/{}/storage/delete".format(project)
     headers = {"api-key": api_key, "content-type": "application/json", "accept": "application/json"}
     body = {"items": file_ids}
@@ -167,7 +167,7 @@ def list_files(name=None, directory=None, file_type=None, source=None, **kwargs)
     Returns:
         v04.dto.FileListResponse: A data object containing the requested files information.
     """
-    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    api_key, project = config.get_session_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url(api_version=0.4) + "/projects/{}/storage".format(project)
     headers = {"api-key": api_key, "accept": "application/json"}
     params = {
@@ -216,7 +216,7 @@ def get_file_info(id, **kwargs):
     Returns:
         v04.dto.FileInfoResponse: A data object containing the requested file information.
     """
-    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    api_key, project = config.get_session_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url(api_version=0.4) + "/projects/{}/storage/{}/info".format(project, id)
     headers = {"api-key": api_key, "accept": "application/json"}
     res = _utils.get_request(url, headers=headers)

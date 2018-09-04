@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import argparse
-import os
 import sys
 
-from cognite.cli.config import CogniteConfigCLI
-from cognite.cli.ml import CogniteMLCLI
+from cognite import config
+from cognite.cli.cli_config import CogniteConfigCLI
+from cognite.cli.cli_ml import CogniteMLCLI
 
 
 class CogniteCLI:
@@ -26,23 +26,24 @@ The available Cognite services are:
             parser.print_help()
             exit(1)
         # use dispatch pattern to invoke method with same name
-        getattr(self, args.service)()
+        config.load_from_file()
+        getattr(self, args.service)(next_arg_index=2)
 
-    def config(self):
+    def config(self, next_arg_index):
         usage_msg = """cognite config <command> [<args>]
 
 The available Cognite config commands are:
-    set         Set config variables
+    set-default         Set default config
     view        View config
 """
         parser = argparse.ArgumentParser(description="Configure your CDP client.", usage=usage_msg)
         parser.add_argument("command", help="Command to run", choices=["set-default", "view"])
-        args = parser.parse_args(sys.argv[2:3])
+        args = parser.parse_args(sys.argv[next_arg_index : next_arg_index + 1])
         cmd = args.command.replace("-", "_")
         config_cli = CogniteConfigCLI()
-        getattr(config_cli, cmd)()
+        getattr(config_cli, cmd)(next_arg_index + 1)
 
-    def ml(self):
+    def ml(self, next_arg_index):
         usage_msg = """cognite ml <command> <resource> [<args>]
 
 The available Cognite ML commands are:
@@ -54,7 +55,7 @@ The available Cognite ML commands are:
         parser.add_argument("resource", help="Resource to run command on", choices=["model", "version" "source"])
         # now that we're inside a subcommand, ignore the first
         # TWO argvs, ie the command (cognite) and the subcommand (ml)
-        args = parser.parse_args(sys.argv[2:4])
+        args = parser.parse_args(sys.argv[next_arg_index : next_arg_index + 2])
         ml_cli = CogniteMLCLI()
         getattr(ml_cli, args.command)(args.resource)
 
