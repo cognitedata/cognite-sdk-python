@@ -221,6 +221,7 @@ def search_for_events(
         "limit": kwargs.get("limit", 1000),
         "offset": kwargs.get("offset"),
     }
+
     res = _utils.get_request(url, headers=headers, params=params)
 
     return EventListResponse(res.json())
