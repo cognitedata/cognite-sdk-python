@@ -236,6 +236,7 @@ class TestMultiTimeseriesDatapoints:
         from cognite.v05.dto import DatapointsResponse
 
         assert isinstance(get_multi_time_series_dps_response_obj, list)
+
         for dpr in get_multi_time_series_dps_response_obj:
             assert isinstance(dpr, DatapointsResponse)
 
