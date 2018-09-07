@@ -28,7 +28,14 @@ $ pip install cognite-sdk
 ```
 
 ## Usage
-Simple script to download and plot one year of hourly aggregates.
+
+This sample requires 'matplotlib' for plotting the time series.
+```bash
+$ pip install matplotlib
+```
+
+Simple script to download data and plot one year of hourly aggregates from the [Open Industrial Data](https://openindustrialdata.com/). An API key can be obtained from the Open Industrial Data web site.
+
 ```python
 import os
 
@@ -37,11 +44,12 @@ from cognite.config import configure_session
 from cognite.v05.timeseries import get_datapoints
 
 # Set API key and project for current session
-configure_session(api_key=os.getenv('COGNITE_API_KEY'), project='akerbp')
+configure_session(api_key=os.getenv('COGNITE_API_KEY'), project='publicdata')
 
-# Retrieve one year of hourly aggreagets for timeseries 'equipment_x'
-ts = 'equipment_x'
-datapoints = get_datapoints(ts, start='52w-ago', aggregates=['avg'], granularity='1h')
+# Retrieve one year of hourly aggreagets for timeseries ''
+ts = 'VAL_23-PT-92512:X.Value'
+datapoints = get_datapoints(ts, start='52w-ago', end='7d-ago',
+                            aggregates=['avg'], granularity='1d', processes=1)
 
 # Convert to pandas dataframe
 dataframe = datapoints.to_pandas()
