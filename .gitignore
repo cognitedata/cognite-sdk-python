@@ -38,3 +38,4 @@ coverage.xml
 # pytest
 .pytest_cache
 test-report.xml
+*.iml

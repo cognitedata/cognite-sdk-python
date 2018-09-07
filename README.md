@@ -27,45 +27,9 @@ On Windows, you can follows [these instructions](https://www.computerhope.com/is
 $ pip install cognite-sdk
 ```
 
-## Usage
-
-This sample requires 'matplotlib' for plotting the time series.
-```bash
-$ pip install matplotlib
-```
-
-Simple script to download data and plot one year of hourly aggregates from the [Open Industrial Data](https://openindustrialdata.com/). An API key can be obtained from the Open Industrial Data web site.
-
-```python
-import os
-
-import matplotlib.pyplot as plt
-from cognite.config import configure_session
-from cognite.v05.timeseries import get_datapoints
-
-# Set API key and project for current session
-configure_session(api_key=os.getenv('COGNITE_API_KEY'), project='publicdata')
-
-# Retrieve one year of hourly aggreagets for timeseries ''
-ts = 'VAL_23-PT-92512:X.Value'
-datapoints = get_datapoints(ts, start='52w-ago', end='7d-ago',
-                            aggregates=['avg'], granularity='1d', processes=1)
-
-# Convert to pandas dataframe
-dataframe = datapoints.to_pandas()
-
-# Plot the dataframe
-dataframe.plot(x='timestamp')
-plt.show()
-```
-
 ## Learn more
-Public examples will come in the examples folder in this repository. This will include examples for:
-- Retrieval of timeseries data, using aggregates, granularity, etc.
-- Different methods for retrieving data and navigating the data set
-- How to get events and why events are useful
-- How to use functionality which is in the public API, but not yet incorporated into the SDK, using requests
 
+See the [examples](examples) folder for samples using the SDK.
 
 Check out the documentation below, including the public API guide.
 
