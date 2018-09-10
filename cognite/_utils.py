@@ -11,7 +11,7 @@ import logging
 import re
 import time
 from datetime import datetime
-from typing import List, Callable
+from typing import Callable, List
 
 import requests
 
@@ -28,15 +28,22 @@ def delete_request(url, params=None, headers=None, cookies=None):
             res = requests.delete(url, params=params, headers=headers, cookies=cookies)
             if res.status_code == 200:
                 return res
-        except Exception as e:
+        except Exception:
             if number_of_tries == config.get_number_of_retries():
-                raise APIError(e)
+                raise
+    x_request_id = res.headers.get("X-Request-Id")
+    code = res.status_code
     try:
-        err_mess = res.json()["error"].__str__()
-    except:
-        err_mess = res.content.__str__()
-    err_mess += "\nX-Request_id: {}".format(res.headers.get("X-Request-Id"))
-    raise APIError(err_mess)
+        error = res.json()["error"]
+        if isinstance(error, str):
+            msg = error
+        else:
+            msg = error.get("message") or res.json()
+    except TypeError:
+        msg = res.content
+    except KeyError:
+        msg = res.json()
+    raise APIError(msg, code, x_request_id)
 
 
 def get_request(url, params=None, headers=None, cookies=None):
@@ -47,15 +54,22 @@ def get_request(url, params=None, headers=None, cookies=None):
             res = requests.get(url, params=params, headers=headers, cookies=cookies)
             if res.status_code == 200:
                 return res
-        except Exception as e:
+        except Exception:
             if number_of_tries == config.get_number_of_retries():
-                raise APIError(e)
+                raise
+    x_request_id = res.headers.get("X-Request-Id")
+    code = res.status_code
     try:
-        err_mess = res.json()["error"].__str__()
-    except:
-        err_mess = res.content.__str__()
-    err_mess += "\nX-Request_id: {}".format(res.headers.get("X-Request-Id"))
-    raise APIError(err_mess)
+        error = res.json()["error"]
+        if isinstance(error, str):
+            msg = error
+        else:
+            msg = error.get("message") or res.json()
+    except TypeError:
+        msg = res.content
+    except KeyError:
+        msg = res.json()
+    raise APIError(msg, code, x_request_id)
 
 
 def post_request(url, body, headers=None, params=None, cookies=None, use_gzip=False):
@@ -80,15 +94,22 @@ def post_request(url, body, headers=None, params=None, cookies=None, use_gzip=Fa
                 res = requests.post(url, data=json.dumps(body), headers=headers, params=params, cookies=cookies)
             if res.status_code == 200:
                 return res
-        except Exception as e:
+        except Exception:
             if number_of_tries == config.get_number_of_retries():
-                raise APIError(e)
+                raise
+    x_request_id = res.headers.get("X-Request-Id")
+    code = res.status_code
     try:
-        err_mess = res.json()["error"].__str__()
-    except:
-        err_mess = res.content.__str__()
-    err_mess += "\nX-Request_id: {}".format(res.headers.get("X-Request-Id"))
-    raise APIError(err_mess)
+        error = res.json()["error"]
+        if isinstance(error, str):
+            msg = error
+        else:
+            msg = error.get("message") or res.json()
+    except TypeError:
+        msg = res.content
+    except KeyError:
+        msg = res.json()
+    raise APIError(msg, code, x_request_id)
 
 
 def put_request(url, body=None, headers=None, cookies=None):
@@ -99,15 +120,22 @@ def put_request(url, body=None, headers=None, cookies=None):
             res = requests.put(url, data=json.dumps(body), headers=headers, cookies=cookies)
             if res.ok:
                 return res
-        except Exception as e:
+        except Exception:
             if number_of_tries == config.get_number_of_retries():
-                raise APIError(e)
+                raise
+    x_request_id = res.headers.get("X-Request-Id")
+    code = res.status_code
     try:
-        err_mess = res.json()["error"].__str__()
-    except:
-        err_mess = res.content.__str__()
-    err_mess += "\nX-Request_id: {}".format(res.headers.get("X-Request-Id"))
-    raise APIError(err_mess)
+        error = res.json()["error"]
+        if isinstance(error, str):
+            msg = error
+        else:
+            msg = error.get("message") or res.json()
+    except TypeError:
+        msg = res.content
+    except KeyError:
+        msg = res.json()
+    raise APIError(msg, code, x_request_id)
 
 
 def _log_request(method, url, **kwargs):
@@ -173,7 +201,13 @@ def interval_to_ms(start, end):
 
 
 class APIError(Exception):
-    pass
+    def __init__(self, message, code=None, x_request_id=None):
+        self.message = message
+        self.code = code
+        self.x_request_id = x_request_id
+
+    def __str__(self):
+        return "{} | code: {} | X-Request-ID: {}".format(self.message, self.code, self.x_request_id)
 
 
 class InputError(Exception):
