@@ -8,15 +8,16 @@ https://doc.cognitedata.com/0.5/#Cognite-API-Time-series
 import io
 import os
 import time
+from concurrent.futures import ThreadPoolExecutor as Pool
 from functools import partial
-from multiprocessing import Pool
 from typing import List
 from urllib.parse import quote
+
+import pandas as pd
 
 import cognite._constants as _constants
 import cognite._utils as _utils
 import cognite.config as config
-import pandas as pd
 from cognite._protobuf_descriptors import _api_timeseries_data_v2_pb2
 from cognite.v05.dto import (
     Datapoint,
@@ -83,7 +84,7 @@ def get_datapoints(name, aggregates=None, granularity=None, start=None, end=None
         )
 
     diff = end - start
-    num_of_processes = kwargs.get("processes", os.cpu_count())
+    num_of_processes = kwargs.get("processes", _constants.NUM_OF_WORKERS)
 
     granularity_ms = 1
     if granularity:
@@ -539,7 +540,7 @@ def get_datapoints_frame(time_series, aggregates, granularity, start=None, end=N
         )
 
     diff = end - start
-    num_of_processes = kwargs.get("processes") or os.cpu_count()
+    num_of_processes = kwargs.get("processes") or _constants.NUM_OF_WORKERS
 
     granularity_ms = 1
     if granularity:
