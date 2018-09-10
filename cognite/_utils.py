@@ -143,8 +143,7 @@ def _log_request(method, url, **kwargs):
 
 
 def datetime_to_ms(dt):
-    epoch = datetime.utcfromtimestamp(0)
-    return int((dt - epoch).total_seconds() * 1000)
+    return int(dt.timestamp() * 1000)
 
 
 def round_to_nearest(x, base):
@@ -170,6 +169,8 @@ def granularity_to_ms(time_string):
 
 def _time_ago_to_ms(time_ago_string):
     """Returns millisecond representation of time-ago string"""
+    if time_ago_string == 'now':
+        return 0
     pattern = r"(\d+)([a-z])-ago"
     res = re.match(pattern, str(time_ago_string))
     if res:
