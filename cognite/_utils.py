@@ -31,19 +31,18 @@ def delete_request(url, params=None, headers=None, cookies=None):
         except Exception:
             if number_of_tries == config.get_number_of_retries():
                 raise
+    x_request_id = res.headers.get("X-Request-Id")
+    code = res.status_code
     try:
-        err_content = res.json().get("error", {})
+        error = res.json()["error"]
+        if isinstance(error, str):
+            msg = error
+        else:
+            msg = error.get("message") or res.json()
     except TypeError:
-        err_content = res.content.__str__()
-    except:
-        err_content = {}
-
-    try:
-        code = err_content["code"]
-        msg = err_content["message"]
-        x_request_id = res.headers.get("X-Request-Id")
-    except:
-        raise APIError(err_content)
+        msg = res.content
+    except KeyError:
+        msg = res.json()
     raise APIError(msg, code, x_request_id)
 
 
@@ -58,19 +57,18 @@ def get_request(url, params=None, headers=None, cookies=None):
         except Exception:
             if number_of_tries == config.get_number_of_retries():
                 raise
+    x_request_id = res.headers.get("X-Request-Id")
+    code = res.status_code
     try:
-        err_content = res.json().get("error", {})
+        error = res.json()["error"]
+        if isinstance(error, str):
+            msg = error
+        else:
+            msg = error.get("message") or res.json()
     except TypeError:
-        err_content = res.content.__str__()
-    except:
-        err_content = {}
-
-    try:
-        code = err_content["code"]
-        msg = err_content["message"]
-        x_request_id = res.headers.get("X-Request-Id")
-    except:
-        raise APIError(err_content)
+        msg = res.content
+    except KeyError:
+        msg = res.json()
     raise APIError(msg, code, x_request_id)
 
 
@@ -99,19 +97,18 @@ def post_request(url, body, headers=None, params=None, cookies=None, use_gzip=Fa
         except Exception:
             if number_of_tries == config.get_number_of_retries():
                 raise
+    x_request_id = res.headers.get("X-Request-Id")
+    code = res.status_code
     try:
-        err_content = res.json().get("error", {})
+        error = res.json()["error"]
+        if isinstance(error, str):
+            msg = error
+        else:
+            msg = error.get("message") or res.json()
     except TypeError:
-        err_content = res.content.__str__()
-    except:
-        err_content = {}
-
-    try:
-        code = err_content["code"]
-        msg = err_content["message"]
-        x_request_id = res.headers.get("X-Request-Id")
-    except:
-        raise APIError(err_content)
+        msg = res.content
+    except KeyError:
+        msg = res.json()
     raise APIError(msg, code, x_request_id)
 
 
@@ -126,19 +123,18 @@ def put_request(url, body=None, headers=None, cookies=None):
         except Exception:
             if number_of_tries == config.get_number_of_retries():
                 raise
+    x_request_id = res.headers.get("X-Request-Id")
+    code = res.status_code
     try:
-        err_content = res.json().get("error", {})
+        error = res.json()["error"]
+        if isinstance(error, str):
+            msg = error
+        else:
+            msg = error.get("message") or res.json()
     except TypeError:
-        err_content = res.content.__str__()
-    except:
-        err_content = {}
-
-    try:
-        code = err_content["code"]
-        msg = err_content["message"]
-        x_request_id = res.headers.get("X-Request-Id")
-    except:
-        raise APIError(err_content)
+        msg = res.content
+    except KeyError:
+        msg = res.json()
     raise APIError(msg, code, x_request_id)
 
 

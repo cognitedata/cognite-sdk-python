@@ -58,6 +58,16 @@ class TestRequests:
             utils.delete_request(url)
         assert re.match("Server error", str(e.value))
 
+        mock_request.return_value = MockReturnValue(
+            status=400, json_data={"error": {"code": 400, "message": "Client error"}}
+        )
+
+        with pytest.raises(utils.APIError) as e:
+            utils.delete_request(url)
+        assert re.match("Client error | code: 400 | X-Request-ID:", str(e.value))
+        assert e.value.code == 400
+        assert e.value.message == "Client error"
+
     @mock.patch("cognite._utils.requests.delete")
     def test_delete_request_exception(self, mock_request):
         mock_request.return_value = MockReturnValue(status=500)
