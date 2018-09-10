@@ -8,15 +8,16 @@ https://doc.cognitedata.com/0.5/#Cognite-API-Time-series
 import io
 import os
 import time
+from concurrent.futures import ThreadPoolExecutor as Pool
 from functools import partial
-from multiprocessing import Pool
 from typing import List
 from urllib.parse import quote
+
+import pandas as pd
 
 import cognite._constants as _constants
 import cognite._utils as _utils
 import cognite.config as config
-import pandas as pd
 from cognite._protobuf_descriptors import _api_timeseries_data_v2_pb2
 from cognite.v05.dto import (
     Datapoint,
