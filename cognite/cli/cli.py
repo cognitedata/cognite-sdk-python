@@ -3,21 +3,18 @@
 import argparse
 import sys
 
-from cognite import config
-from cognite.cli.cli_config import CogniteConfigCLI
-from cognite.cli.cli_ml import CogniteMLCLI
+from cognite.cli.cli_models import CogniteMLCLI
 
 
 class CogniteCLI:
     def __init__(self):
-        usage_msg = """cognite <service> [<args>]
+        """cognite <service> [<args>]
 
-The available Cognite services are:
-   config       Configure your CDP client.
-   ml           Cognite machine learning services
-"""
-        parser = argparse.ArgumentParser(description="Command line interface for CDP.", usage=usage_msg)
-        parser.add_argument("service", help="Service to run", choices=["config", "ml"])
+        The available Cognite services are:
+        models      Model hosting
+        """
+        parser = argparse.ArgumentParser(description="Command line interface for CDP.", usage=self.__init__.__doc__)
+        parser.add_argument("service", help="Service to run", choices=["models"])
         # parse_args defaults to [1:] for args, but you need to
         # exclude the rest of the args too, or validation will fail
         args = parser.parse_args(sys.argv[1:2])
@@ -26,38 +23,22 @@ The available Cognite services are:
             parser.print_help()
             exit(1)
         # use dispatch pattern to invoke method with same name
-        config.load_from_file()
-        getattr(self, args.service)(next_arg_index=2)
+        getattr(self, args.service)(sys.argv[2:])
 
-    def config(self, next_arg_index):
-        usage_msg = """cognite config <command> [<args>]
+    def models(self, args):
+        """cognite models <command> [<args>]
 
-The available Cognite config commands are:
-    set-default         Set default config
-    view        View config
-"""
-        parser = argparse.ArgumentParser(description="Configure your CDP client.", usage=usage_msg)
-        parser.add_argument("command", help="Command to run", choices=["set-default", "view"])
-        args = parser.parse_args(sys.argv[next_arg_index : next_arg_index + 1])
-        cmd = args.command.replace("-", "_")
-        config_cli = CogniteConfigCLI()
-        getattr(config_cli, cmd)(next_arg_index + 1)
-
-    def ml(self, next_arg_index):
-        usage_msg = """cognite ml <command> <resource> [<args>]
-
-The available Cognite ML commands are:
-    get         Get resource
-    create      Create resource
-"""
-        parser = argparse.ArgumentParser(description="Access CDP machine learning services.", usage=usage_msg)
-        parser.add_argument("command", help="Command to run", choices=["create", "get"])
-        parser.add_argument("resource", help="Resource to run command on", choices=["model", "version", "source"])
-        # now that we're inside a subcommand, ignore the first
-        # TWO argvs, ie the command (cognite) and the subcommand (ml)
-        args = parser.parse_args(sys.argv[next_arg_index : next_arg_index + 2])
+        The available commands are:
+            new         Create a new model source package in the current directory
+            get         Get all models, or all versions for a specific model.
+            create      Create a new model
+            train       Train a new model version
+        """
+        parser = argparse.ArgumentParser(description="Access CDP model hosting services.", usage=self.models.__doc__)
+        parser.add_argument("command", help="Command to run", choices=["new", "train", "create", "get"])
+        parsed_args = parser.parse_args(args[:1])
         ml_cli = CogniteMLCLI()
-        getattr(ml_cli, args.command)(args.resource, next_arg_index + 2)
+        getattr(ml_cli, parsed_args.command)(args[1:])
 
 
 def main():
