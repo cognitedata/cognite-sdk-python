@@ -16,12 +16,12 @@ In order to start using these examples, you need
 
 ## Examples
 
-### [basics/Learn to use cdp](basics/Learn%20to%20use%20CDP.ipynb.py)
+### [basics/Learn to use cdp](basics/Learn%20to%20use%20CDP.ipynb)
 
 Simple Jupyter notebook which introduces some of the main concepts of the Cognite Data Platform. The notebook fetches, visualizes, and navigates some data from the [Open Industrial Data](https://openindustrialdata.com/) collection. An API key can be obtained from the Open Industrial Data web site.
 
 
-### [openindustrialdata.py](openindustrialdata.py)
+### [basics/openindustrialdata.py](basics/openindustrialdata.py)
 
 This example requires `matplotlib` for plotting the time series.
 ```bash
