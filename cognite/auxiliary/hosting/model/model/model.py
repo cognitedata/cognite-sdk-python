@@ -19,6 +19,10 @@ class Model:
         Returns:
             None
         """
+        my_model = {"input": "result"}
+
+        with file_io("yourmodel.pkl", "wb") as f:
+            pickle.dump(my_model, f)
         pass
 
     def predict(self, data, **kwargs):
@@ -44,6 +48,6 @@ class Model:
         Returns:
             An instance of Model
         """
-        with file_io("yourmodel.pkl") as f:
+        with file_io("yourmodel.pkl", "rb") as f:
             model = pickle.load(f)
         return Model(model)
