@@ -11,9 +11,7 @@ class CogniteCLI:
         """cognite <service> [<args>]
 
 The available Cognite services are:
-name        Description
-----        -----------
-models      Model hosting
+    models      Model hosting
 """
         parser = argparse.ArgumentParser(description="Command line interface for CDP.", usage=self.__init__.__doc__)
         parser.add_argument("service", help="Service to run", choices=["models"])
@@ -36,7 +34,7 @@ The available commands are:
     create      Create a new model
     train       Train a new model version
 """
-        parser = argparse.ArgumentParser(description="Access CDP model hosting services.", usage=self.models.__doc__)
+        parser = argparse.ArgumentParser(description="Access CDP model _hosting services.", usage=self.models.__doc__)
         parser.add_argument("command", help="Command to run", choices=["new", "train", "create", "get"])
         parsed_args = parser.parse_args(args[:1])
         ml_cli = CogniteMLCLI()

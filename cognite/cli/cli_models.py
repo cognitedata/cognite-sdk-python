@@ -8,7 +8,7 @@ from tabulate import tabulate
 
 from cognite.v06 import models
 
-MODEL_SRC_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, "auxiliary/hosting/model"))
+MODEL_SRC_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, "auxiliary/_hosting/model"))
 
 
 class CogniteMLCLI:
@@ -17,7 +17,7 @@ class CogniteMLCLI:
 
         Get all models or pass a model id and get all model versions.
         """
-        parser = argparse.ArgumentParser(description="Access CDP model hosting services.", usage=self.get.__doc__)
+        parser = argparse.ArgumentParser(description="Get information about models.", usage=self.get.__doc__)
         parser.add_argument("-m", "--model-id", help="Model to get versions for", type=int)
         parser.add_argument("-s", "--source-packages", help="Get source-packages", action="store_true")
         parsed_args = parser.parse_args(args)
@@ -40,7 +40,7 @@ class CogniteMLCLI:
 
         Create a new model source package in the current working directory
         """
-        parser = argparse.ArgumentParser(description="Access CDP model hosting services.", usage=self.new.__doc__)
+        parser = argparse.ArgumentParser(description="Create new model source package.", usage=self.new.__doc__)
         parsed_args = parser.parse_args(args)
 
         model_name = input("Model name: ")
