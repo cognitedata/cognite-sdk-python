@@ -14,7 +14,7 @@ Attributes:
 import os
 
 # GLOBAL CONSTANTS
-BASE_URL = "https://api.cognitedata.com/api/"
+BASE_URL = "https://api.cognitedata.com"
 LIMIT = 100000
 LIMIT_AGG = 10000
 RETRY_LIMIT = 0

@@ -75,16 +75,14 @@ def set_base_url(url=None):
     _CONFIG_BASE_URL = url
 
 
-def get_base_url(api_version=None):
+def get_base_url():
     """Returns the current base url for requests made from the SDK.
     Args:
         api_version (float): Version of API to use for base_url
     Returns:
         str: current base url.
     """
-    if not api_version:
-        api_version = "<version>"
-    return (_CONFIG_BASE_URL or BASE_URL) + str(api_version)
+    return _CONFIG_BASE_URL or BASE_URL
 
 
 def set_number_of_retries(retries: int = None):

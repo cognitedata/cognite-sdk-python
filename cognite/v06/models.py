@@ -7,7 +7,6 @@ https://doc.cognitedata.com/0.6/models
 """
 from cognite import _utils as utils
 from cognite import config
-from cognite.v05 import api_version
 
 
 def create_model(name, description="", **kwargs):

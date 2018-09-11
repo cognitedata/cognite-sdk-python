@@ -1,6 +1,7 @@
 import argparse
 import os
 import shutil
+import sys
 from datetime import datetime
 
 from tabulate import tabulate
@@ -54,13 +55,13 @@ class CogniteMLCLI:
             )
         )
 
-    # def create(self, next_arg_index):
-    #     """cognite ml create {} [<args>]""".format(resource)
-    #     parser = argparse.ArgumentParser(description="Create a new {}.".format(resource), usage=usage_msg)
-    #     parser.add_argument("name", help="Name of the model")
-    #     parser.add_argument("-d", "--description", help="A description of what the model does", default="")
-    #     args = parser.parse_args(sys.argv[next_arg_index:])
-    #     models.create_model(name=args.name, description=args.description)
+    def create(self, args):
+        """cognite models create [<args>]"""
+        parser = argparse.ArgumentParser(description="Create a new model.", usage=self.create.__doc__)
+        parser.add_argument("name", help="Name of the model")
+        parser.add_argument("-d", "--description", help="A description of what the model does", default="")
+        args = parser.parse_args(args)
+        models.create_model(name=args.name, description=args.description)
 
     def _print_models(self, models_list):
         if not models_list:

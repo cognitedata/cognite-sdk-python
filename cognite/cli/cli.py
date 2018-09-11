@@ -10,9 +10,11 @@ class CogniteCLI:
     def __init__(self):
         """cognite <service> [<args>]
 
-        The available Cognite services are:
-        models      Model hosting
-        """
+The available Cognite services are:
+name        Description
+----        -----------
+models      Model hosting
+"""
         parser = argparse.ArgumentParser(description="Command line interface for CDP.", usage=self.__init__.__doc__)
         parser.add_argument("service", help="Service to run", choices=["models"])
         # parse_args defaults to [1:] for args, but you need to
@@ -28,12 +30,12 @@ class CogniteCLI:
     def models(self, args):
         """cognite models <command> [<args>]
 
-        The available commands are:
-            new         Create a new model source package in the current directory
-            get         Get all models, or all versions for a specific model.
-            create      Create a new model
-            train       Train a new model version
-        """
+The available commands are:
+    new         Create a new model source package in the current directory
+    get         Get all models, versions, or source packages.
+    create      Create a new model
+    train       Train a new model version
+"""
         parser = argparse.ArgumentParser(description="Access CDP model hosting services.", usage=self.models.__doc__)
         parser.add_argument("command", help="Command to run", choices=["new", "train", "create", "get"])
         parsed_args = parser.parse_args(args[:1])
