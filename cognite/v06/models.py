@@ -29,3 +29,12 @@ def get_models(**kwargs):
     headers = {"api-key": api_key, "accept": "application/json"}
     res = utils.get_request(url, headers=headers, cookies=config.get_cookies())
     return res.json()
+
+
+def get_versions(model_id, **kwargs):
+    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    # url = config.get_base_url(0.6) + "/project/{}/models".format(project)
+    url = "http://localhost:8000/api/0.1/project/{}/models/{}/versions".format(project, model_id)
+    headers = {"api-key": api_key, "accept": "application/json"}
+    res = utils.get_request(url, headers=headers, cookies=config.get_cookies())
+    return res.json()

@@ -27,7 +27,7 @@ RESPONSE = {
 
 @pytest.fixture(autouse=True)
 def url():
-    api_key, project = config.get_session_config_variables(None, None)
+    api_key, project = config.get_config_variables(None, None)
     return config.get_base_url(api_version=0.5) + '/projects/{}/assets'.format(project)
 
 

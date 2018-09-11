@@ -23,7 +23,7 @@ class DataTransferService:
             api_key (str):          Api key.
             cookies (dict):         Cookies.
         """
-        config_api_key, config_project = config.get_session_config_variables(api_key, project)
+        config_api_key, config_project = config.get_config_variables(api_key, project)
 
         if not isinstance(data_spec, DataSpec):
             raise InputError("DataTransferService accepts a DataSpec instance.")

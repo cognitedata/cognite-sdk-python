@@ -29,7 +29,7 @@ def get_databases(limit: int = None, cursor: str = None, api_key=None, project=N
         v05.dto.RawResponse: A data object containing the requested data with several getter methods with different
         output formats.
     """
-    api_key, project = config.get_session_config_variables(api_key, project)
+    api_key, project = config.get_config_variables(api_key, project)
     url = config.get_base_url(api_version=0.5) + "/projects/{}/raw".format(project)
 
     params = {"limit": limit, "cursor": cursor}
@@ -55,7 +55,7 @@ def create_databases(database_names: list, api_key=None, project=None):
         output formats.
 
     """
-    api_key, project = config.get_session_config_variables(api_key, project)
+    api_key, project = config.get_config_variables(api_key, project)
     url = config.get_base_url(api_version=0.5) + "/projects/{}/raw/create".format(project)
     body = {"items": [{"dbName": "{}".format(database_name)} for database_name in database_names]}
     headers = {"api-key": api_key, "content-type": "*/*", "accept": "application/json"}
@@ -77,7 +77,7 @@ def delete_databases(database_names: list, recursive: bool = False, api_key=None
         An empty response.
 
     """
-    api_key, project = config.get_session_config_variables(api_key, project)
+    api_key, project = config.get_config_variables(api_key, project)
     url = config.get_base_url(api_version=0.5) + "/projects/{}/raw/delete".format(project)
     body = {"items": [{"dbName": "{}".format(database_name)} for database_name in database_names]}
     params = {"recursive": recursive}
@@ -104,7 +104,7 @@ def get_tables(database_name: str = None, limit: int = None, cursor: str = None,
         v05.dto.RawResponse: A data object containing the requested data with several getter methods with different
         output formats.
     """
-    api_key, project = config.get_session_config_variables(api_key, project)
+    api_key, project = config.get_config_variables(api_key, project)
     url = config.get_base_url(api_version=0.5) + "/projects/{}/raw/{}".format(project, database_name)
     params = dict()
     if not limit:
@@ -133,7 +133,7 @@ def create_tables(database_name: str = None, table_names: list = None, api_key=N
         output formats.
 
     """
-    api_key, project = config.get_session_config_variables(api_key, project)
+    api_key, project = config.get_config_variables(api_key, project)
     url = config.get_base_url(api_version=0.5) + "/projects/{}/raw/{}/create".format(project, database_name)
     body = {"items": [{"tableName": "{}".format(table_name)} for table_name in table_names]}
     headers = {"api-key": api_key, "content-type": "*/*", "accept": "application/json"}
@@ -157,7 +157,7 @@ def delete_tables(database_name: str = None, table_names: list = None, api_key=N
         An empty response.
 
     """
-    api_key, project = config.get_session_config_variables(api_key, project)
+    api_key, project = config.get_config_variables(api_key, project)
     url = config.get_base_url(api_version=0.5) + "/projects/{}/raw/{}/delete".format(project, database_name)
     body = {"items": [{"tableName": "{}".format(table_name)} for table_name in table_names]}
     headers = {"api-key": api_key, "content-type": "*/*", "accept": "application/json"}
@@ -187,7 +187,7 @@ def get_rows(
         v05.dto.RawResponse: A data object containing the requested data with several getter methods with different
         output formats.
     """
-    api_key, project = config.get_session_config_variables(api_key, project)
+    api_key, project = config.get_config_variables(api_key, project)
     url = config.get_base_url(api_version=0.5) + "/projects/{}/raw/{}/{}".format(project, database_name, table_name)
     params = dict()
     params["limit"] = limit
@@ -227,7 +227,7 @@ def create_rows(
         An empty response
 
     """
-    api_key, project = config.get_session_config_variables(api_key, project)
+    api_key, project = config.get_config_variables(api_key, project)
     url = config.get_base_url(api_version=0.5) + "/projects/{}/raw/{}/{}/create".format(
         project, database_name, table_name
     )
@@ -269,7 +269,7 @@ def delete_rows(
         An empty response.
 
     """
-    api_key, project = config.get_session_config_variables(api_key, project)
+    api_key, project = config.get_config_variables(api_key, project)
     url = config.get_base_url(api_version=0.5) + "/projects/{}/raw/{}/{}/delete".format(
         project, database_name, table_name
     )
@@ -297,7 +297,7 @@ def get_row(database_name: str = None, table_name: str = None, row_key: str = No
         v05.dto.RawResponse: A data object containing the requested data with several getter methods with different
         output formats.
     """
-    api_key, project = config.get_session_config_variables(api_key, project)
+    api_key, project = config.get_config_variables(api_key, project)
     url = config.get_base_url(api_version=0.5) + "/projects/{}/raw/{}/{}/{}".format(
         project, database_name, table_name, row_key
     )

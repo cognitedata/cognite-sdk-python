@@ -33,7 +33,7 @@ def tag_matching(tag_ids, fuzzy_threshold=0, platform=None, **kwargs):
         v05.dto.TagMatchingResponse: A data object containing the requested data with several getter methods with different
         output formats.
     """
-    api_key, project = config.get_session_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url(api_version=0.5) + "/projects/{}/tagmatching".format(project)
     body = {"tagIds": tag_ids, "metadata": {"fuzzyThreshold": fuzzy_threshold, "platform": platform}}
     headers = {"api-key": api_key, "content-type": "*/*", "accept": "application/json"}

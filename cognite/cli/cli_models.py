@@ -1,10 +1,13 @@
 import argparse
-import sys
+import os
+import shutil
 from datetime import datetime
 
 from tabulate import tabulate
 
 from cognite.v06 import models
+
+MODEL_SRC_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, "auxiliary/hosting/model"))
 
 
 class CogniteMLCLI:
@@ -14,7 +17,7 @@ class CogniteMLCLI:
         Get all models or pass a model id and get all model versions.
         """
         parser = argparse.ArgumentParser(description="Access CDP model hosting services.", usage=self.get.__doc__)
-        parser.add_argument("-m", "--model-id", help="Model to get versions for")
+        parser.add_argument("-m", "--model-id", help="Model to get versions for", type=int)
         parser.add_argument("-s", "--source-packages", help="Get source-packages", action="store_true")
         parsed_args = parser.parse_args(args)
         if parsed_args.source_packages:
@@ -25,17 +28,43 @@ class CogniteMLCLI:
                 # TODO: Get all source packages
                 pass
         elif parsed_args.model_id:
-            # TODO: Get all model versions
-            pass
+            versions_list = models.get_versions(parsed_args.model_id)
+            self._print_versions(versions_list)
         else:
-            # TODO: Get all models
-            self.print_models()
+            models_list = models.get_models()
+            self._print_models(models_list)
 
-    def print_models(self):
-        models_list = models.get_models()
+    def new(self, args):
+        """cognite models new
 
-        if not models:
-            print("No models yet :(")
+        Create a new model source package in the current working directory
+        """
+        parser = argparse.ArgumentParser(description="Access CDP model hosting services.", usage=self.new.__doc__)
+        parsed_args = parser.parse_args(args)
+
+        model_name = input("Model name: ")
+
+        dest_dir = os.path.join(os.getcwd(), model_name)
+        # if not os.path.isdir(dest_dir):
+        #     os.mkdir(dest_dir)
+        shutil.copytree(MODEL_SRC_DIR, dest_dir)
+        print(
+            "\nYour source package has been prepared!\nEnter the following command to take a look\n\n   cd {}\n".format(
+                model_name
+            )
+        )
+
+    # def create(self, next_arg_index):
+    #     """cognite ml create {} [<args>]""".format(resource)
+    #     parser = argparse.ArgumentParser(description="Create a new {}.".format(resource), usage=usage_msg)
+    #     parser.add_argument("name", help="Name of the model")
+    #     parser.add_argument("-d", "--description", help="A description of what the model does", default="")
+    #     args = parser.parse_args(sys.argv[next_arg_index:])
+    #     models.create_model(name=args.name, description=args.description)
+
+    def _print_models(self, models_list):
+        if not models_list:
+            print("No models yet.")
             return
 
         models_tabular = [
@@ -52,10 +81,24 @@ class CogniteMLCLI:
         headers = ["ID", "Name", "Description", "Active Version", "Created Time", "Is Deprecated"]
         print(tabulate(models_tabular, headers=headers))
 
-    def create(self, resource, next_arg_index):
-        usage_msg = """cognite ml create {} [<args>]""".format(resource)
-        parser = argparse.ArgumentParser(description="Create a new {}.".format(resource), usage=usage_msg)
-        parser.add_argument("name", help="Name of the model")
-        parser.add_argument("-d", "--description", help="A description of what the model does", default="")
-        args = parser.parse_args(sys.argv[next_arg_index:])
-        models.create_model(name=args.name, description=args.description)
+    def _print_versions(self, versions_list):
+        if not versions_list:
+            print("No versions yet.")
+            return
+        versions_tabular = [
+            [
+                m.get("id"),
+                m.get("name"),
+                m.get("status"),
+                m.get("description"),
+                m.get("source_package_id"),
+                datetime.fromtimestamp(int(m.get("created_time")) / 1000),
+                m.get("is_deprecated") == "1",
+            ]
+            for m in versions_list
+        ]
+        headers = ["ID", "Name", "Status", "Description", "Source Package ID", "Created Time", "Is Deprecated"]
+        print(tabulate(versions_tabular, headers=headers))
+
+    def _copy_source_package(self, path):
+        pass

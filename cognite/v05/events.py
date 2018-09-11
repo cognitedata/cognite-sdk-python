@@ -24,7 +24,7 @@ def get_event(event_id, **kwargs):
     Returns:
         v05.dto.EventResponse: A data object containing the requested event.
     """
-    api_key, project = config.get_session_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url(api_version=0.5) + "/projects/{}/events/{}".format(project, event_id)
     headers = {"api-key": api_key, "content-type": "application/json", "accept": "application/json"}
     res = _utils.get_request(url, headers=headers, cookies=config.get_cookies())
@@ -54,7 +54,7 @@ def get_events(type=None, sub_type=None, asset_id=None, **kwargs):
     Returns:
         v05.dto.EventListResponse: A data object containing the requested event.
     """
-    api_key, project = config.get_session_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url(api_version=0.5) + "/projects/{}/events".format(project)
 
     headers = {"api-key": api_key, "content-type": "application/json", "accept": "application/json"}
@@ -113,7 +113,7 @@ def post_events(events, **kwargs):
     Returns:
         v05.dto.EventListResponse
     """
-    api_key, project = config.get_session_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url(api_version=0.5) + "/projects/{}/events".format(project)
 
     headers = {"api-key": api_key, "content-type": "application/json", "accept": "application/json"}
@@ -137,7 +137,7 @@ def delete_events(event_ids, **kwargs):
     Returns:
         An empty response.
     """
-    api_key, project = config.get_session_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url(api_version=0.5) + "/projects/{}/events/delete".format(project)
 
     headers = {"api-key": api_key, "content-type": "application/json", "accept": "application/json"}

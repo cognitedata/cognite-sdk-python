@@ -23,17 +23,17 @@ def change_number_of_retries():
 
 @pytest.mark.usefixtures('unset_config_variables')
 def test_get_config_variables_when_not_set():
-    result = config.get_session_config_variables(None, None)
+    result = config.get_config_variables(None, None)
     assert result == ('', '')
 
 
 def test_get_config_variables_when_set():
-    result = config.get_session_config_variables(None, None)
+    result = config.get_config_variables(None, None)
     assert result == (TEST_API_KEY, TEST_PROJECT)
 
 
 def test_get_config_variables_when_set_explicitly():
-    result = config.get_session_config_variables('some_other_key', 'some_other_project')
+    result = config.get_config_variables('some_other_key', 'some_other_project')
     assert result == ('some_other_key', 'some_other_project')
 
 

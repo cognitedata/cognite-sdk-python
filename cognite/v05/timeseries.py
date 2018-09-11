@@ -13,11 +13,12 @@ from multiprocessing import Pool
 from typing import List
 from urllib.parse import quote
 
+import pandas as pd
+
 import cognite._constants as _constants
 import cognite._utils as _utils
 import cognite.config as config
-import pandas as pd
-from cognite._protobuf_descriptors import _api_timeseries_data_v2_pb2
+from cognite.auxiliary._protobuf_descriptors import _api_timeseries_data_v2_pb2
 from cognite.v05.dto import (
     Datapoint,
     DatapointsResponse,
@@ -66,7 +67,7 @@ def get_datapoints(name, aggregates=None, granularity=None, start=None, end=None
         v05.dto.DatapointsResponse: A data object containing the requested data with several getter methods with different
         output formats.
     """
-    api_key, project = config.get_session_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     start, end = _utils.interval_to_ms(start, end)
 
     if kwargs.get("limit"):
@@ -293,7 +294,7 @@ def post_multi_tag_datapoints(timeseries_with_datapoints: List[TimeseriesWithDat
     Returns:
         An empty response.
     """
-    api_key, project = config.get_session_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url(api_version=0.4) + "/projects/{}/timeseries/data".format(project)
 
     use_gzip = kwargs.get("use_gzip", False)
@@ -340,7 +341,7 @@ def post_datapoints(name, datapoints: List[Datapoint], **kwargs):
     Returns:
         An empty response.
     """
-    api_key, project = config.get_session_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url(api_version=0.5) + "/projects/{}/timeseries/data/{}".format(project, quote(name, safe=""))
 
     headers = {"api-key": api_key, "content-type": "application/json", "accept": "application/json"}
@@ -369,7 +370,7 @@ def get_latest(name, **kwargs):
         v05.dto.LatestDatapointsResponse: A data object containing the requested data with several getter methods with different
         output formats.
     """
-    api_key, project = config.get_session_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url(api_version=0.5) + "/projects/{}/timeseries/latest/{}".format(
         project, quote(name, safe="")
     )
@@ -412,7 +413,7 @@ def get_multi_time_series_datapoints(
         list(v05.dto.DatapointsResponse): A list of data objects containing the requested data with several getter methods
         with different output formats.
     """
-    api_key, project = config.get_session_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url(api_version=0.5) + "/projects/{}/timeseries/dataquery".format(project)
     start, end = _utils.interval_to_ms(start, end)
 
@@ -521,7 +522,7 @@ def get_datapoints_frame(time_series, aggregates, granularity, start=None, end=N
     """
     if not isinstance(time_series, list):
         raise _utils.InputError("time_series should be a list")
-    api_key, project = config.get_session_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     cookies = config.get_cookies(kwargs.get("cookies"))
     start, end = _utils.interval_to_ms(start, end)
 
@@ -756,7 +757,7 @@ def get_timeseries(prefix=None, description=None, include_metadata=False, asset_
         v05.dto.TimeSeriesResponse: A data object containing the requested timeseries with several getter methods with different
         output formats.
     """
-    api_key, project = config.get_session_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url(api_version=0.5) + "/projects/{}/timeseries".format(project)
     headers = {"api-key": api_key, "accept": "application/json"}
     params = {
@@ -804,7 +805,7 @@ def post_time_series(time_series: List[TimeSeries], **kwargs):
         An empty response.
     """
 
-    api_key, project = config.get_session_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url(api_version=0.5) + "/projects/{}/timeseries".format(project)
 
     body = {"items": [ts.__dict__ for ts in time_series]}
@@ -832,7 +833,7 @@ def update_time_series(time_series: List[TimeSeries], **kwargs):
         An empty response.
     """
 
-    api_key, project = config.get_session_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url(api_version=0.5) + "/projects/{}/timeseries".format(project)
 
     body = {"items": [ts.__dict__ for ts in time_series]}
@@ -857,7 +858,7 @@ def delete_time_series(name, **kwargs):
     Returns:
         An empty response.
     """
-    api_key, project = config.get_session_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url(api_version=0.5) + "/projects/{}/timeseries/{}".format(project, quote(name, safe=""))
 
     headers = {"api-key": api_key, "accept": "application/json"}
@@ -883,7 +884,7 @@ def live_data_generator(name, update_frequency=1, **kwargs):
     Yields:
         dict: Dictionary containing timestamp and value of latest datapoint.
     """
-    api_key, project = config.get_session_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     last_timestamp = get_latest(name, api_key=api_key, project=project).to_json()["timestamp"]
     while True:
         latest = get_latest(name, api_key=api_key, project=project).to_json()

@@ -41,7 +41,7 @@ def get_assets(name=None, path=None, description=None, metadata=None, depth=None
         v05.dto.AssetListResponse: A data object containing the requested assets with several getter methods with different
         output formats.
     """
-    api_key, project = config.get_session_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url(api_version=0.5) + "/projects/{}/assets".format(project)
     params = {
         "name": name,
@@ -72,7 +72,7 @@ def get_asset(asset_id, **kwargs):
         v05.dto.AssetResponse: A data object containing the requested assets with several getter methods with different
         output formats.
     """
-    api_key, project = config.get_session_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url(api_version=0.5) + "/projects/{}/assets/{}/subtree".format(project, asset_id)
     headers = {"api-key": api_key, "accept": "application/json"}
     res = utils.get_request(url, headers=headers, cookies=config.get_cookies())
@@ -99,7 +99,7 @@ def get_asset_subtree(asset_id, depth=None, **kwargs):
         v05.dto.AssetListResponse: A data object containing the requested assets with several getter methods with different
         output formats.
     """
-    api_key, project = config.get_session_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url(api_version=0.5) + "/projects/{}/assets/{}/subtree".format(project, asset_id)
     params = {"depth": depth, "limit": kwargs.get("limit", constants.LIMIT), "cursor": kwargs.get("cursor")}
     headers = {"api-key": api_key, "accept": "application/json"}
@@ -122,7 +122,7 @@ def post_assets(assets: List[Asset], **kwargs):
         v05.dto.AssetListResponse: A data object containing the posted assets with several getter methods with different
         output formats.
     """
-    api_key, project = config.get_session_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url(api_version=0.5) + "/projects/{}/assets".format(project)
     body = {"items": [asset.__dict__ for asset in assets]}
     headers = {"api-key": api_key, "content-type": "application/json", "accept": "application/json"}
@@ -144,7 +144,7 @@ def delete_assets(asset_ids: List[int], **kwargs):
     Returns:
         An empty response.
     """
-    api_key, project = config.get_session_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url(api_version=0.5) + "/projects/{}/assets/delete".format(project)
     body = {"items": asset_ids}
     headers = {"api-key": api_key, "content-type": "application/json", "accept": "application/json"}
