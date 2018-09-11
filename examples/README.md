@@ -16,6 +16,11 @@ In order to start using these examples, you need
 
 ## Examples
 
+### [basics/Learn to use cdp](basics/Learn%20to%20use%20CDP.ipynb.py)
+
+Simple Jupyter notebook which introduces some of the main concepts of the Cognite Data Platform. The notebook fetches, visualizes, and navigates some data from the [Open Industrial Data](https://openindustrialdata.com/) collection. An API key can be obtained from the Open Industrial Data web site.
+
+
 ### [openindustrialdata.py](openindustrialdata.py)
 
 This example requires `matplotlib` for plotting the time series.
@@ -24,6 +29,11 @@ $ pip install matplotlib
 ```
 
 Simple script to get and plot one year of daily aggregates (min, max, avg) from a time series in the [Open Industrial Data](https://openindustrialdata.com/) collection. An API key can be obtained from the Open Industrial Data web site.
+
+
+### [analytics/PatternSearch example](analytics/PatternSearch%20example.ipynb)
+
+A Jupyter notebook which uses the Python requests module to make an API call to the Cognite public API and demonstrates the PatternSearch endpoint. PatternSearch lets you search through select intevals of timeseries for a particular timeseries pattern.
 
 
 ## Learn more
