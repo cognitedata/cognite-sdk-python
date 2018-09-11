@@ -3,7 +3,6 @@
 
 This module allows you to set an api-key and a project for your python project.
 """
-
 import os
 
 from cognite_logger import cognite_logger

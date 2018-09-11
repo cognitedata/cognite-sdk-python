@@ -9,8 +9,8 @@ pandas = "*"
 requests = "*"
 protobuf = "*"
 sphinx-rtd-theme = "*"
-cognite-logger = "*"
 tabulate = "*"
+cognite-logger = "0.3.*"
 
 [dev-packages]
 pytest-cov = "*"

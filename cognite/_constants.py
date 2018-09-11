@@ -18,7 +18,7 @@ BASE_URL = "https://api.cognitedata.com/api/"
 LIMIT = 100000
 LIMIT_AGG = 10000
 RETRY_LIMIT = 0
-CONFIG_PATH = os.getenv("HOME") + "/.cognite.conf.json"
+NUM_OF_WORKERS = 10
 
 # DATA TRANSFER SERVICE
 TIMESERIES = "timeSeries"

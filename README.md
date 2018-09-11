@@ -27,37 +27,9 @@ On Windows, you can follows [these instructions](https://www.computerhope.com/is
 $ pip install cognite-sdk
 ```
 
-## Usage
-Simple script to download and plot one year of hourly aggregates.
-```python
-import os
-
-import matplotlib.pyplot as plt
-from cognite.config import configure_session
-from cognite.v05.timeseries import get_datapoints
-
-# Set API key and project for current session
-configure_session(api_key=os.getenv('COGNITE_API_KEY'), project='akerbp')
-
-# Retrieve one year of hourly aggreagets for timeseries 'equipment_x'
-ts = 'equipment_x'
-datapoints = get_datapoints(ts, start='52w-ago', aggregates=['avg'], granularity='1h')
-
-# Convert to pandas dataframe
-dataframe = datapoints.to_pandas()
-
-# Plot the dataframe
-dataframe.plot(x='timestamp')
-plt.show()
-```
-
 ## Learn more
-Public examples will come in the examples folder in this repository. This will include examples for:
-- Retrieval of timeseries data, using aggregates, granularity, etc.
-- Different methods for retrieving data and navigating the data set
-- How to get events and why events are useful
-- How to use functionality which is in the public API, but not yet incorporated into the SDK, using requests
 
+See the [examples](examples) folder for samples using the SDK.
 
 Check out the documentation below, including the public API guide.
 
