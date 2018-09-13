@@ -10,7 +10,7 @@ import json
 import logging
 import re
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Callable, List
 
 import requests
@@ -143,7 +143,7 @@ def _log_request(method, url, **kwargs):
 
 
 def datetime_to_ms(dt):
-    return int(dt.timestamp() * 1000)
+    return int(dt.replace(tzinfo=timezone.utc).timestamp() * 1000)
 
 
 def round_to_nearest(x, base):
