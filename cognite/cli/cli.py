@@ -29,13 +29,12 @@ The available Cognite services are:
         """cognite models <command> [<args>]
 
 The available commands are:
-    new         Create a new model source package in the current directory
-    get         Get all models, versions, or source packages.
-    create      Create a new model
-    train       Train a new model version
+    source      Create a new model source package in the current directory.
+    go          Run tests, upload a source package and create a model with the same name.
+    get         Get all models, source packages, or versions for a model.
 """
         parser = argparse.ArgumentParser(description="Access CDP model _hosting services.", usage=self.models.__doc__)
-        parser.add_argument("command", help="Command to run", choices=["new", "train", "create", "get"])
+        parser.add_argument("command", help="Command to run", choices=["source", "get", "go"])
         parsed_args = parser.parse_args(args[:1])
         ml_cli = CogniteMLCLI()
         getattr(ml_cli, parsed_args.command)(args[1:])
