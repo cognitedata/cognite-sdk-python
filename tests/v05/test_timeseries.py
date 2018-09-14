@@ -94,6 +94,7 @@ class TestDatapoints:
 
         assert isinstance(get_dps_response_obj, DatapointsResponse)
 
+
     def test_get_dps_output_formats(self, get_dps_response_obj):
         assert isinstance(get_dps_response_obj.to_ndarray(), np.ndarray)
         assert isinstance(get_dps_response_obj.to_pandas(), pd.DataFrame)
@@ -108,6 +109,10 @@ class TestDatapoints:
     def test_get_dps_with_limit(self):
         res = timeseries.get_datapoints(name="constant", start=0, limit=1)
         assert len(res.to_json().get("datapoints")) == 1
+
+    def test_get_dps_with_end_now(self):
+        res = timeseries.get_datapoints(name="constant", start=0, end="now", limit=100)
+        assert len(res.to_json().get("datapoints")) == 100
 
     def test_get_dps_with_limit_with_config_variables_from_argument(self, unset_config_variables):
         res = timeseries.get_datapoints(
