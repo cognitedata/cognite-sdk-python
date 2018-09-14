@@ -6,8 +6,8 @@ import pytest
 from tests.conftest import MockReturnValue
 
 
-@patch('requests.post')
 @pytest.fixture(scope='module')
+@patch('requests.post')
 def tagmatching_result(mock_post):
     from cognite.v05.tagmatching import tag_matching
     response = {'data': {'items': [{'matches': [
