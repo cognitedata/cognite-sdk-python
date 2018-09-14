@@ -53,10 +53,10 @@ class CogniteMLCLI:
     def go(self, args):
         """cognite models go [<args>]
 
-        1) Run tests
-        2) Build sourcepackage
-        3) upload sourcepackage
-        4) Create model
+        1) Runs tests
+        2) Builds sourcepackage
+        3) Uploads sourcepackage
+        4) Creates model (if --model-name is passed)
         """
         parser = argparse.ArgumentParser(description="Upload your source package", usage=self.go.__doc__)
         parser.add_argument("-m", "--model-name", help="Name of the model")

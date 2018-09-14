@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import argparse
+import os
 import sys
 
 from cognite.cli.cli_models import CogniteMLCLI
@@ -18,6 +19,9 @@ The available Cognite services are:
         # parse_args defaults to [1:] for args, but you need to
         # exclude the rest of the args too, or validation will fail
         args = parser.parse_args(sys.argv[1:2])
+        if not os.getenv("COGNITE_API_KEY") or not os.getenv("COGNITE_PROJECT"):
+            print("You must set COGNITE_API_KEY and COGNITE_PROJECT environment variables.")
+            return
         if not hasattr(self, args.service.replace("-", "_")):
             print("Unrecognized service")
             parser.print_help()

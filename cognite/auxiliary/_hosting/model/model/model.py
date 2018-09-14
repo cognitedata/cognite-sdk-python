@@ -8,7 +8,8 @@ class Model:
     @staticmethod
     def train(file_io, **kwargs):
         """The method to train your model.
-        Should produce at least a serialized model. Can also produce
+        Should produce at least a serialized model. Can also produce other
+        serialized artefacts that you will need when predicting.
 
         Args:
             file_io:    A callable which allows you to write to model hosting storage.
