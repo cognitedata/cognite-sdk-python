@@ -1,6 +1,7 @@
 import json
 
 import pandas as pd
+
 from cognite import _constants as constants
 from cognite import config
 from cognite._utils import InputError
@@ -37,9 +38,11 @@ class DataTransferService:
 
     def get_dataframes(self):
         """Return a dictionary of dataframes indexed by label - one per data spec."""
+        if len(self.ts_data_specs) == 0:
+            return []
         if isinstance(self.ts_data_specs[0], dict):
             return self.__get_dataframes_by_dict()
-        elif isinstance(self.ts_data_specs[0], TimeSeriesDataSpec):
+        if isinstance(self.ts_data_specs[0], TimeSeriesDataSpec):
             return self.__get_dataframes_by_dto()
         raise InputError("DataSpec must be a dict or TimeSeriesDataSpec object.")
 

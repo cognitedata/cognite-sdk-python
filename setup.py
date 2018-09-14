@@ -15,6 +15,7 @@ setup(
     author="Erlend Vollset",
     author_email="erlend.vollset@cognite.com",
     packages=packages,
+    python_requires='>=3.3',
     install_requires=["requests", "pandas", "protobuf", "cognite-logger>=0.3"],
     zip_safe=False,
     include_package_data=True,
