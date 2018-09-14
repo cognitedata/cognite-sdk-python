@@ -277,7 +277,7 @@ class TestConversions:
         assert utils.datetime_to_ms(datetime(2018, 1, 31)) == 1517356800000
         assert utils.datetime_to_ms(datetime(2018, 1, 31, 11, 11, 11)) == 1517397071000
         assert utils.datetime_to_ms(datetime(100, 1, 31)) == -59008867200000
-        with pytest.raises(TypeError):
+        with pytest.raises(AttributeError):
             utils.datetime_to_ms(None)
 
     def test_round_to_nearest(self):
