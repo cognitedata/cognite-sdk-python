@@ -176,10 +176,11 @@ class DataSpec:
     @classmethod
     def from_JSON(cls, json_repr):
         ds = cls(**json.loads(json_repr, cls=DataSpecDecoder))
-        for i, tsds in enumerate(ds.time_series_data_specs):
-            ds.time_series_data_specs[i] = TimeSeriesDataSpec(**tsds)
-            for j, ts in enumerate(ds.time_series_data_specs[i].time_series):
-                ds.time_series_data_specs[i].time_series[j] = TimeSeries(**ts)
+        if ds.time_series_data_specs:
+            for i, tsds in enumerate(ds.time_series_data_specs):
+                ds.time_series_data_specs[i] = TimeSeriesDataSpec(**tsds)
+                for j, ts in enumerate(ds.time_series_data_specs[i].time_series):
+                    ds.time_series_data_specs[i].time_series[j] = TimeSeries(**ts)
         return ds
 
 
