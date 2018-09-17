@@ -729,6 +729,35 @@ def _get_datapoints_frame_user_defined_limit(time_series, aggregates, granularit
     return df
 
 
+def post_datapoints_frame(data, **kwargs):
+    """Write a dataframe 
+
+    Args:
+        dataframe (DataFrame):  Pandas DataFrame Object containing the timeseries
+
+    Keyword Args:
+        api_key (str): Your api-key.
+
+        project (str): Project name.
+
+    Returns:
+        An empty response.
+    """
+    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+
+    try:
+        timestamp = data.timestamp
+        names = data.drop(['timestamp'], axis=1).columns
+    except:
+        print('DataFrame not on correct form')
+        return -1
+    for name in names:
+        dataPoints = [Datapoint(timestamp[i], data[name].iloc[i]) for i in range(0, len(data))]
+        res = post_datapoints(name, dataPoints, api_key=api_key, project=project)
+        
+    return res
+
+
 def get_timeseries(prefix=None, description=None, include_metadata=False, asset_id=None, path=None, **kwargs):
     """Returns a TimeseriesObject containing the requested timeseries.
 

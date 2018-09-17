@@ -12,7 +12,8 @@ TS_NAME = None
 dps_params = [
     {"start": 1522188000000, "end": 1522620000000},
     {"start": datetime(2018, 4, 1), "end": datetime(2018, 4, 2)},
-    {"start": datetime(2018, 4, 1), "end": datetime(2018, 4, 2), "protobuf": True},
+    {"start": datetime(2018, 4, 1), "end": datetime(
+        2018, 4, 2), "protobuf": True},
 ]
 
 
@@ -46,7 +47,8 @@ class TestTimeseries:
 
         assert isinstance(get_timeseries_response_obj, TimeSeriesResponse)
         assert isinstance(get_timeseries_response_obj.to_ndarray(), np.ndarray)
-        assert isinstance(get_timeseries_response_obj.to_pandas(), pd.DataFrame)
+        assert isinstance(
+            get_timeseries_response_obj.to_pandas(), pd.DataFrame)
         assert isinstance(get_timeseries_response_obj.to_json()[0], dict)
 
     def test_get_timeseries_no_results(self):
@@ -89,11 +91,18 @@ class TestDatapoints:
         res = timeseries.post_datapoints(TS_NAME, datapoints=dps)
         assert res == {}
 
+    def test_post_datapoints_frame(self):
+        data = pd.DataFrame()
+        data['timestamp'] = [i for i in range(0, 100)]
+        data['X'] = data['timestamp']**2
+        data['Y'] = 1.0/data['timestamp']
+        res = timeseries.post_datapoints(data)
+        assert res == {}
+
     def test_get_datapoints(self, get_dps_response_obj):
         from cognite.v05.dto import DatapointsResponse
 
         assert isinstance(get_dps_response_obj, DatapointsResponse)
-
 
     def test_get_dps_output_formats(self, get_dps_response_obj):
         assert isinstance(get_dps_response_obj.to_ndarray(), np.ndarray)
@@ -111,7 +120,8 @@ class TestDatapoints:
         assert len(res.to_json().get("datapoints")) == 1
 
     def test_get_dps_with_end_now(self):
-        res = timeseries.get_datapoints(name="constant", start=0, end="now", limit=100)
+        res = timeseries.get_datapoints(
+            name="constant", start=0, end="now", limit=100)
         assert len(res.to_json().get("datapoints")) == 100
 
     def test_get_dps_with_limit_with_config_variables_from_argument(self, unset_config_variables):
@@ -226,14 +236,16 @@ class TestMultiTimeseriesDatapoints:
         with mock.patch.object(utils, "post_request") as post_request_mock:
             post_request_mock: mock.MagicMock = post_request_mock
 
-            timeseries.post_multi_tag_datapoints([timeseries_with_too_many_datapoints])
+            timeseries.post_multi_tag_datapoints(
+                [timeseries_with_too_many_datapoints])
             assert post_request_mock.call_count == 2
 
         with mock.patch.object(utils, "post_request") as post_request_mock:
             post_request_mock: mock.MagicMock = post_request_mock
 
             timeseries.post_multi_tag_datapoints(
-                [timeseries_with_99999_datapoints, timeseries_with_too_many_datapoints]
+                [timeseries_with_99999_datapoints,
+                    timeseries_with_too_many_datapoints]
             )
             assert post_request_mock.call_count == 2
 
@@ -278,7 +290,8 @@ def test_split_TimeseriesWithDatapoints_if_over_limit():
     assert isinstance(result[0], TimeseriesWithDatapoints)
     assert len(result) == 10
 
-    result = _split_TimeseriesWithDatapoints_if_over_limit(timeseries_with_datapoints_over_limit, 1000)
+    result = _split_TimeseriesWithDatapoints_if_over_limit(
+        timeseries_with_datapoints_over_limit, 1000)
 
     assert isinstance(result[0], TimeseriesWithDatapoints)
     assert len(result) == 1
