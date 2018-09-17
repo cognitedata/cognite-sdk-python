@@ -50,15 +50,15 @@ class CogniteModelsCLI:
             )
         )
 
-    def go(self, args):
-        """cognite models go [<args>]
+    def deploy(self, args):
+        """cognite models deploy [<args>]
 
         1) Runs tests
         2) Builds sourcepackage
         3) Uploads sourcepackage
         4) Creates model (if --model-name is passed)
         """
-        parser = argparse.ArgumentParser(description="Upload your source package", usage=self.go.__doc__)
+        parser = argparse.ArgumentParser(description="Upload your source package", usage=self.deploy.__doc__)
         parser.add_argument("-m", "--model-name", help="Name of the model")
         parser.add_argument("-d", "--description", help="A description of what the model does", default="")
         parsed_args = parser.parse_args(args)

@@ -73,7 +73,7 @@ def upload_source_package(
 
     """
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
-    url = config.get_base_url() + "/api/0.6/project/{}/models".format(project)
+    url = config.get_base_url() + "/api/0.6/projects/{}/models/sourcepackages".format(project)
     body = {
         "name": name,
         "description": description or "",

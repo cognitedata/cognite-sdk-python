@@ -34,11 +34,11 @@ The available Cognite services are:
 
 The available commands are:
     source      Create a new model source package in the current directory.
-    go          Run tests, upload a source package and create a model with the same name.
+    deploy          Run tests, upload a source package and optionally create a model with a specified name.
     get         Get all models, source packages, or versions for a model.
 """
         parser = argparse.ArgumentParser(description="Access CDP model hosting services.", usage=self.models.__doc__)
-        parser.add_argument("command", help="Command to run", choices=["source", "get", "go"])
+        parser.add_argument("command", help="Command to run", choices=["source", "get", "deploy"])
         parsed_args = parser.parse_args(args[:1])
         ml_cli = CogniteModelsCLI()
         getattr(ml_cli, parsed_args.command)(args[1:])
