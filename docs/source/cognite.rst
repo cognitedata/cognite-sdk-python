@@ -15,7 +15,7 @@ Preprocessing
     :show-inheritance:
 
 Data Transfer Service
--------------
+---------------------
 .. automodule:: cognite.data_transfer_service
     :members:
     :undoc-members:

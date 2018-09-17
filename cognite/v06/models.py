@@ -13,9 +13,11 @@ from cognite import config
 
 def create_model(name, description="", **kwargs):
     """Create a new hosted models
+
     Args:
         name (str):             Name of model
         description (str):      Description
+        
     Returns:
         The created model.
     """
