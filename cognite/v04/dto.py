@@ -279,7 +279,7 @@ class TimeseriesWithDatapoints(object):
 
     Attributes:
         tag_id (str):       Unique ID of time series.
-        datapoints (List[Datapoint]): List of datapoints in the timeseries.
+        datapoints (List[v04.dto.Datapoint]): List of datapoints in the timeseries.
     """
 
     def __init__(self, tagId, datapoints):

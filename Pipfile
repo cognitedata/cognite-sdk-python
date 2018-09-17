@@ -9,7 +9,9 @@ pandas = "*"
 requests = "*"
 protobuf = "*"
 sphinx-rtd-theme = "*"
-cognite-logger = "0.3.*"
+tabulate = "*"
+cognite-logger = ">=0.3,<0.4"
+pytest-mock = "*"
 
 [dev-packages]
 pytest-cov = "*"

@@ -6,22 +6,34 @@ from requests.structures import CaseInsensitiveDict
 
 from cognite.config import configure_session
 
-TEST_API_KEY = os.getenv('COGNITE_TEST_API_KEY')
-TEST_PROJECT = 'mltest'
+TEST_API_KEY = os.getenv("COGNITE_TEST_API_KEY")
+TEST_PROJECT = "mltest"
 
 
-@pytest.fixture(scope='session', autouse=True)
+@pytest.fixture(scope="session", autouse=True)
 def configure_test_session():
     configure_session(TEST_API_KEY, TEST_PROJECT)
     yield
-    configure_session('', '')  # teardown
+    configure_session("", "")  # teardown
 
 
 @pytest.fixture
 def unset_config_variables():
-    configure_session('', '')
+    configure_session("", "")
     yield (TEST_API_KEY, TEST_PROJECT)
     configure_session(TEST_API_KEY, TEST_PROJECT)
+
+
+@pytest.fixture(autouse=True)
+def credential_env_vars(request):
+    if "noautofixt" in request.keywords:
+        yield
+    else:
+        os.environ["COGNITE_API_KEY"] = "test_key"
+        os.environ["COGNITE_PROJECT"] = "test_project"
+        yield
+        del os.environ["COGNITE_API_KEY"]
+        del os.environ["COGNITE_PROJECT"]
 
 
 class MockReturnValue(mock.Mock):
@@ -30,9 +42,9 @@ class MockReturnValue(mock.Mock):
     Should be assigned to MagicMock.return_value
     """
 
-    def __init__(self, status=200, content="CONTENT", json_data=None, raise_for_status=None,
-                 headers=CaseInsensitiveDict()
-                 ):
+    def __init__(
+        self, status=200, content="CONTENT", json_data=None, raise_for_status=None, headers=CaseInsensitiveDict()
+    ):
         mock.Mock.__init__(self)
         if "X-Request-Id" not in headers:
             headers["X-Request-Id"] = "1234567890"
@@ -52,6 +64,4 @@ class MockReturnValue(mock.Mock):
 
         # add json data if provided
         if json_data:
-            self.json = mock.Mock(
-                return_value=json_data
-            )
+            self.json = mock.Mock(return_value=json_data)
