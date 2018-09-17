@@ -748,11 +748,10 @@ def post_datapoints_frame(data, **kwargs):
         timestamp = data.timestamp
         names = data.drop(['timestamp'], axis=1).columns
     except:
-        print('DataFrame not on correct form')
-        return -1
+        raise _utils.InputError('DataFrame not on a correct format') 
 
     for name in names:
-        dataPoints = [Datapoint(int(timestamp[i]), data[name].iloc[i]) for i in range(0, len(data))]
+        data_points = [Datapoint(int(timestamp[i]), data[name].iloc[i]) for i in range(0, len(data))]
         res = post_datapoints(name, dataPoints, api_key=api_key, project=project)
         
     return res
