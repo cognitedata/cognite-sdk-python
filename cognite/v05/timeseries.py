@@ -752,7 +752,7 @@ def post_datapoints_frame(data, **kwargs):
 
     for name in names:
         data_points = [Datapoint(int(timestamp[i]), data[name].iloc[i]) for i in range(0, len(data))]
-        res = post_datapoints(name, dataPoints, api_key=api_key, project=project)
+        res = post_datapoints(name, data_points, api_key=api_key, project=project)
         
     return res
 
