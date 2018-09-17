@@ -100,10 +100,10 @@ class TestDatapoints:
 
         for name in data.drop(['timestamp'], axis=1).columns:
             ts = dto.TimeSeries(name=name, description='To be deleted')
-        try:
-            timeseries.post_time_series([ts])
-        except:
-            pass
+            try:
+                timeseries.post_time_series([ts])
+            except:
+                pass
 
         res = timeseries.post_datapoints_frame(data)
         assert res == {}
