@@ -93,9 +93,18 @@ class TestDatapoints:
 
     def test_post_datapoints_frame(self):
         data = pd.DataFrame()
-        data['timestamp'] = [int(i) for i in range(0, 100)]
-        data['X'] = data['timestamp']**2
-        data['Y'] = 1.0/data['timestamp']
+        data['timestamp'] = [int(1537208777557+1000*i) for i in range(0, 100)]
+        X = data['timestamp'].values.astype(float)
+        data['X'] = X**2
+        data['Y'] = 1.0/(1+X)
+
+        for name in data.drop(['timestamp'], axis=1).columns:
+            ts = TimeSeries(name=name, description='To be deleted')
+        try:
+            post_time_series([ts])
+        except:
+            pass
+
         res = timeseries.post_datapoints_frame(data)
         assert res == {}
 
