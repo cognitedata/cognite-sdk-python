@@ -99,9 +99,9 @@ class TestDatapoints:
         data['Y'] = 1.0/(1+X)
 
         for name in data.drop(['timestamp'], axis=1).columns:
-            ts = TimeSeries(name=name, description='To be deleted')
+            ts = dto.TimeSeries(name=name, description='To be deleted')
         try:
-            post_time_series([ts])
+            timeseries.post_time_series([ts])
         except:
             pass
 
