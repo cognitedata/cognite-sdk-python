@@ -44,6 +44,12 @@ class TestModelsCLI:
         assert 1 == cognite_utils_request_mock.json.call_count
         assert 1 == cognite.v06.models.get_model_source_packages.call_count
 
+    def test_source_command(self, mocker):
+        copytree_mock = mocker.patch("shutil.copytree")
+        sys.argv = ["cognite", "models", "source", "mysourcepackage"]
+        CogniteCLI()
+        assert 1 == copytree_mock.call_count
+
     def test_verify_source_package_no_setup_file(self, mocker):
         mocker.patch("os.walk", return_value=[])
         models_cli = CogniteModelsCLI()
@@ -114,3 +120,14 @@ class TestModelsCLI:
         info = models_cli._verify_source_package("a/fake/directory/")
 
         assert info.get("available_operations") == ["predict"]
+
+    def test_deploy(self, mocker):
+        models_cli = CogniteModelsCLI()
+        mocker.patch.object(models_cli, "_verify_source_package", autospec=True)
+        mocker.patch("cognite.cli.cli_models.run_setup")
+        upload_sp_mock = mocker.patch("cognite.v06.models.upload_source_package")
+        create_model_mock = mocker.patch("cognite.v06.models.create_model")
+
+        models_cli.deploy(["-m", "a_model"])
+        assert 1 == upload_sp_mock.call_count
+        assert 1 == create_model_mock.call_count

@@ -35,7 +35,7 @@ class CogniteModelsCLI:
             self._print_models(models_list)
 
     def source(self, args):
-        """cognite models source
+        """cognite models source <source-package-name>
 
         Create a new model source package in the current working directory
         """
