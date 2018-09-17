@@ -12,7 +12,7 @@ from cognite.v06 import models
 MODEL_SRC_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, "auxiliary/_hosting/model"))
 
 
-class CogniteMLCLI:
+class CogniteModelsCLI:
     def get(self, args):
         """cognite models get [<args>]
 
@@ -28,7 +28,7 @@ class CogniteMLCLI:
             source_package_list = models.get_model_source_packages()
             self._print_source_packages(source_package_list)
         elif parsed_args.model_id:
-            versions_list = models.get_versions(parsed_args.model_id)
+            versions_list = models.get_model_versions(parsed_args.model_id)
             self._print_versions(versions_list)
         else:
             models_list = models.get_models()

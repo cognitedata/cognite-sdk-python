@@ -12,10 +12,15 @@ from cognite import config
 
 
 def create_model(name, description="", **kwargs):
-    """Create a new hosted models."""
+    """Create a new hosted models
+    Args:
+        name (str):             Name of model
+        description (str):      Description
+    Returns:
+        The created model.
+    """
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
-    # url = config.get_base_url() + "/api/0.6/projects/{}/models".format(project)
-    url = "http://localhost:8000/api/0.1/project/{}/models".format(project)
+    url = config.get_base_url() + "/api/0.6/projects/{}/models".format(project)
     headers = {"api-key": api_key, "accept": "application/json"}
     model_body = {"name": name, "description": description}
     res = utils.post_request(url, body=model_body, headers=headers, cookies=config.get_cookies())
@@ -23,28 +28,27 @@ def create_model(name, description="", **kwargs):
 
 
 def get_models(**kwargs):
-    """Returns hosted models."""
+    """Get all models."""
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
-    # url = config.get_base_url() + "/api/0.6/projects/{}/models".format(project)
-    url = "http://localhost:8000/api/0.1/project/{}/models".format(project)
+    url = config.get_base_url() + "/api/0.6/projects/{}/models".format(project)
     headers = {"api-key": api_key, "accept": "application/json"}
     res = utils.get_request(url, headers=headers, cookies=config.get_cookies())
     return res.json()
 
 
-def get_versions(model_id, **kwargs):
+def get_model_versions(model_id, **kwargs):
+    """Get all versions of a specific model."""
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
-    # url = config.get_base_url() + "/api/0.6/projects/{}/models/{}/versions".format(project, model_id)
-    url = "http://localhost:8000/api/0.1/project/{}/models/{}/versions".format(project, model_id)
+    url = config.get_base_url() + "/api/0.6/projects/{}/models/{}/versions".format(project, model_id)
     headers = {"api-key": api_key, "accept": "application/json"}
     res = utils.get_request(url, headers=headers, cookies=config.get_cookies())
     return res.json()
 
 
 def get_model_source_packages(**kwargs):
+    """Get all model source packages."""
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
-    # url = config.get_base_url() + "/api/0.6/projects/{}/models/sourcepackages".format(project)
-    url = "http://localhost:8000/api/0.1/project/{}/models/sourcepackages".format(project)
+    url = config.get_base_url() + "/api/0.6/projects/{}/models/sourcepackages".format(project)
     headers = {"api-key": api_key, "accept": "application/json"}
     res = utils.get_request(url, headers=headers, cookies=config.get_cookies())
     return res.json()
@@ -61,7 +65,7 @@ def upload_source_package(
         package_name: name of root package for model
         available_operations: List of routines which this source package supports ["predict", "train"]
         meta_data: User defined key value pair of additional information.
-        file_path (str): File path of distribution. If not sepcified, a download url will be returned.
+        file_path (str): File path of source package distribution. If not sepcified, a download url will be returned.
         **kwargs:
 
     Returns:
@@ -69,8 +73,7 @@ def upload_source_package(
 
     """
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
-    # url = config.get_base_url(0.6) + "/project/{}/models".format(project)
-    url = "http://localhost:8000/api/0.1/project/{}/models/sourcepackages".format(project)
+    url = config.get_base_url() + "/api/0.6/project/{}/models".format(project)
     body = {
         "name": name,
         "description": description or "",

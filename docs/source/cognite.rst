@@ -14,6 +14,23 @@ Preprocessing
     :undoc-members:
     :show-inheritance:
 
+Data Transfer Service
+-------------
+.. automodule:: cognite.data_transfer_service
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+API v0.6
+--------
+Models
+^^^^^^
+.. automodule:: cognite.v06.models
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
 API v0.5
 --------
 Assets
@@ -109,6 +126,3 @@ Timeseries
     :members:
     :undoc-members:
     :show-inheritance:
-
-
-

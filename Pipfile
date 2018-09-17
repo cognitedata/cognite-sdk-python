@@ -10,7 +10,8 @@ requests = "*"
 protobuf = "*"
 sphinx-rtd-theme = "*"
 tabulate = "*"
-cognite-logger = "0.3.*"
+cognite-logger = ">=0.3,<0.4"
+pytest-mock = "*"
 
 [dev-packages]
 pytest-cov = "*"

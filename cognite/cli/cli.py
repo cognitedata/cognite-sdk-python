@@ -4,7 +4,7 @@ import argparse
 import os
 import sys
 
-from cognite.cli.cli_models import CogniteMLCLI
+from cognite.cli.cli_models import CogniteModelsCLI
 
 
 class CogniteCLI:
@@ -15,7 +15,7 @@ The available Cognite services are:
     models      Model hosting
 """
         parser = argparse.ArgumentParser(description="Command line interface for CDP.", usage=self.__init__.__doc__)
-        parser.add_argument("service", help="Service to run", choices=["models"])
+        parser.add_argument("service", help="Service to run")
         # parse_args defaults to [1:] for args, but you need to
         # exclude the rest of the args too, or validation will fail
         args = parser.parse_args(sys.argv[1:2])
@@ -25,7 +25,7 @@ The available Cognite services are:
         if not hasattr(self, args.service.replace("-", "_")):
             print("Unrecognized service")
             parser.print_help()
-            exit(1)
+            return
         # use dispatch pattern to invoke method with same name
         getattr(self, args.service)(sys.argv[2:])
 
@@ -37,10 +37,10 @@ The available commands are:
     go          Run tests, upload a source package and create a model with the same name.
     get         Get all models, source packages, or versions for a model.
 """
-        parser = argparse.ArgumentParser(description="Access CDP model _hosting services.", usage=self.models.__doc__)
+        parser = argparse.ArgumentParser(description="Access CDP model hosting services.", usage=self.models.__doc__)
         parser.add_argument("command", help="Command to run", choices=["source", "get", "go"])
         parsed_args = parser.parse_args(args[:1])
-        ml_cli = CogniteMLCLI()
+        ml_cli = CogniteModelsCLI()
         getattr(ml_cli, parsed_args.command)(args[1:])
 
 

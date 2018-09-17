@@ -128,6 +128,8 @@ class DataTransferService:
 
 
 class TimeSeries:
+    """Object for specifying a specific time series from the TimeSeries API when using a data spec."""
+
     def __init__(self, name, aggregates=None, missing_data_strategy=None):
         self.name = name
         self.aggregates = aggregates
@@ -135,6 +137,8 @@ class TimeSeries:
 
 
 class TimeSeriesDataSpec:
+    """Object for specifying data from the TimeSeries API when using a data spec."""
+
     def __init__(
         self, time_series, aggregates, granularity, missing_data_strategy=None, start=None, end=None, label=None
     ):
@@ -147,7 +151,21 @@ class TimeSeriesDataSpec:
         self.label = label or "default"
 
 
+class FilesDataSpec:
+    """Object for specifying data from the Files API when using a data spec."""
+
+    def __init__(self, file_ids):
+        self.file_ids = file_ids
+
+
 class DataSpec:
+    """Object for specifying data when querying CDP.
+
+    Attributes:
+        time_series_data_specs (List[TimeSeriesDataSpec]):  Time Series data specs
+        files_data_spec (FilesDataSpec):                    Files data spec
+    """
+
     def __init__(self, time_series_data_specs=None, files_data_spec=None):
         self.time_series_data_specs = time_series_data_specs
         self.files_data_spec = files_data_spec
