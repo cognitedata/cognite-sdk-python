@@ -3,16 +3,17 @@
 
 This module allows you to set an api-key and a project for your python project.
 """
+import os
 
 from cognite_logger import cognite_logger
 
 from cognite._constants import BASE_URL, RETRY_LIMIT
 
-_CONFIG_API_KEY = ""
-_CONFIG_PROJECT = ""
+_CONFIG_API_KEY = os.getenv("COGNITE_API_KEY", "")
+_CONFIG_PROJECT = os.getenv("COGNITE_PROJECT", "")
 _CONFIG_COOKIES = {}
-_CONFIG_BASE_URL = None
-_CONFIG_RETRIES = None
+_CONFIG_BASE_URL = os.getenv("COGNITE_BASE_URL")
+_CONFIG_RETRIES = os.getenv("COGNITE_NUM_RETRIES")
 
 
 def configure_session(api_key="", project="", cookies=None, debug=False):
@@ -74,16 +75,14 @@ def set_base_url(url=None):
     _CONFIG_BASE_URL = url
 
 
-def get_base_url(api_version=None):
+def get_base_url():
     """Returns the current base url for requests made from the SDK.
     Args:
         api_version (float): Version of API to use for base_url
     Returns:
         str: current base url.
     """
-    if not api_version:
-        api_version = "<version>"
-    return (_CONFIG_BASE_URL or BASE_URL) + str(api_version)
+    return _CONFIG_BASE_URL or BASE_URL
 
 
 def set_number_of_retries(retries: int = None):

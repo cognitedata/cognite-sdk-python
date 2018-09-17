@@ -6,7 +6,6 @@ This module mirrors the Timeseries API. It allows you to fetch data from the api
 https://doc.cognitedata.com/0.5/#Cognite-API-Time-series
 """
 import io
-import os
 import time
 from concurrent.futures import ThreadPoolExecutor as Pool
 from functools import partial
@@ -18,7 +17,7 @@ import pandas as pd
 import cognite._constants as _constants
 import cognite._utils as _utils
 import cognite.config as config
-from cognite._protobuf_descriptors import _api_timeseries_data_v2_pb2
+from cognite.auxiliary._protobuf_descriptors import _api_timeseries_data_v2_pb2
 from cognite.v05.dto import (
     Datapoint,
     DatapointsResponse,
@@ -168,7 +167,7 @@ def _get_datapoints_helper(name, aggregates=None, granularity=None, start=None, 
         list of datapoints: A list containing datapoint dicts.
     """
     api_key, project = kwargs.get("api_key"), kwargs.get("project")
-    url = config.get_base_url(api_version=0.5) + "/projects/{}/timeseries/data/{}".format(project, quote(name, safe=""))
+    url = config.get_base_url() + "/api/0.5/projects/{}/timeseries/data/{}".format(project, quote(name, safe=""))
 
     use_protobuf = kwargs.get("protobuf", True) and aggregates is None
     limit = _constants.LIMIT if aggregates is None else _constants.LIMIT_AGG
@@ -231,7 +230,7 @@ def _get_datapoints_user_defined_limit(name, aggregates, granularity, start, end
         output formats.
     """
     api_key, project = kwargs.get("api_key"), kwargs.get("project")
-    url = config.get_base_url(api_version=0.5) + "/projects/{}/timeseries/data/{}".format(project, quote(name, safe=""))
+    url = config.get_base_url() + "/api/0.5/projects/{}/timeseries/data/{}".format(project, quote(name, safe=""))
 
     use_protobuf = kwargs.get("protobuf", True) and aggregates is None
 
@@ -295,7 +294,7 @@ def post_multi_tag_datapoints(timeseries_with_datapoints: List[TimeseriesWithDat
         An empty response.
     """
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
-    url = config.get_base_url(api_version=0.4) + "/projects/{}/timeseries/data".format(project)
+    url = config.get_base_url() + "/api/0.4/projects/{}/timeseries/data".format(project)
 
     use_gzip = kwargs.get("use_gzip", False)
 
@@ -342,7 +341,7 @@ def post_datapoints(name, datapoints: List[Datapoint], **kwargs):
         An empty response.
     """
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
-    url = config.get_base_url(api_version=0.5) + "/projects/{}/timeseries/data/{}".format(project, quote(name, safe=""))
+    url = config.get_base_url() + "/api/0.5/projects/{}/timeseries/data/{}".format(project, quote(name, safe=""))
 
     headers = {"api-key": api_key, "content-type": "application/json", "accept": "application/json"}
 
@@ -371,7 +370,7 @@ def get_latest(name, **kwargs):
         output formats.
     """
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
-    url = config.get_base_url(api_version=0.5) + "/projects/{}/timeseries/latest/{}".format(
+    url = config.get_base_url() + "/api/0.5/projects/{}/timeseries/latest/{}".format(
         project, quote(name, safe="")
     )
     headers = {"api-key": api_key, "accept": "application/json"}
@@ -414,7 +413,7 @@ def get_multi_time_series_datapoints(
         with different output formats.
     """
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
-    url = config.get_base_url(api_version=0.5) + "/projects/{}/timeseries/dataquery".format(project)
+    url = config.get_base_url() + "/api/0.5/projects/{}/timeseries/dataquery".format(project)
     start, end = _utils.interval_to_ms(start, end)
 
     num_of_dpqs_with_agg = 0
@@ -636,7 +635,7 @@ def _get_datapoints_frame_helper(time_series, aggregates, granularity, start=Non
     """
     api_key, project = kwargs.get("api_key"), kwargs.get("project")
     cookies = kwargs.get("cookies")
-    url = config.get_base_url(api_version=0.5) + "/projects/{}/timeseries/dataframe".format(project)
+    url = config.get_base_url() + "/api/0.5/projects/{}/timeseries/dataframe".format(project)
 
     num_aggregates = 0
     for ts in time_series:
@@ -707,7 +706,7 @@ def _get_datapoints_frame_user_defined_limit(time_series, aggregates, granularit
     """
     api_key, project = kwargs.get("api_key"), kwargs.get("project")
     cookies = kwargs.get("cookies")
-    url = config.get_base_url(api_version=0.5) + "/projects/{}/timeseries/dataframe".format(project)
+    url = config.get_base_url() + "/api/0.5/projects/{}/timeseries/dataframe".format(project)
     body = {
         "items": [
             {"name": "{}".format(ts)}
@@ -758,7 +757,7 @@ def get_timeseries(prefix=None, description=None, include_metadata=False, asset_
         output formats.
     """
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
-    url = config.get_base_url(api_version=0.5) + "/projects/{}/timeseries".format(project)
+    url = config.get_base_url() + "/api/0.5/projects/{}/timeseries".format(project)
     headers = {"api-key": api_key, "accept": "application/json"}
     params = {
         "q": prefix,
@@ -806,7 +805,7 @@ def post_time_series(time_series: List[TimeSeries], **kwargs):
     """
 
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
-    url = config.get_base_url(api_version=0.5) + "/projects/{}/timeseries".format(project)
+    url = config.get_base_url() + "/api/0.5/projects/{}/timeseries".format(project)
 
     body = {"items": [ts.__dict__ for ts in time_series]}
 
@@ -834,7 +833,7 @@ def update_time_series(time_series: List[TimeSeries], **kwargs):
     """
 
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
-    url = config.get_base_url(api_version=0.5) + "/projects/{}/timeseries".format(project)
+    url = config.get_base_url() + "/api/0.5/projects/{}/timeseries".format(project)
 
     body = {"items": [ts.__dict__ for ts in time_series]}
 
@@ -859,7 +858,7 @@ def delete_time_series(name, **kwargs):
         An empty response.
     """
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
-    url = config.get_base_url(api_version=0.5) + "/projects/{}/timeseries/{}".format(project, quote(name, safe=""))
+    url = config.get_base_url() + "/api/0.5/projects/{}/timeseries/{}".format(project, quote(name, safe=""))
 
     headers = {"api-key": api_key, "accept": "application/json"}
 
