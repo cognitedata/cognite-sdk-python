@@ -751,7 +751,7 @@ def post_datapoints_frame(data, **kwargs):
         print('DataFrame not on correct form')
         return -1
     for name in names:
-        dataPoints = [Datapoint(timestamp[i], data[name].iloc[i]) for i in range(0, len(data))]
+        dataPoints = [Datapoint(timestamp.iloc[i], data[name].iloc[i]) for i in range(0, len(data))]
         res = post_datapoints(name, dataPoints, api_key=api_key, project=project)
         
     return res

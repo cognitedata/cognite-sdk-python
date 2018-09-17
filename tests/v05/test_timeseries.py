@@ -93,7 +93,7 @@ class TestDatapoints:
 
     def test_post_datapoints_frame(self):
         data = pd.DataFrame()
-        data['timestamp'] = [i for i in range(0, 100)]
+        data['timestamp'] = [int(i) for i in range(0, 100)]
         data['X'] = data['timestamp']**2
         data['Y'] = 1.0/data['timestamp']
         res = timeseries.post_datapoints_frame(data)
