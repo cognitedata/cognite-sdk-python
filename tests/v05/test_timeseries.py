@@ -96,7 +96,7 @@ class TestDatapoints:
         data['timestamp'] = [i for i in range(0, 100)]
         data['X'] = data['timestamp']**2
         data['Y'] = 1.0/data['timestamp']
-        res = timeseries.post_datapoints(data)
+        res = timeseries.post_datapoints_frame(data)
         assert res == {}
 
     def test_get_datapoints(self, get_dps_response_obj):
