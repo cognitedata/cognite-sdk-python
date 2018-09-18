@@ -2,6 +2,7 @@ import argparse
 import importlib.util
 import os
 import shutil
+import sys
 from datetime import datetime
 from distutils.core import run_setup
 
@@ -157,6 +158,7 @@ class CogniteModelsCLI:
         print(tabulate(versions_tabular, headers=headers))
 
     def _verify_source_package(self, directory):
+        sys.path.append(os.getcwd())
         info = {"source_package_name": None, "package_name": None, "available_operations": []}
 
         has_model_module = False
