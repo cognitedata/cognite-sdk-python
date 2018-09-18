@@ -273,8 +273,8 @@ class TimeSeries(object):
         unit (str):         Physical unit of the time series.
         assetId (str):     Asset that this time series belongs to.
         description (str):  Description of the time series.
-        security_categories (list(int)): Security categories required in order to access this time series.
-        step (bool):        Whether or not the time series is a step series.
+        securityCategories (list(int)): Security categories required in order to access this time series.
+        isStep (bool):        Whether or not the time series is a step series.
 
     """
 
@@ -287,7 +287,7 @@ class TimeSeries(object):
         asset_id=None,
         description=None,
         security_categories=None,
-        step=None,
+        is_step=None,
     ):
         self.name = name
         self.isString = is_string
@@ -295,8 +295,8 @@ class TimeSeries(object):
         self.unit = unit
         self.assetId = asset_id
         self.description = description
-        self.security_categories = security_categories
-        self.isStep = step
+        self.securityCategories = security_categories
+        self.isStep = is_step
 
 
 class AssetListResponse(CogniteDataObject):
