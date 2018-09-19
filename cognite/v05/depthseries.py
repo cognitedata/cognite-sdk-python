@@ -263,8 +263,8 @@ def _has_depth_index_changes(ds: TimeSeries) -> bool:
         ds.metadata is None
         and ds.assetId is None
         and ds.description is None
-        and ds.security_categories is None
-        and ds.step is None
+        and ds.securityCategories is None
+        and ds.isStep is None
     ):
         return False
     return True
