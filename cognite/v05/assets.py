@@ -30,6 +30,9 @@ def get_assets(name=None, path=None, description=None, metadata=None, depth=None
         fuzziness (int):        The degree of fuzziness in the name matching.
 
     Keyword Arguments:
+        autopaging (bool):      Whether or not to automatically page through results. If set to true, limit will be
+                                disregarded. Defaults to False.
+
         limit (int):            The maximum number of assets to be returned.
 
         cursor (str):           Cursor to use for paging through results.
@@ -51,11 +54,29 @@ def get_assets(name=None, path=None, description=None, metadata=None, depth=None
         "depth": depth,
         "fuzziness": fuzziness,
         "cursor": kwargs.get("cursor"),
-        "limit": kwargs.get("limit", constants.LIMIT),
+        "limit": kwargs.get("limit", constants.LIMIT) if not kwargs.get("autopaging") else constants.LIMIT,
     }
     headers = {"api-key": api_key, "accept": "application/json"}
     res = utils.get_request(url, params=params, headers=headers, cookies=config.get_cookies())
-    return AssetListResponse(res.json())
+    assets = []
+    assets.extend(res.json()["data"]["items"])
+    next_cursor = res.json()["data"].get("nextCursor")
+
+    while next_cursor and kwargs.get("autopaging"):
+        params["cursor"] = next_cursor
+        res = utils.get_request(url=url, headers=headers, params=params, cookies=config.get_cookies())
+        assets.extend(res.json()["data"]["items"])
+        next_cursor = res.json()["data"].get("nextCursor")
+
+    return AssetListResponse(
+        {
+            "data": {
+                "nextCursor": next_cursor,
+                "previousCursor": res.json()["data"].get("previousCursor"),
+                "items": assets,
+            }
+        }
+    )
 
 
 def get_asset(asset_id, **kwargs):
