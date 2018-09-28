@@ -50,6 +50,8 @@ def get_datapoints(name, aggregates=None, granularity=None, start=None, end=None
         end (Union[str, int, datetime]):      Get datapoints up to this time. Same format as for start.
 
     Keyword Arguments:
+        include_outside_points (bool):      No description
+
         protobuf (bool):        Download the data using the binary protobuf format. Only applicable when getting raw data.
                                 Defaults to True.
 
@@ -78,6 +80,7 @@ def get_datapoints(name, aggregates=None, granularity=None, start=None, end=None
             end,
             limit=kwargs.get("limit"),
             protobuf=kwargs.get("protobuf"),
+            include_outside_points=kwargs.get("include_outside_points", False),
             api_key=api_key,
             project=project,
         )
@@ -103,22 +106,10 @@ def get_datapoints(name, aggregates=None, granularity=None, start=None, end=None
         aggregates=aggregates,
         granularity=granularity,
         protobuf=kwargs.get("protobuf", True),
+        include_outside_points=kwargs.get("include_outside_points", False),
         api_key=api_key,
         project=project,
     )
-
-    if steps == 1:
-        dps = _get_datapoints_helper(
-            name,
-            aggregates,
-            granularity,
-            start,
-            end,
-            protobuf=kwargs.get("protobuf", True),
-            api_key=api_key,
-            project=project,
-        )
-        return DatapointsResponse({"data": {"items": [{"name": name, "datapoints": dps}]}})
 
     with Pool(steps) as p:
         datapoints = p.map(partial_get_dps, args)
@@ -129,9 +120,19 @@ def get_datapoints(name, aggregates=None, granularity=None, start=None, end=None
     return DatapointsResponse({"data": {"items": [{"name": name, "datapoints": concat_dps}]}})
 
 
-def _get_datapoints_helper_wrapper(args, name, aggregates, granularity, protobuf, api_key, project):
+def _get_datapoints_helper_wrapper(
+    args, name, aggregates, granularity, protobuf, include_outside_points, api_key, project
+):
     return _get_datapoints_helper(
-        name, aggregates, granularity, args["start"], args["end"], protobuf=protobuf, api_key=api_key, project=project
+        name,
+        aggregates,
+        granularity,
+        args["start"],
+        args["end"],
+        protobuf=protobuf,
+        api_key=api_key,
+        project=project,
+        include_ooutside_points=include_outside_points,
     )
 
 
@@ -156,6 +157,8 @@ def _get_datapoints_helper(name, aggregates=None, granularity=None, start=None, 
         end (Union[str, int, datetime]):      Get datapoints up to this time. Same format as for start.
 
     Keyword Arguments:
+        include_outside_points (bool):  No description.
+
         protobuf (bool):        Download the data using the binary protobuf format. Only applicable when getting raw data.
                                 Defaults to True.
 
@@ -172,7 +175,14 @@ def _get_datapoints_helper(name, aggregates=None, granularity=None, start=None, 
     use_protobuf = kwargs.get("protobuf", True) and aggregates is None
     limit = _constants.LIMIT if aggregates is None else _constants.LIMIT_AGG
 
-    params = {"aggregates": aggregates, "granularity": granularity, "limit": limit, "start": start, "end": end}
+    params = {
+        "aggregates": aggregates,
+        "granularity": granularity,
+        "limit": limit,
+        "start": start,
+        "end": end,
+        "includeOutsidePoints": kwargs.get("include_outside_points", False),
+    }
 
     headers = {"api-key": api_key, "accept": "application/protobuf" if use_protobuf else "application/json"}
     datapoints = []
@@ -219,6 +229,8 @@ def _get_datapoints_user_defined_limit(name, aggregates, granularity, start, end
         limit (str):            Max number of datapoints to return. Max is 100,000.
 
     Keyword Arguments:
+        include_outside_points (bool):  No description.
+
         protobuf (bool):        Download the data using the binary protobuf format. Only applicable when getting raw data.
                                 Defaults to True.
 
@@ -234,7 +246,14 @@ def _get_datapoints_user_defined_limit(name, aggregates, granularity, start, end
 
     use_protobuf = kwargs.get("protobuf", True) and aggregates is None
 
-    params = {"aggregates": aggregates, "granularity": granularity, "limit": limit, "start": start, "end": end}
+    params = {
+        "aggregates": aggregates,
+        "granularity": granularity,
+        "limit": limit,
+        "start": start,
+        "end": end,
+        "includeOutsidePoints": kwargs.get("include_outside_points", False),
+    }
 
     headers = {"api-key": api_key, "accept": "application/protobuf" if use_protobuf else "application/json"}
     res = _utils.get_request(url, params=params, headers=headers)
@@ -370,9 +389,7 @@ def get_latest(name, **kwargs):
         output formats.
     """
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
-    url = config.get_base_url() + "/api/0.5/projects/{}/timeseries/latest/{}".format(
-        project, quote(name, safe="")
-    )
+    url = config.get_base_url() + "/api/0.5/projects/{}/timeseries/latest/{}".format(project, quote(name, safe=""))
     headers = {"api-key": api_key, "accept": "application/json"}
     res = _utils.get_request(url, headers=headers, cookies=config.get_cookies())
     return LatestDatapointResponse(res.json())
@@ -404,6 +421,8 @@ def get_multi_time_series_datapoints(
         end (Union[str, int, datetime]):      Get datapoints up to this time. Same format as for start.
 
     Keyword Arguments:
+        include_outside_points (bool):  No description.
+
         api_key (str):                  Your api-key.
 
         project (str):                  Project name.
@@ -436,6 +455,7 @@ def get_multi_time_series_datapoints(
         "aggregates": ",".join(aggregates) if aggregates is not None else None,
         "granularity": granularity,
         "start": start,
+        "includeOutsidePoints": kwargs.get("include_outside_points", False),
         "end": end,
     }
     headers = {"api-key": api_key, "content-type": "application/json", "accept": "application/json"}
@@ -746,14 +766,14 @@ def post_datapoints_frame(data, **kwargs):
 
     try:
         timestamp = data.timestamp
-        names = data.drop(['timestamp'], axis=1).columns
+        names = data.drop(["timestamp"], axis=1).columns
     except:
-        raise _utils.InputError('DataFrame not on a correct format') 
+        raise _utils.InputError("DataFrame not on a correct format")
 
     for name in names:
         data_points = [Datapoint(int(timestamp[i]), data[name].iloc[i]) for i in range(0, len(data))]
         res = post_datapoints(name, data_points, api_key=api_key, project=project)
-        
+
     return res
 
 
