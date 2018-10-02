@@ -64,36 +64,36 @@ class DataSpec:
             labels = []
             for tsds in self.time_series_data_specs:
                 if not isinstance(tsds, TimeSeriesDataSpec):
-                    raise TypeError("Time series data specs must be TimeSeriesDataSpec objects.")
+                    raise DataSpecValidationError("Time series data specs must be TimeSeriesDataSpec objects.")
 
                 label = tsds.label or "default"
                 if label in labels:
-                    raise AssertionError("Unique labels for each dataspec must be used")
+                    raise DataSpecValidationError("Unique labels for each dataspec must be used")
                 labels.append(label)
 
                 if not isinstance(tsds.time_series, list):
-                    raise TypeError("Time series must be a list of time series objects.")
+                    raise DataSpecValidationError("Time series must be a list of time series objects.")
 
                 if not len(tsds.time_series) > 0:
-                    raise AssertionError("A time series data spec does not contain any time series")
+                    raise DataSpecValidationError("A time series data spec does not contain any time series")
 
                 for ts in tsds.time_series:
                     if not isinstance(ts, TimeSeries):
-                        raise AssertionError("Time series must be a TimeSeries object")
+                        raise DataSpecValidationError("Time series must be a TimeSeries object")
 
     def __validate_files_data_spec(self):
         if self.files_data_spec:
             if not isinstance(self.files_data_spec, FilesDataSpec):
-                raise TypeError("files_data_spec must be a FilesDataSpec object")
+                raise DataSpecValidationError("files_data_spec must be a FilesDataSpec object")
 
             if not isinstance(self.files_data_spec.file_ids, Dict):
-                raise TypeError("file_ids must be a dict of form {name: id}")
+                raise DataSpecValidationError("file_ids must be a dict of form {name: id}")
 
             for name, id in self.files_data_spec.file_ids.items():
                 if not isinstance(name, str):
-                    raise TypeError("File names must be a strings")
+                    raise DataSpecValidationError("File names must be a strings")
                 if not isinstance(id, int):
-                    raise TypeError("File ids must be integers")
+                    raise DataSpecValidationError("File ids must be integers")
 
     def to_JSON(self):
         return json.dumps(self.__dict__, cls=self.__DataSpecEncoder)
@@ -128,6 +128,10 @@ class DataSpec:
             elif obj is None:
                 del obj
             return super(self, self).default(obj)
+
+
+class DataSpecValidationError(Exception):
+    pass
 
 
 class DataTransferService:
