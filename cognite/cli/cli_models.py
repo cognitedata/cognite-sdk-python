@@ -112,7 +112,7 @@ class CogniteModelsCLI:
                 m.get("description"),
                 m.get("active_version_id"),
                 datetime.fromtimestamp(int(m.get("created_time")) / 1000),
-                m.get("is_deprecated") == "1",
+                m.get("is_deprecated"),
             ]
             for m in models_list
         ]
@@ -131,7 +131,7 @@ class CogniteModelsCLI:
                 m.get("description"),
                 m.get("source_package_id"),
                 datetime.fromtimestamp(int(m.get("created_time")) / 1000),
-                m.get("is_deprecated") == "1",
+                m.get("is_deprecated"),
             ]
             for m in versions_list
         ]
@@ -149,8 +149,8 @@ class CogniteModelsCLI:
                 m.get("description"),
                 ", ".join(m.get("available_operations")),
                 datetime.fromtimestamp(int(m.get("created_time")) / 1000),
-                m.get("is_deprecated") == "1",
-                m.get("is_uploaded") == "1",
+                m.get("is_deprecated"),
+                m.get("is_uploaded"),
             ]
             for m in source_package_list
         ]
