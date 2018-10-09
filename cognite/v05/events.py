@@ -214,7 +214,7 @@ def search_for_events(
         "minLastUpdatedTime": min_last_updated_time,
         "maxLastUpdatedTime": max_last_updated_time,
         "metadata": json.dumps(metadata),
-        "assetIds": asset_ids,
+        "assetIds": str(asset_ids),
         "assetSubtrees": asset_subtrees,
         "sort": kwargs.get("sort"),
         "dir": kwargs.get("dir"),
