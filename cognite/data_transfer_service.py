@@ -1,29 +1,68 @@
 import json
 from copy import deepcopy
+from datetime import datetime
 from io import BytesIO
-from typing import Dict, List
+from typing import Dict, List, Union
 
 import pandas as pd
 
 from cognite import config
-from cognite._utils import InputError
+from cognite._utils import InputError, get_aggregate_func_return_name
 from cognite.v05 import files, timeseries
 
 
 class TimeSeries:
-    """Object for specifying a specific time series from the TimeSeries API when using a data spec."""
+    """Object for specifying a specific time series from the TimeSeries API when using a data spec.
 
-    def __init__(self, name, aggregates=None, missing_data_strategy=None):
+    Args:
+        name (str): name of time series to retrieve
+        aggregates (List[str]): Local aggregate functions to apply
+        missing_data_strategy(str): Missing data strategy to apply
+        label (str): name of the column in the resulting data frame when passed to data transfer service.
+
+    Examples:
+        When you supply a label the resulting data frames produced by data transfer service
+        will use the label as column names.
+    """
+
+    def __init__(self, name, aggregates=None, missing_data_strategy=None, label=None):
         self.name = name
         self.aggregates = aggregates
         self.missing_data_strategy = missing_data_strategy
+        self.label = label or name
 
 
 class TimeSeriesDataSpec:
-    """Object for specifying data from the TimeSeries API when using a data spec."""
+    """Object for specifying data from the TimeSeries API when using a data spec.
+
+    Args:
+        time_series (List[data_transfer_service.TimeSeries]):  Time series
+        aggregates (List[str]): List of aggregate functions
+        granularity (str): Granularity of aggregates
+        missing_data_strategy (str): Missing data strategy to apply, can be "linearInterpolation" or "ffill"
+        start (Union[str, int, datetime]): Start time
+        end (Union[str, int, datetime]): end time
+        label (str): Label for this data spec
+
+    Examples:
+        When you specify a label, data transfer service will exhibit the following behaviour::
+
+            ts_data_spec = TimeSeriesDataSpec(..., label="some_label")
+            data_spec = DataSpec([ts_data_spec], ...)
+            dts = DataTransferService(data_spec)
+            dataframes = dts.get_dataframes
+            my_df = dataframes["some_label"]
+    """
 
     def __init__(
-        self, time_series, aggregates, granularity, missing_data_strategy=None, start=None, end=None, label=None
+        self,
+        time_series: Union[List[TimeSeries], Dict[str, TimeSeries]],
+        aggregates: List[str],
+        granularity: str,
+        missing_data_strategy: str = None,
+        start: Union[str, int, datetime] = None,
+        end: Union[str, int, datetime] = None,
+        label: str = None,
     ):
         self.time_series = time_series
         self.aggregates = aggregates
@@ -37,7 +76,7 @@ class TimeSeriesDataSpec:
 class FilesDataSpec:
     """Object for specifying data from the Files API when using a data spec.
 
-    Attributes:
+    Args:
         file_ids (Dict):    Dictionary of fileNames -> fileIds
     """
 
@@ -48,9 +87,13 @@ class FilesDataSpec:
 class DataSpec:
     """Object for specifying data when querying CDP.
 
-    Attributes:
+    Args:
         time_series_data_specs (List[TimeSeriesDataSpec]):  Time Series data specs
         files_data_spec (FilesDataSpec):                    Files data spec
+
+    Raises:
+        DataSpecValidationError: An error occurred while validating the data spec
+
     """
 
     def __init__(self, time_series_data_specs: List[TimeSeriesDataSpec] = None, files_data_spec: FilesDataSpec = None):
@@ -167,13 +210,24 @@ class DataTransferService:
         self.cookies = cookies
         self.num_of_processes = num_of_processes
 
-    def get_dataframes(self):
-        """Return a dictionary of dataframes indexed by label - one per data spec."""
+    def get_dataframes(self, drop_agg_suffix: bool = True):
+        """Return a dictionary of dataframes indexed by label - one per data spec.
+
+        Args:
+            drop_agg_suffix (bool): If a time series has only one aggregate, drop the "|<agg-func>" suffix on
+                                    those column names.
+        Returns:
+            Dict[str, pd.DataFrame]: A label-indexed dictionary of data frames.
+        """
         if len(self.ts_data_specs) == 0:
             return {}
+        if self.ts_data_specs is None:
+            raise InputError("Data spec does not contain any TimeSeriesDataSpecs")
+
         dataframes = {}
         for tsds in self.ts_data_specs:
             ts_list = []
+
             for ts in tsds.time_series:
                 ts_dict = dict(name=ts.name, aggregates=ts.aggregates, missingDataStrategy=ts.missing_data_strategy)
                 ts_list.append(ts_dict)
@@ -190,8 +244,35 @@ class DataTransferService:
                 processes=self.num_of_processes,
             )
             df = self.__apply_missing_data_strategies(df, ts_list, tsds.missing_data_strategy)
+            df = self.__convert_ts_names_to_labels(df, tsds, drop_agg_suffix)
             dataframes[tsds.label] = df
         return dataframes
+
+    def get_file(self, name):
+        """Return files by name as specified in the DataSpec
+
+        Args:
+            name (str): Name of file
+        """
+        if not self.files_data_spec:
+            raise InputError("Data spec does not contain a FilesDataSpec")
+        if isinstance(self.files_data_spec, FilesDataSpec):
+            id = self.files_data_spec.file_ids.get(name)
+            if id:
+                file_bytes = files.download_file(id, get_contents=True)
+                return BytesIO(file_bytes)
+            raise InputError("Invalid name")
+
+    def __convert_ts_names_to_labels(self, df: pd.DataFrame, tsds: TimeSeriesDataSpec, drop_agg_suffix: bool):
+        name_to_label = {}
+        for ts in tsds.time_series:
+            for agg in ts.aggregates or tsds.aggregates:
+                agg_return_name = get_aggregate_func_return_name(agg)
+                if len(ts.aggregates or tsds.aggregates) > 1 or not drop_agg_suffix:
+                    name_to_label[ts.name + "|" + agg_return_name] = ts.label + "|" + agg_return_name
+                else:
+                    name_to_label[ts.name + "|" + agg_return_name] = ts.label
+        return df.rename(columns=name_to_label)
 
     def __apply_missing_data_strategies(self, df, ts_list, global_missing_data_strategy):
         """Applies missing data strategies to dataframe.
@@ -211,21 +292,6 @@ class DataTransferService:
             elif missing_data_strategy and missing_data_strategy.endswith("Interpolation"):
                 method = missing_data_strategy[:-13].lower()
                 partial_df = df[colnames].interpolate(method=method, axis=0)
-
             new_df = pd.concat([new_df, partial_df], axis=1)
+            new_df = new_df.iloc[:, ~new_df.columns.duplicated()]
         return new_df
-
-    def get_file(self, name):
-        """Return files by name as specified in the DataSpec
-
-        Args:
-            name (str): Name of file
-        """
-        if not self.files_data_spec:
-            raise InputError("Data spec does not contain a FilesDataSpec")
-        if isinstance(self.files_data_spec, FilesDataSpec):
-            id = self.files_data_spec.file_ids.get(name)
-            if id:
-                file_bytes = files.download_file(id, get_contents=True)
-                return BytesIO(file_bytes)
-            raise InputError("Invalid name")

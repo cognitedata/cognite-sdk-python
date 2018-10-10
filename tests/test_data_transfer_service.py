@@ -3,8 +3,8 @@ import pprint
 from io import BytesIO
 
 import pandas as pd
-
 import pytest
+
 from cognite.data_transfer_service import (
     DataSpec,
     DataSpecValidationError,
@@ -79,9 +79,9 @@ class TestDataTransferService:
         with pytest.raises(DataSpecValidationError):
             DataSpec(
                 time_series_data_specs=[
-                    TimeSeriesDataSpec(time_series=[TimeSeries("ts1")], aggregates=["avg"], granularity=["1s"]),
+                    TimeSeriesDataSpec(time_series=[TimeSeries("ts1")], aggregates=["avg"], granularity="1s"),
                     TimeSeriesDataSpec(
-                        time_series=[TimeSeries("ts1")], aggregates=["avg"], granularity=["1s"], label="default"
+                        time_series=[TimeSeries("ts1")], aggregates=["avg"], granularity="1s", label="default"
                     ),
                 ]
             )
@@ -90,21 +90,19 @@ class TestDataTransferService:
         with pytest.raises(DataSpecValidationError):
             DataSpec(
                 time_series_data_specs=[
-                    TimeSeriesDataSpec(time_series=TimeSeries(name="ts1"), aggregates=["avg"], granularity=["1s"])
+                    TimeSeriesDataSpec(time_series=TimeSeries(name="ts1"), aggregates=["avg"], granularity="1s")
                 ]
             )
 
     def test_instantiate_ts_data_spec_no_time_series(self):
         with pytest.raises(DataSpecValidationError):
-            DataSpec(
-                time_series_data_specs=[TimeSeriesDataSpec(time_series=[], aggregates=["avg"], granularity=["1s"])]
-            )
+            DataSpec(time_series_data_specs=[TimeSeriesDataSpec(time_series=[], aggregates=["avg"], granularity="1s")])
 
     def test_instantiate_ts_data_spec_invalid_time_series_types(self):
         with pytest.raises(DataSpecValidationError):
             DataSpec(
                 time_series_data_specs=[
-                    TimeSeriesDataSpec(time_series=[{"name": "ts1"}], aggregates=["avg"], granularity=["1s"])
+                    TimeSeriesDataSpec(time_series=[{"name": "ts1"}], aggregates=["avg"], granularity="1s")
                 ]
             )
 
@@ -148,3 +146,66 @@ class TestDataTransferService:
             data.getvalue()
             == b'import os\n\nfrom cognite.config import configure_session\nfrom cognite.v05 import files\n\nconfigure_session(os.getenv("COGNITE_TEST_API_KEY"), "mltest")\n\n\nres = files.upload_file("test.py", "./test.py")\n\nprint(res)\n'
         )
+
+    @pytest.fixture
+    def data_spec(self):
+        ts1 = TimeSeries(name="constant", aggregates=["avg", "min"], label="ts1")
+        ts2 = TimeSeries(name="constant", aggregates=["cv"], label="ts2")
+        ts3 = TimeSeries(name="constant", aggregates=["max", "count"], label="ts3")
+        ts4 = TimeSeries(name="constant", aggregates=["step"], label="ts4")
+
+        tsds = TimeSeriesDataSpec(
+            time_series=[ts1, ts2, ts3, ts4], aggregates=["avg"], granularity="1h", start="300d-ago"
+        )
+        ds = DataSpec(time_series_data_specs=[tsds])
+        yield ds
+
+    def test_get_dataframes_w_column_mapping(self):
+        ts1 = TimeSeries(name="constant", aggregates=["avg"], label="cavg")
+        ts2 = TimeSeries(name="constant", aggregates=["cv"], label="ccv")
+        ts3 = TimeSeries(name="sinus", aggregates=["avg"], label="sinavg")
+
+        tsds = TimeSeriesDataSpec(time_series=[ts1, ts2, ts3], aggregates=["avg"], granularity="1h", start="300d-ago")
+
+        dts = DataTransferService(DataSpec([tsds]))
+        dfs = dts.get_dataframes()
+        assert list(dfs["default"].columns.values) == ["timestamp", "cavg", "ccv", "sinavg"]
+
+    def test_get_dataframes_w_column_mapping_and_global_aggregates(self):
+        ts1 = TimeSeries(name="constant", aggregates=["avg"], label="cavg")
+        ts2 = TimeSeries(name="constant", aggregates=["cv"], label="ccv")
+        ts3 = TimeSeries(name="sinus", label="sinavg")
+
+        tsds = TimeSeriesDataSpec(time_series=[ts1, ts2, ts3], aggregates=["avg"], granularity="1h", start="300d-ago")
+
+        dts = DataTransferService(DataSpec([tsds]))
+        dfs = dts.get_dataframes()
+        assert list(dfs["default"].columns.values) == ["timestamp", "cavg", "ccv", "sinavg"]
+
+    def test_get_dataframes_column_mapping_drop_agg_suffixes(self, data_spec):
+        dts = DataTransferService(data_spec, num_of_processes=3)
+
+        dfs = dts.get_dataframes(drop_agg_suffix=True)
+        assert list(dfs["default"].columns.values) == [
+            "timestamp",
+            "ts1|average",
+            "ts1|min",
+            "ts2",
+            "ts3|max",
+            "ts3|count",
+            "ts4",
+        ]
+
+    def test_get_dataframes_column_mapping_no_drop_agg_suffix(self, data_spec):
+        dts = DataTransferService(data_spec, num_of_processes=3)
+
+        dfs = dts.get_dataframes(drop_agg_suffix=False)
+        assert list(dfs["default"].columns.values) == [
+            "timestamp",
+            "ts1|average",
+            "ts1|min",
+            "ts2|continuousvariance",
+            "ts3|max",
+            "ts3|count",
+            "ts4|stepinterpolation",
+        ]

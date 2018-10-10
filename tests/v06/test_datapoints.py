@@ -1,0 +1,253 @@
+from datetime import datetime
+from random import randint
+
+import numpy as np
+import pandas as pd
+import pytest
+
+from cognite.v05 import dto
+from cognite.v06 import datapoints, time_series
+
+TS_NAME = None
+
+dps_params = [
+    {"start": 1522188000000, "end": 1522620000000},
+    {"start": datetime(2018, 4, 1), "end": datetime(2018, 4, 2)},
+]
+
+
+@pytest.fixture(autouse=True, scope="class")
+def ts_name():
+    global TS_NAME
+    TS_NAME = "test_ts_{}".format(randint(1, 2 ** 53 - 1))
+
+
+@pytest.fixture(scope="class")
+def datapoints_fixture():
+    tso = dto.TimeSeries(TS_NAME)
+    time_series.post_time_series([tso])
+    yield
+    time_series.delete_time_series(TS_NAME)
+
+
+@pytest.mark.usefixtures("datapoints_fixture")
+class TestDatapoints:
+    @pytest.fixture(scope="class", params=dps_params)
+    def get_dps_response_obj(self, request):
+        yield datapoints.get_datapoints(
+            id=4536445397018257, start=request.param["start"], end=request.param["end"], include_outside_points=True
+        )
+
+    def test_post_datapoints(self):
+        dps = [dto.Datapoint(i, i * 100) for i in range(10)]
+        res = datapoints.post_datapoints(TS_NAME, datapoints=dps)
+        assert res == {}
+
+    def test_post_datapoints_frame(self):
+        data = pd.DataFrame()
+        data["timestamp"] = [int(1537208777557 + 1000 * i) for i in range(0, 100)]
+        X = data["timestamp"].values.astype(float)
+        data["X"] = X ** 2
+        data["Y"] = 1.0 / (1 + X)
+
+        for name in data.drop(["timestamp"], axis=1).columns:
+            ts = dto.TimeSeries(name=name, description="To be deleted")
+            try:
+                time_series.post_time_series([ts])
+            except:
+                pass
+
+        res = datapoints.post_datapoints_frame(data)
+        assert res == {}
+
+    def test_get_datapoints(self, get_dps_response_obj):
+        from cognite.v05.dto import DatapointsResponse
+
+        assert isinstance(get_dps_response_obj, DatapointsResponse)
+
+    def test_get_dps_output_formats(self, get_dps_response_obj):
+        assert isinstance(get_dps_response_obj.to_ndarray(), np.ndarray)
+        assert isinstance(get_dps_response_obj.to_pandas(), pd.DataFrame)
+        assert isinstance(get_dps_response_obj.to_json(), dict)
+
+    def test_get_dps_correctly_spaced(self, get_dps_response_obj):
+        timestamps = get_dps_response_obj.to_pandas().timestamp.values
+        deltas = np.diff(timestamps, 1)
+        assert (deltas != 0).all()
+        assert (deltas % 10000 == 0).all()
+
+    def test_get_dps_with_limit(self):
+        res = datapoints.get_datapoints(id=4536445397018257, start=0, limit=1)
+        assert len(res.to_json().get("datapoints")) == 1
+
+    def test_get_dps_with_end_now(self):
+        res = datapoints.get_datapoints(id=4536445397018257, start=0, end="now", limit=100)
+        assert len(res.to_json().get("datapoints")) == 100
+
+    def test_get_dps_with_limit_with_config_variables_from_argument(self, unset_config_variables):
+        res = datapoints.get_datapoints(
+            id=4536445397018257, start=0, limit=1, api_key=unset_config_variables[0], project=unset_config_variables[1]
+        )
+        assert len(res.to_json().get("datapoints")) == 1
+
+    def test_get_dps_with_config_variables_from_argument(self, unset_config_variables):
+        res = datapoints.get_datapoints(
+            id=4536445397018257,
+            start=1522188000000,
+            end=1522620000000,
+            api_key=unset_config_variables[0],
+            project=unset_config_variables[1],
+        )
+        assert res
+
+
+class TestLatest:
+    def test_get_latest(self):
+        from cognite.v05.dto import LatestDatapointResponse
+
+        response = datapoints.get_latest("constant")
+        assert isinstance(response, LatestDatapointResponse)
+        assert isinstance(response.to_ndarray(), np.ndarray)
+        assert isinstance(response.to_pandas(), pd.DataFrame)
+        assert isinstance(response.to_json(), dict)
+
+
+class TestDatapointsFrame:
+    @pytest.fixture(scope="class", params=dps_params)
+    def get_datapoints_frame_response_obj(self, request):
+        yield datapoints.get_datapoints_frame(
+            time_series=["constant"],
+            start=request.param["start"],
+            end=request.param["end"],
+            aggregates=["avg"],
+            granularity="1m",
+        )
+
+    def test_get_dps_frame_output_format(self, get_datapoints_frame_response_obj):
+        assert isinstance(get_datapoints_frame_response_obj, pd.DataFrame)
+
+    def test_get_dps_frame_correctly_spaced(self, get_datapoints_frame_response_obj):
+        timestamps = get_datapoints_frame_response_obj.timestamp.values
+        deltas = np.diff(timestamps, 1)
+        assert (deltas != 0).all()
+        assert (deltas % 60000 == 0).all()
+
+    def test_get_dps_frame_with_limit(self):
+        df = datapoints.get_datapoints_frame(
+            time_series=["constant"], aggregates=["avg"], granularity="1m", start=0, limit=1
+        )
+        assert df.shape[0] == 1
+
+    def test_get_dps_frame_with_limit_with_config_values_from_argument(self, unset_config_variables):
+        df = datapoints.get_datapoints_frame(
+            time_series=["constant"],
+            aggregates=["avg"],
+            granularity="1m",
+            start=0,
+            limit=1,
+            api_key=unset_config_variables[0],
+            project=unset_config_variables[1],
+        )
+        assert df.shape[0] == 1
+
+    def test_get_dps_frame_with_config_values_from_argument(self, unset_config_variables):
+        res = datapoints.get_datapoints_frame(
+            time_series=["constant"],
+            start=1522188000000,
+            end=1522620000000,
+            aggregates=["avg"],
+            granularity="1m",
+            api_key=unset_config_variables[0],
+            project=unset_config_variables[1],
+        )
+        assert isinstance(res, pd.DataFrame)
+
+
+class TestMultiTimeseriesDatapoints:
+    @pytest.fixture(scope="class", params=dps_params[:1])
+    def get_multi_time_series_dps_response_obj(self, request):
+        from cognite.v05.dto import DatapointsQuery
+
+        dq1 = DatapointsQuery("constant")
+        dq2 = DatapointsQuery("sinus", aggregates=["avg"], granularity="30s")
+        yield list(
+            datapoints.get_multi_time_series_datapoints(
+                datapoints_queries=[dq1, dq2],
+                start=request.param["start"],
+                end=request.param["end"],
+                aggregates=["avg"],
+                granularity="60s",
+            )
+        )
+
+    def test_post_multitag_datapoints(self):
+        from cognite.v05 import dto
+        from cognite.v05.dto import TimeseriesWithDatapoints
+        from unittest import mock
+        import cognite._utils as utils
+
+        time_series_with_too_many_datapoints = TimeseriesWithDatapoints(
+            name="test", datapoints=[dto.Datapoint(x, x) for x in range(100001)]
+        )
+        time_series_with_99999_datapoints = TimeseriesWithDatapoints(
+            name="test", datapoints=[dto.Datapoint(x, x) for x in range(99999)]
+        )
+
+        with mock.patch.object(utils, "post_request") as post_request_mock:
+            post_request_mock: mock.MagicMock = post_request_mock
+
+            datapoints.post_multi_tag_datapoints([time_series_with_too_many_datapoints])
+            assert post_request_mock.call_count == 2
+
+        with mock.patch.object(utils, "post_request") as post_request_mock:
+            post_request_mock: mock.MagicMock = post_request_mock
+
+            datapoints.post_multi_tag_datapoints(
+                [time_series_with_99999_datapoints, time_series_with_too_many_datapoints]
+            )
+            assert post_request_mock.call_count == 2
+
+    def test_get_multi_time_series_dps_output_format(self, get_multi_time_series_dps_response_obj):
+        from cognite.v05.dto import DatapointsResponse
+
+        assert isinstance(get_multi_time_series_dps_response_obj, list)
+
+        for dpr in get_multi_time_series_dps_response_obj:
+            assert isinstance(dpr, DatapointsResponse)
+
+    def test_get_multi_time_series_dps_response_length(self, get_multi_time_series_dps_response_obj):
+        assert len(list(get_multi_time_series_dps_response_obj)) == 2
+
+    @pytest.mark.xfail(strict=True)
+    def test_get_multi_time_series_dps_correctly_spaced(self, get_multi_time_series_dps_response_obj):
+        m = list(get_multi_time_series_dps_response_obj)
+        timestamps = m[0].to_pandas().timestamp.values
+        deltas = np.diff(timestamps, 1)
+        assert (deltas != 0).all()
+        assert (deltas % 60000 == 0).all()
+        timestamps = m[1].to_pandas().timestamp.values
+        deltas = np.diff(timestamps, 1)
+        assert (deltas != 0).all()
+        assert (deltas % 30000 == 0).all()
+
+
+def test_split_TimeseriesWithDatapoints_if_over_limit():
+    from cognite.v05.dto import TimeseriesWithDatapoints, Datapoint
+    from cognite.v06.datapoints import _split_TimeseriesWithDatapoints_if_over_limit
+    from typing import List
+
+    time_series_with_datapoints_over_limit: TimeseriesWithDatapoints = TimeseriesWithDatapoints(
+        name="test", datapoints=[Datapoint(x, x) for x in range(1000)]
+    )
+
+    result: List[TimeseriesWithDatapoints] = _split_TimeseriesWithDatapoints_if_over_limit(
+        time_series_with_datapoints_over_limit, 100
+    )
+
+    assert isinstance(result[0], TimeseriesWithDatapoints)
+    assert len(result) == 10
+
+    result = _split_TimeseriesWithDatapoints_if_over_limit(time_series_with_datapoints_over_limit, 1000)
+
+    assert isinstance(result[0], TimeseriesWithDatapoints)
+    assert len(result) == 1

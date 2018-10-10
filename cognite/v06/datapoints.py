@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
-"""Timeseries Module
+"""Datapoints Module
 
-This module mirrors the Timeseries API. It allows you to fetch data from the api and output it in various formats.
+This module mirrors the Datapoints API. It allows you to fetch data from the api and output it in various formats.
 
-https://doc.cognitedata.com/0.5/#Cognite-API-Time-series
+https://doc.cognitedata.com/0.6/#Cognite-API-Datapoints
 """
 import io
-import time
 from concurrent.futures import ThreadPoolExecutor as Pool
 from functools import partial
 from typing import List
@@ -17,25 +16,22 @@ import pandas as pd
 import cognite._constants as _constants
 import cognite._utils as _utils
 import cognite.config as config
-from cognite.auxiliary._protobuf_descriptors import _api_timeseries_data_v2_pb2
 from cognite.v05.dto import (
     Datapoint,
     DatapointsResponse,
     DatapointsResponseIterator,
     LatestDatapointResponse,
-    TimeSeries,
-    TimeSeriesResponse,
     TimeseriesWithDatapoints,
 )
 
 
-def get_datapoints(name, aggregates=None, granularity=None, start=None, end=None, **kwargs):
+def get_datapoints(id, aggregates=None, granularity=None, start=None, end=None, **kwargs):
     """Returns a DatapointsObject containing a list of datapoints for the given query.
 
     This method will automate paging for the user and return all data for the given time period.
 
     Args:
-        name (str):             The name of the timeseries to retrieve data for.
+        id (int):             The unique id of the timeseries to retrieve data for.
 
         aggregates (list):      The list of aggregate functions you wish to apply to the data. Valid aggregate functions
                                 are: 'average/avg, max, min, count, sum, interpolation/int, stepinterpolation/step'.
@@ -51,9 +47,6 @@ def get_datapoints(name, aggregates=None, granularity=None, start=None, end=None
 
     Keyword Arguments:
         include_outside_points (bool):      No description
-
-        protobuf (bool):        Download the data using the binary protobuf format. Only applicable when getting raw data.
-                                Defaults to True.
 
         processes (int):        Number of download processes to run in parallell. Defaults to number returned by cpu_count().
 
@@ -73,13 +66,12 @@ def get_datapoints(name, aggregates=None, granularity=None, start=None, end=None
 
     if kwargs.get("limit"):
         return _get_datapoints_user_defined_limit(
-            name,
+            id,
             aggregates,
             granularity,
             start,
             end,
             limit=kwargs.get("limit"),
-            protobuf=kwargs.get("protobuf"),
             include_outside_points=kwargs.get("include_outside_points", False),
             api_key=api_key,
             project=project,
@@ -102,10 +94,9 @@ def get_datapoints(name, aggregates=None, granularity=None, start=None, end=None
 
     partial_get_dps = partial(
         _get_datapoints_helper_wrapper,
-        name=name,
+        id=id,
         aggregates=aggregates,
         granularity=granularity,
-        protobuf=kwargs.get("protobuf", True),
         include_outside_points=kwargs.get("include_outside_points", False),
         api_key=api_key,
         project=project,
@@ -117,32 +108,29 @@ def get_datapoints(name, aggregates=None, granularity=None, start=None, end=None
     concat_dps = []
     [concat_dps.extend(el) for el in datapoints]
 
-    return DatapointsResponse({"data": {"items": [{"name": name, "datapoints": concat_dps}]}})
+    return DatapointsResponse({"data": {"items": [{"id": id, "datapoints": concat_dps}]}})
 
 
-def _get_datapoints_helper_wrapper(
-    args, name, aggregates, granularity, protobuf, include_outside_points, api_key, project
-):
+def _get_datapoints_helper_wrapper(args, id, aggregates, granularity, include_outside_points, api_key, project):
     return _get_datapoints_helper(
-        name,
+        id,
         aggregates,
         granularity,
         args["start"],
         args["end"],
-        protobuf=protobuf,
         api_key=api_key,
         project=project,
-        include_ooutside_points=include_outside_points,
+        include_outside_points=include_outside_points,
     )
 
 
-def _get_datapoints_helper(name, aggregates=None, granularity=None, start=None, end=None, **kwargs):
+def _get_datapoints_helper(id, aggregates=None, granularity=None, start=None, end=None, **kwargs):
     """Returns a list of datapoints for the given query.
 
     This method will automate paging for the given time period.
 
     Args:
-        name (str):       The name of the timeseries to retrieve data for.
+        id (int):       The unique id of the timeseries to retrieve data for.
 
         aggregates (list):      The list of aggregate functions you wish to apply to the data. Valid aggregate functions
                                 are: 'average/avg, max, min, count, sum, interpolation/int, stepinterpolation/step'.
@@ -159,9 +147,6 @@ def _get_datapoints_helper(name, aggregates=None, granularity=None, start=None, 
     Keyword Arguments:
         include_outside_points (bool):  No description.
 
-        protobuf (bool):        Download the data using the binary protobuf format. Only applicable when getting raw data.
-                                Defaults to True.
-
         api_key (str):          Your api-key. Obligatory in this helper method.
 
         project (str):          Project name. Obligatory in this helper method.
@@ -170,9 +155,8 @@ def _get_datapoints_helper(name, aggregates=None, granularity=None, start=None, 
         list of datapoints: A list containing datapoint dicts.
     """
     api_key, project = kwargs.get("api_key"), kwargs.get("project")
-    url = config.get_base_url() + "/api/0.5/projects/{}/timeseries/data/{}".format(project, quote(name, safe=""))
+    url = config.get_base_url() + "/api/0.6/projects/{}/timeseries/{}/data".format(project, id)
 
-    use_protobuf = kwargs.get("protobuf", True) and aggregates is None
     limit = _constants.LIMIT if aggregates is None else _constants.LIMIT_AGG
 
     params = {
@@ -184,16 +168,11 @@ def _get_datapoints_helper(name, aggregates=None, granularity=None, start=None, 
         "includeOutsidePoints": kwargs.get("include_outside_points", False),
     }
 
-    headers = {"api-key": api_key, "accept": "application/protobuf" if use_protobuf else "application/json"}
+    headers = {"api-key": api_key, "accept": "application/json"}
     datapoints = []
     while (not datapoints or len(datapoints[-1]) == limit) and params["end"] > params["start"]:
         res = _utils.get_request(url, params=params, headers=headers)
-        if use_protobuf:
-            ts_data = _api_timeseries_data_v2_pb2.TimeseriesData()
-            ts_data.ParseFromString(res.content)
-            res = [{"timestamp": p.timestamp, "value": p.value} for p in ts_data.numericData.points]
-        else:
-            res = res.json()["data"]["items"][0]["datapoints"]
+        res = res.json()["data"]["items"][0]["datapoints"]
 
         if not res:
             break
@@ -206,13 +185,13 @@ def _get_datapoints_helper(name, aggregates=None, granularity=None, start=None, 
     return dps
 
 
-def _get_datapoints_user_defined_limit(name, aggregates, granularity, start, end, limit, **kwargs):
+def _get_datapoints_user_defined_limit(id, aggregates, granularity, start, end, limit, **kwargs):
     """Returns a DatapointsResponse object with the requested data.
 
     No paging or parallelizing is done.
 
     Args:
-        name (str):       The name of the timeseries to retrieve data for.
+        id (int):       The unique id of the timeseries to retrieve data for.
 
         aggregates (list):      The list of aggregate functions you wish to apply to the data. Valid aggregate functions
                                 are: 'average/avg, max, min, count, sum, interpolation/int, stepinterpolation/step'.
@@ -231,9 +210,6 @@ def _get_datapoints_user_defined_limit(name, aggregates, granularity, start, end
     Keyword Arguments:
         include_outside_points (bool):  No description.
 
-        protobuf (bool):        Download the data using the binary protobuf format. Only applicable when getting raw data.
-                                Defaults to True.
-
         api_key (str):          Your api-key. Obligatory in this helper method.
 
         project (str):          Project name. Obligatory in this helper method.
@@ -242,9 +218,7 @@ def _get_datapoints_user_defined_limit(name, aggregates, granularity, start, end
         output formats.
     """
     api_key, project = kwargs.get("api_key"), kwargs.get("project")
-    url = config.get_base_url() + "/api/0.5/projects/{}/timeseries/data/{}".format(project, quote(name, safe=""))
-
-    use_protobuf = kwargs.get("protobuf", True) and aggregates is None
+    url = config.get_base_url() + "/api/0.6/projects/{}/timeseries/{}/data".format(project, id)
 
     params = {
         "aggregates": aggregates,
@@ -255,16 +229,11 @@ def _get_datapoints_user_defined_limit(name, aggregates, granularity, start, end
         "includeOutsidePoints": kwargs.get("include_outside_points", False),
     }
 
-    headers = {"api-key": api_key, "accept": "application/protobuf" if use_protobuf else "application/json"}
+    headers = {"api-key": api_key, "accept": "application/json"}
     res = _utils.get_request(url, params=params, headers=headers)
-    if use_protobuf:
-        ts_data = _api_timeseries_data_v2_pb2.TimeseriesData()
-        ts_data.ParseFromString(res.content)
-        res = [{"timestamp": p.timestamp, "value": p.value} for p in ts_data.numericData.points]
-    else:
-        res = res.json()["data"]["items"][0]["datapoints"]
+    res = res.json()["data"]["items"][0]["datapoints"]
 
-    return DatapointsResponse({"data": {"items": [{"name": name, "datapoints": res}]}})
+    return DatapointsResponse({"data": {"items": [{"id": id, "datapoints": res}]}})
 
 
 def _split_TimeseriesWithDatapoints_if_over_limit(
@@ -360,7 +329,7 @@ def post_datapoints(name, datapoints: List[Datapoint], **kwargs):
         An empty response.
     """
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
-    url = config.get_base_url() + "/api/0.5/projects/{}/timeseries/data/{}".format(project, quote(name, safe=""))
+    url = config.get_base_url() + "/api/0.6/projects/{}/timeseries/data/{}".format(project, quote(name, safe=""))
 
     headers = {"api-key": api_key, "content-type": "application/json", "accept": "application/json"}
 
@@ -389,7 +358,7 @@ def get_latest(name, **kwargs):
         output formats.
     """
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
-    url = config.get_base_url() + "/api/0.5/projects/{}/timeseries/latest/{}".format(project, quote(name, safe=""))
+    url = config.get_base_url() + "/api/0.6/projects/{}/timeseries/latest/{}".format(project, quote(name, safe=""))
     headers = {"api-key": api_key, "accept": "application/json"}
     res = _utils.get_request(url, headers=headers, cookies=config.get_cookies())
     return LatestDatapointResponse(res.json())
@@ -432,7 +401,7 @@ def get_multi_time_series_datapoints(
         with different output formats.
     """
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
-    url = config.get_base_url() + "/api/0.5/projects/{}/timeseries/dataquery".format(project)
+    url = config.get_base_url() + "/api/0.6/projects/{}/timeseries/dataquery".format(project)
     start, end = _utils.interval_to_ms(start, end)
 
     num_of_dpqs_with_agg = 0
@@ -519,7 +488,7 @@ def get_datapoints_frame(time_series, aggregates, granularity, start=None, end=N
 
         limit (str): Max number of rows to return. If limit is specified, this method will not automate
                         paging and will return a maximum of 100,000 rows.
-        
+
         processes (int):    Number of download processes to run in parallell. Defaults to number returned by cpu_count().
 
     Returns:
@@ -655,7 +624,7 @@ def _get_datapoints_frame_helper(time_series, aggregates, granularity, start=Non
     """
     api_key, project = kwargs.get("api_key"), kwargs.get("project")
     cookies = kwargs.get("cookies")
-    url = config.get_base_url() + "/api/0.5/projects/{}/timeseries/dataframe".format(project)
+    url = config.get_base_url() + "/api/0.6/projects/{}/timeseries/dataframe".format(project)
 
     num_aggregates = 0
     for ts in time_series:
@@ -726,7 +695,7 @@ def _get_datapoints_frame_user_defined_limit(time_series, aggregates, granularit
     """
     api_key, project = kwargs.get("api_key"), kwargs.get("project")
     cookies = kwargs.get("cookies")
-    url = config.get_base_url() + "/api/0.5/projects/{}/timeseries/dataframe".format(project)
+    url = config.get_base_url() + "/api/0.6/projects/{}/timeseries/dataframe".format(project)
     body = {
         "items": [
             {"name": "{}".format(ts)}
@@ -749,7 +718,7 @@ def _get_datapoints_frame_user_defined_limit(time_series, aggregates, granularit
 
 
 def post_datapoints_frame(data, **kwargs):
-    """Write a dataframe 
+    """Write a dataframe
 
     Args:
         dataframe (DataFrame):  Pandas DataFrame Object containing the timeseries
@@ -775,169 +744,3 @@ def post_datapoints_frame(data, **kwargs):
         res = post_datapoints(name, data_points, api_key=api_key, project=project)
 
     return res
-
-
-def get_timeseries(prefix=None, description=None, include_metadata=False, asset_id=None, path=None, **kwargs):
-    """Returns a TimeseriesObject containing the requested timeseries.
-
-    Args:
-        prefix (str):           List timeseries with this prefix in the name.
-
-        description (str):      Filter timeseries taht contains this string in its description.
-
-        include_metadata (bool):    Decide if the metadata field should be returned or not. Defaults to False.
-
-        asset_id (int):        Get timeseries related to this asset.
-
-        path (str):             Get timeseries under this asset path branch.
-
-    Keyword Arguments:
-        limit (int):            Number of results to return.
-
-        api_key (str):          Your api-key.
-
-        project (str):          Project name.
-
-        autopaging (bool):      Whether or not to automatically page through results. If set to true, limit will be
-                                disregarded. Defaults to False.
-
-    Returns:
-        v05.dto.TimeSeriesResponse: A data object containing the requested timeseries with several getter methods with different
-        output formats.
-    """
-    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
-    url = config.get_base_url() + "/api/0.5/projects/{}/timeseries".format(project)
-    headers = {"api-key": api_key, "accept": "application/json"}
-    params = {
-        "q": prefix,
-        "description": description,
-        "includeMetadata": include_metadata,
-        "assetId": asset_id,
-        "path": path,
-        "limit": kwargs.get("limit", 10000) if not kwargs.get("autopaging") else 10000,
-    }
-
-    time_series = []
-    res = _utils.get_request(url=url, headers=headers, params=params, cookies=config.get_cookies())
-    time_series.extend(res.json()["data"]["items"])
-    next_cursor = res.json()["data"].get("nextCursor")
-
-    while next_cursor and kwargs.get("autopaging"):
-        params["cursor"] = next_cursor
-        res = _utils.get_request(url=url, headers=headers, params=params, cookies=config.get_cookies())
-        time_series.extend(res.json()["data"]["items"])
-        next_cursor = res.json()["data"].get("nextCursor")
-
-    return TimeSeriesResponse(
-        {
-            "data": {
-                "nextCursor": next_cursor,
-                "previousCursor": res.json()["data"].get("previousCursor"),
-                "items": time_series,
-            }
-        }
-    )
-
-
-def post_time_series(time_series: List[TimeSeries], **kwargs):
-    """Create a new time series.
-
-    Args:
-        time_series (list[v05.dto.TimeSeries]):   List of time series data transfer objects to create.
-
-    Keyword Args:
-        api_key (str): Your api-key.
-
-        project (str): Project name.
-    Returns:
-        An empty response.
-    """
-
-    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
-    url = config.get_base_url() + "/api/0.5/projects/{}/timeseries".format(project)
-
-    body = {"items": [ts.__dict__ for ts in time_series]}
-
-    headers = {"api-key": api_key, "content-type": "application/json", "accept": "application/json"}
-
-    res = _utils.post_request(url, body=body, headers=headers)
-    return res.json()
-
-
-def update_time_series(time_series: List[TimeSeries], **kwargs):
-    """Update an existing time series.
-
-    For each field that can be updated, a null value indicates that nothing should be done.
-
-    Args:
-        time_series (list[v05.dto.TimeSeries]):   List of time series data transfer objects to update.
-
-    Keyword Args:
-        api_key (str): Your api-key.
-
-        project (str): Project name.
-
-    Returns:
-        An empty response.
-    """
-
-    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
-    url = config.get_base_url() + "/api/0.5/projects/{}/timeseries".format(project)
-
-    body = {"items": [ts.__dict__ for ts in time_series]}
-
-    headers = {"api-key": api_key, "content-type": "application/json", "accept": "application/json"}
-
-    res = _utils.put_request(url, body=body, headers=headers)
-    return res.json()
-
-
-def delete_time_series(name, **kwargs):
-    """Delete a timeseries.
-
-    Args:
-        name (str):   Name of timeseries to delete.
-
-    Keyword Args:
-        api_key (str): Your api-key.
-
-        project (str): Project name.
-
-    Returns:
-        An empty response.
-    """
-    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
-    url = config.get_base_url() + "/api/0.5/projects/{}/timeseries/{}".format(project, quote(name, safe=""))
-
-    headers = {"api-key": api_key, "accept": "application/json"}
-
-    res = _utils.delete_request(url, headers=headers)
-    return res.json()
-
-
-def live_data_generator(name, update_frequency=1, **kwargs):
-    """Generator function which continously polls latest datapoint of a timeseries and yields new datapoints.
-
-    Args:
-        name (str): Name of timeseries to get latest datapoints for.
-
-        update_frequency (float): Frequency to pull for data in seconds.
-
-    Keyword Args:
-
-        api_key (str): Your api-key.
-
-        project (str): Project name.
-
-    Yields:
-        dict: Dictionary containing timestamp and value of latest datapoint.
-    """
-    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
-    last_timestamp = get_latest(name, api_key=api_key, project=project).to_json()["timestamp"]
-    while True:
-        latest = get_latest(name, api_key=api_key, project=project).to_json()
-        if last_timestamp == latest["timestamp"]:
-            time.sleep(update_frequency)
-        else:
-            yield latest
-        last_timestamp = latest["timestamp"]
