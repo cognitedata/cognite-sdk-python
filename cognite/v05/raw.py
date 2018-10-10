@@ -107,9 +107,9 @@ def get_tables(database_name: str = None, limit: int = None, cursor: str = None,
     api_key, project = config.get_config_variables(api_key, project)
     url = config.get_base_url() + "/api/0.5/projects/{}/raw/{}".format(project, database_name)
     params = dict()
-    if not limit:
+    if limit is not None:
         params["limit"] = limit
-    if not cursor:
+    if cursor is not None:
         params["cursor"] = cursor
     headers = {"api-key": api_key, "content-type": "*/*", "accept": "application/json"}
     res = _utils.get_request(url=url, params=params, headers=headers, cookies=config.get_cookies())
