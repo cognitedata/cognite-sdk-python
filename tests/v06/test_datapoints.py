@@ -8,7 +8,7 @@ import pytest
 from cognite.v05 import dto
 from cognite.v05.timeseries import delete_time_series as delete_time_series_v05
 from cognite.v05.timeseries import post_time_series as post_time_series_v05
-from cognite.v06 import datapoints, time_series
+from cognite.v06 import datapoints
 
 TS_NAME = None
 
