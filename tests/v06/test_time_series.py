@@ -1,11 +1,8 @@
 from datetime import datetime
 from random import randint
 
-import numpy as np
-import pandas as pd
 import pytest
 
-from cognite.v05 import dto
 from cognite.v05.dto import TimeSeriesResponse
 from cognite.v06 import time_series
 
@@ -26,44 +23,17 @@ def ts_name():
 
 class TestTimeseries:
     @pytest.fixture(scope="class", params=[True, False])
-    def get_time_series_response_obj(self, request):
-        yield time_series.get_time_series(prefix=TS_NAME, limit=1, include_metadata=request.param)
+    def get_time_series_by_id_response_obj(self, request):
+        yield time_series.get_time_series_by_id(id=4536445397018257, include_metadata=request.param)
 
-    def test_post_time_series(self):
-        tso = dto.TimeSeries(TS_NAME)
-        res = time_series.post_time_series([tso])
-        assert isinstance(res, TimeSeriesResponse)
-        assert res.to_json()[0]["name"] == TS_NAME
+    @pytest.fixture(scope="class")
+    def get_multiple_time_series_by_id_response_obj(self):
+        yield time_series.get_multiple_time_series_by_id(ids=[4536445397018257])
 
-    def test_update_time_series(self):
-        tso = dto.TimeSeries(TS_NAME, unit="celsius")
-        res = time_series.update_time_series([tso])
-        assert res == {}
+    def test_get_time_series_by_id(self, get_time_series_by_id_response_obj):
+        assert isinstance(get_time_series_by_id_response_obj, TimeSeriesResponse)
+        assert get_time_series_by_id_response_obj.to_json()[0]["name"] == "constant"
 
-    def test_time_series_unit_correct(self, get_time_series_response_obj):
-        if "unit" in get_time_series_response_obj.to_json()[0]:
-            assert get_time_series_response_obj.to_json()[0]["unit"] == "celsius"
-
-    def test_get_time_series_output_format(self, get_time_series_response_obj):
-        print(get_time_series_response_obj.to_pandas())
-        from cognite.v05.dto import TimeSeriesResponse
-
-        assert isinstance(get_time_series_response_obj, TimeSeriesResponse)
-        assert isinstance(get_time_series_response_obj.to_ndarray(), np.ndarray)
-        assert isinstance(get_time_series_response_obj.to_pandas(), pd.DataFrame)
-        assert isinstance(get_time_series_response_obj.to_json()[0], dict)
-
-    def test_get_time_series_no_results(self):
-        result = time_series.get_time_series(name="not_a_time_series")
-        assert result.to_pandas().empty
-        assert not result.to_json()
-
-    def test_delete_time_series(self):
-        res = time_series.delete_time_series(TS_NAME)
-        assert res == {}
-
-    def test_get_time_series_with_config_variables_from_argument(self, unset_config_variables):
-        ts = time_series.get_time_series(
-            prefix=TS_NAME, limit=1, api_key=unset_config_variables[0], project=unset_config_variables[1]
-        )
-        assert ts
+    def test_get_multiple_time_series_by_id(self, get_multiple_time_series_by_id_response_obj):
+        assert isinstance(get_multiple_time_series_by_id_response_obj, TimeSeriesResponse)
+        assert get_multiple_time_series_by_id_response_obj.to_json()[0]["name"] == "constant"

@@ -86,6 +86,18 @@ class TestDataTransferService:
                 ]
             )
 
+    def test_instantiate_ts_data_spec_duplicate_ts_labels(self):
+        with pytest.raises(DataSpecValidationError):
+            DataSpec(
+                time_series_data_specs=[
+                    TimeSeriesDataSpec(
+                        time_series=[TimeSeries("ts1", label="ts1"), TimeSeries("ts2", label="ts1")],
+                        aggregates=["avg"],
+                        granularity="1s",
+                    )
+                ]
+            )
+
     def test_instantiate_ts_data_spec_time_series_not_list(self):
         with pytest.raises(DataSpecValidationError):
             DataSpec(

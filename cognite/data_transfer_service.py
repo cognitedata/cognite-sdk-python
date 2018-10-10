@@ -120,9 +120,13 @@ class DataSpec:
                 if not len(tsds.time_series) > 0:
                     raise DataSpecValidationError("A time series data spec does not contain any time series")
 
+                ts_labels = []
                 for ts in tsds.time_series:
                     if not isinstance(ts, TimeSeries):
                         raise DataSpecValidationError("Time series must be a TimeSeries object")
+                    if ts.label in ts_labels:
+                        raise DataSpecValidationError("Time series labels must be unique")
+                    ts_labels.append(ts.label)
 
     def __validate_files_data_spec(self):
         if self.files_data_spec:
