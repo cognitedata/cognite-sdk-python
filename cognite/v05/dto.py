@@ -273,7 +273,7 @@ class TimeSeries(object):
         unit (str):         Physical unit of the time series.
         asset_id (str):     Asset that this time series belongs to.
         description (str):  Description of the time series.
-        security_ategories (list(int)): Security categories required in order to access this time series.
+        security_categories (list(int)): Security categories required in order to access this time series.
         is_step (bool):        Whether or not the time series is a step series.
 
     """
