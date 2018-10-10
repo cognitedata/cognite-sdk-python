@@ -204,27 +204,25 @@ class DatapointDepth(object):
 
 
 class Datapoint(object):
-    """Data transfer object for datapoints.
-
-    Attributes:
-        timestamp (int, datetime): The data timestamp in milliseconds since the epoch (Jan 1, 1970) or as a datetime object.
-        value (string):     The data value, Can be string or numeric depending on the metric.
-    """
+    """Data transfer object for datapoints."""
 
     def __init__(self, timestamp, value):
+        """
+        :param timestamp: The data timestamp in milliseconds since the epoch (Jan 1, 1970) or as a datetime object (int | datetime).
+        :param value:     The data value, can be string or numeric depending on the metric (str | Number).
+        """
         self.timestamp = timestamp if isinstance(timestamp, int) else _utils.datetime_to_ms(timestamp)
         self.value = value
 
 
 class TimeseriesWithDatapoints(object):
-    """Data transfer object for a timeseries with datapoints.
-
-    Attributes:
-        tag_id (str):       Unique ID of time series.
-        datapoints (List[v05.dto.Datapoint]): List of datapoints in the timeseries.
-    """
+    """Data transfer object for a timeseries with datapoints."""
 
     def __init__(self, name, datapoints):
+        """
+        :param name:        Unique name of time series (str).
+        :param datapoints:  List of datapoints in the timeseries  (List[v05.dto.Datapoint]).
+        """
         self.name = name
         self.datapoints = datapoints
 
@@ -264,19 +262,7 @@ class TimeSeriesResponse(CogniteDataObject):
 
 
 class TimeSeries(object):
-    """Data Transfer Object for a time series.
-
-    Attributes:
-        name (str):       Unique name of time series.
-        isString (bool):    Whether the time series is string valued or not.
-        metadata (dict):    Metadata.
-        unit (str):         Physical unit of the time series.
-        assetId (str):     Asset that this time series belongs to.
-        description (str):  Description of the time series.
-        securityCategories (list(int)): Security categories required in order to access this time series.
-        isStep (bool):        Whether or not the time series is a step series.
-
-    """
+    """Data Transfer Object for a time series."""
 
     def __init__(
         self,
@@ -289,6 +275,18 @@ class TimeSeries(object):
         security_categories=None,
         is_step=None,
     ):
+        """
+        Time series DTO constructor.
+
+        :param name:                 Unique name of time series (str).
+        :param is_string:            Whether the time series is string valued or not (bool).
+        :param metadata:             Metadata (dict).
+        :param unit:                 Physical unit of the time series (str).
+        :param asset_id:             Asset that this time series belongs to (int).
+        :param description:          Description of the time series (str).
+        :param security_categories:  (list(int)): Security categories required in order to access this time series (list(int)).
+        :param is_step:              Whether or not the time series is a step series (bool).
+        """
         self.name = name
         self.isString = is_string
         self.metadata = metadata
