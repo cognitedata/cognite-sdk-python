@@ -8,14 +8,16 @@ import pandas as pd
 
 from cognite import config
 from cognite._utils import InputError, get_aggregate_func_return_name
-from cognite.v05 import files, timeseries
+from cognite.v05 import files
+from cognite.v05 import timeseries as time_series_v05
+from cognite.v06 import time_series as time_series_v06
 
 
 class TimeSeries:
     """Object for specifying a specific time series from the TimeSeries API when using a data spec.
 
     Args:
-        name (str): name of time series to retrieve
+        id (int): id of time series to retrieve
         aggregates (List[str]): Local aggregate functions to apply
         missing_data_strategy(str): Missing data strategy to apply
         label (str): name of the column in the resulting data frame when passed to data transfer service.
@@ -25,11 +27,12 @@ class TimeSeries:
         will use the label as column names.
     """
 
-    def __init__(self, name, aggregates=None, missing_data_strategy=None, label=None):
-        self.name = name
+    def __init__(self, id: int, aggregates: List[str] = None, missing_data_strategy: str = None, label: str = None):
+        self.id = id
         self.aggregates = aggregates
         self.missing_data_strategy = missing_data_strategy
-        self.label = label or name
+        self.label = label
+        self._name = None
 
 
 class TimeSeriesDataSpec:
@@ -56,7 +59,7 @@ class TimeSeriesDataSpec:
 
     def __init__(
         self,
-        time_series: Union[List[TimeSeries], Dict[str, TimeSeries]],
+        time_series: List[TimeSeries],
         aggregates: List[str],
         granularity: str,
         missing_data_strategy: str = None,
@@ -77,10 +80,10 @@ class FilesDataSpec:
     """Object for specifying data from the Files API when using a data spec.
 
     Args:
-        file_ids (Dict):    Dictionary of fileNames -> fileIds
+        file_ids (Dict[str, int]):    Dictionary of fileNames -> fileIds
     """
 
-    def __init__(self, file_ids):
+    def __init__(self, file_ids: Dict[str, int]):
         self.file_ids = file_ids
 
 
@@ -232,11 +235,22 @@ class DataTransferService:
         for tsds in self.ts_data_specs:
             ts_list = []
 
+            # Temporary workaround that you cannot use get_datapoints_frame with ts id.
+            ts_res = time_series_v06.get_multiple_time_series_by_id(ids=list(set([ts.id for ts in tsds.time_series])))
+            id_to_name = {ts["id"]: ts["name"] for ts in ts_res.to_json()}
+
             for ts in tsds.time_series:
-                ts_dict = dict(name=ts.name, aggregates=ts.aggregates, missingDataStrategy=ts.missing_data_strategy)
+                ts._name = id_to_name[ts.id]
+                if not ts.label:
+                    ts.label = id_to_name[ts.id]
+                ts_dict = dict(
+                    name=id_to_name[ts.id],
+                    aggregates=ts.aggregates or tsds.aggregates,
+                    missingDataStrategy=ts.missing_data_strategy,
+                )
                 ts_list.append(ts_dict)
 
-            df = timeseries.get_datapoints_frame(
+            df = time_series_v05.get_datapoints_frame(
                 ts_list,
                 tsds.aggregates,
                 tsds.granularity,
@@ -273,9 +287,9 @@ class DataTransferService:
             for agg in ts.aggregates or tsds.aggregates:
                 agg_return_name = get_aggregate_func_return_name(agg)
                 if len(ts.aggregates or tsds.aggregates) > 1 or not drop_agg_suffix:
-                    name_to_label[ts.name + "|" + agg_return_name] = ts.label + "|" + agg_return_name
+                    name_to_label[ts._name + "|" + agg_return_name] = ts.label + "|" + agg_return_name
                 else:
-                    name_to_label[ts.name + "|" + agg_return_name] = ts.label
+                    name_to_label[ts._name + "|" + agg_return_name] = ts.label
         return df.rename(columns=name_to_label)
 
     def __apply_missing_data_strategies(self, df, ts_list, global_missing_data_strategy):
