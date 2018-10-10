@@ -204,27 +204,25 @@ class DatapointDepth(object):
 
 
 class Datapoint(object):
-    """Data transfer object for datapoints.
-
-    Attributes:
-        timestamp (int, datetime): The data timestamp in milliseconds since the epoch (Jan 1, 1970) or as a datetime object.
-        value (string):     The data value, Can be string or numeric depending on the metric.
-    """
+    """Data transfer object for datapoints."""
 
     def __init__(self, timestamp, value):
+        """
+        :param timestamp: The data timestamp in milliseconds since the epoch (Jan 1, 1970) or as a datetime object (int | datetime).
+        :param value:     The data value, can be string or numeric depending on the metric (str | Number).
+        """
         self.timestamp = timestamp if isinstance(timestamp, int) else _utils.datetime_to_ms(timestamp)
         self.value = value
 
 
 class TimeseriesWithDatapoints(object):
-    """Data transfer object for a timeseries with datapoints.
-
-    Attributes:
-        tag_id (str):       Unique ID of time series.
-        datapoints (List[v05.dto.Datapoint]): List of datapoints in the timeseries.
-    """
+    """Data transfer object for a timeseries with datapoints."""
 
     def __init__(self, name, datapoints):
+        """
+        :param name:        Unique name of time series (str).
+        :param datapoints:  List of datapoints in the timeseries  (List[v05.dto.Datapoint]).
+        """
         self.name = name
         self.datapoints = datapoints
 
