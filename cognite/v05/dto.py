@@ -264,19 +264,7 @@ class TimeSeriesResponse(CogniteDataObject):
 
 
 class TimeSeries(object):
-    """Data Transfer Object for a time series.
-
-    Attributes:
-        name (str):       Unique name of time series.
-        isString (bool):    Whether the time series is string valued or not.
-        metadata (dict):    Metadata.
-        unit (str):         Physical unit of the time series.
-        assetId (str):     Asset that this time series belongs to.
-        description (str):  Description of the time series.
-        securityCategories (list(int)): Security categories required in order to access this time series.
-        isStep (bool):        Whether or not the time series is a step series.
-
-    """
+    """Data Transfer Object for a time series."""
 
     def __init__(
         self,
@@ -289,6 +277,18 @@ class TimeSeries(object):
         security_categories=None,
         is_step=None,
     ):
+        """
+        Time series DTO constructor.
+
+        :param name:                 Unique name of time series.
+        :param is_string:            Whether the time series is string valued or not.
+        :param metadata:             Metadata.
+        :param unit:                 Physical unit of the time series.
+        :param asset_id:             Asset that this time series belongs to.
+        :param description:          Description of the time series.
+        :param security_categories:  (list(int)): Security categories required in order to access this time series.
+        :param is_step:              Whether or not the time series is a step series.
+        """
         self.name = name
         self.isString = is_string
         self.metadata = metadata
