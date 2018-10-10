@@ -280,14 +280,14 @@ class TimeSeries(object):
         """
         Time series DTO constructor.
 
-        :param name:                 Unique name of time series.
-        :param is_string:            Whether the time series is string valued or not.
-        :param metadata:             Metadata.
-        :param unit:                 Physical unit of the time series.
-        :param asset_id:             Asset that this time series belongs to.
-        :param description:          Description of the time series.
-        :param security_categories:  (list(int)): Security categories required in order to access this time series.
-        :param is_step:              Whether or not the time series is a step series.
+        :param name:                 Unique name of time series (str).
+        :param is_string:            Whether the time series is string valued or not (bool).
+        :param metadata:             Metadata (dict).
+        :param unit:                 Physical unit of the time series (str).
+        :param asset_id:             Asset that this time series belongs to (int).
+        :param description:          Description of the time series (str).
+        :param security_categories:  (list(int)): Security categories required in order to access this time series (list(int)).
+        :param is_step:              Whether or not the time series is a step series (bool).
         """
         self.name = name
         self.isString = is_string
