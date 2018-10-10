@@ -18,8 +18,8 @@ from cognite.data_transfer_service import (
 @pytest.fixture
 def ts_data_spec_dtos():
     time_series = [
-        TimeSeries(name="constant", aggregates=["step"], missing_data_strategy="ffill"),
-        TimeSeries(name="sinus"),
+        TimeSeries(id=4536445397018257, aggregates=["step"], missing_data_strategy="ffill"),
+        TimeSeries(id=8953361644869258),
     ]
 
     ts_data_spec1 = TimeSeriesDataSpec(
@@ -102,7 +102,7 @@ class TestDataTransferService:
         with pytest.raises(DataSpecValidationError):
             DataSpec(
                 time_series_data_specs=[
-                    TimeSeriesDataSpec(time_series=TimeSeries(name="ts1"), aggregates=["avg"], granularity="1s")
+                    TimeSeriesDataSpec(time_series=TimeSeries(id=1234), aggregates=["avg"], granularity="1s")
                 ]
             )
 
@@ -114,7 +114,7 @@ class TestDataTransferService:
         with pytest.raises(DataSpecValidationError):
             DataSpec(
                 time_series_data_specs=[
-                    TimeSeriesDataSpec(time_series=[{"name": "ts1"}], aggregates=["avg"], granularity="1s")
+                    TimeSeriesDataSpec(time_series=[{"id": 1234}], aggregates=["avg"], granularity="1s")
                 ]
             )
 
@@ -161,10 +161,10 @@ class TestDataTransferService:
 
     @pytest.fixture
     def data_spec(self):
-        ts1 = TimeSeries(name="constant", aggregates=["avg", "min"], label="ts1")
-        ts2 = TimeSeries(name="constant", aggregates=["cv"], label="ts2")
-        ts3 = TimeSeries(name="constant", aggregates=["max", "count"], label="ts3")
-        ts4 = TimeSeries(name="constant", aggregates=["step"], label="ts4")
+        ts1 = TimeSeries(id=4536445397018257, aggregates=["avg", "min"], label="ts1")
+        ts2 = TimeSeries(id=4536445397018257, aggregates=["cv"], label="ts2")
+        ts3 = TimeSeries(id=4536445397018257, aggregates=["max", "count"], label="ts3")
+        ts4 = TimeSeries(id=4536445397018257, aggregates=["step"], label="ts4")
 
         tsds = TimeSeriesDataSpec(
             time_series=[ts1, ts2, ts3, ts4], aggregates=["avg"], granularity="1h", start="300d-ago"
@@ -173,26 +173,29 @@ class TestDataTransferService:
         yield ds
 
     def test_get_dataframes_w_column_mapping(self):
-        ts1 = TimeSeries(name="constant", aggregates=["avg"], label="cavg")
-        ts2 = TimeSeries(name="constant", aggregates=["cv"], label="ccv")
-        ts3 = TimeSeries(name="sinus", aggregates=["avg"], label="sinavg")
+        ts1 = TimeSeries(id=4536445397018257, aggregates=["avg"], label="cavg")
+        ts2 = TimeSeries(id=4536445397018257, aggregates=["cv"], label="ccv")
+        ts3 = TimeSeries(id=8953361644869258, aggregates=["avg"], label="sinavg")
 
         tsds = TimeSeriesDataSpec(time_series=[ts1, ts2, ts3], aggregates=["avg"], granularity="1h", start="300d-ago")
 
         dts = DataTransferService(DataSpec([tsds]))
         dfs = dts.get_dataframes()
-        assert list(dfs["default"].columns.values) == ["timestamp", "cavg", "ccv", "sinavg"]
+        expected = ["timestamp", "cavg", "ccv", "sinavg"]
+        assert expected == list(dfs["default"].columns.values)
 
     def test_get_dataframes_w_column_mapping_and_global_aggregates(self):
-        ts1 = TimeSeries(name="constant", aggregates=["avg"], label="cavg")
-        ts2 = TimeSeries(name="constant", aggregates=["cv"], label="ccv")
-        ts3 = TimeSeries(name="sinus", label="sinavg")
+        ts1 = TimeSeries(id=4536445397018257, aggregates=["avg"], label="cavg")
+        ts2 = TimeSeries(id=4536445397018257, aggregates=["cv"], label="ccv")
+        ts3 = TimeSeries(id=8953361644869258, label="sinavg")
 
         tsds = TimeSeriesDataSpec(time_series=[ts1, ts2, ts3], aggregates=["avg"], granularity="1h", start="300d-ago")
 
         dts = DataTransferService(DataSpec([tsds]))
         dfs = dts.get_dataframes()
-        assert list(dfs["default"].columns.values) == ["timestamp", "cavg", "ccv", "sinavg"]
+        expected = ["timestamp", "cavg", "ccv", "sinavg"]
+
+        assert expected == list(dfs["default"].columns.values)
 
     def test_get_dataframes_column_mapping_drop_agg_suffixes(self, data_spec):
         dts = DataTransferService(data_spec, num_of_processes=3)

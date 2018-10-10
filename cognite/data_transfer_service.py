@@ -127,7 +127,7 @@ class DataSpec:
                 for ts in tsds.time_series:
                     if not isinstance(ts, TimeSeries):
                         raise DataSpecValidationError("Time series must be a TimeSeries object")
-                    if ts.label in ts_labels:
+                    if ts.label and ts.label in ts_labels:
                         raise DataSpecValidationError("Time series labels must be unique")
                     ts_labels.append(ts.label)
 
