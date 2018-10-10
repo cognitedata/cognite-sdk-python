@@ -6,6 +6,8 @@ import pandas as pd
 import pytest
 
 from cognite.v05 import dto
+from cognite.v05.timeseries import delete_time_series as delete_time_series_v05
+from cognite.v05.timeseries import post_time_series as post_time_series_v05
 from cognite.v06 import datapoints, time_series
 
 TS_NAME = None
@@ -25,9 +27,9 @@ def ts_name():
 @pytest.fixture(scope="class")
 def datapoints_fixture():
     tso = dto.TimeSeries(TS_NAME)
-    time_series.post_time_series([tso])
+    post_time_series_v05([tso])
     yield
-    time_series.delete_time_series(TS_NAME)
+    delete_time_series_v05(TS_NAME)
 
 
 @pytest.mark.usefixtures("datapoints_fixture")
