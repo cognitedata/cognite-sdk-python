@@ -1,12 +1,13 @@
 import pickle
 
+from cognite.data_transfer_service import DataTransferService
 
 class Model:
     def __init__(self, model):
         self._model = model
 
     @staticmethod
-    def train(file_io, **kwargs):
+    def train(file_io, data_spec, **kwargs):
         """The method to train your model.
         Should produce at least a serialized model. Can also produce other
         serialized artefacts that you will need when predicting.
@@ -26,11 +27,11 @@ class Model:
             pickle.dump(my_model, f)
         pass
 
-    def predict(self, data, **kwargs):
+    def predict(self, instance, data_spec, **kwargs):
         """Method to perform predictions on your model.
 
         Args:
-            data:       The input to your model.
+            instance: The input to your model.
         Keyword Args:
             Any user defined arguments
         Returns:

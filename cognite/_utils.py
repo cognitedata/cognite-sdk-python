@@ -167,6 +167,28 @@ def granularity_to_ms(time_string):
     return magnitude * unit_in_ms[unit]
 
 
+def get_aggregate_func_return_name(agg_func: str) -> str:
+    agg_funcs = {
+        "avg": "average",
+        "average": "average",
+        "count": "count",
+        "continuousvariance": "continuousvariance",
+        "cv": "continuousvariance",
+        "discretevariance": "discretevariance",
+        "dv": "discretevariance",
+        "int": "interpolation",
+        "interpolation": "interpolation",
+        "max": "max",
+        "min": "min",
+        "step": "stepinterpolation",
+        "stepinterpolation": "stepinterpolation",
+        "sum": "sum",
+        "totalvariation": "totalvariation",
+        "tv": "totalvariation",
+    }
+    return agg_funcs.get(agg_func)
+
+
 def _time_ago_to_ms(time_ago_string):
     """Returns millisecond representation of time-ago string"""
     if time_ago_string == "now":

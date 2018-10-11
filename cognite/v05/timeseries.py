@@ -526,7 +526,7 @@ def get_datapoints_frame(time_series, aggregates, granularity, start=None, end=N
         pandas.DataFrame: A pandas dataframe containing the datapoints for the given timeseries. The datapoints for all the
         timeseries will all be on the same timestamps.
 
-    Note:
+    Examples:
         The ``timeseries`` parameter can take a list of strings and/or dicts on the following formats::
 
             Using strings:

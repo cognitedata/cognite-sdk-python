@@ -72,7 +72,7 @@ class RawRow(object):
     The Raw API is a simple key/value-store. Each row in a table in a raw database consists of a
     unique row key and a set of columns.
 
-    Attributes:
+    Args:
         key (str):      Unique key for the row.
 
         columns (int):  A key/value-map consisting of the values in the row.
@@ -137,7 +137,7 @@ class TagMatchingResponse(CogniteDataObject):
 class DatapointsQuery:
     """Data Query Object for Datapoints.
 
-    Attributes:
+    Args:
         name (str):           Unique name of the time series.
         aggregates (list):          The aggregate functions to be returned. Use default if null. An empty string must
                                     be sent to get raw data if the default is a set of aggregate functions.
@@ -193,7 +193,7 @@ class DatapointsResponseIterator:
 class DatapointDepth(object):
     """Data transfer object for Depth datapoints.
 
-       Attributes:
+       Args:
            depth (double): The depth (in m) of the datapoint 
            value (string):     The data value, Can be string or numeric depending on the metric.
        """
@@ -206,7 +206,7 @@ class DatapointDepth(object):
 class Datapoint(object):
     """Data transfer object for datapoints.
 
-    Attributes:
+    Args:
         timestamp (int, datetime): The data timestamp in milliseconds since the epoch (Jan 1, 1970) or as a datetime object.
         value (string):     The data value, Can be string or numeric depending on the metric.
     """
@@ -219,8 +219,8 @@ class Datapoint(object):
 class TimeseriesWithDatapoints(object):
     """Data transfer object for a timeseries with datapoints.
 
-    Attributes:
-        tag_id (str):       Unique ID of time series.
+    Args:
+        name (str):       Unique ID of time series.
         datapoints (List[v05.dto.Datapoint]): List of datapoints in the timeseries.
     """
 
@@ -266,15 +266,15 @@ class TimeSeriesResponse(CogniteDataObject):
 class TimeSeries(object):
     """Data Transfer Object for a time series.
 
-    Attributes:
+    Args:
         name (str):       Unique name of time series.
-        isString (bool):    Whether the time series is string valued or not.
+        is_string (bool):    Whether the time series is string valued or not.
         metadata (dict):    Metadata.
         unit (str):         Physical unit of the time series.
-        assetId (str):     Asset that this time series belongs to.
+        asset_id (str):     Asset that this time series belongs to.
         description (str):  Description of the time series.
-        securityCategories (list(int)): Security categories required in order to access this time series.
-        isStep (bool):        Whether or not the time series is a step series.
+        security_categories (list(int)): Security categories required in order to access this time series.
+        is_step (bool):        Whether or not the time series is a step series.
 
     """
 
@@ -342,7 +342,7 @@ class AssetResponse(CogniteDataObject):
 class Asset(object):
     """Data transfer object for assets.
 
-    Attributes:
+    Args:
         name (str):                 Name of asset. Often referred to as tag.
         parent_id (int):            ID of parent asset, if any.
         description (str):          Description of asset.
@@ -368,7 +368,7 @@ class Asset(object):
 class FileInfoResponse(CogniteDataObject):
     """File Info Response Object.
 
-    Attributes:
+    Args:
         id (int):               ID given by the API to the file.
         file_name (str):        File name. Max length is 256.
         directory (str):        Directory containing the file. Max length is 512.
@@ -462,7 +462,8 @@ class EventListResponse(CogniteDataObject):
 
 class Event(object):
     """Data transfer object for events.
-    Attributes:
+
+    Args:
         start_time (int):       Start time of the event in ms since epoch.
         end_time (int):         End time of the event in ms since epoch.
         description (str):      Textual description of the event.
