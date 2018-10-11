@@ -103,7 +103,7 @@ def download_file(id, get_contents=False, **kwargs):
         project (str, optional):            Project name.
 
     Returns:
-        str: Download link if get_contents is False else file contents.
+        bytes: Download link if get_contents is False else file contents.
     """
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url() + "/api/0.5/projects/{}/files/{}/downloadlink".format(project, id)
