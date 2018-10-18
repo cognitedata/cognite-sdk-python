@@ -152,6 +152,11 @@ class DataSpec:
     def from_JSON(cls, json_repr):
         json_repr = json.loads(json_repr)
         time_series_data_specs_json = json_repr.get("time_series_data_specs")
+        files_data_spec_json = json_repr.get("files_data_spec")
+
+        if not (time_series_data_specs_json or files_data_spec_json):
+            raise DataSpecValidationError("Not a valid data spec")
+
         time_series_data_specs = []
         if time_series_data_specs_json:
             for tsds_json in time_series_data_specs_json:
@@ -161,7 +166,6 @@ class DataSpec:
                     tsds.time_series = [TimeSeries(**ts) for ts in time_series_json]
                     time_series_data_specs.append(tsds)
 
-        files_data_spec_json = json_repr.get("files_data_spec")
         files_data_spec = None
         if files_data_spec_json:
             files_data_spec = FilesDataSpec(**files_data_spec_json)
@@ -233,8 +237,20 @@ class DataTransferService:
 
         dataframes = {}
         for tsds in self.ts_data_specs:
-            ts_list = []
+            df = self.get_dataframe(tsds.label, drop_agg_suffix=drop_agg_suffix)
+            dataframes[tsds.label] = df
+        return dataframes
 
+    def get_dataframe(self, label: str = "default", drop_agg_suffix: bool = True):
+        if self.ts_data_specs is None:
+            raise InputError("Data spec does not contain any TimeSeriesDataSpecs")
+
+        tsds = None
+        for ts_data_spec in self.ts_data_specs:
+            if ts_data_spec.label == label:
+                tsds = ts_data_spec
+        if tsds:
+            ts_list = []
             # Temporary workaround that you cannot use get_datapoints_frame with ts id.
             ts_res = time_series_v06.get_multiple_time_series_by_id(ids=list(set([ts.id for ts in tsds.time_series])))
             id_to_name = {ts["id"]: ts["name"] for ts in ts_res.to_json()}
@@ -263,8 +279,8 @@ class DataTransferService:
             )
             df = self.__apply_missing_data_strategies(df, ts_list, tsds.missing_data_strategy)
             df = self.__convert_ts_names_to_labels(df, tsds, drop_agg_suffix)
-            dataframes[tsds.label] = df
-        return dataframes
+            return df
+        return None
 
     def get_file(self, name):
         """Return files by name as specified in the DataSpec
