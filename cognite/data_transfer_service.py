@@ -241,7 +241,7 @@ class DataTransferService:
             dataframes[tsds.label] = df
         return dataframes
 
-    def get_dataframe(self, label, drop_agg_suffix: bool = True):
+    def get_dataframe(self, label: str = "default", drop_agg_suffix: bool = True):
         if self.ts_data_specs is None:
             raise InputError("Data spec does not contain any TimeSeriesDataSpecs")
 
