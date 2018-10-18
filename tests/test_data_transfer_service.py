@@ -140,6 +140,10 @@ class TestDataTransferService:
         ds = DataSpec.from_JSON(json_repr)
         assert ds.__eq__(data_spec)
 
+    def test_json_loads_invalid(self):
+        with pytest.raises(DataSpecValidationError):
+            DataSpec.from_JSON(json.dumps({"blabla": "dada"}))
+
     def test_get_dataframes(self, ts_data_spec_dtos):
         data_spec = DataSpec(time_series_data_specs=ts_data_spec_dtos)
         service = DataTransferService(data_spec)
@@ -147,6 +151,12 @@ class TestDataTransferService:
 
         assert isinstance(dataframes.get("ds1"), pd.DataFrame)
         assert isinstance(dataframes.get("ds2"), pd.DataFrame)
+
+    def test_get_dataframe(self, ts_data_spec_dtos):
+        data_spec = DataSpec(time_series_data_specs=ts_data_spec_dtos)
+        service = DataTransferService(data_spec)
+        df = service.get_dataframe("ds1")
+        assert isinstance(df, pd.DataFrame)
 
     def test_get_files(self):
         data_spec = DataSpec(files_data_spec=FilesDataSpec(file_ids={"test": 7725800487412823}))
