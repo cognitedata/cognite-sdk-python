@@ -252,7 +252,9 @@ class DataTransferService:
         if tsds:
             ts_list = []
             # Temporary workaround that you cannot use get_datapoints_frame with ts id.
-            ts_res = time_series_v06.get_multiple_time_series_by_id(ids=list(set([ts.id for ts in tsds.time_series])))
+            ts_res = time_series_v06.get_multiple_time_series_by_id(
+                ids=list(set([ts.id for ts in tsds.time_series])), api_key=self.api_key, project=self.project
+            )
             id_to_name = {ts["id"]: ts["name"] for ts in ts_res.to_json()}
 
             for ts in tsds.time_series:
@@ -293,7 +295,7 @@ class DataTransferService:
         if isinstance(self.files_data_spec, FilesDataSpec):
             id = self.files_data_spec.file_ids.get(name)
             if id:
-                file_bytes = files.download_file(id, get_contents=True)
+                file_bytes = files.download_file(id, get_contents=True, api_key=self.api_key, project=self.project)
                 return BytesIO(file_bytes)
             raise InputError("Invalid name")
 

@@ -313,7 +313,7 @@ def post_multi_tag_datapoints(timeseries_with_datapoints: List[TimeseriesWithDat
         An empty response.
     """
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
-    url = config.get_base_url() + "/api/0.4/projects/{}/timeseries/data".format(project)
+    url = config.get_base_url() + "/api/0.5/projects/{}/timeseries/data".format(project)
 
     use_gzip = kwargs.get("use_gzip", False)
 
@@ -334,7 +334,7 @@ def post_multi_tag_datapoints(timeseries_with_datapoints: List[TimeseriesWithDat
     for bin in timeseries_to_upload_binned:
         body = {
             "items": [
-                {"tagId": ts_with_data.name, "datapoints": [dp.__dict__ for dp in ts_with_data.datapoints]}
+                {"name": ts_with_data.name, "datapoints": [dp.__dict__ for dp in ts_with_data.datapoints]}
                 for ts_with_data in bin
             ]
         }
