@@ -218,9 +218,12 @@ class DataTransferService:
         """
         config_api_key, config_project = config.get_config_variables(api_key, project)
 
-        if not isinstance(data_spec, DataSpec):
-            raise InputError("DataTransferService accepts a DataSpec instance.")
-        self.data_spec = data_spec
+        if isinstance(data_spec, DataSpec):
+            self.data_spec = data_spec
+        elif isinstance(data_spec, str):
+            self.data_spec = DataSpec.from_JSON(data_spec)
+        else:
+            raise InputError("DataTransferService accepts a DataSpec instance or a json represantion of it.")
         self.ts_data_specs = data_spec.time_series_data_specs
         self.files_data_spec = data_spec.files_data_spec
         self.api_key = api_key or config_api_key
