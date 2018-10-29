@@ -3,8 +3,8 @@ import pprint
 from io import BytesIO
 
 import pandas as pd
-import pytest
 
+import pytest
 from cognite.data_transfer_service import (
     DataSpec,
     DataSpecValidationError,
