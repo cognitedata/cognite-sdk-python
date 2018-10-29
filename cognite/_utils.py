@@ -296,3 +296,13 @@ def first_fit(list_items: List, max_size, get_count: Callable) -> List[List]:
         list_items.append(bin.show())
 
     return list_items
+
+
+def to_camel_case(snake_case_string: str):
+    components = snake_case_string.split("_")
+    return components[0] + "".join(x.title() for x in components[1:])
+
+
+def to_snake_case(camel_case_string: str):
+    s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", camel_case_string)
+    return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()

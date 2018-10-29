@@ -7,7 +7,7 @@ from typing import Dict, List, Union
 import pandas as pd
 
 from cognite import config
-from cognite._utils import InputError, get_aggregate_func_return_name
+from cognite._utils import InputError, get_aggregate_func_return_name, to_camel_case, to_snake_case
 from cognite.v05 import files
 from cognite.v05 import timeseries as time_series_v05
 from cognite.v06 import time_series as time_series_v06
@@ -146,13 +146,15 @@ class DataSpec:
                     raise DataSpecValidationError("File ids must be integers")
 
     def to_JSON(self):
-        return json.dumps(self.__dict__, cls=self.__DataSpecEncoder)
+        return json.dumps(
+            {to_camel_case(key): value for key, value in self.__dict__.items()}, cls=self.__DataSpecEncoder
+        )
 
     @classmethod
     def from_JSON(cls, json_repr):
         json_repr = json.loads(json_repr)
-        time_series_data_specs_json = json_repr.get("time_series_data_specs")
-        files_data_spec_json = json_repr.get("files_data_spec")
+        time_series_data_specs_json = json_repr.get("timeSeriesDataSpecs")
+        files_data_spec_json = json_repr.get("filesDataSpec")
 
         if not (time_series_data_specs_json or files_data_spec_json):
             raise DataSpecValidationError("Not a valid data spec")
@@ -160,25 +162,30 @@ class DataSpec:
         time_series_data_specs = []
         if time_series_data_specs_json:
             for tsds_json in time_series_data_specs_json:
-                time_series_json = tsds_json.get("time_series")
+                time_series_json = tsds_json.get("timeSeries")
                 if time_series_json:
-                    tsds = TimeSeriesDataSpec(**tsds_json)
-                    tsds.time_series = [TimeSeries(**ts) for ts in time_series_json]
+                    tsds = TimeSeriesDataSpec(**{to_snake_case(key): value for key, value in tsds_json.items()})
+                    tsds.time_series = [
+                        TimeSeries(**{to_snake_case(key): value for key, value in ts.items()})
+                        for ts in time_series_json
+                    ]
                     time_series_data_specs.append(tsds)
 
         files_data_spec = None
         if files_data_spec_json:
-            files_data_spec = FilesDataSpec(**files_data_spec_json)
+            files_data_spec = FilesDataSpec(
+                **{to_snake_case(key): value for key, value in files_data_spec_json.items()}
+            )
         return DataSpec(time_series_data_specs, files_data_spec)
 
     class __DataSpecEncoder(json.JSONEncoder):
         def default(self, obj):
             if isinstance(obj, (TimeSeries, TimeSeriesDataSpec)):
-                dict_copy = deepcopy(obj.__dict__)
+                new_dict = {}
                 for key, value in obj.__dict__.items():
-                    if not value:
-                        del dict_copy[key]
-                return dict_copy
+                    if value is not None:
+                        new_dict[to_camel_case(key)] = value
+                return new_dict
             elif obj is None:
                 del obj
             return super(self, self).default(obj)
@@ -211,9 +218,12 @@ class DataTransferService:
         """
         config_api_key, config_project = config.get_config_variables(api_key, project)
 
-        if not isinstance(data_spec, DataSpec):
-            raise InputError("DataTransferService accepts a DataSpec instance.")
-        self.data_spec = data_spec
+        if isinstance(data_spec, DataSpec):
+            self.data_spec = data_spec
+        elif isinstance(data_spec, str):
+            self.data_spec = DataSpec.from_JSON(data_spec)
+        else:
+            raise InputError("DataTransferService accepts a DataSpec instance or a json represantion of it.")
         self.ts_data_specs = data_spec.time_series_data_specs
         self.files_data_spec = data_spec.files_data_spec
         self.api_key = api_key or config_api_key
