@@ -5,18 +5,30 @@ This module mirrors the Models API.
 
 https://doc.cognitedata.com/0.6/models
 """
+from typing import Any, Dict, List
+
 import requests
 
 from cognite import _utils as utils
 from cognite import config
 
 
-def create_model(name, description="", **kwargs):
-    """Create a new hosted models
+def create_model(
+    name,
+    description="",
+    metadata: Dict[str, Any] = None,
+    input_fields: List[str] = None,
+    output_fields: List[str] = None,
+    **kwargs
+):
+    """Creates a new hosted model
 
     Args:
         name (str):             Name of model
         description (str):      Description
+        metadata (Dict[str, Any]):          Metadata about model
+        input_fields (List[str]):   List of input fields the model accepts
+        output_fields (List[str]:   List of output fields the model produces
 
     Returns:
         The created model.
@@ -24,7 +36,13 @@ def create_model(name, description="", **kwargs):
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url() + "/api/0.6/projects/{}/models".format(project)
     headers = {"api-key": api_key, "accept": "application/json"}
-    model_body = {"name": name, "description": description}
+    model_body = {
+        "name": name,
+        "description": description,
+        "metadata": metadata or {},
+        "inputFields": input_fields or [],
+        "outputFields": output_fields or [],
+    }
     res = utils.post_request(url, body=model_body, headers=headers, cookies=config.get_cookies())
     return res.json()
 
@@ -33,7 +51,6 @@ def get_models(**kwargs):
     """Get all models."""
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url() + "/api/0.6/projects/{}/models".format(project)
-    # url = "http://localhost:8000/api/0.1/project/{}/models".format(project)
     headers = {"api-key": api_key, "accept": "application/json"}
     res = utils.get_request(url, headers=headers, cookies=config.get_cookies())
     return res.json()
@@ -52,7 +69,6 @@ def delete_model(model_id, **kwargs):
     """Delete a model."""
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url() + "/api/0.6/projects/{}/models/{}".format(project, model_id)
-    # url = "http://localhost:8000/api/0.1/project/{}/models/{}".format(project, model_id)
     headers = {"api-key": api_key, "accept": "application/json"}
     res = utils.delete_request(url, headers=headers, cookies=config.get_cookies())
     return res.json()
@@ -64,7 +80,6 @@ def train_model_version(
     description=None,
     predict_source_package_id=None,
     train_source_package_id=None,
-    data_spec=None,
     args=None,
     scale_tier=None,
     machine_type=None,
@@ -76,13 +91,12 @@ def train_model_version(
     body = {
         "name": name,
         "description": description or "",
-        "source_package_id": predict_source_package_id,
-        "training_details": {
-            "source_package_id": train_source_package_id or predict_source_package_id,
-            "data_spec": data_spec.to_JSON() if data_spec else None,
+        "sourcePackageID": predict_source_package_id,
+        "trainingDetails": {
+            "sourcePackageID": train_source_package_id or predict_source_package_id,
             "args": args or {},
-            "scale_tier": scale_tier,
-            "machine_type": machine_type,
+            "scaleTier": scale_tier or "BASIC",
+            "machineType": machine_type,
         },
     }
     headers = {"api-key": api_key, "accept": "application/json"}
@@ -90,7 +104,7 @@ def train_model_version(
     return res.json()
 
 
-def online_predict(model_id, version_id=None, instances=None, arguments=None, data_spec=None, **kwargs):
+def online_predict(model_id, version_id=None, instances=None, arguments=None, **kwargs):
     """Perform online prediction on a models active version or a specified version."""
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     if version_id:
@@ -100,7 +114,7 @@ def online_predict(model_id, version_id=None, instances=None, arguments=None, da
     else:
         url = config.get_base_url() + "/api/0.6/projects/{}/models/{}/predict".format(project, model_id)
 
-    body = {"instances": instances, "arguments": arguments or {}, "data_spec": data_spec.to_JSON() if data_spec else {}}
+    body = {"instances": instances, "arguments": arguments or {}}
     headers = {"api-key": api_key, "accept": "application/json"}
     res = utils.put_request(url, body=body, headers=headers, cookies=config.get_cookies())
     return res.json()
@@ -138,20 +152,21 @@ def upload_source_package(
     body = {
         "name": name,
         "description": description or "",
-        "package_name": package_name,
-        "available_operations": available_operations,
-        "meta_data": meta_data or {},
+        "packageName": package_name,
+        "availableOperations": available_operations,
+        "metadata": meta_data or {},
     }
     headers = {"api-key": api_key, "accept": "application/json"}
     res = utils.post_request(url, body=body, headers=headers, cookies=config.get_cookies())
     if file_path:
-        _upload_file(res.json().get("upload_url"), file_path)
-        return res.json().get("id")
+        _upload_file(res.json().get("uploadURL"), file_path)
+        del res.json()["uploadURL"]
+        return res.json()
     return res.json()
 
 
 def _upload_file(upload_url, file_path):
     with open(file_path, "rb") as fh:
         mydata = fh.read()
-        response = requests.put(upload_url, data=mydata, params={"file": file_path})
+        response = requests.put(upload_url, data=mydata)
     return response
