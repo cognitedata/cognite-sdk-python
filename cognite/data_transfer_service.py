@@ -224,8 +224,8 @@ class DataTransferService:
             self.data_spec = DataSpec.from_JSON(data_spec)
         else:
             raise InputError("DataTransferService accepts a DataSpec instance or a json represantion of it.")
-        self.ts_data_specs = data_spec.time_series_data_specs
-        self.files_data_spec = data_spec.files_data_spec
+        self.ts_data_specs = self.data_spec.time_series_data_specs
+        self.files_data_spec = self.data_spec.files_data_spec
         self.api_key = api_key or config_api_key
         self.project = project or config_project
         self.cookies = cookies
