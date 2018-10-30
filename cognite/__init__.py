@@ -17,7 +17,5 @@ Data Platform (CDP).
 # For more information on versioning see https://semver.org/
 #
 
-from cognite.data_transfer_service import DataTransferService
-
 __all__ = ["v04", "v05", "v06", "preprocessing", "config", "data_transfer_service"]
 __version__ = "0.11.7"
