@@ -271,7 +271,7 @@ class TimeSeries(object):
         is_string (bool):    Whether the time series is string valued or not.
         metadata (dict):    Metadata.
         unit (str):         Physical unit of the time series.
-        asset_id (str):     Asset that this time series belongs to.
+        asset_id (int):     Asset that this time series belongs to.
         description (str):  Description of the time series.
         security_categories (list(int)): Security categories required in order to access this time series.
         is_step (bool):        Whether or not the time series is a step series.
