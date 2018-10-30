@@ -1,9 +1,8 @@
 import sys
 from unittest import mock
 
+import cognite.v06.analytics.models
 import pytest
-
-import cognite.v06.models
 from cognite.cli.cli import CogniteCLI
 from cognite.cli.cli_models import CogniteModelsCLI
 
@@ -15,34 +14,34 @@ def cognite_utils_request_mock(monkeypatch):
     def mockreturn(*args, **kwargs):
         return response_mock
 
-    monkeypatch.setattr(cognite.v06.models.utils, "get_request", mockreturn)
-    monkeypatch.setattr(cognite.v06.models.utils, "delete_request", mockreturn)
-    monkeypatch.setattr(cognite.v06.models.utils, "post_request", mockreturn)
-    monkeypatch.setattr(cognite.v06.models.utils, "put_request", mockreturn)
+    monkeypatch.setattr(cognite.v06.analytics.models.utils, "get_request", mockreturn)
+    monkeypatch.setattr(cognite.v06.analytics.models.utils, "delete_request", mockreturn)
+    monkeypatch.setattr(cognite.v06.analytics.models.utils, "post_request", mockreturn)
+    monkeypatch.setattr(cognite.v06.analytics.models.utils, "put_request", mockreturn)
     yield response_mock
 
 
 class TestModelsCLI:
     def test_get_models(self, cognite_utils_request_mock, mocker):
         sys.argv = ["cognite", "models", "get"]
-        mocker.spy(cognite.v06.models, "get_models")
+        mocker.spy(cognite.v06.analytics.models, "get_models")
         CogniteCLI()
-        assert 1 == cognite.v06.models.get_models.call_count
+        assert 1 == cognite.v06.analytics.models.get_models.call_count
         assert 1 == cognite_utils_request_mock.json.call_count
 
     def test_get_versions(self, cognite_utils_request_mock, mocker):
         sys.argv = ["cognite", "models", "get", "123"]
-        mocker.spy(cognite.v06.models, "get_model_versions")
+        mocker.spy(cognite.v06.analytics.models, "get_model_versions")
         CogniteCLI()
         assert 1 == cognite_utils_request_mock.json.call_count
-        assert 1 == cognite.v06.models.get_model_versions.call_count
+        assert 1 == cognite.v06.analytics.models.get_model_versions.call_count
 
     def test_get_source_packages(self, cognite_utils_request_mock, mocker):
         sys.argv = ["cognite", "models", "get", "-s"]
-        mocker.spy(cognite.v06.models, "get_model_source_packages")
+        mocker.spy(cognite.v06.analytics.models, "get_model_source_packages")
         CogniteCLI()
         assert 1 == cognite_utils_request_mock.json.call_count
-        assert 1 == cognite.v06.models.get_model_source_packages.call_count
+        assert 1 == cognite.v06.analytics.models.get_model_source_packages.call_count
 
     def test_source_command(self, mocker):
         copytree_mock = mocker.patch("shutil.copytree")
@@ -125,8 +124,8 @@ class TestModelsCLI:
         models_cli = CogniteModelsCLI()
         mocker.patch.object(models_cli, "_verify_source_package", autospec=True)
         mocker.patch("cognite.cli.cli_models.run_setup")
-        upload_sp_mock = mocker.patch("cognite.v06.models.upload_source_package")
-        create_model_mock = mocker.patch("cognite.v06.models.create_model")
+        upload_sp_mock = mocker.patch("cognite.v06.analytics.models.upload_source_package")
+        create_model_mock = mocker.patch("cognite.v06.analytics.models.create_model")
 
         models_cli.deploy(["-m", "a_model"])
         assert 1 == upload_sp_mock.call_count

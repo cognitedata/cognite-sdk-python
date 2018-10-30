@@ -8,7 +8,7 @@ from distutils.core import run_setup
 
 from tabulate import tabulate
 
-from cognite.v06 import models
+from cognite.v06.analytics import models
 
 MODEL_SRC_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, "auxiliary/_hosting/model"))
 
