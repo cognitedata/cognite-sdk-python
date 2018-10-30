@@ -235,7 +235,7 @@ class DataTransferService:
         """Return a dictionary of dataframes indexed by label - one per data spec.
 
         Args:
-            drop_agg_suffix (bool): If a time series has only one aggregate, drop the "|<agg-func>" suffix on
+            drop_agg_suffix (bool): If a time series has only one aggregate, drop the `|<agg-func>` suffix on
                                     those column names.
         Returns:
             Dict[str, pd.DataFrame]: A label-indexed dictionary of data frames.
