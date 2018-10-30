@@ -14,7 +14,7 @@ import cognite.config as config
 from cognite.v05.dto import DatapointsResponse
 
 
-def get_datapoints(id, aggregates=None, granularity=None, start=None, end=None, **kwargs):
+def get_datapoints(id, start, end=None, aggregates=None, granularity=None, **kwargs):
     """Returns a DatapointsObject containing a list of datapoints for the given query.
 
     This method will automate paging for the user and return all data for the given time period.
@@ -22,17 +22,17 @@ def get_datapoints(id, aggregates=None, granularity=None, start=None, end=None, 
     Args:
         id (int):             The unique id of the timeseries to retrieve data for.
 
-        aggregates (list):      The list of aggregate functions you wish to apply to the data. Valid aggregate functions
-                                are: 'average/avg, max, min, count, sum, interpolation/int, stepinterpolation/step'.
-
-        granularity (str):      The granularity of the aggregate values. Valid entries are : 'day/d, hour/h, minute/m,
-                                second/s', or a multiple of these indicated by a number as a prefix e.g. '12hour'.
-
         start (Union[str, int, datetime]):    Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s.
                                     E.g. '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since
                                     epoch or a datetime object which will be converted to ms since epoch UTC.
 
         end (Union[str, int, datetime]):      Get datapoints up to this time. Same format as for start.
+
+        aggregates (list):      The list of aggregate functions you wish to apply to the data. Valid aggregate functions
+                                are: 'average/avg, max, min, count, sum, interpolation/int, stepinterpolation/step'.
+
+        granularity (str):      The granularity of the aggregate values. Valid entries are : 'day/d, hour/h, minute/m,
+                                second/s', or a multiple of these indicated by a number as a prefix e.g. '12hour'.
 
     Keyword Arguments:
         include_outside_points (bool):      No description
