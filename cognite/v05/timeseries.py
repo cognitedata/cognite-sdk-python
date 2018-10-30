@@ -29,7 +29,7 @@ from cognite.v05.dto import (
 )
 
 
-def get_datapoints(name, aggregates=None, granularity=None, start=None, end=None, **kwargs):
+def get_datapoints(name, start, end=None, aggregates=None, granularity=None, **kwargs):
     """Returns a DatapointsObject containing a list of datapoints for the given query.
 
     This method will automate paging for the user and return all data for the given time period.
@@ -37,17 +37,17 @@ def get_datapoints(name, aggregates=None, granularity=None, start=None, end=None
     Args:
         name (str):             The name of the timeseries to retrieve data for.
 
-        aggregates (list):      The list of aggregate functions you wish to apply to the data. Valid aggregate functions
-                                are: 'average/avg, max, min, count, sum, interpolation/int, stepinterpolation/step'.
-
-        granularity (str):      The granularity of the aggregate values. Valid entries are : 'day/d, hour/h, minute/m,
-                                second/s', or a multiple of these indicated by a number as a prefix e.g. '12hour'.
-
         start (Union[str, int, datetime]):    Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s.
                                     E.g. '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since
                                     epoch or a datetime object which will be converted to ms since epoch UTC.
 
         end (Union[str, int, datetime]):      Get datapoints up to this time. Same format as for start.
+
+        aggregates (list):      The list of aggregate functions you wish to apply to the data. Valid aggregate functions
+                                are: 'average/avg, max, min, count, sum, interpolation/int, stepinterpolation/step'.
+
+        granularity (str):      The granularity of the aggregate values. Valid entries are : 'day/d, hour/h, minute/m,
+                                second/s', or a multiple of these indicated by a number as a prefix e.g. '12hour'.
 
     Keyword Arguments:
         include_outside_points (bool):      No description
@@ -395,9 +395,7 @@ def get_latest(name, **kwargs):
     return LatestDatapointResponse(res.json())
 
 
-def get_multi_time_series_datapoints(
-    datapoints_queries, aggregates=None, granularity=None, start=None, end=None, **kwargs
-):
+def get_multi_time_series_datapoints(datapoints_queries, start, end=None, aggregates=None, granularity=None, **kwargs):
     """Returns a list of DatapointsObjects each of which contains a list of datapoints for the given timeseries.
 
     This method will automate paging for the user and return all data for the given time period(s).
@@ -406,6 +404,12 @@ def get_multi_time_series_datapoints(
         datapoints_queries (list[v05.dto.DatapointsQuery]): The list of DatapointsQuery objects specifying which
                                                                     timeseries to retrieve data for.
 
+        start (Union[str, int, datetime]):    Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s.
+                                    E.g. '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since
+                                    epoch or a datetime object which will be converted to ms since epoch UTC.
+
+        end (Union[str, int, datetime]):      Get datapoints up to this time. Same format as for start.
+
         aggregates (list, optional):    The list of aggregate functions you wish to apply to the data. Valid aggregate
                                         functions are: 'average/avg, max, min, count, sum, interpolation/int,
                                         stepinterpolation/step'.
@@ -413,12 +417,6 @@ def get_multi_time_series_datapoints(
         granularity (str):              The granularity of the aggregate values. Valid entries are : 'day/d, hour/h,
                                         minute/m, second/s', or a multiple of these indicated by a number as a prefix
                                         e.g. '12hour'.
-
-        start (Union[str, int, datetime]):    Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s.
-                                    E.g. '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since
-                                    epoch or a datetime object which will be converted to ms since epoch UTC.
-
-        end (Union[str, int, datetime]):      Get datapoints up to this time. Same format as for start.
 
     Keyword Arguments:
         include_outside_points (bool):  No description.
@@ -487,7 +485,7 @@ def get_multi_time_series_datapoints(
     return DatapointsResponseIterator([DatapointsResponse(result) for result in results])
 
 
-def get_datapoints_frame(time_series, aggregates, granularity, start=None, end=None, **kwargs):
+def get_datapoints_frame(time_series, aggregates, granularity, start, end=None, **kwargs):
     """Returns a pandas dataframe of datapoints for the given timeseries all on the same timestamps.
 
     This method will automate paging for the user and return all data for the given time period.
