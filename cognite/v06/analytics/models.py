@@ -34,7 +34,7 @@ def create_model(
         The created model.
     """
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
-    url = config.get_base_url() + "/api/0.6/projects/{}/models".format(project)
+    url = config.get_base_url() + "/api/0.6/projects/{}/analytics/models".format(project)
     headers = {"api-key": api_key, "accept": "application/json"}
     model_body = {
         "name": name,
@@ -50,7 +50,7 @@ def create_model(
 def get_models(**kwargs):
     """Get all models."""
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
-    url = config.get_base_url() + "/api/0.6/projects/{}/models".format(project)
+    url = config.get_base_url() + "/api/0.6/projects/{}/analytics/models".format(project)
     headers = {"api-key": api_key, "accept": "application/json"}
     res = utils.get_request(url, headers=headers, cookies=config.get_cookies())
     return res.json()
@@ -59,7 +59,7 @@ def get_models(**kwargs):
 def get_model_versions(model_id, **kwargs):
     """Get all versions of a specific model."""
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
-    url = config.get_base_url() + "/api/0.6/projects/{}/models/{}/versions".format(project, model_id)
+    url = config.get_base_url() + "/api/0.6/projects/{}/analytics/models/{}/versions".format(project, model_id)
     headers = {"api-key": api_key, "accept": "application/json"}
     res = utils.get_request(url, headers=headers, cookies=config.get_cookies())
     return res.json()
@@ -68,7 +68,7 @@ def get_model_versions(model_id, **kwargs):
 def delete_model(model_id, **kwargs):
     """Delete a model."""
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
-    url = config.get_base_url() + "/api/0.6/projects/{}/models/{}".format(project, model_id)
+    url = config.get_base_url() + "/api/0.6/projects/{}/analytics/models/{}".format(project, model_id)
     headers = {"api-key": api_key, "accept": "application/json"}
     res = utils.delete_request(url, headers=headers, cookies=config.get_cookies())
     return res.json()
@@ -87,7 +87,7 @@ def train_model_version(
 ):
     """Train a new version of a model."""
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
-    url = config.get_base_url() + "/api/0.6/projects/{}/models/{}/versions/train".format(project, model_id)
+    url = config.get_base_url() + "/api/0.6/projects/{}/analytics/models/{}/versions/train".format(project, model_id)
     body = {
         "name": name,
         "description": description or "",
@@ -108,11 +108,11 @@ def online_predict(model_id, version_id=None, instances=None, arguments=None, **
     """Perform online prediction on a models active version or a specified version."""
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     if version_id:
-        url = config.get_base_url() + "/api/0.6/projects/{}/models/{}/versions/{}/predict".format(
+        url = config.get_base_url() + "/api/0.6/projects/{}/analytics/models/{}/versions/{}/predict".format(
             project, model_id, version_id
         )
     else:
-        url = config.get_base_url() + "/api/0.6/projects/{}/models/{}/predict".format(project, model_id)
+        url = config.get_base_url() + "/api/0.6/projects/{}/analytics/models/{}/predict".format(project, model_id)
 
     body = {"instances": instances, "arguments": arguments or {}}
     headers = {"api-key": api_key, "accept": "application/json"}
@@ -123,7 +123,7 @@ def online_predict(model_id, version_id=None, instances=None, arguments=None, **
 def get_model_source_packages(**kwargs):
     """Get all model source packages."""
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
-    url = config.get_base_url() + "/api/0.6/projects/{}/models/sourcepackages".format(project)
+    url = config.get_base_url() + "/api/0.6/projects/{}/analytics/models/sourcepackages".format(project)
     headers = {"api-key": api_key, "accept": "application/json"}
     res = utils.get_request(url, headers=headers, cookies=config.get_cookies())
     return res.json()
@@ -148,7 +148,7 @@ def upload_source_package(
 
     """
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
-    url = config.get_base_url() + "/api/0.6/projects/{}/models/sourcepackages".format(project)
+    url = config.get_base_url() + "/api/0.6/projects/{}/analytics/models/sourcepackages".format(project)
     body = {
         "name": name,
         "description": description or "",
