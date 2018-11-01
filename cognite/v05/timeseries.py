@@ -132,7 +132,7 @@ def _get_datapoints_helper_wrapper(
         protobuf=protobuf,
         api_key=api_key,
         project=project,
-        include_ooutside_points=include_outside_points,
+        include_outside_points=include_outside_points,
     )
 
 
