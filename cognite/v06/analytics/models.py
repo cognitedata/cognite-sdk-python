@@ -18,7 +18,6 @@ def create_model(
     metadata: Dict[str, Any] = None,
     input_fields: List[str] = None,
     output_fields: List[str] = None,
-    runtime_version: str = "0.1",
     **kwargs
 ):
     """Creates a new model
@@ -29,7 +28,6 @@ def create_model(
         metadata (Dict[str, Any]):          Metadata about model
         input_fields (List[str]):   List of input fields the model accepts
         output_fields (List[str]:   List of output fields the model produces
-        runtime_version (str):      Version of environment in which the source-package should run
 
     Keyword Arguments:
         api_key (str):          Your api-key.
@@ -47,7 +45,6 @@ def create_model(
         "metadata": metadata or {},
         "inputFields": input_fields or [],
         "outputFields": output_fields or [],
-        "runtimeVersion": runtime_version,
     }
     res = utils.post_request(url, body=model_body, headers=headers, cookies=config.get_cookies())
     return res.json()
@@ -212,7 +209,14 @@ def get_model_source_packages(**kwargs):
 
 
 def upload_source_package(
-    name, description, package_name, available_operations, meta_data=None, file_path=None, **kwargs
+    name,
+    description,
+    package_name,
+    available_operations,
+    meta_data=None,
+    file_path=None,
+    runtime_version="0.1",
+    **kwargs
 ):
     """Upload a source package to the model hosting environment.
 
@@ -223,6 +227,7 @@ def upload_source_package(
         available_operations: List of routines which this source package supports ["predict", "train"]
         meta_data: User defined key value pair of additional information.
         file_path (str): File path of source package distribution. If not sepcified, a download url will be returned.
+        runtime_version (str):      Version of environment in which the source-package should run. Defaults to 0.1
 
     Keyword Arguments:
         api_key (str):          Your api-key.
@@ -240,6 +245,7 @@ def upload_source_package(
         "packageName": package_name,
         "availableOperations": available_operations,
         "metadata": meta_data or {},
+        "runtimeVersion": runtime_version,
     }
     headers = {"api-key": api_key, "accept": "application/json"}
     res = utils.post_request(url, body=body, headers=headers, cookies=config.get_cookies())
