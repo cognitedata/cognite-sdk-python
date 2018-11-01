@@ -262,10 +262,10 @@ def online_predict(
 
 def create_source_package(
     name: str,
-    description: str,
     package_name: str,
     available_operations: List[str],
     runtime_version: str,
+    description: str = None,
     meta_data: Dict = None,
     file_path: str = None,
     **kwargs,
@@ -274,10 +274,10 @@ def create_source_package(
 
     Args:
         name (str): Name of source package
-        description (str): Description for source package
         package_name (str): name of root package for model
         available_operations (List[str]): List of routines which this source package supports ["predict", "train"]
         runtime_version (str): Version of environment in which the source-package should run. Currently only 0.1.
+        description (str): Description for source package
         meta_data (Dict): User defined key value pair of additional information.
         file_path (str): File path of source package distribution. If not specified, a download url will be returned.
 
@@ -333,7 +333,7 @@ def get_source_packages(**kwargs):
 
 
 def get_source_package(source_package_id: int, **kwargs):
-    """Get all model source packages.
+    """Get model source package by id.
 
     Args:
         source_package_id (int): Id of soure package to get.
@@ -351,6 +351,28 @@ def get_source_package(source_package_id: int, **kwargs):
     )
     headers = {"api-key": api_key, "accept": "application/json"}
     res = utils.get_request(url, headers=headers, cookies=config.get_cookies())
+    return res.json()
+
+
+def delete_source_package(source_package_id: int, **kwargs):
+    """Delete source package by id.
+
+    Args:
+        source_package_id (int): Id of soure package to delete.
+
+    Keyword Arguments:
+        api_key (str):          Your api-key.
+        project (str):          Project name.
+
+    Returns:
+        Dict: Empty response.
+    """
+    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    url = config.get_base_url() + "/api/0.6/projects/{}/analytics/models/sourcepackages/{}".format(
+        project, source_package_id
+    )
+    headers = {"api-key": api_key, "accept": "application/json"}
+    res = utils.delete_request(url, headers=headers, cookies=config.get_cookies())
     return res.json()
 
 
