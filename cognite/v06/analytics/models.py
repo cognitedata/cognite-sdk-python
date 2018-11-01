@@ -265,9 +265,9 @@ def create_source_package(
     description: str,
     package_name: str,
     available_operations: List[str],
+    runtime_version: str,
     meta_data: Dict = None,
     file_path: str = None,
-    runtime_version: str = "0.1",
     **kwargs,
 ):
     """Upload a source package to the model hosting environment.
@@ -277,9 +277,9 @@ def create_source_package(
         description (str): Description for source package
         package_name (str): name of root package for model
         available_operations (List[str]): List of routines which this source package supports ["predict", "train"]
+        runtime_version (str): Version of environment in which the source-package should run. Currently only 0.1.
         meta_data (Dict): User defined key value pair of additional information.
         file_path (str): File path of source package distribution. If not specified, a download url will be returned.
-        runtime_version (str): Version of environment in which the source-package should run. Defaults to 0.1
 
     Keyword Arguments:
         api_key (str):          Your api-key.
