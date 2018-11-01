@@ -180,7 +180,7 @@ class DataSpec:
 
     class __DataSpecEncoder(json.JSONEncoder):
         def default(self, obj):
-            if isinstance(obj, (TimeSeries, TimeSeriesDataSpec)):
+            if isinstance(obj, (TimeSeries, TimeSeriesDataSpec, FilesDataSpec)):
                 new_dict = {}
                 for key, value in obj.__dict__.items():
                     if value is not None:

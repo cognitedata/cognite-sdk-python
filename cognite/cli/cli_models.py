@@ -26,10 +26,10 @@ class CogniteModelsCLI:
         parser.add_argument("-s", "--source-packages", help="Get source-packages", action="store_true")
         parsed_args = parser.parse_args(args)
         if parsed_args.source_packages:
-            source_package_list = models.get_model_source_packages()
+            source_package_list = models.get_source_packages()
             self._print_source_packages(source_package_list)
         elif parsed_args.model_id:
-            versions_list = models.get_model_versions(parsed_args.model_id)
+            versions_list = models.get_versions(parsed_args.model_id)
             self._print_versions(versions_list)
         else:
             models_list = models.get_models()
@@ -78,7 +78,7 @@ class CogniteModelsCLI:
                 if f.endswith(".tar.gz"):
                     tarball_path = os.path.join(dist_dir, f)
 
-        source_package_id = models.upload_source_package(
+        source_package_id = models.create_source_package(
             info.get("source_package_name"),
             parsed_args.description,
             info.get("package_name"),
