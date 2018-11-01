@@ -117,7 +117,7 @@ def train_model_version(
     train_source_package_id: int = None,
     metadata: Dict = None,
     description: str = None,
-    args: Dict[str] = None,
+    args: Dict[str, Any] = None,
     scale_tier: str = None,
     machine_type: str = None,
     **kwargs,
@@ -132,7 +132,7 @@ def train_model_version(
                                         source_package_id.
         metadata (Dict[str, Any]):  Metadata about model version
         description (str):  Description of model version
-        args (Dict[str]):   Dictionary of arguments to pass to the training job.
+        args (Dict[str, Any]):   Dictionary of arguments to pass to the training job.
         scale_tier (str):   Which scale tier to use. Must be either "BASIC" or "CUSTOM"
         machine_type (str): Specify a machiene type Applies only if scale_tier is "CUSTOM".
 
@@ -205,14 +205,16 @@ def get_version(model_id: int, version_id: int, **kwargs):
     return res.json()
 
 
-def online_predict(model_id: int, version_id: int = None, instances: List = None, args: Dict[str] = None, **kwargs):
+def online_predict(
+    model_id: int, version_id: int = None, instances: List = None, args: Dict[str, Any] = None, **kwargs
+):
     """Perform online prediction on a models active version or a specified version.
 
     Args:
         model_id (int):     Perform a prediction on the model with this id. Will use active version.
         version_id (int):   Use this version instead of the active version. (optional)
         instances (List): List of JSON serializable instances to pass to your model one-by-one.
-        args (Dict[str])    Dictinoary of keyword arguments to pass to your predict method.
+        args (Dict[str, Any])    Dictinoary of keyword arguments to pass to your predict method.
 
     Keyword Arguments:
         api_key (str):          Your api-key.
