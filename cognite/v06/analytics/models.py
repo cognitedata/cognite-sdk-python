@@ -8,7 +8,6 @@ https://doc.cognitedata.com/0.6/models
 from typing import Any, Dict, List
 
 import requests
-
 from cognite import _utils as utils
 from cognite import config
 
@@ -19,6 +18,7 @@ def create_model(
     metadata: Dict[str, Any] = None,
     input_fields: List[str] = None,
     output_fields: List[str] = None,
+    runtime_version: str = "0.1",
     **kwargs
 ):
     """Creates a new hosted model
@@ -29,9 +29,10 @@ def create_model(
         metadata (Dict[str, Any]):          Metadata about model
         input_fields (List[str]):   List of input fields the model accepts
         output_fields (List[str]:   List of output fields the model produces
+        runtime_version (str):      Version of environment in which the source-package should run
 
     Returns:
-        The created model.
+        Dict: Json representation of the created model.
     """
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url() + "/api/0.6/projects/{}/analytics/models".format(project)
@@ -42,6 +43,7 @@ def create_model(
         "metadata": metadata or {},
         "inputFields": input_fields or [],
         "outputFields": output_fields or [],
+        "runtimeVersion": runtime_version,
     }
     res = utils.post_request(url, body=model_body, headers=headers, cookies=config.get_cookies())
     return res.json()
@@ -77,9 +79,9 @@ def delete_model(model_id, **kwargs):
 def train_model_version(
     model_id,
     name,
-    description=None,
-    predict_source_package_id=None,
+    source_package_id,
     train_source_package_id=None,
+    description=None,
     args=None,
     scale_tier=None,
     machine_type=None,
@@ -91,9 +93,9 @@ def train_model_version(
     body = {
         "name": name,
         "description": description or "",
-        "sourcePackageID": predict_source_package_id,
+        "sourcePackageId": source_package_id,
         "trainingDetails": {
-            "sourcePackageID": train_source_package_id or predict_source_package_id,
+            "sourcePackageId": train_source_package_id or source_package_id,
             "args": args or {},
             "scaleTier": scale_tier or "BASIC",
             "machineType": machine_type,
@@ -159,8 +161,8 @@ def upload_source_package(
     headers = {"api-key": api_key, "accept": "application/json"}
     res = utils.post_request(url, body=body, headers=headers, cookies=config.get_cookies())
     if file_path:
-        _upload_file(res.json().get("uploadURL"), file_path)
-        del res.json()["uploadURL"]
+        _upload_file(res.json().get("uploadUrl"), file_path)
+        del res.json()["uploadUrl"]
         return res.json()
     return res.json()
 
