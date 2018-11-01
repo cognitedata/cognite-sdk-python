@@ -183,7 +183,7 @@ def get_versions(model_id: int, **kwargs):
 
 
 def get_version(model_id: int, version_id: int, **kwargs):
-    """Get all versions of a specific model.
+    """Get a specific model version by id.
 
     Args:
         model_id (int): Id of model which has the model version.
@@ -202,6 +202,29 @@ def get_version(model_id: int, version_id: int, **kwargs):
     )
     headers = {"api-key": api_key, "accept": "application/json"}
     res = utils.get_request(url, headers=headers, cookies=config.get_cookies())
+    return res.json()
+
+
+def delete_version(model_id: int, version_id: int, **kwargs):
+    """Delete a model version by id.
+
+    Args:
+        model_id (int): Id of model which has the model version.
+        version_id (int): Id of model version.
+
+    Keyword Arguments:
+        api_key (str):          Your api-key.
+        project (str):          Project name.
+
+    Returns:
+        Dict: The requested model version
+    """
+    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    url = config.get_base_url() + "/api/0.6/projects/{}/analytics/models/{}/versions/{}".format(
+        project, model_id, version_id
+    )
+    headers = {"api-key": api_key, "accept": "application/json"}
+    res = utils.delete_request(url, headers=headers, cookies=config.get_cookies())
     return res.json()
 
 
