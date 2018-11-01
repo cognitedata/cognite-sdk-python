@@ -1,5 +1,4 @@
 import json
-from copy import deepcopy
 from datetime import datetime
 from io import BytesIO
 from typing import Dict, List, Union
@@ -136,7 +135,7 @@ class DataSpec:
             if not isinstance(self.files_data_spec, FilesDataSpec):
                 raise DataSpecValidationError("files_data_spec must be a FilesDataSpec object")
 
-            if not isinstance(self.files_data_spec.file_ids, Dict):
+            if not isinstance(self.files_data_spec.file_ids, dict):
                 raise DataSpecValidationError("file_ids must be a dict of form {name: id}")
 
             for name, id in self.files_data_spec.file_ids.items():
