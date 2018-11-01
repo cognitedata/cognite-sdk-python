@@ -237,7 +237,7 @@ def online_predict(
     return res.json()
 
 
-def upload_source_package(
+def create_source_package(
     name: str,
     description: str,
     package_name: str,
@@ -255,7 +255,7 @@ def upload_source_package(
         package_name (str): name of root package for model
         available_operations (List[str]): List of routines which this source package supports ["predict", "train"]
         meta_data (Dict): User defined key value pair of additional information.
-        file_path (str): File path of source package distribution. If not sepcified, a download url will be returned.
+        file_path (str): File path of source package distribution. If not specified, a download url will be returned.
         runtime_version (str): Version of environment in which the source-package should run. Defaults to 0.1
 
     Keyword Arguments:

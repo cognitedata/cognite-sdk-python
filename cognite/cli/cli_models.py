@@ -78,7 +78,7 @@ class CogniteModelsCLI:
                 if f.endswith(".tar.gz"):
                     tarball_path = os.path.join(dist_dir, f)
 
-        source_package_id = models.upload_source_package(
+        source_package_id = models.create_source_package(
             info.get("source_package_name"),
             parsed_args.description,
             info.get("package_name"),
