@@ -14,8 +14,8 @@ from cognite import config
 
 
 def create_model(
-    name,
-    description="",
+    name: str,
+    description: str = "",
     metadata: Dict[str, Any] = None,
     input_fields: List[str] = None,
     output_fields: List[str] = None,
@@ -68,27 +68,27 @@ def get_models(**kwargs):
     return res.json()
 
 
-def get_versions(model_id, **kwargs):
-    """Get all versions of a specific model.
+def get_model(model_id: int, **kwargs):
+    """Get a model by id.
 
     Args:
-        model_id (int): Get versions for the model with this id.
+        model_id (int): Id of model to get.
 
     Keyword Arguments:
         api_key (str):          Your api-key.
         project (str):          Project name.
 
     Returns:
-        List[Dict]: List of model versions
+        Dict: The requested model
     """
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
-    url = config.get_base_url() + "/api/0.6/projects/{}/analytics/models/{}/versions".format(project, model_id)
+    url = config.get_base_url() + "/api/0.6/projects/{}/analytics/models/{}".format(project, model_id)
     headers = {"api-key": api_key, "accept": "application/json"}
     res = utils.get_request(url, headers=headers, cookies=config.get_cookies())
     return res.json()
 
 
-def delete_model(model_id, **kwargs):
+def delete_model(model_id: int, **kwargs):
     """Delete a model.
 
     Will also delete all versions and schedules for this model.
@@ -111,15 +111,15 @@ def delete_model(model_id, **kwargs):
 
 
 def train_model_version(
-    model_id,
-    name,
-    source_package_id,
-    train_source_package_id=None,
-    metadata=None,
-    description=None,
-    args=None,
-    scale_tier=None,
-    machine_type=None,
+    model_id: int,
+    name: str,
+    source_package_id: int,
+    train_source_package_id: int = None,
+    metadata: Dict = None,
+    description: str = None,
+    args: Dict[str] = None,
+    scale_tier: str = None,
+    machine_type: str = None,
     **kwargs,
 ):
     """Train a new version of a model.
@@ -162,7 +162,50 @@ def train_model_version(
     return res.json()
 
 
-def online_predict(model_id, version_id=None, instances=None, args=None, **kwargs):
+def get_versions(model_id: int, **kwargs):
+    """Get all versions of a specific model.
+
+    Args:
+        model_id (int): Get versions for the model with this id.
+
+    Keyword Arguments:
+        api_key (str):          Your api-key.
+        project (str):          Project name.
+
+    Returns:
+        List[Dict]: List of model versions
+    """
+    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    url = config.get_base_url() + "/api/0.6/projects/{}/analytics/models/{}/versions".format(project, model_id)
+    headers = {"api-key": api_key, "accept": "application/json"}
+    res = utils.get_request(url, headers=headers, cookies=config.get_cookies())
+    return res.json()
+
+
+def get_version(model_id: int, version_id: int, **kwargs):
+    """Get all versions of a specific model.
+
+    Args:
+        model_id (int): Id of model which has the model version.
+        version_id (int): Id of model version.
+
+    Keyword Arguments:
+        api_key (str):          Your api-key.
+        project (str):          Project name.
+
+    Returns:
+        Dict: The requested model version
+    """
+    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    url = config.get_base_url() + "/api/0.6/projects/{}/analytics/models/{}/versions/{}".format(
+        project, model_id, version_id
+    )
+    headers = {"api-key": api_key, "accept": "application/json"}
+    res = utils.get_request(url, headers=headers, cookies=config.get_cookies())
+    return res.json()
+
+
+def online_predict(model_id: int, version_id: int = None, instances: List = None, args: Dict[str] = None, **kwargs):
     """Perform online prediction on a models active version or a specified version.
 
     Args:
@@ -192,43 +235,26 @@ def online_predict(model_id, version_id=None, instances=None, args=None, **kwarg
     return res.json()
 
 
-def get_source_packages(**kwargs):
-    """Get all model source packages.
-
-    Keyword Arguments:
-        api_key (str):          Your api-key.
-        project (str):          Project name.
-
-    Returns:
-        List[Dict]: List of source packages.
-    """
-    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
-    url = config.get_base_url() + "/api/0.6/projects/{}/analytics/models/sourcepackages".format(project)
-    headers = {"api-key": api_key, "accept": "application/json"}
-    res = utils.get_request(url, headers=headers, cookies=config.get_cookies())
-    return res.json()
-
-
 def upload_source_package(
-    name,
-    description,
-    package_name,
-    available_operations,
-    meta_data=None,
-    file_path=None,
-    runtime_version="0.1",
+    name: str,
+    description: str,
+    package_name: str,
+    available_operations: List[str],
+    meta_data: Dict = None,
+    file_path: str = None,
+    runtime_version: str = "0.1",
     **kwargs,
 ):
     """Upload a source package to the model hosting environment.
 
     Args:
-        name: Name of source package
-        description: Description for source package
-        package_name: name of root package for model
-        available_operations: List of routines which this source package supports ["predict", "train"]
-        meta_data: User defined key value pair of additional information.
+        name (str): Name of source package
+        description (str): Description for source package
+        package_name (str): name of root package for model
+        available_operations (List[str]): List of routines which this source package supports ["predict", "train"]
+        meta_data (Dict): User defined key value pair of additional information.
         file_path (str): File path of source package distribution. If not sepcified, a download url will be returned.
-        runtime_version (str):      Version of environment in which the source-package should run. Defaults to 0.1
+        runtime_version (str): Version of environment in which the source-package should run. Defaults to 0.1
 
     Keyword Arguments:
         api_key (str):          Your api-key.
@@ -262,6 +288,45 @@ def _upload_file(upload_url, file_path):
         mydata = fh.read()
         response = requests.put(upload_url, data=mydata)
     return response
+
+
+def get_source_packages(**kwargs):
+    """Get all model source packages.
+
+    Keyword Arguments:
+        api_key (str):          Your api-key.
+        project (str):          Project name.
+
+    Returns:
+        List[Dict]: List of source packages.
+    """
+    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    url = config.get_base_url() + "/api/0.6/projects/{}/analytics/models/sourcepackages".format(project)
+    headers = {"api-key": api_key, "accept": "application/json"}
+    res = utils.get_request(url, headers=headers, cookies=config.get_cookies())
+    return res.json()
+
+
+def get_source_package(source_package_id: int, **kwargs):
+    """Get all model source packages.
+
+    Args:
+        source_package_id (int): Id of soure package to get.
+
+    Keyword Arguments:
+        api_key (str):          Your api-key.
+        project (str):          Project name.
+
+    Returns:
+        Dict: The requested source package.
+    """
+    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    url = config.get_base_url() + "/api/0.6/projects/{}/analytics/models/sourcepackages/{}".format(
+        project, source_package_id
+    )
+    headers = {"api-key": api_key, "accept": "application/json"}
+    res = utils.get_request(url, headers=headers, cookies=config.get_cookies())
+    return res.json()
 
 
 def create_schedule(
