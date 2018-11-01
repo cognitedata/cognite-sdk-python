@@ -67,6 +67,11 @@ def ts_data_spec_dicts():
     yield [ts_data_spec1, ts_data_spec2]
 
 
+@pytest.fixture
+def files_data_spec_dto():
+    yield FilesDataSpec(file_ids={"file1": 1})
+
+
 class TestDataTransferService:
     def test_instantiate_data_spec(self, ts_data_spec_dtos):
         DataSpec(ts_data_spec_dtos, files_data_spec=FilesDataSpec(file_ids={"name": 123}))
@@ -134,8 +139,8 @@ class TestDataTransferService:
         with pytest.raises(DataSpecValidationError):
             DataSpec(files_data_spec=FilesDataSpec(file_ids={"f1": 123, "f2": "456"}))
 
-    def test_json_dumps_loads(self, ts_data_spec_dtos, ts_data_spec_dicts):
-        data_spec = DataSpec(time_series_data_specs=ts_data_spec_dtos)
+    def test_json_dumps_loads(self, ts_data_spec_dtos, ts_data_spec_dicts, files_data_spec_dto):
+        data_spec = DataSpec(time_series_data_specs=ts_data_spec_dtos, files_data_spec=files_data_spec_dto)
         json_repr = data_spec.to_JSON()
         ds = DataSpec.from_JSON(json_repr)
         assert ds.__eq__(data_spec)
