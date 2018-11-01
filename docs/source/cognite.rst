@@ -29,12 +29,14 @@ Models
     :members:
     :undoc-members:
     :show-inheritance:
+
 Time Series
 -----------
 .. automodule:: cognite.v06.time_series
     :members:
     :undoc-members:
     :show-inheritance:
+
 Datapoints
 ----------
 .. automodule:: cognite.v06.datapoints
