@@ -68,7 +68,7 @@ def get_models(**kwargs):
     return res.json()
 
 
-def get_model_versions(model_id, **kwargs):
+def get_versions(model_id, **kwargs):
     """Get all versions of a specific model.
 
     Args:
@@ -192,7 +192,7 @@ def online_predict(model_id, version_id=None, instances=None, args=None, **kwarg
     return res.json()
 
 
-def get_model_source_packages(**kwargs):
+def get_source_packages(**kwargs):
     """Get all model source packages.
 
     Keyword Arguments:
