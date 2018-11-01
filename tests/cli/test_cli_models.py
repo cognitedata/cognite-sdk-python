@@ -124,7 +124,7 @@ class TestModelsCLI:
         models_cli = CogniteModelsCLI()
         mocker.patch.object(models_cli, "_verify_source_package", autospec=True)
         mocker.patch("cognite.cli.cli_models.run_setup")
-        upload_sp_mock = mocker.patch("cognite.v06.analytics.models.upload_source_package")
+        upload_sp_mock = mocker.patch("cognite.v06.analytics.models.create_source_package")
         create_model_mock = mocker.patch("cognite.v06.analytics.models.create_model")
 
         models_cli.deploy(["-m", "a_model"])
