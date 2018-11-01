@@ -8,6 +8,7 @@ https://doc.cognitedata.com/0.6/models
 from typing import Any, Dict, List
 
 import requests
+
 from cognite import _utils as utils
 from cognite import config
 
@@ -18,7 +19,7 @@ def create_model(
     metadata: Dict[str, Any] = None,
     input_fields: List[str] = None,
     output_fields: List[str] = None,
-    **kwargs
+    **kwargs,
 ):
     """Creates a new model
 
@@ -119,7 +120,7 @@ def train_model_version(
     args=None,
     scale_tier=None,
     machine_type=None,
-    **kwargs
+    **kwargs,
 ):
     """Train a new version of a model.
 
@@ -216,7 +217,7 @@ def upload_source_package(
     meta_data=None,
     file_path=None,
     runtime_version="0.1",
-    **kwargs
+    **kwargs,
 ):
     """Upload a source package to the model hosting environment.
 
@@ -234,7 +235,7 @@ def upload_source_package(
         project (str):          Project name.
 
     Returns:
-        Source package ID if file path was specified. Else, source package id and upload url.
+        Dict: Source package ID if file path was specified. Else, source package id and upload url.
 
     """
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
@@ -261,3 +262,131 @@ def _upload_file(upload_url, file_path):
         mydata = fh.read()
         response = requests.put(upload_url, data=mydata)
     return response
+
+
+def create_schedule(
+    model_id: int,
+    name: str,
+    output_data_spec: Dict,
+    input_data_spec: Dict,
+    description: str = None,
+    args: Dict = None,
+    metadata: Dict = None,
+    **kwargs,
+):
+    """Create a new schedule on a given model.
+
+    Args:
+        model_id (int): Id of model to create schedule on
+        name (str): Name of schedule
+        output_data_spec (Dict): Specification of output. Example below.
+        input_data_spec (Dict): Specification of input. Example below.
+        description (str): Description for schedule
+        args (Dict): Dictionary of keyword arguments to pass to predict method.
+        metadata (Dict): Dictionary of metadata about schedule
+
+    Keyword Arguments:
+        api_key (str):          Your api-key.
+        project (str):          Project name.
+
+    Returns:
+        Dict: The created schedule.
+
+    Examples
+        The output data spec must look like this::
+
+            {
+                "timeSeries": [
+                    {
+                        "label": "string",
+                        "id": 123456789
+                    }
+                ]
+            }
+
+        The input data spec must look like this. The local aggregate and the missingDataStrategy fields are optional::
+
+            {
+                "windowSize": "1s",
+                "stride": "1s",
+                "missingDataStrategy": "",
+                "timeSeries": [
+                  {
+                    "label": "string",
+                    "id": 0,
+                    "missingDataStrategy": "string",
+                    "aggregate": "string"
+                  }
+                ],
+                "aggregate": "string",
+                "granularity": "string"
+            }
+    """
+    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    url = config.get_base_url() + "/api/0.6/projects/{}/analytics/models/schedules".format(project)
+    body = {
+        "name": name,
+        "description": description,
+        "modelId": model_id,
+        "args": args or {},
+        "inputDataSpec": input_data_spec,
+        "outputDataSpec": output_data_spec,
+        "metadata": metadata or {},
+    }
+    headers = {"api-key": api_key, "accept": "application/json"}
+    res = utils.post_request(url, body=body, headers=headers, cookies=config.get_cookies())
+    return res.json()
+
+
+def delete_schedule(schedule_id: int, **kwargs):
+    """Delete a schedule by id.
+
+    Args:
+        schedule_id (int):  The id of the schedule to delete.
+
+    Keyword Arguments:
+        api_key (str):          Your api-key.
+        project (str):          Project name.
+
+    Returns:
+        Dict: Empty response
+    """
+    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    url = config.get_base_url() + "/api/0.6/projects/{}/analytics/models/schedules/{}".format(project, schedule_id)
+    headers = {"api-key": api_key, "accept": "application/json"}
+    res = utils.delete_request(url=url, headers=headers)
+    return res.json()
+
+
+def get_schedules(**kwargs):
+    """Get all schedules.
+
+    Keyword Arguments:
+        api_key (str):          Your api-key.
+        project (str):          Project name.
+
+    Returns:
+        List[Dict]: The requested schedules.
+    """
+    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    url = config.get_base_url() + "/api/0.6/projects/{}/analytics/models/schedules".format(project)
+    headers = {"api-key": api_key, "accept": "application/json"}
+    res = utils.get_request(url=url, headers=headers)
+    return res.json()
+
+
+def get_schedule(schedule_id: int, **kwargs):
+    """Get a schedule by id.
+
+    Keyword Arguments:
+        api_key (str):          Your api-key.
+        project (str):          Project name.
+
+    Returns:
+        Dict: The requested schedule.
+    """
+    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    url = config.get_base_url() + "/api/0.6/projects/{}/analytics/models/schedules/{}".format(project, schedule_id)
+    headers = {"api-key": api_key, "accept": "application/json"}
+    res = utils.get_request(url=url, headers=headers)
+    return res.json()
