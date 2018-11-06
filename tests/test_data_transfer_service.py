@@ -145,9 +145,13 @@ class TestDataTransferService:
         ds = DataSpec.from_JSON(json_repr)
         assert ds.__eq__(data_spec)
 
-    def test_json_loads_invalid(self):
+    def test_from_JSON_str(self):
         with pytest.raises(DataSpecValidationError):
             DataSpec.from_JSON(json.dumps({"blabla": "dada"}))
+
+    def test_from_JSON_invalid(self):
+        with pytest.raises(DataSpecValidationError):
+            DataSpec.from_JSON({"blabla": "dada"})
 
     def test_get_dataframes(self, ts_data_spec_dtos):
         data_spec = DataSpec(time_series_data_specs=ts_data_spec_dtos)

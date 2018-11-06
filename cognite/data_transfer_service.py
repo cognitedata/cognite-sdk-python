@@ -145,18 +145,36 @@ class DataSpec:
                     raise DataSpecValidationError("File ids must be integers")
 
     def to_JSON(self):
-        return json.dumps(
-            {to_camel_case(key): value for key, value in self.__dict__.items()}, cls=self.__DataSpecEncoder
-        )
+        return DataSpec._to_json(self)
+
+    @staticmethod
+    def _to_json(obj):
+        if isinstance(obj, (DataSpec, TimeSeries, FilesDataSpec, TimeSeriesDataSpec)):
+            return DataSpec._to_json(obj.__dict__)
+        if isinstance(obj, dict):
+            return {to_camel_case(key): DataSpec._to_json(value) for key, value in obj.items() if value is not None}
+        elif isinstance(obj, list):
+            new_list = []
+            for el in obj:
+                new_list.append(DataSpec._to_json(el))
+            return new_list
+        elif isinstance(obj, (str, int, float, bool)) or obj is None:
+            return obj
+        raise AssertionError("Data spec does not accept type {}".format(type(obj)))
 
     @classmethod
     def from_JSON(cls, json_repr):
-        json_repr = json.loads(json_repr)
+        if isinstance(json_repr, str):
+            json_repr = json.loads(json_repr)
+
+        if not isinstance(json_repr, dict):
+            raise DataSpecValidationError("from_JSON accepts a dict")
+
         time_series_data_specs_json = json_repr.get("timeSeriesDataSpecs")
         files_data_spec_json = json_repr.get("filesDataSpec")
 
         if not (time_series_data_specs_json or files_data_spec_json):
-            raise DataSpecValidationError("Not a valid data spec")
+            raise DataSpecValidationError("Data spec must include at least one of [timeSeriesDataSpec, filesDataSpec]")
 
         time_series_data_specs = []
         if time_series_data_specs_json:
@@ -176,18 +194,6 @@ class DataSpec:
                 **{to_snake_case(key): value for key, value in files_data_spec_json.items()}
             )
         return DataSpec(time_series_data_specs, files_data_spec)
-
-    class __DataSpecEncoder(json.JSONEncoder):
-        def default(self, obj):
-            if isinstance(obj, (TimeSeries, TimeSeriesDataSpec, FilesDataSpec)):
-                new_dict = {}
-                for key, value in obj.__dict__.items():
-                    if value is not None:
-                        new_dict[to_camel_case(key)] = value
-                return new_dict
-            elif obj is None:
-                del obj
-            return super(self, self).default(obj)
 
 
 class DataSpecValidationError(Exception):
@@ -219,10 +225,10 @@ class DataTransferService:
 
         if isinstance(data_spec, DataSpec):
             self.data_spec = data_spec
-        elif isinstance(data_spec, str):
+        elif isinstance(data_spec, dict):
             self.data_spec = DataSpec.from_JSON(data_spec)
         else:
-            raise InputError("DataTransferService accepts a DataSpec instance or a json represantion of it.")
+            raise InputError("DataTransferService accepts a DataSpec instance or a json object representation of it.")
         self.ts_data_specs = self.data_spec.time_series_data_specs
         self.files_data_spec = self.data_spec.files_data_spec
         self.api_key = api_key or config_api_key
