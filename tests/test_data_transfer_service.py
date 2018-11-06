@@ -142,7 +142,6 @@ class TestDataTransferService:
     def test_json_dumps_loads(self, ts_data_spec_dtos, ts_data_spec_dicts, files_data_spec_dto):
         data_spec = DataSpec(time_series_data_specs=ts_data_spec_dtos, files_data_spec=files_data_spec_dto)
         json_repr = data_spec.to_JSON()
-        print(json_repr)
         ds = DataSpec.from_JSON(json_repr)
         assert ds.__eq__(data_spec)
 
