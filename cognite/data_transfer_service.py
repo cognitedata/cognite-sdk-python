@@ -164,8 +164,12 @@ class DataSpec:
 
     @classmethod
     def from_JSON(cls, json_repr):
+        if isinstance(json_repr, str):
+            json_repr = json.loads(json_repr)
+
         if not isinstance(json_repr, dict):
             raise DataSpecValidationError("from_JSON accepts a dict")
+
         time_series_data_specs_json = json_repr.get("timeSeriesDataSpecs")
         files_data_spec_json = json_repr.get("filesDataSpec")
 
