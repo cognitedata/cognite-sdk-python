@@ -160,7 +160,7 @@ class DataSpec:
             return new_list
         elif isinstance(obj, (str, int, float, bool)) or obj is None:
             return obj
-        raise AssertionError("Invalid type in data spec")
+        raise AssertionError("Data spec does not accept type {}".format(type(obj)))
 
     @classmethod
     def from_JSON(cls, json_repr):
