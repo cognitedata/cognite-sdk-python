@@ -20,13 +20,17 @@ import cognite.config as config
 log = logging.getLogger("cognite-sdk")
 
 
+def _status_is_valid(status_code: int):
+    return status_code < 400
+
+
 def delete_request(url, params=None, headers=None, cookies=None):
     """Perform a DELETE request with a predetermined number of retries."""
     _log_request("DELETE", url, params=params, headers=headers, cookies=cookies)
     for number_of_tries in range(config.get_number_of_retries() + 1):
         try:
             res = requests.delete(url, params=params, headers=headers, cookies=cookies)
-            if res.status_code == 200:
+            if _status_is_valid(res.status_code):
                 return res
         except Exception:
             if number_of_tries == config.get_number_of_retries():
@@ -52,7 +56,7 @@ def get_request(url, params=None, headers=None, cookies=None):
     for number_of_tries in range(config.get_number_of_retries() + 1):
         try:
             res = requests.get(url, params=params, headers=headers, cookies=cookies)
-            if res.status_code == 200:
+            if _status_is_valid(res.status_code):
                 return res
         except Exception:
             if number_of_tries == config.get_number_of_retries():
@@ -92,7 +96,7 @@ def post_request(url, body, headers=None, params=None, cookies=None, use_gzip=Fa
                 )
             else:
                 res = requests.post(url, data=json.dumps(body), headers=headers, params=params, cookies=cookies)
-            if res.status_code == 200:
+            if _status_is_valid(res.status_code):
                 return res
         except Exception:
             if number_of_tries == config.get_number_of_retries():
@@ -118,7 +122,7 @@ def put_request(url, body=None, headers=None, cookies=None):
     for number_of_tries in range(config.get_number_of_retries() + 1):
         try:
             res = requests.put(url, data=json.dumps(body), headers=headers, cookies=cookies)
-            if res.ok:
+            if _status_is_valid(res.status_code):
                 return res
         except Exception:
             if number_of_tries == config.get_number_of_retries():
