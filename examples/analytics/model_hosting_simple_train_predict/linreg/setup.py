@@ -1,5 +1,8 @@
 from setuptools import find_packages, setup
 
+# It's important to specify all dependencies on external packages,
+# so that these can be installed.
+# There's no need to specify cognite-sdk (it's installed by default)
 REQUIRED_PACKAGES = ["pandas>=0.23", "numpy>=1.15"]
 
 setup(

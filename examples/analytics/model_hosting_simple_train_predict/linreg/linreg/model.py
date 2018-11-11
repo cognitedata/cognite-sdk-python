@@ -25,12 +25,15 @@ class Model:
         file_io:
             The train method must accept a file_io argument. This is a function
             that works the same way as the builtin open(), except it reads from
-            and writes to a special Model Hosting location in the cloud.
+            and writes to the root of a special storage location in the cloud
+            that belongs to the current model version.
         data_spec:
             An argument we pass in ourself when we initiate the training.
         api_key, project:
             Optional arguments that are passed in automatically from Model
-            Hosting for your convenience.
+            Hosting for your convenience. The API key is the one that were
+            used to initiate this training routine through the Model Hosting
+            HTTP API.
         """
         dts = DataTransferService(data_spec, api_key=api_key, project=project)
         X = pd.read_csv(dts.get_file("data"))
@@ -70,6 +73,9 @@ class Model:
             of two numbers.
         precision:
             Optional argument we have defined ourselves.
+        
+        Note that it's also possible to take api_key and project in as
+        optional arguments here the same way as in train().
         """
         instance = pd.DataFrame([[1] + instance], columns=["f0", "f1", "f2"])
         prediction = float(np.dot(instance, self.coefficients))
