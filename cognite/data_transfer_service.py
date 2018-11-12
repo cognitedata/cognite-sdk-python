@@ -146,6 +146,9 @@ class DataSpec:
 
     def to_JSON(self):
         return DataSpec._to_json(self)
+    
+    def __str__(self):
+        return json.dumps(self.to_JSON(), indent=4)
 
     @staticmethod
     def _to_json(obj):
