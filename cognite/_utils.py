@@ -27,6 +27,22 @@ def _status_is_valid(status_code: int):
 def _should_retry(status_code):
     return status_code in [401, 429, 500, 502, 503]
 
+def serialize(obj):
+    """JSON serializer for objects not serializable by default json code"""
+    return obj.__dict__
+
+
+def delete_request(url, params=None, headers=None, cookies=None):
+    """Perform a DELETE request with a predetermined number of retries."""
+    _log_request("DELETE", url, params=params, headers=headers, cookies=cookies)
+    for number_of_tries in range(config.get_number_of_retries() + 1):
+        try:
+            res = requests.delete(url, params=params, headers=headers, cookies=cookies)
+            if res.status_code == 200:
+                return res
+        except Exception:
+            if number_of_tries == config.get_number_of_retries():
+                raise
 
 def _raise_API_error(res):
     x_request_id = res.headers.get("X-Request-Id")
@@ -79,12 +95,46 @@ def post_request(url, body, headers=None, params=None, cookies=None, use_gzip=Fa
     """Perform a POST request with a predetermined number of retries."""
     _log_request("POST", url, body=body, params=params, headers=headers, cookies=cookies)
 
-    data = json.dumps(body)
-    headers = headers or {}
-    if use_gzip:
-        headers["Content-Encoding"] = "gzip"
-        data = gzip.compress(json.dumps(body).encode("utf-8"))
-    return requests.post(url, data=data, headers=headers, params=params, cookies=cookies)
+    for number_of_tries in range(config.get_number_of_retries() + 1):
+        try:
+            if use_gzip:
+                if headers:
+                    headers["Content-Encoding"] = "gzip"
+                else:
+                    headers = {"Content-Encoding": "gzip"}
+                res = requests.post(
+                    url,
+                    data=gzip.compress(json.dumps(body, default=serialize).encode("utf-8")),
+                    headers=headers,
+                    params=params,
+                    cookies=cookies,
+                )
+            else:
+                res = requests.post(
+                    url,
+                    data=json.dumps(body, default=serialize),
+                    headers=headers,
+                    params=params,
+                    cookies=cookies
+                )
+            if res.status_code == 200:
+                return res
+        except Exception:
+            if number_of_tries == config.get_number_of_retries():
+                raise
+    x_request_id = res.headers.get("X-Request-Id")
+    code = res.status_code
+    try:
+        error = res.json()["error"]
+        if isinstance(error, str):
+            msg = error
+        else:
+            msg = error.get("message") or res.json()
+    except TypeError:
+        msg = res.content
+    except KeyError:
+        msg = res.json()
+    raise APIError(msg, code, x_request_id)
 
 
 @request_method
