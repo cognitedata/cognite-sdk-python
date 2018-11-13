@@ -53,6 +53,7 @@ def request_method(method):
                 return res
             if not _should_retry(res.status_code):
                 break
+            time.sleep(0.5 * number_of_tries)
         _raise_API_error(res)
 
     return wrapper
