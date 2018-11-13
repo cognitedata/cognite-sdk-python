@@ -39,3 +39,6 @@ coverage.xml
 .pytest_cache
 test-report.xml
 *.iml
+
+# jupyter
+.ipynb_checkpoints
