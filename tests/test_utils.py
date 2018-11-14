@@ -3,10 +3,10 @@ import re
 from datetime import datetime
 from unittest import mock
 
-import pytest
 from tests.conftest import MockReturnValue
 
 import cognite._utils as utils
+import pytest
 from cognite import config
 
 RESPONSE = {

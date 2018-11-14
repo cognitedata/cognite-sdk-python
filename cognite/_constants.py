@@ -17,7 +17,7 @@ import os
 BASE_URL = "https://api.cognitedata.com"
 LIMIT = 100000
 LIMIT_AGG = 10000
-RETRY_LIMIT = 0
+RETRY_LIMIT = 3
 NUM_OF_WORKERS = 10
 
 # DATA TRANSFER SERVICE
