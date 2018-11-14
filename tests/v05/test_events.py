@@ -3,7 +3,6 @@ import pandas as pd
 
 import pytest
 from cognite import _utils
-from cognite._utils import APIError
 from cognite.v05 import dto, events
 
 
@@ -71,5 +70,4 @@ def test_delete_event(post_event):
 
 
 def test_search_for_events(get_post_event_obj):
-    with pytest.raises(APIError):
-        evs = events.search_for_events(description="hahaha")
+    events.search_for_events(description="hahaha")
