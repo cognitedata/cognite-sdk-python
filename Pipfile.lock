@@ -560,13 +560,6 @@
             "index": "pypi",
             "version": "==2.1.1"
         },
-        "pytest": {
-            "hashes": [
-                "sha256:488c842647bbeb350029da10325cb40af0a9c7a2fdda45aeb1dda75b60048ffb",
-                "sha256:c055690dfefa744992f563e8c3a654089a6aa5b8092dded9b6fafbd70b2e45a7"
-            ],
-            "version": "==4.0.0"
-        },
         "pytest-cov": {
             "hashes": [
                 "sha256:513c425e931a0344944f84ea47f3956be0e416d95acbd897a44970c8d926d5d7",
