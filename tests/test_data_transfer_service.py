@@ -44,30 +44,6 @@ def ts_data_spec_dtos():
 
 
 @pytest.fixture
-def ts_data_spec_dicts():
-    time_series = [{"name": "constant", "aggregates": ["step"], "missingDataStrategy": "ffill"}, {"name": "sinus"}]
-
-    ts_data_spec1 = {
-        "timeSeries": time_series,
-        "aggregates": ["avg"],
-        "granularity": "10m",
-        "label": "ds1",
-        "start": 1522188000000,
-        "end": 1522620000000,
-    }
-    ts_data_spec2 = {
-        "timeSeries": time_series,
-        "aggregates": ["avg"],
-        "granularity": "1h",
-        "start": 1522188000000,
-        "end": 1522620000000,
-        "missingDataStrategy": "linearInterpolation",
-        "label": "ds2",
-    }
-    yield [ts_data_spec1, ts_data_spec2]
-
-
-@pytest.fixture
 def files_data_spec_dto():
     yield FilesDataSpec(file_ids={"file1": 1})
 
@@ -139,11 +115,19 @@ class TestDataTransferService:
         with pytest.raises(DataSpecValidationError):
             DataSpec(files_data_spec=FilesDataSpec(file_ids={"f1": 123, "f2": "456"}))
 
-    def test_json_dumps_loads(self, ts_data_spec_dtos, ts_data_spec_dicts, files_data_spec_dto):
+    def test_json_dumps_loads(self, ts_data_spec_dtos, files_data_spec_dto):
         data_spec = DataSpec(time_series_data_specs=ts_data_spec_dtos, files_data_spec=files_data_spec_dto)
         json_repr = data_spec.to_JSON()
         ds = DataSpec.from_JSON(json_repr)
         assert ds.__eq__(data_spec)
+
+    def test_json_dumps_after_used_by_dts(self, ts_data_spec_dtos, files_data_spec_dto):
+        data_spec = DataSpec(time_series_data_specs=ts_data_spec_dtos, files_data_spec=files_data_spec_dto)
+        json_repr = data_spec.to_JSON()
+        dts = DataTransferService(data_spec)
+        dts.get_dataframes()
+        json_repr_after_dts = data_spec.to_JSON()
+        assert json_repr == json_repr_after_dts
 
     def test_from_JSON_str(self):
         with pytest.raises(DataSpecValidationError):
