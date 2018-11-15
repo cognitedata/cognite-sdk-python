@@ -1,4 +1,5 @@
 import json
+from copy import copy, deepcopy
 from datetime import datetime
 from io import BytesIO
 from typing import Dict, List, Union
@@ -146,7 +147,7 @@ class DataSpec:
 
     def to_JSON(self):
         return DataSpec._to_json(self)
-    
+
     def __str__(self):
         return json.dumps(self.to_JSON(), indent=4)
 
@@ -155,7 +156,7 @@ class DataSpec:
         if isinstance(obj, (DataSpec, TimeSeries, FilesDataSpec, TimeSeriesDataSpec)):
             return DataSpec._to_json(obj.__dict__)
         if isinstance(obj, dict):
-            return {to_camel_case(key): DataSpec._to_json(value) for key, value in obj.items() if value is not None}
+            return {to_camel_case(key): DataSpec._to_json(value) for key, value in obj.items() if (value is not None)}
         elif isinstance(obj, list):
             new_list = []
             for el in obj:
@@ -266,7 +267,7 @@ class DataTransferService:
         tsds = None
         for ts_data_spec in self.ts_data_specs:
             if ts_data_spec.label == label:
-                tsds = ts_data_spec
+                tsds = deepcopy(ts_data_spec)
         if tsds:
             ts_list = []
             # Temporary workaround that you cannot use get_datapoints_frame with ts id.
