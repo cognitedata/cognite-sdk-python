@@ -1,5 +1,5 @@
 import json
-from copy import copy, deepcopy
+from copy import deepcopy
 from datetime import datetime
 from io import BytesIO
 from typing import Dict, List, Union
@@ -228,7 +228,7 @@ class DataTransferService:
         config_api_key, config_project = config.get_config_variables(api_key, project)
 
         if isinstance(data_spec, DataSpec):
-            self.data_spec = data_spec
+            self.data_spec = deepcopy(data_spec)
         elif isinstance(data_spec, dict):
             self.data_spec = DataSpec.from_JSON(data_spec)
         else:
@@ -267,7 +267,7 @@ class DataTransferService:
         tsds = None
         for ts_data_spec in self.ts_data_specs:
             if ts_data_spec.label == label:
-                tsds = deepcopy(ts_data_spec)
+                tsds = ts_data_spec
         if tsds:
             ts_list = []
             # Temporary workaround that you cannot use get_datapoints_frame with ts id.
