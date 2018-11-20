@@ -13,29 +13,29 @@ class Column:
     Args:
         id (int):           ID of the column.
         name (str):         Name of the column.
-        external_id (str):  External ID of the column.
-        data_type (str):    Data type of the column.
+        externalId (str):   External ID of the column.
+        dataType (str):     Data type of the column.
         metadata (dict):    Custom, application specific metadata. String key -> String Value.
     """
 
     id: Union[int, None]
     name: str
-    external_id: str
-    data_type: str
+    externalId: str
+    dataType: str
     metadata: dict
 
     def __init__(
             self,
             id: Union[int, None],
             name: str,
-            external_id: str,
-            data_type: str,
+            externalId: str,
+            dataType: str,
             metadata: dict
     ):
         self.id = id
         self.name = name
-        self.external_id = external_id
-        self.data_type = data_type
+        self.externalId = externalId
+        self.dataType = dataType
         self.metadata = metadata
 
     @staticmethod
@@ -43,8 +43,8 @@ class Column:
         return Column(
             id=the_column['id'],
             name=the_column['name'],
-            external_id=the_column.get('externalId', None),
-            data_type=the_column['dataType'],
+            externalId=the_column.get('externalId', None),
+            dataType=the_column['dataType'],
             metadata=the_column['metadata']
         )
 
@@ -55,8 +55,8 @@ class Sequence:
     Args:
         id (int):           ID of the sequence.
         name (str):         Name of the sequence.
-        external_id (str):  External ID of the sequence.
-        asset_id (int):     ID of the asset the sequence is connected to, if any.
+        externalId (str):   External ID of the sequence.
+        assetId (int):      ID of the asset the sequence is connected to, if any.
         columns (list):     List of columns in the sequence.
         description (str):  Description of the sequence.
         metadata (dict):    Custom, application specific metadata. String key -> String Value.
@@ -64,8 +64,8 @@ class Sequence:
 
     id: Union[int, None]
     name: str
-    external_id: str
-    asset_id: int
+    externalId: str
+    assetId: int
     columns: List[Column]
     description: str
     metadata: dict
@@ -74,16 +74,16 @@ class Sequence:
             self,
             id: Union[int, None],
             name: str,
-            external_id: str,
-            asset_id: Union[int, None],
+            externalId: str,
+            assetId: Union[int, None],
             columns: List[Column],
             description: str,
             metadata: dict
     ):
         self.id = id
         self.name = name
-        self.external_id = external_id
-        self.asset_id = asset_id
+        self.externalId = externalId
+        self.assetId = assetId
         self.columns = columns
         self.description = description
         self.metadata = metadata
@@ -93,8 +93,8 @@ class Sequence:
         return Sequence(
             id=the_sequence['id'],
             name=the_sequence['name'],
-            external_id=the_sequence.get('externalId', None),
-            asset_id=the_sequence.get('assetId', None),
+            externalId=the_sequence.get('externalId', None),
+            assetId=the_sequence.get('assetId', None),
             columns=[
                 Column.from_JSON(the_column)
                 for the_column in the_sequence['columns']
