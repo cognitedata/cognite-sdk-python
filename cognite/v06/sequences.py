@@ -73,6 +73,36 @@ def get_sequence_by_id(
     return Sequence.from_JSON(the_sequence)
 
 
+def get_sequence_by_external_id(
+        externalId: str,
+        **kwargs
+):
+    """Returns a Sequence object containing the requested sequence.
+
+    Args:
+        externalId (int):         External ID of the sequence to look up
+
+    Keyword Arguments:
+        api_key (str):            Your api-key.
+        project (str):            Project name.
+
+    Returns:
+        v06.dto.Sequence: A data object containing the requested sequence.
+    """
+
+    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    url = config.get_base_url() + "/api/0.6/projects/{}/sequences".format(project)
+    headers = {"api-key": api_key, "accept": "application/json"}
+    params = {"externalId": externalId}
+
+    res = _utils.get_request(url=url, params=params, headers=headers, cookies=config.get_cookies())
+
+    json_response = json.loads(res.text)
+    the_sequence: dict = json_response['data']['items'][0]
+
+    return Sequence.from_JSON(the_sequence)
+
+
 def delete_sequence_by_id(
         id: int,
         **kwargs
