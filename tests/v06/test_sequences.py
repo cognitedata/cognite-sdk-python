@@ -1,7 +1,6 @@
-from random import randint
-
 import pytest
 
+from cognite._utils import APIError
 from cognite.v06 import sequences
 from cognite.v06.dto import Sequence, Column
 
@@ -49,3 +48,9 @@ class TestSequences:
         assert isinstance(sequence_that_is_created, Sequence)
         assert sequence_that_is_created.id == CREATED_SEQUENCE_ID
         assert sequence_that_is_created.name == sequence_that_isnt_created.name
+
+    def test_delete_sequence_by_id(self, sequence_that_is_created):
+        sequences.delete_sequence_by_id(sequence_that_is_created.id)
+        # Check that we now can't fetch it
+        with pytest.raises(APIError):
+            sequences.get_sequence_by_id(sequence_that_is_created.id)
