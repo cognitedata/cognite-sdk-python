@@ -71,3 +71,27 @@ def get_sequence_by_id(
     the_sequence: dict = json_response['data']['items'][0]
 
     return Sequence.from_JSON(the_sequence)
+
+
+def delete_sequence_by_id(
+        id: int,
+        **kwargs
+):
+    """Deletes the sequence with the given id.
+
+    Args:
+        id (int):                 ID of the sequence to delete
+
+    Keyword Arguments:
+        api_key (str):            Your api-key.
+        project (str):            Project name.
+
+    Returns:
+    """
+
+    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    url = config.get_base_url() + "/api/0.6/projects/{}/sequences/{}".format(project, id)
+    headers = {"api-key": api_key, "accept": "application/json"}
+
+    res = _utils.delete_request(url=url, headers=headers, cookies=config.get_cookies())
+    return res.json()
