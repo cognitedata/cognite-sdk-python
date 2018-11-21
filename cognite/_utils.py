@@ -27,22 +27,10 @@ def _status_is_valid(status_code: int):
 def _should_retry(status_code):
     return status_code in [401, 429, 500, 502, 503]
 
+
 def serialize(obj):
     """JSON serializer for objects not serializable by default json code"""
     return obj.__dict__
-
-
-def delete_request(url, params=None, headers=None, cookies=None):
-    """Perform a DELETE request with a predetermined number of retries."""
-    _log_request("DELETE", url, params=params, headers=headers, cookies=cookies)
-    for number_of_tries in range(config.get_number_of_retries() + 1):
-        try:
-            res = requests.delete(url, params=params, headers=headers, cookies=cookies)
-            if res.status_code == 200:
-                return res
-        except Exception:
-            if number_of_tries == config.get_number_of_retries():
-                raise
 
 def _raise_API_error(res):
     x_request_id = res.headers.get("X-Request-Id")
