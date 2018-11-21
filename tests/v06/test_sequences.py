@@ -1,8 +1,10 @@
+from typing import List
+
 import pytest
 
 from cognite._utils import APIError
 from cognite.v06 import sequences
-from cognite.v06.dto import Sequence, Column, SequenceDataPost, Row, RowValue, SequenceDataRequest, SequenceDataResponse
+from cognite.v06.dto import Sequence, Column, Row, RowValue, SequenceDataResponse
 
 # This variable will hold the ID of the sequence that is created in one of the test fixtures of this class.
 CREATED_SEQUENCE_ID: int = None
@@ -93,23 +95,21 @@ class TestSequences:
             sequence_that_is_created_retrieved_by_id
     ):
         # Prepare some data to post
-        sequenceData: SequenceDataPost = SequenceDataPost(
-            id=sequence_that_is_created_retrieved_by_id.id,
-            rows=[
-                Row(
-                    rowNumber=1,
-                    values=[
-                        RowValue(
-                            columnId=sequence_that_is_created_retrieved_by_id.columns[0].id,
-                            value="42"
-                        )
-                    ]
-                )
-            ]
-        )
+        rows: List[Row] = [
+            Row(
+                rowNumber=1,
+                values=[
+                    RowValue(
+                        columnId=sequence_that_is_created_retrieved_by_id.columns[0].id,
+                        value="42"
+                    )
+                ]
+            )
+        ]
         # Post data
         res = sequences.post_data_to_sequence(
-            sequenceData=sequenceData
+            id=sequence_that_is_created_retrieved_by_id.id,
+            rows=rows
         )
         assert res == {}
         # Sleep a little, to give the api a chance to process the data
@@ -118,19 +118,17 @@ class TestSequences:
         # Get the data
         sequenceDataResponse: SequenceDataResponse = sequences.get_data_from_sequence(
             id=sequence_that_is_created_retrieved_by_id.id,
-            sequenceDataRequest=SequenceDataRequest(
-                inclusiveFrom=1,
-                inclusiveTo=1,
-                limit=1,
-                columnIds=[
-                    sequence_that_is_created_retrieved_by_id.columns[0].id
-                ]
-            )
+            inclusiveFrom=1,
+            inclusiveTo=1,
+            limit=1,
+            columnIds=[
+                sequence_that_is_created_retrieved_by_id.columns[0].id
+            ]
         )
         # Verify that the data is the same
-        assert sequenceData.rows[0].rowNumber == sequenceDataResponse.rows[0].rowNumber
-        assert sequenceData.rows[0].values[0].columnId == sequenceDataResponse.rows[0].values[0].columnId
-        assert sequenceData.rows[0].values[0].value == sequenceDataResponse.rows[0].values[0].value
+        assert rows[0].rowNumber == sequenceDataResponse.rows[0].rowNumber
+        assert rows[0].values[0].columnId == sequenceDataResponse.rows[0].values[0].columnId
+        assert rows[0].values[0].value == sequenceDataResponse.rows[0].values[0].value
 
     def test_delete_sequence_by_id(self, sequence_that_is_created_retrieved_by_id):
         sequences.delete_sequence_by_id(sequence_that_is_created_retrieved_by_id.id)

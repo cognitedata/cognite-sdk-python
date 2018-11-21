@@ -188,26 +188,6 @@ class SequenceDataResponse:
         )
 
 
-class SequenceDataPost:
-    """Data transfer object for the data in a sequence, used when posting data.
-
-    Args:
-        id (int):     ID of the sequence.
-        rows (list):  List of rows with the data.
-    """
-
-    id: int
-    rows: List[Row]
-
-    def __init__(
-            self,
-            id: int,
-            rows: List[Row]
-    ):
-        self.id = id
-        self.rows = rows
-
-
 class SequenceDataRequest:
     """Data transfer object for requesting sequence data.
 
