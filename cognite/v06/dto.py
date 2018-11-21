@@ -39,7 +39,7 @@ class Column:
         self.metadata = metadata
 
     @staticmethod
-    def from_JSON(the_column):
+    def from_JSON(the_column: dict):
         return Column(
             id=the_column['id'],
             name=the_column['name'],
