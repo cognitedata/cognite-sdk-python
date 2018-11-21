@@ -108,20 +108,27 @@ class RowValue:
     """Data transfer object for the value in a row in a sequence.
 
     Args:
-        column_id (int):  The ID of the column that this value is for.
+        columnId (int):   The ID of the column that this value is for.
         value (str):      The actual value.
     """
 
-    column_id: int
+    columnId: int
     value: str # Can be either string, float, or boolean
 
     def __init__(
             self,
-            column_id: int,
+            columnId: int,
             value: str
     ):
-        self.column_id = column_id
+        self.columnId = columnId
         self.value = value
+
+    @staticmethod
+    def from_JSON(the_row_value: dict):
+        return RowValue(
+            columnId=the_row_value['columnId'],
+            value=the_row_value['value']
+        )
 
 
 class Row:
@@ -131,23 +138,58 @@ class Row:
         row_number (int):  The row number for this row.
         values (list):     The values in this row.
     """
-    row_number: int
+    rowNumber: int
     values: List[RowValue]
 
     def __init__(
             self,
-            row_number: int,
+            rowNumber: int,
             values: List[RowValue]
     ):
-        self.row_number = row_number
+        self.rowNumber = rowNumber
         self.values = values
+
+    @staticmethod
+    def from_JSON(the_row: dict):
+        return Row(
+            rowNumber=the_row['rowNumber'],
+            values=[
+                RowValue.from_JSON(the_row_value)
+                for the_row_value in the_row['values']
+            ]
+        )
 
     def get_row_as_csv(self):
         return ','.join([str(x.value) for x in self.values])
 
 
-class SequenceData:
-    """Data transfer object for the data in a sequence.
+class SequenceDataResponse:
+    """Data transfer object for the data in a sequence, used when receiving data.
+
+    Args:
+        rows (list):  List of rows with the data.
+    """
+
+    rows: List[Row]
+
+    def __init__(
+            self,
+            rows: List[Row]
+    ):
+        self.rows = rows
+
+    @staticmethod
+    def from_JSON(the_data: dict):
+        return SequenceDataResponse(
+            rows=[
+                Row.from_JSON(the_row)
+                for the_row in the_data['rows']
+            ]
+        )
+
+
+class SequenceDataPost:
+    """Data transfer object for the data in a sequence, used when posting data.
 
     Args:
         id (int):     ID of the sequence.
@@ -157,10 +199,38 @@ class SequenceData:
     id: int
     rows: List[Row]
 
-    def __init(
+    def __init__(
             self,
             id: int,
             rows: List[Row]
     ):
         self.id = id
         self.rows = rows
+
+
+class SequenceDataRequest:
+    """Data transfer object for requesting sequence data.
+
+    Args:
+        inclusiveFrom (int):    Row number to get from (inclusive).
+        inclusiveTo (int):      Row number to get to (inclusive).
+        limit (int):            How many rows to return.
+        columnsIds (List[int]): ids of the columns to get data for.
+    """
+
+    inclusiveFrom: int
+    inclusiveTo: int
+    limit: int = 100
+    columnIds: List[int] = []
+
+    def __init__(
+            self,
+            inclusiveFrom: int,
+            inclusiveTo: int,
+            limit: int = 100,
+            columnIds: List[int] = []
+    ):
+        self.inclusiveFrom = inclusiveFrom
+        self.inclusiveTo = inclusiveTo
+        self.limit = limit
+        self.columnIds = columnIds
