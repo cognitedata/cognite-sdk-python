@@ -112,6 +112,9 @@ class TestSequences:
             sequenceData=sequenceData
         )
         assert res == {}
+        # Sleep a little, to give the api a chance to process the data
+        import time
+        time.sleep(5)
         # Get the data
         sequenceDataResponse: SequenceDataResponse = sequences.get_data_from_sequence(
             id=sequence_that_is_created_retrieved_by_id.id,
