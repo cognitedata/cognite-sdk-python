@@ -32,6 +32,11 @@ def post_sequences(
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url() + "/api/0.6/projects/{}/sequences".format(project)
 
+    # Remove the id field from the sequences to be posted, as including them will lead to 400's since sequences that
+    # are not created yet should not have id's yet.
+    for sequence in sequences:
+        del sequence.id
+
     body = {"items": [sequence.__dict__ for sequence in sequences]}
 
     headers = {"api-key": api_key, "content-type": "application/json", "accept": "application/json"}
