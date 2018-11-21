@@ -36,6 +36,8 @@ def post_sequences(
     # are not created yet should not have id's yet.
     for sequence in sequences:
         del sequence.id
+        for column in sequence.columns:
+            del column.id
 
     body = {"items": [sequence.__dict__ for sequence in sequences]}
 
