@@ -9,7 +9,7 @@ import json
 from typing import List
 
 from cognite import _utils, config
-from cognite.v06.dto import Sequence, SequenceDataPost, SequenceDataRequest, SequenceDataResponse
+from cognite.v06.dto import Sequence, SequenceDataRequest, SequenceDataResponse, Row
 
 
 def post_sequences(
@@ -128,13 +128,15 @@ def delete_sequence_by_id(
 
 
 def post_data_to_sequence(
-        sequenceData: SequenceDataPost,
+        id: int,
+        rows: List[Row],
         **kwargs
 ):
     """Posts data to a sequence.
 
     Args:
-        sequenceData (SequenceDataPost): Data object with the sequence ID and the data to be posted.
+        id (int):     ID of the sequence.
+        rows (list):  List of rows with the data.
 
     Keyword Arguments:
         api_key (str):               Your api-key.
@@ -144,12 +146,12 @@ def post_data_to_sequence(
     """
 
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
-    url = config.get_base_url() + "/api/0.6/projects/{}/sequences/{}/postdata".format(project, sequenceData.id)
+    url = config.get_base_url() + "/api/0.6/projects/{}/sequences/{}/postdata".format(project, id)
 
     body = {
         "items": [
             {
-                "rows": [row.__dict__ for row in sequenceData.rows]
+                "rows": [row.__dict__ for row in rows]
             }
         ]
     }
@@ -163,14 +165,20 @@ def post_data_to_sequence(
 
 def get_data_from_sequence(
         id: int,
-        sequenceDataRequest: SequenceDataRequest,
+        inclusiveFrom: int,
+        inclusiveTo: int,
+        limit: int = 100,
+        columnIds: List[int] = [],
         **kwargs
 ):
     """Gets data from the given sequence.
 
     Args:
-        id (int):                                  id of the sequence.
-        sequenceDataRequest (SequenceDataRequest): Data object for requesting data from a sequence.
+        id (int):              id of the sequence.
+        inclusiveFrom (int):   Row number to get from (inclusive).
+        inclusiveTo (int):     Row number to get to (inclusive).
+        limit (int):           How many rows to return.
+        columnIds (List[int]): ids of the columns to get data for.
 
     Keyword Arguments:
         api_key (str):            Your api-key.
@@ -183,6 +191,13 @@ def get_data_from_sequence(
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url() + "/api/0.6/projects/{}/sequences/{}/getdata".format(project, id)
     headers = {"api-key": api_key, "accept": "application/json", "Content-Type": "application/json"}
+
+    sequenceDataRequest: SequenceDataRequest = SequenceDataRequest(
+        inclusiveFrom=inclusiveFrom,
+        inclusiveTo=inclusiveTo,
+        limit=limit,
+        columnIds=columnIds
+    )
 
     body = {
         "items": [
