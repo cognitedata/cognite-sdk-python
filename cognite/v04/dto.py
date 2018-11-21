@@ -228,14 +228,14 @@ class TimeSeriesResponse(CogniteDataObject):
 class TimeSeries(object):
     """Data Transfer Object for a timeseries.
 
-    Attributes:
+    Args:
         tag_id (str):       Unique ID of time series.
         is_string (bool):    Whether the time series is string valued or not.
         metadata (dict):    Metadata.
         unit (str):         Physical unit of the time series.
         asset_id (int):     Asset that this time series belongs to.
         description (str):  Description of the time series.
-        securityCategories (list(int)): Security categories required in order to access this time series.
+        security_categories (list(int)): Security categories required in order to access this time series.
         step (bool):        Whether or not the time series is a step series.
 
     """
@@ -257,8 +257,8 @@ class TimeSeries(object):
         self.unit = unit
         self.assetId = asset_id
         self.description = description
-        self.security_categories = security_categories
-        self.step = step
+        self.securityCategories = security_categories
+        self.isStep = step
 
 
 class Datapoint(object):
