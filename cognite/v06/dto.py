@@ -3,7 +3,7 @@
 
 This module contains data objects used to represent the data returned from the API.
 """
-
+import pandas as pd
 from typing import List, Union
 
 
@@ -14,14 +14,14 @@ class Column:
         id (int):           ID of the column.
         name (str):         Name of the column.
         externalId (str):   External ID of the column.
-        dataType (str):     Data type of the column.
+        valueType (str):    Data type of the column.
         metadata (dict):    Custom, application specific metadata. String key -> String Value.
     """
 
     id: Union[int, None]
     name: str
     externalId: str
-    dataType: str
+    valueType: str
     metadata: dict
 
     def __init__(
@@ -29,13 +29,13 @@ class Column:
             id: Union[int, None],
             name: str,
             externalId: str,
-            dataType: str,
+            valueType: str,
             metadata: dict
     ):
         self.id = id
         self.name = name
         self.externalId = externalId
-        self.dataType = dataType
+        self.valueType = valueType
         self.metadata = metadata
 
     @staticmethod
@@ -44,7 +44,7 @@ class Column:
             id=the_column['id'],
             name=the_column['name'],
             externalId=the_column.get('externalId', None),
-            dataType=the_column['dataType'],
+            valueType=the_column['valueType'],
             metadata=the_column['metadata']
         )
 
@@ -186,6 +186,42 @@ class SequenceDataResponse:
                 for the_row in the_data['rows']
             ]
         )
+
+    @staticmethod
+    def _row_has_value_for_column(row: Row, column_id: int):
+        return column_id in [value.columnId for value in row.values]
+
+    @staticmethod
+    def _get_value_for_column(row: Row, column_id: int):
+        return next(value.value for value in row.values if value.columnId == column_id)
+
+    def to_pandas(self):
+        """Returns data as a pandas dataframe"""
+
+        # Create the empty dataframe
+        column_ids = [value.columnId for value in self.rows[0].values]
+        my_df = pd.DataFrame(
+            columns=column_ids
+        )
+        # Fill the dataframe with values. We might not have data for every column, so we need to be careful
+        for row in self.rows:
+            data_this_row: List[float] = []
+            for column_id in column_ids:
+                # Do we have a value for this column?
+                if self._row_has_value_for_column(row, column_id):
+                    data_this_row.append(
+                        self._get_value_for_column(row, column_id)
+                    )
+                else:
+                    data_this_row.append(
+                        'null'
+                    )
+            my_df.loc[len(my_df)] = data_this_row
+        return my_df
+
+    def to_json(self):
+        """Returns data as a json object"""
+        pass
 
 
 class SequenceDataRequest:

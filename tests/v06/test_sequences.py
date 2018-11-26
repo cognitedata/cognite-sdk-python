@@ -1,3 +1,4 @@
+import pandas as pd
 from typing import List
 
 import pytest
@@ -21,19 +22,27 @@ class TestSequences:
         """Returns a Sequence that hasn't been created yet. (It does not have an ID)"""
         global SEQUENCE_EXTERNAL_ID
 
-        column: Column = Column(
-            id=None,
-            name="test_column",
-            externalId="external_id",
-            dataType="STRING",
-            metadata={}
-        )
         return Sequence(
             id=None,
             name="test_sequence",
             externalId=SEQUENCE_EXTERNAL_ID,
             assetId=None,
-            columns=[column],
+            columns=[
+                Column(
+                    id=None,
+                    name="test_column",
+                    externalId="external_id",
+                    valueType="STRING",
+                    metadata={}
+                ),
+                Column(
+                    id=None,
+                    name="test_column2",
+                    externalId="external_id2",
+                    valueType="STRING",
+                    metadata={}
+                )
+            ],
             description="Test sequence",
             metadata={}
         )
@@ -102,6 +111,10 @@ class TestSequences:
                     RowValue(
                         columnId=sequence_that_is_created_retrieved_by_id.columns[0].id,
                         value="42"
+                    ),
+                    RowValue(
+                        columnId=sequence_that_is_created_retrieved_by_id.columns[1].id,
+                        value="43"
                     )
                 ]
             )
@@ -122,13 +135,23 @@ class TestSequences:
             inclusiveTo=1,
             limit=1,
             columnIds=[
-                sequence_that_is_created_retrieved_by_id.columns[0].id
+                sequence_that_is_created_retrieved_by_id.columns[0].id,
+                sequence_that_is_created_retrieved_by_id.columns[1].id
             ]
         )
         # Verify that the data is the same
         assert rows[0].rowNumber == sequenceDataResponse.rows[0].rowNumber
         assert rows[0].values[0].columnId == sequenceDataResponse.rows[0].values[0].columnId
         assert rows[0].values[0].value == sequenceDataResponse.rows[0].values[0].value
+        assert rows[0].values[1].columnId == sequenceDataResponse.rows[0].values[1].columnId
+        assert rows[0].values[1].value == sequenceDataResponse.rows[0].values[1].value
+
+        # Verify that we can get the data as a pandas dataframe
+        dataframe = sequenceDataResponse.to_pandas()
+        assert isinstance(dataframe, pd.DataFrame)
+        assert len(rows[0].values) == len(dataframe.values[0])
+        assert rows[0].values[0].value == dataframe.values[0][0]
+        assert rows[0].values[1].value == dataframe.values[0][1]
 
     def test_delete_sequence_by_id(self, sequence_that_is_created_retrieved_by_id):
         sequences.delete_sequence_by_id(sequence_that_is_created_retrieved_by_id.id)
