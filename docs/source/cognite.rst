@@ -44,6 +44,13 @@ Datapoints
     :undoc-members:
     :show-inheritance:
 
+Sequences
+----------
+.. automodule:: cognite.v06.sequences
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 API v0.5
 =============
 Assets
