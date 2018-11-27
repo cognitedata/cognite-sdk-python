@@ -200,10 +200,10 @@ def get_data_from_sequence(
     headers = {"api-key": api_key, "accept": "application/json", "Content-Type": "application/json"}
 
     sequenceDataRequest: SequenceDataRequest = SequenceDataRequest(
-        inclusiveFrom=inclusiveFrom,
-        inclusiveTo=inclusiveTo,
+        inclusive_from=inclusiveFrom,
+        inclusive_to=inclusiveTo,
         limit=limit,
-        columnIds=columnIds or []
+        column_ids=columnIds or []
     )
 
     body = {
