@@ -19,11 +19,11 @@ def post_sequences(
     """Create a new time series.
 
     Args:
-        sequences (list[v06.dto.Sequence]): List of sequence data transfer objects to create.
+        sequences (list[v06.dto.Sequence]):  List of sequence data transfer objects to create.
 
     Keyword Args:
-        api_key (str): Your api-key.
-        project (str): Project name.
+        api_key (str):                       Your api-key.
+        project (str):                       Project name.
 
     Returns:
         The created sequence
@@ -58,11 +58,11 @@ def get_sequence_by_id(
     """Returns a Sequence object containing the requested sequence.
 
     Args:
-        id (int):                 ID of the sequence to look up
+        id (int):       ID of the sequence to look up
 
     Keyword Arguments:
-        api_key (str):            Your api-key.
-        project (str):            Project name.
+        api_key (str):  Your api-key.
+        project (str):  Project name.
 
     Returns:
         v06.dto.Sequence: A data object containing the requested sequence.
@@ -81,17 +81,17 @@ def get_sequence_by_id(
 
 
 def get_sequence_by_external_id(
-        externalId: str,
+        external_id: str,
         **kwargs
 ):
     """Returns a Sequence object containing the requested sequence.
 
     Args:
-        externalId (int):         External ID of the sequence to look up
+        external_id (int):  External ID of the sequence to look up
 
     Keyword Arguments:
-        api_key (str):            Your api-key.
-        project (str):            Project name.
+        api_key (str):      Your api-key.
+        project (str):      Project name.
 
     Returns:
         v06.dto.Sequence: A data object containing the requested sequence.
@@ -100,7 +100,7 @@ def get_sequence_by_external_id(
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url() + "/api/0.6/projects/{}/sequences".format(project)
     headers = {"api-key": api_key, "accept": "application/json"}
-    params = {"externalId": externalId}
+    params = {"externalId": external_id}
 
     res = _utils.get_request(url=url, params=params, headers=headers, cookies=config.get_cookies())
 
@@ -117,11 +117,11 @@ def delete_sequence_by_id(
     """Deletes the sequence with the given id.
 
     Args:
-        id (int):                 ID of the sequence to delete
+        id (int):       ID of the sequence to delete
 
     Keyword Arguments:
-        api_key (str):            Your api-key.
-        project (str):            Project name.
+        api_key (str):  Your api-key.
+        project (str):  Project name.
 
     Returns:
     """
@@ -142,12 +142,12 @@ def post_data_to_sequence(
     """Posts data to a sequence.
 
     Args:
-        id (int):     ID of the sequence.
-        rows (list):  List of rows with the data.
+        id (int):       ID of the sequence.
+        rows (list):    List of rows with the data.
 
     Keyword Arguments:
-        api_key (str):               Your api-key.
-        project (str):               Project name.
+        api_key (str):  Your api-key.
+        project (str):  Project name.
 
     Returns:
     """
@@ -172,24 +172,24 @@ def post_data_to_sequence(
 
 def get_data_from_sequence(
         id: int,
-        inclusiveFrom: int,
-        inclusiveTo: int,
+        inclusive_from: int,
+        inclusive_to: int,
         limit: int = 100,
-        columnIds: List[int] = None,
+        column_ids: List[int] = None,
         **kwargs
 ):
     """Gets data from the given sequence.
 
     Args:
-        id (int):              id of the sequence.
-        inclusiveFrom (int):   Row number to get from (inclusive).
-        inclusiveTo (int):     Row number to get to (inclusive).
-        limit (int):           How many rows to return.
-        columnIds (List[int]): ids of the columns to get data for.
+        id (int):                id of the sequence.
+        inclusive_from (int):    Row number to get from (inclusive).
+        inclusive_to (int):      Row number to get to (inclusive).
+        limit (int):             How many rows to return.
+        column_ids (List[int]):  ids of the columns to get data for.
 
     Keyword Arguments:
-        api_key (str):            Your api-key.
-        project (str):            Project name.
+        api_key (str):           Your api-key.
+        project (str):           Project name.
 
     Returns:
         v06.dto.Sequence: A data object containing the requested sequence.
@@ -200,10 +200,10 @@ def get_data_from_sequence(
     headers = {"api-key": api_key, "accept": "application/json", "Content-Type": "application/json"}
 
     sequenceDataRequest: SequenceDataRequest = SequenceDataRequest(
-        inclusive_from=inclusiveFrom,
-        inclusive_to=inclusiveTo,
+        inclusive_from=inclusive_from,
+        inclusive_to=inclusive_to,
         limit=limit,
-        column_ids=columnIds or []
+        column_ids=column_ids or []
     )
 
     body = {

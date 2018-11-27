@@ -131,10 +131,10 @@ class TestSequences:
         # Get the data
         sequenceDataResponse: SequenceDataResponse = sequences.get_data_from_sequence(
             id=sequence_that_is_created_retrieved_by_id.id,
-            inclusiveFrom=1,
-            inclusiveTo=1,
+            inclusive_from=1,
+            inclusive_to=1,
             limit=1,
-            columnIds=[
+            column_ids=[
                 sequence_that_is_created_retrieved_by_id.columns[0].id,
                 sequence_that_is_created_retrieved_by_id.columns[1].id
             ]
