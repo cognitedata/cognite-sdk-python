@@ -5,21 +5,21 @@ import pytest
 from cognite.v05.dto import EventResponse, EventListResponse, TimeSeriesResponse, FileInfoResponse
 
 
-@pytest.fixture(scope='module', params=['ts', 'file', 'event', 'eventlist'])
+@pytest.fixture(scope="module", params=["ts", "file", "event", "eventlist"])
 def get_response_obj(request):
-    TS_INTERNAL_REPR = {'data': {'items': [{'name': '0', 'metadata': {'md1': 'val1'}}]}}
-    EVENT_LIST_INTERNAL_REPR = {'data': {'items': [{'id': 0, 'metadata': {'md1': 'val1'}}]}}
-    EVENT_INTERNAL_REPR = {'data': {'items': [{'id': 0, 'metadata': {'md1': 'val1'}, 'assetIds': []}]}}
-    FILE_INFO_INTERNAL_REPR = {'data': {'items': [{'id': 0, 'metadata': {'md1': 'val1'}}]}}
+    TS_INTERNAL_REPR = {"data": {"items": [{"name": "0", "metadata": {"md1": "val1"}}]}}
+    EVENT_LIST_INTERNAL_REPR = {"data": {"items": [{"id": 0, "metadata": {"md1": "val1"}}]}}
+    EVENT_INTERNAL_REPR = {"data": {"items": [{"id": 0, "metadata": {"md1": "val1"}, "assetIds": []}]}}
+    FILE_INFO_INTERNAL_REPR = {"data": {"items": [{"id": 0, "metadata": {"md1": "val1"}}]}}
 
     response = None
-    if request.param == 'ts':
+    if request.param == "ts":
         response = TimeSeriesResponse(TS_INTERNAL_REPR)
-    elif request.param == 'file':
+    elif request.param == "file":
         response = FileInfoResponse(FILE_INFO_INTERNAL_REPR)
-    elif request.param == 'eventlist':
+    elif request.param == "eventlist":
         response = EventListResponse(EVENT_LIST_INTERNAL_REPR)
-    elif request.param == 'event':
+    elif request.param == "event":
         response = EventResponse(EVENT_INTERNAL_REPR)
 
     yield response

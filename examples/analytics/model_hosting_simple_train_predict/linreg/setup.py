@@ -13,5 +13,5 @@ setup(
     description="A simple linear regression model for a tutorial",
     url="https://relevant.webpage",
     maintainer="Tutorial",
-    maintainer_email="Tutorial"
+    maintainer_email="Tutorial",
 )

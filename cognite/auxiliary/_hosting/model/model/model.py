@@ -2,6 +2,7 @@ import pickle
 
 from cognite.data_transfer_service import DataTransferService
 
+
 class Model:
     def __init__(self, model):
         self._model = model

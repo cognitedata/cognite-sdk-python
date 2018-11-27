@@ -20,7 +20,9 @@ twine = "*"
 pytest = "*"
 pylint = "*"
 astunparse = "*"
-black = "*"
+black = "==18.6b4"
+strip-hints = "*"
+pre-commit = "*"
 
 [requires]
 python_version = "3.6"
