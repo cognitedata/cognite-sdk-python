@@ -50,7 +50,7 @@ podTemplate(
                 sh("pipenv sync --dev")
             }
             stage('Remove typehints') {
-                sh("pipenv run python3 code_parser.py --remove-type-hints --suppress-warning")
+                sh("pipenv run python3 type_hint_remover.py")
                 sh("pipenv run python3 -m black ./cognite -l 120")
             }
             stage('Test and coverage report') {
