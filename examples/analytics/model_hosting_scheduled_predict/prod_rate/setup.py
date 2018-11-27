@@ -13,5 +13,5 @@ setup(
     description="A random forrest regressor used to find production rate for abc equipment",
     url="https://relevant.webpage",
     maintainer="Tutorial",
-    maintainer_email="Tutorial"
+    maintainer_email="Tutorial",
 )

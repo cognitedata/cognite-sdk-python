@@ -32,6 +32,7 @@ def serialize(obj):
     """JSON serializer for objects not serializable by default json code"""
     return obj.__dict__
 
+
 def _raise_API_error(res):
     x_request_id = res.headers.get("X-Request-Id")
     code = res.status_code

@@ -49,7 +49,8 @@ podTemplate(
             stage('Install dependencies') {
                 sh("pipenv sync --dev")
             }
-            stage('Remove typehints') {
+            stage('Check code style & remove typehints') {
+                sh("pipenv run black -l 120 --check .")
                 sh("pipenv run python3 type_hint_remover.py")
                 sh("pipenv run python3 -m black ./cognite -l 120")
             }

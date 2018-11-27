@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from cognite.data_transfer_service import DataTransferService
 
+
 class Model:
     """
     You need to have a class called Model in a file called model.py at the 
@@ -19,6 +20,7 @@ class Model:
             Which use the persisted state to do predictions.
 
     """
+
     @staticmethod
     def train(file_io, data_spec, api_key, project, **kwargs):
         """
@@ -43,10 +45,7 @@ class Model:
         X.insert(0, "f0", 1)
 
         # Least squares
-        coefficients = pd.DataFrame(
-            np.linalg.inv(X.T.dot(X)).dot(X.T).dot(y),
-            columns=["beta_hat"]
-        )
+        coefficients = pd.DataFrame(np.linalg.inv(X.T.dot(X)).dot(X.T).dot(y), columns=["beta_hat"])
 
         # Persist our result
         with file_io("coefficients.csv", "w") as f:
@@ -65,7 +64,7 @@ class Model:
         with file_io("coefficients.csv", "r") as f:
             coefficients = pd.read_csv(f)
         return Model(coefficients)
-    
+
     def predict(self, instance, precision=2, **kwargs):
         """
         instance:

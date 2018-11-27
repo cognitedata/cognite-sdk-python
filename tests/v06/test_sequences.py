@@ -14,11 +14,8 @@ SEQUENCE_EXTERNAL_ID: str = "external_id"
 
 
 class TestSequences:
-
     @pytest.fixture(scope="class")
-    def sequence_that_isnt_created(
-            self
-    ):
+    def sequence_that_isnt_created(self):
         """Returns a Sequence that hasn't been created yet. (It does not have an ID)"""
         global SEQUENCE_EXTERNAL_ID
 
@@ -28,30 +25,15 @@ class TestSequences:
             external_id=SEQUENCE_EXTERNAL_ID,
             asset_id=None,
             columns=[
-                Column(
-                    id=None,
-                    name="test_column",
-                    external_id="external_id",
-                    value_type="STRING",
-                    metadata={}
-                ),
-                Column(
-                    id=None,
-                    name="test_column2",
-                    external_id="external_id2",
-                    value_type="STRING",
-                    metadata={}
-                )
+                Column(id=None, name="test_column", external_id="external_id", value_type="STRING", metadata={}),
+                Column(id=None, name="test_column2", external_id="external_id2", value_type="STRING", metadata={}),
             ],
             description="Test sequence",
-            metadata={}
+            metadata={},
         )
 
     @pytest.fixture(scope="class")
-    def sequence_that_is_created_retrieved_by_id(
-            self,
-            sequence_that_isnt_created
-    ):
+    def sequence_that_is_created_retrieved_by_id(self, sequence_that_isnt_created):
         """Returns the created sequence by using the cognite id"""
         global CREATED_SEQUENCE_ID
         if CREATED_SEQUENCE_ID:
@@ -64,10 +46,7 @@ class TestSequences:
             return created_sequence
 
     @pytest.fixture(scope="class")
-    def sequence_that_is_created_retrieved_by_external_id(
-            self,
-            sequence_that_isnt_created
-    ):
+    def sequence_that_is_created_retrieved_by_external_id(self, sequence_that_isnt_created):
         """Returns the created sequence by using the external id"""
         global CREATED_SEQUENCE_ID, SEQUENCE_EXTERNAL_ID
         if CREATED_SEQUENCE_ID:
@@ -79,54 +58,37 @@ class TestSequences:
             CREATED_SEQUENCE_ID = created_sequence.id
             return created_sequence
 
-    def test_get_sequence_by_id(
-            self,
-            sequence_that_is_created_retrieved_by_id,
-            sequence_that_isnt_created
-    ):
+    def test_get_sequence_by_id(self, sequence_that_is_created_retrieved_by_id, sequence_that_isnt_created):
         global CREATED_SEQUENCE_ID
         assert isinstance(sequence_that_is_created_retrieved_by_id, Sequence)
         assert sequence_that_is_created_retrieved_by_id.id == CREATED_SEQUENCE_ID
         assert sequence_that_is_created_retrieved_by_id.name == sequence_that_isnt_created.name
 
     def test_get_sequence_by_external_id(
-            self,
-            sequence_that_is_created_retrieved_by_external_id,
-            sequence_that_isnt_created
+        self, sequence_that_is_created_retrieved_by_external_id, sequence_that_isnt_created
     ):
         global CREATED_SEQUENCE_ID
         assert isinstance(sequence_that_is_created_retrieved_by_external_id, Sequence)
         assert sequence_that_is_created_retrieved_by_external_id.id == CREATED_SEQUENCE_ID
         assert sequence_that_is_created_retrieved_by_external_id.name == sequence_that_isnt_created.name
 
-    def test_post_data_to_sequence_and_get_data_from_sequence(
-            self,
-            sequence_that_is_created_retrieved_by_id
-    ):
+    def test_post_data_to_sequence_and_get_data_from_sequence(self, sequence_that_is_created_retrieved_by_id):
         # Prepare some data to post
         rows: List[Row] = [
             Row(
                 row_number=1,
                 values=[
-                    RowValue(
-                        column_id=sequence_that_is_created_retrieved_by_id.columns[0].id,
-                        value="42"
-                    ),
-                    RowValue(
-                        column_id=sequence_that_is_created_retrieved_by_id.columns[1].id,
-                        value="43"
-                    )
-                ]
+                    RowValue(column_id=sequence_that_is_created_retrieved_by_id.columns[0].id, value="42"),
+                    RowValue(column_id=sequence_that_is_created_retrieved_by_id.columns[1].id, value="43"),
+                ],
             )
         ]
         # Post data
-        res = sequences.post_data_to_sequence(
-            id=sequence_that_is_created_retrieved_by_id.id,
-            rows=rows
-        )
+        res = sequences.post_data_to_sequence(id=sequence_that_is_created_retrieved_by_id.id, rows=rows)
         assert res == {}
         # Sleep a little, to give the api a chance to process the data
         import time
+
         time.sleep(5)
         # Get the data
         sequenceDataResponse: SequenceDataResponse = sequences.get_data_from_sequence(
@@ -136,8 +98,8 @@ class TestSequences:
             limit=1,
             column_ids=[
                 sequence_that_is_created_retrieved_by_id.columns[0].id,
-                sequence_that_is_created_retrieved_by_id.columns[1].id
-            ]
+                sequence_that_is_created_retrieved_by_id.columns[1].id,
+            ],
         )
         # Verify that the data is the same
         assert rows[0].rowNumber == sequenceDataResponse.rows[0].rowNumber
