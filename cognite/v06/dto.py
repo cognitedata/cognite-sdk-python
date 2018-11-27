@@ -4,7 +4,7 @@
 This module contains data objects used to represent the data returned from the API.
 """
 import pandas as pd
-from typing import List, Union
+from typing import List
 
 
 class Column:
@@ -18,7 +18,7 @@ class Column:
         metadata (dict):    Custom, application specific metadata. String key -> String Value.
     """
 
-    id: Union[int, None]
+    id: int
     name: str
     externalId: str
     valueType: str
@@ -26,7 +26,7 @@ class Column:
 
     def __init__(
             self,
-            id: Union[int, None],
+            id: int,
             name: str,
             externalId: str,
             valueType: str,
@@ -62,7 +62,7 @@ class Sequence:
         metadata (dict):    Custom, application specific metadata. String key -> String Value.
     """
 
-    id: Union[int, None]
+    id: int
     name: str
     externalId: str
     assetId: int
@@ -72,10 +72,10 @@ class Sequence:
 
     def __init__(
             self,
-            id: Union[int, None],
+            id: int,
             name: str,
             externalId: str,
-            assetId: Union[int, None],
+            assetId: int,
             columns: List[Column],
             description: str,
             metadata: dict
