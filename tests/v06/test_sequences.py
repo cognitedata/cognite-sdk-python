@@ -25,21 +25,21 @@ class TestSequences:
         return Sequence(
             id=None,
             name="test_sequence",
-            externalId=SEQUENCE_EXTERNAL_ID,
-            assetId=None,
+            external_id=SEQUENCE_EXTERNAL_ID,
+            asset_id=None,
             columns=[
                 Column(
                     id=None,
                     name="test_column",
-                    externalId="external_id",
-                    valueType="STRING",
+                    external_id="external_id",
+                    value_type="STRING",
                     metadata={}
                 ),
                 Column(
                     id=None,
                     name="test_column2",
-                    externalId="external_id2",
-                    valueType="STRING",
+                    external_id="external_id2",
+                    value_type="STRING",
                     metadata={}
                 )
             ],
@@ -106,14 +106,14 @@ class TestSequences:
         # Prepare some data to post
         rows: List[Row] = [
             Row(
-                rowNumber=1,
+                row_number=1,
                 values=[
                     RowValue(
-                        columnId=sequence_that_is_created_retrieved_by_id.columns[0].id,
+                        column_id=sequence_that_is_created_retrieved_by_id.columns[0].id,
                         value="42"
                     ),
                     RowValue(
-                        columnId=sequence_that_is_created_retrieved_by_id.columns[1].id,
+                        column_id=sequence_that_is_created_retrieved_by_id.columns[1].id,
                         value="43"
                     )
                 ]
@@ -131,10 +131,10 @@ class TestSequences:
         # Get the data
         sequenceDataResponse: SequenceDataResponse = sequences.get_data_from_sequence(
             id=sequence_that_is_created_retrieved_by_id.id,
-            inclusiveFrom=1,
-            inclusiveTo=1,
+            inclusive_from=1,
+            inclusive_to=1,
             limit=1,
-            columnIds=[
+            column_ids=[
                 sequence_that_is_created_retrieved_by_id.columns[0].id,
                 sequence_that_is_created_retrieved_by_id.columns[1].id
             ]

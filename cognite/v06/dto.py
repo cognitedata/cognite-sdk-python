@@ -4,7 +4,7 @@
 This module contains data objects used to represent the data returned from the API.
 """
 import pandas as pd
-from typing import List, Union
+from typing import List
 
 
 class Column:
@@ -13,12 +13,12 @@ class Column:
     Args:
         id (int):           ID of the column.
         name (str):         Name of the column.
-        externalId (str):   External ID of the column.
-        valueType (str):    Data type of the column.
+        external_id (str):  External ID of the column.
+        value_type (str):   Data type of the column.
         metadata (dict):    Custom, application specific metadata. String key -> String Value.
     """
 
-    id: Union[int, None]
+    id: int
     name: str
     externalId: str
     valueType: str
@@ -26,16 +26,16 @@ class Column:
 
     def __init__(
             self,
-            id: Union[int, None],
+            id: int,
             name: str,
-            externalId: str,
-            valueType: str,
+            external_id: str,
+            value_type: str,
             metadata: dict
     ):
         self.id = id
         self.name = name
-        self.externalId = externalId
-        self.valueType = valueType
+        self.externalId = external_id
+        self.valueType = value_type
         self.metadata = metadata
 
     @staticmethod
@@ -43,8 +43,8 @@ class Column:
         return Column(
             id=the_column['id'],
             name=the_column['name'],
-            externalId=the_column.get('externalId', None),
-            valueType=the_column['valueType'],
+            external_id=the_column.get('externalId', None),
+            value_type=the_column['valueType'],
             metadata=the_column['metadata']
         )
 
@@ -55,14 +55,14 @@ class Sequence:
     Args:
         id (int):           ID of the sequence.
         name (str):         Name of the sequence.
-        externalId (str):   External ID of the sequence.
-        assetId (int):      ID of the asset the sequence is connected to, if any.
+        external_id (str):  External ID of the sequence.
+        asset_id (int):     ID of the asset the sequence is connected to, if any.
         columns (list):     List of columns in the sequence.
         description (str):  Description of the sequence.
         metadata (dict):    Custom, application specific metadata. String key -> String Value.
     """
 
-    id: Union[int, None]
+    id: int
     name: str
     externalId: str
     assetId: int
@@ -72,18 +72,18 @@ class Sequence:
 
     def __init__(
             self,
-            id: Union[int, None],
+            id: int,
             name: str,
-            externalId: str,
-            assetId: Union[int, None],
+            external_id: str,
+            asset_id: int,
             columns: List[Column],
             description: str,
             metadata: dict
     ):
         self.id = id
         self.name = name
-        self.externalId = externalId
-        self.assetId = assetId
+        self.externalId = external_id
+        self.assetId = asset_id
         self.columns = columns
         self.description = description
         self.metadata = metadata
@@ -93,8 +93,8 @@ class Sequence:
         return Sequence(
             id=the_sequence['id'],
             name=the_sequence['name'],
-            externalId=the_sequence.get('externalId', None),
-            assetId=the_sequence.get('assetId', None),
+            external_id=the_sequence.get('externalId', None),
+            asset_id=the_sequence.get('assetId', None),
             columns=[
                 Column.from_JSON(the_column)
                 for the_column in the_sequence['columns']
@@ -108,7 +108,7 @@ class RowValue:
     """Data transfer object for the value in a row in a sequence.
 
     Args:
-        columnId (int):   The ID of the column that this value is for.
+        column_id (int):  The ID of the column that this value is for.
         value (str):      The actual value.
     """
 
@@ -117,16 +117,16 @@ class RowValue:
 
     def __init__(
             self,
-            columnId: int,
+            column_id: int,
             value: str
     ):
-        self.columnId = columnId
+        self.columnId = column_id
         self.value = value
 
     @staticmethod
     def from_JSON(the_row_value: dict):
         return RowValue(
-            columnId=the_row_value['columnId'],
+            column_id=the_row_value['columnId'],
             value=the_row_value['value']
         )
 
@@ -143,16 +143,16 @@ class Row:
 
     def __init__(
             self,
-            rowNumber: int,
+            row_number: int,
             values: List[RowValue]
     ):
-        self.rowNumber = rowNumber
+        self.rowNumber = row_number
         self.values = values
 
     @staticmethod
     def from_JSON(the_row: dict):
         return Row(
-            rowNumber=the_row['rowNumber'],
+            row_number=the_row['rowNumber'],
             values=[
                 RowValue.from_JSON(the_row_value)
                 for the_row_value in the_row['values']
@@ -228,10 +228,10 @@ class SequenceDataRequest:
     """Data transfer object for requesting sequence data.
 
     Args:
-        inclusiveFrom (int):    Row number to get from (inclusive).
-        inclusiveTo (int):      Row number to get to (inclusive).
-        limit (int):            How many rows to return.
-        columnsIds (List[int]): ids of the columns to get data for.
+        inclusive_from (int):    Row number to get from (inclusive).
+        inclusive_to (int):      Row number to get to (inclusive).
+        limit (int):             How many rows to return.
+        column_ids (List[int]):  ids of the columns to get data for.
     """
 
     inclusiveFrom: int
@@ -241,12 +241,12 @@ class SequenceDataRequest:
 
     def __init__(
             self,
-            inclusiveFrom: int,
-            inclusiveTo: int,
+            inclusive_from: int,
+            inclusive_to: int,
             limit: int = 100,
-            columnIds: List[int] = []
+            column_ids: List[int] = None
     ):
-        self.inclusiveFrom = inclusiveFrom
-        self.inclusiveTo = inclusiveTo
+        self.inclusiveFrom = inclusive_from
+        self.inclusiveTo = inclusive_to
         self.limit = limit
-        self.columnIds = columnIds
+        self.columnIds = column_ids or []
