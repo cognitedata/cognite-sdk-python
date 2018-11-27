@@ -28,6 +28,10 @@ def _should_retry(status_code):
     return status_code in [401, 429, 500, 502, 503]
 
 
+def serialize(obj):
+    """JSON serializer for objects not serializable by default json code"""
+    return obj.__dict__
+
 def _raise_API_error(res):
     x_request_id = res.headers.get("X-Request-Id")
     code = res.status_code
@@ -79,11 +83,11 @@ def post_request(url, body, headers=None, params=None, cookies=None, use_gzip=Fa
     """Perform a POST request with a predetermined number of retries."""
     _log_request("POST", url, body=body, params=params, headers=headers, cookies=cookies)
 
-    data = json.dumps(body)
+    data = json.dumps(body, default=serialize)
     headers = headers or {}
     if use_gzip:
         headers["Content-Encoding"] = "gzip"
-        data = gzip.compress(json.dumps(body).encode("utf-8"))
+        data = gzip.compress(json.dumps(body, default=serialize).encode("utf-8"))
     return requests.post(url, data=data, headers=headers, params=params, cookies=cookies)
 
 
