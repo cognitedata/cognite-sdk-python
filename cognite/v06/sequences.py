@@ -12,10 +12,7 @@ from cognite import _utils, config
 from cognite.v06.dto import Sequence, SequenceDataRequest, SequenceDataResponse, Row
 
 
-def post_sequences(
-        sequences: List[Sequence],
-        **kwargs
-):
+def post_sequences(sequences: List[Sequence], **kwargs):
     """Create a new time series.
 
     Args:
@@ -46,15 +43,12 @@ def post_sequences(
     res = _utils.post_request(url, body=body, headers=headers)
 
     json_response = json.loads(res.text)
-    the_sequence: dict = json_response['data']['items'][0]
+    the_sequence: dict = json_response["data"]["items"][0]
 
     return Sequence.from_JSON(the_sequence)
 
 
-def get_sequence_by_id(
-        id: int,
-        **kwargs
-):
+def get_sequence_by_id(id: int, **kwargs):
     """Returns a Sequence object containing the requested sequence.
 
     Args:
@@ -75,15 +69,12 @@ def get_sequence_by_id(
     res = _utils.get_request(url=url, headers=headers, cookies=config.get_cookies())
 
     json_response = json.loads(res.text)
-    the_sequence: dict = json_response['data']['items'][0]
+    the_sequence: dict = json_response["data"]["items"][0]
 
     return Sequence.from_JSON(the_sequence)
 
 
-def get_sequence_by_external_id(
-        external_id: str,
-        **kwargs
-):
+def get_sequence_by_external_id(external_id: str, **kwargs):
     """Returns a Sequence object containing the requested sequence.
 
     Args:
@@ -105,15 +96,12 @@ def get_sequence_by_external_id(
     res = _utils.get_request(url=url, params=params, headers=headers, cookies=config.get_cookies())
 
     json_response = json.loads(res.text)
-    the_sequence: dict = json_response['data']['items'][0]
+    the_sequence: dict = json_response["data"]["items"][0]
 
     return Sequence.from_JSON(the_sequence)
 
 
-def delete_sequence_by_id(
-        id: int,
-        **kwargs
-):
+def delete_sequence_by_id(id: int, **kwargs):
     """Deletes the sequence with the given id.
 
     Args:
@@ -134,11 +122,7 @@ def delete_sequence_by_id(
     return res.json()
 
 
-def post_data_to_sequence(
-        id: int,
-        rows: List[Row],
-        **kwargs
-):
+def post_data_to_sequence(id: int, rows: List[Row], **kwargs):
     """Posts data to a sequence.
 
     Args:
@@ -155,13 +139,7 @@ def post_data_to_sequence(
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url() + "/api/0.6/projects/{}/sequences/{}/postdata".format(project, id)
 
-    body = {
-        "items": [
-            {
-                "rows": [row.__dict__ for row in rows]
-            }
-        ]
-    }
+    body = {"items": [{"rows": [row.__dict__ for row in rows]}]}
 
     headers = {"api-key": api_key, "content-type": "application/json", "accept": "application/json"}
 
@@ -171,12 +149,7 @@ def post_data_to_sequence(
 
 
 def get_data_from_sequence(
-        id: int,
-        inclusive_from: int,
-        inclusive_to: int,
-        limit: int = 100,
-        column_ids: List[int] = None,
-        **kwargs
+    id: int, inclusive_from: int, inclusive_to: int, limit: int = 100, column_ids: List[int] = None, **kwargs
 ):
     """Gets data from the given sequence.
 
@@ -200,21 +173,14 @@ def get_data_from_sequence(
     headers = {"api-key": api_key, "accept": "application/json", "Content-Type": "application/json"}
 
     sequenceDataRequest: SequenceDataRequest = SequenceDataRequest(
-        inclusive_from=inclusive_from,
-        inclusive_to=inclusive_to,
-        limit=limit,
-        column_ids=column_ids or []
+        inclusive_from=inclusive_from, inclusive_to=inclusive_to, limit=limit, column_ids=column_ids or []
     )
 
-    body = {
-        "items": [
-            sequenceDataRequest.__dict__
-        ]
-    }
+    body = {"items": [sequenceDataRequest.__dict__]}
 
     res = _utils.post_request(url=url, body=body, headers=headers, cookies=config.get_cookies())
 
     json_response = json.loads(res.text)
-    the_data: dict = json_response['data']['items'][0]
+    the_data: dict = json_response["data"]["items"][0]
 
     return SequenceDataResponse.from_JSON(the_data)

@@ -14,39 +14,39 @@ ROW_KEY = None
 ROW_COLUMNS = None
 
 
-@pytest.fixture(autouse=True, scope='class')
+@pytest.fixture(autouse=True, scope="class")
 def db_name():
     global DB_NAME
-    DB_NAME = 'test_db_{}'.format(randint(1, 2 ** 53 - 1))
+    DB_NAME = "test_db_{}".format(randint(1, 2 ** 53 - 1))
 
 
-@pytest.fixture(autouse=True, scope='class')
+@pytest.fixture(autouse=True, scope="class")
 def table_name():
     global TABLE_NAME
-    TABLE_NAME = 'test_table_{}'.format(randint(1, 2 ** 53 - 1))
+    TABLE_NAME = "test_table_{}".format(randint(1, 2 ** 53 - 1))
 
 
-@pytest.fixture(autouse=True, scope='class')
+@pytest.fixture(autouse=True, scope="class")
 def row_key():
     global ROW_KEY
-    ROW_KEY = 'test_key_{}'.format(randint(1, 2 ** 53 - 1))
+    ROW_KEY = "test_key_{}".format(randint(1, 2 ** 53 - 1))
 
 
-@pytest.fixture(autouse=True, scope='class')
+@pytest.fixture(autouse=True, scope="class")
 def row_columns():
     global ROW_COLUMNS
-    ROW_COLUMNS = {'col1': 'val1'}
+    ROW_COLUMNS = {"col1": "val1"}
 
 
 class TestDatabases:
-    @pytest.fixture(scope='class')
+    @pytest.fixture(scope="class")
     def databases(self):
         yield raw.get_databases()
 
     def test_create_databases(self):
         response = raw.create_databases([DB_NAME])
         assert isinstance(response, RawResponse)
-        assert response.to_json()[0]['dbName'] == DB_NAME
+        assert response.to_json()[0]["dbName"] == DB_NAME
 
     def test_databases_response_length(self, databases):
         assert len(databases.to_json()) > 0
@@ -65,20 +65,20 @@ class TestDatabases:
 
 
 class TestTables:
-    @pytest.fixture(autouse=True, scope='class')
+    @pytest.fixture(autouse=True, scope="class")
     def create_database(self):
         raw.create_databases([DB_NAME])
         yield
         raw.delete_databases([DB_NAME], recursive=True)
 
-    @pytest.fixture(scope='class')
+    @pytest.fixture(scope="class")
     def tables(self):
         yield raw.get_tables(DB_NAME)
 
     def test_create_tables(self):
         response = raw.create_tables(DB_NAME, [TABLE_NAME])
         # assert isinstance(response, RawObject)
-        assert response.to_json()[0]['tableName'] == TABLE_NAME
+        assert response.to_json()[0]["tableName"] == TABLE_NAME
 
     def test_tables_response_length(self, tables):
         assert len(tables.to_json()) > 0
@@ -99,7 +99,7 @@ class TestTables:
 
 
 class TestRows:
-    @pytest.fixture(autouse=True, scope='class')
+    @pytest.fixture(autouse=True, scope="class")
     def create_database(self):
         raw.create_databases([DB_NAME])
         raw.create_tables(DB_NAME, [TABLE_NAME])

@@ -228,9 +228,7 @@ def create_rows(
 
     """
     api_key, project = config.get_config_variables(api_key, project)
-    url = config.get_base_url() + "/api/0.5/projects/{}/raw/{}/{}/create".format(
-        project, database_name, table_name
-    )
+    url = config.get_base_url() + "/api/0.5/projects/{}/raw/{}/{}/create".format(project, database_name, table_name)
 
     headers = {"api-key": api_key, "content-type": "*/*", "accept": "application/json"}
     if ensure_parent:
@@ -270,9 +268,7 @@ def delete_rows(
 
     """
     api_key, project = config.get_config_variables(api_key, project)
-    url = config.get_base_url() + "/api/0.5/projects/{}/raw/{}/{}/delete".format(
-        project, database_name, table_name
-    )
+    url = config.get_base_url() + "/api/0.5/projects/{}/raw/{}/{}/delete".format(project, database_name, table_name)
     body = {"items": [{"key": "{}".format(row.key), "columns": row.columns} for row in rows]}
     headers = {"api-key": api_key, "content-type": "*/*", "accept": "application/json"}
     res = _utils.post_request(url=url, body=body, headers=headers, cookies=config.get_cookies())

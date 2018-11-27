@@ -2,6 +2,7 @@ import pickle
 from sklearn.ensemble import RandomForestRegressor
 from cognite.data_transfer_service import DataTransferService
 
+
 class Model:
     """
     You need to have a class called Model in a file called model.py at the 
@@ -19,6 +20,7 @@ class Model:
             Which use the persisted state to do predictions.
 
     """
+
     @staticmethod
     def train(file_io, data_spec, api_key, project, **kwargs):
         """
@@ -41,7 +43,7 @@ class Model:
         X = df[["temp", "pressure", "rpm"]].values
         y = df["production_rate"].values
 
-        regressor = RandomForestRegressor(n_estimators=10, min_samples_split=100) # We'll mostly use default settings
+        regressor = RandomForestRegressor(n_estimators=10, min_samples_split=100)  # We'll mostly use default settings
         regressor.fit(X, y)
 
         # Persist our regressor model
@@ -61,7 +63,7 @@ class Model:
         with file_io("regressor.pickle", "rb") as f:
             regressor = pickle.load(f)
         return Model(regressor)
-    
+
     def predict(self, instance, api_key, project, **kwargs):
         """
         instance:

@@ -5,28 +5,28 @@ import pytest
 from cognite import preprocessing
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def dfs_no_nan():
     df1 = pd.DataFrame([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]])
     df2 = pd.DataFrame([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]])
     df3 = pd.DataFrame([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]])
-    df1['timestamp'] = df1.index * 2000
-    df2['timestamp'] = df2.index * 5000
-    df3['timestamp'] = df3.index * 10000
+    df1["timestamp"] = df1.index * 2000
+    df2["timestamp"] = df2.index * 5000
+    df3["timestamp"] = df3.index * 10000
     return df1, df2, df3
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def df_with_zero_var_column():
     return pd.DataFrame([[1, 2, 3], [1, 4, 5], [1, 6, 7]])
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def df_with_nan():
     return pd.DataFrame([[1, 2, 3, 4], [5, 6, None, 8], [None, 10, 11, 12]])
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def df_with_leading_nan():
     return pd.DataFrame([[None, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]])
 
@@ -35,7 +35,7 @@ class TestNormalize:
     def test_zero_mean(self, dfs_no_nan):
         df = dfs_no_nan[0]
         norm_df = preprocessing.normalize(df)
-        assert (norm_df.drop('timestamp', axis=1).mean() == 0).all()
+        assert (norm_df.drop("timestamp", axis=1).mean() == 0).all()
 
 
 class TestMergeDataframes:
@@ -63,7 +63,7 @@ class TestMergeDataframes:
 class TestEvenIndex:
     def test_even_index(self, dfs_no_nan):
         df = dfs_no_nan[0]
-        df['timestamp'] = [1000, 3000, 8000]
+        df["timestamp"] = [1000, 3000, 8000]
         even_index_df = preprocessing.make_index_even(df)
         timestamps = even_index_df.timestamp.values
         even_deltas = np.diff(timestamps, 1) == 1000
@@ -81,11 +81,11 @@ class TestFillNan:
         assert has_leading_nan, "Leading Nans removed"
 
 
-class TestRemoveNanColumns():
+class TestRemoveNanColumns:
     @pytest.fixture
     def df_nan_col_removed(self, df_with_nan):
         df = df_with_nan
-        df['timestamp'] = df.index * 1000
+        df["timestamp"] = df.index * 1000
         col_removed_df, mask = preprocessing.remove_nan_columns(df)
         return col_removed_df, mask
 
@@ -98,11 +98,11 @@ class TestRemoveNanColumns():
         assert 0 not in df_nan_col_removed[0].columns
 
 
-class TestRemoveZeroVarColumns():
+class TestRemoveZeroVarColumns:
     @pytest.fixture
     def df_zero_var_removed(self, df_with_zero_var_column):
         df = df_with_zero_var_column
-        df['timestamp'] = df.index * 1000
+        df["timestamp"] = df.index * 1000
         col_removed_df, mask = preprocessing.remove_zero_variance_columns(df)
         return col_removed_df, mask
 
@@ -115,11 +115,11 @@ class TestRemoveZeroVarColumns():
         assert 0 not in df_zero_var_removed[0].columns
 
 
-class TestPreprocess():
-    @pytest.fixture(scope='class')
+class TestPreprocess:
+    @pytest.fixture(scope="class")
     def df_nans_uneven(self):
         df = pd.DataFrame([[None, 2, 3, 4], [5, None, 7, 8], [9, 10, 11, 12]])
-        df['timestamp'] = [1000, 3000, 8000]
+        df["timestamp"] = [1000, 3000, 8000]
         return df
 
     def test_preprocess(self, df_nans_uneven):
@@ -139,4 +139,4 @@ class TestPreprocess():
 
     def test_preprocess_center_and_scale(self, df_nans_uneven):
         pp_df, mask = preprocessing.preprocess(df_nans_uneven, center_and_scale=True, remove_leading_nan_rows=True)
-        assert (pp_df.drop('timestamp', axis=1).mean().round() == 0).all()
+        assert (pp_df.drop("timestamp", axis=1).mean().round() == 0).all()
