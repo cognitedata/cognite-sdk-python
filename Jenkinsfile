@@ -49,6 +49,10 @@ podTemplate(
             stage('Install dependencies') {
                 sh("pipenv sync --dev")
             }
+            stage('Remove typehints') {
+                sh("pipenv run python3 code_parser.py --remove-type-hints --suppress-warning")
+                sh("pipenv run python3 -m black ./cognite -l 120")
+            }
             stage('Test and coverage report') {
                 sh("pipenv run pytest --cov-report xml:coverage.xml --cov=cognite --junitxml=test-report.xml || true")
                 junit(allowEmptyResults: true, testResults: '**/test-report.xml')
@@ -59,8 +63,6 @@ podTemplate(
                 step([$class: 'CoberturaPublisher', coberturaReportFile: 'coverage.xml'])
             }
             stage('Build') {
-                sh("pipenv run python3 code_parser.py --remove-type-hints --suppress-warning")
-                sh("pipenv run python3 -m black ./cognite -l 120")
                 sh("python3 setup.py sdist")
                 sh("python3 setup.py bdist_wheel")
             }
