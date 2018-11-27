@@ -244,9 +244,9 @@ class SequenceDataRequest:
             inclusiveFrom: int,
             inclusiveTo: int,
             limit: int = 100,
-            columnIds: List[int] = []
+            columnIds: List[int] = None
     ):
         self.inclusiveFrom = inclusiveFrom
         self.inclusiveTo = inclusiveTo
         self.limit = limit
-        self.columnIds = columnIds
+        self.columnIds = columnIds or []

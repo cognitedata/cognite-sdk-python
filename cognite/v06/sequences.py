@@ -175,7 +175,7 @@ def get_data_from_sequence(
         inclusiveFrom: int,
         inclusiveTo: int,
         limit: int = 100,
-        columnIds: List[int] = [],
+        columnIds: List[int] = None,
         **kwargs
 ):
     """Gets data from the given sequence.
@@ -203,7 +203,7 @@ def get_data_from_sequence(
         inclusiveFrom=inclusiveFrom,
         inclusiveTo=inclusiveTo,
         limit=limit,
-        columnIds=columnIds
+        columnIds=columnIds or []
     )
 
     body = {
