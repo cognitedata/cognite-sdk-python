@@ -8,22 +8,23 @@ from cognite.v05 import files
 
 
 def test_upload_file_metadata():
-    response = files.upload_file('test_file', source='sdk-tests', overwrite=True)
-    assert response.get('uploadURL') is not None
-    assert response.get('fileId') is not None
+    response = files.upload_file("test_file", source="sdk-tests", overwrite=True)
+    assert response.get("uploadURL") is not None
+    assert response.get("fileId") is not None
 
 
 def test_upload_file(tmpdir):
-    file_path = os.path.join(tmpdir, 'test_file.txt')
-    tmpdir.join('test_file.txt').write("This is a test file.")
+    file_path = os.path.join(tmpdir, "test_file.txt")
+    tmpdir.join("test_file.txt").write("This is a test file.")
     with pytest.warns(UserWarning):
-        response = files.upload_file('test_file', file_path, source='sdk-tests', overwrite=True)
-    assert response.get('uploadURL') is None
-    assert response.get('fileId') is not None
+        response = files.upload_file("test_file", file_path, source="sdk-tests", overwrite=True)
+    assert response.get("uploadURL") is None
+    assert response.get("fileId") is not None
 
 
 def test_list_files():
     from cognite.v05.dto import FileListResponse
+
     response = files.list_files(limit=3)
     assert isinstance(response, FileListResponse)
     assert isinstance(response.to_pandas(), pd.DataFrame)
@@ -33,19 +34,20 @@ def test_list_files():
 
 
 def test_list_files_empty():
-    response = files.list_files(source='not_a_source')
+    response = files.list_files(source="not_a_source")
     assert response.to_pandas().empty
     assert len(response.to_json()) == 0
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def file_id():
-    res = files.list_files(name='test_file', source='sdk-tests', limit=1)
-    return res.to_json()[0]['id']
+    res = files.list_files(name="test_file", source="sdk-tests", limit=1)
+    return res.to_json()[0]["id"]
 
 
 def test_get_file_info(file_id):
     from cognite.v05.dto import FileInfoResponse
+
     response = files.get_file_info(file_id)
     assert isinstance(response, FileInfoResponse)
     assert isinstance(response.to_json(), dict)
@@ -54,7 +56,7 @@ def test_get_file_info(file_id):
     assert response.id == file_id
 
 
-@pytest.mark.parametrize('get_contents', [True, False])
+@pytest.mark.parametrize("get_contents", [True, False])
 def test_download_files(file_id, get_contents):
     try:
         response = files.download_file(file_id, get_contents)
@@ -68,4 +70,4 @@ def test_download_files(file_id, get_contents):
 
 def test_delete_file(file_id):
     response = files.delete_files([file_id])
-    assert file_id in response['deleted'] or file_id in response['failed']
+    assert file_id in response["deleted"] or file_id in response["failed"]
