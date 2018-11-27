@@ -3,8 +3,9 @@
 
 This module contains data objects used to represent the data returned from the API.
 """
-import pandas as pd
 from typing import List
+
+import pandas as pd
 
 
 class Column:
@@ -18,20 +19,7 @@ class Column:
         metadata (dict):    Custom, application specific metadata. String key -> String Value.
     """
 
-    id: int
-    name: str
-    externalId: str
-    valueType: str
-    metadata: dict
-
-    def __init__(
-            self,
-            id: int,
-            name: str,
-            external_id: str,
-            value_type: str,
-            metadata: dict
-    ):
+    def __init__(self, id: int, name: str, external_id: str, value_type: str, metadata: dict):
         self.id = id
         self.name = name
         self.externalId = external_id
@@ -41,11 +29,11 @@ class Column:
     @staticmethod
     def from_JSON(the_column: dict):
         return Column(
-            id=the_column['id'],
-            name=the_column['name'],
-            external_id=the_column.get('externalId', None),
-            value_type=the_column['valueType'],
-            metadata=the_column['metadata']
+            id=the_column["id"],
+            name=the_column["name"],
+            external_id=the_column.get("externalId", None),
+            value_type=the_column["valueType"],
+            metadata=the_column["metadata"],
         )
 
 
@@ -62,23 +50,15 @@ class Sequence:
         metadata (dict):    Custom, application specific metadata. String key -> String Value.
     """
 
-    id: int
-    name: str
-    externalId: str
-    assetId: int
-    columns: List[Column]
-    description: str
-    metadata: dict
-
     def __init__(
-            self,
-            id: int,
-            name: str,
-            external_id: str,
-            asset_id: int,
-            columns: List[Column],
-            description: str,
-            metadata: dict
+        self,
+        id: int,
+        name: str,
+        external_id: str,
+        asset_id: int,
+        columns: List[Column],
+        description: str,
+        metadata: dict,
     ):
         self.id = id
         self.name = name
@@ -91,16 +71,13 @@ class Sequence:
     @staticmethod
     def from_JSON(the_sequence: dict):
         return Sequence(
-            id=the_sequence['id'],
-            name=the_sequence['name'],
-            external_id=the_sequence.get('externalId', None),
-            asset_id=the_sequence.get('assetId', None),
-            columns=[
-                Column.from_JSON(the_column)
-                for the_column in the_sequence['columns']
-            ],
-            description=the_sequence['description'],
-            metadata=the_sequence['metadata']
+            id=the_sequence["id"],
+            name=the_sequence["name"],
+            external_id=the_sequence.get("externalId", None),
+            asset_id=the_sequence.get("assetId", None),
+            columns=[Column.from_JSON(the_column) for the_column in the_sequence["columns"]],
+            description=the_sequence["description"],
+            metadata=the_sequence["metadata"],
         )
 
 
@@ -112,23 +89,13 @@ class RowValue:
         value (str):      The actual value.
     """
 
-    columnId: int
-    value: str # Can be either string, float, or boolean
-
-    def __init__(
-            self,
-            column_id: int,
-            value: str
-    ):
+    def __init__(self, column_id: int, value: str):
         self.columnId = column_id
         self.value = value
 
     @staticmethod
     def from_JSON(the_row_value: dict):
-        return RowValue(
-            column_id=the_row_value['columnId'],
-            value=the_row_value['value']
-        )
+        return RowValue(column_id=the_row_value["columnId"], value=the_row_value["value"])
 
 
 class Row:
@@ -138,29 +105,20 @@ class Row:
         row_number (int):  The row number for this row.
         values (list):     The values in this row.
     """
-    rowNumber: int
-    values: List[RowValue]
 
-    def __init__(
-            self,
-            row_number: int,
-            values: List[RowValue]
-    ):
+    def __init__(self, row_number: int, values: List[RowValue]):
         self.rowNumber = row_number
         self.values = values
 
     @staticmethod
     def from_JSON(the_row: dict):
         return Row(
-            row_number=the_row['rowNumber'],
-            values=[
-                RowValue.from_JSON(the_row_value)
-                for the_row_value in the_row['values']
-            ]
+            row_number=the_row["rowNumber"],
+            values=[RowValue.from_JSON(the_row_value) for the_row_value in the_row["values"]],
         )
 
     def get_row_as_csv(self):
-        return ','.join([str(x.value) for x in self.values])
+        return ",".join([str(x.value) for x in self.values])
 
 
 class SequenceDataResponse:
@@ -170,22 +128,12 @@ class SequenceDataResponse:
         rows (list):  List of rows with the data.
     """
 
-    rows: List[Row]
-
-    def __init__(
-            self,
-            rows: List[Row]
-    ):
+    def __init__(self, rows: List[Row]):
         self.rows = rows
 
     @staticmethod
     def from_JSON(the_data: dict):
-        return SequenceDataResponse(
-            rows=[
-                Row.from_JSON(the_row)
-                for the_row in the_data['rows']
-            ]
-        )
+        return SequenceDataResponse(rows=[Row.from_JSON(the_row) for the_row in the_data["rows"]])
 
     @staticmethod
     def _row_has_value_for_column(row: Row, column_id: int):
@@ -200,22 +148,16 @@ class SequenceDataResponse:
 
         # Create the empty dataframe
         column_ids = [value.columnId for value in self.rows[0].values]
-        my_df = pd.DataFrame(
-            columns=column_ids
-        )
+        my_df = pd.DataFrame(columns=column_ids)
         # Fill the dataframe with values. We might not have data for every column, so we need to be careful
         for row in self.rows:
             data_this_row: List[float] = []
             for column_id in column_ids:
                 # Do we have a value for this column?
                 if self._row_has_value_for_column(row, column_id):
-                    data_this_row.append(
-                        self._get_value_for_column(row, column_id)
-                    )
+                    data_this_row.append(self._get_value_for_column(row, column_id))
                 else:
-                    data_this_row.append(
-                        'null'
-                    )
+                    data_this_row.append("null")
             my_df.loc[len(my_df)] = data_this_row
         return my_df
 
@@ -234,18 +176,7 @@ class SequenceDataRequest:
         column_ids (List[int]):  ids of the columns to get data for.
     """
 
-    inclusiveFrom: int
-    inclusiveTo: int
-    limit: int = 100
-    columnIds: List[int] = []
-
-    def __init__(
-            self,
-            inclusive_from: int,
-            inclusive_to: int,
-            limit: int = 100,
-            column_ids: List[int] = None
-    ):
+    def __init__(self, inclusive_from: int, inclusive_to: int, limit: int = 100, column_ids: List[int] = None):
         self.inclusiveFrom = inclusive_from
         self.inclusiveTo = inclusive_to
         self.limit = limit
