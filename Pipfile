@@ -20,7 +20,7 @@ twine = "*"
 pytest = "*"
 pylint = "*"
 astunparse = "*"
-black = "==18.6b4"
+black = "==18.9b0"
 strip-hints = "*"
 pre-commit = "*"
 
