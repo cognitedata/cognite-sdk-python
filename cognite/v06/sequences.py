@@ -9,7 +9,7 @@ import json
 from typing import List
 
 from cognite import _utils, config
-from cognite.v06.dto import Sequence, SequenceDataRequest, SequenceDataResponse, Row
+from cognite.v06.dto import Row, Sequence, SequenceDataRequest, SequenceDataResponse
 
 
 def post_sequences(sequences: List[Sequence], **kwargs):
@@ -149,14 +149,21 @@ def post_data_to_sequence(id: int, rows: List[Row], **kwargs):
 
 
 def get_data_from_sequence(
-    id: int, inclusive_from: int, inclusive_to: int, limit: int = 100, column_ids: List[int] = None, **kwargs
+    id: int,
+    inclusive_from: int = None,
+    inclusive_to: int = None,
+    limit: int = 100,
+    column_ids: List[int] = None,
+    **kwargs
 ):
     """Gets data from the given sequence.
 
     Args:
         id (int):                id of the sequence.
-        inclusive_from (int):    Row number to get from (inclusive).
-        inclusive_to (int):      Row number to get to (inclusive).
+        inclusive_from (int):    Row number to get from (inclusive). If set to None, you'll get data from the first row
+                                 that exists.
+        inclusive_to (int):      Row number to get to (inclusive). If set to None, you'll get data to the last row that
+                                 exists (depending on the limit).
         limit (int):             How many rows to return.
         column_ids (List[int]):  ids of the columns to get data for.
 
