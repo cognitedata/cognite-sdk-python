@@ -5,6 +5,7 @@ This module mirrors the Assets API.
 
 https://doc.cognitedata.com/0.5/#Cognite-API-Assets
 """
+import json
 from typing import List
 
 import cognite._constants as constants
@@ -171,3 +172,67 @@ def delete_assets(asset_ids: List[int], **kwargs):
     headers = {"api-key": api_key, "content-type": "application/json", "accept": "application/json"}
     res = utils.post_request(url, body=body, headers=headers, cookies=config.get_cookies())
     return res.json()
+
+
+def search_for_assets(
+    name=None,
+    description=None,
+    query=None,
+    metadata=None,
+    asset_subtrees=None,
+    min_created_time=None,
+    max_created_time=None,
+    min_last_updated_time=None,
+    max_last_updated_time=None,
+    **kwargs
+):
+    """Search for events.
+
+        Args:
+            name:   Prefix and fuzzy search on name.
+            description str:   Prefix and fuzzy search on description.
+            query (str):       Search on name and description using wildcard search on each of the words
+                                (separated by spaces). Retrieves results where at least one word must match.
+                                Example: 'some other'
+            metadata (dict):        Filter out events that do not match these metadata fields and values (case-sensitive).
+                                    Format is {"key1":"value1","key2":"value2"}.
+            asset_subtrees (List[int]): Filter out assets that are not linked to assets in the subtree rooted at these assets.
+                                        Format is [12,345,6,7890].
+            min_created_time(str):  Filter out assets with createdTime before this. Format is milliseconds since epoch.
+            max_created_time (str): Filter out assets with createdTime after this. Format is milliseconds since epoch.
+            min_last_updated_time(str):  Filter out assets with lastUpdatedtime before this. Format is milliseconds since epoch.
+            max_last_updated_time(str): Filter out assets with lastUpdatedtime after this. Format is milliseconds since epoch.
+
+        Keyword Args:
+            api_key (str):          Your api-key.
+            project (str):          Project name.
+            sort (str):             Field to be sorted.
+            dir (str):              Sort direction (desc or asc)
+            limit (int):            Return up to this many results. Max is 1000, default is 25.
+            offset (int):           Offset from the first result. Sum of limit and offset must not exceed 1000. Default is 0.
+            boost_name (str):       Whether or not boosting name field. This option is experimental and can be changed.
+        Returns:
+            v05.dto.EventListResponse.
+        """
+    api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
+    url = config.get_base_url() + "/api/0.5/projects/{}/assets/search".format(project)
+    headers = {"api-key": api_key, "content-type": "application/json", "accept": "application/json"}
+    params = {
+        "name": name,
+        "description": description,
+        "query": query,
+        "metadata": json.dumps(metadata),
+        "assetSubtrees": asset_subtrees,
+        "minCreatedTime": min_created_time,
+        "maxCreatedTime": max_created_time,
+        "minLastUpdatedTime": min_last_updated_time,
+        "maxLastUpdatedTime": max_last_updated_time,
+        "sort": kwargs.get("sort"),
+        "dir": kwargs.get("dir"),
+        "limit": kwargs.get("limit", 1000),
+        "offset": kwargs.get("offset"),
+        "boostName": kwargs.get("boost_name"),
+    }
+
+    res = utils.get_request(url, headers=headers, params=params)
+    return AssetListResponse(res.json())
