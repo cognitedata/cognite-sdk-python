@@ -186,7 +186,7 @@ def search_for_assets(
     max_last_updated_time=None,
     **kwargs
 ):
-    """Search for events.
+    """Search for assets.
 
         Args:
             name:   Prefix and fuzzy search on name.
@@ -194,7 +194,7 @@ def search_for_assets(
             query (str):       Search on name and description using wildcard search on each of the words
                                 (separated by spaces). Retrieves results where at least one word must match.
                                 Example: 'some other'
-            metadata (dict):        Filter out events that do not match these metadata fields and values (case-sensitive).
+            metadata (dict):        Filter out assets that do not match these metadata fields and values (case-sensitive).
                                     Format is {"key1":"value1","key2":"value2"}.
             asset_subtrees (List[int]): Filter out assets that are not linked to assets in the subtree rooted at these assets.
                                         Format is [12,345,6,7890].
