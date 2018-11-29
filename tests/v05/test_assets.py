@@ -72,4 +72,5 @@ def test_delete_assets():
 
 
 def test_search_for_assets():
-    assets.search_for_assets()
+    res = assets.search_for_assets()
+    assert len(res.to_json()) > 0
