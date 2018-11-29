@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
+
 from cognite.v05 import assets
 from cognite.v05.dto import Asset, AssetListResponse, AssetResponse
 
@@ -68,3 +69,8 @@ def test_delete_assets():
     res = assets.delete_assets([id])
     assert res == {}
     assert len(assets.get_assets(ASSET_NAME, depth=0).to_json()) == 0
+
+
+def test_search_for_assets():
+    res = assets.search_for_assets()
+    assert len(res.to_json()) > 0
