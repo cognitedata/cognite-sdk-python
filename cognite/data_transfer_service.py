@@ -240,6 +240,28 @@ class DataTransferService:
         self.cookies = cookies
         self.num_of_processes = num_of_processes
 
+    def get_time_series_name(self, ts_label: str = "default", dataframe_label: str = "default"):
+        if self.ts_data_specs is None:
+            raise InputError("Data spec does not contain any TimeSeriesDataSpecs")
+        if self.ts_data_specs is None:
+            raise InputError("Data spec does not contain any TimeSeriesDataSpecs")
+
+        tsds = None
+        for ts_data_spec in self.ts_data_specs:
+            if ts_data_spec.label == dataframe_label:
+                tsds = ts_data_spec
+
+        if tsds:
+            # Temporary workaround that you cannot use get_datapoints_frame with ts id.
+            ts_res = time_series_v06.get_multiple_time_series_by_id(
+                ids=list(set([ts.id for ts in tsds.time_series])), api_key=self.api_key, project=self.project
+            )
+            id_to_name = {ts["id"]: ts["name"] for ts in ts_res.to_json()}
+
+            for ts in tsds.time_series:
+                if ts.label == ts_label:
+                    return id_to_name[ts.id]
+
     def get_dataframes(self, drop_agg_suffix: bool = True):
         """Return a dictionary of dataframes indexed by label - one per data spec.
 

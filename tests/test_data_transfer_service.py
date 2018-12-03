@@ -3,8 +3,8 @@ import pprint
 from io import BytesIO
 
 import pandas as pd
-
 import pytest
+
 from cognite.data_transfer_service import (
     DataSpec,
     DataSpecValidationError,
@@ -227,3 +227,8 @@ class TestDataTransferService:
             "ts3|count",
             "ts4|stepinterpolation",
         ]
+
+    def test_get_timeseries_name(self, data_spec):
+        dts = DataTransferService(data_spec, num_of_processes=3)
+        for ts_label in ["ts1", "ts2", "ts3", "ts4"]:
+            assert dts.get_time_series_name(ts_label) == "constant"
