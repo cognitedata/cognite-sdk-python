@@ -373,7 +373,7 @@ def post_datapoints(name, datapoints: List[Datapoint], **kwargs):
     return res.json()
 
 
-def get_latest(name, **kwargs):
+def get_latest(name, before=None, **kwargs):
     """Returns a LatestDatapointObject containing the latest datapoint for the given timeseries.
 
     Args:
@@ -391,7 +391,8 @@ def get_latest(name, **kwargs):
     api_key, project = config.get_config_variables(kwargs.get("api_key"), kwargs.get("project"))
     url = config.get_base_url() + "/api/0.5/projects/{}/timeseries/latest/{}".format(project, quote(name, safe=""))
     headers = {"api-key": api_key, "accept": "application/json"}
-    res = _utils.get_request(url, headers=headers, cookies=config.get_cookies())
+    params = {"before": before}
+    res = _utils.get_request(url, params=params, headers=headers, cookies=config.get_cookies())
     return LatestDatapointResponse(res.json())
 
 
