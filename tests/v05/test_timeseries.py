@@ -3,8 +3,8 @@ from random import randint
 
 import numpy as np
 import pandas as pd
-
 import pytest
+
 from cognite.v05 import dto, timeseries
 
 TS_NAME = None
@@ -153,10 +153,14 @@ class TestLatest:
         from cognite.v05.dto import LatestDatapointResponse
 
         response = timeseries.get_latest("constant")
+        assert list(response.to_json().keys()) == ["timestamp", "value"]
         assert isinstance(response, LatestDatapointResponse)
         assert isinstance(response.to_ndarray(), np.ndarray)
         assert isinstance(response.to_pandas(), pd.DataFrame)
         assert isinstance(response.to_json(), dict)
+        timestamp = response.to_json()["timestamp"]
+        response = timeseries.get_latest("constant", before=timestamp)
+        assert response.to_json()["timestamp"] < timestamp
 
 
 class TestDatapointsFrame:

@@ -5,7 +5,6 @@ from io import BytesIO
 from typing import Dict, List, Union
 
 import pandas as pd
-
 from cognite import config
 from cognite._utils import InputError, get_aggregate_func_return_name, to_camel_case, to_snake_case
 from cognite.v05 import files
@@ -240,6 +239,28 @@ class DataTransferService:
         self.cookies = cookies
         self.num_of_processes = num_of_processes
 
+    def get_time_series_name(self, ts_label: str, dataframe_label: str = "default"):
+        if self.ts_data_specs is None:
+            raise InputError("Data spec does not contain any TimeSeriesDataSpecs")
+
+        tsds = None
+        for ts_data_spec in self.ts_data_specs:
+            if ts_data_spec.label == dataframe_label:
+                tsds = ts_data_spec
+
+        if tsds:
+            # Temporary workaround that you cannot use get_datapoints_frame with ts id.
+            ts_res = time_series_v06.get_multiple_time_series_by_id(
+                ids=list(set([ts.id for ts in tsds.time_series])), api_key=self.api_key, project=self.project
+            )
+            id_to_name = {ts["id"]: ts["name"] for ts in ts_res.to_json()}
+
+            for ts in tsds.time_series:
+                if ts.label == ts_label:
+                    return id_to_name[ts.id]
+            raise InputError("Invalid time series label")
+        raise InputError("Invalid dataframe label")
+
     def get_dataframes(self, drop_agg_suffix: bool = True):
         """Return a dictionary of dataframes indexed by label - one per data spec.
 
@@ -301,7 +322,7 @@ class DataTransferService:
             df = self.__apply_missing_data_strategies(df, ts_list, tsds.missing_data_strategy)
             df = self.__convert_ts_names_to_labels(df, tsds, drop_agg_suffix)
             return df
-        return None
+        raise InputError("Invalid label")
 
     def get_file(self, name):
         """Return files by name as specified in the DataSpec
@@ -309,14 +330,13 @@ class DataTransferService:
         Args:
             name (str): Name of file
         """
-        if not self.files_data_spec:
+        if not self.files_data_spec or not isinstance(self.files_data_spec, FilesDataSpec):
             raise InputError("Data spec does not contain a FilesDataSpec")
-        if isinstance(self.files_data_spec, FilesDataSpec):
-            id = self.files_data_spec.file_ids.get(name)
-            if id:
-                file_bytes = files.download_file(id, get_contents=True, api_key=self.api_key, project=self.project)
-                return BytesIO(file_bytes)
-            raise InputError("Invalid name")
+        id = self.files_data_spec.file_ids.get(name)
+        if id:
+            file_bytes = files.download_file(id, get_contents=True, api_key=self.api_key, project=self.project)
+            return BytesIO(file_bytes)
+        raise InputError("Invalid name")
 
     def __convert_ts_names_to_labels(self, df: pd.DataFrame, tsds: TimeSeriesDataSpec, drop_agg_suffix: bool):
         name_to_label = {}
