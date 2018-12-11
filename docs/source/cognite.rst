@@ -51,6 +51,13 @@ Sequences
     :undoc-members:
     :show-inheritance:
 
+DTO
+---
+.. automodule:: cognite.v06.dto
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 API v0.5
 =============
 Assets
