@@ -19,7 +19,11 @@ class Column:
         metadata (dict):    Custom, application specific metadata. String key -> String Value.
     """
 
-    def __init__(self, id: int, name: str, external_id: str, value_type: str, metadata: dict):
+    def __init__(
+        self, id: int = None, name: str = None, external_id: str = None, value_type: str = None, metadata: dict = None
+    ):
+        if value_type is None:
+            raise ValueError("value_type must not be None")
         self.id = id
         self.name = name
         self.externalId = external_id
@@ -45,21 +49,24 @@ class Sequence:
         name (str):         Name of the sequence.
         external_id (str):  External ID of the sequence.
         asset_id (int):     ID of the asset the sequence is connected to, if any.
-        columns (list):     List of columns in the sequence.
+        columns (List[Column]):     List of columns in the sequence.
         description (str):  Description of the sequence.
         metadata (dict):    Custom, application specific metadata. String key -> String Value.
+
     """
 
     def __init__(
         self,
-        id: int,
-        name: str,
-        external_id: str,
-        asset_id: int,
-        columns: List[Column],
-        description: str,
-        metadata: dict,
+        id: int = None,
+        name: str = None,
+        external_id: str = None,
+        asset_id: int = None,
+        columns: List[Column] = None,
+        description: str = None,
+        metadata: dict = None,
     ):
+        if columns is None:
+            raise ValueError("columns must not be None")
         self.id = id
         self.name = name
         self.externalId = external_id
@@ -163,7 +170,7 @@ class SequenceDataResponse:
 
     def to_json(self):
         """Returns data as a json object"""
-        pass
+        raise NotImplementedError
 
 
 class SequenceDataRequest:
