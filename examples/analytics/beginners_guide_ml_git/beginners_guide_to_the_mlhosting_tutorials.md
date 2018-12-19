@@ -10,13 +10,13 @@ and in depth explanation of some lines of code from the tutorials which you can 
 
 ## Prerequisites
 
-###Access
+### Access
 - Obtain an API key and a project name from an administrator
 - Add the API key as an environment variable for security purposes. I named it "apikeyml" in the example below
 
-![](.beginners_guide_to_the_mlhosting_tutorials_images\4aa33ba6.png)
+![](.beginners_guide_to_the_mlhosting_tutorials_images/4aa33ba6.png)
 
-###Installation
+### Installation
 In order to start the tutorials you will need a programming environment. I will present how to use Jupyter Notebook through Anaconda, but feel free to use another programming environment. 
 - Install Anaconda Python 3.7 version from the [Anaconda](https://www.anaconda.com/download/) website.
 - Launch Anaconda Navigator and install Jupyter notebook
@@ -24,11 +24,11 @@ In order to start the tutorials you will need a programming environment. I will 
 
 - Follow the instructions:
 
-![](.beginners_guide_to_the_mlhosting_tutorials_images\f3167d77.png)
+![](.beginners_guide_to_the_mlhosting_tutorials_images/f3167d77.png)
 
 - Create a new notebook from this page in your browser
 
-![](.beginners_guide_to_the_mlhosting_tutorials_images\cc21bb5a.png)
+![](.beginners_guide_to_the_mlhosting_tutorials_images/cc21bb5a.png)
 
 - Install the Cognite SDK and other packages missing packages (e.g. matplotlib).
  The method below can be executed directly into the Jupyter notebook, and also work if the notebook is in a virtual environment. 
@@ -61,7 +61,7 @@ API_KEY = os.environ.get("apikeyml")
 ```
 To see the ID of a model/version/source_package, you can use the print function:
 
-![](.beginners_guide_to_the_mlhosting_tutorials_images\a563d2d6.png)
+![](.beginners_guide_to_the_mlhosting_tutorials_images/a563d2d6.png)
 
 ### Time series - Schedule tutorial
 In the schedule tutorial you are asked to insert your own time series. Below is the code needed to create
