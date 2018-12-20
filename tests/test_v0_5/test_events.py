@@ -1,0 +1,71 @@
+import pandas as pd
+import pytest
+
+import cognite.client.v0_5.events
+from cognite import APIError, CogniteClient
+
+events = CogniteClient().events
+
+
+@pytest.fixture(scope="module")
+def get_post_event_obj():
+    event = cognite.client.v0_5.events.Event(start_time=1521500400000, end_time=1521586800000, description="hahaha")
+    res = events.post_events([event])
+    yield res
+    ids = list(ev["id"] for ev in res.to_json())
+    events.delete_events(ids)
+
+
+def test_post_events(get_post_event_obj):
+    assert isinstance(get_post_event_obj, cognite.client.v0_5.events.EventListResponse)
+    assert isinstance(get_post_event_obj.to_pandas(), pd.DataFrame)
+    assert isinstance(get_post_event_obj.to_json(), list)
+
+
+def test_post_events_length(get_post_event_obj):
+    assert len(get_post_event_obj.to_json()) == 1
+
+
+def test_get_event(get_post_event_obj):
+    id = get_post_event_obj.to_json()[0]["id"]
+    res = events.get_event(event_id=id)
+    assert isinstance(res, cognite.client.v0_5.events.EventResponse)
+    assert isinstance(res.to_pandas(), pd.DataFrame)
+    assert isinstance(res.to_json(), dict)
+
+
+def test_get_event_invalid_id():
+    with pytest.raises(APIError):
+        events.get_event(123456789)
+
+
+def test_get_events():
+    res = events.get_events(min_start_time=1521500399999, max_start_time=1521500400001)
+    assert isinstance(res, cognite.client.v0_5.events.EventListResponse)
+    assert isinstance(res.to_pandas(), pd.DataFrame)
+    assert isinstance(res.to_json(), list)
+    for event in res:
+        assert isinstance(event, cognite.client.v0_5.events.EventResponse)
+
+
+def test_get_events_empty():
+    res = events.get_events(limit=0)
+    assert res.to_pandas().empty
+    assert len(res.to_json()) == 0
+
+
+@pytest.fixture()
+def post_event():
+    event = cognite.client.v0_5.events.Event(start_time=1521500400000, end_time=1521586800000)
+    res = events.post_events([event])
+    return res
+
+
+def test_delete_event(post_event):
+    id = post_event.to_json()[0]["id"]
+    res = events.delete_events([id])
+    assert res == {}
+
+
+def test_search_for_events(get_post_event_obj):
+    events.search_for_events(description="hahaha")

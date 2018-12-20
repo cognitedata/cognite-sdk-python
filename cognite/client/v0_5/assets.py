@@ -1,0 +1,267 @@
+# -*- coding: utf-8 -*-
+"""Assets Module.
+
+This module mirrors the Assets API.
+
+https://doc.cognitedata.com/0.5/#Cognite-API-Assets
+"""
+import json
+from typing import Dict, List
+
+import pandas as pd
+
+from cognite.client._api_client import APIClient
+from cognite.client.v0_5 import CogniteResponse
+
+
+class AssetListResponse(CogniteResponse):
+    """Assets Response Object"""
+
+    def __init__(self, internal_representation):
+        super().__init__(internal_representation)
+        self.counter = 0
+
+    def to_json(self):
+        """Returns data as a json object"""
+        return self.internal_representation["data"]["items"]
+
+    def to_pandas(self):
+        """Returns data as a pandas dataframe"""
+        if len(self.to_json()) > 0:
+            return pd.DataFrame(self.internal_representation["data"]["items"])
+        return pd.DataFrame()
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.counter > len(self.to_json()) - 1:
+            raise StopIteration
+        else:
+            self.counter += 1
+            return AssetResponse({"data": {"items": [self.to_json()[self.counter - 1]]}})
+
+
+class AssetResponse(CogniteResponse):
+    def to_json(self):
+        """Returns data as a json object"""
+        return self.internal_representation["data"]["items"][0]
+
+    def to_pandas(self):
+        """Returns data as a pandas dataframe"""
+        if len(self.to_json()) > 0:
+            return pd.DataFrame.from_dict(self.to_json(), orient="index")
+        return pd.DataFrame()
+
+
+class Asset:
+    """Data transfer object for assets.
+
+    Args:
+        name (str):                 Name of asset. Often referred to as tag.
+        parent_id (int):            ID of parent asset, if any.
+        description (str):          Description of asset.
+        metadata (dict):            Custom , application specific metadata. String key -> String Value.
+        ref_id (str):               Reference ID used only in post request to disambiguate references to duplicate
+                                    names.
+        parent_name (str):          Name of parent, this parent must exist in the same POST request.
+        parent_ref_id (list(int)):  Reference ID of parent, to disambiguate if multiple nodes have the same name.
+    """
+
+    def __init__(
+        self, name, parent_id=None, description=None, metadata=None, ref_id=None, parent_name=None, parent_ref_id=None
+    ):
+        self.name = name
+        self.parentId = parent_id
+        self.description = description
+        self.metadata = metadata
+        self.refId = ref_id
+        self.parentName = parent_name
+        self.parentRefId = parent_ref_id
+
+
+class AssetsClientV0_5(APIClient):
+    def get_assets(
+        self, name=None, path=None, description=None, metadata=None, depth=None, fuzziness=None, **kwargs
+    ) -> AssetListResponse:
+        """Returns assets matching provided description.
+
+        Args:
+            name (str):             The name of the asset(s) to get.
+
+            path (str):             The path of the subtree to search in.
+
+            description (str):      Search query.
+
+            metadata (dict):         The metadata values used to filter the results.
+
+            depth (int):            Get sub assets up oto this many levels below the specified path.
+
+            fuzziness (int):        The degree of fuzziness in the name matching.
+
+        Keyword Arguments:
+            autopaging (bool):      Whether or not to automatically page through results. If set to true, limit will be
+                                    disregarded. Defaults to False.
+
+            limit (int):            The maximum number of assets to be returned.
+
+            cursor (str):           Cursor to use for paging through results.
+        Returns:
+            v0_5.assets.AssetListResponse: A data object containing the requested assets with several getter methods with different
+            output formats.
+        """
+        url = "/assets"
+        params = {
+            "name": name,
+            "description": description,
+            "path": path,
+            "metadata": str(metadata) if metadata else None,
+            "depth": depth,
+            "fuzziness": fuzziness,
+            "cursor": kwargs.get("cursor"),
+            "limit": kwargs.get("limit", self.LIMIT) if not kwargs.get("autopaging") else self.LIMIT,
+        }
+        res = self._get(url, params=params)
+        assets = []
+        assets.extend(res.json()["data"]["items"])
+        next_cursor = res.json()["data"].get("nextCursor")
+
+        while next_cursor and kwargs.get("autopaging"):
+            params["cursor"] = next_cursor
+            res = self._get(url=url, params=params)
+            assets.extend(res.json()["data"]["items"])
+            next_cursor = res.json()["data"].get("nextCursor")
+
+        return AssetListResponse(
+            {
+                "data": {
+                    "nextCursor": next_cursor,
+                    "previousCursor": res.json()["data"].get("previousCursor"),
+                    "items": assets,
+                }
+            }
+        )
+
+    def get_asset(self, asset_id) -> AssetResponse:
+        """Returns the asset with the provided assetId.
+
+        Args:
+            asset_id (int):         The asset id of the top asset to get.
+
+        Returns:
+            v0_5.assets.AssetResponse: A data object containing the requested assets with several getter methods with different
+            output formats.
+        """
+        url = "/assets/{}/subtree".format(asset_id)
+        res = self._get(url)
+        return AssetResponse(res.json())
+
+    def get_asset_subtree(self, asset_id, depth=None, **kwargs) -> AssetListResponse:
+        """Returns asset subtree of asset with provided assetId.
+
+        Args:
+            asset_id (int):         The asset id of the top asset to get.
+
+            depth (int):            Get subassets this many levels below the top asset.
+
+        Keyword Arguments:
+            limit (int):            The maximum nuber of assets to be returned.
+
+            cursor (str):           Cursor to use for paging through results.
+        Returns:
+            v0_5.assets.AssetListResponse: A data object containing the requested assets with several getter methods with different
+            output formats.
+        """
+        url = "/assets/{}/subtree".format(asset_id)
+        params = {"depth": depth, "limit": kwargs.get("limit", self.LIMIT), "cursor": kwargs.get("cursor")}
+        res = self._get(url, params=params)
+        return AssetListResponse(res.json())
+
+    def post_assets(self, assets: List[Asset]) -> AssetListResponse:
+        """Insert a list of assets.
+
+        Args:
+            assets (list[v0_5.assets.Asset]): List of asset data transfer objects.
+
+        Returns:
+            v0_5.assets.AssetListResponse: A data object containing the posted assets with several getter methods with different
+            output formats.
+        """
+        url = "/assets"
+        body = {"items": [asset.__dict__ for asset in assets]}
+        res = self._post(url, body=body)
+        return AssetListResponse(res.json())
+
+    def delete_assets(self, asset_ids: List[int]) -> Dict:
+        """Delete a list of assets.
+
+        Args:
+            asset_ids (list[int]): List of IDs of assets to delete.
+
+        Returns:
+            An empty response.
+        """
+        url = "/assets/delete"
+        body = {"items": asset_ids}
+        res = self._post(url, body=body)
+        return res.json()
+
+    def search_for_assets(
+        self,
+        name=None,
+        description=None,
+        query=None,
+        metadata=None,
+        asset_subtrees=None,
+        min_created_time=None,
+        max_created_time=None,
+        min_last_updated_time=None,
+        max_last_updated_time=None,
+        **kwargs
+    ) -> AssetListResponse:
+        """Search for assets.
+
+            Args:
+                name:   Prefix and fuzzy search on name.
+                description str:   Prefix and fuzzy search on description.
+                query (str):       Search on name and description using wildcard search on each of the words
+                                    (separated by spaces). Retrieves results where at least one word must match.
+                                    Example: 'some other'
+                metadata (dict):        Filter out assets that do not match these metadata fields and values (case-sensitive).
+                                        Format is {"key1":"value1","key2":"value2"}.
+                asset_subtrees (List[int]): Filter out assets that are not linked to assets in the subtree rooted at these assets.
+                                            Format is [12,345,6,7890].
+                min_created_time(str):  Filter out assets with createdTime before this. Format is milliseconds since epoch.
+                max_created_time (str): Filter out assets with createdTime after this. Format is milliseconds since epoch.
+                min_last_updated_time(str):  Filter out assets with lastUpdatedtime before this. Format is milliseconds since epoch.
+                max_last_updated_time(str): Filter out assets with lastUpdatedtime after this. Format is milliseconds since epoch.
+
+            Keyword Args:
+                sort (str):             Field to be sorted.
+                dir (str):              Sort direction (desc or asc)
+                limit (int):            Return up to this many results. Max is 1000, default is 25.
+                offset (int):           Offset from the first result. Sum of limit and offset must not exceed 1000. Default is 0.
+                boost_name (str):       Whether or not boosting name field. This option is experimental and can be changed.
+            Returns:
+                v0_5.assets.AssetListResponse.
+            """
+        url = "/assets/search"
+        params = {
+            "name": name,
+            "description": description,
+            "query": query,
+            "metadata": json.dumps(metadata),
+            "assetSubtrees": asset_subtrees,
+            "minCreatedTime": min_created_time,
+            "maxCreatedTime": max_created_time,
+            "minLastUpdatedTime": min_last_updated_time,
+            "maxLastUpdatedTime": max_last_updated_time,
+            "sort": kwargs.get("sort"),
+            "dir": kwargs.get("dir"),
+            "limit": kwargs.get("limit", 1000),
+            "offset": kwargs.get("offset"),
+            "boostName": kwargs.get("boost_name"),
+        }
+
+        res = self._get(url, params=params)
+        return AssetListResponse(res.json())

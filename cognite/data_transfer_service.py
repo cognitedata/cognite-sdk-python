@@ -5,11 +5,10 @@ from io import BytesIO
 from typing import Dict, List, Union
 
 import pandas as pd
-from cognite import config
-from cognite._utils import InputError, get_aggregate_func_return_name, to_camel_case, to_snake_case
-from cognite.v05 import files
-from cognite.v05 import timeseries as time_series_v05
-from cognite.v06 import time_series as time_series_v06
+
+from cognite import CogniteClient
+from cognite.client._utils import get_aggregate_func_return_name, to_camel_case, to_snake_case
+from cognite.client.v0_6.time_series import TimeSeriesClientV0_6
 
 
 class TimeSeries:
@@ -209,39 +208,30 @@ class DataTransferService:
     Fetch timeseries from the api.
     """
 
-    def __init__(
-        self,
-        data_spec: DataSpec,
-        project: str = None,
-        api_key: str = None,
-        cookies: Dict = None,
-        num_of_processes: int = 10,
-    ):
+    def __init__(self, data_spec: DataSpec, api_key: str = None, cookies: Dict = None, num_of_workers: int = 10):
         """
         Args:
             data_spec (data_transfer_service.DataSpec):   Data Spec.
-            project (str):          Project name.
             api_key (str):          Api key.
             cookies (dict):         Cookies.
+            num_of_workers (int):   Number of workers to fetch data with.
         """
-        config_api_key, config_project = config.get_config_variables(api_key, project)
+        self.cognite_client = CogniteClient(api_key=api_key, cookies=cookies, num_of_workers=num_of_workers)
+        self.time_series_v06 = self.cognite_client.client_factory(TimeSeriesClientV0_6)
 
         if isinstance(data_spec, DataSpec):
             self.data_spec = deepcopy(data_spec)
         elif isinstance(data_spec, dict):
             self.data_spec = DataSpec.from_JSON(data_spec)
         else:
-            raise InputError("DataTransferService accepts a DataSpec instance or a json object representation of it.")
+            raise ValueError("DataTransferService accepts a DataSpec instance or a json object representation of it.")
         self.ts_data_specs = self.data_spec.time_series_data_specs
         self.files_data_spec = self.data_spec.files_data_spec
-        self.api_key = api_key or config_api_key
-        self.project = project or config_project
         self.cookies = cookies
-        self.num_of_processes = num_of_processes
 
     def get_time_series_name(self, ts_label: str, dataframe_label: str = "default"):
         if self.ts_data_specs is None:
-            raise InputError("Data spec does not contain any TimeSeriesDataSpecs")
+            raise ValueError("Data spec does not contain any TimeSeriesDataSpecs")
 
         tsds = None
         for ts_data_spec in self.ts_data_specs:
@@ -250,16 +240,16 @@ class DataTransferService:
 
         if tsds:
             # Temporary workaround that you cannot use get_datapoints_frame with ts id.
-            ts_res = time_series_v06.get_multiple_time_series_by_id(
-                ids=list(set([ts.id for ts in tsds.time_series])), api_key=self.api_key, project=self.project
+            ts_res = self.time_series_v06.get_multiple_time_series_by_id(
+                ids=list(set([ts.id for ts in tsds.time_series]))
             )
             id_to_name = {ts["id"]: ts["name"] for ts in ts_res.to_json()}
 
             for ts in tsds.time_series:
                 if ts.label == ts_label:
                     return id_to_name[ts.id]
-            raise InputError("Invalid time series label")
-        raise InputError("Invalid dataframe label")
+            raise ValueError("Invalid time series label")
+        raise ValueError("Invalid dataframe label")
 
     def get_dataframes(self, drop_agg_suffix: bool = True):
         """Return a dictionary of dataframes indexed by label - one per data spec.
@@ -273,7 +263,7 @@ class DataTransferService:
         if len(self.ts_data_specs) == 0:
             return {}
         if self.ts_data_specs is None:
-            raise InputError("Data spec does not contain any TimeSeriesDataSpecs")
+            raise ValueError("Data spec does not contain any TimeSeriesDataSpecs")
 
         dataframes = {}
         for tsds in self.ts_data_specs:
@@ -283,7 +273,7 @@ class DataTransferService:
 
     def get_dataframe(self, label: str = "default", drop_agg_suffix: bool = True):
         if self.ts_data_specs is None:
-            raise InputError("Data spec does not contain any TimeSeriesDataSpecs")
+            raise ValueError("Data spec does not contain any TimeSeriesDataSpecs")
 
         tsds = None
         for ts_data_spec in self.ts_data_specs:
@@ -292,8 +282,8 @@ class DataTransferService:
         if tsds:
             ts_list = []
             # Temporary workaround that you cannot use get_datapoints_frame with ts id.
-            ts_res = time_series_v06.get_multiple_time_series_by_id(
-                ids=list(set([ts.id for ts in tsds.time_series])), api_key=self.api_key, project=self.project
+            ts_res = self.time_series_v06.get_multiple_time_series_by_id(
+                ids=list(set([ts.id for ts in tsds.time_series]))
             )
             id_to_name = {ts["id"]: ts["name"] for ts in ts_res.to_json()}
 
@@ -308,21 +298,13 @@ class DataTransferService:
                 )
                 ts_list.append(ts_dict)
 
-            df = time_series_v05.get_datapoints_frame(
-                ts_list,
-                tsds.aggregates,
-                tsds.granularity,
-                tsds.start,
-                tsds.end,
-                api_key=self.api_key,
-                project=self.project,
-                cookies=self.cookies,
-                processes=self.num_of_processes,
+            df = self.cognite_client.datapoints.get_datapoints_frame(
+                ts_list, tsds.aggregates, tsds.granularity, tsds.start, tsds.end
             )
             df = self.__apply_missing_data_strategies(df, ts_list, tsds.missing_data_strategy)
             df = self.__convert_ts_names_to_labels(df, tsds, drop_agg_suffix)
             return df
-        raise InputError("Invalid label")
+        raise ValueError("Invalid label")
 
     def get_file(self, name):
         """Return files by name as specified in the DataSpec
@@ -331,12 +313,12 @@ class DataTransferService:
             name (str): Name of file
         """
         if not self.files_data_spec or not isinstance(self.files_data_spec, FilesDataSpec):
-            raise InputError("Data spec does not contain a FilesDataSpec")
+            raise ValueError("Data spec does not contain a FilesDataSpec")
         id = self.files_data_spec.file_ids.get(name)
         if id:
-            file_bytes = files.download_file(id, get_contents=True, api_key=self.api_key, project=self.project)
+            file_bytes = self.cognite_client.files.download_file(id, get_contents=True)
             return BytesIO(file_bytes)
-        raise InputError("Invalid name")
+        raise ValueError("Invalid name")
 
     def __convert_ts_names_to_labels(self, df: pd.DataFrame, tsds: TimeSeriesDataSpec, drop_agg_suffix: bool):
         name_to_label = {}
