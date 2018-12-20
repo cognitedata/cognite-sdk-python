@@ -9,7 +9,10 @@ class CogniteResponse:
         self.internal_representation = internal_representation
 
     def __str__(self):
-        return self.internal_representation["data"]["items"]
+        data = self.internal_representation.get("data", {})
+        if "items" in data:
+            return data["items"]
+        return data
 
     def next_cursor(self):
         """Returns next cursor to use for paging through results"""

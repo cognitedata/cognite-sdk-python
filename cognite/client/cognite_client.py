@@ -36,6 +36,37 @@ class _CogniteAPIVersion(enum.Enum):
 
 
 class CogniteClient:
+    """Main entrypoint into Cognite Python SDK.
+
+    All services are made available through this object. See examples below.
+
+    Args:
+        api_key (str): API key
+        project (str): Project. Defaults to project of given API key.
+        base_url (str): Base url to send requests to. Defaults to "https://api.cognitedata.com"
+        num_of_retries: Number of times to retry failed requests. Defaults to 5.
+                        Will only retry status codes 401, 429, 500, 502, and 503.
+        num_of_workers: Number of workers to spawn when parallelizing data fetching. Defaults to 10.
+        cookies: Cookies to append to all requests. Defaults to {}
+        headers: Additional headers to add to all requests. Defaults are:
+                 {"api-key": self.api_key, "content-type": "application/json", "accept": "application/json"}
+        log_level: Which log level to log request details to. Defaults to DEBUG.
+
+    Examples:
+            The CogniteClient is instantiated and used like this::
+
+                client = CogniteClient()
+                res = client.time_series.get_timeseries()
+                print(res.to_pandas())
+
+            Default configurations may be set using the following environment variables::
+
+                export COGNITE_API_KEY = <your-api-key>
+                COGNITE_BASE_URL = http://<host>:<port>
+                COGNITE_NUM_RETRIES = <number-of-retries>
+                COGNITE_NUM_WORKERS = <number-of-workers>
+    """
+
     def __init__(
         self,
         api_key: str = None,
@@ -47,32 +78,6 @@ class CogniteClient:
         headers: Dict[str, str] = None,
         log_level: str = None,
     ):
-        """Main entrypoint into Cognite Python SDK.
-
-        Args:
-            api_key (str): API key
-            project (str): Project. Defaults to project of given API key.
-            base_url (str): Base url to send requests to. Defaults to "https://api.cognitedata.com"
-            num_of_retries: Number of times to retry failed requests. Defaults to 5.
-                            Will only retry status codes 401, 429, 500, 502, and 503.
-            num_of_workers: Number of workers to spawn when parallelizing data fetching. Defaults to 10.
-            cookies: Cookies to append to all requests. Defaults to {}
-            headers: Additional headers to add to all requests. Defaults are:
-                     {"api-key": self.api_key, "content-type": "application/json", "accept": "application/json"}
-            log_level: Which log level to log request details to. Defaults to DEBUG.
-
-        Attributes:
-            assets: Assets client
-            analytics: Analytics client
-            datapoints: Datapoints client
-            events: Events client
-            files: Files client
-            login: Login client
-            raw: Raw client
-            sequences: Sequences client
-            tag_matching: Tag matching client
-            time_series: Time series client
-        """
         self.__api_key = api_key or ENVIRONMENT_API_KEY
         if self.__api_key is None:
             raise ValueError("No Api Key has been specified")
