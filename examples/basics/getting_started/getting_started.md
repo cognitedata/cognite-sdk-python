@@ -5,7 +5,7 @@
 Getting started 
 ===========================
 
-A thorough description of the setups required for the Model Hosting tutorials or pattern search example, for Windows, Ubuntu and Mac.
+A description of the setups required for the Model Hosting tutorials or pattern search example, for Windows, Ubuntu and Mac.
 Obtaining an API key and a project name from an administrator is a prerequisite for model hosting. 
 
 
@@ -16,17 +16,17 @@ Obtaining an API key and a project name from an administrator is a prerequisite 
 
 - Add the API key as an environment variable for security purposes. I named it "API_KEY" in the example below
 
-![](.getting_started_images\263a20db.png)
+![](.getting_started_images/263a20db.png)
 
 #### Installation of Jupyter notebook through Anaconda
 In order to start the tutorials you will need a programming environment. I will present how to use Jupyter Notebook through Anaconda, but feel free to use another programming environment. 
 - Install Anaconda Python 3.7 version from the [Anaconda](https://www.anaconda.com/download/) website.
 
-![](.getting_started_images\42da0d55.png)
+![](.getting_started_images/42da0d55.png)
 
 - Launch Anaconda Navigator
 
-![](.getting_started_images\54dbaa5a.png)
+![](.getting_started_images/54dbaa5a.png)
 
 - Install Jupyter notebook
 - Launch Jupyter notebook
@@ -34,11 +34,11 @@ In order to start the tutorials you will need a programming environment. I will 
 
 - Follow the instructions:
 
-![](.getting_started_images\8a6974a2.png)
+![](.getting_started_images/8a6974a2.png)
 
 - Create a new notebook from this page in your browser
 
-![](.getting_started_images\a7fe6cf3.png)
+![](.getting_started_images/a7fe6cf3.png)
 
 - Install the Cognite SDK and other packages missing packages (e.g. matplotlib).
  The method below can be executed directly into the Jupyter notebook, and also work if the notebook is in a virtual environment. 
