@@ -129,7 +129,7 @@ class EventsClientV0_5(APIClient):
                 "assetId": asset_id,
                 "sort": kwargs.get("sort"),
                 "cursor": kwargs.get("cursor"),
-                "limit": kwargs.get("limit", 25) if not kwargs.get("autopaging") else self.LIMIT_AGG,
+                "limit": kwargs.get("limit", 25) if not kwargs.get("autopaging") else self._LIMIT_AGG,
             }
         else:
             params = {
@@ -138,7 +138,7 @@ class EventsClientV0_5(APIClient):
                 "assetId": asset_id,
                 "sort": kwargs.get("sort"),
                 "cursor": kwargs.get("cursor"),
-                "limit": kwargs.get("limit", 25) if not kwargs.get("autopaging") else self.LIMIT_AGG,
+                "limit": kwargs.get("limit", 25) if not kwargs.get("autopaging") else self._LIMIT_AGG,
                 "hasDescription": kwargs.get("has_description"),
                 "minStartTime": kwargs.get("min_start_time"),
                 "maxStartTime": kwargs.get("max_start_time"),

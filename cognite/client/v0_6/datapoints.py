@@ -140,7 +140,7 @@ class DatapointsClientV0_6(APIClient):
         """
         url = "/timeseries/{}/data".format(id)
 
-        limit = self.LIMIT if aggregates is None else self.LIMIT_AGG
+        limit = self._LIMIT if aggregates is None else self._LIMIT_AGG
 
         params = {
             "aggregates": aggregates,

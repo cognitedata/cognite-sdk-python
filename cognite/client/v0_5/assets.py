@@ -119,7 +119,7 @@ class AssetsClientV0_5(APIClient):
             "depth": depth,
             "fuzziness": fuzziness,
             "cursor": kwargs.get("cursor"),
-            "limit": kwargs.get("limit", self.LIMIT) if not kwargs.get("autopaging") else self.LIMIT,
+            "limit": kwargs.get("limit", self._LIMIT) if not kwargs.get("autopaging") else self._LIMIT,
         }
         res = self._get(url, params=params)
         assets = []
@@ -173,7 +173,7 @@ class AssetsClientV0_5(APIClient):
             output formats.
         """
         url = "/assets/{}/subtree".format(asset_id)
-        params = {"depth": depth, "limit": kwargs.get("limit", self.LIMIT), "cursor": kwargs.get("cursor")}
+        params = {"depth": depth, "limit": kwargs.get("limit", self._LIMIT), "cursor": kwargs.get("cursor")}
         res = self._get(url, params=params)
         return AssetListResponse(res.json())
 

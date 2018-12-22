@@ -1,8 +1,7 @@
 class CogniteResponse:
     """Cognite Response
 
-    This class provides a skeleton for all data objects in this module. All response objects should inherit
-    this class.
+    All responses inherit from this class.
     """
 
     def __init__(self, internal_representation):

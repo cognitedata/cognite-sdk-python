@@ -249,7 +249,7 @@ class DatapointsClientV0_5(APIClient):
         url = "/timeseries/data/{}".format(quote(name, safe=""))
 
         use_protobuf = kwargs.get("protobuf", True) and aggregates is None
-        limit = self.LIMIT if aggregates is None else self.LIMIT_AGG
+        limit = self._LIMIT if aggregates is None else self._LIMIT_AGG
 
         params = {
             "aggregates": aggregates,
@@ -486,9 +486,9 @@ class DatapointsClientV0_5(APIClient):
         items = []
         for dpq in datapoints_queries:
             if dpq.aggregates is None and aggregates is None:
-                dpq.limit = int(self.LIMIT / num_of_dpqs_raw)
+                dpq.limit = int(self._LIMIT / num_of_dpqs_raw)
             else:
-                dpq.limit = int(self.LIMIT_AGG / num_of_dpqs_with_agg)
+                dpq.limit = int(self._LIMIT_AGG / num_of_dpqs_with_agg)
             items.append(dpq.__dict__)
         body = {
             "items": items,
@@ -660,7 +660,7 @@ class DatapointsClientV0_5(APIClient):
             else:
                 num_aggregates += len(ts["aggregates"])
 
-        per_tag_limit = int(self.LIMIT / num_aggregates)
+        per_tag_limit = int(self._LIMIT / num_aggregates)
 
         body = {
             "items": [

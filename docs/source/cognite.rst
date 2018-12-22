@@ -4,6 +4,13 @@ Cognite Client
 --------------
 .. autoclass:: cognite.client.cognite_client.CogniteClient
 
+Responses
+---------
+.. autoclass:: cognite.client.v0_5.CogniteResponse
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Exceptions
 ----------
 .. automodule:: cognite.client.exceptions
