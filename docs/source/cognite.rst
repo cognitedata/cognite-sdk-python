@@ -18,8 +18,8 @@ Exceptions
     :undoc-members:
     :show-inheritance:
 
-API stable
-==========
+API
+===
 Assets
 ------
 .. automodule:: cognite.client.stable.assets
@@ -62,8 +62,8 @@ Timeseries
     :undoc-members:
     :show-inheritance:
 
-API v0.6
-========
+Experimental
+============
 Analytics
 ---------
 Models
