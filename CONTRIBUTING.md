@@ -8,7 +8,7 @@ $ pipenv shell
 ```
 
 ### Testing
-Set up tests for all new functionality. Running the tests will require setting the environment variable 'COGNITE_TEST_API_KEY'.
+Set up tests for all new functionality. Running the tests will require setting the environment variable 'COGNITE_API_KEY'.
 
 Initiate unit tests by running the following command from the root directory:
 
@@ -39,8 +39,7 @@ Format:
 MAJOR.MINOR[.PATCH]
 ```
 Increment the:
-* MAJOR version when you make incompatible API changes,
-* MINOR version when you add functionality in a backwards-compatible manner, and
-* PATCH version when you make backwards-compatible bug fixes.
+* MINOR version when you add functionality in a backwards-incompatible manner
+* PATCH version when you make backwards-compatible bug fixes or minor additions.
 
 For more information on versioning see https://semver.org/
