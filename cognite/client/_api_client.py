@@ -47,6 +47,7 @@ def _raise_API_error(res):
 
 
 def _log_request(log_level, method, url, **kwargs):
+    print(url)
     log.log(logging.getLevelName(log_level), "HTTP/1.1 {} {}".format(method, url), extra=kwargs)
 
 
@@ -79,6 +80,7 @@ class APIClient:
 
     def __init__(
         self,
+        version: str = None,
         project: str = None,
         base_url: str = None,
         num_of_retries: int = None,
@@ -88,7 +90,8 @@ class APIClient:
         log_level: str = None,
     ):
         self._project = project
-        self._base_url = base_url
+        __base_path = f"/api/{version}/projects/{project}" if version else ""
+        self._base_url = base_url + __base_path
         self._num_of_retries = num_of_retries
         self._num_of_workers = num_of_workers
         self._cookies = cookies
@@ -131,3 +134,29 @@ class APIClient:
         """Perform a PUT request with a predetermined number of retries."""
         _log_request(self._log_level, "PUT", url, body=body, headers=headers, cookies=self._cookies)
         return requests.put(url, data=json.dumps(body), headers=headers, cookies=self._cookies)
+
+
+class CogniteResponse:
+    """Cognite Response
+
+    All responses inherit from this class.
+    """
+
+    def __init__(self, internal_representation):
+        self.internal_representation = internal_representation
+
+    def __str__(self):
+        data = self.internal_representation.get("data", {})
+        if "items" in data:
+            return data["items"]
+        return data
+
+    def next_cursor(self):
+        """Returns next cursor to use for paging through results"""
+        if self.internal_representation.get("data"):
+            return self.internal_representation.get("data").get("nextCursor")
+
+    def previous_cursor(self):
+        """Returns previous cursor"""
+        if self.internal_representation.get("data"):
+            return self.internal_representation.get("data").get("previousCursor")

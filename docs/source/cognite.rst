@@ -6,7 +6,7 @@ Cognite Client
 
 Responses
 ---------
-.. autoclass:: cognite.client.v0_5.CogniteResponse
+.. autoclass:: cognite.client._api_client.CogniteResponse
     :members:
     :undoc-members:
     :show-inheritance:
@@ -18,46 +18,46 @@ Exceptions
     :undoc-members:
     :show-inheritance:
 
-API v0.5
-=============
+API stable
+==========
 Assets
 ------
-.. automodule:: cognite.client.v0_5.assets
+.. automodule:: cognite.client.stable.assets
     :members:
     :undoc-members:
     :show-inheritance:
 
 Events
 ------
-.. automodule:: cognite.client.v0_5.events
+.. automodule:: cognite.client.stable.events
     :members:
     :undoc-members:
     :show-inheritance:
 
 Files
 -----
-.. automodule:: cognite.client.v0_5.files
+.. automodule:: cognite.client.stable.files
     :members:
     :undoc-members:
     :show-inheritance:
 
 Raw
 ----
-.. automodule:: cognite.client.v0_5.raw
+.. automodule:: cognite.client.stable.raw
     :members:
     :undoc-members:
     :show-inheritance:
 
 Tagmatching
 -----------
-.. automodule:: cognite.client.v0_5.tagmatching
+.. automodule:: cognite.client.stable.tagmatching
     :members:
     :undoc-members:
     :show-inheritance:
 
 Timeseries
 ----------
-.. automodule:: cognite.client.v0_5.timeseries
+.. automodule:: cognite.client.stable.timeseries
     :members:
     :undoc-members:
     :show-inheritance:
@@ -68,28 +68,28 @@ Analytics
 ---------
 Models
 ^^^^^^
-.. automodule:: cognite.client.v0_6.analytics.models
+.. automodule:: cognite.client.experimental.analytics.models
     :members:
     :undoc-members:
     :show-inheritance:
 
 Time Series
 -----------
-.. automodule:: cognite.client.v0_6.time_series
+.. automodule:: cognite.client.experimental.time_series
     :members:
     :undoc-members:
     :show-inheritance:
 
 Datapoints
 ----------
-.. automodule:: cognite.client.v0_6.datapoints
+.. automodule:: cognite.client.experimental.datapoints
     :members:
     :undoc-members:
     :show-inheritance:
 
 Sequences
 ----------
-.. automodule:: cognite.client.v0_6.sequences
+.. automodule:: cognite.client.experimental.sequences
     :members:
     :undoc-members:
     :show-inheritance:

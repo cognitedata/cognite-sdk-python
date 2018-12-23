@@ -8,7 +8,6 @@ import pandas as pd
 
 from cognite import CogniteClient
 from cognite.client._utils import get_aggregate_func_return_name, to_camel_case, to_snake_case
-from cognite.client.v0_6.time_series import TimeSeriesClientV0_6
 
 
 class TimeSeries:
@@ -217,7 +216,6 @@ class DataTransferService:
             num_of_workers (int):   Number of workers to fetch data with.
         """
         self.cognite_client = CogniteClient(api_key=api_key, cookies=cookies, num_of_workers=num_of_workers)
-        self.time_series_v06 = self.cognite_client.client_factory(TimeSeriesClientV0_6)
 
         if isinstance(data_spec, DataSpec):
             self.data_spec = deepcopy(data_spec)
@@ -240,7 +238,7 @@ class DataTransferService:
 
         if tsds:
             # Temporary workaround that you cannot use get_datapoints_frame with ts id.
-            ts_res = self.time_series_v06.get_multiple_time_series_by_id(
+            ts_res = self.cognite_client.experimental.time_series.get_multiple_time_series_by_id(
                 ids=list(set([ts.id for ts in tsds.time_series]))
             )
             id_to_name = {ts["id"]: ts["name"] for ts in ts_res.to_json()}
@@ -282,7 +280,7 @@ class DataTransferService:
         if tsds:
             ts_list = []
             # Temporary workaround that you cannot use get_datapoints_frame with ts id.
-            ts_res = self.time_series_v06.get_multiple_time_series_by_id(
+            ts_res = self.cognite_client.experimental.time_series.get_multiple_time_series_by_id(
                 ids=list(set([ts.id for ts in tsds.time_series]))
             )
             id_to_name = {ts["id"]: ts["name"] for ts in ts_res.to_json()}

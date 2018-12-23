@@ -7,8 +7,8 @@ from requests.structures import CaseInsensitiveDict
 
 from cognite import APIError, CogniteClient
 from cognite.client._utils import generate_random_string, get_time_w_offset
-from cognite.client.v0_5.datapoints import Datapoint
-from cognite.client.v0_5.timeseries import TimeSeries
+from cognite.client.stable.datapoints import Datapoint
+from cognite.client.stable.timeseries import TimeSeries
 
 log = logging.getLogger(__name__)
 

@@ -1,38 +1,28 @@
-import enum
+import functools
 import logging
 import os
-import re
-from typing import Dict, List
+from typing import Any, Dict
 
-from cognite.client.v0_5.assets import AssetsClientV0_5
-from cognite.client.v0_5.datapoints import DatapointsClientV0_5
-from cognite.client.v0_5.events import EventsClientV0_5
-from cognite.client.v0_5.files import FilesClientV0_5
-from cognite.client.v0_5.login import LoginClientV0_5
-from cognite.client.v0_5.raw import RawClientV0_5
-from cognite.client.v0_5.tagmatching import TagMatchingClientV0_5
-from cognite.client.v0_5.timeseries import TimeSeriesClientV0_5
-from cognite.client.v0_6.analytics import AnalyticsClient
-from cognite.client.v0_6.sequences import SequencesClientV0_6
+from cognite.client._api_client import APIClient
+from cognite.client.experimental import ExperimentalClient
+from cognite.client.stable.assets import AssetsClient
+from cognite.client.stable.datapoints import DatapointsClient
+from cognite.client.stable.events import EventsClient
+from cognite.client.stable.files import FilesClient
+from cognite.client.stable.login import LoginClient
+from cognite.client.stable.raw import RawClient
+from cognite.client.stable.tagmatching import TagMatchingClient
+from cognite.client.stable.timeseries import TimeSeriesClient
 
 DEFAULT_BASE_URL = "https://api.cognitedata.com"
 DEFAULT_NUM_OF_RETRIES = 5
 DEFAULT_NUM_OF_WORKERS = 10
-DEFAULT_LOG_LEVEL = "DEBUG"
+DEFAULT_LOG_LEVEL = "INFO"
 
 ENVIRONMENT_API_KEY = os.getenv("COGNITE_API_KEY")
 ENVIRONMENT_BASE_URL = os.getenv("COGNITE_BASE_URL")
 ENVIRONMENT_NUM_OF_RETRIES = os.getenv("COGNITE_NUM_RETRIES")
 ENVIRONMENT_NUM_OF_WORKERS = os.getenv("COGNITE_NUM_WORKERS")
-
-
-class _CogniteAPIVersion(enum.Enum):
-    V0_5 = "0.5"
-    V0_6 = "0.6"
-
-    @staticmethod
-    def get_versions() -> List[str]:
-        return [e.value for e in _CogniteAPIVersion]
 
 
 class CogniteClient:
@@ -58,6 +48,18 @@ class CogniteClient:
                 client = CogniteClient()
                 res = client.time_series.get_timeseries()
                 print(res.to_pandas())
+
+            Certain experimental features are made available through this client as follows::
+
+                client = CogniteClient()
+                res = client.experimental.analytics.models.get_models()
+                print(res)
+
+            Certain experimental features are made available through this client as follows::
+
+                client = CogniteClient()
+                res = client.experimental.analytics.models.get_models()
+                print(res)
 
             Default configurations may be set using the following environment variables::
 
@@ -97,72 +99,80 @@ class CogniteClient:
         self._log_level = log_level or DEFAULT_LOG_LEVEL
         __valid_log_levels = [logging.getLevelName(i) for i in range(10, 51, 10)]
         if self._log_level not in __valid_log_levels:
-            raise ValueError(f"{self.log_level} is not a valid log level")
+            raise ValueError(f"{self._log_level} is not a valid log level")
 
         self._project = project
         if project is None:
-            __login_client = self.client_factory(LoginClientV0_5)
+            __login_client = self.client_factory(LoginClient)
             self._project = __login_client.status().project
 
-    @property
-    def assets(self) -> AssetsClientV0_5:
-        return self.client_factory(AssetsClientV0_5)
+        self._api_client = self.client_factory(APIClient)
+
+        self.get.__signature__ = self._api_client._get.__signature__
 
     @property
-    def analytics(self) -> AnalyticsClient:
-        return AnalyticsClient(self)
+    def assets(self) -> AssetsClient:
+        return self.client_factory(AssetsClient, "0.5")
 
     @property
-    def datapoints(self) -> DatapointsClientV0_5:
-        return self.client_factory(DatapointsClientV0_5)
+    def datapoints(self) -> DatapointsClient:
+        return self.client_factory(DatapointsClient, "0.5")
 
     @property
-    def events(self) -> EventsClientV0_5:
-        return self.client_factory(EventsClientV0_5)
+    def events(self) -> EventsClient:
+        return self.client_factory(EventsClient, "0.5")
 
     @property
-    def files(self) -> FilesClientV0_5:
-        return self.client_factory(FilesClientV0_5)
+    def files(self) -> FilesClient:
+        return self.client_factory(FilesClient, "0.5")
 
     @property
-    def login(self) -> LoginClientV0_5:
-        return self.client_factory(LoginClientV0_5)
+    def login(self) -> LoginClient:
+        return self.client_factory(LoginClient)
 
     @property
-    def raw(self) -> RawClientV0_5:
-        return self.client_factory(RawClientV0_5)
+    def raw(self) -> RawClient:
+        return self.client_factory(RawClient, "0.5")
 
     @property
-    def sequences(self) -> SequencesClientV0_6:
-        return self.client_factory(SequencesClientV0_6)
+    def tag_matching(self) -> TagMatchingClient:
+        return self.client_factory(TagMatchingClient, "0.5")
 
     @property
-    def tag_matching(self) -> TagMatchingClientV0_5:
-        return self.client_factory(TagMatchingClientV0_5)
+    def time_series(self) -> TimeSeriesClient:
+        return self.client_factory(TimeSeriesClient, "0.5")
 
     @property
-    def time_series(self) -> TimeSeriesClientV0_5:
-        return self.client_factory(TimeSeriesClientV0_5)
+    def experimental(self) -> ExperimentalClient:
+        return ExperimentalClient(self.client_factory)
 
-    def client_factory(self, client):
-        version_pattern = r".v(\d+)_(\d+)."
+    def get(self, url, params=None, headers=None):
+        return self._api_client._get(url, params, headers)
 
-        res = re.search(version_pattern, client.__module__)
-        major = res.group(1)
-        minor = res.group(2)
-        version = f"{major}.{minor}"
+    def post(
+        self,
+        url: str,
+        body: Dict[str, Any],
+        params: Dict[str, Any] = None,
+        use_gzip: bool = False,
+        headers: Dict[str, Any] = None,
+    ):
+        return self._api_client._post(url, body, params, use_gzip, headers)
 
-        base_url = self._base_url
-        if self._project is not None:
-            base_url = base_url + f"/api/{version}/projects/{self._project}"
+    def put(self, url: str, body: Dict[str, Any] = None, headers: Dict[str, Any] = None):
+        return self._api_client._post(url, body, headers)
 
-        config = {
-            "project": self._project,
-            "base_url": base_url,
-            "num_of_retries": self._num_of_retries,
-            "num_of_workers": self._num_of_workers,
-            "cookies": self._cookies,
-            "headers": self._headers,
-            "log_level": self._log_level,
-        }
-        return client(**config)
+    def delete(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
+        return self._api_client._delete(url, params, headers)
+
+    def client_factory(self, client, version=None):
+        return client(
+            version=version,
+            project=self._project,
+            base_url=self._base_url,
+            num_of_retries=self._num_of_retries,
+            num_of_workers=self._num_of_workers,
+            cookies=self._cookies,
+            headers=self._headers,
+            log_level=self._log_level,
+        )

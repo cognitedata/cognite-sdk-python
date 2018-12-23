@@ -3,7 +3,7 @@ from datetime import datetime
 import pytest
 
 import cognite.client._utils as utils
-from cognite.client.v0_5.datapoints import Datapoint, TimeseriesWithDatapoints
+from cognite.client.stable.datapoints import Datapoint, TimeseriesWithDatapoints
 
 
 class TestConversions:
