@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-"""Tag Matching
-
-This module mirrors the Tag Matching API. It allows the user to search for tag id matches.
-"""
 import pandas as pd
 
 from cognite.client._api_client import APIClient, CogniteResponse

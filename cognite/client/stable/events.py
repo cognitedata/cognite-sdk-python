@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-"""Events
-
-This module mirrors the Events API. It allows you to get, post, update, and delete events.
-"""
 import json
 from copy import deepcopy
 from typing import Dict, List

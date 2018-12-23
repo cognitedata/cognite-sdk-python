@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-"""Raw
-
-This module mirrors the Raw API. It allows the user to handle raw data.
-"""
 import json
 from typing import Dict, List
 

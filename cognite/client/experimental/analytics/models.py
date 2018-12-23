@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-"""Models.
-
-This module mirrors the Models API.
-"""
 from typing import Any, Dict, List
 
 import requests

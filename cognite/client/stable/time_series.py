@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-"""Time Series
-
-This module mirrors the Timeseries API. It allows you to fetch data from the api and output it in various formats.
-"""
 from copy import deepcopy
 from typing import Dict, List
 from urllib.parse import quote
@@ -90,7 +86,7 @@ class TimeSeriesClient(APIClient):
                                     disregarded. Defaults to False.
 
         Returns:
-            stable.dto.TimeSeriesResponse: A data object containing the requested timeseries with several getter methods with different
+            stable.time_series.TimeSeriesResponse: A data object containing the requested timeseries with several getter methods with different
             output formats.
 
         Examples:
@@ -135,7 +131,7 @@ class TimeSeriesClient(APIClient):
         """Create a new time series.
 
         Args:
-            time_series (list[stable.dto.TimeSeries]):   List of time series data transfer objects to create.
+            time_series (list[stable.time_series.TimeSeries]):   List of time series data transfer objects to create.
 
         Returns:
             An empty response.
@@ -164,7 +160,7 @@ class TimeSeriesClient(APIClient):
         For each field that can be updated, a null value indicates that nothing should be done.
 
         Args:
-            time_series (list[stable.dto.TimeSeries]):   List of time series data transfer objects to update.
+            time_series (list[stable.time_series.TimeSeries]):   List of time series data transfer objects to update.
 
         Returns:
             An empty response.

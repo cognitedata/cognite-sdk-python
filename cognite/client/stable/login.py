@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-"""Login.
-
-This module mirrors the Login API.
-"""
 from cognite.client._api_client import APIClient, CogniteResponse
 
 
@@ -26,8 +22,10 @@ class LoginStatusResponse(CogniteResponse):
 class LoginClient(APIClient):
     def status(self) -> LoginStatusResponse:
         """Check login status
+
         Returns:
             client.stable.login.LoginStatusResponse
+
         Examples:
             Check the current login status::
 

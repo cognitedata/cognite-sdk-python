@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-"""Sequences
-
-This module mirrors the Sequences API.
-"""
 import json
 from typing import Dict, List
 

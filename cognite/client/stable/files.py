@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-"""Files
-
-This module mirrors the Files API. It allows you to manage files in GCP.
-"""
-
 import os
 import warnings
 from copy import deepcopy

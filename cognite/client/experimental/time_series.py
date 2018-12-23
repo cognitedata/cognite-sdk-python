@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-"""Timeseries
-
-This module mirrors the Timeseries API. It allows you to fetch data from the api and output it in various formats.
-"""
 from copy import deepcopy
 from typing import List
 

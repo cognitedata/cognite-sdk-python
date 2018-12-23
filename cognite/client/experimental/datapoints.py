@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-"""Datapoints
-
-This module mirrors the Datapoints API. It allows you to fetch data from the api and output it in various formats.
-"""
 from concurrent.futures import ThreadPoolExecutor as Pool
 from functools import partial
 from typing import List

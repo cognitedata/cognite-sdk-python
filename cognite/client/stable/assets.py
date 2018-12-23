@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-"""Assets.
-
-This module mirrors the Assets API.
-"""
 import json
 from typing import Dict, List
 
