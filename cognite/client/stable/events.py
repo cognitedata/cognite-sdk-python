@@ -93,6 +93,13 @@ class EventsClient(APIClient):
 
         Returns:
             stable.events.EventResponse: A data object containing the requested event.
+
+        Examples:
+            Getting an event::
+
+                client = CogniteClient()
+                res = client.events.get_event(123)
+                print(res)
         """
         url = "/events/{}".format(event_id)
         res = self._get(url)
@@ -118,6 +125,13 @@ class EventsClient(APIClient):
 
         Returns:
             stable.events.EventListResponse: A data object containing the requested event.
+
+        Examples:
+            Getting all events of a given type::
+
+                client = CogniteClient()
+                res = client.events.get_events(type="a special type", autopaging=True)
+                print(res.to_pandas())
         """
         url = "/events"
 
@@ -170,6 +184,17 @@ class EventsClient(APIClient):
 
         Returns:
             stable.events.EventListResponse
+
+        Examples:
+            Posting two events and linking them to an asset::
+
+                from cognite.client.stable.events import Event
+                client = CogniteClient()
+
+                my_events = [Event(start_time=1, end_time=10, type="workorder", asset_ids=[123]),
+                            Event(start_time=11, end_time=20, type="workorder", asset_ids=[123])]
+                res = client.events.post_events(my_events)
+                print(res)
         """
         url = "/events"
         body = {"items": [event.__dict__ for event in events]}
@@ -184,6 +209,12 @@ class EventsClient(APIClient):
 
         Returns:
             An empty response.
+
+        Examples:
+            Deleting a list of events::
+
+                client = CogniteClient()
+                res = client.events.delete_events(event_ids=[1,2,3,4,5])
         """
         url = "/events/delete"
         body = {"items": event_ids}
@@ -210,36 +241,40 @@ class EventsClient(APIClient):
     ):
         """Search for events.
 
-            Args:
-                description str:   Prefix and fuzzy search on description.
+        Args:
+            description (str):   Prefix and fuzzy search on description.
+            type (str):             Filter on type (case-sensitive).
+            subtype (str):          Filter on subtype (case-sensitive).
+            min_start_time (str):   Filter out events with startTime before this. Format is milliseconds since epoch.
+            max_start_time (str):   Filter out events with startTime after this. Format is milliseconds since epoch.
+            min_end_time (str):     Filter out events with endTime before this. Format is milliseconds since epoch.
+            max_end_time (str):     Filter out events with endTime after this. Format is milliseconds since epoch.
+            min_created_time(str):  Filter out events with createdTime before this. Format is milliseconds since epoch.
+            max_created_time (str): Filter out events with createdTime after this. Format is milliseconds since epoch.
+            min_last_updated_time(str):  Filter out events with lastUpdatedtime before this. Format is milliseconds since epoch.
+            max_last_updated_time(str): Filter out events with lastUpdatedtime after this. Format is milliseconds since epoch.
+            metadata (dict):        Filter out events that do not match these metadata fields and values (case-sensitive).
+                                    Format is {"key1":"value1","key2":"value2"}.
+            asset_ids (List[int]):  Filter out events that are not linked to any of these assets. Format is [12,345,6,7890].
+            asset_subtrees (List[int]): Filter out events that are not linked to assets in the subtree rooted at these assets.
+                                        Format is [12,345,6,7890].
 
-            Keyword Args:
-                api_key (str):          Your api-key.
-                project (str):          Project name.
-                type (str):             Filter on type (case-sensitive).
-                subtype (str):          Filter on subtype (case-sensitive).
-                min_start_time (str):   Filter out events with startTime before this. Format is milliseconds since epoch.
-                max_start_time (str):   Filter out events with startTime after this. Format is milliseconds since epoch.
-                min_end_time (str):     Filter out events with endTime before this. Format is milliseconds since epoch.
-                max_end_time (str):     Filter out events with endTime after this. Format is milliseconds since epoch.
-                min_created_time(str):  Filter out events with createdTime before this. Format is milliseconds since epoch.
-                max_created_time (str): Filter out events with createdTime after this. Format is milliseconds since epoch.
-                min_last_updated_time(str):  Filter out events with lastUpdatedtime before this. Format is milliseconds since epoch.
-                max_last_updated_time(str): Filter out events with lastUpdatedtime after this. Format is milliseconds since epoch.
-                metadata (dict):        Filter out events that do not match these metadata fields and values (case-sensitive).
-                                        Format is {"key1":"value1","key2":"value2"}.
-                asset_ids (List[int]):  Filter out events that are not linked to any of these assets. Format is [12,345,6,7890].
-                asset_subtrees (List[int]): Filter out events that are not linked to assets in the subtree rooted at these assets.
-                                            Format is [12,345,6,7890].
+        Keyword Args:
+            sort (str):             Field to be sorted.
+            dir (str):              Sort direction (desc or asc)
+            limit (int):            Return up to this many results. Max is 1000, default is 25.
+            offset (int):           Offset from the first result. Sum of limit and offset must not exceed 1000. Default is 0.
 
-            Keyword Args:
-                sort (str):             Field to be sorted.
-                dir (str):              Sort direction (desc or asc)
-                limit (int):            Return up to this many results. Max is 1000, default is 25.
-                offset (int):           Offset from the first result. Sum of limit and offset must not exceed 1000. Default is 0.
-            Returns:
-                stable.events.EventListResponse.
-            """
+        Returns:
+            stable.events.EventListResponse.
+
+        Examples:
+            Perform a fuzzy search on event descriptions and get the first 3 results::
+
+                client = CogniteClient()
+                res = client.events.search_for_events(description="Something like this", limit=10)
+                print(res)
+        """
         url = "/events/search"
         params = {
             "description": description,

@@ -28,7 +28,7 @@ class TestTimeseries:
 
     @pytest.fixture(scope="class", params=[True, False])
     def get_timeseries_response_obj(self, request):
-        yield timeseries.get_timeseries(prefix=TS_NAME, limit=1, include_metadata=request.param)
+        yield timeseries.get_time_series(prefix=TS_NAME, limit=1, include_metadata=request.param)
 
     def test_timeseries_unit_correct(self, get_timeseries_response_obj):
         assert get_timeseries_response_obj.to_json()[0]["unit"] == "celsius"
@@ -39,7 +39,7 @@ class TestTimeseries:
         assert isinstance(get_timeseries_response_obj.to_json()[0], dict)
 
     def test_get_timeseries_no_results(self):
-        result = timeseries.get_timeseries(prefix="not_a_timeseries_prefix")
+        result = timeseries.get_time_series(prefix="not_a_timeseries_prefix")
         assert result.to_pandas().empty
         assert not result.to_json()
 

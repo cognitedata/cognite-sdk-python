@@ -28,5 +28,12 @@ class LoginClient(APIClient):
         """Check login status
         Returns:
             client.stable.login.LoginStatusResponse
+        Examples:
+            Check the current login status::
+
+                client = CogniteClient()
+                login_status = client.login.status()
+                print(login_status)
+
         """
         return LoginStatusResponse(self._get("/login/status").json())

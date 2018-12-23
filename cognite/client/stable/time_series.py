@@ -67,10 +67,10 @@ class TimeSeries:
 
 
 class TimeSeriesClient(APIClient):
-    def get_timeseries(
+    def get_time_series(
         self, prefix=None, description=None, include_metadata=False, asset_id=None, path=None, **kwargs
     ) -> TimeSeriesResponse:
-        """Returns a TimeseriesObject containing the requested timeseries.
+        """Returns an object containing the requested timeseries.
 
         Args:
             prefix (str):           List timeseries with this prefix in the name.
@@ -92,6 +92,13 @@ class TimeSeriesClient(APIClient):
         Returns:
             stable.dto.TimeSeriesResponse: A data object containing the requested timeseries with several getter methods with different
             output formats.
+
+        Examples:
+            Get all time series for a given asset::
+
+                client = CogniteClient()
+                res = client.time_series.get_time_series(asset_id=123, autopaging=True)
+                print(res.to_pandas())
         """
         url = "/timeseries"
         params = {
@@ -132,6 +139,16 @@ class TimeSeriesClient(APIClient):
 
         Returns:
             An empty response.
+
+        Examples:
+            Create a new time series::
+
+                from cognite.client.stable.time_series import TimeSeries
+                client = CogniteClient()
+
+                my_time_series = [TimeSeries(name="my_ts_1")]
+
+                client.time_series.post_time_series(my_time_series)
         """
 
         url = "/timeseries"
@@ -151,6 +168,16 @@ class TimeSeriesClient(APIClient):
 
         Returns:
             An empty response.
+
+        Examples:
+            Update the unit of a time series::
+
+                from cognite.client.stable.time_series import TimeSeries
+                client = CogniteClient()
+
+                my_time_series = [TimeSeries(name="my_ts_1", unit="celsius")]
+
+                client.time_series.update_time_series(my_time_series)
         """
 
         url = "/timeseries"
@@ -168,6 +195,13 @@ class TimeSeriesClient(APIClient):
 
         Returns:
             An empty response.
+
+        Examples:
+            Delete a time series by name::
+
+                client = CogniteClient()
+
+                client.time_series.delete_time_series(name="my_ts_1")
         """
         url = "/timeseries/{}".format(quote(name, safe=""))
 

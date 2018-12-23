@@ -100,6 +100,14 @@ class FilesClient(APIClient):
 
         Returns:
             Dict: A dictionary containing the field fileId and optionally also uploadURL if file_path is omitted.
+
+        Examples:
+            Upload a file and link it to an asset::
+
+                client = CogniteClient()
+                res = client.files.upload_file(file_name="myfile", file_path="/path/to/my/file.txt",
+                        content_type="text/plain", asset_ids=[123])
+                file_id = res["fileId"]
         """
         url = "/files/initupload"
 
@@ -138,6 +146,19 @@ class FilesClient(APIClient):
 
         Returns:
             Union[str, bytes]: Download link if get_contents is False else file contents.
+
+        Examples:
+            Get a download url for the file::
+
+                client = CogniteClient()
+                res = client.files.download_file(id=12345)
+                download_url = res["downloadUrl"]
+
+            Download a file::
+
+                client = CogniteClient()
+                file_bytes = client.files.download_file(id=12345, get_contents=True)
+
         """
         url = "/files/{}/downloadlink".format(id)
         res = self._get(url=url)
@@ -155,6 +176,12 @@ class FilesClient(APIClient):
 
         Returns:
             List of files deleted and files that failed to delete.
+
+        Examples:
+            Delete two files::
+
+                client = CogniteClient()
+                res = client.files.delete_files([123, 234])
         """
         url = "/files/delete"
         body = {"items": file_ids}
@@ -190,6 +217,12 @@ class FilesClient(APIClient):
 
         Returns:
             stable.files.FileListResponse: A data object containing the requested files information.
+        Examples:
+            List all files in a given directory::
+
+                client = CogniteClient()
+                res = client.files.list_files(directory="allfiles/myspecialfiles", autopaging=True)
+                print(res.to_pandas())
         """
         url = "/files"
         params = {
@@ -232,6 +265,13 @@ class FilesClient(APIClient):
 
         Returns:
             stable.files.FileInfoResponse: A data object containing the requested file information.
+
+        Examples:
+            Get info a bout a specific file::
+
+                client = CogniteClient()
+                res = client.files.get_file_info(12345)
+                print(res)
         """
         url = "/files/{}".format(id)
         res = self._get(url)
