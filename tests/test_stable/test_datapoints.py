@@ -176,13 +176,13 @@ class TestMultiTimeseriesDatapoints:
         with mock.patch.object(APIClient, "_post") as post_request_mock:
             post_request_mock: mock.MagicMock = post_request_mock
 
-            client.datapoints.post_multi_tag_datapoints([timeseries_with_too_many_datapoints])
+            client.datapoints.post_multi_time_series_datapoints([timeseries_with_too_many_datapoints])
             assert post_request_mock.call_count == 2
 
         with mock.patch.object(APIClient, "_post") as post_request_mock:
             post_request_mock: mock.MagicMock = post_request_mock
 
-            client.datapoints.post_multi_tag_datapoints(
+            client.datapoints.post_multi_time_series_datapoints(
                 [timeseries_with_99999_datapoints, timeseries_with_too_many_datapoints]
             )
             assert post_request_mock.call_count == 2

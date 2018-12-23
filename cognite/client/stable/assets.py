@@ -106,6 +106,13 @@ class AssetsClient(APIClient):
         Returns:
             stable.assets.AssetListResponse: A data object containing the requested assets with several getter methods with different
             output formats.
+
+        Examples:
+            You can fetch all assets with a maximum depth of three like this::
+
+                client = CogniteClient()
+                res = client.assets.get_assets(depth=3, autopaging=True)
+                print(res.to_pandas())
         """
         url = "/assets"
         params = {
@@ -148,6 +155,12 @@ class AssetsClient(APIClient):
         Returns:
             stable.assets.AssetResponse: A data object containing the requested assets with several getter methods with different
             output formats.
+        Examples:
+            You can fetch a single asset like this::
+
+                client = CogniteClient()
+                res = client.assets.get_asset(asset_id=123)
+                print(res)
         """
         url = "/assets/{}/subtree".format(asset_id)
         res = self._get(url)
@@ -168,6 +181,13 @@ class AssetsClient(APIClient):
         Returns:
             stable.assets.AssetListResponse: A data object containing the requested assets with several getter methods with different
             output formats.
+
+        Examples:
+            You can fetch an asset subtree like this::
+
+                client = CogniteClient()
+                res = client.assets.get_asset_subtree(asset_id=123, depth=)
+                print(res.to_pandas())
         """
         url = "/assets/{}/subtree".format(asset_id)
         params = {"depth": depth, "limit": kwargs.get("limit", self._LIMIT), "cursor": kwargs.get("cursor")}
@@ -183,6 +203,18 @@ class AssetsClient(APIClient):
         Returns:
             stable.assets.AssetListResponse: A data object containing the posted assets with several getter methods with different
             output formats.
+
+        Examples:
+            Posting an asset::
+
+                from cognite.client.stable.assets import Asset
+
+                client = CogniteClient()
+
+                my_asset = Asset("myasset")
+                assets_to_post = [my_asset]
+                res = client.assets.post_assets(assets_to_post)
+                print(res)
         """
         url = "/assets"
         body = {"items": [asset.__dict__ for asset in assets]}
@@ -197,6 +229,12 @@ class AssetsClient(APIClient):
 
         Returns:
             An empty response.
+
+        Examples:
+            You can delete an asset like this::
+
+                client = CogniteClient()
+                res = client.assets.delete_assets([123])
         """
         url = "/assets/delete"
         body = {"items": asset_ids}
@@ -218,30 +256,37 @@ class AssetsClient(APIClient):
     ) -> AssetListResponse:
         """Search for assets.
 
-            Args:
-                name:   Prefix and fuzzy search on name.
-                description str:   Prefix and fuzzy search on description.
-                query (str):       Search on name and description using wildcard search on each of the words
-                                    (separated by spaces). Retrieves results where at least one word must match.
-                                    Example: 'some other'
-                metadata (dict):        Filter out assets that do not match these metadata fields and values (case-sensitive).
-                                        Format is {"key1":"value1","key2":"value2"}.
-                asset_subtrees (List[int]): Filter out assets that are not linked to assets in the subtree rooted at these assets.
-                                            Format is [12,345,6,7890].
-                min_created_time(str):  Filter out assets with createdTime before this. Format is milliseconds since epoch.
-                max_created_time (str): Filter out assets with createdTime after this. Format is milliseconds since epoch.
-                min_last_updated_time(str):  Filter out assets with lastUpdatedtime before this. Format is milliseconds since epoch.
-                max_last_updated_time(str): Filter out assets with lastUpdatedtime after this. Format is milliseconds since epoch.
+        Args:
+            name:   Prefix and fuzzy search on name.
+            description str:   Prefix and fuzzy search on description.
+            query (str):       Search on name and description using wildcard search on each of the words
+                                (separated by spaces). Retrieves results where at least one word must match.
+                                Example: 'some other'
+            metadata (dict):        Filter out assets that do not match these metadata fields and values (case-sensitive).
+                                    Format is {"key1":"value1","key2":"value2"}.
+            asset_subtrees (List[int]): Filter out assets that are not linked to assets in the subtree rooted at these assets.
+                                        Format is [12,345,6,7890].
+            min_created_time(str):  Filter out assets with createdTime before this. Format is milliseconds since epoch.
+            max_created_time (str): Filter out assets with createdTime after this. Format is milliseconds since epoch.
+            min_last_updated_time(str):  Filter out assets with lastUpdatedtime before this. Format is milliseconds since epoch.
+            max_last_updated_time(str): Filter out assets with lastUpdatedtime after this. Format is milliseconds since epoch.
 
-            Keyword Args:
-                sort (str):             Field to be sorted.
-                dir (str):              Sort direction (desc or asc)
-                limit (int):            Return up to this many results. Max is 1000, default is 25.
-                offset (int):           Offset from the first result. Sum of limit and offset must not exceed 1000. Default is 0.
-                boost_name (str):       Whether or not boosting name field. This option is test_experimental and can be changed.
-            Returns:
-                stable.assets.AssetListResponse.
-            """
+        Keyword Args:
+            sort (str):             Field to be sorted.
+            dir (str):              Sort direction (desc or asc)
+            limit (int):            Return up to this many results. Max is 1000, default is 25.
+            offset (int):           Offset from the first result. Sum of limit and offset must not exceed 1000. Default is 0.
+            boost_name (str):       Whether or not boosting name field. This option is test_experimental and can be changed.
+        Returns:
+            stable.assets.AssetListResponse.
+
+        Examples:
+            Searching for assets::
+
+                client = CogniteClient()
+                res = client.assets.search_for_assets(name="myasset")
+                print(res)
+        """
         url = "/assets/search"
         params = {
             "name": name,

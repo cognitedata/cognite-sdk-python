@@ -161,6 +161,13 @@ class DatapointsClient(APIClient):
         Returns:
             stable.datapoints.DatapointsResponse: A data object containing the requested data with several getter methods with different
             output formats.
+
+        Examples:
+            Getting the last 3 days of raw datapoints for a given time series::
+
+                client = CogniteClient()
+                res = client.datapoints.get_datapoints(name="my_ts", start="3d-ago")
+                print(res.to_pandas())
         """
         start, end = _utils.interval_to_ms(start, end)
 
@@ -367,7 +374,9 @@ class DatapointsClient(APIClient):
 
         return timeseries_with_datapoints_list
 
-    def post_multi_tag_datapoints(self, timeseries_with_datapoints: List[TimeseriesWithDatapoints], **kwargs) -> Dict:
+    def post_multi_time_series_datapoints(
+        self, timeseries_with_datapoints: List[TimeseriesWithDatapoints], **kwargs
+    ) -> Dict:
         """Insert data into multiple timeseries.
 
         Args:
@@ -378,6 +387,25 @@ class DatapointsClient(APIClient):
 
         Returns:
             An empty response.
+
+        Examples:
+            Posting some dummy datapoints to multiple time series. This example assumes that the time series have
+            already been created::
+
+                from cognite.client.stable.datapoints import TimeseriesWithDatapoints, Datapoint
+
+                start = 1514761200000
+                my_dummy_data_1 = [Datapoint(timestamp=ms, value=i) for i, ms in range(start, start+100)]
+                ts_with_datapoints_1 = TimeSeriesWithDatapoints(name="ts1", datapoints=my_dummy_data_1)
+
+                start = 1503331800000
+                my_dummy_data_2 = [Datapoint(timestamp=ms, value=i) for i, ms in range(start, start+100)]
+                ts_with_datapoints_2 = TimeSeriesWithDatapoints(name="ts2", datapoints=my_dummy_data_2)
+
+                my_dummy_data = [ts_with_datapoints_1, ts_with_datapoints_2]
+
+                client = CogniteClient()
+                res = client.datapoints.post_multi_time_series_datapoints(my_dummy_data)
         """
         url = "/timeseries/data"
 
@@ -418,6 +446,17 @@ class DatapointsClient(APIClient):
 
         Returns:
             An empty response.
+
+        Examples:
+            Posting some dummy datapoints::
+
+                from cognite.client.stable.datapoints import Datapoint
+
+                client = CogniteClient()
+
+                start = 1514761200000
+                my_dummy_data = [Datapoint(timestamp=ms, value=i) for i, ms in range(start, start+100)]
+                client.datapoints.post_datapoints(my_dummy_data)
         """
         url = "/timeseries/data/{}".format(quote(name, safe=""))
 
@@ -438,6 +477,14 @@ class DatapointsClient(APIClient):
         Returns:
             stable.datapoints.LatestDatapointsResponse: A data object containing the requested data with several getter methods with different
             output formats.
+
+        Examples:
+            Get the latest datapoint from a time series before time x::
+
+                client = CogniteClient()
+                x = 1514761200000
+                client.datapoints.get_latest(name="my_ts", before=x)
+
         """
         url = "/timeseries/latest/{}".format(quote(name, safe=""))
         params = {"before": before}
@@ -561,7 +608,17 @@ class DatapointsClient(APIClient):
             timeseries will all be on the same timestamps.
 
         Examples:
-            The ``timeseries`` parameter can take a list of strings and/or dicts on the following formats::
+            Get a dataframe of aggregated time series data::
+
+                client = CogniteClient()
+
+                res = client.datapoints.get_datapoints_frame(time_series=["ts1", "ts2"],
+                                aggregates=["avg"], granularity="30s", start="1w-ago")
+
+                print(res)
+
+            The ``timeseries`` parameter can take a list of strings and/or dicts on the following formats.
+            This is useful for specifying aggregate functions on a per time series level::
 
                 Using strings:
                     ['<timeseries1>', '<timeseries2>']
