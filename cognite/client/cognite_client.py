@@ -108,8 +108,6 @@ class CogniteClient:
 
         self._api_client = self.client_factory(APIClient)
 
-        self.get.__signature__ = self._api_client._get.__signature__
-
     @property
     def assets(self) -> AssetsClient:
         return self.client_factory(AssetsClient, "0.5")

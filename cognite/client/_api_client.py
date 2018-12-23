@@ -149,7 +149,7 @@ class CogniteResponse:
         data = self.internal_representation.get("data", {})
         if "items" in data:
             return data["items"]
-        return data
+        return json.dumps(data, indent=4, sort_keys=True)
 
     def next_cursor(self):
         """Returns next cursor to use for paging through results"""
