@@ -1,7 +1,8 @@
-import functools
 import logging
 import os
 from typing import Any, Dict
+
+from cognite_logger import cognite_logger
 
 from cognite.client._api_client import APIClient
 from cognite.client.experimental import ExperimentalClient
@@ -17,7 +18,7 @@ from cognite.client.stable.time_series import TimeSeriesClient
 DEFAULT_BASE_URL = "https://api.cognitedata.com"
 DEFAULT_NUM_OF_RETRIES = 5
 DEFAULT_NUM_OF_WORKERS = 10
-DEFAULT_LOG_LEVEL = "INFO"
+DEFAULT_LOG_LEVEL = "DEBUG"
 
 ENVIRONMENT_API_KEY = os.getenv("COGNITE_API_KEY")
 ENVIRONMENT_BASE_URL = os.getenv("COGNITE_BASE_URL")
@@ -79,6 +80,7 @@ class CogniteClient:
         cookies: Dict[str, str] = None,
         headers: Dict[str, str] = None,
         log_level: str = None,
+        debug: bool = None,
     ):
         self.__api_key = api_key or ENVIRONMENT_API_KEY
         if self.__api_key is None:
@@ -107,6 +109,9 @@ class CogniteClient:
             self._project = __login_client.status().project
 
         self._api_client = self.client_factory(APIClient)
+
+        if debug:
+            cognite_logger.configure_logger("cognite-sdk", log_level="DEBUG", log_json=True)
 
     @property
     def assets(self) -> AssetsClient:

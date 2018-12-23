@@ -47,8 +47,10 @@ def _raise_API_error(res):
 
 
 def _log_request(log_level, method, url, **kwargs):
-    print(url)
-    log.log(logging.getLevelName(log_level), "HTTP/1.1 {} {}".format(method, url), extra=kwargs)
+    extra = deepcopy(kwargs)
+    if "api-key" in extra.get("headers", {}):
+        del extra["headers"]["api-key"]
+    log.log(logging.getLevelName(log_level), "HTTP/1.1 {} {}".format(method, url), extra=extra)
 
 
 def request_method(method):

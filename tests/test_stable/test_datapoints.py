@@ -65,7 +65,6 @@ class TestDatapoints:
             include_outside_points=True,
             protobuf=request.param.get("protobuf", False),
         )
-        print(res.to_pandas())
         yield res
 
     def test_post_datapoints(self):
