@@ -1,7 +1,7 @@
 import os
 
 import matplotlib.pyplot as plt
-from cognite.client.stable.timeseries import get_datapoints_frame
+from cognite.client.stable.time_series import get_datapoints_frame
 from cognite.config import configure_session
 
 # Set API key and project for current session. The project is Open Industrial Data.

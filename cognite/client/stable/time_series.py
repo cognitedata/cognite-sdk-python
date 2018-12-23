@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
-"""Timeseries Module
+"""Timeseries
 
 This module mirrors the Timeseries API. It allows you to fetch data from the api and output it in various formats.
-
-https://doc.cognitedata.com/0.5/#Cognite-API-Time-series
 """
 import time
 from copy import deepcopy

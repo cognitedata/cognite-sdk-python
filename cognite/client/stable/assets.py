@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
-"""Assets Module.
+"""Assets.
 
 This module mirrors the Assets API.
-
-https://doc.cognitedata.com/0.5/#Cognite-API-Assets
 """
 import json
 from typing import Dict, List

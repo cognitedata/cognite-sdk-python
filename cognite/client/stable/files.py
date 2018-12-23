@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
-"""Files Module
+"""Files
 
 This module mirrors the Files API. It allows you to manage files in GCP.
-
-https://doc.cognitedata.com/0.5/#Cognite-API-Files
 """
 
 import os

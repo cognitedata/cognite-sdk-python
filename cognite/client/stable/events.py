@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
-"""Events Module
+"""Events
 
 This module mirrors the Events API. It allows you to get, post, update, and delete events.
-
-https://doc.cognitedata.com/0.5/#Cognite-API-Events
 """
 import json
 from copy import deepcopy

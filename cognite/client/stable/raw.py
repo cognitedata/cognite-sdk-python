@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
-"""Raw Module
+"""Raw
 
 This module mirrors the Raw API. It allows the user to handle raw data.
-
-https://doc.cognitedata.com/0.5/#Cognite-API-Cloud-Raw
 """
 import json
 from typing import Dict, List

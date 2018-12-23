@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+"""Login.
+
+This module mirrors the Login API.
+"""
 from cognite.client._api_client import APIClient, CogniteResponse
 
 

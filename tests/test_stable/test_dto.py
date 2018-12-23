@@ -4,7 +4,7 @@ import pytest
 
 from cognite.client.stable.events import EventListResponse, EventResponse
 from cognite.client.stable.files import FileInfoResponse
-from cognite.client.stable.timeseries import TimeSeriesResponse
+from cognite.client.stable.time_series import TimeSeriesResponse
 
 
 @pytest.fixture(scope="module", params=["ts", "file", "event", "eventlist"])

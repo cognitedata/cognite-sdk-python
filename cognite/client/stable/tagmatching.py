@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
-"""Tag Matching Module
+"""Tag Matching
 
 This module mirrors the Tag Matching API. It allows the user to search for tag id matches.
-
-https://doc.cognitedata.com/0.5/#Cognite-API-Tag-Matching
 """
 import pandas as pd
 

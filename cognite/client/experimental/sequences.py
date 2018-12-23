@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
-"""Sequences Module
+"""Sequences
 
 This module mirrors the Sequences API.
-
-https://doc.cognitedata.com/api/0.6/#tag/Sequences
 """
 import json
 from typing import Dict, List

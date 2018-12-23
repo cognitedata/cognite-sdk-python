@@ -4,7 +4,7 @@ import pandas as pd
 import pytest
 
 from cognite import CogniteClient
-from cognite.client.stable.timeseries import TimeSeries, TimeSeriesResponse
+from cognite.client.stable.time_series import TimeSeries, TimeSeriesResponse
 
 timeseries = CogniteClient().time_series
 

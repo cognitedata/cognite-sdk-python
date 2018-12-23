@@ -16,7 +16,7 @@ from cognite.client.stable.datapoints import (
     LatestDatapointResponse,
     TimeseriesWithDatapoints,
 )
-from cognite.client.stable.timeseries import TimeSeries
+from cognite.client.stable.time_series import TimeSeries
 from tests.conftest import (
     TEST_TS_1_NAME,
     TEST_TS_2_NAME,

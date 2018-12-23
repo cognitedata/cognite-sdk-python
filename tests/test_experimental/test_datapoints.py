@@ -7,7 +7,7 @@ import pytest
 
 from cognite import CogniteClient
 from cognite.client.experimental.datapoints import DatapointsClient, DatapointsResponse
-from cognite.client.stable.timeseries import TimeSeries
+from cognite.client.stable.time_series import TimeSeries
 from tests.conftest import TEST_TS_REASONABLE_INTERVAL, TEST_TS_REASONABLE_INTERVAL_DATETIME
 
 cognite_client = CogniteClient()

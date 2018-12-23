@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+"""Datapoints.
+
+This module mirrors the Datapoints API.
+"""
 import io
 import time
 from concurrent.futures import ThreadPoolExecutor as Pool

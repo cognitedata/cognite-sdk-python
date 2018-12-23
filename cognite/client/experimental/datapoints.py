@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
-"""Datapoints Module
+"""Datapoints
 
 This module mirrors the Datapoints API. It allows you to fetch data from the api and output it in various formats.
-
-https://doc.cognitedata.com/0.6/#Cognite-API-Datapoints
 """
 from concurrent.futures import ThreadPoolExecutor as Pool
 from functools import partial

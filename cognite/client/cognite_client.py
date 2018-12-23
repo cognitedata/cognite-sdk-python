@@ -12,7 +12,7 @@ from cognite.client.stable.files import FilesClient
 from cognite.client.stable.login import LoginClient
 from cognite.client.stable.raw import RawClient
 from cognite.client.stable.tagmatching import TagMatchingClient
-from cognite.client.stable.timeseries import TimeSeriesClient
+from cognite.client.stable.time_series import TimeSeriesClient
 
 DEFAULT_BASE_URL = "https://api.cognitedata.com"
 DEFAULT_NUM_OF_RETRIES = 5

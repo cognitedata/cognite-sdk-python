@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
-"""Models Module.
+"""Models.
 
 This module mirrors the Models API.
-
-https://doc.cognitedata.com/0.6/models
 """
 from typing import Any, Dict, List
 
