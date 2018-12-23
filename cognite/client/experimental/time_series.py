@@ -39,7 +39,7 @@ class TimeSeriesClient(APIClient):
             include_metadata (bool):    Decide if the metadata field should be returned or not. Defaults to False.
 
         Returns:
-            client.test_experimental.time_series.TimeSeriesResponse: A data object containing the requested timeseries.
+            client.experimental.time_series.TimeSeriesResponse: A data object containing the requested timeseries.
         """
         url = "/timeseries/{}".format(id)
         params = {"includeMetadata": include_metadata}
@@ -54,7 +54,7 @@ class TimeSeriesClient(APIClient):
             include_metadata:       Whether or not to include meta data about time series.
 
         Returns:
-            client.test_experimental.time_series.TimeSeriesResponse: A data object containing the requested timeseries with several
+            client.experimental.time_series.TimeSeriesResponse: A data object containing the requested timeseries with several
             getter methods with different output formats.
         """
         url = "/timeseries/byids"
@@ -109,7 +109,7 @@ class TimeSeriesClient(APIClient):
             boost_name (bool): Whether or not boosting name field. This option is test_experimental and can be changed.
 
         Returns:
-            client.test_experimental.time_series.TimeSeriesResponse: A data object containing the requested timeseries with several getter methods with different
+            client.experimental.time_series.TimeSeriesResponse: A data object containing the requested timeseries with several getter methods with different
             output formats.
         """
         url = "/timeseries/search"
