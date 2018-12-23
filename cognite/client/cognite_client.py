@@ -35,13 +35,14 @@ class CogniteClient:
         api_key (str): API key
         project (str): Project. Defaults to project of given API key.
         base_url (str): Base url to send requests to. Defaults to "https://api.cognitedata.com"
-        num_of_retries: Number of times to retry failed requests. Defaults to 5.
+        num_of_retries (int): Number of times to retry failed requests. Defaults to 5.
                         Will only retry status codes 401, 429, 500, 502, and 503.
-        num_of_workers: Number of workers to spawn when parallelizing data fetching. Defaults to 10.
-        cookies: Cookies to append to all requests. Defaults to {}
-        headers: Additional headers to add to all requests. Defaults are:
+        num_of_workers (int): Number of workers to spawn when parallelizing data fetching. Defaults to 10.
+        cookies (Dict): Cookies to append to all requests. Defaults to {}
+        headers (Dict): Additional headers to add to all requests. Defaults are:
                  {"api-key": self.api_key, "content-type": "application/json", "accept": "application/json"}
-        log_level: Which log level to log request details to. Defaults to DEBUG.
+        log_level (str): Which log level to log request details to. Defaults to DEBUG.
+        debug (bool): Automatically configures logger to log extra request details to stdout.
 
     Examples:
             The CogniteClient is instantiated and used like this::
@@ -65,9 +66,9 @@ class CogniteClient:
             Default configurations may be set using the following environment variables::
 
                 export COGNITE_API_KEY = <your-api-key>
-                COGNITE_BASE_URL = http://<host>:<port>
-                COGNITE_NUM_RETRIES = <number-of-retries>
-                COGNITE_NUM_WORKERS = <number-of-workers>
+                export COGNITE_BASE_URL = http://<host>:<port>
+                export COGNITE_NUM_RETRIES = <number-of-retries>
+                export COGNITE_NUM_WORKERS = <number-of-workers>
     """
 
     def __init__(
@@ -149,7 +150,11 @@ class CogniteClient:
     def experimental(self) -> ExperimentalClient:
         return ExperimentalClient(self.client_factory)
 
-    def get(self, url, params=None, headers=None):
+    def get(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
+        """Perform a GET request to a path in the API.
+
+        Comes in handy if the endpoint you want to reach is not currently supported by the SDK.
+        """
         return self._api_client._get(url, params, headers)
 
     def post(
@@ -160,12 +165,24 @@ class CogniteClient:
         use_gzip: bool = False,
         headers: Dict[str, Any] = None,
     ):
+        """Perform a POST request to a path in the API.
+
+        Comes in handy if the endpoint you want to reach is not currently supported by the SDK.
+        """
         return self._api_client._post(url, body, params, use_gzip, headers)
 
     def put(self, url: str, body: Dict[str, Any] = None, headers: Dict[str, Any] = None):
+        """Perform a PUT request to a path in the API.
+
+        Comes in handy if the endpoint you want to reach is not currently supported by the SDK.
+        """
         return self._api_client._post(url, body, headers)
 
     def delete(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
+        """Perform a DELETE request to a path in the API.
+
+        Comes in handy if the endpoint you want to reach is not currently supported by the SDK.
+        """
         return self._api_client._delete(url, params, headers)
 
     def client_factory(self, client, version=None):

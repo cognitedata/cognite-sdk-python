@@ -17,7 +17,7 @@ class ExperimentalClient:
         return self._client_factory(DatapointsClient, "0.6")
 
     @property
-    def sequences(self) -> TimeSeriesClient:
+    def sequences(self) -> SequencesClient:
         return self._client_factory(SequencesClient, "0.6")
 
     @property

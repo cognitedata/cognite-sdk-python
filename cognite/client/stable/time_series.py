@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
-"""Timeseries
+"""Time Series
 
 This module mirrors the Timeseries API. It allows you to fetch data from the api and output it in various formats.
 """
-import time
 from copy import deepcopy
 from typing import Dict, List
 from urllib.parse import quote
