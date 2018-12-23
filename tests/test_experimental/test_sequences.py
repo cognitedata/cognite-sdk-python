@@ -74,6 +74,7 @@ class TestSequences:
         assert sequence_that_is_created_retrieved_by_external_id.id == CREATED_SEQUENCE_ID
         assert sequence_that_is_created_retrieved_by_external_id.name == sequence_that_isnt_created.name
 
+    @pytest.mark.skip
     def test_post_data_to_sequence_and_get_data_from_sequence(self, sequence_that_is_created_retrieved_by_id):
         # Prepare some data to post
         rows: List[Row] = [
