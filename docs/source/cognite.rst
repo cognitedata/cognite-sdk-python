@@ -2,7 +2,7 @@ Overview
 ========
 Cognite Client
 --------------
-.. autoclass:: cognite.client.cognite_client.CogniteClient
+.. autoclass:: cognite.CogniteClient
     :members:
     :member-order: bysource
 
