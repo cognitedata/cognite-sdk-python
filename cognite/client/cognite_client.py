@@ -48,12 +48,14 @@ class CogniteClient:
             The CogniteClient is instantiated and used like this. This example assumes that the environment variable
             COGNITE_API_KEY has been set::
 
+                from cognite import CogniteClient
                 client = CogniteClient()
                 res = client.time_series.get_timeseries()
                 print(res.to_pandas())
 
             Certain experimental features are made available through this client as follows::
 
+                from cognite import CogniteClient
                 client = CogniteClient()
                 res = client.experimental.analytics.models.get_models()
                 print(res)
