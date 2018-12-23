@@ -2,11 +2,12 @@ import pandas as pd
 import pytest
 
 from cognite import CogniteClient
+from cognite.client._utils import generate_random_string
 from cognite.client.stable.assets import Asset, AssetListResponse, AssetResponse
 
 assets = CogniteClient().assets
 
-ASSET_NAME = "test_asset"
+ASSET_NAME = "test_asset" + generate_random_string(10)
 
 
 @pytest.fixture(scope="module")
