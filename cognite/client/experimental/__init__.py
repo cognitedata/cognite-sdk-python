@@ -10,16 +10,16 @@ class ExperimentalClient:
 
     @property
     def analytics(self) -> AnalyticsClient:
-        return AnalyticsClient(client_factory=self._client_factory, version="0.6")
+        return AnalyticsClient(client_factory=self._client_factory)
 
     @property
     def datapoints(self) -> DatapointsClient:
-        return self._client_factory(DatapointsClient, "0.6")
+        return self._client_factory(DatapointsClient)
 
     @property
     def sequences(self) -> SequencesClient:
-        return self._client_factory(SequencesClient, "0.6")
+        return self._client_factory(SequencesClient)
 
     @property
     def time_series(self) -> TimeSeriesClient:
-        return self._client_factory(TimeSeriesClient, "0.6")
+        return self._client_factory(TimeSeriesClient)

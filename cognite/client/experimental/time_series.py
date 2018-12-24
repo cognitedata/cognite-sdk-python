@@ -26,6 +26,10 @@ class TimeSeriesResponse(CogniteResponse):
 
 
 class TimeSeriesClient(APIClient):
+    def __init__(self, **kwargs):
+        kwargs["version"] = "0.6"
+        super().__init__(**kwargs)
+
     def get_time_series_by_id(self, id: int, include_metadata: bool = False) -> TimeSeriesResponse:
         """Returns a TimeseriesResponse object containing the requested timeseries.
 

@@ -103,8 +103,7 @@ class CogniteClient:
 
         self._project = project
         if project is None:
-            __login_client = self.client_factory(LoginClient)
-            self._project = __login_client.status().project
+            self._project = self.login.status().project
 
         self._api_client = self.client_factory(APIClient)
 
@@ -113,19 +112,19 @@ class CogniteClient:
 
     @property
     def assets(self) -> AssetsClient:
-        return self.client_factory(AssetsClient, "0.5")
+        return self.client_factory(AssetsClient)
 
     @property
     def datapoints(self) -> DatapointsClient:
-        return self.client_factory(DatapointsClient, "0.5")
+        return self.client_factory(DatapointsClient)
 
     @property
     def events(self) -> EventsClient:
-        return self.client_factory(EventsClient, "0.5")
+        return self.client_factory(EventsClient)
 
     @property
     def files(self) -> FilesClient:
-        return self.client_factory(FilesClient, "0.5")
+        return self.client_factory(FilesClient)
 
     @property
     def login(self) -> LoginClient:
@@ -133,15 +132,15 @@ class CogniteClient:
 
     @property
     def raw(self) -> RawClient:
-        return self.client_factory(RawClient, "0.5")
+        return self.client_factory(RawClient)
 
     @property
     def tag_matching(self) -> TagMatchingClient:
-        return self.client_factory(TagMatchingClient, "0.5")
+        return self.client_factory(TagMatchingClient)
 
     @property
     def time_series(self) -> TimeSeriesClient:
-        return self.client_factory(TimeSeriesClient, "0.5")
+        return self.client_factory(TimeSeriesClient)
 
     @property
     def experimental(self) -> ExperimentalClient:

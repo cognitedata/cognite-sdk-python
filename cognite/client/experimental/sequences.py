@@ -190,6 +190,10 @@ class SequenceDataRequest:
 
 
 class SequencesClient(APIClient):
+    def __init__(self, **kwargs):
+        kwargs["version"] = "0.6"
+        super().__init__(**kwargs)
+
     def post_sequences(self, sequences: List[Sequence]) -> Sequence:
         """Create a new time series.
 

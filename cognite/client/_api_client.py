@@ -49,7 +49,7 @@ def _raise_API_error(res):
 def _log_request(log_level, method, url, **kwargs):
     extra = deepcopy(kwargs)
     if "api-key" in extra.get("headers", {}):
-        del extra["headers"]["api-key"]
+        extra["headers"]["api-key"] = None
     log.log(logging.getLevelName(log_level), "HTTP/1.1 {} {}".format(method, url), extra=extra)
 
 

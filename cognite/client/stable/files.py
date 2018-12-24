@@ -59,6 +59,10 @@ class FileListResponse(CogniteResponse):
 
 
 class FilesClient(APIClient):
+    def __init__(self, **kwargs):
+        kwargs["version"] = "0.5"
+        super().__init__(**kwargs)
+
     def upload_file(
         self, file_name, file_path=None, directory=None, source=None, file_type=None, content_type=None, **kwargs
     ) -> Dict:
