@@ -118,7 +118,7 @@ class APIClient:
         url: str,
         body: Dict[str, Any],
         params: Dict[str, Any] = None,
-        use_gzip: bool = False,
+        use_gzip: bool = True,
         headers: Dict[str, Any] = None,
     ):
         """Perform a POST request with a predetermined number of retries."""

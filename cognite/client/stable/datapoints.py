@@ -383,7 +383,7 @@ class DatapointsClient(APIClient):
             timeseries_with_datapoints (List[stable.datapoints.TimeseriesWithDatapoints]): The timeseries with data to insert.
 
         Keyword Args:
-            use_gzip (bool): Whether or not to gzip the request
+            use_gzip (bool): Whether or not to gzip the request. Defaults to True.
 
         Returns:
             An empty response.
@@ -409,7 +409,7 @@ class DatapointsClient(APIClient):
         """
         url = "/timeseries/data"
 
-        use_gzip = kwargs.get("use_gzip", False)
+        use_gzip = kwargs.get("use_gzip", True)
 
         ul_dps_limit = 100000
 

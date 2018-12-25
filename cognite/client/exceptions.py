@@ -6,8 +6,7 @@ class APIError(Exception):
     Args:
         message (str):  The error message produced by the API
         code (int):     The error code produced by the failure
-        x_request_id (int): The request-id generated for the failed request.
-
+        x_request_id (str): The request-id generated for the failed request.
     """
 
     def __init__(self, message, code=None, x_request_id=None):

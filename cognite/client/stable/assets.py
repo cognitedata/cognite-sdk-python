@@ -58,7 +58,7 @@ class Asset:
         ref_id (str):               Reference ID used only in post request to disambiguate references to duplicate
                                     names.
         parent_name (str):          Name of parent, this parent must exist in the same POST request.
-        parent_ref_id (list(int)):  Reference ID of parent, to disambiguate if multiple nodes have the same name.
+        parent_ref_id (str):        Reference ID of parent, to disambiguate if multiple nodes have the same name.
     """
 
     def __init__(

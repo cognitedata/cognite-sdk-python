@@ -185,7 +185,7 @@ class RawClient(APIClient):
         table_name: str = None,
         rows: List[RawRow] = None,
         ensure_parent=False,
-        use_gzip=False,
+        use_gzip=True,
     ) -> Dict:
         """Creates tables in the given Raw API database.
 
