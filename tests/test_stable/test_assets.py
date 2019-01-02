@@ -64,7 +64,7 @@ def test_delete_assets():
     asset = assets.get_assets(ASSET_NAME, depth=0)
     id = asset.to_json()[0]["id"]
     res = assets.delete_assets([id])
-    assert res == {}
+    assert res is None
     assert len(assets.get_assets(ASSET_NAME, depth=0).to_json()) == 0
 
 

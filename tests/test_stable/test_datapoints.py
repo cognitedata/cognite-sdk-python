@@ -70,7 +70,7 @@ class TestDatapoints:
     def test_post_datapoints(self):
         dps = [Datapoint(i, i * 100) for i in range(10)]
         res = client.datapoints.post_datapoints(TS_NAME, datapoints=dps)
-        assert res == {}
+        assert res is None
 
     def test_post_datapoints_frame(self):
         data = pd.DataFrame()
@@ -87,7 +87,7 @@ class TestDatapoints:
                 pass
 
         res = client.datapoints.post_datapoints_frame(data)
-        assert res == {}
+        assert res is None
 
     def test_get_datapoints(self, get_dps_response_obj):
         assert isinstance(get_dps_response_obj, DatapointsResponse)

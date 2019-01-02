@@ -4,6 +4,7 @@ from unittest import mock
 from unittest.mock import MagicMock
 
 import pytest
+
 from cognite import APIError
 from cognite.client._api_client import APIClient
 from tests.conftest import MockReturnValue
@@ -181,7 +182,9 @@ class TestRequests:
 
     @mock.patch("cognite.client._api_client.requests.post")
     def test_post_request_args(self, mock_request, api_client, url):
-        def check_args_to_post_and_return_mock(arg_url, data=None, headers=None, params=None, cookies=None):
+        def check_args_to_post_and_return_mock(
+            arg_url, data=None, headers=None, params=None, cookies=None, timeout=None
+        ):
             # URL is sent as is
             assert arg_url == api_client._base_url + url
 
@@ -201,7 +204,9 @@ class TestRequests:
     def test_post_request_gzip(self, mock_request, api_client, url):
         import json, gzip
 
-        def check_gzip_enabled_and_return_mock(arg_url, data=None, headers=None, params=None, cookies=None):
+        def check_gzip_enabled_and_return_mock(
+            arg_url, data=None, headers=None, params=None, cookies=None, timeout=None
+        ):
             # URL is sent as is
             assert arg_url == api_client._base_url + url
             # gzip is added as Content-Encoding header
@@ -217,7 +222,9 @@ class TestRequests:
         response = api_client._post(url, RESPONSE, headers={}, use_gzip=True)
         assert response.status_code == 200
 
-        def check_gzip_disabled_and_return_mock(arg_url, data=None, headers=None, params=None, cookies=None):
+        def check_gzip_disabled_and_return_mock(
+            arg_url, data=None, headers=None, params=None, cookies=None, timeout=None
+        ):
             # URL is sent as is
             assert arg_url == api_client._base_url + url
             # gzip is not added as Content-Encoding header
@@ -275,7 +282,9 @@ class TestRequests:
     def test_put_request_args(self, mock_request, api_client, url):
         import json
 
-        def check_args_to_put_and_return_mock(arg_url, data=None, headers=None, params=None, cookies=None):
+        def check_args_to_put_and_return_mock(
+            arg_url, data=None, headers=None, params=None, cookies=None, timeout=None
+        ):
             # URL is sent as is
             assert arg_url == api_client._base_url + url
             # data is json encoded

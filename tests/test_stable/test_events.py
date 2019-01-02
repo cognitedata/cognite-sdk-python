@@ -64,7 +64,7 @@ def post_event():
 def test_delete_event(post_event):
     id = post_event.to_json()[0]["id"]
     res = events.delete_events([id])
-    assert res == {}
+    assert res is None
 
 
 def test_search_for_events(get_post_event_obj):

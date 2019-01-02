@@ -59,7 +59,7 @@ class TestDatabases:
 
     def test_delete_databases(self):
         response = raw.delete_databases([DB_NAME], recursive=True)
-        assert response == {}
+        assert response is None
         with pytest.raises(APIError) as e:
             raw.delete_databases([DB_NAME])
 
@@ -90,7 +90,7 @@ class TestTables:
 
     def test_delete_tables(self):
         response = raw.delete_tables(database_name=DB_NAME, table_names=[TABLE_NAME])
-        assert response == {}
+        assert response is None
         with pytest.raises(APIError) as e:
             raw.delete_tables(DB_NAME, [TABLE_NAME])
             # assert re.match("{'code': 404, 'message': 'Did not find any dbs with the given names'}", str(e.value))
@@ -107,7 +107,7 @@ class TestRows:
 
     def test_create_rows(self):
         response = raw.create_rows(DB_NAME, TABLE_NAME, rows=[RawRow(key=ROW_KEY, columns=ROW_COLUMNS)])
-        assert response == {}
+        assert response is None
 
     def test_rows_response_length(self):
         rows = raw.get_rows(database_name=DB_NAME, table_name=TABLE_NAME).to_json()
@@ -121,4 +121,4 @@ class TestRows:
 
     def test_delete_rows(self):
         response = raw.delete_rows(DB_NAME, TABLE_NAME, [RawRow(key=ROW_KEY, columns=ROW_COLUMNS)])
-        assert response == {}
+        assert response is None

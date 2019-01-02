@@ -19,12 +19,12 @@ class TestTimeseries:
     def test_post_timeseries(self):
         tso = TimeSeries(TS_NAME)
         res = timeseries.post_time_series([tso])
-        assert res == {}
+        assert res is None
 
     def test_update_timeseries(self):
         tso = TimeSeries(TS_NAME, unit="celsius")
         res = timeseries.update_time_series([tso])
-        assert res == {}
+        assert res is None
 
     @pytest.fixture(scope="class", params=[True, False])
     def get_timeseries_response_obj(self, request):
@@ -45,4 +45,4 @@ class TestTimeseries:
 
     def test_delete_timeseries(self):
         res = timeseries.delete_time_series(TS_NAME)
-        assert res == {}
+        assert res is None
