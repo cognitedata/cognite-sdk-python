@@ -97,6 +97,7 @@ class APIClient:
         cookies: Dict = None,
         headers: Dict = None,
         log_level: str = None,
+        timeout: int = None,
     ):
         self._project = project
         __base_path = f"/api/{version}/projects/{project}" if version else ""
@@ -106,18 +107,19 @@ class APIClient:
         self._cookies = cookies
         self._headers = headers
         self._log_level = log_level
+        self._timeout = timeout
 
     @request_method
     def _delete(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
         """Perform a DELETE request with a predetermined number of retries."""
         _log_request(self._log_level, "DELETE", url, params=params, headers=headers, cookies=self._cookies)
-        return requests.delete(url, params=params, headers=headers, cookies=self._cookies)
+        return requests.delete(url, params=params, headers=headers, cookies=self._cookies, timeout=self._timeout)
 
     @request_method
     def _get(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
         """Perform a GET request with a predetermined number of retries."""
         _log_request(self._log_level, "GET", url, params=params, headers=headers, cookies=self._cookies)
-        return requests.get(url, params=params, headers=headers, cookies=self._cookies)
+        return requests.get(url, params=params, headers=headers, cookies=self._cookies, timeout=self._timeout)
 
     @request_method(do_retry=False)
     def _post(
@@ -136,13 +138,15 @@ class APIClient:
         if use_gzip:
             headers["Content-Encoding"] = "gzip"
             data = gzip.compress(json.dumps(body, default=_serialize).encode("utf-8"))
-        return requests.post(url, data=data, headers=headers, params=params, cookies=self._cookies)
+        return requests.post(
+            url, data=data, headers=headers, params=params, cookies=self._cookies, timeout=self._timeout
+        )
 
     @request_method
     def _put(self, url: str, body: Dict[str, Any] = None, headers: Dict[str, Any] = None):
         """Perform a PUT request with a predetermined number of retries."""
         _log_request(self._log_level, "PUT", url, body=body, headers=headers, cookies=self._cookies)
-        return requests.put(url, data=json.dumps(body), headers=headers, cookies=self._cookies)
+        return requests.put(url, data=json.dumps(body), headers=headers, cookies=self._cookies, timeout=self._timeout)
 
 
 class CogniteResponse:
