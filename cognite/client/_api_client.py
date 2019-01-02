@@ -159,9 +159,11 @@ class CogniteResponse:
         self.internal_representation = internal_representation
 
     def __str__(self):
-        data = self.internal_representation.get("data", {})
-        if "items" in data:
-            data = data["items"]
+        data = self.internal_representation
+        if data and "data" in data:
+            data = self.internal_representation.get("data")
+            if data and "items" in data:
+                data = data["items"]
         return json.dumps(data, indent=4, sort_keys=True)
 
     def next_cursor(self):
