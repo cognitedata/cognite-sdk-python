@@ -14,10 +14,6 @@ class AssetListResponse(CogniteResponse):
         super().__init__(internal_representation)
         self.counter = 0
 
-    def to_json(self):
-        """Returns data as a json object"""
-        return self.internal_representation["data"]["items"]
-
     def to_pandas(self):
         """Returns data as a pandas dataframe"""
         if len(self.to_json()) > 0:

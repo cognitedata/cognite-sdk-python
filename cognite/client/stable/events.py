@@ -34,9 +34,6 @@ class EventListResponse(CogniteResponse):
         super().__init__(internal_representation)
         self.counter = 0
 
-    def to_json(self):
-        return self.internal_representation["data"]["items"]
-
     def to_pandas(self):
         items = deepcopy(self.to_json())
         for d in items:

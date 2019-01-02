@@ -28,10 +28,6 @@ class TagMatchingResponse(CogniteResponse):
             return pd.DataFrame(matches)[["tag", "match", "platform", "score"]]
         return pd.DataFrame()
 
-    def to_json(self):
-        """Returns data as a json object"""
-        return self.internal_representation["data"]["items"]
-
     def to_list(self, first_matches_only=True):
         """Returns a list representation of the matches.
 

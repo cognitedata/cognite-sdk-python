@@ -10,10 +10,6 @@ from cognite.client._api_client import APIClient, CogniteResponse
 class TimeSeriesResponse(CogniteResponse):
     """Time series Response Object"""
 
-    def to_json(self):
-        """Returns data as a json object"""
-        return self.internal_representation["data"]["items"]
-
     def to_pandas(self):
         """Returns data as a pandas dataframe"""
         items = deepcopy(self.internal_representation["data"]["items"])

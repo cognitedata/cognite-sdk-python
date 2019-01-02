@@ -51,11 +51,8 @@ class FileInfoResponse(CogniteResponse):
 class FileListResponse(CogniteResponse):
     """File List Response Object"""
 
-    def to_json(self):
-        return self.internal_representation["data"]["items"]
-
     def to_pandas(self):
-        return pd.DataFrame(self.internal_representation["data"]["items"])
+        return pd.DataFrame(self.to_json())
 
 
 class FilesClient(APIClient):
