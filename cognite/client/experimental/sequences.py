@@ -268,10 +268,6 @@ class SequencesClient(APIClient):
             id (int):       ID of the sequence.
             rows (list):    List of rows with the data.
 
-        Keyword Arguments:
-            api_key (str):  Your api-key.
-            project (str):  Project name.
-
         Returns:
             None
         """

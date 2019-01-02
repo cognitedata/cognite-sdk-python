@@ -800,11 +800,6 @@ class DatapointsClient(APIClient):
         Args:
             dataframe (DataFrame):  Pandas DataFrame Object containing the timeseries
 
-        Keyword Args:
-            api_key (str): Your api-key.
-
-            project (str): Project name.
-
         Returns:
             None
         """
