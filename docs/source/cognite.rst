@@ -34,6 +34,7 @@ Assets
     :exclude-members: AssetsClient
     :undoc-members:
     :show-inheritance:
+    :inherited-members:
 
 
 Datapoints
@@ -48,6 +49,7 @@ Datapoints
     :exclude-members: DatapointsClient
     :undoc-members:
     :show-inheritance:
+    :inherited-members:
 
 Events
 ------
@@ -61,6 +63,7 @@ Events
     :exclude-members: EventsClient
     :undoc-members:
     :show-inheritance:
+    :inherited-members:
 
 Files
 -----
@@ -74,6 +77,7 @@ Files
     :exclude-members: FilesClient
     :undoc-members:
     :show-inheritance:
+    :inherited-members:
 
 Login
 -----
@@ -87,6 +91,7 @@ Login
     :exclude-members: LoginClient
     :undoc-members:
     :show-inheritance:
+    :inherited-members:
 
 Raw
 ----
@@ -100,6 +105,7 @@ Raw
     :exclude-members: RawClient
     :undoc-members:
     :show-inheritance:
+    :inherited-members:
 
 Tagmatching
 -----------
@@ -113,6 +119,7 @@ Tagmatching
     :exclude-members: TagMatchingClient
     :undoc-members:
     :show-inheritance:
+    :inherited-members:
 
 Time Series
 -----------
@@ -126,6 +133,7 @@ Time Series
     :exclude-members: TimeSeriesClient
     :undoc-members:
     :show-inheritance:
+    :inherited-members:
 
 Experimental
 ============
@@ -143,6 +151,7 @@ Models
     :exclude-members: ModelsClient
     :undoc-members:
     :show-inheritance:
+    :inherited-members:
 
 Time Series
 -----------
@@ -156,6 +165,7 @@ Time Series
     :exclude-members: TimeSeriesClient
     :undoc-members:
     :show-inheritance:
+    :inherited-members:
 
 Datapoints
 ----------
@@ -169,6 +179,7 @@ Datapoints
     :exclude-members: DatapointsClient
     :undoc-members:
     :show-inheritance:
+    :inherited-members:
 
 Sequences
 ----------
@@ -182,6 +193,7 @@ Sequences
     :exclude-members: SequencesClient
     :undoc-members:
     :show-inheritance:
+    :inherited-members:
 
 Data Transfer Service
 =====================

@@ -162,14 +162,15 @@ class CogniteResponse:
         return json.dumps(self.to_json(), indent=4, sort_keys=True)
 
     def to_json(self):
+        """Returns data as a json object"""
         return self.internal_representation["data"]["items"]
 
     def next_cursor(self):
-        """Returns next cursor to use for paging through results"""
+        """Returns next cursor to use for paging through results. Returns ``None`` if there are no more results."""
         if self.internal_representation.get("data"):
             return self.internal_representation.get("data").get("nextCursor")
 
     def previous_cursor(self):
-        """Returns previous cursor"""
+        """Returns previous cursor to use for paging through results. Returns ``None`` if there are no more results."""
         if self.internal_representation.get("data"):
             return self.internal_representation.get("data").get("previousCursor")
