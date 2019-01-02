@@ -174,6 +174,7 @@ class CogniteResponse:
 
             asset_list = []
 
+            cursor = None
             while True:
                 res = client.assets.get_assets(cursor=cursor)
                 asset_list.extend(res.to_json())
