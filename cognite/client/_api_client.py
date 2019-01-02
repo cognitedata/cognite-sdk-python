@@ -150,9 +150,38 @@ class APIClient:
 
 
 class CogniteResponse:
-    """Cognite Response
+    """Cognite Response class
 
     All responses inherit from this class.
+
+    Examples:
+        All responses are pretty-printable::
+
+            from cognite import CogniteClient
+
+            client = CogniteClient()
+            res = client.assets.get_assets(limit=1)
+
+            print(res)
+
+        All endpoints which support paging have an ``autopaging`` flag which may be set to true in order to sequentially
+        fetch all resources. If for some reason, you want to do this manually, you may use the next_cursor() method on
+        the response object. Here is an example of that::
+
+            from cognite import CogniteClient
+
+            client = CogniteClient()
+
+            asset_list = []
+
+            while True:
+                res = client.assets.get_assets(cursor=cursor)
+                asset_list.extend(res.to_json())
+                cursor = res.next_cursor()
+                if cursor is None:
+                    break
+
+            print(asset_list)
     """
 
     def __init__(self, internal_representation):
