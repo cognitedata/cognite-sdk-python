@@ -150,6 +150,8 @@ class DatapointsClient(APIClient):
                                     second/s', or a multiple of these indicated by a number as a prefix e.g. '12hour'.
 
         Keyword Arguments:
+            workers (int):    Number of download workers to run in parallell. Defaults to 10.
+
             include_outside_points (bool):      No description
 
             protobuf (bool):        Download the data using the binary protobuf format. Only applicable when getting raw data.
@@ -184,7 +186,7 @@ class DatapointsClient(APIClient):
             )
 
         diff = end - start
-        num_of_workers = kwargs.get("processes", self._num_of_workers)
+        num_of_workers = kwargs.get("workers", self._num_of_workers)
         if kwargs.get("include_outside_points") is True:
             num_of_workers = 1
 
