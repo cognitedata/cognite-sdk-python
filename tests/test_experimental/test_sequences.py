@@ -4,8 +4,8 @@ import pandas as pd
 import pytest
 
 from cognite import APIError, CogniteClient
-from cognite.client._utils import generate_random_string
 from cognite.client.experimental.sequences import Column, Row, RowValue, Sequence, SequenceDataResponse
+from tests.conftest import generate_random_string
 
 sequences = CogniteClient().experimental.sequences
 

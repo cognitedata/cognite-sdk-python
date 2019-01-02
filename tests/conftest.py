@@ -1,4 +1,7 @@
+import datetime
 import logging
+import random
+import string
 from datetime import datetime
 from unittest import mock
 
@@ -6,7 +9,6 @@ import pytest
 from requests.structures import CaseInsensitiveDict
 
 from cognite import APIError, CogniteClient
-from cognite.client._utils import generate_random_string, get_time_w_offset
 from cognite.client.stable.datapoints import Datapoint
 from cognite.client.stable.time_series import TimeSeries
 
@@ -112,3 +114,13 @@ class MockReturnValue(mock.Mock):
         # add json data if provided
         if json_data:
             self.json = mock.Mock(return_value=json_data)
+
+
+def get_time_w_offset(**kwargs):
+    curr_time = datetime.datetime.now()
+    offset_time = curr_time - datetime.timedelta(**kwargs)
+    return int(round(offset_time.timestamp() * 1000))
+
+
+def generate_random_string(n):
+    return "".join(random.choice(string.ascii_uppercase + string.digits) for _ in range(n))

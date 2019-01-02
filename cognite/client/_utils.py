@@ -6,9 +6,7 @@ This module provides helper methods and different utilities for the Cognite API 
 This module is protected and should not used by end-users.
 """
 import datetime
-import random
 import re
-import string
 import time
 from datetime import datetime, timezone
 from typing import Callable, List
@@ -164,13 +162,3 @@ def to_camel_case(snake_case_string: str):
 def to_snake_case(camel_case_string: str):
     s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", camel_case_string)
     return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
-
-
-def get_time_w_offset(**kwargs):
-    curr_time = datetime.datetime.now()
-    offset_time = curr_time - datetime.timedelta(**kwargs)
-    return int(round(offset_time.timestamp() * 1000))
-
-
-def generate_random_string(n):
-    return "".join(random.choice(string.ascii_uppercase + string.digits) for _ in range(n))
