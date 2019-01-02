@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 import re
 from unittest import mock
+from unittest.mock import MagicMock
 
 import pytest
-
 from cognite import APIError
 from cognite.client._api_client import APIClient
 from tests.conftest import MockReturnValue
@@ -29,6 +29,20 @@ def api_client():
         project="test_proj",
         base_url="http://localtest.com/api/0.5/projects/test_proj",
         num_of_retries=0,
+        num_of_workers=1,
+        cookies={"a-cookie": "a-cookie-val"},
+        headers={},
+        log_level="INFO",
+    )
+    yield client
+
+
+@pytest.fixture
+def api_client_with_retries():
+    client = APIClient(
+        project="test_proj",
+        base_url="http://localtest.com/api/0.5/projects/test_proj",
+        num_of_retries=1,
         num_of_workers=1,
         cookies={"a-cookie": "a-cookie-val"},
         headers={},
@@ -276,3 +290,27 @@ class TestRequests:
         response = api_client._put(url, RESPONSE, headers={"Existing-Header": "SomeValue"})
 
         assert response.status_code == 200
+
+    @pytest.mark.parametrize("status_code,expected_number_of_tries", [(400, 1), (500, 1)])
+    @mock.patch("cognite.client._api_client.requests.post")
+    def test_retry_logic_post(self, mock_post, status_code, expected_number_of_tries, api_client_with_retries, url):
+        response_object = MagicMock()
+        response_object.configure_mock(status_code=status_code)
+        mock_post.return_value = response_object
+
+        with pytest.raises(APIError):
+            api_client_with_retries._post(url, RESPONSE)
+
+        assert mock_post.call_count == expected_number_of_tries, "incorrect number of tries for post"
+
+    @pytest.mark.parametrize("status_code,expected_number_of_tries", [(400, 1), (500, 2)])
+    @mock.patch("cognite.client._api_client.requests.get")
+    def test_retry_logic_get(self, mock_post, status_code, expected_number_of_tries, api_client_with_retries, url):
+        response_object = MagicMock()
+        response_object.configure_mock(status_code=status_code)
+        mock_post.return_value = response_object
+
+        with pytest.raises(APIError):
+            api_client_with_retries._get(url, RESPONSE)
+
+        assert mock_post.call_count == expected_number_of_tries, "incorrect number of tries for post"

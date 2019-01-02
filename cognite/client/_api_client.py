@@ -1,3 +1,4 @@
+import functools
 import gzip
 import json
 import logging
@@ -17,7 +18,7 @@ def _status_is_valid(status_code: int):
 
 
 def _should_retry(status_code):
-    return status_code in [401, 429, 500, 502, 503]
+    return status_code in [429, 500, 502, 503]
 
 
 def _serialize(obj):
@@ -53,7 +54,11 @@ def _log_request(log_level, method, url, **kwargs):
     log.log(logging.getLevelName(log_level), "HTTP/1.1 {} {}".format(method, url), extra=extra)
 
 
-def request_method(method):
+def request_method(method=None, do_retry: bool = True):
+    if method is None:
+        return functools.partial(request_method, do_retry=do_retry)
+
+    @functools.wraps(method)
     def wrapper(client_instance, url, *args, **kwargs):
         if not url.startswith("/"):
             raise ValueError("URL must start with '/'")
@@ -63,22 +68,24 @@ def request_method(method):
         default_headers.update(kwargs.get("headers") or {})
         kwargs["headers"] = default_headers
 
-        for number_of_tries in range(client_instance._num_of_retries + 1):
+        total_number_of_tries = range(client_instance._num_of_retries + 1 if do_retry else 1)
+
+        for try_num in total_number_of_tries:
             res = method(client_instance, full_url, *args, **kwargs)
             if _status_is_valid(res.status_code):
                 return res
             if not _should_retry(res.status_code):
                 break
 
-            time.sleep(_exponential_backoff_sleep_seconds(backoff_factor=1, num_of_tries=number_of_tries))
+            time.sleep(_exponential_backoff_sleep_seconds(backoff_factor=1, num_of_tries=try_num))
         _raise_API_error(res)
 
     return wrapper
 
 
 class APIClient:
-    _LIMIT = 100000
-    _LIMIT_AGG = 10000
+    _LIMIT = 100_000
+    _LIMIT_AGG = 10_000
 
     def __init__(
         self,
@@ -112,7 +119,7 @@ class APIClient:
         _log_request(self._log_level, "GET", url, params=params, headers=headers, cookies=self._cookies)
         return requests.get(url, params=params, headers=headers, cookies=self._cookies)
 
-    @request_method
+    @request_method(do_retry=False)
     def _post(
         self,
         url: str,
@@ -121,7 +128,7 @@ class APIClient:
         use_gzip: bool = True,
         headers: Dict[str, Any] = None,
     ):
-        """Perform a POST request with a predetermined number of retries."""
+        """Perform a POST request."""
         _log_request(self._log_level, "POST", url, body=body, params=params, headers=headers, cookies=self._cookies)
 
         data = json.dumps(body, default=_serialize)
