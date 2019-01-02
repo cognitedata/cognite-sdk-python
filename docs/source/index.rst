@@ -3,10 +3,10 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to the Cognite API Python SDK documentation!
-====================================================
+Cognite Python SDK Documentation
+================================
 
-This package has been created to ensure excellent user experience for data scientists using the Cognite Data Platform (CDP).
+Python SDK to ensure excellent user experience for developers and data scientists working with the Cognite Data Platform.
 
 To install this package run the following command
 
@@ -16,6 +16,6 @@ To install this package run the following command
 
 .. toctree::
    :maxdepth: 4
-   :caption: Contents:
+   :caption: Contents
 
    cognite
