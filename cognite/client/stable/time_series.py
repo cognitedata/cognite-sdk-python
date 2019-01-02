@@ -131,14 +131,14 @@ class TimeSeriesClient(APIClient):
             }
         )
 
-    def post_time_series(self, time_series: List[TimeSeries]) -> Dict:
+    def post_time_series(self, time_series: List[TimeSeries]) -> None:
         """Create a new time series.
 
         Args:
             time_series (list[stable.time_series.TimeSeries]):   List of time series data transfer objects to create.
 
         Returns:
-            An empty response.
+            None
 
         Examples:
             Create a new time series::
@@ -150,15 +150,11 @@ class TimeSeriesClient(APIClient):
 
                 client.time_series.post_time_series(my_time_series)
         """
-
         url = "/timeseries"
-
         body = {"items": [ts.__dict__ for ts in time_series]}
+        self._post(url, body=body)
 
-        res = self._post(url, body=body)
-        return res.json()
-
-    def update_time_series(self, time_series: List[TimeSeries]) -> Dict:
+    def update_time_series(self, time_series: List[TimeSeries]) -> None:
         """Update an existing time series.
 
         For each field that can be updated, a null value indicates that nothing should be done.
@@ -167,7 +163,7 @@ class TimeSeriesClient(APIClient):
             time_series (list[stable.time_series.TimeSeries]):   List of time series data transfer objects to update.
 
         Returns:
-            An empty response.
+            None
 
         Examples:
             Update the unit of a time series::
@@ -179,22 +175,18 @@ class TimeSeriesClient(APIClient):
 
                 client.time_series.update_time_series(my_time_series)
         """
-
         url = "/timeseries"
-
         body = {"items": [ts.__dict__ for ts in time_series]}
+        self._put(url, body=body)
 
-        res = self._put(url, body=body)
-        return res.json()
-
-    def delete_time_series(self, name) -> Dict:
+    def delete_time_series(self, name) -> None:
         """Delete a timeseries.
 
         Args:
             name (str):   Name of timeseries to delete.
 
         Returns:
-            An empty response.
+            None
 
         Examples:
             Delete a time series by name::
@@ -204,6 +196,4 @@ class TimeSeriesClient(APIClient):
                 client.time_series.delete_time_series(name="my_ts_1")
         """
         url = "/timeseries/{}".format(quote(name, safe=""))
-
-        res = self._delete(url)
-        return res.json()
+        self._delete(url)

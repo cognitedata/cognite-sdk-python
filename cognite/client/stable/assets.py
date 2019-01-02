@@ -221,14 +221,14 @@ class AssetsClient(APIClient):
         res = self._post(url, body=body)
         return AssetListResponse(res.json())
 
-    def delete_assets(self, asset_ids: List[int]) -> Dict:
+    def delete_assets(self, asset_ids: List[int]) -> None:
         """Delete a list of assets.
 
         Args:
             asset_ids (list[int]): List of IDs of assets to delete.
 
         Returns:
-            An empty response.
+            None
 
         Examples:
             You can delete an asset like this::
@@ -238,8 +238,7 @@ class AssetsClient(APIClient):
         """
         url = "/assets/delete"
         body = {"items": asset_ids}
-        res = self._post(url, body=body)
-        return res.json()
+        self._post(url, body=body)
 
     def search_for_assets(
         self,

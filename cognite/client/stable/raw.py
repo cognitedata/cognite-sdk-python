@@ -80,21 +80,20 @@ class RawClient(APIClient):
         res = self._post(url=url, body=body, headers={"content-type": "*/*"})
         return RawResponse(res.json())
 
-    def delete_databases(self, database_names: list, recursive: bool = False) -> Dict:
+    def delete_databases(self, database_names: list, recursive: bool = False) -> None:
         """Deletes databases in the Raw API.
 
         Args:
             database_names (list):  A list of databases to delete.
 
         Returns:
-            An empty response.
+            None
 
         """
         url = "/raw/delete"
         body = {"items": [{"dbName": "{}".format(database_name)} for database_name in database_names]}
         params = {"recursive": recursive}
-        res = self._post(url=url, body=body, params=params, headers={"content-type": "*/*"})
-        return res.json()
+        self._post(url=url, body=body, params=params, headers={"content-type": "*/*"})
 
     def get_tables(self, database_name: str = None, limit: int = None, cursor: str = None) -> RawResponse:
         """Returns a RawObject containing a list of tables in a raw database.
@@ -137,7 +136,7 @@ class RawClient(APIClient):
         res = self._post(url=url, body=body, headers={"content-type": "*/*"})
         return RawResponse(res.json())
 
-    def delete_tables(self, database_name: str = None, table_names: list = None) -> Dict:
+    def delete_tables(self, database_name: str = None, table_names: list = None) -> None:
         """Deletes databases in the Raw API.
 
         Args:
@@ -146,13 +145,12 @@ class RawClient(APIClient):
             table_names (list):     The table names to create.
 
         Returns:
-            An empty response.
+            None
 
         """
         url = "/raw/{}/delete".format(database_name)
         body = {"items": [{"tableName": "{}".format(table_name)} for table_name in table_names]}
-        res = self._post(url=url, body=body, headers={"content-type": "*/*"})
-        return res.json()
+        self._post(url=url, body=body, headers={"content-type": "*/*"})
 
     def get_rows(
         self, database_name: str = None, table_name: str = None, limit: int = None, cursor: str = None
@@ -186,7 +184,7 @@ class RawClient(APIClient):
         rows: List[RawRow] = None,
         ensure_parent=False,
         use_gzip=True,
-    ) -> Dict:
+    ) -> None:
         """Creates tables in the given Raw API database.
 
         Args:
@@ -201,7 +199,7 @@ class RawClient(APIClient):
             use_gzip (bool):        Compress content using gzip
 
         Returns:
-            An empty response
+            None
 
         """
         url = "/raw/{}/{}/create".format(database_name, table_name)
@@ -216,11 +214,10 @@ class RawClient(APIClient):
             body = {
                 "items": [{"key": "{}".format(row.key), "columns": row.columns} for row in rows[i : i + ul_row_limit]]
             }
-            res = self._post(url=url, body=body, headers={"content-type": "*/*"}, params=params, use_gzip=use_gzip)
+            self._post(url=url, body=body, headers={"content-type": "*/*"}, params=params, use_gzip=use_gzip)
             i += ul_row_limit
-        return res.json()
 
-    def delete_rows(self, database_name: str = None, table_name: str = None, rows: List[RawRow] = None) -> Dict:
+    def delete_rows(self, database_name: str = None, table_name: str = None, rows: List[RawRow] = None) -> None:
         """Deletes rows in the Raw API.
 
         Args:
@@ -231,13 +228,12 @@ class RawClient(APIClient):
             rows (list):            The rows to delete.
 
         Returns:
-            An empty response.
+            None
 
         """
         url = "/raw/{}/{}/delete".format(database_name, table_name)
         body = {"items": [{"key": "{}".format(row.key), "columns": row.columns} for row in rows]}
-        res = self._post(url=url, body=body, headers={"content-type": "*/*"})
-        return res.json()
+        self._post(url=url, body=body, headers={"content-type": "*/*"})
 
     def get_row(self, database_name: str = None, table_name: str = None, row_key: str = None) -> RawResponse:
         """Returns a RawObject containing a list of rows.

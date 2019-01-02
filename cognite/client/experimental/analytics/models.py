@@ -65,7 +65,7 @@ class ModelsClient(APIClient):
         res = self._get(url)
         return res.json()
 
-    def delete_model(self, model_id: int) -> Dict:
+    def delete_model(self, model_id: int) -> None:
         """Delete a model.
 
         Will also delete all versions and schedules for this model.
@@ -74,11 +74,10 @@ class ModelsClient(APIClient):
             model_id (int): Delete model with this id.
 
         Returns:
-            Dict: Empty Response
+            None
         """
         url = "/analytics/models/{}".format(model_id)
-        res = self._delete(url)
-        return res.json()
+        self._delete(url)
 
     def train_model_version(
         self,
@@ -152,7 +151,7 @@ class ModelsClient(APIClient):
         res = self._get(url)
         return res.json()
 
-    def delete_version(self, model_id: int, version_id: int) -> Dict:
+    def delete_version(self, model_id: int, version_id: int) -> None:
         """Delete a model version by id.
 
         Args:
@@ -160,11 +159,10 @@ class ModelsClient(APIClient):
             version_id (int): Id of model version.
 
         Returns:
-            Dict: The requested model version
+            None
         """
         url = "/analytics/models/{}/versions/{}".format(model_id, version_id)
-        res = self._delete(url)
-        return res.json()
+        self._delete(url)
 
     def online_predict(
         self, model_id: int, version_id: int = None, instances: List = None, args: Dict[str, Any] = None
@@ -257,18 +255,17 @@ class ModelsClient(APIClient):
         res = self._get(url)
         return res.json()
 
-    def delete_source_package(self, source_package_id: int) -> Dict:
+    def delete_source_package(self, source_package_id: int) -> None:
         """Delete source package by id.
 
         Args:
             source_package_id (int): Id of soure package to delete.
 
         Returns:
-            Dict: Empty response.
+            None
         """
         url = "/analytics/models/sourcepackages/{}".format(source_package_id)
-        res = self._delete(url)
-        return res.json()
+        self._delete(url)
 
     def create_schedule(
         self,
@@ -337,18 +334,17 @@ class ModelsClient(APIClient):
         res = self._post(url, body=body)
         return res.json()
 
-    def delete_schedule(self, schedule_id: int) -> Dict:
+    def delete_schedule(self, schedule_id: int) -> None:
         """Delete a schedule by id.
 
         Args:
             schedule_id (int):  The id of the schedule to delete.
 
         Returns:
-            Dict: Empty response
+            None
         """
         url = "/analytics/models/schedules/{}".format(schedule_id)
-        res = self._delete(url=url)
-        return res.json()
+        self._delete(url=url)
 
     def get_schedules(self) -> List[Dict]:
         """Get all schedules.

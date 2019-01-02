@@ -258,9 +258,7 @@ class DataTransferService:
         Returns:
             Dict[str, pd.DataFrame]: A label-indexed dictionary of data frames.
         """
-        if len(self.ts_data_specs) == 0:
-            return {}
-        if self.ts_data_specs is None:
+        if len(self.ts_data_specs) == 0 or self.ts_data_specs is None:
             raise ValueError("Data spec does not contain any TimeSeriesDataSpecs")
 
         dataframes = {}

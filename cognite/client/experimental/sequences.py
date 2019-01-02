@@ -249,20 +249,19 @@ class SequencesClient(APIClient):
         the_sequence: dict = json_response["data"]["items"][0]
         return Sequence.from_JSON(the_sequence)
 
-    def delete_sequence_by_id(self, id: int) -> Dict:
+    def delete_sequence_by_id(self, id: int) -> None:
         """Deletes the sequence with the given id.
 
         Args:
             id (int):       ID of the sequence to delete
 
         Returns:
-            Dict: An empty response
+            None
         """
         url = "/sequences/{}".format(id)
-        res = self._delete(url=url)
-        return res.json()
+        self._delete(url=url)
 
-    def post_data_to_sequence(self, id: int, rows: List[Row]) -> Dict:
+    def post_data_to_sequence(self, id: int, rows: List[Row]) -> None:
         """Posts data to a sequence.
 
         Args:
@@ -274,12 +273,11 @@ class SequencesClient(APIClient):
             project (str):  Project name.
 
         Returns:
-            Dict: An empty response
+            None
         """
         url = "/sequences/{}/postdata".format(id)
         body = {"items": [{"rows": [row.__dict__ for row in rows]}]}
-        res = self._post(url, body=body)
-        return res.json()
+        self._post(url, body=body)
 
     def get_data_from_sequence(
         self,

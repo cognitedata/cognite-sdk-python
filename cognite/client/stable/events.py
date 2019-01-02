@@ -201,14 +201,14 @@ class EventsClient(APIClient):
         res = self._post(url, body=body)
         return EventListResponse(res.json())
 
-    def delete_events(self, event_ids: List[int]) -> Dict:
+    def delete_events(self, event_ids: List[int]) -> None:
         """Deletes a list of events.
 
         Args:
             event_ids (List[int]):    List of ids of events to delete.
 
         Returns:
-            An empty response.
+            None
 
         Examples:
             Deleting a list of events::
@@ -218,8 +218,7 @@ class EventsClient(APIClient):
         """
         url = "/events/delete"
         body = {"items": event_ids}
-        res = self._post(url, body=body)
-        return res.json()
+        self._post(url, body=body)
 
     def search_for_events(
         self,

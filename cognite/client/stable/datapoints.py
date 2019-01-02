@@ -376,7 +376,7 @@ class DatapointsClient(APIClient):
 
     def post_multi_time_series_datapoints(
         self, timeseries_with_datapoints: List[TimeseriesWithDatapoints], **kwargs
-    ) -> Dict:
+    ) -> None:
         """Insert data into multiple timeseries.
 
         Args:
@@ -386,7 +386,7 @@ class DatapointsClient(APIClient):
             use_gzip (bool): Whether or not to gzip the request. Defaults to True.
 
         Returns:
-            An empty response.
+            None
 
         Examples:
             Posting some dummy datapoints to multiple time series. This example assumes that the time series have
@@ -432,11 +432,9 @@ class DatapointsClient(APIClient):
                     for ts_with_data in bin
                 ]
             }
-            res = self._post(url, body=body, use_gzip=use_gzip)
+            self._post(url, body=body, use_gzip=use_gzip)
 
-        return res.json()
-
-    def post_datapoints(self, name, datapoints: List[Datapoint], **kwargs) -> Dict:
+    def post_datapoints(self, name, datapoints: List[Datapoint]) -> None:
         """Insert a list of datapoints.
 
         Args:
@@ -445,7 +443,7 @@ class DatapointsClient(APIClient):
             datapoints (list[stable.datapoints.Datapoint): List of datapoint data transfer objects to insert.
 
         Returns:
-            An empty response.
+            None
 
         Examples:
             Posting some dummy datapoints::
@@ -464,11 +462,10 @@ class DatapointsClient(APIClient):
         i = 0
         while i < len(datapoints):
             body = {"items": [dp.__dict__ for dp in datapoints[i : i + ul_dps_limit]]}
-            res = self._post(url, body=body)
+            self._post(url, body=body)
             i += ul_dps_limit
-        return res.json()
 
-    def get_latest(self, name, before=None, **kwargs) -> LatestDatapointResponse:
+    def get_latest(self, name, before=None) -> LatestDatapointResponse:
         """Returns a LatestDatapointObject containing the latest datapoint for the given timeseries.
 
         Args:
@@ -674,7 +671,7 @@ class DatapointsClient(APIClient):
     def _get_datapoints_frame_helper_wrapper(self, args, time_series, aggregates, granularity):
         return self._get_datapoints_frame_helper(time_series, aggregates, granularity, args["start"], args["end"])
 
-    def _get_datapoints_frame_helper(self, time_series, aggregates, granularity, start=None, end=None, **kwargs):
+    def _get_datapoints_frame_helper(self, time_series, aggregates, granularity, start=None, end=None):
         """Returns a pandas dataframe of datapoints for the given timeseries all on the same timestamps.
 
         This method will automate paging for the user and return all data for the given time period.
@@ -797,7 +794,7 @@ class DatapointsClient(APIClient):
 
         return df
 
-    def post_datapoints_frame(self, dataframe) -> Dict:
+    def post_datapoints_frame(self, dataframe) -> None:
         """Write a dataframe
 
         Args:
@@ -809,7 +806,7 @@ class DatapointsClient(APIClient):
             project (str): Project name.
 
         Returns:
-            An empty response.
+            None
         """
 
         try:
@@ -820,9 +817,7 @@ class DatapointsClient(APIClient):
 
         for name in names:
             data_points = [Datapoint(int(timestamp[i]), dataframe[name].iloc[i]) for i in range(0, len(dataframe))]
-            res = self.post_datapoints(name, data_points)
-
-        return res
+            self.post_datapoints(name, data_points)
 
     def live_data_generator(self, name, update_frequency=1):
         """Generator function which continously polls latest datapoint of a timeseries and yields new datapoints.
