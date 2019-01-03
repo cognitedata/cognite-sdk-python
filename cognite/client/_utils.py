@@ -6,10 +6,14 @@ This module provides helper methods and different utilities for the Cognite API 
 This module is protected and should not used by end-users.
 """
 import datetime
+import platform
 import re
+import sys
 import time
 from datetime import datetime, timezone
 from typing import Callable, List
+
+import cognite
 
 
 def datetime_to_ms(dt):
@@ -162,3 +166,10 @@ def to_camel_case(snake_case_string: str):
 def to_snake_case(camel_case_string: str):
     s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", camel_case_string)
     return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
+
+
+def get_user_agent():
+    sdk_version = "PythonSDK/{}".format(cognite.__version__)
+    python_version = "Python/{}.{}.{}".format(sys.version_info.major, sys.version_info.minor, sys.version_info.micro)
+    operation_system = "OS/{}".format(platform.platform())
+    return "{} {} {}".format(sdk_version, python_version, operation_system)

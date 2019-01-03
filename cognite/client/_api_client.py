@@ -5,8 +5,7 @@ import logging
 from copy import deepcopy
 from typing import Any, Dict
 
-from requests import Session
-from requests.exceptions import RetryError
+from requests import Response, Session
 
 from cognite.client.exceptions import APIError
 
@@ -17,7 +16,7 @@ def _status_is_valid(status_code: int):
     return status_code < 400
 
 
-def _raise_API_error(res):
+def _raise_API_error(res: Response):
     x_request_id = res.headers.get("X-Request-Id")
     code = res.status_code
     try:
@@ -34,11 +33,12 @@ def _raise_API_error(res):
     raise APIError(msg, code, x_request_id)
 
 
-def _log_request(method, url, **kwargs):
-    extra = deepcopy(kwargs)
-    if "api-key" in extra.get("headers", {}):
-        extra["headers"]["api-key"] = None
-    log.info("HTTP/1.1 {} {}".format(method, url), extra=extra)
+def _log_request(res: Response, **extra):
+    method = res.request.method
+    url = res.request.url
+    status_code = res.status_code
+    extra.update({"headers": res.request.headers})
+    log.info("HTTP/1.1 {} {} {}".format(method, url, status_code), extra=extra)
 
 
 def request_method(method=None):
@@ -85,17 +85,19 @@ class APIClient:
 
     @request_method
     def _delete(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
-        _log_request("DELETE", url, params=params, headers=headers, cookies=self._cookies)
-        return self._request_session.delete(
+        res = self._request_session.delete(
             url, params=params, headers=headers, cookies=self._cookies, timeout=self._timeout
         )
+        _log_request(res)
+        return res
 
     @request_method
     def _get(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
-        _log_request("GET", url, params=params, headers=headers, cookies=self._cookies)
-        return self._request_session.get(
+        res = self._request_session.get(
             url, params=params, headers=headers, cookies=self._cookies, timeout=self._timeout
         )
+        _log_request(res)
+        return res
 
     @request_method
     def _post(
@@ -106,23 +108,24 @@ class APIClient:
         use_gzip: bool = True,
         headers: Dict[str, Any] = None,
     ):
-        _log_request("POST", url, body=body, params=params, headers=headers, cookies=self._cookies)
-
         data = json.dumps(body, default=lambda x: x.__dict__)
         headers = headers or {}
         if use_gzip:
             headers["Content-Encoding"] = "gzip"
             data = gzip.compress(json.dumps(body, default=lambda x: x.__dict__).encode("utf-8"))
-        return self._request_session.post(
+        res = self._request_session.post(
             url, data=data, headers=headers, params=params, cookies=self._cookies, timeout=self._timeout
         )
+        _log_request(res, body=body)
+        return res
 
     @request_method
     def _put(self, url: str, body: Dict[str, Any] = None, headers: Dict[str, Any] = None):
-        _log_request("PUT", url, body=body, headers=headers, cookies=self._cookies)
-        return self._request_session.put(
+        res = self._request_session.put(
             url, data=json.dumps(body), headers=headers, cookies=self._cookies, timeout=self._timeout
         )
+        _log_request(res, body=body)
+        return res
 
 
 class CogniteResponse:

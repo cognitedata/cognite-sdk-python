@@ -1,12 +1,14 @@
 import os
 from typing import Any, Dict
 
+import requests
 from cognite_logger import cognite_logger
 from requests import Session
 from requests.adapters import HTTPAdapter
 from urllib3 import Retry
 
 from cognite.client._api_client import APIClient
+from cognite.client._utils import get_user_agent
 from cognite.client.experimental import ExperimentalClient
 from cognite.client.stable.assets import AssetsClient
 from cognite.client.stable.datapoints import DatapointsClient
@@ -82,8 +84,8 @@ class CogniteClient:
         base_url: str = None,
         num_of_retries: int = None,
         num_of_workers: int = None,
-        cookies: Dict[str, str] = None,
         headers: Dict[str, str] = None,
+        cookies: Dict[str, str] = None,
         timeout: int = None,
         debug: bool = None,
     ):
@@ -97,11 +99,9 @@ class CogniteClient:
 
         self._num_of_workers = num_of_workers or ENVIRONMENT_NUM_OF_WORKERS or DEFAULT_NUM_OF_WORKERS
 
-        self._cookies = cookies or {}
+        self._configure_headers(headers)
 
-        self._headers = {"api-key": self.__api_key, "content-type": "application/json", "accept": "application/json"}
-        if headers:
-            self._headers.update(headers)
+        self._cookies = cookies or {}
 
         self._timeout = timeout or ENVIRONMENT_TIMEOUT or DEFAULT_TIMEOUT
 
@@ -212,3 +212,17 @@ class CogniteClient:
         session.mount("http://", adapter)
         session.mount("https://", adapter)
         return session
+
+    def _configure_headers(self, user_defined_headers):
+        self._headers = requests.utils.default_headers()
+        self._headers.update(
+            {"api-key": self.__api_key, "content-type": "application/json", "accept": "application/json"}
+        )
+
+        if "User-Agent" in self._headers:
+            self._headers["User-Agent"] += " " + get_user_agent()
+        else:
+            self._headers["User-Agent"] = get_user_agent()
+
+        if user_defined_headers:
+            self._headers.update(user_defined_headers)
