@@ -79,8 +79,7 @@ class Event(object):
 
 class EventsClient(APIClient):
     def __init__(self, **kwargs):
-        kwargs["version"] = "0.5"
-        super().__init__(**kwargs)
+        super().__init__(version="0.5", **kwargs)
 
     def get_event(self, event_id: int) -> EventResponse:
         """Returns a EventResponse containing an event matching the id.

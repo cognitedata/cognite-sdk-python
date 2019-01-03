@@ -60,8 +60,7 @@ class TimeSeries:
 
 class TimeSeriesClient(APIClient):
     def __init__(self, **kwargs):
-        kwargs["version"] = "0.5"
-        super().__init__(**kwargs)
+        super().__init__(version="0.5", **kwargs)
 
     def get_time_series(
         self, prefix=None, description=None, include_metadata=False, asset_id=None, path=None, **kwargs

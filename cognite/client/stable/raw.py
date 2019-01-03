@@ -40,8 +40,7 @@ class RawRow(object):
 
 class RawClient(APIClient):
     def __init__(self, **kwargs):
-        kwargs["version"] = "0.5"
-        super().__init__(**kwargs)
+        super().__init__(version="0.5", **kwargs)
 
     def get_databases(self, limit: int = None, cursor: str = None) -> RawResponse:
         """Returns a RawObject containing a list of raw databases.

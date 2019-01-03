@@ -8,8 +8,7 @@ from cognite.client._api_client import APIClient
 
 class ModelsClient(APIClient):
     def __init__(self, **kwargs):
-        kwargs["version"] = "0.6"
-        super().__init__(**kwargs)
+        super().__init__(version="0.6", **kwargs)
 
     def create_model(
         self,

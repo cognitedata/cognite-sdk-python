@@ -47,8 +47,7 @@ class TagMatchingResponse(CogniteResponse):
 
 class TagMatchingClient(APIClient):
     def __init__(self, **kwargs):
-        kwargs["version"] = "0.5"
-        super().__init__(**kwargs)
+        super().__init__(version="0.5", **kwargs)
 
     def tag_matching(self, tag_ids, fuzzy_threshold=0, platform=None) -> TagMatchingResponse:
         """Returns a TagMatchingObject containing a list of matched tags for the given query.

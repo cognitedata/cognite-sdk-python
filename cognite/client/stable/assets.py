@@ -71,8 +71,7 @@ class Asset:
 
 class AssetsClient(APIClient):
     def __init__(self, **kwargs):
-        kwargs["version"] = "0.5"
-        super().__init__(**kwargs)
+        super().__init__(version="0.5", **kwargs)
 
     def get_assets(
         self, name=None, path=None, description=None, metadata=None, depth=None, fuzziness=None, **kwargs

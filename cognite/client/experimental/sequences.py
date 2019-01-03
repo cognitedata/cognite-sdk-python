@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
-from typing import Dict, List
+from typing import List
 
 import pandas as pd
 
@@ -191,8 +191,7 @@ class SequenceDataRequest:
 
 class SequencesClient(APIClient):
     def __init__(self, **kwargs):
-        kwargs["version"] = "0.6"
-        super().__init__(**kwargs)
+        super().__init__(version="0.6", **kwargs)
 
     def post_sequences(self, sequences: List[Sequence]) -> Sequence:
         """Create a new time series.

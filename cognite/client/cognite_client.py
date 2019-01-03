@@ -113,46 +113,46 @@ class CogniteClient:
         if project is None:
             self._project = self.login.status().project
 
-        self._api_client = self.client_factory(APIClient)
+        self._api_client = self._client_factory(APIClient)
 
         if debug:
             cognite_logger.configure_logger("cognite-sdk", log_level="DEBUG", log_json=True)
 
     @property
     def assets(self) -> AssetsClient:
-        return self.client_factory(AssetsClient)
+        return self._client_factory(AssetsClient)
 
     @property
     def datapoints(self) -> DatapointsClient:
-        return self.client_factory(DatapointsClient)
+        return self._client_factory(DatapointsClient)
 
     @property
     def events(self) -> EventsClient:
-        return self.client_factory(EventsClient)
+        return self._client_factory(EventsClient)
 
     @property
     def files(self) -> FilesClient:
-        return self.client_factory(FilesClient)
+        return self._client_factory(FilesClient)
 
     @property
     def login(self) -> LoginClient:
-        return self.client_factory(LoginClient)
+        return self._client_factory(LoginClient)
 
     @property
     def raw(self) -> RawClient:
-        return self.client_factory(RawClient)
+        return self._client_factory(RawClient)
 
     @property
     def tag_matching(self) -> TagMatchingClient:
-        return self.client_factory(TagMatchingClient)
+        return self._client_factory(TagMatchingClient)
 
     @property
     def time_series(self) -> TimeSeriesClient:
-        return self.client_factory(TimeSeriesClient)
+        return self._client_factory(TimeSeriesClient)
 
     @property
     def experimental(self) -> ExperimentalClient:
-        return ExperimentalClient(self.client_factory)
+        return ExperimentalClient(self._client_factory)
 
     def get(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
         """Perform a GET request to a path in the API.
@@ -189,9 +189,8 @@ class CogniteClient:
         """
         return self._api_client._delete(url, params, headers)
 
-    def client_factory(self, client, version=None):
+    def _client_factory(self, client):
         return client(
-            version=version,
             project=self._project,
             base_url=self._base_url,
             num_of_retries=self._num_of_retries,

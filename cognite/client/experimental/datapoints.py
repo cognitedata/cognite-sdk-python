@@ -23,8 +23,7 @@ class DatapointsResponse(CogniteResponse):
 
 class DatapointsClient(APIClient):
     def __init__(self, **kwargs):
-        kwargs["version"] = "0.6"
-        super().__init__(**kwargs)
+        super().__init__(version="0.6", **kwargs)
 
     def get_datapoints(self, id, start, end=None, aggregates=None, granularity=None, **kwargs) -> DatapointsResponse:
         """Returns a DatapointsObject containing a list of datapoints for the given query.
