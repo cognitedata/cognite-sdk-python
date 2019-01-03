@@ -1,13 +1,11 @@
 import os
 
+from cognite import CogniteClient
 from sklearn import linear_model
 from sklearn.externals import joblib
 
-from cognite.timeseries import get_datapoints_frame
-from cognite.config import configure_session
-from cognite.preprocessing import fill_nan
-
-configure_session(os.environ.get("COGNITE_API_KEY"), "akerbp")
+# Set the environment variable COGNITE_API_KEY for this to work
+client = CogniteClient()
 
 tag_ids = [
     "SKAP_18ESV2113/BCH/10sSamp",
@@ -16,8 +14,9 @@ tag_ids = [
 ]
 
 target_vars = ["SKAP_18PI2117/Y/10sSAMP"]
-df = fill_nan(get_datapoints_frame(tag_ids, aggregates=["step"], granularity="1d", start="50w-ago"))
+df = client.datapoints.get_datapoints_frame(tag_ids, aggregates=["step"], granularity="1d", start="50w-ago")
 
+df = df.fillna()
 
 y_labels = [label for label in list(df.columns) if any([label.startswith(var_name) for var_name in target_vars])]
 X_labels = [label for label in list(df.columns) if not any([label.startswith(var_name) for var_name in target_vars])]

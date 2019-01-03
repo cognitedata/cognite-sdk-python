@@ -29,6 +29,7 @@ wheels/
 
 # Other
 test.py
+.env
 
 # Coverage
 .coverage
