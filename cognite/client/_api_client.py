@@ -27,7 +27,7 @@ def _serialize(obj):
 
 
 def _exponential_backoff_sleep_seconds(backoff_factor, num_of_tries):
-    return backoff_factor * (2 ** (num_of_tries - 1))
+    return backoff_factor * (2 ** (num_of_tries - 1)) if num_of_tries > 0 else 0
 
 
 def _raise_API_error(res):
@@ -71,13 +71,12 @@ def request_method(method=None, do_retry: bool = True):
         total_number_of_tries = range(client_instance._num_of_retries + 1 if do_retry else 1)
 
         for try_num in total_number_of_tries:
+            time.sleep(_exponential_backoff_sleep_seconds(backoff_factor=1, num_of_tries=try_num))
             res = method(client_instance, full_url, *args, **kwargs)
             if _status_is_valid(res.status_code):
                 return res
             if not _should_retry(res.status_code):
                 break
-
-            time.sleep(_exponential_backoff_sleep_seconds(backoff_factor=1, num_of_tries=try_num))
         _raise_API_error(res)
 
     return wrapper
