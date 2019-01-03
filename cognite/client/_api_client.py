@@ -47,11 +47,11 @@ def _raise_API_error(res):
     raise APIError(msg, code, x_request_id)
 
 
-def _log_request(log_level, method, url, **kwargs):
+def _log_request(method, url, **kwargs):
     extra = deepcopy(kwargs)
     if "api-key" in extra.get("headers", {}):
         extra["headers"]["api-key"] = None
-    log.log(logging.getLevelName(log_level), "HTTP/1.1 {} {}".format(method, url), extra=extra)
+    log.info("HTTP/1.1 {} {}".format(method, url), extra=extra)
 
 
 def request_method(method=None, do_retry: bool = True):
@@ -96,7 +96,6 @@ class APIClient:
         num_of_workers: int = None,
         cookies: Dict = None,
         headers: Dict = None,
-        log_level: str = None,
         timeout: int = None,
     ):
         self._project = project
@@ -106,19 +105,18 @@ class APIClient:
         self._num_of_workers = num_of_workers
         self._cookies = cookies
         self._headers = headers
-        self._log_level = log_level
         self._timeout = timeout
 
     @request_method
     def _delete(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
         """Perform a DELETE request with a predetermined number of retries."""
-        _log_request(self._log_level, "DELETE", url, params=params, headers=headers, cookies=self._cookies)
+        _log_request("DELETE", url, params=params, headers=headers, cookies=self._cookies)
         return requests.delete(url, params=params, headers=headers, cookies=self._cookies, timeout=self._timeout)
 
     @request_method
     def _get(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
         """Perform a GET request with a predetermined number of retries."""
-        _log_request(self._log_level, "GET", url, params=params, headers=headers, cookies=self._cookies)
+        _log_request("GET", url, params=params, headers=headers, cookies=self._cookies)
         return requests.get(url, params=params, headers=headers, cookies=self._cookies, timeout=self._timeout)
 
     @request_method(do_retry=False)
@@ -131,7 +129,7 @@ class APIClient:
         headers: Dict[str, Any] = None,
     ):
         """Perform a POST request."""
-        _log_request(self._log_level, "POST", url, body=body, params=params, headers=headers, cookies=self._cookies)
+        _log_request("POST", url, body=body, params=params, headers=headers, cookies=self._cookies)
 
         data = json.dumps(body, default=_serialize)
         headers = headers or {}
@@ -145,7 +143,7 @@ class APIClient:
     @request_method
     def _put(self, url: str, body: Dict[str, Any] = None, headers: Dict[str, Any] = None):
         """Perform a PUT request with a predetermined number of retries."""
-        _log_request(self._log_level, "PUT", url, body=body, headers=headers, cookies=self._cookies)
+        _log_request("PUT", url, body=body, headers=headers, cookies=self._cookies)
         return requests.put(url, data=json.dumps(body), headers=headers, cookies=self._cookies, timeout=self._timeout)
 
 

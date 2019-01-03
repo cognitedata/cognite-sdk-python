@@ -18,7 +18,6 @@ from cognite.client.stable.time_series import TimeSeriesClient
 DEFAULT_BASE_URL = "https://api.cognitedata.com"
 DEFAULT_NUM_OF_RETRIES = 5
 DEFAULT_NUM_OF_WORKERS = 10
-DEFAULT_LOG_LEVEL = "DEBUG"
 DEFAULT_TIMEOUT = 60
 
 ENVIRONMENT_API_KEY = os.getenv("COGNITE_API_KEY")
@@ -44,8 +43,7 @@ class CogniteClient:
         headers (Dict): Additional headers to add to all requests. Defaults are:
                  {"api-key": self.api_key, "content-type": "application/json", "accept": "application/json"}
         timeout (int): Timeout on requests sent to the api. Defaults to 60 seconds.
-        log_level (str): Which log level to log request details to. Defaults to DEBUG.
-        debug (bool): Automatically configures logger to log extra request details to stdout.
+        debug (bool): Configures logger to log extra request details to stdout.
 
 
     Examples:
@@ -83,7 +81,6 @@ class CogniteClient:
         cookies: Dict[str, str] = None,
         headers: Dict[str, str] = None,
         timeout: int = None,
-        log_level: str = None,
         debug: bool = None,
     ):
         self.__api_key = api_key or ENVIRONMENT_API_KEY
@@ -104,11 +101,6 @@ class CogniteClient:
 
         self._timeout = timeout or ENVIRONMENT_TIMEOUT or DEFAULT_TIMEOUT
 
-        self._log_level = log_level or DEFAULT_LOG_LEVEL
-        __valid_log_levels = [logging.getLevelName(i) for i in range(10, 51, 10)]
-        if self._log_level not in __valid_log_levels:
-            raise ValueError(f"{self._log_level} is not a valid log level")
-
         self._project = project
         if project is None:
             self._project = self.login.status().project
@@ -116,7 +108,7 @@ class CogniteClient:
         self._api_client = self._client_factory(APIClient)
 
         if debug:
-            cognite_logger.configure_logger("cognite-sdk", log_level="DEBUG", log_json=True)
+            cognite_logger.configure_logger("cognite-sdk", log_level="INFO", log_json=True)
 
     @property
     def assets(self) -> AssetsClient:
@@ -197,6 +189,5 @@ class CogniteClient:
             num_of_workers=self._num_of_workers,
             cookies=self._cookies,
             headers=self._headers,
-            log_level=self._log_level,
             timeout=self._timeout,
         )

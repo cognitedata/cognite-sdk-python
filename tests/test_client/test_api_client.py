@@ -33,7 +33,6 @@ def api_client():
         num_of_workers=1,
         cookies={"a-cookie": "a-cookie-val"},
         headers={},
-        log_level="INFO",
     )
     yield client
 
@@ -47,7 +46,6 @@ def api_client_with_retries():
         num_of_workers=1,
         cookies={"a-cookie": "a-cookie-val"},
         headers={},
-        log_level="INFO",
     )
     yield client
 
