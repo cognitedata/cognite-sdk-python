@@ -88,9 +88,9 @@ def single_time_series_in_cdp():
 class MockRequest(mock.Mock):
     def __init__(self):
         super().__init__()
-        self.method = None
-        self.url = None
-        self.headers = None
+        self.method = "GET"
+        self.url = "http://some.url"
+        self.headers = {}
 
 
 class MockReturnValue(mock.Mock):

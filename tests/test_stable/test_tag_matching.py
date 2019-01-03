@@ -11,7 +11,7 @@ tag_matching = CogniteClient().tag_matching.tag_matching
 
 
 @pytest.fixture(scope="module")
-@patch("requests.post")
+@patch("requests.sessions.Session.post")
 def tagmatching_result(mock_post):
     response = {
         "data": {

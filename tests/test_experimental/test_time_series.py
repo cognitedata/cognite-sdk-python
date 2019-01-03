@@ -19,9 +19,9 @@ def ts_name():
 
 
 class TestTimeseries:
-    @pytest.fixture(scope="class", params=[True, False])
-    def get_time_series_by_id_response_obj(self, request, time_series_in_cdp):
-        yield time_series.get_time_series_by_id(id=time_series_in_cdp[0], include_metadata=request.param)
+    @pytest.fixture(scope="class")
+    def get_time_series_by_id_response_obj(self, time_series_in_cdp):
+        yield time_series.get_time_series_by_id(id=time_series_in_cdp[0])
 
     @pytest.fixture(scope="class")
     def get_multiple_time_series_by_id_response_obj(self, time_series_in_cdp):
