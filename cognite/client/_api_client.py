@@ -33,11 +33,16 @@ def _raise_API_error(res: Response):
     raise APIError(msg, code, x_request_id)
 
 
-def _log_request(res: Response, **extra):
+def _log_request(res: Response, **kwargs):
     method = res.request.method
     url = res.request.url
     status_code = res.status_code
+
+    extra = deepcopy(kwargs)
     extra.update({"headers": res.request.headers})
+    if "api-key" in extra.get("headers", {}):
+        extra["headers"]["api-key"] = None
+
     log.info("HTTP/1.1 {} {} {}".format(method, url, status_code), extra=extra)
 
 
