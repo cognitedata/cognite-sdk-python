@@ -6,3 +6,5 @@ exclude_lines =
     pragma: no cover
     raise AssertionError
     raise NotImplementedError
+omit =
+    cognite/_auxiliary/*

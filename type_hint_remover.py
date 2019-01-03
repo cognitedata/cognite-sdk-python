@@ -4,7 +4,7 @@ import re
 
 import strip_hints
 
-SKIP_DIRECTORIES = ["auxiliary", "__pycache__"]
+SKIP_DIRECTORIES = ["_auxiliary", "__pycache__"]
 PYTHON_FILE_PATTERN = r"^.+\.py$"
 
 
