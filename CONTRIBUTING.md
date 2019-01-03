@@ -33,11 +33,4 @@ $ make html
 Documentation will be automatically generated from the google-style docstrings in the source code. It is then built and released when changes are merged into master.
 
 ### Release version conventions
-Format:
-```
-MAJOR.MINOR.PATCH
-```
-Increment the:
-* MAJOR version for significant changes or additions in functionality or interface.
-* MINOR version when adding functionality in a backwards-incompatible manner or changing the interface.
-* PATCH version when you have made backwards-compatible bug fixes or minor additions.
+See https://semver.org/
