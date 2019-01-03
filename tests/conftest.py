@@ -85,6 +85,14 @@ def single_time_series_in_cdp():
     client.time_series.delete_time_series(name=name)
 
 
+class MockRequest(mock.Mock):
+    def __init__(self):
+        super().__init__()
+        self.method = None
+        self.url = None
+        self.headers = None
+
+
 class MockReturnValue(mock.Mock):
     """Helper class for building mock request responses.
 
@@ -114,6 +122,8 @@ class MockReturnValue(mock.Mock):
         # add json data if provided
         if json_data:
             self.json = mock.Mock(return_value=json_data)
+
+        self.request = MockRequest()
 
 
 def get_time_w_offset(**kwargs):
