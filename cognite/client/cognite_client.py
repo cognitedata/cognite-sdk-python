@@ -1,8 +1,10 @@
-import logging
 import os
 from typing import Any, Dict
 
 from cognite_logger import cognite_logger
+from requests import Session
+from requests.adapters import HTTPAdapter
+from urllib3 import Retry
 
 from cognite.client._api_client import APIClient
 from cognite.client.experimental import ExperimentalClient
@@ -14,6 +16,8 @@ from cognite.client.stable.login import LoginClient
 from cognite.client.stable.raw import RawClient
 from cognite.client.stable.tagmatching import TagMatchingClient
 from cognite.client.stable.time_series import TimeSeriesClient
+
+STATUS_FORCELIST = [429, 500, 502, 503]
 
 DEFAULT_BASE_URL = "https://api.cognitedata.com"
 DEFAULT_NUM_OF_RETRIES = 5
@@ -101,6 +105,8 @@ class CogniteClient:
 
         self._timeout = timeout or ENVIRONMENT_TIMEOUT or DEFAULT_TIMEOUT
 
+        self._requests_session = self._requests_retry_session()
+
         self._project = project
         if project is None:
             self._project = self.login.status().project
@@ -183,11 +189,26 @@ class CogniteClient:
 
     def _client_factory(self, client):
         return client(
+            request_session=self._requests_session,
             project=self._project,
             base_url=self._base_url,
-            num_of_retries=self._num_of_retries,
             num_of_workers=self._num_of_workers,
             cookies=self._cookies,
             headers=self._headers,
             timeout=self._timeout,
         )
+
+    def _requests_retry_session(self):
+        session = Session()
+        retry = Retry(
+            total=self._num_of_retries,
+            read=self._num_of_retries,
+            connect=self._num_of_retries,
+            backoff_factor=1,
+            status_forcelist=STATUS_FORCELIST,
+            raise_on_status=False,
+        )
+        adapter = HTTPAdapter(max_retries=retry)
+        session.mount("http://", adapter)
+        session.mount("https://", adapter)
+        return session
