@@ -25,28 +25,25 @@ class TimeSeriesClient(APIClient):
     def __init__(self, **kwargs):
         super().__init__(version="0.6", **kwargs)
 
-    def get_time_series_by_id(self, id: int, include_metadata: bool = False) -> TimeSeriesResponse:
+    def get_time_series_by_id(self, id: int) -> TimeSeriesResponse:
         """Returns a TimeseriesResponse object containing the requested timeseries.
 
         Args:
             id (int):           ID of timeseries to look up
 
-            include_metadata (bool):    Decide if the metadata field should be returned or not. Defaults to False.
-
         Returns:
             client.experimental.time_series.TimeSeriesResponse: A data object containing the requested timeseries.
         """
         url = "/timeseries/{}".format(id)
-        params = {"includeMetadata": include_metadata}
+        params = {}
         res = self._get(url=url, params=params)
         return TimeSeriesResponse(res.json())
 
-    def get_multiple_time_series_by_id(self, ids: List[int], include_metadata: bool = False) -> TimeSeriesResponse:
+    def get_multiple_time_series_by_id(self, ids: List[int]) -> TimeSeriesResponse:
         """Returns a TimeseriesResponse object containing the requested timeseries.
 
         Args:
             ids (List[int]):           IDs of timeseries to look up
-            include_metadata:       Whether or not to include meta data about time series.
 
         Returns:
             client.experimental.time_series.TimeSeriesResponse: A data object containing the requested timeseries with several
@@ -54,7 +51,7 @@ class TimeSeriesClient(APIClient):
         """
         url = "/timeseries/byids"
         body = {"items": ids}
-        params = {"includeMetadata": include_metadata}
+        params = {}
         res = self._post(url=url, body=body, params=params)
         return TimeSeriesResponse(res.json())
 
