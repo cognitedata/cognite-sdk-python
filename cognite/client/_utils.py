@@ -169,7 +169,15 @@ def to_snake_case(camel_case_string: str):
 
 
 def get_user_agent():
-    sdk_version = "PythonSDK/{}".format(cognite.__version__)
-    python_version = "Python/{}.{}.{}".format(sys.version_info.major, sys.version_info.minor, sys.version_info.micro)
-    operation_system = "OS/{}".format(platform.platform())
-    return "{} {} {}".format(sdk_version, python_version, operation_system)
+    sdk_version = "CognitePythonSDK/{}".format(cognite.__version__)
+
+    python_version = "{}/{} ({};{})".format(
+        platform.python_implementation(), platform.python_version(), platform.python_build(), platform.python_compiler()
+    )
+
+    os_version_info = [platform.release(), platform.machine(), platform.architecture()[0]]
+    os_version_info = [s for s in os_version_info if s]  # Ignore empty strings
+    os_version_info = "-".join(os_version_info)
+    operating_system = "{}/{}".format(platform.system(), os_version_info)
+
+    return "{} {} {}".format(sdk_version, python_version, operating_system)
