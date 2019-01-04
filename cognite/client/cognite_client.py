@@ -204,7 +204,7 @@ class CogniteClient:
             total=self._num_of_retries,
             read=self._num_of_retries,
             connect=self._num_of_retries,
-            backoff_factor=1,
+            backoff_factor=0.5,
             status_forcelist=STATUS_FORCELIST,
             raise_on_status=False,
         )
