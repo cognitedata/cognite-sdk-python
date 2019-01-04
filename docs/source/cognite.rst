@@ -24,11 +24,13 @@ API
 ===
 Assets
 ------
-.. automodule:: cognite.client.stable.assets
-    :members: AssetsClient
-    :undoc-members:
-    :show-inheritance:
+Client
+^^^^^^
+.. autoclass:: cognite.client.stable.assets.AssetsClient
+    :members:
 
+Data Objects
+^^^^^^^^^^^^
 .. automodule:: cognite.client.stable.assets
     :members:
     :exclude-members: AssetsClient
@@ -36,14 +38,15 @@ Assets
     :show-inheritance:
     :inherited-members:
 
-
 Datapoints
 ----------
-.. automodule:: cognite.client.stable.datapoints
-    :members: DatapointsClient
-    :undoc-members:
-    :show-inheritance:
+Client
+^^^^^^
+.. autoclass:: cognite.client.stable.datapoints.DatapointsClient
+    :members:
 
+Data Objects
+^^^^^^^^^^^^
 .. automodule:: cognite.client.stable.datapoints
     :members:
     :exclude-members: DatapointsClient
@@ -53,11 +56,13 @@ Datapoints
 
 Events
 ------
-.. automodule:: cognite.client.stable.events
-    :members: EventsClient
-    :undoc-members:
-    :show-inheritance:
+Client
+^^^^^^
+.. autoclass:: cognite.client.stable.events.EventsClient
+    :members:
 
+Data Objects
+^^^^^^^^^^^^
 .. automodule:: cognite.client.stable.events
     :members:
     :exclude-members: EventsClient
@@ -67,11 +72,13 @@ Events
 
 Files
 -----
-.. automodule:: cognite.client.stable.files
-    :members: FilesClient
-    :undoc-members:
-    :show-inheritance:
+Client
+^^^^^^
+.. autoclass:: cognite.client.stable.files.FilesClient
+    :members:
 
+Data Objects
+^^^^^^^^^^^^
 .. automodule:: cognite.client.stable.files
     :members:
     :exclude-members: FilesClient
@@ -81,11 +88,13 @@ Files
 
 Login
 -----
-.. automodule:: cognite.client.stable.login
-    :members: LoginClient
-    :undoc-members:
-    :show-inheritance:
+Client
+^^^^^^
+.. autoclass:: cognite.client.stable.login.LoginClient
+    :members:
 
+Data Objects
+^^^^^^^^^^^^
 .. automodule:: cognite.client.stable.login
     :members:
     :exclude-members: LoginClient
@@ -95,11 +104,13 @@ Login
 
 Raw
 ----
-.. automodule:: cognite.client.stable.raw
-    :members: RawClient
-    :undoc-members:
-    :show-inheritance:
+Client
+^^^^^^
+.. autoclass:: cognite.client.stable.raw.RawClient
+    :members:
 
+Data Objects
+^^^^^^^^^^^^
 .. automodule:: cognite.client.stable.raw
     :members:
     :exclude-members: RawClient
@@ -109,11 +120,13 @@ Raw
 
 Tagmatching
 -----------
-.. automodule:: cognite.client.stable.tagmatching
-    :members: TagMatchingClient
-    :undoc-members:
-    :show-inheritance:
+Client
+^^^^^^
+.. autoclass:: cognite.client.stable.tagmatching.TagMatchingClient
+    :members:
 
+Data Objects
+^^^^^^^^^^^^
 .. automodule:: cognite.client.stable.tagmatching
     :members:
     :exclude-members: TagMatchingClient
@@ -123,11 +136,13 @@ Tagmatching
 
 Time Series
 -----------
-.. automodule:: cognite.client.stable.time_series
-    :members: TimeSeriesClient
-    :undoc-members:
-    :show-inheritance:
+Client
+^^^^^^
+.. autoclass:: cognite.client.stable.time_series.TimeSeriesClient
+    :members:
 
+Data Objects
+^^^^^^^^^^^^
 .. automodule:: cognite.client.stable.time_series
     :members:
     :exclude-members: TimeSeriesClient
@@ -141,11 +156,13 @@ Analytics
 ---------
 Models
 ^^^^^^
-.. automodule:: cognite.client.experimental.analytics.models
-    :members: ModelsClient
-    :undoc-members:
-    :show-inheritance:
+Client
+~~~~~~
+.. autoclass:: cognite.client.experimental.analytics.models.ModelsClient
+    :members:
 
+Data Objects
+~~~~~~~~~~~~
 .. automodule:: cognite.client.experimental.analytics.models
     :members:
     :exclude-members: ModelsClient
@@ -155,11 +172,13 @@ Models
 
 Time Series
 -----------
-.. automodule:: cognite.client.experimental.time_series
-    :members: TimeSeriesClient
-    :undoc-members:
-    :show-inheritance:
+Client
+^^^^^^
+.. autoclass:: cognite.client.experimental.time_series.TimeSeriesClient
+    :members:
 
+Data Objects
+^^^^^^^^^^^^
 .. automodule:: cognite.client.experimental.time_series
     :members:
     :exclude-members: TimeSeriesClient
@@ -169,11 +188,13 @@ Time Series
 
 Datapoints
 ----------
-.. automodule:: cognite.client.experimental.datapoints
-    :members: DatapointsClient
-    :undoc-members:
-    :show-inheritance:
+Client
+^^^^^^
+.. autoclass:: cognite.client.experimental.datapoints.DatapointsClient
+    :members:
 
+Data Objects
+^^^^^^^^^^^^
 .. automodule:: cognite.client.experimental.datapoints
     :members:
     :exclude-members: DatapointsClient
@@ -183,11 +204,13 @@ Datapoints
 
 Sequences
 ----------
-.. automodule:: cognite.client.experimental.sequences
-    :members: SequencesClient
-    :undoc-members:
-    :show-inheritance:
+Client
+^^^^^^
+.. autoclass:: cognite.client.experimental.sequences.SequencesClient
+    :members:
 
+Data Objects
+^^^^^^^^^^^^
 .. automodule:: cognite.client.experimental.sequences
     :members:
     :exclude-members: SequencesClient
