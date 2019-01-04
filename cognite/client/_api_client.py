@@ -43,7 +43,9 @@ def _log_request(res: Response, **kwargs):
     if "api-key" in extra.get("headers", {}):
         extra["headers"]["api-key"] = None
 
-    log.info("HTTP/1.1 {} {} {}".format(method, url, status_code), extra=extra)
+    http_protocol_version = ".".join(list(str(res.raw.version)))
+
+    log.info("HTTP/{} {} {} {}".format(http_protocol_version, method, url, status_code), extra=extra)
 
 
 def request_method(method=None):

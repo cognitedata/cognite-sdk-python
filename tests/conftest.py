@@ -4,6 +4,7 @@ import random
 import string
 from datetime import datetime
 from unittest import mock
+from unittest.mock import MagicMock
 
 import pytest
 from requests.structures import CaseInsensitiveDict
@@ -124,6 +125,8 @@ class MockReturnValue(mock.Mock):
             self.json = mock.Mock(return_value=json_data)
 
         self.request = MockRequest()
+
+        self.raw = MagicMock()
 
 
 def get_time_w_offset(**kwargs):
