@@ -95,7 +95,11 @@ class CogniteClient:
 
         self._base_url = base_url or ENVIRONMENT_BASE_URL or DEFAULT_BASE_URL
 
-        self._num_of_retries = num_of_retries or ENVIRONMENT_NUM_OF_RETRIES or DEFAULT_NUM_OF_RETRIES
+        self._num_of_retries = DEFAULT_NUM_OF_RETRIES
+        if num_of_retries is not None:
+            self._num_of_retries = num_of_retries
+        elif ENVIRONMENT_NUM_OF_RETRIES is not None:
+            self._num_of_retries = ENVIRONMENT_NUM_OF_RETRIES
 
         self._num_of_workers = num_of_workers or ENVIRONMENT_NUM_OF_WORKERS or DEFAULT_NUM_OF_WORKERS
 
