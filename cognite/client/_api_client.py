@@ -2,11 +2,10 @@ import functools
 import gzip
 import json
 import logging
-import time
 from copy import deepcopy
 from typing import Any, Dict
 
-import requests
+from requests import Response, Session
 
 from cognite.client.exceptions import APIError
 
@@ -17,20 +16,7 @@ def _status_is_valid(status_code: int):
     return status_code < 400
 
 
-def _should_retry(status_code):
-    return status_code in [429, 500, 502, 503]
-
-
-def _serialize(obj):
-    """JSON serializer for objects not serializable by default json code"""
-    return obj.__dict__
-
-
-def _exponential_backoff_sleep_seconds(backoff_factor, num_of_tries):
-    return backoff_factor * (2 ** (num_of_tries - 1)) if num_of_tries > 0 else 0
-
-
-def _raise_API_error(res):
+def _raise_API_error(res: Response):
     x_request_id = res.headers.get("X-Request-Id")
     code = res.status_code
     try:
@@ -47,17 +33,22 @@ def _raise_API_error(res):
     raise APIError(msg, code, x_request_id)
 
 
-def _log_request(method, url, **kwargs):
+def _log_request(res: Response, **kwargs):
+    method = res.request.method
+    url = res.request.url
+    status_code = res.status_code
+
     extra = deepcopy(kwargs)
+    extra.update({"headers": res.request.headers})
     if "api-key" in extra.get("headers", {}):
         extra["headers"]["api-key"] = None
-    log.info("HTTP/1.1 {} {}".format(method, url), extra=extra)
+
+    http_protocol_version = ".".join(list(str(res.raw.version)))
+
+    log.info("HTTP/{} {} {} {}".format(http_protocol_version, method, url, status_code), extra=extra)
 
 
-def request_method(method=None, do_retry: bool = True):
-    if method is None:
-        return functools.partial(request_method, do_retry=do_retry)
-
+def request_method(method=None):
     @functools.wraps(method)
     def wrapper(client_instance, url, *args, **kwargs):
         if not url.startswith("/"):
@@ -67,16 +58,9 @@ def request_method(method=None, do_retry: bool = True):
         default_headers = deepcopy(client_instance._headers)
         default_headers.update(kwargs.get("headers") or {})
         kwargs["headers"] = default_headers
-
-        total_number_of_tries = range(client_instance._num_of_retries + 1 if do_retry else 1)
-
-        for try_num in total_number_of_tries:
-            time.sleep(_exponential_backoff_sleep_seconds(backoff_factor=1, num_of_tries=try_num))
-            res = method(client_instance, full_url, *args, **kwargs)
-            if _status_is_valid(res.status_code):
-                return res
-            if not _should_retry(res.status_code):
-                break
+        res = method(client_instance, full_url, *args, **kwargs)
+        if _status_is_valid(res.status_code):
+            return res
         _raise_API_error(res)
 
     return wrapper
@@ -88,19 +72,19 @@ class APIClient:
 
     def __init__(
         self,
+        request_session: Session,
         version: str = None,
         project: str = None,
         base_url: str = None,
-        num_of_retries: int = None,
         num_of_workers: int = None,
         cookies: Dict = None,
         headers: Dict = None,
         timeout: int = None,
     ):
+        self._request_session = request_session
         self._project = project
         __base_path = f"/api/{version}/projects/{project}" if version else ""
         self._base_url = base_url + __base_path
-        self._num_of_retries = num_of_retries
         self._num_of_workers = num_of_workers
         self._cookies = cookies
         self._headers = headers
@@ -108,17 +92,21 @@ class APIClient:
 
     @request_method
     def _delete(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
-        """Perform a DELETE request with a predetermined number of retries."""
-        _log_request("DELETE", url, params=params, headers=headers, cookies=self._cookies)
-        return requests.delete(url, params=params, headers=headers, cookies=self._cookies, timeout=self._timeout)
+        res = self._request_session.delete(
+            url, params=params, headers=headers, cookies=self._cookies, timeout=self._timeout
+        )
+        _log_request(res)
+        return res
 
     @request_method
     def _get(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
-        """Perform a GET request with a predetermined number of retries."""
-        _log_request("GET", url, params=params, headers=headers, cookies=self._cookies)
-        return requests.get(url, params=params, headers=headers, cookies=self._cookies, timeout=self._timeout)
+        res = self._request_session.get(
+            url, params=params, headers=headers, cookies=self._cookies, timeout=self._timeout
+        )
+        _log_request(res)
+        return res
 
-    @request_method(do_retry=False)
+    @request_method
     def _post(
         self,
         url: str,
@@ -127,23 +115,24 @@ class APIClient:
         use_gzip: bool = True,
         headers: Dict[str, Any] = None,
     ):
-        """Perform a POST request."""
-        _log_request("POST", url, body=body, params=params, headers=headers, cookies=self._cookies)
-
-        data = json.dumps(body, default=_serialize)
+        data = json.dumps(body, default=lambda x: x.__dict__)
         headers = headers or {}
         if use_gzip:
             headers["Content-Encoding"] = "gzip"
-            data = gzip.compress(json.dumps(body, default=_serialize).encode("utf-8"))
-        return requests.post(
+            data = gzip.compress(json.dumps(body, default=lambda x: x.__dict__).encode("utf-8"))
+        res = self._request_session.post(
             url, data=data, headers=headers, params=params, cookies=self._cookies, timeout=self._timeout
         )
+        _log_request(res, body=body)
+        return res
 
     @request_method
     def _put(self, url: str, body: Dict[str, Any] = None, headers: Dict[str, Any] = None):
-        """Perform a PUT request with a predetermined number of retries."""
-        _log_request("PUT", url, body=body, headers=headers, cookies=self._cookies)
-        return requests.put(url, data=json.dumps(body), headers=headers, cookies=self._cookies, timeout=self._timeout)
+        res = self._request_session.put(
+            url, data=json.dumps(body), headers=headers, cookies=self._cookies, timeout=self._timeout
+        )
+        _log_request(res, body=body)
+        return res
 
 
 class CogniteResponse:
