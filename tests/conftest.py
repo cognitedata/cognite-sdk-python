@@ -4,6 +4,7 @@ import random
 import string
 from datetime import datetime
 from unittest import mock
+from unittest.mock import MagicMock
 
 import pytest
 from requests.structures import CaseInsensitiveDict
@@ -85,6 +86,14 @@ def single_time_series_in_cdp():
     client.time_series.delete_time_series(name=name)
 
 
+class MockRequest(mock.Mock):
+    def __init__(self):
+        super().__init__()
+        self.method = "GET"
+        self.url = "http://some.url"
+        self.headers = {}
+
+
 class MockReturnValue(mock.Mock):
     """Helper class for building mock request responses.
 
@@ -114,6 +123,10 @@ class MockReturnValue(mock.Mock):
         # add json data if provided
         if json_data:
             self.json = mock.Mock(return_value=json_data)
+
+        self.request = MockRequest()
+
+        self.raw = MagicMock()
 
 
 def get_time_w_offset(**kwargs):

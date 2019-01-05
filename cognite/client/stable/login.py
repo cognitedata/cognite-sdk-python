@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from copy import copy
+
 from cognite.client._api_client import APIClient, CogniteResponse
 
 
@@ -17,6 +19,11 @@ class LoginStatusResponse(CogniteResponse):
         self.project = internal_representation["data"]["project"]
         self.project_id = internal_representation["data"]["projectId"]
         self.logged_in = internal_representation["data"]["loggedIn"]
+
+    def to_json(self):
+        json_repr = copy(self.__dict__)
+        del json_repr["internal_representation"]
+        return json_repr
 
 
 class LoginClient(APIClient):
