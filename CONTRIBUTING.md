@@ -8,7 +8,7 @@ $ pipenv shell
 ```
 
 ### Testing
-Set up tests for all new functionality. Running the tests will require setting the environment variable 'COGNITE_TEST_API_KEY'.
+Set up tests for all new functionality. Running the tests will require setting the environment variable 'COGNITE_API_KEY'.
 
 Initiate unit tests by running the following command from the root directory:
 
@@ -33,14 +33,4 @@ $ make html
 Documentation will be automatically generated from the google-style docstrings in the source code. It is then built and released when changes are merged into master.
 
 ### Release version conventions
-TODO: Add more detailed instructions on releasing
-Format:
-```
-MAJOR.MINOR[.PATCH]
-```
-Increment the:
-* MAJOR version when you make incompatible API changes,
-* MINOR version when you add functionality in a backwards-compatible manner, and
-* PATCH version when you make backwards-compatible bug fixes.
-
-For more information on versioning see https://semver.org/
+See https://semver.org/
