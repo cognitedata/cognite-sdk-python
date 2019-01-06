@@ -107,8 +107,8 @@ html_sidebars = {
     "**": ["relations.html", "searchbox.html", "globaltoc.html"]  # needs 'show_related': True theme option to display
 }
 
-html_favicon = "../../cognite_logo_black.png"
-html_logo = "../../cognite_logo_white.png"
+html_favicon = "../../img/cognite_logo_black.png"
+html_logo = "../../img/cognite_logo_white.png"
 
 # -- Options for HTMLHelp output ------------------------------------------
 
