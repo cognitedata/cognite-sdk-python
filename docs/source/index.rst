@@ -15,7 +15,7 @@ To install this package run the following command
    pip install cognite-sdk
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 2
    :caption: Contents
 
    cognite
