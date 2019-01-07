@@ -67,8 +67,8 @@ def request_method(method=None):
 
 
 class APIClient:
-    _LIMIT = 100_000
-    _LIMIT_AGG = 10_000
+    _LIMIT = 100000
+    _LIMIT_AGG = 10000
 
     def __init__(
         self,
