@@ -83,7 +83,7 @@ class APIClient:
     ):
         self._request_session = request_session
         self._project = project
-        __base_path = f"/api/{version}/projects/{project}" if version else ""
+        __base_path = "/api/{}/projects/{}".format(version, project) if version else ""
         self._base_url = base_url + __base_path
         self._num_of_workers = num_of_workers
         self._cookies = cookies
