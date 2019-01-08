@@ -23,6 +23,7 @@ strip-hints = "*"
 pre-commit = "*"
 isort = "*"
 tox = "*"
+tox-pyenv = "*"
 
 [requires]
 python_version = "3.7"
