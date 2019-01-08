@@ -114,7 +114,7 @@ class TestDatapoints:
 class TestLatest:
     def test_get_latest(self):
         response = client.datapoints.get_latest(TEST_TS_1_NAME)
-        assert list(response.to_json().keys()) == ["timestamp", "value"]
+        assert set(list(response.to_json().keys())) == {"timestamp", "value"}
         assert isinstance(response, LatestDatapointResponse)
         assert isinstance(response.to_pandas(), pd.DataFrame)
         assert isinstance(response.to_json(), dict)
