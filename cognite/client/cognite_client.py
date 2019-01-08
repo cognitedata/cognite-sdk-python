@@ -161,7 +161,7 @@ class CogniteClient:
 
         Comes in handy if the endpoint you want to reach is not currently supported by the SDK.
         """
-        return self._api_client._get(url, params, headers)
+        return self._api_client._get(url, params=params, headers=headers)
 
     def post(
         self,
@@ -175,21 +175,21 @@ class CogniteClient:
 
         Comes in handy if the endpoint you want to reach is not currently supported by the SDK.
         """
-        return self._api_client._post(url, body, params, use_gzip, headers)
+        return self._api_client._post(url, body=body, params=params, use_gzip=use_gzip, headers=headers)
 
     def put(self, url: str, body: Dict[str, Any] = None, headers: Dict[str, Any] = None):
         """Perform a PUT request to a path in the API.
 
         Comes in handy if the endpoint you want to reach is not currently supported by the SDK.
         """
-        return self._api_client._post(url, body, headers)
+        return self._api_client._put(url, body=body, headers=headers)
 
     def delete(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
         """Perform a DELETE request to a path in the API.
 
         Comes in handy if the endpoint you want to reach is not currently supported by the SDK.
         """
-        return self._api_client._delete(url, params, headers)
+        return self._api_client._delete(url, params=params, headers=headers)
 
     def _client_factory(self, client):
         return client(
