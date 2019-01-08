@@ -54,7 +54,7 @@ podTemplate(
                 sh("pipenv run python3 -m black ./cognite -l 120")
             }
             stage('Test and coverage report') {
-                sh("tox")
+                sh("pipenv run tox")
                 junit(allowEmptyResults: true, testResults: '**/test-report.xml')
                 summarizeTestResults()
             }
