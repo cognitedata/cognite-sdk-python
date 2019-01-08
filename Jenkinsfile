@@ -46,12 +46,12 @@ podTemplate(
                 sh("pip3 install pipenv")
             }
             stage('Install dependencies') {
-                sh("pipenv install --dev --system --ignore-pipfile")
+                sh("pipenv sync --dev")
             }
             stage('Check code style & remove typehints') {
-                sh("black -l 120 --check .")
-                sh("python3 type_hint_remover.py")
-                sh("python3 -m black ./cognite -l 120")
+                sh("pipenv run black -l 120 --check .")
+                sh("pipenv run python3 type_hint_remover.py")
+                sh("pipenv run python3 -m black ./cognite -l 120")
             }
             stage('Test and coverage report') {
                 sh("tox")
@@ -67,14 +67,14 @@ podTemplate(
                 sh("python3 setup.py bdist_wheel")
             }
 
-            def pipVersion = sh(returnStdout: true, script: 'yolk -V cognite-sdk | sort -n | tail -1 | cut -d\\  -f 2').trim()
+            def pipVersion = sh(returnStdout: true, script: 'pipenv run yolk -V cognite-sdk | sort -n | tail -1 | cut -d\\  -f 2').trim()
             def currentVersion = sh(returnStdout: true, script: 'sed -n -e "/^__version__/p" cognite/__init__.py | cut -d\\" -f2').trim()
 
             println("This version: " + currentVersion)
             println("Latest pip version: " + pipVersion)
             if (env.BRANCH_NAME == 'master' && currentVersion != pipVersion) {
                 stage('Release') {
-                    sh("twine upload --config-file /pypi/.pypirc dist/*")
+                    sh("pipenv run twine upload --config-file /pypi/.pypirc dist/*")
                 }
             }
         }
