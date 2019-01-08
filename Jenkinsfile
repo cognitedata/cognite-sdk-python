@@ -10,7 +10,7 @@ podTemplate(
     ],
     containers: [
         containerTemplate(name: 'python',
-            image: 'python:3.6.4',
+            image: 'eu.gcr.io/cognitedata/multi-python:9b8bde1',
             command: '/bin/cat -',
             resourceRequestCpu: '1000m',
             resourceRequestMemory: '800Mi',
@@ -47,7 +47,7 @@ podTemplate(
                 sh("pip3 install pipenv")
             }
             stage('Install dependencies') {
-                sh("pipenv sync --dev")
+                sh("pipenv install --dev --system --ignore-pipfile")
             }
             stage('Check code style & remove typehints') {
                 sh("pipenv run black -l 120 --check .")
@@ -55,7 +55,7 @@ podTemplate(
                 sh("pipenv run python3 -m black ./cognite -l 120")
             }
             stage('Test and coverage report') {
-                sh("pipenv run pytest --cov-report xml:coverage.xml --cov=cognite --junitxml=test-report.xml || true")
+                sh("tox")
                 junit(allowEmptyResults: true, testResults: '**/test-report.xml')
                 summarizeTestResults()
             }
