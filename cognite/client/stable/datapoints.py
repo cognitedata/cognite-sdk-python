@@ -441,7 +441,7 @@ class DatapointsClient(APIClient):
         Args:
             name (str):       Name of timeseries to insert to.
 
-            datapoints (list[stable.datapoints.Datapoint): List of datapoint data transfer objects to insert.
+            datapoints (List[stable.datapoints.Datapoint]): List of datapoint data transfer objects to insert.
 
         Returns:
             None
