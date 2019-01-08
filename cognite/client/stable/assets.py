@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
+from copy import deepcopy
 from typing import Dict, List
 
 import pandas as pd
@@ -39,6 +40,9 @@ class AssetResponse(CogniteResponse):
     def to_pandas(self):
         """Returns data as a pandas dataframe"""
         if len(self.to_json()) > 0:
+            asset = deepcopy(self.to_json())
+            # Hack to avoid path ending up as first element in dict as from_dict will fail
+            asset["path"] = asset.pop("path")
             return pd.DataFrame.from_dict(self.to_json(), orient="index")
         return pd.DataFrame()
 

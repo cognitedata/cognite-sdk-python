@@ -24,6 +24,9 @@ class EventResponse(CogniteResponse):
         event = deepcopy(self.to_json())
         if event.get("metadata"):
             event.update(event.pop("metadata"))
+
+        # Hack to avoid assetIds ending up as first element in dict as from_dict will fail
+        event["assetIds"] = event.pop("assetIds")
         return pd.DataFrame.from_dict(event, orient="index")
 
 
