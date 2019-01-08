@@ -10,6 +10,7 @@ from tests.conftest import TEST_TS_1_NAME
 stable_time_series = CogniteClient().time_series
 time_series = CogniteClient().experimental.time_series
 
+
 TS_NAME = None
 
 
