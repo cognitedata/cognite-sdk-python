@@ -46,3 +46,4 @@ test-report.xml
 
 # tox
 .tox/
+.python-version
