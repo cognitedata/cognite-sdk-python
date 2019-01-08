@@ -65,27 +65,6 @@ def time_series_in_cdp():
     yield TEST_TS_1_ID, TEST_TS_2_ID
 
 
-@pytest.fixture
-def single_time_series_in_cdp():
-    client = CogniteClient()
-    name = generate_random_string(10)
-    try:
-        ts_list = [TimeSeries(name=name)]
-        client.time_series.post_time_series(ts_list)
-    except APIError:
-        pass
-    client.datapoints.post_datapoints(
-        name=name,
-        datapoints=[
-            Datapoint(timestamp=i, value=i) for i in range(get_time_w_offset(days=100), get_time_w_offset(), int(3.6e6))
-        ],
-    )
-
-    yield name
-
-    client.time_series.delete_time_series(name=name)
-
-
 class MockRequest(mock.Mock):
     def __init__(self):
         super().__init__()
