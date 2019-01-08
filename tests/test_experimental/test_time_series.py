@@ -25,7 +25,7 @@ class TestTimeseries:
     def created_ts_id(self):
         tso = TimeSeries(TS_NAME)
         res = stable_time_series.post_time_series([tso])
-        yield time_series.search_for_time_series(name=TS_NAME).to_json()[0]["id"]
+        yield stable_time_series.get_time_series(prefix=TS_NAME).to_json()[0]["id"]
 
     def test_delete_time_series_by_id(self, created_ts_id):
         res = time_series.delete_time_series_by_id([created_ts_id])
