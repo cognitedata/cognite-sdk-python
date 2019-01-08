@@ -7,9 +7,8 @@ from cognite.client.stable.time_series import TimeSeries
 from cognite.client.experimental.time_series import TimeSeriesClient, TimeSeriesResponse
 from tests.conftest import TEST_TS_1_NAME
 
-_client = CogniteClient()
-time_series = _client.experimental.time_series
-stable_time_series = _client.time_series
+stable_time_series = CogniteClient().time_series
+time_series = CogniteClient().experimental.time_series
 
 TS_NAME = None
 
