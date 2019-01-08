@@ -15,10 +15,17 @@ def strip_hints_and_overwrite(file_path):
         f.write(transformed)
 
 
-if __name__ == "__main__":
-    for root, _, files in os.walk("cognite"):
+def remove_type_hints_recursively(directory: str):
+    for root, _, files in os.walk(directory):
         if not any(dir_name in root for dir_name in SKIP_DIRECTORIES):
             for file in files:
                 if re.match(PYTHON_FILE_PATTERN, file):
                     file_path = "{}/{}".format(root, file)
                     strip_hints_and_overwrite(file_path)
+
+
+if __name__ == "__main__":
+    directories = ["cognite", "tests"]
+
+    for dir in directories:
+        remove_type_hints_recursively(dir)
