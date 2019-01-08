@@ -43,8 +43,7 @@ class TimeSeriesClient(APIClient):
         """
         url = "/timeseries/delete"
         body = {"items": ids}
-        params = {}
-        self._post(url, body=body, params=params)
+        self._post(url, body=body)
 
     def get_time_series_by_id(self, id: int) -> TimeSeriesResponse:
         """Returns a TimeseriesResponse object containing the requested timeseries.
