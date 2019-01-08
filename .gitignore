@@ -43,3 +43,6 @@ test-report.xml
 
 # jupyter
 .ipynb_checkpoints
+
+# tox
+.tox/
