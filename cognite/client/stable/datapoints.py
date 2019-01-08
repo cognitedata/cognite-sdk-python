@@ -441,7 +441,7 @@ class DatapointsClient(APIClient):
         Args:
             name (str):       Name of timeseries to insert to.
 
-            datapoints (list[stable.datapoints.Datapoint): List of datapoint data transfer objects to insert.
+            datapoints (List[stable.datapoints.Datapoint]): List of datapoint data transfer objects to insert.
 
         Returns:
             None
@@ -454,8 +454,8 @@ class DatapointsClient(APIClient):
                 client = CogniteClient()
 
                 start = 1514761200000
-                my_dummy_data = [Datapoint(timestamp=ms, value=i) for i, ms in range(start, start+100)]
-                client.datapoints.post_datapoints(my_dummy_data)
+                my_dummy_data = [Datapoint(timestamp=start+off, value=off) for off in range(100)]
+                client.datapoints.post_datapoints(ts_name, my_dummy_data)
         """
         url = "/timeseries/data/{}".format(quote(name, safe=""))
 
