@@ -11,21 +11,12 @@ stable_time_series = CogniteClient().time_series
 time_series = CogniteClient().experimental.time_series
 
 
-TS_NAME = None
-
-
-@pytest.fixture(autouse=True, scope="class")
-def ts_name():
-    global TS_NAME
-    TS_NAME = "test_ts_{}".format(randint(1, 2 ** 53 - 1))
-
-
 class TestTimeseries:
-    @pytest.fixture(scope="class")
+    @pytest.fixture
     def created_ts_id(self):
-        tso = TimeSeries(TS_NAME)
-        stable_time_series.post_time_series([tso])
-        yield stable_time_series.get_time_series(prefix=TS_NAME).to_json()[0]["id"]
+        name = "test_ts_{}".format(randint(1, 2 ** 53 - 1))
+        stable_time_series.post_time_series([TimeSeries(name)])
+        yield stable_time_series.get_time_series(prefix=name).to_json()[0]["id"]
 
     def test_delete_time_series_by_id(self, created_ts_id):
         res = time_series.delete_time_series_by_id([created_ts_id])
