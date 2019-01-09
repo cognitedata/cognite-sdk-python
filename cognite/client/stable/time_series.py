@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-from copy import deepcopy
-from typing import Dict, List
+from copy import copy
+from typing import List
 from urllib.parse import quote
 
 import pandas as pd
@@ -13,7 +13,7 @@ class TimeSeriesResponse(CogniteResponse):
 
     def to_pandas(self):
         """Returns data as a pandas dataframe"""
-        items = deepcopy(self.internal_representation["data"]["items"])
+        items = copy(self.internal_representation["data"]["items"])
         if items and items[0].get("metadata") is None:
             return pd.DataFrame(items)
         for d in items:

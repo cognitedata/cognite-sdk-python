@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
-from copy import deepcopy
-from typing import Dict, List
+from copy import copy
+from typing import List
 
 import pandas as pd
 
@@ -40,7 +40,7 @@ class AssetResponse(CogniteResponse):
     def to_pandas(self):
         """Returns data as a pandas dataframe"""
         if len(self.to_json()) > 0:
-            asset = deepcopy(self.to_json())
+            asset = copy(self.to_json())
             # Hack to avoid path ending up as first element in dict as from_dict will fail
             list_like_dict = {}
             list_like_dict["path"] = asset.pop("path")
