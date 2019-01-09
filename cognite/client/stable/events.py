@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
 from copy import deepcopy
-from typing import Dict, List
+from typing import List
 
 import pandas as pd
 
@@ -21,10 +21,18 @@ class EventResponse(CogniteResponse):
         return self.internal_representation["data"]["items"][0]
 
     def to_pandas(self):
-        event = deepcopy(self.to_json())
+        event = self.to_json().copy()
         if event.get("metadata"):
             event.update(event.pop("metadata"))
-        return pd.DataFrame.from_dict(event, orient="index")
+
+        # Hack to avoid assetIds ending up as first element in dict as from_dict will fail
+        list_like_dict = {}
+        list_like_dict["assetIds"] = event.pop("assetIds")
+        df = pd.concat(
+            (pd.DataFrame.from_dict(event, orient="index"), pd.DataFrame.from_dict(list_like_dict, orient="index")),
+            axis="rows",
+        )
+        return df
 
 
 class EventListResponse(CogniteResponse):

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from copy import deepcopy
-from typing import Dict, List
+from typing import List
 from urllib.parse import quote
 
 import pandas as pd

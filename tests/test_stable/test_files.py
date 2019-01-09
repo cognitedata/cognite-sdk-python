@@ -16,7 +16,7 @@ def test_upload_file_metadata():
 
 
 def test_upload_file(tmpdir):
-    file_path = os.path.join(tmpdir, "test_file.txt")
+    file_path = os.path.join(str(tmpdir), "test_file.txt")
     tmpdir.join("test_file.txt").write("This is a test file.")
     with pytest.warns(UserWarning):
         response = files.upload_file("test_file", file_path, source="sdk-tests", overwrite=True)

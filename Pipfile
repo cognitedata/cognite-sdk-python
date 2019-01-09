@@ -22,9 +22,8 @@ black = "==18.6b4"
 strip-hints = "*"
 pre-commit = "*"
 isort = "*"
-
-[requires]
-python_version = "3.6"
+tox = "*"
+tox-pyenv = "*"
 
 [pipenv]
 allow_prereleases = true
