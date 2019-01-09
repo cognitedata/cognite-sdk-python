@@ -26,8 +26,13 @@ class EventResponse(CogniteResponse):
             event.update(event.pop("metadata"))
 
         # Hack to avoid assetIds ending up as first element in dict as from_dict will fail
-        event["assetIds"] = event.pop("assetIds")
-        return pd.DataFrame.from_dict(event, orient="index")
+        list_like_dict = {}
+        list_like_dict["assetIds"] = event.pop("assetIds")
+        df = pd.concat(
+            (pd.DataFrame.from_dict(event, orient="index"), pd.DataFrame.from_dict(list_like_dict, orient="index")),
+            axis="rows",
+        )
+        return df
 
 
 class EventListResponse(CogniteResponse):

@@ -42,8 +42,13 @@ class AssetResponse(CogniteResponse):
         if len(self.to_json()) > 0:
             asset = deepcopy(self.to_json())
             # Hack to avoid path ending up as first element in dict as from_dict will fail
-            asset["path"] = asset.pop("path")
-            return pd.DataFrame.from_dict(self.to_json(), orient="index")
+            list_like_dict = {}
+            list_like_dict["path"] = asset.pop("path")
+            df = pd.concat(
+                (pd.DataFrame.from_dict(asset, orient="index"), pd.DataFrame.from_dict(list_like_dict, orient="index")),
+                axis="rows",
+            )
+            return df
         return pd.DataFrame()
 
 
