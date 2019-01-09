@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
-from copy import copy
+from copy import deepcopy
 from typing import List
 
 import pandas as pd
@@ -21,7 +21,7 @@ class EventResponse(CogniteResponse):
         return self.internal_representation["data"]["items"][0]
 
     def to_pandas(self):
-        event = copy(self.to_json())
+        event = self.to_json().copy()
         if event.get("metadata"):
             event.update(event.pop("metadata"))
 
@@ -43,7 +43,7 @@ class EventListResponse(CogniteResponse):
         self.counter = 0
 
     def to_pandas(self):
-        items = copy(self.to_json())
+        items = deepcopy(self.to_json())
         for d in items:
             if d.get("metadata"):
                 d.update(d.pop("metadata"))
