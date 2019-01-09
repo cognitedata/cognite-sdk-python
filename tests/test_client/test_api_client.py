@@ -229,7 +229,7 @@ class TestRequests:
             # gzip is added as Content-Encoding header
             assert headers["Content-Encoding"] == "gzip"
             # data is gzipped. Decompress and check if items size matches
-            decompressed_assets = json.loads(gzip.decompress(data))
+            decompressed_assets = json.loads(gzip.decompress(data).decode("utf8"))
             assert len(decompressed_assets["data"]["items"]) == len(RESPONSE)
             # Return the mock response
             return MockReturnValue(json_data=RESPONSE)

@@ -2,7 +2,6 @@ import functools
 import gzip
 import json
 import logging
-from copy import deepcopy
 from typing import Any, Dict
 
 from requests import Response, Session
@@ -38,8 +37,8 @@ def _log_request(res: Response, **kwargs):
     url = res.request.url
     status_code = res.status_code
 
-    extra = deepcopy(kwargs)
-    extra.update({"headers": res.request.headers})
+    extra = kwargs.copy()
+    extra["headers"] = res.request.headers
     if "api-key" in extra.get("headers", {}):
         extra["headers"]["api-key"] = None
 
@@ -55,7 +54,7 @@ def request_method(method=None):
             raise ValueError("URL must start with '/'")
         full_url = client_instance._base_url + url
 
-        default_headers = deepcopy(client_instance._headers)
+        default_headers = client_instance._headers.copy()
         default_headers.update(kwargs.get("headers") or {})
         kwargs["headers"] = default_headers
         res = method(client_instance, full_url, *args, **kwargs)
@@ -83,7 +82,7 @@ class APIClient:
     ):
         self._request_session = request_session
         self._project = project
-        __base_path = f"/api/{version}/projects/{project}" if version else ""
+        __base_path = "/api/{}/projects/{}".format(version, project) if version else ""
         self._base_url = base_url + __base_path
         self._num_of_workers = num_of_workers
         self._cookies = cookies

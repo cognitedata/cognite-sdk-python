@@ -45,7 +45,7 @@ def time_series_in_cdp():
         log.warning("Posted datapoints to sdk test time series 1")
         TEST_TS_1_ID = client.time_series.get_time_series(prefix=TEST_TS_1_NAME).to_json()[0]["id"]
     except APIError as e:
-        log.warning(f"Posting test time series 1 failed with code {e.code}")
+        log.warning("Posting test time series 1 failed with code {}".format(e.code))
 
     try:
         ts_list = [TimeSeries(name=TEST_TS_2_NAME)]
@@ -58,7 +58,7 @@ def time_series_in_cdp():
         log.warning("Posted datapoints to sdk test time series 2")
         TEST_TS_2_ID = client.time_series.get_time_series(prefix=TEST_TS_2_NAME).to_json()[0]["id"]
     except APIError as e:
-        log.warning(f"Posting test time series 2 failed with code {e.code}")
+        log.warning("Posting test time series 2 failed with code {}".format(e.code))
 
     TEST_TS_1_ID = client.time_series.get_time_series(prefix=TEST_TS_1_NAME).to_json()[0]["id"]
     TEST_TS_2_ID = client.time_series.get_time_series(prefix=TEST_TS_2_NAME).to_json()[0]["id"]

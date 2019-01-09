@@ -10,13 +10,12 @@ podTemplate(
     ],
     containers: [
         containerTemplate(name: 'python',
-            image: 'python:3.6.4',
+            image: 'eu.gcr.io/cognitedata/multi-python:9b8bde1',
             command: '/bin/cat -',
             resourceRequestCpu: '1000m',
             resourceRequestMemory: '800Mi',
             resourceLimitCpu: '1000m',
             resourceLimitMemory: '800Mi',
-            envVars: [envVar(key: 'PYTHONPATH', value: '/usr/local/bin')],
             ttyEnabled: true),
     ],
     volumes: [
@@ -55,7 +54,8 @@ podTemplate(
                 sh("pipenv run python3 -m black ./cognite -l 120")
             }
             stage('Test and coverage report') {
-                sh("pipenv run pytest --cov-report xml:coverage.xml --cov=cognite --junitxml=test-report.xml || true")
+                sh("pyenv local 3.5.5 3.6.6 system")
+                sh("pipenv run tox")
                 junit(allowEmptyResults: true, testResults: '**/test-report.xml')
                 summarizeTestResults()
             }

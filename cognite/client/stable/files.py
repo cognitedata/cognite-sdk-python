@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import warnings
-from copy import deepcopy
+from copy import copy
 from typing import Dict, List, Union
 
 import pandas as pd
@@ -42,7 +42,7 @@ class FileInfoResponse(CogniteResponse):
         return self.internal_representation["data"]["items"][0]
 
     def to_pandas(self):
-        file_info = deepcopy(self.to_json())
+        file_info = copy(self.to_json())
         if file_info.get("metadata"):
             file_info.update(file_info.pop("metadata"))
         return pd.DataFrame.from_dict(file_info, orient="index")

@@ -9,7 +9,7 @@ models = CogniteClient().experimental.analytics.models
 
 @pytest.fixture
 def created_model():
-    model_name = f"test-model-{randint(0, 1e5)}"
+    model_name = "test-model-{}".format(randint(0, 1e5))
     model = models.create_model(name=model_name)
     yield model
     models.delete_model(model["id"])
@@ -17,7 +17,7 @@ def created_model():
 
 @pytest.fixture
 def created_source_package():
-    sp_name = f"test-sp-{randint(0, 1e5)}"
+    sp_name = "test-sp-{}".format(randint(0, 1e5))
     sp = models.create_source_package(
         name=sp_name, package_name="whatever", available_operations=["TRAIN", "PREDICT"], runtime_version="0.1"
     )
