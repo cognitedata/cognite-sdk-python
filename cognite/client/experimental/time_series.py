@@ -25,6 +25,26 @@ class TimeSeriesClient(APIClient):
     def __init__(self, **kwargs):
         super().__init__(version="0.6", **kwargs)
 
+    def delete_time_series_by_id(self, ids: List[int]) -> None:
+        """Delete multiple time series by id.
+
+        Args:
+            ids (List[int]):   IDs of time series to delete.
+
+        Returns:
+            None
+
+        Examples:
+            Delete a single time series by id::
+
+                client = CogniteClient()
+
+                client.time_series.delete_time_series_by_id(ids=[my_ts_id])
+        """
+        url = "/timeseries/delete"
+        body = {"items": ids}
+        self._post(url, body=body)
+
     def get_time_series_by_id(self, id: int) -> TimeSeriesResponse:
         """Returns a TimeseriesResponse object containing the requested timeseries.
 
