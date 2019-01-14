@@ -39,8 +39,8 @@ class CogniteClient:
     All services are made available through this object. See examples below.
 
     Args:
-        api_key (str): API key
-        project (str): Project. Defaults to project of given API key.
+        api_key (str): API key. If not given, uses the COGNITE_API_KEY environment variable.
+        project (str): Project. If given, verify that the API key belongs to this project.
         base_url (str): Base url to send requests to. Defaults to "https://api.cognitedata.com"
         num_of_retries (int): Number of times to retry failed requests. Defaults to 5.
                         Will only retry status codes 401, 429, 500, 502, and 503.
@@ -112,9 +112,10 @@ class CogniteClient:
 
         self._requests_session = self._requests_retry_session()
 
-        self._project = project
-        if project is None:
-            self._project = self.login.status().project
+        self._project = self.login.status().project
+        if project is not None and project != self._project:
+            raise AssertionError("Expected an API key for {!r}, but the key was actually for {!r}",
+                                 project, self._project)
 
         self._api_client = self._client_factory(APIClient)
 
