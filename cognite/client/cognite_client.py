@@ -114,8 +114,9 @@ class CogniteClient:
 
         self._project = self.login.status().project
         if project is not None and project != self._project:
-            raise AssertionError("Expected an API key for {!r}, but the key was actually for {!r}",
-                                 project, self._project)
+            raise AssertionError(
+                "Expected an API key for {!r}, but the key was actually for {!r}", project, self._project
+            )
 
         self._api_client = self._client_factory(APIClient)
 
