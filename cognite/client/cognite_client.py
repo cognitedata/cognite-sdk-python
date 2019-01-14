@@ -112,6 +112,7 @@ class CogniteClient:
 
         self._requests_session = self._requests_retry_session()
 
+        self._project = None  # Allow the LoginClient object to be created
         self._project = self.login.status().project
         if project is not None and project != self._project:
             raise AssertionError(
