@@ -798,8 +798,7 @@ class DatapointsClient(APIClient):
     def post_datapoints_frame(self, dataframe) -> None:
         """Write a dataframe.
         The dataframe must have a 'timestamp' column with timestamps in milliseconds.
-        The names of the remaining columns should be precisely the names
-        of the time series to which column contents should be written.
+        The names of the remaining columns specify the names of the time series to which column contents will be written.
 
         Args:
             dataframe (pandas.DataFrame):  Pandas DataFrame Object containing the timeseries.
