@@ -1,12 +1,19 @@
 ## Development Instructions
 ### Setup
+Get the code!
 ```bash
 $ git clone https://github.com/cognitedata/cognite-sdk-python.git
 $ cd cognite-sdk-python
+```
+Install dependencies and initialize a shell within the virtual environment.
+```bash
 $ pipenv install -d
 $ pipenv shell
 ```
-
+Install pre-commit hooks
+```bash
+$ pre-commit install
+```
 ### Testing
 Set up tests for all new functionality. Running the tests will require setting the environment variable 'COGNITE_API_KEY'.
 
