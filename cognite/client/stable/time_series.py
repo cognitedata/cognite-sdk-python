@@ -11,14 +11,20 @@ from cognite.client._api_client import APIClient, CogniteResponse
 class TimeSeriesResponse(CogniteResponse):
     """Time series Response Object"""
 
-    def to_pandas(self):
-        """Returns data as a pandas dataframe"""
+    def to_pandas(self, include_metadata: bool = False):
+        """Returns data as a pandas dataframe
+
+        Args:
+            include_metadata (bool): Whether or not to include metadata fields in the resulting dataframe
+        """
         items = deepcopy(self.internal_representation["data"]["items"])
         if items and items[0].get("metadata") is None:
             return pd.DataFrame(items)
         for d in items:
             if d.get("metadata"):
-                d.update(d.pop("metadata"))
+                metadata = d.pop("metadata")
+                if include_metadata:
+                    d.update(metadata)
         return pd.DataFrame(items)
 
 
