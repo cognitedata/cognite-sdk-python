@@ -36,6 +36,7 @@ def test_get_asset():
     assert isinstance(res, AssetResponse)
     assert isinstance(res.to_json(), dict)
     assert isinstance(res.to_pandas(), pd.DataFrame)
+    assert res.to_pandas().shape[1] == 1
 
 
 def test_asset_subtree_object(get_asset_subtree_response):
