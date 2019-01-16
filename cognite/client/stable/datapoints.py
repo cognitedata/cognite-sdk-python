@@ -796,13 +796,32 @@ class DatapointsClient(APIClient):
         return df
 
     def post_datapoints_frame(self, dataframe) -> None:
-        """Write a dataframe
+        """Write a dataframe.
+        The dataframe must have a 'timestamp' column with timestamps in milliseconds since epoch.
+        The names of the remaining columns specify the names of the time series to which column contents will be written.
+        Said time series must already exist.
 
         Args:
-            dataframe (DataFrame):  Pandas DataFrame Object containing the timeseries
+            dataframe (pandas.DataFrame):  Pandas DataFrame Object containing the time series.
 
         Returns:
             None
+
+        Examples:
+            Post a dataframe with white noise::
+
+                client = CogniteClient()
+                ts_name = 'NOISE'
+
+                start = datetime(2018, 1, 1)
+                # The scaling by 1000 is important: timestamp() returns seconds
+                x = [(start + timedelta(days=d)).timestamp() * 1000 for d in range(100)]
+                y = np.random.normal(0, 1, 100)
+
+                # The time column must be called precisely 'timestamp'
+                df = pd.DataFrame({'timestamp': x, ts_name: y})
+
+                client.datapoints.post_datapoints_frame(df)
         """
 
         try:
