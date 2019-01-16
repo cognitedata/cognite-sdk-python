@@ -32,6 +32,7 @@ def test_get_event(get_post_event_obj):
     assert isinstance(res, cognite.client.stable.events.EventResponse)
     assert isinstance(res.to_pandas(), pd.DataFrame)
     assert isinstance(res.to_json(), dict)
+    assert res.to_pandas().shape[1] == 1
 
 
 def test_get_event_invalid_id():
