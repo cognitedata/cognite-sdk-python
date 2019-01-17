@@ -25,16 +25,21 @@ def default_client_config():
 @pytest.fixture
 def environment_client_config():
     base_url = "blabla"
-    num_of_retries = "1"
-    num_of_workers = "1"
-    timeout = "10"
+    num_of_retries = 1
+    num_of_workers = 1
+    timeout = 10
 
     os.environ["COGNITE_BASE_URL"] = base_url
-    os.environ["COGNITE_NUM_RETRIES"] = num_of_retries
-    os.environ["COGNITE_NUM_WORKERS"] = num_of_workers
-    os.environ["COGNITE_TIMEOUT"] = timeout
+    os.environ["COGNITE_NUM_RETRIES"] = str(num_of_retries)
+    os.environ["COGNITE_NUM_WORKERS"] = str(num_of_workers)
+    os.environ["COGNITE_TIMEOUT"] = str(timeout)
 
     yield base_url, num_of_retries, num_of_workers, timeout
+
+    del os.environ["COGNITE_BASE_URL"]
+    del os.environ["COGNITE_NUM_RETRIES"]
+    del os.environ["COGNITE_NUM_WORKERS"]
+    del os.environ["COGNITE_TIMEOUT"]
 
 
 class TestCogniteClient:
@@ -60,10 +65,17 @@ class TestCogniteClient:
         assert client._project == "mltest"
 
     def assert_config_is_correct(self, client, base_url, num_of_retries, num_of_workers, timeout):
-        assert str(client._base_url) == base_url
-        assert str(client._num_of_retries) == num_of_retries
-        assert str(client._num_of_workers) == num_of_workers
-        assert str(client._timeout) == timeout
+        assert client._base_url == base_url
+        assert type(client._base_url) is str
+
+        assert client._num_of_retries == num_of_retries
+        assert type(client._num_of_retries) is int
+
+        assert client._num_of_workers == num_of_workers
+        assert type(client._num_of_workers) is int
+
+        assert client._timeout == timeout
+        assert type(client._timeout) is int
 
     def test_default_config(self, client, default_client_config):
         self.assert_config_is_correct(client, *default_client_config)
