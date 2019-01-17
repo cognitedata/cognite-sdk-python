@@ -174,13 +174,13 @@ class TestMultiTimeseriesDatapoints:
         )
 
         with mock.patch.object(APIClient, "_post") as post_request_mock:
-            post_request_mock: mock.MagicMock = post_request_mock
+            post_request_mock = post_request_mock
 
             client.datapoints.post_multi_time_series_datapoints([timeseries_with_too_many_datapoints])
             assert post_request_mock.call_count == 2
 
         with mock.patch.object(APIClient, "_post") as post_request_mock:
-            post_request_mock: mock.MagicMock = post_request_mock
+            post_request_mock = post_request_mock
 
             client.datapoints.post_multi_time_series_datapoints(
                 [timeseries_with_99999_datapoints, timeseries_with_too_many_datapoints]
@@ -208,11 +208,11 @@ class TestMultiTimeseriesDatapoints:
         assert (deltas % 30000 == 0).all()
 
     def test_split_TimeseriesWithDatapoints_if_over_limit(self):
-        timeseries_with_datapoints_over_limit: TimeseriesWithDatapoints = TimeseriesWithDatapoints(
+        timeseries_with_datapoints_over_limit = TimeseriesWithDatapoints(
             name="test", datapoints=[Datapoint(x, x) for x in range(1000)]
         )
 
-        result: List[TimeseriesWithDatapoints] = client.datapoints._split_TimeseriesWithDatapoints_if_over_limit(
+        result = client.datapoints._split_TimeseriesWithDatapoints_if_over_limit(
             timeseries_with_datapoints_over_limit, 100
         )
 
