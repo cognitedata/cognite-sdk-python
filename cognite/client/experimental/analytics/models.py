@@ -120,7 +120,7 @@ class ModelsClient(APIClient):
             },
             "metadata": metadata or {},
         }
-        res = self._post(url)
+        res = self._post(url, body=body)
         return res.json()
 
     def get_versions(self, model_id: int) -> List[Dict]:
