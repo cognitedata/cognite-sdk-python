@@ -44,24 +44,22 @@ class TestFirstFit:
     def test_with_timeserieswithdatapoints(self):
         from typing import List
 
-        timeseries_with_100_datapoints: TimeseriesWithDatapoints = TimeseriesWithDatapoints(
+        timeseries_with_100_datapoints = TimeseriesWithDatapoints(
             name="test", datapoints=[Datapoint(x, x) for x in range(100)]
         )
-        timeseries_with_200_datapoints: TimeseriesWithDatapoints = TimeseriesWithDatapoints(
+        timeseries_with_200_datapoints = TimeseriesWithDatapoints(
             name="test", datapoints=[Datapoint(x, x) for x in range(200)]
         )
-        timeseries_with_300_datapoints: TimeseriesWithDatapoints = TimeseriesWithDatapoints(
+        timeseries_with_300_datapoints = TimeseriesWithDatapoints(
             name="test", datapoints=[Datapoint(x, x) for x in range(300)]
         )
 
-        all_timeseries: List[TimeseriesWithDatapoints] = [
+        all_timeseries = [
             timeseries_with_100_datapoints,
             timeseries_with_200_datapoints,
             timeseries_with_300_datapoints,
         ]
 
-        result: List[List[TimeseriesWithDatapoints]] = utils.first_fit(
-            list_items=all_timeseries, max_size=300, get_count=lambda x: len(x.datapoints)
-        )
+        result = utils.first_fit(list_items=all_timeseries, max_size=300, get_count=lambda x: len(x.datapoints))
 
         assert len(result) == 2

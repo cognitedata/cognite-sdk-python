@@ -157,7 +157,7 @@ class SequenceDataResponse:
         my_df = pd.DataFrame(columns=column_ids)
         # Fill the dataframe with values. We might not have data for every column, so we need to be careful
         for row in self.rows:
-            data_this_row: List[float] = []
+            data_this_row = []
             for column_id in column_ids:
                 # Do we have a value for this column?
                 if self._row_has_value_for_column(row, column_id):
@@ -214,7 +214,7 @@ class SequencesClient(APIClient):
         body = {"items": [sequence.__dict__ for sequence in sequences]}
         res = self._post(url, body=body)
         json_response = json.loads(res.text)
-        the_sequence: dict = json_response["data"]["items"][0]
+        the_sequence = json_response["data"]["items"][0]
         return Sequence.from_JSON(the_sequence)
 
     def get_sequence_by_id(self, id: int) -> Sequence:
@@ -229,7 +229,7 @@ class SequencesClient(APIClient):
         url = "/sequences/{}".format(id)
         res = self._get(url=url)
         json_response = json.loads(res.text)
-        the_sequence: dict = json_response["data"]["items"][0]
+        the_sequence = json_response["data"]["items"][0]
         return Sequence.from_JSON(the_sequence)
 
     def get_sequence_by_external_id(self, external_id: str) -> Sequence:
@@ -245,7 +245,7 @@ class SequencesClient(APIClient):
         params = {"externalId": external_id}
         res = self._get(url=url, params=params)
         json_response = json.loads(res.text)
-        the_sequence: dict = json_response["data"]["items"][0]
+        the_sequence = json_response["data"]["items"][0]
         return Sequence.from_JSON(the_sequence)
 
     def delete_sequence_by_id(self, id: int) -> None:
@@ -297,11 +297,11 @@ class SequencesClient(APIClient):
             client.test_experimental.sequences.SequenceDataResponse: A data object containing the requested sequence.
         """
         url = "/sequences/{}/getdata".format(id)
-        sequenceDataRequest: SequenceDataRequest = SequenceDataRequest(
+        sequenceDataRequest = SequenceDataRequest(
             inclusive_from=inclusive_from, inclusive_to=inclusive_to, limit=limit, column_ids=column_ids or []
         )
         body = {"items": [sequenceDataRequest.__dict__]}
         res = self._post(url=url, body=body)
         json_response = json.loads(res.text)
-        the_data: dict = json_response["data"]["items"][0]
+        the_data = json_response["data"]["items"][0]
         return SequenceDataResponse.from_JSON(the_data)

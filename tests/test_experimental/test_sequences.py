@@ -10,9 +10,9 @@ from tests.conftest import generate_random_string
 sequences = CogniteClient().experimental.sequences
 
 # This variable will hold the ID of the sequence that is created in one of the test fixtures of this class.
-CREATED_SEQUENCE_ID: int = None
+CREATED_SEQUENCE_ID = None
 # This variable holds the external id used for the sequence that'll be created (and deleted) in these tests
-SEQUENCE_EXTERNAL_ID: str = "external_id" + generate_random_string(10)
+SEQUENCE_EXTERNAL_ID = "external_id" + generate_random_string(10)
 
 
 class TestSequences:
@@ -42,7 +42,7 @@ class TestSequences:
             return sequences.get_sequence_by_id(CREATED_SEQUENCE_ID)
         else:
             # Create the sequence
-            created_sequence: Sequence = sequences.post_sequences([sequence_that_isnt_created])
+            created_sequence = sequences.post_sequences([sequence_that_isnt_created])
             # Store the id of the created sequence
             CREATED_SEQUENCE_ID = created_sequence.id
             return created_sequence
@@ -55,7 +55,7 @@ class TestSequences:
             return sequences.get_sequence_by_external_id(SEQUENCE_EXTERNAL_ID)
         else:
             # Create the sequence
-            created_sequence: Sequence = sequences.post_sequences([sequence_that_isnt_created])
+            created_sequence = sequences.post_sequences([sequence_that_isnt_created])
             # Store the id of the created sequence
             CREATED_SEQUENCE_ID = created_sequence.id
             return created_sequence
@@ -77,7 +77,7 @@ class TestSequences:
     @pytest.mark.skip
     def test_post_data_to_sequence_and_get_data_from_sequence(self, sequence_that_is_created_retrieved_by_id):
         # Prepare some data to post
-        rows: List[Row] = [
+        rows = [
             Row(
                 row_number=1,
                 values=[
@@ -94,7 +94,7 @@ class TestSequences:
 
         time.sleep(5)
         # Get the data
-        sequenceDataResponse: SequenceDataResponse = sequences.get_data_from_sequence(
+        sequenceDataResponse = sequences.get_data_from_sequence(
             id=sequence_that_is_created_retrieved_by_id.id,
             inclusive_from=1,
             inclusive_to=1,
