@@ -67,6 +67,17 @@ class TestDatapoints:
         )
         yield res
 
+    @pytest.fixture(scope="class")
+    def get_dps_aggregates_response_obj(self):
+        res = client.datapoints.get_datapoints(
+            name=TEST_TS_1_NAME,
+            start=TEST_TS_REASONABLE_INTERVAL["start"],
+            end=TEST_TS_REASONABLE_INTERVAL["end"],
+            aggregates=["min", "max"],
+            granularity="1s",
+        )
+        yield res
+
     def test_post_datapoints(self):
         dps = [Datapoint(i, i * 100) for i in range(10)]
         res = client.datapoints.post_datapoints(TS_NAME, datapoints=dps)
@@ -109,6 +120,10 @@ class TestDatapoints:
     def test_get_dps_with_end_now(self):
         res = client.datapoints.get_datapoints(name=TEST_TS_1_NAME, start=0, end="now", limit=100)
         assert len(res.to_json().get("datapoints")) == 100
+
+    def test_get_dps_with_aggregates(self, get_dps_aggregates_response_obj):
+        dps = get_dps_aggregates_response_obj.to_json()["datapoints"]
+        assert len(dps[0].keys()) == 3, "Datapoints should have 3 columns: timestamp, min, max"
 
 
 class TestLatest:
