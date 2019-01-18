@@ -26,12 +26,6 @@ DEFAULT_NUM_OF_RETRIES = 5
 DEFAULT_NUM_OF_WORKERS = 10
 DEFAULT_TIMEOUT = 60
 
-ENVIRONMENT_API_KEY = os.getenv("COGNITE_API_KEY")
-ENVIRONMENT_BASE_URL = os.getenv("COGNITE_BASE_URL")
-ENVIRONMENT_NUM_OF_RETRIES = os.getenv("COGNITE_NUM_RETRIES")
-ENVIRONMENT_NUM_OF_WORKERS = os.getenv("COGNITE_NUM_WORKERS")
-ENVIRONMENT_TIMEOUT = os.getenv("COGNITE_TIMEOUT")
-
 
 class CogniteClient:
     """Main entrypoint into Cognite Python SDK.
@@ -89,26 +83,32 @@ class CogniteClient:
         timeout: int = None,
         debug: bool = None,
     ):
-        self.__api_key = api_key or ENVIRONMENT_API_KEY
+        environment_api_key = os.getenv("COGNITE_API_KEY")
+        environment_base_url = os.getenv("COGNITE_BASE_URL")
+        environment_num_of_retries = os.getenv("COGNITE_NUM_RETRIES")
+        environment_num_of_workers = os.getenv("COGNITE_NUM_WORKERS")
+        environment_timeout = os.getenv("COGNITE_TIMEOUT")
+
+        self.__api_key = api_key or environment_api_key
         if self.__api_key is None:
             raise ValueError("No Api Key has been specified")
 
-        self._base_url = base_url or ENVIRONMENT_BASE_URL or DEFAULT_BASE_URL
+        self._base_url = base_url or environment_base_url or DEFAULT_BASE_URL
 
         if num_of_retries is not None:
             self._num_of_retries = num_of_retries
-        elif ENVIRONMENT_NUM_OF_RETRIES is not None:
-            self._num_of_retries = ENVIRONMENT_NUM_OF_RETRIES
+        elif environment_num_of_retries is not None:
+            self._num_of_retries = int(environment_num_of_retries)
         else:
             self._num_of_retries = DEFAULT_NUM_OF_RETRIES
 
-        self._num_of_workers = num_of_workers or ENVIRONMENT_NUM_OF_WORKERS or DEFAULT_NUM_OF_WORKERS
+        self._num_of_workers = int(num_of_workers or environment_num_of_workers or DEFAULT_NUM_OF_WORKERS)
 
         self._configure_headers(headers)
 
         self._cookies = cookies or {}
 
-        self._timeout = timeout or ENVIRONMENT_TIMEOUT or DEFAULT_TIMEOUT
+        self._timeout = int(timeout or environment_timeout or DEFAULT_TIMEOUT)
 
         self._requests_session = self._requests_retry_session()
 
@@ -169,7 +169,7 @@ class CogniteClient:
         url: str,
         body: Dict[str, Any],
         params: Dict[str, Any] = None,
-        use_gzip: bool = False,
+        use_gzip: bool = True,
         headers: Dict[str, Any] = None,
     ):
         """Perform a POST request to a path in the API.

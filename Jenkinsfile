@@ -50,8 +50,7 @@ podTemplate(
             }
             stage('Check code style & remove typehints') {
                 sh("pipenv run black -l 120 --check .")
-                sh("pipenv run python3 type_hint_remover.py")
-                sh("pipenv run python3 -m black ./cognite -l 120")
+                sh("pipenv run python3 type_hint_remover.py --check")
             }
             stage('Test and coverage report') {
                 sh("pyenv local 3.5.5 3.6.6 system")
