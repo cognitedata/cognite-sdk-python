@@ -172,6 +172,9 @@ class DatapointsClient(APIClient):
         """
         start, end = _utils.interval_to_ms(start, end)
 
+        if aggregates:
+            aggregates = ",".join(aggregates)
+
         if kwargs.get("limit"):
             return self._get_datapoints_user_defined_limit(
                 name,
