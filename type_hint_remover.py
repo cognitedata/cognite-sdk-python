@@ -2,7 +2,6 @@
 import argparse
 import os
 import re
-import subprocess
 
 import strip_hints
 
@@ -26,7 +25,13 @@ def remove_type_hints_recursively(directory: str):
                     strip_hints_and_overwrite(file_path)
 
 
-def check_for_changes(directory: str):
+def file_has_incompatible_typehints(file_path):
+    return strip_hints.strip_file_to_string(
+        file_path, to_empty=True, only_assigns_and_defs=True, only_test_for_changes=True
+    )
+
+
+def check_for_incompatible_typehints(directory: str):
     print("*****Checking for type hints in '{}' directory".format(directory))
     has_changed = []
     for root, _, files in os.walk(directory):
@@ -34,14 +39,8 @@ def check_for_changes(directory: str):
             for file in files:
                 if re.match(PYTHON_FILE_PATTERN, file):
                     file_path = "{}/{}".format(root, file)
-                    try:
-                        subprocess.check_call(
-                            ["strip-hints", file_path, "--only-test-for-changes", "--only-assigns-and-defs"],
-                            stdout=subprocess.PIPE,
-                        )
-                    except subprocess.CalledProcessError:
-                        continue
-                    has_changed.append(file_path)
+                    if file_has_incompatible_typehints(file_path):
+                        has_changed.append(file_path)
     if has_changed:
         print("Found typehints incomaptible with python 3.5 in the following files: \n")
         for file in has_changed:
@@ -58,6 +57,6 @@ if __name__ == "__main__":
     directories = ["cognite", "tests"]
     for dir in directories:
         if args.check:
-            check_for_changes(dir)
+            check_for_incompatible_typehints(dir)
         else:
             remove_type_hints_recursively(dir)
