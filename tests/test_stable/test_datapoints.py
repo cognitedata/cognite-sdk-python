@@ -1,3 +1,4 @@
+from copy import copy
 from datetime import datetime
 from random import randint
 from typing import List
@@ -170,6 +171,8 @@ class TestMultiTimeseriesDatapoints:
     def get_multi_time_series_dps_response_obj(self, request):
         dq1 = DatapointsQuery(TEST_TS_1_NAME)
         dq2 = DatapointsQuery(TEST_TS_2_NAME, aggregates=["avg"], granularity="30s")
+        dq1_copy = copy(dq1)
+        dq2_copy = copy(dq2)
         yield list(
             client.datapoints.get_multi_time_series_datapoints(
                 datapoints_queries=[dq1, dq2],
@@ -179,6 +182,11 @@ class TestMultiTimeseriesDatapoints:
                 granularity="60s",
             )
         )
+        for val, val_c in zip(dq1.__dict__.values(), dq1_copy.__dict__.values()):
+            assert val == val_c
+
+        for val, val_c in zip(dq2.__dict__.values(), dq2_copy.__dict__.values()):
+            assert val == val_c
 
     def test_post_multitag_datapoints(self):
         timeseries_with_too_many_datapoints = TimeseriesWithDatapoints(

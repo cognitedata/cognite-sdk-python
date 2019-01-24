@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 import io
+import json
 import time
 from concurrent.futures import ThreadPoolExecutor as Pool
+from copy import copy
 from functools import partial
 from typing import Dict, List
 from urllib.parse import quote
@@ -49,6 +51,9 @@ class DatapointsQuery:
         if not end:
             self.end = None
         self.limit = limit
+
+    def __str__(self):
+        return json.dumps(self.__dict__, indent=4, sort_keys=True)
 
 
 class DatapointsResponseIterator:
@@ -493,7 +498,7 @@ class DatapointsClient(APIClient):
         return LatestDatapointResponse(res.json())
 
     def get_multi_time_series_datapoints(
-        self, datapoints_queries, start, end=None, aggregates=None, granularity=None, **kwargs
+        self, datapoints_queries: List[DatapointsQuery], start, end=None, aggregates=None, granularity=None, **kwargs
     ) -> DatapointsResponseIterator:
         """Returns a list of DatapointsObjects each of which contains a list of datapoints for the given timeseries.
 
@@ -521,12 +526,12 @@ class DatapointsClient(APIClient):
             include_outside_points (bool):  No description.
 
         Returns:
-            list(stable.datapoints.DatapointsResponse): A list of data objects containing the requested data with several getter methods
-            with different output formats.
+            stable.datapoints.DatapointsResponseIterator: An iterator which iterates over stable.datapoints.DatapointsResponse objects.
         """
         url = "/timeseries/dataquery"
         start, end = _utils.interval_to_ms(start, end)
 
+        datapoints_queries = [copy(dpq) for dpq in datapoints_queries]
         num_of_dpqs_with_agg = 0
         num_of_dpqs_raw = 0
         for dpq in datapoints_queries:
