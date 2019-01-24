@@ -22,6 +22,12 @@ def test_post_events(get_post_event_obj):
     assert isinstance(get_post_event_obj.to_json(), list)
 
 
+def test_attributes_not_none(get_post_event_obj):
+    assert isinstance(get_post_event_obj, cognite.client.stable.events.EventListResponse)
+    assert isinstance(get_post_event_obj.to_pandas(), pd.DataFrame)
+    assert isinstance(get_post_event_obj.to_json(), list)
+
+
 def test_post_events_length(get_post_event_obj):
     assert len(get_post_event_obj.to_json()) == 1
 

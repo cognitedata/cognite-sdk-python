@@ -39,6 +39,16 @@ def test_get_asset():
     assert res.to_pandas().shape[1] == 1
 
 
+def test_attributes_not_none():
+    asset = assets.get_asset(6354653755843357)
+    print(asset)
+    for key, val in asset.__dict__.items():
+        if key is "metadata" or (key is "parent_id" and asset.depth == 0):
+            assert val is None
+        else:
+            assert val is not None, "{} is None".format(key)
+
+
 def test_asset_subtree_object(get_asset_subtree_response):
     assert isinstance(get_asset_subtree_response, AssetListResponse)
     assert get_asset_subtree_response.next_cursor() is not None

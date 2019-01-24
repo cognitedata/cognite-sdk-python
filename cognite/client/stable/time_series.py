@@ -8,8 +8,12 @@ import pandas as pd
 from cognite.client._api_client import APIClient, CogniteResponse
 
 
-class TimeSeriesResponse(CogniteResponse):
+class TimeSeriesListResponse(CogniteResponse):
     """Time series Response Object"""
+
+    def __init__(self, internal_representation):
+        super().__init__(internal_representation)
+        self.counter = 0
 
     def to_pandas(self, include_metadata: bool = False):
         """Returns data as a pandas dataframe
@@ -26,6 +30,44 @@ class TimeSeriesResponse(CogniteResponse):
                 if include_metadata:
                     d.update(metadata)
         return pd.DataFrame(items)
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.counter > len(self.to_json()) - 1:
+            raise StopIteration
+        else:
+            self.counter += 1
+            return TimeSeriesResponse({"data": {"items": [self.to_json()[self.counter - 1]]}})
+
+
+class TimeSeriesResponse(CogniteResponse):
+    """Time series Response Object"""
+
+    def __init__(self, internal_representation):
+        super().__init__(internal_representation)
+        item = self.to_json()
+        self.id = item.get("id")
+        self.name = item.get("name")
+        self.unit = item.get("unit")
+        self.is_step = item.get("isStep")
+        self.is_string = item.get("isString")
+        self.created_time = item.get("createdTime")
+        self.last_updated_time = item.get("lastUpdatedTime")
+
+    def to_json(self):
+        """Returns data as a json object"""
+        return self.internal_representation["data"]["items"][0]
+
+    def to_pandas(self):
+        """Returns data as a pandas dataframe"""
+        if len(self.to_json()) > 0:
+            ts = self.to_json().copy()
+            # Hack to avoid path ending up as first element in dict as from_dict will fail
+            df = pd.DataFrame.from_dict(ts, orient="index")
+            return df
+        return pd.DataFrame()
 
 
 class TimeSeries:
@@ -70,7 +112,7 @@ class TimeSeriesClient(APIClient):
 
     def get_time_series(
         self, prefix=None, description=None, include_metadata=False, asset_id=None, path=None, **kwargs
-    ) -> TimeSeriesResponse:
+    ) -> TimeSeriesListResponse:
         """Returns an object containing the requested timeseries.
 
         Args:
@@ -91,7 +133,7 @@ class TimeSeriesClient(APIClient):
                                     disregarded. Defaults to False.
 
         Returns:
-            stable.time_series.TimeSeriesResponse: A data object containing the requested timeseries with several getter methods with different
+            stable.time_series.TimeSeriesListResponse: A data object containing the requested timeseries with several getter methods with different
             output formats.
 
         Examples:
@@ -122,7 +164,7 @@ class TimeSeriesClient(APIClient):
             time_series.extend(res.json()["data"]["items"])
             next_cursor = res.json()["data"].get("nextCursor")
 
-        return TimeSeriesResponse(
+        return TimeSeriesListResponse(
             {
                 "data": {
                     "nextCursor": next_cursor,

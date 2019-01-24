@@ -16,6 +16,12 @@ from cognite.client._api_client import APIClient, CogniteResponse
 class DatapointsResponse(CogniteResponse):
     """Datapoints Response Object."""
 
+    def __init__(self, internal_representation):
+        super().__init__(internal_representation)
+        item = self.to_json()
+        self.name = item.get("name")
+        self.datapoints = item.get("datapoints")
+
     def to_json(self):
         """Returns data as a json object"""
         return self.internal_representation["data"]["items"][0]
