@@ -80,19 +80,6 @@ class DatapointsResponseIterator:
             return self.datapoints_objects[self.counter - 1]
 
 
-class DatapointDepth:
-    """Data transfer object for Depth datapoints.
-
-       Args:
-           depth (double): The depth (in m) of the datapoint
-           value (string):     The data value, Can be string or numeric depending on the metric.
-       """
-
-    def __init__(self, depth, value):
-        self.depth = depth
-        self.value = value
-
-
 class Datapoint:
     """Data transfer object for datapoints.
 
@@ -129,10 +116,6 @@ class LatestDatapointResponse(CogniteResponse):
     def to_pandas(self):
         """Returns data as a pandas dataframe"""
         return pd.DataFrame([self.internal_representation["data"]["items"][0]])
-
-    def to_ndarray(self):
-        """Returns data as a numpy array"""
-        return self.to_pandas().values[0]
 
 
 class DatapointsClient(APIClient):
