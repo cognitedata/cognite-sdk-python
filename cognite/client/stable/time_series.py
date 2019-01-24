@@ -55,6 +55,7 @@ class TimeSeriesResponse(CogniteResponse):
         self.is_string = item.get("isString")
         self.created_time = item.get("createdTime")
         self.last_updated_time = item.get("lastUpdatedTime")
+        self.metadata = item.get("metadata")
 
     def to_json(self):
         """Returns data as a json object"""
@@ -64,8 +65,13 @@ class TimeSeriesResponse(CogniteResponse):
         """Returns data as a pandas dataframe"""
         if len(self.to_json()) > 0:
             ts = self.to_json().copy()
-            # Hack to avoid path ending up as first element in dict as from_dict will fail
-            df = pd.DataFrame.from_dict(ts, orient="index")
+            if "metadata" in ts:
+                # Hack to avoid path ending up as first element in dict as from_dict will fail
+                metadata = ts.pop("metadata")
+                df = pd.DataFrame.from_dict(ts, orient="index")
+                df.loc["metadata"] = [metadata]
+            else:
+                df = pd.DataFrame.from_dict(ts, orient="index")
             return df
         return pd.DataFrame()
 
