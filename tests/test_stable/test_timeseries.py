@@ -4,7 +4,7 @@ import pandas as pd
 import pytest
 
 from cognite import CogniteClient
-from cognite.client.stable.time_series import TimeSeries, TimeSeriesResponse
+from cognite.client.stable.time_series import TimeSeries, TimeSeriesListResponse, TimeSeriesResponse
 
 timeseries = CogniteClient().time_series
 
@@ -34,9 +34,16 @@ class TestTimeseries:
         assert get_timeseries_response_obj.to_json()[0]["unit"] == "celsius"
 
     def test_get_timeseries_output_format(self, get_timeseries_response_obj):
-        assert isinstance(get_timeseries_response_obj, TimeSeriesResponse)
+        assert isinstance(get_timeseries_response_obj, TimeSeriesListResponse)
         assert isinstance(get_timeseries_response_obj.to_pandas(), pd.DataFrame)
         assert isinstance(get_timeseries_response_obj.to_json()[0], dict)
+
+        for ts in get_timeseries_response_obj:
+            assert isinstance(ts, TimeSeriesResponse)
+            assert isinstance(ts.to_pandas(), pd.DataFrame)
+            assert isinstance(ts.to_json(), dict)
+            for key, val in ts.__dict__.items():
+                assert val is not None
 
     def test_get_timeseries_no_results(self):
         result = timeseries.get_time_series(prefix="not_a_timeseries_prefix")

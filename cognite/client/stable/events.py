@@ -13,9 +13,17 @@ class EventResponse(CogniteResponse):
 
     def __init__(self, internal_representation):
         super().__init__(internal_representation)
-        item = self.internal_representation["data"]["items"][0]
+        item = self.to_json()
         self.id = item.get("id")
+        self.type = item.get("type")
+        self.sub_type = item.get("subType")
+        self.description = item.get("description")
         self.asset_ids = item.get("assetIds")
+        self.created_time = item.get("createdTime")
+        self.start_time = item.get("startTime")
+        self.end_time = item.get("endTime")
+        self.last_updated_time = item.get("lastUpdatedTime")
+        self.metadata = item.get("metadata")
 
     def to_json(self):
         return self.internal_representation["data"]["items"][0]
