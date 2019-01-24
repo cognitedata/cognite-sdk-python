@@ -1,6 +1,4 @@
-from datetime import datetime
 from random import randint
-from typing import List
 from unittest import mock
 
 import numpy as np
@@ -106,6 +104,10 @@ class TestDatapoints:
     def test_get_dps_output_formats(self, get_dps_response_obj):
         assert isinstance(get_dps_response_obj.to_pandas(), pd.DataFrame)
         assert isinstance(get_dps_response_obj.to_json(), dict)
+
+    def test_attributes_not_none(self, get_dps_response_obj):
+        for key, val in get_dps_response_obj.__dict__.items():
+            assert val is not None
 
     def test_get_dps_correctly_spaced(self, get_dps_response_obj):
         timestamps = get_dps_response_obj.to_pandas().timestamp.values
