@@ -32,6 +32,19 @@ class AssetListResponse(CogniteResponse):
 
 
 class AssetResponse(CogniteResponse):
+    def __init__(self, internal_representation):
+        super().__init__(internal_representation)
+        item = self.to_json()
+        self.id = item.get("id")
+        self.name = item.get("name")
+        self.depth = item.get("depth")
+        self.description = item.get("description")
+        self.created_time = item.get("createdTime")
+        self.last_updated_time = item.get("lastUpdatedTime")
+        self.metadata = item.get("metadata")
+        self.parent_id = item.get("parentId")
+        self.path = item.get("path")
+
     def to_json(self):
         """Returns data as a json object"""
         return self.internal_representation["data"]["items"][0]
