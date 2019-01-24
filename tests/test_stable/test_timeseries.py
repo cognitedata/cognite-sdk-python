@@ -43,7 +43,10 @@ class TestTimeseries:
             assert isinstance(ts.to_pandas(), pd.DataFrame)
             assert isinstance(ts.to_json(), dict)
             for key, val in ts.__dict__.items():
-                assert val is not None
+                if key == "metadata":
+                    assert val is None
+                else:
+                    assert val is not None
 
     def test_get_timeseries_no_results(self):
         result = timeseries.get_time_series(prefix="not_a_timeseries_prefix")
