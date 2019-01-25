@@ -145,6 +145,60 @@ class TestDataTransferService:
         assert isinstance(dataframes.get("ds1"), pd.DataFrame)
         assert isinstance(dataframes.get("ds2"), pd.DataFrame)
 
+    def test_malformed_multiple_raw(self, time_series_in_cdp):
+        with pytest.raises(DataSpecValidationError):
+            data_spec = DataSpec(
+                time_series_data_specs=[
+                    TimeSeriesDataSpec(
+                        time_series=[
+                            TimeSeries(id=time_series_in_cdp[0]),
+                            TimeSeries(id=time_series_in_cdp[1])
+                        ],
+                        aggregates=[],
+                        granularity="raw",
+                        start=TEST_TS_REASONABLE_INTERVAL["start"],
+                        end=TEST_TS_REASONABLE_INTERVAL["end"],
+                    )
+                ]
+            )
+
+    def test_malformed_raw_aggregate_mix(self, time_series_in_cdp):
+        with pytest.raises(DataSpecValidationError):
+            data_spec = DataSpec(
+                time_series_data_specs=[
+                    TimeSeriesDataSpec(
+                        time_series=[
+                            TimeSeries(id=time_series_in_cdp[0]),
+                            TimeSeries(id=time_series_in_cdp[1], aggregates=["avg"])
+                        ],
+                        aggregates=[],
+                        granularity="raw",
+                        start=TEST_TS_REASONABLE_INTERVAL["start"],
+                        end=TEST_TS_REASONABLE_INTERVAL["end"],
+                    )
+                ]
+            )
+
+    def test_get_raw_dataframes(self, time_series_in_cdp):
+        data_spec = DataSpec(time_series_data_specs=[
+            TimeSeriesDataSpec(
+                time_series=[
+                    TimeSeries(id=time_series_in_cdp[1], label="ts1")
+                ],
+                aggregates=[],
+                granularity="raw",
+                start=TEST_TS_REASONABLE_INTERVAL["start"],
+                end=TEST_TS_REASONABLE_INTERVAL["end"],
+                label="ds1"
+            )
+        ])
+        service = DataTransferService(data_spec)
+        dataframes = service.get_dataframes()
+
+        assert "ds1" in dataframes
+        assert isinstance(dataframes["ds1"], pd.DataFrame)
+        assert dataframes["ds1"].columns.tolist() == ["timestamp", "ts1"]
+
     def test_get_dataframe(self, ts_data_spec_dtos):
         data_spec = DataSpec(time_series_data_specs=ts_data_spec_dtos)
         service = DataTransferService(data_spec)

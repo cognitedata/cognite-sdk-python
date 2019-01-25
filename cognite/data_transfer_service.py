@@ -37,7 +37,7 @@ class TimeSeriesDataSpec:
 
     Args:
         time_series (List[data_transfer_service.TimeSeries]):  Time series
-        aggregates (List[str]): List of aggregate functions
+        aggregates (List[str]): List of aggregate functions; if empty, raw data points are fetched
         granularity (str): Granularity of aggregates
         missing_data_strategy (str): Missing data strategy to apply, can be "linearInterpolation" or "ffill"
         start (Union[str, int, datetime]): Start time
@@ -120,6 +120,10 @@ class DataSpec:
                 if not len(tsds.time_series) > 0:
                     raise DataSpecValidationError("A time series data spec does not contain any time series")
 
+                if not tsds.aggregates and not all(ts.aggregates for ts in tsds.time_series):
+                    if len(tsds.time_series) != 1:
+                        raise DataSpecValidationError("A raw time series must be the only item in its data spec")
+
                 ts_labels = []
                 for ts in tsds.time_series:
                     if not isinstance(ts, TimeSeries):
@@ -127,6 +131,7 @@ class DataSpec:
                     if ts.label and ts.label in ts_labels:
                         raise DataSpecValidationError("Time series labels must be unique")
                     ts_labels.append(ts.label)
+
 
     def __validate_files_data_spec(self):
         if self.files_data_spec:
@@ -294,12 +299,22 @@ class DataTransferService:
                 )
                 ts_list.append(ts_dict)
 
-            df = self.cognite_client.datapoints.get_datapoints_frame(
-                ts_list, tsds.aggregates, tsds.granularity, tsds.start, tsds.end
-            )
-            df = self.__apply_missing_data_strategies(df, ts_list, tsds.missing_data_strategy)
-            df = self.__convert_ts_names_to_labels(df, tsds, drop_agg_suffix)
-            return df
+            # If at least one time series in the spec has no associated aggregates, this is a raw datapoints request
+            if not tsds.aggregates and not all(ts.aggregates for ts in tsds.time_series):
+                df = self.cognite_client.datapoints.get_datapoints(
+                    ts_list[0]["name"], start=tsds.start, end=tsds.end
+                ).to_pandas()
+                if tsds.time_series[0].label:
+                    df.rename(columns={"value": tsds.time_series[0].label}, inplace=True)
+                return df
+            else:
+                df = self.cognite_client.datapoints.get_datapoints_frame(
+                    ts_list, tsds.aggregates, tsds.granularity, tsds.start, tsds.end
+                )
+                df = self.__apply_missing_data_strategies(df, ts_list, tsds.missing_data_strategy)
+                df = self.__convert_ts_names_to_labels(df, tsds, drop_agg_suffix)
+                return df
+
         raise ValueError("Invalid label")
 
     def get_file(self, name):
