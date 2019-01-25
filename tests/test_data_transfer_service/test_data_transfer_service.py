@@ -150,10 +150,7 @@ class TestDataTransferService:
             data_spec = DataSpec(
                 time_series_data_specs=[
                     TimeSeriesDataSpec(
-                        time_series=[
-                            TimeSeries(id=time_series_in_cdp[0]),
-                            TimeSeries(id=time_series_in_cdp[1])
-                        ],
+                        time_series=[TimeSeries(id=123), TimeSeries(id=456)],
                         aggregates=[],
                         granularity="raw",
                         start=TEST_TS_REASONABLE_INTERVAL["start"],
@@ -167,10 +164,7 @@ class TestDataTransferService:
             data_spec = DataSpec(
                 time_series_data_specs=[
                     TimeSeriesDataSpec(
-                        time_series=[
-                            TimeSeries(id=time_series_in_cdp[0]),
-                            TimeSeries(id=time_series_in_cdp[1], aggregates=["avg"])
-                        ],
+                        time_series=[TimeSeries(id=123), TimeSeries(id=456, aggregates=["avg"])],
                         aggregates=[],
                         granularity="raw",
                         start=TEST_TS_REASONABLE_INTERVAL["start"],
@@ -180,18 +174,18 @@ class TestDataTransferService:
             )
 
     def test_get_raw_dataframes(self, time_series_in_cdp):
-        data_spec = DataSpec(time_series_data_specs=[
-            TimeSeriesDataSpec(
-                time_series=[
-                    TimeSeries(id=time_series_in_cdp[1], label="ts1")
-                ],
-                aggregates=[],
-                granularity="raw",
-                start=TEST_TS_REASONABLE_INTERVAL["start"],
-                end=TEST_TS_REASONABLE_INTERVAL["end"],
-                label="ds1"
-            )
-        ])
+        data_spec = DataSpec(
+            time_series_data_specs=[
+                TimeSeriesDataSpec(
+                    time_series=[TimeSeries(id=time_series_in_cdp[1], label="ts1")],
+                    aggregates=[],
+                    granularity="raw",
+                    start=TEST_TS_REASONABLE_INTERVAL["start"],
+                    end=TEST_TS_REASONABLE_INTERVAL["end"],
+                    label="ds1",
+                )
+            ]
+        )
         service = DataTransferService(data_spec)
         dataframes = service.get_dataframes()
 

@@ -132,7 +132,6 @@ class DataSpec:
                         raise DataSpecValidationError("Time series labels must be unique")
                     ts_labels.append(ts.label)
 
-
     def __validate_files_data_spec(self):
         if self.files_data_spec:
             if not isinstance(self.files_data_spec, FilesDataSpec):
