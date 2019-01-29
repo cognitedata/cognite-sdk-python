@@ -33,6 +33,7 @@ def granularity_to_ms(time_string):
         "second": 1000,
         "m": 60000,
         "minute": 60000,
+        "min": 60000,
         "h": 3600000,
         "hour": 3600000,
         "d": 86400000,
