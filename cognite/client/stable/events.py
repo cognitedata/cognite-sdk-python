@@ -120,7 +120,7 @@ class EventsClient(APIClient):
         Args:
             type (str):             Type (class) of event, e.g. 'failure'.
             sub_type (str):         Sub-type of event, e.g. 'electrical'.
-            asset_id (str):         Return events associated with this assetId.
+            asset_id (int):         Return events associated with this assetId.
         Keyword Arguments:
             sort (str):             Sort descending or ascending. Default 'ASC'.
             cursor (str):           Cursor to use for paging through results.
