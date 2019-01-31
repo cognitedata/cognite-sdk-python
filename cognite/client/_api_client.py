@@ -26,12 +26,10 @@ def _raise_API_error(res: Response):
         else:
             msg = error["message"]
             extra = error.get("extra")
-    except KeyError:
-        msg = res.json()
     except:
         msg = res.content
 
-    log.error(f"HTTP Error {code}: {msg}", extra={"X-Request-ID": x_request_id, "extra": extra})
+    log.error("HTTP Error %s: %s", code, msg, extra={"X-Request-ID": x_request_id, "extra": extra})
     raise APIError(msg, code, x_request_id, extra=extra)
 
 
