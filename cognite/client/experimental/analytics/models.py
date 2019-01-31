@@ -39,7 +39,7 @@ class ModelsClient(APIClient):
             "outputFields": output_fields or [],
         }
         res = self._post(url, body=model_body)
-        return res.json()["data"]
+        return res
 
     def get_models(self) -> List[Dict]:
         """Get all models.
@@ -49,7 +49,7 @@ class ModelsClient(APIClient):
         """
         url = "/analytics/models"
         res = self._get(url)
-        return res.json()["data"]["items"]
+        return res
 
     def get_model(self, model_id: int) -> Dict:
         """Get a model by id.
@@ -62,7 +62,7 @@ class ModelsClient(APIClient):
         """
         url = "/analytics/models/{}".format(model_id)
         res = self._get(url)
-        return res.json()["data"]["items"]
+        return res
 
     def delete_model(self, model_id: int) -> None:
         """Delete a model.
@@ -121,7 +121,7 @@ class ModelsClient(APIClient):
             "metadata": metadata or {},
         }
         res = self._post(url, body=body)
-        return res.json()["data"]["items"]
+        return res
 
     def get_versions(self, model_id: int) -> List[Dict]:
         """Get all versions of a specific model.
@@ -134,7 +134,7 @@ class ModelsClient(APIClient):
         """
         url = "/analytics/models/{}/versions".format(model_id)
         res = self._get(url)
-        return res.json()["data"]["items"]
+        return res
 
     def get_version(self, model_id: int, version_id: int) -> Dict:
         """Get a specific model version by id.
@@ -148,7 +148,7 @@ class ModelsClient(APIClient):
         """
         url = "/analytics/models/{}/versions/{}".format(model_id, version_id)
         res = self._get(url)
-        return res.json()["data"]["items"]
+        return res
 
     def delete_version(self, model_id: int, version_id: int) -> None:
         """Delete a model version by id.
@@ -182,7 +182,7 @@ class ModelsClient(APIClient):
             url = "/analytics/models/{}/versions/{}/predict".format(model_id, version_id)
         body = {"instances": instances, "args": args or {}}
         res = self._put(url, body=body)
-        return res.json()["data"]
+        return res
 
     def create_source_package(
         self,
@@ -223,7 +223,7 @@ class ModelsClient(APIClient):
             self._upload_file(res.json().get("uploadUrl"), file_path)
             del res.json()["data"]["uploadUrl"]
             return res.json()["data"]
-        return res.json()["data"]
+        return res
 
     def _upload_file(self, upload_url, file_path):
         with open(file_path, "rb") as fh:
@@ -239,7 +239,7 @@ class ModelsClient(APIClient):
         """
         url = "/analytics/models/sourcepackages"
         res = self._get(url)
-        return res.json()["data"]["items"]
+        return res
 
     def get_source_package(self, source_package_id: int) -> Dict:
         """Get model source package by id.
@@ -252,7 +252,7 @@ class ModelsClient(APIClient):
         """
         url = "/analytics/models/sourcepackages/{}".format(source_package_id)
         res = self._get(url)
-        return res.json()["data"]["items"]
+        return res
 
     def delete_source_package(self, source_package_id: int) -> None:
         """Delete source package by id.
@@ -331,7 +331,7 @@ class ModelsClient(APIClient):
             "metadata": metadata or {},
         }
         res = self._post(url, body=body)
-        return res.json()["data"]["items"]
+        return res
 
     def delete_schedule(self, schedule_id: int) -> None:
         """Delete a schedule by id.
@@ -353,7 +353,7 @@ class ModelsClient(APIClient):
         """
         url = "/analytics/models/schedules"
         res = self._get(url=url)
-        return res.json()["data"]["items"]
+        return res
 
     def get_schedule(self, schedule_id: int) -> Dict:
         """Get a schedule by id.
@@ -363,4 +363,4 @@ class ModelsClient(APIClient):
         """
         url = "/analytics/models/schedules/{}".format(schedule_id)
         res = self._get(url=url)
-        return res.json()["data"]["items"]
+        return res
