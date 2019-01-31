@@ -56,7 +56,7 @@ def test_get_events():
 
 
 def test_get_events_empty():
-    res = events.get_events(limit=0)
+    res = events.get_events(asset_id=0)
     assert res.to_pandas().empty
     assert len(res.to_json()) == 0
 
