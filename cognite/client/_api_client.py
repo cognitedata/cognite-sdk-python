@@ -18,18 +18,19 @@ def _status_is_valid(status_code: int):
 def _raise_API_error(res: Response):
     x_request_id = res.headers.get("X-Request-Id")
     code = res.status_code
+    extra = {}
     try:
         error = res.json()["error"]
         if isinstance(error, str):
             msg = error
         else:
             msg = error["message"]
-    except KeyError:
-        msg = res.json()
+            extra = error.get("extra")
     except:
         msg = res.content
 
-    raise APIError(msg, code, x_request_id)
+    log.error("HTTP Error %s: %s", code, msg, extra={"X-Request-ID": x_request_id, "extra": extra})
+    raise APIError(msg, code, x_request_id, extra=extra)
 
 
 def _log_request(res: Response, **kwargs):
