@@ -31,6 +31,9 @@ class TimeSeriesListResponse(CogniteResponse):
                     d.update(metadata)
         return pd.DataFrame(items)
 
+    def __getitem__(self, index):
+        return TimeSeriesResponse({"data": {"items": [self.to_json()[index]]}})
+
     def __iter__(self):
         return self
 
