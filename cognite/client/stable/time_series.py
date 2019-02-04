@@ -31,6 +31,9 @@ class TimeSeriesListResponse(CogniteResponse):
                     d.update(metadata)
         return pd.DataFrame(items)
 
+    def __getitem__(self, index):
+        return TimeSeriesResponse({"data": {"items": [self.to_json()[index]]}})
+
     def __iter__(self):
         return self
 
@@ -156,7 +159,7 @@ class TimeSeriesClient(APIClient):
             "includeMetadata": include_metadata,
             "assetId": asset_id,
             "path": path,
-            "limit": kwargs.get("limit", 10000) if not kwargs.get("autopaging") else 10000,
+            "limit": kwargs.get("limit", self._LIMIT) if not kwargs.get("autopaging") else self._LIMIT,
         }
 
         time_series = []

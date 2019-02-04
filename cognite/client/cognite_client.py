@@ -52,7 +52,7 @@ class CogniteClient:
 
                 from cognite import CogniteClient
                 client = CogniteClient()
-                res = client.time_series.get_timeseries()
+                res = client.time_series.get_time_series()
                 print(res.to_pandas())
 
             Certain experimental features are made available through this client as follows::

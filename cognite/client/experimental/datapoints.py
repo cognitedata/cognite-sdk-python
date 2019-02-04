@@ -24,6 +24,8 @@ class DatapointsResponse(CogniteResponse):
 class DatapointsClient(APIClient):
     def __init__(self, **kwargs):
         super().__init__(version="0.6", **kwargs)
+        self._LIMIT_AGG = 10000
+        self._LIMIT = 100000
 
     def get_datapoints(self, id, start, end=None, aggregates=None, granularity=None, **kwargs) -> DatapointsResponse:
         """Returns a DatapointsObject containing a list of datapoints for the given query.

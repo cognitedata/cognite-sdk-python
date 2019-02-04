@@ -5,7 +5,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor as Pool
 from copy import copy
 from functools import partial
-from typing import Dict, List
+from typing import List
 from urllib.parse import quote
 
 import pandas as pd
@@ -69,6 +69,9 @@ class DatapointsResponseIterator:
         self.datapoints_objects = datapoints_objects
         self.counter = 0
 
+    def __getitem__(self, index):
+        return self.datapoints_objects[index]
+
     def __iter__(self):
         return self
 
@@ -121,6 +124,8 @@ class LatestDatapointResponse(CogniteResponse):
 class DatapointsClient(APIClient):
     def __init__(self, **kwargs):
         super().__init__(version="0.5", **kwargs)
+        self._LIMIT_AGG = 10000
+        self._LIMIT = 100000
 
     def get_datapoints(self, name, start, end=None, aggregates=None, granularity=None, **kwargs) -> DatapointsResponse:
         """Returns a DatapointsObject containing a list of datapoints for the given query.

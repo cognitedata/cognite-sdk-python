@@ -20,6 +20,9 @@ class AssetListResponse(CogniteResponse):
             return pd.DataFrame(self.internal_representation["data"]["items"])
         return pd.DataFrame()
 
+    def __getitem__(self, index):
+        return AssetResponse({"data": {"items": [self.to_json()[index]]}})
+
     def __iter__(self):
         return self
 
@@ -312,7 +315,7 @@ class AssetsClient(APIClient):
             "maxLastUpdatedTime": max_last_updated_time,
             "sort": kwargs.get("sort"),
             "dir": kwargs.get("dir"),
-            "limit": kwargs.get("limit", 1000),
+            "limit": kwargs.get("limit", self._LIMIT),
             "offset": kwargs.get("offset"),
             "boostName": kwargs.get("boost_name"),
         }
