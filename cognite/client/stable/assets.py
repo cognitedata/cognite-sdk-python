@@ -315,7 +315,7 @@ class AssetsClient(APIClient):
             "maxLastUpdatedTime": max_last_updated_time,
             "sort": kwargs.get("sort"),
             "dir": kwargs.get("dir"),
-            "limit": kwargs.get("limit", 1000),
+            "limit": kwargs.get("limit", self._LIMIT),
             "offset": kwargs.get("offset"),
             "boostName": kwargs.get("boost_name"),
         }
