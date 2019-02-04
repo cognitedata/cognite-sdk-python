@@ -54,6 +54,9 @@ class EventListResponse(CogniteResponse):
                 d.update(d.pop("metadata"))
         return pd.DataFrame(items)
 
+    def __getitem__(self, index):
+        return EventResponse({"data": {"items": [self.to_json()[index]]}})
+
     def __iter__(self):
         return self
 
