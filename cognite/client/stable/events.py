@@ -152,7 +152,7 @@ class EventsClient(APIClient):
                 "assetId": asset_id,
                 "sort": kwargs.get("sort"),
                 "cursor": kwargs.get("cursor"),
-                "limit": kwargs.get("limit", 25) if not kwargs.get("autopaging") else self._LIMIT_AGG,
+                "limit": kwargs.get("limit", 25) if not kwargs.get("autopaging") else self._LIMIT,
             }
         else:
             params = {
@@ -161,7 +161,7 @@ class EventsClient(APIClient):
                 "assetId": asset_id,
                 "sort": kwargs.get("sort"),
                 "cursor": kwargs.get("cursor"),
-                "limit": kwargs.get("limit", 25) if not kwargs.get("autopaging") else self._LIMIT_AGG,
+                "limit": kwargs.get("limit", 25) if not kwargs.get("autopaging") else self._LIMIT,
                 "hasDescription": kwargs.get("has_description"),
                 "minStartTime": kwargs.get("min_start_time"),
                 "maxStartTime": kwargs.get("max_start_time"),
@@ -304,7 +304,7 @@ class EventsClient(APIClient):
             "assetSubtrees": asset_subtrees,
             "sort": kwargs.get("sort"),
             "dir": kwargs.get("dir"),
-            "limit": kwargs.get("limit", 1000),
+            "limit": kwargs.get("limit", self._LIMIT),
             "offset": kwargs.get("offset"),
         }
 
