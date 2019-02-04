@@ -24,6 +24,7 @@ def test_get_assets_response_object(get_assets_response):
     assert isinstance(get_assets_response, AssetListResponse)
     assert get_assets_response.next_cursor() is not None
     assert get_assets_response.previous_cursor() is None
+    assert isinstance(get_assets_response[0], AssetResponse)
 
 
 def test_get_assets_with_metadata_args():

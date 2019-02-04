@@ -228,7 +228,7 @@ class FilesClient(APIClient):
             "source": source,
             "isUploaded": kwargs.get("is_uploaded"),
             "sort": kwargs.get("sort"),
-            "limit": kwargs.get("limit", 100) if not kwargs.get("autopaging") else 10000,
+            "limit": kwargs.get("limit", self._LIMIT) if not kwargs.get("autopaging") else self._LIMIT,
             "cursor": kwargs.get("cursor"),
         }
 

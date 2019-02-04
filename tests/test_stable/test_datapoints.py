@@ -214,7 +214,7 @@ class TestMultiTimeseriesDatapoints:
 
     def test_get_multi_time_series_dps_output_format(self, get_multi_time_series_dps_response_obj):
         assert isinstance(get_multi_time_series_dps_response_obj, list)
-
+        assert isinstance(get_multi_time_series_dps_response_obj[0], DatapointsResponse)
         for dpr in get_multi_time_series_dps_response_obj:
             assert isinstance(dpr, DatapointsResponse)
 
