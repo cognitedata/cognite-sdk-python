@@ -20,6 +20,9 @@ class AssetListResponse(CogniteResponse):
             return pd.DataFrame(self.internal_representation["data"]["items"])
         return pd.DataFrame()
 
+    def __getitem__(self, index):
+        return AssetResponse({"data": {"items": [self.to_json()[index]]}})
+
     def __iter__(self):
         return self
 
