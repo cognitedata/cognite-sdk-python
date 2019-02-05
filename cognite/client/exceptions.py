@@ -35,4 +35,6 @@ class APIError(Exception):
         self.extra = extra
 
     def __str__(self):
+        if self.extra:
+            return "{} | code: {} | X-Request-ID: {}\n{}".format(self.message, self.code, self.x_request_id, self.extra)
         return "{} | code: {} | X-Request-ID: {}".format(self.message, self.code, self.x_request_id)
