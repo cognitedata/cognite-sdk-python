@@ -1,3 +1,6 @@
+import json
+
+
 class APIError(Exception):
     """Cognite API Error
 
@@ -35,4 +38,9 @@ class APIError(Exception):
         self.extra = extra
 
     def __str__(self):
+        if self.extra:
+            pretty_extra = json.dumps(self.extra, indent=4, sort_keys=True)
+            return "{} | code: {} | X-Request-ID: {}\n{}".format(
+                self.message, self.code, self.x_request_id, pretty_extra
+            )
         return "{} | code: {} | X-Request-ID: {}".format(self.message, self.code, self.x_request_id)
