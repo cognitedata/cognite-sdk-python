@@ -32,7 +32,12 @@ class TimeSeriesListResponse(CogniteResponse):
         return pd.DataFrame(items)
 
     def __getitem__(self, index):
+        if isinstance(index, slice):
+            return TimeSeriesListResponse({"data": {"items": self.to_json()[index]}})
         return TimeSeriesResponse({"data": {"items": [self.to_json()[index]]}})
+
+    def __len__(self):
+        return len(self.to_json())
 
     def __iter__(self):
         return self

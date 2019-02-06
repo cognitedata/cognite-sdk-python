@@ -38,6 +38,8 @@ class TestTimeseries:
         assert isinstance(get_timeseries_response_obj.to_pandas(), pd.DataFrame)
         assert isinstance(get_timeseries_response_obj.to_json()[0], dict)
         assert isinstance(get_timeseries_response_obj[0], TimeSeriesResponse)
+        assert isinstance(get_timeseries_response_obj[:1], TimeSeriesListResponse)
+        assert len(get_timeseries_response_obj[:1]) == 1
 
         for ts in get_timeseries_response_obj:
             assert isinstance(ts, TimeSeriesResponse)
