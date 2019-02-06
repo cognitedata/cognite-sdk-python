@@ -1,3 +1,5 @@
+import time
+
 import pandas as pd
 import pytest
 
@@ -75,11 +77,13 @@ def test_post_assets():
 
 
 def test_delete_assets():
-    asset = assets.get_assets(ASSET_NAME, depth=0)
-    id = asset.to_json()[0]["id"]
+    assets_response = assets.get_assets(ASSET_NAME, depth=0).to_json()
+    while len(assets_response) == 0:
+        assets_response = assets.get_assets(ASSET_NAME, depth=0).to_json()
+        time.sleep(0.5)
+    id = assets_response[0]["id"]
     res = assets.delete_assets([id])
     assert res is None
-    assert len(assets.get_assets(ASSET_NAME, depth=0).to_json()) == 0
 
 
 def test_search_for_assets():
