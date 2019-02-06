@@ -21,7 +21,12 @@ class AssetListResponse(CogniteResponse):
         return pd.DataFrame()
 
     def __getitem__(self, index):
+        if isinstance(index, slice):
+            return AssetListResponse({"data": {"items": self.to_json()[index]}})
         return AssetResponse({"data": {"items": [self.to_json()[index]]}})
+
+    def __len__(self):
+        return len(self.to_json())
 
     def __iter__(self):
         return self

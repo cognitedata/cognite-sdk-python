@@ -24,7 +24,10 @@ def test_get_assets_response_object(get_assets_response):
     assert isinstance(get_assets_response, AssetListResponse)
     assert get_assets_response.next_cursor() is not None
     assert get_assets_response.previous_cursor() is None
+    assert len(get_assets_response)
     assert isinstance(get_assets_response[0], AssetResponse)
+    assert isinstance(get_assets_response[:1], AssetListResponse)
+    assert len(get_assets_response[:1]) == 1
 
 
 def test_get_assets_with_metadata_args():
@@ -42,7 +45,6 @@ def test_get_asset():
 
 def test_attributes_not_none():
     asset = assets.get_asset(6354653755843357)
-    print(asset)
     for key, val in asset.__dict__.items():
         if key is "metadata" or (key is "parent_id" and asset.depth == 0):
             assert val is None

@@ -30,6 +30,9 @@ def test_list_files():
     assert isinstance(response.to_pandas(), pd.DataFrame)
     assert isinstance(response.to_json(), list)
     assert len(response.to_json()) > 0 and len(response.to_json()) <= 3
+    assert isinstance(response[0], FileInfoResponse)
+    assert isinstance(response[:1], FileListResponse)
+    assert len(response[:1]) == 1
 
 
 def test_list_files_empty():

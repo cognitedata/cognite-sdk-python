@@ -52,6 +52,8 @@ def test_get_events():
     assert isinstance(res.to_pandas(), pd.DataFrame)
     assert isinstance(res.to_json(), list)
     assert isinstance(res[0], cognite.client.stable.events.EventResponse)
+    assert isinstance(res[:1], cognite.client.stable.events.EventListResponse)
+    assert len(res[:1]) == 1
     for event in res:
         assert isinstance(event, cognite.client.stable.events.EventResponse)
 
