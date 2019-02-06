@@ -55,10 +55,15 @@ class EventListResponse(CogniteResponse):
         return pd.DataFrame(items)
 
     def __getitem__(self, index):
+        if isinstance(index, slice):
+            return EventListResponse({"data": {"items": self.to_json()[index]}})
         return EventResponse({"data": {"items": [self.to_json()[index]]}})
 
     def __iter__(self):
         return self
+
+    def __len__(self):
+        return len(self.to_json())
 
     def __next__(self):
         if self.counter > len(self.to_json()) - 1:

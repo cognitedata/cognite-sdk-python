@@ -54,6 +54,25 @@ class FileListResponse(CogniteResponse):
     def to_pandas(self):
         return pd.DataFrame(self.to_json())
 
+    def __getitem__(self, index):
+        if isinstance(index, slice):
+            return FileListResponse({"data": {"items": self.to_json()[index]}})
+        return FileInfoResponse({"data": {"items": [self.to_json()[index]]}})
+
+    def __len__(self):
+        return len(self.to_json())
+
+    def __iter__(self):
+        self.counter = 0
+        return self
+
+    def __next__(self):
+        if self.counter > len(self.to_json()) - 1:
+            raise StopIteration
+        else:
+            self.counter += 1
+            return FileInfoResponse({"data": {"items": [self.to_json()[self.counter - 1]]}})
+
 
 class FilesClient(APIClient):
     def __init__(self, **kwargs):

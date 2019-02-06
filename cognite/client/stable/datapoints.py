@@ -72,6 +72,9 @@ class DatapointsResponseIterator:
     def __getitem__(self, index):
         return self.datapoints_objects[index]
 
+    def __len__(self):
+        return len(self.datapoints_objects)
+
     def __iter__(self):
         return self
 
