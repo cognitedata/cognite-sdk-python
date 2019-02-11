@@ -24,7 +24,7 @@ class RawRow(object):
     Args:
         key (str):      Unique key for the row.
 
-        columns (int):  A key/value-map consisting of the values in the row.
+        columns (dict):  A key/value-map consisting of the values in the row.
     """
 
     def __init__(self, key, columns):
