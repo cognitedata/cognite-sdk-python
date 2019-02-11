@@ -11,8 +11,8 @@ models = CogniteClient().experimental.analytics.models
 def created_model():
     model_name = "test-model-{}".format(randint(0, 1e5))
     model = models.create_model(name=model_name)
-    yield model
-    models.delete_model(model["id"])
+    yield model["items"][0]
+    models.delete_model(model["items"][0]["id"])
 
 
 @pytest.fixture
@@ -27,9 +27,9 @@ def created_source_package():
 
 class TestModels:
     def test_get_model(self, created_model):
-        model = models.get_model(created_model["id"])
+        model = models.get_model(created_model["id"])["items"][0]
         assert model["name"] == created_model["name"]
 
     def test_get_source_package(self, created_source_package):
-        sp = models.get_source_package(created_source_package["id"])
+        sp = models.get_source_package(created_source_package["id"])["items"][0]
         assert sp["id"] == created_source_package["id"]
