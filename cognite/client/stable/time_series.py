@@ -5,49 +5,7 @@ from urllib.parse import quote
 
 import pandas as pd
 
-from cognite.client._api_client import APIClient, CogniteResponse
-
-
-class TimeSeriesListResponse(CogniteResponse):
-    """Time series Response Object"""
-
-    def __init__(self, internal_representation):
-        super().__init__(internal_representation)
-        self.counter = 0
-
-    def to_pandas(self, include_metadata: bool = False):
-        """Returns data as a pandas dataframe
-
-        Args:
-            include_metadata (bool): Whether or not to include metadata fields in the resulting dataframe
-        """
-        items = deepcopy(self.internal_representation["data"]["items"])
-        if items and items[0].get("metadata") is None:
-            return pd.DataFrame(items)
-        for d in items:
-            if d.get("metadata"):
-                metadata = d.pop("metadata")
-                if include_metadata:
-                    d.update(metadata)
-        return pd.DataFrame(items)
-
-    def __getitem__(self, index):
-        if isinstance(index, slice):
-            return TimeSeriesListResponse({"data": {"items": self.to_json()[index]}})
-        return TimeSeriesResponse({"data": {"items": [self.to_json()[index]]}})
-
-    def __len__(self):
-        return len(self.to_json())
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        if self.counter > len(self.to_json()) - 1:
-            raise StopIteration
-        else:
-            self.counter += 1
-            return TimeSeriesResponse({"data": {"items": [self.to_json()[self.counter - 1]]}})
+from cognite.client._api_client import APIClient, CogniteCollectionResponse, CogniteResponse
 
 
 class TimeSeriesResponse(CogniteResponse):
@@ -65,10 +23,6 @@ class TimeSeriesResponse(CogniteResponse):
         self.last_updated_time = item.get("lastUpdatedTime")
         self.metadata = item.get("metadata")
 
-    def to_json(self):
-        """Returns data as a json object"""
-        return self.internal_representation["data"]["items"][0]
-
     def to_pandas(self):
         """Returns data as a pandas dataframe"""
         if len(self.to_json()) > 0:
@@ -82,6 +36,28 @@ class TimeSeriesResponse(CogniteResponse):
                 df = pd.DataFrame.from_dict(ts, orient="index")
             return df
         return pd.DataFrame()
+
+
+class TimeSeriesListResponse(CogniteCollectionResponse):
+    """Time series Response Object"""
+
+    _RESPONSE_CLASS = TimeSeriesResponse
+
+    def to_pandas(self, include_metadata: bool = False):
+        """Returns data as a pandas dataframe
+
+        Args:
+            include_metadata (bool): Whether or not to include metadata fields in the resulting dataframe
+        """
+        items = deepcopy(self.internal_representation["data"]["items"])
+        if items and items[0].get("metadata") is None:
+            return pd.DataFrame(items)
+        for d in items:
+            if d.get("metadata"):
+                metadata = d.pop("metadata")
+                if include_metadata:
+                    d.update(metadata)
+        return pd.DataFrame(items)
 
 
 class TimeSeries:

@@ -5,7 +5,7 @@ from typing import List
 
 import pandas as pd
 
-from cognite.client._api_client import APIClient, CogniteResponse
+from cognite.client._api_client import APIClient, CogniteCollectionResponse, CogniteResponse
 
 
 class EventResponse(CogniteResponse):
@@ -25,9 +25,6 @@ class EventResponse(CogniteResponse):
         self.last_updated_time = item.get("lastUpdatedTime")
         self.metadata = item.get("metadata")
 
-    def to_json(self):
-        return self.internal_representation["data"]["items"][0]
-
     def to_pandas(self):
         event = self.to_json().copy()
         if event.get("metadata"):
@@ -40,12 +37,13 @@ class EventResponse(CogniteResponse):
         return df
 
 
-class EventListResponse(CogniteResponse):
+class EventListResponse(CogniteCollectionResponse):
     """Event List Response Object."""
+
+    _RESPONSE_CLASS = EventResponse
 
     def __init__(self, internal_representation):
         super().__init__(internal_representation)
-        self.counter = 0
 
     def to_pandas(self):
         items = deepcopy(self.to_json())
@@ -53,24 +51,6 @@ class EventListResponse(CogniteResponse):
             if d.get("metadata"):
                 d.update(d.pop("metadata"))
         return pd.DataFrame(items)
-
-    def __getitem__(self, index):
-        if isinstance(index, slice):
-            return EventListResponse({"data": {"items": self.to_json()[index]}})
-        return EventResponse({"data": {"items": [self.to_json()[index]]}})
-
-    def __iter__(self):
-        return self
-
-    def __len__(self):
-        return len(self.to_json())
-
-    def __next__(self):
-        if self.counter > len(self.to_json()) - 1:
-            raise StopIteration
-        else:
-            self.counter += 1
-            return EventResponse({"data": {"items": [self.to_json()[self.counter - 1]]}})
 
 
 class Event(object):

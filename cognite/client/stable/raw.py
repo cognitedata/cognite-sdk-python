@@ -10,6 +10,10 @@ from cognite.client._api_client import APIClient, CogniteResponse
 class RawResponse(CogniteResponse):
     """Raw Response Object."""
 
+    def to_json(self):
+        """Returns data as a json object"""
+        return self.internal_representation["data"]["items"]
+
     def to_pandas(self):
         """Returns data as a pandas dataframe"""
         return pd.DataFrame(self.to_json())

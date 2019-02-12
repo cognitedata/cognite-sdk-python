@@ -11,6 +11,10 @@ class TagMatchingResponse(CogniteResponse):
     names of the tag matches.
     """
 
+    def to_json(self):
+        """Returns data as a json object"""
+        return self.internal_representation["data"]["items"]
+
     def to_pandas(self):
         """Returns data as a pandas dataframe"""
         matches = []
