@@ -4,39 +4,7 @@ from typing import List
 
 import pandas as pd
 
-from cognite.client._api_client import APIClient, CogniteResponse
-
-
-class AssetListResponse(CogniteResponse):
-    """Assets Response Object"""
-
-    def __init__(self, internal_representation):
-        super().__init__(internal_representation)
-        self.counter = 0
-
-    def to_pandas(self):
-        """Returns data as a pandas dataframe"""
-        if len(self.to_json()) > 0:
-            return pd.DataFrame(self.internal_representation["data"]["items"])
-        return pd.DataFrame()
-
-    def __getitem__(self, index):
-        if isinstance(index, slice):
-            return AssetListResponse({"data": {"items": self.to_json()[index]}})
-        return AssetResponse({"data": {"items": [self.to_json()[index]]}})
-
-    def __len__(self):
-        return len(self.to_json())
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        if self.counter > len(self.to_json()) - 1:
-            raise StopIteration
-        else:
-            self.counter += 1
-            return AssetResponse({"data": {"items": [self.to_json()[self.counter - 1]]}})
+from cognite.client._api_client import APIClient, CogniteCollectionResponse, CogniteResponse
 
 
 class AssetResponse(CogniteResponse):
@@ -53,10 +21,6 @@ class AssetResponse(CogniteResponse):
         self.parent_id = item.get("parentId")
         self.path = item.get("path")
 
-    def to_json(self):
-        """Returns data as a json object"""
-        return self.internal_representation["data"]["items"][0]
-
     def to_pandas(self):
         """Returns data as a pandas dataframe"""
         if len(self.to_json()) > 0:
@@ -66,6 +30,21 @@ class AssetResponse(CogniteResponse):
             df = pd.DataFrame.from_dict(asset, orient="index")
             df.loc["path"] = [path]
             return df
+        return pd.DataFrame()
+
+
+class AssetListResponse(CogniteCollectionResponse):
+    """Assets Response Object"""
+
+    _RESPONSE_CLASS = AssetResponse
+
+    def __init__(self, internal_representation):
+        super().__init__(internal_representation)
+
+    def to_pandas(self):
+        """Returns data as a pandas dataframe"""
+        if len(self.to_json()) > 0:
+            return pd.DataFrame(self.internal_representation["data"]["items"])
         return pd.DataFrame()
 
 
