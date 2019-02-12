@@ -13,6 +13,11 @@ Responses
     :undoc-members:
     :show-inheritance:
 
+.. autoclass:: cognite.client._api_client.CogniteCollectionResponse
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Exceptions
 ----------
 .. automodule:: cognite.client.exceptions
