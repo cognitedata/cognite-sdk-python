@@ -1,4 +1,5 @@
 import os
+import sys
 from typing import Any, Dict
 
 import requests
@@ -83,13 +84,15 @@ class CogniteClient:
         timeout: int = None,
         debug: bool = None,
     ):
+        thread_local_api_key, thread_local_project = self._get_thread_local_credentials()
+
         environment_api_key = os.getenv("COGNITE_API_KEY")
         environment_base_url = os.getenv("COGNITE_BASE_URL")
         environment_num_of_retries = os.getenv("COGNITE_NUM_RETRIES")
         environment_num_of_workers = os.getenv("COGNITE_NUM_WORKERS")
         environment_timeout = os.getenv("COGNITE_TIMEOUT")
 
-        self.__api_key = api_key or environment_api_key
+        self.__api_key = api_key or thread_local_api_key or environment_api_key
         if self.__api_key is None:
             raise ValueError("No Api Key has been specified")
 
@@ -112,8 +115,8 @@ class CogniteClient:
 
         self._requests_session = self._requests_retry_session()
 
-        self._project = project
-        if project is None:
+        self._project = project or thread_local_project
+        if self._project is None:
             self._project = self.login.status().project
 
         self._api_client = self._client_factory(APIClient)
@@ -231,3 +234,12 @@ class CogniteClient:
 
         if user_defined_headers:
             self._headers.update(user_defined_headers)
+
+    def _get_thread_local_credentials(self):
+        if "cognite._thread_local" in sys.modules:
+            from cognite._thread_local import credentials
+
+            thread_local_api_key = getattr(credentials, "api_key", None)
+            thread_local_project = getattr(credentials, "project", None)
+            return thread_local_api_key, thread_local_project
+        return None, None
