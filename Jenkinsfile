@@ -68,7 +68,7 @@ podTemplate(
             }
 
             def pipVersion = sh(returnStdout: true, script: 'pipenv run yolk -V cognite-sdk | sort -n | tail -1 | cut -d\\  -f 2').trim()
-            def currentVersion = sh(returnStdout: true, script: 'sed -n -e "/^__version__/p" cognite/__init__.py | cut -d\\" -f2').trim()
+            def currentVersion = sh(returnStdout: true, script: 'sed -n -e "/^__version__/p" cognite/client/__init__.py | cut -d\\" -f2').trim()
 
             println("This version: " + currentVersion)
             println("Latest pip version: " + pipVersion)

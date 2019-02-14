@@ -3,7 +3,7 @@ import time
 import pandas as pd
 import pytest
 
-from cognite import CogniteClient
+from cognite.client import CogniteClient
 from cognite.client.stable.assets import Asset, AssetListResponse, AssetResponse
 from tests.conftest import generate_random_string
 

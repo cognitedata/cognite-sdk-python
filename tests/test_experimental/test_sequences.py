@@ -3,7 +3,7 @@ from typing import List
 import pandas as pd
 import pytest
 
-from cognite import APIError, CogniteClient
+from cognite.client import APIError, CogniteClient
 from cognite.client.experimental.sequences import Column, Row, RowValue, Sequence, SequenceDataResponse
 from tests.conftest import generate_random_string
 

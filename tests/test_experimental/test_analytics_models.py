@@ -2,7 +2,7 @@ from random import randint
 
 import pytest
 
-from cognite import CogniteClient
+from cognite.client import CogniteClient
 
 models = CogniteClient().experimental.analytics.models
 

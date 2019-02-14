@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from cognite import APIError, CogniteClient
+from cognite.client import APIError, CogniteClient
 from cognite.client.stable.raw import RawResponse, RawRow
 
 raw = CogniteClient().raw

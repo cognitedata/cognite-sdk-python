@@ -9,7 +9,8 @@ from unittest.mock import MagicMock
 import pytest
 from requests.structures import CaseInsensitiveDict
 
-from cognite import APIError, CogniteClient
+from cognite.client import CogniteClient
+from cognite.client.exceptions import APIError
 from cognite.client.stable.datapoints import Datapoint
 from cognite.client.stable.time_series import TimeSeries
 

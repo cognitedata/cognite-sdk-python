@@ -3,7 +3,7 @@ import os
 import pandas as pd
 import pytest
 
-from cognite import CogniteClient
+from cognite.client import CogniteClient
 from cognite.client.stable.files import FileInfoResponse, FileListResponse
 
 files = CogniteClient().files

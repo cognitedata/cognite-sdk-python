@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from cognite import APIError, CogniteClient
+from cognite.client import APIError, CogniteClient
 
 
 @pytest.fixture

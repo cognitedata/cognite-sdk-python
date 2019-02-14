@@ -3,7 +3,7 @@ from random import randint
 import pandas as pd
 import pytest
 
-from cognite import CogniteClient
+from cognite.client import CogniteClient
 from cognite.client.stable.time_series import TimeSeries, TimeSeriesListResponse, TimeSeriesResponse
 
 timeseries = CogniteClient().time_series

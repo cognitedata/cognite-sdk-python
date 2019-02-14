@@ -8,7 +8,7 @@ from requests import Session
 from requests.adapters import HTTPAdapter
 from urllib3 import Retry
 
-from cognite import APIError
+from cognite.client import APIError
 from cognite.client._api_client import APIClient
 from cognite.client.cognite_client import STATUS_FORCELIST
 from tests.conftest import MockReturnValue
