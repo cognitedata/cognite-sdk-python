@@ -178,7 +178,7 @@ class CogniteResponse:
 
     def to_json(self):
         """Returns data as a json object"""
-        return self.internal_representation["data"]["items"]
+        return self.internal_representation["data"]["items"][0]
 
     def next_cursor(self):
         """Returns next cursor to use for paging through results. Returns ``None`` if there are no more results."""
@@ -189,3 +189,35 @@ class CogniteResponse:
         """Returns previous cursor to use for paging through results. Returns ``None`` if there are no more results."""
         if self.internal_representation.get("data"):
             return self.internal_representation.get("data").get("previousCursor")
+
+
+class CogniteCollectionResponse(CogniteResponse):
+    """Cognite Collection Response class
+
+    All collection responses inherit from this class. Collection responses are subscriptable and iterable.
+    """
+
+    _RESPONSE_CLASS = None
+
+    def to_json(self):
+        """Returns data as a json object"""
+        return self.internal_representation["data"]["items"]
+
+    def __getitem__(self, index):
+        if isinstance(index, slice):
+            return self.__class__({"data": {"items": self.to_json()[index]}})
+        return self._RESPONSE_CLASS({"data": {"items": [self.to_json()[index]]}})
+
+    def __len__(self):
+        return len(self.to_json())
+
+    def __iter__(self):
+        self.counter = 0
+        return self
+
+    def __next__(self):
+        if self.counter > len(self.to_json()) - 1:
+            raise StopIteration
+        else:
+            self.counter += 1
+            return self._RESPONSE_CLASS({"data": {"items": [self.to_json()[self.counter - 1]]}})
