@@ -111,7 +111,7 @@ class MockReturnValue(mock.Mock):
 
     def __setattr__(self, key, value):
         if key == "_content":
-            self.json = lambda: json.loads(value)
+            self.json = lambda: json.loads(value.decode())
         super().__setattr__(key, value)
 
 

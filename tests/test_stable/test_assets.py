@@ -7,14 +7,14 @@ from cognite.client import CogniteClient
 from cognite.client.stable.assets import Asset, AssetListResponse, AssetResponse
 from tests.conftest import generate_random_string
 
-assets = CogniteClient().assets
+assets = CogniteClient(debug=True).assets
 
 ASSET_NAME = "test_asset" + generate_random_string(10)
 
 
 @pytest.fixture(scope="module")
 def get_asset_subtree_response():
-    return assets.get_asset_subtree(asset_id=6354653755843357, limit=1)
+    return assets.get_asset_subtree(asset_id=6354653755843357, limit=2)
 
 
 @pytest.fixture(scope="module")
