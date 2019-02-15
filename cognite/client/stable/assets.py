@@ -111,6 +111,7 @@ class AssetsClient(APIClient):
                 res = client.assets.get_assets(depth=3, autopaging=True)
                 print(res.to_pandas())
         """
+        autopaging = kwargs.get("autopaging", False)
         url = "/assets"
         params = {
             "name": name,
@@ -120,28 +121,10 @@ class AssetsClient(APIClient):
             "depth": depth,
             "fuzziness": fuzziness,
             "cursor": kwargs.get("cursor"),
-            "limit": kwargs.get("limit", self._LIMIT) if not kwargs.get("autopaging") else self._LIMIT,
+            "limit": kwargs.get("limit", self._LIMIT) if not autopaging else self._LIMIT,
         }
-        res = self._get(url, params=params)
-        assets = []
-        assets.extend(res.json()["data"]["items"])
-        next_cursor = res.json()["data"].get("nextCursor")
-
-        while next_cursor and kwargs.get("autopaging"):
-            params["cursor"] = next_cursor
-            res = self._get(url=url, params=params)
-            assets.extend(res.json()["data"]["items"])
-            next_cursor = res.json()["data"].get("nextCursor")
-
-        return AssetListResponse(
-            {
-                "data": {
-                    "nextCursor": next_cursor,
-                    "previousCursor": res.json()["data"].get("previousCursor"),
-                    "items": assets,
-                }
-            }
-        )
+        res = self._get(url, params=params, autopaging=autopaging)
+        return AssetListResponse(res.json())
 
     def get_asset(self, asset_id) -> AssetResponse:
         """Returns the asset with the provided assetId.
@@ -175,9 +158,12 @@ class AssetsClient(APIClient):
             limit (int):            The maximum nuber of assets to be returned.
 
             cursor (str):           Cursor to use for paging through results.
+
+            autopaging (bool):      Whether or not to automatically page through results. If set to true, limit will be
+                                    disregarded. Defaults to False.
         Returns:
-            stable.assets.AssetListResponse: A data object containing the requested assets with several getter methods with different
-            output formats.
+            stable.assets.AssetListResponse: A data object containing the requested assets with several getter methods
+            with different output formats.
 
         Examples:
             You can fetch an asset subtree like this::
@@ -186,9 +172,14 @@ class AssetsClient(APIClient):
                 res = client.assets.get_asset_subtree(asset_id=123, depth=)
                 print(res.to_pandas())
         """
+        autopaging = kwargs.get("autopaging", False)
         url = "/assets/{}/subtree".format(asset_id)
-        params = {"depth": depth, "limit": kwargs.get("limit", self._LIMIT), "cursor": kwargs.get("cursor")}
-        res = self._get(url, params=params)
+        params = {
+            "depth": depth,
+            "limit": kwargs.get("limit", self._LIMIT) if not autopaging else self._LIMIT,
+            "cursor": kwargs.get("cursor"),
+        }
+        res = self._get(url, params=params, autopaging=autopaging)
         return AssetListResponse(res.json())
 
     def post_assets(self, assets: List[Asset]) -> AssetListResponse:

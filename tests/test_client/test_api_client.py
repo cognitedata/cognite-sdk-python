@@ -158,6 +158,18 @@ class TestRequests:
             api_client._get(url)
         assert re.match("Custom error", str(e.value))
 
+    @mock.patch("requests.sessions.Session.get")
+    def test_get_request_with_autopaging(self, mock_request, api_client, url):
+        mock_request.side_effect = [
+            MockReturnValue(json_data={"data": {"items": [1, 2, 3], "nextCursor": "next"}}),
+            MockReturnValue(json_data={"data": {"items": [4, 5, 6], "nextCursor": "next"}}),
+            MockReturnValue(json_data={"data": {"items": [7, 8, 9], "nextCursor": None}}),
+        ]
+
+        res = api_client._get(url, params={}, autopaging=True)
+        assert mock_request.call_count == 3
+        assert {"data": {"items": [1, 2, 3, 4, 5, 6, 7, 8, 9]}} == res.json()
+
     @mock.patch("requests.sessions.Session.post")
     def test_post_request_ok(self, mock_request, api_client, url):
         mock_request.return_value = MockReturnValue(json_data=RESPONSE)

@@ -125,17 +125,8 @@ class ModelsClient(APIClient):
         """
         url = "/analytics/models"
         params = {"cursor": cursor, "limit": limit if autopaging is False else self._LIMIT}
-        res = self._get(url, params=params)
-
-        models = []
-        models.extend(res.json()["data"]["items"])
-        next_cursor = res.json()["data"].get("nextCursor")
-        while next_cursor and autopaging is True:
-            params["cursor"] = next_cursor
-            res = self._get(url=url, params=params)
-            models.extend(res.json()["data"]["items"])
-            next_cursor = res.json()["data"].get("nextCursor")
-        return ModelCollectionResponse({"data": {"items": models, "nextCursor": None}})
+        res = self._get(url, params=params, autopaging=autopaging)
+        return ModelCollectionResponse(res.json())
 
     def get_model(self, id: int) -> ModelResponse:
         """Get a model by id.
@@ -263,19 +254,8 @@ class ModelsClient(APIClient):
         """
         url = "/analytics/models/{}/versions".format(model_id)
         params = {"cursor": cursor, "limit": limit if autopaging is False else self._LIMIT}
-        res = self._get(url)
-
-        model_versions = []
-        model_versions.extend(res.json()["data"]["items"])
-        next_cursor = res.json()["data"].get("nextCursor")
-
-        while next_cursor and autopaging is True:
-            params["cursor"] = next_cursor
-            res = self._get(url=url, params=params)
-            model_versions.extend(res.json()["data"]["items"])
-            next_cursor = res.json()["data"].get("nextCursor")
-
-        return ModelVersionCollectionResponse({"data": {"items": model_versions, "nextCursor": None}})
+        res = self._get(url, params=params, autopaging=True)
+        return ModelVersionCollectionResponse(res.json())
 
     def get_model_version(self, model_id: int, version_id: int) -> ModelVersionResponse:
         """Get a specific model version by id.

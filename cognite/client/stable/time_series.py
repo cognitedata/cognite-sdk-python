@@ -133,6 +133,7 @@ class TimeSeriesClient(APIClient):
                 res = client.time_series.get_time_series(asset_id=123, autopaging=True)
                 print(res.to_pandas())
         """
+        autopaging = kwargs.get("autopaging", False)
         url = "/timeseries"
         params = {
             "q": prefix,
@@ -140,29 +141,11 @@ class TimeSeriesClient(APIClient):
             "includeMetadata": include_metadata,
             "assetId": asset_id,
             "path": path,
-            "limit": kwargs.get("limit", self._LIMIT) if not kwargs.get("autopaging") else self._LIMIT,
+            "limit": kwargs.get("limit", self._LIMIT) if not autopaging else self._LIMIT,
         }
 
-        time_series = []
-        res = self._get(url=url, params=params)
-        time_series.extend(res.json()["data"]["items"])
-        next_cursor = res.json()["data"].get("nextCursor")
-
-        while next_cursor and kwargs.get("autopaging"):
-            params["cursor"] = next_cursor
-            res = self._get(url=url, params=params)
-            time_series.extend(res.json()["data"]["items"])
-            next_cursor = res.json()["data"].get("nextCursor")
-
-        return TimeSeriesListResponse(
-            {
-                "data": {
-                    "nextCursor": next_cursor,
-                    "previousCursor": res.json()["data"].get("previousCursor"),
-                    "items": time_series,
-                }
-            }
-        )
+        res = self._get(url=url, params=params, autopaging=autopaging)
+        return TimeSeriesListResponse(res.json())
 
     def post_time_series(self, time_series: List[TimeSeries]) -> None:
         """Create a new time series.

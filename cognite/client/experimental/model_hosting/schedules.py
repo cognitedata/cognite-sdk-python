@@ -89,17 +89,8 @@ class SchedulesClient(APIClient):
         """
         url = "/analytics/models/schedules"
         params = {"cursor": cursor, "limit": limit if autopaging is False else self._LIMIT}
-        res = self._get(url, params=params)
-
-        schedules = []
-        schedules.extend(res.json()["data"]["items"])
-        next_cursor = res.json()["data"].get("nextCursor")
-        while next_cursor and autopaging is True:
-            params["cursor"] = next_cursor
-            res = self._get(url=url, params=params)
-            schedules.extend(res.json()["data"]["items"])
-            next_cursor = res.json()["data"].get("nextCursor")
-        return ScheduleCollectionResponse({"data": {"items": schedules, "nextCursor": None}})
+        res = self._get(url, params=params, autopaging=autopaging)
+        return ScheduleCollectionResponse(res.json())
 
     def get_schedule(self, id: int) -> ScheduleResponse:
         """Get a schedule by id.

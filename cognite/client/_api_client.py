@@ -97,8 +97,26 @@ class APIClient:
         _log_request(res)
         return res
 
+    def _autopaged_get(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
+        params = params.copy()
+        items = []
+        while True:
+            res = self._request_session.get(
+                url, params=params, headers=headers, cookies=self._cookies, timeout=self._timeout
+            )
+            _log_request(res)
+            params["cursor"] = res.json()["data"].get("nextCursor")
+            items.extend(res.json()["data"]["items"])
+            next_cursor = res.json()["data"].get("nextCursor")
+            if not next_cursor:
+                break
+        res._content = json.dumps({"data": {"items": items}}).encode()
+        return res
+
     @request_method
-    def _get(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
+    def _get(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None, autopaging: bool = False):
+        if autopaging:
+            return self._autopaged_get(url, params, headers)
         res = self._request_session.get(
             url, params=params, headers=headers, cookies=self._cookies, timeout=self._timeout
         )

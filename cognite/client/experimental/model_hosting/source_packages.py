@@ -105,18 +105,8 @@ class SourcePackageClient(APIClient):
         """
         url = "/analytics/models/sourcepackages"
         params = {"cursor": cursor, "limit": limit if autopaging is False else self._LIMIT}
-        source_packages = []
-
-        res = self._get(url, params=params)
-        source_packages.extend(res.json()["data"]["items"])
-        next_cursor = res.json()["data"].get("nextCursor")
-
-        while next_cursor and autopaging is True:
-            params["cursor"] = next_cursor
-            res = self._get(url=url, params=params)
-            source_packages.extend(res.json()["data"]["items"])
-            next_cursor = res.json()["data"].get("nextCursor")
-        return SourcePackageCollectionResponse({"data": {"nextCursor": next_cursor, "items": source_packages}})
+        res = self._get(url, params=params, autopaging=autopaging)
+        return SourcePackageCollectionResponse(res.json())
 
     def get_source_package(self, id: int) -> SourcePackageResponse:
         """Get source package by id.
