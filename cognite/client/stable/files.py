@@ -5,7 +5,6 @@ from copy import copy
 from typing import Dict, List, Union
 
 import pandas as pd
-import requests
 
 from cognite.client._api_client import APIClient, CogniteCollectionResponse, CogniteResponse
 
@@ -125,7 +124,7 @@ class FilesClient(APIClient):
                 warnings.warn(warning)
             headers = {"content-length": str(os.path.getsize(file_path))}
             with open(file_path, "rb") as file:
-                requests.put(result["uploadURL"], data=file, headers=headers)
+                self._request_session.put(result["uploadURL"], data=file, headers=headers)
             result.pop("uploadURL")
         return result
 
@@ -158,7 +157,7 @@ class FilesClient(APIClient):
         res = self._get(url=url)
         if get_contents:
             dl_link = res.json()["data"]
-            res = requests.get(dl_link)
+            res = self._request_session.get(dl_link)
             return res.content
         return res.json()["data"]
 

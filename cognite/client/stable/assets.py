@@ -38,9 +38,6 @@ class AssetListResponse(CogniteCollectionResponse):
 
     _RESPONSE_CLASS = AssetResponse
 
-    def __init__(self, internal_representation):
-        super().__init__(internal_representation)
-
     def to_pandas(self):
         """Returns data as a pandas dataframe"""
         if len(self.to_json()) > 0:
