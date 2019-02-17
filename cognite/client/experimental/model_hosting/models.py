@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import os
 from typing import Any, Dict, List
 
@@ -99,7 +98,7 @@ class ModelsClient(APIClient):
             output_fields (List[str]:   List of output fields the model produces
 
         Returns:
-            Dict: The created model.
+            experimental.model_hosting.models.ModelResponse: The created model.
         """
         url = "/analytics/models"
         model_body = {
@@ -216,8 +215,8 @@ class ModelsClient(APIClient):
             metadata (Dict[str, Any]):  Metadata about model version
             description (str):  Description of model version
             args (Dict[str, Any]):   Dictionary of arguments to pass to the training job.
-            scale_tier (str):   Which scale tier to use. Must be either "BASIC" or "CUSTOM"
-            machine_type (str): Specify a machiene type Applies only if scale_tier is "CUSTOM".
+            scale_tier (str):   Which scale tier to use. Must be either "BASIC" or "CUSTOM".
+            machine_type (str): Specify a machine type. Applies only if scale_tier is "CUSTOM".
 
         Returns:
             experimental.model_hosting.models.ModelVersionResponse: The created model version.
