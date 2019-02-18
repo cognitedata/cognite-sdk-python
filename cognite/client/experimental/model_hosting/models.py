@@ -340,9 +340,10 @@ class ModelsClient(APIClient):
             List: List of predictions for each instance.
         """
         url = "/analytics/models/{}/predict".format(model_id)
-        for i, instance in enumerate(instances):
-            if hasattr(instance, "dump"):
-                instances[i] = instance.dump()
+        if instances:
+            for i, instance in enumerate(instances):
+                if hasattr(instance, "dump"):
+                    instances[i] = instance.dump()
         if version_id:
             url = "/analytics/models/{}/versions/{}/predict".format(model_id, version_id)
         body = {"instances": instances, "args": args or {}}
