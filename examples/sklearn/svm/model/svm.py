@@ -1,6 +1,6 @@
 import os
 
-from cognite import CogniteClient
+from cognite.client import CogniteClient
 from sklearn import linear_model
 from sklearn.externals import joblib
 

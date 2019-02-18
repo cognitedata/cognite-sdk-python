@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 import pytest
 
-from cognite import CogniteClient
+from cognite.client import CogniteClient
 from cognite.client.stable.tagmatching import TagMatchingResponse
 from tests.conftest import MockReturnValue
 

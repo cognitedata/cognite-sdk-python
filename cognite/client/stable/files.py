@@ -5,7 +5,6 @@ from copy import copy
 from typing import Dict, List, Union
 
 import pandas as pd
-import requests
 
 from cognite.client._api_client import APIClient, CogniteCollectionResponse, CogniteResponse
 
@@ -125,7 +124,7 @@ class FilesClient(APIClient):
                 warnings.warn(warning)
             headers = {"content-length": str(os.path.getsize(file_path))}
             with open(file_path, "rb") as file:
-                requests.put(result["uploadURL"], data=file, headers=headers)
+                self._request_session.put(result["uploadURL"], data=file, headers=headers)
             result.pop("uploadURL")
         return result
 
@@ -158,7 +157,7 @@ class FilesClient(APIClient):
         res = self._get(url=url)
         if get_contents:
             dl_link = res.json()["data"]
-            res = requests.get(dl_link)
+            res = self._request_session.get(dl_link)
             return res.content
         return res.json()["data"]
 
@@ -218,6 +217,7 @@ class FilesClient(APIClient):
                 res = client.files.list_files(directory="allfiles/myspecialfiles", autopaging=True)
                 print(res.to_pandas())
         """
+        autopaging = kwargs.get("autopaging", False)
         url = "/files"
         params = {
             "assetId": kwargs.get("asset_id"),
@@ -227,29 +227,12 @@ class FilesClient(APIClient):
             "source": source,
             "isUploaded": kwargs.get("is_uploaded"),
             "sort": kwargs.get("sort"),
-            "limit": kwargs.get("limit", self._LIMIT) if not kwargs.get("autopaging") else self._LIMIT,
+            "limit": kwargs.get("limit", self._LIMIT) if not autopaging else self._LIMIT,
             "cursor": kwargs.get("cursor"),
         }
 
-        file_list = []
-        res = self._get(url=url, params=params)
-        file_list.extend(res.json()["data"]["items"])
-        next_cursor = res.json()["data"].get("nextCursor", None)
-
-        while next_cursor and kwargs.get("autopaging"):
-            params["cursor"] = next_cursor
-            res = self._get(url=url, params=params)
-            file_list.extend(res.json()["data"]["items"])
-            next_cursor = res.json()["data"].get("nextCursor", None)
-        return FileListResponse(
-            {
-                "data": {
-                    "nextCursor": next_cursor,
-                    "previousCursor": res.json()["data"].get("previousCursor"),
-                    "items": file_list,
-                }
-            }
-        )
+        res = self._get(url=url, params=params, autopaging=autopaging)
+        return FileListResponse(res.json())
 
     def get_file_info(self, id) -> FileInfoResponse:
         """Returns information about a file.

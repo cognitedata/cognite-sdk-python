@@ -10,9 +10,9 @@ from urllib.parse import quote
 
 import pandas as pd
 
-from cognite._auxiliary._protobuf_descriptors import _api_timeseries_data_v2_pb2
 from cognite.client import _utils
 from cognite.client._api_client import APIClient, CogniteResponse
+from cognite.client._auxiliary._protobuf_descriptors import _api_timeseries_data_v2_pb2
 
 
 class DatapointsResponse(CogniteResponse):

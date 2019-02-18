@@ -4,7 +4,7 @@ from setuptools import find_packages, setup
 
 packages = find_packages(exclude=["tests*"])
 
-version = re.search('^__version__\s*=\s*"(.*)"', open("cognite/__init__.py").read(), re.M).group(1)
+version = re.search('^__version__\s*=\s*"(.*)"', open("cognite/client/__init__.py").read(), re.M).group(1)
 
 setup(
     name="cognite-sdk",

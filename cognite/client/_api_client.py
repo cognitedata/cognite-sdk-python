@@ -97,8 +97,26 @@ class APIClient:
         _log_request(res)
         return res
 
+    def _autopaged_get(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
+        params = params.copy()
+        items = []
+        while True:
+            res = self._request_session.get(
+                url, params=params, headers=headers, cookies=self._cookies, timeout=self._timeout
+            )
+            _log_request(res)
+            params["cursor"] = res.json()["data"].get("nextCursor")
+            items.extend(res.json()["data"]["items"])
+            next_cursor = res.json()["data"].get("nextCursor")
+            if not next_cursor:
+                break
+        res._content = json.dumps({"data": {"items": items}}).encode()
+        return res
+
     @request_method
-    def _get(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
+    def _get(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None, autopaging: bool = False):
+        if autopaging:
+            return self._autopaged_get(url, params, headers)
         res = self._request_session.get(
             url, params=params, headers=headers, cookies=self._cookies, timeout=self._timeout
         )
@@ -142,7 +160,7 @@ class CogniteResponse:
     Examples:
         All responses are pretty-printable::
 
-            from cognite import CogniteClient
+            from cognite.client import CogniteClient
 
             client = CogniteClient()
             res = client.assets.get_assets(limit=1)
@@ -153,7 +171,7 @@ class CogniteResponse:
         fetch all resources. If for some reason, you want to do this manually, you may use the next_cursor() method on
         the response object. Here is an example of that::
 
-            from cognite import CogniteClient
+            from cognite.client import CogniteClient
 
             client = CogniteClient()
 
