@@ -2,9 +2,9 @@ from random import randint
 
 import pytest
 
-from cognite import CogniteClient
-from cognite.client.stable.time_series import TimeSeries
+from cognite.client import CogniteClient
 from cognite.client.experimental.time_series import TimeSeriesClient, TimeSeriesResponse
+from cognite.client.stable.time_series import TimeSeries
 from tests.conftest import TEST_TS_1_NAME
 
 stable_time_series = CogniteClient().time_series

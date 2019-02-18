@@ -1,4 +1,4 @@
-from cognite.client.experimental.analytics import AnalyticsClient
+from cognite.client.experimental.model_hosting import ModelHostingClient
 from cognite.client.experimental.datapoints import DatapointsClient
 from cognite.client.experimental.sequences import SequencesClient
 from cognite.client.experimental.time_series import TimeSeriesClient
@@ -9,8 +9,8 @@ class ExperimentalClient:
         self._client_factory = client_factory
 
     @property
-    def analytics(self) -> AnalyticsClient:
-        return AnalyticsClient(client_factory=self._client_factory)
+    def model_hosting(self) -> ModelHostingClient:
+        return ModelHostingClient(client_factory=self._client_factory)
 
     @property
     def datapoints(self) -> DatapointsClient:

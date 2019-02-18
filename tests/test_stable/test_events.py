@@ -2,7 +2,7 @@ import pandas as pd
 import pytest
 
 import cognite.client.stable.events
-from cognite import APIError, CogniteClient
+from cognite.client import APIError, CogniteClient
 
 events = CogniteClient().events
 

@@ -130,6 +130,7 @@ class EventsClient(APIClient):
                 res = client.events.get_events(type="a special type", autopaging=True)
                 print(res.to_pandas())
         """
+        autopaging = kwargs.get("autopaging", False)
         url = "/events"
 
         if asset_id:
@@ -137,7 +138,7 @@ class EventsClient(APIClient):
                 "assetId": asset_id,
                 "sort": kwargs.get("sort"),
                 "cursor": kwargs.get("cursor"),
-                "limit": kwargs.get("limit", 25) if not kwargs.get("autopaging") else self._LIMIT,
+                "limit": kwargs.get("limit", 25) if not autopaging else self._LIMIT,
             }
         else:
             params = {
@@ -146,32 +147,14 @@ class EventsClient(APIClient):
                 "assetId": asset_id,
                 "sort": kwargs.get("sort"),
                 "cursor": kwargs.get("cursor"),
-                "limit": kwargs.get("limit", 25) if not kwargs.get("autopaging") else self._LIMIT,
+                "limit": kwargs.get("limit", 25) if not autopaging else self._LIMIT,
                 "hasDescription": kwargs.get("has_description"),
                 "minStartTime": kwargs.get("min_start_time"),
                 "maxStartTime": kwargs.get("max_start_time"),
             }
 
-        res = self._get(url, params=params)
-        events = []
-        events.extend(res.json()["data"]["items"])
-        next_cursor = res.json()["data"].get("nextCursor")
-
-        while next_cursor and kwargs.get("autopaging"):
-            params["cursor"] = next_cursor
-            res = self._get(url=url, params=params)
-            events.extend(res.json()["data"]["items"])
-            next_cursor = res.json()["data"].get("nextCursor")
-
-        return EventListResponse(
-            {
-                "data": {
-                    "nextCursor": next_cursor,
-                    "previousCursor": res.json()["data"].get("previousCursor"),
-                    "items": events,
-                }
-            }
-        )
+        res = self._get(url, params=params, autopaging=autopaging)
+        return EventListResponse(res.json())
 
     def post_events(self, events: List[Event]) -> EventListResponse:
         """Adds a list of events and returns an EventListResponse object containing created events.

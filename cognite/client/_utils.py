@@ -8,12 +8,11 @@ This module is protected and should not used by end-users.
 import datetime
 import platform
 import re
-import sys
 import time
 from datetime import datetime, timezone
 from typing import Callable, List
 
-import cognite
+import cognite.client
 
 
 def datetime_to_ms(dt):
@@ -169,7 +168,7 @@ def to_snake_case(camel_case_string: str):
 
 
 def get_user_agent():
-    sdk_version = "CognitePythonSDK/{}".format(cognite.__version__)
+    sdk_version = "CognitePythonSDK/{}".format(cognite.client.__version__)
 
     python_version = "{}/{} ({};{})".format(
         platform.python_implementation(), platform.python_version(), platform.python_build(), platform.python_compiler()

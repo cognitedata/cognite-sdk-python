@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from cognite import CogniteClient
+from cognite.client import CogniteClient
 from cognite.client._api_client import APIClient
 from cognite.client.stable.datapoints import (
     Datapoint,

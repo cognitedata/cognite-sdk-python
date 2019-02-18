@@ -1,8 +1,14 @@
 import os
+import random
+import sys
+import threading
+import types
+from multiprocessing.pool import ThreadPool
+from time import sleep
 
 import pytest
 
-from cognite import APIError, CogniteClient
+from cognite.client import APIError, CogniteClient
 
 
 @pytest.fixture
@@ -98,3 +104,30 @@ class TestCogniteClient:
     def test_environment_config(self, environment_client_config):
         client = CogniteClient(project="something")
         self.assert_config_is_correct(client, *environment_client_config)
+
+    @pytest.fixture
+    def thread_local_credentials_module(self):
+        credentials_module = types.ModuleType("cognite._thread_local")
+        credentials_module.credentials = threading.local()
+        sys.modules["cognite._thread_local"] = credentials_module
+        yield
+        del sys.modules["cognite._thread_local"]
+
+    def create_client_and_check_config(self, i):
+        from cognite._thread_local import credentials
+
+        api_key = "thread-local-api-key{}".format(i)
+        project = "thread-local-project{}".format(i)
+
+        credentials.api_key = api_key
+        credentials.project = project
+
+        sleep(random.random())
+        client = CogniteClient()
+
+        assert api_key == client._CogniteClient__api_key
+        assert project == client._project
+
+    def test_create_client_thread_local_config(self, thread_local_credentials_module):
+        with ThreadPool() as pool:
+            pool.map(self.create_client_and_check_config, list(range(16)))

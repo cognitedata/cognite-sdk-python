@@ -15,7 +15,7 @@ class APIError(Exception):
     Examples:
         Catching an API-error and handling it based on the error code::
 
-            from cognite import CogniteClient, APIError
+            from cognite.client import CogniteClient, APIError
 
             client = CogniteClient()
 

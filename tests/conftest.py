@@ -1,4 +1,5 @@
 import datetime
+import json
 import logging
 import random
 import string
@@ -9,7 +10,8 @@ from unittest.mock import MagicMock
 import pytest
 from requests.structures import CaseInsensitiveDict
 
-from cognite import APIError, CogniteClient
+from cognite.client import CogniteClient
+from cognite.client.exceptions import APIError
 from cognite.client.stable.datapoints import Datapoint
 from cognite.client.stable.time_series import TimeSeries
 
@@ -101,11 +103,16 @@ class MockReturnValue(mock.Mock):
 
         # add json data if provided
         if json_data:
-            self.json = mock.Mock(return_value=json_data)
+            self.json = lambda: json_data
 
         self.request = MockRequest()
 
         self.raw = MagicMock()
+
+    def __setattr__(self, key, value):
+        if key == "_content":
+            self.json = lambda: json.loads(value.decode())
+        super().__setattr__(key, value)
 
 
 def get_time_w_offset(**kwargs):
