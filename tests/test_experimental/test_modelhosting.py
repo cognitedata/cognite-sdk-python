@@ -32,6 +32,15 @@ schedules = modelhosting_client.schedules
 source_packages = modelhosting_client.source_packages
 
 
+@pytest.fixture
+def mock_data_spec():
+    class FakeScheduleDataSpec:
+        def dump(self):
+            return {"spec": "spec"}
+
+    return FakeScheduleDataSpec()
+
+
 class TestSourcePackages:
     @pytest.fixture(scope="class")
     def source_package_file_path(self):
@@ -202,6 +211,14 @@ class TestVersions:
         res = models.train_model_version(id=1, name="mymodel", source_package_id=1)
         assert isinstance(res, ModelVersionResponse)
 
+    @mock.patch("requests.sessions.Session.post")
+    def test_train_version_data_spec_arg(self, post_mock, mock_data_spec):
+        post_mock.return_value = MockReturnValue(json_data=self.model_version_response)
+        models.train_model_version(id=1, name="mymodel", source_package_id=1, args={"data_spec": mock_data_spec})
+
+        data_sent_to_api = json.loads(gzip.decompress(post_mock.call_args[1]["data"]).decode())
+        assert {"spec": "spec"} == data_sent_to_api["trainingDetails"]["args"]["data_spec"]
+
     @mock.patch("requests.sessions.Session.delete")
     def test_delete_version(self, delete_mock):
         delete_mock.return_value = MockReturnValue()
@@ -269,6 +286,14 @@ class TestVersions:
         assert predictions == [1, 2, 3]
 
     @mock.patch("requests.sessions.Session.put")
+    def test_predict_instance_is_data_spec(self, mock_put, mock_data_spec):
+        mock_put.return_value = MockReturnValue(json_data={"data": {"predictions": [1, 2, 3]}})
+        models.online_predict(model_id=1, version_id=1, instances=[mock_data_spec, mock_data_spec])
+        data_sent_to_api = json.loads(mock_put.call_args[1]["data"])
+        for instance in data_sent_to_api["instances"]:
+            assert {"spec": "spec"} == instance
+
+    @mock.patch("requests.sessions.Session.put")
     def test_predict_on_model_version_prediction_error(self, mock_put):
         mock_put.return_value = MockReturnValue(json_data={"error": {"message": "User error", "code": 200}})
         with pytest.raises(PredictionError, match="User error"):
@@ -311,22 +336,14 @@ class TestSchedules:
         assert isinstance(res, ScheduleResponse)
         assert res.id == 123
 
-    @pytest.fixture
-    def mock_schedule_data_spec(self):
-        class FakeScheduleDataSpec:
-            def dump(self):
-                return {"spec": "spec"}
-
-        return FakeScheduleDataSpec()
-
     @mock.patch("requests.sessions.Session.post")
-    def test_create_schedule_with_data_spec_objects(self, mock_post, mock_schedule_data_spec):
+    def test_create_schedule_with_data_spec_objects(self, mock_post, mock_data_spec):
         mock_post.return_value = MockReturnValue(json_data=self.schedule_response)
         res = schedules.create_schedule(
             model_id=123,
             name="myschedule",
-            input_data_spec=mock_schedule_data_spec,
-            output_data_spec=mock_schedule_data_spec,
+            input_data_spec=mock_data_spec,
+            output_data_spec=mock_data_spec,
             args={"k": "v"},
             metadata={"k": "v"},
         )
