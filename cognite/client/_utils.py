@@ -180,3 +180,21 @@ def get_user_agent():
     operating_system = "{}/{}".format(platform.system(), os_version_info)
 
     return "{} {} {}".format(sdk_version, python_version, operating_system)
+
+
+def get_datapoints_windows(start: int, end: int, granularity: str, num_of_workers):
+    diff = end - start
+    granularity_ms = 1
+    if granularity:
+        granularity_ms = granularity_to_ms(granularity)
+
+    # Ensure that number of steps is not greater than the number data points that will be returned
+    steps = min(num_of_workers, max(1, int(diff / granularity_ms)))
+    # Make step size a multiple of the granularity requested in order to ensure evenly spaced results
+    step_size = round_to_nearest(int(diff / steps), base=granularity_ms)
+    # Create list of where each of the parallelized intervals will begin
+    step_starts = [start + (i * step_size) for i in range(steps)]
+    windows = [{"start": start, "end": start + step_size} for start in step_starts]
+    if windows[-1]["end"] < end:
+        windows[-1]["end"] = end
+    return windows

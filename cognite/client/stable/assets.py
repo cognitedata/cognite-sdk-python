@@ -83,7 +83,7 @@ class AssetsClient(APIClient):
         Args:
             name (str):             The name of the asset(s) to get.
 
-            path (str):             The path of the subtree to search in.
+            path (List[int]):       The path of the subtree to search in.
 
             description (str):      Search query.
 
@@ -110,13 +110,19 @@ class AssetsClient(APIClient):
                 client = CogniteClient()
                 res = client.assets.get_assets(depth=3, autopaging=True)
                 print(res.to_pandas())
+
+            You can fetch all assets in a given subtree like this::
+
+                client = CogniteClient()
+                res = client.assets.get_assets(path=[1,2,3], autopaging=True)
+                print(res.to_pandas())
         """
         autopaging = kwargs.get("autopaging", False)
         url = "/assets"
         params = {
             "name": name,
             "description": description,
-            "path": path,
+            "path": str(path) if path else None,
             "metadata": str(metadata) if metadata else None,
             "depth": depth,
             "fuzziness": fuzziness,
