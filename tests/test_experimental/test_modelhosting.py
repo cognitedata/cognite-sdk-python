@@ -63,7 +63,7 @@ class TestSourcePackages:
         yield sp
         source_packages.delete_source_package(id=sp.id)
 
-    def test_list_source_packages(self):
+    def test_list_source_packages(self, created_source_package):
         res = source_packages.list_source_packages()
         assert len(res) > 0
         assert isinstance(res, SourcePackageCollectionResponse)
@@ -120,7 +120,7 @@ class TestModels:
         assert model.name == created_model.name
         assert model.active_version_id is None
 
-    def test_list_models(self):
+    def test_list_models(self, created_model):
         res = models.list_models()
         assert len(res) > 0
         assert isinstance(res, ModelCollectionResponse)
@@ -315,7 +315,6 @@ class TestSchedules:
                     "inputDataSpec": {"spec": "spec"},
                     "args": {"k": "v"},
                     "description": "string",
-                    "lastProcessedTimestamp": 0,
                 }
             ]
         },
@@ -326,12 +325,7 @@ class TestSchedules:
     def test_create_schedule(self, mock_post):
         mock_post.return_value = MockReturnValue(json_data=self.schedule_response)
         res = schedules.create_schedule(
-            model_id=123,
-            name="myschedule",
-            input_data_spec={"spec": "spec"},
-            output_data_spec={"spec": "spec"},
-            args={"k": "v"},
-            metadata={"k": "v"},
+            model_id=123, name="myschedule", schedule_data_spec={"spec": "spec"}, args={"k": "v"}, metadata={"k": "v"}
         )
         assert isinstance(res, ScheduleResponse)
         assert res.id == 123
@@ -340,22 +334,15 @@ class TestSchedules:
     def test_create_schedule_with_data_spec_objects(self, mock_post, mock_data_spec):
         mock_post.return_value = MockReturnValue(json_data=self.schedule_response)
         res = schedules.create_schedule(
-            model_id=123,
-            name="myschedule",
-            input_data_spec=mock_data_spec,
-            output_data_spec=mock_data_spec,
-            args={"k": "v"},
-            metadata={"k": "v"},
+            model_id=123, name="myschedule", schedule_data_spec=mock_data_spec, args={"k": "v"}, metadata={"k": "v"}
         )
         assert isinstance(res, ScheduleResponse)
         assert res.id == 123
 
         data_sent_to_api = json.loads(gzip.decompress(mock_post.call_args[1]["data"]).decode())
-        actual_input_data_spec = data_sent_to_api["inputDataSpec"]
-        actual_output_data_spec = data_sent_to_api["outputDataSpec"]
+        actual_data_spec = data_sent_to_api["dataSpec"]
 
-        assert {"spec": "spec"} == actual_input_data_spec
-        assert {"spec": "spec"} == actual_output_data_spec
+        assert {"spec": "spec"} == actual_data_spec
 
     @mock.patch("requests.sessions.Session.get")
     def test_list_schedules(self, mock_get):

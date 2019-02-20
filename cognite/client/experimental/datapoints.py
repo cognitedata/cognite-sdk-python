@@ -72,22 +72,11 @@ class DatapointsClient(APIClient):
                 include_outside_points=kwargs.get("include_outside_points", False),
             )
 
-        diff = end - start
         num_of_workers = kwargs.get("processes", self._num_of_workers)
         if kwargs.get("include_outside_points") is True:
             num_of_workers = 1
 
-        granularity_ms = 1
-        if granularity:
-            granularity_ms = _utils.granularity_to_ms(granularity)
-
-        # Ensure that number of steps is not greater than the number data points that will be returned
-        steps = min(num_of_workers, max(1, int(diff / granularity_ms)))
-        # Make step size a multiple of the granularity requested in order to ensure evenly spaced results
-        step_size = _utils.round_to_nearest(int(diff / steps), base=granularity_ms)
-        # Create list of where each of the parallelized intervals will begin
-        step_starts = [start + (i * step_size) for i in range(steps)]
-        args = [{"start": start, "end": start + step_size} for start in step_starts]
+        windows = _utils.get_datapoints_windows(start, end, granularity, num_of_workers)
 
         partial_get_dps = partial(
             self._get_datapoints_helper_wrapper,
@@ -97,8 +86,8 @@ class DatapointsClient(APIClient):
             include_outside_points=kwargs.get("include_outside_points", False),
         )
 
-        with Pool(steps) as p:
-            datapoints = p.map(partial_get_dps, args)
+        with Pool(len(windows)) as p:
+            datapoints = p.map(partial_get_dps, windows)
 
         concat_dps = []
         [concat_dps.extend(el) for el in datapoints]
