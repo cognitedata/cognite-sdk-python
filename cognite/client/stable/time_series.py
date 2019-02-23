@@ -5,7 +5,7 @@ from urllib.parse import quote
 
 import pandas as pd
 
-from cognite.client._api_client import APIClient, CogniteCollectionResponse, CogniteResponse
+from cognite.client._api_client import APIClient, CogniteCollectionResponse, CogniteResource, CogniteResponse
 
 
 class TimeSeriesResponse(CogniteResponse):
@@ -60,7 +60,7 @@ class TimeSeriesListResponse(CogniteCollectionResponse):
         return pd.DataFrame(items)
 
 
-class TimeSeries:
+class TimeSeries(CogniteResource):
     """Data Transfer Object for a time series.
 
     Args:
@@ -87,13 +87,13 @@ class TimeSeries:
         is_step=None,
     ):
         self.name = name
-        self.isString = is_string
+        self.is_string = is_string
         self.metadata = metadata
         self.unit = unit
-        self.assetId = asset_id
+        self.asset_id = asset_id
         self.description = description
-        self.securityCategories = security_categories
-        self.isStep = is_step
+        self.security_categories = security_categories
+        self.is_step = is_step
 
 
 class TimeSeriesClient(APIClient):
@@ -167,7 +167,8 @@ class TimeSeriesClient(APIClient):
                 client.time_series.post_time_series(my_time_series)
         """
         url = "/timeseries"
-        body = {"items": [ts.__dict__ for ts in time_series]}
+        items = [ts.camel_case_dict() for ts in time_series]
+        body = {"items": items}
         self._post(url, body=body)
 
     def update_time_series(self, time_series: List[TimeSeries]) -> None:

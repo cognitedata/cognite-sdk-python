@@ -8,6 +8,7 @@ from typing import Any, Dict
 
 from requests import Response, Session
 
+from cognite.client._utils import to_camel_case
 from cognite.client.exceptions import APIError
 
 log = logging.getLogger("cognite-sdk")
@@ -255,3 +256,14 @@ class CogniteCollectionResponse(CogniteResponse):
         else:
             self.counter += 1
             return self._RESPONSE_CLASS({"data": {"items": [self.to_json()[self.counter - 1]]}})
+
+
+class CogniteResource:
+    def camel_case_dict(self):
+        new_d = {}
+        for key in self.__dict__:
+            new_d[to_camel_case(key)] = self.__dict__[key]
+        return new_d
+
+    def __str__(self):
+        return json.dumps(self.__dict__, indent=4, sort_keys=True)
