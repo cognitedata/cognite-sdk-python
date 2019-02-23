@@ -85,8 +85,8 @@ class ModelsClient(APIClient):
         name: str,
         description: str = "",
         metadata: Dict[str, Any] = None,
-        input_fields: List[str] = None,
-        output_fields: List[str] = None,
+        input_fields: List[Dict[str, str]] = None,
+        output_fields: List[Dict[str, str]] = None,
     ) -> ModelResponse:
         """Creates a new model
 
