@@ -4,7 +4,7 @@ from typing import List
 
 import pandas as pd
 
-from cognite.client._api_client import APIClient, CogniteCollectionResponse, CogniteResponse
+from cognite.client._api_client import APIClient, CogniteCollectionResponse, CogniteResource, CogniteResponse
 
 
 class AssetResponse(CogniteResponse):
@@ -45,7 +45,7 @@ class AssetListResponse(CogniteCollectionResponse):
         return pd.DataFrame()
 
 
-class Asset:
+class Asset(CogniteResource):
     """Data transfer object for assets.
 
     Args:
@@ -63,12 +63,12 @@ class Asset:
         self, name, parent_id=None, description=None, metadata=None, ref_id=None, parent_name=None, parent_ref_id=None
     ):
         self.name = name
-        self.parentId = parent_id
+        self.parent_id = parent_id
         self.description = description
         self.metadata = metadata
-        self.refId = ref_id
-        self.parentName = parent_name
-        self.parentRefId = parent_ref_id
+        self.ref_id = ref_id
+        self.parent_name = parent_name
+        self.parent_ref_id = parent_ref_id
 
 
 class AssetsClient(APIClient):
@@ -211,7 +211,8 @@ class AssetsClient(APIClient):
                 print(res)
         """
         url = "/assets"
-        body = {"items": [asset.__dict__ for asset in assets]}
+        items = [asset.camel_case_dict() for asset in assets]
+        body = {"items": items}
         res = self._post(url, body=body)
         return AssetListResponse(res.json())
 

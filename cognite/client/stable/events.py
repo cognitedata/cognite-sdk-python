@@ -5,7 +5,7 @@ from typing import List
 
 import pandas as pd
 
-from cognite.client._api_client import APIClient, CogniteCollectionResponse, CogniteResponse
+from cognite.client._api_client import APIClient, CogniteCollectionResponse, CogniteResource, CogniteResponse
 
 
 class EventResponse(CogniteResponse):
@@ -53,7 +53,7 @@ class EventListResponse(CogniteCollectionResponse):
         return pd.DataFrame(items)
 
 
-class Event(object):
+class Event(CogniteResource):
     """Data transfer object for events.
 
     Args:
@@ -61,21 +61,21 @@ class Event(object):
         end_time (int):         End time of the event in ms since epoch.
         description (str):      Textual description of the event.
         type (str):             Type of the event, e.g. 'failure'.
-        sub_type (str):          Subtype of the event, e.g. 'electrical'.
+        subtype (str):          Subtype of the event, e.g. 'electrical'.
         metadata (dict):        Customizable extra data about the event.
         asset_ids (list[int]):  List of Asset IDs of related equipments that this event relates to.
     """
 
     def __init__(
-        self, start_time=None, end_time=None, description=None, type=None, sub_type=None, metadata=None, asset_ids=None
+        self, start_time=None, end_time=None, description=None, type=None, subtype=None, metadata=None, asset_ids=None
     ):
-        self.startTime = start_time
-        self.endTime = end_time
+        self.start_time = start_time
+        self.end_time = end_time
         self.description = description
         self.type = type
-        self.subtype = sub_type
+        self.subtype = subtype
         self.metadata = metadata
-        self.assetIds = asset_ids
+        self.asset_ids = asset_ids
 
 
 class EventsClient(APIClient):
@@ -177,7 +177,8 @@ class EventsClient(APIClient):
                 print(res)
         """
         url = "/events"
-        body = {"items": [event.__dict__ for event in events]}
+        items = [event.camel_case_dict() for event in events]
+        body = {"items": items}
         res = self._post(url, body=body)
         return EventListResponse(res.json())
 
