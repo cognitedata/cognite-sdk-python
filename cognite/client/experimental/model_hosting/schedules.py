@@ -17,7 +17,6 @@ class ScheduleResponse(CogniteResponse):
         self.id = item["id"]
         self.args = item["args"]
         self.description = item["description"]
-        self.last_processed_timestamp = item["lastProcessedTimestamp"]
 
 
 class ScheduleCollectionResponse(CogniteCollectionResponse):
@@ -33,8 +32,7 @@ class SchedulesClient(APIClient):
         self,
         model_id: int,
         name: str,
-        output_data_spec: Any,
-        input_data_spec: Any,
+        schedule_data_spec: Any,
         description: str = None,
         args: Dict = None,
         metadata: Dict = None,
@@ -44,10 +42,8 @@ class SchedulesClient(APIClient):
         Args:
             model_id (int): Id of model to create schedule on
             name (str): Name of schedule
-            output_data_spec (Any): Specification of output. Can be either a dictionary or a ScheduleSpec object
-                                    from cognite-data-fetcher
-            input_data_spec (Any): Specification of input. Can be either a dictionary or a ScheduleSpec object
-                                    from cognite-data-fetcher.
+            schedule_data_spec (Any): Specification of schedule input/output. Can be either a dictionary or a
+                                    ScheduleDataSpec object from cognite-data-fetcher
             description (str): Description for schedule
             args (Dict): Dictionary of keyword arguments to pass to predict method.
             metadata (Dict): Dictionary of metadata about schedule
@@ -57,18 +53,15 @@ class SchedulesClient(APIClient):
         """
         url = "/analytics/models/schedules"
 
-        if hasattr(input_data_spec, "dump"):
-            input_data_spec = input_data_spec.dump()
-        if hasattr(output_data_spec, "dump"):
-            output_data_spec = output_data_spec.dump()
+        if hasattr(schedule_data_spec, "dump"):
+            schedule_data_spec = schedule_data_spec.dump()
 
         body = {
             "name": name,
             "description": description,
             "modelId": model_id,
             "args": args or {},
-            "inputDataSpec": input_data_spec,
-            "outputDataSpec": output_data_spec,
+            "dataSpec": schedule_data_spec,
             "metadata": metadata or {},
         }
         res = self._post(url, body=body)

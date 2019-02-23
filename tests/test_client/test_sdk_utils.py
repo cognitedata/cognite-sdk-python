@@ -63,3 +63,17 @@ class TestFirstFit:
         result = utils.first_fit(list_items=all_timeseries, max_size=300, get_count=lambda x: len(x.datapoints))
 
         assert len(result) == 2
+
+
+class TestMisc:
+    @pytest.mark.parametrize(
+        "start, end, granularity, num_of_workers, expected_output",
+        [
+            (1550241236999, 1550244237001, "1d", 1, [{"start": 1550241236999, "end": 1550244237001}]),
+            (0, 10000, "1s", 10, [{"start": i, "end": i + 1000} for i in range(0, 10000, 1000)]),
+            (0, 2500, "1s", 3, [{"start": 0, "end": 1000}, {"start": 1000, "end": 2500}]),
+        ],
+    )
+    def test_get_datapoints_windows(self, start, end, granularity, num_of_workers, expected_output):
+        res = utils.get_datapoints_windows(start=start, end=end, granularity=granularity, num_of_workers=num_of_workers)
+        assert expected_output == res

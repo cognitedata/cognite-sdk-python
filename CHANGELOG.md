@@ -38,6 +38,10 @@ Changes are grouped as follows
 packages under `cognite` namespace. This means `CogniteClient` no longer can be 
 imported directly from `cognite` namespace.
 - Move all autopaging functionality to common method on ApiClient class.
+- `path` parameter in `client.assets.get_assets()` is now `List[int]` instead of `str`
+
+### Fixed
+- get_datapoints and get_datapoints_frame no longer cap time series data in certain edge cases.
 
 ## [0.12.4] - 2019-01-09
 ### Added
