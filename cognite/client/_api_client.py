@@ -2,6 +2,8 @@ import functools
 import gzip
 import json
 import logging
+import os
+import re
 from typing import Any, Dict
 
 from requests import Response, Session
@@ -55,6 +57,10 @@ def request_method(method=None):
             raise ValueError("URL must start with '/'")
         full_url = client_instance._base_url + url
 
+        # Hack to allow running model hosting requests against local emulator
+        if os.getenv("USE_MODEL_HOSTING_EMULATOR") == "1":
+            full_url = _model_hosting_emulator_url_converter(full_url)
+
         default_headers = client_instance._headers.copy()
         default_headers.update(kwargs.get("headers") or {})
         kwargs["headers"] = default_headers
@@ -64,6 +70,16 @@ def request_method(method=None):
         _raise_API_error(res)
 
     return wrapper
+
+
+def _model_hosting_emulator_url_converter(url):
+    pattern = "https://api.cognitedata.com/api/0.6/projects/(.*)/analytics/models(.*)"
+    res = re.match(pattern, url)
+    if res is not None:
+        project = res.group(1)
+        path = res.group(2)
+        return "http://localhost:8000/api/0.1/projects/{}/models{}".format(project, path)
+    return url
 
 
 class APIClient:

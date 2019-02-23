@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import re
 from unittest import mock
-from unittest.mock import MagicMock
 
 import pytest
 from requests import Session
@@ -9,7 +8,7 @@ from requests.adapters import HTTPAdapter
 from urllib3 import Retry
 
 from cognite.client import APIError
-from cognite.client._api_client import APIClient
+from cognite.client._api_client import APIClient, _model_hosting_emulator_url_converter
 from cognite.client.cognite_client import STATUS_FORCELIST
 from tests.conftest import MockReturnValue
 
@@ -328,3 +327,23 @@ class TestRequests:
         response = api_client._put(url, RESPONSE, headers={"Existing-Header": "SomeValue"})
 
         assert response.status_code == 200
+
+    @pytest.mark.parametrize(
+        "input, expected",
+        [
+            (
+                "https://api.cognitedata.com/api/0.6/projects/test-project/analytics/models",
+                "http://localhost:8000/api/0.1/projects/test-project/models",
+            ),
+            (
+                "https://api.cognitedata.com/api/0.6/projects/test-project/analytics/models/sourcepackages/1",
+                "http://localhost:8000/api/0.1/projects/test-project/models/sourcepackages/1",
+            ),
+            (
+                "https://api.cognitedata.com/api/0.6/projects/test-project/assets/update",
+                "https://api.cognitedata.com/api/0.6/projects/test-project/assets/update",
+            ),
+        ],
+    )
+    def test_nostromo_emulator_url_converter(self, input, expected):
+        assert expected == _model_hosting_emulator_url_converter(input)
