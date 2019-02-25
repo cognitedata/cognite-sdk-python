@@ -6,6 +6,7 @@ import os
 import re
 from typing import Any, Dict
 
+import numpy
 from requests import Response, Session
 
 from cognite.client._utils import to_camel_case
@@ -149,11 +150,11 @@ class APIClient:
         use_gzip: bool = True,
         headers: Dict[str, Any] = None,
     ):
-        data = json.dumps(body, default=lambda x: x.__dict__)
+        data = json.dumps(body, default=self._json_dumps_default)
         headers = headers or {}
         if use_gzip:
             headers["Content-Encoding"] = "gzip"
-            data = gzip.compress(json.dumps(body, default=lambda x: x.__dict__).encode("utf-8"))
+            data = gzip.compress(json.dumps(body, default=self._json_dumps_default).encode("utf-8"))
         res = self._request_session.post(
             url, data=data, headers=headers, params=params, cookies=self._cookies, timeout=self._timeout
         )
@@ -167,6 +168,15 @@ class APIClient:
         )
         _log_request(res, body=body)
         return res
+
+    def _json_dumps_default(self, x):
+        if isinstance(x, numpy.int_):
+            return int(x)
+        if isinstance(x, numpy.float_):
+            return float(x)
+        if isinstance(x, numpy.bool_):
+            return bool(x)
+        return x.__dict__
 
 
 class CogniteResponse:
