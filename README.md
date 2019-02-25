@@ -13,6 +13,13 @@ Cognite Python SDK
 
 Python SDK to ensure excellent user experience for developers and data scientists working with the Cognite Data Platform.
 
+## Documentation
+* [SDK Documentation](https://cognite-sdk-python.readthedocs-hosted.com/en/latest/)
+* [API Documentation](https://doc.cognitedata.com/)
+* [API Guide](https://doc.cognitedata.com/guides/api-guide.html)
+
+See the [examples](examples) folder for samples using the SDK.
+
 ## Prerequisites
 In order to start using the Python SDK, you need
 - Python3 (>= 3.5) and pip
@@ -30,23 +37,8 @@ On Windows, you can follows [these instructions](https://www.computerhope.com/is
 $ pip install cognite-sdk
 ```
 
-## Learn more
-
-See the [examples](examples) folder for samples using the SDK.
-
-Check out the documentation below, including the public API guide.
-
-If you work at Cognite, you can find examples of code use in the repository ML-examples.
-
+## Changelog
+Wondering about upcoming or previous changes to the SDK? Take a look at the [CHANGELOG](https://github.com/cognitedata/cognite-sdk-python/blob/master/CHANGELOG.md).
 
 ## Contributing
 Want to contribute? Check out [CONTRIBUTING](https://github.com/cognitedata/cognite-sdk-python/blob/master/CONTRIBUTING.md).
-
-## Documentation
-* [SDK Documentation](https://cognite-sdk-python.readthedocs-hosted.com/en/latest/)
-* [API Documentation](https://doc.cognitedata.com/)
-* [API Guide](https://doc.cognitedata.com/guides/api-guide.html)
-
-
-## License
-Apache 2.0
