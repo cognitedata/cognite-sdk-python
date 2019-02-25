@@ -20,9 +20,9 @@
 import os
 import sys
 
-import cognite.client
-
 sys.path.insert(0, os.path.abspath("../.."))
+import cognite.client  # isort:skip
+
 
 # -- General configuration ------------------------------------------------
 

@@ -2,7 +2,7 @@ Overview
 ========
 Cognite Client
 --------------
-.. autoclass:: cognite.CogniteClient
+.. autoclass:: cognite.client.CogniteClient
     :members:
     :member-order: bysource
 
@@ -157,20 +157,52 @@ Data Objects
 
 Experimental
 ============
-Analytics
----------
+Model Hosting
+-------------
 Models
 ^^^^^^
 Client
 ~~~~~~
-.. autoclass:: cognite.client.experimental.analytics.models.ModelsClient
+.. autoclass:: cognite.client.experimental.model_hosting.models.ModelsClient
     :members:
 
 Data Objects
 ~~~~~~~~~~~~
-.. automodule:: cognite.client.experimental.analytics.models
+.. automodule:: cognite.client.experimental.model_hosting.models
     :members:
     :exclude-members: ModelsClient
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+
+Source Packages
+^^^^^^^^^^^^^^^
+Client
+~~~~~~
+.. autoclass:: cognite.client.experimental.model_hosting.source_packages.SourcePackageClient
+    :members:
+
+Data Objects
+~~~~~~~~~~~~
+.. automodule:: cognite.client.experimental.model_hosting.source_packages
+    :members:
+    :exclude-members: SourcePackageClient
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+
+Schedules
+^^^^^^^^^
+Client
+~~~~~~
+.. autoclass:: cognite.client.experimental.model_hosting.schedules.SchedulesClient
+    :members:
+
+Data Objects
+~~~~~~~~~~~~
+.. automodule:: cognite.client.experimental.model_hosting.schedules
+    :members:
+    :exclude-members: SchedulesClient
     :undoc-members:
     :show-inheritance:
     :inherited-members:
@@ -222,10 +254,3 @@ Data Objects
     :undoc-members:
     :show-inheritance:
     :inherited-members:
-
-Data Transfer Service
-=====================
-.. automodule:: cognite.data_transfer_service
-    :members:
-    :undoc-members:
-    :show-inheritance:
