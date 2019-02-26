@@ -82,6 +82,11 @@ class TestDatapoints:
         res = client.datapoints.post_datapoints(TS_NAME, datapoints=dps)
         assert res is None
 
+    def test_post_datapoints_float_timestamp(self):
+        dps = [Datapoint(float(i), i * 100) for i in range(10)]
+        res = client.datapoints.post_datapoints(TS_NAME, datapoints=dps)
+        assert res is None
+
     def test_post_datapoints_frame(self):
         data = pd.DataFrame()
         data["timestamp"] = [int(1537208777557 + 1000 * i) for i in range(0, 100)]

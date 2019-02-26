@@ -17,8 +17,8 @@ class TestConversions:
             utils.datetime_to_ms(None)
 
     def test_round_to_nearest(self):
-        assert utils.round_to_nearest(12, 10) == 10
-        assert utils.round_to_nearest(8, 10) == 10
+        assert utils._round_to_nearest(12, 10) == 10
+        assert utils._round_to_nearest(8, 10) == 10
 
     def test_granularity_to_ms(self):
         assert utils.granularity_to_ms("10s") == 10000
