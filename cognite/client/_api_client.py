@@ -275,5 +275,11 @@ class CogniteResource:
             new_d[to_camel_case(key)] = self.__dict__[key]
         return new_d
 
+    def to_json(self):
+        return json.loads(json.dumps(self, default=lambda x: x.__dict__))
+
+    def __eq__(self, other):
+        return type(self) == type(other) and self.to_json() == other.to_json()
+
     def __str__(self):
-        return json.dumps(self.__dict__, indent=4, sort_keys=True)
+        return json.dumps(self.__dict__, default=lambda x: x.__dict__, indent=4, sort_keys=True)
