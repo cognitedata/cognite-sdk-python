@@ -19,10 +19,6 @@ def datetime_to_ms(dt):
     return int(dt.replace(tzinfo=timezone.utc).timestamp() * 1000)
 
 
-def round_to_nearest(x, base):
-    return int(base * round(float(x) / base))
-
-
 def granularity_to_ms(time_string):
     """Returns millisecond representation of granularity time string"""
     magnitude = int("".join([c for c in time_string if c.isdigit()]))
@@ -38,28 +34,6 @@ def granularity_to_ms(time_string):
         "day": 86400000,
     }
     return magnitude * unit_in_ms[unit]
-
-
-def get_aggregate_func_return_name(agg_func: str) -> str:
-    agg_funcs = {
-        "avg": "average",
-        "average": "average",
-        "count": "count",
-        "continuousvariance": "continuousvariance",
-        "cv": "continuousvariance",
-        "discretevariance": "discretevariance",
-        "dv": "discretevariance",
-        "int": "interpolation",
-        "interpolation": "interpolation",
-        "max": "max",
-        "min": "min",
-        "step": "stepinterpolation",
-        "stepinterpolation": "stepinterpolation",
-        "sum": "sum",
-        "totalvariation": "totalvariation",
-        "tv": "totalvariation",
-    }
-    return agg_funcs.get(agg_func)
 
 
 def _time_ago_to_ms(time_ago_string):
@@ -157,16 +131,6 @@ def first_fit(list_items: List, max_size, get_count: Callable) -> List[List]:
     return list_items
 
 
-def to_camel_case(snake_case_string: str):
-    components = snake_case_string.split("_")
-    return components[0] + "".join(x.title() for x in components[1:])
-
-
-def to_snake_case(camel_case_string: str):
-    s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", camel_case_string)
-    return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
-
-
 def get_user_agent():
     sdk_version = "CognitePythonSDK/{}".format(cognite.client.__version__)
 
@@ -182,6 +146,10 @@ def get_user_agent():
     return "{} {} {}".format(sdk_version, python_version, operating_system)
 
 
+def _round_to_nearest(x, base):
+    return int(base * round(float(x) / base))
+
+
 def get_datapoints_windows(start: int, end: int, granularity: str, num_of_workers):
     diff = end - start
     granularity_ms = 1
@@ -191,7 +159,7 @@ def get_datapoints_windows(start: int, end: int, granularity: str, num_of_worker
     # Ensure that number of steps is not greater than the number data points that will be returned
     steps = min(num_of_workers, max(1, int(diff / granularity_ms)))
     # Make step size a multiple of the granularity requested in order to ensure evenly spaced results
-    step_size = round_to_nearest(int(diff / steps), base=granularity_ms)
+    step_size = _round_to_nearest(int(diff / steps), base=granularity_ms)
     # Create list of where each of the parallelized intervals will begin
     step_starts = [start + (i * step_size) for i in range(steps)]
     windows = [{"start": start, "end": start + step_size} for start in step_starts]

@@ -4,6 +4,7 @@ import json
 import time
 from concurrent.futures import ThreadPoolExecutor as Pool
 from copy import copy
+from datetime import datetime
 from functools import partial
 from typing import List
 from urllib.parse import quote
@@ -90,12 +91,16 @@ class Datapoint(CogniteResource):
     """Data transfer object for datapoints.
 
     Args:
-        timestamp (int, datetime): The data timestamp in milliseconds since the epoch (Jan 1, 1970) or as a datetime object.
-        value (string):     The data value, Can be string or numeric depending on the metric.
+        timestamp (Union[int, float, datetime]): The data timestamp in milliseconds since the epoch (Jan 1, 1970) or as
+            a datetime object.
+        value (Union[string, int, float]): The data value, Can be string or numeric depending on the metric.
     """
 
     def __init__(self, timestamp, value):
-        self.timestamp = timestamp if isinstance(timestamp, int) else _utils.datetime_to_ms(timestamp)
+        if isinstance(timestamp, datetime):
+            self.timestamp = _utils.datetime_to_ms(timestamp)
+        else:
+            self.timestamp = timestamp
         self.value = value
 
 
