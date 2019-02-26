@@ -9,7 +9,6 @@ from typing import Any, Dict
 import numpy
 from requests import Response, Session
 
-from cognite.client._utils import to_camel_case
 from cognite.client.exceptions import APIError
 
 log = logging.getLogger("cognite-sdk")
@@ -269,10 +268,15 @@ class CogniteCollectionResponse(CogniteResponse):
 
 
 class CogniteResource:
+    @staticmethod
+    def _to_camel_case(snake_case_string: str):
+        components = snake_case_string.split("_")
+        return components[0] + "".join(x.title() for x in components[1:])
+
     def camel_case_dict(self):
         new_d = {}
         for key in self.__dict__:
-            new_d[to_camel_case(key)] = self.__dict__[key]
+            new_d[self._to_camel_case(key)] = self.__dict__[key]
         return new_d
 
     def to_json(self):
