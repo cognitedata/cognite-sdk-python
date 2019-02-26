@@ -11,7 +11,7 @@ from urllib.parse import quote
 import pandas as pd
 
 from cognite.client import _utils
-from cognite.client._api_client import APIClient, CogniteResponse
+from cognite.client._api_client import APIClient, CogniteResource, CogniteResponse
 from cognite.client._auxiliary._protobuf_descriptors import _api_timeseries_data_v2_pb2
 
 
@@ -33,7 +33,7 @@ class DatapointsResponse(CogniteResponse):
         return pd.DataFrame(self.internal_representation["data"]["items"][0]["datapoints"])
 
 
-class DatapointsQuery:
+class DatapointsQuery(CogniteResource):
     """Data Query Object for Datapoints.
 
     Args:
@@ -86,7 +86,7 @@ class DatapointsResponseIterator:
             return self.datapoints_objects[self.counter - 1]
 
 
-class Datapoint:
+class Datapoint(CogniteResource):
     """Data transfer object for datapoints.
 
     Args:
@@ -99,7 +99,7 @@ class Datapoint:
         self.value = value
 
 
-class TimeseriesWithDatapoints:
+class TimeseriesWithDatapoints(CogniteResource):
     """Data transfer object for a timeseries with datapoints.
 
     Args:
