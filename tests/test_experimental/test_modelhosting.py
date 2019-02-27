@@ -60,6 +60,7 @@ class TestSourcePackages:
             runtime_version="0.1",
             file_path=source_package_file_path,
         )
+        assert sp.upload_url is None
         yield sp
         source_packages.delete_source_package(id=sp.id)
 
