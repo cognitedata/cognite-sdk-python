@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
-from typing import List
+from typing import Dict, List
 
 import pandas as pd
 
@@ -50,6 +50,7 @@ class Asset(CogniteResource):
 
     Args:
         name (str):                 Name of asset. Often referred to as tag.
+        id (int):                   Id of asset.
         parent_id (int):            ID of parent asset, if any.
         description (str):          Description of asset.
         metadata (dict):            Custom , application specific metadata. String key -> String Value.
@@ -57,18 +58,33 @@ class Asset(CogniteResource):
                                     names.
         parent_name (str):          Name of parent, this parent must exist in the same POST request.
         parent_ref_id (str):        Reference ID of parent, to disambiguate if multiple nodes have the same name.
+        source (str):               Source of asset.
+        source_id (str):            Source id of asset.
     """
 
     def __init__(
-        self, name, parent_id=None, description=None, metadata=None, ref_id=None, parent_name=None, parent_ref_id=None
+        self,
+        name=None,
+        id=None,
+        parent_id=None,
+        description=None,
+        metadata=None,
+        ref_id=None,
+        parent_name=None,
+        parent_ref_id=None,
+        source=None,
+        source_id=None,
     ):
         self.name = name
+        self.id = id
         self.parent_id = parent_id
         self.description = description
         self.metadata = metadata
         self.ref_id = ref_id
         self.parent_name = parent_name
         self.parent_ref_id = parent_ref_id
+        self.source = source
+        self.source_id = source_id
 
 
 class AssetsClient(APIClient):
@@ -212,8 +228,7 @@ class AssetsClient(APIClient):
         """
         url = "/assets"
         items = [asset.camel_case_dict() for asset in assets]
-        body = {"items": items}
-        res = self._post(url, body=body)
+        res = self._post(url, body={"items": items})
         return AssetListResponse(res.json())
 
     def delete_assets(self, asset_ids: List[int]) -> None:
@@ -234,6 +249,64 @@ class AssetsClient(APIClient):
         url = "/assets/delete"
         body = {"items": asset_ids}
         self._post(url, body=body)
+
+    @staticmethod
+    def _asset_to_patch_format(id, name=None, description=None, metadata=None, source=None, source_id=None):
+        patch_asset = {"id": id}
+        if name:
+            patch_asset["name"] = {"set": name}
+        if description:
+            patch_asset["description"] = {"set": description}
+        if metadata:
+            patch_asset["metadata"] = {"set": metadata}
+        if source:
+            patch_asset["source"] = {"set": source}
+        if source_id:
+            patch_asset["sourceId"] = {"set": source_id}
+        return patch_asset
+
+    def update_asset(
+        self,
+        asset_id: int,
+        name: str = None,
+        description: str = None,
+        metadata: Dict = None,
+        source: str = None,
+        source_id: str = None,
+    ) -> AssetResponse:
+        """Update an asset
+
+        Args:
+            asset_id (int): The id of the asset to update
+            name (str, optional): The new name
+            description (str, optional): The new description
+            metadata (Dict, optional): The new metadata
+            source (str, optional): The new source
+            source_id (str, optional): The new source id
+
+        Returns:
+            AssetResponse: The updated asset
+        """
+        url = "/assets/{}/update".format(asset_id)
+        body = self._asset_to_patch_format(asset_id, name, description, metadata, source, source_id)
+        res = self._post(url, body=body)
+        return AssetResponse(res.json())
+
+    def update_assets(self, assets: List[Asset]):
+        """Update multiple assets
+
+        Args:
+            assets (List[stable.assets.Asset]): List of assets to update
+
+        Returns:
+            AssetListResponse: List of updated assets
+        """
+        url = "/assets/update"
+        items = [
+            self._asset_to_patch_format(a.id, a.name, a.description, a.metadata, a.source, a.source_id) for a in assets
+        ]
+        res = self._post(url, body={"items": items})
+        return AssetListResponse(res.json())
 
     def search_for_assets(
         self,

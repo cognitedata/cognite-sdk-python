@@ -9,8 +9,6 @@ from tests.conftest import generate_random_string
 
 assets = CogniteClient(debug=True).assets
 
-ASSET_NAME = "test_asset" + generate_random_string(10)
-
 
 @pytest.fixture(scope="module")
 def get_asset_subtree_response():
@@ -68,21 +66,36 @@ def test_pandas(get_asset_subtree_response):
     assert isinstance(get_asset_subtree_response.to_pandas(), pd.DataFrame)
 
 
-def test_post_assets():
-    a1 = Asset(name=ASSET_NAME)
+@pytest.fixture(scope="module")
+def created_asset():
+    random_asset_name = "test_asset" + generate_random_string(10)
+    a1 = Asset(name=random_asset_name)
     res = assets.post_assets([a1])
     assert isinstance(res, AssetListResponse)
-    assert res.to_json()[0]["name"] == ASSET_NAME
+    assert res.to_json()[0]["name"] == random_asset_name
     assert res.to_json()[0].get("id") != None
 
-
-def test_delete_assets():
-    assets_response = assets.get_assets(ASSET_NAME, depth=0).to_json()
+    assets_response = assets.get_assets(random_asset_name, depth=0)
     while len(assets_response) == 0:
-        assets_response = assets.get_assets(ASSET_NAME, depth=0).to_json()
+        assets_response = assets.get_assets(random_asset_name, depth=0)
         time.sleep(0.5)
-    id = assets_response[0]["id"]
-    res = assets.delete_assets([id])
+    return assets_response[0]
+
+
+def test_update_asset(created_asset):
+    new_name = generate_random_string(10)
+    res = assets.update_asset(created_asset.id, name=new_name)
+    assert new_name == res.name
+
+
+def test_update_multiple_assets(created_asset):
+    new_name = generate_random_string(10)
+    res = assets.update_assets([Asset(id=created_asset.id, name=new_name)])
+    assert new_name == res[0].name
+
+
+def test_delete_assets(created_asset):
+    res = assets.delete_assets([created_asset.id])
     assert res is None
 
 

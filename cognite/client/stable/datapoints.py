@@ -816,7 +816,7 @@ class DatapointsClient(APIClient):
             raise ValueError("DataFrame not on a correct format")
 
         for name in names:
-            data_points = [Datapoint(int(timestamp[i]), dataframe[name].iloc[i]) for i in range(0, len(dataframe))]
+            data_points = [Datapoint(int(timestamp.iloc[i]), dataframe[name].iloc[i]) for i in range(0, len(dataframe))]
             self.post_datapoints(name, data_points)
 
     def live_data_generator(self, name, update_frequency=1):
