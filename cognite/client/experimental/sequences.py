@@ -248,6 +248,22 @@ class SequencesClient(APIClient):
         the_sequence = json_response["data"]["items"][0]
         return Sequence.from_JSON(the_sequence)
 
+    def list_sequences(self, external_id: str = None):
+        """Returns a list of Sequence objects.
+
+        Args:
+            external_id (int, optional):  External ID of the sequence to look up
+
+        Returns:
+            List[test_experimental.dto.Sequence]: A data object containing the requested sequence.
+        """
+        url = "/sequences"
+        params = {"externalId": external_id}
+        res = self._get(url=url, params=params)
+        json_response = json.loads(res.text)
+        sequences = json_response["data"]["items"]
+        return [Sequence.from_JSON(seq) for seq in sequences]
+
     def delete_sequence_by_id(self, id: int) -> None:
         """Deletes the sequence with the given id.
 

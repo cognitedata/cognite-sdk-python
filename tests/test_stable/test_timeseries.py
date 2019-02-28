@@ -1,4 +1,5 @@
 from random import randint
+from time import sleep
 
 import pandas as pd
 import pytest
@@ -28,10 +29,14 @@ class TestTimeseries:
 
     @pytest.fixture(scope="class", params=[True, False])
     def get_timeseries_response_obj(self, request):
-        yield timeseries.get_time_series(prefix=TS_NAME, limit=1, include_metadata=request.param)
+        res = timeseries.get_time_series(prefix=TS_NAME, limit=1, include_metadata=request.param)
+        while len(res) == 0:
+            res = timeseries.get_time_series(prefix=TS_NAME, limit=1, include_metadata=request.param)
+            sleep(0.5)
+        yield res
 
     def test_timeseries_unit_correct(self, get_timeseries_response_obj):
-        assert get_timeseries_response_obj.to_json()[0]["unit"] == "celsius"
+        assert get_timeseries_response_obj[0].unit == "celsius"
 
     def test_get_timeseries_output_format(self, get_timeseries_response_obj):
         assert isinstance(get_timeseries_response_obj, TimeSeriesListResponse)

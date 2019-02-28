@@ -1,3 +1,4 @@
+from time import sleep
 from typing import List
 
 import pandas as pd
@@ -39,26 +40,26 @@ class TestSequences:
         """Returns the created sequence by using the cognite id"""
         global CREATED_SEQUENCE_ID
         if CREATED_SEQUENCE_ID:
-            return sequences.get_sequence_by_id(CREATED_SEQUENCE_ID)
-        else:
-            # Create the sequence
-            created_sequence = sequences.post_sequences([sequence_that_isnt_created])
-            # Store the id of the created sequence
-            CREATED_SEQUENCE_ID = created_sequence.id
-            return created_sequence
+            res = sequences.get_sequence_by_id(CREATED_SEQUENCE_ID)
+            return res
+        created_sequence = sequences.post_sequences([sequence_that_isnt_created])
+        CREATED_SEQUENCE_ID = created_sequence.id
+        return created_sequence
 
     @pytest.fixture(scope="class")
     def sequence_that_is_created_retrieved_by_external_id(self, sequence_that_isnt_created):
         """Returns the created sequence by using the external id"""
         global CREATED_SEQUENCE_ID, SEQUENCE_EXTERNAL_ID
         if CREATED_SEQUENCE_ID:
-            return sequences.get_sequence_by_external_id(SEQUENCE_EXTERNAL_ID)
-        else:
-            # Create the sequence
-            created_sequence = sequences.post_sequences([sequence_that_isnt_created])
-            # Store the id of the created sequence
-            CREATED_SEQUENCE_ID = created_sequence.id
-            return created_sequence
+            res = sequences.list_sequences(SEQUENCE_EXTERNAL_ID)
+            while len(res) == 0:
+                res = sequences.list_sequences(SEQUENCE_EXTERNAL_ID)
+                sleep(0.5)
+            res = sequences.get_sequence_by_external_id(SEQUENCE_EXTERNAL_ID)
+            return res
+        created_sequence = sequences.post_sequences([sequence_that_isnt_created])
+        CREATED_SEQUENCE_ID = created_sequence.id
+        return created_sequence
 
     def test_get_sequence_by_id(self, sequence_that_is_created_retrieved_by_id, sequence_that_isnt_created):
         global CREATED_SEQUENCE_ID
