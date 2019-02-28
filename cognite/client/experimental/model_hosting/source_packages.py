@@ -77,12 +77,12 @@ class SourcePackageClient(APIClient):
             "metadata": metadata or {},
             "runtimeVersion": runtime_version,
         }
-        res = self._post(url, body=body)
+        res = self._post(url, body=body).json()
         if file_path:
-            self._upload_file(res.json()["data"]["uploadUrl"], file_path)
-            del res.json()["data"]["uploadUrl"]
-            return CreateSourcePackageResponse(res.json())
-        return CreateSourcePackageResponse(res.json())
+            self._upload_file(res["data"]["uploadUrl"], file_path)
+            del res["data"]["uploadUrl"]
+            return CreateSourcePackageResponse(res)
+        return CreateSourcePackageResponse(res)
 
     def _upload_file(self, upload_url, file_path):
         with open(file_path, "rb") as fh:

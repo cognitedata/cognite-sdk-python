@@ -1,9 +1,10 @@
 from random import randint
+from time import sleep
 
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.experimental.time_series import TimeSeriesClient, TimeSeriesResponse
+from cognite.client.experimental.time_series import TimeSeriesResponse
 from cognite.client.stable.time_series import TimeSeries
 from tests.conftest import TEST_TS_1_NAME
 
@@ -15,7 +16,12 @@ time_series = CogniteClient().experimental.time_series
 def new_ts_id():
     name = "test_ts_{}".format(randint(1, 2 ** 53 - 1))
     stable_time_series.post_time_series([TimeSeries(name)])
-    yield stable_time_series.get_time_series(prefix=name).to_json()[0]["id"]
+
+    res = stable_time_series.get_time_series(prefix=name)
+    while len(res) == 0:
+        res = stable_time_series.get_time_series(prefix=name)
+        sleep(0.5)
+    yield res[0].id
 
 
 class TestTimeseries:
