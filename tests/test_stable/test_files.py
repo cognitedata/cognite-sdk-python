@@ -1,4 +1,5 @@
 import os
+from time import sleep
 
 import pandas as pd
 import pytest
@@ -44,6 +45,9 @@ def test_list_files_empty():
 @pytest.fixture(scope="module")
 def file_id():
     res = files.list_files(name="test_file", source="sdk-tests", limit=1)
+    while len(res) == 0:
+        res = files.list_files(name="test_file", source="sdk-tests", limit=1)
+        sleep(0.5)
     return res.to_json()[0]["id"]
 
 
