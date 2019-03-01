@@ -123,7 +123,7 @@ class SourcePackageClient(APIClient):
         return package_name, available_operations
 
     def _build_distribution(self, package_path) -> str:
-        check_call(f"cd {package_path} && python setup.py sdist", shell=True)
+        check_call("cd {} && python setup.py sdist".format(package_path), shell=True)
         dist_directory = os.path.join(package_path, "dist")
         for file in os.listdir(dist_directory):
             if file.endswith(".tar.gz"):
