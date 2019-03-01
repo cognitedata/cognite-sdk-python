@@ -89,15 +89,13 @@ class SourcePackageClient(APIClient):
 
     def _get_modules_named_model(self, path, package_name=None):
         modules = []
-        for module_info in pkgutil.walk_packages([path]):
-            if module_info.ispkg:
-                modules.extend(
-                    self._get_modules_named_model(path + "/{}".format(module_info.name), package_name=module_info.name)
-                )
+        for module_finder, name, ispkg in pkgutil.walk_packages([path]):
+            if ispkg:
+                modules.extend(self._get_modules_named_model(path + "/{}".format(name), package_name=name))
             else:
-                if module_info.name == "model":
+                if name == "model":
                     try:
-                        module = module_info.module_finder.find_module(module_info.name).load_module()
+                        module = module_finder.find_module(name).load_module()
                     except:
                         raise AssertionError("Your model.py file could not be imported")
                     modules.append((package_name, module))
