@@ -1,4 +1,5 @@
 import os
+from concurrent.futures.thread import ThreadPoolExecutor
 from typing import Any, Dict, List
 
 from cognite.client._api_client import APIClient, CogniteCollectionResponse, CogniteResponse
@@ -192,9 +193,83 @@ class ModelsClient(APIClient):
         url = "/analytics/models/{}".format(id)
         self._delete(url)
 
-    def train_model_version(
+    def create_model_version(
+        self, model_id: int, name: str, source_package_id: int, description: str = None, metadata: Dict = None
+    ) -> ModelVersionResponse:
+        """Create a model version without deploying it.
+
+        Then you can optionally upload artifacts to the model version and later deploy it.
+
+        Args:
+            name (str): Name of the the moodel version.
+            model_id (int): Create the version un the model with this id.
+            source_package_id (int): Use the source package with this id. The source package must have an available
+                predict operation.
+            description (str):  Description of model version
+            metadata (Dict[str, Any]):  Metadata about model version
+
+        Returns:
+            ModelVersionResponse: The created model version.
+        """
+        url = "/analytics/models/{}/versions".format(model_id)
+        body = {
+            "name": name,
+            "description": description or "",
+            "sourcePackageId": source_package_id,
+            "metadata": metadata or {},
+        }
+        res = self._post(url, body=body)
+        return ModelVersionResponse(res.json())
+
+    def deploy_model_version(self, model_id: int, version_id: int) -> ModelVersionResponse:
+        """Deploy a model version.
+
+        The model version must have status AWAITING_MANUAL_DEPLOYMENT in order for this to work.
+
+        Args:
+            model_id (int): The id of the model containing the version to deploy.
+            version_id (int): The id of the model version to deploy.
+        Returns:
+            ModelVersionResponse: The deployed model version.
+        """
+        url = "/analytics/models/{}/versions/{}/deploy".format(model_id, version_id)
+        res = self._post(url, body={})
+        return ModelVersionResponse(res.json())
+
+    def create_and_deploy_model_version(
         self,
-        id: int,
+        model_id: int,
+        name: str,
+        source_package_id: int,
+        artifacts_directory: str = None,
+        description: str = None,
+        metadata: Dict = None,
+    ) -> ModelVersionResponse:
+        """This will create and deploy a model version.
+
+        If artifacts_directory is specified, it will traverse that directory recursively and
+        upload all artifacts in that directory before deploying.
+
+        Args:
+            name (str): Name of the the moodel version.
+            model_id (int): Create the version un the model with this id.
+            source_package_id (int): Use the source package with this id. The source package must have an available
+                predict operation.
+            artifacts_directory (str, optional): Absolute path of directory containing artifacts.
+            description (str, optional):  Description of model version
+            metadata (Dict[str, Any], optional):  Metadata about model version
+            
+        Returns:
+            ModelVersionResponse: The created model version.
+        """
+        model_version = self.create_model_version(model_id, name, source_package_id, description, metadata)
+        if artifacts_directory:
+            self.upload_artifacts_from_directory(model_id, model_version.id, directory=artifacts_directory)
+        return self.deploy_model_version(model_id, model_version.id)
+
+    def train_and_deploy_model_version(
+        self,
+        model_id: int,
         name: str,
         source_package_id: int,
         train_source_package_id: int = None,
@@ -204,11 +279,13 @@ class ModelsClient(APIClient):
         scale_tier: str = None,
         machine_type: str = None,
     ) -> ModelVersionResponse:
-        """Train a new version of a model.
+        """Train and deploy a new version of a model.
+
+        This will instantiate a training job and automatically deploy the model upon completion.
 
         Args:
-            id (int): Create a new version under the model with this id
-            name (str): Name of model version. Must be unique on the model.
+            model_id (int): Create a new version under the model with this id
+            name (str): Name of model version.
             source_package_id (int):    Use the source package with this id
             train_source_package_id (int):  Use this source package for training. If omitted, will default to
                                             source_package_id.
@@ -221,7 +298,7 @@ class ModelsClient(APIClient):
         Returns:
             experimental.model_hosting.models.ModelVersionResponse: The created model version.
         """
-        url = "/analytics/models/{}/versions/train".format(id)
+        url = "/analytics/models/{}/versions/train".format(model_id)
         if args and "data_spec" in args:
             data_spec = args["data_spec"]
             if hasattr(data_spec, "dump"):
@@ -386,6 +463,54 @@ class ModelsClient(APIClient):
         with open(file_path, "wb") as fh:
             response = self._request_session.get(download_url).content
             fh.write(response)
+
+    def upload_artifact_from_file(self, model_id: int, version_id: int, name: str, file_path: str) -> None:
+        """Upload an artifact to a model version.
+
+        The model version must have status AWAITING_MANUAL_DEPLOYMENT in order for this to work.
+
+        Args:
+            model_id (int): The id of the model.
+            version_id (int): The id of the model version to upload the artifacts to.
+            name (str): The name of the artifact.
+            file_path (str): The local path of the artifact.
+        Returns:
+            None
+        """
+        url = "/analytics/models/{}/versions/{}/artifacts/upload".format(model_id, version_id)
+        body = {"name": name}
+        res = self._post(url, body=body)
+        upload_url = res.json()["data"]["uploadUrl"]
+        self._upload_file(upload_url, file_path)
+
+    def upload_artifacts_from_directory(self, model_id: int, version_id: int, directory: str) -> None:
+        """Upload all files in directory recursively.
+
+        Args:
+            model_id (int): The id of the model.
+            version_id (int): The id of the model version to upload the artifacts to.
+            directory (int): Absolute path of directory to upload artifacts from.
+        Returns:
+            None
+        """
+        upload_tasks = []
+        for root, dirs, files in os.walk(directory):
+            for file_name in files:
+                file_path = os.path.join(root, file_name)
+                upload_tasks.append((model_id, version_id, file_name, file_path))
+        self._execute_tasks_concurrently(self.upload_artifact_from_file, upload_tasks)
+
+    @staticmethod
+    def _execute_tasks_concurrently(func, tasks):
+        with ThreadPoolExecutor(16) as p:
+            futures = [p.submit(func, *task) for task in tasks]
+            return [future.result() for future in futures]
+
+    def _upload_file(self, upload_url, file_path):
+        with open(file_path, "rb") as fh:
+            mydata = fh.read()
+            response = self._request_session.put(upload_url, data=mydata)
+        return response
 
     def get_logs(self, model_id: int, version_id: int, log_type: str = None) -> ModelLogResponse:
         """Get logs for prediction and/or training routine of a specific model version.
