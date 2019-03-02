@@ -290,7 +290,7 @@ class TestVersions:
     def test_predict_instance_is_data_spec(self, mock_put, mock_data_spec):
         mock_put.return_value = MockReturnValue(json_data={"data": {"predictions": [1, 2, 3]}})
         models.online_predict(model_id=1, version_id=1, instances=[mock_data_spec, mock_data_spec])
-        data_sent_to_api = json.loads(mock_put.call_args[1]["data"])
+        data_sent_to_api = json.loads(gzip.decompress(mock_put.call_args[1]["data"]).decode())
         for instance in data_sent_to_api["instances"]:
             assert {"spec": "spec"} == instance
 
