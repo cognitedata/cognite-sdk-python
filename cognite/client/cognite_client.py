@@ -80,7 +80,6 @@ class CogniteClient:
 
         environment_api_key = os.getenv("COGNITE_API_KEY")
         environment_base_url = os.getenv("COGNITE_BASE_URL")
-        environment_num_of_retries = os.getenv("COGNITE_NUM_RETRIES")
         environment_num_of_workers = os.getenv("COGNITE_NUM_WORKERS")
         environment_timeout = os.getenv("COGNITE_TIMEOUT")
 
