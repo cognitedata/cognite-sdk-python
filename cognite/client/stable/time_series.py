@@ -193,7 +193,8 @@ class TimeSeriesClient(APIClient):
                 client.time_series.update_time_series(my_time_series)
         """
         url = "/timeseries"
-        body = {"items": [ts.__dict__ for ts in time_series]}
+        items = [ts.camel_case_dict() for ts in time_series]
+        body = {"items": items}
         self._put(url, body=body)
 
     def delete_time_series(self, name) -> None:
