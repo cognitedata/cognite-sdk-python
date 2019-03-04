@@ -1,15 +1,13 @@
 # -*- coding: utf-8 -*-
+import gzip
+import json
 import re
 from unittest import mock
 
 import pytest
-from requests import Session
-from requests.adapters import HTTPAdapter
-from urllib3 import Retry
 
 from cognite.client import APIError
 from cognite.client._api_client import APIClient, _model_hosting_emulator_url_converter
-from cognite.client.cognite_client import STATUS_FORCELIST
 from tests.conftest import MockReturnValue
 
 RESPONSE = {
@@ -29,35 +27,7 @@ RESPONSE = {
 
 @pytest.fixture(autouse=True)
 def api_client():
-    session = Session()
-    retry = Retry(total=0, read=0, connect=0, backoff_factor=1, status_forcelist=STATUS_FORCELIST)
-    adapter = HTTPAdapter(max_retries=retry)
-    session.mount("http://", adapter)
-    session.mount("https://", adapter)
-
     client = APIClient(
-        request_session=session,
-        project="test_proj",
-        base_url="http://localtest.com/api/0.5/projects/test_proj",
-        num_of_workers=1,
-        cookies={"a-cookie": "a-cookie-val"},
-        headers={},
-        timeout=60,
-    )
-    yield client
-
-
-@pytest.fixture(autouse=True)
-def api_client_with_retries():
-    session = Session()
-    tries = 2
-    retry = Retry(total=tries, read=tries, connect=tries, backoff_factor=1, status_forcelist=STATUS_FORCELIST)
-    adapter = HTTPAdapter(max_retries=retry)
-    session.mount("http://", adapter)
-    session.mount("https://", adapter)
-
-    client = APIClient(
-        request_session=session,
         project="test_proj",
         base_url="http://localtest.com/api/0.5/projects/test_proj",
         num_of_workers=1,
@@ -224,32 +194,13 @@ class TestRequests:
 
         mock_request.side_effect = check_args_to_post_and_return_mock
 
-        response = api_client._post(url, RESPONSE, headers={"Existing-Header": "SomeValue"}, use_gzip=True)
+        response = api_client._post(url, RESPONSE, headers={"Existing-Header": "SomeValue"})
 
         assert response.status_code == 200
 
+    @pytest.mark.usefixtures("disable_gzip")
     @mock.patch("requests.sessions.Session.post")
-    def test_post_request_gzip(self, mock_request, api_client, url):
-        import json, gzip
-
-        def check_gzip_enabled_and_return_mock(
-            arg_url, data=None, headers=None, params=None, cookies=None, timeout=None
-        ):
-            # URL is sent as is
-            assert arg_url == api_client._base_url + url
-            # gzip is added as Content-Encoding header
-            assert headers["Content-Encoding"] == "gzip"
-            # data is gzipped. Decompress and check if items size matches
-            decompressed_assets = json.loads(gzip.decompress(data).decode("utf8"))
-            assert len(decompressed_assets["data"]["items"]) == len(RESPONSE)
-            # Return the mock response
-            return MockReturnValue(json_data=RESPONSE)
-
-        mock_request.side_effect = check_gzip_enabled_and_return_mock
-
-        response = api_client._post(url, RESPONSE, headers={}, use_gzip=True)
-        assert response.status_code == 200
-
+    def test_post_request_gzip_disabled(self, mock_request, api_client, url):
         def check_gzip_disabled_and_return_mock(
             arg_url, data=None, headers=None, params=None, cookies=None, timeout=None
         ):
@@ -264,7 +215,7 @@ class TestRequests:
 
         mock_request.side_effect = check_gzip_disabled_and_return_mock
 
-        response = api_client._post(url, RESPONSE, headers={}, use_gzip=False)
+        response = api_client._post(url, RESPONSE, headers={})
         assert response.status_code == 200
 
     @mock.patch("requests.sessions.Session.put")
@@ -316,7 +267,7 @@ class TestRequests:
             # URL is sent as is
             assert arg_url == api_client._base_url + url
             # data is json encoded
-            assert len(json.loads(data)["data"]["items"]) == len(RESPONSE)
+            assert len(json.loads(gzip.decompress(data).decode("utf8"))["data"]["items"]) == len(RESPONSE)
             # cookies should be the same
             assert cookies == {"a-cookie": "a-cookie-val"}
             # Return the mock response
