@@ -24,6 +24,7 @@ from cognite.client.experimental.model_hosting.source_packages import (
     SourcePackageResponse,
 )
 from tests.conftest import MockReturnValue
+from tests.utils import get_call_args_data_from_mock
 
 modelhosting_client = CogniteClient().experimental.model_hosting
 
@@ -62,6 +63,22 @@ class TestSourcePackages:
         )
         assert sp.upload_url is None
         yield sp
+        source_packages.delete_source_package(id=sp.id)
+
+    @pytest.fixture(scope="class")
+    def source_package_directory(self):
+        yield os.path.join(os.path.dirname(__file__), "source_package_for_tests")
+
+    def test_build_and_create_source_package(self, source_package_directory):
+        sp_name = "test-sp-{}".format(randint(0, 1e5))
+        sp = source_packages.build_and_create_source_package(
+            name=sp_name, runtime_version="0.1", package_directory=source_package_directory
+        )
+        assert sp.upload_url is None
+
+        sp = source_packages.get_source_package(sp.id)
+        assert ["TRAIN", "PREDICT"] == sp.available_operations
+        assert "my_model" == sp.package_name
         source_packages.delete_source_package(id=sp.id)
 
     def test_list_source_packages(self, created_source_package):
@@ -186,6 +203,53 @@ class TestVersions:
         "nextCursor": "string",
     }
 
+    @mock.patch("requests.sessions.Session.post")
+    def test_create_version(self, post_mock):
+        model_version_response = self.model_version_response.copy()
+        model_version_response["data"]["items"][0]["trainingDetails"] = None
+        post_mock.return_value = MockReturnValue(json_data=model_version_response)
+        res = models.create_model_version(model_id=1, name="mymodel", source_package_id=1)
+        assert isinstance(res, ModelVersionResponse)
+        assert 1 == res.id
+
+    @mock.patch("requests.sessions.Session.post")
+    def test_deploy_version(self, post_mock):
+        model_version_response = self.model_version_response.copy()
+        model_version_response["data"]["items"][0]["trainingDetails"] = None
+        model_version_response["data"]["items"][0]["status"] = "DEPLOYING"
+        post_mock.return_value = MockReturnValue(json_data=model_version_response)
+        res = models.deploy_model_version(model_id=1, version_id=1)
+        assert isinstance(res, ModelVersionResponse)
+        assert "DEPLOYING" == res.status
+
+    @mock.patch("requests.sessions.Session.put")
+    @mock.patch("requests.sessions.Session.post")
+    def test_create_and_deploy_model_version(self, post_mock, put_mock):
+        model_version_response = self.model_version_response.copy()
+        model_version_response["data"]["items"][0]["trainingDetails"] = None
+        post_mock.side_effect = [
+            MockReturnValue(json_data=model_version_response),
+            MockReturnValue(json_data={"data": {"uploadUrl": "https://upload.here"}}),
+            MockReturnValue(json_data={"data": {"uploadUrl": "https://upload.here"}}),
+            MockReturnValue(json_data=model_version_response),
+        ]
+        put_mock.return_value = MockReturnValue()
+
+        artifacts_directory = os.path.join(os.path.dirname(__file__), "source_package_for_tests/artifacts")
+        model_version = models.create_and_deploy_model_version(
+            model_id=1, name="mymodel", source_package_id=1, artifacts_directory=artifacts_directory
+        )
+        assert model_version.id == 1
+        assert {
+            "description": "",
+            "metadata": {},
+            "name": "mymodel",
+            "sourcePackageId": 1,
+        } == get_call_args_data_from_mock(post_mock, 0, decompress_gzip=True)
+        assert {"name": "artifact1.txt"} == get_call_args_data_from_mock(post_mock, 1, decompress_gzip=True)
+        assert {"name": "sub_dir/artifact2.txt"} == get_call_args_data_from_mock(post_mock, 2, decompress_gzip=True)
+        assert {} == get_call_args_data_from_mock(post_mock, 3, decompress_gzip=True)
+
     @mock.patch("requests.sessions.Session.get")
     def test_list_versions(self, get_mock):
         get_mock.return_value = MockReturnValue(json_data=self.model_version_response)
@@ -207,16 +271,17 @@ class TestVersions:
         assert model_version.id == self.model_version_response["data"]["items"][0]["id"]
 
     @mock.patch("requests.sessions.Session.post")
-    def test_train_version(self, post_mock):
+    def test_train_and_deploy_version(self, post_mock):
         post_mock.return_value = MockReturnValue(json_data=self.model_version_response)
-        res = models.train_model_version(id=1, name="mymodel", source_package_id=1)
+        res = models.train_and_deploy_model_version(model_id=1, name="mymodel", source_package_id=1)
         assert isinstance(res, ModelVersionResponse)
 
     @mock.patch("requests.sessions.Session.post")
-    def test_train_version_data_spec_arg(self, post_mock, mock_data_spec):
+    def test_train_and_deploy_version_data_spec_arg(self, post_mock, mock_data_spec):
         post_mock.return_value = MockReturnValue(json_data=self.model_version_response)
-        models.train_model_version(id=1, name="mymodel", source_package_id=1, args={"data_spec": mock_data_spec})
-
+        models.train_and_deploy_model_version(
+            model_id=1, name="mymodel", source_package_id=1, args={"data_spec": mock_data_spec}
+        )
         data_sent_to_api = json.loads(gzip.decompress(post_mock.call_args[1]["data"]).decode())
         assert {"spec": "spec"} == data_sent_to_api["trainingDetails"]["args"]["data_spec"]
 
@@ -249,6 +314,36 @@ class TestVersions:
         with open(file_path, "rb") as f:
             assert b"content" == f.read()
         os.remove(file_path)
+
+    @pytest.fixture(scope="class")
+    def artifact_file_path(self):
+        file_path = "/tmp/my_artifact.txt"
+        with open(file_path, "w") as f:
+            f.write("content")
+        yield file_path
+        os.remove(file_path)
+
+    @mock.patch("requests.sessions.Session.put")
+    @mock.patch("requests.sessions.Session.post")
+    def test_upload_artifact_from_file(self, post_mock, put_mock, artifact_file_path):
+        post_mock.return_value = MockReturnValue(json_data={"data": {"uploadUrl": "https://upload.here"}})
+        put_mock.return_value = MockReturnValue()
+        models.upload_artifact_from_file(model_id=1, version_id=1, name="my_artifact.txt", file_path=artifact_file_path)
+
+    @mock.patch("requests.sessions.Session.put")
+    @mock.patch("requests.sessions.Session.post")
+    def test_upload_artifacts_from_directory(self, post_mock, put_mock):
+        artifacts_directory = os.path.join(os.path.dirname(__file__), "source_package_for_tests/artifacts")
+        post_mock.side_effect = [
+            MockReturnValue(json_data={"data": {"uploadUrl": "https://upload.here"}}),
+            MockReturnValue(json_data={"data": {"uploadUrl": "https://upload.here"}}),
+        ]
+        put_mock.return_value = MockReturnValue()
+
+        models.upload_artifacts_from_directory(model_id=1, version_id=1, directory=artifacts_directory)
+
+        assert {"name": "artifact1.txt"} == get_call_args_data_from_mock(post_mock, 0, decompress_gzip=True)
+        assert {"name": "sub_dir/artifact2.txt"} == get_call_args_data_from_mock(post_mock, 1, decompress_gzip=True)
 
     @mock.patch("requests.sessions.Session.put")
     def test_deprecate_model_version(self, mock_put):
