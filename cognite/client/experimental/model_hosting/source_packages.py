@@ -96,8 +96,8 @@ class SourcePackageClient(APIClient):
                 if name == "model":
                     try:
                         module = module_finder.find_module(name).load_module()
-                    except:
-                        raise AssertionError("Your model.py file could not be imported")
+                    except Exception as e:
+                        raise AssertionError("Your model.py file could not be imported") from e
                     modules.append((package_name, module))
         return modules
 
