@@ -1,6 +1,7 @@
 import datetime
 import json
 import logging
+import os
 import random
 import string
 from datetime import datetime
@@ -34,7 +35,7 @@ TEST_TS_2_ID = None
 @pytest.fixture(scope="session", autouse=True)
 def time_series_in_cdp():
     global TEST_TS_1_ID, TEST_TS_2_ID
-    client = CogniteClient(num_of_retries=3)
+    client = CogniteClient()
 
     try:
         ts_list = [TimeSeries(name=TEST_TS_1_NAME)]
@@ -65,6 +66,13 @@ def time_series_in_cdp():
     TEST_TS_1_ID = client.time_series.get_time_series(prefix=TEST_TS_1_NAME).to_json()[0]["id"]
     TEST_TS_2_ID = client.time_series.get_time_series(prefix=TEST_TS_2_NAME).to_json()[0]["id"]
     yield TEST_TS_1_ID, TEST_TS_2_ID
+
+
+@pytest.fixture
+def disable_gzip():
+    os.environ["COGNITE_DISABLE_GZIP"] = "1"
+    yield
+    del os.environ["COGNITE_DISABLE_GZIP"]
 
 
 class MockRequest(mock.Mock):

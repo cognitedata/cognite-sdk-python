@@ -4,9 +4,6 @@ from typing import Any, Dict
 
 import requests
 from cognite_logger import cognite_logger
-from requests import Session
-from requests.adapters import HTTPAdapter
-from urllib3 import Retry
 
 from cognite.client._api_client import APIClient
 from cognite.client._utils import get_user_agent
@@ -20,12 +17,9 @@ from cognite.client.stable.raw import RawClient
 from cognite.client.stable.tagmatching import TagMatchingClient
 from cognite.client.stable.time_series import TimeSeriesClient
 
-STATUS_FORCELIST = [429, 500, 502, 503]
-
 DEFAULT_BASE_URL = "https://api.cognitedata.com"
-DEFAULT_NUM_OF_RETRIES = 5
 DEFAULT_NUM_OF_WORKERS = 10
-DEFAULT_TIMEOUT = 60
+DEFAULT_TIMEOUT = 30
 
 
 class CogniteClient:
@@ -37,8 +31,6 @@ class CogniteClient:
         api_key (str): API key
         project (str): Project. Defaults to project of given API key.
         base_url (str): Base url to send requests to. Defaults to "https://api.cognitedata.com"
-        num_of_retries (int): Number of times to retry failed requests. Defaults to 5.
-                        Will only retry status codes 401, 429, 500, 502, and 503.
         num_of_workers (int): Number of workers to spawn when parallelizing data fetching. Defaults to 10.
         cookies (Dict): Cookies to append to all requests. Defaults to {}
         headers (Dict): Additional headers to add to all requests. Defaults are:
@@ -70,6 +62,7 @@ class CogniteClient:
                 export COGNITE_NUM_RETRIES = <number-of-retries>
                 export COGNITE_NUM_WORKERS = <number-of-workers>
                 export COGNITE_TIMEOUT = <num-of-seconds>
+                export COGNITE_DISABLE_GZIP = "1"
     """
 
     def __init__(
@@ -77,7 +70,6 @@ class CogniteClient:
         api_key: str = None,
         project: str = None,
         base_url: str = None,
-        num_of_retries: int = None,
         num_of_workers: int = None,
         headers: Dict[str, str] = None,
         cookies: Dict[str, str] = None,
@@ -88,7 +80,6 @@ class CogniteClient:
 
         environment_api_key = os.getenv("COGNITE_API_KEY")
         environment_base_url = os.getenv("COGNITE_BASE_URL")
-        environment_num_of_retries = os.getenv("COGNITE_NUM_RETRIES")
         environment_num_of_workers = os.getenv("COGNITE_NUM_WORKERS")
         environment_timeout = os.getenv("COGNITE_TIMEOUT")
 
@@ -98,13 +89,6 @@ class CogniteClient:
 
         self._base_url = base_url or environment_base_url or DEFAULT_BASE_URL
 
-        if num_of_retries is not None:
-            self._num_of_retries = num_of_retries
-        elif environment_num_of_retries is not None:
-            self._num_of_retries = int(environment_num_of_retries)
-        else:
-            self._num_of_retries = DEFAULT_NUM_OF_RETRIES
-
         self._num_of_workers = int(num_of_workers or environment_num_of_workers or DEFAULT_NUM_OF_WORKERS)
 
         self._configure_headers(headers)
@@ -113,52 +97,60 @@ class CogniteClient:
 
         self._timeout = int(timeout or environment_timeout or DEFAULT_TIMEOUT)
 
-        self._requests_session = self._requests_retry_session()
-
         self._project = project or thread_local_project
+        self._login_client = self._client_factory(LoginClient)
         if self._project is None:
-            self._project = self.login.status().project
+            self._project = self._login_client.status().project
 
         self._api_client = self._client_factory(APIClient)
 
         if debug:
             cognite_logger.configure_logger("cognite-sdk", log_level="INFO", log_json=True)
 
+        self._assets_client = self._client_factory(AssetsClient)
+        self._datapoints_client = self._client_factory(DatapointsClient)
+        self._events_client = self._client_factory(EventsClient)
+        self._files_client = self._client_factory(FilesClient)
+        self._raw_client = self._client_factory(RawClient)
+        self._tagmatching_client = self._client_factory(TagMatchingClient)
+        self._time_series_client = self._client_factory(TimeSeriesClient)
+        self._experimental_client = ExperimentalClient(self._client_factory)
+
     @property
     def assets(self) -> AssetsClient:
-        return self._client_factory(AssetsClient)
+        return self._assets_client
 
     @property
     def datapoints(self) -> DatapointsClient:
-        return self._client_factory(DatapointsClient)
+        return self._datapoints_client
 
     @property
     def events(self) -> EventsClient:
-        return self._client_factory(EventsClient)
+        return self._events_client
 
     @property
     def files(self) -> FilesClient:
-        return self._client_factory(FilesClient)
+        return self._files_client
 
     @property
     def login(self) -> LoginClient:
-        return self._client_factory(LoginClient)
+        return self._login_client
 
     @property
     def raw(self) -> RawClient:
-        return self._client_factory(RawClient)
+        return self._raw_client
 
     @property
     def tag_matching(self) -> TagMatchingClient:
-        return self._client_factory(TagMatchingClient)
+        return self._tagmatching_client
 
     @property
     def time_series(self) -> TimeSeriesClient:
-        return self._client_factory(TimeSeriesClient)
+        return self._time_series_client
 
     @property
     def experimental(self) -> ExperimentalClient:
-        return ExperimentalClient(self._client_factory)
+        return self._experimental_client
 
     def get(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
         """Perform a GET request to a path in the API.
@@ -167,19 +159,12 @@ class CogniteClient:
         """
         return self._api_client._get(url, params=params, headers=headers)
 
-    def post(
-        self,
-        url: str,
-        body: Dict[str, Any],
-        params: Dict[str, Any] = None,
-        use_gzip: bool = True,
-        headers: Dict[str, Any] = None,
-    ):
+    def post(self, url: str, body: Dict[str, Any], params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
         """Perform a POST request to a path in the API.
 
         Comes in handy if the endpoint you want to reach is not currently supported by the SDK.
         """
-        return self._api_client._post(url, body=body, params=params, use_gzip=use_gzip, headers=headers)
+        return self._api_client._post(url, body=body, params=params, headers=headers)
 
     def put(self, url: str, body: Dict[str, Any] = None, headers: Dict[str, Any] = None):
         """Perform a PUT request to a path in the API.
@@ -197,7 +182,6 @@ class CogniteClient:
 
     def _client_factory(self, client):
         return client(
-            request_session=self._requests_session,
             project=self._project,
             base_url=self._base_url,
             num_of_workers=self._num_of_workers,
@@ -205,21 +189,6 @@ class CogniteClient:
             headers=self._headers,
             timeout=self._timeout,
         )
-
-    def _requests_retry_session(self):
-        session = Session()
-        retry = Retry(
-            total=self._num_of_retries,
-            read=self._num_of_retries,
-            connect=self._num_of_retries,
-            backoff_factor=0.5,
-            status_forcelist=STATUS_FORCELIST,
-            raise_on_status=False,
-        )
-        adapter = HTTPAdapter(max_retries=retry)
-        session.mount("http://", adapter)
-        session.mount("https://", adapter)
-        return session
 
     def _configure_headers(self, user_defined_headers):
         self._headers = requests.utils.default_headers()
