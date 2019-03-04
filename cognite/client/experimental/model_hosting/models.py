@@ -201,8 +201,8 @@ class ModelsClient(APIClient):
         Then you can optionally upload artifacts to the model version and later deploy it.
 
         Args:
-            name (str): Name of the the moodel version.
-            model_id (int): Create the version un the model with this id.
+            name (str): Name of the the model version.
+            model_id (int): Create the version on the model with this id.
             source_package_id (int): Use the source package with this id. The source package must have an available
                 predict operation.
             description (str):  Description of model version
@@ -251,8 +251,8 @@ class ModelsClient(APIClient):
         upload all artifacts in that directory before deploying.
 
         Args:
-            name (str): Name of the the moodel version.
-            model_id (int): Create the version un the model with this id.
+            name (str): Name of the the model version.
+            model_id (int): Create the version on the model with this id.
             source_package_id (int): Use the source package with this id. The source package must have an available
                 predict operation.
             artifacts_directory (str, optional): Absolute path of directory containing artifacts.
@@ -494,10 +494,12 @@ class ModelsClient(APIClient):
             None
         """
         upload_tasks = []
+        root_directory_name = directory.split("/")[-1]
         for root, dirs, files in os.walk(directory):
             for file_name in files:
                 file_path = os.path.join(root, file_name)
-                upload_tasks.append((model_id, version_id, file_name, file_path))
+                full_file_name = file_path.split("/{}/".format(root_directory_name))[-1]
+                upload_tasks.append((model_id, version_id, full_file_name, file_path))
         self._execute_tasks_concurrently(self.upload_artifact_from_file, upload_tasks)
 
     @staticmethod

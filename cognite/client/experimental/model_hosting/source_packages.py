@@ -118,6 +118,8 @@ class SourcePackageClient(APIClient):
             else:
                 raise AssertionError("Your Model class defines predict() but not load().")
 
+        assert len(available_operations) > 0, "Your model does not define a train or a predict method"
+
         return package_name, available_operations
 
     def _build_distribution(self, package_path) -> str:

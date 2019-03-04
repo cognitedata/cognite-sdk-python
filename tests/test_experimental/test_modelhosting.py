@@ -247,7 +247,7 @@ class TestVersions:
             "sourcePackageId": 1,
         } == get_call_args_data_from_mock(post_mock, 0, decompress_gzip=True)
         assert {"name": "artifact1.txt"} == get_call_args_data_from_mock(post_mock, 1, decompress_gzip=True)
-        assert {"name": "artifact2.txt"} == get_call_args_data_from_mock(post_mock, 2, decompress_gzip=True)
+        assert {"name": "sub_dir/artifact2.txt"} == get_call_args_data_from_mock(post_mock, 2, decompress_gzip=True)
         assert {} == get_call_args_data_from_mock(post_mock, 3, decompress_gzip=True)
 
     @mock.patch("requests.sessions.Session.get")
@@ -343,7 +343,7 @@ class TestVersions:
         models.upload_artifacts_from_directory(model_id=1, version_id=1, directory=artifacts_directory)
 
         assert {"name": "artifact1.txt"} == get_call_args_data_from_mock(post_mock, 0, decompress_gzip=True)
-        assert {"name": "artifact2.txt"} == get_call_args_data_from_mock(post_mock, 1, decompress_gzip=True)
+        assert {"name": "sub_dir/artifact2.txt"} == get_call_args_data_from_mock(post_mock, 1, decompress_gzip=True)
 
     @mock.patch("requests.sessions.Session.put")
     def test_deprecate_model_version(self, mock_put):
