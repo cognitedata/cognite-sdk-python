@@ -23,7 +23,7 @@ class TestTimeseries:
         assert res is None
 
     def test_update_timeseries(self):
-        tso = TimeSeries(TS_NAME, unit="celsius")
+        tso = TimeSeries(TS_NAME, is_string=False)
         res = timeseries.update_time_series([tso])
         assert res is None
 
