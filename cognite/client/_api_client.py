@@ -8,10 +8,35 @@ from typing import Any, Dict
 
 import numpy
 from requests import Response, Session
+from requests.adapters import HTTPAdapter
+from urllib3 import Retry
 
 from cognite.client.exceptions import APIError
 
 log = logging.getLogger("cognite-sdk")
+
+DEFAULT_NUM_OF_RETRIES = 5
+HTTP_METHODS_TO_RETRY = [429, 500, 502, 503]
+
+
+def _init_requests_session():
+    session = Session()
+    num_of_retries = int(os.getenv("COGNITE_NUM_RETRIES", DEFAULT_NUM_OF_RETRIES))
+    retry = Retry(
+        total=num_of_retries,
+        read=num_of_retries,
+        connect=num_of_retries,
+        backoff_factor=0.5,
+        status_forcelist=HTTP_METHODS_TO_RETRY,
+        raise_on_status=False,
+    )
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
+    return session
+
+
+_REQUESTS_SESSION = _init_requests_session()
 
 
 def _status_is_valid(status_code: int):
@@ -88,7 +113,6 @@ class APIClient:
 
     def __init__(
         self,
-        request_session: Session,
         version: str = None,
         project: str = None,
         base_url: str = None,
@@ -97,7 +121,7 @@ class APIClient:
         headers: Dict = None,
         timeout: int = None,
     ):
-        self._request_session = request_session
+        self._request_session = _REQUESTS_SESSION
         self._project = project
         __base_path = "/api/{}/projects/{}".format(version, project) if version else ""
         self._base_url = base_url + __base_path
@@ -141,19 +165,11 @@ class APIClient:
         return res
 
     @request_method
-    def _post(
-        self,
-        url: str,
-        body: Dict[str, Any],
-        params: Dict[str, Any] = None,
-        use_gzip: bool = True,
-        headers: Dict[str, Any] = None,
-    ):
+    def _post(self, url: str, body: Dict[str, Any], params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
         data = json.dumps(body, default=self._json_dumps_default)
-        headers = headers or {}
-        if use_gzip:
+        if not os.getenv("COGNITE_DISABLE_GZIP", False):
             headers["Content-Encoding"] = "gzip"
-            data = gzip.compress(json.dumps(body, default=self._json_dumps_default).encode("utf-8"))
+            data = gzip.compress(data.encode())
         res = self._request_session.post(
             url, data=data, headers=headers, params=params, cookies=self._cookies, timeout=self._timeout
         )
@@ -162,13 +178,16 @@ class APIClient:
 
     @request_method
     def _put(self, url: str, body: Dict[str, Any] = None, headers: Dict[str, Any] = None):
-        res = self._request_session.put(
-            url, data=json.dumps(body), headers=headers, cookies=self._cookies, timeout=self._timeout
-        )
+        data = json.dumps(body or {}, default=self._json_dumps_default)
+        if not os.getenv("COGNITE_DISABLE_GZIP", False):
+            headers["Content-Encoding"] = "gzip"
+            data = gzip.compress(data.encode())
+        res = self._request_session.put(url, data=data, headers=headers, cookies=self._cookies, timeout=self._timeout)
         _log_request(res, body=body)
         return res
 
-    def _json_dumps_default(self, x):
+    @staticmethod
+    def _json_dumps_default(x):
         if isinstance(x, numpy.int_):
             return int(x)
         if isinstance(x, numpy.float_):
