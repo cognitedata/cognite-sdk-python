@@ -28,6 +28,7 @@ Changes are grouped as follows
 - New client for modelhosting API: `experimental.model_hosting`
 - Support for thread-local credentials
 - CHANGELOG.md :)
+- Enable toggling gzip with environment variable "COGNITE_DISABLE_GZIP"
 
 ### Removed
 - `data_transfer_service` module. Replaced with separate PyPi package. 
@@ -39,6 +40,7 @@ packages under `cognite` namespace. This means `CogniteClient` no longer can be
 imported directly from `cognite` namespace.
 - Move all autopaging functionality to common method on ApiClient class.
 - `path` parameter in `client.assets.get_assets()` is now `List[int]` instead of `str`
+- Use shared requests session instead of one per client
 
 ### Fixed
 - get_datapoints and get_datapoints_frame no longer cap time series data in certain edge cases.

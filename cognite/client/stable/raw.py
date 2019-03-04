@@ -177,12 +177,7 @@ class RawClient(APIClient):
         return RawResponse(res.json())
 
     def create_rows(
-        self,
-        database_name: str = None,
-        table_name: str = None,
-        rows: List[RawRow] = None,
-        ensure_parent=False,
-        use_gzip=True,
+        self, database_name: str = None, table_name: str = None, rows: List[RawRow] = None, ensure_parent=False
     ) -> None:
         """Creates tables in the given Raw API database.
 
@@ -194,8 +189,6 @@ class RawClient(APIClient):
             rows (list[stable.raw.RawRow]):            The rows to create.
 
             ensure_parent (bool):   Create database/table if it doesn't exist already
-
-            use_gzip (bool):        Compress content using gzip
 
         Returns:
             None
@@ -213,7 +206,7 @@ class RawClient(APIClient):
             body = {
                 "items": [{"key": "{}".format(row.key), "columns": row.columns} for row in rows[i : i + ul_row_limit]]
             }
-            self._post(url=url, body=body, headers={"content-type": "*/*"}, params=params, use_gzip=use_gzip)
+            self._post(url=url, body=body, headers={"content-type": "*/*"}, params=params)
             i += ul_row_limit
 
     def delete_rows(self, database_name: str = None, table_name: str = None, rows: List[RawRow] = None) -> None:

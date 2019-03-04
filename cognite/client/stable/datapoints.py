@@ -374,16 +374,11 @@ class DatapointsClient(APIClient):
 
         return timeseries_with_datapoints_list
 
-    def post_multi_time_series_datapoints(
-        self, timeseries_with_datapoints: List[TimeseriesWithDatapoints], **kwargs
-    ) -> None:
+    def post_multi_time_series_datapoints(self, timeseries_with_datapoints: List[TimeseriesWithDatapoints]) -> None:
         """Insert data into multiple timeseries.
 
         Args:
             timeseries_with_datapoints (List[stable.datapoints.TimeseriesWithDatapoints]): The timeseries with data to insert.
-
-        Keyword Args:
-            use_gzip (bool): Whether or not to gzip the request. Defaults to True.
 
         Returns:
             None
@@ -409,8 +404,6 @@ class DatapointsClient(APIClient):
         """
         url = "/timeseries/data"
 
-        use_gzip = kwargs.get("use_gzip", True)
-
         ul_dps_limit = 100000
 
         # Make sure we only work with TimeseriesWithDatapoints objects that has a max number of datapoints
@@ -432,7 +425,7 @@ class DatapointsClient(APIClient):
                     for ts_with_data in bin
                 ]
             }
-            self._post(url, body=body, use_gzip=use_gzip)
+            self._post(url, body=body)
 
     def post_datapoints(self, name, datapoints: List[Datapoint]) -> None:
         """Insert a list of datapoints.
