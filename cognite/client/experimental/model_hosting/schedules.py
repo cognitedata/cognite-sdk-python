@@ -9,8 +9,7 @@ class ScheduleResponse(CogniteResponse):
         item = self.to_json()
         self.is_deprecated = item["isDeprecated"]
         self.name = item["name"]
-        self.output_data_spec = item["outputDataSpec"]
-        self.input_data_spec = item["inputDataSpec"]
+        self.schedule_data_spec = item["dataSpec"]
         self.model_id = item["modelId"]
         self.created_time = item["createdTime"]
         self.metadata = item["metadata"]
