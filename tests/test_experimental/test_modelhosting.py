@@ -403,12 +403,11 @@ class TestSchedules:
                 {
                     "isDeprecated": False,
                     "name": "test-schedule",
-                    "outputDataSpec": {"spec": "spec"},
+                    "dataSpec": {"spec": "spec"},
                     "modelId": 123,
                     "createdTime": 0,
                     "metadata": {"k": "v"},
                     "id": 123,
-                    "inputDataSpec": {"spec": "spec"},
                     "args": {"k": "v"},
                     "description": "string",
                 }
