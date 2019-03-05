@@ -54,7 +54,7 @@ class TestSourcePackages:
     @pytest.fixture(scope="class")
     def created_source_package(self, source_package_file_path):
         sp_name = "test-sp-{}".format(randint(0, 1e5))
-        sp = source_packages.create_source_package(
+        sp = source_packages.upload_source_package(
             name=sp_name,
             package_name="whatever",
             available_operations=["TRAIN", "PREDICT"],
@@ -71,7 +71,7 @@ class TestSourcePackages:
 
     def test_build_and_create_source_package(self, source_package_directory):
         sp_name = "test-sp-{}".format(randint(0, 1e5))
-        sp = source_packages.build_and_create_source_package(
+        sp = source_packages.build_and_upload_source_package(
             name=sp_name, runtime_version="0.1", package_directory=source_package_directory
         )
         assert sp.upload_url is None
