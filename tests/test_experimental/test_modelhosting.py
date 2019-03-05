@@ -54,7 +54,7 @@ class TestSourcePackages:
     @pytest.fixture(scope="class")
     def created_source_package(self, source_package_file_path):
         sp_name = "test-sp-{}".format(randint(0, 1e5))
-        sp = source_packages.create_source_package(
+        sp = source_packages.upload_source_package(
             name=sp_name,
             package_name="whatever",
             available_operations=["TRAIN", "PREDICT"],
@@ -71,7 +71,7 @@ class TestSourcePackages:
 
     def test_build_and_create_source_package(self, source_package_directory):
         sp_name = "test-sp-{}".format(randint(0, 1e5))
-        sp = source_packages.build_and_create_source_package(
+        sp = source_packages.build_and_upload_source_package(
             name=sp_name, runtime_version="0.1", package_directory=source_package_directory
         )
         assert sp.upload_url is None
@@ -218,7 +218,7 @@ class TestVersions:
         model_version_response["data"]["items"][0]["trainingDetails"] = None
         model_version_response["data"]["items"][0]["status"] = "DEPLOYING"
         post_mock.return_value = MockReturnValue(json_data=model_version_response)
-        res = models.deploy_model_version(model_id=1, version_id=1)
+        res = models.deploy_awaiting_model_version(model_id=1, version_id=1)
         assert isinstance(res, ModelVersionResponse)
         assert "DEPLOYING" == res.status
 
@@ -236,7 +236,7 @@ class TestVersions:
         put_mock.return_value = MockReturnValue()
 
         artifacts_directory = os.path.join(os.path.dirname(__file__), "source_package_for_tests/artifacts")
-        model_version = models.create_and_deploy_model_version(
+        model_version = models.deploy_model_version(
             model_id=1, name="mymodel", source_package_id=1, artifacts_directory=artifacts_directory
         )
         assert model_version.id == 1
@@ -246,8 +246,12 @@ class TestVersions:
             "name": "mymodel",
             "sourcePackageId": 1,
         } == get_call_args_data_from_mock(post_mock, 0, decompress_gzip=True)
-        assert {"name": "artifact1.txt"} == get_call_args_data_from_mock(post_mock, 1, decompress_gzip=True)
-        assert {"name": "sub_dir/artifact2.txt"} == get_call_args_data_from_mock(post_mock, 2, decompress_gzip=True)
+        post_artifacts_call_args = [
+            get_call_args_data_from_mock(post_mock, 1, decompress_gzip=True),
+            get_call_args_data_from_mock(post_mock, 2, decompress_gzip=True),
+        ]
+        assert {"name": "artifact1.txt"} in post_artifacts_call_args
+        assert {"name": "sub_dir/artifact2.txt"} in post_artifacts_call_args
         assert {} == get_call_args_data_from_mock(post_mock, 3, decompress_gzip=True)
 
     @mock.patch("requests.sessions.Session.get")
@@ -342,8 +346,12 @@ class TestVersions:
 
         models.upload_artifacts_from_directory(model_id=1, version_id=1, directory=artifacts_directory)
 
-        assert {"name": "artifact1.txt"} == get_call_args_data_from_mock(post_mock, 0, decompress_gzip=True)
-        assert {"name": "sub_dir/artifact2.txt"} == get_call_args_data_from_mock(post_mock, 1, decompress_gzip=True)
+        post_artifacts_call_args = [
+            get_call_args_data_from_mock(post_mock, 0, decompress_gzip=True),
+            get_call_args_data_from_mock(post_mock, 1, decompress_gzip=True),
+        ]
+        assert {"name": "artifact1.txt"} in post_artifacts_call_args
+        assert {"name": "sub_dir/artifact2.txt"} in post_artifacts_call_args
 
     @mock.patch("requests.sessions.Session.put")
     def test_deprecate_model_version(self, mock_put):

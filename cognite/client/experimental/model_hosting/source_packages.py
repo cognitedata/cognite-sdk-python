@@ -45,7 +45,7 @@ class SourcePackageClient(APIClient):
         super().__init__(version="0.6", **kwargs)
         self._LIMIT = 1000
 
-    def create_source_package(
+    def upload_source_package(
         self,
         name: str,
         package_name: str,
@@ -129,7 +129,7 @@ class SourcePackageClient(APIClient):
             if file.endswith(".tar.gz"):
                 return os.path.join(dist_directory, file)
 
-    def build_and_create_source_package(
+    def build_and_upload_source_package(
         self, name: str, runtime_version: str, package_directory: str, description: str = None, metadata: Dict = None
     ) -> CreateSourcePackageResponse:
         """Build a distribution for a source package and upload it to the model hosting environment.
@@ -151,7 +151,7 @@ class SourcePackageClient(APIClient):
         package_name, available_operations = self._find_model_file_and_extract_details(package_directory)
         tar_gz_path = self._build_distribution(package_directory)
 
-        return self.create_source_package(
+        return self.upload_source_package(
             name=name,
             package_name=package_name,
             available_operations=available_operations,

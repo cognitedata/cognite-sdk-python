@@ -194,7 +194,7 @@ class ModelsClient(APIClient):
         self._delete(url)
 
     def create_model_version(
-        self, model_id: int, name: str, source_package_id: int, description: str = None, metadata: Dict = None
+        self, name: str, model_id: int, source_package_id: int, description: str = None, metadata: Dict = None
     ) -> ModelVersionResponse:
         """Create a model version without deploying it.
 
@@ -221,8 +221,8 @@ class ModelsClient(APIClient):
         res = self._post(url, body=body)
         return ModelVersionResponse(res.json())
 
-    def deploy_model_version(self, model_id: int, version_id: int) -> ModelVersionResponse:
-        """Deploy a model version.
+    def deploy_awaiting_model_version(self, model_id: int, version_id: int) -> ModelVersionResponse:
+        """Deploy an already created model version awaiting manual deployment.
 
         The model version must have status AWAITING_MANUAL_DEPLOYMENT in order for this to work.
 
@@ -236,10 +236,10 @@ class ModelsClient(APIClient):
         res = self._post(url, body={})
         return ModelVersionResponse(res.json())
 
-    def create_and_deploy_model_version(
+    def deploy_model_version(
         self,
-        model_id: int,
         name: str,
+        model_id: int,
         source_package_id: int,
         artifacts_directory: str = None,
         description: str = None,
@@ -262,15 +262,15 @@ class ModelsClient(APIClient):
         Returns:
             ModelVersionResponse: The created model version.
         """
-        model_version = self.create_model_version(model_id, name, source_package_id, description, metadata)
+        model_version = self.create_model_version(name, model_id, source_package_id, description, metadata)
         if artifacts_directory:
             self.upload_artifacts_from_directory(model_id, model_version.id, directory=artifacts_directory)
-        return self.deploy_model_version(model_id, model_version.id)
+        return self.deploy_awaiting_model_version(model_id, model_version.id)
 
     def train_and_deploy_model_version(
         self,
-        model_id: int,
         name: str,
+        model_id: int,
         source_package_id: int,
         train_source_package_id: int = None,
         metadata: Dict = None,
