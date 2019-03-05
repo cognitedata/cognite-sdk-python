@@ -1,8 +1,6 @@
 import re
 
-from setuptools import find_packages, setup
-
-packages = find_packages(exclude=["tests*"])
+from setuptools import setup
 
 version = re.search('^__version__\s*=\s*"(.*)"', open("cognite/client/__init__.py").read(), re.M).group(1)
 
@@ -14,7 +12,7 @@ setup(
     download_url="https://github.com/cognitedata/cognite-sdk-python/archive/{}.tar.gz".format(version),
     author="Erlend Vollset",
     author_email="erlend.vollset@cognite.com",
-    packages=packages,
+    packages=["cognite.client"],
     install_requires=["requests", "pandas", "protobuf", "cognite-logger>=0.3"],
     python_requires=">=3.5",
     zip_safe=False,
