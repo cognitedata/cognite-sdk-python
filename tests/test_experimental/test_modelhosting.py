@@ -218,7 +218,7 @@ class TestVersions:
         model_version_response["data"]["items"][0]["trainingDetails"] = None
         model_version_response["data"]["items"][0]["status"] = "DEPLOYING"
         post_mock.return_value = MockReturnValue(json_data=model_version_response)
-        res = models.deploy_model_version(model_id=1, version_id=1)
+        res = models.deploy_awaiting_model_version(model_id=1, version_id=1)
         assert isinstance(res, ModelVersionResponse)
         assert "DEPLOYING" == res.status
 
@@ -236,7 +236,7 @@ class TestVersions:
         put_mock.return_value = MockReturnValue()
 
         artifacts_directory = os.path.join(os.path.dirname(__file__), "source_package_for_tests/artifacts")
-        model_version = models.create_and_deploy_model_version(
+        model_version = models.deploy_model_version(
             model_id=1, name="mymodel", source_package_id=1, artifacts_directory=artifacts_directory
         )
         assert model_version.id == 1

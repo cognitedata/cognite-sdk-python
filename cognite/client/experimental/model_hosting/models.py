@@ -221,8 +221,8 @@ class ModelsClient(APIClient):
         res = self._post(url, body=body)
         return ModelVersionResponse(res.json())
 
-    def deploy_model_version(self, model_id: int, version_id: int) -> ModelVersionResponse:
-        """Deploy a model version.
+    def deploy_awaiting_model_version(self, model_id: int, version_id: int) -> ModelVersionResponse:
+        """Deploy an already created model version awaiting manual deployment.
 
         The model version must have status AWAITING_MANUAL_DEPLOYMENT in order for this to work.
 
@@ -236,7 +236,7 @@ class ModelsClient(APIClient):
         res = self._post(url, body={})
         return ModelVersionResponse(res.json())
 
-    def create_and_deploy_model_version(
+    def deploy_model_version(
         self,
         model_id: int,
         name: str,
@@ -265,7 +265,7 @@ class ModelsClient(APIClient):
         model_version = self.create_model_version(model_id, name, source_package_id, description, metadata)
         if artifacts_directory:
             self.upload_artifacts_from_directory(model_id, model_version.id, directory=artifacts_directory)
-        return self.deploy_model_version(model_id, model_version.id)
+        return self.deploy_awaiting_model_version(model_id, model_version.id)
 
     def train_and_deploy_model_version(
         self,
