@@ -152,12 +152,12 @@ class CogniteClient:
     def experimental(self) -> ExperimentalClient:
         return self._experimental_client
 
-    def get(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
+    def get(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None, autopaging: bool = False):
         """Perform a GET request to a path in the API.
 
         Comes in handy if the endpoint you want to reach is not currently supported by the SDK.
         """
-        return self._api_client._get(url, params=params, headers=headers)
+        return self._api_client._get(url, params=params, headers=headers, autopaging=autopaging)
 
     def post(self, url: str, body: Dict[str, Any], params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
         """Perform a POST request to a path in the API.
