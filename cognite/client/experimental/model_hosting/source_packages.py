@@ -1,5 +1,6 @@
 import os
 import pkgutil
+import re
 from collections import namedtuple
 from subprocess import check_call
 from typing import Dict, List, NamedTuple, Tuple
@@ -87,40 +88,38 @@ class SourcePackageClient(APIClient):
             return CreateSourcePackageResponse(res)
         return CreateSourcePackageResponse(res)
 
-    def _get_modules_named_model(self, path, package_name=None):
-        modules = []
-        for module_finder, name, ispkg in pkgutil.walk_packages([path]):
-            if ispkg:
-                modules.extend(self._get_modules_named_model(path + "/{}".format(name), package_name=name))
-            else:
-                if name == "model":
-                    try:
-                        module = module_finder.find_module(name).load_module()
-                    except Exception as e:
-                        raise AssertionError("Your model.py file could not be imported") from e
-                    modules.append((package_name, module))
-        return modules
+    def _get_model_py_files(self, path) -> List:
+        files_containing_model_py = []
+        for root, dirs, files in os.walk(path):
+            if "model.py" in files:
+                package_name = root.split("/")[-1]
+                file_path = os.path.join(root, "model.py")
+                files_containing_model_py.append((package_name, file_path))
+        return files_containing_model_py
 
     def _find_model_file_and_extract_details(self, package_directory: str) -> Tuple:
-        for pkg_name, module in self._get_modules_named_model(package_directory):
-            if hasattr(module, "Model"):
-                package_name = pkg_name
-                break
-        else:
-            raise AssertionError("Could not locate a file named model.py containing a Model class")
+        num_of_eligible_model_py_files = 0
+        for package_name, file_path in self._get_model_py_files(package_directory):
+            with open(file_path, "r") as f:
+                file_content = f.read()
+                if re.search("class Model", file_content):
+                    num_of_eligible_model_py_files += 1
+                    model_package_name = package_name
+                    model_file_content = file_content
+
+        assert num_of_eligible_model_py_files != 0, "Could not locate a file named model.py containing a Model class"
+        assert num_of_eligible_model_py_files == 1, "Multiple model.py files with a Model class in your source package"
 
         available_operations = []
-        if hasattr(module.Model, "train"):
+        if re.search("def train\(", model_file_content):
             available_operations.append("TRAIN")
-        if hasattr(module.Model, "predict"):
-            if hasattr(module.Model, "load"):
+        if re.search("def predict\(", model_file_content):
+            if re.search("def load\(", model_file_content):
                 available_operations.append("PREDICT")
             else:
                 raise AssertionError("Your Model class defines predict() but not load().")
-
         assert len(available_operations) > 0, "Your model does not define a train or a predict method"
-
-        return package_name, available_operations
+        return model_package_name, available_operations
 
     def _build_distribution(self, package_path) -> str:
         check_call("cd {} && python setup.py sdist".format(package_path), shell=True)
