@@ -48,9 +48,14 @@ podTemplate(
             stage('Install dependencies') {
                 sh("pipenv sync --dev")
             }
-            stage('Check code style & remove typehints') {
+            stage('Check code') {
                 sh("pipenv run black -l 120 --check .")
                 sh("pipenv run python3 type_hint_remover.py --check")
+            }
+            stage('Build Docs'){
+                dir('./docs'){
+                    sh("pipenv run sphinx-build -W -b html ./source ./build")
+                }
             }
             stage('Test and coverage report') {
                 sh("pyenv local 3.5.5 3.6.6 system")

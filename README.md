@@ -1,5 +1,5 @@
 <a href="https://cognite.com/">
-    <img src="https://github.com/cognitedata/cognite-sdk-python/blob/master/img/cognite_logo.png" alt="Cognite logo" title="Cognite" align="right" height="80" />
+    <img src="https://github.com/cognitedata/cognite-python-docs/blob/master/img/cognite_logo.png" alt="Cognite logo" title="Cognite" align="right" height="80" />
 </a>
 
 Cognite Python SDK
@@ -36,6 +36,9 @@ On Windows, you can follows [these instructions](https://www.computerhope.com/is
 ```bash
 $ pip install cognite-sdk
 ```
+
+## Examples
+Examples on how to use the SDK can be found [here](https://github.com/cognitedata/cognite-python-docs)
 
 ## Changelog
 Wondering about upcoming or previous changes to the SDK? Take a look at the [CHANGELOG](https://github.com/cognitedata/cognite-sdk-python/blob/master/CHANGELOG.md).

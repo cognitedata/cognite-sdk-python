@@ -4,7 +4,6 @@ from typing import List
 from urllib.parse import quote
 
 import pandas as pd
-
 from cognite.client._api_client import APIClient, CogniteCollectionResponse, CogniteResource, CogniteResponse
 
 
@@ -22,6 +21,7 @@ class TimeSeriesResponse(CogniteResponse):
         self.created_time = item.get("createdTime")
         self.last_updated_time = item.get("lastUpdatedTime")
         self.metadata = item.get("metadata")
+        self.asset_id = item.get("assetId")
 
     def to_pandas(self):
         """Returns data as a pandas dataframe"""
