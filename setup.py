@@ -12,7 +12,6 @@ setup(
     download_url="https://github.com/cognitedata/cognite-sdk-python/archive/{}.tar.gz".format(version),
     author="Erlend Vollset",
     author_email="erlend.vollset@cognite.com",
-    packages=["cognite.client"],
     install_requires=["requests", "pandas", "protobuf", "cognite-logger>=0.3"],
     python_requires=">=3.5",
     zip_safe=False,
