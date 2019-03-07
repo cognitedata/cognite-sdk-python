@@ -37,6 +37,9 @@ On Windows, you can follows [these instructions](https://www.computerhope.com/is
 $ pip install cognite-sdk
 ```
 
+## Examples
+Examples on how to use the SDK can be found [here](https://github.com/cognitedata/cognite-python-docs)
+
 ## Changelog
 Wondering about upcoming or previous changes to the SDK? Take a look at the [CHANGELOG](https://github.com/cognitedata/cognite-sdk-python/blob/master/CHANGELOG.md).
 
