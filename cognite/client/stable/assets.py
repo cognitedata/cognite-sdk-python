@@ -191,7 +191,7 @@ class AssetsClient(APIClient):
             You can fetch an asset subtree like this::
 
                 client = CogniteClient()
-                res = client.assets.get_asset_subtree(asset_id=123, depth=)
+                res = client.assets.get_asset_subtree(asset_id=123, depth=2)
                 print(res.to_pandas())
         """
         autopaging = kwargs.get("autopaging", False)
