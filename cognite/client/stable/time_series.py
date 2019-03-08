@@ -4,6 +4,7 @@ from typing import List
 from urllib.parse import quote
 
 import pandas as pd
+
 from cognite.client._api_client import APIClient, CogniteCollectionResponse, CogniteResource, CogniteResponse
 
 
@@ -114,7 +115,7 @@ class TimeSeriesClient(APIClient):
 
             asset_id (int):        Get timeseries related to this asset.
 
-            path (str):             Get timeseries under this asset path branch.
+            path (List[int]):             Get timeseries under this asset path branch.
 
         Keyword Arguments:
             limit (int):            Number of results to return.
@@ -140,7 +141,7 @@ class TimeSeriesClient(APIClient):
             "description": description,
             "includeMetadata": include_metadata,
             "assetId": asset_id,
-            "path": path,
+            "path": str(path) if path else None,
             "limit": kwargs.get("limit", self._LIMIT) if not autopaging else self._LIMIT,
         }
 
