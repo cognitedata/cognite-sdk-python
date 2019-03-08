@@ -3,6 +3,7 @@ from time import sleep
 
 import pandas as pd
 import pytest
+
 from cognite.client import CogniteClient
 from cognite.client.stable.time_series import TimeSeries, TimeSeriesListResponse, TimeSeriesResponse
 
