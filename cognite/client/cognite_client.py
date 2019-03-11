@@ -3,6 +3,7 @@ import sys
 from typing import Any, Dict
 
 import requests
+
 from cognite.client._api_client import APIClient
 from cognite.client._utils import get_user_agent
 from cognite.client.experimental import ExperimentalClient
@@ -51,7 +52,7 @@ class CogniteClient:
 
                 from cognite.client import CogniteClient
                 client = CogniteClient()
-                res = client.experimental.analytics.models.get_models()
+                res = client.experimental.model_hosting.models.list_models()
                 print(res)
 
             Default configurations may be set using the following environment variables::
