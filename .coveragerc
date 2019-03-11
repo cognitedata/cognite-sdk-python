@@ -7,4 +7,4 @@ exclude_lines =
     raise AssertionError
     raise NotImplementedError
 omit =
-    cognite/_auxiliary/*
+    cognite/client/_auxiliary/*
