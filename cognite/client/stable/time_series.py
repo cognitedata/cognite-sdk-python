@@ -23,6 +23,7 @@ class TimeSeriesResponse(CogniteResponse):
         self.last_updated_time = item.get("lastUpdatedTime")
         self.metadata = item.get("metadata")
         self.asset_id = item.get("assetId")
+        self.description = item.get("description")
 
     def to_pandas(self):
         """Returns data as a pandas dataframe"""
