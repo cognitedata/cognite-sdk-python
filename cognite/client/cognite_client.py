@@ -3,8 +3,6 @@ import sys
 from typing import Any, Dict
 
 import requests
-from cognite_logger import cognite_logger
-
 from cognite.client._api_client import APIClient
 from cognite.client._utils import get_user_agent
 from cognite.client.experimental import ExperimentalClient
@@ -16,6 +14,7 @@ from cognite.client.stable.login import LoginClient
 from cognite.client.stable.raw import RawClient
 from cognite.client.stable.tagmatching import TagMatchingClient
 from cognite.client.stable.time_series import TimeSeriesClient
+from cognite.logger import logger
 
 DEFAULT_BASE_URL = "https://api.cognitedata.com"
 DEFAULT_NUM_OF_WORKERS = 10
@@ -105,7 +104,7 @@ class CogniteClient:
         self._api_client = self._client_factory(APIClient)
 
         if debug:
-            cognite_logger.configure_logger("cognite-sdk", log_level="INFO", log_json=True)
+            logger.configure_logger("cognite-sdk", log_level="INFO", log_json=True)
 
         self._assets_client = self._client_factory(AssetsClient)
         self._datapoints_client = self._client_factory(DatapointsClient)
