@@ -51,7 +51,7 @@ class TestTimeseries:
             assert isinstance(ts.to_pandas(), pd.DataFrame)
             assert isinstance(ts.to_json(), dict)
             for key, val in ts.__dict__.items():
-                if key in ["metadata", "asset_id"]:
+                if key in ["metadata", "asset_id", "description"]:
                     assert val is None
                 else:
                     assert val is not None
