@@ -23,7 +23,7 @@ Changes are grouped as follows
 - Rename methods so they reflect what the method does instead of what http method is used
 
 
-## [0.13.0] - 2019-02-15
+## [0.13.0] - 2019-03-12
 ### Added
 - New client for modelhosting API: `experimental.model_hosting`
 - Support for thread-local credentials
@@ -39,7 +39,7 @@ Changes are grouped as follows
 packages under `cognite` namespace. This means `CogniteClient` no longer can be 
 imported directly from `cognite` namespace.
 - Move all autopaging functionality to common method on ApiClient class.
-- `path` parameter in `client.assets.get_assets()` is now `List[int]` instead of `str`
+- `path` parameter in `client.assets.get_assets()` and `client.time_series.get_time_series()` is now `List[int]` instead of `str`
 - Use shared requests session instead of one per client
 
 ### Fixed
