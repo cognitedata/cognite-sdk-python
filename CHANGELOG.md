@@ -44,6 +44,7 @@ imported directly from `cognite` namespace.
 
 ### Fixed
 - get_datapoints and get_datapoints_frame no longer cap time series data in certain edge cases.
+- cognite-logger dependency is locked to 0.4.* to avoid breaking on minor updates.
 
 ## [0.12.4] - 2019-01-09
 ### Added
