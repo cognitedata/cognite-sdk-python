@@ -14,7 +14,7 @@ Cognite Python SDK
 Python SDK to ensure excellent user experience for developers and data scientists working with the Cognite Data Platform.
 
 ## Documentation
-* [SDK Documentation](https://cognite-docs.readthedocs-hosted.com/en/latest/)
+* [SDK Documentation](https://cognite-sdk-python.readthedocs-hosted.com/en/latest/)
 * [API Documentation](https://doc.cognitedata.com/)
 * [API Guide](https://doc.cognitedata.com/guides/api-guide.html)
 
