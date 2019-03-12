@@ -10,7 +10,7 @@ podTemplate(
     ],
     containers: [
         containerTemplate(name: 'python',
-            image: 'eu.gcr.io/cognitedata/multi-python:9b8bde1',
+            image: 'eu.gcr.io/cognitedata/multi-python:7040fac',
             command: '/bin/cat -',
             resourceRequestCpu: '1000m',
             resourceRequestMemory: '800Mi',
@@ -59,7 +59,7 @@ podTemplate(
                 }
             }
             stage('Test and coverage report') {
-                sh("pyenv local 3.5.5 3.6.6 system")
+                sh("pyenv local 3.5.0 3.6.6 3.7.2")
                 sh("pipenv run tox")
                 junit(allowEmptyResults: true, testResults: '**/test-report.xml')
                 summarizeTestResults()
