@@ -53,6 +53,7 @@ podTemplate(
                 sh("pipenv run python3 type_hint_remover.py --check")
             }
             stage('Build Docs'){
+                sh("pipenv run pip install .")
                 dir('./docs'){
                     sh("pipenv run sphinx-build -W -b html ./source ./build")
                 }
