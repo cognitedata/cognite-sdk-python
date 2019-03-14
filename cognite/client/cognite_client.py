@@ -4,17 +4,15 @@ from typing import Any, Dict
 
 import requests
 
-from cognite.client._api_client import APIClient
-from cognite.client._utils import get_user_agent
-from cognite.client.experimental import ExperimentalClient
-from cognite.client.stable.assets import AssetsClient
-from cognite.client.stable.datapoints import DatapointsClient
-from cognite.client.stable.events import EventsClient
-from cognite.client.stable.files import FilesClient
-from cognite.client.stable.login import LoginClient
-from cognite.client.stable.raw import RawClient
-from cognite.client.stable.tagmatching import TagMatchingClient
-from cognite.client.stable.time_series import TimeSeriesClient
+from cognite.client._utils.api_client import APIClient
+from cognite.client._utils.utils import get_user_agent
+from cognite.client.resources.assets import AssetsClient
+from cognite.client.resources.datapoints import DatapointsClient
+from cognite.client.resources.events import EventsClient
+from cognite.client.resources.files import FilesClient
+from cognite.client.resources.login import LoginClient
+from cognite.client.resources.raw import RawClient
+from cognite.client.resources.time_series import TimeSeriesClient
 from cognite.logger import configure_logger
 
 DEFAULT_BASE_URL = "https://api.cognitedata.com"
@@ -97,60 +95,85 @@ class CogniteClient:
 
         self._timeout = int(timeout or environment_timeout or DEFAULT_TIMEOUT)
 
-        self._project = project or thread_local_project
-        self._login_client = self._client_factory(LoginClient)
-        if self._project is None:
-            self._project = self._login_client.status().project
-
-        self._api_client = self._client_factory(APIClient)
-
         if debug:
             configure_logger("cognite-sdk", log_level="INFO", log_json=True)
 
-        self._assets_client = self._client_factory(AssetsClient)
-        self._datapoints_client = self._client_factory(DatapointsClient)
-        self._events_client = self._client_factory(EventsClient)
-        self._files_client = self._client_factory(FilesClient)
-        self._raw_client = self._client_factory(RawClient)
-        self._tagmatching_client = self._client_factory(TagMatchingClient)
-        self._time_series_client = self._client_factory(TimeSeriesClient)
-        self._experimental_client = ExperimentalClient(self._client_factory)
+        __api_version = "0.6"
+        self._project = project or thread_local_project
+        self.login = LoginClient(
+            project=self._project,
+            base_url=self._base_url,
+            num_of_workers=self._num_of_workers,
+            cookies=self._cookies,
+            headers=self._headers,
+            timeout=self._timeout,
+        )
+        if self._project is None:
+            self._project = self.login.status().project
 
-    @property
-    def assets(self) -> AssetsClient:
-        return self._assets_client
+        self.assets = AssetsClient(
+            version=__api_version,
+            project=self._project,
+            base_url=self._base_url,
+            num_of_workers=self._num_of_workers,
+            cookies=self._cookies,
+            headers=self._headers,
+            timeout=self._timeout,
+        )
+        self.datapoints = DatapointsClient(
+            version=__api_version,
+            project=self._project,
+            base_url=self._base_url,
+            num_of_workers=self._num_of_workers,
+            cookies=self._cookies,
+            headers=self._headers,
+            timeout=self._timeout,
+        )
+        self.events = EventsClient(
+            version=__api_version,
+            project=self._project,
+            base_url=self._base_url,
+            num_of_workers=self._num_of_workers,
+            cookies=self._cookies,
+            headers=self._headers,
+            timeout=self._timeout,
+        )
+        self.files = FilesClient(
+            version=__api_version,
+            project=self._project,
+            base_url=self._base_url,
+            num_of_workers=self._num_of_workers,
+            cookies=self._cookies,
+            headers=self._headers,
+            timeout=self._timeout,
+        )
+        self.raw = RawClient(
+            version=__api_version,
+            project=self._project,
+            base_url=self._base_url,
+            num_of_workers=self._num_of_workers,
+            cookies=self._cookies,
+            headers=self._headers,
+            timeout=self._timeout,
+        )
+        self.time_series = TimeSeriesClient(
+            version=__api_version,
+            project=self._project,
+            base_url=self._base_url,
+            num_of_workers=self._num_of_workers,
+            cookies=self._cookies,
+            headers=self._headers,
+            timeout=self._timeout,
+        )
 
-    @property
-    def datapoints(self) -> DatapointsClient:
-        return self._datapoints_client
-
-    @property
-    def events(self) -> EventsClient:
-        return self._events_client
-
-    @property
-    def files(self) -> FilesClient:
-        return self._files_client
-
-    @property
-    def login(self) -> LoginClient:
-        return self._login_client
-
-    @property
-    def raw(self) -> RawClient:
-        return self._raw_client
-
-    @property
-    def tag_matching(self) -> TagMatchingClient:
-        return self._tagmatching_client
-
-    @property
-    def time_series(self) -> TimeSeriesClient:
-        return self._time_series_client
-
-    @property
-    def experimental(self) -> ExperimentalClient:
-        return self._experimental_client
+        self._api_client = APIClient(
+            project=self._project,
+            base_url=self._base_url,
+            num_of_workers=self._num_of_workers,
+            cookies=self._cookies,
+            headers=self._headers,
+            timeout=self._timeout,
+        )
 
     def get(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None, autopaging: bool = False):
         """Perform a GET request to a path in the API.
@@ -180,18 +203,9 @@ class CogniteClient:
         """
         return self._api_client._delete(url, params=params, headers=headers)
 
-    def _client_factory(self, client):
-        return client(
-            project=self._project,
-            base_url=self._base_url,
-            num_of_workers=self._num_of_workers,
-            cookies=self._cookies,
-            headers=self._headers,
-            timeout=self._timeout,
-        )
-
     def _configure_headers(self, user_defined_headers):
-        self._headers = requests.utils.default_headers()
+        self._headers = {}
+        self._headers.update(requests.utils.default_headers())
         self._headers.update(
             {"api-key": self.__api_key, "content-type": "application/json", "accept": "application/json"}
         )
