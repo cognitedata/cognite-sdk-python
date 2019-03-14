@@ -92,7 +92,7 @@ class SourcePackageClient(APIClient):
         files_containing_model_py = []
         for root, dirs, files in os.walk(path):
             if "model.py" in files:
-                package_name = root.split("/")[-1]
+                package_name = os.path.basename(root)
                 file_path = os.path.join(root, "model.py")
                 files_containing_model_py.append((package_name, file_path))
         return files_containing_model_py

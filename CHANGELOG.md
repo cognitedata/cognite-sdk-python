@@ -23,6 +23,10 @@ Changes are grouped as follows
 - Rename methods so they reflect what the method does instead of what http method is used
 
 
+## [0.13.1] - 2019-03-14
+### Fixed
+- Make `_get_model_py_files` work on Windows
+
 ## [0.13.0] - 2019-03-12
 ### Added
 - New client for modelhosting API: `experimental.model_hosting`
