@@ -14,7 +14,7 @@ import pandas as pd
 from cognite.client._auxiliary._protobuf_descriptors import _api_timeseries_data_v2_pb2
 from cognite.client._utils import utils
 from cognite.client._utils.api_client import APIClient
-from cognite.client._utils.resource_base import CogniteResource, CogniteResponse
+from cognite.client._utils.bases import CogniteResource, CogniteResponse
 
 
 class DatapointsResponse(CogniteResponse):
@@ -542,7 +542,7 @@ class DatapointsClient(APIClient):
         datapoints_responses = []
         has_incomplete_requests = True
         while has_incomplete_requests:
-            res = self._post(url=url, body=body).json()["data"]["items"]
+            res = self._post(url_path=url, body=body).json()["data"]["items"]
             datapoints_responses.append(res)
             has_incomplete_requests = False
             for i, dpr in enumerate(res):
@@ -715,7 +715,7 @@ class DatapointsClient(APIClient):
         headers = {"accept": "text/csv"}
         dataframes = []
         while (not dataframes or dataframes[-1].shape[0] == per_tag_limit) and body["end"] > body["start"]:
-            res = self._post(url=url, body=body, headers=headers)
+            res = self._post(url_path=url, body=body, headers=headers)
             dataframes.append(
                 pd.read_csv(io.StringIO(res.content.decode(res.encoding if res.encoding else res.apparent_encoding)))
             )
@@ -768,7 +768,7 @@ class DatapointsClient(APIClient):
         }
 
         headers = {"accept": "text/csv"}
-        res = self._post(url=url, body=body, headers=headers)
+        res = self._post(url_path=url, body=body, headers=headers)
         df = pd.read_csv(io.StringIO(res.content.decode(res.encoding if res.encoding else res.apparent_encoding)))
 
         return df

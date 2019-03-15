@@ -3,14 +3,13 @@ import json
 import logging
 import os
 import re
-from typing import Any, Dict, Type
+from typing import Any, Dict, List
 
 import numpy
 from requests import Response, Session
 from requests.adapters import HTTPAdapter
 from urllib3 import Retry
 
-from cognite.client._utils.resource_base import CogniteResource
 from cognite.client.exceptions import APIError
 
 log = logging.getLogger("cognite-sdk")
@@ -108,60 +107,50 @@ class APIClient:
         self._headers = headers
         self._timeout = timeout
 
-    def _delete(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
+    def _delete(self, url_path: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
         res = self._do_request(
-            "DELETE", url, params=params, headers=headers, cookies=self._cookies, timeout=self._timeout
+            "DELETE", url_path, params=params, headers=headers, cookies=self._cookies, timeout=self._timeout
         )
         _log_request(res)
         return res
 
-    def _autopaged_get(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
-        params = params.copy()
-        items = []
-        while True:
-            res = self._do_request(
-                "GET", url, params=params, headers=headers, cookies=self._cookies, timeout=self._timeout
-            )
-            _log_request(res)
-            params["cursor"] = res.json()["data"].get("nextCursor")
-            items.extend(res.json()["data"]["items"])
-            next_cursor = res.json()["data"].get("nextCursor")
-            if not next_cursor:
-                break
-        res._content = json.dumps({"data": {"items": items}}).encode()
-        return res
-
-    def _get(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None, autopaging: bool = False):
-        if autopaging:
-            return self._autopaged_get(url, params, headers)
-        res = self._do_request("GET", url, params=params, headers=headers, cookies=self._cookies, timeout=self._timeout)
+    def _get(self, url_path: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
+        res = self._do_request(
+            "GET", url_path, params=params, headers=headers, cookies=self._cookies, timeout=self._timeout
+        )
         _log_request(res)
         return res
 
-    def _post(self, url: str, body: Dict[str, Any], params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
+    def _post(self, url_path: str, body: Dict[str, Any], params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
         data = json.dumps(body, default=self._json_dumps_default)
         res = self._do_request(
-            "POST", url, data=data, headers=headers, params=params, cookies=self._cookies, timeout=self._timeout
+            "POST", url_path, data=data, headers=headers, params=params, cookies=self._cookies, timeout=self._timeout
         )
         _log_request(res, body=body)
         return res
 
-    def _put(self, url: str, body: Dict[str, Any] = None, headers: Dict[str, Any] = None):
+    def _put(self, url_path: str, body: Dict[str, Any] = None, headers: Dict[str, Any] = None):
         data = json.dumps(body or {}, default=self._json_dumps_default)
-        res = self._do_request("PUT", url, data=data, headers=headers, cookies=self._cookies, timeout=self._timeout)
+        res = self._do_request(
+            "PUT", url_path, data=data, headers=headers, cookies=self._cookies, timeout=self._timeout
+        )
         _log_request(res, body=body)
         return res
 
-    def _do_request(self, method: str, url: str, **kwargs):
-        if not url.startswith("/"):
+    def _do_request(self, method: str, url_path: str, **kwargs):
+        if not url_path.startswith("/"):
             raise ValueError("URL path must start with '/'")
-        full_url = self._base_url + url
+        full_url = self._base_url + url_path
         # Hack to allow running model hosting requests against local emulator
         if os.getenv("USE_MODEL_HOSTING_EMULATOR") == "1":
             full_url = _model_hosting_emulator_url_converter(full_url)
 
         default_headers = self._headers.copy()
-        if not os.getenv("COGNITE_DISABLE_GZIP", False) and method in ["PUT", "POST"]:
+        if (
+            not os.getenv("COGNITE_DISABLE_GZIP", False)
+            and method in ["PUT", "POST"]
+            and kwargs.get("data") is not None
+        ):
             default_headers["Content-Encoding"] = "gzip"
             kwargs["data"] = gzip.compress(kwargs["data"].encode())
         default_headers.update(kwargs.get("headers") or {})
@@ -172,8 +161,49 @@ class APIClient:
             _raise_API_error(res)
         return res
 
-    def _standard_retrieve(self, resource, url: str, params: Dict = None, headers: Dict = None):
-        return resource._load(self._get(url=url, params=params, headers=headers).json()["data"]["items"][0])
+    def _standard_retrieve(self, resource_class, url_path: str, params: Dict = None, headers: Dict = None):
+        return resource_class._load(
+            self._get(url_path=url_path, params=params, headers=headers).json()["data"]["items"][0]
+        )
+
+    def _standard_list_generator(
+        self, resource_list, url_path: str, limit: int = None, params: Dict = None, headers: Dict = None
+    ):
+        total_items_retrieved = 0
+        current_limit = self._LIMIT
+        next_cursor = None
+        params = params or {}
+        while True:
+            if limit:
+                num_of_remaining_items = limit - total_items_retrieved
+                if num_of_remaining_items < self._LIMIT:
+                    current_limit = num_of_remaining_items
+            params["limit"] = current_limit
+            params["cursor"] = next_cursor
+            res = self._get(url_path=url_path, params=params, headers=headers)
+            current_items = res.json()["data"]["items"]
+            yield resource_list._load(current_items)
+            total_items_retrieved += len(current_items)
+            next_cursor = res.json()["data"].get("nextCursor")
+            if total_items_retrieved == limit or next_cursor is None:
+                break
+
+    def _standard_list(
+        self, resource_list_class, url_path: str, limit: int = None, params: Dict = None, headers: Dict = None
+    ):
+        items = []
+        for resource_list in self._standard_list_generator(
+            resource_list=resource_list_class, url_path=url_path, limit=limit, params=params, headers=headers
+        ):
+            items.extend(resource_list._resources)
+        return resource_list_class(items)
+
+    def _standard_create(
+        self, resource_list_class: Any, url_path: str, items: List[Any], params: Dict = None, headers: Dict = None
+    ):
+        items = {"items": [item.dump(camel_case=True) for item in items]}
+        res = self._post(url_path, body=items, headers=headers, params=params)
+        return resource_list_class._load(res.json()["data"]["items"])
 
     @staticmethod
     def _json_dumps_default(x):

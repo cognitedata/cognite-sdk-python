@@ -5,7 +5,7 @@ from typing import Dict, List
 import pandas as pd
 
 from cognite.client._utils.api_client import APIClient
-from cognite.client._utils.resource_base import CogniteCollectionResponse, CogniteResource, CogniteResponse
+from cognite.client._utils.bases import CogniteResource, CogniteResourceList, CogniteResponse
 
 
 class AssetResponse(CogniteResponse):
@@ -34,7 +34,7 @@ class AssetResponse(CogniteResponse):
         return pd.DataFrame()
 
 
-class AssetListResponse(CogniteCollectionResponse):
+class AssetListResponse(CogniteResourceList):
     """Assets Response Object"""
 
     _RESPONSE_CLASS = AssetResponse

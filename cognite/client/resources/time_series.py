@@ -6,7 +6,7 @@ from urllib.parse import quote
 import pandas as pd
 
 from cognite.client._utils.api_client import APIClient
-from cognite.client._utils.resource_base import CogniteCollectionResponse, CogniteResource, CogniteResponse
+from cognite.client._utils.bases import CogniteResource, CogniteResourceList, CogniteResponse
 
 
 class TimeSeriesResponse(CogniteResponse):
@@ -41,7 +41,7 @@ class TimeSeriesResponse(CogniteResponse):
         return pd.DataFrame()
 
 
-class TimeSeriesListResponse(CogniteCollectionResponse):
+class TimeSeriesListResponse(CogniteResourceList):
     """Time series Response Object"""
 
     _RESPONSE_CLASS = TimeSeriesResponse
@@ -144,7 +144,7 @@ class TimeSeriesClient(APIClient):
             "limit": kwargs.get("limit", self._LIMIT) if not autopaging else self._LIMIT,
         }
 
-        res = self._get(url=url, params=params, autopaging=autopaging)
+        res = self._get(url_path=url, params=params, autopaging=autopaging)
         return TimeSeriesListResponse(res.json())
 
     def post_time_series(self, time_series: List[TimeSeries]) -> None:

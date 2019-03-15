@@ -1,6 +1,6 @@
 import json
 import re
-from typing import Dict
+from typing import Any, Dict, List, Union
 
 
 class CogniteResponse:
@@ -60,36 +60,56 @@ class CogniteResponse:
             return self.internal_representation.get("data").get("previousCursor")
 
 
-class CogniteCollectionResponse(CogniteResponse):
+class CogniteResourceList:
     """Cognite Collection Response class
 
     All collection responses inherit from this class. Collection responses are subscriptable and iterable.
     """
 
-    _RESPONSE_CLASS = None
+    _RESOURCE = None
 
-    def to_json(self):
-        """Returns data as a json object"""
-        return self.internal_representation["data"]["items"]
+    def __init__(self, resources: List[Any]):
+        for resource in resources:
+            if not isinstance(resource, self._RESOURCE):
+                raise TypeError("All resources must be of type {}".format(self._RESOURCE.__name__))
+        self._resources = resources
+
+    def dump(self):
+        return [resource.dump() for resource in self._resources]
+
+    @classmethod
+    def _load(cls, resource_list: Union[List, str]):
+        if isinstance(resource_list, str):
+            return cls._load(json.loads(resource_list))
+        elif isinstance(resource_list, List):
+            resources = [cls._RESOURCE._load(resource) for resource in resource_list]
+            return cls(resources)
 
     def __getitem__(self, index):
-        if isinstance(index, slice):
-            return self.__class__({"data": {"items": self.to_json()[index]}})
-        return self._RESPONSE_CLASS({"data": {"items": [self.to_json()[index]]}})
+        return self._resources[index]
+
+    def __eq__(self, other):
+        if not type(self) == type(other):
+            return False
+        if not len(self) == len(other):
+            return False
+        for i in range(len(self)):
+            if self[i] != other[i]:
+                return False
+        return True
 
     def __len__(self):
-        return len(self.to_json())
+        return len(self._resources)
 
     def __iter__(self):
-        self.counter = 0
-        return self
+        for resource in self._resources:
+            yield resource
 
-    def __next__(self):
-        if self.counter > len(self.to_json()) - 1:
-            raise StopIteration
-        else:
-            self.counter += 1
-            return self._RESPONSE_CLASS({"data": {"items": [self.to_json()[self.counter - 1]]}})
+    def __str__(self):
+        return json.dumps(self.dump(), default=lambda x: x.__dict__, indent=4, sort_keys=True)
+
+    def __repr__(self):
+        return self.__str__()
 
 
 class CogniteResource:

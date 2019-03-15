@@ -7,7 +7,7 @@ from typing import Dict, List, Union
 import pandas as pd
 
 from cognite.client._utils.api_client import APIClient
-from cognite.client._utils.resource_base import CogniteCollectionResponse, CogniteResponse
+from cognite.client._utils.bases import CogniteResourceList, CogniteResponse
 
 
 class FileInfoResponse(CogniteResponse):
@@ -45,7 +45,7 @@ class FileInfoResponse(CogniteResponse):
         return pd.DataFrame.from_dict(file_info, orient="index")
 
 
-class FileListResponse(CogniteCollectionResponse):
+class FileListResponse(CogniteResourceList):
     """File List Response Object"""
 
     _RESPONSE_CLASS = FileInfoResponse
@@ -114,7 +114,7 @@ class FilesClient(APIClient):
             "metadata": kwargs.get("metadata", None),
             "assetIds": kwargs.get("asset_ids", None),
         }
-        res_storage = self._post(url=url, body=body, headers=headers, params=params)
+        res_storage = self._post(url_path=url, body=body, headers=headers, params=params)
         result = res_storage.json()["data"]
         if file_path:
             if not content_type:
@@ -152,7 +152,7 @@ class FilesClient(APIClient):
 
         """
         url = "/files/{}/downloadlink".format(id)
-        res = self._get(url=url)
+        res = self._get(url_path=url)
         if get_contents:
             dl_link = res.json()["data"]
             res = self._request_session.get(dl_link)
@@ -229,7 +229,7 @@ class FilesClient(APIClient):
             "cursor": kwargs.get("cursor"),
         }
 
-        res = self._get(url=url, params=params, autopaging=autopaging)
+        res = self._get(url_path=url, params=params, autopaging=autopaging)
         return FileListResponse(res.json())
 
     def get_file_info(self, id) -> FileInfoResponse:

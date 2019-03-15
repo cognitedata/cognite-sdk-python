@@ -6,7 +6,7 @@ from typing import List
 import pandas as pd
 
 from cognite.client._utils.api_client import APIClient
-from cognite.client._utils.resource_base import CogniteCollectionResponse, CogniteResource, CogniteResponse
+from cognite.client._utils.bases import CogniteResource, CogniteResourceList, CogniteResponse
 
 
 class EventResponse(CogniteResponse):
@@ -38,7 +38,7 @@ class EventResponse(CogniteResponse):
         return df
 
 
-class EventListResponse(CogniteCollectionResponse):
+class EventListResponse(CogniteResourceList):
     """Event List Response Object."""
 
     _RESPONSE_CLASS = EventResponse
