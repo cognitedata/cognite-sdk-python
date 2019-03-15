@@ -1,16 +1,16 @@
-import functools
 import gzip
 import json
 import logging
 import os
 import re
-from typing import Any, Dict
+from typing import Any, Dict, Type
 
 import numpy
 from requests import Response, Session
 from requests.adapters import HTTPAdapter
 from urllib3 import Retry
 
+from cognite.client._utils.resource_base import CogniteResource
 from cognite.client.exceptions import APIError
 
 log = logging.getLogger("cognite-sdk")
@@ -171,6 +171,9 @@ class APIClient:
         if not _status_is_valid(res.status_code):
             _raise_API_error(res)
         return res
+
+    def _standard_retrieve(self, resource, url: str, params: Dict = None, headers: Dict = None):
+        return resource._load(self._get(url=url, params=params, headers=headers).json()["data"]["items"][0])
 
     @staticmethod
     def _json_dumps_default(x):

@@ -7,47 +7,46 @@ import pytest
 
 from cognite.client import APIError
 from cognite.client._utils.api_client import APIClient, _model_hosting_emulator_url_converter
+from cognite.client._utils.resource_base import CogniteResource
 
 BASE_URL = "http://localtest.com/api/1.0/projects/test_proj"
 URL_PATH = "/someurl"
 
 RESPONSE = {"any": "ok"}
 
-
-@pytest.fixture
-def mock_all_requests_ok(rsps):
-    rsps.assert_all_requests_are_fired = False
-    for method in [rsps.GET, rsps.PUT, rsps.POST, rsps.DELETE]:
-        rsps.add(method, BASE_URL + URL_PATH, status=200, json=RESPONSE)
-
-
-@pytest.fixture
-def mock_all_requests_fail(rsps):
-    rsps.assert_all_requests_are_fired = False
-    for method in [rsps.GET, rsps.PUT, rsps.POST, rsps.DELETE]:
-        rsps.add(method, BASE_URL + URL_PATH, status=400, json={"error": "Client error"})
-        rsps.add(method, BASE_URL + URL_PATH, status=500, body="Server error")
-        rsps.add(method, BASE_URL + URL_PATH, status=500, json={"error": "Server error"})
-        rsps.add(method, BASE_URL + URL_PATH, status=400, json={"error": {"code": 400, "message": "Client error"}})
+API_CLIENT = APIClient(
+    project="test_proj",
+    base_url=BASE_URL,
+    num_of_workers=1,
+    cookies={"a-cookie": "a-cookie-val"},
+    headers={},
+    timeout=60,
+)
 
 
 class TestBasicRequests:
-    api_client = APIClient(
-        project="test_proj",
-        base_url=BASE_URL,
-        num_of_workers=1,
-        cookies={"a-cookie": "a-cookie-val"},
-        headers={},
-        timeout=60,
-    )
+    @pytest.fixture
+    def mock_all_requests_ok(self, rsps):
+        rsps.assert_all_requests_are_fired = False
+        for method in [rsps.GET, rsps.PUT, rsps.POST, rsps.DELETE]:
+            rsps.add(method, BASE_URL + URL_PATH, status=200, json=RESPONSE)
+
+    @pytest.fixture
+    def mock_all_requests_fail(self, rsps):
+        rsps.assert_all_requests_are_fired = False
+        for method in [rsps.GET, rsps.PUT, rsps.POST, rsps.DELETE]:
+            rsps.add(method, BASE_URL + URL_PATH, status=400, json={"error": "Client error"})
+            rsps.add(method, BASE_URL + URL_PATH, status=500, body="Server error")
+            rsps.add(method, BASE_URL + URL_PATH, status=500, json={"error": "Server error"})
+            rsps.add(method, BASE_URL + URL_PATH, status=400, json={"error": {"code": 400, "message": "Client error"}})
 
     RequestCase = namedtuple("RequestCase", ["name", "method", "kwargs"])
 
     request_cases = [
-        RequestCase(name="post", method=api_client._post, kwargs={"url": URL_PATH, "body": {"any": "ok"}}),
-        RequestCase(name="get", method=api_client._get, kwargs={"url": URL_PATH}),
-        RequestCase(name="delete", method=api_client._delete, kwargs={"url": URL_PATH}),
-        RequestCase(name="put", method=api_client._put, kwargs={"url": URL_PATH, "body": {"any": "ok"}}),
+        RequestCase(name="post", method=API_CLIENT._post, kwargs={"url": URL_PATH, "body": {"any": "ok"}}),
+        RequestCase(name="get", method=API_CLIENT._get, kwargs={"url": URL_PATH}),
+        RequestCase(name="delete", method=API_CLIENT._delete, kwargs={"url": URL_PATH}),
+        RequestCase(name="put", method=API_CLIENT._put, kwargs={"url": URL_PATH, "body": {"any": "ok"}}),
     ]
 
     @pytest.mark.usefixtures("mock_all_requests_ok")
@@ -85,7 +84,7 @@ class TestBasicRequests:
 
     @pytest.mark.usefixtures("mock_requests_auto_paging")
     def test_get_request_with_autopaging(self):
-        res = self.api_client._get(URL_PATH, params={}, autopaging=True)
+        res = API_CLIENT._get(URL_PATH, params={}, autopaging=True)
         assert {"data": {"items": [1, 2, 3, 4, 5, 6, 7, 8, 9]}} == res.json()
 
     @pytest.mark.usefixtures("disable_gzip")
@@ -93,29 +92,60 @@ class TestBasicRequests:
         def check_gzip_disabled(request):
             assert "Content-Encoding" not in request.headers
             assert {"any": "OK"} == json.loads(request.body)
-            return (200, {}, json.dumps(RESPONSE))
+            return 200, {}, json.dumps(RESPONSE)
 
         for method in [rsps.PUT, rsps.POST]:
             rsps.add_callback(method, BASE_URL + URL_PATH, check_gzip_disabled)
 
-        self.api_client._post(URL_PATH, {"any": "OK"}, headers={})
-        self.api_client._put(URL_PATH, {"any": "OK"}, headers={})
+        API_CLIENT._post(URL_PATH, {"any": "OK"}, headers={})
+        API_CLIENT._put(URL_PATH, {"any": "OK"}, headers={})
 
     def test_request_gzip_enabled(self, rsps):
         def check_gzip_enabled(request):
             assert "Content-Encoding" in request.headers
             assert {"any": "OK"} == json.loads(gzip.decompress(request.body))
-            return (200, {}, json.dumps(RESPONSE))
+            return 200, {}, json.dumps(RESPONSE)
 
         for method in [rsps.PUT, rsps.POST]:
             rsps.add_callback(method, BASE_URL + URL_PATH, check_gzip_enabled)
 
-        self.api_client._post(URL_PATH, {"any": "OK"}, headers={})
-        self.api_client._put(URL_PATH, {"any": "OK"}, headers={})
+        API_CLIENT._post(URL_PATH, {"any": "OK"}, headers={})
+        API_CLIENT._put(URL_PATH, {"any": "OK"}, headers={})
 
 
 class TestStandardMethods:
-    pass
+    class SomeResource(CogniteResource):
+        def __init__(self, x=None, y=None):
+            self.x = x
+            self.y = y
+
+    @pytest.fixture
+    def mock_get_for_retrieve_ok(self, rsps):
+        rsps.add(rsps.GET, BASE_URL + URL_PATH, status=200, json={"data": {"items": [{"x": 1, "y": 2}]}})
+
+    @pytest.mark.usefixtures("mock_get_for_retrieve_ok")
+    def test_standard_retrieve_OK(self):
+        assert self.SomeResource(1, 2) == API_CLIENT._standard_retrieve(resource=self.SomeResource, url=URL_PATH)
+
+    @pytest.fixture
+    def mock_get_for_retrieve_fail(self, rsps):
+        rsps.add(rsps.GET, BASE_URL + URL_PATH, status=400, json={"error": {"message": "Client Error"}})
+
+    @pytest.mark.usefixtures("mock_get_for_retrieve_fail")
+    def test_standard_retrieve_fail(self):
+        with pytest.raises(APIError, match="Client Error") as e:
+            API_CLIENT._standard_retrieve(resource=self.SomeResource, url=URL_PATH)
+        assert "Client Error" == e.value.message
+        assert 400 == e.value.code
+
+    @pytest.fixture
+    def mock_get_for_retrieve_unknown_attribute(self, rsps):
+        rsps.add(rsps.GET, BASE_URL + URL_PATH, status=200, json={"data": {"items": [{"x": 1, "y": 2, "z": 3}]}})
+
+    @pytest.mark.usefixtures("mock_get_for_retrieve_unknown_attribute")
+    def test_standard_retrieve_unknown_attribute(self):
+        with pytest.raises(AttributeError):
+            API_CLIENT._standard_retrieve(resource=self.SomeResource, url=URL_PATH)
 
 
 class TestMiscellaneous:

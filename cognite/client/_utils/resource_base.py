@@ -1,4 +1,6 @@
 import json
+import re
+from typing import Dict
 
 
 class CogniteResponse:
@@ -96,17 +98,41 @@ class CogniteResource:
         components = snake_case_string.split("_")
         return components[0] + "".join(x.title() for x in components[1:])
 
-    def camel_case_dict(self):
-        new_d = {}
-        for key in self.__dict__:
-            new_d[self._to_camel_case(key)] = self.__dict__[key]
-        return new_d
+    @staticmethod
+    def _to_snake_case(camel_case_string: str):
+        s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", camel_case_string)
+        return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
 
-    def to_json(self):
-        return json.loads(json.dumps(self, default=lambda x: x.__dict__))
+    def dump(self, camel_case: bool = False):
+        dumped = {key: value for key, value in self.__dict__.items() if value is not None}
+        if camel_case:
+            dumped = {self._to_camel_case(key): value for key, value in dumped.items()}
+        return dumped
+
+    @classmethod
+    def _load(cls, resource: [Dict, str]):
+        if isinstance(resource, str):
+            return cls._load(json.loads(resource))
+        elif isinstance(resource, Dict):
+            instance = cls()
+            for key, value in resource.items():
+                snake_case_key = cls._to_snake_case(key)
+                if not hasattr(instance, snake_case_key):
+                    raise AttributeError(
+                        "Attribute '{}' does not exist on '{}'".format(snake_case_key, instance.__class__.__name__)
+                    )
+                setattr(instance, snake_case_key, value)
+            return instance
+        raise TypeError("Resource must be json str or Dict")
+
+    def to_pandas(self):
+        raise NotImplementedError
 
     def __eq__(self, other):
-        return type(self) == type(other) and self.to_json() == other.to_json()
+        return type(self) == type(other) and self.dump() == other.dump()
 
     def __str__(self):
-        return json.dumps(self.__dict__, default=lambda x: x.__dict__, indent=4, sort_keys=True)
+        return json.dumps(self.dump(), default=lambda x: x.__dict__, indent=4, sort_keys=True)
+
+    def __repr__(self):
+        return self.__str__()
