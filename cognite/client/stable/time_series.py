@@ -45,20 +45,21 @@ class TimeSeriesListResponse(CogniteCollectionResponse):
 
     _RESPONSE_CLASS = TimeSeriesResponse
 
-    def to_pandas(self, include_metadata: bool = False):
+    def to_pandas(self, include_metadata: bool = True):
         """Returns data as a pandas dataframe
 
         Args:
             include_metadata (bool): Whether or not to include metadata fields in the resulting dataframe
         """
         items = deepcopy(self.internal_representation["data"]["items"])
+
         if items and items[0].get("metadata") is None:
             return pd.DataFrame(items)
         for d in items:
             if d.get("metadata"):
                 metadata = d.pop("metadata")
                 if include_metadata:
-                    d["metadata"] = metadata
+                    d.update(metadata)
         return pd.DataFrame(items)
 
 
