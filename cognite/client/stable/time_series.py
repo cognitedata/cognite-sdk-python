@@ -52,7 +52,6 @@ class TimeSeriesListResponse(CogniteCollectionResponse):
             include_metadata (bool): Whether or not to include metadata fields in the resulting dataframe
         """
         items = deepcopy(self.internal_representation["data"]["items"])
-
         if items and items[0].get("metadata") is None:
             return pd.DataFrame(items)
         for d in items:
