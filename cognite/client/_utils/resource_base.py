@@ -15,7 +15,6 @@ class CogniteResponse:
         return type(other) == type(self) and other.dump() == self.dump()
 
     def dump(self, camel_case: bool = False):
-        """Returns data as a json object"""
         dumped = {}
         for key, value in self.__dict__.items():
             if value is not None and key is not "_api_response":
@@ -36,7 +35,10 @@ class CogniteResponse:
                     raise AttributeError("Attribute '{}' does not exist on '{}'".format(snake_case_key, cls.__name__))
                 setattr(instance, snake_case_key, value)
             return instance
-        raise TypeError("API response must be json str or Dict")
+        raise TypeError("api_response must be json str or Dict")
+
+    def _load_response(self):
+        raise NotImplementedError
 
     def to_pandas(self):
         raise NotImplementedError

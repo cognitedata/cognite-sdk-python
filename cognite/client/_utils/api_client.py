@@ -161,17 +161,30 @@ class APIClient:
             _raise_API_error(res)
         return res
 
-    def _standard_retrieve(self, cls, url_path: str, id: Union[List[int], int], headers: Dict = None):
-        if isinstance(id, int):
+    def _standard_retrieve(self, cls, resource_path: str, id: int, params: Dict = None, headers: Dict = None):
+        return cls._load(
+            self._get(url_path=resource_path + "/{}".format(id), params=params, headers=headers).json()["data"][
+                "items"
+            ][0]
+        )
+
+    def _standard_retrieve_multiple(self, cls, resource_path: str, ids: Union[List[int], int], headers: Dict = None):
+        if isinstance(ids, int):
             return cls._RESOURCE._load(
-                self._post(url_path=url_path, body={"items": [id]}, headers=headers).json()["data"]["items"][0]
+                self._post(url_path=resource_path + "/byids", body={"items": [ids]}, headers=headers).json()["data"][
+                    "items"
+                ][0]
             )
-        elif isinstance(id, list):
-            return cls._load(self._post(url_path=url_path, body={"items": id}, headers=headers).json()["data"]["items"])
-        raise TypeError("id must be int or list of int")
+        elif isinstance(ids, list):
+            return cls._load(
+                self._post(url_path=resource_path + "/byids", body={"items": ids}, headers=headers).json()["data"][
+                    "items"
+                ]
+            )
+        raise TypeError("ids must be int or list of int")
 
     def _standard_list_generator(
-        self, cls, url_path: str, limit: int = None, chunk: int = None, params: Dict = None, headers: Dict = None
+        self, cls, resource_path: str, limit: int = None, chunk: int = None, params: Dict = None, headers: Dict = None
     ):
         total_items_retrieved = 0
         current_limit = self._LIMIT
@@ -187,7 +200,7 @@ class APIClient:
                     current_limit = num_of_remaining_items
             params["limit"] = current_limit
             params["cursor"] = next_cursor
-            res = self._get(url_path=url_path, params=params, headers=headers)
+            res = self._get(url_path=resource_path, params=params, headers=headers)
             current_items = res.json()["data"]["items"]
             if chunk:
                 yield cls._load(current_items)
@@ -199,17 +212,19 @@ class APIClient:
             if total_items_retrieved == limit or next_cursor is None:
                 break
 
-    def _standard_list(self, cls, url_path: str, limit: int = None, params: Dict = None, headers: Dict = None):
+    def _standard_list(self, cls, resource_path: str, limit: int = None, params: Dict = None, headers: Dict = None):
         items = []
         for resource_list in self._standard_list_generator(
-            cls=cls, url_path=url_path, limit=limit, chunk=self._LIMIT, params=params, headers=headers
+            cls=cls, resource_path=resource_path, limit=limit, chunk=self._LIMIT, params=params, headers=headers
         ):
             items.extend(resource_list._resources)
         return cls(items)
 
-    def _standard_create(self, cls: Any, url_path: str, items: List[Any], params: Dict = None, headers: Dict = None):
+    def _standard_create(
+        self, cls: Any, resource_path: str, items: List[Any], params: Dict = None, headers: Dict = None
+    ):
         items = {"items": [item.dump(camel_case=True) for item in items]}
-        res = self._post(url_path, body=items, headers=headers, params=params)
+        res = self._post(resource_path, body=items, headers=headers, params=params)
         return cls._load(res.json()["data"]["items"])
 
     @staticmethod
