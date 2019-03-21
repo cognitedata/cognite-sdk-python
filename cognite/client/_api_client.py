@@ -142,10 +142,8 @@ class APIClient:
         params = params.copy()
         items = []
         while True:
-            res = self._request_session.get(
-                url, params=params, headers=headers, cookies=self._cookies, timeout=self._timeout
-            )
-            _log_request(res)
+            url = re.sub("{}(/.*)".format(self._base_url), r"\1", url)
+            res = self._get(url, params=params, headers=headers)
             params["cursor"] = res.json()["data"].get("nextCursor")
             items.extend(res.json()["data"]["items"])
             next_cursor = res.json()["data"].get("nextCursor")
