@@ -63,6 +63,8 @@ class AssetList(CogniteResourceList):
 
 
 class AssetsApi(APIClient):
+    RESOURCE_PATH = "/assets"
+
     def get(self, id: Union[int, List[int]]) -> Union[Asset, AssetList]:
         """Get assets by id
 
@@ -71,8 +73,8 @@ class AssetsApi(APIClient):
         Returns:
             Union[Asset, AssetList]: Requested asset(s)
         """
-        url_path = "/assets/byids"
-        return self._standard_retrieve(AssetList, url_path, id)
+
+        return self._retrieve(AssetList, self.RESOURCE_PATH, id)
 
     # GenMethod: getAssets -> AssetList
     def list(

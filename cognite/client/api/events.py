@@ -178,7 +178,7 @@ class EventsApi(APIClient):
         url = "/events"
         items = [event.camel_case_dict() for event in events]
         body = {"items": items}
-        res = self._post(url, body=body)
+        res = self._post(url, json=body)
         return EventListResponse(res.json())
 
     def delete_events(self, event_ids: List[int]) -> None:
@@ -198,7 +198,7 @@ class EventsApi(APIClient):
         """
         url = "/events/delete"
         body = {"items": event_ids}
-        self._post(url, body=body)
+        self._post(url, json=body)
 
     def search_for_events(
         self,

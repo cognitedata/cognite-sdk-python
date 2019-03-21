@@ -182,19 +182,19 @@ class CogniteClient:
         """
         return self._api_client._get(url, params=params, headers=headers)
 
-    def post(self, url: str, body: Dict[str, Any], params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
+    def post(self, url: str, json: Dict[str, Any], params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
         """Perform a POST request to a path in the API.
 
         Comes in handy if the endpoint you want to reach is not currently supported by the SDK.
         """
-        return self._api_client._post(url, body=body, params=params, headers=headers)
+        return self._api_client._post(url, json=json, params=params, headers=headers)
 
-    def put(self, url: str, body: Dict[str, Any] = None, headers: Dict[str, Any] = None):
+    def put(self, url: str, json: Dict[str, Any] = None, headers: Dict[str, Any] = None):
         """Perform a PUT request to a path in the API.
 
         Comes in handy if the endpoint you want to reach is not currently supported by the SDK.
         """
-        return self._api_client._put(url, body=body, headers=headers)
+        return self._api_client._put(url, json=json, headers=headers)
 
     def delete(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
         """Perform a DELETE request to a path in the API.

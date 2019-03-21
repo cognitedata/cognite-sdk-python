@@ -43,10 +43,10 @@ class TestBasicRequests:
     RequestCase = namedtuple("RequestCase", ["name", "method", "kwargs"])
 
     request_cases = [
-        RequestCase(name="post", method=API_CLIENT._post, kwargs={"url_path": URL_PATH, "body": {"any": "ok"}}),
+        RequestCase(name="post", method=API_CLIENT._post, kwargs={"url_path": URL_PATH, "json": {"any": "ok"}}),
         RequestCase(name="get", method=API_CLIENT._get, kwargs={"url_path": URL_PATH}),
         RequestCase(name="delete", method=API_CLIENT._delete, kwargs={"url_path": URL_PATH}),
-        RequestCase(name="put", method=API_CLIENT._put, kwargs={"url_path": URL_PATH, "body": {"any": "ok"}}),
+        RequestCase(name="put", method=API_CLIENT._put, kwargs={"url_path": URL_PATH, "json": {"any": "ok"}}),
     ]
 
     @pytest.mark.usefixtures("mock_all_requests_ok")
@@ -118,12 +118,12 @@ class TestStandardMethods:
             rsps.GET, BASE_URL + URL_PATH + "/1", status=200, json={"data": {"items": [{"x": 1, "y": 2}, {"x": 1}]}}
         )
 
-        assert SomeResource(1, 2) == API_CLIENT._standard_retrieve(cls=SomeResource, resource_path=URL_PATH, id=1)
+        assert SomeResource(1, 2) == API_CLIENT._retrieve(cls=SomeResource, resource_path=URL_PATH, id=1)
 
     def test_standard_retrieve_fail(self, rsps):
         rsps.add(rsps.GET, BASE_URL + URL_PATH + "/1", status=400, json={"error": {"message": "Client Error"}})
         with pytest.raises(APIError, match="Client Error") as e:
-            API_CLIENT._standard_retrieve(cls=SomeResource, resource_path=URL_PATH, id=1)
+            API_CLIENT._retrieve(cls=SomeResource, resource_path=URL_PATH, id=1)
         assert "Client Error" == e.value.message
         assert 400 == e.value.code
 
@@ -134,7 +134,7 @@ class TestStandardMethods:
             status=200,
             json={"data": {"items": [{"x": 1, "y": 2}, {"x": 1}]}},
         )
-        assert SomeResourceList([SomeResource(1, 2), SomeResource(1)]) == API_CLIENT._standard_retrieve_multiple(
+        assert SomeResourceList([SomeResource(1, 2), SomeResource(1)]) == API_CLIENT._retrieve_multiple(
             cls=SomeResourceList, resource_path=URL_PATH, ids=[1, 2]
         )
 
@@ -145,27 +145,25 @@ class TestStandardMethods:
             status=200,
             json={"data": {"items": [{"x": 1, "y": 2}, {"x": 1}]}},
         )
-        assert SomeResource(1, 2) == API_CLIENT._standard_retrieve_multiple(
-            cls=SomeResourceList, resource_path=URL_PATH, ids=1
-        )
+        assert SomeResource(1, 2) == API_CLIENT._retrieve_multiple(cls=SomeResourceList, resource_path=URL_PATH, ids=1)
 
     def test_standard_retrieve_multiple_fail(self, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH + "/byids", status=400, json={"error": {"message": "Client Error"}})
         with pytest.raises(APIError, match="Client Error") as e:
-            API_CLIENT._standard_retrieve_multiple(cls=SomeResourceList, resource_path=URL_PATH, ids=[1, 2])
+            API_CLIENT._retrieve_multiple(cls=SomeResourceList, resource_path=URL_PATH, ids=[1, 2])
         assert "Client Error" == e.value.message
         assert 400 == e.value.code
 
     def test_standard_list_ok(self, rsps):
         rsps.add(rsps.GET, BASE_URL + URL_PATH, status=200, json={"data": {"items": [{"x": 1, "y": 2}, {"x": 1}]}})
-        assert SomeResourceList([SomeResource(1, 2), SomeResource(1)]) == API_CLIENT._standard_list(
+        assert SomeResourceList([SomeResource(1, 2), SomeResource(1)]) == API_CLIENT._list(
             cls=SomeResourceList, resource_path=URL_PATH
         )
 
     def test_standard_list_fail(self, rsps):
         rsps.add(rsps.GET, BASE_URL + URL_PATH, status=400, json={"error": {"message": "Client Error"}})
         with pytest.raises(APIError, match="Client Error") as e:
-            API_CLIENT._standard_list(cls=SomeResourceList, resource_path=URL_PATH)
+            API_CLIENT._list(cls=SomeResourceList, resource_path=URL_PATH)
         assert 400 == e.value.code
         assert "Client Error" == e.value.message
 
@@ -191,7 +189,7 @@ class TestStandardMethods:
     @pytest.mark.usefixtures("mock_get_for_autopaging")
     def test_standard_list_generator(self):
         total_resources = 0
-        for resource in API_CLIENT._standard_list_generator(cls=SomeResourceList, resource_path=URL_PATH, limit=10000):
+        for resource in API_CLIENT._list_generator(cls=SomeResourceList, resource_path=URL_PATH, limit=10000):
             assert isinstance(resource, SomeResource)
             total_resources += 1
         assert 10000 == total_resources
@@ -199,7 +197,7 @@ class TestStandardMethods:
     @pytest.mark.usefixtures("mock_get_for_autopaging")
     def test_standard_list_generator(self):
         total_resources = 0
-        for resource_chunk in API_CLIENT._standard_list_generator(
+        for resource_chunk in API_CLIENT._list_generator(
             cls=SomeResourceList, resource_path=URL_PATH, limit=10000, chunk=1000
         ):
             assert isinstance(resource_chunk, SomeResourceList)
@@ -209,17 +207,17 @@ class TestStandardMethods:
 
     @pytest.mark.usefixtures("mock_get_for_autopaging")
     def test_standard_list_autopaging(self):
-        res = API_CLIENT._standard_list(cls=SomeResourceList, resource_path=URL_PATH)
+        res = API_CLIENT._list(cls=SomeResourceList, resource_path=URL_PATH)
         assert self.NUMBER_OF_ITEMS_FOR_AUTOPAGING == len(res)
 
     @pytest.mark.usefixtures("mock_get_for_autopaging")
     def test_standard_list_autopaging_with_limit(self):
-        res = API_CLIENT._standard_list(cls=SomeResourceList, resource_path=URL_PATH, limit=5333)
+        res = API_CLIENT._list(cls=SomeResourceList, resource_path=URL_PATH, limit=5333)
         assert 5333 == len(res)
 
     def test_standard_create_ok(self, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH, status=200, json={"data": {"items": [{"x": 1, "y": 2}, {"x": 1}]}})
-        res = API_CLIENT._standard_create(
+        res = API_CLIENT._create(
             cls=SomeResourceList, resource_path=URL_PATH, items=[SomeResource(1, 1), SomeResource(1)]
         )
         assert SomeResource(1, 2) == res[0]
@@ -228,8 +226,35 @@ class TestStandardMethods:
     def test_standard_create_fail(self, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH, status=400, json={"error": {"message": "Client Error"}})
         with pytest.raises(APIError, match="Client Error") as e:
-            API_CLIENT._standard_create(
+            API_CLIENT._create(
                 cls=SomeResourceList, resource_path=URL_PATH, items=[SomeResource(1, 1), SomeResource(1)]
+            )
+        assert 400 == e.value.code
+        assert "Client Error" == e.value.message
+
+    def test_standard_delete_multiple_ok(self, rsps):
+        rsps.add(
+            rsps.POST,
+            BASE_URL + URL_PATH + "/delete",
+            status=200,
+            json={"data": {"items": [{"x": 1, "y": 2}, {"x": 1}]}},
+        )
+        res = API_CLIENT._delete_multiple(cls=SomeResourceList, resource_path=URL_PATH, ids=[1, 2])
+        assert isinstance(res, SomeResourceList)
+        assert SomeResource(1, 2) == res[0]
+        assert SomeResource(1) == res[1]
+
+    def test_standard_delete_multiple_ok__single_id(self, rsps):
+        rsps.add(rsps.POST, BASE_URL + URL_PATH + "/delete", status=200, json={"data": {"items": [{"x": 1, "y": 2}]}})
+        res = API_CLIENT._delete_multiple(cls=SomeResourceList, resource_path=URL_PATH, ids=1)
+        assert isinstance(res, SomeResource)
+        assert SomeResource(1, 2) == res
+
+    def test_standard_delete_multiple_fail(self, rsps):
+        rsps.add(rsps.POST, BASE_URL + URL_PATH + "/delete", status=400, json={"error": {"message": "Client Error"}})
+        with pytest.raises(APIError, match="Client Error") as e:
+            API_CLIENT._delete_multiple(
+                cls=SomeResourceList, resource_path=URL_PATH, ids=[SomeResource(1, 1), SomeResource(1)]
             )
         assert 400 == e.value.code
         assert "Client Error" == e.value.message

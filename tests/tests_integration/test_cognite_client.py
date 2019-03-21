@@ -9,7 +9,7 @@ class TestCogniteClient:
         assert res.status_code == 200
 
     def test_post(self, client):
-        res = client.post("/login", body={"apiKey": client._CogniteClient__api_key})
+        res = client.post("/login", json={"apiKey": client._CogniteClient__api_key})
         assert res.status_code == 200
 
     def test_put(self, client):

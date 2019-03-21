@@ -425,7 +425,7 @@ class DatapointsApi(APIClient):
                     for ts_with_data in bin
                 ]
             }
-            self._post(url, body=body)
+            self._post(url, json=body)
 
     def post_datapoints(self, name, datapoints: List[Datapoint]) -> None:
         """Insert a list of datapoints.
@@ -455,7 +455,7 @@ class DatapointsApi(APIClient):
         i = 0
         while i < len(datapoints):
             body = {"items": [dp.__dict__ for dp in datapoints[i : i + ul_dps_limit]]}
-            self._post(url, body=body)
+            self._post(url, json=body)
             i += ul_dps_limit
 
     def get_latest(self, name, before=None) -> LatestDatapointResponse:
@@ -542,7 +542,7 @@ class DatapointsApi(APIClient):
         datapoints_responses = []
         has_incomplete_requests = True
         while has_incomplete_requests:
-            res = self._post(url_path=url, body=body).json()["data"]["items"]
+            res = self._post(url_path=url, json=body).json()["data"]["items"]
             datapoints_responses.append(res)
             has_incomplete_requests = False
             for i, dpr in enumerate(res):
@@ -715,7 +715,7 @@ class DatapointsApi(APIClient):
         headers = {"accept": "text/csv"}
         dataframes = []
         while (not dataframes or dataframes[-1].shape[0] == per_tag_limit) and body["end"] > body["start"]:
-            res = self._post(url_path=url, body=body, headers=headers)
+            res = self._post(url_path=url, json=body, headers=headers)
             dataframes.append(
                 pd.read_csv(io.StringIO(res.content.decode(res.encoding if res.encoding else res.apparent_encoding)))
             )
@@ -768,7 +768,7 @@ class DatapointsApi(APIClient):
         }
 
         headers = {"accept": "text/csv"}
-        res = self._post(url_path=url, body=body, headers=headers)
+        res = self._post(url_path=url, json=body, headers=headers)
         df = pd.read_csv(io.StringIO(res.content.decode(res.encoding if res.encoding else res.apparent_encoding)))
 
         return df

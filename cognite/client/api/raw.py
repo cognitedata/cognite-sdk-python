@@ -75,7 +75,7 @@ class RawApi(APIClient):
         """
         url = "/raw/create"
         body = {"items": [{"dbName": "{}".format(database_name)} for database_name in database_names]}
-        res = self._post(url_path=url, body=body, headers={"content-type": "*/*"})
+        res = self._post(url_path=url, json=body, headers={"content-type": "*/*"})
         return RawResponse(res.json())
 
     def delete_databases(self, database_names: list, recursive: bool = False) -> None:
@@ -91,7 +91,7 @@ class RawApi(APIClient):
         url = "/raw/delete"
         body = {"items": [{"dbName": "{}".format(database_name)} for database_name in database_names]}
         params = {"recursive": recursive}
-        self._post(url_path=url, body=body, params=params, headers={"content-type": "*/*"})
+        self._post(url_path=url, json=body, params=params, headers={"content-type": "*/*"})
 
     def get_tables(self, database_name: str = None, limit: int = None, cursor: str = None) -> RawResponse:
         """Returns a RawObject containing a list of tables in a raw database.
@@ -131,7 +131,7 @@ class RawApi(APIClient):
         """
         url = "/raw/{}/create".format(database_name)
         body = {"items": [{"tableName": "{}".format(table_name)} for table_name in table_names]}
-        res = self._post(url_path=url, body=body, headers={"content-type": "*/*"})
+        res = self._post(url_path=url, json=body, headers={"content-type": "*/*"})
         return RawResponse(res.json())
 
     def delete_tables(self, database_name: str = None, table_names: list = None) -> None:
@@ -148,7 +148,7 @@ class RawApi(APIClient):
         """
         url = "/raw/{}/delete".format(database_name)
         body = {"items": [{"tableName": "{}".format(table_name)} for table_name in table_names]}
-        self._post(url_path=url, body=body, headers={"content-type": "*/*"})
+        self._post(url_path=url, json=body, headers={"content-type": "*/*"})
 
     def get_rows(
         self, database_name: str = None, table_name: str = None, limit: int = None, cursor: str = None
@@ -205,7 +205,7 @@ class RawApi(APIClient):
             body = {
                 "items": [{"key": "{}".format(row.key), "columns": row.columns} for row in rows[i : i + ul_row_limit]]
             }
-            self._post(url_path=url, body=body, headers={"content-type": "*/*"}, params=params)
+            self._post(url_path=url, json=body, headers={"content-type": "*/*"}, params=params)
             i += ul_row_limit
 
     def delete_rows(self, database_name: str = None, table_name: str = None, rows: List[RawRow] = None) -> None:
@@ -224,7 +224,7 @@ class RawApi(APIClient):
         """
         url = "/raw/{}/{}/delete".format(database_name, table_name)
         body = {"items": [{"key": "{}".format(row.key), "columns": row.columns} for row in rows]}
-        self._post(url_path=url, body=body, headers={"content-type": "*/*"})
+        self._post(url_path=url, json=body, headers={"content-type": "*/*"})
 
     def get_row(self, database_name: str = None, table_name: str = None, row_key: str = None) -> RawResponse:
         """Returns a RawObject containing a list of rows.

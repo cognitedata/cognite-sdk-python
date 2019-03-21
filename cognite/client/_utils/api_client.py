@@ -1,5 +1,5 @@
 import gzip
-import json
+import json as _json
 import logging
 import os
 import re
@@ -121,20 +121,20 @@ class APIClient:
         _log_request(res)
         return res
 
-    def _post(self, url_path: str, body: Dict[str, Any], params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
-        data = json.dumps(body, default=self._json_dumps_default)
+    def _post(self, url_path: str, json: Dict[str, Any], params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
+        data = _json.dumps(json, default=self._json_dumps_default)
         res = self._do_request(
             "POST", url_path, data=data, headers=headers, params=params, cookies=self._cookies, timeout=self._timeout
         )
-        _log_request(res, body=body)
+        _log_request(res, body=json)
         return res
 
-    def _put(self, url_path: str, body: Dict[str, Any] = None, headers: Dict[str, Any] = None):
-        data = json.dumps(body or {}, default=self._json_dumps_default)
+    def _put(self, url_path: str, json: Dict[str, Any] = None, headers: Dict[str, Any] = None):
+        data = _json.dumps(json or {}, default=self._json_dumps_default)
         res = self._do_request(
             "PUT", url_path, data=data, headers=headers, cookies=self._cookies, timeout=self._timeout
         )
-        _log_request(res, body=body)
+        _log_request(res, body=json)
         return res
 
     def _do_request(self, method: str, url_path: str, **kwargs):
@@ -161,29 +161,29 @@ class APIClient:
             _raise_API_error(res)
         return res
 
-    def _standard_retrieve(self, cls, resource_path: str, id: int, params: Dict = None, headers: Dict = None):
+    def _retrieve(self, cls, resource_path: str, id: int, params: Dict = None, headers: Dict = None):
         return cls._load(
             self._get(url_path=resource_path + "/{}".format(id), params=params, headers=headers).json()["data"][
                 "items"
             ][0]
         )
 
-    def _standard_retrieve_multiple(self, cls, resource_path: str, ids: Union[List[int], int], headers: Dict = None):
+    def _retrieve_multiple(self, cls, resource_path: str, ids: Union[List[int], int], headers: Dict = None):
         if isinstance(ids, int):
             return cls._RESOURCE._load(
-                self._post(url_path=resource_path + "/byids", body={"items": [ids]}, headers=headers).json()["data"][
+                self._post(url_path=resource_path + "/byids", json={"items": [ids]}, headers=headers).json()["data"][
                     "items"
                 ][0]
             )
         elif isinstance(ids, list):
             return cls._load(
-                self._post(url_path=resource_path + "/byids", body={"items": ids}, headers=headers).json()["data"][
+                self._post(url_path=resource_path + "/byids", json={"items": ids}, headers=headers).json()["data"][
                     "items"
                 ]
             )
         raise TypeError("ids must be int or list of int")
 
-    def _standard_list_generator(
+    def _list_generator(
         self, cls, resource_path: str, limit: int = None, chunk: int = None, params: Dict = None, headers: Dict = None
     ):
         total_items_retrieved = 0
@@ -212,20 +212,31 @@ class APIClient:
             if total_items_retrieved == limit or next_cursor is None:
                 break
 
-    def _standard_list(self, cls, resource_path: str, limit: int = None, params: Dict = None, headers: Dict = None):
+    def _list(self, cls, resource_path: str, limit: int = None, params: Dict = None, headers: Dict = None):
         items = []
-        for resource_list in self._standard_list_generator(
+        for resource_list in self._list_generator(
             cls=cls, resource_path=resource_path, limit=limit, chunk=self._LIMIT, params=params, headers=headers
         ):
             items.extend(resource_list._resources)
         return cls(items)
 
-    def _standard_create(
-        self, cls: Any, resource_path: str, items: List[Any], params: Dict = None, headers: Dict = None
-    ):
+    def _create(self, cls: Any, resource_path: str, items: List[Any], params: Dict = None, headers: Dict = None):
         items = {"items": [item.dump(camel_case=True) for item in items]}
-        res = self._post(resource_path, body=items, headers=headers, params=params)
+        res = self._post(resource_path, json=items, headers=headers, params=params)
         return cls._load(res.json()["data"]["items"])
+
+    def _delete_multiple(
+        self, cls: Any, resource_path: str, ids: Union[List[int], int], params: Dict = None, headers: Dict = None
+    ):
+        if isinstance(ids, int):
+            items = {"items": [ids]}
+            res = self._post(resource_path + "/delete", json=items, headers=headers, params=params)
+            return cls._RESOURCE._load(res.json()["data"]["items"][0])
+        elif isinstance(ids, list):
+            items = {"items": ids}
+            res = self._post(resource_path + "/delete", json=items, headers=headers, params=params)
+            return cls._load(res.json()["data"]["items"])
+        raise TypeError("ids must be int or list of ints")
 
     @staticmethod
     def _json_dumps_default(x):

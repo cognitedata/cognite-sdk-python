@@ -170,7 +170,7 @@ class TimeSeriesApi(APIClient):
         url = "/timeseries"
         items = [ts.camel_case_dict() for ts in time_series]
         body = {"items": items}
-        self._post(url, body=body)
+        self._post(url, json=body)
 
     def update_time_series(self, time_series: List[TimeSeries]) -> None:
         """Update an existing time series.
@@ -196,7 +196,7 @@ class TimeSeriesApi(APIClient):
         url = "/timeseries"
         items = [ts.camel_case_dict() for ts in time_series]
         body = {"items": items}
-        self._put(url, body=body)
+        self._put(url, json=body)
 
     def delete_time_series(self, name) -> None:
         """Delete a timeseries.

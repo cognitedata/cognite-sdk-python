@@ -115,7 +115,7 @@ class FilesApi(APIClient):
             "metadata": kwargs.get("metadata", None),
             "assetIds": kwargs.get("asset_ids", None),
         }
-        res_storage = self._post(url_path=url, body=body, headers=headers, params=params)
+        res_storage = self._post(url_path=url, json=body, headers=headers, params=params)
         result = res_storage.json()["data"]
         if file_path:
             if not content_type:
@@ -177,7 +177,7 @@ class FilesApi(APIClient):
         """
         url = "/files/delete"
         body = {"items": file_ids}
-        res = self._post(url, body=body)
+        res = self._post(url, json=body)
         return res.json()["data"]
 
     def list_files(self, name=None, directory=None, file_type=None, source=None, **kwargs) -> FileListResponse:
