@@ -205,6 +205,11 @@ class TestStandardMethods:
             total_resources += 1000
         assert 10000 == total_resources
 
+    def test_standard_list_generator__chunk_size_exceeds_max(self):
+        with pytest.raises(AssertionError, match="exceed 1000"):
+            for _ in API_CLIENT._list_generator(cls=SomeResourceList, resource_path=URL_PATH, chunk=1001):
+                pass
+
     @pytest.mark.usefixtures("mock_get_for_autopaging")
     def test_standard_list_autopaging(self):
         res = API_CLIENT._list(cls=SomeResourceList, resource_path=URL_PATH)
@@ -253,9 +258,7 @@ class TestStandardMethods:
     def test_standard_delete_multiple_fail(self, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH + "/delete", status=400, json={"error": {"message": "Client Error"}})
         with pytest.raises(APIError, match="Client Error") as e:
-            API_CLIENT._delete_multiple(
-                cls=SomeResourceList, resource_path=URL_PATH, ids=[SomeResource(1, 1), SomeResource(1)]
-            )
+            API_CLIENT._delete_multiple(cls=SomeResourceList, resource_path=URL_PATH, ids=[1, 2])
         assert 400 == e.value.code
         assert "Client Error" == e.value.message
 
