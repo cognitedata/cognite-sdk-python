@@ -4,7 +4,7 @@ from unittest.mock import patch
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.resources.tagmatching import TagMatchingResponse
+from cognite.client.api.tagmatching import TagMatchingResponse
 from tests.tests_old.conftest import MockReturnValue
 
 tag_matching = CogniteClient().tag_matching.tag_matching

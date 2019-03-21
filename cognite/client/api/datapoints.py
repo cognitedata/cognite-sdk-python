@@ -6,6 +6,7 @@ from concurrent.futures import ThreadPoolExecutor as Pool
 from copy import copy
 from datetime import datetime
 from functools import partial
+from typing import *
 from typing import List
 from urllib.parse import quote
 
@@ -14,7 +15,7 @@ import pandas as pd
 from cognite.client._auxiliary._protobuf_descriptors import _api_timeseries_data_v2_pb2
 from cognite.client._utils import utils
 from cognite.client._utils.api_client import APIClient
-from cognite.client._utils.bases import CogniteResource, CogniteResponse
+from cognite.client._utils.resource_base import CogniteResource, CogniteResponse
 
 
 class DatapointsResponse(CogniteResponse):
@@ -130,10 +131,9 @@ class LatestDatapointResponse(CogniteResponse):
         return pd.DataFrame([self.internal_representation["data"]["items"][0]])
 
 
-class DatapointsClient(APIClient):
-    def __init__(self, **kwargs):
-        self._LIMIT_AGG = 10000
-        self._LIMIT = 100000
+class DatapointsApi(APIClient):
+    _LIMIT_AGG = 10000
+    _LIMIT = 100000
 
     def get_datapoints(self, name, start, end=None, aggregates=None, granularity=None, **kwargs) -> DatapointsResponse:
         """Returns a DatapointsObject containing a list of datapoints for the given query.

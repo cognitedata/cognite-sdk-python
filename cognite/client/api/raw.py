@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 import json
+from typing import *
 from typing import List
 
 import pandas as pd
 
 from cognite.client._utils.api_client import APIClient
-from cognite.client._utils.bases import CogniteResponse
+from cognite.client._utils.resource_base import CogniteResponse
 
 
 class RawResponse(CogniteResponse):
@@ -43,7 +44,7 @@ class RawRow(object):
         return self.__dict__
 
 
-class RawClient(APIClient):
+class RawApi(APIClient):
     def get_databases(self, limit: int = None, cursor: str = None) -> RawResponse:
         """Returns a RawObject containing a list of raw databases.
 

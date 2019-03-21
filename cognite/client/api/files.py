@@ -2,12 +2,13 @@
 import os
 import warnings
 from copy import copy
+from typing import *
 from typing import Dict, List, Union
 
 import pandas as pd
 
 from cognite.client._utils.api_client import APIClient
-from cognite.client._utils.bases import CogniteResourceList, CogniteResponse
+from cognite.client._utils.resource_base import CogniteResourceList, CogniteResponse
 
 
 class FileInfoResponse(CogniteResponse):
@@ -54,7 +55,7 @@ class FileListResponse(CogniteResourceList):
         return pd.DataFrame(self.to_json())
 
 
-class FilesClient(APIClient):
+class FilesApi(APIClient):
     def upload_file(
         self, file_name, file_path=None, directory=None, source=None, file_type=None, content_type=None, **kwargs
     ) -> Dict:

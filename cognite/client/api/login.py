@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 from copy import copy
+from typing import *
 
 from cognite.client._utils.api_client import APIClient
-from cognite.client._utils.bases import CogniteResponse
+from cognite.client._utils.resource_base import CogniteResponse
 
 
 class LoginStatusResponse(CogniteResponse):
@@ -27,7 +28,7 @@ class LoginStatusResponse(CogniteResponse):
         return json_repr
 
 
-class LoginClient(APIClient):
+class LoginApi(APIClient):
     def status(self) -> LoginStatusResponse:
         """Check login status
 

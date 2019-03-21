@@ -8,14 +8,14 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client._utils.api_client import APIClient
-from cognite.client.resources.datapoints import (
+from cognite.client.api.datapoints import (
     Datapoint,
     DatapointsQuery,
     DatapointsResponse,
     LatestDatapointResponse,
     TimeseriesWithDatapoints,
 )
-from cognite.client.resources.time_series import TimeSeries
+from cognite.client.api.time_series import TimeSeries
 from tests.tests_old.conftest import (
     TEST_TS_1_NAME,
     TEST_TS_2_NAME,

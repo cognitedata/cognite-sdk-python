@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.resources.files import FileInfoResponse, FileListResponse
+from cognite.client.api.files import FileInfoResponse, FileListResponse
 
 files = CogniteClient().files
 

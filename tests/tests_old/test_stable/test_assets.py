@@ -4,7 +4,7 @@ import pandas as pd
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.resources.assets import Asset, AssetListResponse, AssetResponse
+from cognite.client.api.assets import Asset, AssetListResponse, AssetResponse
 from tests.tests_old.conftest import generate_random_string
 
 assets = CogniteClient(debug=True).assets

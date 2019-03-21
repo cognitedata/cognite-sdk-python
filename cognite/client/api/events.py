@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 import json
 from copy import deepcopy
+from typing import *
 from typing import List
 
 import pandas as pd
 
 from cognite.client._utils.api_client import APIClient
-from cognite.client._utils.bases import CogniteResource, CogniteResourceList, CogniteResponse
+from cognite.client._utils.resource_base import CogniteResource, CogniteResourceList, CogniteResponse
 
 
 class EventResponse(CogniteResponse):
@@ -79,7 +80,7 @@ class Event(CogniteResource):
         self.asset_ids = asset_ids
 
 
-class EventsClient(APIClient):
+class EventsApi(APIClient):
     def get_event(self, event_id: int) -> EventResponse:
         """Returns a EventResponse containing an event matching the id.
 

@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from cognite.client._utils.bases import CogniteResource, CogniteResourceList
+from cognite.client._utils.resource_base import CogniteResource, CogniteResourceList, CogniteResponse
 
 
 class MyResource(CogniteResource):
@@ -18,16 +18,6 @@ class TestCogniteResource:
 
     def test_dump_camel_case(self):
         assert {"varA": 1} == MyResource(1).dump(camel_case=True)
-
-    def test_to_camel_case(self):
-        assert "camelCase" == MyResource._to_camel_case("camel_case")
-        assert "camelCase" == MyResource._to_camel_case("camelCase")
-        assert "a" == MyResource._to_camel_case("a")
-
-    def test_to_snake_case(self):
-        assert "snake_case" == MyResource._to_snake_case("snakeCase")
-        assert "snake_case" == MyResource._to_snake_case("snake_case")
-        assert "a" == MyResource._to_snake_case("a")
 
     def test_load(self):
         assert MyResource(1).dump() == MyResource._load({"varA": 1}).dump()
@@ -104,3 +94,13 @@ class TestCogniteResourceList:
     def test_constructor_bad_type(self):
         with pytest.raises(TypeError, match="must be of type MyResource"):
             MyResourceList([1, 2, 3])
+
+
+class MyResponse(CogniteResponse):
+    def __init__(self, x):
+        self.x = x
+
+
+class TestCogniteResponse:
+    def test_load(self):
+        res = MyResponse.load({"data": {"items": []}})

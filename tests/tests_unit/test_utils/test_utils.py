@@ -3,7 +3,7 @@ from datetime import datetime
 import pytest
 
 from cognite.client._utils import utils
-from cognite.client.resources.datapoints import Datapoint, TimeseriesWithDatapoints
+from cognite.client.api.datapoints import Datapoint, TimeseriesWithDatapoints
 
 
 class TestConversions:
@@ -75,3 +75,13 @@ class TestMisc:
     def test_get_datapoints_windows(self, start, end, granularity, num_of_workers, expected_output):
         res = utils.get_datapoints_windows(start=start, end=end, granularity=granularity, num_of_workers=num_of_workers)
         assert expected_output == res
+
+    def test_to_camel_case(self):
+        assert "camelCase" == utils.to_camel_case("camel_case")
+        assert "camelCase" == utils.to_camel_case("camelCase")
+        assert "a" == utils.to_camel_case("a")
+
+    def test_to_snake_case(self):
+        assert "snake_case" == utils.to_snake_case("snakeCase")
+        assert "snake_case" == utils.to_snake_case("snake_case")
+        assert "a" == utils.to_snake_case("a")

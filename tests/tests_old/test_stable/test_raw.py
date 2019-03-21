@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 
 from cognite.client import APIError, CogniteClient
-from cognite.client.resources.raw import RawResponse, RawRow
+from cognite.client.api.raw import RawResponse, RawRow
 
 raw = CogniteClient().raw
 

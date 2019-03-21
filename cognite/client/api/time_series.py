@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 from copy import deepcopy
+from typing import *
 from typing import List
 from urllib.parse import quote
 
 import pandas as pd
 
 from cognite.client._utils.api_client import APIClient
-from cognite.client._utils.bases import CogniteResource, CogniteResourceList, CogniteResponse
+from cognite.client._utils.resource_base import CogniteResource, CogniteResourceList, CogniteResponse
 
 
 class TimeSeriesResponse(CogniteResponse):
@@ -99,7 +100,7 @@ class TimeSeries(CogniteResource):
         self.is_step = is_step
 
 
-class TimeSeriesClient(APIClient):
+class TimeSeriesApi(APIClient):
     def get_time_series(
         self, prefix=None, description=None, include_metadata=False, asset_id=None, path=None, **kwargs
     ) -> TimeSeriesListResponse:

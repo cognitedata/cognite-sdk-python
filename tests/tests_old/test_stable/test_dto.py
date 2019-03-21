@@ -2,9 +2,9 @@ from copy import deepcopy
 
 import pytest
 
-from cognite.client.resources.events import EventListResponse, EventResponse
-from cognite.client.resources.files import FileInfoResponse
-from cognite.client.resources.time_series import TimeSeriesResponse
+from cognite.client.api.events import EventListResponse, EventResponse
+from cognite.client.api.files import FileInfoResponse
+from cognite.client.api.time_series import TimeSeriesResponse
 
 
 @pytest.fixture(scope="module", params=["ts", "file", "event", "eventlist"])

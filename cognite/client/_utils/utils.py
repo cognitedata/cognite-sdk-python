@@ -166,3 +166,13 @@ def get_datapoints_windows(start: int, end: int, granularity: str, num_of_worker
     if windows[-1]["end"] < end:
         windows[-1]["end"] = end
     return windows
+
+
+def to_camel_case(snake_case_string: str):
+    components = snake_case_string.split("_")
+    return components[0] + "".join(x.title() for x in components[1:])
+
+
+def to_snake_case(camel_case_string: str):
+    s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", camel_case_string)
+    return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()

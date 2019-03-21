@@ -6,13 +6,13 @@ import requests
 
 from cognite.client._utils.api_client import APIClient
 from cognite.client._utils.utils import get_user_agent
-from cognite.client.resources.assets import AssetsClient
-from cognite.client.resources.datapoints import DatapointsClient
-from cognite.client.resources.events import EventsClient
-from cognite.client.resources.files import FilesClient
-from cognite.client.resources.login import LoginClient
-from cognite.client.resources.raw import RawClient
-from cognite.client.resources.time_series import TimeSeriesClient
+from cognite.client.api.assets import AssetsApi
+from cognite.client.api.datapoints import DatapointsApi
+from cognite.client.api.events import EventsApi
+from cognite.client.api.files import FilesApi
+from cognite.client.api.login import LoginApi
+from cognite.client.api.raw import RawApi
+from cognite.client.api.time_series import TimeSeriesApi
 from cognite.logger import configure_logger
 
 DEFAULT_BASE_URL = "https://api.cognitedata.com"
@@ -100,7 +100,7 @@ class CogniteClient:
 
         __api_version = "0.6"
         self._project = project or thread_local_project
-        self.login = LoginClient(
+        self.login = LoginApi(
             project=self._project,
             base_url=self._base_url,
             num_of_workers=self._num_of_workers,
@@ -111,7 +111,7 @@ class CogniteClient:
         if self._project is None:
             self._project = self.login.status().project
 
-        self.assets = AssetsClient(
+        self.assets = AssetsApi(
             version=__api_version,
             project=self._project,
             base_url=self._base_url,
@@ -120,7 +120,7 @@ class CogniteClient:
             headers=self._headers,
             timeout=self._timeout,
         )
-        self.datapoints = DatapointsClient(
+        self.datapoints = DatapointsApi(
             version=__api_version,
             project=self._project,
             base_url=self._base_url,
@@ -129,7 +129,7 @@ class CogniteClient:
             headers=self._headers,
             timeout=self._timeout,
         )
-        self.events = EventsClient(
+        self.events = EventsApi(
             version=__api_version,
             project=self._project,
             base_url=self._base_url,
@@ -138,7 +138,7 @@ class CogniteClient:
             headers=self._headers,
             timeout=self._timeout,
         )
-        self.files = FilesClient(
+        self.files = FilesApi(
             version=__api_version,
             project=self._project,
             base_url=self._base_url,
@@ -147,7 +147,7 @@ class CogniteClient:
             headers=self._headers,
             timeout=self._timeout,
         )
-        self.raw = RawClient(
+        self.raw = RawApi(
             version=__api_version,
             project=self._project,
             base_url=self._base_url,
@@ -156,7 +156,7 @@ class CogniteClient:
             headers=self._headers,
             timeout=self._timeout,
         )
-        self.time_series = TimeSeriesClient(
+        self.time_series = TimeSeriesApi(
             version=__api_version,
             project=self._project,
             base_url=self._base_url,
@@ -175,12 +175,12 @@ class CogniteClient:
             timeout=self._timeout,
         )
 
-    def get(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None, autopaging: bool = False):
+    def get(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
         """Perform a GET request to a path in the API.
 
         Comes in handy if the endpoint you want to reach is not currently supported by the SDK.
         """
-        return self._api_client._get(url, params=params, headers=headers, autopaging=autopaging)
+        return self._api_client._get(url, params=params, headers=headers)
 
     def post(self, url: str, body: Dict[str, Any], params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
         """Perform a POST request to a path in the API.

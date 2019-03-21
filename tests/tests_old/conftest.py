@@ -12,9 +12,9 @@ import pytest
 from requests.structures import CaseInsensitiveDict
 
 from cognite.client import CogniteClient
+from cognite.client.api.datapoints import Datapoint
+from cognite.client.api.time_series import TimeSeries
 from cognite.client.exceptions import APIError
-from cognite.client.resources.datapoints import Datapoint
-from cognite.client.resources.time_series import TimeSeries
 
 log = logging.getLogger(__name__)
 

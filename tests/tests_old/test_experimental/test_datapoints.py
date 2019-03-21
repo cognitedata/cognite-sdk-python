@@ -5,8 +5,8 @@ import pandas as pd
 import pytest
 
 from cognite.client import CogniteClient
+from cognite.client.api.time_series import TimeSeries
 from cognite.client.experimental.datapoints import DatapointsResponse
-from cognite.client.resources.time_series import TimeSeries
 from tests.tests_old.conftest import TEST_TS_REASONABLE_INTERVAL, TEST_TS_REASONABLE_INTERVAL_DATETIME
 
 cognite_client = CogniteClient()

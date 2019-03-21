@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-import cognite.client.resources.events
+import cognite.client.api.events
 from cognite.client import APIError, CogniteClient
 
 events = CogniteClient().events
@@ -9,9 +9,7 @@ events = CogniteClient().events
 
 @pytest.fixture(scope="module")
 def get_post_event_obj():
-    event = cognite.client.resources.events.Event(
-        start_time=1521500400000, end_time=1521586800000, description="hahaha"
-    )
+    event = cognite.client.api.events.Event(start_time=1521500400000, end_time=1521586800000, description="hahaha")
     res = events.post_events([event])
     yield res
     ids = list(ev["id"] for ev in res.to_json())
@@ -19,13 +17,13 @@ def get_post_event_obj():
 
 
 def test_post_events(get_post_event_obj):
-    assert isinstance(get_post_event_obj, cognite.client.resources.events.EventListResponse)
+    assert isinstance(get_post_event_obj, cognite.client.api.events.EventListResponse)
     assert isinstance(get_post_event_obj.to_pandas(), pd.DataFrame)
     assert isinstance(get_post_event_obj.to_json(), list)
 
 
 def test_attributes_not_none(get_post_event_obj):
-    assert isinstance(get_post_event_obj, cognite.client.resources.events.EventListResponse)
+    assert isinstance(get_post_event_obj, cognite.client.api.events.EventListResponse)
     assert isinstance(get_post_event_obj.to_pandas(), pd.DataFrame)
     assert isinstance(get_post_event_obj.to_json(), list)
 
@@ -37,7 +35,7 @@ def test_post_events_length(get_post_event_obj):
 def test_get_event(get_post_event_obj):
     id = get_post_event_obj.to_json()[0]["id"]
     res = events.get_event(event_id=id)
-    assert isinstance(res, cognite.client.resources.events.EventResponse)
+    assert isinstance(res, cognite.client.api.events.EventResponse)
     assert isinstance(res.to_pandas(), pd.DataFrame)
     assert isinstance(res.to_json(), dict)
     assert res.to_pandas().shape[1] == 1
@@ -50,14 +48,14 @@ def test_get_event_invalid_id():
 
 def test_get_events():
     res = events.get_events(min_start_time=1521500399999, max_start_time=1521500400001)
-    assert isinstance(res, cognite.client.resources.events.EventListResponse)
+    assert isinstance(res, cognite.client.api.events.EventListResponse)
     assert isinstance(res.to_pandas(), pd.DataFrame)
     assert isinstance(res.to_json(), list)
-    assert isinstance(res[0], cognite.client.resources.events.EventResponse)
-    assert isinstance(res[:1], cognite.client.resources.events.EventListResponse)
+    assert isinstance(res[0], cognite.client.api.events.EventResponse)
+    assert isinstance(res[:1], cognite.client.api.events.EventListResponse)
     assert len(res[:1]) == 1
     for event in res:
-        assert isinstance(event, cognite.client.resources.events.EventResponse)
+        assert isinstance(event, cognite.client.api.events.EventResponse)
 
 
 def test_get_events_empty():
@@ -68,7 +66,7 @@ def test_get_events_empty():
 
 @pytest.fixture()
 def post_event():
-    event = cognite.client.resources.events.Event(start_time=1521500400000, end_time=1521586800000)
+    event = cognite.client.api.events.Event(start_time=1521500400000, end_time=1521586800000)
     res = events.post_events([event])
     return res
 

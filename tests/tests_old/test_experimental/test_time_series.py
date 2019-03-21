@@ -4,8 +4,8 @@ from time import sleep
 import pytest
 
 from cognite.client import CogniteClient
+from cognite.client.api.time_series import TimeSeries
 from cognite.client.experimental.time_series import TimeSeriesResponse
-from cognite.client.resources.time_series import TimeSeries
 from tests.tests_old.conftest import TEST_TS_1_NAME
 
 stable_time_series = CogniteClient().time_series

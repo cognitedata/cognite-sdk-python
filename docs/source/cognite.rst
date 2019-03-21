@@ -8,12 +8,17 @@ Cognite Client
 
 Responses
 ---------
-.. autoclass:: cognite.client._api_client.CogniteResponse
+.. autoclass:: cognite.client._utils.resource_base.CogniteResource
     :members:
     :undoc-members:
     :show-inheritance:
 
-.. autoclass:: cognite.client._api_client.CogniteCollectionResponse
+.. autoclass:: cognite.client._utils.resource_base.CogniteResourceList
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+.. autoclass:: cognite.client._utils.resource_base.CogniteResponse
     :members:
     :undoc-members:
     :show-inheritance:
@@ -31,12 +36,12 @@ Assets
 ------
 Client
 ^^^^^^
-.. autoclass:: cognite.client.stable.assets.AssetsClient
+.. autoclass:: cognite.client.api.assets.AssetsApi
     :members:
 
 Data Objects
 ^^^^^^^^^^^^
-.. automodule:: cognite.client.stable.assets
+.. automodule:: cognite.client.api.assets
     :members:
     :exclude-members: AssetsClient
     :undoc-members:
@@ -151,106 +156,6 @@ Data Objects
 .. automodule:: cognite.client.stable.time_series
     :members:
     :exclude-members: TimeSeriesClient
-    :undoc-members:
-    :show-inheritance:
-    :inherited-members:
-
-Experimental
-============
-Model Hosting
--------------
-Models
-^^^^^^
-Client
-~~~~~~
-.. autoclass:: cognite.client.experimental.model_hosting.models.ModelsClient
-    :members:
-
-Data Objects
-~~~~~~~~~~~~
-.. automodule:: cognite.client.experimental.model_hosting.models
-    :members:
-    :exclude-members: ModelsClient
-    :undoc-members:
-    :show-inheritance:
-    :inherited-members:
-
-Source Packages
-^^^^^^^^^^^^^^^
-Client
-~~~~~~
-.. autoclass:: cognite.client.experimental.model_hosting.source_packages.SourcePackageClient
-    :members:
-
-Data Objects
-~~~~~~~~~~~~
-.. automodule:: cognite.client.experimental.model_hosting.source_packages
-    :members:
-    :exclude-members: SourcePackageClient
-    :undoc-members:
-    :show-inheritance:
-    :inherited-members:
-
-Schedules
-^^^^^^^^^
-Client
-~~~~~~
-.. autoclass:: cognite.client.experimental.model_hosting.schedules.SchedulesClient
-    :members:
-
-Data Objects
-~~~~~~~~~~~~
-.. automodule:: cognite.client.experimental.model_hosting.schedules
-    :members:
-    :exclude-members: SchedulesClient
-    :undoc-members:
-    :show-inheritance:
-    :inherited-members:
-
-Time Series
------------
-Client
-^^^^^^
-.. autoclass:: cognite.client.experimental.time_series.TimeSeriesClient
-    :members:
-
-Data Objects
-^^^^^^^^^^^^
-.. automodule:: cognite.client.experimental.time_series
-    :members:
-    :exclude-members: TimeSeriesClient
-    :undoc-members:
-    :show-inheritance:
-    :inherited-members:
-
-Datapoints
-----------
-Client
-^^^^^^
-.. autoclass:: cognite.client.experimental.datapoints.DatapointsClient
-    :members:
-
-Data Objects
-^^^^^^^^^^^^
-.. automodule:: cognite.client.experimental.datapoints
-    :members:
-    :exclude-members: DatapointsClient
-    :undoc-members:
-    :show-inheritance:
-    :inherited-members:
-
-Sequences
-----------
-Client
-^^^^^^
-.. autoclass:: cognite.client.experimental.sequences.SequencesClient
-    :members:
-
-Data Objects
-^^^^^^^^^^^^
-.. automodule:: cognite.client.experimental.sequences
-    :members:
-    :exclude-members: SequencesClient
     :undoc-members:
     :show-inheritance:
     :inherited-members:
