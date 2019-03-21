@@ -156,13 +156,6 @@ class TestStandardMethods:
         assert "Client Error" == e.value.message
         assert 400 == e.value.code
 
-    def test_standard_retrieve_multiple_unknown_attribute(self, rsps):
-        rsps.add(
-            rsps.POST, BASE_URL + URL_PATH + "/byids", status=200, json={"data": {"items": [{"x": 1, "y": 2, "z": 3}]}}
-        )
-        with pytest.raises(AttributeError):
-            API_CLIENT._standard_retrieve_multiple(cls=SomeResourceList, resource_path=URL_PATH, ids=[1, 2])
-
     def test_standard_list_ok(self, rsps):
         rsps.add(rsps.GET, BASE_URL + URL_PATH, status=200, json={"data": {"items": [{"x": 1, "y": 2}, {"x": 1}]}})
         assert SomeResourceList([SomeResource(1, 2), SomeResource(1)]) == API_CLIENT._standard_list(
@@ -175,11 +168,6 @@ class TestStandardMethods:
             API_CLIENT._standard_list(cls=SomeResourceList, resource_path=URL_PATH)
         assert 400 == e.value.code
         assert "Client Error" == e.value.message
-
-    def test_standard_list_unkown_attribute(self, rsps):
-        rsps.add(rsps.GET, BASE_URL + URL_PATH, status=200, json={"data": {"items": [{"x": 1, "y": 2, "z": 3}]}})
-        with pytest.raises(AttributeError):
-            API_CLIENT._standard_list(cls=SomeResourceList, resource_path=URL_PATH)
 
     NUMBER_OF_ITEMS_FOR_AUTOPAGING = 11500
     ITEMS_TO_GET_WHILE_AUTOPAGING = [{"x": 1, "y": 1} for _ in range(NUMBER_OF_ITEMS_FOR_AUTOPAGING)]
