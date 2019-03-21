@@ -58,6 +58,11 @@ def test_get_events():
         assert isinstance(event, cognite.client.api.events.EventResponse)
 
 
+def test_get_events_invalid_param_combination():
+    with pytest.raises(APIError, match="disabled"):
+        events.get_events(type="bla", asset_id=1)
+
+
 def test_get_events_empty():
     res = events.get_events(asset_id=0)
     assert res.to_pandas().empty

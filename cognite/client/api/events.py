@@ -132,25 +132,17 @@ class EventsApi(APIClient):
         autopaging = kwargs.get("autopaging", False)
         url = "/events"
 
-        if asset_id:
-            params = {
-                "assetId": asset_id,
-                "sort": kwargs.get("sort"),
-                "cursor": kwargs.get("cursor"),
-                "limit": kwargs.get("limit", 25) if not autopaging else self._LIMIT,
-            }
-        else:
-            params = {
-                "type": type,
-                "subtype": sub_type,
-                "assetId": asset_id,
-                "sort": kwargs.get("sort"),
-                "cursor": kwargs.get("cursor"),
-                "limit": kwargs.get("limit", 25) if not autopaging else self._LIMIT,
-                "hasDescription": kwargs.get("has_description"),
-                "minStartTime": kwargs.get("min_start_time"),
-                "maxStartTime": kwargs.get("max_start_time"),
-            }
+        params = {
+            "type": type,
+            "subtype": sub_type,
+            "assetId": asset_id,
+            "sort": kwargs.get("sort"),
+            "cursor": kwargs.get("cursor"),
+            "limit": kwargs.get("limit", 25) if not autopaging else self._LIMIT,
+            "hasDescription": kwargs.get("has_description"),
+            "minStartTime": kwargs.get("min_start_time"),
+            "maxStartTime": kwargs.get("max_start_time"),
+        }
 
         res = self._get(url, params=params, autopaging=autopaging)
         return EventListResponse(res.json())

@@ -47,7 +47,7 @@ class TimeSeriesListResponse(CogniteResourceList):
 
     _RESPONSE_CLASS = TimeSeriesResponse
 
-    def to_pandas(self, include_metadata: bool = False):
+    def to_pandas(self, include_metadata: bool = True):
         """Returns data as a pandas dataframe
 
         Args:
