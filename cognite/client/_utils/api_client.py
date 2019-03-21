@@ -3,7 +3,7 @@ import json
 import logging
 import os
 import re
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 import numpy
 from requests import Response, Session
@@ -161,16 +161,23 @@ class APIClient:
             _raise_API_error(res)
         return res
 
-    def _standard_retrieve(self, resource_class, url_path: str, params: Dict = None, headers: Dict = None):
-        return resource_class._load(
-            self._get(url_path=url_path, params=params, headers=headers).json()["data"]["items"][0]
-        )
+    def _standard_retrieve(self, cls, url_path: str, id: Union[List[int], int], headers: Dict = None):
+        if isinstance(id, int):
+            return cls._RESOURCE._load(
+                self._post(url_path=url_path, body={"items": [id]}, headers=headers).json()["data"]["items"][0]
+            )
+        elif isinstance(id, list):
+            return cls._load(self._post(url_path=url_path, body={"items": id}, headers=headers).json()["data"]["items"])
+        raise TypeError("id must be int or list of int")
 
     def _standard_list_generator(
-        self, resource_list, url_path: str, limit: int = None, params: Dict = None, headers: Dict = None
+        self, cls, url_path: str, limit: int = None, chunk: int = None, params: Dict = None, headers: Dict = None
     ):
         total_items_retrieved = 0
         current_limit = self._LIMIT
+        if chunk:
+            assert chunk <= self._LIMIT, "Chunk size can not exceed {}".format(self._LIMIT)
+            current_limit = chunk
         next_cursor = None
         params = params or {}
         while True:
@@ -182,28 +189,28 @@ class APIClient:
             params["cursor"] = next_cursor
             res = self._get(url_path=url_path, params=params, headers=headers)
             current_items = res.json()["data"]["items"]
-            yield resource_list._load(current_items)
+            if chunk:
+                yield cls._load(current_items)
+            else:
+                for item in current_items:
+                    yield cls._RESOURCE._load(item)
             total_items_retrieved += len(current_items)
             next_cursor = res.json()["data"].get("nextCursor")
             if total_items_retrieved == limit or next_cursor is None:
                 break
 
-    def _standard_list(
-        self, resource_list_class, url_path: str, limit: int = None, params: Dict = None, headers: Dict = None
-    ):
+    def _standard_list(self, cls, url_path: str, limit: int = None, params: Dict = None, headers: Dict = None):
         items = []
         for resource_list in self._standard_list_generator(
-            resource_list=resource_list_class, url_path=url_path, limit=limit, params=params, headers=headers
+            cls=cls, url_path=url_path, limit=limit, chunk=self._LIMIT, params=params, headers=headers
         ):
             items.extend(resource_list._resources)
-        return resource_list_class(items)
+        return cls(items)
 
-    def _standard_create(
-        self, resource_list_class: Any, url_path: str, items: List[Any], params: Dict = None, headers: Dict = None
-    ):
+    def _standard_create(self, cls: Any, url_path: str, items: List[Any], params: Dict = None, headers: Dict = None):
         items = {"items": [item.dump(camel_case=True) for item in items]}
         res = self._post(url_path, body=items, headers=headers, params=params)
-        return resource_list_class._load(res.json()["data"]["items"])
+        return cls._load(res.json()["data"]["items"])
 
     @staticmethod
     def _json_dumps_default(x):

@@ -7,7 +7,7 @@ import pytest
 
 from cognite.client import APIError
 from cognite.client._utils.api_client import APIClient, _model_hosting_emulator_url_converter
-from cognite.client._utils.bases import CogniteResource, CogniteResourceList
+from cognite.client._utils.resource_base import CogniteResource, CogniteResourceList
 
 BASE_URL = "http://localtest.com/api/1.0/projects/test_proj"
 URL_PATH = "/someurl"
@@ -114,32 +114,40 @@ class SomeResourceList(CogniteResourceList):
 
 class TestStandardMethods:
     @pytest.fixture
-    def mock_get_for_retrieve_ok(self, rsps):
-        rsps.add(rsps.GET, BASE_URL + URL_PATH, status=200, json={"data": {"items": [{"x": 1, "y": 2}]}})
-
-    @pytest.mark.usefixtures("mock_get_for_retrieve_ok")
-    def test_standard_retrieve_OK(self):
-        assert SomeResource(1, 2) == API_CLIENT._standard_retrieve(resource_class=SomeResource, url_path=URL_PATH)
+    def mock_post_for_retrieve_ok(self, rsps):
+        rsps.add(
+            rsps.POST, BASE_URL + URL_PATH, status=200, json={"data": {"items": [{"x": 1, "y": 2}, {"x": 1, "y": 2}]}}
+        )
 
     @pytest.fixture
-    def mock_get_fail(self, rsps):
-        rsps.add(rsps.GET, BASE_URL + URL_PATH, status=400, json={"error": {"message": "Client Error"}})
+    def mock_post_fail(self, rsps):
+        rsps.add(rsps.POST, BASE_URL + URL_PATH, status=400, json={"error": {"message": "Client Error"}})
 
-    @pytest.mark.usefixtures("mock_get_fail")
+    @pytest.mark.usefixtures("mock_post_for_retrieve_ok")
+    def test_standard_retrieve_single_OK(self):
+        assert SomeResource(1, 2) == API_CLIENT._standard_retrieve(cls=SomeResourceList, url_path=URL_PATH, id=1)
+
+    @pytest.mark.usefixtures("mock_post_for_retrieve_ok")
+    def test_standard_retrieve_single_OK(self):
+        assert SomeResourceList([SomeResource(1, 2), SomeResource(1, 2)]) == API_CLIENT._standard_retrieve(
+            cls=SomeResourceList, url_path=URL_PATH, id=[1, 2]
+        )
+
+    @pytest.mark.usefixtures("mock_post_fail")
     def test_standard_retrieve_fail(self):
         with pytest.raises(APIError, match="Client Error") as e:
-            API_CLIENT._standard_retrieve(resource_class=SomeResource, url_path=URL_PATH)
+            API_CLIENT._standard_retrieve(cls=SomeResourceList, url_path=URL_PATH, id=1)
         assert "Client Error" == e.value.message
         assert 400 == e.value.code
 
     @pytest.fixture
-    def mock_get_unknown_attribute(self, rsps):
-        rsps.add(rsps.GET, BASE_URL + URL_PATH, status=200, json={"data": {"items": [{"x": 1, "y": 2, "z": 3}]}})
+    def mock_post_unknown_attribute(self, rsps):
+        rsps.add(rsps.POST, BASE_URL + URL_PATH, status=200, json={"data": {"items": [{"x": 1, "y": 2, "z": 3}]}})
 
-    @pytest.mark.usefixtures("mock_get_unknown_attribute")
+    @pytest.mark.usefixtures("mock_post_unknown_attribute")
     def test_standard_retrieve_unknown_attribute(self):
         with pytest.raises(AttributeError):
-            API_CLIENT._standard_retrieve(resource_class=SomeResource, url_path=URL_PATH)
+            API_CLIENT._standard_retrieve(cls=SomeResourceList, url_path=URL_PATH, id=[1, 2])
 
     @pytest.fixture
     def mock_get_for_list_ok(self, rsps):
@@ -148,20 +156,28 @@ class TestStandardMethods:
     @pytest.mark.usefixtures("mock_get_for_list_ok")
     def test_standard_list_ok(self):
         assert SomeResourceList([SomeResource(1, 2), SomeResource(1)]) == API_CLIENT._standard_list(
-            resource_list_class=SomeResourceList, url_path=URL_PATH
+            cls=SomeResourceList, url_path=URL_PATH
         )
+
+    @pytest.fixture
+    def mock_get_fail(self, rsps):
+        rsps.add(rsps.GET, BASE_URL + URL_PATH, status=400, json={"error": {"message": "Client Error"}})
 
     @pytest.mark.usefixtures("mock_get_fail")
     def test_standard_list_fail(self):
         with pytest.raises(APIError, match="Client Error") as e:
-            API_CLIENT._standard_list(resource_list_class=SomeResourceList, url_path=URL_PATH)
+            API_CLIENT._standard_list(cls=SomeResourceList, url_path=URL_PATH)
         assert 400 == e.value.code
         assert "Client Error" == e.value.message
+
+    @pytest.fixture
+    def mock_get_unknown_attribute(self, rsps):
+        rsps.add(rsps.GET, BASE_URL + URL_PATH, status=200, json={"data": {"items": [{"x": 1, "y": 2, "z": 3}]}})
 
     @pytest.mark.usefixtures("mock_get_unknown_attribute")
     def test_standard_list_unkown_attribute(self):
         with pytest.raises(AttributeError):
-            API_CLIENT._standard_list(resource_list_class=SomeResourceList, url_path=URL_PATH)
+            API_CLIENT._standard_list(cls=SomeResourceList, url_path=URL_PATH)
 
     NUMBER_OF_ITEMS_FOR_AUTOPAGING = 11500
     ITEMS_TO_GET_WHILE_AUTOPAGING = [{"x": 1, "y": 1} for _ in range(NUMBER_OF_ITEMS_FOR_AUTOPAGING)]
@@ -185,21 +201,30 @@ class TestStandardMethods:
     @pytest.mark.usefixtures("mock_get_for_autopaging")
     def test_standard_list_generator(self):
         total_resources = 0
-        for resources in API_CLIENT._standard_list_generator(
-            resource_list=SomeResourceList, url_path=URL_PATH, limit=10000
+        for resource in API_CLIENT._standard_list_generator(cls=SomeResourceList, url_path=URL_PATH, limit=10000):
+            assert isinstance(resource, SomeResource)
+            total_resources += 1
+        assert 10000 == total_resources
+
+    @pytest.mark.usefixtures("mock_get_for_autopaging")
+    def test_standard_list_generator(self):
+        total_resources = 0
+        for resource_chunk in API_CLIENT._standard_list_generator(
+            cls=SomeResourceList, url_path=URL_PATH, limit=10000, chunk=1000
         ):
-            assert 1000 == len(resources)
-            total_resources += len(resources)
+            assert isinstance(resource_chunk, SomeResourceList)
+            assert 1000 == len(resource_chunk)
+            total_resources += 1000
         assert 10000 == total_resources
 
     @pytest.mark.usefixtures("mock_get_for_autopaging")
     def test_standard_list_autopaging(self):
-        res = API_CLIENT._standard_list(resource_list_class=SomeResourceList, url_path=URL_PATH)
+        res = API_CLIENT._standard_list(cls=SomeResourceList, url_path=URL_PATH)
         assert self.NUMBER_OF_ITEMS_FOR_AUTOPAGING == len(res)
 
     @pytest.mark.usefixtures("mock_get_for_autopaging")
     def test_standard_list_autopaging_with_limit(self):
-        res = API_CLIENT._standard_list(resource_list_class=SomeResourceList, url_path=URL_PATH, limit=5333)
+        res = API_CLIENT._standard_list(cls=SomeResourceList, url_path=URL_PATH, limit=5333)
         assert 5333 == len(res)
 
     @pytest.fixture
@@ -214,20 +239,16 @@ class TestStandardMethods:
     @pytest.mark.usefixtures("mock_post_for_create_ok")
     def test_standard_create_ok(self):
         res = API_CLIENT._standard_create(
-            resource_list_class=SomeResourceList, url_path=URL_PATH, items=[SomeResource(1, 1), SomeResource(1)]
+            cls=SomeResourceList, url_path=URL_PATH, items=[SomeResource(1, 1), SomeResource(1)]
         )
         assert SomeResource(1, 1) == res[0]
         assert SomeResource(1) == res[1]
 
-    @pytest.fixture
-    def mock_post_for_create_fail(self, rsps):
-        rsps.add(rsps.POST, BASE_URL + URL_PATH, status=400, json={"error": {"message": "Client Error"}})
-
-    @pytest.mark.usefixtures("mock_post_for_create_fail")
+    @pytest.mark.usefixtures("mock_post_fail")
     def test_standard_create_fail(self):
         with pytest.raises(APIError, match="Client Error") as e:
             API_CLIENT._standard_create(
-                resource_list_class=SomeResourceList, url_path=URL_PATH, items=[SomeResource(1, 1), SomeResource(1)]
+                cls=SomeResourceList, url_path=URL_PATH, items=[SomeResource(1, 1), SomeResource(1)]
             )
         assert 400 == e.value.code
         assert "Client Error" == e.value.message
