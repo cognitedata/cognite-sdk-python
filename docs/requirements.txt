@@ -1,2 +1,1 @@
-cognite-logger==0.4.*
 .
