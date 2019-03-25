@@ -22,6 +22,8 @@ Changes are grouped as follows
 ### Changed
 - Rename methods so they reflect what the method does instead of what http method is used
 
+### Fixed
+- Make `upload_artifacts_from_directory` work on Windows
 
 ## [0.13.1] - 2019-03-14
 ### Fixed

@@ -494,11 +494,11 @@ class ModelsClient(APIClient):
             None
         """
         upload_tasks = []
-        root_directory_name = directory.split("/")[-1]
+        root_directory_name = os.path.basename(directory)
         for root, dirs, files in os.walk(directory):
             for file_name in files:
                 file_path = os.path.join(root, file_name)
-                full_file_name = file_path.split("{}/".format(root_directory_name))[-1]
+                full_file_name = os.path.relpath(file_path, root_directory_name)
                 upload_tasks.append((model_id, version_id, full_file_name, file_path))
         self._execute_tasks_concurrently(self.upload_artifact_from_file, upload_tasks)
 
