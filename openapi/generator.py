@@ -5,14 +5,15 @@ from collections import namedtuple
 from black import FileMode, format_str
 
 from openapi import utils
-from openapi.openapi import OpenAPISpec, Schema
+from openapi.openapi import OpenAPISpec
+from openapi.utils import TYPE_MAPPING
 
 TO_EXCLUDE = ["project", "cursor"]
-GEN_CLASS_PATTERN = "# GenClass: (\S+)\s+class (\S+)\(.+\):(?:(?!# GenStop)[\s\S])+# GenStop"
-GEN_METHOD_PATTERN = "# GenMethod: (\S+) -> ([\S ]+)\s+def (\S+)\((.+)\):(?:(?!# GenStop)[\s\S])+# GenStop"
+GEN_CLASS_PATTERN = "# GenClass: ([\S ]+)\s+class (\S+)\(.+\):(?:(?!# GenStop)[\s\S])+# GenStop"
+GEN_UPDATE_CLASS_PATTERN = "# GenUpdateClass: (\S+)\s+class (\S+)\(.+\):(?:(?!# GenStop)[\s\S])+# GenStop"
 
-GenClassSegment = namedtuple("GenClassSegment", ["schema_name", "class_name"])
-GenMethodSegment = namedtuple("GenMethodSegment", ["operation_id", "return_type", "method", "params"])
+GenClassSegment = namedtuple("GenClassSegment", ["schema_names", "class_name"])
+GenUpdateClassSegment = namedtuple("GenUpdateClassSegment", ["schema_name", "class_name"])
 
 
 class ClassGenerator:
@@ -24,116 +25,198 @@ class ClassGenerator:
     def generate_code_for_class_segments(self):
         generated_segments = {}
         for class_segment in self.gen_class_segments:
-            schema = self._spec.components.get_schema(class_segment.schema_name)
-            docstring = self.generate_docstring(schema, indentation=4)
-            constructor_args = self.generate_constructor(schema, indentation=4)
+            schema_names = class_segment.schema_names.split(", ")
+            schemas = []
+            for schema_name in schema_names:
+                res = re.match("(.*)\.(.*)", schema_name)
+                if res is not None:
+                    schema_name = res.group(1)
+                    property_name = res.group(2)
+                    schema = self._spec.components.schemas.get(schema_name)
+                    property = schema["properties"][property_name]
+                    schemas.append(property)
+                else:
+                    schemas.append(self._spec.components.schemas.get(schema_name))
+            docstring = self.generate_docstring(schemas, indentation=4)
+            constructor_args = self.generate_constructor(schemas, indentation=4)
             generated_segment = docstring + "\n" + constructor_args
             generated_segments[class_segment.class_name] = generated_segment
         return generated_segments
 
-    def generate_docstring(self, schema: Schema, indentation):
-        docstring = " " * indentation + '"""{}\n\n'.format(schema.description)
+    def generate_docstring(self, schemas, indentation):
+        docstring = " " * indentation + '"""{}\n\n'.format(self._get_schema_description(schemas[0]))
         docstring += " " * indentation + "Args:\n"
-        for prop in schema.properties:
-            if prop.name not in TO_EXCLUDE:
-                docstring += " " * (indentation + 4) + "{} ({}): {}\n".format(
-                    utils.to_snake_case(prop.name),
-                    utils.get_full_type_hint(prop.python_type, self.gen_class_segments),
-                    prop.description,
-                )
+        ignore = [p for p in TO_EXCLUDE]
+        for schema in schemas:
+            for prop_name, prop in self._get_schema_properties(schema).items():
+                if prop_name not in ignore:
+                    docstring += " " * (indentation + 4) + "{} ({}): {}\n".format(
+                        utils.to_snake_case(prop_name), utils.get_type_hint(prop), self._get_schema_description(prop)
+                    )
+                    ignore.append(prop_name)
         docstring += " " * indentation + '"""'
         return docstring
 
-    def generate_constructor(self, schema: Schema, indentation):
+    def generate_constructor(self, schemas, indentation):
         constructor_params = [" " * indentation + "def __init__(self"]
-        for prop in schema.properties:
-            prop_name = utils.to_snake_case(prop.name)
-            req = "" if prop.required else " = None"
-            constructor_params.append(
-                "{}: {}{}".format(prop_name, utils.get_full_type_hint(prop.python_type, self.gen_class_segments), req)
-            )
+        ignore = [p for p in TO_EXCLUDE]
+        for schema in schemas:
+            for prop_name, prop in self._get_schema_properties(schema).items():
+                prop_name = utils.to_snake_case(prop_name)
+                req = "" if prop.get("required", False) else " = None"
+                if prop_name not in ignore:
+                    constructor_params.append("{}: {}{}".format(prop_name, utils.get_type_hint(prop), req))
+                    ignore.append(prop_name)
         constructor_params = ", ".join(constructor_params) + "):"
         constructor_body = ""
-        for prop in schema.properties:
-            prop_name = utils.to_snake_case(prop.name)
-            constructor_body += " " * (indentation + 4) + "self.{} = {}\n".format(prop_name, prop_name)
+        ignore = [p for p in TO_EXCLUDE]
+        for schema in schemas:
+            for prop_name, prop in self._get_schema_properties(schema).items():
+                prop_name = utils.to_snake_case(prop_name)
+                if prop_name not in ignore:
+                    constructor_body += " " * (indentation + 4) + "self.{} = {}\n".format(prop_name, prop_name)
+                    ignore.append(prop_name)
         return constructor_params + "\n" + constructor_body[:-1]
 
+    @staticmethod
+    def _get_schema_description(schema):
+        if "allOf" in schema:
+            return schema["allOf"][0]["description"]
+        if "description" not in schema:
+            return "No description."
+        return schema["description"]
 
-class MethodGenerator:
+    @staticmethod
+    def _get_schema_properties(schema):
+        if "allOf" in schema:
+            properties = {}
+            for s in schema["allOf"]:
+                for prop_name, prop in s["properties"].items():
+                    properties[prop_name] = prop
+            return properties
+        return schema["properties"]
+
+
+class UpdateClassGenerator:
     def __init__(self, spec, input):
         self._spec = spec
         self._input = input
-        self.gen_class_segments = [GenClassSegment(*args) for args in re.findall(GEN_CLASS_PATTERN, self._input)]
-        self.gen_method_segments = [GenMethodSegment(*args) for args in re.findall(GEN_METHOD_PATTERN, self._input)]
+        self.gen_update_class_segments = [
+            GenUpdateClassSegment(*args) for args in re.findall(GEN_UPDATE_CLASS_PATTERN, self._input)
+        ]
 
-    def generate_code_for_method_segments(self):
+    def generate_code_for_class_segments(self):
         generated_segments = {}
-        for segment in self.gen_method_segments:
-            operation = self._spec.get_operation(segment.operation_id)
-            docstring = self.generate_docstring(operation, indentation=8)
-            signature = self.generate_method_signature(operation, segment.method, indentation=4)
-            generated_segments[segment.operation_id] = signature + "\n" + docstring
+        for class_segment in self.gen_update_class_segments:
+            schema = self._spec.components.schemas.get(class_segment.schema_name)
+            docstring = self.generate_docstring(schema, indentation=4)
+            constructor = self.generate_constructor(schema, indentation=4)
+            setters = self.generate_setters(schema, indentation=4)
+            generated_segment = docstring + "\n" + constructor + "\n" + setters
+            generated_segments[class_segment.class_name] = generated_segment
         return generated_segments
 
-    def generate_docstring(self, operation, indentation):
-        docstring = " " * indentation + '"""{}\n\n'.format(operation.description)
+    def generate_docstring(self, schema, indentation):
+        docstring = " " * indentation + '"""{}\n\n'.format(self._get_schema_description(schema))
         docstring += " " * indentation + "Args:\n"
-
-        for param in operation.params:
-            if param.name not in TO_EXCLUDE:
-                docstring += " " * (indentation + 4) + "{} ({}): {}\n".format(
-                    utils.to_snake_case(param.name), utils.get_python_type(param.type), param.description
-                )
-
-        if operation.request_schema:
-            for prop in operation.request_schema.properties:
-                if prop.name not in TO_EXCLUDE:
-                    docstring += " " * (indentation + 4) + "{} ({}): {}\n".format(
-                        utils.to_snake_case(prop.name),
-                        utils.get_full_type_hint(prop.python_type, self.gen_class_segments),
-                        prop.description,
-                    )
-
-        docstring += "\n" + " " * indentation + "Returns:\n"
-        docstring += " " * (indentation + 4) + self._get_return_type_hint(operation) + ":"
-        docstring += "\n" + " " * indentation + '"""'
+        for prop_name, prop in self._get_schema_properties(schema).items():
+            indent = " " * (indentation + 4)
+            if prop_name == "id":
+                docstring += indent + "id (int): {}\n".format(self._get_schema_description(prop))
+            elif prop_name == "externalId":
+                docstring += indent + "external_id (str): {}\n".format(self._get_schema_description(prop))
+        docstring += " " * indentation + '"""'
         return docstring
 
-    def generate_method_signature(self, operation, method_name, indentation):
-        return_value = self._get_return_type_hint(operation)
-        signature = [" " * indentation + "def {}(self".format(method_name)]
+    def generate_constructor(self, schema, indentation):
+        constructor_params = [" " * indentation + "def __init__(self"]
+        for prop_name, prop in self._get_schema_properties(schema).items():
+            if prop_name == "id":
+                constructor_params.append("id: int = None")
+            elif prop_name == "externalId":
+                constructor_params.append("external_id: str = None")
+        constructor_params = ", ".join(constructor_params) + "):"
+        constructor_body = ""
+        indent = " " * (indentation + 4)
+        for prop_name, prop in self._get_schema_properties(schema).items():
+            if prop_name == "id":
+                constructor_body += indent + "self.id = id\n"
+            elif prop_name == "externalId":
+                constructor_body += indent + "self.external_id = external_id\n"
+        constructor_body += indent + "self._update_object = {}\n"
+        return constructor_params + "\n" + constructor_body[:-1]
 
-        for param in operation.params:
-            if param.name not in TO_EXCLUDE:
-                req = "" if param.required else " = None"
-                signature.append(
-                    "{}: {}{}".format(utils.to_snake_case(param.name), utils.get_python_type(param.type), req)
+    def generate_setters(self, schema, indentation):
+        setters = []
+        update_schema = self._get_schema_properties(schema)["update"]
+        indent = " " * indentation
+        for prop_name, prop in self._get_schema_properties(update_schema).items():
+            for update_prop, type_hint in self._get_update_properties(prop):
+                setter = indent + "def {}_{}(self, value: {}):\n".format(
+                    utils.to_snake_case(prop_name), update_prop, type_hint
                 )
+                if update_prop == "set":
+                    setter += indent * 2 + "if value is None:\n"
+                    setter += indent * 3 + "self._update_object['{}'] = {{'setNull': True}}\n".format(prop_name)
+                    setter += indent * 3 + "return self\n"
+                    setter += indent * 2 + "self._update_object['{}'] = {{'set': value}}\n".format(prop_name)
+                    setter += indent * 2 + "return self\n"
+                if update_prop == "add":
+                    setter += indent * 2 + "self._update_object['{}'] = {{'add': value}}\n".format(prop_name)
+                    setter += indent * 2 + "return self\n"
+                if update_prop == "remove":
+                    setter += indent * 2 + "self._update_object['{}'] = {{'remove': value}}\n".format(prop_name)
+                    setter += indent * 2 + "return self\n"
+                setters.append(setter)
+        return "\n\n".join(setters)
 
-        if operation.request_schema:
-            for prop in operation.request_schema.properties:
-                if prop.name not in TO_EXCLUDE:
-                    prop_name = utils.to_snake_case(prop.name)
-                    req = "" if prop.required else " = None"
-                    signature.append(
-                        "{}: {}{}".format(
-                            prop_name, utils.get_full_type_hint(prop.python_type, self.gen_class_segments), req
-                        )
-                    )
+    @staticmethod
+    def _get_update_properties(property_update_schema):
+        update_properties = []
+        if "oneOf" in property_update_schema:
+            update_objects = property_update_schema["oneOf"]
+            for update_obj in update_objects:
+                update_properties.extend(UpdateClassGenerator._get_update_properties(update_obj))
+            return update_properties
+        for property_name, property in property_update_schema["properties"].items():
+            if property_name != "setNull":
+                update_properties.append((property_name, TYPE_MAPPING[property["type"]]))
+        return update_properties
 
-        return ", ".join(signature) + ") -> {}:".format(return_value)
+    @staticmethod
+    def _get_schema_description(schema):
+        if "allOf" in schema:
+            return schema["allOf"][0]["description"]
+        elif "oneOf" in schema:
+            return UpdateClassGenerator._get_schema_description(schema["oneOf"][0])
+        if "description" not in schema:
+            print("bla")
+        return schema["description"]
 
-    def _get_return_type_hint(self, operation):
-        for segment in self.gen_method_segments:
-            if segment.operation_id == operation.operation_id:
-                return segment.return_type
-        raise ValueError("Operation '{}' does not exist".format(operation.operation_id))
+    @staticmethod
+    def _get_schema_properties(schema):
+        if "allOf" in schema:
+            properties = {}
+            for s in schema["allOf"]:
+                for prop_name, prop in s["properties"].items():
+                    properties[prop_name] = prop
+            return properties
+        if "oneOf" in schema:
+            assert len(schema["oneOf"]) == 2, "oneOf contains {} schemas, expected 2".format(len(schema["oneOf"]))
+            first_schema_properties = UpdateClassGenerator._get_schema_properties(schema["oneOf"][0])
+            second_schema_properties = UpdateClassGenerator._get_schema_properties(schema["oneOf"][1])
+            diff = list(set(first_schema_properties) - set(second_schema_properties))
+            assert diff == ["id"] or diff == ["externalId"]
+            properties = {}
+            properties.update(first_schema_properties)
+            properties.update(second_schema_properties)
+            return properties
+        return schema["properties"]
 
 
 class CodeGenerator:
-    def __init__(self, spec_url: str):
-        self.open_api_spec = OpenAPISpec(spec_url)
+    def __init__(self, spec_url: str = None, spec_path: str = None):
+        self.open_api_spec = OpenAPISpec(url=spec_url, path=spec_path)
 
     def generate(self, input: str, output):
         generated = self.generate_to_str(input)
@@ -142,29 +225,31 @@ class CodeGenerator:
 
     def generate_to_str(self, input: str):
         input = self._parse_input(input)
-        self.class_generator = ClassGenerator(self.open_api_spec, input)
-        self.method_generator = MethodGenerator(self.open_api_spec, input)
+        class_generator = ClassGenerator(self.open_api_spec, input)
+        update_class_generator = UpdateClassGenerator(self.open_api_spec, input)
 
-        content_with_generated_classes = self._generate_classes(input)
-        content_with_generated_methods = self._generate_methods(content_with_generated_classes)
-        content_with_imports = self._generate_imports(content_with_generated_methods)
+        content_with_generated_classes = self._generate_classes(input, class_generator)
+        content_with_generated_update_classes = self._generate_update_classes(
+            content_with_generated_classes, update_class_generator
+        )
+        content_with_imports = self._generate_imports(content_with_generated_update_classes)
         content_formatted = self._format_with_black(content_with_imports)
 
         return content_formatted
 
-    def _generate_classes(self, content):
-        generated_class_segments = self.class_generator.generate_code_for_class_segments()
+    def _generate_classes(self, content, class_generator):
+        generated_class_segments = class_generator.generate_code_for_class_segments()
         for cls_name, code_segment in generated_class_segments.items():
             pattern = self._get_gen_class_replace_pattern(cls_name)
             replace_with = self._get_gen_class_replace_string(cls_name, code_segment)
             content = re.sub(pattern, replace_with, content)
         return content
 
-    def _generate_methods(self, content):
-        generated_method_segments = self.method_generator.generate_code_for_method_segments()
-        for operation_id, code_segment in generated_method_segments.items():
-            pattern = self._get_gen_method_replace_pattern(operation_id)
-            replace_with = self._get_gen_method_replace_string(operation_id, code_segment)
+    def _generate_update_classes(self, content, method_generator):
+        generated_class_segments = method_generator.generate_code_for_class_segments()
+        for operation_id, code_segment in generated_class_segments.items():
+            pattern = self._get_gen_update_class_replace_pattern(operation_id)
+            replace_with = self._get_gen_update_class_replace_string(operation_id, code_segment)
             content = re.sub(pattern, replace_with, content)
         return content
 
@@ -177,16 +262,16 @@ class CodeGenerator:
         return format_str(src_contents=content, mode=FileMode(line_length=120))
 
     def _get_gen_class_replace_pattern(self, class_name):
-        return "# GenClass: (\S+)\s+class {}\((.+)\):(?:(?!# GenStop)[\s\S])+# GenStop".format(class_name)
+        return "# GenClass: ([\S ]+)\s+class {}\((.+)\):(?:(?!# GenStop)[\s\S])+# GenStop".format(class_name)
 
     def _get_gen_class_replace_string(self, class_name, code_segment):
         return r"# GenClass: \1\nclass {}(\2):\n{}\n    # GenStop".format(class_name, code_segment)
 
-    def _get_gen_method_replace_pattern(self, operation_id):
-        return "# GenMethod: {} -> ([\S ]+)\s+def \S+\(.+\):(?:(?!# GenStop)[\s\S])+# GenStop".format(operation_id)
+    def _get_gen_update_class_replace_pattern(self, class_name):
+        return "# GenUpdateClass: (\S+)\s+class {}\((.+)\):(?:(?!# GenStop)[\s\S])+# GenStop".format(class_name)
 
-    def _get_gen_method_replace_string(self, operation_id, code_segment):
-        return r"# GenMethod: {} -> \1\n{}\n        # GenStop".format(operation_id, code_segment)
+    def _get_gen_update_class_replace_string(self, class_name, code_segment):
+        return r"# GenUpdateClass: \1\nclass {}(\2):\n{}\n    # GenStop".format(class_name, code_segment)
 
     @staticmethod
     def _parse_input(input):

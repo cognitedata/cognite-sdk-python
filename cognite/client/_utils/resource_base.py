@@ -126,3 +126,43 @@ class CogniteResource:
 
     def to_pandas(self):
         raise NotImplementedError
+
+
+class CogniteUpdate:
+    id = None
+    external_id = None
+    _update_object = None
+
+    def __eq__(self, other):
+        return type(self) == type(other) and self.dump() == other.dump()
+
+    def __str__(self):
+        return json.dumps(self.dump(), indent=4, sort_keys=True)
+
+    def __repr__(self):
+        return self.__str__()
+
+    def dump(self):
+        dumped = {"update": self._update_object}
+        if self.external_id is not None:
+            dumped["externalId"] = self.external_id
+        if self.id is not None:
+            dumped["id"] = self.id
+        return dumped
+
+
+class CogniteFilter:
+    def __eq__(self, other):
+        return type(self) == type(other) and self.dump() == other.dump()
+
+    def __str__(self):
+        return json.dumps(self.dump(), default=lambda x: x.__dict__, indent=4, sort_keys=True)
+
+    def __repr__(self):
+        return self.__str__()
+
+    def dump(self, camel_case: bool = False):
+        dumped = {key: value for key, value in self.__dict__.items() if value is not None}
+        if camel_case:
+            dumped = {to_camel_case(key): value for key, value in dumped.items()}
+        return dumped

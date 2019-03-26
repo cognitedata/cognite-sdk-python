@@ -50,9 +50,13 @@ def _raise_API_error(res: Response):
         error = res.json()["error"]
         if isinstance(error, str):
             msg = error
-        else:
+        elif isinstance(error, Dict):
             msg = error["message"]
-            extra = error.get("extra")
+            extra = error.get("extra", {})
+            for key in set(error.keys()) - {"code", "message", "extra"}:
+                extra[key] = error[key]
+        else:
+            msg = res.content
     except:
         msg = res.content
 
@@ -237,6 +241,9 @@ class APIClient:
             res = self._post(resource_path + "/delete", json=items, headers=headers, params=params)
             return cls._load(res.json()["data"]["items"])
         raise TypeError("ids must be int or list of ints")
+
+    def _update(self, cls: Any, resource_path: str, items: List[Any], params: Dict = None, headers: Dict = None):
+        pass
 
     @staticmethod
     def _json_dumps_default(x):

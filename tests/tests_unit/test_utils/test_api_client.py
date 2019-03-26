@@ -8,6 +8,7 @@ import pytest
 from cognite.client import APIError
 from cognite.client._utils.api_client import APIClient, _model_hosting_emulator_url_converter
 from cognite.client._utils.resource_base import CogniteResource, CogniteResourceList
+from tests.utils import jgz_load
 
 BASE_URL = "http://localtest.com/api/1.0/projects/test_proj"
 URL_PATH = "/someurl"
@@ -225,6 +226,7 @@ class TestStandardMethods:
         res = API_CLIENT._create(
             cls=SomeResourceList, resource_path=URL_PATH, items=[SomeResource(1, 1), SomeResource(1)]
         )
+        assert {"items": [{"x": 1, "y": 1}, {"x": 1}]} == jgz_load(rsps.calls[0].request.body)
         assert SomeResource(1, 2) == res[0]
         assert SomeResource(1) == res[1]
 
@@ -261,6 +263,11 @@ class TestStandardMethods:
             API_CLIENT._delete_multiple(cls=SomeResourceList, resource_path=URL_PATH, ids=[1, 2])
         assert 400 == e.value.code
         assert "Client Error" == e.value.message
+
+    def test_standard_update_ok(self, rsps):
+        rsps.add(rsps.POST, BASE_URL + URL_PATH + "/update", status=200, json={"data": {"items": [{"x": 1, "y": 100}]}})
+        res = API_CLIENT._update(SomeResourceList, resource_path=URL_PATH, items=[SomeResource(y=100)])
+        assert isinstance(res, SomeResourceList)
 
 
 class TestMiscellaneous:

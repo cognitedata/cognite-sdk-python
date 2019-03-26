@@ -1,7 +1,6 @@
 import os
 
-from openapi.generator import ClassGenerator, CodeGenerator, MethodGenerator
-from tests.tests_unit.tests_openapi.utils import SPEC_URL
+from openapi.generator import ClassGenerator, CodeGenerator, UpdateClassGenerator
 
 input_path = os.path.join(os.path.dirname(__file__), "input_output/input.py")
 output_path = os.path.join(os.path.dirname(__file__), "input_output/output.py")
@@ -11,7 +10,7 @@ with open(input_path) as f:
 with open(output_path) as f:
     OUTPUT = f.read()
 
-CODE_GENERATOR = CodeGenerator(SPEC_URL)
+CODE_GENERATOR = CodeGenerator(spec_path="input_output/test_spec_dereferenced.json")
 
 
 class TestCodeGenerator:
@@ -32,172 +31,189 @@ CLASS_GENERATOR = ClassGenerator(CODE_GENERATOR.open_api_spec, INPUT)
 class TestClassGenerator:
     def test_get_gen_class_segments(self):
         segments = CLASS_GENERATOR.gen_class_segments
-        assert ("GetFieldValuesDTO", "Field") == segments[0]
-        assert ("AssetV2", "Asset") == segments[1]
+        assert ("Asset, AssetReferences", "Asset") == segments[0]
+        assert ("AssetFilter.filter", "AssetFilter") == segments[1]
 
-        assert "Asset" == segments[1].class_name
-        assert "AssetV2" == segments[1].schema_name
+        assert "Asset" == segments[0].class_name
+        assert "Asset, AssetReferences" == segments[0].schema_names
 
     def test_generate_docstring_from_schema(self):
-        docstring = CLASS_GENERATOR.generate_docstring(CLASS_GENERATOR._spec.components.get_schema("AssetV2"), 4)
+        schemas = [
+            CLASS_GENERATOR._spec.components.schemas.get("Asset"),
+            CLASS_GENERATOR._spec.components.schemas.get("AssetReferences"),
+        ]
+        docstring = CLASS_GENERATOR.generate_docstring(schemas, 4)
         assert (
-            """    \"\"\"Representation of a physical asset, e.g plant or piece of equipment\n
+            """    \"\"\"Representation of a physical asset, e.g plant or piece of equipment
+
     Args:
-        id (int): ID of the asset.
-        path (List[int]): IDs of assets on the path to the asset.
-        depth (int): Asset path depth (number of levels below root node).
+        external_id (str): External Id provided by client. Should be unique within the project
         name (str): Name of asset. Often referred to as tag.
-        parent_id (int): ID of parent asset, if any
+        parent_id (int): Javascript friendly internal ID given to the object.
         description (str): Description of asset.
-        types (List[Field]): The field specific values of the asset.
         metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
         source (str): The source of this asset
-        source_id (str): ID of the asset in the source. Only applicable if source is specified. The combination of source and sourceId must be unique.
-        created_time (int): Time when this asset was created in CDP in milliseconds since Jan 1, 1970.
-        last_updated_time (int): The last time this asset was updated in CDP, in milliseconds since Jan 1, 1970.
+        created_time (int): It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        id (int): Javascript friendly internal ID given to the object.
+        last_updated_time (int): It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        path (List[int]): IDs of assets on the path to the asset.
+        depth (int): Asset path depth (number of levels below root node).
+        ref_id (str): Reference ID used only in post request to disambiguate references to duplicate names.
+        parent_ref_id (str): Reference ID of parent, to disambiguate if multiple nodes have the same name
     \"\"\""""
             == docstring
         )
 
     def test_generate_constructor_from_schema(self):
-        constructor = CLASS_GENERATOR.generate_constructor(
-            CLASS_GENERATOR._spec.components.get_schema("AssetV2"), indentation=4
-        )
+        schemas = [
+            CLASS_GENERATOR._spec.components.schemas.get("Asset"),
+            CLASS_GENERATOR._spec.components.schemas.get("AssetReferences"),
+        ]
+        constructor = CLASS_GENERATOR.generate_constructor(schemas, indentation=4)
         assert (
-            """    def __init__(self, id: int = None, path: List[int] = None, depth: int = None, name: str = None, parent_id: int = None, description: str = None, types: List[Field] = None, metadata: Dict[str, Any] = None, source: str = None, source_id: str = None, created_time: int = None, last_updated_time: int = None):
-        self.id = id
-        self.path = path
-        self.depth = depth
+            """    def __init__(self, external_id: str = None, name: str = None, parent_id: int = None, description: str = None, metadata: Dict[str, Any] = None, source: str = None, created_time: int = None, id: int = None, last_updated_time: int = None, path: List[int] = None, depth: int = None, ref_id: str = None, parent_ref_id: str = None):
+        self.external_id = external_id
         self.name = name
         self.parent_id = parent_id
         self.description = description
-        self.types = types
         self.metadata = metadata
         self.source = source
-        self.source_id = source_id
         self.created_time = created_time
-        self.last_updated_time = last_updated_time"""
+        self.id = id
+        self.last_updated_time = last_updated_time
+        self.path = path
+        self.depth = depth
+        self.ref_id = ref_id
+        self.parent_ref_id = parent_ref_id"""
             == constructor
         )
 
     def test_generate_code_for_class_segments(self):
         class_segments = CLASS_GENERATOR.generate_code_for_class_segments()
-        docstring = CLASS_GENERATOR.generate_docstring(
-            CLASS_GENERATOR._spec.components.get_schema("AssetV2"), indentation=4
-        )
-        constructor = CLASS_GENERATOR.generate_constructor(
-            CLASS_GENERATOR._spec.components.get_schema("AssetV2"), indentation=4
-        )
+        schemas = [
+            CLASS_GENERATOR._spec.components.schemas.get("Asset"),
+            CLASS_GENERATOR._spec.components.schemas.get("AssetReferences"),
+        ]
+        docstring = CLASS_GENERATOR.generate_docstring(schemas, indentation=4)
+        constructor = CLASS_GENERATOR.generate_constructor(schemas, indentation=4)
         assert class_segments["Asset"] == docstring + "\n" + constructor
 
 
-METHOD_GENERATOR = MethodGenerator(CODE_GENERATOR.open_api_spec, INPUT)
+UPDATE_CLASS_GENERATOR = UpdateClassGenerator(CODE_GENERATOR.open_api_spec, INPUT)
 
 
-class TestMethodGenerator:
+class TestUpdateClassGenerator:
     def test_get_gen_method_segments(self):
-        segments = METHOD_GENERATOR.gen_method_segments
-        assert ("getAssets", "Asset", "get", "self") == segments[0]
-        assert ("postAssets", "Union[Asset, List[Asset]]", "post", "self, nana") == segments[1]
+        segments = UPDATE_CLASS_GENERATOR.gen_update_class_segments
+        assert ("AssetChange", "AssetUpdate") == segments[0]
+        assert "AssetUpdate" == segments[0].class_name
+        assert "AssetChange" == segments[0].schema_name
 
-        assert "getAssets" == segments[0].operation_id
-        assert "Asset" == segments[0].return_type
-        assert "get" == segments[0].method
-        assert "self" == segments[0].params
-
-    def test_generate_docstring_from_operation_get(self):
-        docstring = METHOD_GENERATOR.generate_docstring(
-            METHOD_GENERATOR._spec.get_operation("getAssets"), indentation=8
+    def test_gen_docstring(self):
+        docstring = UPDATE_CLASS_GENERATOR.generate_docstring(
+            CLASS_GENERATOR._spec.components.schemas.get("AssetChange"), indentation=4
         )
         assert (
-            """        \"\"\"List all assets
+            """    \"\"\"Changes will be applied to event.
 
-Retrieve a list of all assets in the given project. The list is sorted alphabetically
-by name. This operation supports pagination. You can retrieve a subset of assets
-by supplying additional fields; Only assets satisfying all criteria will be returned.
-Names and descriptions are fuzzy searched using [edit distance](https://en.wikipedia.org/wiki/Edit_distance).
-The fuzziness parameter controls the maximum edit distance when considering matches
-for the name and description fields.
-
-        Args:
-            name (str): The name of the asset(s) to get.
-            depth (int): Get sub assets up to this many levels below the specified path.
-            metadata (str): The metadata values used to filter the results. Format is {"key1": "value1", "key2": "value2"}. The maximum number of entries (pairs of key+value) is 64. The maximum length in characters of the sum of all keys and values is 10240. There is also a maximum length of 128 characters per key and 512 per value.
-            description (str): Only return assets that contain this description
-            source (str): The source of the assets used to filter the results
-            limit (int): Limits the number of results to be returned. The maximum results returned by the server is 1000 even if the limit specified is larger.
-
-        Returns:
-            Asset:
-        \"\"\""""
+    Args:
+        id (int): Javascript friendly internal ID given to the object.
+        external_id (str): External Id provided by client. Should be unique within the project
+    \"\"\""""
             == docstring
         )
 
-    def test_generate_method_signature_operation_get(self):
-        signature = METHOD_GENERATOR.generate_method_signature(
-            METHOD_GENERATOR._spec.get_operation("getAssets"), "get", 4
+    def test_gen_constructor(self):
+        constructor = UPDATE_CLASS_GENERATOR.generate_constructor(
+            CLASS_GENERATOR._spec.components.schemas.get("AssetChange"), indentation=4
         )
         assert (
-            "    def get(self, name: str = None, depth: int = None, metadata: str = None, description: str = None, "
-            "source: str = None, limit: int = None) -> Asset:" == signature
+            """    def __init__(self, id: int = None, external_id: str = None):
+        self.id = id
+        self.external_id = external_id
+        self._update_object = {}"""
+            == constructor
         )
 
-    def test_generate_code_for_method_segments_operation_get(self):
-        signature = METHOD_GENERATOR.generate_method_signature(
-            METHOD_GENERATOR._spec.get_operation("getAssets"), "get", 4
+    def test_gen_setters(self):
+        setters = UPDATE_CLASS_GENERATOR.generate_setters(
+            CLASS_GENERATOR._spec.components.schemas.get("EventChange"), indentation=4
         )
-        docstring = METHOD_GENERATOR.generate_docstring(
-            METHOD_GENERATOR._spec.get_operation("getAssets"), indentation=8
-        )
-        method_segments = METHOD_GENERATOR.generate_code_for_method_segments()
-        assert method_segments["getAssets"] == signature + "\n" + docstring
-
-    def test_generate_docstring_from_operation_with_request_body(self):
-        docstring = METHOD_GENERATOR.generate_docstring(
-            METHOD_GENERATOR._spec.get_operation("postAssets"), indentation=8
-        )
+        print(setters)
         assert (
-            """        \"\"\"Create new assets
+            """    def external_id_set(self, value: str):
+        if value is None:
+            self._update_object['externalId'] = {'setNull': True}
+            return self
+        self._update_object['externalId'] = {'set': value}
+        return self
 
-Create new assets. It is possible to post a maximum of 1000 assets per request
 
-        Args:
-            name (str): Name of asset. Often referred to as tag.
-            ref_id (str): Reference ID used only in post request to disambiguate references to duplicate names.
-            parent_name (str): Name of parent. This parent must exist in the same POST request.
-            parent_ref_id (str): Reference ID of parent, to disambiguate if multiple nodes have the same name.
-            parent_id (int): ID of parent asset in CDP, if any. If parentName or parentRefId are also specified, this will be ignored.
-            description (str): Description of asset.
-            source (str): The source of this asset
-            source_id (str): ID of the asset in the source. Only applicable if source is specified. The combination of source and sourceId must be unique.
-            types (List[Dict[str, Any]]): The field specific values of the asset.
-            metadata (Dict[str, Any]): Custom, application specific metadata. Format is {"key1": "value1", "key2": "value2"}. The maximum number of entries (pairs of key+value) is 64. The maximum length in characters of the sum of all keys and values is 10240. There is also a maximum length of 128 characters per key and 512 per value.
-            created_time (int): Time when this asset was created in CDP in milliseconds since Jan 1, 1970.
-            last_updated_time (int): The last time this asset was updated in CDP, in milliseconds since Jan 1, 1970.
+    def start_time_set(self, value: int):
+        if value is None:
+            self._update_object['startTime'] = {'setNull': True}
+            return self
+        self._update_object['startTime'] = {'set': value}
+        return self
 
-        Returns:
-            Union[Asset, List[Asset]]:
-        \"\"\""""
-            == docstring
+
+    def end_time_set(self, value: int):
+        if value is None:
+            self._update_object['endTime'] = {'setNull': True}
+            return self
+        self._update_object['endTime'] = {'set': value}
+        return self
+
+
+    def description_set(self, value: str):
+        if value is None:
+            self._update_object['description'] = {'setNull': True}
+            return self
+        self._update_object['description'] = {'set': value}
+        return self
+
+
+    def metadata_set(self, value: Dict[str, Any]):
+        if value is None:
+            self._update_object['metadata'] = {'setNull': True}
+            return self
+        self._update_object['metadata'] = {'set': value}
+        return self
+
+
+    def asset_ids_add(self, value: List):
+        self._update_object['assetIds'] = {'add': value}
+        return self
+
+
+    def asset_ids_remove(self, value: List):
+        self._update_object['assetIds'] = {'remove': value}
+        return self
+
+
+    def asset_ids_set(self, value: List):
+        if value is None:
+            self._update_object['assetIds'] = {'setNull': True}
+            return self
+        self._update_object['assetIds'] = {'set': value}
+        return self
+
+
+    def source_set(self, value: str):
+        if value is None:
+            self._update_object['source'] = {'setNull': True}
+            return self
+        self._update_object['source'] = {'set': value}
+        return self
+"""
+            == setters
         )
 
-    def test_generate_method_signature_from_operation_with_request_body(self):
-        signature = METHOD_GENERATOR.generate_method_signature(
-            METHOD_GENERATOR._spec.get_operation("postAssets"), "get", 4
-        )
-        assert (
-            "    def get(self, name: str = None, ref_id: str = None, parent_name: str = None, "
-            "parent_ref_id: str = None, parent_id: int = None, description: str = None, source: str = None, "
-            "source_id: str = None, types: List[Dict[str, Any]] = None, metadata: Dict[str, Any] = None, "
-            "created_time: int = None, last_updated_time: int = None) -> Union[Asset, List[Asset]]:" == signature
-        )
+    def test_generate_code(self):
+        schema = UPDATE_CLASS_GENERATOR._spec.components.schemas.get("AssetChange")
+        docstring = UPDATE_CLASS_GENERATOR.generate_docstring(schema, indentation=4)
+        constructor = UPDATE_CLASS_GENERATOR.generate_constructor(schema, indentation=4)
+        setters = UPDATE_CLASS_GENERATOR.generate_setters(schema, indentation=4)
 
-    def test_generate_code_for_method_segments_operation_with_request_body(self):
-        signature = METHOD_GENERATOR.generate_method_signature(
-            METHOD_GENERATOR._spec.get_operation("postAssets"), "post", 4
-        )
-        docstring = METHOD_GENERATOR.generate_docstring(
-            METHOD_GENERATOR._spec.get_operation("postAssets"), indentation=8
-        )
-        method_segments = METHOD_GENERATOR.generate_code_for_method_segments()
-        assert method_segments["postAssets"] == signature + "\n" + docstring
+        generated = UPDATE_CLASS_GENERATOR.generate_code_for_class_segments()["AssetUpdate"]
+        assert generated == docstring + "\n" + constructor + "\n" + setters
