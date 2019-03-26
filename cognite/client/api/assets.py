@@ -58,6 +58,10 @@ class Asset(CogniteResource):
     # GenStop
 
 
+class AssetList(CogniteResourceList):
+    _RESOURCE = Asset
+
+
 # GenUpdateClass: AssetChange
 class AssetUpdate(CogniteUpdate):
     """Changes will be applied to event.
@@ -155,10 +159,6 @@ class AssetFilter(CogniteFilter):
     # GenStop
 
 
-class AssetList(CogniteResourceList):
-    _RESOURCE = Asset
-
-
 class AssetsApi(APIClient):
     RESOURCE_PATH = "/assets"
 
@@ -170,7 +170,6 @@ class AssetsApi(APIClient):
         Returns:
             Union[Asset, AssetList]: Requested asset(s)
         """
-
         return self._retrieve(AssetList, self.RESOURCE_PATH, id)
 
     def list(self) -> AssetList:

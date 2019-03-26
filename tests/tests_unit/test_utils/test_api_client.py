@@ -8,7 +8,7 @@ import pytest
 from cognite.client import APIError
 from cognite.client._utils.api_client import APIClient, _model_hosting_emulator_url_converter
 from cognite.client._utils.resource_base import CogniteResource, CogniteResourceList
-from tests.utils import jgz_load
+from tests.utils import jsgz_load
 
 BASE_URL = "http://localtest.com/api/1.0/projects/test_proj"
 URL_PATH = "/someurl"
@@ -113,7 +113,7 @@ class SomeResourceList(CogniteResourceList):
     _RESOURCE = SomeResource
 
 
-class TestStandardMethods:
+class TestStandardRetrieve:
     def test_standard_retrieve_OK(self, rsps):
         rsps.add(
             rsps.GET, BASE_URL + URL_PATH + "/1", status=200, json={"data": {"items": [{"x": 1, "y": 2}, {"x": 1}]}}
@@ -128,33 +128,79 @@ class TestStandardMethods:
         assert "Client Error" == e.value.message
         assert 400 == e.value.code
 
-    def test_standard_retrieve_multiple_OK(self, rsps):
-        rsps.add(
-            rsps.POST,
-            BASE_URL + URL_PATH + "/byids",
-            status=200,
-            json={"data": {"items": [{"x": 1, "y": 2}, {"x": 1}]}},
-        )
-        assert SomeResourceList([SomeResource(1, 2), SomeResource(1)]) == API_CLIENT._retrieve_multiple(
-            cls=SomeResourceList, resource_path=URL_PATH, ids=[1, 2]
-        )
 
-    def test_standard_retrieve_multiple__single_id_OK(self, rsps):
+class TestStandardRetrieveById:
+    @pytest.fixture
+    def mock_by_ids(self, rsps):
         rsps.add(
             rsps.POST,
             BASE_URL + URL_PATH + "/byids",
             status=200,
             json={"data": {"items": [{"x": 1, "y": 2}, {"x": 1}]}},
         )
-        assert SomeResource(1, 2) == API_CLIENT._retrieve_multiple(cls=SomeResourceList, resource_path=URL_PATH, ids=1)
+        yield rsps
+
+    def test_by_id_no_wrap_OK(self, mock_by_ids):
+        assert SomeResourceList([SomeResource(1, 2), SomeResource(1)]) == API_CLIENT._retrieve_multiple(
+            cls=SomeResourceList, resource_path=URL_PATH, wrap_ids=False, ids=[1, 2]
+        )
+        assert {"items": [1, 2]} == jsgz_load(mock_by_ids.calls[0].request.body)
+
+    def test_by_single_id_no_wrap_OK(self, mock_by_ids):
+        assert SomeResource(1, 2) == API_CLIENT._retrieve_multiple(
+            cls=SomeResourceList, resource_path=URL_PATH, wrap_ids=False, ids=1
+        )
+        assert {"items": [1]} == jsgz_load(mock_by_ids.calls[0].request.body)
+
+    def test_by_id_wrap_OK(self, mock_by_ids):
+        assert SomeResourceList([SomeResource(1, 2), SomeResource(1)]) == API_CLIENT._retrieve_multiple(
+            cls=SomeResourceList, resource_path=URL_PATH, wrap_ids=True, ids=[1, 2]
+        )
+        assert {"items": [{"id": 1}, {"id": 2}]} == jsgz_load(mock_by_ids.calls[0].request.body)
+
+    def test_by_single_id_wrap_OK(self, mock_by_ids):
+        assert SomeResource(1, 2) == API_CLIENT._retrieve_multiple(
+            cls=SomeResourceList, resource_path=URL_PATH, wrap_ids=True, ids=1
+        )
+        assert {"items": [{"id": 1}]} == jsgz_load(mock_by_ids.calls[0].request.body)
+
+    def test_by_external_id_wrap_OK(self, mock_by_ids):
+        assert SomeResourceList([SomeResource(1, 2), SomeResource(1)]) == API_CLIENT._retrieve_multiple(
+            cls=SomeResourceList, resource_path=URL_PATH, wrap_ids=True, external_ids=["1", "2"]
+        )
+        assert {"items": [{"externalId": "1"}, {"externalId": "2"}]} == jsgz_load(mock_by_ids.calls[0].request.body)
+
+    def test_by_single_external_id_wrap_OK(self, mock_by_ids):
+        assert SomeResource(1, 2) == API_CLIENT._retrieve_multiple(
+            cls=SomeResourceList, resource_path=URL_PATH, wrap_ids=True, external_ids="1"
+        )
+        assert {"items": [{"externalId": "1"}]} == jsgz_load(mock_by_ids.calls[0].request.body)
+
+    def test_by_external_id_no_wrap(self):
+        with pytest.raises(ValueError, match="must be wrapped"):
+            API_CLIENT._retrieve_multiple(
+                cls=SomeResourceList, resource_path=URL_PATH, wrap_ids=False, external_ids=["1", "2"]
+            )
+
+    def test_id_and_external_id_mixed(self, mock_by_ids):
+        assert SomeResourceList([SomeResource(1, 2), SomeResource(1)]) == API_CLIENT._retrieve_multiple(
+            cls=SomeResourceList, resource_path=URL_PATH, wrap_ids=True, ids=1, external_ids=["2"]
+        )
+        assert {"items": [{"id": 1}, {"externalId": "2"}]} == jsgz_load(mock_by_ids.calls[0].request.body)
 
     def test_standard_retrieve_multiple_fail(self, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH + "/byids", status=400, json={"error": {"message": "Client Error"}})
         with pytest.raises(APIError, match="Client Error") as e:
-            API_CLIENT._retrieve_multiple(cls=SomeResourceList, resource_path=URL_PATH, ids=[1, 2])
+            API_CLIENT._retrieve_multiple(cls=SomeResourceList, resource_path=URL_PATH, wrap_ids=True, ids=[1, 2])
         assert "Client Error" == e.value.message
         assert 400 == e.value.code
 
+    def test_ids_all_None(self):
+        with pytest.raises(ValueError, match="No ids specified"):
+            API_CLIENT._retrieve_multiple(cls=SomeResourceList, resource_path=URL_PATH, wrap_ids=False)
+
+
+class TestStandardList:
     def test_standard_list_ok(self, rsps):
         rsps.add(rsps.GET, BASE_URL + URL_PATH, status=200, json={"data": {"items": [{"x": 1, "y": 2}, {"x": 1}]}})
         assert SomeResourceList([SomeResource(1, 2), SomeResource(1)]) == API_CLIENT._list(
@@ -221,12 +267,14 @@ class TestStandardMethods:
         res = API_CLIENT._list(cls=SomeResourceList, resource_path=URL_PATH, limit=5333)
         assert 5333 == len(res)
 
+
+class TestStandardCreate:
     def test_standard_create_ok(self, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH, status=200, json={"data": {"items": [{"x": 1, "y": 2}, {"x": 1}]}})
         res = API_CLIENT._create(
             cls=SomeResourceList, resource_path=URL_PATH, items=[SomeResource(1, 1), SomeResource(1)]
         )
-        assert {"items": [{"x": 1, "y": 1}, {"x": 1}]} == jgz_load(rsps.calls[0].request.body)
+        assert {"items": [{"x": 1, "y": 1}, {"x": 1}]} == jsgz_load(rsps.calls[0].request.body)
         assert SomeResource(1, 2) == res[0]
         assert SomeResource(1) == res[1]
 
@@ -239,6 +287,8 @@ class TestStandardMethods:
         assert 400 == e.value.code
         assert "Client Error" == e.value.message
 
+
+class TestStandardDelete:
     def test_standard_delete_multiple_ok(self, rsps):
         rsps.add(
             rsps.POST,
@@ -246,24 +296,28 @@ class TestStandardMethods:
             status=200,
             json={"data": {"items": [{"x": 1, "y": 2}, {"x": 1}]}},
         )
-        res = API_CLIENT._delete_multiple(cls=SomeResourceList, resource_path=URL_PATH, ids=[1, 2])
+        res = API_CLIENT._delete_multiple(cls=SomeResourceList, resource_path=URL_PATH, wrap_ids=False, ids=[1, 2])
+        assert {"items": [1, 2]} == jsgz_load(rsps.calls[0].request.body)
         assert isinstance(res, SomeResourceList)
         assert SomeResource(1, 2) == res[0]
         assert SomeResource(1) == res[1]
 
     def test_standard_delete_multiple_ok__single_id(self, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH + "/delete", status=200, json={"data": {"items": [{"x": 1, "y": 2}]}})
-        res = API_CLIENT._delete_multiple(cls=SomeResourceList, resource_path=URL_PATH, ids=1)
+        res = API_CLIENT._delete_multiple(cls=SomeResourceList, resource_path=URL_PATH, wrap_ids=False, ids=1)
+        assert {"items": [1]} == jsgz_load(rsps.calls[0].request.body)
         assert isinstance(res, SomeResource)
         assert SomeResource(1, 2) == res
 
     def test_standard_delete_multiple_fail(self, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH + "/delete", status=400, json={"error": {"message": "Client Error"}})
         with pytest.raises(APIError, match="Client Error") as e:
-            API_CLIENT._delete_multiple(cls=SomeResourceList, resource_path=URL_PATH, ids=[1, 2])
+            API_CLIENT._delete_multiple(cls=SomeResourceList, resource_path=URL_PATH, wrap_ids=False, ids=[1, 2])
         assert 400 == e.value.code
         assert "Client Error" == e.value.message
 
+
+class TestStandardUpdate:
     def test_standard_update_ok(self, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH + "/update", status=200, json={"data": {"items": [{"x": 1, "y": 100}]}})
         res = API_CLIENT._update(SomeResourceList, resource_path=URL_PATH, items=[SomeResource(y=100)])

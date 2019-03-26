@@ -172,20 +172,22 @@ class APIClient:
             ][0]
         )
 
-    def _retrieve_multiple(self, cls, resource_path: str, ids: Union[List[int], int], headers: Dict = None):
-        if isinstance(ids, int):
-            return cls._RESOURCE._load(
-                self._post(url_path=resource_path + "/byids", json={"items": [ids]}, headers=headers).json()["data"][
-                    "items"
-                ][0]
-            )
-        elif isinstance(ids, list):
-            return cls._load(
-                self._post(url_path=resource_path + "/byids", json={"items": ids}, headers=headers).json()["data"][
-                    "items"
-                ]
-            )
-        raise TypeError("ids must be int or list of int")
+    def _retrieve_multiple(
+        self,
+        cls,
+        resource_path: str,
+        wrap_ids: bool,
+        ids: Union[List[int], int] = None,
+        external_ids: Union[List[str], str] = None,
+        headers: Dict = None,
+    ):
+        all_ids = self._process_ids(ids, external_ids, wrap_ids=wrap_ids)
+        res = self._post(url_path=resource_path + "/byids", json={"items": all_ids}, headers=headers).json()["data"][
+            "items"
+        ]
+        if len(all_ids) == 1:
+            return cls._RESOURCE._load(res[0])
+        return cls._load(res)
 
     def _list_generator(
         self, cls, resource_path: str, limit: int = None, chunk: int = None, params: Dict = None, headers: Dict = None
@@ -230,20 +232,54 @@ class APIClient:
         return cls._load(res.json()["data"]["items"])
 
     def _delete_multiple(
-        self, cls: Any, resource_path: str, ids: Union[List[int], int], params: Dict = None, headers: Dict = None
+        self,
+        cls: Any,
+        resource_path: str,
+        wrap_ids: bool,
+        ids: Union[List[int], int] = None,
+        external_ids: Union[List[str], str] = None,
+        params: Dict = None,
+        headers: Dict = None,
     ):
-        if isinstance(ids, int):
-            items = {"items": [ids]}
-            res = self._post(resource_path + "/delete", json=items, headers=headers, params=params)
-            return cls._RESOURCE._load(res.json()["data"]["items"][0])
-        elif isinstance(ids, list):
-            items = {"items": ids}
-            res = self._post(resource_path + "/delete", json=items, headers=headers, params=params)
-            return cls._load(res.json()["data"]["items"])
-        raise TypeError("ids must be int or list of ints")
+        all_ids = self._process_ids(ids, external_ids, wrap_ids)
+        res = self._post(resource_path + "/delete", json={"items": all_ids}, params=params, headers=headers).json()[
+            "data"
+        ]["items"]
+        if len(all_ids) == 1:
+            return cls._RESOURCE._load(res[0])
+        return cls._load(res)
 
     def _update(self, cls: Any, resource_path: str, items: List[Any], params: Dict = None, headers: Dict = None):
         pass
+
+    @staticmethod
+    def _process_ids(
+        ids: Union[List[int], int, None], external_ids: Union[List[str], str, None], wrap_ids: bool
+    ) -> List:
+        if not external_ids and not ids:
+            raise ValueError("No ids specified")
+        if external_ids and not wrap_ids:
+            raise ValueError("externalIds must be wrapped")
+
+        if isinstance(ids, int):
+            ids = [ids]
+        elif isinstance(ids, List) or ids is None:
+            ids = ids or []
+        else:
+            raise TypeError("ids must be int or list of int")
+
+        if isinstance(external_ids, str):
+            external_ids = [external_ids]
+        elif isinstance(external_ids, List) or external_ids is None:
+            external_ids = external_ids or []
+        else:
+            raise TypeError("external_ids must be str or list of str")
+
+        if wrap_ids:
+            ids = [{"id": id} for id in ids]
+            external_ids = [{"externalId": external_id} for external_id in external_ids]
+
+        return ids + external_ids
 
     @staticmethod
     def _json_dumps_default(x):
