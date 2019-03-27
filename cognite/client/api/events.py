@@ -1,272 +1,270 @@
 # -*- coding: utf-8 -*-
-import json
-from copy import deepcopy
 from typing import *
 from typing import List
 
-import pandas as pd
-
 from cognite.client._utils.api_client import APIClient
-from cognite.client._utils.resource_base import CogniteResource, CogniteResourceList, CogniteResponse
+from cognite.client._utils.resource_base import CogniteFilter, CogniteResource, CogniteResourceList, CogniteUpdate
 
 
-class EventResponse(CogniteResponse):
-    """Event Response Object."""
-
-    def __init__(self, internal_representation):
-        super().__init__(internal_representation)
-        item = self.to_json()
-        self.id = item.get("id")
-        self.type = item.get("type")
-        self.sub_type = item.get("subType")
-        self.description = item.get("description")
-        self.asset_ids = item.get("assetIds")
-        self.created_time = item.get("createdTime")
-        self.start_time = item.get("startTime")
-        self.end_time = item.get("endTime")
-        self.last_updated_time = item.get("lastUpdatedTime")
-        self.metadata = item.get("metadata")
-
-    def to_pandas(self):
-        event = self.to_json().copy()
-        if event.get("metadata"):
-            event.update(event.pop("metadata"))
-
-        # Hack to avoid assetIds ending up as first element in dict as from_dict will fail
-        asset_ids = event.pop("assetIds")
-        df = pd.DataFrame.from_dict(event, orient="index")
-        df.loc["assetIds"] = [asset_ids]
-        return df
-
-
-class EventListResponse(CogniteResourceList):
-    """Event List Response Object."""
-
-    _RESPONSE_CLASS = EventResponse
-
-    def __init__(self, internal_representation):
-        super().__init__(internal_representation)
-
-    def to_pandas(self):
-        items = deepcopy(self.to_json())
-        for d in items:
-            if d.get("metadata"):
-                d.update(d.pop("metadata"))
-        return pd.DataFrame(items)
-
-
+# GenClass: Event
 class Event(CogniteResource):
-    """Data transfer object for events.
+    """An event represents something that happened at a given interval in time, e.g a failure, a work order etc.
 
     Args:
-        start_time (int):       Start time of the event in ms since epoch.
-        end_time (int):         End time of the event in ms since epoch.
-        description (str):      Textual description of the event.
-        type (str):             Type of the event, e.g. 'failure'.
-        subtype (str):          Subtype of the event, e.g. 'electrical'.
-        metadata (dict):        Customizable extra data about the event.
-        asset_ids (list[int]):  List of Asset IDs of related equipments that this event relates to.
+        external_id (str): External Id provided by client. Should be unique within the project
+        start_time (int): It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        end_time (int): It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        description (str): Textual description of the event.
+        metadata (Dict[str, Any]): Customizable extra data about the event. String key -> String value.
+        asset_ids (List[int]): Asset IDs of related equipments that this event relates to.
+        source (str): The source of this event.
+        created_time (int): It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        id (int): Javascript friendly internal ID given to the object.
+        last_updated_time (int): It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
     """
 
     def __init__(
-        self, start_time=None, end_time=None, description=None, type=None, subtype=None, metadata=None, asset_ids=None
+        self,
+        external_id: str = None,
+        start_time: int = None,
+        end_time: int = None,
+        description: str = None,
+        metadata: Dict[str, Any] = None,
+        asset_ids: List[int] = None,
+        source: str = None,
+        created_time: int = None,
+        id: int = None,
+        last_updated_time: int = None,
     ):
+        self.external_id = external_id
         self.start_time = start_time
         self.end_time = end_time
         self.description = description
-        self.type = type
-        self.subtype = subtype
         self.metadata = metadata
         self.asset_ids = asset_ids
+        self.source = source
+        self.created_time = created_time
+        self.id = id
+        self.last_updated_time = last_updated_time
+
+    # GenStop
+
+
+class EventList(CogniteResourceList):
+    _RESOURCE = Event
+
+
+# GenClass: EventFilter.filter
+class EventFilter(CogniteFilter):
+    """No description.
+
+    Args:
+        start_time (Dict[str, Any]): Range between two timestamps
+        end_time (Dict[str, Any]): Range between two timestamps
+        metadata (Dict[str, Any]): Customizable extra data about the event. String key -> String value.
+        asset_ids (List[int]): Asset IDs of related equipments that this event relates to.
+        asset_subtrees (List[int]): Filter out events that are not linked to assets in the subtree rooted at these assets.
+        source (str): The source of this event.
+        created_time (Dict[str, Any]): Range between two timestamps
+        last_updated_time (Dict[str, Any]): Range between two timestamps
+        external_id_prefix (str): External Id provided by client. Should be unique within the project
+    """
+
+    def __init__(
+        self,
+        start_time: Dict[str, Any] = None,
+        end_time: Dict[str, Any] = None,
+        metadata: Dict[str, Any] = None,
+        asset_ids: List[int] = None,
+        asset_subtrees: List[int] = None,
+        source: str = None,
+        created_time: Dict[str, Any] = None,
+        last_updated_time: Dict[str, Any] = None,
+        external_id_prefix: str = None,
+    ):
+        self.start_time = start_time
+        self.end_time = end_time
+        self.metadata = metadata
+        self.asset_ids = asset_ids
+        self.asset_subtrees = asset_subtrees
+        self.source = source
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
+        self.external_id_prefix = external_id_prefix
+
+    # GenStop
+
+
+# GenUpdateClass: EventChange
+class EventUpdate(CogniteUpdate):
+    """Changes will be applied to event.
+
+    Args:
+        id (int): Javascript friendly internal ID given to the object.
+        external_id (str): External Id provided by client. Should be unique within the project
+    """
+
+    def __init__(self, id: int = None, external_id: str = None):
+        self.id = id
+        self.external_id = external_id
+        self._update_object = {}
+
+    def external_id_set(self, value: str):
+        if value is None:
+            self._update_object["externalId"] = {"setNull": True}
+            return self
+        self._update_object["externalId"] = {"set": value}
+        return self
+
+    def start_time_set(self, value: int):
+        if value is None:
+            self._update_object["startTime"] = {"setNull": True}
+            return self
+        self._update_object["startTime"] = {"set": value}
+        return self
+
+    def end_time_set(self, value: int):
+        if value is None:
+            self._update_object["endTime"] = {"setNull": True}
+            return self
+        self._update_object["endTime"] = {"set": value}
+        return self
+
+    def description_set(self, value: str):
+        if value is None:
+            self._update_object["description"] = {"setNull": True}
+            return self
+        self._update_object["description"] = {"set": value}
+        return self
+
+    def metadata_set(self, value: Dict[str, Any]):
+        if value is None:
+            self._update_object["metadata"] = {"setNull": True}
+            return self
+        self._update_object["metadata"] = {"set": value}
+        return self
+
+    def asset_ids_add(self, value: List):
+        self._update_object["assetIds"] = {"add": value}
+        return self
+
+    def asset_ids_remove(self, value: List):
+        self._update_object["assetIds"] = {"remove": value}
+        return self
+
+    def asset_ids_set(self, value: List):
+        if value is None:
+            self._update_object["assetIds"] = {"setNull": True}
+            return self
+        self._update_object["assetIds"] = {"set": value}
+        return self
+
+    def source_set(self, value: str):
+        if value is None:
+            self._update_object["source"] = {"setNull": True}
+            return self
+        self._update_object["source"] = {"set": value}
+        return self
+
+    # GenStop
 
 
 class EventsAPI(APIClient):
-    def get_event(self, event_id: int) -> EventResponse:
-        """Returns a EventResponse containing an event matching the id.
+    RESOURCE_PATH = "/events"
+
+    def get(
+        self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None
+    ) -> Union[Event, EventList]:
+        """Get events by id
 
         Args:
-            event_id (int):         The event id.
+            id (Union[int, List[int], optional): Id or list of ids
+            external_id (Union[str, List[str]], optional): External ID or list of external ids
 
         Returns:
-            stable.events.EventResponse: A data object containing the requested event.
-
-        Examples:
-            Getting an event::
-
-                client = CogniteClient()
-                res = client.events.get_event(123)
-                print(res)
+            Union[Event, EventList]: Requested event(s)
         """
-        url = "/events/{}".format(event_id)
-        res = self._get(url)
-        return EventResponse(res.json())
+        return self._retrieve_multiple(EventList, self.RESOURCE_PATH, ids=id, external_ids=external_id, wrap_ids=True)
 
-    def get_events(self, type=None, sub_type=None, asset_id=None, **kwargs) -> EventListResponse:
-        """Returns an EventListReponse object containing events matching the query.
+    def list(self, filter: EventFilter = None, limit: int = None) -> EventList:
+        """List events
 
         Args:
-            type (str):             Type (class) of event, e.g. 'failure'.
-            sub_type (str):         Sub-type of event, e.g. 'electrical'.
-            asset_id (int):         Return events associated with this assetId.
-        Keyword Arguments:
-            sort (str):             Sort descending or ascending. Default 'ASC'.
-            cursor (str):           Cursor to use for paging through results.
-            limit (int):            Return up to this many results. Maximum is 10000. Default is 25.
-            has_description (bool): Return only events that have a textual description. Default null. False gives only
-                                    those without description.
-            min_start_time (string): Only return events from after this time.
-            max_start_time (string): Only return events form before this time.
-            autopaging (bool):      Whether or not to automatically page through results. If set to true, limit will be
-                                    disregarded. Defaults to False.
+            filter (EventFilter, optional): Filter to apply.
+            limit (int, optional): Maximum number of events to return. If not specified, all events will be returned.
 
         Returns:
-            stable.events.EventListResponse: A data object containing the requested event.
-
-        Examples:
-            Getting all events of a given type::
-
-                client = CogniteClient()
-                res = client.events.get_events(type="a special type", autopaging=True)
-                print(res.to_pandas())
+            EventList: List of requested events
         """
-        autopaging = kwargs.get("autopaging", False)
-        url = "/events"
+        params = filter.dump(camel_case=True) if filter else None
+        return self._list(EventList, resource_path=self.RESOURCE_PATH, limit=limit, params=params)
 
-        params = {
-            "type": type,
-            "subtype": sub_type,
-            "assetId": asset_id,
-            "sort": kwargs.get("sort"),
-            "cursor": kwargs.get("cursor"),
-            "limit": kwargs.get("limit", 25) if not autopaging else self._LIMIT,
-            "hasDescription": kwargs.get("has_description"),
-            "minStartTime": kwargs.get("min_start_time"),
-            "maxStartTime": kwargs.get("max_start_time"),
-        }
+    def iter(self, filter: EventFilter = None, chunk_size: int = None) -> Generator:
+        """Iterate over events
 
-        res = self._get(url, params=params, autopaging=autopaging)
-        return EventListResponse(res.json())
-
-    def post_events(self, events: List[Event]) -> EventListResponse:
-        """Adds a list of events and returns an EventListResponse object containing created events.
+        Fetches events as they are iterated over, so you keep a limited number of events in memory.
 
         Args:
-            events (List[stable.events.Event]):    List of events to create.
+            filter (EventFilter, optional): Filter to apply.
+            chunk_size (int, optional): Number of events to return in each chunk. Defaults to yielding one event a time.
+
+        Yields:
+            Union[Event, EventList]: yields Event one by one if chunk is not specified, else EventList objects.
+        """
+        params = filter.dump(camel_case=True) if filter else None
+        return self._list_generator(EventList, resource_path=self.RESOURCE_PATH, chunk=chunk_size, params=params)
+
+    def create(self, event: Union[Event, List[Event]]) -> Union[Event, EventList]:
+        """Create one or more events.
+
+        Args:
+            event (Union[Event, List[Event]]): Event or list of events to create.
 
         Returns:
-            stable.events.EventListResponse
-
-        Examples:
-            Posting two events and linking them to an asset::
-
-                from cognite.client.stable.events import Event
-                client = CogniteClient()
-
-                my_events = [Event(start_time=1, end_time=10, type="workorder", asset_ids=[123]),
-                            Event(start_time=11, end_time=20, type="workorder", asset_ids=[123])]
-                res = client.events.post_events(my_events)
-                print(res)
+            Union[Event, EventList]: Created event(s)
         """
-        url = "/events"
-        items = [event.camel_case_dict() for event in events]
-        body = {"items": items}
-        res = self._post(url, json=body)
-        return EventListResponse(res.json())
+        return self._create_multiple(EventList, resource_path=self.RESOURCE_PATH, items=event)
 
-    def delete_events(self, event_ids: List[int]) -> None:
-        """Deletes a list of events.
+    def delete(self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None) -> None:
+        """Delete one or more events
 
         Args:
-            event_ids (List[int]):    List of ids of events to delete.
+            id (Union[int, List[int]): Id or list of ids
+            external_id (Union[str, List[str]]): External ID or list of exgernal ids
 
         Returns:
             None
-
-        Examples:
-            Deleting a list of events::
-
-                client = CogniteClient()
-                res = client.events.delete_events(event_ids=[1,2,3,4,5])
         """
-        url = "/events/delete"
-        body = {"items": event_ids}
-        self._post(url, json=body)
+        self._delete_multiple(resource_path=self.RESOURCE_PATH, ids=id, external_ids=external_id, wrap_ids=True)
 
-    def search_for_events(
-        self,
-        description=None,
-        type=None,
-        subtype=None,
-        min_start_time=None,
-        max_start_time=None,
-        min_end_time=None,
-        max_end_time=None,
-        min_created_time=None,
-        max_created_time=None,
-        min_last_updated_time=None,
-        max_last_updated_time=None,
-        metadata=None,
-        asset_ids=None,
-        asset_subtrees=None,
-        **kwargs
-    ):
-        """Search for events.
+    def update(self, item: Union[Event, EventUpdate, List[Union[Event, EventUpdate]]]) -> Union[Event, EventList]:
+        """Update one or more events
 
         Args:
-            description (str):   Prefix and fuzzy search on description.
-            type (str):             Filter on type (case-sensitive).
-            subtype (str):          Filter on subtype (case-sensitive).
-            min_start_time (str):   Filter out events with startTime before this. Format is milliseconds since epoch.
-            max_start_time (str):   Filter out events with startTime after this. Format is milliseconds since epoch.
-            min_end_time (str):     Filter out events with endTime before this. Format is milliseconds since epoch.
-            max_end_time (str):     Filter out events with endTime after this. Format is milliseconds since epoch.
-            min_created_time(str):  Filter out events with createdTime before this. Format is milliseconds since epoch.
-            max_created_time (str): Filter out events with createdTime after this. Format is milliseconds since epoch.
-            min_last_updated_time(str):  Filter out events with lastUpdatedtime before this. Format is milliseconds since epoch.
-            max_last_updated_time(str): Filter out events with lastUpdatedtime after this. Format is milliseconds since epoch.
-            metadata (dict):        Filter out events that do not match these metadata fields and values (case-sensitive).
-                                    Format is {"key1":"value1","key2":"value2"}.
-            asset_ids (List[int]):  Filter out events that are not linked to any of these assets. Format is [12,345,6,7890].
-            asset_subtrees (List[int]): Filter out events that are not linked to assets in the subtree rooted at these assets.
-                                        Format is [12,345,6,7890].
-
-        Keyword Args:
-            sort (str):             Field to be sorted.
-            dir (str):              Sort direction (desc or asc)
-            limit (int):            Return up to this many results. Max is 1000, default is 25.
-            offset (int):           Offset from the first result. Sum of limit and offset must not exceed 1000. Default is 0.
+            item (Union[Event, EventUpdate, List[Union[Event, EventUpdate]]]): Event(s) to update
 
         Returns:
-            stable.events.EventListResponse.
-
-        Examples:
-            Perform a fuzzy search on event descriptions and get the first 3 results::
-
-                client = CogniteClient()
-                res = client.events.search_for_events(description="Something like this", limit=10)
-                print(res)
+            Union[Event, EventList]: Updated event(s)
         """
-        url = "/events/search"
-        params = {
-            "description": description,
-            "type": type,
-            "subtype": subtype,
-            "minStartTime": min_start_time,
-            "maxStartTime": max_start_time,
-            "minEndTime": min_end_time,
-            "maxEndTime": max_end_time,
-            "minCreatedTime": min_created_time,
-            "maxCreatedTime": max_created_time,
-            "minLastUpdatedTime": min_last_updated_time,
-            "maxLastUpdatedTime": max_last_updated_time,
-            "metadata": json.dumps(metadata),
-            "assetIds": str(asset_ids or []),
-            "assetSubtrees": asset_subtrees,
-            "sort": kwargs.get("sort"),
-            "dir": kwargs.get("dir"),
-            "limit": kwargs.get("limit", self._LIMIT),
-            "offset": kwargs.get("offset"),
-        }
+        return self._update_multiple(cls=EventList, resource_path=self.RESOURCE_PATH, items=item)
 
-        res = self._get(url, params=params)
-        return EventListResponse(res.json())
+    def search(
+        self, name: str = None, description: str = None, filter: EventFilter = None, limit: int = None
+    ) -> EventList:
+        """Search for events
+
+        Args:
+            name (str): Fuzzy match on name.
+            description (str): Fuzzy match on description.
+            filter (EventFilter): Filter to apply. Performs exact match on these fields.
+            limit (int): Maximum number of results to return.
+
+        Returns:
+            EventList: List of requested events
+        """
+        filter = filter.dump(camel_case=True) if filter else None
+        return self._search(
+            cls=EventList,
+            resource_path=self.RESOURCE_PATH,
+            json={"search": {"name": name, "description": description}, "filter": filter, "limit": limit},
+        )
