@@ -15,29 +15,13 @@ class CogniteResponse:
         return type(other) == type(self) and other.dump() == self.dump()
 
     def dump(self, camel_case: bool = False):
-        dumped = {}
-        for key, value in self.__dict__.items():
-            if value is not None and key is not "_api_response":
-                dumped[key] = value
+        dumped = {key: value for key, value in self.__dict__.items() if value is not None}
         if camel_case:
             dumped = {to_camel_case(key): value for key, value in dumped.items()}
         return dumped
 
     @classmethod
     def _load(cls, api_response):
-        if isinstance(api_response, str):
-            return cls._load(json.loads(api_response))
-        elif isinstance(api_response, Dict):
-            instance = cls()
-            for key, value in api_response.items():
-                snake_case_key = to_snake_case(key)
-                if not hasattr(instance, snake_case_key):
-                    raise AttributeError("Attribute '{}' does not exist on '{}'".format(snake_case_key, cls.__name__))
-                setattr(instance, snake_case_key, value)
-            return instance
-        raise TypeError("api_response must be json str or Dict")
-
-    def _load_response(self):
         raise NotImplementedError
 
     def to_pandas(self):
@@ -79,8 +63,8 @@ class CogniteResourceList:
     def __repr__(self):
         return self.__str__()
 
-    def dump(self):
-        return [resource.dump() for resource in self._resources]
+    def dump(self, camel_case: bool = False):
+        return [resource.dump(camel_case) for resource in self._resources]
 
     def to_pandas(self):
         raise NotImplementedError

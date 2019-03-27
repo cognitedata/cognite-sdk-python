@@ -162,12 +162,14 @@ class AssetFilter(CogniteFilter):
 class AssetsAPI(APIClient):
     RESOURCE_PATH = "/assets"
 
-    def get(self, id: Union[int, List[int]], external_id: Union[str, List[str]]) -> Union[Asset, AssetList]:
+    def get(
+        self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None
+    ) -> Union[Asset, AssetList]:
         """Get assets by id
 
         Args:
-            id (Union[int, List[int]): Id or list of ids
-            external_id (Union[str, List[str]]): External ID or list of exgernal ids
+            id (Union[int, List[int], optional): Id or list of ids
+            external_id (Union[str, List[str]], optional): External ID or list of external ids
 
         Returns:
             Union[Asset, AssetList]: Requested asset(s)
@@ -184,7 +186,8 @@ class AssetsAPI(APIClient):
         Returns:
             AssetList: List of requested assets
         """
-        return self._list(AssetList, resource_path=self.RESOURCE_PATH, limit=limit, params=filter.dump(camel_case=True))
+        params = filter.dump(camel_case=True) if filter else None
+        return self._list(AssetList, resource_path=self.RESOURCE_PATH, limit=limit, params=params)
 
     def iter(self, filter: AssetFilter = None, chunk_size: int = None) -> Generator:
         """Iterate over assets
@@ -193,14 +196,13 @@ class AssetsAPI(APIClient):
 
         Args:
             filter (AssetFilter, optional): Filter to apply.
-            chunk_size (int, optional): Number of assets to return in each chunk. Defaults to 1.
+            chunk_size (int, optional): Number of assets to return in each chunk. Defaults to yielding one asset a time.
 
         Yields:
             Union[Asset, AssetList]: yields Asset one by one if chunk is not specified, else AssetList objects.
         """
-        return self._list_generator(
-            AssetList, resource_path=self.RESOURCE_PATH, chunk=chunk_size, params=filter.dump(camel_case=True)
-        )
+        params = filter.dump(camel_case=True) if filter else None
+        return self._list_generator(AssetList, resource_path=self.RESOURCE_PATH, chunk=chunk_size, params=params)
 
     def create(self, asset: Union[Asset, List[Asset]]) -> Union[Asset, AssetList]:
         """Create one or more assets.
@@ -213,7 +215,7 @@ class AssetsAPI(APIClient):
         """
         return self._create_multiple(AssetList, resource_path=self.RESOURCE_PATH, items=asset)
 
-    def delete(self, id: Union[int, List[int]], external_id: Union[str, List[str]]) -> None:
+    def delete(self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None) -> None:
         """Delete one or more assets
 
         Args:
@@ -239,12 +241,20 @@ class AssetsAPI(APIClient):
     def search(
         self, name: str = None, description: str = None, filter: AssetFilter = None, limit: int = None
     ) -> AssetList:
+        """Search for assets
+
+        Args:
+            name (str): Fuzzy match on name.
+            description (str): Fuzzy match on description.
+            filter (AssetFilter): Filter to apply. Performs exact match on these fields.
+            limit (int): Maximum number of results to return.
+
+        Returns:
+            AssetList: List of requested assets
+        """
+        filter = filter.dump(camel_case=True) if filter else None
         return self._search(
             cls=AssetList,
             resource_path=self.RESOURCE_PATH,
-            json={
-                "search": {"name": name, "description": description},
-                "filter": filter.dump(camel_case=True),
-                "limit": limit,
-            },
+            json={"search": {"name": name, "description": description}, "filter": filter, "limit": limit},
         )

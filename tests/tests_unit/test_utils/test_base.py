@@ -226,10 +226,32 @@ class TestCogniteUpdate:
 
 
 class MyResponse(CogniteResponse):
-    def __init__(self, x):
-        self.x = x
+    def __init__(self, var_a=None):
+        self.var_a = var_a
+
+    @classmethod
+    def _load(cls, api_response):
+        data = api_response["data"]
+        return cls(data["varA"])
 
 
 class TestCogniteResponse:
     def test_load(self):
-        res = MyResponse.load({"data": {"items": []}})
+        res = MyResponse._load({"data": {"varA": 1}})
+        assert 1 == res.var_a
+
+    def test_dump(self):
+        assert {"var_a": 1} == MyResponse(1).dump()
+        assert {"varA": 1} == MyResponse(1).dump(camel_case=True)
+        assert {} == MyResponse().dump()
+
+    def test_str(self):
+        assert json.dumps(MyResponse(1).dump(), indent=4, sort_keys=True) == MyResponse(1).__str__()
+
+    def test_repr(self):
+        assert json.dumps(MyResponse(1).dump(), indent=4, sort_keys=True) == MyResponse(1).__repr__()
+
+    def test_eq(self):
+        assert MyResponse(1) == MyResponse(1)
+        assert MyResponse(1) != MyResponse(2)
+        assert MyResponse(1) != MyResponse()
