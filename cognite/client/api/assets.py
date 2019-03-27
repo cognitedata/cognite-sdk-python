@@ -162,40 +162,89 @@ class AssetFilter(CogniteFilter):
 class AssetsApi(APIClient):
     RESOURCE_PATH = "/assets"
 
-    def get(self, id: Union[int, List[int]]) -> Union[Asset, AssetList]:
+    def get(self, id: Union[int, List[int]], external_id: Union[str, List[str]]) -> Union[Asset, AssetList]:
         """Get assets by id
 
         Args:
             id (Union[int, List[int]): Id or list of ids
+            external_id (Union[str, List[str]]): External ID or list of exgernal ids
+
         Returns:
             Union[Asset, AssetList]: Requested asset(s)
         """
-        return self._retrieve(AssetList, self.RESOURCE_PATH, id)
+        return self._retrieve_multiple(AssetList, self.RESOURCE_PATH, ids=id, external_ids=external_id, wrap_ids=True)
 
-    def list(self) -> AssetList:
-        return
+    def list(self, filter: AssetFilter = None, limit: int = None) -> AssetList:
+        """List assets
 
-    def iter(self):
-        return
+        Args:
+            filter (AssetFilter, optional): Filter to apply.
+            limit (int, optional): Maximum number of assets to return. If not specified, all assets will be returned.
+
+        Returns:
+            AssetList: List of requested assets
+        """
+        return self._list(AssetList, resource_path=self.RESOURCE_PATH, limit=limit, params=filter.dump(camel_case=True))
+
+    def iter(self, filter: AssetFilter = None, chunk_size: int = None) -> Generator:
+        """Iterate over assets
+
+        Fetches assets as they are iterated over, so you keep a limited number of assets in memory.
+
+        Args:
+            filter (AssetFilter, optional): Filter to apply.
+            chunk_size (int, optional): Number of assets to return in each chunk. Defaults to 1.
+
+        Yields:
+            Union[Asset, AssetList]: yields Asset one by one if chunk is not specified, else AssetList objects.
+        """
+        return self._list_generator(
+            AssetList, resource_path=self.RESOURCE_PATH, chunk=chunk_size, params=filter.dump(camel_case=True)
+        )
 
     def create(self, asset: Union[Asset, List[Asset]]) -> Union[Asset, AssetList]:
         """Create one or more assets.
 
         Args:
             asset (Union[Asset, List[Asset]]): Asset or list of assets to create.
+
         Returns:
             Union[Asset, AssetList]: Created asset(s)
         """
-        return
+        return self._create_multiple(AssetList, resource_path=self.RESOURCE_PATH, items=asset)
 
-    def delete(self):
-        return
+    def delete(self, id: Union[int, List[int]], external_id: Union[str, List[str]]) -> None:
+        """Delete one or more assets
 
-    def update(self):
-        return
+        Args:
+            id (Union[int, List[int]): Id or list of ids
+            external_id (Union[str, List[str]]): External ID or list of exgernal ids
 
-    def search(self):
-        return
+        Returns:
+            None
+        """
+        self._delete_multiple(resource_path=self.RESOURCE_PATH, ids=id, external_ids=external_id, wrap_ids=True)
 
-    def get_subtree(self):
-        return
+    def update(self, item: Union[Asset, AssetUpdate, List[Union[Asset, AssetUpdate]]]) -> Union[Asset, AssetList]:
+        """Update one or more assets
+
+        Args:
+            item (Union[Asset, AssetUpdate, List[Union[Asset, AssetUpdate]]]): Asset(s) to update
+
+        Returns:
+            Union[Asset, AssetList]: Updated asset(s)
+        """
+        return self._update_multiple(cls=AssetList, resource_path=self.RESOURCE_PATH, items=item)
+
+    def search(
+        self, name: str = None, description: str = None, filter: AssetFilter = None, limit: int = None
+    ) -> AssetList:
+        return self._search(
+            cls=AssetList,
+            resource_path=self.RESOURCE_PATH,
+            json={
+                "search": {"name": name, "description": description},
+                "filter": filter.dump(camel_case=True),
+                "limit": limit,
+            },
+        )

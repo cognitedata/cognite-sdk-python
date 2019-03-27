@@ -3,13 +3,14 @@ import json as _json
 import logging
 import os
 import re
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Tuple, Union
 
 import numpy
 from requests import Response, Session
 from requests.adapters import HTTPAdapter
 from urllib3 import Retry
 
+from cognite.client._utils.resource_base import CogniteResource, CogniteUpdate
 from cognite.client.exceptions import APIError
 
 log = logging.getLogger("cognite-sdk")
@@ -38,57 +39,6 @@ def _init_requests_session():
 _REQUESTS_SESSION = _init_requests_session()
 
 
-def _status_is_valid(status_code: int):
-    return status_code < 400
-
-
-def _raise_API_error(res: Response):
-    x_request_id = res.headers.get("X-Request-Id")
-    code = res.status_code
-    extra = {}
-    try:
-        error = res.json()["error"]
-        if isinstance(error, str):
-            msg = error
-        elif isinstance(error, Dict):
-            msg = error["message"]
-            extra = error.get("extra", {})
-            for key in set(error.keys()) - {"code", "message", "extra"}:
-                extra[key] = error[key]
-        else:
-            msg = res.content
-    except:
-        msg = res.content
-
-    log.error("HTTP Error %s: %s", code, msg, extra={"X-Request-ID": x_request_id, "extra": extra})
-    raise APIError(msg, code, x_request_id, extra=extra)
-
-
-def _log_request(res: Response, **kwargs):
-    method = res.request.method
-    url = res.request.url
-    status_code = res.status_code
-
-    extra = kwargs.copy()
-    extra["headers"] = res.request.headers
-    if "api-key" in extra.get("headers", {}):
-        extra["headers"]["api-key"] = None
-
-    http_protocol_version = ".".join(list(str(res.raw.version)))
-
-    log.info("HTTP/{} {} {} {}".format(http_protocol_version, method, url, status_code), extra=extra)
-
-
-def _model_hosting_emulator_url_converter(url):
-    pattern = "https://api.cognitedata.com/api/0.6/projects/(.*)/analytics/models(.*)"
-    res = re.match(pattern, url)
-    if res is not None:
-        project = res.group(1)
-        path = res.group(2)
-        return "http://localhost:8000/api/0.1/projects/{}/models{}".format(project, path)
-    return url
-
-
 class APIClient:
     _LIMIT = 1000
 
@@ -115,14 +65,14 @@ class APIClient:
         res = self._do_request(
             "DELETE", url_path, params=params, headers=headers, cookies=self._cookies, timeout=self._timeout
         )
-        _log_request(res)
+        self._log_request(res)
         return res
 
     def _get(self, url_path: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
         res = self._do_request(
             "GET", url_path, params=params, headers=headers, cookies=self._cookies, timeout=self._timeout
         )
-        _log_request(res)
+        self._log_request(res)
         return res
 
     def _post(self, url_path: str, json: Dict[str, Any], params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
@@ -130,7 +80,7 @@ class APIClient:
         res = self._do_request(
             "POST", url_path, data=data, headers=headers, params=params, cookies=self._cookies, timeout=self._timeout
         )
-        _log_request(res, body=json)
+        self._log_request(res, body=json)
         return res
 
     def _put(self, url_path: str, json: Dict[str, Any] = None, headers: Dict[str, Any] = None):
@@ -138,7 +88,7 @@ class APIClient:
         res = self._do_request(
             "PUT", url_path, data=data, headers=headers, cookies=self._cookies, timeout=self._timeout
         )
-        _log_request(res, body=json)
+        self._log_request(res, body=json)
         return res
 
     def _do_request(self, method: str, url_path: str, **kwargs):
@@ -147,7 +97,7 @@ class APIClient:
         full_url = self._base_url + url_path
         # Hack to allow running model hosting requests against local emulator
         if os.getenv("USE_MODEL_HOSTING_EMULATOR") == "1":
-            full_url = _model_hosting_emulator_url_converter(full_url)
+            full_url = self._model_hosting_emulator_url_converter(full_url)
 
         default_headers = self._headers.copy()
         if (
@@ -161,8 +111,8 @@ class APIClient:
         kwargs["headers"] = default_headers
 
         res = self._request_session.request(method=method, url=full_url, **kwargs)
-        if not _status_is_valid(res.status_code):
-            _raise_API_error(res)
+        if not self._status_is_valid(res.status_code):
+            self._raise_API_error(res)
         return res
 
     def _retrieve(self, cls, resource_path: str, id: int, params: Dict = None, headers: Dict = None):
@@ -181,11 +131,11 @@ class APIClient:
         external_ids: Union[List[str], str] = None,
         headers: Dict = None,
     ):
-        all_ids = self._process_ids(ids, external_ids, wrap_ids=wrap_ids)
+        all_ids, is_single_identifier = self._process_ids(ids, external_ids, wrap_ids=wrap_ids)
         res = self._post(url_path=resource_path + "/byids", json={"items": all_ids}, headers=headers).json()["data"][
             "items"
         ]
-        if len(all_ids) == 1:
+        if is_single_identifier:
             return cls._RESOURCE._load(res[0])
         return cls._load(res)
 
@@ -226,14 +176,20 @@ class APIClient:
             items.extend(resource_list._resources)
         return cls(items)
 
-    def _create(self, cls: Any, resource_path: str, items: List[Any], params: Dict = None, headers: Dict = None):
+    def _create_multiple(
+        self, cls: Any, resource_path: str, items: Union[List[Any], Any], params: Dict = None, headers: Dict = None
+    ):
+        single_item = not isinstance(items, list)
+        if single_item:
+            items = [items]
         items = {"items": [item.dump(camel_case=True) for item in items]}
-        res = self._post(resource_path, json=items, headers=headers, params=params)
-        return cls._load(res.json()["data"]["items"])
+        res = self._post(resource_path, json=items, headers=headers, params=params).json()["data"]["items"]
+        if single_item:
+            return cls._RESOURCE._load(res[0])
+        return cls._load(res)
 
     def _delete_multiple(
         self,
-        cls: Any,
         resource_path: str,
         wrap_ids: bool,
         ids: Union[List[int], int] = None,
@@ -241,28 +197,70 @@ class APIClient:
         params: Dict = None,
         headers: Dict = None,
     ):
-        all_ids = self._process_ids(ids, external_ids, wrap_ids)
-        res = self._post(resource_path + "/delete", json={"items": all_ids}, params=params, headers=headers).json()[
-            "data"
-        ]["items"]
-        if len(all_ids) == 1:
+        all_ids, is_single_identifier = self._process_ids(ids, external_ids, wrap_ids)
+        self._post(resource_path + "/delete", json={"items": all_ids}, params=params, headers=headers)
+
+    def _update_multiple(
+        self, cls: Any, resource_path: str, items: Union[List[Any], Any], params: Dict = None, headers: Dict = None
+    ):
+        patch_objects = []
+        single_item = not isinstance(items, list)
+        if single_item:
+            items = [items]
+
+        for item in items:
+            if isinstance(item, CogniteResource):
+                patch_objects.append(self._convert_resource_to_patch_object(item))
+            elif isinstance(item, CogniteUpdate):
+                patch_objects.append(item.dump())
+            else:
+                raise ValueError("update item must be of type CogniteResource or CogniteUpdate")
+        res = self._post(
+            resource_path + "/update", json={"items": patch_objects}, params=params, headers=headers
+        ).json()["data"]["items"]
+
+        if single_item:
             return cls._RESOURCE._load(res[0])
         return cls._load(res)
 
-    def _update(self, cls: Any, resource_path: str, items: List[Any], params: Dict = None, headers: Dict = None):
-        pass
+    def _search(self, cls: Any, resource_path: str, json: Dict, params: Dict = None, headers: Dict = None):
+        res = self._post(url_path=resource_path + "/search", json=json, params=params, headers=headers)
+        return cls._load(res.json()["data"]["items"])
+
+    @staticmethod
+    def _convert_resource_to_patch_object(resource):
+        dumped_resource = resource.dump(camel_case=True)
+        has_id = "id" in dumped_resource
+        has_external_id = "externalId" in dumped_resource
+        assert (has_id or has_external_id) and not (
+            has_id and has_external_id
+        ), "{} must have exactly one of [id, externalId] set when used in update()".format(resource.__class__.__name__)
+
+        patch_object = {"update": {}}
+        if has_id:
+            patch_object["id"] = dumped_resource.pop("id")
+        elif has_external_id:
+            patch_object["externalId"] = dumped_resource.pop("externalId")
+
+        for key, value in dumped_resource.items():
+            patch_object["update"][key] = {"set": value}
+        return patch_object
 
     @staticmethod
     def _process_ids(
         ids: Union[List[int], int, None], external_ids: Union[List[str], str, None], wrap_ids: bool
-    ) -> List:
+    ) -> Tuple[List, bool]:
         if not external_ids and not ids:
             raise ValueError("No ids specified")
         if external_ids and not wrap_ids:
             raise ValueError("externalIds must be wrapped")
 
+        single_id = False
+        single_external_id = False
+
         if isinstance(ids, int):
             ids = [ids]
+            single_id = True
         elif isinstance(ids, List) or ids is None:
             ids = ids or []
         else:
@@ -270,6 +268,7 @@ class APIClient:
 
         if isinstance(external_ids, str):
             external_ids = [external_ids]
+            single_external_id = True
         elif isinstance(external_ids, List) or external_ids is None:
             external_ids = external_ids or []
         else:
@@ -279,7 +278,10 @@ class APIClient:
             ids = [{"id": id} for id in ids]
             external_ids = [{"externalId": external_id} for external_id in external_ids]
 
-        return ids + external_ids
+        all_ids = ids + external_ids
+        is_single_identifier = (single_id or single_external_id) and len(all_ids) == 1
+
+        return all_ids, is_single_identifier
 
     @staticmethod
     def _json_dumps_default(x):
@@ -290,3 +292,54 @@ class APIClient:
         if isinstance(x, numpy.bool_):
             return bool(x)
         return x.__dict__
+
+    @staticmethod
+    def _status_is_valid(status_code: int):
+        return status_code < 400
+
+    @staticmethod
+    def _raise_API_error(res: Response):
+        x_request_id = res.headers.get("X-Request-Id")
+        code = res.status_code
+        extra = {}
+        try:
+            error = res.json()["error"]
+            if isinstance(error, str):
+                msg = error
+            elif isinstance(error, Dict):
+                msg = error["message"]
+                extra = error.get("extra", {})
+                for key in set(error.keys()) - {"code", "message", "extra"}:
+                    extra[key] = error[key]
+            else:
+                msg = res.content
+        except:
+            msg = res.content
+
+        log.error("HTTP Error %s: %s", code, msg, extra={"X-Request-ID": x_request_id, "extra": extra})
+        raise APIError(msg, code, x_request_id, extra=extra)
+
+    @staticmethod
+    def _log_request(res: Response, **kwargs):
+        method = res.request.method
+        url = res.request.url
+        status_code = res.status_code
+
+        extra = kwargs.copy()
+        extra["headers"] = res.request.headers
+        if "api-key" in extra.get("headers", {}):
+            extra["headers"]["api-key"] = None
+
+        http_protocol_version = ".".join(list(str(res.raw.version)))
+
+        log.info("HTTP/{} {} {} {}".format(http_protocol_version, method, url, status_code), extra=extra)
+
+    @staticmethod
+    def _model_hosting_emulator_url_converter(url):
+        pattern = "https://api.cognitedata.com/api/0.6/projects/(.*)/analytics/models(.*)"
+        res = re.match(pattern, url)
+        if res is not None:
+            project = res.group(1)
+            path = res.group(2)
+            return "http://localhost:8000/api/0.1/projects/{}/models{}".format(project, path)
+        return url

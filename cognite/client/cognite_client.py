@@ -218,7 +218,8 @@ class CogniteClient:
         if user_defined_headers:
             self._headers.update(user_defined_headers)
 
-    def _get_thread_local_credentials(self):
+    @staticmethod
+    def _get_thread_local_credentials():
         if "cognite._thread_local" in sys.modules:
             from cognite._thread_local import credentials
 

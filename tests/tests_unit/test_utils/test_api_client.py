@@ -6,8 +6,8 @@ from collections import namedtuple
 import pytest
 
 from cognite.client import APIError
-from cognite.client._utils.api_client import APIClient, _model_hosting_emulator_url_converter
-from cognite.client._utils.resource_base import CogniteResource, CogniteResourceList
+from cognite.client._utils.api_client import APIClient
+from cognite.client._utils.resource_base import CogniteResource, CogniteResourceList, CogniteUpdate
 from tests.utils import jsgz_load
 
 BASE_URL = "http://localtest.com/api/1.0/projects/test_proj"
@@ -104,9 +104,11 @@ class TestBasicRequests:
 
 
 class SomeResource(CogniteResource):
-    def __init__(self, x=None, y=None):
+    def __init__(self, x=None, y=None, id=None, external_id=None):
         self.x = x
         self.y = y
+        self.id = id
+        self.external_id = external_id
 
 
 class SomeResourceList(CogniteResourceList):
@@ -207,6 +209,13 @@ class TestStandardList:
             cls=SomeResourceList, resource_path=URL_PATH
         )
 
+    def test_standard_list_with_params_ok(self, rsps):
+        rsps.add(rsps.GET, BASE_URL + URL_PATH, status=200, json={"data": {"items": [{"x": 1, "y": 2}, {"x": 1}]}})
+        assert SomeResourceList([SomeResource(1, 2), SomeResource(1)]) == API_CLIENT._list(
+            cls=SomeResourceList, resource_path=URL_PATH, params={"filter": "bla"}
+        )
+        assert "filter=bla" in rsps.calls[0].request.path_url
+
     def test_standard_list_fail(self, rsps):
         rsps.add(rsps.GET, BASE_URL + URL_PATH, status=400, json={"error": {"message": "Client Error"}})
         with pytest.raises(APIError, match="Client Error") as e:
@@ -271,17 +280,29 @@ class TestStandardList:
 class TestStandardCreate:
     def test_standard_create_ok(self, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH, status=200, json={"data": {"items": [{"x": 1, "y": 2}, {"x": 1}]}})
-        res = API_CLIENT._create(
+        res = API_CLIENT._create_multiple(
             cls=SomeResourceList, resource_path=URL_PATH, items=[SomeResource(1, 1), SomeResource(1)]
         )
         assert {"items": [{"x": 1, "y": 1}, {"x": 1}]} == jsgz_load(rsps.calls[0].request.body)
         assert SomeResource(1, 2) == res[0]
         assert SomeResource(1) == res[1]
 
+    def test_standard_create_single_item_ok(self, rsps):
+        rsps.add(rsps.POST, BASE_URL + URL_PATH, status=200, json={"data": {"items": [{"x": 1, "y": 2}]}})
+        res = API_CLIENT._create_multiple(cls=SomeResourceList, resource_path=URL_PATH, items=SomeResource(1, 2))
+        assert {"items": [{"x": 1, "y": 2}]} == jsgz_load(rsps.calls[0].request.body)
+        assert SomeResource(1, 2) == res
+
+    def test_standard_create_single_item_in_list_ok(self, rsps):
+        rsps.add(rsps.POST, BASE_URL + URL_PATH, status=200, json={"data": {"items": [{"x": 1, "y": 2}]}})
+        res = API_CLIENT._create_multiple(cls=SomeResourceList, resource_path=URL_PATH, items=[SomeResource(1, 2)])
+        assert {"items": [{"x": 1, "y": 2}]} == jsgz_load(rsps.calls[0].request.body)
+        assert SomeResourceList([SomeResource(1, 2)]) == res
+
     def test_standard_create_fail(self, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH, status=400, json={"error": {"message": "Client Error"}})
         with pytest.raises(APIError, match="Client Error") as e:
-            API_CLIENT._create(
+            API_CLIENT._create_multiple(
                 cls=SomeResourceList, resource_path=URL_PATH, items=[SomeResource(1, 1), SomeResource(1)]
             )
         assert 400 == e.value.code
@@ -290,38 +311,139 @@ class TestStandardCreate:
 
 class TestStandardDelete:
     def test_standard_delete_multiple_ok(self, rsps):
-        rsps.add(
-            rsps.POST,
-            BASE_URL + URL_PATH + "/delete",
-            status=200,
-            json={"data": {"items": [{"x": 1, "y": 2}, {"x": 1}]}},
-        )
-        res = API_CLIENT._delete_multiple(cls=SomeResourceList, resource_path=URL_PATH, wrap_ids=False, ids=[1, 2])
+        rsps.add(rsps.POST, BASE_URL + URL_PATH + "/delete", status=200, json={})
+        API_CLIENT._delete_multiple(resource_path=URL_PATH, wrap_ids=False, ids=[1, 2])
         assert {"items": [1, 2]} == jsgz_load(rsps.calls[0].request.body)
-        assert isinstance(res, SomeResourceList)
-        assert SomeResource(1, 2) == res[0]
-        assert SomeResource(1) == res[1]
 
     def test_standard_delete_multiple_ok__single_id(self, rsps):
-        rsps.add(rsps.POST, BASE_URL + URL_PATH + "/delete", status=200, json={"data": {"items": [{"x": 1, "y": 2}]}})
-        res = API_CLIENT._delete_multiple(cls=SomeResourceList, resource_path=URL_PATH, wrap_ids=False, ids=1)
+        rsps.add(rsps.POST, BASE_URL + URL_PATH + "/delete", status=200, json={})
+        API_CLIENT._delete_multiple(resource_path=URL_PATH, wrap_ids=False, ids=1)
         assert {"items": [1]} == jsgz_load(rsps.calls[0].request.body)
-        assert isinstance(res, SomeResource)
-        assert SomeResource(1, 2) == res
+
+    def test_standard_delete_multiple_ok__single_id_in_list(self, rsps):
+        rsps.add(rsps.POST, BASE_URL + URL_PATH + "/delete", status=200, json={})
+        API_CLIENT._delete_multiple(resource_path=URL_PATH, wrap_ids=False, ids=[1])
+        assert {"items": [1]} == jsgz_load(rsps.calls[0].request.body)
 
     def test_standard_delete_multiple_fail(self, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH + "/delete", status=400, json={"error": {"message": "Client Error"}})
         with pytest.raises(APIError, match="Client Error") as e:
-            API_CLIENT._delete_multiple(cls=SomeResourceList, resource_path=URL_PATH, wrap_ids=False, ids=[1, 2])
+            API_CLIENT._delete_multiple(resource_path=URL_PATH, wrap_ids=False, ids=[1, 2])
         assert 400 == e.value.code
         assert "Client Error" == e.value.message
 
 
+class SomeUpdate(CogniteUpdate):
+    def __init__(self, id=None, external_id=None):
+        self.id = id
+        self.external_id = external_id
+        self._update_object = {}
+
+    def y_set(self, value: int):
+        if value is None:
+            self._update_object["y"] = {"setNull": True}
+            return self
+        self._update_object["y"] = {"set": value}
+        return self
+
+
 class TestStandardUpdate:
-    def test_standard_update_ok(self, rsps):
-        rsps.add(rsps.POST, BASE_URL + URL_PATH + "/update", status=200, json={"data": {"items": [{"x": 1, "y": 100}]}})
-        res = API_CLIENT._update(SomeResourceList, resource_path=URL_PATH, items=[SomeResource(y=100)])
-        assert isinstance(res, SomeResourceList)
+    def test_standard_update_with_cognite_resource_OK(self, rsps):
+        rsps.add(
+            rsps.POST,
+            BASE_URL + URL_PATH + "/update",
+            status=200,
+            json={"data": {"items": [{"id": 1, "x": 1, "y": 100}]}},
+        )
+        res = API_CLIENT._update_multiple(SomeResourceList, resource_path=URL_PATH, items=[SomeResource(id=1, y=100)])
+        assert SomeResourceList([SomeResource(id=1, x=1, y=100)]) == res
+        assert {"items": [{"id": 1, "update": {"y": {"set": 100}}}]} == jsgz_load(rsps.calls[0].request.body)
+
+    def test_standard_update_with_cognite_resource_and_external_id_OK(self, rsps):
+        rsps.add(
+            rsps.POST,
+            BASE_URL + URL_PATH + "/update",
+            status=200,
+            json={"data": {"items": [{"id": 1, "x": 1, "y": 100}]}},
+        )
+        res = API_CLIENT._update_multiple(
+            SomeResourceList, resource_path=URL_PATH, items=[SomeResource(external_id="1", y=100)]
+        )
+        assert SomeResourceList([SomeResource(id=1, x=1, y=100)]) == res
+        assert {"items": [{"externalId": "1", "update": {"y": {"set": 100}}}]} == jsgz_load(rsps.calls[0].request.body)
+
+    def test_standard_update_with_cognite_resource__id_error(self):
+        with pytest.raises(AssertionError, match="SomeResource must have exactly one"):
+            API_CLIENT._update_multiple(SomeResourceList, resource_path=URL_PATH, items=[SomeResource(y=100)])
+
+        with pytest.raises(AssertionError, match="SomeResource must have exactly one"):
+            API_CLIENT._update_multiple(
+                SomeResourceList, resource_path=URL_PATH, items=[SomeResource(id=1, external_id=1, y=100)]
+            )
+
+    def test_standard_update_with_cognite_update_object_OK(self, rsps):
+        rsps.add(
+            rsps.POST,
+            BASE_URL + URL_PATH + "/update",
+            status=200,
+            json={"data": {"items": [{"id": 1, "x": 1, "y": 100}]}},
+        )
+        res = API_CLIENT._update_multiple(SomeResourceList, resource_path=URL_PATH, items=[SomeUpdate(id=1).y_set(100)])
+        assert SomeResourceList([SomeResource(id=1, x=1, y=100)]) == res
+        assert {"items": [{"id": 1, "update": {"y": {"set": 100}}}]} == jsgz_load(rsps.calls[0].request.body)
+
+    def test_standard_update_single_object(self, rsps):
+        rsps.add(
+            rsps.POST,
+            BASE_URL + URL_PATH + "/update",
+            status=200,
+            json={"data": {"items": [{"id": 1, "x": 1, "y": 100}]}},
+        )
+        res = API_CLIENT._update_multiple(SomeResourceList, resource_path=URL_PATH, items=SomeUpdate(id=1).y_set(100))
+        assert SomeResource(id=1, x=1, y=100) == res
+        assert {"items": [{"id": 1, "update": {"y": {"set": 100}}}]} == jsgz_load(rsps.calls[0].request.body)
+
+    def test_standard_update_with_cognite_update_object_and_external_id_OK(self, rsps):
+        rsps.add(
+            rsps.POST,
+            BASE_URL + URL_PATH + "/update",
+            status=200,
+            json={"data": {"items": [{"id": 1, "x": 1, "y": 100}]}},
+        )
+        res = API_CLIENT._update_multiple(
+            SomeResourceList, resource_path=URL_PATH, items=[SomeUpdate(external_id="1").y_set(100)]
+        )
+        assert SomeResourceList([SomeResource(id=1, x=1, y=100)]) == res
+        assert {"items": [{"externalId": "1", "update": {"y": {"set": 100}}}]} == jsgz_load(rsps.calls[0].request.body)
+
+    def test_standard_update_fail(self, rsps):
+        rsps.add(rsps.POST, BASE_URL + URL_PATH + "/update", status=400, json={"error": {"message": "Client Error"}})
+
+        with pytest.raises(APIError, match="Client Error"):
+            API_CLIENT._update_multiple(SomeResourceList, resource_path=URL_PATH, items=[])
+
+
+class TestStandardSearch:
+    def test_standard_search_ok(self, rsps):
+        rsps.add(rsps.POST, BASE_URL + URL_PATH + "/search", status=200, json={"data": {"items": [{"x": 1, "y": 2}]}})
+
+        res = API_CLIENT._search(
+            cls=SomeResourceList,
+            resource_path=URL_PATH,
+            json={"search": {"name": "bla"}, "limit": 1000, "filter": {"name": "bla"}},
+        )
+        assert SomeResourceList([SomeResource(1, 2)]) == res
+        assert {"search": {"name": "bla"}, "limit": 1000, "filter": {"name": "bla"}} == jsgz_load(
+            rsps.calls[0].request.body
+        )
+
+    def test_standard_search_fail(self, rsps):
+        rsps.add(rsps.POST, BASE_URL + URL_PATH + "/search", status=400, json={"error": {"message": "Client Error"}})
+
+        with pytest.raises(APIError, match="Client Error") as e:
+            API_CLIENT._search(cls=SomeResourceList, resource_path=URL_PATH, json={})
+        assert "Client Error" == e.value.message
+        assert 400 == e.value.code
 
 
 class TestMiscellaneous:
@@ -343,4 +465,4 @@ class TestMiscellaneous:
         ],
     )
     def test_nostromo_emulator_url_converter(self, input, expected):
-        assert expected == _model_hosting_emulator_url_converter(input)
+        assert expected == API_CLIENT._model_hosting_emulator_url_converter(input)

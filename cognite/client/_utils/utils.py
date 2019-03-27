@@ -131,21 +131,6 @@ def first_fit(list_items: List, max_size, get_count: Callable) -> List[List]:
     return list_items
 
 
-def get_user_agent():
-    sdk_version = "CognitePythonSDK/{}".format(cognite.client.__version__)
-
-    python_version = "{}/{} ({};{})".format(
-        platform.python_implementation(), platform.python_version(), platform.python_build(), platform.python_compiler()
-    )
-
-    os_version_info = [platform.release(), platform.machine(), platform.architecture()[0]]
-    os_version_info = [s for s in os_version_info if s]  # Ignore empty strings
-    os_version_info = "-".join(os_version_info)
-    operating_system = "{}/{}".format(platform.system(), os_version_info)
-
-    return "{} {} {}".format(sdk_version, python_version, operating_system)
-
-
 def _round_to_nearest(x, base):
     return int(base * round(float(x) / base))
 
@@ -176,3 +161,18 @@ def to_camel_case(snake_case_string: str):
 def to_snake_case(camel_case_string: str):
     s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", camel_case_string)
     return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
+
+
+def get_user_agent():
+    sdk_version = "CognitePythonSDK/{}".format(cognite.client.__version__)
+
+    python_version = "{}/{} ({};{})".format(
+        platform.python_implementation(), platform.python_version(), platform.python_build(), platform.python_compiler()
+    )
+
+    os_version_info = [platform.release(), platform.machine(), platform.architecture()[0]]
+    os_version_info = [s for s in os_version_info if s]  # Ignore empty strings
+    os_version_info = "-".join(os_version_info)
+    operating_system = "{}/{}".format(platform.system(), os_version_info)
+
+    return "{} {} {}".format(sdk_version, python_version, operating_system)
