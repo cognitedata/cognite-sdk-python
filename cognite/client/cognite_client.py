@@ -98,7 +98,7 @@ class CogniteClient:
         if debug:
             configure_logger("cognite-sdk", log_level="INFO", log_json=True)
 
-        __api_version = "0.6"
+        __api_version = "1.0"
         self._project = project or thread_local_project
         self.login = LoginAPI(
             project=self._project,

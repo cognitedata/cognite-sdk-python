@@ -63,11 +63,11 @@ class TestEvents:
         assert mock_events_response.calls[0].response.json()["data"]["items"] == res.dump(camel_case=True)
 
     def test_iter_single(self, mock_events_response):
-        for event in EVENTS_API.iter():
+        for event in EVENTS_API:
             assert mock_events_response.calls[0].response.json()["data"]["items"][0] == event.dump(camel_case=True)
 
     def test_iter_chunk(self, mock_events_response):
-        for events in EVENTS_API.iter(chunk_size=1):
+        for events in EVENTS_API(chunk_size=1):
             assert mock_events_response.calls[0].response.json()["data"]["items"] == events.dump(camel_case=True)
 
     def test_delete_single(self, mock_events_response):

@@ -64,11 +64,11 @@ class TestAssets:
         assert mock_assets_response.calls[0].response.json()["data"]["items"] == res.dump(camel_case=True)
 
     def test_iter_single(self, mock_assets_response):
-        for asset in ASSETS_API.iter():
+        for asset in ASSETS_API:
             assert mock_assets_response.calls[0].response.json()["data"]["items"][0] == asset.dump(camel_case=True)
 
     def test_iter_chunk(self, mock_assets_response):
-        for assets in ASSETS_API.iter(chunk_size=1):
+        for assets in ASSETS_API(chunk_size=1):
             assert mock_assets_response.calls[0].response.json()["data"]["items"] == assets.dump(camel_case=True)
 
     def test_delete_single(self, mock_assets_response):

@@ -172,6 +172,31 @@ class EventUpdate(CogniteUpdate):
 class EventsAPI(APIClient):
     RESOURCE_PATH = "/events"
 
+    def __call__(self, filter: EventFilter = None, chunk_size: int = None) -> Generator:
+        """Iterate over events
+
+        Fetches events as they are iterated over, so you keep a limited number of events in memory.
+
+        Args:
+            filter (EventFilter, optional): Filter to apply.
+            chunk_size (int, optional): Number of events to return in each chunk. Defaults to yielding one event a time.
+
+        Yields:
+            Union[Event, EventList]: yields Event one by one if chunk is not specified, else EventList objects.
+        """
+        params = filter.dump(camel_case=True) if filter else None
+        return self._list_generator(EventList, resource_path=self.RESOURCE_PATH, chunk=chunk_size, params=params)
+
+    def __iter__(self) -> Generator:
+        """Iterate over events
+
+        Fetches events as they are iterated over, so you keep a limited number of events in memory.
+
+        Yields:
+            Event: yields Events one by one.
+        """
+        return self.__call__()
+
     def get(
         self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None
     ) -> Union[Event, EventList]:
@@ -198,21 +223,6 @@ class EventsAPI(APIClient):
         """
         params = filter.dump(camel_case=True) if filter else None
         return self._list(EventList, resource_path=self.RESOURCE_PATH, limit=limit, params=params)
-
-    def iter(self, filter: EventFilter = None, chunk_size: int = None) -> Generator:
-        """Iterate over events
-
-        Fetches events as they are iterated over, so you keep a limited number of events in memory.
-
-        Args:
-            filter (EventFilter, optional): Filter to apply.
-            chunk_size (int, optional): Number of events to return in each chunk. Defaults to yielding one event a time.
-
-        Yields:
-            Union[Event, EventList]: yields Event one by one if chunk is not specified, else EventList objects.
-        """
-        params = filter.dump(camel_case=True) if filter else None
-        return self._list_generator(EventList, resource_path=self.RESOURCE_PATH, chunk=chunk_size, params=params)
 
     def create(self, event: Union[Event, List[Event]]) -> Union[Event, EventList]:
         """Create one or more events.

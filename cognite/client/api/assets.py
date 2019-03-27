@@ -132,7 +132,7 @@ class AssetFilter(CogniteFilter):
         source (str): The source of this asset
         created_time (Dict[str, Any]): Range between two timestamps
         last_updated_time (Dict[str, Any]): Range between two timestamps
-        asset_subtrees (List[int]): Filter out events that are not linked to assets in the subtree rooted at these assets.
+        asset_subtrees (List[int]): Filter out assets that are not linked to assets in the subtree rooted at these assets.
         external_id_prefix (str): External Id provided by client. Should be unique within the project
     """
 
@@ -162,6 +162,31 @@ class AssetFilter(CogniteFilter):
 class AssetsAPI(APIClient):
     RESOURCE_PATH = "/assets"
 
+    def __call__(self, filter: AssetFilter = None, chunk_size: int = None) -> Generator:
+        """Iterate over assets
+
+        Fetches assets as they are iterated over, so you keep a limited number of assets in memory.
+
+        Args:
+            filter (AssetFilter, optional): Filter to apply.
+            chunk_size (int, optional): Number of assets to return in each chunk. Defaults to yielding one event a time.
+
+        Yields:
+            Union[Asset, AssetList]: yields Asset one by one if chunk is not specified, else AssetList objects.
+        """
+        params = filter.dump(camel_case=True) if filter else None
+        return self._list_generator(AssetList, resource_path=self.RESOURCE_PATH, chunk=chunk_size, params=params)
+
+    def __iter__(self) -> Generator:
+        """Iterate over assets
+
+        Fetches assets as they are iterated over, so you keep a limited number of assets in memory.
+
+        Yields:
+            Asset: yields Assets one by one.
+        """
+        return self.__call__()
+
     def get(
         self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None
     ) -> Union[Asset, AssetList]:
@@ -188,21 +213,6 @@ class AssetsAPI(APIClient):
         """
         params = filter.dump(camel_case=True) if filter else None
         return self._list(AssetList, resource_path=self.RESOURCE_PATH, limit=limit, params=params)
-
-    def iter(self, filter: AssetFilter = None, chunk_size: int = None) -> Generator:
-        """Iterate over assets
-
-        Fetches assets as they are iterated over, so you keep a limited number of assets in memory.
-
-        Args:
-            filter (AssetFilter, optional): Filter to apply.
-            chunk_size (int, optional): Number of assets to return in each chunk. Defaults to yielding one asset a time.
-
-        Yields:
-            Union[Asset, AssetList]: yields Asset one by one if chunk is not specified, else AssetList objects.
-        """
-        params = filter.dump(camel_case=True) if filter else None
-        return self._list_generator(AssetList, resource_path=self.RESOURCE_PATH, chunk=chunk_size, params=params)
 
     def create(self, asset: Union[Asset, List[Asset]]) -> Union[Asset, AssetList]:
         """Create one or more assets.
