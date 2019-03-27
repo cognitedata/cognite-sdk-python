@@ -131,7 +131,7 @@ class LatestDatapointResponse(CogniteResponse):
         return pd.DataFrame([self.internal_representation["data"]["items"][0]])
 
 
-class DatapointsApi(APIClient):
+class DatapointsAPI(APIClient):
     _LIMIT_AGG = 10000
     _LIMIT = 100000
 

@@ -6,13 +6,13 @@ import requests
 
 from cognite.client._utils.api_client import APIClient
 from cognite.client._utils.utils import get_user_agent
-from cognite.client.api.assets import AssetsApi
-from cognite.client.api.datapoints import DatapointsApi
-from cognite.client.api.events import EventsApi
-from cognite.client.api.files import FilesApi
-from cognite.client.api.login import LoginApi
-from cognite.client.api.raw import RawApi
-from cognite.client.api.time_series import TimeSeriesApi
+from cognite.client.api.assets import AssetsAPI
+from cognite.client.api.datapoints import DatapointsAPI
+from cognite.client.api.events import EventsAPI
+from cognite.client.api.files import FilesAPI
+from cognite.client.api.login import LoginAPI
+from cognite.client.api.raw import RawAPI
+from cognite.client.api.time_series import TimeSeriesAPI
 from cognite.logger import configure_logger
 
 DEFAULT_BASE_URL = "https://api.cognitedata.com"
@@ -100,7 +100,7 @@ class CogniteClient:
 
         __api_version = "0.6"
         self._project = project or thread_local_project
-        self.login = LoginApi(
+        self.login = LoginAPI(
             project=self._project,
             base_url=self._base_url,
             num_of_workers=self._num_of_workers,
@@ -111,7 +111,7 @@ class CogniteClient:
         if self._project is None:
             self._project = self.login.status().project
 
-        self.assets = AssetsApi(
+        self.assets = AssetsAPI(
             version=__api_version,
             project=self._project,
             base_url=self._base_url,
@@ -120,7 +120,7 @@ class CogniteClient:
             headers=self._headers,
             timeout=self._timeout,
         )
-        self.datapoints = DatapointsApi(
+        self.datapoints = DatapointsAPI(
             version=__api_version,
             project=self._project,
             base_url=self._base_url,
@@ -129,7 +129,7 @@ class CogniteClient:
             headers=self._headers,
             timeout=self._timeout,
         )
-        self.events = EventsApi(
+        self.events = EventsAPI(
             version=__api_version,
             project=self._project,
             base_url=self._base_url,
@@ -138,7 +138,7 @@ class CogniteClient:
             headers=self._headers,
             timeout=self._timeout,
         )
-        self.files = FilesApi(
+        self.files = FilesAPI(
             version=__api_version,
             project=self._project,
             base_url=self._base_url,
@@ -147,7 +147,7 @@ class CogniteClient:
             headers=self._headers,
             timeout=self._timeout,
         )
-        self.raw = RawApi(
+        self.raw = RawAPI(
             version=__api_version,
             project=self._project,
             base_url=self._base_url,
@@ -156,7 +156,7 @@ class CogniteClient:
             headers=self._headers,
             timeout=self._timeout,
         )
-        self.time_series = TimeSeriesApi(
+        self.time_series = TimeSeriesAPI(
             version=__api_version,
             project=self._project,
             base_url=self._base_url,

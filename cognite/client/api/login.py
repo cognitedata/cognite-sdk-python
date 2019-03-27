@@ -28,7 +28,7 @@ class LoginStatusResponse(CogniteResponse):
         return json_repr
 
 
-class LoginApi(APIClient):
+class LoginAPI(APIClient):
     def status(self) -> LoginStatusResponse:
         """Check login status
 

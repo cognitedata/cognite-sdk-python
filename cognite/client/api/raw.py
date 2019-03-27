@@ -44,7 +44,7 @@ class RawRow(object):
         return self.__dict__
 
 
-class RawApi(APIClient):
+class RawAPI(APIClient):
     def get_databases(self, limit: int = None, cursor: str = None) -> RawResponse:
         """Returns a RawObject containing a list of raw databases.
 

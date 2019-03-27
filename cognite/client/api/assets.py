@@ -159,7 +159,7 @@ class AssetFilter(CogniteFilter):
     # GenStop
 
 
-class AssetsApi(APIClient):
+class AssetsAPI(APIClient):
     RESOURCE_PATH = "/assets"
 
     def get(self, id: Union[int, List[int]], external_id: Union[str, List[str]]) -> Union[Asset, AssetList]:

@@ -55,7 +55,7 @@ class FileListResponse(CogniteResourceList):
         return pd.DataFrame(self.to_json())
 
 
-class FilesApi(APIClient):
+class FilesAPI(APIClient):
     def upload_file(
         self, file_name, file_path=None, directory=None, source=None, file_type=None, content_type=None, **kwargs
     ) -> Dict:

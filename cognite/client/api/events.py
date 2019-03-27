@@ -80,7 +80,7 @@ class Event(CogniteResource):
         self.asset_ids = asset_ids
 
 
-class EventsApi(APIClient):
+class EventsAPI(APIClient):
     def get_event(self, event_id: int) -> EventResponse:
         """Returns a EventResponse containing an event matching the id.
 

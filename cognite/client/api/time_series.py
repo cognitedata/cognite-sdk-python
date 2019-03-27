@@ -100,7 +100,7 @@ class TimeSeries(CogniteResource):
         self.is_step = is_step
 
 
-class TimeSeriesApi(APIClient):
+class TimeSeriesAPI(APIClient):
     def get_time_series(
         self, prefix=None, description=None, include_metadata=False, asset_id=None, path=None, **kwargs
     ) -> TimeSeriesListResponse:
