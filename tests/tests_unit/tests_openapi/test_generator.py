@@ -139,7 +139,7 @@ class TestUpdateClassGenerator:
             CLASS_GENERATOR._spec.components.schemas.get("EventChange"), indentation=4
         )
         assert (
-            """    def external_id_set(self, value: str):
+            """    def external_id_set(self, value: Union[str, None]):
         if value is None:
             self._update_object['externalId'] = {'setNull': True}
             return self
@@ -147,7 +147,7 @@ class TestUpdateClassGenerator:
         return self
 
 
-    def start_time_set(self, value: int):
+    def start_time_set(self, value: Union[int, None]):
         if value is None:
             self._update_object['startTime'] = {'setNull': True}
             return self
@@ -155,7 +155,7 @@ class TestUpdateClassGenerator:
         return self
 
 
-    def end_time_set(self, value: int):
+    def end_time_set(self, value: Union[int, None]):
         if value is None:
             self._update_object['endTime'] = {'setNull': True}
             return self
@@ -163,7 +163,7 @@ class TestUpdateClassGenerator:
         return self
 
 
-    def description_set(self, value: str):
+    def description_set(self, value: Union[str, None]):
         if value is None:
             self._update_object['description'] = {'setNull': True}
             return self
@@ -171,7 +171,7 @@ class TestUpdateClassGenerator:
         return self
 
 
-    def metadata_set(self, value: Dict[str, Any]):
+    def metadata_set(self, value: Union[Dict[str, Any], None]):
         if value is None:
             self._update_object['metadata'] = {'setNull': True}
             return self
@@ -189,7 +189,7 @@ class TestUpdateClassGenerator:
         return self
 
 
-    def asset_ids_set(self, value: List):
+    def asset_ids_set(self, value: Union[List, None]):
         if value is None:
             self._update_object['assetIds'] = {'setNull': True}
             return self
@@ -197,7 +197,7 @@ class TestUpdateClassGenerator:
         return self
 
 
-    def source_set(self, value: str):
+    def source_set(self, value: Union[str, None]):
         if value is None:
             self._update_object['source'] = {'setNull': True}
             return self

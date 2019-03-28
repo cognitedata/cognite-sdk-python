@@ -156,19 +156,26 @@ class UpdateClassGenerator:
             if prop_name == "id":
                 continue
             for update_prop, type_hint in self._get_update_properties(prop):
-                setter = indent + "def {}_{}(self, value: {}):\n".format(
-                    utils.to_snake_case(prop_name), update_prop, type_hint
-                )
+
                 if update_prop == "set":
+                    setter = indent + "def {}_{}(self, value: Union[{}, None]):\n".format(
+                        utils.to_snake_case(prop_name), update_prop, type_hint
+                    )
                     setter += indent * 2 + "if value is None:\n"
                     setter += indent * 3 + "self._update_object['{}'] = {{'setNull': True}}\n".format(prop_name)
                     setter += indent * 3 + "return self\n"
                     setter += indent * 2 + "self._update_object['{}'] = {{'set': value}}\n".format(prop_name)
                     setter += indent * 2 + "return self\n"
                 if update_prop == "add":
+                    setter = indent + "def {}_{}(self, value: {}):\n".format(
+                        utils.to_snake_case(prop_name), update_prop, type_hint
+                    )
                     setter += indent * 2 + "self._update_object['{}'] = {{'add': value}}\n".format(prop_name)
                     setter += indent * 2 + "return self\n"
                 if update_prop == "remove":
+                    setter = indent + "def {}_{}(self, value: {}):\n".format(
+                        utils.to_snake_case(prop_name), update_prop, type_hint
+                    )
                     setter += indent * 2 + "self._update_object['{}'] = {{'remove': value}}\n".format(prop_name)
                     setter += indent * 2 + "return self\n"
                 setters.append(setter)
