@@ -258,13 +258,10 @@ class EventsAPI(APIClient):
         """
         return self._update_multiple(cls=EventList, resource_path=self.RESOURCE_PATH, items=item)
 
-    def search(
-        self, name: str = None, description: str = None, filter: EventFilter = None, limit: int = None
-    ) -> EventList:
+    def search(self, description: str = None, filter: EventFilter = None, limit: int = None) -> EventList:
         """Search for events
 
         Args:
-            name (str): Fuzzy match on name.
             description (str): Fuzzy match on description.
             filter (EventFilter): Filter to apply. Performs exact match on these fields.
             limit (int): Maximum number of results to return.
@@ -276,5 +273,5 @@ class EventsAPI(APIClient):
         return self._search(
             cls=EventList,
             resource_path=self.RESOURCE_PATH,
-            json={"search": {"name": name, "description": description}, "filter": filter, "limit": limit},
+            json={"search": {"description": description}, "filter": filter, "limit": limit},
         )
