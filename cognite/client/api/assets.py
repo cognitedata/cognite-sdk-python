@@ -73,35 +73,35 @@ class AssetUpdate(CogniteUpdate):
         self.external_id = external_id
         self._update_object = {}
 
-    def external_id_set(self, value: str):
+    def external_id_set(self, value: Union[str, None]):
         if value is None:
             self._update_object["externalId"] = {"setNull": True}
             return self
         self._update_object["externalId"] = {"set": value}
         return self
 
-    def name_set(self, value: str):
+    def name_set(self, value: Union[str, None]):
         if value is None:
             self._update_object["name"] = {"setNull": True}
             return self
         self._update_object["name"] = {"set": value}
         return self
 
-    def description_set(self, value: str):
+    def description_set(self, value: Union[str, None]):
         if value is None:
             self._update_object["description"] = {"setNull": True}
             return self
         self._update_object["description"] = {"set": value}
         return self
 
-    def metadata_set(self, value: Dict[str, Any]):
+    def metadata_set(self, value: Union[Dict[str, Any], None]):
         if value is None:
             self._update_object["metadata"] = {"setNull": True}
             return self
         self._update_object["metadata"] = {"set": value}
         return self
 
-    def source_set(self, value: str):
+    def source_set(self, value: Union[str, None]):
         if value is None:
             self._update_object["source"] = {"setNull": True}
             return self
@@ -164,8 +164,10 @@ class AssetsAPI(APIClient):
         Yields:
             Union[Asset, AssetList]: yields Asset one by one if chunk is not specified, else AssetList objects.
         """
-        params = filter.dump(camel_case=True) if filter else None
-        return self._list_generator(AssetList, resource_path=self.RESOURCE_PATH, chunk=chunk_size, params=params)
+        filter = filter.dump(camel_case=True) if filter else None
+        return self._list_generator(
+            AssetList, resource_path=self.RESOURCE_PATH, method="POST", chunk=chunk_size, filter=filter
+        )
 
     def __iter__(self) -> Generator:
         """Iterate over assets
@@ -201,8 +203,8 @@ class AssetsAPI(APIClient):
         Returns:
             AssetList: List of requested assets
         """
-        params = filter.dump(camel_case=True) if filter else None
-        return self._list(AssetList, resource_path=self.RESOURCE_PATH, limit=limit, params=params)
+        filter = filter.dump(camel_case=True) if filter else None
+        return self._list(AssetList, resource_path=self.RESOURCE_PATH, method="POST", limit=limit, filter=filter)
 
     def create(self, asset: Union[Asset, List[Asset]]) -> Union[Asset, AssetList]:
         """Create one or more assets.

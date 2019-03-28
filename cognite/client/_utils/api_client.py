@@ -10,6 +10,7 @@ from requests import Response, Session
 from requests.adapters import HTTPAdapter
 from urllib3 import Retry
 
+from cognite.client._utils import utils
 from cognite.client._utils.resource_base import CogniteResource, CogniteUpdate
 from cognite.client.exceptions import APIError
 
@@ -140,7 +141,14 @@ class APIClient:
         return cls._load(res)
 
     def _list_generator(
-        self, cls, resource_path: str, limit: int = None, chunk: int = None, params: Dict = None, headers: Dict = None
+        self,
+        cls,
+        resource_path: str,
+        method: str,
+        limit: int = None,
+        chunk: int = None,
+        filter: Dict = None,
+        headers: Dict = None,
     ):
         total_items_retrieved = 0
         current_limit = self._LIMIT
@@ -148,15 +156,23 @@ class APIClient:
             assert chunk <= self._LIMIT, "Chunk size can not exceed {}".format(self._LIMIT)
             current_limit = chunk
         next_cursor = None
-        params = params or {}
+        filter = filter or {}
         while True:
             if limit:
                 num_of_remaining_items = limit - total_items_retrieved
                 if num_of_remaining_items < self._LIMIT:
                     current_limit = num_of_remaining_items
-            params["limit"] = current_limit
-            params["cursor"] = next_cursor
-            res = self._get(url_path=resource_path, params=params, headers=headers)
+
+            if method == "GET":
+                params = filter.copy()
+                params["limit"] = current_limit
+                params["cursor"] = next_cursor
+                res = self._get(url_path=resource_path, params=params, headers=headers)
+            elif method == "POST":
+                body = {"filter": filter, "limit": current_limit, "cursor": next_cursor}
+                res = self._post(url_path=resource_path + "/list", json=body, headers=headers)
+            else:
+                raise ValueError("_list parameter `method` must be GET or POST, not %s", method)
             current_items = res.json()["data"]["items"]
             if chunk:
                 yield cls._load(current_items)
@@ -168,25 +184,47 @@ class APIClient:
             if total_items_retrieved == limit or next_cursor is None:
                 break
 
-    def _list(self, cls, resource_path: str, limit: int = None, params: Dict = None, headers: Dict = None):
+    def _list(self, cls, resource_path: str, method: str, limit: int = None, filter: Dict = None, headers: Dict = None):
         items = []
         for resource_list in self._list_generator(
-            cls=cls, resource_path=resource_path, limit=limit, chunk=self._LIMIT, params=params, headers=headers
+            cls=cls,
+            resource_path=resource_path,
+            method=method,
+            limit=limit,
+            chunk=self._LIMIT,
+            filter=filter,
+            headers=headers,
         ):
             items.extend(resource_list._resources)
         return cls(items)
 
     def _create_multiple(
-        self, cls: Any, resource_path: str, items: Union[List[Any], Any], params: Dict = None, headers: Dict = None
+        self,
+        cls: Any,
+        resource_path: str,
+        items: Union[List[Any], Any],
+        params: Dict = None,
+        headers: Dict = None,
+        limit=None,
     ):
+        limit = limit or self._LIMIT
         single_item = not isinstance(items, list)
         if single_item:
             items = [items]
-        items = {"items": [item.dump(camel_case=True) for item in items]}
-        res = self._post(resource_path, json=items, headers=headers, params=params).json()["data"]["items"]
+
+        items_split = []
+        for i in range(0, len(items), limit):
+            items_split.append({"items": [item.dump(camel_case=True) for item in items[i : i + limit]]})
+        tasks = [(resource_path, task_items, params, headers) for task_items in items_split]
+        results = utils.execute_tasks_concurrently(self._post, tasks, workers=self._num_of_workers)
+
+        created_resources = []
+        for res in results:
+            created_resources.extend(res.json()["data"]["items"])
+
         if single_item:
-            return cls._RESOURCE._load(res[0])
-        return cls._load(res)
+            return cls._RESOURCE._load(created_resources[0])
+        return cls._load(created_resources)
 
     def _delete_multiple(
         self,

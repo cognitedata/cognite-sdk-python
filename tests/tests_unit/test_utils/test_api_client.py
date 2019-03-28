@@ -206,20 +206,29 @@ class TestStandardList:
     def test_standard_list_ok(self, rsps):
         rsps.add(rsps.GET, BASE_URL + URL_PATH, status=200, json={"data": {"items": [{"x": 1, "y": 2}, {"x": 1}]}})
         assert SomeResourceList([SomeResource(1, 2), SomeResource(1)]) == API_CLIENT._list(
-            cls=SomeResourceList, resource_path=URL_PATH
+            cls=SomeResourceList, resource_path=URL_PATH, method="GET"
         )
 
-    def test_standard_list_with_params_ok(self, rsps):
+    def test_standard_list_with_filter_GET_ok(self, rsps):
         rsps.add(rsps.GET, BASE_URL + URL_PATH, status=200, json={"data": {"items": [{"x": 1, "y": 2}, {"x": 1}]}})
         assert SomeResourceList([SomeResource(1, 2), SomeResource(1)]) == API_CLIENT._list(
-            cls=SomeResourceList, resource_path=URL_PATH, params={"filter": "bla"}
+            cls=SomeResourceList, resource_path=URL_PATH, method="GET", filter={"filter": "bla"}
         )
         assert "filter=bla" in rsps.calls[0].request.path_url
+
+    def test_standard_list_with_filter_POST_ok(self, rsps):
+        rsps.add(
+            rsps.POST, BASE_URL + URL_PATH + "/list", status=200, json={"data": {"items": [{"x": 1, "y": 2}, {"x": 1}]}}
+        )
+        assert SomeResourceList([SomeResource(1, 2), SomeResource(1)]) == API_CLIENT._list(
+            cls=SomeResourceList, resource_path=URL_PATH, method="POST", filter={"filter": "bla"}
+        )
+        assert {"filter": {"filter": "bla"}, "limit": 1000, "cursor": None} == jsgz_load(rsps.calls[0].request.body)
 
     def test_standard_list_fail(self, rsps):
         rsps.add(rsps.GET, BASE_URL + URL_PATH, status=400, json={"error": {"message": "Client Error"}})
         with pytest.raises(APIError, match="Client Error") as e:
-            API_CLIENT._list(cls=SomeResourceList, resource_path=URL_PATH)
+            API_CLIENT._list(cls=SomeResourceList, resource_path=URL_PATH, method="GET")
         assert 400 == e.value.code
         assert "Client Error" == e.value.message
 
@@ -245,7 +254,9 @@ class TestStandardList:
     @pytest.mark.usefixtures("mock_get_for_autopaging")
     def test_standard_list_generator(self):
         total_resources = 0
-        for resource in API_CLIENT._list_generator(cls=SomeResourceList, resource_path=URL_PATH, limit=10000):
+        for resource in API_CLIENT._list_generator(
+            cls=SomeResourceList, resource_path=URL_PATH, method="GET", limit=10000
+        ):
             assert isinstance(resource, SomeResource)
             total_resources += 1
         assert 10000 == total_resources
@@ -254,7 +265,7 @@ class TestStandardList:
     def test_standard_list_generator(self):
         total_resources = 0
         for resource_chunk in API_CLIENT._list_generator(
-            cls=SomeResourceList, resource_path=URL_PATH, limit=10000, chunk=1000
+            cls=SomeResourceList, resource_path=URL_PATH, method="GET", limit=10000, chunk=1000
         ):
             assert isinstance(resource_chunk, SomeResourceList)
             assert 1000 == len(resource_chunk)
@@ -263,17 +274,17 @@ class TestStandardList:
 
     def test_standard_list_generator__chunk_size_exceeds_max(self):
         with pytest.raises(AssertionError, match="exceed 1000"):
-            for _ in API_CLIENT._list_generator(cls=SomeResourceList, resource_path=URL_PATH, chunk=1001):
+            for _ in API_CLIENT._list_generator(cls=SomeResourceList, resource_path=URL_PATH, method="GET", chunk=1001):
                 pass
 
     @pytest.mark.usefixtures("mock_get_for_autopaging")
     def test_standard_list_autopaging(self):
-        res = API_CLIENT._list(cls=SomeResourceList, resource_path=URL_PATH)
+        res = API_CLIENT._list(cls=SomeResourceList, resource_path=URL_PATH, method="GET")
         assert self.NUMBER_OF_ITEMS_FOR_AUTOPAGING == len(res)
 
     @pytest.mark.usefixtures("mock_get_for_autopaging")
     def test_standard_list_autopaging_with_limit(self):
-        res = API_CLIENT._list(cls=SomeResourceList, resource_path=URL_PATH, limit=5333)
+        res = API_CLIENT._list(cls=SomeResourceList, resource_path=URL_PATH, method="GET", limit=5333)
         assert 5333 == len(res)
 
 
@@ -307,6 +318,18 @@ class TestStandardCreate:
             )
         assert 400 == e.value.code
         assert "Client Error" == e.value.message
+
+    def test_standard_create_concurrent(self, rsps):
+        rsps.add(rsps.POST, BASE_URL + URL_PATH, status=200, json={"data": {"items": [{"x": 1, "y": 2}]}})
+        rsps.add(rsps.POST, BASE_URL + URL_PATH, status=200, json={"data": {"items": [{"x": 3, "y": 4}]}})
+
+        res = API_CLIENT._create_multiple(
+            cls=SomeResourceList, resource_path=URL_PATH, items=[SomeResource(1, 2), SomeResource(3, 4)], limit=1
+        )
+        assert SomeResourceList([SomeResource(1, 2), SomeResource(3, 4)]) == res
+
+        assert {"items": [{"x": 1, "y": 2}]} == jsgz_load(rsps.calls[0].request.body)
+        assert {"items": [{"x": 3, "y": 4}]} == jsgz_load(rsps.calls[1].request.body)
 
 
 class TestStandardDelete:

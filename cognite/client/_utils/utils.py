@@ -9,8 +9,9 @@ import datetime
 import platform
 import re
 import time
+from concurrent.futures.thread import ThreadPoolExecutor
 from datetime import datetime, timezone
-from typing import Callable, List
+from typing import Callable, Dict, List, Tuple, Union
 
 import cognite.client
 
@@ -161,6 +162,19 @@ def to_camel_case(snake_case_string: str):
 def to_snake_case(camel_case_string: str):
     s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", camel_case_string)
     return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
+
+
+def execute_tasks_concurrently(func: Callable, tasks: Union[List[Tuple], List[Dict]], workers: int):
+    if workers > 0:
+        with ThreadPoolExecutor(workers) as p:
+            futures = []
+            for task in tasks:
+                if isinstance(task, dict):
+                    futures.append(p.submit(func, **task))
+                elif isinstance(task, tuple):
+                    futures.append(p.submit(func, *task))
+            return [future.result() for future in futures]
+    raise AssertionError("Number of workers should be >= 1, was {}".format(workers))
 
 
 def get_user_agent():

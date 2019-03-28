@@ -106,35 +106,35 @@ class EventUpdate(CogniteUpdate):
         self.external_id = external_id
         self._update_object = {}
 
-    def external_id_set(self, value: str):
+    def external_id_set(self, value: Union[str, None]):
         if value is None:
             self._update_object["externalId"] = {"setNull": True}
             return self
         self._update_object["externalId"] = {"set": value}
         return self
 
-    def start_time_set(self, value: int):
+    def start_time_set(self, value: Union[int, None]):
         if value is None:
             self._update_object["startTime"] = {"setNull": True}
             return self
         self._update_object["startTime"] = {"set": value}
         return self
 
-    def end_time_set(self, value: int):
+    def end_time_set(self, value: Union[int, None]):
         if value is None:
             self._update_object["endTime"] = {"setNull": True}
             return self
         self._update_object["endTime"] = {"set": value}
         return self
 
-    def description_set(self, value: str):
+    def description_set(self, value: Union[str, None]):
         if value is None:
             self._update_object["description"] = {"setNull": True}
             return self
         self._update_object["description"] = {"set": value}
         return self
 
-    def metadata_set(self, value: Dict[str, Any]):
+    def metadata_set(self, value: Union[Dict[str, Any], None]):
         if value is None:
             self._update_object["metadata"] = {"setNull": True}
             return self
@@ -149,14 +149,14 @@ class EventUpdate(CogniteUpdate):
         self._update_object["assetIds"] = {"remove": value}
         return self
 
-    def asset_ids_set(self, value: List):
+    def asset_ids_set(self, value: Union[List, None]):
         if value is None:
             self._update_object["assetIds"] = {"setNull": True}
             return self
         self._update_object["assetIds"] = {"set": value}
         return self
 
-    def source_set(self, value: str):
+    def source_set(self, value: Union[str, None]):
         if value is None:
             self._update_object["source"] = {"setNull": True}
             return self
@@ -181,8 +181,10 @@ class EventsAPI(APIClient):
         Yields:
             Union[Event, EventList]: yields Event one by one if chunk is not specified, else EventList objects.
         """
-        params = filter.dump(camel_case=True) if filter else None
-        return self._list_generator(EventList, resource_path=self.RESOURCE_PATH, chunk=chunk_size, params=params)
+        filter = filter.dump(camel_case=True) if filter else None
+        return self._list_generator(
+            EventList, resource_path=self.RESOURCE_PATH, method="POST", chunk=chunk_size, filter=filter
+        )
 
     def __iter__(self) -> Generator:
         """Iterate over events
@@ -218,8 +220,8 @@ class EventsAPI(APIClient):
         Returns:
             EventList: List of requested events
         """
-        params = filter.dump(camel_case=True) if filter else None
-        return self._list(EventList, resource_path=self.RESOURCE_PATH, limit=limit, params=params)
+        filter = filter.dump(camel_case=True) if filter else None
+        return self._list(EventList, resource_path=self.RESOURCE_PATH, method="POST", limit=limit, filter=filter)
 
     def create(self, event: Union[Event, List[Event]]) -> Union[Event, EventList]:
         """Create one or more events.
