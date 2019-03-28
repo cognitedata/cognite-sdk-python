@@ -199,67 +199,38 @@ class DatapointsAPI(APIClient):
             num_of_workers = 1
 
         windows = utils.get_datapoints_windows(start, end, granularity, num_of_workers)
-
-        partial_get_dps = partial(
-            self._get_datapoints_helper_wrapper,
-            name=name,
-            aggregates=aggregates,
-            granularity=granularity,
-            protobuf=kwargs.get("protobuf", True),
-            include_outside_points=kwargs.get("include_outside_points", False),
-        )
-
-        with Pool(len(windows)) as p:
-            datapoints = p.map(partial_get_dps, windows)
+        tasks = [
+            (
+                name,
+                aggregates,
+                granularity,
+                window["start"],
+                window["end"],
+                kwargs.get("protobuf", True),
+                kwargs.get("include_outside_points", False),
+            )
+            for window in windows
+        ]
+        datapoints = utils.execute_tasks_concurrently(self._get_datapoints_helper, tasks, num_of_workers)
 
         concat_dps = []
         [concat_dps.extend(el) for el in datapoints]
 
         return DatapointsResponse({"data": {"items": [{"name": name, "datapoints": concat_dps}]}})
 
-    def _get_datapoints_helper_wrapper(self, args, name, aggregates, granularity, protobuf, include_outside_points):
-        return self._get_datapoints_helper(
-            name,
-            aggregates,
-            granularity,
-            args["start"],
-            args["end"],
-            protobuf=protobuf,
-            include_outside_points=include_outside_points,
-        )
-
-    def _get_datapoints_helper(self, name, aggregates=None, granularity=None, start=None, end=None, **kwargs):
-        """Returns a list of datapoints for the given query.
-
-        This method will automate paging for the given time period.
-
-        Args:
-            name (str):       The name of the timeseries to retrieve data for.
-
-            aggregates (list):      The list of aggregate functions you wish to apply to the data. Valid aggregate functions
-                                    are: 'average/avg, max, min, count, sum, interpolation/int, stepinterpolation/step'.
-
-            granularity (str):      The granularity of the aggregate values. Valid entries are : 'day/d, hour/h, minute/m,
-                                    second/s', or a multiple of these indicated by a number as a prefix e.g. '12hour'.
-
-            start (Union[str, int, datetime]):    Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s.
-                                        E.g. '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since
-                                        epoch or a datetime object which will be converted to ms since epoch UTC.
-
-            end (Union[str, int, datetime]):      Get datapoints up to this time. Same format as for start.
-
-        Keyword Arguments:
-            include_outside_points (bool):  No description.
-
-            protobuf (bool):        Download the data using the binary protobuf format. Only applicable when getting raw data.
-                                    Defaults to True.
-
-        Returns:
-            list of datapoints: A list containing datapoint dicts.
-        """
+    def _get_datapoints_helper(
+        self,
+        name,
+        aggregates=None,
+        granularity=None,
+        start=None,
+        end=None,
+        include_outside_points: bool = False,
+        protobuf: bool = True,
+    ):
         url = "/timeseries/data/{}".format(quote(name, safe=""))
 
-        use_protobuf = kwargs.get("protobuf", True) and aggregates is None
+        use_protobuf = protobuf and aggregates is None
         limit = self._LIMIT if aggregates is None else self._LIMIT_AGG
 
         params = {
@@ -268,7 +239,7 @@ class DatapointsAPI(APIClient):
             "limit": limit,
             "start": start,
             "end": end,
-            "includeOutsidePoints": kwargs.get("include_outside_points", False),
+            "includeOutsidePoints": include_outside_points,
         }
 
         headers = {"accept": "application/protobuf"} if use_protobuf else {}
@@ -292,40 +263,12 @@ class DatapointsAPI(APIClient):
         [dps.extend(el) for el in datapoints]
         return dps
 
-    def _get_datapoints_user_defined_limit(self, name, aggregates, granularity, start, end, limit, **kwargs):
-        """Returns a DatapointsResponse object with the requested data.
-
-        No paging or parallelizing is done.
-
-        Args:
-            name (str):       The name of the timeseries to retrieve data for.
-
-            aggregates (list):      The list of aggregate functions you wish to apply to the data. Valid aggregate functions
-                                    are: 'average/avg, max, min, count, sum, interpolation/int, stepinterpolation/step'.
-
-            granularity (str):      The granularity of the aggregate values. Valid entries are : 'day/d, hour/h, minute/m,
-                                    second/s', or a multiple of these indicated by a number as a prefix e.g. '12hour'.
-
-            start (Union[str, int, datetime]):    Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s.
-                                        E.g. '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since
-                                        epoch or a datetime object which will be converted to ms since epoch UTC.
-
-            end (Union[str, int, datetime]):      Get datapoints up to this time. Same format as for start.
-
-            limit (str):            Max number of datapoints to return. Max is 100,000.
-
-        Keyword Arguments:
-            include_outside_points (bool):  No description.
-
-            protobuf (bool):        Download the data using the binary protobuf format. Only applicable when getting raw data.
-                                    Defaults to True.
-        Returns:
-            stable.datapoints.DatapointsResponse: A data object containing the requested data with several getter methods with different
-            output formats.
-        """
+    def _get_datapoints_user_defined_limit(
+        self, name, aggregates, granularity, start, end, limit, include_outside_points, protobuf
+    ):
         url = "/timeseries/data/{}".format(quote(name, safe=""))
 
-        use_protobuf = kwargs.get("protobuf", True) and aggregates is None
+        use_protobuf = protobuf and aggregates is None
 
         params = {
             "aggregates": aggregates,
@@ -333,7 +276,7 @@ class DatapointsAPI(APIClient):
             "limit": limit,
             "start": start,
             "end": end,
-            "includeOutsidePoints": kwargs.get("include_outside_points", False),
+            "includeOutsidePoints": include_outside_points,
         }
         headers = {"accept": "application/protobuf"} if use_protobuf else {}
         res = self._get(url, params=params, headers=headers)
