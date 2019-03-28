@@ -24,7 +24,6 @@ class Asset(CogniteResource):
         description (str): Description of asset.
         metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
         source (str): The source of this asset
-        created_time (int): It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         id (int): Javascript friendly internal ID given to the object.
         last_updated_time (int): It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         path (List[int]): IDs of assets on the path to the asset.
@@ -41,7 +40,6 @@ class Asset(CogniteResource):
         description: str = None,
         metadata: Dict[str, Any] = None,
         source: str = None,
-        created_time: int = None,
         id: int = None,
         last_updated_time: int = None,
         path: List[int] = None,
@@ -55,7 +53,6 @@ class Asset(CogniteResource):
         self.description = description
         self.metadata = metadata
         self.source = source
-        self.created_time = created_time
         self.id = id
         self.last_updated_time = last_updated_time
         self.path = path
@@ -115,13 +112,6 @@ class AssetUpdate(CogniteUpdate):
             self._update_object["source"] = {"setNull": True}
             return self
         self._update_object["source"] = {"set": value}
-        return self
-
-    def created_time_set(self, value: int):
-        if value is None:
-            self._update_object["createdTime"] = {"setNull": True}
-            return self
-        self._update_object["createdTime"] = {"set": value}
         return self
 
     # GenStop

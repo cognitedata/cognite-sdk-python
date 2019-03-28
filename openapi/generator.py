@@ -81,10 +81,8 @@ class ClassGenerator:
     @staticmethod
     def _get_schema_description(schema):
         if "allOf" in schema:
-            return schema["allOf"][0]["description"]
-        if "description" not in schema:
-            return "No description."
-        return schema["description"]
+            schema = schema["allOf"][0]
+        return schema.get("description", "No description.")
 
     @staticmethod
     def _get_schema_properties(schema):
@@ -148,9 +146,15 @@ class UpdateClassGenerator:
 
     def generate_setters(self, schema, indentation):
         setters = []
-        update_schema = self._get_schema_properties(schema)["update"]
+        schema_properties = self._get_schema_properties(schema)
+        if "update" in schema_properties:
+            update_schema = schema_properties["update"]
+        else:
+            update_schema = schema
         indent = " " * indentation
         for prop_name, prop in self._get_schema_properties(update_schema).items():
+            if prop_name == "id":
+                continue
             for update_prop, type_hint in self._get_update_properties(prop):
                 setter = indent + "def {}_{}(self, value: {}):\n".format(
                     utils.to_snake_case(prop_name), update_prop, type_hint
@@ -186,12 +190,10 @@ class UpdateClassGenerator:
     @staticmethod
     def _get_schema_description(schema):
         if "allOf" in schema:
-            return schema["allOf"][0]["description"]
+            schema = schema["allOf"][0]
         elif "oneOf" in schema:
             return UpdateClassGenerator._get_schema_description(schema["oneOf"][0])
-        if "description" not in schema:
-            print("bla")
-        return schema["description"]
+        return schema.get("description", "No description.")
 
     @staticmethod
     def _get_schema_properties(schema):

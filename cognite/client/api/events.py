@@ -18,7 +18,6 @@ class Event(CogniteResource):
         metadata (Dict[str, Any]): Customizable extra data about the event. String key -> String value.
         asset_ids (List[int]): Asset IDs of related equipments that this event relates to.
         source (str): The source of this event.
-        created_time (int): It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         id (int): Javascript friendly internal ID given to the object.
         last_updated_time (int): It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
     """
@@ -32,7 +31,6 @@ class Event(CogniteResource):
         metadata: Dict[str, Any] = None,
         asset_ids: List[int] = None,
         source: str = None,
-        created_time: int = None,
         id: int = None,
         last_updated_time: int = None,
     ):
@@ -43,7 +41,6 @@ class Event(CogniteResource):
         self.metadata = metadata
         self.asset_ids = asset_ids
         self.source = source
-        self.created_time = created_time
         self.id = id
         self.last_updated_time = last_updated_time
 

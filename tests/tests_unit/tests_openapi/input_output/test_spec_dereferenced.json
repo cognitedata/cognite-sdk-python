@@ -204,12 +204,6 @@
           "source": {
             "type": "string",
             "description": "The source of this asset"
-          },
-          "createdTime": {
-            "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
-            "type": "integer",
-            "minimum": 0,
-            "format": "int64"
           }
         },
         "description": "Representation of a physical asset, e.g plant or piece of equipment"
@@ -246,12 +240,6 @@
               "source": {
                 "type": "string",
                 "description": "The source of this asset"
-              },
-              "createdTime": {
-                "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
-                "type": "integer",
-                "minimum": 0,
-                "format": "int64"
               }
             },
             "description": "Representation of a physical asset, e.g plant or piece of equipment"
@@ -333,12 +321,6 @@
                     "source": {
                       "type": "string",
                       "description": "The source of this asset"
-                    },
-                    "createdTime": {
-                      "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
-                      "type": "integer",
-                      "minimum": 0,
-                      "format": "int64"
                     }
                   },
                   "description": "Representation of a physical asset, e.g plant or piece of equipment"
@@ -425,18 +407,13 @@
                               "description": "Removable string change."
                             },
                             "name": {
+                              "description": "Removable string change.",
                               "type": "object",
-                              "oneOf": [
-                                {
-                                  "type": "object",
-                                  "properties": {
-                                    "set": {
-                                      "type": "string"
-                                    }
-                                  }
+                              "properties": {
+                                "set": {
+                                  "type": "string"
                                 }
-                              ],
-                              "description": "Removable string change."
+                              }
                             },
                             "description": {
                               "type": "object",
@@ -503,28 +480,6 @@
                                 }
                               ],
                               "description": "Removable string change."
-                            },
-                            "createdTime": {
-                              "type": "object",
-                              "oneOf": [
-                                {
-                                  "type": "object",
-                                  "properties": {
-                                    "set": {
-                                      "type": "integer",
-                                      "format": "int64"
-                                    }
-                                  }
-                                },
-                                {
-                                  "type": "object",
-                                  "properties": {
-                                    "setNull": {
-                                      "type": "boolean"
-                                    }
-                                  }
-                                }
-                              ]
                             }
                           }
                         }
@@ -579,18 +534,13 @@
                               "description": "Removable string change."
                             },
                             "name": {
+                              "description": "Removable string change.",
                               "type": "object",
-                              "oneOf": [
-                                {
-                                  "type": "object",
-                                  "properties": {
-                                    "set": {
-                                      "type": "string"
-                                    }
-                                  }
+                              "properties": {
+                                "set": {
+                                  "type": "string"
                                 }
-                              ],
-                              "description": "Removable string change."
+                              }
                             },
                             "description": {
                               "type": "object",
@@ -657,28 +607,6 @@
                                 }
                               ],
                               "description": "Removable string change."
-                            },
-                            "createdTime": {
-                              "type": "object",
-                              "oneOf": [
-                                {
-                                  "type": "object",
-                                  "properties": {
-                                    "set": {
-                                      "type": "integer",
-                                      "format": "int64"
-                                    }
-                                  }
-                                },
-                                {
-                                  "type": "object",
-                                  "properties": {
-                                    "setNull": {
-                                      "type": "boolean"
-                                    }
-                                  }
-                                }
-                              ]
                             }
                           }
                         }
@@ -741,12 +669,6 @@
                     "source": {
                       "type": "string",
                       "description": "The source of this asset"
-                    },
-                    "createdTime": {
-                      "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
-                      "type": "integer",
-                      "minimum": 0,
-                      "format": "int64"
                     }
                   },
                   "description": "Representation of a physical asset, e.g plant or piece of equipment"
@@ -808,12 +730,6 @@
                     "source": {
                       "type": "string",
                       "description": "The source of this asset"
-                    },
-                    "createdTime": {
-                      "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
-                      "type": "integer",
-                      "minimum": 0,
-                      "format": "int64"
                     }
                   },
                   "description": "Representation of a physical asset, e.g plant or piece of equipment"
@@ -1115,18 +1031,13 @@
                         "description": "Removable string change."
                       },
                       "name": {
+                        "description": "Removable string change.",
                         "type": "object",
-                        "oneOf": [
-                          {
-                            "type": "object",
-                            "properties": {
-                              "set": {
-                                "type": "string"
-                              }
-                            }
+                        "properties": {
+                          "set": {
+                            "type": "string"
                           }
-                        ],
-                        "description": "Removable string change."
+                        }
                       },
                       "description": {
                         "type": "object",
@@ -1193,28 +1104,6 @@
                           }
                         ],
                         "description": "Removable string change."
-                      },
-                      "createdTime": {
-                        "type": "object",
-                        "oneOf": [
-                          {
-                            "type": "object",
-                            "properties": {
-                              "set": {
-                                "type": "integer",
-                                "format": "int64"
-                              }
-                            }
-                          },
-                          {
-                            "type": "object",
-                            "properties": {
-                              "setNull": {
-                                "type": "boolean"
-                              }
-                            }
-                          }
-                        ]
                       }
                     }
                   }
@@ -1269,18 +1158,13 @@
                         "description": "Removable string change."
                       },
                       "name": {
+                        "description": "Removable string change.",
                         "type": "object",
-                        "oneOf": [
-                          {
-                            "type": "object",
-                            "properties": {
-                              "set": {
-                                "type": "string"
-                              }
-                            }
+                        "properties": {
+                          "set": {
+                            "type": "string"
                           }
-                        ],
-                        "description": "Removable string change."
+                        }
                       },
                       "description": {
                         "type": "object",
@@ -1347,28 +1231,6 @@
                           }
                         ],
                         "description": "Removable string change."
-                      },
-                      "createdTime": {
-                        "type": "object",
-                        "oneOf": [
-                          {
-                            "type": "object",
-                            "properties": {
-                              "set": {
-                                "type": "integer",
-                                "format": "int64"
-                              }
-                            }
-                          },
-                          {
-                            "type": "object",
-                            "properties": {
-                              "setNull": {
-                                "type": "boolean"
-                              }
-                            }
-                          }
-                        ]
                       }
                     }
                   }
@@ -1423,18 +1285,13 @@
                     "description": "Removable string change."
                   },
                   "name": {
+                    "description": "Removable string change.",
                     "type": "object",
-                    "oneOf": [
-                      {
-                        "type": "object",
-                        "properties": {
-                          "set": {
-                            "type": "string"
-                          }
-                        }
+                    "properties": {
+                      "set": {
+                        "type": "string"
                       }
-                    ],
-                    "description": "Removable string change."
+                    }
                   },
                   "description": {
                     "type": "object",
@@ -1501,28 +1358,6 @@
                       }
                     ],
                     "description": "Removable string change."
-                  },
-                  "createdTime": {
-                    "type": "object",
-                    "oneOf": [
-                      {
-                        "type": "object",
-                        "properties": {
-                          "set": {
-                            "type": "integer",
-                            "format": "int64"
-                          }
-                        }
-                      },
-                      {
-                        "type": "object",
-                        "properties": {
-                          "setNull": {
-                            "type": "boolean"
-                          }
-                        }
-                      }
-                    ]
                   }
                 }
               }
@@ -1577,18 +1412,13 @@
                     "description": "Removable string change."
                   },
                   "name": {
+                    "description": "Removable string change.",
                     "type": "object",
-                    "oneOf": [
-                      {
-                        "type": "object",
-                        "properties": {
-                          "set": {
-                            "type": "string"
-                          }
-                        }
+                    "properties": {
+                      "set": {
+                        "type": "string"
                       }
-                    ],
-                    "description": "Removable string change."
+                    }
                   },
                   "description": {
                     "type": "object",
@@ -1655,28 +1485,6 @@
                       }
                     ],
                     "description": "Removable string change."
-                  },
-                  "createdTime": {
-                    "type": "object",
-                    "oneOf": [
-                      {
-                        "type": "object",
-                        "properties": {
-                          "set": {
-                            "type": "integer",
-                            "format": "int64"
-                          }
-                        }
-                      },
-                      {
-                        "type": "object",
-                        "properties": {
-                          "setNull": {
-                            "type": "boolean"
-                          }
-                        }
-                      }
-                    ]
                   }
                 }
               }
@@ -1727,18 +1535,13 @@
                 "description": "Removable string change."
               },
               "name": {
+                "description": "Removable string change.",
                 "type": "object",
-                "oneOf": [
-                  {
-                    "type": "object",
-                    "properties": {
-                      "set": {
-                        "type": "string"
-                      }
-                    }
+                "properties": {
+                  "set": {
+                    "type": "string"
                   }
-                ],
-                "description": "Removable string change."
+                }
               },
               "description": {
                 "type": "object",
@@ -1805,28 +1608,6 @@
                   }
                 ],
                 "description": "Removable string change."
-              },
-              "createdTime": {
-                "type": "object",
-                "oneOf": [
-                  {
-                    "type": "object",
-                    "properties": {
-                      "set": {
-                        "type": "integer",
-                        "format": "int64"
-                      }
-                    }
-                  },
-                  {
-                    "type": "object",
-                    "properties": {
-                      "setNull": {
-                        "type": "boolean"
-                      }
-                    }
-                  }
-                ]
               }
             }
           }
@@ -1932,18 +1713,13 @@
         "description": "Removable string change."
       },
       "SinglePatchRequiredString": {
+        "description": "Removable string change.",
         "type": "object",
-        "oneOf": [
-          {
-            "type": "object",
-            "properties": {
-              "set": {
-                "type": "string"
-              }
-            }
+        "properties": {
+          "set": {
+            "type": "string"
           }
-        ],
-        "description": "Removable string change."
+        }
       },
       "ArrayPatchLong": {
         "type": "object",
@@ -2051,12 +1827,6 @@
                       "maxLength": 128,
                       "type": "string",
                       "description": "The source of this event."
-                    },
-                    "createdTime": {
-                      "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
-                      "type": "integer",
-                      "minimum": 0,
-                      "format": "int64"
                     }
                   },
                   "description": "An event represents something that happened at a given interval in time, e.g a failure, a work order etc."
@@ -2141,12 +1911,6 @@
                   "maxLength": 128,
                   "type": "string",
                   "description": "The source of this event."
-                },
-                "createdTime": {
-                  "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
-                  "type": "integer",
-                  "minimum": 0,
-                  "format": "int64"
                 }
               },
               "description": "An event represents something that happened at a given interval in time, e.g a failure, a work order etc."
@@ -2628,12 +2392,6 @@
                       "maxLength": 128,
                       "type": "string",
                       "description": "The source of this event."
-                    },
-                    "createdTime": {
-                      "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
-                      "type": "integer",
-                      "minimum": 0,
-                      "format": "int64"
                     }
                   },
                   "description": "An event represents something that happened at a given interval in time, e.g a failure, a work order etc."
@@ -2720,12 +2478,6 @@
                 "maxLength": 128,
                 "type": "string",
                 "description": "The source of this event."
-              },
-              "createdTime": {
-                "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
-                "type": "integer",
-                "minimum": 0,
-                "format": "int64"
               }
             },
             "description": "An event represents something that happened at a given interval in time, e.g a failure, a work order etc."
@@ -2802,12 +2554,6 @@
             "maxLength": 128,
             "type": "string",
             "description": "The source of this event."
-          },
-          "createdTime": {
-            "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
-            "type": "integer",
-            "minimum": 0,
-            "format": "int64"
           }
         },
         "description": "An event represents something that happened at a given interval in time, e.g a failure, a work order etc."
@@ -4121,7 +3867,7 @@
             "type": "object",
             "description": "Customizable extra data about the file. String key -> String value."
           },
-          "assetsIds": {
+          "assetIds": {
             "type": "array",
             "items": {
               "description": "Javascript friendly internal ID given to the object.",
@@ -4163,7 +3909,7 @@
                 "type": "object",
                 "description": "Customizable extra data about the file. String key -> String value."
               },
-              "assetsIds": {
+              "assetIds": {
                 "type": "array",
                 "items": {
                   "description": "Javascript friendly internal ID given to the object.",
@@ -4293,7 +4039,7 @@
                 "description": "<- TODO",
                 "type": "integer",
                 "format": "int32",
-                "minimum": 1,
+                "minimum": 100,
                 "maximum": 1000,
                 "default": 100
               }
@@ -4329,18 +4075,13 @@
                   "format": "int64"
                 },
                 "name": {
+                  "description": "Removable string change.",
                   "type": "object",
-                  "oneOf": [
-                    {
-                      "type": "object",
-                      "properties": {
-                        "set": {
-                          "type": "string"
-                        }
-                      }
+                  "properties": {
+                    "set": {
+                      "type": "string"
                     }
-                  ],
-                  "description": "Removable string change."
+                  }
                 },
                 "mimeType": {
                   "type": "object",
@@ -4499,7 +4240,7 @@
                       "type": "object",
                       "description": "Customizable extra data about the file. String key -> String value."
                     },
-                    "assetsIds": {
+                    "assetIds": {
                       "type": "array",
                       "items": {
                         "description": "Javascript friendly internal ID given to the object.",
@@ -4591,7 +4332,7 @@
                   "type": "object",
                   "description": "Customizable extra data about the file. String key -> String value."
                 },
-                "assetsIds": {
+                "assetIds": {
                   "type": "array",
                   "items": {
                     "description": "Javascript friendly internal ID given to the object.",
@@ -4617,18 +4358,13 @@
             "format": "int64"
           },
           "name": {
+            "description": "Removable string change.",
             "type": "object",
-            "oneOf": [
-              {
-                "type": "object",
-                "properties": {
-                  "set": {
-                    "type": "string"
-                  }
-                }
+            "properties": {
+              "set": {
+                "type": "string"
               }
-            ],
-            "description": "Removable string change."
+            }
           },
           "mimeType": {
             "type": "object",
@@ -4784,7 +4520,7 @@
                       "type": "object",
                       "description": "Customizable extra data about the file. String key -> String value."
                     },
-                    "assetsIds": {
+                    "assetIds": {
                       "type": "array",
                       "items": {
                         "description": "Javascript friendly internal ID given to the object.",
@@ -4919,7 +4655,7 @@
             "description": "<- TODO",
             "type": "integer",
             "format": "int32",
-            "minimum": 1,
+            "minimum": 100,
             "maximum": 1000,
             "default": 100
           }
@@ -4953,7 +4689,7 @@
         "in": "query",
         "schema": {
           "type": "integer",
-          "default": 1,
+          "default": 100,
           "minimum": 1,
           "maximum": 1000
         }
@@ -5017,12 +4753,6 @@
                               "source": {
                                 "type": "string",
                                 "description": "The source of this asset"
-                              },
-                              "createdTime": {
-                                "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
-                                "type": "integer",
-                                "minimum": 0,
-                                "format": "int64"
                               }
                             },
                             "description": "Representation of a physical asset, e.g plant or piece of equipment"
@@ -5124,12 +4854,6 @@
                               "source": {
                                 "type": "string",
                                 "description": "The source of this asset"
-                              },
-                              "createdTime": {
-                                "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
-                                "type": "integer",
-                                "minimum": 0,
-                                "format": "int64"
                               }
                             },
                             "description": "Representation of a physical asset, e.g plant or piece of equipment"
@@ -5283,12 +5007,6 @@
                                 "maxLength": 128,
                                 "type": "string",
                                 "description": "The source of this event."
-                              },
-                              "createdTime": {
-                                "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
-                                "type": "integer",
-                                "minimum": 0,
-                                "format": "int64"
                               }
                             },
                             "description": "An event represents something that happened at a given interval in time, e.g a failure, a work order etc."
@@ -5387,12 +5105,6 @@
                                 "maxLength": 128,
                                 "type": "string",
                                 "description": "The source of this event."
-                              },
-                              "createdTime": {
-                                "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
-                                "type": "integer",
-                                "minimum": 0,
-                                "format": "int64"
                               }
                             },
                             "description": "An event represents something that happened at a given interval in time, e.g a failure, a work order etc."
@@ -5470,7 +5182,7 @@
                           "type": "object",
                           "description": "Customizable extra data about the file. String key -> String value."
                         },
-                        "assetsIds": {
+                        "assetIds": {
                           "type": "array",
                           "items": {
                             "description": "Javascript friendly internal ID given to the object.",
@@ -5563,7 +5275,7 @@
                               "type": "object",
                               "description": "Customizable extra data about the file. String key -> String value."
                             },
-                            "assetsIds": {
+                            "assetIds": {
                               "type": "array",
                               "items": {
                                 "description": "Javascript friendly internal ID given to the object.",
@@ -5668,7 +5380,7 @@
                                 "type": "object",
                                 "description": "Customizable extra data about the file. String key -> String value."
                               },
-                              "assetsIds": {
+                              "assetIds": {
                                 "type": "array",
                                 "items": {
                                   "description": "Javascript friendly internal ID given to the object.",
@@ -5771,7 +5483,7 @@
                                 "type": "object",
                                 "description": "Customizable extra data about the file. String key -> String value."
                               },
-                              "assetsIds": {
+                              "assetIds": {
                                 "type": "array",
                                 "items": {
                                   "description": "Javascript friendly internal ID given to the object.",
@@ -5950,12 +5662,6 @@
                             "source": {
                               "type": "string",
                               "description": "The source of this asset"
-                            },
-                            "createdTime": {
-                              "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
-                              "type": "integer",
-                              "minimum": 0,
-                              "format": "int64"
                             }
                           },
                           "description": "Representation of a physical asset, e.g plant or piece of equipment"
@@ -6029,12 +5735,6 @@
                                   "source": {
                                     "type": "string",
                                     "description": "The source of this asset"
-                                  },
-                                  "createdTime": {
-                                    "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
-                                    "type": "integer",
-                                    "minimum": 0,
-                                    "format": "int64"
                                   }
                                 },
                                 "description": "Representation of a physical asset, e.g plant or piece of equipment"
@@ -6281,12 +5981,6 @@
                                   "source": {
                                     "type": "string",
                                     "description": "The source of this asset"
-                                  },
-                                  "createdTime": {
-                                    "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
-                                    "type": "integer",
-                                    "minimum": 0,
-                                    "format": "int64"
                                   }
                                 },
                                 "description": "Representation of a physical asset, e.g plant or piece of equipment"
@@ -6466,12 +6160,6 @@
                                   "source": {
                                     "type": "string",
                                     "description": "The source of this asset"
-                                  },
-                                  "createdTime": {
-                                    "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
-                                    "type": "integer",
-                                    "minimum": 0,
-                                    "format": "int64"
                                   }
                                 },
                                 "description": "Representation of a physical asset, e.g plant or piece of equipment"
@@ -6575,7 +6263,7 @@
         ],
         "summary": "Update multiple assets",
         "description": "Updates multiple assets within the same project. Updating assets does not replace the existing asset hierarchy. This operation supports partial updates, meaning that fields omitted from the requests are not changed.\n\nUnder DataAssetChange -> SinglePathString, you can use 'set': 'value' to update value; use 'setNull': true to set that field to null.\n\nIt is possible to post changes to a maximum of 1000 assets per request and all of their IDs must be unique.",
-        "operationId": "udpateAssets",
+        "operationId": "updateAssets",
         "parameters": [
           {
             "name": "project",
@@ -6630,18 +6318,13 @@
                                       "description": "Removable string change."
                                     },
                                     "name": {
+                                      "description": "Removable string change.",
                                       "type": "object",
-                                      "oneOf": [
-                                        {
-                                          "type": "object",
-                                          "properties": {
-                                            "set": {
-                                              "type": "string"
-                                            }
-                                          }
+                                      "properties": {
+                                        "set": {
+                                          "type": "string"
                                         }
-                                      ],
-                                      "description": "Removable string change."
+                                      }
                                     },
                                     "description": {
                                       "type": "object",
@@ -6708,28 +6391,6 @@
                                         }
                                       ],
                                       "description": "Removable string change."
-                                    },
-                                    "createdTime": {
-                                      "type": "object",
-                                      "oneOf": [
-                                        {
-                                          "type": "object",
-                                          "properties": {
-                                            "set": {
-                                              "type": "integer",
-                                              "format": "int64"
-                                            }
-                                          }
-                                        },
-                                        {
-                                          "type": "object",
-                                          "properties": {
-                                            "setNull": {
-                                              "type": "boolean"
-                                            }
-                                          }
-                                        }
-                                      ]
                                     }
                                   }
                                 }
@@ -6784,18 +6445,13 @@
                                       "description": "Removable string change."
                                     },
                                     "name": {
+                                      "description": "Removable string change.",
                                       "type": "object",
-                                      "oneOf": [
-                                        {
-                                          "type": "object",
-                                          "properties": {
-                                            "set": {
-                                              "type": "string"
-                                            }
-                                          }
+                                      "properties": {
+                                        "set": {
+                                          "type": "string"
                                         }
-                                      ],
-                                      "description": "Removable string change."
+                                      }
                                     },
                                     "description": {
                                       "type": "object",
@@ -6862,28 +6518,6 @@
                                         }
                                       ],
                                       "description": "Removable string change."
-                                    },
-                                    "createdTime": {
-                                      "type": "object",
-                                      "oneOf": [
-                                        {
-                                          "type": "object",
-                                          "properties": {
-                                            "set": {
-                                              "type": "integer",
-                                              "format": "int64"
-                                            }
-                                          }
-                                        },
-                                        {
-                                          "type": "object",
-                                          "properties": {
-                                            "setNull": {
-                                              "type": "boolean"
-                                            }
-                                          }
-                                        }
-                                      ]
                                     }
                                   }
                                 }
@@ -6958,12 +6592,6 @@
                                   "source": {
                                     "type": "string",
                                     "description": "The source of this asset"
-                                  },
-                                  "createdTime": {
-                                    "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
-                                    "type": "integer",
-                                    "minimum": 0,
-                                    "format": "int64"
                                   }
                                 },
                                 "description": "Representation of a physical asset, e.g plant or piece of equipment"
@@ -7067,7 +6695,7 @@
         ],
         "summary": "Search for assets",
         "description": "Retrieves a list of assets matching the given criteria. This operation does not support pagination.",
-        "operationId": "updateAssets",
+        "operationId": "searchAssets",
         "parameters": [
           {
             "name": "project",
@@ -7255,12 +6883,6 @@
                                         "source": {
                                           "type": "string",
                                           "description": "The source of this asset"
-                                        },
-                                        "createdTime": {
-                                          "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
-                                          "type": "integer",
-                                          "minimum": 0,
-                                          "format": "int64"
                                         }
                                       },
                                       "description": "Representation of a physical asset, e.g plant or piece of equipment"
@@ -7523,12 +7145,6 @@
                           "maxLength": 128,
                           "type": "string",
                           "description": "The source of this event."
-                        },
-                        "createdTime": {
-                          "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
-                          "type": "integer",
-                          "minimum": 0,
-                          "format": "int64"
                         }
                       },
                       "description": "An event represents something that happened at a given interval in time, e.g a failure, a work order etc."
@@ -7602,12 +7218,6 @@
                                     "maxLength": 128,
                                     "type": "string",
                                     "description": "The source of this event."
-                                  },
-                                  "createdTime": {
-                                    "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
-                                    "type": "integer",
-                                    "minimum": 0,
-                                    "format": "int64"
                                   }
                                 },
                                 "description": "An event represents something that happened at a given interval in time, e.g a failure, a work order etc."
@@ -7893,12 +7503,6 @@
                                     "maxLength": 128,
                                     "type": "string",
                                     "description": "The source of this event."
-                                  },
-                                  "createdTime": {
-                                    "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
-                                    "type": "integer",
-                                    "minimum": 0,
-                                    "format": "int64"
                                   }
                                 },
                                 "description": "An event represents something that happened at a given interval in time, e.g a failure, a work order etc."
@@ -8080,12 +7684,6 @@
                                     "maxLength": 128,
                                     "type": "string",
                                     "description": "The source of this event."
-                                  },
-                                  "createdTime": {
-                                    "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
-                                    "type": "integer",
-                                    "minimum": 0,
-                                    "format": "int64"
                                   }
                                 },
                                 "description": "An event represents something that happened at a given interval in time, e.g a failure, a work order etc."
@@ -8650,12 +8248,6 @@
                                     "maxLength": 128,
                                     "type": "string",
                                     "description": "The source of this event."
-                                  },
-                                  "createdTime": {
-                                    "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
-                                    "type": "integer",
-                                    "minimum": 0,
-                                    "format": "int64"
                                   }
                                 },
                                 "description": "An event represents something that happened at a given interval in time, e.g a failure, a work order etc."
@@ -8978,12 +8570,6 @@
                                     "maxLength": 128,
                                     "type": "string",
                                     "description": "The source of this event."
-                                  },
-                                  "createdTime": {
-                                    "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
-                                    "type": "integer",
-                                    "minimum": 0,
-                                    "format": "int64"
                                   }
                                 },
                                 "description": "An event represents something that happened at a given interval in time, e.g a failure, a work order etc."
@@ -9255,7 +8841,7 @@
                         "description": "<- TODO",
                         "type": "integer",
                         "format": "int32",
-                        "minimum": 1,
+                        "minimum": 100,
                         "maximum": 1000,
                         "default": 100
                       }
@@ -9317,7 +8903,7 @@
                                     "type": "object",
                                     "description": "Customizable extra data about the file. String key -> String value."
                                   },
-                                  "assetsIds": {
+                                  "assetIds": {
                                     "type": "array",
                                     "items": {
                                       "description": "Javascript friendly internal ID given to the object.",
@@ -9446,7 +9032,7 @@
                         "type": "object",
                         "description": "Customizable extra data about the file. String key -> String value."
                       },
-                      "assetsIds": {
+                      "assetIds": {
                         "type": "array",
                         "items": {
                           "description": "Javascript friendly internal ID given to the object.",
@@ -9513,7 +9099,7 @@
                                   "type": "object",
                                   "description": "Customizable extra data about the file. String key -> String value."
                                 },
-                                "assetsIds": {
+                                "assetIds": {
                                   "type": "array",
                                   "items": {
                                     "description": "Javascript friendly internal ID given to the object.",
@@ -9725,7 +9311,7 @@
                                     "type": "object",
                                     "description": "Customizable extra data about the file. String key -> String value."
                                   },
-                                  "assetsIds": {
+                                  "assetIds": {
                                     "type": "array",
                                     "items": {
                                       "description": "Javascript friendly internal ID given to the object.",
@@ -9930,7 +9516,7 @@
                         "description": "<- TODO",
                         "type": "integer",
                         "format": "int32",
-                        "minimum": 1,
+                        "minimum": 100,
                         "maximum": 1000,
                         "default": 100
                       }
@@ -9996,7 +9582,7 @@
                                     "type": "object",
                                     "description": "Customizable extra data about the file. String key -> String value."
                                   },
-                                  "assetsIds": {
+                                  "assetIds": {
                                     "type": "array",
                                     "items": {
                                       "description": "Javascript friendly internal ID given to the object.",
@@ -10389,18 +9975,13 @@
                           "format": "int64"
                         },
                         "name": {
+                          "description": "Removable string change.",
                           "type": "object",
-                          "oneOf": [
-                            {
-                              "type": "object",
-                              "properties": {
-                                "set": {
-                                  "type": "string"
-                                }
-                              }
+                          "properties": {
+                            "set": {
+                              "type": "string"
                             }
-                          ],
-                          "description": "Removable string change."
+                          }
                         },
                         "mimeType": {
                           "type": "object",
@@ -10566,7 +10147,7 @@
                               "type": "object",
                               "description": "Customizable extra data about the file. String key -> String value."
                             },
-                            "assetsIds": {
+                            "assetIds": {
                               "type": "array",
                               "items": {
                                 "description": "Javascript friendly internal ID given to the object.",

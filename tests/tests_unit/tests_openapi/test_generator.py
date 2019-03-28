@@ -54,7 +54,6 @@ class TestClassGenerator:
         description (str): Description of asset.
         metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
         source (str): The source of this asset
-        created_time (int): It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         id (int): Javascript friendly internal ID given to the object.
         last_updated_time (int): It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         path (List[int]): IDs of assets on the path to the asset.
@@ -72,14 +71,13 @@ class TestClassGenerator:
         ]
         constructor = CLASS_GENERATOR.generate_constructor(schemas, indentation=4)
         assert (
-            """    def __init__(self, external_id: str = None, name: str = None, parent_id: int = None, description: str = None, metadata: Dict[str, Any] = None, source: str = None, created_time: int = None, id: int = None, last_updated_time: int = None, path: List[int] = None, depth: int = None, ref_id: str = None, parent_ref_id: str = None):
+            """    def __init__(self, external_id: str = None, name: str = None, parent_id: int = None, description: str = None, metadata: Dict[str, Any] = None, source: str = None, id: int = None, last_updated_time: int = None, path: List[int] = None, depth: int = None, ref_id: str = None, parent_ref_id: str = None):
         self.external_id = external_id
         self.name = name
         self.parent_id = parent_id
         self.description = description
         self.metadata = metadata
         self.source = source
-        self.created_time = created_time
         self.id = id
         self.last_updated_time = last_updated_time
         self.path = path
