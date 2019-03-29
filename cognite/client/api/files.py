@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import os
-import warnings
 from typing import *
 from typing import Dict, List, Union
 
@@ -10,14 +9,14 @@ from cognite.client._utils.resource_base import CogniteFilter, CogniteResource, 
 
 
 # GenClass: FilesMetadata
-class File(CogniteResource):
+class FileMetadata(CogniteResource):
     """No description.
 
     Args:
         external_id (str): External Id provided by client. Should be unique within the project
         name (str): No description.
         source (str): The source of the file.
-        mime_type (str): File type. E.g. pdf, css, spreadsheet, ..
+        mime_type (str): FileMetadata type. E.g. pdf, css, spreadsheet, ..
         metadata (Dict[str, Any]): Customizable extra data about the file. String key -> String value.
         asset_ids (List[int]): No description.
         id (int): Javascript friendly internal ID given to the object.
@@ -56,12 +55,12 @@ class File(CogniteResource):
     # GenStop
 
 
-class FileList(CogniteResourceList):
-    _RESOURCE = File
+class FileMetadaList(CogniteResourceList):
+    _RESOURCE = FileMetadata
 
 
-# GenClass: FileFilter.filter
-class FileFilter(CogniteFilter):
+# GenClass: FileMetadataFilter.filter
+class FileMetadataFilter(CogniteFilter):
     """No description.
 
     Args:
@@ -93,7 +92,7 @@ class FileFilter(CogniteFilter):
 
 
 # GenUpdateClass: FileChange
-class FileUpdate(CogniteUpdate):
+class FileMetadataUpdate(CogniteUpdate):
     """Changes will be applied to file.
 
     Args:
@@ -162,21 +161,21 @@ class FileUpdate(CogniteUpdate):
 class FilesAPI(APIClient):
     RESOURCE_PATH = "/files"
 
-    def __call__(self, filter: FileFilter = None, chunk_size: int = None) -> Generator:
+    def __call__(self, filter: FileMetadataFilter = None, chunk_size: int = None) -> Generator:
         """Iterate over files
 
         Fetches file metadata objects as they are iterated over, so you keep a limited number of metadata objects in memory.
 
         Args:
-            filter (FileFilter, optional): Filter to apply.
+            filter (FileMetadataFilter, optional): Filter to apply.
             chunk_size (int, optional): Number of files to return in each chunk. Defaults to yielding one event a time.
 
         Yields:
-            Union[Asset, AssetList]: yields Asset one by one if chunk is not specified, else AssetList objects.
+            Union[FileMetadata, FileMetadataList]: yields FileMetadata one by one if chunk is not specified, else FileMetadataList objects.
         """
         filter = filter.dump(camel_case=True) if filter else None
         return self._list_generator(
-            FileList, resource_path=self.RESOURCE_PATH, method="POST", chunk=chunk_size, filter=filter
+            FileMetadaList, resource_path=self.RESOURCE_PATH, method="POST", chunk=chunk_size, filter=filter
         )
 
     def __iter__(self) -> Generator:
@@ -185,35 +184,39 @@ class FilesAPI(APIClient):
         Fetches file metadata objects as they are iterated over, so you keep a limited number of metadata objects in memory.
 
         Yields:
-            File: yields Files one by one.
+            FileMetadata: yields Files one by one.
         """
         return self.__call__()
 
-    def get(self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None) -> Union[File, FileList]:
+    def get(
+        self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None
+    ) -> Union[FileMetadata, FileMetadaList]:
         """Get files by id
 
         Args:
             id (Union[int, List[int]], optional): Id or list of ids
             external_id(Union[str, List[str]], optional): str or list of str
         Returns:
-            Union[File, FileList]: The requested files
+            Union[FileMetadata, FileMetadataList]: The requested files
         """
         return self._retrieve_multiple(
-            cls=FileList, resource_path=self.RESOURCE_PATH, ids=id, external_ids=external_id, wrap_ids=True
+            cls=FileMetadaList, resource_path=self.RESOURCE_PATH, ids=id, external_ids=external_id, wrap_ids=True
         )
 
-    def list(self, filter: FileFilter = None, limit: int = None) -> FileList:
+    def list(self, filter: FileMetadataFilter = None, limit: int = None) -> FileMetadaList:
         """List files
 
         Args:
-            filter (FileFilter, optional): Filter to apply.
+            filter (FileMetadataFilter, optional): Filter to apply.
             limit (int, optional): Max number of files to return.
 
         Returns:
-            FileList: The requested files.
+            FileMetadataList: The requested files.
         """
         filter = filter.dump(camel_case=True) if filter else None
-        return self._list(cls=FileList, resource_path=self.RESOURCE_PATH, method="POST", limit=limit, filter=filter)
+        return self._list(
+            cls=FileMetadaList, resource_path=self.RESOURCE_PATH, method="POST", limit=limit, filter=filter
+        )
 
     def delete(self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None) -> None:
         """Delete files
@@ -227,50 +230,66 @@ class FilesAPI(APIClient):
         """
         self._delete_multiple(resource_path=self.RESOURCE_PATH, wrap_ids=True, ids=id, external_ids=external_id)
 
-    def update(self, item: Union[File, FileUpdate, List[Union[File, FileUpdate]]]) -> Union[File, FileList]:
+    def update(
+        self, item: Union[FileMetadata, FileMetadataUpdate, List[Union[FileMetadata, FileMetadataUpdate]]]
+    ) -> Union[FileMetadata, FileMetadaList]:
         """Update files
 
         Args:
-            item (Union[File, FileUpdate, List[Union[File, FileUpdate]]]): File(s) to update.
+            item (Union[FileMetadata, FileMetadataUpdate, List[Union[FileMetadata, FileMetadataUpdate]]]): file(s) to update.
 
         Returns:
-            Union[File, FileList]: The updated files.
+            Union[FileMetadata, FileMetadataList]: The updated files.
         """
-        return self._update_multiple(cls=FileList, resource_path=self.RESOURCE_PATH, items=item)
+        return self._update_multiple(cls=FileMetadaList, resource_path=self.RESOURCE_PATH, items=item)
 
-    def upload(self, file: File, path: str) -> File:
+    def upload(self, path: str, file_metadata: FileMetadata = None) -> Union[FileMetadata, FileMetadaList]:
         """Upload a file
 
         Args:
-            file (File): The file metadata
-            path (str): Path to the file you wish to upload
+            path (str): Path to the file you wish to upload. If path is a directory, this method will upload all files in that directory.
+            file_metadata (FileMetadata, optional): The file metadata
 
         Returns:
-            File (File): The file metadata of the uploaded file.
+            Union[FileMetadata, FileMetadataList]: The file metadata of the uploaded file(s).
         """
-        with open(path, "rb") as f:
+        if os.path.isfile(path):
+            if not file_metadata:
+                file_metadata = FileMetadata(name=os.path.basename(path))
+            return self._upload_file_from_path(file_metadata, path)
+        elif os.path.isdir(path):
+            assert file_metadata is None, "file_metadata must not be specified when 'path' is a directory"
+            tasks = []
+            for file_name in os.listdir(path):
+                file_path = os.path.join(path, file_name)
+                if os.path.isfile(file_path):
+                    tasks.append((FileMetadata(name=file_name), file_path))
+            file_metadata_list = utils.execute_tasks_concurrently(
+                self._upload_file_from_path, tasks, self._num_of_workers
+            )
+            return FileMetadaList(file_metadata_list)
+        raise ValueError("path '{}' does not exist".format(path))
+
+    def _upload_file_from_path(self, file: FileMetadata, file_path: str):
+        with open(file_path, "rb") as f:
             file_metadata = self.upload_from_memory(file, f.read())
         return file_metadata
 
-    def upload_from_memory(self, file: File, content: Union[str, bytes]):
+    def upload_from_memory(self, file_metadata: FileMetadata, content: Union[str, bytes]):
         """Upload a file from memory
 
         Args:
-            file (File): The file metadata.
+            file_metadata (FileMetadata): The file metadata.
             content (Union[str, bytes]): The content to upload.
         """
         url_path = self.RESOURCE_PATH + "/initupload"
 
-        res = self._post(url_path=url_path, json=file.dump())
-        file_metadata = res.json()["data"]
-        upload_url = file_metadata.pop("uploadUrl")
-
-        if not file.mime_type:
-            warning = "File.mime_type should be specified when uploading the file."
-            warnings.warn(warning)
-        headers = {"X-Upload-Content-Type": file.mime_type, "content-length": str(len(content))}
+        res = self._post(url_path=url_path, json=file_metadata.dump(camel_case=True))
+        returned_file_metadata = res.json()["data"]
+        upload_url = returned_file_metadata.pop("uploadUrl")
+        headers = {"X-Upload-Content-Type": file_metadata.mime_type, "content-length": str(len(content))}
         self._request_session.put(upload_url, data=content, headers=headers)
-        return File._load(file_metadata)
+        return FileMetadata._load(returned_file_metadata)
 
     def download(
         self, directory: str, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None
@@ -279,8 +298,8 @@ class FilesAPI(APIClient):
 
         Args:
             directory (str): Directory to download the file(s) to.
-            id (Union[int, List[int]], optional), optional): Id of the file
-            external_id (str, optional): External ID of the file.
+            id (Union[int, List[int]], optional): Id or list of ids
+            external_id (Union[str, List[str]), optional): External ID or list of external ids.
 
         Returns:
             None
@@ -298,7 +317,7 @@ class FilesAPI(APIClient):
                 path = os.path.join(directory, item["externalId"])
                 task = (dl_link, path)
             else:
-                raise AssertionError("File download does not contain 'id' or 'externalId'")
+                raise AssertionError("FileMetadata download does not contain 'id' or 'externalId'")
             download_tasks.append(task)
 
         utils.execute_tasks_concurrently(self._download_file_to_path, download_tasks, self._num_of_workers)

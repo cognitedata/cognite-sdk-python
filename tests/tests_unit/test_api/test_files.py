@@ -4,7 +4,7 @@ import re
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.api.files import File, FileFilter, FileList, FileUpdate
+from cognite.client.api.files import FileMetadaList, FileMetadata, FileMetadataFilter, FileMetadataUpdate
 from tests.utils import jsgz_load
 
 FILES_API = CogniteClient().files
@@ -86,17 +86,17 @@ def mock_file_download_response(rsps):
 class TestFilesAPI:
     def test_get_single(self, mock_files_response):
         res = FILES_API.get(id=1)
-        assert isinstance(res, File)
+        assert isinstance(res, FileMetadata)
         assert mock_files_response.calls[0].response.json()["data"]["items"][0] == res.dump(camel_case=True)
 
     def test_get_multiple(self, mock_files_response):
         res = FILES_API.get(id=[1])
-        assert isinstance(res, FileList)
+        assert isinstance(res, FileMetadaList)
         assert mock_files_response.calls[0].response.json()["data"]["items"] == res.dump(camel_case=True)
 
     def test_list(self, mock_files_response):
-        res = FILES_API.list(filter=FileFilter(source="bla"), limit=10)
-        assert isinstance(res, FileList)
+        res = FILES_API.list(filter=FileMetadataFilter(source="bla"), limit=10)
+        assert isinstance(res, FileMetadaList)
         assert mock_files_response.calls[0].response.json()["data"]["items"] == res.dump(camel_case=True)
         assert "bla" == jsgz_load(mock_files_response.calls[0].request.body)["filter"]["source"]
         assert 10 == jsgz_load(mock_files_response.calls[0].request.body)["limit"]
@@ -112,22 +112,22 @@ class TestFilesAPI:
         assert res is None
 
     def test_update_with_resource_class(self, mock_files_response):
-        res = FILES_API.update(File(id=1, name="bla"))
-        assert isinstance(res, File)
+        res = FILES_API.update(FileMetadata(id=1, name="bla"))
+        assert isinstance(res, FileMetadata)
         assert {"items": [{"id": 1, "update": {"name": {"set": "bla"}}}]} == jsgz_load(
             mock_files_response.calls[0].request.body
         )
 
     def test_update_with_update_class(self, mock_files_response):
-        res = FILES_API.update(FileUpdate(id=1).name_set("bla"))
-        assert isinstance(res, File)
+        res = FILES_API.update(FileMetadataUpdate(id=1).name_set("bla"))
+        assert isinstance(res, FileMetadata)
         assert {"items": [{"id": 1, "update": {"name": {"set": "bla"}}}]} == jsgz_load(
             mock_files_response.calls[0].request.body
         )
 
     def test_update_multiple(self, mock_files_response):
-        res = FILES_API.update([FileUpdate(id=1).name_set(None), File(external_id="2", name="bla")])
-        assert isinstance(res, FileList)
+        res = FILES_API.update([FileMetadataUpdate(id=1).name_set(None), FileMetadata(external_id="2", name="bla")])
+        assert isinstance(res, FileMetadaList)
         assert {
             "items": [
                 {"id": 1, "update": {"name": {"setNull": True}}},
@@ -137,28 +137,45 @@ class TestFilesAPI:
 
     def test_iter_single(self, mock_files_response):
         for file in FILES_API:
-            assert isinstance(file, File)
+            assert isinstance(file, FileMetadata)
             assert mock_files_response.calls[0].response.json()["data"]["items"][0] == file.dump(camel_case=True)
 
     def test_iter_chunk(self, mock_files_response):
         for file in FILES_API(chunk_size=1):
-            assert isinstance(file, FileList)
+            assert isinstance(file, FileMetadaList)
             assert mock_files_response.calls[0].response.json()["data"]["items"] == file.dump(camel_case=True)
 
     def test_upload(self, mock_file_upload_response):
-        path = os.path.join(os.path.dirname(__file__), "file_for_test_upload.txt")
-        res = FILES_API.upload(File(name="bla"), path=path)
+        path = os.path.join(os.path.dirname(__file__), "files_for_test_upload", "file_for_test_upload_1.txt")
+        res = FILES_API.upload(path, FileMetadata(name="bla"))
         response_body = mock_file_upload_response.calls[0].response.json()["data"]
         del response_body["uploadUrl"]
-        assert File._load(response_body) == res
+        assert FileMetadata._load(response_body) == res
         assert "https://upload.here/" == mock_file_upload_response.calls[1].request.url
-        assert b"content\n" == mock_file_upload_response.calls[1].request.body
+        assert b"content1\n" == mock_file_upload_response.calls[1].request.body
+
+    def test_upload_from_directory(self, mock_file_upload_response):
+        path = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
+        res = FILES_API.upload(path=path)
+        response_body = mock_file_upload_response.calls[0].response.json()["data"]
+        del response_body["uploadUrl"]
+        assert FileMetadaList([FileMetadata._load(response_body), FileMetadata._load(response_body)]) == res
+        uploaded_names = [jsgz_load(call.request.body)["name"] for call in mock_file_upload_response.calls[:2]]
+        uploaded_content = [call.request.body for call in mock_file_upload_response.calls[2:4]]
+        assert "file_for_test_upload_1.txt" in uploaded_names
+        assert "file_for_test_upload_2.txt" in uploaded_names
+        assert b"content1\n" in uploaded_content
+        assert b"content2\n" in uploaded_content
+
+    def test_upload_from_directory_with_file_metadata(self):
+        with pytest.raises(AssertionError, match="must not be specified"):
+            FILES_API.upload(path=os.path.dirname(__file__), file_metadata=FileMetadata())
 
     def test_upload_from_memory(self, mock_file_upload_response):
-        res = FILES_API.upload_from_memory(File(name="bla"), content=b"content")
+        res = FILES_API.upload_from_memory(FileMetadata(name="bla"), content=b"content")
         response_body = mock_file_upload_response.calls[0].response.json()["data"]
         del response_body["uploadUrl"]
-        assert File._load(response_body) == res
+        assert FileMetadata._load(response_body) == res
         assert "https://upload.here/" == mock_file_upload_response.calls[1].request.url
         assert b"content" == mock_file_upload_response.calls[1].request.body
 

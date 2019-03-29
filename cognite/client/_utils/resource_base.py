@@ -106,7 +106,7 @@ class CogniteResource:
                     raise AttributeError("Attribute '{}' does not exist on '{}'".format(snake_case_key, cls.__name__))
                 setattr(instance, snake_case_key, value)
             return instance
-        raise TypeError("Resource must be json str or Dict")
+        raise TypeError("Resource must be json str or Dict, not {}".format(type(resource)))
 
     def to_pandas(self):
         raise NotImplementedError
