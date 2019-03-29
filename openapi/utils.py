@@ -29,8 +29,13 @@ def truncate_description(description):
 def get_type_hint(item):
     if hasattr(item, "type"):
         type = item.type
-    else:
+    elif "type" in item:
         type = item["type"]
+    elif "oneOf" in item and "type" in item["oneOf"][0]:
+        types = []
+        for current in item["oneOf"]:
+            types.append(get_type_hint(current))
+        return "Union[{}]".format(", ".join(types))
 
     if type == "array":
         return "List[{}]".format(get_type_hint(item["items"]))

@@ -79,13 +79,6 @@ class AssetUpdate(CogniteUpdate):
         self.external_id = external_id
         self._update_object = {}
 
-    def external_id_set(self, value: Union[str, None]):
-        if value is None:
-            self._update_object["externalId"] = {"setNull": True}
-            return self
-        self._update_object["externalId"] = {"set": value}
-        return self
-
     def name_set(self, value: Union[str, None]):
         if value is None:
             self._update_object["name"] = {"setNull": True}

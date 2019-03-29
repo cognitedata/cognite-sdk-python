@@ -185,11 +185,8 @@ class TestCogniteUpdate:
         assert MyUpdate(1) != MyUpdate(1).string_set("1")
 
     def test_str(self):
-        assert json.dumps(MyUpdate(1).dump(), indent=4, sort_keys=True) == MyUpdate(1).__str__()
-        assert (
-            json.dumps(MyUpdate(1).string_set("1").dump(), indent=4, sort_keys=True)
-            == MyUpdate(1).string_set("1").__str__()
-        )
+        assert json.dumps(MyUpdate(1).dump(), indent=4) == MyUpdate(1).__str__()
+        assert json.dumps(MyUpdate(1).string_set("1").dump(), indent=4) == MyUpdate(1).string_set("1").__str__()
 
     def test_set_string(self):
         assert {"id": 1, "update": {"string": {"set": "bla"}}} == MyUpdate(1).string_set("bla").dump()

@@ -9,7 +9,7 @@ import platform
 import re
 import time
 from concurrent.futures.thread import ThreadPoolExecutor
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Callable, Dict, List, Tuple, Union
 
 import cognite.client

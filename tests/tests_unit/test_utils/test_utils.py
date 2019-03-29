@@ -3,7 +3,6 @@ from datetime import datetime
 import pytest
 
 from cognite.client._utils import utils
-from cognite.client.api.datapoints import Datapoint, TimeseriesWithDatapoints
 
 
 class TestConversions:
@@ -13,7 +12,7 @@ class TestConversions:
         assert utils.datetime_to_ms(datetime(2018, 1, 31)) == 1517356800000
         assert utils.datetime_to_ms(datetime(2018, 1, 31, 11, 11, 11)) == 1517397071000
         assert utils.datetime_to_ms(datetime(100, 1, 31)) == -59008867200000
-        with pytest.raises(AttributeError):
+        with pytest.raises(TypeError):
             utils.datetime_to_ms(None)
 
     def test_round_to_nearest(self):
@@ -38,29 +37,6 @@ class TestConversions:
         assert utils._time_ago_to_ms("1s-ago") == 1000
         assert utils
         assert utils._time_ago_to_ms("not_correctly_formatted") is None
-
-
-class TestFirstFit:
-    def test_with_timeserieswithdatapoints(self):
-        timeseries_with_100_datapoints = TimeseriesWithDatapoints(
-            name="test", datapoints=[Datapoint(x, x) for x in range(100)]
-        )
-        timeseries_with_200_datapoints = TimeseriesWithDatapoints(
-            name="test", datapoints=[Datapoint(x, x) for x in range(200)]
-        )
-        timeseries_with_300_datapoints = TimeseriesWithDatapoints(
-            name="test", datapoints=[Datapoint(x, x) for x in range(300)]
-        )
-
-        all_timeseries = [
-            timeseries_with_100_datapoints,
-            timeseries_with_200_datapoints,
-            timeseries_with_300_datapoints,
-        ]
-
-        result = utils.first_fit(list_items=all_timeseries, max_size=300, get_count=lambda x: len(x.datapoints))
-
-        assert len(result) == 2
 
 
 class TestMisc:
