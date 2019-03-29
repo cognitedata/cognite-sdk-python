@@ -16,13 +16,13 @@ from cognite.client.exceptions import APIError
 
 log = logging.getLogger("cognite-sdk")
 
-DEFAULT_NUM_OF_RETRIES = 5
+DEFAULT_MAX_RETRIES = 5
 HTTP_METHODS_TO_RETRY = [429, 500, 502, 503]
 
 
 def _init_requests_session():
     session = Session()
-    num_of_retries = int(os.getenv("COGNITE_NUM_RETRIES", DEFAULT_NUM_OF_RETRIES))
+    num_of_retries = int(os.getenv("COGNITE_MAX_RETRIES", DEFAULT_MAX_RETRIES))
     retry = Retry(
         total=num_of_retries,
         read=num_of_retries,
