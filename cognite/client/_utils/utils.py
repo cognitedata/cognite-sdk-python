@@ -5,7 +5,6 @@ This module provides helper methods and different utilities for the Cognite API 
 
 This module is protected and should not used by end-users.
 """
-import datetime
 import platform
 import re
 import time
@@ -17,7 +16,12 @@ import cognite.client
 
 
 def datetime_to_ms(dt):
-    return int(dt.replace(tzinfo=timezone.utc).timestamp() * 1000)
+    epoch = datetime.utcfromtimestamp(0)
+    return int((dt - epoch).total_seconds() * 1000.0)
+
+
+def ms_to_datetime(ms):
+    return datetime.utcfromtimestamp(ms / 1000)
 
 
 def granularity_to_ms(time_string):

@@ -10,6 +10,7 @@ from typing import *
 from typing import List
 from urllib.parse import quote
 
+import numpy
 import pandas as pd
 
 from cognite.client._auxiliary._protobuf_descriptors import _api_timeseries_data_v2_pb2
@@ -90,20 +91,34 @@ class DatapointsResponseIterator:
 
 
 class Datapoint(CogniteResource):
-    """Data transfer object for datapoints.
-
-    Args:
-        timestamp (Union[int, float, datetime]): The data timestamp in milliseconds since the epoch (Jan 1, 1970) or as
-            a datetime object.
-        value (Union[string, int, float]): The data value, Can be string or numeric depending on the metric.
-    """
-
-    def __init__(self, timestamp, value):
+    def __init__(self, timestamp: Union[int, float, datetime], value: Union[int, float, str, numpy.int_, numpy.float_]):
         if isinstance(timestamp, datetime):
             self.timestamp = utils.datetime_to_ms(timestamp)
-        else:
+        elif isinstance(timestamp, (int, float)):
             self.timestamp = timestamp
-        self.value = value
+        else:
+            raise TypeError("timestamp must be int, float, or datetime, not {}".format(type(timestamp)))
+
+        if isinstance(value, (int, numpy.int_)):
+            self.value = int(value)
+        elif isinstance(value, (float, numpy.float_)):
+            self.value = float(value)
+        elif isinstance(value, str):
+            self.value = value
+        else:
+            raise TypeError("value must be int, float, or str, not {}".format(type(value)))
+
+    def __getitem__(self, item):
+        if isinstance(item, str):
+            return {"timestamp": self.timestamp, "value": self.value}[item]
+        if isinstance(item, int):
+            return (self.timestamp, self.value)[item]
+        raise TypeError("Datapoint indices must be integers, slices, or str")
+
+    def __getattribute__(self, item):
+        if item == "timestamp":
+            return utils.ms_to_datetime(super().__getattribute__(item))
+        return super().__getattribute__(item)
 
 
 class TimeseriesWithDatapoints(CogniteResource):
