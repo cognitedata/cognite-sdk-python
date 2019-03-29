@@ -1,218 +1,306 @@
 # -*- coding: utf-8 -*-
-from copy import deepcopy
 from typing import *
 from typing import List
 from urllib.parse import quote
 
-import pandas as pd
-
 from cognite.client._utils.api_client import APIClient
-from cognite.client._utils.resource_base import CogniteResource, CogniteResourceList, CogniteResponse
+from cognite.client._utils.resource_base import CogniteFilter, CogniteResource, CogniteResourceList, CogniteUpdate
 
 
-class TimeSeriesResponse(CogniteResponse):
-    """Time series Response Object"""
-
-    def __init__(self, internal_representation):
-        super().__init__(internal_representation)
-        item = self.to_json()
-        self.id = item.get("id")
-        self.name = item.get("name")
-        self.unit = item.get("unit")
-        self.is_step = item.get("isStep")
-        self.is_string = item.get("isString")
-        self.created_time = item.get("createdTime")
-        self.last_updated_time = item.get("lastUpdatedTime")
-        self.metadata = item.get("metadata")
-        self.asset_id = item.get("assetId")
-        self.description = item.get("description")
-
-    def to_pandas(self):
-        """Returns data as a pandas dataframe"""
-        if len(self.to_json()) > 0:
-            ts = self.to_json().copy()
-            if "metadata" in ts:
-                # Hack to avoid path ending up as first element in dict as from_dict will fail
-                metadata = ts.pop("metadata")
-                df = pd.DataFrame.from_dict(ts, orient="index")
-                df.loc["metadata"] = [metadata]
-            else:
-                df = pd.DataFrame.from_dict(ts, orient="index")
-            return df
-        return pd.DataFrame()
-
-
-class TimeSeriesListResponse(CogniteResourceList):
-    """Time series Response Object"""
-
-    _RESPONSE_CLASS = TimeSeriesResponse
-
-    def to_pandas(self, include_metadata: bool = True):
-        """Returns data as a pandas dataframe
-
-        Args:
-            include_metadata (bool): Whether or not to include metadata fields in the resulting dataframe
-        """
-        items = deepcopy(self.internal_representation["data"]["items"])
-        if items and items[0].get("metadata") is None:
-            return pd.DataFrame(items)
-        for d in items:
-            if d.get("metadata"):
-                metadata = d.pop("metadata")
-                if include_metadata:
-                    d.update(metadata)
-        return pd.DataFrame(items)
-
-
+# GenClass: GetTimeSeriesMetadataDTO
 class TimeSeries(CogniteResource):
-    """Data Transfer Object for a time series.
+    """No description.
 
     Args:
-        name (str):       Unique name of time series.
-        is_string (bool):    Whether the time series is string valued or not.
-        metadata (dict):    Metadata.
-        unit (str):         Physical unit of the time series.
-        asset_id (int):     Asset that this time series belongs to.
-        description (str):  Description of the time series.
-        security_categories (list(int)): Security categories required in order to access this time series.
-        is_step (bool):        Whether or not the time series is a step series.
-
+        id (int): Generated id of the time series
+        external_id (str): Externaly supplied id of the time series
+        name (str): Unique name of time series
+        is_string (bool): Whether the time series is string valued or not.
+        metadata (Dict[str, Any]): Additional metadata. String key -> String value.
+        unit (str): The physical unit of the time series.
+        asset_id (int): Asset that this time series belongs to.
+        is_step (bool): Whether the time series is a step series or not.
+        description (str): Description of the time series.
+        security_categories (List[int]): Security categories required in order to access this time series.
+        created_time (int): Time when this time-series is created in CDP in milliseconds since Jan 1, 1970.
+        last_updated_time (int): The latest time when this time-series is updated in CDP in milliseconds since Jan 1, 1970.
     """
 
     def __init__(
         self,
-        name,
-        is_string=False,
-        metadata=None,
-        unit=None,
-        asset_id=None,
-        description=None,
-        security_categories=None,
-        is_step=None,
+        id: int = None,
+        external_id: str = None,
+        name: str = None,
+        is_string: bool = None,
+        metadata: Dict[str, Any] = None,
+        unit: str = None,
+        asset_id: int = None,
+        is_step: bool = None,
+        description: str = None,
+        security_categories: List[int] = None,
+        created_time: int = None,
+        last_updated_time: int = None,
     ):
+        self.id = id
+        self.external_id = external_id
         self.name = name
         self.is_string = is_string
         self.metadata = metadata
         self.unit = unit
         self.asset_id = asset_id
+        self.is_step = is_step
         self.description = description
         self.security_categories = security_categories
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
+
+    # GenStop
+
+
+class TimeSeriesList(CogniteResourceList):
+    _RESOURCE = TimeSeries
+
+
+# GenClass: TimeSeriesSearchDTO.filter
+class TimeSeriesFilter(CogniteFilter):
+    """Filtering parameters
+
+    Args:
+        unit (str): Filter on unit (case-sensitive).
+        is_string (bool): Filter on isString.
+        is_step (bool): Filter on isStep.
+        metadata (Dict[str, Any]): Filter out timeseries that do not match these metadata fields and values (case-sensitive). Format is {"key1":"value1","key2":"value2"}.
+        asset_ids (List[int]): Filter out time series that are not linked to any of these assets.
+        asset_subtrees (List[int]): Filter out time series that are not linked to assets in the subtree rooted at these assets. Format is [12,345,6,7890].
+        created_time (Dict[str, Any]): Filter out time series with createdTime before this. Format is milliseconds since epoch.
+        last_updated_time (Dict[str, Any]): Filter out time series with lastUpdatedTime before this. Format is milliseconds since epoch.
+    """
+
+    def __init__(
+        self,
+        unit: str = None,
+        is_string: bool = None,
+        is_step: bool = None,
+        metadata: Dict[str, Any] = None,
+        asset_ids: List[int] = None,
+        asset_subtrees: List[int] = None,
+        created_time: Dict[str, Any] = None,
+        last_updated_time: Dict[str, Any] = None,
+    ):
+        self.unit = unit
+        self.is_string = is_string
         self.is_step = is_step
+        self.metadata = metadata
+        self.asset_ids = asset_ids
+        self.asset_subtrees = asset_subtrees
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
+
+    # GenStop
+
+
+# GenUpdateClass: TimeSeriesChange
+class TimeSeriesUpdate(CogniteUpdate):
+    """Changes will be applied to time series.
+
+    Args:
+        id (int): No description.
+        external_id (str): No description.
+    """
+
+    def __init__(self, id: int = None, external_id: str = None):
+        self.id = id
+        self.external_id = external_id
+        self._update_object = {}
+
+    def external_id_change_set(self, value: Union[str, None]):
+        if value is None:
+            self._update_object["externalIdChange"] = {"setNull": True}
+            return self
+        self._update_object["externalIdChange"] = {"set": value}
+        return self
+
+    def name_set(self, value: Union[str, None]):
+        if value is None:
+            self._update_object["name"] = {"setNull": True}
+            return self
+        self._update_object["name"] = {"set": value}
+        return self
+
+    def metadata_set(self, value: Union[Dict[str, Any], None]):
+        if value is None:
+            self._update_object["metadata"] = {"setNull": True}
+            return self
+        self._update_object["metadata"] = {"set": value}
+        return self
+
+    def unit_set(self, value: Union[str, None]):
+        if value is None:
+            self._update_object["unit"] = {"setNull": True}
+            return self
+        self._update_object["unit"] = {"set": value}
+        return self
+
+    def asset_id_set(self, value: Union[int, None]):
+        if value is None:
+            self._update_object["assetId"] = {"setNull": True}
+            return self
+        self._update_object["assetId"] = {"set": value}
+        return self
+
+    def description_set(self, value: Union[str, None]):
+        if value is None:
+            self._update_object["description"] = {"setNull": True}
+            return self
+        self._update_object["description"] = {"set": value}
+        return self
+
+    def security_categories_add(self, value: List):
+        self._update_object["securityCategories"] = {"add": value}
+        return self
+
+    def security_categories_remove(self, value: List):
+        self._update_object["securityCategories"] = {"remove": value}
+        return self
+
+    def security_categories_set(self, value: Union[List, None]):
+        if value is None:
+            self._update_object["securityCategories"] = {"setNull": True}
+            return self
+        self._update_object["securityCategories"] = {"set": value}
+        return self
+
+    # GenStop
 
 
 class TimeSeriesAPI(APIClient):
-    def get_time_series(
-        self, prefix=None, description=None, include_metadata=False, asset_id=None, path=None, **kwargs
-    ) -> TimeSeriesListResponse:
+    RESOURCE_PATH = "/timeseries"
+
+    def __call__(self, include_metadata: bool = False, asset_id: int = None, chunk_size: int = None) -> Generator:
+        """Iterate over files
+
+        Fetches time series as they are iterated over, so you keep a limited number of objects in memory.
+
+        Args:
+            include_metadata (bool, optional): Whether or not to include metadata
+            asset_id (int, optional): List time series related to this asset.
+            chunk_size (int, optional): Number of files to return in each chunk. Defaults to yielding one event a time.
+
+        Yields:
+            Union[TimeSeries, TimeSeriesList]: yields TimeSeries one by one if chunk is not specified, else TimeSeriesList objects.
+        """
+        filter = {"includeMetadata": include_metadata, "assetId": asset_id}
+        return self._list_generator(
+            TimeSeriesList, resource_path=self.RESOURCE_PATH, method="GET", chunk=chunk_size, filter=filter
+        )
+
+    def __iter__(self) -> Generator:
+        """Iterate over files
+
+        Fetches time series as they are iterated over, so you keep a limited number of metadata objects in memory.
+
+        Yields:
+            TimeSeries: yields TimeSeries one by one.
+        """
+        return self.__call__()
+
+    def get(
+        self, id: Union[int, List[int]] = None, external_id: Union[int, List[int]] = None
+    ) -> Union[TimeSeries, TimeSeriesList]:
         """Returns an object containing the requested timeseries.
 
         Args:
-            prefix (str):           List timeseries with this prefix in the name.
-
-            description (str):      Filter timeseries taht contains this string in its description.
-
-            include_metadata (bool):    Decide if the metadata field should be returned or not. Defaults to False.
-
-            asset_id (int):        Get timeseries related to this asset.
-
-            path (List[int]):             Get timeseries under this asset path branch.
-
-        Keyword Arguments:
-            limit (int):            Number of results to return.
-
-            autopaging (bool):      Whether or not to automatically page through results. If set to true, limit will be
-                                    disregarded. Defaults to False.
+            id (Union[int, List[int]], optional): Id or list of ids
+            external_id(Union[str, List[str]], optional): str or list of str
 
         Returns:
-            stable.time_series.TimeSeriesListResponse: A data object containing the requested timeseries with several getter methods with different
-            output formats.
-
-        Examples:
-            Get all time series for a given asset::
-
-                client = CogniteClient()
-                res = client.time_series.get_time_series(asset_id=123, autopaging=True)
-                print(res.to_pandas())
+            Union[TimeSeries, TimeSeriesList]: The requested time series
         """
-        autopaging = kwargs.get("autopaging", False)
-        url = "/timeseries"
-        params = {
-            "q": prefix,
-            "description": description,
-            "includeMetadata": include_metadata,
-            "assetId": asset_id,
-            "path": str(path) if path else None,
-            "limit": kwargs.get("limit", self._LIMIT) if not autopaging else self._LIMIT,
-        }
+        return self._retrieve_multiple(
+            cls=TimeSeriesList, resource_path=self.RESOURCE_PATH, ids=id, external_ids=external_id, wrap_ids=True
+        )
 
-        res = self._get(url_path=url, params=params, autopaging=autopaging)
-        return TimeSeriesListResponse(res.json())
+    def list(self, include_metadata: bool = False, asset_id: int = None, limit: int = None) -> TimeSeriesList:
+        """Iterate over files
 
-    def post_time_series(self, time_series: List[TimeSeries]) -> None:
-        """Create a new time series.
+        Fetches time series as they are iterated over, so you keep a limited number of objects in memory.
 
         Args:
-            time_series (list[stable.time_series.TimeSeries]):   List of time series data transfer objects to create.
+            include_metadata (bool, optional): Whether or not to include metadata
+            asset_id (int, optional): List time series related to this asset.
+            limit (int, optional): Max number of time series to return.
 
         Returns:
-            None
-
-        Examples:
-            Create a new time series::
-
-                from cognite.client.stable.time_series import TimeSeries
-                client = CogniteClient()
-
-                my_time_series = [TimeSeries(name="my_ts_1")]
-
-                client.time_series.post_time_series(my_time_series)
+            TimeSeriesList: The requested time series.
         """
-        url = "/timeseries"
-        items = [ts.camel_case_dict() for ts in time_series]
-        body = {"items": items}
-        self._post(url, json=body)
+        filter = {"includeMetadata": include_metadata, "assetId": asset_id}
+        return self._list(
+            cls=TimeSeriesList, resource_path=self.RESOURCE_PATH, method="GET", filter=filter, limit=limit
+        )
 
-    def update_time_series(self, time_series: List[TimeSeries]) -> None:
-        """Update an existing time series.
-
-        For each field that can be updated, a null value indicates that nothing should be done.
+    def create(self, time_series: Union[TimeSeries, List[TimeSeries]]) -> Union[TimeSeries, TimeSeriesList]:
+        """Create one or more time series.
 
         Args:
-            time_series (list[stable.time_series.TimeSeries]):   List of time series data transfer objects to update.
+            time_series (Union[TimeSeries, List[TimeSeries]]): TimeSeries or list of TimeSeries to create.
 
         Returns:
-            None
-
-        Examples:
-            Update the unit of a time series::
-
-                from cognite.client.stable.time_series import TimeSeries
-                client = CogniteClient()
-
-                my_time_series = [TimeSeries(name="my_ts_1", unit="celsius")]
-
-                client.time_series.update_time_series(my_time_series)
+            Union[TimeSeries, TimeSeriesList]: The created time series.
         """
-        url = "/timeseries"
-        items = [ts.camel_case_dict() for ts in time_series]
-        body = {"items": items}
-        self._put(url, json=body)
+        return self._create_multiple(cls=TimeSeriesList, resource_path=self.RESOURCE_PATH, items=time_series)
 
-    def delete_time_series(self, name) -> None:
-        """Delete a timeseries.
+    def delete(self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None) -> None:
+        """Delete one or more time series.
 
         Args:
-            name (str):   Name of timeseries to delete.
-
+            id (Union[int, List[int]): Id or list of ids
+            external_id (Union[str, List[str]]): External ID or list of external ids
         Returns:
             None
-
-        Examples:
-            Delete a time series by name::
-
-                client = CogniteClient()
-
-                client.time_series.delete_time_series(name="my_ts_1")
         """
-        url = "/timeseries/{}".format(quote(name, safe=""))
-        self._delete(url)
+        self._delete_multiple(resource_path=self.RESOURCE_PATH, wrap_ids=True, ids=id, external_ids=external_id)
+
+    def update(
+        self, item: Union[TimeSeries, TimeSeriesUpdate, List[Union[TimeSeries, TimeSeriesUpdate]]]
+    ) -> Union[TimeSeries, TimeSeriesList]:
+        """Update one or more time series.
+
+        Args:
+            item (Union[TimeSeries, TimeSeriesUpdate, List[Union[TimeSeries, TimeSeriesUpdate]]]): Time series to update
+
+        Returns:
+            Union[TimeSeries, TimeSeriesList]: Updated time series.
+        """
+        return self._update_multiple(cls=TimeSeriesList, resource_path=self.RESOURCE_PATH, items=item)
+
+    def search(
+        self,
+        name: str = None,
+        description: str = None,
+        query: str = None,
+        filter: TimeSeriesFilter = None,
+        limit: int = None,
+    ) -> TimeSeriesList:
+        """Search for time series.
+
+        Args:
+            name (str, optional): Prefix and fuzzy search on name.
+            description (str, optional): Prefix and fuzzy search on description.
+            query (str, optional): Search on name and description using wildcard search on each of the words (separated
+                by spaces). Retrieves results where at least one word must match. Example: 'some other'
+            filter (TimeSeriesFilter, optional): Filter to apply. Performs exact match on these fields.
+            limit (int, optional): Max number of results to return.
+
+        Returns:
+            TimeSeriesList: List of requested time series.
+        """
+        filter = filter.dump(camel_case=True) if filter else None
+        return self._search(
+            cls=TimeSeriesList,
+            resource_path=self.RESOURCE_PATH,
+            json={
+                "search": {"name": name, "description": description, "query": query},
+                "filter": filter,
+                "limit": limit,
+            },
+        )

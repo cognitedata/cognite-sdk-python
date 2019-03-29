@@ -3,7 +3,7 @@ import os
 
 from openapi.generator import CodeGenerator
 
-DEFAULT_SPEC_PATH = "openapi/default_spec.json"
+DEFAULT_SPEC_PATH = "openapi/spec_ts_normal.json"
 
 
 def main(spec_url, spec_path):
@@ -19,7 +19,7 @@ def main(spec_url, spec_path):
     for root, dirs, files in os.walk("./cognite/client/api"):
         for file in files:
             file_path = os.path.join(root, file)
-            if file_path.endswith(".py"):
+            if file_path.endswith(".py") and os.path.basename(file_path) in ("time_series.py", "datapoints.py"):
                 print("* Generating code in {}".format(file_path))
                 codegen.generate(file_path, file_path)
 
