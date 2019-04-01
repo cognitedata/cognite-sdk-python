@@ -169,19 +169,49 @@ class EventUpdate(CogniteUpdate):
 class EventsAPI(APIClient):
     RESOURCE_PATH = "/events"
 
-    def __call__(self, filter: EventFilter = None, chunk_size: int = None) -> Generator:
+    def __call__(
+        self,
+        chunk_size: int = None,
+        start_time: Dict[str, Any] = None,
+        end_time: Dict[str, Any] = None,
+        metadata: Dict[str, Any] = None,
+        asset_ids: List[int] = None,
+        asset_subtrees: List[int] = None,
+        source: str = None,
+        created_time: Dict[str, Any] = None,
+        last_updated_time: Dict[str, Any] = None,
+        external_id_prefix: str = None,
+    ) -> Generator:
         """Iterate over events
 
         Fetches events as they are iterated over, so you keep a limited number of events in memory.
 
         Args:
-            filter (EventFilter, optional): Filter to apply.
             chunk_size (int, optional): Number of events to return in each chunk. Defaults to yielding one event a time.
+            start_time (Dict[str, Any]): Range between two timestamps
+            end_time (Dict[str, Any]): Range between two timestamps
+            metadata (Dict[str, Any]): Customizable extra data about the event. String key -> String value.
+            asset_ids (List[int]): Asset IDs of related equipments that this event relates to.
+            asset_subtrees (List[int]): Filter out events that are not linked to assets in the subtree rooted at these assets.
+            source (str): The source of this event.
+            created_time (Dict[str, Any]): Range between two timestamps
+            last_updated_time (Dict[str, Any]): Range between two timestamps
+            external_id_prefix (str): External Id provided by client. Should be unique within the project
 
         Yields:
             Union[Event, EventList]: yields Event one by one if chunk is not specified, else EventList objects.
         """
-        filter = filter.dump(camel_case=True) if filter else None
+        filter = EventFilter(
+            start_time,
+            end_time,
+            metadata,
+            asset_ids,
+            asset_subtrees,
+            source,
+            created_time,
+            last_updated_time,
+            external_id_prefix,
+        ).dump(camel_case=True)
         return self._list_generator(
             EventList, resource_path=self.RESOURCE_PATH, method="POST", chunk=chunk_size, filter=filter
         )
@@ -210,17 +240,47 @@ class EventsAPI(APIClient):
         """
         return self._retrieve_multiple(EventList, self.RESOURCE_PATH, ids=id, external_ids=external_id, wrap_ids=True)
 
-    def list(self, filter: EventFilter = None, limit: int = None) -> EventList:
+    def list(
+        self,
+        start_time: Dict[str, Any] = None,
+        end_time: Dict[str, Any] = None,
+        metadata: Dict[str, Any] = None,
+        asset_ids: List[int] = None,
+        asset_subtrees: List[int] = None,
+        source: str = None,
+        created_time: Dict[str, Any] = None,
+        last_updated_time: Dict[str, Any] = None,
+        external_id_prefix: str = None,
+        limit: int = None,
+    ) -> EventList:
         """List events
 
         Args:
-            filter (EventFilter, optional): Filter to apply.
+            start_time (Dict[str, Any]): Range between two timestamps
+            end_time (Dict[str, Any]): Range between two timestamps
+            metadata (Dict[str, Any]): Customizable extra data about the event. String key -> String value.
+            asset_ids (List[int]): Asset IDs of related equipments that this event relates to.
+            asset_subtrees (List[int]): Filter out events that are not linked to assets in the subtree rooted at these assets.
+            source (str): The source of this event.
+            created_time (Dict[str, Any]): Range between two timestamps
+            last_updated_time (Dict[str, Any]): Range between two timestamps
+            external_id_prefix (str): External Id provided by client. Should be unique within the project
             limit (int, optional): Maximum number of events to return. If not specified, all events will be returned.
 
         Returns:
             EventList: List of requested events
         """
-        filter = filter.dump(camel_case=True) if filter else None
+        filter = EventFilter(
+            start_time,
+            end_time,
+            metadata,
+            asset_ids,
+            asset_subtrees,
+            source,
+            created_time,
+            last_updated_time,
+            external_id_prefix,
+        ).dump(camel_case=True)
         return self._list(EventList, resource_path=self.RESOURCE_PATH, method="POST", limit=limit, filter=filter)
 
     def create(self, event: Union[Event, List[Event]]) -> Union[Event, EventList]:

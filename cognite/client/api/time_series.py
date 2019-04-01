@@ -176,15 +176,15 @@ class TimeSeriesUpdate(CogniteUpdate):
 class TimeSeriesAPI(APIClient):
     RESOURCE_PATH = "/timeseries"
 
-    def __call__(self, include_metadata: bool = False, asset_id: int = None, chunk_size: int = None) -> Generator:
+    def __call__(self, chunk_size: int = None, include_metadata: bool = False, asset_id: int = None) -> Generator:
         """Iterate over files
 
         Fetches time series as they are iterated over, so you keep a limited number of objects in memory.
 
         Args:
+            chunk_size (int, optional): Number of files to return in each chunk. Defaults to yielding one event a time.
             include_metadata (bool, optional): Whether or not to include metadata
             asset_id (int, optional): List time series related to this asset.
-            chunk_size (int, optional): Number of files to return in each chunk. Defaults to yielding one event a time.
 
         Yields:
             Union[TimeSeries, TimeSeriesList]: yields TimeSeries one by one if chunk is not specified, else TimeSeriesList objects.

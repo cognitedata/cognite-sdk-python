@@ -152,19 +152,40 @@ class AssetFilter(CogniteFilter):
 class AssetsAPI(APIClient):
     RESOURCE_PATH = "/assets"
 
-    def __call__(self, filter: AssetFilter = None, chunk_size: int = None) -> Generator:
+    def __call__(
+        self,
+        chunk_size: int = None,
+        name: str = None,
+        parent_ids: List[int] = None,
+        metadata: Dict[str, Any] = None,
+        source: str = None,
+        created_time: Dict[str, Any] = None,
+        last_updated_time: Dict[str, Any] = None,
+        asset_subtrees: List[int] = None,
+        external_id_prefix: str = None,
+    ) -> Generator:
         """Iterate over assets
 
         Fetches assets as they are iterated over, so you keep a limited number of assets in memory.
 
         Args:
-            filter (AssetFilter, optional): Filter to apply.
             chunk_size (int, optional): Number of assets to return in each chunk. Defaults to yielding one event a time.
+            name (str): Name of asset. Often referred to as tag.
+            parent_ids (List[int]): No description.
+            metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
+            source (str): The source of this asset
+            created_time (Dict[str, Any]): Range between two timestamps
+            last_updated_time (Dict[str, Any]): Range between two timestamps
+            asset_subtrees (List[int]): Filter out events that are not linked to assets in the subtree rooted at these assets.
+            external_id_prefix (str): External Id provided by client. Should be unique within the project
 
         Yields:
             Union[Asset, AssetList]: yields Asset one by one if chunk is not specified, else AssetList objects.
         """
-        filter = filter.dump(camel_case=True) if filter else None
+
+        filter = AssetFilter(
+            name, parent_ids, metadata, source, created_time, last_updated_time, asset_subtrees, external_id_prefix
+        ).dump(camel_case=True)
         return self._list_generator(
             AssetList, resource_path=self.RESOURCE_PATH, method="POST", chunk=chunk_size, filter=filter
         )
@@ -193,17 +214,37 @@ class AssetsAPI(APIClient):
         """
         return self._retrieve_multiple(AssetList, self.RESOURCE_PATH, ids=id, external_ids=external_id, wrap_ids=True)
 
-    def list(self, filter: AssetFilter = None, limit: int = None) -> AssetList:
+    def list(
+        self,
+        name: str = None,
+        parent_ids: List[int] = None,
+        metadata: Dict[str, Any] = None,
+        source: str = None,
+        created_time: Dict[str, Any] = None,
+        last_updated_time: Dict[str, Any] = None,
+        asset_subtrees: List[int] = None,
+        external_id_prefix: str = None,
+        limit: int = None,
+    ) -> AssetList:
         """List assets
 
         Args:
-            filter (AssetFilter, optional): Filter to apply.
+            chunk_size (int, optional): Number of assets to return in each chunk. Defaults to yielding one event a time.
+            name (str): Name of asset. Often referred to as tag.
+            parent_ids (List[int]): No description.
+            metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
+            source (str): The source of this asset
+            created_time (Dict[str, Any]): Range between two timestamps
+            last_updated_time (Dict[str, Any]): Range between two timestamps
+            asset_subtrees (List[int]): Filter out events that are not linked to assets in the subtree rooted at these assets.
             limit (int, optional): Maximum number of assets to return. If not specified, all assets will be returned.
 
         Returns:
             AssetList: List of requested assets
         """
-        filter = filter.dump(camel_case=True) if filter else None
+        filter = AssetFilter(
+            name, parent_ids, metadata, source, created_time, last_updated_time, asset_subtrees, external_id_prefix
+        ).dump(camel_case=True)
         return self._list(AssetList, resource_path=self.RESOURCE_PATH, method="POST", limit=limit, filter=filter)
 
     def create(self, asset: Union[Asset, List[Asset]]) -> Union[Asset, AssetList]:

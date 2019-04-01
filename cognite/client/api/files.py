@@ -161,19 +161,36 @@ class FileMetadataUpdate(CogniteUpdate):
 class FilesAPI(APIClient):
     RESOURCE_PATH = "/files"
 
-    def __call__(self, filter: FileMetadataFilter = None, chunk_size: int = None) -> Generator:
+    def __call__(
+        self,
+        chunk_size: int = None,
+        metadata: Dict[str, Any] = None,
+        asset_ids: List[int] = None,
+        source: str = None,
+        created_time: Dict[str, Any] = None,
+        last_updated_time: Dict[str, Any] = None,
+        external_id_prefix: str = None,
+    ) -> Generator:
         """Iterate over files
 
         Fetches file metadata objects as they are iterated over, so you keep a limited number of metadata objects in memory.
 
         Args:
-            filter (FileMetadataFilter, optional): Filter to apply.
             chunk_size (int, optional): Number of files to return in each chunk. Defaults to yielding one event a time.
+            metadata (Dict[str, Any]): Customizable extra data about the event. String key -> String value.
+            asset_ids (List[int]): Asset IDs of related equipments that this event relates to.
+            source (str): The source of this event.
+            created_time (Dict[str, Any]): Range between two timestamps
+            last_updated_time (Dict[str, Any]): Range between two timestamps
+            external_id_prefix (str): External Id provided by client. Should be unique within the project
+
 
         Yields:
             Union[FileMetadata, FileMetadataList]: yields FileMetadata one by one if chunk is not specified, else FileMetadataList objects.
         """
-        filter = filter.dump(camel_case=True) if filter else None
+        filter = FileMetadataFilter(
+            metadata, asset_ids, source, created_time, last_updated_time, external_id_prefix
+        ).dump(camel_case=True)
         return self._list_generator(
             FileMetadaList, resource_path=self.RESOURCE_PATH, method="POST", chunk=chunk_size, filter=filter
         )
@@ -203,17 +220,33 @@ class FilesAPI(APIClient):
             cls=FileMetadaList, resource_path=self.RESOURCE_PATH, ids=id, external_ids=external_id, wrap_ids=True
         )
 
-    def list(self, filter: FileMetadataFilter = None, limit: int = None) -> FileMetadaList:
+    def list(
+        self,
+        metadata: Dict[str, Any] = None,
+        asset_ids: List[int] = None,
+        source: str = None,
+        created_time: Dict[str, Any] = None,
+        last_updated_time: Dict[str, Any] = None,
+        external_id_prefix: str = None,
+        limit: int = None,
+    ) -> FileMetadaList:
         """List files
 
         Args:
-            filter (FileMetadataFilter, optional): Filter to apply.
+            metadata (Dict[str, Any]): Customizable extra data about the event. String key -> String value.
+            asset_ids (List[int]): Asset IDs of related equipments that this event relates to.
+            source (str): The source of this event.
+            created_time (Dict[str, Any]): Range between two timestamps
+            last_updated_time (Dict[str, Any]): Range between two timestamps
+            external_id_prefix (str): External Id provided by client. Should be unique within the project
             limit (int, optional): Max number of files to return.
 
         Returns:
             FileMetadataList: The requested files.
         """
-        filter = filter.dump(camel_case=True) if filter else None
+        filter = FileMetadataFilter(
+            metadata, asset_ids, source, created_time, last_updated_time, external_id_prefix
+        ).dump(camel_case=True)
         return self._list(
             cls=FileMetadaList, resource_path=self.RESOURCE_PATH, method="POST", limit=limit, filter=filter
         )
