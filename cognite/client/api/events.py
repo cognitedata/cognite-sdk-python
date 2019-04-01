@@ -11,7 +11,7 @@ class Event(CogniteResource):
     """An event represents something that happened at a given interval in time, e.g a failure, a work order etc.
 
     Args:
-        external_id (str): External Id provided by client. Should be unique within the project
+        external_id (str): External Id provided by client. Should be unique within the project.
         start_time (int): It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         end_time (int): It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         description (str): Textual description of the event.
@@ -64,7 +64,7 @@ class EventFilter(CogniteFilter):
         source (str): The source of this event.
         created_time (Dict[str, Any]): Range between two timestamps
         last_updated_time (Dict[str, Any]): Range between two timestamps
-        external_id_prefix (str): External Id provided by client. Should be unique within the project
+        external_id_prefix (str): External Id provided by client. Should be unique within the project.
     """
 
     def __init__(
@@ -98,7 +98,7 @@ class EventUpdate(CogniteUpdate):
 
     Args:
         id (int): Javascript friendly internal ID given to the object.
-        external_id (str): External Id provided by client. Should be unique within the project
+        external_id (str): External Id provided by client. Should be unique within the project.
     """
 
     def __init__(self, id: int = None, external_id: str = None):
@@ -132,6 +132,14 @@ class EventUpdate(CogniteUpdate):
             self._update_object["description"] = {"setNull": True}
             return self
         self._update_object["description"] = {"set": value}
+        return self
+
+    def metadata_add(self, value: Dict[str, Any]):
+        self._update_object["metadata"] = {"add": value}
+        return self
+
+    def metadata_remove(self, value: List):
+        self._update_object["metadata"] = {"remove": value}
         return self
 
     def metadata_set(self, value: Union[Dict[str, Any], None]):

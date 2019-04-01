@@ -138,7 +138,6 @@ class TestUpdateClassGenerator:
         setters = UPDATE_CLASS_GENERATOR.generate_setters(
             CLASS_GENERATOR._spec.components.schemas.get("EventChange"), indentation=4
         )
-        print(setters)
         assert (
             """    def external_id_set(self, value: Union[str, None]):
         if value is None:

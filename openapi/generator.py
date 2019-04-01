@@ -33,7 +33,7 @@ class ClassGenerator:
                     schema_name = res.group(1)
                     property_name = res.group(2)
                     schema = self._spec.components.schemas.get(schema_name)
-                    property = schema["properties"][property_name]
+                    property = self._get_schema_properties(schema)[property_name]
                     schemas.append(property)
                 else:
                     schemas.append(self._spec.components.schemas.get(schema_name))

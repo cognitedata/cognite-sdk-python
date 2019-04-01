@@ -101,7 +101,7 @@ class TimeSeriesFilter(CogniteFilter):
 
 # GenUpdateClass: TimeSeriesChange
 class TimeSeriesUpdate(CogniteUpdate):
-    """Changes will be applied to time series.
+    """No description.
 
     Args:
         id (int): No description.
@@ -113,11 +113,11 @@ class TimeSeriesUpdate(CogniteUpdate):
         self.external_id = external_id
         self._update_object = {}
 
-    def external_id_change_set(self, value: Union[str, None]):
+    def external_id_set(self, value: Union[str, None]):
         if value is None:
-            self._update_object["externalIdChange"] = {"setNull": True}
+            self._update_object["externalId"] = {"setNull": True}
             return self
-        self._update_object["externalIdChange"] = {"set": value}
+        self._update_object["externalId"] = {"set": value}
         return self
 
     def name_set(self, value: Union[str, None]):

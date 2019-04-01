@@ -13,10 +13,10 @@ class FileMetadata(CogniteResource):
     """No description.
 
     Args:
-        external_id (str): External Id provided by client. Should be unique within the project
+        external_id (str): External Id provided by client. Should be unique within the project.
         name (str): No description.
         source (str): The source of the file.
-        mime_type (str): FileMetadata type. E.g. pdf, css, spreadsheet, ..
+        mime_type (str): File type. E.g. pdf, css, spreadsheet, ..
         metadata (Dict[str, Any]): Customizable extra data about the file. String key -> String value.
         asset_ids (List[int]): No description.
         id (int): Javascript friendly internal ID given to the object.
@@ -59,7 +59,7 @@ class FileMetadaList(CogniteResourceList):
     _RESOURCE = FileMetadata
 
 
-# GenClass: FileMetadataFilter.filter
+# GenClass: FilesSearchFilter.filter
 class FileMetadataFilter(CogniteFilter):
     """No description.
 
@@ -69,7 +69,7 @@ class FileMetadataFilter(CogniteFilter):
         source (str): The source of this event.
         created_time (Dict[str, Any]): Range between two timestamps
         last_updated_time (Dict[str, Any]): Range between two timestamps
-        external_id_prefix (str): External Id provided by client. Should be unique within the project
+        external_id_prefix (str): External Id provided by client. Should be unique within the project.
     """
 
     def __init__(
@@ -124,6 +124,14 @@ class FileMetadataUpdate(CogniteUpdate):
             self._update_object["source"] = {"setNull": True}
             return self
         self._update_object["source"] = {"set": value}
+        return self
+
+    def metadata_add(self, value: Dict[str, Any]):
+        self._update_object["metadata"] = {"add": value}
+        return self
+
+    def metadata_remove(self, value: List):
+        self._update_object["metadata"] = {"remove": value}
         return self
 
     def metadata_set(self, value: Union[Dict[str, Any], None]):
