@@ -11,7 +11,6 @@ from cognite.client.api.datapoints import DatapointsAPI
 from cognite.client.api.events import EventsAPI
 from cognite.client.api.files import FilesAPI
 from cognite.client.api.login import LoginAPI
-from cognite.client.api.raw import RawAPI
 from cognite.client.api.time_series import TimeSeriesAPI
 from cognite.logger import configure_logger
 
@@ -147,15 +146,15 @@ class CogniteClient:
             headers=self._headers,
             timeout=self._timeout,
         )
-        self.raw = RawAPI(
-            version=__api_version,
-            project=self._project,
-            base_url=self._base_url,
-            max_workers=self._max_workers,
-            cookies=self._cookies,
-            headers=self._headers,
-            timeout=self._timeout,
-        )
+        # self.raw = RawAPI(
+        #     version=__api_version,
+        #     project=self._project,
+        #     base_url=self._base_url,
+        #     max_workers=self._max_workers,
+        #     cookies=self._cookies,
+        #     headers=self._headers,
+        #     timeout=self._timeout,
+        # )
         self.time_series = TimeSeriesAPI(
             version=__api_version,
             project=self._project,

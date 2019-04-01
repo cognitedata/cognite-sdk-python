@@ -36,14 +36,14 @@ Assets
 ------
 Client
 ^^^^^^
-.. autoclass:: cognite.client.api.assets.AssetsApi
+.. autoclass:: cognite.client.api.assets.AssetsAPI
     :members:
 
 Data Objects
 ^^^^^^^^^^^^
 .. automodule:: cognite.client.api.assets
     :members:
-    :exclude-members: AssetsClient
+    :exclude-members: AssetsAPI
     :undoc-members:
     :show-inheritance:
     :inherited-members:
@@ -52,14 +52,14 @@ Datapoints
 ----------
 Client
 ^^^^^^
-.. autoclass:: cognite.client.stable.datapoints.DatapointsClient
+.. autoclass:: cognite.client.api.datapoints.DatapointsAPI
     :members:
 
 Data Objects
 ^^^^^^^^^^^^
-.. automodule:: cognite.client.stable.datapoints
+.. automodule:: cognite.client.api.datapoints
     :members:
-    :exclude-members: DatapointsClient
+    :exclude-members: DatapointsAPI
     :undoc-members:
     :show-inheritance:
     :inherited-members:
@@ -68,14 +68,14 @@ Events
 ------
 Client
 ^^^^^^
-.. autoclass:: cognite.client.stable.events.EventsClient
+.. autoclass:: cognite.client.api.events.EventsAPI
     :members:
 
 Data Objects
 ^^^^^^^^^^^^
-.. automodule:: cognite.client.stable.events
+.. automodule:: cognite.client.api.events
     :members:
-    :exclude-members: EventsClient
+    :exclude-members: EventsAPI
     :undoc-members:
     :show-inheritance:
     :inherited-members:
@@ -84,14 +84,14 @@ Files
 -----
 Client
 ^^^^^^
-.. autoclass:: cognite.client.stable.files.FilesClient
+.. autoclass:: cognite.client.api.files.FilesAPI
     :members:
 
 Data Objects
 ^^^^^^^^^^^^
-.. automodule:: cognite.client.stable.files
+.. automodule:: cognite.client.api.files
     :members:
-    :exclude-members: FilesClient
+    :exclude-members: FilesAPI
     :undoc-members:
     :show-inheritance:
     :inherited-members:
@@ -100,46 +100,14 @@ Login
 -----
 Client
 ^^^^^^
-.. autoclass:: cognite.client.stable.login.LoginClient
+.. autoclass:: cognite.client.api.login.LoginAPI
     :members:
 
 Data Objects
 ^^^^^^^^^^^^
-.. automodule:: cognite.client.stable.login
+.. automodule:: cognite.client.api.login
     :members:
-    :exclude-members: LoginClient
-    :undoc-members:
-    :show-inheritance:
-    :inherited-members:
-
-Raw
-----
-Client
-^^^^^^
-.. autoclass:: cognite.client.stable.raw.RawClient
-    :members:
-
-Data Objects
-^^^^^^^^^^^^
-.. automodule:: cognite.client.stable.raw
-    :members:
-    :exclude-members: RawClient
-    :undoc-members:
-    :show-inheritance:
-    :inherited-members:
-
-Tagmatching
------------
-Client
-^^^^^^
-.. autoclass:: cognite.client.stable.tagmatching.TagMatchingClient
-    :members:
-
-Data Objects
-^^^^^^^^^^^^
-.. automodule:: cognite.client.stable.tagmatching
-    :members:
-    :exclude-members: TagMatchingClient
+    :exclude-members: LoginAPI
     :undoc-members:
     :show-inheritance:
     :inherited-members:
@@ -148,14 +116,14 @@ Time Series
 -----------
 Client
 ^^^^^^
-.. autoclass:: cognite.client.stable.time_series.TimeSeriesClient
+.. autoclass:: cognite.client.api.time_series.TimeSeriesAPI
     :members:
 
 Data Objects
 ^^^^^^^^^^^^
-.. automodule:: cognite.client.stable.time_series
+.. automodule:: cognite.client.api.time_series
     :members:
-    :exclude-members: TimeSeriesClient
+    :exclude-members: TimeSeriesAPI
     :undoc-members:
     :show-inheritance:
     :inherited-members:
