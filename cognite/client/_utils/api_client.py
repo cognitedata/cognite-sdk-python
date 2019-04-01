@@ -48,7 +48,7 @@ class APIClient:
         version: str = None,
         project: str = None,
         base_url: str = None,
-        num_of_workers: int = None,
+        max_workers: int = None,
         cookies: Dict = None,
         headers: Dict = None,
         timeout: int = None,
@@ -57,7 +57,7 @@ class APIClient:
         self._project = project
         __base_path = "/api/{}/projects/{}".format(version, project) if version else ""
         self._base_url = base_url + __base_path
-        self._num_of_workers = num_of_workers
+        self._max_workers = max_workers
         self._cookies = cookies
         self._headers = headers
         self._timeout = timeout
@@ -216,7 +216,7 @@ class APIClient:
         for i in range(0, len(items), limit):
             items_split.append({"items": [item.dump(camel_case=True) for item in items[i : i + limit]]})
         tasks = [(resource_path, task_items, params, headers) for task_items in items_split]
-        results = utils.execute_tasks_concurrently(self._post, tasks, workers=self._num_of_workers)
+        results = utils.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
 
         created_resources = []
         for res in results:
@@ -270,9 +270,7 @@ class APIClient:
         dumped_resource = resource.dump(camel_case=True)
         has_id = "id" in dumped_resource
         has_external_id = "externalId" in dumped_resource
-        assert (has_id or has_external_id) and not (
-            has_id and has_external_id
-        ), "{} must have exactly one of [id, externalId] set when used in update()".format(resource.__class__.__name__)
+        utils.assert_only_one_of_id_or_external_id(dumped_resource.get("id"), dumped_resource.get("externalId"))
 
         patch_object = {"update": {}}
         if has_id:

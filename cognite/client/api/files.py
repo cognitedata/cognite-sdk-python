@@ -264,9 +264,7 @@ class FilesAPI(APIClient):
                 file_path = os.path.join(path, file_name)
                 if os.path.isfile(file_path):
                     tasks.append((FileMetadata(name=file_name), file_path))
-            file_metadata_list = utils.execute_tasks_concurrently(
-                self._upload_file_from_path, tasks, self._num_of_workers
-            )
+            file_metadata_list = utils.execute_tasks_concurrently(self._upload_file_from_path, tasks, self._max_workers)
             return FileMetadaList(file_metadata_list)
         raise ValueError("path '{}' does not exist".format(path))
 
@@ -304,7 +302,7 @@ class FilesAPI(APIClient):
         Returns:
             None
         """
-        all_ids = self._process_ids(ids=id, external_ids=external_id, wrap_ids=True)
+        all_ids, is_single_id = self._process_ids(ids=id, external_ids=external_id, wrap_ids=True)
         res = self._post(url_path="/files/download", json={"items": all_ids})
 
         download_tasks = []
@@ -320,7 +318,7 @@ class FilesAPI(APIClient):
                 raise AssertionError("FileMetadata download does not contain 'id' or 'externalId'")
             download_tasks.append(task)
 
-        utils.execute_tasks_concurrently(self._download_file_to_path, download_tasks, self._num_of_workers)
+        utils.execute_tasks_concurrently(self._download_file_to_path, download_tasks, self._max_workers)
 
     def download_to_memory(self, id: int = None, external_id: str = None) -> bytes:
         """Download a file to memory.
@@ -329,8 +327,8 @@ class FilesAPI(APIClient):
             id (int, optional): Id of the file
             external_id (str, optional): External id of the file
         """
-        assert (id or external_id) and not (id and external_id), "Exactly one of id and external_id must be specified"
-        all_ids = self._process_ids(ids=id, external_ids=external_id, wrap_ids=True)
+        utils.assert_only_one_of_id_or_external_id(id, external_id)
+        all_ids, is_single_id = self._process_ids(ids=id, external_ids=external_id, wrap_ids=True)
         res = self._post(url_path="/files/download", json={"items": all_ids})
         dl_link = res.json()["data"]["items"][0]["link"]
         return self._download_file(dl_link)

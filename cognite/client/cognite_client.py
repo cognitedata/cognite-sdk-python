@@ -78,7 +78,7 @@ class CogniteClient:
 
         environment_api_key = os.getenv("COGNITE_API_KEY")
         environment_base_url = os.getenv("COGNITE_BASE_URL")
-        environment_num_of_workers = os.getenv("COGNITE_MAX_WORKERS")
+        environment_max_workers = os.getenv("COGNITE_MAX_WORKERS")
         environment_timeout = os.getenv("COGNITE_TIMEOUT")
 
         self.__api_key = api_key or thread_local_api_key or environment_api_key
@@ -87,7 +87,7 @@ class CogniteClient:
 
         self._base_url = base_url or environment_base_url or DEFAULT_BASE_URL
 
-        self._max_workers = int(max_workers or environment_num_of_workers or DEFAULT_MAX_WORKERS)
+        self._max_workers = int(max_workers or environment_max_workers or DEFAULT_MAX_WORKERS)
 
         self._configure_headers(headers)
 
@@ -103,7 +103,7 @@ class CogniteClient:
         self.login = LoginAPI(
             project=self._project,
             base_url=self._base_url,
-            num_of_workers=self._max_workers,
+            max_workers=self._max_workers,
             cookies=self._cookies,
             headers=self._headers,
             timeout=self._timeout,
@@ -115,7 +115,7 @@ class CogniteClient:
             version=__api_version,
             project=self._project,
             base_url=self._base_url,
-            num_of_workers=self._max_workers,
+            max_workers=self._max_workers,
             cookies=self._cookies,
             headers=self._headers,
             timeout=self._timeout,
@@ -124,7 +124,7 @@ class CogniteClient:
             version=__api_version,
             project=self._project,
             base_url=self._base_url,
-            num_of_workers=self._max_workers,
+            max_workers=self._max_workers,
             cookies=self._cookies,
             headers=self._headers,
             timeout=self._timeout,
@@ -133,7 +133,7 @@ class CogniteClient:
             version=__api_version,
             project=self._project,
             base_url=self._base_url,
-            num_of_workers=self._max_workers,
+            max_workers=self._max_workers,
             cookies=self._cookies,
             headers=self._headers,
             timeout=self._timeout,
@@ -142,7 +142,7 @@ class CogniteClient:
             version=__api_version,
             project=self._project,
             base_url=self._base_url,
-            num_of_workers=self._max_workers,
+            max_workers=self._max_workers,
             cookies=self._cookies,
             headers=self._headers,
             timeout=self._timeout,
@@ -151,7 +151,7 @@ class CogniteClient:
             version=__api_version,
             project=self._project,
             base_url=self._base_url,
-            num_of_workers=self._max_workers,
+            max_workers=self._max_workers,
             cookies=self._cookies,
             headers=self._headers,
             timeout=self._timeout,
@@ -160,7 +160,7 @@ class CogniteClient:
             version=__api_version,
             project=self._project,
             base_url=self._base_url,
-            num_of_workers=self._max_workers,
+            max_workers=self._max_workers,
             cookies=self._cookies,
             headers=self._headers,
             timeout=self._timeout,
@@ -169,7 +169,7 @@ class CogniteClient:
         self._api_client = APIClient(
             project=self._project,
             base_url=self._base_url,
-            num_of_workers=self._max_workers,
+            max_workers=self._max_workers,
             cookies=self._cookies,
             headers=self._headers,
             timeout=self._timeout,

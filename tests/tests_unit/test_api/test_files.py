@@ -182,6 +182,7 @@ class TestFilesAPI:
     def test_download(self, mock_file_download_response):
         curdir = os.path.dirname(__file__)
         res = FILES_API.download(directory=curdir, id=[1, 2])
+        assert {"items": [{"id": 1}, {"id": 2}]} == jsgz_load(mock_file_download_response.calls[0].request.body)
         assert res is None
         assert os.path.isfile(os.path.join(curdir, "1"))
         assert os.path.isfile(os.path.join(curdir, "2"))
@@ -189,4 +190,5 @@ class TestFilesAPI:
     def test_download_to_memory(self, mock_file_download_response):
         mock_file_download_response.assert_all_requests_are_fired = False
         res = FILES_API.download_to_memory(id=1)
+        assert {"items": [{"id": 1}]} == jsgz_load(mock_file_download_response.calls[0].request.body)
         assert res == b"content1"

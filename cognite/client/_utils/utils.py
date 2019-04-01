@@ -8,11 +8,15 @@ This module is protected and should not used by end-users.
 import platform
 import re
 import time
+from collections import namedtuple
 from concurrent.futures.thread import ThreadPoolExecutor
 from datetime import datetime
 from typing import Callable, Dict, List, Tuple, Union
 
 import cognite.client
+
+_unit_in_ms_without_week = {"s": 1000, "m": 60000, "h": 3600000, "d": 86400000}
+_unit_in_ms = {**_unit_in_ms_without_week, "w": 604800000}
 
 
 def datetime_to_ms(dt):
@@ -24,138 +28,63 @@ def ms_to_datetime(ms):
     return datetime.utcfromtimestamp(ms / 1000)
 
 
-def granularity_to_ms(time_string):
-    """Returns millisecond representation of granularity time string"""
-    magnitude = int("".join([c for c in time_string if c.isdigit()]))
-    unit = "".join([c for c in time_string if c.isalpha()])
-    unit_in_ms = {
-        "s": 1000,
-        "second": 1000,
-        "m": 60000,
-        "minute": 60000,
-        "h": 3600000,
-        "hour": 3600000,
-        "d": 86400000,
-        "day": 86400000,
-    }
-    return magnitude * unit_in_ms[unit]
-
-
-def _time_ago_to_ms(time_ago_string):
-    """Returns millisecond representation of time-ago string"""
-    if time_ago_string == "now":
-        return 0
-    pattern = r"(\d+)([a-z])-ago"
-    res = re.match(pattern, str(time_ago_string))
+def time_string_to_ms(pattern, string, unit_in_ms):
+    pattern = pattern.format("|".join(unit_in_ms))
+    res = re.fullmatch(pattern, string)
     if res:
         magnitude = int(res.group(1))
         unit = res.group(2)
-        unit_in_ms = {"s": 1000, "m": 60000, "h": 3600000, "d": 86400000, "w": 604800000}
         return magnitude * unit_in_ms[unit]
     return None
 
 
-def interval_to_ms(start, end):
-    """Returns the ms representation of start-end-interval whether it is time-ago, datetime or None."""
-    time_now = int(round(time.time() * 1000))
-    if isinstance(start, datetime):
-        start = datetime_to_ms(start)
-    elif isinstance(start, str):
-        start = time_now - _time_ago_to_ms(start)
-    elif start is None:
-        start = time_now - _time_ago_to_ms("2w-ago")
-
-    if isinstance(end, datetime):
-        end = datetime_to_ms(end)
-    elif isinstance(end, str):
-        end = time_now - _time_ago_to_ms(end)
-    elif end is None:
-        end = time_now
-
-    return start, end
+def granularity_to_ms(granularity: str) -> int:
+    ms = time_string_to_ms(r"(\d+)({})", granularity, _unit_in_ms_without_week)
+    if ms is None:
+        raise ValueError(
+            "Invalid granularity format: `{}`. Must be on format <integer>(s|m|h|d). E.g. '5m', '3h' or '1d'.".format(
+                granularity
+            )
+        )
+    return ms
 
 
-class Bin:
-    """
-    Attributes:
-        entries (List): List of entries.
-        get_count (Callable): Callable function to get count.
-    """
-
-    def __init__(self, get_count):
-        """
-        Args:
-            get_count: A function that will take an element and get the count of something in it.
-        """
-        self.entries = []
-        self.get_count = get_count
-
-    def add_item(self, item):
-        self.entries.append(item)
-
-    def sum(self):
-        total = 0
-        for elem in self.entries:
-            total += self.get_count(elem)
-        return total
-
-    def show(self):
-        return self.entries
+def granularity_unit_to_ms(granularity: str) -> int:
+    granularity = re.sub(r"^\d+", "1", granularity)
+    return granularity_to_ms(granularity)
 
 
-def first_fit(list_items: List, max_size, get_count: Callable) -> List[List]:
-    """Returns list of bins with input items inside."""
-
-    # Sort the input list in decreasing order
-    list_items = sorted(list_items, key=get_count, reverse=True)
-
-    list_bins = [Bin(get_count=get_count)]
-
-    for item in list_items:
-        # Go through bins and try to allocate
-        alloc_flag = False
-
-        for bin in list_bins:
-            if bin.sum() + get_count(item) <= max_size:
-                bin.add_item(item)
-                alloc_flag = True
-                break
-
-        # If item not allocated in bins in list, create new bin
-        # and allocate it to it.
-        if not alloc_flag:
-            new_bin = Bin(get_count=get_count)
-            new_bin.add_item(item)
-            list_bins.append(new_bin)
-
-    # Turn bins into list of items and return
-    list_items = []
-    for bin in list_bins:
-        list_items.append(bin.show())
-
-    return list_items
+def time_ago_to_ms(time_ago_string: str) -> int:
+    """Returns millisecond representation of time-ago string"""
+    if time_ago_string == "now":
+        return 0
+    ms = time_string_to_ms(r"(\d+)({})-ago", time_ago_string, _unit_in_ms)
+    if ms is None:
+        raise ValueError(
+            "Invalid time-ago format: `{}`. Must be on format <integer>(s|m|h|d|w)-ago or 'now'. E.g. '3d-ago' or '1w-ago'.".format(
+                time_ago_string
+            )
+        )
+    return ms
 
 
-def _round_to_nearest(x, base):
-    return int(base * round(float(x) / base))
+def timestamp_to_ms(t: Union[int, str, datetime]):
+    """Returns the ms representation of some timestamp given by milliseconds, time-ago format or datetime object"""
+    if isinstance(t, int):
+        ms = t
+    elif isinstance(t, str):
+        ms = int(round(time.time() * 1000)) - time_ago_to_ms(t)
+    elif isinstance(t, datetime):
+        ms = datetime_to_ms(t)
+    else:
+        raise TypeError("Timestamp `{}` was of type {}, but must be int, str or datetime,".format(t, type(t)))
 
+    if ms < 0:
+        raise ValueError(
+            "Timestamps can't be negative - they must represent a time after 1.1.1970, but {} was provided".format(ms)
+        )
 
-def get_datapoints_windows(start: int, end: int, granularity: str, num_of_workers):
-    diff = end - start
-    granularity_ms = 1
-    if granularity:
-        granularity_ms = granularity_to_ms(granularity)
-
-    # Ensure that number of steps is not greater than the number data points that will be returned
-    steps = min(num_of_workers, max(1, int(diff / granularity_ms)))
-    # Make step size a multiple of the granularity requested in order to ensure evenly spaced results
-    step_size = _round_to_nearest(int(diff / steps), base=granularity_ms)
-    # Create list of where each of the parallelized intervals will begin
-    step_starts = [start + (i * step_size) for i in range(steps)]
-    windows = [{"start": start, "end": start + step_size} for start in step_starts]
-    if windows[-1]["end"] < end:
-        windows[-1]["end"] = end
-    return windows
+    return ms
 
 
 def to_camel_case(snake_case_string: str):
@@ -168,9 +97,9 @@ def to_snake_case(camel_case_string: str):
     return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
 
 
-def execute_tasks_concurrently(func: Callable, tasks: Union[List[Tuple], List[Dict]], workers: int):
-    if workers > 0:
-        with ThreadPoolExecutor(workers) as p:
+def execute_tasks_concurrently(func: Callable, tasks: Union[List[Tuple], List[Dict]], max_workers: int):
+    if max_workers > 0:
+        with ThreadPoolExecutor(max_workers) as p:
             futures = []
             for task in tasks:
                 if isinstance(task, dict):
@@ -178,7 +107,11 @@ def execute_tasks_concurrently(func: Callable, tasks: Union[List[Tuple], List[Di
                 elif isinstance(task, tuple):
                     futures.append(p.submit(func, *task))
             return [future.result() for future in futures]
-    raise AssertionError("Number of workers should be >= 1, was {}".format(workers))
+    raise AssertionError("Number of workers should be >= 1, was {}".format(max_workers))
+
+
+def assert_only_one_of_id_or_external_id(id, external_id):
+    assert (id or external_id) and not (id and external_id), "Exactly one of 'id' and 'external_id' must be specified"
 
 
 def get_user_agent():

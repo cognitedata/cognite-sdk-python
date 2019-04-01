@@ -16,12 +16,7 @@ URL_PATH = "/someurl"
 RESPONSE = {"any": "ok"}
 
 API_CLIENT = APIClient(
-    project="test_proj",
-    base_url=BASE_URL,
-    num_of_workers=1,
-    cookies={"a-cookie": "a-cookie-val"},
-    headers={},
-    timeout=60,
+    project="test_proj", base_url=BASE_URL, max_workers=1, cookies={"a-cookie": "a-cookie-val"}, headers={}, timeout=60
 )
 
 
@@ -396,10 +391,10 @@ class TestStandardUpdate:
         assert {"items": [{"externalId": "1", "update": {"y": {"set": 100}}}]} == jsgz_load(rsps.calls[0].request.body)
 
     def test_standard_update_with_cognite_resource__id_error(self):
-        with pytest.raises(AssertionError, match="SomeResource must have exactly one"):
+        with pytest.raises(AssertionError, match="one of 'id' and 'external_id'"):
             API_CLIENT._update_multiple(SomeResourceList, resource_path=URL_PATH, items=[SomeResource(y=100)])
 
-        with pytest.raises(AssertionError, match="SomeResource must have exactly one"):
+        with pytest.raises(AssertionError, match="one of 'id' and 'external_id'"):
             API_CLIENT._update_multiple(
                 SomeResourceList, resource_path=URL_PATH, items=[SomeResource(id=1, external_id=1, y=100)]
             )
