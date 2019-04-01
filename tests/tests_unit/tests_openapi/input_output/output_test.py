@@ -13,12 +13,12 @@ class CogniteFilter:
     pass
 
 
-# GenClass: Asset, AssetReferences
+# GenClass: Asset, ExternalAssetItem
 class Asset(CogniteResource):
     """Representation of a physical asset, e.g plant or piece of equipment
 
     Args:
-        external_id (str): External Id provided by client. Should be unique within the project
+        external_id (str): External Id provided by client. Should be unique within the project.
         name (str): Name of asset. Often referred to as tag.
         parent_id (int): Javascript friendly internal ID given to the object.
         description (str): Description of asset.
@@ -29,7 +29,7 @@ class Asset(CogniteResource):
         path (List[int]): IDs of assets on the path to the asset.
         depth (int): Asset path depth (number of levels below root node).
         ref_id (str): Reference ID used only in post request to disambiguate references to duplicate names.
-        parent_ref_id (str): Reference ID of parent, to disambiguate if multiple nodes have the same name
+        parent_ref_id (str): Reference ID of parent, to disambiguate if multiple nodes have the same name.
     """
 
     def __init__(
@@ -71,13 +71,20 @@ class AssetUpdate(CogniteUpdate):
 
     Args:
         id (int): Javascript friendly internal ID given to the object.
-        external_id (str): External Id provided by client. Should be unique within the project
+        external_id (str): External Id provided by client. Should be unique within the project.
     """
 
     def __init__(self, id: int = None, external_id: str = None):
         self.id = id
         self.external_id = external_id
         self._update_object = {}
+
+    def external_id_set(self, value: Union[str, None]):
+        if value is None:
+            self._update_object["externalId"] = {"setNull": True}
+            return self
+        self._update_object["externalId"] = {"set": value}
+        return self
 
     def name_set(self, value: Union[str, None]):
         if value is None:
@@ -91,6 +98,14 @@ class AssetUpdate(CogniteUpdate):
             self._update_object["description"] = {"setNull": True}
             return self
         self._update_object["description"] = {"set": value}
+        return self
+
+    def metadata_add(self, value: Dict[str, Any]):
+        self._update_object["metadata"] = {"add": value}
+        return self
+
+    def metadata_remove(self, value: List):
+        self._update_object["metadata"] = {"remove": value}
         return self
 
     def metadata_set(self, value: Union[Dict[str, Any], None]):
@@ -122,7 +137,7 @@ class AssetFilter(CogniteFilter):
         created_time (Dict[str, Any]): Range between two timestamps
         last_updated_time (Dict[str, Any]): Range between two timestamps
         asset_subtrees (List[int]): Filter out events that are not linked to assets in the subtree rooted at these assets.
-        external_id_prefix (str): External Id provided by client. Should be unique within the project
+        external_id_prefix (str): External Id provided by client. Should be unique within the project.
     """
 
     def __init__(

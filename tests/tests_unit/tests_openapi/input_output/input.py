@@ -10,7 +10,7 @@ class CogniteFilter:
     pass
 
 
-# GenClass: Asset, AssetReferences
+# GenClass: Asset, ExternalAssetItem
 class Asset(CogniteResource):
     # GenStop
     def to_pandas(self):

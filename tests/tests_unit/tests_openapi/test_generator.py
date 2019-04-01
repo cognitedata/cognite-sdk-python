@@ -32,23 +32,23 @@ CLASS_GENERATOR = ClassGenerator(CODE_GENERATOR.open_api_spec, INPUT)
 class TestClassGenerator:
     def test_get_gen_class_segments(self):
         segments = CLASS_GENERATOR.gen_class_segments
-        assert ("Asset, AssetReferences", "Asset") == segments[0]
+        assert ("Asset, ExternalAssetItem", "Asset") == segments[0]
         assert ("AssetFilter.filter", "AssetFilter") == segments[1]
 
         assert "Asset" == segments[0].class_name
-        assert "Asset, AssetReferences" == segments[0].schema_names
+        assert "Asset, ExternalAssetItem" == segments[0].schema_names
 
     def test_generate_docstring_from_schema(self):
         schemas = [
             CLASS_GENERATOR._spec.components.schemas.get("Asset"),
-            CLASS_GENERATOR._spec.components.schemas.get("AssetReferences"),
+            CLASS_GENERATOR._spec.components.schemas.get("ExternalAssetItem"),
         ]
         docstring = CLASS_GENERATOR.generate_docstring(schemas, 4)
         assert (
             """    \"\"\"Representation of a physical asset, e.g plant or piece of equipment
 
     Args:
-        external_id (str): External Id provided by client. Should be unique within the project
+        external_id (str): External Id provided by client. Should be unique within the project.
         name (str): Name of asset. Often referred to as tag.
         parent_id (int): Javascript friendly internal ID given to the object.
         description (str): Description of asset.
@@ -59,7 +59,7 @@ class TestClassGenerator:
         path (List[int]): IDs of assets on the path to the asset.
         depth (int): Asset path depth (number of levels below root node).
         ref_id (str): Reference ID used only in post request to disambiguate references to duplicate names.
-        parent_ref_id (str): Reference ID of parent, to disambiguate if multiple nodes have the same name
+        parent_ref_id (str): Reference ID of parent, to disambiguate if multiple nodes have the same name.
     \"\"\""""
             == docstring
         )
@@ -67,7 +67,7 @@ class TestClassGenerator:
     def test_generate_constructor_from_schema(self):
         schemas = [
             CLASS_GENERATOR._spec.components.schemas.get("Asset"),
-            CLASS_GENERATOR._spec.components.schemas.get("AssetReferences"),
+            CLASS_GENERATOR._spec.components.schemas.get("ExternalAssetItem"),
         ]
         constructor = CLASS_GENERATOR.generate_constructor(schemas, indentation=4)
         assert (
@@ -91,7 +91,7 @@ class TestClassGenerator:
         class_segments = CLASS_GENERATOR.generate_code_for_class_segments()
         schemas = [
             CLASS_GENERATOR._spec.components.schemas.get("Asset"),
-            CLASS_GENERATOR._spec.components.schemas.get("AssetReferences"),
+            CLASS_GENERATOR._spec.components.schemas.get("ExternalAssetItem"),
         ]
         docstring = CLASS_GENERATOR.generate_docstring(schemas, indentation=4)
         constructor = CLASS_GENERATOR.generate_constructor(schemas, indentation=4)
@@ -117,7 +117,7 @@ class TestUpdateClassGenerator:
 
     Args:
         id (int): Javascript friendly internal ID given to the object.
-        external_id (str): External Id provided by client. Should be unique within the project
+        external_id (str): External Id provided by client. Should be unique within the project.
     \"\"\""""
             == docstring
         )
@@ -138,6 +138,7 @@ class TestUpdateClassGenerator:
         setters = UPDATE_CLASS_GENERATOR.generate_setters(
             CLASS_GENERATOR._spec.components.schemas.get("EventChange"), indentation=4
         )
+        print(setters)
         assert (
             """    def external_id_set(self, value: Union[str, None]):
         if value is None:
@@ -168,6 +169,16 @@ class TestUpdateClassGenerator:
             self._update_object['description'] = {'setNull': True}
             return self
         self._update_object['description'] = {'set': value}
+        return self
+
+
+    def metadata_add(self, value: Dict[str, Any]):
+        self._update_object['metadata'] = {'add': value}
+        return self
+
+
+    def metadata_remove(self, value: List):
+        self._update_object['metadata'] = {'remove': value}
         return self
 
 

@@ -153,7 +153,7 @@ class UpdateClassGenerator:
             update_schema = schema
         indent = " " * indentation
         for prop_name, prop in self._get_schema_properties(update_schema).items():
-            if prop_name == "id" or prop_name == "externalId":
+            if prop_name == "id":
                 continue
             for update_prop, type_hint in self._get_update_properties(prop):
 
