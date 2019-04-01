@@ -1,21 +1,13 @@
 # -*- coding: utf-8 -*-
-import io
-import json
-import time
-from concurrent.futures import ThreadPoolExecutor as Pool
-from copy import copy
+from collections import namedtuple
 from datetime import datetime
-from functools import partial
 from typing import *
 from typing import List
-from urllib.parse import quote
-
-import pandas as pd
 
 from cognite.client._auxiliary._protobuf_descriptors import _api_timeseries_data_v2_pb2
 from cognite.client._utils import utils
 from cognite.client._utils.api_client import APIClient
-from cognite.client._utils.resource_base import CogniteResource, CogniteResponse
+from cognite.client._utils.resource_base import CogniteResource, CogniteResourceList
 
 
 # GenClass: DatapointsGetDatapoint
@@ -34,6 +26,19 @@ class Datapoints(CogniteResource):
         self.datapoints = datapoints
 
     # GenStop
+    def __len__(self):
+        return len(self.datapoints)
+
+    def __getitem__(self, item):
+        return self.datapoints[item]
+
+    def __iter__(self):
+        for dp in self.datapoints:
+            yield dp
+
+
+class DatapointsList(CogniteResourceList):
+    _RESOURCE = Datapoints
 
 
 # GenClass: DatapointsQuery
@@ -77,34 +82,7 @@ class DatapointsQuery(CogniteResource):
     # GenStop
 
 
-# class Datapoint(_DatapointBase):
-#     def __init__(self, timestamp: Union[int, float, datetime], value: Union[int, float, str], *args, **kwargs):
-#         if isinstance(timestamp, datetime):
-#             timestamp = utils.datetime_to_ms(timestamp)
-#         elif isinstance(timestamp, (int, float)):
-#             pass
-#         else:
-#             raise TypeError("timestamp must be int, float, or datetime, not {}".format(type(timestamp)))
-#         super().__init__(timestamp, value, *args, **kwargs)
-#
-#     def __getitem__(self, item):
-#         datapoint_dict = self.__dict__.copy()
-#         datapoint_dict["timestamp"] = utils.ms_to_datetime(datapoint_dict["timestamp"])
-#         if isinstance(item, str):
-#             return datapoint_dict[item]
-#         if isinstance(item, int):
-#             return list(datapoint_dict.values())[item]
-#         raise TypeError("Datapoint indices must be integers, slices, or str")
-#
-#     def __getattribute__(self, item):
-#         if item == "timestamp":
-#             return utils.ms_to_datetime(super().__getattribute__(item))
-#         return super().__getattribute__(item)
-#
-#     def __str__(self):
-#         datapoint_dict = self.dump()
-#         datapoint_dict["timestamp"] = utils.ms_to_datetime(datapoint_dict["timestamp"]).strftime("%m-%d-%Y %H:%M:%S")
-#         return json.dumps(datapoint_dict, indent=4)
+_DPWindow = namedtuple("Window", ["start", "end"])
 
 
 class DatapointsAPI(APIClient):
@@ -114,18 +92,138 @@ class DatapointsAPI(APIClient):
 
     def get(
         self,
-        start: int,
-        end: int,
+        start: Union[int, str, datetime],
+        end: Union[int, str, datetime],
         id: Union[int, List[int]] = None,
         external_id: Union[str, List[str]] = None,
         aggregates: List[str] = None,
-    ):
-        payload = {"items": [{"id": id}], "start": start, "end": end}
-        res = self._post(self._RESOURCE_PATH + "/get", json=payload).json()["data"]["items"][0]
-        return Datapoints._load(res)
+        granularity: str = None,
+        include_outside_points: bool = None,
+        limit: int = None,
+    ) -> Union[Datapoints, List[Datapoints]]:
+        start = utils.timestamp_to_ms(start)
+        end = utils.timestamp_to_ms(end)
+        all_ids, is_single_id = self._process_ids(id, external_id, wrap_ids=True)
 
-    def query(self):
-        pass
+        tasks = []
+        for id_object in all_ids:
+            id = id_object.get("id")
+            external_id = id_object.get("externalId")
+            max_workers_per_ts = max(self._max_workers // len(all_ids), 1)
+            if include_outside_points:
+                max_workers_per_ts = 1
+            tasks.append(
+                (
+                    start,
+                    end,
+                    id,
+                    external_id,
+                    aggregates,
+                    granularity,
+                    include_outside_points,
+                    limit,
+                    max_workers_per_ts,
+                )
+            )
+
+        results = utils.execute_tasks_concurrently(
+            self._get_datapoints_concurrently, tasks, max_workers=min(self._max_workers, len(all_ids))
+        )
+        for dps_res in results:
+            if limit:
+                dps_res["datapoints"] = dps_res["datapoints"][:limit]
+
+        dps_list = DatapointsList._load(results)
+
+        if is_single_id:
+            return dps_list[0]
+        return dps_list
+
+    def _get_datapoints_concurrently(
+        self,
+        start: int,
+        end: int,
+        id: int,
+        external_id: str,
+        aggregates: List[str],
+        granularity: str,
+        include_outside_points: bool,
+        limit: int,
+        max_workers: int,
+    ) -> Dict[str, Any]:
+        datapoints = []
+        windows = self._get_windows(start, end, granularity=granularity, max_windows=max_workers)
+        tasks = [
+            (w.start, w.end, id, external_id, aggregates, granularity, include_outside_points, limit) for w in windows
+        ]
+        results = utils.execute_tasks_concurrently(self._get_datapoints, tasks, max_workers=max_workers)
+        for res in results:
+            returned_id = res["id"]
+            returned_external_id = res["externalId"]
+            datapoints.extend(res["datapoints"])
+        return {"id": returned_id, "externalId": returned_external_id, "datapoints": datapoints}
+
+    def _get_datapoints(
+        self,
+        start: int,
+        end: int,
+        id: int,
+        external_id: str,
+        aggregates: List[str],
+        granularity: str,
+        include_outside_points: bool,
+        limit: int,
+    ) -> Dict[str, Any]:
+        per_request_limit = self._LIMIT_AGG if aggregates else self._LIMIT
+        utils.assert_only_one_of_id_or_external_id(id, external_id)
+        if id:
+            items = [{"id": id}]
+        elif external_id:
+            items = [{"externalId": external_id}]
+        payload = {
+            "items": items,
+            "start": start,
+            "end": end,
+            "aggregates": aggregates,
+            "granularity": granularity,
+            "includeOutsidePoints": include_outside_points,
+            "limit": per_request_limit,
+        }
+        res = {"datapoints": []}
+        datapoints = []
+        while (
+            (not datapoints or len(res["datapoints"]) == per_request_limit)
+            and payload["end"] > payload["start"]
+            and len(datapoints) < (limit or float("inf"))
+        ):
+            res = self._post(self._RESOURCE_PATH + "/get", json=payload).json()["data"]["items"][0]
+            datapoints.extend(res["datapoints"])
+            latest_timestamp = int(datapoints[-1]["timestamp"])
+            payload["start"] = latest_timestamp + (utils.granularity_to_ms(granularity) if granularity else 1)
+        return {"id": res["id"], "externalId": res.get("externalId"), "datapoints": datapoints}
+
+    @staticmethod
+    def _get_windows(start: int, end: int, granularity: str, max_windows: int):
+        diff = end - start
+        granularity_ms = 1
+        if granularity:
+            granularity_ms = utils.granularity_to_ms(granularity)
+
+        # Ensure that number of steps is not greater than the number data points that will be returned
+        steps = min(max_windows, max(1, int(diff / granularity_ms)))
+        # # Make step size a multiple of the granularity requested in order to ensure evenly spaced results
+        # step_size = _round_to_nearest(int(diff / steps), base=granularity_ms)
+        step_size = diff // steps
+        windows = []
+        next_start = start
+        next_end = next_start + step_size
+        while (not windows or windows[-1].end < end) and next_start < next_end:
+            windows.append(_DPWindow(start=next_start, end=next_end))
+            next_start += step_size + granularity_ms
+            next_end = next_start + step_size
+            if next_end > end:
+                next_end = end
+        return windows
 
     # def get_datapoints(self, name, start, end=None, aggregates=None, granularity=None, **kwargs) -> DatapointsResponse:
     #     """Returns a DatapointsObject containing a list of datapoints for the given query.
