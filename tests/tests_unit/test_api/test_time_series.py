@@ -108,3 +108,25 @@ class TestTimeSeries:
         req_body = jsgz_load(mock_ts_response.calls[0].request.body)
         assert "bla" == req_body["filter"]["unit"]
         assert {"name": "n", "description": "d", "query": "q"} == req_body["search"]
+
+    def test_events_update_object(self):
+        assert isinstance(
+            TimeSeriesUpdate(1)
+            .asset_id_set(1)
+            .asset_id_set(None)
+            .description_set("")
+            .description_set(None)
+            .external_id_set("1")
+            .external_id_set(None)
+            .metadata_set({})
+            .metadata_set(None)
+            .name_set("")
+            .name_set(None)
+            .security_categories_add([])
+            .security_categories_remove([])
+            .security_categories_set([])
+            .security_categories_set(None)
+            .unit_set("")
+            .unit_set(None),
+            TimeSeriesUpdate,
+        )

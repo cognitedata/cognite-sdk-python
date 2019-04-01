@@ -50,7 +50,8 @@ class TestAssets:
         assert mock_assets_response.calls[0].response.json()["data"]["items"] == res.dump(camel_case=True)
 
     def test_list(self, mock_assets_response):
-        res = ASSETS_API.list()
+        res = ASSETS_API.list(name="bla")
+        assert "bla" == jsgz_load(mock_assets_response.calls[0].request.body)["filter"]["name"]
         assert mock_assets_response.calls[0].response.json()["data"]["items"] == res.dump(camel_case=True)
 
     def test_create_single(self, mock_assets_response):
@@ -99,3 +100,21 @@ class TestAssets:
     def test_search(self, mock_assets_response):
         res = ASSETS_API.search()
         assert mock_assets_response.calls[0].response.json()["data"]["items"] == res.dump(camel_case=True)
+
+    def test_assets_update_object(self):
+        assert isinstance(
+            AssetUpdate(1)
+            .description_set("")
+            .description_set(None)
+            .external_id_set("1")
+            .external_id_set(None)
+            .metadata_add({})
+            .metadata_remove([])
+            .metadata_set({})
+            .metadata_set(None)
+            .name_set("")
+            .name_set(None)
+            .source_set(1)
+            .source_set(None),
+            AssetUpdate,
+        )

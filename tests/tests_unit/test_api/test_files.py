@@ -95,7 +95,7 @@ class TestFilesAPI:
         assert mock_files_response.calls[0].response.json()["data"]["items"] == res.dump(camel_case=True)
 
     def test_list(self, mock_files_response):
-        res = FILES_API.list(filter=FileMetadataFilter(source="bla"), limit=10)
+        res = FILES_API.list(source="bla", limit=10)
         assert isinstance(res, FileMetadaList)
         assert mock_files_response.calls[0].response.json()["data"]["items"] == res.dump(camel_case=True)
         assert "bla" == jsgz_load(mock_files_response.calls[0].request.body)["filter"]["source"]
@@ -192,3 +192,23 @@ class TestFilesAPI:
         res = FILES_API.download_to_memory(id=1)
         assert {"items": [{"id": 1}]} == jsgz_load(mock_file_download_response.calls[0].request.body)
         assert res == b"content1"
+
+    def test_files_update_object(self):
+        assert isinstance(
+            FileMetadataUpdate(1)
+            .asset_ids_add([])
+            .asset_ids_remove([])
+            .asset_ids_set([])
+            .asset_ids_set(None)
+            .external_id_set("1")
+            .external_id_set(None)
+            .metadata_add({})
+            .metadata_remove([])
+            .metadata_set({})
+            .metadata_set(None)
+            .mime_type_set("")
+            .mime_type_set(None)
+            .source_set(1)
+            .source_set(None),
+            FileMetadataUpdate,
+        )
