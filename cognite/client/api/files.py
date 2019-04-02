@@ -368,7 +368,7 @@ class FilesAPI(APIClient):
             id (int, optional): Id of the file
             external_id (str, optional): External id of the file
         """
-        utils.assert_only_one_of_id_or_external_id(id, external_id)
+        utils.assert_exactly_one_of_id_or_external_id(id, external_id)
         all_ids, is_single_id = self._process_ids(ids=id, external_ids=external_id, wrap_ids=True)
         res = self._post(url_path="/files/download", json={"items": all_ids})
         dl_link = res.json()["data"]["items"][0]["link"]

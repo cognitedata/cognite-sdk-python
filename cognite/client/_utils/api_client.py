@@ -270,7 +270,7 @@ class APIClient:
         dumped_resource = resource.dump(camel_case=True)
         has_id = "id" in dumped_resource
         has_external_id = "externalId" in dumped_resource
-        utils.assert_only_one_of_id_or_external_id(dumped_resource.get("id"), dumped_resource.get("externalId"))
+        utils.assert_exactly_one_of_id_or_external_id(dumped_resource.get("id"), dumped_resource.get("externalId"))
 
         patch_object = {"update": {}}
         if has_id:

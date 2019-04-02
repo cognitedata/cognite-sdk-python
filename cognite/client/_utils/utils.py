@@ -110,7 +110,7 @@ def execute_tasks_concurrently(func: Callable, tasks: Union[List[Tuple], List[Di
     raise AssertionError("Number of workers should be >= 1, was {}".format(max_workers))
 
 
-def assert_only_one_of_id_or_external_id(id, external_id):
+def assert_exactly_one_of_id_or_external_id(id, external_id):
     assert (id or external_id) and not (id and external_id), "Exactly one of 'id' and 'external_id' must be specified"
 
 

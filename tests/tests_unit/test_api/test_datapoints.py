@@ -1,5 +1,4 @@
 import json
-import math
 from random import random
 
 import pytest
@@ -28,7 +27,7 @@ def generate_datapoints(start: int, end: int, aggregates=None, granularity=None)
 
 
 @pytest.fixture
-def get_datapoints_mock(rsps):
+def mock_get_datapoints(rsps):
     def request_callback(request):
         payload = jsgz_load(request.body)
 
@@ -105,11 +104,12 @@ def set_dps_workers():
     DPS_CLIENT._max_workers = workers_tmp
 
 
-class TestDatapointsAPI:
+class TestGetDatapoints:
     def assert_dps_response_is_correct(self, calls, dps_object):
         datapoints = []
         for call in calls:
             dps_response = call.response.json()["data"]["items"][0]
+            dps = {}
             if dps_response["id"] == dps_object.id and dps_response["externalId"] == dps_object.external_id:
                 datapoints.extend(dps_response["datapoints"])
                 id = dps_response["id"]
@@ -121,38 +121,44 @@ class TestDatapointsAPI:
             "datapoints": sorted(datapoints, key=lambda x: x["timestamp"]),
         } == dps_object.dump(camel_case=True)
 
-    def test_get_datapoints_by_id(self, get_datapoints_mock):
+    def test_get_datapoints_by_id(self, mock_get_datapoints):
         dps_res = DPS_CLIENT.get(id=123, start=1000000, end=1100000)
         assert isinstance(dps_res, Datapoints)
-        self.assert_dps_response_is_correct(get_datapoints_mock.calls, dps_res)
+        print()
+        print(dps_res.dump(camel_case=True))
+        print()
 
-    def test_get_datapoints_by_external_id(self, get_datapoints_mock):
+        self.assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
+
+    def test_get_datapoints_by_external_id(self, mock_get_datapoints):
         dps_res = DPS_CLIENT.get(external_id="123", start=1000000, end=1100000)
-        self.assert_dps_response_is_correct(get_datapoints_mock.calls, dps_res)
+        self.assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
 
-    def test_get_datapoints_aggregates(self, get_datapoints_mock):
-        dps_res = DPS_CLIENT.get(id=123, start=1000000, end=1100000, aggregates=["avg", "step"], granularity="10s")
-        self.assert_dps_response_is_correct(get_datapoints_mock.calls, dps_res)
+    def test_get_datapoints_aggregates(self, mock_get_datapoints):
+        dps_res = DPS_CLIENT.get(
+            id=123, start=1000000, end=1100000, aggregates=["average", "stepInterpolation"], granularity="10s"
+        )
+        self.assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
 
-    def test_datapoints_paging(self, get_datapoints_mock, set_dps_limits, set_dps_workers):
+    def test_datapoints_paging(self, mock_get_datapoints, set_dps_limits, set_dps_workers):
         set_dps_workers(1)
         set_dps_limits(1)
-        dps_res = DPS_CLIENT.get(id=123, start=0, end=10000, aggregates=["avg"], granularity="1s")
-        assert 10 == len(dps_res.datapoints)
+        dps_res = DPS_CLIENT.get(id=123, start=0, end=10000, aggregates=["average"], granularity="1s")
+        assert 10 == len(dps_res)
 
-    def test_datapoints_concurrent(self, get_datapoints_mock, set_dps_workers, set_dps_limits):
+    def test_datapoints_concurrent(self, mock_get_datapoints, set_dps_workers, set_dps_limits):
         set_dps_workers(5)
-        dps_res = DPS_CLIENT.get(id=123, start=0, end=20000, aggregates=["avg"], granularity="1s")
+        dps_res = DPS_CLIENT.get(id=123, start=0, end=20000, aggregates=["average"], granularity="1s")
         requested_windows = sorted(
             [
                 (jsgz_load(call.request.body)["start"], jsgz_load(call.request.body)["end"])
-                for call in get_datapoints_mock.calls
+                for call in mock_get_datapoints.calls
             ],
             key=lambda x: x[0],
         )
 
         assert [(0, 4000), (5000, 9000), (10000, 14000), (15000, 19000)] == requested_windows
-        self.assert_dps_response_is_correct(get_datapoints_mock.calls, dps_res)
+        self.assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
 
     @pytest.mark.parametrize(
         "max_workers, aggregates, granularity, actual_windows_req",
@@ -160,14 +166,14 @@ class TestDatapointsAPI:
             (1, None, None, [(0, 20000), (9001, 20000), (18002, 20000)]),
             (2, None, None, [(0, 10000), (9001, 10000), (10001, 20000), (19002, 20000)]),
             (3, None, None, [(0, 6666), (6667, 13333), (13334, 20000)]),
-            (4, ["avg"], "1s", [(0, 5000), (6000, 11000), (12000, 17000), (18000, 20000)]),
-            (2, ["avg"], "5s", [(0, 10000), (15000, 20000)]),
-            (4, ["avg"], "5s", [(0, 5000), (10000, 15000)]),
+            (4, ["average"], "1s", [(0, 5000), (6000, 11000), (12000, 17000), (18000, 20000)]),
+            (2, ["average"], "5s", [(0, 10000), (15000, 20000)]),
+            (4, ["average"], "5s", [(0, 5000), (10000, 15000)]),
         ],
     )
     def test_request_dps_spacing_correct(
         self,
-        get_datapoints_mock,
+        mock_get_datapoints,
         set_dps_workers,
         set_dps_limits,
         max_workers,
@@ -181,18 +187,18 @@ class TestDatapointsAPI:
         requested_windows = sorted(
             [
                 (jsgz_load(call.request.body)["start"], jsgz_load(call.request.body)["end"])
-                for call in get_datapoints_mock.calls
+                for call in mock_get_datapoints.calls
             ],
             key=lambda x: x[0],
         )
         assert actual_windows_req == requested_windows
 
-    def test_datapoints_paging_with_limit(self, get_datapoints_mock, set_dps_limits):
+    def test_datapoints_paging_with_limit(self, mock_get_datapoints, set_dps_limits):
         set_dps_limits(3)
-        dps_res = DPS_CLIENT.get(id=123, start=0, end=10000, aggregates=["avg"], granularity="1s", limit=4)
-        assert 4 == len(dps_res.datapoints)
+        dps_res = DPS_CLIENT.get(id=123, start=0, end=10000, aggregates=["average"], granularity="1s", limit=4)
+        assert 4 == len(dps_res)
 
-    def test_get_datapoints_multiple_time_series(self, get_datapoints_mock, set_dps_limits):
+    def test_get_datapoints_multiple_time_series(self, mock_get_datapoints, set_dps_limits):
         set_dps_limits(10)
         ids = [1, 2, 3]
         external_ids = ["4", "5", "6"]
@@ -203,10 +209,88 @@ class TestDatapointsAPI:
                 ids.remove(dps_res.id)
             if dps_res.external_id in external_ids:
                 external_ids.remove(dps_res.external_id)
-            self.assert_dps_response_is_correct(get_datapoints_mock.calls, dps_res)
-            print(dps_res)
+            self.assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
         assert 0 == len(ids)
         assert 0 == len(external_ids)
+
+
+@pytest.fixture
+def mock_get_latest(rsps):
+    def request_callback(request):
+        payload = jsgz_load(request.body)
+
+        items = []
+        for latest_query in payload["items"]:
+            id = latest_query.get("id", -1)
+            external_id = latest_query.get("externalId", "-1")
+            before = latest_query.get("before", 10001)
+            items.append(
+                {"id": id, "externalId": external_id, "datapoints": [{"timestamp": before - 1, "value": random()}]}
+            )
+        return 200, {}, json.dumps({"data": {"items": items}})
+
+    rsps.add_callback(
+        rsps.POST,
+        DPS_CLIENT._base_url + "/timeseries/data/latest",
+        callback=request_callback,
+        content_type="application/json",
+    )
+    yield rsps
+
+
+class TestGetLatest:
+    def test_get_latest(self, mock_get_latest):
+        res = DPS_CLIENT.get_latest(id=1)
+        assert isinstance(res, Datapoints)
+        assert 10000 == res[0].timestamp
+        assert isinstance(res[0].value, float)
+
+    def test_get_latest_multiple_ts(self, mock_get_latest):
+        res = DPS_CLIENT.get_latest(id=1, external_id="2")
+        assert isinstance(res, DatapointsList)
+        for dps in res:
+            assert 10000 == dps[0].timestamp
+            assert isinstance(dps[0].value, float)
+
+    def test_get_latest_with_before(self, mock_get_latest):
+        res = DPS_CLIENT.get_latest(id=1, before=10)
+        assert isinstance(res, Datapoints)
+        assert 9 == res[0].timestamp
+        assert isinstance(res[0].value, float)
+
+    def test_get_latest_multiple_ts_with_before(self, mock_get_latest):
+        res = DPS_CLIENT.get_latest(id=[1, 2], external_id=["1", "2"], before=10)
+        assert isinstance(res, DatapointsList)
+        for dps in res:
+            assert 9 == dps[0].timestamp
+            assert isinstance(dps[0].value, float)
+
+
+class TestDatapointsObject:
+    def test_len(self):
+        assert 3 == len(Datapoints(id=1, timestamp=[1, 2, 3], value=[1, 2, 3]))
+
+    def test_get_operative_attr_names(self):
+        assert ["timestamp", "value"] == Datapoints(
+            id=1, timestamp=[1, 2, 3], value=[1, 2, 3]
+        )._get_operative_attr_names()
+        assert ["timestamp", "max", "sum"] == Datapoints(
+            id=1, timestamp=[1, 2, 3], sum=[1, 2, 3], max=[1, 2, 3]
+        )._get_operative_attr_names()
+        assert [] == Datapoints(id=1)._get_operative_attr_names()
+
+    def test_load(self):
+        res = Datapoints._load(
+            {"id": 1, "externalId": "1", "datapoints": [{"timestamp": 1, "value": 1}, {"timestamp": 2, "value": 2}]}
+        )
+        assert 1 == res.id
+        assert "1" == res.external_id
+        assert [1, 2] == res.timestamp
+        assert [1, 2] == res.value
+
+    def test_truncate(self):
+        res = Datapoints(id=1, timestamp=[1, 2, 3])._truncate(limit=1)
+        assert [1] == res.timestamp
 
 
 class TestHelpers:
@@ -222,3 +306,13 @@ class TestHelpers:
     def test_get_datapoints_windows(self, start, end, granularity, num_of_workers, expected_output):
         res = DPS_CLIENT._get_windows(start=start, end=end, granularity=granularity, max_windows=num_of_workers)
         assert expected_output == res
+
+    def test_concatenate_datapoints(self):
+        d1 = Datapoints(id=1, external_id="1", timestamp=[1, 2, 3], value=[1, 2, 3])
+        d2 = Datapoints(id=1, external_id="1", timestamp=[4, 5, 6], value=[4, 5, 6])
+        concatenated = DPS_CLIENT._concatenate_datapoints(d1, d2)
+        assert [1, 2, 3, 4, 5, 6] == concatenated.timestamp
+        assert [1, 2, 3, 4, 5, 6] == concatenated.value
+        assert 1 == concatenated.id
+        assert "1" == concatenated.external_id
+        assert concatenated.sum is None

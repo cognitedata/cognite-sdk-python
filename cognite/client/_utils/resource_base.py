@@ -35,7 +35,11 @@ class CogniteResourceList:
     def __init__(self, resources: List[Any]):
         for resource in resources:
             if not isinstance(resource, self._RESOURCE):
-                raise TypeError("All resources must be of type {}".format(self._RESOURCE.__name__))
+                raise TypeError(
+                    "All resources for class '{}' must be of type '{}', not '{}'.".format(
+                        self.__class__.__name__, self._RESOURCE.__name__, type(resource)
+                    )
+                )
         self._resources = resources
 
     def __getitem__(self, index):
