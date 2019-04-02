@@ -178,7 +178,7 @@ class FilesAPI(APIClient):
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
         external_id_prefix: str = None,
-    ) -> Generator:
+    ) -> Generator[Union[FileMetadata, FileMetadaList], None, None]:
         """Iterate over files
 
         Fetches file metadata objects as they are iterated over, so you keep a limited number of metadata objects in memory.
@@ -203,7 +203,7 @@ class FilesAPI(APIClient):
             FileMetadaList, resource_path=self.RESOURCE_PATH, method="POST", chunk=chunk_size, filter=filter
         )
 
-    def __iter__(self) -> Generator:
+    def __iter__(self) -> Generator[FileMetadata, None, None]:
         """Iterate over files
 
         Fetches file metadata objects as they are iterated over, so you keep a limited number of metadata objects in memory.

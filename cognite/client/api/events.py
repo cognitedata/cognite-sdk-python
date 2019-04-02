@@ -189,7 +189,7 @@ class EventsAPI(APIClient):
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
         external_id_prefix: str = None,
-    ) -> Generator:
+    ) -> Generator[Union[Event, EventList], None, None]:
         """Iterate over events
 
         Fetches events as they are iterated over, so you keep a limited number of events in memory.
@@ -224,7 +224,7 @@ class EventsAPI(APIClient):
             EventList, resource_path=self.RESOURCE_PATH, method="POST", chunk=chunk_size, filter=filter
         )
 
-    def __iter__(self) -> Generator:
+    def __iter__(self) -> Generator[Event, None, None]:
         """Iterate over events
 
         Fetches events as they are iterated over, so you keep a limited number of events in memory.

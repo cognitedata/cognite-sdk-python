@@ -176,7 +176,9 @@ class TimeSeriesUpdate(CogniteUpdate):
 class TimeSeriesAPI(APIClient):
     RESOURCE_PATH = "/timeseries"
 
-    def __call__(self, chunk_size: int = None, include_metadata: bool = False, asset_id: int = None) -> Generator:
+    def __call__(
+        self, chunk_size: int = None, include_metadata: bool = False, asset_id: int = None
+    ) -> Generator[Union[TimeSeries, TimeSeriesList], None, None]:
         """Iterate over files
 
         Fetches time series as they are iterated over, so you keep a limited number of objects in memory.
@@ -194,7 +196,7 @@ class TimeSeriesAPI(APIClient):
             TimeSeriesList, resource_path=self.RESOURCE_PATH, method="GET", chunk=chunk_size, filter=filter
         )
 
-    def __iter__(self) -> Generator:
+    def __iter__(self) -> Generator[TimeSeries, None, None]:
         """Iterate over files
 
         Fetches time series as they are iterated over, so you keep a limited number of metadata objects in memory.

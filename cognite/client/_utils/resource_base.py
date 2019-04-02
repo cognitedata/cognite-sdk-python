@@ -1,6 +1,6 @@
 import json
 from datetime import datetime
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, Generator, List, Union
 
 from cognite.client._utils.utils import to_camel_case, to_snake_case
 
@@ -15,7 +15,7 @@ class CogniteResponse:
     def __eq__(self, other):
         return type(other) == type(self) and other.dump() == self.dump()
 
-    def dump(self, camel_case: bool = False):
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         dumped = {key: value for key, value in self.__dict__.items() if value is not None}
         if camel_case:
             dumped = {to_camel_case(key): value for key, value in dumped.items()}
@@ -42,7 +42,7 @@ class CogniteResourceList:
                 )
         self._resources = resources
 
-    def __getitem__(self, index):
+    def __getitem__(self, index) -> _RESOURCE:
         return self._resources[index]
 
     def __eq__(self, other):
@@ -58,7 +58,7 @@ class CogniteResourceList:
     def __len__(self):
         return len(self._resources)
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[_RESOURCE, None, None]:
         for resource in self._resources:
             yield resource
 
@@ -68,7 +68,7 @@ class CogniteResourceList:
     def __repr__(self):
         return self.__str__()
 
-    def dump(self, camel_case: bool = False):
+    def dump(self, camel_case: bool = False) -> List[Dict[str, Any]]:
         return [resource.dump(camel_case) for resource in self._resources]
 
     def to_pandas(self):
@@ -93,7 +93,7 @@ class CogniteResource:
     def __repr__(self):
         return self.__str__()
 
-    def dump(self, camel_case: bool = False):
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         dumped = {key: value for key, value in self.__dict__.items() if value is not None}
         if camel_case:
             dumped = {to_camel_case(key): value for key, value in dumped.items()}

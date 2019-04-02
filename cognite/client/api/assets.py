@@ -171,7 +171,7 @@ class AssetsAPI(APIClient):
         last_updated_time: Dict[str, Any] = None,
         asset_subtrees: List[int] = None,
         external_id_prefix: str = None,
-    ) -> Generator:
+    ) -> Generator[Union[Asset, AssetList], None, None]:
         """Iterate over assets
 
         Fetches assets as they are iterated over, so you keep a limited number of assets in memory.
@@ -198,7 +198,7 @@ class AssetsAPI(APIClient):
             AssetList, resource_path=self.RESOURCE_PATH, method="POST", chunk=chunk_size, filter=filter
         )
 
-    def __iter__(self) -> Generator:
+    def __iter__(self) -> Generator[Asset, None, None]:
         """Iterate over assets
 
         Fetches assets as they are iterated over, so you keep a limited number of assets in memory.
