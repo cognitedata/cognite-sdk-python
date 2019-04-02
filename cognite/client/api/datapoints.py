@@ -63,15 +63,15 @@ class Datapoints:
     Args:
         id (int): Id of the timeseries the datapoints belong to
         external_id (str): External id of the timeseries the datapoints belong to (Only if id is not set)
-        timestamp (List[Union[int, float]]): The data timestamp in milliseconds since the epoch (Jan 1, 1970).
-        value (List[Union[int, str, float]]): The data value. Can be String or numeric depending on the metric
-        average (List[float]): The integral average value in the aggregate period
-        max (List[float]): The maximum value in the aggregate period
-        min (List[float]): The minimum value in the aggregate period
-        count (List[int]): The number of datapoints in the aggregate period
-        sum (List[float]): The sum of the datapoints in the aggregate period
-        interpolation (List[float]): The interpolated value of the series in the beginning of the aggregate
-        step_interpolation (List[float]): The last value before or at the beginning of the aggregate.
+        timestamp (List[Union[int, float]]): The data timestamps in milliseconds since the epoch (Jan 1, 1970).
+        value (List[Union[int, str, float]]): The data values. Can be String or numeric depending on the metric
+        average (List[float]): The integral average values in the aggregate period
+        max (List[float]): The maximum values in the aggregate period
+        min (List[float]): The minimum values in the aggregate period
+        count (List[int]): The number of datapoints in the aggregate periods
+        sum (List[float]): The sum of the datapoints in the aggregate periods
+        interpolation (List[float]): The interpolated values of the series in the beginning of the aggregates
+        step_interpolation (List[float]): The last values before or at the beginning of the aggregates.
         continuous_variance (List[float]): The variance of the interpolated underlying function.
         discrete_variance (List[float]): The variance of the datapoint values.
         total_variation (List[float]): The total variation of the interpolated underlying function.
@@ -345,7 +345,7 @@ class DatapointsAPI(APIClient):
         return concat_dps_object
 
     @staticmethod
-    def _get_windows(start: int, end: int, granularity: str, max_windows: int):
+    def _get_windows(start: int, end: int, granularity: str, max_windows: int) -> List[_DPWindow]:
         diff = end - start
         granularity_ms = utils.granularity_to_ms(granularity) if granularity else 1
 
@@ -369,7 +369,7 @@ class DatapointsAPI(APIClient):
         id: Union[int, List[int]] = None,
         external_id: Union[str, List[str]] = None,
         before: Union[int, str, datetime] = None,
-    ):
+    ) -> Union[Datapoints, DatapointsList]:
         before = utils.timestamp_to_ms(before) if before else None
         all_ids, is_single_id = self._process_ids(id, external_id, wrap_ids=True)
         if before:
