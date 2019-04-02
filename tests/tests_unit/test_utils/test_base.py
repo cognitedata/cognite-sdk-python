@@ -107,7 +107,7 @@ class TestCogniteResourceList:
         assert 2 == counter
 
     def test_constructor_bad_type(self):
-        with pytest.raises(TypeError, match="must be of type MyResource"):
+        with pytest.raises(TypeError, match="must be of type 'MyResource'"):
             MyResourceList([1, 2, 3])
 
 
