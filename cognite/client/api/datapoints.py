@@ -225,6 +225,15 @@ class DatapointsAPI(APIClient):
                 next_end = end
         return windows
 
+    def insert(self):
+        pass
+
+    def delete(self):
+        pass
+
+    def get_latest(self):
+        pass
+
     # def get_datapoints(self, name, start, end=None, aggregates=None, granularity=None, **kwargs) -> DatapointsResponse:
     #     """Returns a DatapointsObject containing a list of datapoints for the given query.
     #

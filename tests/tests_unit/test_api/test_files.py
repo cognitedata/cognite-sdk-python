@@ -160,12 +160,18 @@ class TestFilesAPI:
         response_body = mock_file_upload_response.calls[0].response.json()["data"]
         del response_body["uploadUrl"]
         assert FileMetadaList([FileMetadata._load(response_body), FileMetadata._load(response_body)]) == res
-        uploaded_names = [jsgz_load(call.request.body)["name"] for call in mock_file_upload_response.calls[:2]]
-        uploaded_content = [call.request.body for call in mock_file_upload_response.calls[2:4]]
-        assert "file_for_test_upload_1.txt" in uploaded_names
-        assert "file_for_test_upload_2.txt" in uploaded_names
-        assert b"content1\n" in uploaded_content
-        assert b"content2\n" in uploaded_content
+        for call in mock_file_upload_response.calls:
+            payload = call.request.body
+            if b"content1\n" == payload:
+                continue
+            elif b"content2\n" == payload:
+                continue
+            elif "file_for_test_upload_1.txt" == jsgz_load(payload)["name"]:
+                continue
+            elif "file_for_test_upload_2.txt" == jsgz_load(payload)["name"]:
+                continue
+            else:
+                raise AssertionError("incorrect payload: {}".format(payload))
 
     def test_upload_from_directory_with_file_metadata(self):
         with pytest.raises(AssertionError, match="must not be specified"):
