@@ -58,7 +58,10 @@ podTemplate(
                     sh("pipenv run sphinx-build -W -b html ./source ./build")
                 }
             }
-            stage('Test and coverage report') {
+            stage('Test OpenAPI Generator'){
+                sh('pipenv run pytest openapi/tests')
+            }
+            stage('Test Client') {
                 sh("pyenv local 3.5.0 3.6.6 3.7.2")
                 sh("pipenv run tox")
                 junit(allowEmptyResults: true, testResults: '**/test-report.xml')
