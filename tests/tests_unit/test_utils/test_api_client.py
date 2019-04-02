@@ -88,7 +88,7 @@ class TestBasicRequests:
     def test_request_gzip_enabled(self, rsps):
         def check_gzip_enabled(request):
             assert "Content-Encoding" in request.headers
-            assert {"any": "OK"} == json.loads(gzip.decompress(request.body))
+            assert {"any": "OK"} == jsgz_load(request.body)
             return 200, {}, json.dumps(RESPONSE)
 
         for method in [rsps.PUT, rsps.POST]:

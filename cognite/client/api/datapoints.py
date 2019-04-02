@@ -205,14 +205,11 @@ class DatapointsAPI(APIClient):
     @staticmethod
     def _get_windows(start: int, end: int, granularity: str, max_windows: int):
         diff = end - start
-        granularity_ms = 1
-        if granularity:
-            granularity_ms = utils.granularity_to_ms(granularity)
+        granularity_ms = utils.granularity_to_ms(granularity) if granularity else 1
 
         # Ensure that number of steps is not greater than the number data points that will be returned
         steps = min(max_windows, max(1, int(diff / granularity_ms)))
-        # # Make step size a multiple of the granularity requested in order to ensure evenly spaced results
-        # step_size = _round_to_nearest(int(diff / steps), base=granularity_ms)
+
         step_size = diff // steps
         windows = []
         next_start = start
@@ -225,13 +222,16 @@ class DatapointsAPI(APIClient):
                 next_end = end
         return windows
 
+    def get_latest(self):
+        pass
+
+    def get_dataframe(self):
+        pass
+
     def insert(self):
         pass
 
     def delete(self):
-        pass
-
-    def get_latest(self):
         pass
 
     # def get_datapoints(self, name, start, end=None, aggregates=None, granularity=None, **kwargs) -> DatapointsResponse:
