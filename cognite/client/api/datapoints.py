@@ -334,8 +334,8 @@ class DatapointsAPI(APIClient):
 
     @staticmethod
     def _concatenate_datapoints(*dps_objects: Datapoints) -> Datapoints:
-        # assert 1 == len(set([dps.id for dps in dps_objects]))
-        # assert 1 == len(set([dps.external_id for dps in dps_objects]))
+        assert 1 == len(set([dps.id for dps in dps_objects]))
+        assert 1 == len(set([dps.external_id for dps in dps_objects]))
         concat_dps_object = Datapoints(id=dps_objects[0].id, external_id=dps_objects[0].external_id)
         for dps in dps_objects:
             for attr in dps._get_operative_attr_names():
