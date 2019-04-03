@@ -76,12 +76,11 @@ podTemplate(
                 sh("python3 setup.py bdist_wheel")
             }
 
-            def pipVersion = sh(returnStdout: true, script: 'pipenv run yolk -V cognite-sdk | sort -n | tail -1 | cut -d\\  -f 2').trim()
             def currentVersion = sh(returnStdout: true, script: 'sed -n -e "/^__version__/p" cognite/client/__init__.py | cut -d\\" -f2').trim()
-
+            def versionExists = sh(returnStdout: true, script: 'python3 version_checker.py -p cognite-sdk -v ${currentVersion}')
             println("This version: " + currentVersion)
-            println("Latest pip version: " + pipVersion)
-            if (env.BRANCH_NAME == 'master' && currentVersion != pipVersion) {
+            println("Version Exists: " + versionExists)
+            if (env.BRANCH_NAME == 'master' && versionExists == 'no') {
                 stage('Release') {
                     sh("pipenv run twine upload --config-file /pypi/.pypirc dist/*")
                 }
