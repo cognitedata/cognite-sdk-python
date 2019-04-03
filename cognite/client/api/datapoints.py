@@ -150,27 +150,25 @@ class Datapoints:
                 setattr(instance, snake_key, current_attr)
         return instance
 
-    def _get_operative_attr_names(self) -> List[str]:
-        attrs = []
-        for attr in self.__dict__.copy():
-            if attr not in ["id", "external_id", "_Datapoints__datapoint_objects"] and getattr(self, attr) is not None:
-                attrs.append(attr)
-        return attrs
+    def _get_operative_attrs(self) -> Generator[Tuple[str, Any], None, None]:
+        for attr, value in self.__dict__.copy().items():
+            if attr not in ["id", "external_id", "_Datapoints__datapoint_objects"] and value is not None:
+                yield attr, value
 
     def __get_datapoint_objects(self) -> List[Datapoint]:
         if self.__datapoint_objects is None:
             self.__datapoint_objects = []
             for i in range(len(self)):
                 dp_args = {}
-                for attr in self._get_operative_attr_names():
+                for attr, value in self._get_operative_attrs():
                     dp_args[attr] = getattr(self, attr)[i]
                 self.__datapoint_objects.append(Datapoint(**dp_args))
         return self.__datapoint_objects
 
     def _truncate(self, limit: int):
         truncated_datapoints = Datapoints(id=self.id, external_id=self.external_id)
-        for attr in self._get_operative_attr_names():
-            setattr(truncated_datapoints, attr, getattr(self, attr)[:limit])
+        for attr, value in self._get_operative_attrs():
+            setattr(truncated_datapoints, attr, value[:limit])
         return truncated_datapoints
 
 
@@ -338,9 +336,9 @@ class DatapointsAPI(APIClient):
         assert 1 == len(set([dps.external_id for dps in dps_objects]))
         concat_dps_object = Datapoints(id=dps_objects[0].id, external_id=dps_objects[0].external_id)
         for dps in dps_objects:
-            for attr in dps._get_operative_attr_names():
+            for attr, value in dps._get_operative_attrs():
                 current = getattr(concat_dps_object, attr) or []
-                current.extend(getattr(dps, attr))
+                current.extend(value)
                 setattr(concat_dps_object, attr, current)
         return concat_dps_object
 

@@ -270,14 +270,14 @@ class TestDatapointsObject:
     def test_len(self):
         assert 3 == len(Datapoints(id=1, timestamp=[1, 2, 3], value=[1, 2, 3]))
 
-    def test_get_operative_attr_names(self):
-        assert ["timestamp", "value"] == Datapoints(
-            id=1, timestamp=[1, 2, 3], value=[1, 2, 3]
-        )._get_operative_attr_names()
-        assert ["timestamp", "max", "sum"] == Datapoints(
-            id=1, timestamp=[1, 2, 3], sum=[1, 2, 3], max=[1, 2, 3]
-        )._get_operative_attr_names()
-        assert [] == Datapoints(id=1)._get_operative_attr_names()
+    def test_get_operative_attrs(self):
+        assert [("timestamp", [1, 2, 3]), ("value", [1, 2, 3])] == list(
+            Datapoints(id=1, timestamp=[1, 2, 3], value=[1, 2, 3])._get_operative_attrs()
+        )
+        assert sorted([("timestamp", [1, 2, 3]), ("max", [1, 2, 3]), ("sum", [1, 2, 3])]) == sorted(
+            list(Datapoints(id=1, timestamp=[1, 2, 3], sum=[1, 2, 3], max=[1, 2, 3])._get_operative_attrs())
+        )
+        assert [] == list(Datapoints(id=1)._get_operative_attrs())
 
     def test_load(self):
         res = Datapoints._load(
