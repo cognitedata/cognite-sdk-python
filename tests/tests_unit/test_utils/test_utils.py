@@ -28,7 +28,7 @@ class TestDatetimeToMs:
 
 
 class TestTimestampToMs:
-    @pytest.mark.parametrize("t", [None, 1.23, [], {}])
+    @pytest.mark.parametrize("t", [None, [], {}])
     def test_invalid_type(self, t):
         with pytest.raises(TypeError, match="must be"):
             utils.timestamp_to_ms(t)
@@ -40,6 +40,10 @@ class TestTimestampToMs:
     def test_datetime(self):
         assert 1514764800000 == utils.timestamp_to_ms(datetime(2018, 1, 1))
         assert 1546300800000 == utils.timestamp_to_ms(datetime(2019, 1, 1))
+
+    def test_float(self):
+        assert 1514760000000 == utils.timestamp_to_ms(1514760000000.0)
+        assert 1514764800000 == utils.timestamp_to_ms(1514764800000.0)
 
     @mock.patch("cognite.client._utils.utils.time.time")
     @pytest.mark.parametrize(
@@ -140,3 +144,29 @@ class TestCaseConversion:
         assert "snake_case" == utils.to_snake_case("snakeCase")
         assert "snake_case" == utils.to_snake_case("snake_case")
         assert "a" == utils.to_snake_case("a")
+
+
+class TestAssertions:
+    @pytest.mark.parametrize("timestamp", [utils.timestamp_to_ms(datetime(2018, 1, 1)), datetime(1970, 2, 2), "now"])
+    def test_assert_timestamp_not_in_jan_in_1970_ok(self, timestamp):
+        utils.assert_timestamp_not_in_jan_in_1970(timestamp)
+
+    @pytest.mark.parametrize("timestamp", [utils.timestamp_to_ms(datetime(2018, 1, 1)) / 1000, datetime(1970, 2, 1)])
+    def test_assert_timestamp_not_in_jan_in_1970_fail(self, timestamp):
+        with pytest.raises(AssertionError, match="You are attempting to post data in January 1970"):
+            utils.assert_timestamp_not_in_jan_in_1970(timestamp)
+
+    @pytest.mark.parametrize("var, var_name, types", [(1, "var1", (int,)), ("1", "var2", (int, str))])
+    def test_assert_type_ok(self, var, var_name, types):
+        utils.assert_type(var, var_name, *types)
+
+    @pytest.mark.parametrize("var, var_name, types", [("1", "var", (int, float)), ((1,), "var2", (dict, list))])
+    def test_assert_type_fail(self, var, var_name, types):
+        with pytest.raises(TypeError, match=str(types)):
+            utils.assert_type(var, var_name, *types)
+
+    def test_assert_exactly_one_of_id_and_external_id(self):
+        with pytest.raises(AssertionError):
+            utils.assert_exactly_one_of_id_or_external_id(1, "1")
+        utils.assert_exactly_one_of_id_or_external_id(1, None)
+        utils.assert_exactly_one_of_id_or_external_id(None, "1")

@@ -341,6 +341,80 @@ class TestGetLatest:
             assert 0 == len(res)
 
 
+@pytest.fixture
+def mock_post_datapoints(rsps):
+    rsps.add(rsps.POST, DPS_CLIENT._base_url + "/timeseries/data", status=200, json={})
+    yield rsps
+
+
+class TestInsertDatapoints:
+    def test_insert_tuples(self, mock_post_datapoints):
+        dps = [(i * 1e10, i) for i in range(1, 11)]
+        DPS_CLIENT.insert(dps, id=1)
+        assert {
+            "items": {"id": 1, "datapoints": [{"timestamp": int(i * 1e10), "value": i} for i in range(1, 11)]}
+        } == jsgz_load(mock_post_datapoints.calls[0].request.body)
+
+    def test_insert_dicts(self, mock_post_datapoints):
+        dps = [{"timestamp": i * 1e10, "value": i} for i in range(1, 11)]
+        DPS_CLIENT.insert(dps, id=1)
+        assert {
+            "items": {"id": 1, "datapoints": [{"timestamp": int(i * 1e10), "value": i} for i in range(1, 11)]}
+        } == jsgz_load(mock_post_datapoints.calls[0].request.body)
+
+    def test_by_external_id(self, mock_post_datapoints):
+        dps = [(i * 1e10, i) for i in range(1, 11)]
+        DPS_CLIENT.insert(dps, external_id="1")
+        assert {
+            "items": {"externalId": "1", "datapoints": [{"timestamp": int(i * 1e10), "value": i} for i in range(1, 11)]}
+        } == jsgz_load(mock_post_datapoints.calls[0].request.body)
+
+    def test_insert_datapoints_in_jan_1970(self):
+        dps = [{"timestamp": i, "value": i} for i in range(1, 11)]
+        with pytest.raises(AssertionError):
+            DPS_CLIENT.insert(dps, id=1)
+
+    @pytest.mark.parametrize("ts_key, value_key", [("timestamp", "values"), ("timstamp", "value")])
+    def test_invalid_datapoints_keys(self, ts_key, value_key):
+        dps = [{ts_key: i * 1e10, value_key: i} for i in range(1, 11)]
+        with pytest.raises(AssertionError, match="is missing the"):
+            DPS_CLIENT.insert(dps, id=1)
+
+    def test_insert_datapoints_over_limit(self, set_dps_limits, mock_post_datapoints):
+        set_dps_limits(5)
+        dps = [(i * 1e10, i) for i in range(1, 11)]
+        DPS_CLIENT.insert(dps, id=1)
+        request_bodies = [jsgz_load(call.request.body) for call in mock_post_datapoints.calls]
+        assert {
+            "items": {"id": 1, "datapoints": [{"timestamp": int(i * 1e10), "value": i} for i in range(1, 6)]}
+        } in request_bodies
+        assert {
+            "items": {"id": 1, "datapoints": [{"timestamp": int(i * 1e10), "value": i} for i in range(6, 11)]}
+        } in request_bodies
+
+    def test_insert_datapoints_no_data(self):
+        with pytest.raises(AssertionError, match="No datapoints provided"):
+            DPS_CLIENT.insert(id=1, datapoints=[])
+
+    def test_insert_datapoints_in_multiple_time_series(self, mock_post_datapoints):
+        dps = [{"timestamp": i * 1e10, "value": i} for i in range(1, 11)]
+        dps_objects = [{"externalId": "1", "datapoints": dps}, {"id": 1, "datapoints": dps}]
+        DPS_CLIENT.insert_multiple(dps_objects)
+        request_bodies = [jsgz_load(call.request.body) for call in mock_post_datapoints.calls]
+        assert {
+            "items": {"id": 1, "datapoints": [{"timestamp": int(i * 1e10), "value": i} for i in range(1, 11)]}
+        } in request_bodies
+        assert {
+            "items": {"externalId": "1", "datapoints": [{"timestamp": int(i * 1e10), "value": i} for i in range(1, 11)]}
+        } in request_bodies
+
+    def test_insert_datapoints_in_multiple_time_series_invalid_key(self):
+        dps = [{"timestamp": i * 1e10, "value": i} for i in range(1, 11)]
+        dps_objects = [{"extId": "1", "datapoints": dps}]
+        with pytest.raises(AssertionError, match="Invalid key 'extId'"):
+            DPS_CLIENT.insert_multiple(dps_objects)
+
+
 class TestDatapointsObject:
     def test_len(self):
         assert 3 == len(Datapoints(id=1, timestamp=[1, 2, 3], value=[1, 2, 3]))

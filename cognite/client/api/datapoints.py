@@ -291,11 +291,37 @@ class DatapointsAPI(APIClient):
             return results[0]
         return DatapointsList(results)
 
-    def insert(self):
-        pass
+    def insert(
+        self,
+        datapoints: Union[
+            List[Dict[Union[int, float, datetime], Union[int, float, str]]],
+            List[Tuple[Union[int, float, datetime], Union[int, float, str]]],
+        ],
+        id: int = None,
+        external_id: str = None,
+    ):
+        utils.assert_exactly_one_of_id_or_external_id(id, external_id)
+        datapoints = self._validate_and_format_datapoints(datapoints)
+        utils.assert_timestamp_not_in_jan_in_1970(datapoints[0]["timestamp"])
+        if id:
+            post_dps_object = {"id": id}
+        else:
+            post_dps_object = {"externalId": external_id}
+        post_dps_object.update({"datapoints": datapoints})
+        self._insert_datapoints_concurrently([post_dps_object])
 
-    def insert_multiple(self):
-        pass
+    def insert_multiple(self, datapoints: List[Dict[str, Union[str, int, List]]]):
+        valid_dps_objects = []
+        for dps_object in datapoints:
+            for key in dps_object:
+                if key not in ("id", "externalId", "datapoints"):
+                    raise AssertionError(
+                        "Invalid key '{}' in datapoints. Must contain 'datapoints', and 'id' or 'externalId".format(key)
+                    )
+            valid_dps_object = dps_object.copy()
+            valid_dps_object["datapoints"] = self._validate_and_format_datapoints(dps_object["datapoints"])
+            valid_dps_objects.append(valid_dps_object)
+        self._insert_datapoints_concurrently(valid_dps_objects)
 
     def delete_range(self):
         pass
@@ -448,3 +474,36 @@ class DatapointsAPI(APIClient):
                 )
             return item
         raise TypeError("Invalid type '{}' for argument '{}'".format(type(item), item_type))
+
+    def _insert_datapoints_concurrently(self, post_dps_objects: List[Dict[str, Any]]):
+        tasks = []
+        for dps_object in post_dps_objects:
+            for i in range(0, len(dps_object["datapoints"]), self._LIMIT):
+                dps_object_chunk = dps_object.copy()
+                dps_object_chunk["datapoints"] = dps_object["datapoints"][i : i + self._LIMIT]
+                tasks.append((dps_object_chunk,))
+        utils.execute_tasks_concurrently(self._insert_datapoints, tasks, max_workers=self._max_workers)
+
+    def _insert_datapoints(self, post_dps_objects: List[Dict[str, Any]]):
+        self._post(url_path=self._RESOURCE_PATH, json={"items": post_dps_objects})
+
+    def _validate_and_format_datapoints(
+        self,
+        datapoints: Union[
+            List[Dict[Union[int, float, datetime], Union[int, float, str]]],
+            List[Tuple[Union[int, float, datetime], Union[int, float, str]]],
+        ],
+    ) -> List[Dict[str, int]]:
+        utils.assert_type(datapoints, "datapoints", list)
+        assert len(datapoints) > 0, "No datapoints provided"
+        utils.assert_type(datapoints[0], "datapoints element", tuple, dict)
+
+        valid_datapoints = []
+        if isinstance(datapoints[0], tuple):
+            valid_datapoints = [{"timestamp": utils.timestamp_to_ms(t), "value": v} for t, v in datapoints]
+        elif isinstance(datapoints[0], dict):
+            for dp in datapoints:
+                assert "timestamp" in dp, "A datapoint is missing the 'timestamp' key"
+                assert "value" in dp, "A datapoint is missing the 'value' key"
+                valid_datapoints.append({"timestamp": utils.timestamp_to_ms(dp["timestamp"]), "value": dp["value"]})
+        return valid_datapoints

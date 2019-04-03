@@ -396,7 +396,7 @@ class TestStandardUpdate:
 
         with pytest.raises(AssertionError, match="one of 'id' and 'external_id'"):
             API_CLIENT._update_multiple(
-                SomeResourceList, resource_path=URL_PATH, items=[SomeResource(id=1, external_id=1, y=100)]
+                SomeResourceList, resource_path=URL_PATH, items=[SomeResource(id=1, external_id="1", y=100)]
             )
 
     def test_standard_update_with_cognite_update_object_OK(self, rsps):

@@ -11,7 +11,7 @@ import time
 from collections import namedtuple
 from concurrent.futures.thread import ThreadPoolExecutor
 from datetime import datetime
-from typing import Callable, Dict, List, Tuple, Union
+from typing import Any, Callable, Dict, List, Tuple, Union
 
 import cognite.client
 
@@ -68,10 +68,12 @@ def time_ago_to_ms(time_ago_string: str) -> int:
     return ms
 
 
-def timestamp_to_ms(t: Union[int, str, datetime]):
+def timestamp_to_ms(t: Union[int, float, str, datetime]):
     """Returns the ms representation of some timestamp given by milliseconds, time-ago format or datetime object"""
     if isinstance(t, int):
         ms = t
+    elif isinstance(t, float):
+        ms = int(t)
     elif isinstance(t, str):
         ms = int(round(time.time() * 1000)) - time_ago_to_ms(t)
     elif isinstance(t, datetime):
@@ -111,7 +113,24 @@ def execute_tasks_concurrently(func: Callable, tasks: Union[List[Tuple], List[Di
 
 
 def assert_exactly_one_of_id_or_external_id(id, external_id):
+    assert_type(id, "id", int, allow_none=True)
+    assert_type(external_id, "external_id", str, allow_none=True)
     assert (id or external_id) and not (id and external_id), "Exactly one of 'id' and 'external_id' must be specified"
+
+
+def assert_timestamp_not_in_jan_in_1970(timestamp: Union[int, float, str, datetime]):
+    dt = ms_to_datetime(timestamp_to_ms(timestamp))
+    assert dt > datetime(
+        1970, 2, 1
+    ), "You are attempting to post data in January 1970. Have you forgotten to multiply your timestamps by 1000?"
+
+
+def assert_type(var: Any, var_name: str, *types, allow_none=False):
+    if var is None:
+        if not allow_none:
+            raise TypeError("{} cannot be None".format(var_name))
+    elif not isinstance(var, types):
+        raise TypeError("{} must be one of types {}".format(var_name, types))
 
 
 def get_user_agent():
