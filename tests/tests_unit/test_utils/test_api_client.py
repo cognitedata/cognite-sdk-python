@@ -7,7 +7,7 @@ import pytest
 
 from cognite.client import APIError
 from cognite.client._utils.api_client import APIClient
-from cognite.client._utils.resource_base import CogniteResource, CogniteResourceList, CogniteUpdate
+from cognite.client._utils.base import CogniteResource, CogniteResourceList, CogniteUpdate
 from tests.utils import jsgz_load
 
 BASE_URL = "http://localtest.com/api/1.0/projects/test_proj"

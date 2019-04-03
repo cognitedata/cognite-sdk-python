@@ -3,7 +3,7 @@ from copy import copy
 from typing import *
 
 from cognite.client._utils.api_client import APIClient
-from cognite.client._utils.resource_base import CogniteResponse
+from cognite.client._utils.base import CogniteResponse
 
 
 class LoginStatusResponse(CogniteResponse):

@@ -7,7 +7,7 @@ from typing import List
 
 from cognite.client._utils import utils
 from cognite.client._utils.api_client import APIClient
-from cognite.client._utils.resource_base import CogniteResource, CogniteResourceList
+from cognite.client._utils.base import CogniteResource, CogniteResourceList
 
 
 class Datapoint(CogniteResource):

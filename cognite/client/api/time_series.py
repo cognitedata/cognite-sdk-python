@@ -4,7 +4,7 @@ from typing import List
 from urllib.parse import quote
 
 from cognite.client._utils.api_client import APIClient
-from cognite.client._utils.resource_base import CogniteFilter, CogniteResource, CogniteResourceList, CogniteUpdate
+from cognite.client._utils.base import CogniteFilter, CogniteResource, CogniteResourceList, CogniteUpdate
 
 
 # GenClass: GetTimeSeriesMetadataDTO

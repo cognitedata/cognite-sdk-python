@@ -8,17 +8,17 @@ Cognite Client
 
 Responses
 ---------
-.. autoclass:: cognite.client._utils.resource_base.CogniteResource
+.. autoclass:: cognite.client._utils.base.CogniteResource
     :members:
     :undoc-members:
     :show-inheritance:
 
-.. autoclass:: cognite.client._utils.resource_base.CogniteResourceList
+.. autoclass:: cognite.client._utils.base.CogniteResourceList
     :members:
     :undoc-members:
     :show-inheritance:
 
-.. autoclass:: cognite.client._utils.resource_base.CogniteResponse
+.. autoclass:: cognite.client._utils.base.CogniteResponse
     :members:
     :undoc-members:
     :show-inheritance:

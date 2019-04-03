@@ -3,7 +3,7 @@ from typing import Dict, List
 
 import pytest
 
-from cognite.client._utils.resource_base import (
+from cognite.client._utils.base import (
     CogniteFilter,
     CogniteResource,
     CogniteResourceList,
