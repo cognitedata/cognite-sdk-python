@@ -96,7 +96,7 @@ class Datapoints:
     ):
         self.id = id
         self.external_id = external_id
-        self.timestamp = timestamp
+        self.timestamp = timestamp or []
         self.value = value
         self.average = average
         self.max = max
@@ -176,33 +176,30 @@ class DatapointsList(CogniteResourceList):
     _RESOURCE = Datapoints
 
 
-# GenClass: DatapointsQuery
 class DatapointsQuery(CogniteResource):
     """Parameters describing a query for datapoints.
 
     Args:
+        start (Union[str, int, datetime]): Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s. Example: '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since epoch.
+        end (Union[str, int, datetime]): Get datapoints up to this time. The format is the same as for start.
         id (int): Id of the timeseries to query
         external_id (str): External id of the timeseries to query (Only if id is not set)
-        start (str): Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s. Example: '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since epoch.
-        end (str): Get datapoints up to this time. The format is the same as for start.
         limit (int): Return up to this number of datapoints.
         aggregates (List[str]): The aggregates to be returned.  Use default if null. An empty string must be sent to get raw data if the default is a set of aggregates.
         granularity (str): The granularity size and granularity of the aggregates.
         include_outside_points (bool): Whether to include the last datapoint before the requested time period,and the first one after the requested period. This can be useful for interpolating data. Not available for aggregates.
-        aliases (List[Dict[str, Any]]): No description.
     """
 
     def __init__(
         self,
+        start: Union[str, int, datetime],
+        end: Union[str, int, datetime],
         id: int = None,
         external_id: str = None,
-        start: str = None,
-        end: str = None,
         limit: int = None,
         aggregates: List[str] = None,
         granularity: str = None,
         include_outside_points: bool = None,
-        aliases: List[Dict[str, Any]] = None,
     ):
         self.id = id
         self.external_id = external_id
@@ -212,9 +209,6 @@ class DatapointsQuery(CogniteResource):
         self.aggregates = aggregates
         self.granularity = granularity
         self.include_outside_points = include_outside_points
-        self.aliases = aliases
-
-    # GenStop
 
 
 _DPWindow = namedtuple("Window", ["start", "end"])
@@ -229,8 +223,10 @@ class DatapointsAPI(APIClient):
         self,
         start: Union[int, str, datetime],
         end: Union[int, str, datetime],
-        id: Union[int, List[int]] = None,
-        external_id: Union[str, List[str]] = None,
+        id: Union[int, List[int], Dict[str, Union[int, List[str]]], List[Dict[str, Union[int, List[str]]]]] = None,
+        external_id: Union[
+            int, List[int], Dict[str, Union[int, List[str]]], List[Dict[str, Union[int, List[str]]]]
+        ] = None,
         aggregates: List[str] = None,
         granularity: str = None,
         include_outside_points: bool = None,
@@ -238,20 +234,20 @@ class DatapointsAPI(APIClient):
     ) -> Union[Datapoints, DatapointsList]:
         start = utils.timestamp_to_ms(start)
         end = utils.timestamp_to_ms(end)
-        all_ids, is_single_id = self._process_ids(id, external_id, wrap_ids=True)
+        ts_items, is_single_id = self._process_ts_identifiers(id, external_id)
 
-        max_workers_per_ts = max(self._max_workers // len(all_ids), 1)
+        max_workers_per_ts = max(self._max_workers // len(ts_items), 1)
         if include_outside_points:
             max_workers_per_ts = 1
 
         tasks = []
-        for id_object in all_ids:
+        for ts_item in ts_items:
             tasks.append(
-                (start, end, id_object, aggregates, granularity, include_outside_points, limit, max_workers_per_ts)
+                (start, end, ts_item, aggregates, granularity, include_outside_points, limit, max_workers_per_ts)
             )
 
         results = utils.execute_tasks_concurrently(
-            self._get_datapoints_concurrently, tasks, max_workers=min(self._max_workers, len(all_ids))
+            self._get_datapoints_concurrently, tasks, max_workers=min(self._max_workers, len(ts_items))
         )
 
         if limit:
@@ -264,11 +260,60 @@ class DatapointsAPI(APIClient):
             return dps_list[0]
         return dps_list
 
+    def get_latest(
+        self,
+        id: Union[int, List[int]] = None,
+        external_id: Union[str, List[str]] = None,
+        before: Union[int, str, datetime] = None,
+    ) -> Union[Datapoints, DatapointsList]:
+        before = utils.timestamp_to_ms(before) if before else None
+        all_ids, is_single_id = self._process_ids(id, external_id, wrap_ids=True)
+        if before:
+            for id in all_ids:
+                id.update({"before": before})
+
+        res = self._post(url_path=self._RESOURCE_PATH + "/latest", json={"items": all_ids}).json()["data"]["items"]
+        if is_single_id:
+            return Datapoints._load(res[0])
+        return DatapointsList._load(res)
+
+    def query(self, query: Union[DatapointsQuery, List[DatapointsQuery]]) -> Union[Datapoints, DatapointsList]:
+        is_single_query = False
+        if isinstance(query, DatapointsQuery):
+            is_single_query = True
+            query = [query]
+
+        tasks = []
+        for q in query:
+            tasks.append((q.start, q.end, q.id, q.external_id, q.aggregates, q.granularity, q.include_outside_points))
+        results = utils.execute_tasks_concurrently(self.get, tasks, max_workers=self._max_workers)
+        if is_single_query:
+            return results[0]
+        return DatapointsList(results)
+
+    def insert(self):
+        pass
+
+    def insert_multiple(self):
+        pass
+
+    def delete_range(self):
+        pass
+
+    def delete_ranges(self):
+        pass
+
+    def get_dataframe(self):
+        pass
+
+    def insert_dataframe(self):
+        pass
+
     def _get_datapoints_concurrently(
         self,
         start: int,
         end: int,
-        identifier: Dict[str, Union[str, int]],
+        ts_item: Dict[str, Any],
         aggregates: List[str],
         granularity: str,
         include_outside_points: bool,
@@ -276,7 +321,7 @@ class DatapointsAPI(APIClient):
         max_workers: int,
     ) -> Datapoints:
         windows = self._get_windows(start, end, granularity=granularity, max_windows=max_workers)
-        tasks = [(w.start, w.end, identifier, aggregates, granularity, include_outside_points, limit) for w in windows]
+        tasks = [(w.start, w.end, ts_item, aggregates, granularity, include_outside_points, limit) for w in windows]
         dps_objects = utils.execute_tasks_concurrently(self._get_datapoints_with_paging, tasks, max_workers=max_workers)
         return self._concatenate_datapoints(*dps_objects)
 
@@ -284,7 +329,7 @@ class DatapointsAPI(APIClient):
         self,
         start: int,
         end: int,
-        identifier: Dict[str, Union[str, int]],
+        ts_item: Dict[str, Any],
         aggregates: List[str],
         granularity: str,
         include_outside_points: bool,
@@ -292,34 +337,34 @@ class DatapointsAPI(APIClient):
     ) -> Datapoints:
         per_request_limit = self._LIMIT_AGG if aggregates else self._LIMIT
         next_start = start
-        last_received_datapoints = Datapoints(timestamp=[])
         datapoints = Datapoints(timestamp=[])
+        concatenated_datapoints = Datapoints(timestamp=[])
         while (
-            (len(datapoints) == 0 or len(last_received_datapoints) == per_request_limit)
+            (len(concatenated_datapoints) == 0 or len(datapoints) == per_request_limit)
             and end > next_start
-            and len(datapoints) < (limit or float("inf"))
+            and len(concatenated_datapoints) < (limit or float("inf"))
         ):
-            last_received_datapoints = self._get_datapoints(
-                next_start, end, identifier, aggregates, granularity, include_outside_points
-            )
-            latest_timestamp = int(last_received_datapoints.timestamp[-1])
+            datapoints = self._get_datapoints(next_start, end, ts_item, aggregates, granularity, include_outside_points)
+            if len(datapoints) == 0:
+                break
+            latest_timestamp = int(datapoints.timestamp[-1])
             next_start = latest_timestamp + (utils.granularity_to_ms(granularity) if granularity else 1)
-            datapoints.id = last_received_datapoints.id
-            datapoints.external_id = last_received_datapoints.external_id
-            datapoints = self._concatenate_datapoints(datapoints, last_received_datapoints)
-        return datapoints
+            concatenated_datapoints.id = datapoints.id
+            concatenated_datapoints.external_id = datapoints.external_id
+            concatenated_datapoints = self._concatenate_datapoints(concatenated_datapoints, datapoints)
+        return concatenated_datapoints
 
     def _get_datapoints(
         self,
         start: int,
         end: int,
-        identifier: Dict[str, Union[str, int]],
+        ts_item: Dict[str, Any],
         aggregates: List[str],
         granularity: str,
         include_outside_points: bool,
     ) -> Datapoints:
         payload = {
-            "items": [identifier],
+            "items": [ts_item],
             "start": start,
             "end": end,
             "aggregates": aggregates,
@@ -362,28 +407,44 @@ class DatapointsAPI(APIClient):
                 next_end = end
         return windows
 
-    def get_latest(
-        self,
-        id: Union[int, List[int]] = None,
-        external_id: Union[str, List[str]] = None,
-        before: Union[int, str, datetime] = None,
-    ) -> Union[Datapoints, DatapointsList]:
-        before = utils.timestamp_to_ms(before) if before else None
-        all_ids, is_single_id = self._process_ids(id, external_id, wrap_ids=True)
-        if before:
-            for id in all_ids:
-                id.update({"before": before})
+    @staticmethod
+    def _process_ts_identifiers(ids, external_ids) -> Tuple[List[Dict], bool]:
+        is_list = False
+        items = []
 
-        res = self._post(url_path=self._RESOURCE_PATH + "/latest", json={"items": all_ids}).json()["data"]["items"]
-        if is_single_id:
-            return Datapoints._load(res[0])
-        return DatapointsList._load(res)
+        if isinstance(ids, List):
+            is_list = True
+            for item in ids:
+                items.append(DatapointsAPI._process_single_ts_item(item, False))
+        elif ids is None:
+            pass
+        else:
+            items.append(DatapointsAPI._process_single_ts_item(ids, False))
 
-    def get_dataframe(self):
-        pass
+        if isinstance(external_ids, List):
+            is_list = True
+            for item in external_ids:
+                items.append(DatapointsAPI._process_single_ts_item(item, True))
+        elif external_ids is None:
+            pass
+        else:
+            items.append(DatapointsAPI._process_single_ts_item(external_ids, True))
 
-    def insert(self):
-        pass
+        return items, not is_list and len(items) == 1
 
-    def delete(self):
-        pass
+    @staticmethod
+    def _process_single_ts_item(item, external: bool):
+        item_type = "externalId" if external else "id"
+        id_type = str if external else int
+        if isinstance(item, id_type):
+            return {item_type: item}
+        elif isinstance(item, Dict):
+            for key in item:
+                if not key in [item_type, "aggregates"]:
+                    raise ValueError("Unknown key '{}' in {} dict argument".format(key, item_type))
+            if not item_type in item:
+                raise ValueError(
+                    "When passing a dict to the {} argument, '{}' must be specified.".format(item_type, item_type)
+                )
+            return item
+        raise TypeError("Invalid type '{}' for argument '{}'".format(type(item), item_type))
