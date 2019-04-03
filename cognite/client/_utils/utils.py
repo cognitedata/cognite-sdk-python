@@ -115,7 +115,7 @@ def execute_tasks_concurrently(func: Callable, tasks: Union[List[Tuple], List[Di
 def assert_exactly_one_of_id_or_external_id(id, external_id):
     assert_type(id, "id", int, allow_none=True)
     assert_type(external_id, "external_id", str, allow_none=True)
-    assert (id or external_id) and not (id and external_id), "Exactly one of 'id' and 'external_id' must be specified"
+    assert (id or external_id) and not (id and external_id), "Exactly one of id and external id must be specified"
 
 
 def assert_timestamp_not_in_jan_in_1970(timestamp: Union[int, float, str, datetime]):

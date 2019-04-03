@@ -303,12 +303,9 @@ class DatapointsAPI(APIClient):
         utils.assert_exactly_one_of_id_or_external_id(id, external_id)
         datapoints = self._validate_and_format_datapoints(datapoints)
         utils.assert_timestamp_not_in_jan_in_1970(datapoints[0]["timestamp"])
-        if id:
-            post_dps_object = {"id": id}
-        else:
-            post_dps_object = {"externalId": external_id}
-        post_dps_object.update({"datapoints": datapoints})
-        self._insert_datapoints_concurrently([post_dps_object])
+        post_dps_object, _ = self._process_ids(id, external_id, wrap_ids=True)
+        post_dps_object[0].update({"datapoints": datapoints})
+        self._insert_datapoints_concurrently(post_dps_object)
 
     def insert_multiple(self, datapoints: List[Dict[str, Union[str, int, List]]]):
         valid_dps_objects = []
@@ -323,17 +320,42 @@ class DatapointsAPI(APIClient):
             valid_dps_objects.append(valid_dps_object)
         self._insert_datapoints_concurrently(valid_dps_objects)
 
-    def delete_range(self):
-        pass
+    def delete_range(
+        self, start: Union[int, str, datetime], end: Union[int, str, datetime], id: int = None, external_id: str = None
+    ):
+        utils.assert_exactly_one_of_id_or_external_id(id, external_id)
+        start = utils.timestamp_to_ms(start)
+        end = utils.timestamp_to_ms(end)
+        assert end > start, "end must be larger than start"
 
-    def delete_ranges(self):
-        pass
+        delete_dps_object = self._process_ids(id, external_id, wrap_ids=True)[0][0]
+        delete_dps_object.update({"inclusiveBegin": start, "exclusiveEnd": end})
+        self._delete_datapoints_ranges([delete_dps_object])
+
+    def delete_ranges(self, ranges: List[Dict[str, Any]]):
+        valid_ranges = []
+        for range in ranges:
+            for key in range:
+                if key not in ("id", "externalId", "start", "end"):
+                    raise AssertionError(
+                        "Invalid key '{}' in range. Must contain 'start', 'end', and 'id' or 'externalId".format(key)
+                    )
+            id = range.get("id")
+            external_id = range.get("externalId")
+            utils.assert_exactly_one_of_id_or_external_id(id, external_id)
+            valid_range = self._process_ids(id, external_id, wrap_ids=True)[0][0]
+            valid_range.update({"inclusiveBegin": range["start"], "exclusiveEnd": range["end"]})
+            valid_ranges.append(valid_range)
+        self._delete_datapoints_ranges(valid_ranges)
+
+    def _delete_datapoints_ranges(self, delete_range_objects):
+        self._post(url_path=self._RESOURCE_PATH + "/delete", json={"items": delete_range_objects})
 
     def get_dataframe(self):
-        pass
+        raise NotImplementedError
 
     def insert_dataframe(self):
-        pass
+        raise NotImplementedError
 
     def _get_datapoints_concurrently(
         self,

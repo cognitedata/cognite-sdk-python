@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 from random import random
 
 import pytest
@@ -350,14 +351,16 @@ def mock_post_datapoints(rsps):
 class TestInsertDatapoints:
     def test_insert_tuples(self, mock_post_datapoints):
         dps = [(i * 1e10, i) for i in range(1, 11)]
-        DPS_CLIENT.insert(dps, id=1)
+        res = DPS_CLIENT.insert(dps, id=1)
+        assert res is None
         assert {
             "items": {"id": 1, "datapoints": [{"timestamp": int(i * 1e10), "value": i} for i in range(1, 11)]}
         } == jsgz_load(mock_post_datapoints.calls[0].request.body)
 
     def test_insert_dicts(self, mock_post_datapoints):
         dps = [{"timestamp": i * 1e10, "value": i} for i in range(1, 11)]
-        DPS_CLIENT.insert(dps, id=1)
+        res = DPS_CLIENT.insert(dps, id=1)
+        assert res is None
         assert {
             "items": {"id": 1, "datapoints": [{"timestamp": int(i * 1e10), "value": i} for i in range(1, 11)]}
         } == jsgz_load(mock_post_datapoints.calls[0].request.body)
@@ -383,7 +386,8 @@ class TestInsertDatapoints:
     def test_insert_datapoints_over_limit(self, set_dps_limits, mock_post_datapoints):
         set_dps_limits(5)
         dps = [(i * 1e10, i) for i in range(1, 11)]
-        DPS_CLIENT.insert(dps, id=1)
+        res = DPS_CLIENT.insert(dps, id=1)
+        assert res is None
         request_bodies = [jsgz_load(call.request.body) for call in mock_post_datapoints.calls]
         assert {
             "items": {"id": 1, "datapoints": [{"timestamp": int(i * 1e10), "value": i} for i in range(1, 6)]}
@@ -399,7 +403,8 @@ class TestInsertDatapoints:
     def test_insert_datapoints_in_multiple_time_series(self, mock_post_datapoints):
         dps = [{"timestamp": i * 1e10, "value": i} for i in range(1, 11)]
         dps_objects = [{"externalId": "1", "datapoints": dps}, {"id": 1, "datapoints": dps}]
-        DPS_CLIENT.insert_multiple(dps_objects)
+        res = DPS_CLIENT.insert_multiple(dps_objects)
+        assert res is None
         request_bodies = [jsgz_load(call.request.body) for call in mock_post_datapoints.calls]
         assert {
             "items": {"id": 1, "datapoints": [{"timestamp": int(i * 1e10), "value": i} for i in range(1, 11)]}
@@ -415,13 +420,58 @@ class TestInsertDatapoints:
             DPS_CLIENT.insert_multiple(dps_objects)
 
 
+@pytest.fixture
+def mock_delete_datapoints(rsps):
+    rsps.add(rsps.POST, DPS_CLIENT._base_url + "/timeseries/data/delete", status=200, json={})
+    yield rsps
+
+
+class TestDeleteDatapoints:
+    def test_delete_range(self, mock_delete_datapoints):
+        res = DPS_CLIENT.delete_range(start=datetime(2018, 1, 1), end=datetime(2018, 1, 2), id=1)
+        assert res is None
+        assert {"items": [{"id": 1, "inclusiveBegin": 1514764800000, "exclusiveEnd": 1514851200000}]} == jsgz_load(
+            mock_delete_datapoints.calls[0].request.body
+        )
+
+    @pytest.mark.parametrize(
+        "id, external_id, exception",
+        [(None, None, AssertionError), (1, "1", AssertionError), ("1", None, TypeError), (None, 1, TypeError)],
+    )
+    def test_delete_range_invalid_id(self, id, external_id, exception):
+        with pytest.raises(exception):
+            DPS_CLIENT.delete_range("1d-ago", "now", id, external_id)
+
+    def test_delete_range_start_after_end(self):
+        with pytest.raises(AssertionError, match="must be"):
+            DPS_CLIENT.delete_range(1, 0, 1)
+
+    def test_delete_ranges(self, mock_delete_datapoints):
+        ranges = [{"id": 1, "start": 0, "end": 1}, {"externalId": "1", "start": 0, "end": 1}]
+        DPS_CLIENT.delete_ranges(ranges)
+        assert {
+            "items": [
+                {"id": 1, "inclusiveBegin": 0, "exclusiveEnd": 1},
+                {"externalId": "1", "inclusiveBegin": 0, "exclusiveEnd": 1},
+            ]
+        } == jsgz_load(mock_delete_datapoints.calls[0].request.body)
+
+    def test_delete_ranges_invalid_ids(self):
+        ranges = [{"idz": 1, "start": 0, "end": 1}]
+        with pytest.raises(AssertionError, match="Invalid key 'idz'"):
+            DPS_CLIENT.delete_ranges(ranges)
+        ranges = [{"start": 0, "end": 1}]
+        with pytest.raises(AssertionError, match="Exactly one of id and external id must be specified"):
+            DPS_CLIENT.delete_ranges(ranges)
+
+
 class TestDatapointsObject:
     def test_len(self):
         assert 3 == len(Datapoints(id=1, timestamp=[1, 2, 3], value=[1, 2, 3]))
 
     def test_get_operative_attrs(self):
-        assert [("timestamp", [1, 2, 3]), ("value", [1, 2, 3])] == list(
-            Datapoints(id=1, timestamp=[1, 2, 3], value=[1, 2, 3])._get_operative_attrs()
+        assert sorted([("timestamp", [1, 2, 3]), ("value", [1, 2, 3])]) == sorted(
+            list(Datapoints(id=1, timestamp=[1, 2, 3], value=[1, 2, 3])._get_operative_attrs())
         )
         assert sorted([("timestamp", [1, 2, 3]), ("max", [1, 2, 3]), ("sum", [1, 2, 3])]) == sorted(
             list(Datapoints(id=1, timestamp=[1, 2, 3], sum=[1, 2, 3], max=[1, 2, 3])._get_operative_attrs())
