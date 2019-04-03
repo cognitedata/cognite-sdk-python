@@ -77,7 +77,7 @@ podTemplate(
             def versionExists = sh(returnStdout: true, script: 'python3 version_checker.py -p cognite-sdk -v ${currentVersion}')
             println("This version: " + currentVersion)
             println("Version Exists: " + versionExists)
-            if (env.BRANCH_NAME == '0.5' && versionExists == 'no') {
+            if (env.BRANCH_NAME == '0.13' && versionExists == 'no') {
                 stage('Release') {
                     sh("pipenv run twine upload --config-file /pypi/.pypirc dist/*")
                 }
