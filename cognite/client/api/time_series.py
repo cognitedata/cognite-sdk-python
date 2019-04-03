@@ -179,12 +179,12 @@ class TimeSeriesAPI(APIClient):
     def __call__(
         self, chunk_size: int = None, include_metadata: bool = False, asset_id: int = None
     ) -> Generator[Union[TimeSeries, TimeSeriesList], None, None]:
-        """Iterate over files
+        """Iterate over time series
 
         Fetches time series as they are iterated over, so you keep a limited number of objects in memory.
 
         Args:
-            chunk_size (int, optional): Number of files to return in each chunk. Defaults to yielding one event a time.
+            chunk_size (int, optional): Number of time series to return in each chunk. Defaults to yielding one event a time.
             include_metadata (bool, optional): Whether or not to include metadata
             asset_id (int, optional): List time series related to this asset.
 
@@ -197,7 +197,7 @@ class TimeSeriesAPI(APIClient):
         )
 
     def __iter__(self) -> Generator[TimeSeries, None, None]:
-        """Iterate over files
+        """Iterate over time series
 
         Fetches time series as they are iterated over, so you keep a limited number of metadata objects in memory.
 
@@ -223,7 +223,7 @@ class TimeSeriesAPI(APIClient):
         )
 
     def list(self, include_metadata: bool = False, asset_id: int = None, limit: int = None) -> TimeSeriesList:
-        """Iterate over files
+        """Iterate over time series
 
         Fetches time series as they are iterated over, so you keep a limited number of objects in memory.
 
