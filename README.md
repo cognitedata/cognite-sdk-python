@@ -5,7 +5,7 @@
 Cognite Python SDK
 ==========================
 [![build](https://webhooks.dev.cognite.ai/build/buildStatus/icon?job=github-builds/cognite-sdk-python/0.13)](https://jenkins.cognite.ai/job/github-builds/job/cognite-sdk-python/job/0.13/)
-[![codecov](https://codecov.io/gh/cognitedata/cognite-sdk-python/branch/master/graph/badge.svg)](https://codecov.io/gh/cognitedata/cognite-sdk-python)
+[![codecov](https://codecov.io/gh/cognitedata/cognite-sdk-python/branch/0.13/graph/badge.svg)](https://codecov.io/gh/cognitedata/cognite-sdk-python/branch/0.13)
 [![Documentation Status](https://readthedocs.com/projects/cognite-sdk-python/badge/?version=latest)](https://cognite-docs.readthedocs-hosted.com/en/latest/)
 [![PyPI version](https://badge.fury.io/py/cognite-sdk.svg)](https://pypi.org/project/cognite-sdk/)
 [![tox](https://img.shields.io/badge/tox-3.5%2B-blue.svg)](https://www.python.org/downloads/release/python-350/)
