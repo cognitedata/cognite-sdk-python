@@ -130,7 +130,10 @@ class Datapoints:
     def __getitem__(self, item) -> Union[Datapoint, "Datapoints"]:
         if isinstance(item, slice):
             return self._slice(item)
-        return self.__get_datapoint_objects()[item]
+        dp_args = {}
+        for attr, values in self._get_non_empty_data_fields():
+            dp_args[attr] = values[item]
+        return Datapoint(**dp_args)
 
     def __iter__(self) -> Generator[Datapoint, None, None]:
         yield from self.__get_datapoint_objects()
