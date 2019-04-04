@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import gzip
 import json
 from collections import namedtuple

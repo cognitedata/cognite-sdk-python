@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from typing import *
 
 from cognite.client._utils.api_client import APIClient

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Utilites for Cognite API SDK
 
 This module provides helper methods and different utilities for the Cognite API Python SDK.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+
 #
 # cognite-sdk-python documentation build configuration file, created by
 # sphinx-quickstart on Mon Jan  8 14:36:34 2018.
