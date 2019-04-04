@@ -37,7 +37,7 @@ def environment_client_config():
 
 class TestCogniteClient:
     def test_project_is_correct(self, client):
-        assert client._project == "mltest"
+        assert client.project == "mltest"
 
     def assert_config_is_correct(self, client, base_url, max_workers, timeout):
         assert client._base_url == base_url
@@ -85,7 +85,7 @@ class TestCogniteClient:
         client = CogniteClient()
 
         assert api_key == client._CogniteClient__api_key
-        assert project == client._project
+        assert project == client.project
 
     def test_create_client_thread_local_config(self, thread_local_credentials_module):
         with ThreadPool() as pool:

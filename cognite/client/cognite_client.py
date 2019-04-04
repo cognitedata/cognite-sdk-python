@@ -98,21 +98,21 @@ class CogniteClient:
             configure_logger("cognite-sdk", log_level="INFO", log_json=True)
 
         __api_version = "1.0"
-        self._project = project or thread_local_project
+        self.project = project or thread_local_project
         self.login = LoginAPI(
-            project=self._project,
+            project=self.project,
             base_url=self._base_url,
             max_workers=self._max_workers,
             cookies=self._cookies,
             headers=self._headers,
             timeout=self._timeout,
         )
-        if self._project is None:
-            self._project = self.login.status().project
+        if self.project is None:
+            self.project = self.login.status().project
 
         self.assets = AssetsAPI(
             version=__api_version,
-            project=self._project,
+            project=self.project,
             base_url=self._base_url,
             max_workers=self._max_workers,
             cookies=self._cookies,
@@ -121,7 +121,7 @@ class CogniteClient:
         )
         self.datapoints = DatapointsAPI(
             version=__api_version,
-            project=self._project,
+            project=self.project,
             base_url=self._base_url,
             max_workers=self._max_workers,
             cookies=self._cookies,
@@ -130,7 +130,7 @@ class CogniteClient:
         )
         self.events = EventsAPI(
             version=__api_version,
-            project=self._project,
+            project=self.project,
             base_url=self._base_url,
             max_workers=self._max_workers,
             cookies=self._cookies,
@@ -139,7 +139,7 @@ class CogniteClient:
         )
         self.files = FilesAPI(
             version=__api_version,
-            project=self._project,
+            project=self.project,
             base_url=self._base_url,
             max_workers=self._max_workers,
             cookies=self._cookies,
@@ -157,7 +157,7 @@ class CogniteClient:
         # )
         self.time_series = TimeSeriesAPI(
             version=__api_version,
-            project=self._project,
+            project=self.project,
             base_url=self._base_url,
             max_workers=self._max_workers,
             cookies=self._cookies,
@@ -166,7 +166,7 @@ class CogniteClient:
         )
 
         self._api_client = APIClient(
-            project=self._project,
+            project=self.project,
             base_url=self._base_url,
             max_workers=self._max_workers,
             cookies=self._cookies,
