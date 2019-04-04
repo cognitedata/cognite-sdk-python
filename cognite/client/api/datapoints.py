@@ -373,7 +373,7 @@ class DatapointsAPI(APIClient):
         windows = self._get_windows(start, end, granularity=granularity, max_windows=max_workers)
         tasks = [(w.start, w.end, ts_item, aggregates, granularity, include_outside_points, limit) for w in windows]
         dps_objects = utils.execute_tasks_concurrently(self._get_datapoints_with_paging, tasks, max_workers=max_workers)
-        return self._concatenate_datapoints(*dps_objects)
+        return self._concatenate_datapoints(dps_objects)
 
     def _get_datapoints_with_paging(
         self,
@@ -401,7 +401,7 @@ class DatapointsAPI(APIClient):
             next_start = latest_timestamp + (utils.granularity_to_ms(granularity) if granularity else 1)
             concatenated_datapoints.id = datapoints.id
             concatenated_datapoints.external_id = datapoints.external_id
-            concatenated_datapoints = self._concatenate_datapoints(concatenated_datapoints, datapoints)
+            concatenated_datapoints = self._concatenate_datapoints([concatenated_datapoints, datapoints])
         return concatenated_datapoints
 
     def _get_datapoints(
@@ -426,7 +426,7 @@ class DatapointsAPI(APIClient):
         return Datapoints._load(res)
 
     @staticmethod
-    def _concatenate_datapoints(*dps_objects: Datapoints) -> Datapoints:
+    def _concatenate_datapoints(dps_objects: List[Datapoints]) -> Datapoints:
         assert 1 == len(set([dps.id for dps in dps_objects]))
         assert 1 == len(set([dps.external_id for dps in dps_objects]))
 
@@ -539,9 +539,9 @@ class DatapointsAPI(APIClient):
             List[Tuple[Union[int, float, datetime], Union[int, float, str]]],
         ],
     ) -> List[Dict[str, int]]:
-        utils.assert_type(datapoints, "datapoints", list)
+        utils.assert_type(datapoints, "datapoints", [list])
         assert len(datapoints) > 0, "No datapoints provided"
-        utils.assert_type(datapoints[0], "datapoints element", tuple, dict)
+        utils.assert_type(datapoints[0], "datapoints element", [tuple, dict])
 
         valid_datapoints = []
         if isinstance(datapoints[0], tuple):

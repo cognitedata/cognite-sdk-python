@@ -156,14 +156,14 @@ class TestAssertions:
         with pytest.raises(AssertionError, match="You are attempting to post data in January 1970"):
             utils.assert_timestamp_not_in_jan_in_1970(timestamp)
 
-    @pytest.mark.parametrize("var, var_name, types", [(1, "var1", (int,)), ("1", "var2", (int, str))])
+    @pytest.mark.parametrize("var, var_name, types", [(1, "var1", [int]), ("1", "var2", [int, str])])
     def test_assert_type_ok(self, var, var_name, types):
-        utils.assert_type(var, var_name, *types)
+        utils.assert_type(var, var_name, types=types)
 
-    @pytest.mark.parametrize("var, var_name, types", [("1", "var", (int, float)), ((1,), "var2", (dict, list))])
+    @pytest.mark.parametrize("var, var_name, types", [("1", "var", [int, float]), ((1,), "var2", [dict, list])])
     def test_assert_type_fail(self, var, var_name, types):
         with pytest.raises(TypeError, match=str(types)):
-            utils.assert_type(var, var_name, *types)
+            utils.assert_type(var, var_name, types)
 
     def test_assert_exactly_one_of_id_and_external_id(self):
         with pytest.raises(AssertionError):

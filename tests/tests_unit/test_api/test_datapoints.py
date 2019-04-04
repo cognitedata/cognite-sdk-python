@@ -509,7 +509,7 @@ class TestHelpers:
     def test_concatenate_datapoints(self):
         d1 = Datapoints(id=1, external_id="1", timestamp=[1, 2, 3], value=[1, 2, 3])
         d2 = Datapoints(id=1, external_id="1", timestamp=[4, 5, 6], value=[4, 5, 6])
-        concatenated = DPS_CLIENT._concatenate_datapoints(d1, d2)
+        concatenated = DPS_CLIENT._concatenate_datapoints([d1, d2])
         assert [1, 2, 3, 4, 5, 6] == concatenated.timestamp
         assert [1, 2, 3, 4, 5, 6] == concatenated.value
         assert 1 == concatenated.id
