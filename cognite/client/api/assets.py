@@ -194,7 +194,7 @@ class AssetsAPI(APIClient):
             name, parent_ids, metadata, source, created_time, last_updated_time, asset_subtrees, external_id_prefix
         ).dump(camel_case=True)
         return self._list_generator(
-            AssetList, resource_path=self.RESOURCE_PATH, method="POST", chunk=chunk_size, filter=filter
+            AssetList, resource_path=self.RESOURCE_PATH, method="POST", chunk_size=chunk_size, filter=filter
         )
 
     def __iter__(self) -> Generator[Asset, None, None]:

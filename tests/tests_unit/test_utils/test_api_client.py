@@ -205,14 +205,18 @@ class TestStandardRetrieveById:
 class TestStandardList:
     def test_standard_list_ok(self, rsps):
         rsps.add(rsps.GET, BASE_URL + URL_PATH, status=200, json={"data": {"items": [{"x": 1, "y": 2}, {"x": 1}]}})
-        assert SomeResourceList([SomeResource(1, 2), SomeResource(1)]) == API_CLIENT._list(
-            cls=SomeResourceList, resource_path=URL_PATH, method="GET"
+        assert (
+            SomeResourceList([SomeResource(1, 2), SomeResource(1)]).dump()
+            == API_CLIENT._list(cls=SomeResourceList, resource_path=URL_PATH, method="GET").dump()
         )
 
     def test_standard_list_with_filter_GET_ok(self, rsps):
         rsps.add(rsps.GET, BASE_URL + URL_PATH, status=200, json={"data": {"items": [{"x": 1, "y": 2}, {"x": 1}]}})
-        assert SomeResourceList([SomeResource(1, 2), SomeResource(1)]) == API_CLIENT._list(
-            cls=SomeResourceList, resource_path=URL_PATH, method="GET", filter={"filter": "bla"}
+        assert (
+            SomeResourceList([SomeResource(1, 2), SomeResource(1)]).dump()
+            == API_CLIENT._list(
+                cls=SomeResourceList, resource_path=URL_PATH, method="GET", filter={"filter": "bla"}
+            ).dump()
         )
         assert "filter=bla" in rsps.calls[0].request.path_url
 
@@ -254,6 +258,14 @@ class TestStandardList:
     @pytest.mark.usefixtures("mock_get_for_autopaging")
     def test_standard_list_generator(self):
         total_resources = 0
+        for resource in API_CLIENT._list_generator(cls=SomeResourceList, resource_path=URL_PATH, method="GET"):
+            assert isinstance(resource, SomeResource)
+            total_resources += 1
+        assert 11500 == total_resources
+
+    @pytest.mark.usefixtures("mock_get_for_autopaging")
+    def test_standard_list_generator_with_limit(self):
+        total_resources = 0
         for resource in API_CLIENT._list_generator(
             cls=SomeResourceList, resource_path=URL_PATH, method="GET", limit=10000
         ):
@@ -262,20 +274,41 @@ class TestStandardList:
         assert 10000 == total_resources
 
     @pytest.mark.usefixtures("mock_get_for_autopaging")
-    def test_standard_list_generator(self):
+    def test_standard_list_generator_with_chunk_size(self):
         total_resources = 0
         for resource_chunk in API_CLIENT._list_generator(
-            cls=SomeResourceList, resource_path=URL_PATH, method="GET", limit=10000, chunk=1000
+            cls=SomeResourceList, resource_path=URL_PATH, method="GET", chunk_size=1000
+        ):
+            assert isinstance(resource_chunk, SomeResourceList)
+            if len(resource_chunk) == 1000:
+                total_resources += 1000
+            elif len(resource_chunk) == 500:
+                total_resources += 500
+            else:
+                raise AssertionError("resource chunk length was not 1000 or 500")
+        assert 11500 == total_resources
+
+    @pytest.mark.usefixtures("mock_get_for_autopaging")
+    def test_standard_list_generator_with_chunk_size_with_limit(self):
+        total_resources = 0
+        for resource_chunk in API_CLIENT._list_generator(
+            cls=SomeResourceList, resource_path=URL_PATH, method="GET", limit=10000, chunk_size=1000
         ):
             assert isinstance(resource_chunk, SomeResourceList)
             assert 1000 == len(resource_chunk)
             total_resources += 1000
         assert 10000 == total_resources
 
+    @pytest.mark.usefixtures("mock_get_for_autopaging")
     def test_standard_list_generator__chunk_size_exceeds_max(self):
-        with pytest.raises(AssertionError, match="exceed 1000"):
-            for _ in API_CLIENT._list_generator(cls=SomeResourceList, resource_path=URL_PATH, method="GET", chunk=1001):
-                pass
+        total_resources = 0
+        for resource_chunk in API_CLIENT._list_generator(
+            cls=SomeResourceList, resource_path=URL_PATH, method="GET", limit=2002, chunk_size=1001
+        ):
+            assert isinstance(resource_chunk, SomeResourceList)
+            assert 1001 == len(resource_chunk)
+            total_resources += 1001
+        assert 2002 == total_resources
 
     @pytest.mark.usefixtures("mock_get_for_autopaging")
     def test_standard_list_autopaging(self):

@@ -220,7 +220,7 @@ class EventsAPI(APIClient):
             external_id_prefix,
         ).dump(camel_case=True)
         return self._list_generator(
-            EventList, resource_path=self.RESOURCE_PATH, method="POST", chunk=chunk_size, filter=filter
+            EventList, resource_path=self.RESOURCE_PATH, method="POST", chunk_size=chunk_size, filter=filter
         )
 
     def __iter__(self) -> Generator[Event, None, None]:

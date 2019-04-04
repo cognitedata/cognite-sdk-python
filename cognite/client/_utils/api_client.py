@@ -143,17 +143,17 @@ class APIClient:
         resource_path: str,
         method: str,
         limit: int = None,
-        chunk: int = None,
+        chunk_size: int = None,
         filter: Dict = None,
         headers: Dict = None,
     ):
         total_items_retrieved = 0
         current_limit = self._LIMIT
-        if chunk:
-            assert chunk <= self._LIMIT, "Chunk size can not exceed {}".format(self._LIMIT)
-            current_limit = chunk
+        if chunk_size and chunk_size <= self._LIMIT:
+            current_limit = chunk_size
         next_cursor = None
         filter = filter or {}
+        current_items = []
         while True:
             if limit:
                 num_of_remaining_items = limit - total_items_retrieved
@@ -170,13 +170,20 @@ class APIClient:
                 res = self._post(url_path=resource_path + "/list", json=body, headers=headers)
             else:
                 raise ValueError("_list_generator parameter `method` must be GET or POST, not %s", method)
-            current_items = res.json()["data"]["items"]
-            if chunk:
-                yield cls._load(current_items)
-            else:
+            last_received_items = res.json()["data"]["items"]
+            current_items.extend(last_received_items)
+
+            if not chunk_size:
                 for item in current_items:
                     yield cls._RESOURCE._load(item)
-            total_items_retrieved += len(current_items)
+                total_items_retrieved += len(current_items)
+                current_items = []
+            elif len(current_items) >= chunk_size or len(last_received_items) < self._LIMIT:
+                items_to_yield = current_items[:chunk_size]
+                yield cls._load(items_to_yield)
+                total_items_retrieved += len(items_to_yield)
+                current_items = current_items[chunk_size:]
+
             next_cursor = res.json()["data"].get("nextCursor")
             if total_items_retrieved == limit or next_cursor is None:
                 break
@@ -188,7 +195,7 @@ class APIClient:
             resource_path=resource_path,
             method=method,
             limit=limit,
-            chunk=self._LIMIT,
+            chunk_size=self._LIMIT,
             filter=filter,
             headers=headers,
         ):

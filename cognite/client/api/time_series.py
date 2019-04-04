@@ -192,7 +192,7 @@ class TimeSeriesAPI(APIClient):
         """
         filter = {"includeMetadata": include_metadata, "assetId": asset_id}
         return self._list_generator(
-            TimeSeriesList, resource_path=self.RESOURCE_PATH, method="GET", chunk=chunk_size, filter=filter
+            TimeSeriesList, resource_path=self.RESOURCE_PATH, method="GET", chunk_size=chunk_size, filter=filter
         )
 
     def __iter__(self) -> Generator[TimeSeries, None, None]:
