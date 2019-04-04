@@ -96,7 +96,7 @@ class EventUpdate(CogniteUpdate):
         external_id (str): External Id provided by client. Should be unique within the project.
     """
 
-    _UPDATE_ATTRIBUTES = ["source", "metadata", "startTime", "assetIds", "description", "endTime", "externalId"]
+    _UPDATE_ATTRIBUTES = ["assetIds", "description", "endTime", "externalId", "metadata", "source", "startTime"]
 
     def __init__(self, id: int = None, external_id: str = None):
         super().__init__(id=id, external_id=external_id)

@@ -103,7 +103,7 @@ class TimeSeriesUpdate(CogniteUpdate):
         external_id (str): No description.
     """
 
-    _UPDATE_ATTRIBUTES = ["unit", "metadata", "securityCategories", "assetId", "description", "name", "externalId"]
+    _UPDATE_ATTRIBUTES = ["assetId", "description", "externalId", "metadata", "name", "securityCategories", "unit"]
 
     def __init__(self, id: int = None, external_id: str = None):
         super().__init__(id=id, external_id=external_id)

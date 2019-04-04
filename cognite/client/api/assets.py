@@ -63,7 +63,7 @@ class AssetUpdate(CogniteUpdate):
         external_id (str): External Id provided by client. Should be unique within the project.
     """
 
-    _UPDATE_ATTRIBUTES = ["source", "metadata", "description", "name", "externalId"]
+    _UPDATE_ATTRIBUTES = ["description", "externalId", "metadata", "name", "source"]
 
     def __init__(self, id: int = None, external_id: str = None):
         super().__init__(id=id, external_id=external_id)

@@ -95,7 +95,7 @@ class FileMetadataUpdate(CogniteUpdate):
         external_id (str): No description.
     """
 
-    _UPDATE_ATTRIBUTES = ["source", "assetIds", "metadata", "mimeType", "name", "externalId"]
+    _UPDATE_ATTRIBUTES = ["assetIds", "externalId", "metadata", "mimeType", "name", "source"]
 
     def __init__(self, id: int = None, external_id: str = None):
         super().__init__(id=id, external_id=external_id)

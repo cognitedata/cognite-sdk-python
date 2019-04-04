@@ -128,14 +128,12 @@ class TestUpdateClassGenerator:
         )
         assert (
             """    def __init__(self, id: int = None, external_id: str = None):
-        self.id = id
-        self.external_id = external_id
-        self._update_object = {}"""
+        super().__init__(id=id, external_id=external_id)"""
             == constructor
         )
 
     def test_gen_setters(self):
-        setters = UPDATE_CLASS_GENERATOR.generate_setters(
+        setters, _ = UPDATE_CLASS_GENERATOR.generate_setters(
             CLASS_GENERATOR._spec.components.schemas.get("EventChange"), indentation=4
         )
         assert (
@@ -221,7 +219,7 @@ class TestUpdateClassGenerator:
         schema = UPDATE_CLASS_GENERATOR._spec.components.schemas.get("AssetChange")
         docstring = UPDATE_CLASS_GENERATOR.generate_docstring(schema, indentation=4)
         constructor = UPDATE_CLASS_GENERATOR.generate_constructor(schema, indentation=4)
-        setters = UPDATE_CLASS_GENERATOR.generate_setters(schema, indentation=4)
+        setters, updateable_attributes = UPDATE_CLASS_GENERATOR.generate_setters(schema, indentation=4)
 
         generated = UPDATE_CLASS_GENERATOR.generate_code_for_class_segments()["AssetUpdate"]
-        assert generated == docstring + "\n" + constructor + "\n" + setters
+        assert generated == docstring + "\n" + updateable_attributes + "\n" + constructor + "\n" + setters

@@ -180,7 +180,7 @@ class UpdateClassGenerator:
                     setter += indent * 2 + "self._update_object['{}'] = {{'remove': value}}\n".format(prop_name)
                     setter += indent * 2 + "return self\n"
                 setters.append(setter)
-        updateable_attributes = indent + "_UPDATE_ATTRIBUTES = {}".format(list(set(updateable_attributes)))
+        updateable_attributes = indent + "_UPDATE_ATTRIBUTES = {}".format(sorted(list(set(updateable_attributes))))
         return "\n\n".join(setters), updateable_attributes
 
     @staticmethod
