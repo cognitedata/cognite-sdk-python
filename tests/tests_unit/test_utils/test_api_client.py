@@ -1,5 +1,6 @@
 import gzip
 import json
+import os
 from collections import namedtuple
 
 import pytest
@@ -9,13 +10,18 @@ from cognite.client._utils.api_client import APIClient
 from cognite.client._utils.base import CogniteResource, CogniteResourceList, CogniteUpdate
 from tests.utils import jsgz_load
 
-BASE_URL = "http://localtest.com/api/1.0/projects/test_proj"
+BASE_URL = "http://localtest.com/api/1.0/projects/test-project"
 URL_PATH = "/someurl"
 
 RESPONSE = {"any": "ok"}
 
 API_CLIENT = APIClient(
-    project="test_proj", base_url=BASE_URL, max_workers=1, cookies={"a-cookie": "a-cookie-val"}, headers={}, timeout=60
+    project="test-project",
+    base_url=BASE_URL,
+    max_workers=1,
+    cookies={"a-cookie": "a-cookie-val"},
+    headers={},
+    timeout=60,
 )
 
 
@@ -465,24 +471,43 @@ class TestStandardSearch:
 
 class TestHelpers:
     @pytest.mark.parametrize(
-        "input, expected",
+        "input, emulator_url, expected",
         [
             (
-                "https://api.cognitedata.com/api/0.6/projects/test-project/analytics/models",
+                "http://localtest.com/api/1.0/projects/test-project/analytics/models",
+                "http://localhost:8000/api/0.1",
                 "http://localhost:8000/api/0.1/projects/test-project/models",
             ),
             (
-                "https://api.cognitedata.com/api/0.6/projects/test-project/analytics/models/sourcepackages/1",
-                "http://localhost:8000/api/0.1/projects/test-project/models/sourcepackages/1",
+                "http://localtest.com/api/1.0/projects/test-project/analytics/models/sourcepackages/1",
+                "http://localhost:1234/api/0.5",
+                "http://localhost:1234/api/0.5/projects/test-project/models/sourcepackages/1",
             ),
             (
                 "https://api.cognitedata.com/api/0.6/projects/test-project/assets/update",
+                "http://localhost:8000/api/0.1",
                 "https://api.cognitedata.com/api/0.6/projects/test-project/assets/update",
+            ),
+            (
+                "https://api.cognitedata.com/login/status",
+                "http://localhost:8000/api/0.1",
+                "https://api.cognitedata.com/login/status",
             ),
         ],
     )
-    def test_nostromo_emulator_url_converter(self, input, expected):
-        assert expected == API_CLIENT._model_hosting_emulator_url_converter(input)
+    def test_nostromo_emulator_url_converter(self, input, emulator_url, expected):
+        assert expected == API_CLIENT._model_hosting_emulator_url_converter(input, emulator_url)
+
+    @pytest.fixture
+    def mlh_emulator_mock(self, rsps):
+        os.environ["MODEL_HOSTING_EMULATOR_URL"] = "http://localhost:8888/api/0.1"
+        rsps.add(rsps.POST, "http://localhost:8888/api/0.1/projects/test-project/models/versions", status=200, json={})
+        yield rsps
+        del os.environ["MODEL_HOSTING_EMULATOR_URL"]
+
+    @pytest.mark.usefixtures("mlh_emulator_mock")
+    def test_do_request_with_mlh_emulator_activated(self):
+        API_CLIENT._do_request(method="POST", url_path="/analytics/models/versions")
 
     @pytest.mark.parametrize(
         "ids, external_ids, wrap_ids, expected",

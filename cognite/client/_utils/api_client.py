@@ -97,8 +97,9 @@ class APIClient:
             raise ValueError("URL path must start with '/'")
         full_url = self._base_url + url_path
         # Hack to allow running model hosting requests against local emulator
-        if os.getenv("USE_MODEL_HOSTING_EMULATOR") == "1":
-            full_url = self._model_hosting_emulator_url_converter(full_url)
+        mlh_emul_url = os.getenv("MODEL_HOSTING_EMULATOR_URL")
+        if mlh_emul_url is not None:
+            full_url = self._model_hosting_emulator_url_converter(full_url, mlh_emul_url)
 
         default_headers = self._headers.copy()
         if (
@@ -370,12 +371,11 @@ class APIClient:
 
         log.info("HTTP/{} {} {} {}".format(http_protocol_version, method, url, status_code), extra=extra)
 
-    @staticmethod
-    def _model_hosting_emulator_url_converter(url):
-        pattern = "https://api.cognitedata.com/api/0.6/projects/(.*)/analytics/models(.*)"
-        res = re.match(pattern, url)
+    def _model_hosting_emulator_url_converter(self, target_url, model_hosting_emulator_url):
+        pattern = "{}/analytics/models(.*)".format(self._base_url)
+        print(pattern)
+        res = re.match(pattern, target_url)
         if res is not None:
-            project = res.group(1)
-            path = res.group(2)
-            return "http://localhost:8000/api/0.1/projects/{}/models{}".format(project, path)
-        return url
+            path = res.group(1)
+            return "{}/projects/{}/models{}".format(model_hosting_emulator_url, self._project, path)
+        return target_url
