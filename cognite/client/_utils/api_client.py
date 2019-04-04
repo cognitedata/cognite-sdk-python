@@ -169,7 +169,7 @@ class APIClient:
                 body = {"filter": filter, "limit": current_limit, "cursor": next_cursor}
                 res = self._post(url_path=resource_path + "/list", json=body, headers=headers)
             else:
-                raise ValueError("_list parameter `method` must be GET or POST, not %s", method)
+                raise ValueError("_list_generator parameter `method` must be GET or POST, not %s", method)
             current_items = res.json()["data"]["items"]
             if chunk:
                 yield cls._load(current_items)
