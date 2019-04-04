@@ -1,5 +1,6 @@
 import os
 import re
+from tempfile import TemporaryDirectory
 
 import pytest
 
@@ -77,10 +78,6 @@ def mock_file_download_response(rsps):
     rsps.add(rsps.GET, "https://download.file1.here", status=200, body="content1")
     rsps.add(rsps.GET, "https://download.file2.here", status=200, body="content2")
     yield rsps
-    for file_name in ["1", "2"]:
-        file_path = os.path.join(os.path.dirname(__file__), file_name)
-        if os.path.isfile(file_path):
-            os.remove(file_path)
 
 
 class TestFilesAPI:
@@ -186,12 +183,12 @@ class TestFilesAPI:
         assert b"content" == mock_file_upload_response.calls[1].request.body
 
     def test_download(self, mock_file_download_response):
-        curdir = os.path.dirname(__file__)
-        res = FILES_API.download(directory=curdir, id=[1, 2])
-        assert {"items": [{"id": 1}, {"id": 2}]} == jsgz_load(mock_file_download_response.calls[0].request.body)
-        assert res is None
-        assert os.path.isfile(os.path.join(curdir, "1"))
-        assert os.path.isfile(os.path.join(curdir, "2"))
+        with TemporaryDirectory() as dir:
+            res = FILES_API.download(directory=dir, id=[1, 2])
+            assert {"items": [{"id": 1}, {"id": 2}]} == jsgz_load(mock_file_download_response.calls[0].request.body)
+            assert res is None
+            assert os.path.isfile(os.path.join(dir, "1"))
+            assert os.path.isfile(os.path.join(dir, "2"))
 
     def test_download_to_memory(self, mock_file_download_response):
         mock_file_download_response.assert_all_requests_are_fired = False
