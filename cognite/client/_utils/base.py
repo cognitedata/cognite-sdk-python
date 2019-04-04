@@ -47,7 +47,9 @@ class CogniteResourceList:
                 )
         self._resources = resources
 
-    def __getitem__(self, index) -> _RESOURCE:
+    def __getitem__(self, index):
+        if isinstance(index, slice):
+            return self.__class__(self._resources[index])
         return self._resources[index]
 
     def __eq__(self, other):

@@ -133,7 +133,7 @@ class TestCogniteResourceList:
         resource_list = MyResourceList([MyResource(1, 2), MyResource(2, 3)])
         assert MyResource(1, 2) == resource_list[0]
         assert MyResource(2, 3) == resource_list[1]
-        assert [MyResource(1, 2), MyResource(2, 3)] == resource_list[:]
+        assert MyResourceList([MyResource(1, 2), MyResource(2, 3)]) == resource_list[:]
 
     def test_len(self):
         resource_list = MyResourceList([MyResource(1, 2), MyResource(2, 3)])

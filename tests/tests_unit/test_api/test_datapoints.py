@@ -6,7 +6,7 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client._utils import utils
-from cognite.client.api.datapoints import Datapoints, DatapointsList, DatapointsQuery, _DPWindow
+from cognite.client.api.datapoints import Datapoint, Datapoints, DatapointsList, DatapointsQuery, _DPWindow
 from tests.utils import jsgz_load
 
 DPS_CLIENT = CogniteClient(max_workers=20).datapoints
@@ -478,6 +478,30 @@ class TestDatapointsObject:
         )
         assert [("timestamp", [])] == list(Datapoints(id=1)._get_non_empty_data_fields())
 
+    def test_iter(self):
+        for dp in Datapoints(id=1, timestamp=[1, 2, 3], value=[1, 2, 3]):
+            assert dp.timestamp in [1, 2, 3]
+            assert dp.value in [1, 2, 3]
+
+    def test_eq(self):
+        assert Datapoints(1) == Datapoints(1)
+        assert Datapoints(1, timestamp=[1, 2, 3], value=[1, 2, 3]) == Datapoints(
+            1, timestamp=[1, 2, 3], value=[1, 2, 3]
+        )
+        assert Datapoints(1) != Datapoints(0)
+        assert Datapoints(1, timestamp=[1, 2, 3], value=[1, 2, 3]) != Datapoints(1, timestamp=[1, 2, 3], max=[1, 2, 3])
+        assert Datapoints(1, timestamp=[1, 2, 3], value=[1, 2, 3]) != Datapoints(
+            1, timestamp=[1, 2, 3], value=[1, 2, 4]
+        )
+
+    def test_get_item(self):
+        dps = Datapoints(id=1, timestamp=[1, 2, 3], value=[1, 2, 3])
+
+        assert Datapoint(timestamp=1, value=1) == dps[0]
+        assert Datapoint(timestamp=2, value=2) == dps[1]
+        assert Datapoint(timestamp=3, value=3) == dps[2]
+        assert Datapoints(id=1, timestamp=[1, 2], value=[1, 2]) == dps[:2]
+
     def test_load(self):
         res = Datapoints._load(
             {"id": 1, "externalId": "1", "datapoints": [{"timestamp": 1, "value": 1}, {"timestamp": 2, "value": 2}]}
@@ -487,8 +511,8 @@ class TestDatapointsObject:
         assert [1, 2] == res.timestamp
         assert [1, 2] == res.value
 
-    def test_truncate(self):
-        res = Datapoints(id=1, timestamp=[1, 2, 3])._truncate(limit=1)
+    def test_slice(self):
+        res = Datapoints(id=1, timestamp=[1, 2, 3])._slice(slice(None, 1))
         assert [1] == res.timestamp
 
 

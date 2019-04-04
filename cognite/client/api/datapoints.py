@@ -119,7 +119,17 @@ class Datapoints:
     def __len__(self) -> int:
         return len(self.timestamp)
 
-    def __getitem__(self, item) -> Union[Datapoint, List[Datapoint]]:
+    def __eq__(self, other):
+        return (
+            type(self) == type(other)
+            and self.id == other.id
+            and self.external_id == other.external_id
+            and list(self._get_non_empty_data_fields()) == list(other._get_non_empty_data_fields())
+        )
+
+    def __getitem__(self, item) -> Union[Datapoint, "Datapoints"]:
+        if isinstance(item, slice):
+            return self._slice(item)
         return self.__get_datapoint_objects()[item]
 
     def __iter__(self) -> Generator[Datapoint, None, None]:
@@ -163,10 +173,10 @@ class Datapoints:
                 self.__datapoint_objects.append(Datapoint(**dp_args))
         return self.__datapoint_objects
 
-    def _truncate(self, limit: int):
+    def _slice(self, slice: slice):
         truncated_datapoints = Datapoints(id=self.id, external_id=self.external_id)
         for attr, value in self._get_non_empty_data_fields():
-            setattr(truncated_datapoints, attr, value[:limit])
+            setattr(truncated_datapoints, attr, value[slice])
         return truncated_datapoints
 
 
@@ -249,7 +259,7 @@ class DatapointsAPI(APIClient):
 
         if limit:
             for i, dps_res in enumerate(results):
-                results[i] = dps_res._truncate(limit=limit)
+                results[i] = dps_res[:limit]
 
         if include_outside_points:
             for i, dps in enumerate(results):
