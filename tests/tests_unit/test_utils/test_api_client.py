@@ -495,8 +495,10 @@ class TestHelpers:
             ),
         ],
     )
-    def test_nostromo_emulator_url_converter(self, input, emulator_url, expected):
-        assert expected == API_CLIENT._model_hosting_emulator_url_converter(input, emulator_url)
+    def test_nostromo_emulator_url_filter(self, input, emulator_url, expected):
+        os.environ["MODEL_HOSTING_EMULATOR_URL"] = emulator_url
+        assert expected == API_CLIENT._apply_model_hosting_emulator_url_filter(input)
+        del os.environ["MODEL_HOSTING_EMULATOR_URL"]
 
     @pytest.fixture
     def mlh_emulator_mock(self, rsps):

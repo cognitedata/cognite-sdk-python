@@ -9,7 +9,7 @@ from cognite.client._utils import utils
 from cognite.client.api.datapoints import Datapoints, DatapointsList, DatapointsQuery, _DPWindow
 from tests.utils import jsgz_load
 
-DPS_CLIENT = CogniteClient(debug=True, max_workers=20).datapoints
+DPS_CLIENT = CogniteClient(max_workers=20).datapoints
 
 
 def generate_datapoints(start: int, end: int, aggregates=None, granularity=None):

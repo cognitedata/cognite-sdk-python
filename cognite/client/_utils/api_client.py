@@ -63,59 +63,55 @@ class APIClient:
         self._timeout = timeout
 
     def _delete(self, url_path: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
-        res = self._do_request(
+        return self._do_request(
             "DELETE", url_path, params=params, headers=headers, cookies=self._cookies, timeout=self._timeout
         )
-        self._log_request(res)
-        return res
 
     def _get(self, url_path: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
-        res = self._do_request(
+        return self._do_request(
             "GET", url_path, params=params, headers=headers, cookies=self._cookies, timeout=self._timeout
         )
-        self._log_request(res)
-        return res
 
     def _post(self, url_path: str, json: Dict[str, Any], params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
-        data = _json.dumps(json, default=self._json_dumps_default)
-        res = self._do_request(
-            "POST", url_path, data=data, headers=headers, params=params, cookies=self._cookies, timeout=self._timeout
+        return self._do_request(
+            "POST", url_path, json=json, headers=headers, params=params, cookies=self._cookies, timeout=self._timeout
         )
-        self._log_request(res, body=json)
-        return res
 
     def _put(self, url_path: str, json: Dict[str, Any] = None, headers: Dict[str, Any] = None):
-        data = _json.dumps(json or {}, default=self._json_dumps_default)
-        res = self._do_request(
-            "PUT", url_path, data=data, headers=headers, cookies=self._cookies, timeout=self._timeout
+        return self._do_request(
+            "PUT", url_path, json=json, headers=headers, cookies=self._cookies, timeout=self._timeout
         )
-        self._log_request(res, body=json)
-        return res
 
     def _do_request(self, method: str, url_path: str, **kwargs):
+        full_url = self._resolve_url(url_path)
+
+        json_payload = kwargs.get("json")
+        headers = self._headers.copy()
+
+        if json_payload:
+            data = _json.dumps(json_payload, default=self._json_dumps_default)
+            kwargs["data"] = data
+            if method in ["PUT", "POST"] and not os.getenv("COGNITE_DISABLE_GZIP", False):
+                kwargs["data"] = gzip.compress(data.encode())
+                headers["Content-Encoding"] = "gzip"
+
+        headers.update(kwargs.get("headers") or {})
+        kwargs["headers"] = headers
+
+        res = self._request_session.request(method=method, url=full_url, **kwargs)
+
+        if not self._status_is_valid(res.status_code):
+            self._raise_API_error(res)
+        self._log_request(res, payload=json_payload)
+        return res
+
+    def _resolve_url(self, url_path: str):
         if not url_path.startswith("/"):
             raise ValueError("URL path must start with '/'")
         full_url = self._base_url + url_path
         # Hack to allow running model hosting requests against local emulator
-        mlh_emul_url = os.getenv("MODEL_HOSTING_EMULATOR_URL")
-        if mlh_emul_url is not None:
-            full_url = self._model_hosting_emulator_url_converter(full_url, mlh_emul_url)
-
-        default_headers = self._headers.copy()
-        if (
-            not os.getenv("COGNITE_DISABLE_GZIP", False)
-            and method in ["PUT", "POST"]
-            and kwargs.get("data") is not None
-        ):
-            default_headers["Content-Encoding"] = "gzip"
-            kwargs["data"] = gzip.compress(kwargs["data"].encode())
-        default_headers.update(kwargs.get("headers") or {})
-        kwargs["headers"] = default_headers
-
-        res = self._request_session.request(method=method, url=full_url, **kwargs)
-        if not self._status_is_valid(res.status_code):
-            self._raise_API_error(res)
-        return res
+        full_url = self._apply_model_hosting_emulator_url_filter(full_url)
+        return full_url
 
     def _retrieve(self, cls, resource_path: str, id: int, params: Dict = None, headers: Dict = None):
         return cls._load(
@@ -366,16 +362,19 @@ class APIClient:
         extra["headers"] = res.request.headers
         if "api-key" in extra.get("headers", {}):
             extra["headers"]["api-key"] = None
+        if extra["payload"] is None:
+            del extra["payload"]
 
         http_protocol_version = ".".join(list(str(res.raw.version)))
 
         log.info("HTTP/{} {} {} {}".format(http_protocol_version, method, url, status_code), extra=extra)
 
-    def _model_hosting_emulator_url_converter(self, target_url, model_hosting_emulator_url):
-        pattern = "{}/analytics/models(.*)".format(self._base_url)
-        print(pattern)
-        res = re.match(pattern, target_url)
-        if res is not None:
-            path = res.group(1)
-            return "{}/projects/{}/models{}".format(model_hosting_emulator_url, self._project, path)
-        return target_url
+    def _apply_model_hosting_emulator_url_filter(self, full_url):
+        mlh_emul_url = os.getenv("MODEL_HOSTING_EMULATOR_URL")
+        if mlh_emul_url is not None:
+            pattern = "{}/analytics/models(.*)".format(self._base_url)
+            res = re.match(pattern, full_url)
+            if res is not None:
+                path = res.group(1)
+                return "{}/projects/{}/models{}".format(mlh_emul_url, self._project, path)
+        return full_url
