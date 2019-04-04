@@ -1,5 +1,5 @@
 import json
-from collections import namedtuple
+from collections import defaultdict, namedtuple
 from datetime import datetime
 from typing import *
 from typing import List
@@ -236,8 +236,6 @@ class DatapointsAPI(APIClient):
         ts_items, is_single_id = self._process_ts_identifiers(id, external_id)
 
         max_workers_per_ts = max(self._max_workers // len(ts_items), 1)
-        if include_outside_points:
-            max_workers_per_ts = 1
 
         tasks = []
         for ts_item in ts_items:
@@ -252,6 +250,10 @@ class DatapointsAPI(APIClient):
         if limit:
             for i, dps_res in enumerate(results):
                 results[i] = dps_res._truncate(limit=limit)
+
+        if include_outside_points:
+            for i, dps in enumerate(results):
+                results[i] = self._remove_duplicates(dps)
 
         dps_list = DatapointsList(results)
 
@@ -427,13 +429,34 @@ class DatapointsAPI(APIClient):
     def _concatenate_datapoints(*dps_objects: Datapoints) -> Datapoints:
         assert 1 == len(set([dps.id for dps in dps_objects]))
         assert 1 == len(set([dps.external_id for dps in dps_objects]))
+
         concat_dps_object = Datapoints(id=dps_objects[0].id, external_id=dps_objects[0].external_id)
         for dps in dps_objects:
             for attr, value in dps._get_non_empty_data_fields():
                 current = getattr(concat_dps_object, attr) or []
                 current.extend(value)
                 setattr(concat_dps_object, attr, current)
+
         return concat_dps_object
+
+    @staticmethod
+    def _remove_duplicates(dps_object: Datapoints) -> Datapoints:
+        frequencies = defaultdict(lambda: [0, []])
+        for i, timestamp in enumerate(dps_object.timestamp):
+            frequencies[timestamp][0] += 1
+            frequencies[timestamp][1].append(i)
+
+        indices_to_remove = []
+        for timestamp, freq in frequencies.items():
+            if freq[0] > 1:
+                indices_to_remove += freq[1][1:]
+
+        dps_object_without_duplicates = Datapoints(id=dps_object.id, external_id=dps_object.external_id)
+        for attr, values in dps_object._get_non_empty_data_fields():
+            filtered_values = [elem for i, elem in enumerate(values) if i not in indices_to_remove]
+            setattr(dps_object_without_duplicates, attr, filtered_values)
+
+        return dps_object_without_duplicates
 
     @staticmethod
     def _get_windows(start: int, end: int, granularity: str, max_windows: int) -> List[_DPWindow]:

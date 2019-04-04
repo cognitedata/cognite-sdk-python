@@ -516,6 +516,18 @@ class TestHelpers:
         assert "1" == concatenated.external_id
         assert concatenated.sum is None
 
+    def test_remove_duplicates_from_datapoints(self):
+        d = Datapoints(
+            id=1,
+            timestamp=[1, 1, 2, 3, 3, 4, 5, 5, 6, 7, 7],
+            value=[0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 1],
+            max=[0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 1],
+        )
+        d_no_dupes = DPS_CLIENT._remove_duplicates(d)
+        assert [1, 2, 3, 4, 5, 6, 7] == d_no_dupes.timestamp
+        assert [0, 1, 0, 1, 1, 0, 1] == d_no_dupes.value
+        assert [0, 1, 0, 1, 1, 0, 1] == d_no_dupes.max
+
     @pytest.mark.parametrize(
         "ids, external_ids, expected_output",
         [

@@ -99,16 +99,15 @@ def to_snake_case(camel_case_string: str):
 
 
 def execute_tasks_concurrently(func: Callable, tasks: Union[List[Tuple], List[Dict]], max_workers: int):
-    if max_workers > 0:
-        with ThreadPoolExecutor(max_workers) as p:
-            futures = []
-            for task in tasks:
-                if isinstance(task, dict):
-                    futures.append(p.submit(func, **task))
-                elif isinstance(task, tuple):
-                    futures.append(p.submit(func, *task))
-            return [future.result() for future in futures]
-    raise AssertionError("Number of workers should be >= 1, was {}".format(max_workers))
+    assert max_workers > 0, "Number of workers should be >= 1, was {}".format(max_workers)
+    with ThreadPoolExecutor(max_workers) as p:
+        futures = []
+        for task in tasks:
+            if isinstance(task, dict):
+                futures.append(p.submit(func, **task))
+            elif isinstance(task, tuple):
+                futures.append(p.submit(func, *task))
+        return [future.result() for future in futures]
 
 
 def assert_exactly_one_of_id_or_external_id(id, external_id):
