@@ -430,8 +430,8 @@ class DatapointsAPI(APIClient):
         assert 1 == len(set([dps.id for dps in dps_objects]))
         assert 1 == len(set([dps.external_id for dps in dps_objects]))
 
-        concat_dps_object = Datapoints(id=dps_objects[0].id, external_id=dps_objects[0].external_id)
-        for dps in dps_objects:
+        concat_dps_object = dps_objects[0]
+        for dps in dps_objects[1:]:
             for attr, value in dps._get_non_empty_data_fields():
                 current = getattr(concat_dps_object, attr) or []
                 current.extend(value)
