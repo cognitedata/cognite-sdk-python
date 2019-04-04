@@ -132,11 +132,11 @@ class APIClient:
         external_ids: Union[List[str], str] = None,
         headers: Dict = None,
     ):
-        all_ids, is_single_identifier = self._process_ids(ids, external_ids, wrap_ids=wrap_ids)
+        all_ids = self._process_ids(ids, external_ids, wrap_ids=wrap_ids)
         res = self._post(url_path=resource_path + "/byids", json={"items": all_ids}, headers=headers).json()["data"][
             "items"
         ]
-        if is_single_identifier:
+        if self._is_single_identifier(ids, external_ids):
             return cls._RESOURCE._load(res[0])
         return cls._load(res)
 
@@ -235,7 +235,7 @@ class APIClient:
         params: Dict = None,
         headers: Dict = None,
     ):
-        all_ids, is_single_identifier = self._process_ids(ids, external_ids, wrap_ids)
+        all_ids = self._process_ids(ids, external_ids, wrap_ids)
         self._post(resource_path + "/delete", json={"items": all_ids}, params=params, headers=headers)
 
     def _update_multiple(
@@ -285,27 +285,22 @@ class APIClient:
     @staticmethod
     def _process_ids(
         ids: Union[List[int], int, None], external_ids: Union[List[str], str, None], wrap_ids: bool
-    ) -> Tuple[List, bool]:
+    ) -> List:
         if not external_ids and not ids:
             raise ValueError("No ids specified")
         if external_ids and not wrap_ids:
             raise ValueError("externalIds must be wrapped")
 
-        single_id = False
-        single_external_id = False
-
         if isinstance(ids, int):
             ids = [ids]
-            single_id = True
-        elif isinstance(ids, List) or ids is None:
+        elif isinstance(ids, list) or ids is None:
             ids = ids or []
         else:
             raise TypeError("ids must be int or list of int")
 
         if isinstance(external_ids, str):
             external_ids = [external_ids]
-            single_external_id = True
-        elif isinstance(external_ids, List) or external_ids is None:
+        elif isinstance(external_ids, list) or external_ids is None:
             external_ids = external_ids or []
         else:
             raise TypeError("external_ids must be str or list of str")
@@ -315,9 +310,14 @@ class APIClient:
             external_ids = [{"externalId": external_id} for external_id in external_ids]
 
         all_ids = ids + external_ids
-        is_single_identifier = (single_id or single_external_id) and len(all_ids) == 1
 
-        return all_ids, is_single_identifier
+        return all_ids
+
+    @staticmethod
+    def _is_single_identifier(ids, external_ids):
+        single_id = isinstance(ids, int) and external_ids is None
+        single_external_id = isinstance(external_ids, str) and ids is None
+        return single_id or single_external_id
 
     @staticmethod
     def _json_dumps_default(x):

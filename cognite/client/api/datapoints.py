@@ -266,7 +266,8 @@ class DatapointsAPI(APIClient):
         before: Union[int, str, datetime] = None,
     ) -> Union[Datapoints, DatapointsList]:
         before = utils.timestamp_to_ms(before) if before else None
-        all_ids, is_single_id = self._process_ids(id, external_id, wrap_ids=True)
+        all_ids = self._process_ids(id, external_id, wrap_ids=True)
+        is_single_id = self._is_single_identifier(id, external_id)
         if before:
             for id in all_ids:
                 id.update({"before": before})
@@ -302,9 +303,9 @@ class DatapointsAPI(APIClient):
         utils.assert_exactly_one_of_id_or_external_id(id, external_id)
         datapoints = self._validate_and_format_datapoints(datapoints)
         utils.assert_timestamp_not_in_jan_in_1970(datapoints[0]["timestamp"])
-        post_dps_object, _ = self._process_ids(id, external_id, wrap_ids=True)
-        post_dps_object[0].update({"datapoints": datapoints})
-        self._insert_datapoints_concurrently(post_dps_object)
+        post_dps_object = self._process_ids(id, external_id, wrap_ids=True)[0]
+        post_dps_object.update({"datapoints": datapoints})
+        self._insert_datapoints_concurrently([post_dps_object])
 
     def insert_multiple(self, datapoints: List[Dict[str, Union[str, int, List]]]):
         valid_dps_objects = []
@@ -327,7 +328,7 @@ class DatapointsAPI(APIClient):
         end = utils.timestamp_to_ms(end)
         assert end > start, "end must be larger than start"
 
-        delete_dps_object = self._process_ids(id, external_id, wrap_ids=True)[0][0]
+        delete_dps_object = self._process_ids(id, external_id, wrap_ids=True)[0]
         delete_dps_object.update({"inclusiveBegin": start, "exclusiveEnd": end})
         self._delete_datapoints_ranges([delete_dps_object])
 
@@ -342,7 +343,7 @@ class DatapointsAPI(APIClient):
             id = range.get("id")
             external_id = range.get("externalId")
             utils.assert_exactly_one_of_id_or_external_id(id, external_id)
-            valid_range = self._process_ids(id, external_id, wrap_ids=True)[0][0]
+            valid_range = self._process_ids(id, external_id, wrap_ids=True)[0]
             valid_range.update({"inclusiveBegin": range["start"], "exclusiveEnd": range["end"]})
             valid_ranges.append(valid_range)
         self._delete_datapoints_ranges(valid_ranges)
