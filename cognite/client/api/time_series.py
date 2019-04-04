@@ -56,10 +56,6 @@ class TimeSeries(CogniteResource):
     # GenStop
 
 
-class TimeSeriesList(CogniteResourceList):
-    _RESOURCE = TimeSeries
-
-
 # GenClass: TimeSeriesSearchDTO.filter
 class TimeSeriesFilter(CogniteFilter):
     """Filtering parameters
@@ -107,10 +103,10 @@ class TimeSeriesUpdate(CogniteUpdate):
         external_id (str): No description.
     """
 
+    _UPDATE_ATTRIBUTES = ["unit", "metadata", "securityCategories", "assetId", "description", "name", "externalId"]
+
     def __init__(self, id: int = None, external_id: str = None):
-        self.id = id
-        self.external_id = external_id
-        self._update_object = {}
+        super().__init__(id=id, external_id=external_id)
 
     def external_id_set(self, value: Union[str, None]):
         if value is None:
@@ -170,6 +166,11 @@ class TimeSeriesUpdate(CogniteUpdate):
         return self
 
     # GenStop
+
+
+class TimeSeriesList(CogniteResourceList):
+    _RESOURCE = TimeSeries
+    _UPDATE = TimeSeriesUpdate
 
 
 class TimeSeriesAPI(APIClient):

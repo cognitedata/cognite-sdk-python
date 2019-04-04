@@ -469,14 +469,14 @@ class TestDatapointsObject:
     def test_len(self):
         assert 3 == len(Datapoints(id=1, timestamp=[1, 2, 3], value=[1, 2, 3]))
 
-    def test_get_operative_attrs(self):
+    def test_get_non_empty_data_fields(self):
         assert sorted([("timestamp", [1, 2, 3]), ("value", [1, 2, 3])]) == sorted(
-            list(Datapoints(id=1, timestamp=[1, 2, 3], value=[1, 2, 3])._get_operative_attrs())
+            list(Datapoints(id=1, timestamp=[1, 2, 3], value=[1, 2, 3])._get_non_empty_data_fields())
         )
         assert sorted([("timestamp", [1, 2, 3]), ("max", [1, 2, 3]), ("sum", [1, 2, 3])]) == sorted(
-            list(Datapoints(id=1, timestamp=[1, 2, 3], sum=[1, 2, 3], max=[1, 2, 3])._get_operative_attrs())
+            list(Datapoints(id=1, timestamp=[1, 2, 3], sum=[1, 2, 3], max=[1, 2, 3])._get_non_empty_data_fields())
         )
-        assert [("timestamp", [])] == list(Datapoints(id=1)._get_operative_attrs())
+        assert [("timestamp", [])] == list(Datapoints(id=1)._get_non_empty_data_fields())
 
     def test_load(self):
         res = Datapoints._load(

@@ -54,10 +54,6 @@ class Asset(CogniteResource):
     # GenStop
 
 
-class AssetList(CogniteResourceList):
-    _RESOURCE = Asset
-
-
 # GenUpdateClass: AssetChange
 class AssetUpdate(CogniteUpdate):
     """Changes will be applied to event.
@@ -67,10 +63,10 @@ class AssetUpdate(CogniteUpdate):
         external_id (str): External Id provided by client. Should be unique within the project.
     """
 
+    _UPDATE_ATTRIBUTES = ["source", "metadata", "description", "name", "externalId"]
+
     def __init__(self, id: int = None, external_id: str = None):
-        self.id = id
-        self.external_id = external_id
-        self._update_object = {}
+        super().__init__(id=id, external_id=external_id)
 
     def external_id_set(self, value: Union[str, None]):
         if value is None:
@@ -116,6 +112,11 @@ class AssetUpdate(CogniteUpdate):
         return self
 
     # GenStop
+
+
+class AssetList(CogniteResourceList):
+    _RESOURCE = Asset
+    _UPDATE = AssetUpdate
 
 
 # GenClass: AssetFilter.filter

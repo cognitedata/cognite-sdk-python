@@ -1,5 +1,5 @@
 import json
-from typing import Dict, List
+from typing import Dict, List, Union
 
 import pytest
 
@@ -16,6 +16,63 @@ class MyResource(CogniteResource):
     def __init__(self, var_a=None, var_b=None):
         self.var_a = var_a
         self.var_b = var_b
+
+
+class MyUpdate(CogniteUpdate):
+    def __init__(self, id=None, external_id=None):
+        super().__init__(id, external_id)
+
+    _UPDATE_ATTRIBUTES = ["string", "list", "object"]
+
+    def string_set(self, value: Union[str, None]):
+        if value is None:
+            self._update_object["string"] = {"setNull": True}
+            return self
+        self._update_object["string"] = {"set": value}
+        return self
+
+    def list_set(self, value: Union[List, None]):
+        if value is None:
+            self._update_object["list"] = {"setNull": True}
+            return self
+        self._update_object["list"] = {"set": value}
+        return self
+
+    def list_add(self, value: List):
+        self._update_object["list"] = {"add": value}
+        return self
+
+    def list_remove(self, value: List):
+        self._update_object["list"] = {"remove": value}
+        return self
+
+    def object_set(self, value: Dict):
+        if value is None:
+            self._update_object["object"] = {"setNull": True}
+            return self
+        self._update_object["object"] = {"set": value}
+        return self
+
+
+class MyFilter(CogniteFilter):
+    def __init__(self, var_a=None, var_b=None):
+        self.var_a = var_a
+        self.var_b = var_b
+
+
+class MyResourceList(CogniteResourceList):
+    _RESOURCE = MyResource
+    _UPDATE = MyUpdate
+
+
+class MyResponse(CogniteResponse):
+    def __init__(self, var_a=None):
+        self.var_a = var_a
+
+    @classmethod
+    def _load(cls, api_response):
+        data = api_response["data"]
+        return cls(data["varA"])
 
 
 class TestCogniteResource:
@@ -54,10 +111,6 @@ class TestCogniteResource:
     def test_to_pandas(self):
         with pytest.raises(NotImplementedError):
             MyResource(1).to_pandas()
-
-
-class MyResourceList(CogniteResourceList):
-    _RESOURCE = MyResource
 
 
 class TestCogniteResourceList:
@@ -111,12 +164,6 @@ class TestCogniteResourceList:
             MyResourceList([1, 2, 3])
 
 
-class MyFilter(CogniteFilter):
-    def __init__(self, var_a=None, var_b=None):
-        self.var_a = var_a
-        self.var_b = var_b
-
-
 class TestCogniteFilter:
     def test_dump(self):
         assert MyFilter(1, 2).dump() == {"var_a": 1, "var_b": 2}
@@ -134,48 +181,15 @@ class TestCogniteFilter:
         assert json.dumps({"var_a": 1}, indent=4) == MyFilter(1).__repr__()
 
 
-class MyUpdate(CogniteUpdate):
-    def __init__(self, id=None, external_id=None):
-        self.id = id
-        self.external_id = external_id
-        self._update_object = {}
-
-    def string_set(self, value: str):
-        if value is None:
-            self._update_object["string"] = {"setNull": True}
-            return self
-        self._update_object["string"] = {"set": value}
-        return self
-
-    def list_set(self, value: List):
-        if value is None:
-            self._update_object["list"] = {"setNull": True}
-            return self
-        self._update_object["list"] = {"set": value}
-        return self
-
-    def list_add(self, value: List):
-        self._update_object["list"] = {"add": value}
-        return self
-
-    def list_remove(self, value: List):
-        self._update_object["list"] = {"remove": value}
-        return self
-
-    def object_set(self, value: Dict):
-        if value is None:
-            self._update_object["object"] = {"setNull": True}
-            return self
-        self._update_object["object"] = {"set": value}
-        return self
-
-
 class TestCogniteUpdate:
     def test_dump_id(self):
         assert {"id": 1, "update": {}} == MyUpdate(id=1).dump()
 
     def test_dump_external_id(self):
-        assert {"externalId": 1, "update": {}} == MyUpdate(external_id=1).dump()
+        assert {"externalId": "1", "update": {}} == MyUpdate(external_id="1").dump()
+
+    def test_dump_both_ids_set(self):
+        assert {"id": 1, "update": {}} == MyUpdate(id=1, external_id="1").dump()
 
     def test_eq(self):
         assert MyUpdate() == MyUpdate()
@@ -206,7 +220,7 @@ class TestCogniteUpdate:
         ).dump()
 
     def test_set_string_null(self):
-        assert {"externalId": 1, "update": {"string": {"setNull": True}}} == MyUpdate(external_id=1).string_set(
+        assert {"externalId": "1", "update": {"string": {"setNull": True}}} == MyUpdate(external_id="1").string_set(
             None
         ).dump()
 
@@ -220,16 +234,6 @@ class TestCogniteUpdate:
         assert {"id": 1, "update": {"object": {"setNull": True}, "string": {"set": "bla"}}} == MyUpdate(
             id=1
         ).object_set(None).string_set("bla").dump()
-
-
-class MyResponse(CogniteResponse):
-    def __init__(self, var_a=None):
-        self.var_a = var_a
-
-    @classmethod
-    def _load(cls, api_response):
-        data = api_response["data"]
-        return cls(data["varA"])
 
 
 class TestCogniteResponse:

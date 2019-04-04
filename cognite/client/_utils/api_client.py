@@ -3,6 +3,7 @@ import json as _json
 import logging
 import os
 import re
+from decimal import Decimal
 from typing import Any, Dict, List, Tuple, Union
 
 import numpy
@@ -252,7 +253,7 @@ class APIClient:
 
         for item in items:
             if isinstance(item, CogniteResource):
-                patch_objects.append(self._convert_resource_to_patch_object(item))
+                patch_objects.append(self._convert_resource_to_patch_object(item, cls._UPDATE._UPDATE_ATTRIBUTES))
             elif isinstance(item, CogniteUpdate):
                 patch_objects.append(item.dump())
             else:
@@ -270,7 +271,7 @@ class APIClient:
         return cls._load(res.json()["data"]["items"])
 
     @staticmethod
-    def _convert_resource_to_patch_object(resource):
+    def _convert_resource_to_patch_object(resource, update_attributes):
         dumped_resource = resource.dump(camel_case=True)
         has_id = "id" in dumped_resource
         has_external_id = "externalId" in dumped_resource
@@ -283,7 +284,8 @@ class APIClient:
             patch_object["externalId"] = dumped_resource.pop("externalId")
 
         for key, value in dumped_resource.items():
-            patch_object["update"][key] = {"set": value}
+            if key in update_attributes:
+                patch_object["update"][key] = {"set": value}
         return patch_object
 
     @staticmethod
@@ -325,12 +327,10 @@ class APIClient:
 
     @staticmethod
     def _json_dumps_default(x):
-        if isinstance(x, numpy.int_):
+        if isinstance(x, numpy.integer):
             return int(x)
-        if isinstance(x, numpy.float_):
+        if isinstance(x, Decimal):
             return float(x)
-        if isinstance(x, numpy.bool_):
-            return bool(x)
         return x.__dict__
 
     @staticmethod

@@ -109,8 +109,8 @@ class UpdateClassGenerator:
             schema = self._spec.components.schemas.get(class_segment.schema_name)
             docstring = self.generate_docstring(schema, indentation=4)
             constructor = self.generate_constructor(schema, indentation=4)
-            setters = self.generate_setters(schema, indentation=4)
-            generated_segment = docstring + "\n" + constructor + "\n" + setters
+            setters, updateable_attributes = self.generate_setters(schema, indentation=4)
+            generated_segment = docstring + "\n" + updateable_attributes + "\n" + constructor + "\n" + setters
             generated_segments[class_segment.class_name] = generated_segment
         return generated_segments
 
@@ -134,15 +134,15 @@ class UpdateClassGenerator:
             elif prop_name == "externalId":
                 constructor_params.append("external_id: str = None")
         constructor_params = ", ".join(constructor_params) + "):"
-        constructor_body = ""
         indent = " " * (indentation + 4)
+        super_args = []
         for prop_name, prop in self._get_schema_properties(schema).items():
             if prop_name == "id":
-                constructor_body += indent + "self.id = id\n"
+                super_args.append("id=id")
             elif prop_name == "externalId":
-                constructor_body += indent + "self.external_id = external_id\n"
-        constructor_body += indent + "self._update_object = {}\n"
-        return constructor_params + "\n" + constructor_body[:-1]
+                super_args.append("external_id=external_id")
+        constructor_body = indent + "super().__init__({})".format(", ".join(super_args))
+        return constructor_params + "\n" + constructor_body
 
     def generate_setters(self, schema, indentation):
         setters = []
@@ -152,11 +152,12 @@ class UpdateClassGenerator:
         else:
             update_schema = schema
         indent = " " * indentation
+        updateable_attributes = []
         for prop_name, prop in self._get_schema_properties(update_schema).items():
             if prop_name == "id":
                 continue
             for update_prop, type_hint in self._get_update_properties(prop):
-
+                updateable_attributes.append(prop_name)
                 if update_prop == "set":
                     setter = indent + "def {}_{}(self, value: Union[{}, None]):\n".format(
                         utils.to_snake_case(prop_name), update_prop, type_hint
@@ -179,7 +180,8 @@ class UpdateClassGenerator:
                     setter += indent * 2 + "self._update_object['{}'] = {{'remove': value}}\n".format(prop_name)
                     setter += indent * 2 + "return self\n"
                 setters.append(setter)
-        return "\n\n".join(setters)
+        updateable_attributes = indent + "_UPDATE_ATTRIBUTES = {}".format(list(set(updateable_attributes)))
+        return "\n\n".join(setters), updateable_attributes
 
     @staticmethod
     def _get_update_properties(property_update_schema):

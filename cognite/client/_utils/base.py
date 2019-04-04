@@ -31,8 +31,13 @@ class CogniteResponse:
 
 class CogniteResourceList:
     _RESOURCE = None
+    _UPDATE = None
+    _ASSERT_CLASSES = True
 
     def __init__(self, resources: List[Any]):
+        if self._ASSERT_CLASSES:
+            assert self._RESOURCE is not None, "{} does not have _RESOURCE set".format(self.__class__.__name__)
+            assert self._UPDATE is not None, "{} does not have _UPDATE set".format(self.__class__.__name__)
         for resource in resources:
             if not isinstance(resource, self._RESOURCE):
                 raise TypeError(
@@ -59,8 +64,7 @@ class CogniteResourceList:
         return len(self._resources)
 
     def __iter__(self) -> Generator[_RESOURCE, None, None]:
-        for resource in self._resources:
-            yield resource
+        yield from self._resources
 
     def __str__(self):
         return json.dumps(self.dump(), default=lambda x: x.__dict__, indent=4)
@@ -118,9 +122,10 @@ class CogniteResource:
 
 
 class CogniteUpdate:
-    id = None
-    external_id = None
-    _update_object = None
+    def __init__(self, id: int = None, external_id: str = None):
+        self.id = id
+        self.external_id = external_id
+        self._update_object = {}
 
     def __eq__(self, other):
         return type(self) == type(other) and self.dump() == other.dump()
@@ -133,10 +138,10 @@ class CogniteUpdate:
 
     def dump(self):
         dumped = {"update": self._update_object}
-        if self.external_id is not None:
-            dumped["externalId"] = self.external_id
         if self.id is not None:
             dumped["id"] = self.id
+        elif self.external_id is not None:
+            dumped["externalId"] = self.external_id
         return dumped
 
 

@@ -54,10 +54,6 @@ class FileMetadata(CogniteResource):
     # GenStop
 
 
-class FileMetadaList(CogniteResourceList):
-    _RESOURCE = FileMetadata
-
-
 # GenClass: FilesSearchFilter.filter
 class FileMetadataFilter(CogniteFilter):
     """No description.
@@ -99,10 +95,10 @@ class FileMetadataUpdate(CogniteUpdate):
         external_id (str): No description.
     """
 
+    _UPDATE_ATTRIBUTES = ["source", "assetIds", "metadata", "mimeType", "name", "externalId"]
+
     def __init__(self, id: int = None, external_id: str = None):
-        self.id = id
-        self.external_id = external_id
-        self._update_object = {}
+        super().__init__(id=id, external_id=external_id)
 
     def name_set(self, value: Union[str, None]):
         if value is None:
@@ -163,6 +159,11 @@ class FileMetadataUpdate(CogniteUpdate):
         return self
 
     # GenStop
+
+
+class FileMetadaList(CogniteResourceList):
+    _RESOURCE = FileMetadata
+    _UPDATE = FileMetadataUpdate
 
 
 class FilesAPI(APIClient):
