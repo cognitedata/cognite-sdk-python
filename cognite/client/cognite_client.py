@@ -42,15 +42,8 @@ class CogniteClient:
 
                 from cognite.client import CogniteClient
                 client = CogniteClient()
-                res = client.time_series.get_time_series()
-                print(res.to_pandas())
-
-            Certain experimental features are made available through this client as follows::
-
-                from cognite.client import CogniteClient
-                client = CogniteClient()
-                res = client.experimental.model_hosting.models.list_models()
-                print(res)
+                res = client.time_series.list(limit=5)
+                print(res[:5])
 
             Default configurations may be set using the following environment variables::
 
@@ -98,6 +91,7 @@ class CogniteClient:
             configure_logger("cognite-sdk", log_level="INFO", log_json=True)
 
         __api_version = "1.0"
+
         self.project = project or thread_local_project
         self.login = LoginAPI(
             project=self.project,
@@ -107,6 +101,7 @@ class CogniteClient:
             headers=self._headers,
             timeout=self._timeout,
         )
+
         if self.project is None:
             self.project = self.login.status().project
 
@@ -146,15 +141,6 @@ class CogniteClient:
             headers=self._headers,
             timeout=self._timeout,
         )
-        # self.raw = RawAPI(
-        #     version=__api_version,
-        #     project=self._project,
-        #     base_url=self._base_url,
-        #     max_workers=self._max_workers,
-        #     cookies=self._cookies,
-        #     headers=self._headers,
-        #     timeout=self._timeout,
-        # )
         self.time_series = TimeSeriesAPI(
             version=__api_version,
             project=self.project,
@@ -164,7 +150,6 @@ class CogniteClient:
             headers=self._headers,
             timeout=self._timeout,
         )
-
         self._api_client = APIClient(
             project=self.project,
             base_url=self._base_url,
@@ -175,31 +160,19 @@ class CogniteClient:
         )
 
     def get(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
-        """Perform a GET request to a path in the API.
-
-        Comes in handy if the endpoint you want to reach is not currently supported by the SDK.
-        """
+        """Perform a GET request to an arbitrary path in the API."""
         return self._api_client._get(url, params=params, headers=headers)
 
     def post(self, url: str, json: Dict[str, Any], params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
-        """Perform a POST request to a path in the API.
-
-        Comes in handy if the endpoint you want to reach is not currently supported by the SDK.
-        """
+        """Perform a POST request to an arbitrary path in the API."""
         return self._api_client._post(url, json=json, params=params, headers=headers)
 
     def put(self, url: str, json: Dict[str, Any] = None, headers: Dict[str, Any] = None):
-        """Perform a PUT request to a path in the API.
-
-        Comes in handy if the endpoint you want to reach is not currently supported by the SDK.
-        """
+        """Perform a PUT request to an arbitrary path in the API."""
         return self._api_client._put(url, json=json, headers=headers)
 
     def delete(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
-        """Perform a DELETE request to a path in the API.
-
-        Comes in handy if the endpoint you want to reach is not currently supported by the SDK.
-        """
+        """Perform a DELETE request to an arbitrary path in the API."""
         return self._api_client._delete(url, params=params, headers=headers)
 
     def _configure_headers(self, user_defined_headers):

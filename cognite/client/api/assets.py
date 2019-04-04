@@ -211,7 +211,7 @@ class AssetsAPI(APIClient):
     def get(
         self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None
     ) -> Union[Asset, AssetList]:
-        """Get assets by id
+        """Get assets
 
         Args:
             id (Union[int, List[int], optional): Id or list of ids

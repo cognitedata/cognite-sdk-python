@@ -244,6 +244,35 @@ class DatapointsAPI(APIClient):
         include_outside_points: bool = None,
         limit: int = None,
     ) -> Union[Datapoints, DatapointsList]:
+        """Get datapoints for one or more time series
+
+        Args:
+            start (Union[int, str, datetime]): Inclusive start.
+            end (Union[int, str, datetime]): Exclusive end.
+            id (Union[int, List[int], Dict[str, Any], List[Dict[str, Any]]]: Id or list of ids. Can also be object
+                specifying aggregates. See example below.
+            external_id (Union[int, List[int], Dict[str, Any], List[Dict[str, Any]]]): External id or list of external
+                ids. Can also be object specifying aggregates. See example below.
+            aggregates (List[str]): List of aggregate functions to apply.
+            granularity (str): The granularity to fetch aggregates at. e.g. '1s', '2h', '10d'.
+            include_outside_points (bool): Whether or not to include outside points.
+            limit (int): Maximum number of datapoints to return for each time series.
+
+        Returns:
+            Union[Datapoints, DatapointsList]: A Datapoints object containing the requested data, or a list of such objects.
+
+        Examples:
+
+            You can get specify the ids of the datapoints you wish to retrieve in a number of ways::
+
+                get(id=1)
+                get(id=[1], external_id=["1", "2"])
+
+            If you want different aggregates for different time series specify your ids like this::
+
+                get(id=[{"id": 1, "aggregates": ["avg"]}, {"id": 1, "aggregates": ["min"]}],
+                    external_id={"externalId": "1", "aggregates": ["max"]})
+        """
         start = utils.timestamp_to_ms(start)
         end = utils.timestamp_to_ms(end)
         ts_items, is_single_id = self._process_ts_identifiers(id, external_id)
@@ -280,6 +309,16 @@ class DatapointsAPI(APIClient):
         external_id: Union[str, List[str]] = None,
         before: Union[int, str, datetime] = None,
     ) -> Union[Datapoints, DatapointsList]:
+        """Get the latest datapoint for one or more time series
+
+        Args:
+            id (Union[int, List[int]]: Id or list of ids.
+            external_id (Union[str, List[str]): External id or list of external ids.
+            before: Union[int, str, datetime]: Get latest datapoint before this time.
+
+        Returns:
+            Union[Datapoints, DatapointsList]: A Datapoints object containing the requested data, or a list of such objects.
+        """
         before = utils.timestamp_to_ms(before) if before else None
         all_ids = self._process_ids(id, external_id, wrap_ids=True)
         is_single_id = self._is_single_identifier(id, external_id)
@@ -293,6 +332,17 @@ class DatapointsAPI(APIClient):
         return DatapointsList._load(res)
 
     def query(self, query: Union[DatapointsQuery, List[DatapointsQuery]]) -> Union[Datapoints, DatapointsList]:
+        """Get datapoints for one or more time series
+
+        This method is different from get() in that you can specify different start times, end times, and granularities
+        for each requested time series.
+
+        Args:
+            query (Union[DatapointsQuery, List[DatapointsQuery]): List of datapoint queries.
+
+        Returns:
+            Union[Datapoints, DatapointsList]: A Datapoints object containing the requested data, or a list of such objects.
+        """
         is_single_query = False
         if isinstance(query, DatapointsQuery):
             is_single_query = True
@@ -314,7 +364,41 @@ class DatapointsAPI(APIClient):
         ],
         id: int = None,
         external_id: str = None,
-    ):
+    ) -> None:
+        """Insert datapoints into a time series
+
+        Timestamps can be represented as milliseconds since epoch or datetime objects.
+
+        Args:
+            datapoints(Union[List[Dict, Tuple]]): The datapoints you wish to insert. Can either be a list of tuples or
+                a list of dictionaries. See examples below.
+            id (int): Id of time series to insert datapoints into.
+            external_id (str): External id of time series to insert datapoint into.
+
+        Returns:
+            None
+
+        Examples:
+
+            Your datapoints can be a list of tuples where the first element is the timestamp and the second element is
+            the value::
+
+                # with datetime objects
+                datapoints = [(datetime(2018,1,1), 1000), (datetime(2018,1,2), 2000), ...]
+
+                # with ms since epoch
+                datapoints = [(150000000000, 1000), (160000000000, 2000), ...]
+
+            Or they can be a list of dictionaries::
+
+                # with datetime objects
+                datapoints = [{"timestamp": datetime(2018,1,1), "value": 1000},
+                    {"timestamp": datetime(2018,1,2), "value": 2000}, ...]
+
+                # with ms since epoch
+                datapoints = [{"timestamp": 150000000000, "value": 1000},
+                    {"timestamp": 160000000000, "value": 2000}, ...]
+        """
         utils.assert_exactly_one_of_id_or_external_id(id, external_id)
         datapoints = self._validate_and_format_datapoints(datapoints)
         utils.assert_timestamp_not_in_jan_in_1970(datapoints[0]["timestamp"])
@@ -322,7 +406,37 @@ class DatapointsAPI(APIClient):
         post_dps_object.update({"datapoints": datapoints})
         self._insert_datapoints_concurrently([post_dps_object])
 
-    def insert_multiple(self, datapoints: List[Dict[str, Union[str, int, List]]]):
+    def insert_multiple(self, datapoints: List[Dict[str, Union[str, int, List]]]) -> None:
+        """Insert datapoints into multiple time series
+
+        Args:
+            datapoints (List[Dict]): The datapoints you wish to insert along with the ids of the time series.
+                See examples below.
+
+        Returns:
+            None
+
+        Examples:
+
+            Your datapoints can be a list of tuples where the first element is the timestamp and the second element is
+            the value::
+
+                # with datetime objects and id
+                datapoints = {"id": 1, "datapoints": [(datetime(2018,1,1), 1000), (datetime(2018,1,2), 2000), ...]}
+
+                # with ms since epoch and externalId
+                datapoints = {"externalId": 1, "datapoints": [(150000000000, 1000), (160000000000, 2000), ...]}
+
+            Or they can be a list of dictionaries::
+
+                # with datetime objects and externalId
+                datapoints = {"externalId": "1", "datapoints": [{"timestamp": datetime(2018,1,1), "value": 1000},
+                    {"timestamp": datetime(2018,1,2), "value": 2000}, ...]}
+
+                # with ms since epoch and id
+                datapoints = {"id": 1, "datapoints": [{"timestamp": 150000000000, "value": 1000},
+                    {"timestamp": 160000000000, "value": 2000}, ...]}
+        """
         valid_dps_objects = []
         for dps_object in datapoints:
             for key in dps_object:
@@ -337,7 +451,18 @@ class DatapointsAPI(APIClient):
 
     def delete_range(
         self, start: Union[int, str, datetime], end: Union[int, str, datetime], id: int = None, external_id: str = None
-    ):
+    ) -> None:
+        """Delete a range of datapoints from a time series.
+
+        Args:
+            start (Union[int, str, datetime]): Inclusive start of delete range
+            end (Union[int, str, datetime]): Exclusvie end of delete range
+            id (int): Id of time series to delete data from
+            external_id (str): External id of time series to delete data from
+
+        Returns:
+            None
+        """
         utils.assert_exactly_one_of_id_or_external_id(id, external_id)
         start = utils.timestamp_to_ms(start)
         end = utils.timestamp_to_ms(end)
@@ -347,7 +472,25 @@ class DatapointsAPI(APIClient):
         delete_dps_object.update({"inclusiveBegin": start, "exclusiveEnd": end})
         self._delete_datapoints_ranges([delete_dps_object])
 
-    def delete_ranges(self, ranges: List[Dict[str, Any]]):
+    def delete_ranges(self, ranges: List[Dict[str, Any]]) -> None:
+        """Delete a range of datapoints from multiple time series.
+
+        Args:
+            ranges (List[Dict[str, Any]]): The ids an ranges to delete. See examples below.
+
+        Returns:
+            None
+
+        Examples:
+
+            Each element in the list ranges must be specify either id and a range::
+
+                ranges = [{"id": 1, "start": "2d-ago", "end": "now"}]
+
+            or externalId and a range::
+
+                ranges = [{"externalId": "1", "start": datetime(2018,1,1), "end": datetime(2018,1,2})
+        """
         valid_ranges = []
         for range in ranges:
             for key in range:
