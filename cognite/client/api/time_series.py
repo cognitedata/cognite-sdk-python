@@ -1,9 +1,8 @@
 from typing import *
 from typing import List
-from urllib.parse import quote
 
 from cognite.client._utils.api_client import APIClient
-from cognite.client._utils.base import CogniteFilter, CogniteResource, CogniteResourceList, CogniteUpdate
+from cognite.client._utils.base import *
 
 
 # GenClass: GetTimeSeriesMetadataDTO
@@ -103,67 +102,60 @@ class TimeSeriesUpdate(CogniteUpdate):
         external_id (str): No description.
     """
 
-    _UPDATE_ATTRIBUTES = ["assetId", "description", "externalId", "metadata", "name", "securityCategories", "unit"]
+    @property
+    def external_id(self):
+        return PrimitiveUpdate(self, "externalId")
 
-    def __init__(self, id: int = None, external_id: str = None):
-        super().__init__(id=id, external_id=external_id)
+    @property
+    def name(self):
+        return PrimitiveUpdate(self, "name")
 
-    def external_id_set(self, value: Union[str, None]):
-        if value is None:
-            self._update_object["externalId"] = {"setNull": True}
-            return self
-        self._update_object["externalId"] = {"set": value}
-        return self
+    @property
+    def metadata(self):
+        return ObjectUpdate(self, "metadata")
 
-    def name_set(self, value: Union[str, None]):
-        if value is None:
-            self._update_object["name"] = {"setNull": True}
-            return self
-        self._update_object["name"] = {"set": value}
-        return self
+    @property
+    def unit(self):
+        return PrimitiveUpdate(self, "unit")
 
-    def metadata_set(self, value: Union[Dict[str, Any], None]):
-        if value is None:
-            self._update_object["metadata"] = {"setNull": True}
-            return self
-        self._update_object["metadata"] = {"set": value}
-        return self
+    @property
+    def asset_id(self):
+        return PrimitiveUpdate(self, "assetId")
 
-    def unit_set(self, value: Union[str, None]):
-        if value is None:
-            self._update_object["unit"] = {"setNull": True}
-            return self
-        self._update_object["unit"] = {"set": value}
-        return self
+    @property
+    def description(self):
+        return PrimitiveUpdate(self, "description")
 
-    def asset_id_set(self, value: Union[int, None]):
-        if value is None:
-            self._update_object["assetId"] = {"setNull": True}
-            return self
-        self._update_object["assetId"] = {"set": value}
-        return self
+    @property
+    def security_categories(self):
+        return ListUpdate(self, "securityCategories")
 
-    def description_set(self, value: Union[str, None]):
-        if value is None:
-            self._update_object["description"] = {"setNull": True}
-            return self
-        self._update_object["description"] = {"set": value}
-        return self
 
-    def security_categories_add(self, value: List):
-        self._update_object["securityCategories"] = {"add": value}
-        return self
+class PrimitiveUpdate(CognitePrimitiveUpdate):
+    def set(self, value: Any) -> TimeSeriesUpdate:
+        return self._set(value)
 
-    def security_categories_remove(self, value: List):
-        self._update_object["securityCategories"] = {"remove": value}
-        return self
 
-    def security_categories_set(self, value: Union[List, None]):
-        if value is None:
-            self._update_object["securityCategories"] = {"setNull": True}
-            return self
-        self._update_object["securityCategories"] = {"set": value}
-        return self
+class ObjectUpdate(CogniteObjectUpdate):
+    def set(self, value: Dict) -> TimeSeriesUpdate:
+        return self._set(value)
+
+    def add(self, value: Dict) -> TimeSeriesUpdate:
+        return self._add(value)
+
+    def remove(self, value: List) -> TimeSeriesUpdate:
+        return self._remove(value)
+
+
+class ListUpdate(CogniteListUpdate):
+    def set(self, value: List) -> TimeSeriesUpdate:
+        return self._set(value)
+
+    def add(self, value: List) -> TimeSeriesUpdate:
+        return self._add(value)
+
+    def remove(self, value: List) -> TimeSeriesUpdate:
+        return self._remove(value)
 
     # GenStop
 

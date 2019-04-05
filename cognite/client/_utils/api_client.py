@@ -253,7 +253,7 @@ class APIClient:
 
         for item in items:
             if isinstance(item, CogniteResource):
-                patch_objects.append(self._convert_resource_to_patch_object(item, cls._UPDATE._UPDATE_ATTRIBUTES))
+                patch_objects.append(self._convert_resource_to_patch_object(item, cls._UPDATE._get_update_properties()))
             elif isinstance(item, CogniteUpdate):
                 patch_objects.append(item.dump())
             else:

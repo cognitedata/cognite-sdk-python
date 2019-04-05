@@ -108,9 +108,9 @@ class UpdateClassGenerator:
         for class_segment in self.gen_update_class_segments:
             schema = self._spec.components.schemas.get(class_segment.schema_name)
             docstring = self.generate_docstring(schema, indentation=4)
-            constructor = self.generate_constructor(schema, indentation=4)
-            setters, updateable_attributes = self.generate_setters(schema, indentation=4)
-            generated_segment = docstring + "\n" + updateable_attributes + "\n" + constructor + "\n" + setters
+            setters = self.generate_setters(schema, indentation=4)
+            attr_update_classes = self.generate_attr_update_classes(class_segment.class_name)
+            generated_segment = docstring + "\n" + setters + "\n" + attr_update_classes
             generated_segments[class_segment.class_name] = generated_segment
         return generated_segments
 
@@ -126,24 +126,6 @@ class UpdateClassGenerator:
         docstring += " " * indentation + '"""'
         return docstring
 
-    def generate_constructor(self, schema, indentation):
-        constructor_params = [" " * indentation + "def __init__(self"]
-        for prop_name, prop in self._get_schema_properties(schema).items():
-            if prop_name == "id":
-                constructor_params.append("id: int = None")
-            elif prop_name == "externalId":
-                constructor_params.append("external_id: str = None")
-        constructor_params = ", ".join(constructor_params) + "):"
-        indent = " " * (indentation + 4)
-        super_args = []
-        for prop_name, prop in self._get_schema_properties(schema).items():
-            if prop_name == "id":
-                super_args.append("id=id")
-            elif prop_name == "externalId":
-                super_args.append("external_id=external_id")
-        constructor_body = indent + "super().__init__({})".format(", ".join(super_args))
-        return constructor_params + "\n" + constructor_body
-
     def generate_setters(self, schema, indentation):
         setters = []
         schema_properties = self._get_schema_properties(schema)
@@ -152,36 +134,41 @@ class UpdateClassGenerator:
         else:
             update_schema = schema
         indent = " " * indentation
-        updateable_attributes = []
         for prop_name, prop in self._get_schema_properties(update_schema).items():
             if prop_name == "id":
                 continue
-            for update_prop, type_hint in self._get_update_properties(prop):
-                updateable_attributes.append(prop_name)
-                if update_prop == "set":
-                    setter = indent + "def {}_{}(self, value: Union[{}, None]):\n".format(
-                        utils.to_snake_case(prop_name), update_prop, type_hint
-                    )
-                    setter += indent * 2 + "if value is None:\n"
-                    setter += indent * 3 + "self._update_object['{}'] = {{'setNull': True}}\n".format(prop_name)
-                    setter += indent * 3 + "return self\n"
-                    setter += indent * 2 + "self._update_object['{}'] = {{'set': value}}\n".format(prop_name)
-                    setter += indent * 2 + "return self\n"
-                if update_prop == "add":
-                    setter = indent + "def {}_{}(self, value: {}):\n".format(
-                        utils.to_snake_case(prop_name), update_prop, type_hint
-                    )
-                    setter += indent * 2 + "self._update_object['{}'] = {{'add': value}}\n".format(prop_name)
-                    setter += indent * 2 + "return self\n"
-                if update_prop == "remove":
-                    setter = indent + "def {}_{}(self, value: {}):\n".format(
-                        utils.to_snake_case(prop_name), update_prop, type_hint
-                    )
-                    setter += indent * 2 + "self._update_object['{}'] = {{'remove': value}}\n".format(prop_name)
-                    setter += indent * 2 + "return self\n"
+            update_prop_type_hints = {p: type_hint for p, type_hint in self._get_update_properties(prop)}
+            if "set" in update_prop_type_hints:
+                setter = indent + "@property\n"
+                setter += indent + "def {}(self):\n".format(utils.to_snake_case(prop_name))
+                if update_prop_type_hints["set"] == "List":
+                    setter += indent + indent + "return ListUpdate(self, '{}')".format(prop_name)
+                elif update_prop_type_hints["set"] == "Dict[str, Any]":
+                    setter += indent + indent + "return ObjectUpdate(self, '{}')".format(prop_name)
+                else:
+                    setter += indent + indent + "return PrimitiveUpdate(self, '{}')".format(prop_name)
                 setters.append(setter)
-        updateable_attributes = indent + "_UPDATE_ATTRIBUTES = {}".format(sorted(list(set(updateable_attributes))))
-        return "\n\n".join(setters), updateable_attributes
+        return "\n\n".join(setters)
+
+    def generate_attr_update_classes(self, class_name):
+        update_classes = []
+        update_class_methods = {
+            "PrimitiveUpdate": [("set", "Any")],
+            "ObjectUpdate": [("set", "Dict"), ("add", "Dict"), ("remove", "List")],
+            "ListUpdate": [("set", "List"), ("add", "List"), ("remove", "List")],
+        }
+        indent = " " * 4
+        for update_class_name, methods in update_class_methods.items():
+            update_methods = []
+            for method, value_type in methods:
+                update_method = indent + "def {}(self, value: {}) -> {}:\n".format(method, value_type, class_name)
+                update_method += indent + indent + "return self._{}(value)".format(method)
+                update_methods.append(update_method)
+            update_class = "class {}(Cognite{}):\n{}".format(
+                update_class_name, update_class_name, "\n\n".join(update_methods)
+            )
+            update_classes.append(update_class)
+        return "\n\n".join(update_classes)
 
     @staticmethod
     def _get_update_properties(property_update_schema):

@@ -2,7 +2,7 @@ from typing import *
 from typing import List
 
 from cognite.client._utils.api_client import APIClient
-from cognite.client._utils.base import CogniteFilter, CogniteResource, CogniteResourceList, CogniteUpdate
+from cognite.client._utils.base import *
 
 
 # GenClass: Event
@@ -96,75 +96,60 @@ class EventUpdate(CogniteUpdate):
         external_id (str): External Id provided by client. Should be unique within the project.
     """
 
-    _UPDATE_ATTRIBUTES = ["assetIds", "description", "endTime", "externalId", "metadata", "source", "startTime"]
+    @property
+    def external_id(self):
+        return PrimitiveUpdate(self, "externalId")
 
-    def __init__(self, id: int = None, external_id: str = None):
-        super().__init__(id=id, external_id=external_id)
+    @property
+    def start_time(self):
+        return PrimitiveUpdate(self, "startTime")
 
-    def external_id_set(self, value: Union[str, None]):
-        if value is None:
-            self._update_object["externalId"] = {"setNull": True}
-            return self
-        self._update_object["externalId"] = {"set": value}
-        return self
+    @property
+    def end_time(self):
+        return PrimitiveUpdate(self, "endTime")
 
-    def start_time_set(self, value: Union[int, None]):
-        if value is None:
-            self._update_object["startTime"] = {"setNull": True}
-            return self
-        self._update_object["startTime"] = {"set": value}
-        return self
+    @property
+    def description(self):
+        return PrimitiveUpdate(self, "description")
 
-    def end_time_set(self, value: Union[int, None]):
-        if value is None:
-            self._update_object["endTime"] = {"setNull": True}
-            return self
-        self._update_object["endTime"] = {"set": value}
-        return self
+    @property
+    def metadata(self):
+        return ObjectUpdate(self, "metadata")
 
-    def description_set(self, value: Union[str, None]):
-        if value is None:
-            self._update_object["description"] = {"setNull": True}
-            return self
-        self._update_object["description"] = {"set": value}
-        return self
+    @property
+    def asset_ids(self):
+        return ListUpdate(self, "assetIds")
 
-    def metadata_add(self, value: Dict[str, Any]):
-        self._update_object["metadata"] = {"add": value}
-        return self
+    @property
+    def source(self):
+        return PrimitiveUpdate(self, "source")
 
-    def metadata_remove(self, value: List):
-        self._update_object["metadata"] = {"remove": value}
-        return self
 
-    def metadata_set(self, value: Union[Dict[str, Any], None]):
-        if value is None:
-            self._update_object["metadata"] = {"setNull": True}
-            return self
-        self._update_object["metadata"] = {"set": value}
-        return self
+class PrimitiveUpdate(CognitePrimitiveUpdate):
+    def set(self, value: Any) -> EventUpdate:
+        return self._set(value)
 
-    def asset_ids_add(self, value: List):
-        self._update_object["assetIds"] = {"add": value}
-        return self
 
-    def asset_ids_remove(self, value: List):
-        self._update_object["assetIds"] = {"remove": value}
-        return self
+class ObjectUpdate(CogniteObjectUpdate):
+    def set(self, value: Dict) -> EventUpdate:
+        return self._set(value)
 
-    def asset_ids_set(self, value: Union[List, None]):
-        if value is None:
-            self._update_object["assetIds"] = {"setNull": True}
-            return self
-        self._update_object["assetIds"] = {"set": value}
-        return self
+    def add(self, value: Dict) -> EventUpdate:
+        return self._add(value)
 
-    def source_set(self, value: Union[str, None]):
-        if value is None:
-            self._update_object["source"] = {"setNull": True}
-            return self
-        self._update_object["source"] = {"set": value}
-        return self
+    def remove(self, value: List) -> EventUpdate:
+        return self._remove(value)
+
+
+class ListUpdate(CogniteListUpdate):
+    def set(self, value: List) -> EventUpdate:
+        return self._set(value)
+
+    def add(self, value: List) -> EventUpdate:
+        return self._add(value)
+
+    def remove(self, value: List) -> EventUpdate:
+        return self._remove(value)
 
     # GenStop
 

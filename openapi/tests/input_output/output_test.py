@@ -13,6 +13,18 @@ class CogniteFilter:
     pass
 
 
+class CognitePrimitiveUpdate:
+    pass
+
+
+class CogniteObjectUpdate:
+    pass
+
+
+class CogniteListUpdate:
+    pass
+
+
 # GenClass: Asset, ExternalAssetItem
 class Asset(CogniteResource):
     """Representation of a physical asset, e.g plant or piece of equipment
@@ -74,53 +86,52 @@ class AssetUpdate(CogniteUpdate):
         external_id (str): External Id provided by client. Should be unique within the project.
     """
 
-    _UPDATE_ATTRIBUTES = ["description", "externalId", "metadata", "name", "source"]
+    @property
+    def external_id(self):
+        return PrimitiveUpdate(self, "externalId")
 
-    def __init__(self, id: int = None, external_id: str = None):
-        super().__init__(id=id, external_id=external_id)
+    @property
+    def name(self):
+        return PrimitiveUpdate(self, "name")
 
-    def external_id_set(self, value: Union[str, None]):
-        if value is None:
-            self._update_object["externalId"] = {"setNull": True}
-            return self
-        self._update_object["externalId"] = {"set": value}
-        return self
+    @property
+    def description(self):
+        return PrimitiveUpdate(self, "description")
 
-    def name_set(self, value: Union[str, None]):
-        if value is None:
-            self._update_object["name"] = {"setNull": True}
-            return self
-        self._update_object["name"] = {"set": value}
-        return self
+    @property
+    def metadata(self):
+        return ObjectUpdate(self, "metadata")
 
-    def description_set(self, value: Union[str, None]):
-        if value is None:
-            self._update_object["description"] = {"setNull": True}
-            return self
-        self._update_object["description"] = {"set": value}
-        return self
+    @property
+    def source(self):
+        return PrimitiveUpdate(self, "source")
 
-    def metadata_add(self, value: Dict[str, Any]):
-        self._update_object["metadata"] = {"add": value}
-        return self
 
-    def metadata_remove(self, value: List):
-        self._update_object["metadata"] = {"remove": value}
-        return self
+class PrimitiveUpdate(CognitePrimitiveUpdate):
+    def set(self, value: Any) -> AssetUpdate:
+        return self._set(value)
 
-    def metadata_set(self, value: Union[Dict[str, Any], None]):
-        if value is None:
-            self._update_object["metadata"] = {"setNull": True}
-            return self
-        self._update_object["metadata"] = {"set": value}
-        return self
 
-    def source_set(self, value: Union[str, None]):
-        if value is None:
-            self._update_object["source"] = {"setNull": True}
-            return self
-        self._update_object["source"] = {"set": value}
-        return self
+class ObjectUpdate(CogniteObjectUpdate):
+    def set(self, value: Dict) -> AssetUpdate:
+        return self._set(value)
+
+    def add(self, value: Dict) -> AssetUpdate:
+        return self._add(value)
+
+    def remove(self, value: List) -> AssetUpdate:
+        return self._remove(value)
+
+
+class ListUpdate(CogniteListUpdate):
+    def set(self, value: List) -> AssetUpdate:
+        return self._set(value)
+
+    def add(self, value: List) -> AssetUpdate:
+        return self._add(value)
+
+    def remove(self, value: List) -> AssetUpdate:
+        return self._remove(value)
 
     # GenStop
 

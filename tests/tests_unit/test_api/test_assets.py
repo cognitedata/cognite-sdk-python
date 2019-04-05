@@ -88,12 +88,12 @@ class TestAssets:
         assert mock_assets_response.calls[0].response.json()["data"]["items"][0] == res.dump(camel_case=True)
 
     def test_update_with_update_class(self, mock_assets_response):
-        res = ASSETS_API.update(AssetUpdate(id=1).description_set("blabla"))
+        res = ASSETS_API.update(AssetUpdate(id=1).description.set("blabla"))
         assert isinstance(res, Asset)
         assert mock_assets_response.calls[0].response.json()["data"]["items"][0] == res.dump(camel_case=True)
 
     def test_update_multiple(self, mock_assets_response):
-        res = ASSETS_API.update([AssetUpdate(id=1).description_set("blabla")])
+        res = ASSETS_API.update([AssetUpdate(id=1).description.set("blabla")])
         assert isinstance(res, AssetList)
         assert mock_assets_response.calls[0].response.json()["data"]["items"] == res.dump(camel_case=True)
 
@@ -104,17 +104,17 @@ class TestAssets:
     def test_assets_update_object(self):
         assert isinstance(
             AssetUpdate(1)
-            .description_set("")
-            .description_set(None)
-            .external_id_set("1")
-            .external_id_set(None)
-            .metadata_add({})
-            .metadata_remove([])
-            .metadata_set({})
-            .metadata_set(None)
-            .name_set("")
-            .name_set(None)
-            .source_set(1)
-            .source_set(None),
+            .description.set("")
+            .description.set(None)
+            .external_id.set("1")
+            .external_id.set(None)
+            .metadata.add({})
+            .metadata.remove([])
+            .metadata.set({})
+            .metadata.set(None)
+            .name.set("")
+            .name.set(None)
+            .source.set(1)
+            .source.set(None),
             AssetUpdate,
         )

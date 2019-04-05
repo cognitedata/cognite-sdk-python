@@ -10,6 +10,18 @@ class CogniteFilter:
     pass
 
 
+class CognitePrimitiveUpdate:
+    pass
+
+
+class CogniteObjectUpdate:
+    pass
+
+
+class CogniteListUpdate:
+    pass
+
+
 # GenClass: Asset, ExternalAssetItem
 class Asset(CogniteResource):
     # GenStop

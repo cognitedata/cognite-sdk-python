@@ -122,104 +122,76 @@ class TestUpdateClassGenerator:
             == docstring
         )
 
-    def test_gen_constructor(self):
-        constructor = UPDATE_CLASS_GENERATOR.generate_constructor(
-            CLASS_GENERATOR._spec.components.schemas.get("AssetChange"), indentation=4
-        )
-        assert (
-            """    def __init__(self, id: int = None, external_id: str = None):
-        super().__init__(id=id, external_id=external_id)"""
-            == constructor
-        )
-
     def test_gen_setters(self):
-        setters, _ = UPDATE_CLASS_GENERATOR.generate_setters(
+        setters = UPDATE_CLASS_GENERATOR.generate_setters(
             CLASS_GENERATOR._spec.components.schemas.get("EventChange"), indentation=4
         )
         assert (
-            """    def external_id_set(self, value: Union[str, None]):
-        if value is None:
-            self._update_object['externalId'] = {'setNull': True}
-            return self
-        self._update_object['externalId'] = {'set': value}
-        return self
+            """    @property
+    def external_id(self):
+        return PrimitiveUpdate(self, 'externalId')
 
+    @property
+    def start_time(self):
+        return PrimitiveUpdate(self, 'startTime')
 
-    def start_time_set(self, value: Union[int, None]):
-        if value is None:
-            self._update_object['startTime'] = {'setNull': True}
-            return self
-        self._update_object['startTime'] = {'set': value}
-        return self
+    @property
+    def end_time(self):
+        return PrimitiveUpdate(self, 'endTime')
 
+    @property
+    def description(self):
+        return PrimitiveUpdate(self, 'description')
 
-    def end_time_set(self, value: Union[int, None]):
-        if value is None:
-            self._update_object['endTime'] = {'setNull': True}
-            return self
-        self._update_object['endTime'] = {'set': value}
-        return self
+    @property
+    def metadata(self):
+        return ObjectUpdate(self, 'metadata')
 
+    @property
+    def asset_ids(self):
+        return ListUpdate(self, 'assetIds')
 
-    def description_set(self, value: Union[str, None]):
-        if value is None:
-            self._update_object['description'] = {'setNull': True}
-            return self
-        self._update_object['description'] = {'set': value}
-        return self
-
-
-    def metadata_add(self, value: Dict[str, Any]):
-        self._update_object['metadata'] = {'add': value}
-        return self
-
-
-    def metadata_remove(self, value: List):
-        self._update_object['metadata'] = {'remove': value}
-        return self
-
-
-    def metadata_set(self, value: Union[Dict[str, Any], None]):
-        if value is None:
-            self._update_object['metadata'] = {'setNull': True}
-            return self
-        self._update_object['metadata'] = {'set': value}
-        return self
-
-
-    def asset_ids_add(self, value: List):
-        self._update_object['assetIds'] = {'add': value}
-        return self
-
-
-    def asset_ids_remove(self, value: List):
-        self._update_object['assetIds'] = {'remove': value}
-        return self
-
-
-    def asset_ids_set(self, value: Union[List, None]):
-        if value is None:
-            self._update_object['assetIds'] = {'setNull': True}
-            return self
-        self._update_object['assetIds'] = {'set': value}
-        return self
-
-
-    def source_set(self, value: Union[str, None]):
-        if value is None:
-            self._update_object['source'] = {'setNull': True}
-            return self
-        self._update_object['source'] = {'set': value}
-        return self
-"""
+    @property
+    def source(self):
+        return PrimitiveUpdate(self, 'source')"""
             == setters
+        )
+
+    def test_generate_attr_update_classes(self):
+        attr_update_classes = UPDATE_CLASS_GENERATOR.generate_attr_update_classes("AssetUpdate")
+        print(attr_update_classes)
+        assert (
+            """class PrimitiveUpdate(CognitePrimitiveUpdate):
+    def set(self, value: Any) -> AssetUpdate:
+        return self._set(value)
+
+class ObjectUpdate(CogniteObjectUpdate):
+    def set(self, value: Dict) -> AssetUpdate:
+        return self._set(value)
+
+    def add(self, value: Dict) -> AssetUpdate:
+        return self._add(value)
+
+    def remove(self, value: List) -> AssetUpdate:
+        return self._remove(value)
+
+class ListUpdate(CogniteListUpdate):
+    def set(self, value: List) -> AssetUpdate:
+        return self._set(value)
+
+    def add(self, value: List) -> AssetUpdate:
+        return self._add(value)
+
+    def remove(self, value: List) -> AssetUpdate:
+        return self._remove(value)"""
+            == attr_update_classes
         )
 
     def test_generate_code(self):
         schema = UPDATE_CLASS_GENERATOR._spec.components.schemas.get("AssetChange")
         docstring = UPDATE_CLASS_GENERATOR.generate_docstring(schema, indentation=4)
-        constructor = UPDATE_CLASS_GENERATOR.generate_constructor(schema, indentation=4)
-        setters, updateable_attributes = UPDATE_CLASS_GENERATOR.generate_setters(schema, indentation=4)
+        setters = UPDATE_CLASS_GENERATOR.generate_setters(schema, indentation=4)
+        attr_update_classes = UPDATE_CLASS_GENERATOR.generate_attr_update_classes("AssetUpdate")
 
         generated = UPDATE_CLASS_GENERATOR.generate_code_for_class_segments()["AssetUpdate"]
-        assert generated == docstring + "\n" + updateable_attributes + "\n" + constructor + "\n" + setters
+        assert generated == docstring + "\n" + setters + "\n" + attr_update_classes

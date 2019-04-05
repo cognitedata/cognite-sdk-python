@@ -116,14 +116,14 @@ class TestFilesAPI:
         )
 
     def test_update_with_update_class(self, mock_files_response):
-        res = FILES_API.update(FileMetadataUpdate(id=1).name_set("bla"))
+        res = FILES_API.update(FileMetadataUpdate(id=1).name.set("bla"))
         assert isinstance(res, FileMetadata)
         assert {"items": [{"id": 1, "update": {"name": {"set": "bla"}}}]} == jsgz_load(
             mock_files_response.calls[0].request.body
         )
 
     def test_update_multiple(self, mock_files_response):
-        res = FILES_API.update([FileMetadataUpdate(id=1).name_set(None), FileMetadata(external_id="2", name="bla")])
+        res = FILES_API.update([FileMetadataUpdate(id=1).name.set(None), FileMetadata(external_id="2", name="bla")])
         assert isinstance(res, FileMetadaList)
         assert {
             "items": [
@@ -199,19 +199,19 @@ class TestFilesAPI:
     def test_files_update_object(self):
         assert isinstance(
             FileMetadataUpdate(1)
-            .asset_ids_add([])
-            .asset_ids_remove([])
-            .asset_ids_set([])
-            .asset_ids_set(None)
-            .external_id_set("1")
-            .external_id_set(None)
-            .metadata_add({})
-            .metadata_remove([])
-            .metadata_set({})
-            .metadata_set(None)
-            .mime_type_set("")
-            .mime_type_set(None)
-            .source_set(1)
-            .source_set(None),
+            .asset_ids.add([])
+            .asset_ids.remove([])
+            .asset_ids.set([])
+            .asset_ids.set(None)
+            .external_id.set("1")
+            .external_id.set(None)
+            .metadata.add({})
+            .metadata.remove([])
+            .metadata.set({})
+            .metadata.set(None)
+            .mime_type.set("")
+            .mime_type.set(None)
+            .source.set(1)
+            .source.set(None),
             FileMetadataUpdate,
         )

@@ -1,15 +1,6 @@
-import json
-from typing import Dict, List, Union
-
 import pytest
 
-from cognite.client._utils.base import (
-    CogniteFilter,
-    CogniteResource,
-    CogniteResourceList,
-    CogniteResponse,
-    CogniteUpdate,
-)
+from cognite.client._utils.base import *
 
 
 class MyResource(CogniteResource):
@@ -19,39 +10,44 @@ class MyResource(CogniteResource):
 
 
 class MyUpdate(CogniteUpdate):
-    def __init__(self, id=None, external_id=None):
-        super().__init__(id, external_id)
+    @property
+    def string(self):
+        return PrimitiveUpdate(self, "string")
 
-    _UPDATE_ATTRIBUTES = ["string", "list", "object"]
+    @property
+    def list(self):
+        return ListUpdate(self, "list")
 
-    def string_set(self, value: Union[str, None]):
-        if value is None:
-            self._update_object["string"] = {"setNull": True}
-            return self
-        self._update_object["string"] = {"set": value}
-        return self
+    @property
+    def object(self):
+        return ObjectUpdate(self, "object")
 
-    def list_set(self, value: Union[List, None]):
-        if value is None:
-            self._update_object["list"] = {"setNull": True}
-            return self
-        self._update_object["list"] = {"set": value}
-        return self
 
-    def list_add(self, value: List):
-        self._update_object["list"] = {"add": value}
-        return self
+class PrimitiveUpdate(CognitePrimitiveUpdate):
+    def set(self, value: Any) -> MyUpdate:
+        return self._set(value)
 
-    def list_remove(self, value: List):
-        self._update_object["list"] = {"remove": value}
-        return self
 
-    def object_set(self, value: Dict):
-        if value is None:
-            self._update_object["object"] = {"setNull": True}
-            return self
-        self._update_object["object"] = {"set": value}
-        return self
+class ObjectUpdate(CogniteObjectUpdate):
+    def set(self, value: Dict) -> MyUpdate:
+        return self._set(value)
+
+    def add(self, value: Dict) -> MyUpdate:
+        return self._add(value)
+
+    def remove(self, value: List) -> MyUpdate:
+        return self._remove(value)
+
+
+class ListUpdate(CogniteListUpdate):
+    def set(self, value: List) -> MyUpdate:
+        return self._set(value)
+
+    def add(self, value: List) -> MyUpdate:
+        return self._add(value)
+
+    def remove(self, value: List) -> MyUpdate:
+        return self._remove(value)
 
 
 class MyFilter(CogniteFilter):
@@ -194,46 +190,51 @@ class TestCogniteUpdate:
     def test_eq(self):
         assert MyUpdate() == MyUpdate()
         assert MyUpdate(1) == MyUpdate(1)
-        assert MyUpdate(1).string_set("1") == MyUpdate(1).string_set("1")
+        assert MyUpdate(1).string.set("1") == MyUpdate(1).string.set("1")
         assert MyUpdate(1) != MyUpdate(2)
-        assert MyUpdate(1) != MyUpdate(1).string_set("1")
+        assert MyUpdate(1) != MyUpdate(1).string.set("1")
 
     def test_str(self):
         assert json.dumps(MyUpdate(1).dump(), indent=4) == MyUpdate(1).__str__()
-        assert json.dumps(MyUpdate(1).string_set("1").dump(), indent=4) == MyUpdate(1).string_set("1").__str__()
+        assert json.dumps(MyUpdate(1).string.set("1").dump(), indent=4) == MyUpdate(1).string.set("1").__str__()
 
     def test_set_string(self):
-        assert {"id": 1, "update": {"string": {"set": "bla"}}} == MyUpdate(1).string_set("bla").dump()
+        assert {"id": 1, "update": {"string": {"set": "bla"}}} == MyUpdate(1).string.set("bla").dump()
 
     def test_add_to_list(self):
-        assert {"id": 1, "update": {"list": {"add": [1, 2, 3]}}} == MyUpdate(1).list_add([1, 2, 3]).dump()
+        assert {"id": 1, "update": {"list": {"add": [1, 2, 3]}}} == MyUpdate(1).list.add([1, 2, 3]).dump()
 
     def test_set_list(self):
-        assert {"id": 1, "update": {"list": {"set": [1, 2, 3]}}} == MyUpdate(1).list_set([1, 2, 3]).dump()
+        assert {"id": 1, "update": {"list": {"set": [1, 2, 3]}}} == MyUpdate(1).list.set([1, 2, 3]).dump()
 
     def test_remove_from_list(self):
-        assert {"id": 1, "update": {"list": {"remove": [1, 2, 3]}}} == MyUpdate(1).list_remove([1, 2, 3]).dump()
+        assert {"id": 1, "update": {"list": {"remove": [1, 2, 3]}}} == MyUpdate(1).list.remove([1, 2, 3]).dump()
 
     def test_set_object(self):
-        assert {"id": 1, "update": {"object": {"set": {"key": "value"}}}} == MyUpdate(1).object_set(
+        assert {"id": 1, "update": {"object": {"set": {"key": "value"}}}} == MyUpdate(1).object.set(
             {"key": "value"}
         ).dump()
 
+    def test_add_object(self):
+        assert {"id": 1, "update": {"object": {"add": {"key": "value"}}}} == MyUpdate(1).object.add(
+            {"key": "value"}
+        ).dump()
+
+    def test_remove_object(self):
+        assert {"id": 1, "update": {"object": {"remove": ["value"]}}} == MyUpdate(1).object.remove(["value"]).dump()
+
     def test_set_string_null(self):
-        assert {"externalId": "1", "update": {"string": {"setNull": True}}} == MyUpdate(external_id="1").string_set(
+        assert {"externalId": "1", "update": {"string": {"setNull": True}}} == MyUpdate(external_id="1").string.set(
             None
         ).dump()
 
-    def test_set_list_null(self):
-        assert {"id": 1, "update": {"list": {"setNull": True}}} == MyUpdate(id=1).list_set(None).dump()
-
-    def test_set_object_null(self):
-        assert {"id": 1, "update": {"object": {"setNull": True}}} == MyUpdate(id=1).object_set(None).dump()
-
     def test_chain_setters(self):
-        assert {"id": 1, "update": {"object": {"setNull": True}, "string": {"set": "bla"}}} == MyUpdate(
+        assert {"id": 1, "update": {"object": {"set": {"bla": "bla"}}, "string": {"set": "bla"}}} == MyUpdate(
             id=1
-        ).object_set(None).string_set("bla").dump()
+        ).object.set({"bla": "bla"}).string.set("bla").dump()
+
+    def test_get_update_properties(self):
+        assert ["string", "list", "object"] == MyUpdate._get_update_properties()
 
 
 class TestCogniteResponse:

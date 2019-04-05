@@ -1,6 +1,5 @@
 import json
-from datetime import datetime
-from typing import Any, Dict, Generator, List, Union
+from typing import *
 
 from cognite.client._utils.utils import to_camel_case, to_snake_case
 
@@ -125,8 +124,8 @@ class CogniteResource:
 
 class CogniteUpdate:
     def __init__(self, id: int = None, external_id: str = None):
-        self.id = id
-        self.external_id = external_id
+        self._id = id
+        self._external_id = external_id
         self._update_object = {}
 
     def __eq__(self, other):
@@ -138,13 +137,78 @@ class CogniteUpdate:
     def __repr__(self):
         return self.__str__()
 
+    def _set(self, name, value):
+        self._update_object[name] = {"set": value}
+
+    def _set_null(self, name):
+        self._update_object[name] = {"setNull": True}
+
+    def _add(self, name, value):
+        self._update_object[name] = {"add": value}
+
+    def _remove(self, name, value):
+        self._update_object[name] = {"remove": value}
+
     def dump(self):
         dumped = {"update": self._update_object}
-        if self.id is not None:
-            dumped["id"] = self.id
-        elif self.external_id is not None:
-            dumped["externalId"] = self.external_id
+        if self._id is not None:
+            dumped["id"] = self._id
+        elif self._external_id is not None:
+            dumped["externalId"] = self._external_id
         return dumped
+
+    @classmethod
+    def _get_update_properties(cls):
+        return [key for key in cls.__dict__.keys() if not key.startswith("_")]
+
+
+class CognitePrimitiveUpdate:
+    def __init__(self, update_object, name: str):
+        self._update_object = update_object
+        self._name = name
+
+    def _set(self, value: Union[None, str, int, bool]):
+        if value is None:
+            self._update_object._set_null(self._name)
+        else:
+            self._update_object._set(self._name, value)
+        return self._update_object
+
+
+class CogniteObjectUpdate:
+    def __init__(self, update_object, name: str):
+        self._update_object = update_object
+        self._name = name
+
+    def _set(self, value: Dict):
+        self._update_object._set(self._name, value)
+        return self._update_object
+
+    def _add(self, value: Dict):
+        self._update_object._add(self._name, value)
+        return self._update_object
+
+    def _remove(self, value: List):
+        self._update_object._remove(self._name, value)
+        return self._update_object
+
+
+class CogniteListUpdate:
+    def __init__(self, update_object, name: str):
+        self._update_object = update_object
+        self._name = name
+
+    def _set(self, value: List):
+        self._update_object._set(self._name, value)
+        return self._update_object
+
+    def _add(self, value: List):
+        self._update_object._add(self._name, value)
+        return self._update_object
+
+    def _remove(self, value: List):
+        self._update_object._remove(self._name, value)
+        return self._update_object
 
 
 class CogniteFilter:

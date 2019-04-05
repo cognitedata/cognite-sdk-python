@@ -87,12 +87,12 @@ class TestEvents:
         assert mock_events_response.calls[0].response.json()["data"]["items"][0] == res.dump(camel_case=True)
 
     def test_update_with_update_class(self, mock_events_response):
-        res = EVENTS_API.update(EventUpdate(id=1).description_set("blabla"))
+        res = EVENTS_API.update(EventUpdate(id=1).description.set("blabla"))
         assert isinstance(res, Event)
         assert mock_events_response.calls[0].response.json()["data"]["items"][0] == res.dump(camel_case=True)
 
     def test_update_multiple(self, mock_events_response):
-        res = EVENTS_API.update([EventUpdate(id=1).description_set("blabla")])
+        res = EVENTS_API.update([EventUpdate(id=1).description.set("blabla")])
         assert isinstance(res, EventList)
         assert mock_events_response.calls[0].response.json()["data"]["items"] == res.dump(camel_case=True)
 
@@ -100,26 +100,25 @@ class TestEvents:
         res = EVENTS_API.search()
         assert mock_events_response.calls[0].response.json()["data"]["items"] == res.dump(camel_case=True)
 
-    def test_events_update_object(self):
+    def test_event_update_object(self):
+
         assert isinstance(
             EventUpdate(1)
-            .asset_ids_add([])
-            .asset_ids_remove([])
-            .asset_ids_set([])
-            .asset_ids_set(None)
-            .description_set("")
-            .description_set(None)
-            .end_time_set(1)
-            .end_time_set(None)
-            .external_id_set("1")
-            .external_id_set(None)
-            .metadata_add({})
-            .metadata_remove([])
-            .metadata_set({})
-            .metadata_set(None)
-            .source_set(1)
-            .source_set(None)
-            .start_time_set(1)
-            .start_time_set(None),
+            .asset_ids.add([])
+            .asset_ids.remove([])
+            .asset_ids.set([])
+            .description.set("")
+            .description.set(None)
+            .end_time.set(1)
+            .end_time.set(None)
+            .external_id.set("1")
+            .external_id.set(None)
+            .metadata.add({})
+            .metadata.set({})
+            .metadata.remove([])
+            .source.set(1)
+            .source.set(None)
+            .start_time.set(1)
+            .start_time.set(None),
             EventUpdate,
         )

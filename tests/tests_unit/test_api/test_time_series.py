@@ -89,12 +89,12 @@ class TestTimeSeries:
         assert mock_ts_response.calls[0].response.json()["data"]["items"][0] == res.dump(camel_case=True)
 
     def test_update_with_update_class(self, mock_ts_response):
-        res = TS_API.update(TimeSeriesUpdate(id=1).description_set("blabla"))
+        res = TS_API.update(TimeSeriesUpdate(id=1).description.set("blabla"))
         assert isinstance(res, TimeSeries)
         assert mock_ts_response.calls[0].response.json()["data"]["items"][0] == res.dump(camel_case=True)
 
     def test_update_multiple(self, mock_ts_response):
-        res = TS_API.update([TimeSeriesUpdate(id=1).description_set("blabla")])
+        res = TS_API.update([TimeSeriesUpdate(id=1).description.set("blabla")])
         assert isinstance(res, TimeSeriesList)
         assert mock_ts_response.calls[0].response.json()["data"]["items"] == res.dump(camel_case=True)
 
@@ -112,21 +112,21 @@ class TestTimeSeries:
     def test_events_update_object(self):
         assert isinstance(
             TimeSeriesUpdate(1)
-            .asset_id_set(1)
-            .asset_id_set(None)
-            .description_set("")
-            .description_set(None)
-            .external_id_set("1")
-            .external_id_set(None)
-            .metadata_set({})
-            .metadata_set(None)
-            .name_set("")
-            .name_set(None)
-            .security_categories_add([])
-            .security_categories_remove([])
-            .security_categories_set([])
-            .security_categories_set(None)
-            .unit_set("")
-            .unit_set(None),
+            .asset_id.set(1)
+            .asset_id.set(None)
+            .description.set("")
+            .description.set(None)
+            .external_id.set("1")
+            .external_id.set(None)
+            .metadata.set({})
+            .metadata.add({})
+            .metadata.remove([])
+            .name.set("")
+            .name.set(None)
+            .security_categories.set([])
+            .security_categories.add([])
+            .security_categories.remove([])
+            .unit.set("")
+            .unit.set(None),
             TimeSeriesUpdate,
         )
