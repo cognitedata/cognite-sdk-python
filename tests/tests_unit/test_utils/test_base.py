@@ -234,7 +234,7 @@ class TestCogniteUpdate:
         ).object.set({"bla": "bla"}).string.set("bla").dump()
 
     def test_get_update_properties(self):
-        assert ["string", "list", "object"] == MyUpdate._get_update_properties()
+        assert {"string", "list", "object"} == set(MyUpdate._get_update_properties())
 
 
 class TestCogniteResponse:
