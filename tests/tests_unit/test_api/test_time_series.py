@@ -1,9 +1,13 @@
+import doctest
 import re
+from unittest import TestSuite, TextTestRunner, mock
 
 import pytest
 
 from cognite.client import CogniteClient
+from cognite.client.api import time_series
 from cognite.client.api.time_series import TimeSeries, TimeSeriesFilter, TimeSeriesList, TimeSeriesUpdate
+from tests import utils
 from tests.utils import jsgz_load
 
 TS_API = CogniteClient().time_series

@@ -1,4 +1,5 @@
 import os
+from unittest import mock
 
 import pytest
 import responses
@@ -16,9 +17,19 @@ def client():
 def rsps_with_login_mock():
     with responses.RequestsMock() as rsps:
         rsps.add(
-            responses.GET, BASE_URL + "/login/status", status=200, json={"data": {"project": "test", "loggedIn": True}}
+            responses.GET,
+            BASE_URL + "/login/status",
+            status=200,
+            json={"data": {"project": "test", "loggedIn": True, "user": "bla", "projectId": "bla"}},
         )
         yield rsps
+
+
+@pytest.fixture
+def mock_cognite_client():
+    with mock.patch("cognite.client.CogniteClient") as client_mock:
+        client_mock.return_value = mock.MagicMock()
+        yield
 
 
 @pytest.fixture

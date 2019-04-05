@@ -230,6 +230,20 @@ class EventsAPI(APIClient):
 
         Returns:
             Union[Event, EventList]: Requested event(s)
+
+        Examples:
+
+            Get events by id::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.events.get(id=[1,2,3])
+
+            Get an event by external id::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.events.get(external_id="abc")
         """
         return self._retrieve_multiple(EventList, self.RESOURCE_PATH, ids=id, external_ids=external_id, wrap_ids=True)
 
@@ -262,6 +276,28 @@ class EventsAPI(APIClient):
 
         Returns:
             EventList: List of requested events
+
+        Examples:
+
+            List events and filter on max start time::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> file_list = c.events.list(limit=5, start_time={"max": 1500000000})
+
+            Iterate over events::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> for event in c.events:
+                ...     event # do something with the event
+
+            Iterate over chunks of events to reduce memory load::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> for event_list in c.events(chunk_size=2500):
+                ...     event_list # do something with the files
         """
         filter = EventFilter(
             start_time,
@@ -284,6 +320,16 @@ class EventsAPI(APIClient):
 
         Returns:
             Union[Event, EventList]: Created event(s)
+
+        Examples:
+
+            Create new events::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.api.events import Event
+                >>> c = CogniteClient()
+                >>> events = [Event(start_time=0, end_time=1), Event(start_time=2, end_time=3)]
+                >>> res = c.events.create(events)
         """
         return self._create_multiple(EventList, resource_path=self.RESOURCE_PATH, items=event)
 
@@ -296,6 +342,13 @@ class EventsAPI(APIClient):
 
         Returns:
             None
+        Examples:
+
+            Delete events by id or external id::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.events.delete(id=[1,2,3], external_id="3")
         """
         self._delete_multiple(resource_path=self.RESOURCE_PATH, ids=id, external_ids=external_id, wrap_ids=True)
 
@@ -307,6 +360,24 @@ class EventsAPI(APIClient):
 
         Returns:
             Union[Event, EventList]: Updated event(s)
+
+        Examples:
+
+            Update an event that you have fetched. This will perform a full update of the event::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> event = c.events.get(id=1)
+                >>> event.description = "New description"
+                >>> res = c.events.update(event)
+
+            Perform a partial update on a event, updating the description and adding a new field to metadata::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.api.events import EventUpdate
+                >>> c = CogniteClient()
+                >>> my_update = EventUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
+                >>> res = c.events.update(my_update)
         """
         return self._update_multiple(cls=EventList, resource_path=self.RESOURCE_PATH, items=item)
 
@@ -320,6 +391,14 @@ class EventsAPI(APIClient):
 
         Returns:
             EventList: List of requested events
+
+        Examples:
+
+            Search for events::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.events.search(description="some description")
         """
         filter = filter.dump(camel_case=True) if filter else None
         return self._search(

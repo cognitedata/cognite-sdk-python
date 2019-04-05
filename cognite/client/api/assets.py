@@ -218,6 +218,20 @@ class AssetsAPI(APIClient):
 
         Returns:
             Union[Asset, AssetList]: Requested asset(s)
+
+        Examples:
+
+            Get assets by id::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.assets.get(id=1)
+
+            Get assets by external id::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.assets.get(external_id=["1", "abc"])
         """
         return self._retrieve_multiple(AssetList, self.RESOURCE_PATH, ids=id, external_ids=external_id, wrap_ids=True)
 
@@ -248,6 +262,28 @@ class AssetsAPI(APIClient):
 
         Returns:
             AssetList: List of requested assets
+        
+        Examples:
+
+            List assets::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> asset_list = c.assets.list(limit=5)
+
+            Iterate over assets::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> for asset in c.assets:
+                ...     asset # do something with the asset
+
+            Iterate over chunks of assets to reduce memory load::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> for asset_list in c.assets(chunk_size=2500):
+                ...     asset_list # do something with the assets
         """
         filter = AssetFilter(
             name, parent_ids, metadata, source, created_time, last_updated_time, asset_subtrees, external_id_prefix
@@ -262,6 +298,16 @@ class AssetsAPI(APIClient):
 
         Returns:
             Union[Asset, AssetList]: Created asset(s)
+
+        Examples:
+
+            Create new assets::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.api.assets import Asset
+                >>> c = CogniteClient()
+                >>> assets = [Asset(name="asset1"), Asset(name="asset2")]
+                >>> res = c.assets.create(assets)
         """
         return self._create_multiple(AssetList, resource_path=self.RESOURCE_PATH, items=asset)
 
@@ -274,6 +320,14 @@ class AssetsAPI(APIClient):
 
         Returns:
             None
+
+        Examples:
+
+            Delete assets by id or external id::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.assets.delete(id=[1,2,3], external_id="3")
         """
         self._delete_multiple(resource_path=self.RESOURCE_PATH, ids=id, external_ids=external_id, wrap_ids=True)
 
@@ -285,6 +339,24 @@ class AssetsAPI(APIClient):
 
         Returns:
             Union[Asset, AssetList]: Updated asset(s)
+
+        Examples:
+
+            Update an asset that you have fetched. This will perform a full update of the asset::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> asset = c.assets.get(id=1)
+                >>> asset.description = "New description"
+                >>> res = c.assets.update(asset)
+
+            Perform a partial update on a asset, updating the description and adding a new field to metadata::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.api.assets import AssetUpdate
+                >>> c = CogniteClient()
+                >>> my_update = AssetUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
+                >>> res = c.assets.update(my_update)
         """
         return self._update_multiple(cls=AssetList, resource_path=self.RESOURCE_PATH, items=item)
 
@@ -301,6 +373,14 @@ class AssetsAPI(APIClient):
 
         Returns:
             AssetList: List of requested assets
+
+        Examples:
+
+            Search for assets::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.assets.search(name="some name")
         """
         filter = filter.dump(camel_case=True) if filter else None
         return self._search(

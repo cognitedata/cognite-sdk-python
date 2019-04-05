@@ -37,13 +37,12 @@ class CogniteClient:
 
 
     Examples:
-            The CogniteClient is instantiated and used like this. This example assumes that the environment variable
-            COGNITE_API_KEY has been set::
+            The CogniteClient is instantiated and used like this. This and all other examples assumes that the
+            environment variable 'COGNITE_API_KEY' has been set::
 
-                from cognite.client import CogniteClient
-                client = CogniteClient()
-                res = client.time_series.list(limit=5)
-                print(res[:5])
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.time_series.search(name="some name")
 
             Default configurations may be set using the following environment variables::
 

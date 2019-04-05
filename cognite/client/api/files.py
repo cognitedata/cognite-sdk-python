@@ -209,8 +209,23 @@ class FilesAPI(APIClient):
         Args:
             id (Union[int, List[int]], optional): Id or list of ids
             external_id(Union[str, List[str]], optional): str or list of str
+
         Returns:
             Union[FileMetadata, FileMetadataList]: The requested files
+
+        Examples:
+
+            Get file metadata by id::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.files.get(id=1)
+
+            Get file meta data by external id::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.files.get(external_id=["1", "abc"])
         """
         return self._retrieve_multiple(
             cls=FileMetadaList, resource_path=self.RESOURCE_PATH, ids=id, external_ids=external_id, wrap_ids=True
@@ -239,6 +254,28 @@ class FilesAPI(APIClient):
 
         Returns:
             FileMetadataList: The requested files.
+
+        Examples:
+
+            List files metadata and filter on external id prefix::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> file_list = c.files.list(limit=5, external_id_prefix="prefix")
+
+            Iterate over files metadata::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> for file_metadata in c.files:
+                ...     file_metadata # do something with the file metadata
+
+            Iterate over chunks of files metadata to reduce memory load::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> for file_list in c.files(chunk_size=2500):
+                ...     file_list # do something with the files
         """
         filter = FileMetadataFilter(
             metadata, asset_ids, source, created_time, last_updated_time, external_id_prefix
@@ -256,6 +293,14 @@ class FilesAPI(APIClient):
 
         Returns:
             None
+
+        Examples:
+
+            Delete files by id or external id::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.files.delete(id=[1,2,3], external_id="3")
         """
         self._delete_multiple(resource_path=self.RESOURCE_PATH, wrap_ids=True, ids=id, external_ids=external_id)
 
@@ -269,22 +314,83 @@ class FilesAPI(APIClient):
 
         Returns:
             Union[FileMetadata, FileMetadataList]: The updated files.
+
+        Examples:
+
+            Update file metadata that you have fetched. This will perform a full update of the file metadata::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> file_metadata = c.files.get(id=1)
+                >>> file_metadata.description = "New description"
+                >>> res = c.files.update(file_metadata)
+
+            Perform a partial update on file metadata, updating the name and adding a new field to metadata::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.api.files import FileMetadataUpdate
+                >>> c = CogniteClient()
+                >>> my_update = FileMetadataUpdate(id=1).name.set("New description").metadata.add({"key": "value"})
+                >>> res = c.files.update(my_update)
         """
         return self._update_multiple(cls=FileMetadaList, resource_path=self.RESOURCE_PATH, items=item)
 
-    def upload(self, path: str, file_metadata: FileMetadata = None) -> Union[FileMetadata, FileMetadaList]:
+    def upload(
+        self,
+        path: str,
+        external_id: str = None,
+        name: str = None,
+        source: str = None,
+        mime_type: str = None,
+        metadata: Dict[str, Any] = None,
+        asset_ids: List[int] = None,
+    ) -> Union[FileMetadata, FileMetadaList]:
         """Upload a file
 
         Args:
             path (str): Path to the file you wish to upload. If path is a directory, this method will upload all files in that directory.
-            file_metadata (FileMetadata, optional): The file metadata
+            external_id (str): External Id provided by client. Should be unique within the project.
+            name (str): No description.
+            source (str): The source of the file.
+            mime_type (str): File type. E.g. pdf, css, spreadsheet, ..
+            metadata (Dict[str, Any]): Customizable extra data about the file. String key -> String value.
+            asset_ids (List[int]): No description.
 
         Returns:
             Union[FileMetadata, FileMetadataList]: The file metadata of the uploaded file(s).
+
+        Examples:
+
+            Upload a file in a given path::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.files.upload("/path/to/file", name="my_file")
+
+            If name is omitted, this method will use the name of the file
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.files.upload("/path/to/file")
+
+            You can also upload all files in a directory by setting path to the path of a directory::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.files.upload("/path/to/my/directory")
+
         """
+        file_metadata = FileMetadata(
+            name=name,
+            external_id=external_id,
+            source=source,
+            mime_type=mime_type,
+            metadata=metadata,
+            asset_ids=asset_ids,
+        )
         if os.path.isfile(path):
-            if not file_metadata:
-                file_metadata = FileMetadata(name=os.path.basename(path))
+            if not name:
+                file_metadata.name = os.path.basename(path)
             return self._upload_file_from_path(file_metadata, path)
         elif os.path.isdir(path):
             assert file_metadata is None, "file_metadata must not be specified when 'path' is a directory"
@@ -302,13 +408,44 @@ class FilesAPI(APIClient):
             file_metadata = self.upload_from_memory(file, f.read())
         return file_metadata
 
-    def upload_from_memory(self, file_metadata: FileMetadata, content: Union[str, bytes]):
+    def upload_from_memory(
+        self,
+        content: Union[str, bytes],
+        external_id: str = None,
+        name: str = None,
+        source: str = None,
+        mime_type: str = None,
+        metadata: Dict[str, Any] = None,
+        asset_ids: List[int] = None,
+    ):
         """Upload a file from memory
 
         Args:
-            file_metadata (FileMetadata): The file metadata.
             content (Union[str, bytes]): The content to upload.
+            external_id (str): External Id provided by client. Should be unique within the project.
+            name (str): No description.
+            source (str): The source of the file.
+            mime_type (str): File type. E.g. pdf, css, spreadsheet, ..
+            metadata (Dict[str, Any]): Customizable extra data about the file. String key -> String value.
+            asset_ids (List[int]): No description.
+
+        Examples:
+
+            Upload a file from memory::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.files.upload_from_memory(b"some content", name="my_file", asset_ids=[1,2,3])
+
         """
+        file_metadata = FileMetadata(
+            name=name,
+            external_id=external_id,
+            source=source,
+            mime_type=mime_type,
+            metadata=metadata,
+            asset_ids=asset_ids,
+        )
         url_path = self.RESOURCE_PATH + "/initupload"
 
         res = self._post(url_path=url_path, json=file_metadata.dump(camel_case=True))
@@ -323,6 +460,8 @@ class FilesAPI(APIClient):
     ) -> None:
         """Download files by id or external id.
 
+        This method will stream all files to disk, never keeping more than 2MB of a given file in memory.
+
         Args:
             directory (str): Directory to download the file(s) to.
             id (Union[int, List[int]], optional): Id or list of ids
@@ -330,6 +469,14 @@ class FilesAPI(APIClient):
 
         Returns:
             None
+
+        Examples:
+
+            Download files by id and external id into directory 'my_directory'::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.files.download(directory="my_directory", id=[1,2,3], external_id=["abc", "def"])
         """
         all_ids = self._process_ids(ids=id, external_ids=external_id, wrap_ids=True)
         res = self._post(url_path="/files/download", json={"items": all_ids})
@@ -355,6 +502,14 @@ class FilesAPI(APIClient):
         Args:
             id (int, optional): Id of the file
             external_id (str, optional): External id of the file
+
+        Examples:
+
+            Download a file's content into memory::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> file_content = c.files.download_to_memory(id=1)
         """
         utils.assert_exactly_one_of_id_or_external_id(id, external_id)
         all_ids = self._process_ids(ids=id, external_ids=external_id, wrap_ids=True)

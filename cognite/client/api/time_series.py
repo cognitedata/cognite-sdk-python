@@ -209,6 +209,14 @@ class TimeSeriesAPI(APIClient):
 
         Returns:
             Union[TimeSeries, TimeSeriesList]: The requested time series
+
+        Examples:
+
+            Retrieving time series by id::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.time_series.get(id=[1,2])
         """
         return self._retrieve_multiple(
             cls=TimeSeriesList, resource_path=self.RESOURCE_PATH, ids=id, external_ids=external_id, wrap_ids=True
@@ -226,6 +234,28 @@ class TimeSeriesAPI(APIClient):
 
         Returns:
             TimeSeriesList: The requested time series.
+
+        Examples:
+
+            List time series::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.time_series.list(limit=5)
+
+            Iterate over time series::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> for ts in c.time_series:
+                ...     ts # do something with the time_series
+
+            Iterate over chunks of time series to reduce memory load::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> for ts_list in c.time_series(chunk_size=2500):
+                ...     ts_list # do something with the time_series
         """
         filter = {"includeMetadata": include_metadata, "assetId": asset_id}
         return self._list(
@@ -240,6 +270,15 @@ class TimeSeriesAPI(APIClient):
 
         Returns:
             Union[TimeSeries, TimeSeriesList]: The created time series.
+
+        Examples:
+
+            Create a new time series::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.api.time_series import TimeSeries
+                >>> c = CogniteClient()
+                >>> ts = c.time_series.create(TimeSeries(name="my ts"))
         """
         return self._create_multiple(cls=TimeSeriesList, resource_path=self.RESOURCE_PATH, items=time_series)
 
@@ -249,8 +288,17 @@ class TimeSeriesAPI(APIClient):
         Args:
             id (Union[int, List[int]): Id or list of ids
             external_id (Union[str, List[str]]): External ID or list of external ids
+
         Returns:
             None
+
+        Examples:
+
+            Delete time series by id or external id::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.time_series.delete(id=[1,2,3], external_id="3")
         """
         self._delete_multiple(resource_path=self.RESOURCE_PATH, wrap_ids=True, ids=id, external_ids=external_id)
 
@@ -264,6 +312,24 @@ class TimeSeriesAPI(APIClient):
 
         Returns:
             Union[TimeSeries, TimeSeriesList]: Updated time series.
+
+        Examples:
+
+            Update a time series that you have fetched. This will perform a full update of the time series::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.time_series.get(id=1)
+                >>> res.description = "New description"
+                >>> res = c.time_series.update(res)
+
+            Perform a partial update on a time series, updating the description and adding a new field to metadata::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.api.time_series import TimeSeriesUpdate
+                >>> c = CogniteClient()
+                >>> my_update = TimeSeriesUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
+                >>> res = c.time_series.update(my_update)
         """
         return self._update_multiple(cls=TimeSeriesList, resource_path=self.RESOURCE_PATH, items=item)
 
@@ -287,6 +353,14 @@ class TimeSeriesAPI(APIClient):
 
         Returns:
             TimeSeriesList: List of requested time series.
+
+        Examples:
+
+            Search for a time series::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.time_series.search(name="some name")
         """
         filter = filter.dump(camel_case=True) if filter else None
         return self._search(

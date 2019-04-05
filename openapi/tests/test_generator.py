@@ -159,7 +159,6 @@ class TestUpdateClassGenerator:
 
     def test_generate_attr_update_classes(self):
         attr_update_classes = UPDATE_CLASS_GENERATOR.generate_attr_update_classes("AssetUpdate")
-        print(attr_update_classes)
         assert (
             """class PrimitiveUpdate(CognitePrimitiveUpdate):
     def set(self, value: Any) -> AssetUpdate:

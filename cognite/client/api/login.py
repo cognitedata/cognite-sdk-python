@@ -35,11 +35,12 @@ class LoginAPI(APIClient):
             client.stable.login.LoginStatusResponse
 
         Examples:
-            Check the current login status::
+            Check the current login status and get the project::
 
-                client = CogniteClient()
-                login_status = client.login.status()
-                print(login_status)
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> login_status = c.login.status()
+                >>> project = login_status.project
 
         """
         return LoginStatusResponse._load(self._get("/login/status").json())
