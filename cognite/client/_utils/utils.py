@@ -10,7 +10,10 @@ import time
 from collections import namedtuple
 from concurrent.futures.thread import ThreadPoolExecutor
 from datetime import datetime
+from decimal import Decimal
 from typing import Any, Callable, Dict, List, Tuple, Union
+
+import numpy
 
 import cognite.client
 
@@ -96,6 +99,16 @@ def to_camel_case(snake_case_string: str):
 def to_snake_case(camel_case_string: str):
     s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", camel_case_string)
     return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
+
+
+def json_dump_default(x):
+    if isinstance(x, numpy.integer):
+        return int(x)
+    if isinstance(x, Decimal):
+        return float(x)
+    elif hasattr(x, __dict__):
+        return x.__dict__
+    return x
 
 
 def execute_tasks_concurrently(func: Callable, tasks: Union[List[Tuple], List[Dict]], max_workers: int):

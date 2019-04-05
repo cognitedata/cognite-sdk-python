@@ -1,4 +1,6 @@
+import json
 from datetime import datetime, timedelta
+from decimal import Decimal
 from time import sleep
 from unittest import mock
 
@@ -144,6 +146,17 @@ class TestCaseConversion:
         assert "snake_case" == utils.to_snake_case("snakeCase")
         assert "snake_case" == utils.to_snake_case("snake_case")
         assert "a" == utils.to_snake_case("a")
+
+
+class TestJsonDumpDefault:
+    import numpy as np
+
+    @pytest.mark.parametrize("input", [Decimal(1), np.int32(1), np.int64(1)])
+    def test_json_serializable(self, input):
+        with pytest.raises(TypeError):
+            json.dumps(input)
+
+        json.dumps(input, default=utils.json_dump_default)
 
 
 class TestAssertions:

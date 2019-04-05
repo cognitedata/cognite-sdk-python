@@ -90,7 +90,7 @@ class APIClient:
         headers = self._headers.copy()
 
         if json_payload:
-            data = _json.dumps(json_payload, default=self._json_dumps_default)
+            data = _json.dumps(json_payload, default=utils.json_dump_default)
             kwargs["data"] = data
             if method in ["PUT", "POST"] and not os.getenv("COGNITE_DISABLE_GZIP", False):
                 kwargs["data"] = gzip.compress(data.encode())
@@ -324,14 +324,6 @@ class APIClient:
         single_id = isinstance(ids, int) and external_ids is None
         single_external_id = isinstance(external_ids, str) and ids is None
         return single_id or single_external_id
-
-    @staticmethod
-    def _json_dumps_default(x):
-        if isinstance(x, numpy.integer):
-            return int(x)
-        if isinstance(x, Decimal):
-            return float(x)
-        return x.__dict__
 
     @staticmethod
     def _status_is_valid(status_code: int):
