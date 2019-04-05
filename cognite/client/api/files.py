@@ -149,7 +149,7 @@ class ListUpdate(CogniteListUpdate):
     # GenStop
 
 
-class FileMetadaList(CogniteResourceList):
+class FileMetadataList(CogniteResourceList):
     _RESOURCE = FileMetadata
     _UPDATE = FileMetadataUpdate
 
@@ -166,7 +166,7 @@ class FilesAPI(APIClient):
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
         external_id_prefix: str = None,
-    ) -> Generator[Union[FileMetadata, FileMetadaList], None, None]:
+    ) -> Generator[Union[FileMetadata, FileMetadataList], None, None]:
         """Iterate over files
 
         Fetches file metadata objects as they are iterated over, so you keep a limited number of metadata objects in memory.
@@ -188,7 +188,7 @@ class FilesAPI(APIClient):
             metadata, asset_ids, source, created_time, last_updated_time, external_id_prefix
         ).dump(camel_case=True)
         return self._list_generator(
-            FileMetadaList, resource_path=self.RESOURCE_PATH, method="POST", chunk_size=chunk_size, filter=filter
+            FileMetadataList, resource_path=self.RESOURCE_PATH, method="POST", chunk_size=chunk_size, filter=filter
         )
 
     def __iter__(self) -> Generator[FileMetadata, None, None]:
@@ -203,7 +203,7 @@ class FilesAPI(APIClient):
 
     def get(
         self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None
-    ) -> Union[FileMetadata, FileMetadaList]:
+    ) -> Union[FileMetadata, FileMetadataList]:
         """Get files by id
 
         Args:
@@ -228,7 +228,7 @@ class FilesAPI(APIClient):
                 >>> res = c.files.get(external_id=["1", "abc"])
         """
         return self._retrieve_multiple(
-            cls=FileMetadaList, resource_path=self.RESOURCE_PATH, ids=id, external_ids=external_id, wrap_ids=True
+            cls=FileMetadataList, resource_path=self.RESOURCE_PATH, ids=id, external_ids=external_id, wrap_ids=True
         )
 
     def list(
@@ -240,7 +240,7 @@ class FilesAPI(APIClient):
         last_updated_time: Dict[str, Any] = None,
         external_id_prefix: str = None,
         limit: int = None,
-    ) -> FileMetadaList:
+    ) -> FileMetadataList:
         """List files
 
         Args:
@@ -281,7 +281,7 @@ class FilesAPI(APIClient):
             metadata, asset_ids, source, created_time, last_updated_time, external_id_prefix
         ).dump(camel_case=True)
         return self._list(
-            cls=FileMetadaList, resource_path=self.RESOURCE_PATH, method="POST", limit=limit, filter=filter
+            cls=FileMetadataList, resource_path=self.RESOURCE_PATH, method="POST", limit=limit, filter=filter
         )
 
     def delete(self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None) -> None:
@@ -306,7 +306,7 @@ class FilesAPI(APIClient):
 
     def update(
         self, item: Union[FileMetadata, FileMetadataUpdate, List[Union[FileMetadata, FileMetadataUpdate]]]
-    ) -> Union[FileMetadata, FileMetadaList]:
+    ) -> Union[FileMetadata, FileMetadataList]:
         """Update files
 
         Args:
@@ -333,7 +333,7 @@ class FilesAPI(APIClient):
                 >>> my_update = FileMetadataUpdate(id=1).name.set("New description").metadata.add({"key": "value"})
                 >>> res = c.files.update(my_update)
         """
-        return self._update_multiple(cls=FileMetadaList, resource_path=self.RESOURCE_PATH, items=item)
+        return self._update_multiple(cls=FileMetadataList, resource_path=self.RESOURCE_PATH, items=item)
 
     def upload(
         self,
@@ -344,7 +344,7 @@ class FilesAPI(APIClient):
         mime_type: str = None,
         metadata: Dict[str, Any] = None,
         asset_ids: List[int] = None,
-    ) -> Union[FileMetadata, FileMetadaList]:
+    ) -> Union[FileMetadata, FileMetadataList]:
         """Upload a file
 
         Args:
@@ -399,7 +399,7 @@ class FilesAPI(APIClient):
                 if os.path.isfile(file_path):
                     tasks.append((FileMetadata(name=file_name), file_path))
             file_metadata_list = utils.execute_tasks_concurrently(self._upload_file_from_path, tasks, self._max_workers)
-            return FileMetadaList(file_metadata_list)
+            return FileMetadataList(file_metadata_list)
         raise ValueError("path '{}' does not exist".format(path))
 
     def _upload_file_from_path(self, file: FileMetadata, file_path: str):

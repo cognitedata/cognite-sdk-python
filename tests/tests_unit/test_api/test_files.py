@@ -5,7 +5,7 @@ from tempfile import TemporaryDirectory
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.api.files import FileMetadaList, FileMetadata, FileMetadataFilter, FileMetadataUpdate
+from cognite.client.api.files import FileMetadata, FileMetadataFilter, FileMetadataList, FileMetadataUpdate
 from tests.utils import jsgz_load
 
 FILES_API = CogniteClient().files
@@ -88,12 +88,12 @@ class TestFilesAPI:
 
     def test_get_multiple(self, mock_files_response):
         res = FILES_API.get(id=[1])
-        assert isinstance(res, FileMetadaList)
+        assert isinstance(res, FileMetadataList)
         assert mock_files_response.calls[0].response.json()["data"]["items"] == res.dump(camel_case=True)
 
     def test_list(self, mock_files_response):
         res = FILES_API.list(source="bla", limit=10)
-        assert isinstance(res, FileMetadaList)
+        assert isinstance(res, FileMetadataList)
         assert mock_files_response.calls[0].response.json()["data"]["items"] == res.dump(camel_case=True)
         assert "bla" == jsgz_load(mock_files_response.calls[0].request.body)["filter"]["source"]
         assert 10 == jsgz_load(mock_files_response.calls[0].request.body)["limit"]
@@ -124,7 +124,7 @@ class TestFilesAPI:
 
     def test_update_multiple(self, mock_files_response):
         res = FILES_API.update([FileMetadataUpdate(id=1).name.set(None), FileMetadata(external_id="2", name="bla")])
-        assert isinstance(res, FileMetadaList)
+        assert isinstance(res, FileMetadataList)
         assert {
             "items": [
                 {"id": 1, "update": {"name": {"setNull": True}}},
@@ -139,7 +139,7 @@ class TestFilesAPI:
 
     def test_iter_chunk(self, mock_files_response):
         for file in FILES_API(chunk_size=1):
-            assert isinstance(file, FileMetadaList)
+            assert isinstance(file, FileMetadataList)
             assert mock_files_response.calls[0].response.json()["data"]["items"] == file.dump(camel_case=True)
 
     def test_upload(self, mock_file_upload_response):
@@ -157,7 +157,7 @@ class TestFilesAPI:
         res = FILES_API.upload(path=path)
         response_body = mock_file_upload_response.calls[0].response.json()["data"]
         del response_body["uploadUrl"]
-        assert FileMetadaList([FileMetadata._load(response_body), FileMetadata._load(response_body)]) == res
+        assert FileMetadataList([FileMetadata._load(response_body), FileMetadata._load(response_body)]) == res
         for call in mock_file_upload_response.calls:
             payload = call.request.body
             if b"content1\n" == payload:
