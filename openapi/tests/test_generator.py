@@ -10,7 +10,7 @@ with open(input_path) as f:
 with open(output_path) as f:
     OUTPUT = f.read()
 
-spec_path = os.path.join(os.path.dirname(__file__), "input_output/test_spec_dereferenced.json")
+spec_path = os.path.join(os.path.dirname(__file__), "../default_spec.json")
 CODE_GENERATOR = CodeGenerator(spec_path=spec_path)
 
 

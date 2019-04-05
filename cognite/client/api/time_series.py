@@ -93,13 +93,13 @@ class TimeSeriesFilter(CogniteFilter):
     # GenStop
 
 
-# GenUpdateClass: TimeSeriesChange
+# GenUpdateClass: TimeSeriesUpdate
 class TimeSeriesUpdate(CogniteUpdate):
-    """No description.
+    """Changes will be applied to timeseries.
 
     Args:
-        id (int): No description.
-        external_id (str): No description.
+        id (int): Javascript friendly internal ID given to the object.
+        external_id (str): External Id provided by client. Should be unique within the project.
     """
 
     @property

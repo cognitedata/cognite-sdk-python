@@ -30,6 +30,41 @@
           }
         }
       },
+      "ConstraintViolationError": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "the constraint violation description"
+          },
+          "propertyPath": {
+            "type": "string",
+            "description": "the path in the JSON document where the constraint violation is occuring"
+          }
+        }
+      },
+      "ConstraintViolationErrors": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string",
+                  "description": "the constraint violation description"
+                },
+                "propertyPath": {
+                  "type": "string",
+                  "description": "the path in the JSON document where the constraint violation is occuring"
+                }
+              }
+            }
+          }
+        },
+        "description": "this object is set as the extra part of /components/schemas/Error when relevant"
+      },
       "Cursor": {
         "description": "Cursor for paging through results",
         "type": "object",
@@ -529,9 +564,6 @@
                     },
                     {
                       "type": "object",
-                      "required": [
-                        "id"
-                      ],
                       "properties": {
                         "id": {
                           "description": "Javascript friendly internal ID given to the object.",
@@ -675,9 +707,6 @@
                     },
                     {
                       "type": "object",
-                      "required": [
-                        "externalId"
-                      ],
                       "properties": {
                         "externalId": {
                           "description": "External Id provided by client. Should be unique within the project.",
@@ -1004,6 +1033,118 @@
           }
         }
       },
+      "AssetListScope": {
+        "allOf": [
+          {
+            "description": "Filter on assets with exact match",
+            "type": "object",
+            "properties": {
+              "filter": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Name of asset. Often referred to as tag."
+                  },
+                  "parentIds": {
+                    "type": "array",
+                    "items": {
+                      "description": "Javascript friendly internal ID given to the object.",
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 9007199254740991,
+                      "format": "int64"
+                    }
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "description": "Custom, application specific metadata. String key -> String value",
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  },
+                  "source": {
+                    "type": "string",
+                    "description": "The source of this asset"
+                  },
+                  "createdTime": {
+                    "description": "Range between two timestamps",
+                    "type": "object",
+                    "properties": {
+                      "max": {
+                        "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
+                        "type": "integer",
+                        "minimum": 0,
+                        "format": "int64"
+                      },
+                      "min": {
+                        "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
+                        "type": "integer",
+                        "minimum": 0,
+                        "format": "int64"
+                      }
+                    }
+                  },
+                  "lastUpdatedTime": {
+                    "description": "Range between two timestamps",
+                    "type": "object",
+                    "properties": {
+                      "max": {
+                        "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
+                        "type": "integer",
+                        "minimum": 0,
+                        "format": "int64"
+                      },
+                      "min": {
+                        "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
+                        "type": "integer",
+                        "minimum": 0,
+                        "format": "int64"
+                      }
+                    }
+                  },
+                  "assetSubtrees": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 100,
+                    "uniqueItems": true,
+                    "description": "Filter out events that are not linked to assets in the subtree rooted at these assets.",
+                    "items": {
+                      "description": "Javascript friendly internal ID given to the object.",
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 9007199254740991,
+                      "format": "int64"
+                    }
+                  },
+                  "externalIdPrefix": {
+                    "description": "External Id provided by client. Should be unique within the project.",
+                    "type": "string",
+                    "maxLength": 255
+                  }
+                }
+              },
+              "limit": {
+                "description": "<- TODO",
+                "type": "integer",
+                "format": "int32",
+                "minimum": 1,
+                "maximum": 1000,
+                "default": 100
+              }
+            }
+          },
+          {
+            "description": "Cursor for paging through results",
+            "type": "object",
+            "properties": {
+              "cursor": {
+                "type": "string"
+              }
+            }
+          }
+        ]
+      },
       "AssetSearchFilter": {
         "description": "Filter on events fillter with exact match",
         "allOf": [
@@ -1259,9 +1400,6 @@
               },
               {
                 "type": "object",
-                "required": [
-                  "id"
-                ],
                 "properties": {
                   "id": {
                     "description": "Javascript friendly internal ID given to the object.",
@@ -1405,9 +1543,6 @@
               },
               {
                 "type": "object",
-                "required": [
-                  "externalId"
-                ],
                 "properties": {
                   "externalId": {
                     "description": "External Id provided by client. Should be unique within the project.",
@@ -1551,9 +1686,6 @@
           },
           {
             "type": "object",
-            "required": [
-              "id"
-            ],
             "properties": {
               "id": {
                 "description": "Javascript friendly internal ID given to the object.",
@@ -1697,9 +1829,6 @@
           },
           {
             "type": "object",
-            "required": [
-              "externalId"
-            ],
             "properties": {
               "externalId": {
                 "description": "External Id provided by client. Should be unique within the project.",
@@ -5629,7 +5758,7 @@
           }
         }
       },
-      "DataLookupByIdDTO": {
+      "TimeSeriesLookupById": {
         "type": "object",
         "required": [
           "items"
@@ -5640,18 +5769,23 @@
             "type": "array",
             "description": "List of ID objects",
             "items": {
-              "type": "object",
-              "description": "Object is required to provide only one from two available attributes (one or another). Id field maps to server side ID while externalId to user set identifier.",
-              "properties": {
-                "id": {
+              "oneOf": [
+                {
+                  "description": "Javascript friendly internal ID given to the object.",
                   "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991,
                   "format": "int64"
                 },
-                "externalId": {
-                  "type": "string"
+                {
+                  "description": "External Id provided by client. Should be unique within the project.",
+                  "type": "string",
+                  "maxLength": 255
                 }
-              }
-            }
+              ]
+            },
+            "maxItems": 1000,
+            "minItems": 1
           }
         }
       },
@@ -5661,120 +5795,918 @@
           "items": {
             "type": "array",
             "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "integer",
-                  "format": "int64"
-                },
-                "externalId": {
-                  "type": "string"
-                },
-                "externalIdChange": {
-                  "type": "object",
-                  "properties": {
-                    "set": {
-                      "type": "string"
-                    },
-                    "setNull": {
-                      "type": "boolean"
-                    }
-                  },
-                  "description": "Change that will be applied to description."
-                },
-                "name": {
-                  "type": "object",
-                  "properties": {
-                    "set": {
-                      "type": "string"
-                    },
-                    "setNull": {
-                      "type": "boolean"
-                    }
-                  },
-                  "description": "Change that will be applied to description."
-                },
-                "metadata": {
-                  "type": "object",
-                  "properties": {
-                    "set": {
-                      "type": "object"
-                    },
-                    "setNull": {
-                      "type": "boolean"
-                    }
-                  },
-                  "description": "Change that will be applied to metadata. String key -> String value."
-                },
-                "unit": {
-                  "type": "object",
-                  "properties": {
-                    "set": {
-                      "type": "string"
-                    },
-                    "setNull": {
-                      "type": "boolean"
-                    }
-                  },
-                  "description": "Change that will be applied to description."
-                },
-                "assetId": {
-                  "type": "object",
-                  "properties": {
-                    "set": {
-                      "type": "integer",
-                      "format": "int64"
-                    },
-                    "setNull": {
-                      "type": "boolean"
-                    }
-                  },
-                  "description": "Change that will be applied to assetId."
-                },
-                "description": {
-                  "type": "object",
-                  "properties": {
-                    "set": {
-                      "type": "string"
-                    },
-                    "setNull": {
-                      "type": "boolean"
-                    }
-                  },
-                  "description": "Change that will be applied to description."
-                },
-                "securityCategories": {
-                  "type": "object",
-                  "description": "array of objects change",
-                  "properties": {
-                    "add": {
-                      "uniqueItems": true,
-                      "type": "array",
-                      "items": {
-                        "type": "integer",
-                        "format": "int64"
+              "oneOf": [
+                {
+                  "allOf": [
+                    {
+                      "type": "object",
+                      "description": "Changes will be applied to timeseries.",
+                      "properties": {
+                        "update": {
+                          "type": "object",
+                          "properties": {
+                            "externalId": {
+                              "type": "object",
+                              "properties": {
+                                "set": {
+                                  "type": "string"
+                                },
+                                "setNull": {
+                                  "type": "boolean"
+                                }
+                              },
+                              "description": "Change that will be applied to description."
+                            },
+                            "name": {
+                              "type": "object",
+                              "properties": {
+                                "set": {
+                                  "type": "string"
+                                },
+                                "setNull": {
+                                  "type": "boolean"
+                                }
+                              },
+                              "description": "Change that will be applied to description."
+                            },
+                            "metadata": {
+                              "type": "object",
+                              "properties": {
+                                "set": {
+                                  "type": "object"
+                                },
+                                "setNull": {
+                                  "type": "boolean"
+                                }
+                              },
+                              "description": "Change that will be applied to metadata. String key -> String value."
+                            },
+                            "unit": {
+                              "type": "object",
+                              "properties": {
+                                "set": {
+                                  "type": "string"
+                                },
+                                "setNull": {
+                                  "type": "boolean"
+                                }
+                              },
+                              "description": "Change that will be applied to description."
+                            },
+                            "assetId": {
+                              "type": "object",
+                              "properties": {
+                                "set": {
+                                  "type": "integer",
+                                  "format": "int64"
+                                },
+                                "setNull": {
+                                  "type": "boolean"
+                                }
+                              },
+                              "description": "Change that will be applied to assetId."
+                            },
+                            "description": {
+                              "type": "object",
+                              "properties": {
+                                "set": {
+                                  "type": "string"
+                                },
+                                "setNull": {
+                                  "type": "boolean"
+                                }
+                              },
+                              "description": "Change that will be applied to description."
+                            },
+                            "securityCategories": {
+                              "type": "object",
+                              "description": "array of objects change",
+                              "properties": {
+                                "add": {
+                                  "uniqueItems": true,
+                                  "type": "array",
+                                  "items": {
+                                    "type": "integer",
+                                    "format": "int64"
+                                  }
+                                },
+                                "remove": {
+                                  "uniqueItems": true,
+                                  "type": "array",
+                                  "items": {
+                                    "type": "integer",
+                                    "format": "int64"
+                                  }
+                                },
+                                "set": {
+                                  "uniqueItems": true,
+                                  "type": "array",
+                                  "items": {
+                                    "type": "integer",
+                                    "format": "int64"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
                       }
                     },
-                    "remove": {
-                      "uniqueItems": true,
-                      "type": "array",
-                      "items": {
-                        "type": "integer",
-                        "format": "int64"
+                    {
+                      "type": "object",
+                      "required": [
+                        "id"
+                      ],
+                      "properties": {
+                        "id": {
+                          "description": "Javascript friendly internal ID given to the object.",
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991,
+                          "format": "int64"
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "allOf": [
+                    {
+                      "type": "object",
+                      "description": "Changes will be applied to timeseries.",
+                      "properties": {
+                        "update": {
+                          "type": "object",
+                          "properties": {
+                            "externalId": {
+                              "type": "object",
+                              "properties": {
+                                "set": {
+                                  "type": "string"
+                                },
+                                "setNull": {
+                                  "type": "boolean"
+                                }
+                              },
+                              "description": "Change that will be applied to description."
+                            },
+                            "name": {
+                              "type": "object",
+                              "properties": {
+                                "set": {
+                                  "type": "string"
+                                },
+                                "setNull": {
+                                  "type": "boolean"
+                                }
+                              },
+                              "description": "Change that will be applied to description."
+                            },
+                            "metadata": {
+                              "type": "object",
+                              "properties": {
+                                "set": {
+                                  "type": "object"
+                                },
+                                "setNull": {
+                                  "type": "boolean"
+                                }
+                              },
+                              "description": "Change that will be applied to metadata. String key -> String value."
+                            },
+                            "unit": {
+                              "type": "object",
+                              "properties": {
+                                "set": {
+                                  "type": "string"
+                                },
+                                "setNull": {
+                                  "type": "boolean"
+                                }
+                              },
+                              "description": "Change that will be applied to description."
+                            },
+                            "assetId": {
+                              "type": "object",
+                              "properties": {
+                                "set": {
+                                  "type": "integer",
+                                  "format": "int64"
+                                },
+                                "setNull": {
+                                  "type": "boolean"
+                                }
+                              },
+                              "description": "Change that will be applied to assetId."
+                            },
+                            "description": {
+                              "type": "object",
+                              "properties": {
+                                "set": {
+                                  "type": "string"
+                                },
+                                "setNull": {
+                                  "type": "boolean"
+                                }
+                              },
+                              "description": "Change that will be applied to description."
+                            },
+                            "securityCategories": {
+                              "type": "object",
+                              "description": "array of objects change",
+                              "properties": {
+                                "add": {
+                                  "uniqueItems": true,
+                                  "type": "array",
+                                  "items": {
+                                    "type": "integer",
+                                    "format": "int64"
+                                  }
+                                },
+                                "remove": {
+                                  "uniqueItems": true,
+                                  "type": "array",
+                                  "items": {
+                                    "type": "integer",
+                                    "format": "int64"
+                                  }
+                                },
+                                "set": {
+                                  "uniqueItems": true,
+                                  "type": "array",
+                                  "items": {
+                                    "type": "integer",
+                                    "format": "int64"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
                       }
                     },
-                    "set": {
-                      "uniqueItems": true,
-                      "type": "array",
-                      "items": {
-                        "type": "integer",
-                        "format": "int64"
+                    {
+                      "type": "object",
+                      "required": [
+                        "externalId"
+                      ],
+                      "properties": {
+                        "externalId": {
+                          "description": "External Id provided by client. Should be unique within the project.",
+                          "type": "string",
+                          "maxLength": 255
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      },
+      "TimeSeriesUpdate": {
+        "oneOf": [
+          {
+            "allOf": [
+              {
+                "type": "object",
+                "description": "Changes will be applied to timeseries.",
+                "properties": {
+                  "update": {
+                    "type": "object",
+                    "properties": {
+                      "externalId": {
+                        "type": "object",
+                        "properties": {
+                          "set": {
+                            "type": "string"
+                          },
+                          "setNull": {
+                            "type": "boolean"
+                          }
+                        },
+                        "description": "Change that will be applied to description."
+                      },
+                      "name": {
+                        "type": "object",
+                        "properties": {
+                          "set": {
+                            "type": "string"
+                          },
+                          "setNull": {
+                            "type": "boolean"
+                          }
+                        },
+                        "description": "Change that will be applied to description."
+                      },
+                      "metadata": {
+                        "type": "object",
+                        "properties": {
+                          "set": {
+                            "type": "object"
+                          },
+                          "setNull": {
+                            "type": "boolean"
+                          }
+                        },
+                        "description": "Change that will be applied to metadata. String key -> String value."
+                      },
+                      "unit": {
+                        "type": "object",
+                        "properties": {
+                          "set": {
+                            "type": "string"
+                          },
+                          "setNull": {
+                            "type": "boolean"
+                          }
+                        },
+                        "description": "Change that will be applied to description."
+                      },
+                      "assetId": {
+                        "type": "object",
+                        "properties": {
+                          "set": {
+                            "type": "integer",
+                            "format": "int64"
+                          },
+                          "setNull": {
+                            "type": "boolean"
+                          }
+                        },
+                        "description": "Change that will be applied to assetId."
+                      },
+                      "description": {
+                        "type": "object",
+                        "properties": {
+                          "set": {
+                            "type": "string"
+                          },
+                          "setNull": {
+                            "type": "boolean"
+                          }
+                        },
+                        "description": "Change that will be applied to description."
+                      },
+                      "securityCategories": {
+                        "type": "object",
+                        "description": "array of objects change",
+                        "properties": {
+                          "add": {
+                            "uniqueItems": true,
+                            "type": "array",
+                            "items": {
+                              "type": "integer",
+                              "format": "int64"
+                            }
+                          },
+                          "remove": {
+                            "uniqueItems": true,
+                            "type": "array",
+                            "items": {
+                              "type": "integer",
+                              "format": "int64"
+                            }
+                          },
+                          "set": {
+                            "uniqueItems": true,
+                            "type": "array",
+                            "items": {
+                              "type": "integer",
+                              "format": "int64"
+                            }
+                          }
+                        }
                       }
                     }
                   }
                 }
               },
-              "description": "Changes will be applied to time series."
+              {
+                "type": "object",
+                "required": [
+                  "id"
+                ],
+                "properties": {
+                  "id": {
+                    "description": "Javascript friendly internal ID given to the object.",
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991,
+                    "format": "int64"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "type": "object",
+                "description": "Changes will be applied to timeseries.",
+                "properties": {
+                  "update": {
+                    "type": "object",
+                    "properties": {
+                      "externalId": {
+                        "type": "object",
+                        "properties": {
+                          "set": {
+                            "type": "string"
+                          },
+                          "setNull": {
+                            "type": "boolean"
+                          }
+                        },
+                        "description": "Change that will be applied to description."
+                      },
+                      "name": {
+                        "type": "object",
+                        "properties": {
+                          "set": {
+                            "type": "string"
+                          },
+                          "setNull": {
+                            "type": "boolean"
+                          }
+                        },
+                        "description": "Change that will be applied to description."
+                      },
+                      "metadata": {
+                        "type": "object",
+                        "properties": {
+                          "set": {
+                            "type": "object"
+                          },
+                          "setNull": {
+                            "type": "boolean"
+                          }
+                        },
+                        "description": "Change that will be applied to metadata. String key -> String value."
+                      },
+                      "unit": {
+                        "type": "object",
+                        "properties": {
+                          "set": {
+                            "type": "string"
+                          },
+                          "setNull": {
+                            "type": "boolean"
+                          }
+                        },
+                        "description": "Change that will be applied to description."
+                      },
+                      "assetId": {
+                        "type": "object",
+                        "properties": {
+                          "set": {
+                            "type": "integer",
+                            "format": "int64"
+                          },
+                          "setNull": {
+                            "type": "boolean"
+                          }
+                        },
+                        "description": "Change that will be applied to assetId."
+                      },
+                      "description": {
+                        "type": "object",
+                        "properties": {
+                          "set": {
+                            "type": "string"
+                          },
+                          "setNull": {
+                            "type": "boolean"
+                          }
+                        },
+                        "description": "Change that will be applied to description."
+                      },
+                      "securityCategories": {
+                        "type": "object",
+                        "description": "array of objects change",
+                        "properties": {
+                          "add": {
+                            "uniqueItems": true,
+                            "type": "array",
+                            "items": {
+                              "type": "integer",
+                              "format": "int64"
+                            }
+                          },
+                          "remove": {
+                            "uniqueItems": true,
+                            "type": "array",
+                            "items": {
+                              "type": "integer",
+                              "format": "int64"
+                            }
+                          },
+                          "set": {
+                            "uniqueItems": true,
+                            "type": "array",
+                            "items": {
+                              "type": "integer",
+                              "format": "int64"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "required": [
+                  "externalId"
+                ],
+                "properties": {
+                  "externalId": {
+                    "description": "External Id provided by client. Should be unique within the project.",
+                    "type": "string",
+                    "maxLength": 255
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "TimeSeriesUpdateById": {
+        "allOf": [
+          {
+            "type": "object",
+            "description": "Changes will be applied to timeseries.",
+            "properties": {
+              "update": {
+                "type": "object",
+                "properties": {
+                  "externalId": {
+                    "type": "object",
+                    "properties": {
+                      "set": {
+                        "type": "string"
+                      },
+                      "setNull": {
+                        "type": "boolean"
+                      }
+                    },
+                    "description": "Change that will be applied to description."
+                  },
+                  "name": {
+                    "type": "object",
+                    "properties": {
+                      "set": {
+                        "type": "string"
+                      },
+                      "setNull": {
+                        "type": "boolean"
+                      }
+                    },
+                    "description": "Change that will be applied to description."
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "properties": {
+                      "set": {
+                        "type": "object"
+                      },
+                      "setNull": {
+                        "type": "boolean"
+                      }
+                    },
+                    "description": "Change that will be applied to metadata. String key -> String value."
+                  },
+                  "unit": {
+                    "type": "object",
+                    "properties": {
+                      "set": {
+                        "type": "string"
+                      },
+                      "setNull": {
+                        "type": "boolean"
+                      }
+                    },
+                    "description": "Change that will be applied to description."
+                  },
+                  "assetId": {
+                    "type": "object",
+                    "properties": {
+                      "set": {
+                        "type": "integer",
+                        "format": "int64"
+                      },
+                      "setNull": {
+                        "type": "boolean"
+                      }
+                    },
+                    "description": "Change that will be applied to assetId."
+                  },
+                  "description": {
+                    "type": "object",
+                    "properties": {
+                      "set": {
+                        "type": "string"
+                      },
+                      "setNull": {
+                        "type": "boolean"
+                      }
+                    },
+                    "description": "Change that will be applied to description."
+                  },
+                  "securityCategories": {
+                    "type": "object",
+                    "description": "array of objects change",
+                    "properties": {
+                      "add": {
+                        "uniqueItems": true,
+                        "type": "array",
+                        "items": {
+                          "type": "integer",
+                          "format": "int64"
+                        }
+                      },
+                      "remove": {
+                        "uniqueItems": true,
+                        "type": "array",
+                        "items": {
+                          "type": "integer",
+                          "format": "int64"
+                        }
+                      },
+                      "set": {
+                        "uniqueItems": true,
+                        "type": "array",
+                        "items": {
+                          "type": "integer",
+                          "format": "int64"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "id"
+            ],
+            "properties": {
+              "id": {
+                "description": "Javascript friendly internal ID given to the object.",
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991,
+                "format": "int64"
+              }
+            }
+          }
+        ]
+      },
+      "TimeSeriesUpdateByExternalId": {
+        "allOf": [
+          {
+            "type": "object",
+            "description": "Changes will be applied to timeseries.",
+            "properties": {
+              "update": {
+                "type": "object",
+                "properties": {
+                  "externalId": {
+                    "type": "object",
+                    "properties": {
+                      "set": {
+                        "type": "string"
+                      },
+                      "setNull": {
+                        "type": "boolean"
+                      }
+                    },
+                    "description": "Change that will be applied to description."
+                  },
+                  "name": {
+                    "type": "object",
+                    "properties": {
+                      "set": {
+                        "type": "string"
+                      },
+                      "setNull": {
+                        "type": "boolean"
+                      }
+                    },
+                    "description": "Change that will be applied to description."
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "properties": {
+                      "set": {
+                        "type": "object"
+                      },
+                      "setNull": {
+                        "type": "boolean"
+                      }
+                    },
+                    "description": "Change that will be applied to metadata. String key -> String value."
+                  },
+                  "unit": {
+                    "type": "object",
+                    "properties": {
+                      "set": {
+                        "type": "string"
+                      },
+                      "setNull": {
+                        "type": "boolean"
+                      }
+                    },
+                    "description": "Change that will be applied to description."
+                  },
+                  "assetId": {
+                    "type": "object",
+                    "properties": {
+                      "set": {
+                        "type": "integer",
+                        "format": "int64"
+                      },
+                      "setNull": {
+                        "type": "boolean"
+                      }
+                    },
+                    "description": "Change that will be applied to assetId."
+                  },
+                  "description": {
+                    "type": "object",
+                    "properties": {
+                      "set": {
+                        "type": "string"
+                      },
+                      "setNull": {
+                        "type": "boolean"
+                      }
+                    },
+                    "description": "Change that will be applied to description."
+                  },
+                  "securityCategories": {
+                    "type": "object",
+                    "description": "array of objects change",
+                    "properties": {
+                      "add": {
+                        "uniqueItems": true,
+                        "type": "array",
+                        "items": {
+                          "type": "integer",
+                          "format": "int64"
+                        }
+                      },
+                      "remove": {
+                        "uniqueItems": true,
+                        "type": "array",
+                        "items": {
+                          "type": "integer",
+                          "format": "int64"
+                        }
+                      },
+                      "set": {
+                        "uniqueItems": true,
+                        "type": "array",
+                        "items": {
+                          "type": "integer",
+                          "format": "int64"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "externalId"
+            ],
+            "properties": {
+              "externalId": {
+                "description": "External Id provided by client. Should be unique within the project.",
+                "type": "string",
+                "maxLength": 255
+              }
+            }
+          }
+        ]
+      },
+      "TimeSeriesPatch": {
+        "type": "object",
+        "description": "Changes will be applied to timeseries.",
+        "properties": {
+          "update": {
+            "type": "object",
+            "properties": {
+              "externalId": {
+                "type": "object",
+                "properties": {
+                  "set": {
+                    "type": "string"
+                  },
+                  "setNull": {
+                    "type": "boolean"
+                  }
+                },
+                "description": "Change that will be applied to description."
+              },
+              "name": {
+                "type": "object",
+                "properties": {
+                  "set": {
+                    "type": "string"
+                  },
+                  "setNull": {
+                    "type": "boolean"
+                  }
+                },
+                "description": "Change that will be applied to description."
+              },
+              "metadata": {
+                "type": "object",
+                "properties": {
+                  "set": {
+                    "type": "object"
+                  },
+                  "setNull": {
+                    "type": "boolean"
+                  }
+                },
+                "description": "Change that will be applied to metadata. String key -> String value."
+              },
+              "unit": {
+                "type": "object",
+                "properties": {
+                  "set": {
+                    "type": "string"
+                  },
+                  "setNull": {
+                    "type": "boolean"
+                  }
+                },
+                "description": "Change that will be applied to description."
+              },
+              "assetId": {
+                "type": "object",
+                "properties": {
+                  "set": {
+                    "type": "integer",
+                    "format": "int64"
+                  },
+                  "setNull": {
+                    "type": "boolean"
+                  }
+                },
+                "description": "Change that will be applied to assetId."
+              },
+              "description": {
+                "type": "object",
+                "properties": {
+                  "set": {
+                    "type": "string"
+                  },
+                  "setNull": {
+                    "type": "boolean"
+                  }
+                },
+                "description": "Change that will be applied to description."
+              },
+              "securityCategories": {
+                "type": "object",
+                "description": "array of objects change",
+                "properties": {
+                  "add": {
+                    "uniqueItems": true,
+                    "type": "array",
+                    "items": {
+                      "type": "integer",
+                      "format": "int64"
+                    }
+                  },
+                  "remove": {
+                    "uniqueItems": true,
+                    "type": "array",
+                    "items": {
+                      "type": "integer",
+                      "format": "int64"
+                    }
+                  },
+                  "set": {
+                    "uniqueItems": true,
+                    "type": "array",
+                    "items": {
+                      "type": "integer",
+                      "format": "int64"
+                    }
+                  }
+                }
+              }
             }
           }
         }
@@ -6195,128 +7127,6 @@
             }
           }
         }
-      },
-      "TimeSeriesChange": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "externalId": {
-            "type": "string"
-          },
-          "update": {
-            "type": "object",
-            "properties":
-              {
-                "externalId": {
-                "type": "object",
-                "properties": {
-                  "set": {
-                    "type": "string"
-                  },
-                  "setNull": {
-                    "type": "boolean"
-                  }
-                },
-                "description": "Change that will be applied to description."
-              },
-                "name": {
-                  "type": "object",
-                  "properties": {
-                    "set": {
-                      "type": "string"
-                    },
-                    "setNull": {
-                      "type": "boolean"
-                    }
-                  },
-                  "description": "Change that will be applied to description."
-                },
-                "metadata": {
-                  "type": "object",
-                  "properties": {
-                    "set": {
-                      "type": "object"
-                    },
-                    "setNull": {
-                      "type": "boolean"
-                    }
-                  },
-                  "description": "Change that will be applied to metadata. String key -> String value."
-                },
-                "unit": {
-                  "type": "object",
-                  "properties": {
-                    "set": {
-                      "type": "string"
-                    },
-                    "setNull": {
-                      "type": "boolean"
-                    }
-                  },
-                  "description": "Change that will be applied to description."
-                },
-                "assetId": {
-                  "type": "object",
-                  "properties": {
-                    "set": {
-                      "type": "integer",
-                      "format": "int64"
-                    },
-                    "setNull": {
-                      "type": "boolean"
-                    }
-                  },
-                  "description": "Change that will be applied to assetId."
-                },
-                "description": {
-                  "type": "object",
-                  "properties": {
-                    "set": {
-                      "type": "string"
-                    },
-                    "setNull": {
-                      "type": "boolean"
-                    }
-                  },
-                  "description": "Change that will be applied to description."
-                },
-                "securityCategories": {
-                  "type": "object",
-                  "description": "array of objects change",
-                  "properties": {
-                    "add": {
-                      "uniqueItems": true,
-                      "type": "array",
-                      "items": {
-                        "type": "integer",
-                        "format": "int64"
-                      }
-                    },
-                    "remove": {
-                      "uniqueItems": true,
-                      "type": "array",
-                      "items": {
-                        "type": "integer",
-                        "format": "int64"
-                      }
-                    },
-                    "set": {
-                      "uniqueItems": true,
-                      "type": "array",
-                      "items": {
-                        "type": "integer",
-                        "format": "int64"
-                      }
-                    }
-                  }
-                }
-              }
-              },
-        "description": "Changes will be applied to time series."
-      }
       },
       "DataWithCursorGetTimeSeriesMetadataDTO": {
         "type": "object",
@@ -8195,6 +9005,36 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "TODO",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "integer",
+                          "description": "HTTP status code",
+                          "format": "int32"
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "Error message"
+                        },
+                        "extra": {
+                          "type": "object",
+                          "description": "Additional data"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "security": [
@@ -8835,9 +9675,6 @@
                             },
                             {
                               "type": "object",
-                              "required": [
-                                "id"
-                              ],
                               "properties": {
                                 "id": {
                                   "description": "Javascript friendly internal ID given to the object.",
@@ -8981,9 +9818,6 @@
                             },
                             {
                               "type": "object",
-                              "required": [
-                                "externalId"
-                              ],
                               "properties": {
                                 "externalId": {
                                   "description": "External Id provided by client. Should be unique within the project.",
@@ -12762,7 +13596,7 @@
         ]
       }
     },
-    "/api/1/projects/{project}/timeseries": {
+    "/api/v1/projects/{project}/timeseries": {
       "get": {
         "tags": [
           "Time series"
@@ -13126,6 +13960,34 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "Timeseries with speficied externalId already exists",
+            "content": {
+              "application/json": {
+                "type": "object",
+                "properties": {
+                  "error": {
+                    "type": "object",
+                    "properties": {
+                      "code": {
+                        "type": "integer",
+                        "description": "HTTP status code",
+                        "format": "int32"
+                      },
+                      "message": {
+                        "type": "string",
+                        "description": "Error message"
+                      },
+                      "extra": {
+                        "type": "object",
+                        "description": "Additional data"
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "security": [
@@ -13141,7 +14003,7 @@
         ]
       }
     },
-    "/api/1/projects/{project}/timeseries/search": {
+    "/api/v1/projects/{project}/timeseries/search": {
       "post": {
         "tags": [
           "Time series"
@@ -13293,7 +14155,7 @@
         },
         "responses": {
           "200": {
-            "description": "Experimental endpoint. Search on time series.",
+            "description": "Search on time series.",
             "content": {
               "application/json": {
                 "schema": {
@@ -13391,7 +14253,7 @@
         ]
       }
     },
-    "/api/1/projects/{project}/timeseries/get": {
+    "/api/v1/projects/{project}/timeseries/byids": {
       "post": {
         "tags": [
           "Time series"
@@ -13425,18 +14287,23 @@
                     "type": "array",
                     "description": "List of ID objects",
                     "items": {
-                      "type": "object",
-                      "description": "Object is required to provide only one from two available attributes (one or another). Id field maps to server side ID while externalId to user set identifier.",
-                      "properties": {
-                        "id": {
+                      "oneOf": [
+                        {
+                          "description": "Javascript friendly internal ID given to the object.",
                           "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991,
                           "format": "int64"
                         },
-                        "externalId": {
-                          "type": "string"
+                        {
+                          "description": "External Id provided by client. Should be unique within the project.",
+                          "type": "string",
+                          "maxLength": 255
                         }
-                      }
-                    }
+                      ]
+                    },
+                    "maxItems": 1000,
+                    "minItems": 1
                   }
                 }
               }
@@ -13530,7 +14397,7 @@
               }
             }
           },
-          "400": {
+          "422": {
             "description": "Ids duplicated.",
             "content": {
               "application/json": {
@@ -13574,7 +14441,7 @@
         ]
       }
     },
-    "/api/1/projects/{project}/timeseries/update": {
+    "/api/v1/projects/{project}/timeseries/update": {
       "post": {
         "tags": [
           "Time series"
@@ -13603,120 +14470,272 @@
                   "items": {
                     "type": "array",
                     "items": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "integer",
-                          "format": "int64"
-                        },
-                        "externalId": {
-                          "type": "string"
-                        },
-                        "externalIdChange": {
-                          "type": "object",
-                          "properties": {
-                            "set": {
-                              "type": "string"
-                            },
-                            "setNull": {
-                              "type": "boolean"
-                            }
-                          },
-                          "description": "Change that will be applied to description."
-                        },
-                        "name": {
-                          "type": "object",
-                          "properties": {
-                            "set": {
-                              "type": "string"
-                            },
-                            "setNull": {
-                              "type": "boolean"
-                            }
-                          },
-                          "description": "Change that will be applied to description."
-                        },
-                        "metadata": {
-                          "type": "object",
-                          "properties": {
-                            "set": {
-                              "type": "object"
-                            },
-                            "setNull": {
-                              "type": "boolean"
-                            }
-                          },
-                          "description": "Change that will be applied to metadata. String key -> String value."
-                        },
-                        "unit": {
-                          "type": "object",
-                          "properties": {
-                            "set": {
-                              "type": "string"
-                            },
-                            "setNull": {
-                              "type": "boolean"
-                            }
-                          },
-                          "description": "Change that will be applied to description."
-                        },
-                        "assetId": {
-                          "type": "object",
-                          "properties": {
-                            "set": {
-                              "type": "integer",
-                              "format": "int64"
-                            },
-                            "setNull": {
-                              "type": "boolean"
-                            }
-                          },
-                          "description": "Change that will be applied to assetId."
-                        },
-                        "description": {
-                          "type": "object",
-                          "properties": {
-                            "set": {
-                              "type": "string"
-                            },
-                            "setNull": {
-                              "type": "boolean"
-                            }
-                          },
-                          "description": "Change that will be applied to description."
-                        },
-                        "securityCategories": {
-                          "type": "object",
-                          "description": "array of objects change",
-                          "properties": {
-                            "add": {
-                              "uniqueItems": true,
-                              "type": "array",
-                              "items": {
-                                "type": "integer",
-                                "format": "int64"
+                      "oneOf": [
+                        {
+                          "allOf": [
+                            {
+                              "type": "object",
+                              "description": "Changes will be applied to timeseries.",
+                              "properties": {
+                                "update": {
+                                  "type": "object",
+                                  "properties": {
+                                    "externalId": {
+                                      "type": "object",
+                                      "properties": {
+                                        "set": {
+                                          "type": "string"
+                                        },
+                                        "setNull": {
+                                          "type": "boolean"
+                                        }
+                                      },
+                                      "description": "Change that will be applied to description."
+                                    },
+                                    "name": {
+                                      "type": "object",
+                                      "properties": {
+                                        "set": {
+                                          "type": "string"
+                                        },
+                                        "setNull": {
+                                          "type": "boolean"
+                                        }
+                                      },
+                                      "description": "Change that will be applied to description."
+                                    },
+                                    "metadata": {
+                                      "type": "object",
+                                      "properties": {
+                                        "set": {
+                                          "type": "object"
+                                        },
+                                        "setNull": {
+                                          "type": "boolean"
+                                        }
+                                      },
+                                      "description": "Change that will be applied to metadata. String key -> String value."
+                                    },
+                                    "unit": {
+                                      "type": "object",
+                                      "properties": {
+                                        "set": {
+                                          "type": "string"
+                                        },
+                                        "setNull": {
+                                          "type": "boolean"
+                                        }
+                                      },
+                                      "description": "Change that will be applied to description."
+                                    },
+                                    "assetId": {
+                                      "type": "object",
+                                      "properties": {
+                                        "set": {
+                                          "type": "integer",
+                                          "format": "int64"
+                                        },
+                                        "setNull": {
+                                          "type": "boolean"
+                                        }
+                                      },
+                                      "description": "Change that will be applied to assetId."
+                                    },
+                                    "description": {
+                                      "type": "object",
+                                      "properties": {
+                                        "set": {
+                                          "type": "string"
+                                        },
+                                        "setNull": {
+                                          "type": "boolean"
+                                        }
+                                      },
+                                      "description": "Change that will be applied to description."
+                                    },
+                                    "securityCategories": {
+                                      "type": "object",
+                                      "description": "array of objects change",
+                                      "properties": {
+                                        "add": {
+                                          "uniqueItems": true,
+                                          "type": "array",
+                                          "items": {
+                                            "type": "integer",
+                                            "format": "int64"
+                                          }
+                                        },
+                                        "remove": {
+                                          "uniqueItems": true,
+                                          "type": "array",
+                                          "items": {
+                                            "type": "integer",
+                                            "format": "int64"
+                                          }
+                                        },
+                                        "set": {
+                                          "uniqueItems": true,
+                                          "type": "array",
+                                          "items": {
+                                            "type": "integer",
+                                            "format": "int64"
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
                               }
                             },
-                            "remove": {
-                              "uniqueItems": true,
-                              "type": "array",
-                              "items": {
-                                "type": "integer",
-                                "format": "int64"
-                              }
-                            },
-                            "set": {
-                              "uniqueItems": true,
-                              "type": "array",
-                              "items": {
-                                "type": "integer",
-                                "format": "int64"
+                            {
+                              "type": "object",
+                              "required": [
+                                "id"
+                              ],
+                              "properties": {
+                                "id": {
+                                  "description": "Javascript friendly internal ID given to the object.",
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 9007199254740991,
+                                  "format": "int64"
+                                }
                               }
                             }
-                          }
+                          ]
+                        },
+                        {
+                          "allOf": [
+                            {
+                              "type": "object",
+                              "description": "Changes will be applied to timeseries.",
+                              "properties": {
+                                "update": {
+                                  "type": "object",
+                                  "properties": {
+                                    "externalId": {
+                                      "type": "object",
+                                      "properties": {
+                                        "set": {
+                                          "type": "string"
+                                        },
+                                        "setNull": {
+                                          "type": "boolean"
+                                        }
+                                      },
+                                      "description": "Change that will be applied to description."
+                                    },
+                                    "name": {
+                                      "type": "object",
+                                      "properties": {
+                                        "set": {
+                                          "type": "string"
+                                        },
+                                        "setNull": {
+                                          "type": "boolean"
+                                        }
+                                      },
+                                      "description": "Change that will be applied to description."
+                                    },
+                                    "metadata": {
+                                      "type": "object",
+                                      "properties": {
+                                        "set": {
+                                          "type": "object"
+                                        },
+                                        "setNull": {
+                                          "type": "boolean"
+                                        }
+                                      },
+                                      "description": "Change that will be applied to metadata. String key -> String value."
+                                    },
+                                    "unit": {
+                                      "type": "object",
+                                      "properties": {
+                                        "set": {
+                                          "type": "string"
+                                        },
+                                        "setNull": {
+                                          "type": "boolean"
+                                        }
+                                      },
+                                      "description": "Change that will be applied to description."
+                                    },
+                                    "assetId": {
+                                      "type": "object",
+                                      "properties": {
+                                        "set": {
+                                          "type": "integer",
+                                          "format": "int64"
+                                        },
+                                        "setNull": {
+                                          "type": "boolean"
+                                        }
+                                      },
+                                      "description": "Change that will be applied to assetId."
+                                    },
+                                    "description": {
+                                      "type": "object",
+                                      "properties": {
+                                        "set": {
+                                          "type": "string"
+                                        },
+                                        "setNull": {
+                                          "type": "boolean"
+                                        }
+                                      },
+                                      "description": "Change that will be applied to description."
+                                    },
+                                    "securityCategories": {
+                                      "type": "object",
+                                      "description": "array of objects change",
+                                      "properties": {
+                                        "add": {
+                                          "uniqueItems": true,
+                                          "type": "array",
+                                          "items": {
+                                            "type": "integer",
+                                            "format": "int64"
+                                          }
+                                        },
+                                        "remove": {
+                                          "uniqueItems": true,
+                                          "type": "array",
+                                          "items": {
+                                            "type": "integer",
+                                            "format": "int64"
+                                          }
+                                        },
+                                        "set": {
+                                          "uniqueItems": true,
+                                          "type": "array",
+                                          "items": {
+                                            "type": "integer",
+                                            "format": "int64"
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "externalId"
+                              ],
+                              "properties": {
+                                "externalId": {
+                                  "description": "External Id provided by client. Should be unique within the project.",
+                                  "type": "string",
+                                  "maxLength": 255
+                                }
+                              }
+                            }
+                          ]
                         }
-                      },
-                      "description": "Changes will be applied to time series."
+                      ]
                     }
                   }
                 }
@@ -13855,7 +14874,7 @@
         ]
       }
     },
-    "/api/1/projects/{project}/timeseries/delete": {
+    "/api/v1/projects/{project}/timeseries/delete": {
       "post": {
         "tags": [
           "Time series"
@@ -13875,7 +14894,7 @@
           }
         ],
         "requestBody": {
-          "description": "List of IDs of time series to delete",
+          "description": "Select a list of time series to delete",
           "content": {
             "application/json": {
               "schema": {
@@ -13889,18 +14908,23 @@
                     "type": "array",
                     "description": "List of ID objects",
                     "items": {
-                      "type": "object",
-                      "description": "Object is required to provide only one from two available attributes (one or another). Id field maps to server side ID while externalId to user set identifier.",
-                      "properties": {
-                        "id": {
+                      "oneOf": [
+                        {
+                          "description": "Javascript friendly internal ID given to the object.",
                           "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991,
                           "format": "int64"
                         },
-                        "externalId": {
-                          "type": "string"
+                        {
+                          "description": "External Id provided by client. Should be unique within the project.",
+                          "type": "string",
+                          "maxLength": 255
                         }
-                      }
-                    }
+                      ]
+                    },
+                    "maxItems": 1000,
+                    "minItems": 1
                   }
                 }
               }
@@ -13949,7 +14973,7 @@
               }
             }
           },
-          "404": {
+          "422": {
             "description": "Ids not found.",
             "content": {
               "application/json": {
@@ -14005,7 +15029,7 @@
         ]
       }
     },
-    "/api/1/projects/{project}/timeseries/data": {
+    "/api/v1/projects/{project}/timeseries/data": {
       "post": {
         "tags": [
           "Time series"
@@ -14157,7 +15181,7 @@
               }
             }
           },
-          "404": {
+          "422": {
             "description": "Ids or external ids not found",
             "content": {
               "application/json": {
@@ -14213,7 +15237,7 @@
         ]
       }
     },
-    "/api/1/projects/{project}/timeseries/data/get": {
+    "/api/v1/projects/{project}/timeseries/data/list": {
       "post": {
         "tags": [
           "Time series"
@@ -14531,7 +15555,7 @@
               }
             }
           },
-          "404": {
+          "422": {
             "description": "Names not found.",
             "content": {
               "application/json": {
@@ -14587,7 +15611,7 @@
         ]
       }
     },
-    "/api/1/projects/{project}/timeseries/data/latest": {
+    "/api/v1/projects/{project}/timeseries/data/latest": {
       "post": {
         "tags": [
           "Time series"
@@ -14793,7 +15817,7 @@
               }
             }
           },
-          "404": {
+          "422": {
             "description": "The time series does not exist.",
             "content": {
               "application/json": {
@@ -14849,7 +15873,7 @@
         ]
       }
     },
-    "/api/1/projects/{project}/timeseries/data/delete": {
+    "/api/v1/projects/{project}/timeseries/data/delete": {
       "post": {
         "tags": [
           "Time series"
@@ -14957,7 +15981,7 @@
               }
             }
           },
-          "404": {
+          "422": {
             "description": "Ids not found.",
             "content": {
               "application/json": {
