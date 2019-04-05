@@ -1,13 +1,11 @@
-Overview
-========
 Cognite Client
---------------
+==============
 .. autoclass:: cognite.client.CogniteClient
     :members:
     :member-order: bysource
 
 Exceptions
-----------
+==========
 .. automodule:: cognite.client.exceptions
     :members:
     :undoc-members:
@@ -17,8 +15,8 @@ API
 ===
 Login
 -----
-Status
-^^^^^^
+Get login status
+^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client.api.login.LoginAPI.status
 
 Data Transfer Objects
