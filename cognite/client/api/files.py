@@ -393,7 +393,6 @@ class FilesAPI(APIClient):
                 file_metadata.name = os.path.basename(path)
             return self._upload_file_from_path(file_metadata, path)
         elif os.path.isdir(path):
-            assert file_metadata is None, "file_metadata must not be specified when 'path' is a directory"
             tasks = []
             for file_name in os.listdir(path):
                 file_path = os.path.join(path, file_name)
@@ -405,7 +404,7 @@ class FilesAPI(APIClient):
 
     def _upload_file_from_path(self, file: FileMetadata, file_path: str):
         with open(file_path, "rb") as f:
-            file_metadata = self.upload_from_memory(file, f.read())
+            file_metadata = self.upload_from_memory(f.read(), **file.dump(camel_case=True))
         return file_metadata
 
     def upload_from_memory(

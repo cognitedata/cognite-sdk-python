@@ -144,11 +144,12 @@ class TestFilesAPI:
 
     def test_upload(self, mock_file_upload_response):
         path = os.path.join(os.path.dirname(__file__), "files_for_test_upload", "file_for_test_upload_1.txt")
-        res = FILES_API.upload(path, FileMetadata(name="bla"))
+        res = FILES_API.upload(path, name="bla")
         response_body = mock_file_upload_response.calls[0].response.json()["data"]
         del response_body["uploadUrl"]
         assert FileMetadata._load(response_body) == res
         assert "https://upload.here/" == mock_file_upload_response.calls[1].request.url
+        assert {"name": "bla"} == jsgz_load(mock_file_upload_response.calls[0].request.body)
         assert b"content1\n" == mock_file_upload_response.calls[1].request.body
 
     def test_upload_from_directory(self, mock_file_upload_response):
@@ -170,16 +171,13 @@ class TestFilesAPI:
             else:
                 raise AssertionError("incorrect payload: {}".format(payload))
 
-    def test_upload_from_directory_with_file_metadata(self):
-        with pytest.raises(AssertionError, match="must not be specified"):
-            FILES_API.upload(path=os.path.dirname(__file__), file_metadata=FileMetadata())
-
     def test_upload_from_memory(self, mock_file_upload_response):
-        res = FILES_API.upload_from_memory(FileMetadata(name="bla"), content=b"content")
+        res = FILES_API.upload_from_memory(content=b"content", name="bla")
         response_body = mock_file_upload_response.calls[0].response.json()["data"]
         del response_body["uploadUrl"]
         assert FileMetadata._load(response_body) == res
         assert "https://upload.here/" == mock_file_upload_response.calls[1].request.url
+        assert {"name": "bla"} == jsgz_load(mock_file_upload_response.calls[0].request.body)
         assert b"content" == mock_file_upload_response.calls[1].request.body
 
     def test_download(self, mock_file_download_response):
