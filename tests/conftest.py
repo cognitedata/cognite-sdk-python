@@ -5,6 +5,12 @@ import pytest
 import responses
 
 from cognite.client import CogniteClient
+from cognite.client.api.assets import AssetsAPI
+from cognite.client.api.datapoints import DatapointsAPI
+from cognite.client.api.events import EventsAPI
+from cognite.client.api.files import FilesAPI
+from cognite.client.api.login import LoginAPI
+from cognite.client.api.time_series import TimeSeriesAPI
 from tests.utils import BASE_URL
 
 
@@ -28,7 +34,14 @@ def rsps_with_login_mock():
 @pytest.fixture
 def mock_cognite_client():
     with mock.patch("cognite.client.CogniteClient") as client_mock:
-        client_mock.return_value = mock.MagicMock()
+        cog_client_mock = mock.MagicMock(spec=CogniteClient)
+        cog_client_mock.time_series = mock.MagicMock(spec=TimeSeriesAPI)
+        cog_client_mock.datapoints = mock.MagicMock(spec=DatapointsAPI)
+        cog_client_mock.assets = mock.MagicMock(spec=AssetsAPI)
+        cog_client_mock.events = mock.MagicMock(spec=EventsAPI)
+        cog_client_mock.files = mock.MagicMock(spec=FilesAPI)
+        cog_client_mock.login = mock.MagicMock(spec=LoginAPI)
+        client_mock.return_value = cog_client_mock
         yield
 
 

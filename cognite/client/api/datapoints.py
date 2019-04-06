@@ -263,15 +263,32 @@ class DatapointsAPI(APIClient):
 
         Examples:
 
-            You can get specify the ids of the datapoints you wish to retrieve in a number of ways::
+            You can get specify the ids of the datapoints you wish to retrieve in a number of ways. In this example
+            we are using the time-ago format to get raw data for the time series with id 1::
 
-                get(id=1)
-                get(id=[1], external_id=["1", "2"])
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> dps = c.datapoints.get(id=1, start="2w-ago", end="now")
+
+            We can also get aggregated values, such as average. Here we are getting daily averages for all of 2018 for
+            two different time series. Note that we arefetching them using their external ids::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> dps = c.datapoints.get(external_id=["abc", "def"],
+                ...                         start=datetime(2018,1,1),
+                ...                         end=datetime(2019,1,1),
+                ...                         aggregates=["avg"],
+                ...                         granularity="1d")
 
             If you want different aggregates for different time series specify your ids like this::
 
-                get(id=[{"id": 1, "aggregates": ["avg"]}, {"id": 1, "aggregates": ["min"]}],
-                    external_id={"externalId": "1", "aggregates": ["max"]})
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> dps = c.datapoints.get(id=[{"id": 1, "aggregates": ["avg"]},
+                ...                             {"id": 1, "aggregates": ["min"]}],
+                ...                         external_id={"externalId": "1", "aggregates": ["max"]},
+                ...                         start="1d-ago", end="now", granularity="1h")
         """
         start = utils.timestamp_to_ms(start)
         end = utils.timestamp_to_ms(end)
@@ -318,6 +335,30 @@ class DatapointsAPI(APIClient):
 
         Returns:
             Union[Datapoints, DatapointsList]: A Datapoints object containing the requested data, or a list of such objects.
+
+        Examples:
+
+            Getting the latest datapoint in a time series. This method returns a Datapoints object, so the datapoint will
+            be the first element::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.datapoints.get_latest(id=1)[0]
+
+            You can also get the first datapoint before a specific time::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.datapoints.get_latest(id=1, before="2d-ago")[0]
+
+            If you need the latest datapoint for multiple time series simply give a list of ids. Note that we are
+            using external ids here, but either will work::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.datapoints.get_latest(external_id=["abc", "def"])
+                >>> latest_abc = res[0][0]
+                >>> latest_def = res[1][0]
         """
         before = utils.timestamp_to_ms(before) if before else None
         all_ids = self._process_ids(id, external_id, wrap_ids=True)
@@ -342,6 +383,22 @@ class DatapointsAPI(APIClient):
 
         Returns:
             Union[Datapoints, DatapointsList]: A Datapoints object containing the requested data, or a list of such objects.
+
+        Examples:
+
+            This method is useful if you want to get multiple time series, but you want to specify different starts,
+            ends, or granularities for each. e.g.::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.api.datapoints import DatapointsQuery
+                >>> c = CogniteClient()
+                >>> queries = [DatapointsQuery(id=1, start="2d-ago", end="now"),
+                ...             DatapointsQuery(external_id="abc",
+                ...                             start="10d-ago",
+                ...                             end="now",
+                ...                             aggregates=["avg"],
+                ...                             granularity="1m")]
+                >>> res = c.datapoints.query(queries)
         """
         is_single_query = False
         if isinstance(query, DatapointsQuery):
@@ -383,21 +440,28 @@ class DatapointsAPI(APIClient):
             Your datapoints can be a list of tuples where the first element is the timestamp and the second element is
             the value::
 
-                # with datetime objects
-                datapoints = [(datetime(2018,1,1), 1000), (datetime(2018,1,2), 2000), ...]
 
-                # with ms since epoch
-                datapoints = [(150000000000, 1000), (160000000000, 2000), ...]
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> # with datetime objects
+                >>> datapoints = [(datetime(2018,1,1), 1000), (datetime(2018,1,2), 2000)]
+                >>> res1 = c.datapoints.insert(datapoints, id=1)
+                >>> # with ms since epoch
+                >>> datapoints = [(150000000000, 1000), (160000000000, 2000)]
+                >>> res2 = c.datapoints.insert(datapoints, id=2)
 
             Or they can be a list of dictionaries::
 
-                # with datetime objects
-                datapoints = [{"timestamp": datetime(2018,1,1), "value": 1000},
-                    {"timestamp": datetime(2018,1,2), "value": 2000}, ...]
-
-                # with ms since epoch
-                datapoints = [{"timestamp": 150000000000, "value": 1000},
-                    {"timestamp": 160000000000, "value": 2000}, ...]
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> # with datetime objects
+                >>> datapoints = [{"timestamp": datetime(2018,1,1), "value": 1000},
+                ...    {"timestamp": datetime(2018,1,2), "value": 2000}]
+                >>> res1 = c.datapoints.insert(datapoints, external_id="abc")
+                >>> # with ms since epoch
+                >>> datapoints = [{"timestamp": 150000000000, "value": 1000},
+                ...    {"timestamp": 160000000000, "value": 2000}]
+                >>> res2 = c.datapoints.insert(datapoints, external_id="def")
         """
         utils.assert_exactly_one_of_id_or_external_id(id, external_id)
         datapoints = self._validate_and_format_datapoints(datapoints)
@@ -421,21 +485,31 @@ class DatapointsAPI(APIClient):
             Your datapoints can be a list of tuples where the first element is the timestamp and the second element is
             the value::
 
-                # with datetime objects and id
-                datapoints = {"id": 1, "datapoints": [(datetime(2018,1,1), 1000), (datetime(2018,1,2), 2000), ...]}
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
 
-                # with ms since epoch and externalId
-                datapoints = {"externalId": 1, "datapoints": [(150000000000, 1000), (160000000000, 2000), ...]}
+                >>> datapoints = []
+                >>> # with datetime objects and id
+                >>> datapoints.append({"id": 1, "datapoints": [(datetime(2018,1,1), 1000), (datetime(2018,1,2), 2000)]})
+                >>> # with ms since epoch and externalId
+                >>> datapoints.append({"externalId": 1, "datapoints": [(150000000000, 1000), (160000000000, 2000)]})
+
+                >>> res = c.datapoints.insert_multiple(datapoints)
 
             Or they can be a list of dictionaries::
 
-                # with datetime objects and externalId
-                datapoints = {"externalId": "1", "datapoints": [{"timestamp": datetime(2018,1,1), "value": 1000},
-                    {"timestamp": datetime(2018,1,2), "value": 2000}, ...]}
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
 
-                # with ms since epoch and id
-                datapoints = {"id": 1, "datapoints": [{"timestamp": 150000000000, "value": 1000},
-                    {"timestamp": 160000000000, "value": 2000}, ...]}
+                >>> datapoints = []
+                >>> # with datetime objects and external id
+                >>> datapoints.append({"externalId": "1", "datapoints": [{"timestamp": datetime(2018,1,1), "value": 1000},
+                ...                     {"timestamp": datetime(2018,1,2), "value": 2000}]})
+                >>> # with ms since epoch and id
+                >>> datapoints.append({"id": 1, "datapoints": [{"timestamp": 150000000000, "value": 1000},
+                ...                     {"timestamp": 160000000000, "value": 2000}]})
+
+                >>> res = c.datapoints.insert_multiple(datapoints)
         """
         valid_dps_objects = []
         for dps_object in datapoints:
@@ -462,6 +536,14 @@ class DatapointsAPI(APIClient):
 
         Returns:
             None
+
+        Examples:
+
+            Deleting the last week of data from a time series::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.datapoints.delete_range(start="1w-ago", end="now", id=1)
         """
         utils.assert_exactly_one_of_id_or_external_id(id, external_id)
         start = utils.timestamp_to_ms(start)
@@ -483,13 +565,13 @@ class DatapointsAPI(APIClient):
 
         Examples:
 
-            Each element in the list ranges must be specify either id and a range::
+            Each element in the list ranges must be specify either id or externalId, and a range::
 
-                ranges = [{"id": 1, "start": "2d-ago", "end": "now"}]
-
-            or externalId and a range::
-
-                ranges = [{"externalId": "1", "start": datetime(2018,1,1), "end": datetime(2018,1,2})
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> ranges = [{"id": 1, "start": "2d-ago", "end": "now"},
+                ...             {"externalId": "abc", "start": "2d-ago", "end": "now"}]
+                >>> res = c.datapoints.delete_ranges(ranges)
         """
         valid_ranges = []
         for range in ranges:

@@ -173,7 +173,7 @@ Get datapoints
 
 Perform datapoints queries
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client.api.datapoints.DatapointsAPI.get
+.. automethod:: cognite.client.api.datapoints.DatapointsAPI.query
 
 Get latest
 ^^^^^^^^^^
