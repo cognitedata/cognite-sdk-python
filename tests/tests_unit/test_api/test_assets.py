@@ -209,6 +209,8 @@ class TestAssetPoster:
 
     @pytest.fixture
     def mock_post_asset_hierarchy(self, rsps):
+        ASSETS_API._LIMIT = 100
+
         def request_callback(request):
             items = jsgz_load(request.body)["items"]
             response_assets = []
@@ -219,6 +221,8 @@ class TestAssetPoster:
         rsps.add_callback(
             rsps.POST, ASSETS_API._base_url + "/assets", callback=request_callback, content_type="application/json"
         )
+        yield rsps
+        ASSETS_API._LIMIT = 1000
 
     def test_post_hierarchy(self, mock_post_asset_hierarchy):
         assets = [Asset(ref_id="0")]
