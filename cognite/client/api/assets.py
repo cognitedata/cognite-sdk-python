@@ -1,5 +1,7 @@
-from typing import *
+import queue
+import threading
 
+from cognite.client._utils import utils
 from cognite.client._utils.api_client import APIClient
 from cognite.client._utils.base import *
 
@@ -157,7 +159,7 @@ class AssetFilter(CogniteFilter):
 
 
 class AssetsAPI(APIClient):
-    RESOURCE_PATH = "/assets"
+    _RESOURCE_PATH = "/assets"
 
     def __call__(
         self,
@@ -194,7 +196,7 @@ class AssetsAPI(APIClient):
             name, parent_ids, metadata, source, created_time, last_updated_time, asset_subtrees, external_id_prefix
         ).dump(camel_case=True)
         return self._list_generator(
-            AssetList, resource_path=self.RESOURCE_PATH, method="POST", chunk_size=chunk_size, filter=filter
+            AssetList, resource_path=self._RESOURCE_PATH, method="POST", chunk_size=chunk_size, filter=filter
         )
 
     def __iter__(self) -> Generator[Asset, None, None]:
@@ -233,7 +235,7 @@ class AssetsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.assets.get(external_id=["1", "abc"])
         """
-        return self._retrieve_multiple(AssetList, self.RESOURCE_PATH, ids=id, external_ids=external_id, wrap_ids=True)
+        return self._retrieve_multiple(AssetList, self._RESOURCE_PATH, ids=id, external_ids=external_id, wrap_ids=True)
 
     def list(
         self,
@@ -288,7 +290,7 @@ class AssetsAPI(APIClient):
         filter = AssetFilter(
             name, parent_ids, metadata, source, created_time, last_updated_time, asset_subtrees, external_id_prefix
         ).dump(camel_case=True)
-        return self._list(AssetList, resource_path=self.RESOURCE_PATH, method="POST", limit=limit, filter=filter)
+        return self._list(AssetList, resource_path=self._RESOURCE_PATH, method="POST", limit=limit, filter=filter)
 
     def create(self, asset: Union[Asset, List[Asset]]) -> Union[Asset, AssetList]:
         """Create one or more assets.
@@ -309,7 +311,10 @@ class AssetsAPI(APIClient):
                 >>> assets = [Asset(name="asset1"), Asset(name="asset2")]
                 >>> res = c.assets.create(assets)
         """
-        return self._create_multiple(AssetList, resource_path=self.RESOURCE_PATH, items=asset)
+        utils.assert_type(asset, "asset", [Asset, list])
+        if isinstance(asset, Asset) or len(asset) <= self._LIMIT:
+            return self._create_multiple(AssetList, self._RESOURCE_PATH, asset)
+        return AssetPoster(asset, client=self).post()
 
     def delete(self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None) -> None:
         """Delete one or more assets
@@ -329,7 +334,7 @@ class AssetsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.assets.delete(id=[1,2,3], external_id="3")
         """
-        self._delete_multiple(resource_path=self.RESOURCE_PATH, ids=id, external_ids=external_id, wrap_ids=True)
+        self._delete_multiple(resource_path=self._RESOURCE_PATH, ids=id, external_ids=external_id, wrap_ids=True)
 
     def update(self, item: Union[Asset, AssetUpdate, List[Union[Asset, AssetUpdate]]]) -> Union[Asset, AssetList]:
         """Update one or more assets
@@ -358,7 +363,7 @@ class AssetsAPI(APIClient):
                 >>> my_update = AssetUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
                 >>> res = c.assets.update(my_update)
         """
-        return self._update_multiple(cls=AssetList, resource_path=self.RESOURCE_PATH, items=item)
+        return self._update_multiple(cls=AssetList, resource_path=self._RESOURCE_PATH, items=item)
 
     def search(
         self, name: str = None, description: str = None, filter: AssetFilter = None, limit: int = None
@@ -385,6 +390,130 @@ class AssetsAPI(APIClient):
         filter = filter.dump(camel_case=True) if filter else None
         return self._search(
             cls=AssetList,
-            resource_path=self.RESOURCE_PATH,
+            resource_path=self._RESOURCE_PATH,
             json={"search": {"name": name, "description": description}, "filter": filter, "limit": limit},
         )
+
+
+class AssetQueue(queue.Queue):
+    def __init__(self, assets: List[Asset]):
+        super().__init__()
+        for asset in assets:
+            self.put(asset)
+
+    def get_asset(self):
+        try:
+            return self.get_nowait()
+        except queue.Empty:
+            return
+
+
+class AssetPosterWorker(threading.Thread):
+    def __init__(
+        self,
+        client: AssetsAPI,
+        asset_queue: AssetQueue,
+        remaining_assets: List[Asset],
+        created_assets: AssetList,
+        lock: threading.Lock,
+    ):
+        self.client = client
+        self.asset_queue = asset_queue
+        self.remaining_assets = remaining_assets
+        self.asset_buffer = []
+        self.color = None
+        self.ref_id_map = {}
+        self.lock = lock
+        self.created_assets = created_assets
+        super().__init__()
+
+    def buffer_is_full(self):
+        return len(self.asset_buffer) == self.client._LIMIT
+
+    def buffer_is_empty(self):
+        return len(self.asset_buffer) == 0
+
+    def all_assets_posted(self):
+        return len(self.remaining_assets) == 0 and self.asset_queue.empty()
+
+    def fill_buffer_with_assets_from_queue(self):
+        while not self.asset_queue.empty() and not self.buffer_is_full():
+            asset = self.asset_queue.get_asset()
+            if asset:
+                self.asset_buffer.append(asset)
+
+    def post_assets_in_buffer(self):
+        res = self.client._create_multiple(AssetList, resource_path=self.client._RESOURCE_PATH, items=self.asset_buffer)
+        self.created_assets.extend(res)
+        self.update_ref_id_map([asset.id for asset in res])
+
+    def update_ref_id_map(self, ids):
+        for i, asset in enumerate(self.asset_buffer):
+            if asset.ref_id:
+                self.ref_id_map[asset.ref_id] = ids[i]
+
+    def empty_buffer(self):
+        self.asset_buffer = []
+
+    def fill_queue_with_unblocked_assets(self):
+        unblocked_assets = []
+        for asset in self.remaining_assets:
+            if asset.parent_ref_id in self.ref_id_map:
+                unblocked_assets.append(asset)
+        for asset in unblocked_assets:
+            with self.lock:
+                self.remaining_assets.remove(asset)
+            asset.parent_id = self.ref_id_map[asset.parent_ref_id]
+            asset.parent_ref_id = None
+            self.asset_queue.put(asset)
+
+    def run(self):
+        while not self.all_assets_posted():
+            self.fill_buffer_with_assets_from_queue()
+            if not self.buffer_is_empty():
+                self.post_assets_in_buffer()
+                self.empty_buffer()
+                self.fill_queue_with_unblocked_assets()
+
+
+class AssetPoster:
+    def __init__(self, assets: List[Asset], client: AssetsAPI):
+        self.assets = [Asset._load(a.dump(camel_case=True)) for a in assets]
+        self.queue = None
+        self.client = client
+        self.created_assets = AssetList([])
+        self.lock = threading.Lock()
+
+    def get_unblocked_assets(self):
+        assets_without_dependencies = []
+        for asset in self.assets:
+            if asset.parent_ref_id is None or asset.parent_id is not None:
+                assets_without_dependencies.append(asset)
+        return assets_without_dependencies
+
+    def initialize_queue(self):
+        unblocked_assets = self.get_unblocked_assets()
+        for asset in unblocked_assets:
+            self.assets.remove(asset)
+        self.queue = AssetQueue(unblocked_assets)
+
+    def validate_asset_hierarchy(self):
+        ref_ids = [asset.ref_id for asset in self.assets if asset.ref_id is not None]
+        for asset in self.assets:
+            parent_ref = asset.parent_ref_id
+            if parent_ref:
+                assert parent_ref in ref_ids, "parent_ref_id '{}' does not point to anything".format(parent_ref)
+                assert asset.parent_id is None, "An asset has both parent_id and parent_ref_id set."
+
+    def post(self):
+        self.validate_asset_hierarchy()
+        self.initialize_queue()
+        workers = []
+        for _ in range(self.client._max_workers):
+            worker = AssetPosterWorker(self.client, self.queue, self.assets, self.created_assets, self.lock)
+            workers.append(worker)
+            worker.start()
+
+        for worker in workers:
+            worker.join()
+        return self.created_assets

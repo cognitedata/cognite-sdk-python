@@ -200,7 +200,7 @@ class APIClient:
             filter=filter,
             headers=headers,
         ):
-            items.extend(resource_list._resources)
+            items.extend(resource_list.data)
         return cls(items)
 
     def _create_multiple(

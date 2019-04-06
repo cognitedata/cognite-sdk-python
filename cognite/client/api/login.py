@@ -28,6 +28,8 @@ class LoginStatusResponse(CogniteResponse):
 
 
 class LoginAPI(APIClient):
+    _RESOURCE_PATH = "/login"
+
     def status(self) -> LoginStatusResponse:
         """Check login status
 
@@ -43,4 +45,4 @@ class LoginAPI(APIClient):
                 >>> project = login_status.project
 
         """
-        return LoginStatusResponse._load(self._get("/login/status").json())
+        return LoginStatusResponse._load(self._get(self._RESOURCE_PATH + "/status").json())

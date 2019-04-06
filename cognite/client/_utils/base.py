@@ -1,4 +1,5 @@
 import json
+from collections import UserList
 from typing import *
 
 from cognite.client._utils.utils import to_camel_case, to_snake_case
@@ -28,7 +29,7 @@ class CogniteResponse:
         raise NotImplementedError
 
 
-class CogniteResourceList:
+class CogniteResourceList(UserList):
     _RESOURCE = None
     _UPDATE = None
     _ASSERT_CLASSES = True
@@ -44,28 +45,7 @@ class CogniteResourceList:
                         self.__class__.__name__, self._RESOURCE.__name__, type(resource)
                     )
                 )
-        self._resources = resources
-
-    def __getitem__(self, index):
-        if isinstance(index, slice):
-            return self.__class__(self._resources[index])
-        return self._resources[index]
-
-    def __eq__(self, other):
-        if not type(self) == type(other):
-            return False
-        if not len(self) == len(other):
-            return False
-        for i in range(len(self)):
-            if self[i] != other[i]:
-                return False
-        return True
-
-    def __len__(self):
-        return len(self._resources)
-
-    def __iter__(self) -> Generator[_RESOURCE, None, None]:
-        yield from self._resources
+        super().__init__(resources)
 
     def __str__(self):
         return json.dumps(self.dump(), default=lambda x: x.__dict__, indent=4)
@@ -74,7 +54,7 @@ class CogniteResourceList:
         return self.__str__()
 
     def dump(self, camel_case: bool = False) -> List[Dict[str, Any]]:
-        return [resource.dump(camel_case) for resource in self._resources]
+        return [resource.dump(camel_case) for resource in self.data]
 
     def to_pandas(self):
         raise NotImplementedError
