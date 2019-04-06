@@ -22,6 +22,7 @@ Changes are grouped as follows
 - Concurrent writes for all resources
 - Distribution of "core" sdk which does not depend on pandas and numpy
 - Typehints for all methods
+- Support for posting an entire asset hierarchy, resolving ref_id/parent_ref_id automatically
 
 ### Removed
 - `experimental` client in order to ensure sdk stability.

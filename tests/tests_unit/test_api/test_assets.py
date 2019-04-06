@@ -223,11 +223,11 @@ class TestAssetPoster:
     def test_post_hierarchy(self, mock_post_asset_hierarchy):
         assets = [Asset(ref_id="0")]
         for i in range(10):
-            assets.append(Asset(parent_ref_id="0", ref_id=f"0{i}"))
+            assets.append(Asset(parent_ref_id="0", ref_id="0{}".format(i)))
             for j in range(10):
-                assets.append(Asset(parent_ref_id=f"0{i}", ref_id=f"0{i}{j}"))
+                assets.append(Asset(parent_ref_id="0{}".format(i), ref_id="0{}{}".format(i, j)))
                 for k in range(10):
-                    assets.append(Asset(parent_ref_id=f"0{i}{j}", ref_id=f"0{i}{j}{k}"))
+                    assets.append(Asset(parent_ref_id="0{}{}".format(i, j), ref_id="0{}{}{}".format(i, j, k)))
 
         created_assets = ASSETS_API.create(assets)
         assert 1111 == len(created_assets)
