@@ -234,7 +234,8 @@ class TestAssetPoster:
                     assets.append(Asset(parent_ref_id="0{}{}".format(i, j), ref_id="0{}{}{}".format(i, j, k)))
 
         created_assets = ASSETS_API.create(assets)
-        assert 1111 == len(created_assets)
+        assert len(assets) == len(created_assets)
+        assert 13 == len(mock_post_asset_hierarchy.calls)
         for asset in created_assets:
             if asset.id == "0id":
                 assert asset.parent_id is None

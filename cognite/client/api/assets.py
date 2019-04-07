@@ -1,5 +1,6 @@
 import queue
 import threading
+import time
 
 from cognite.client._utils import utils
 from cognite.client._utils.api_client import APIClient
@@ -437,13 +438,14 @@ class AssetPosterWorker(threading.Thread):
         return len(self.remaining_assets) == 0 and self.asset_queue.empty()
 
     def fill_buffer_with_assets_from_queue(self):
-        while not self.asset_queue.empty() and not self.buffer_is_full():
-            asset = self.asset_queue.get_asset()
-            if asset:
-                self.asset_buffer.append(asset)
+        with self.lock:
+            while not self.asset_queue.empty() and not self.buffer_is_full():
+                asset = self.asset_queue.get_asset()
+                if asset:
+                    self.asset_buffer.append(asset)
 
     def post_assets_in_buffer(self):
-        res = self.client._create_multiple(AssetList, resource_path=self.client._RESOURCE_PATH, items=self.asset_buffer)
+        res = self.client.create(self.asset_buffer)
         self.created_assets.extend(res)
         self.update_ref_id_map([asset.id for asset in res])
 
@@ -460,12 +462,12 @@ class AssetPosterWorker(threading.Thread):
         for asset in self.remaining_assets:
             if asset.parent_ref_id in self.ref_id_map:
                 unblocked_assets.append(asset)
-        for asset in unblocked_assets:
-            with self.lock:
+        with self.lock:
+            for asset in unblocked_assets:
                 self.remaining_assets.remove(asset)
-            asset.parent_id = self.ref_id_map[asset.parent_ref_id]
-            asset.parent_ref_id = None
-            self.asset_queue.put(asset)
+                asset.parent_id = self.ref_id_map[asset.parent_ref_id]
+                asset.parent_ref_id = None
+                self.asset_queue.put(asset)
 
     def run(self):
         while not self.all_assets_posted():
