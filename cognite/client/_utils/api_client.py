@@ -51,6 +51,7 @@ class APIClient:
         cookies: Dict = None,
         headers: Dict = None,
         timeout: int = None,
+        cognite_client=None,
     ):
         self._request_session = _REQUESTS_SESSION
         self._project = project
@@ -60,6 +61,7 @@ class APIClient:
         self._cookies = cookies
         self._headers = headers
         self._timeout = timeout
+        self._cognite_client = cognite_client
 
     def _delete(self, url_path: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
         return self._do_request(

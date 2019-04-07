@@ -1,4 +1,5 @@
 import os
+from typing import *
 from typing import Dict, List
 
 from cognite.client._utils import utils
@@ -37,6 +38,7 @@ class FileMetadata(CogniteResource):
         uploaded_at: int = None,
         created_time: int = None,
         last_updated_time: int = None,
+        **kwargs
     ):
         self.external_id = external_id
         self.name = name
@@ -74,6 +76,7 @@ class FileMetadataFilter(CogniteFilter):
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
         external_id_prefix: str = None,
+        **kwargs
     ):
         self.metadata = metadata
         self.asset_ids = asset_ids

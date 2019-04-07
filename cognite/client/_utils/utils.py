@@ -7,7 +7,6 @@ This module is protected and should not used by end-users.
 import platform
 import re
 import time
-from collections import namedtuple
 from concurrent.futures.thread import ThreadPoolExecutor
 from datetime import datetime
 from decimal import Decimal
@@ -81,7 +80,7 @@ def timestamp_to_ms(t: Union[int, float, str, datetime]):
     elif isinstance(t, datetime):
         ms = datetime_to_ms(t)
     else:
-        raise TypeError("Timestamp `{}` was of type {}, but must be int, str or datetime,".format(t, type(t)))
+        raise TypeError("Timestamp `{}` was of type {}, but must be int, float, str or datetime,".format(t, type(t)))
 
     if ms < 0:
         raise ValueError(
@@ -142,6 +141,21 @@ def assert_type(var: Any, var_name: str, types: List, allow_none=False):
             raise TypeError("{} cannot be None".format(var_name))
     elif not isinstance(var, tuple(types)):
         raise TypeError("{} must be one of types {}".format(var_name, types))
+
+
+class GlobalClient:
+    _client = None
+
+    @staticmethod
+    def get():
+        return GlobalClient._client
+
+    @staticmethod
+    def set(client):
+        GlobalClient._client = client
+
+
+global_client = GlobalClient
 
 
 def get_user_agent():

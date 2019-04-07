@@ -156,7 +156,7 @@ class TestJsonDumpDefault:
         with pytest.raises(TypeError):
             json.dumps(input)
 
-        json.dumps(input, default=utils.json_dump_default)
+        assert json.dumps(input, default=utils.json_dump_default)
 
 
 class TestAssertions:

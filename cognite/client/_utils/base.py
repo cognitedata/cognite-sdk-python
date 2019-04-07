@@ -2,10 +2,25 @@ import json
 from collections import UserList
 from typing import *
 
-from cognite.client._utils.utils import to_camel_case, to_snake_case
+from cognite.client._utils.utils import global_client, to_camel_case, to_snake_case
+
+
+def instantiate_with_global_client(cls, super, *args, **kwargs):
+    obj = super.__new__(cls)
+    obj._client = global_client.get()
+    if "cognite_client" in kwargs:
+        obj._client = kwargs["cognite_client"]
+    return obj
+
+
+EXCLUDE_VALUE = [None]
+EXCLUDE_KEY = ["_client"]
 
 
 class CogniteResponse:
+    def __new__(cls, *args, **kwargs):
+        return instantiate_with_global_client(cls, super(), *args, **kwargs)
+
     def __str__(self):
         return json.dumps(self.dump(), indent=4)
 
@@ -16,7 +31,9 @@ class CogniteResponse:
         return type(other) == type(self) and other.dump() == self.dump()
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
-        dumped = {key: value for key, value in self.__dict__.items() if value is not None}
+        dumped = {
+            key: value for key, value in self.__dict__.items() if value not in EXCLUDE_VALUE and key not in EXCLUDE_KEY
+        }
         if camel_case:
             dumped = {to_camel_case(key): value for key, value in dumped.items()}
         return dumped
@@ -34,7 +51,10 @@ class CogniteResourceList(UserList):
     _UPDATE = None
     _ASSERT_CLASSES = True
 
-    def __init__(self, resources: List[Any]):
+    def __new__(cls, *args, **kwargs):
+        return instantiate_with_global_client(cls, super(), *args, **kwargs)
+
+    def __init__(self, resources: List[Any], **kwargs):
         if self._ASSERT_CLASSES:
             assert self._RESOURCE is not None, "{} does not have _RESOURCE set".format(self.__class__.__name__)
             assert self._UPDATE is not None, "{} does not have _UPDATE set".format(self.__class__.__name__)
@@ -69,6 +89,9 @@ class CogniteResourceList(UserList):
 
 
 class CogniteResource:
+    def __new__(cls, *args, **kwargs):
+        return instantiate_with_global_client(cls, super(), *args, **kwargs)
+
     def __eq__(self, other):
         return type(self) == type(other) and self.dump() == other.dump()
 
@@ -79,7 +102,9 @@ class CogniteResource:
         return self.__str__()
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
-        dumped = {key: value for key, value in self.__dict__.items() if value is not None}
+        dumped = {
+            key: value for key, value in self.__dict__.items() if value not in EXCLUDE_VALUE and key not in EXCLUDE_KEY
+        }
         if camel_case:
             dumped = {to_camel_case(key): value for key, value in dumped.items()}
         return dumped

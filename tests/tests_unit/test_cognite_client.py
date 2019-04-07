@@ -8,7 +8,11 @@ from time import sleep
 
 import pytest
 
-from cognite.client import CogniteClient
+from cognite.client import Asset, CogniteClient, Event, FileMetadata, TimeSeries
+from cognite.client.api.assets import AssetList
+from cognite.client.api.events import EventList
+from cognite.client.api.files import FileMetadataList
+from cognite.client.api.time_series import TimeSeriesList
 
 
 @pytest.fixture
@@ -38,6 +42,23 @@ def environment_client_config():
 class TestCogniteClient:
     def test_project_is_correct(self, client):
         assert client.project == "mltest"
+
+    def test_global_client_get(self, client):
+
+        from cognite.client import global_client
+
+        CogniteClient._GLOBAL_CLIENT_SET = False
+        first_cl = CogniteClient()
+        assert global_client.get() == first_cl
+        CogniteClient()
+        assert global_client.get() == first_cl
+
+    def test_global_client_set(self, client):
+        from cognite.client import global_client
+
+        new_client = CogniteClient()
+        global_client.set(new_client)
+        assert global_client.get() == new_client
 
     def assert_config_is_correct(self, client, base_url, max_workers, timeout):
         assert client._base_url == base_url
@@ -90,3 +111,15 @@ class TestCogniteClient:
     def test_create_client_thread_local_config(self, thread_local_credentials_module):
         with ThreadPool() as pool:
             pool.map(self.create_client_and_check_config, list(range(16)))
+
+
+class TestInstantiateWithClient:
+    @pytest.mark.parametrize("cls", [Asset, Event, FileMetadata, TimeSeries])
+    def test_instantiate_resources_with_cognite_client(self, cls):
+        c = CogniteClient()
+        assert cls(cognite_client=c)._client == c
+
+    @pytest.mark.parametrize("cls", [AssetList, Event, FileMetadataList, TimeSeriesList])
+    def test_intantiate_resource_lists_with_cognite_client(self, cls):
+        c = CogniteClient()
+        assert cls([], cognite_client=c)._client == c

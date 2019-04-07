@@ -38,6 +38,7 @@ class TimeSeries(CogniteResource):
         security_categories: List[int] = None,
         created_time: int = None,
         last_updated_time: int = None,
+        **kwargs
     ):
         self.id = id
         self.external_id = external_id
@@ -80,6 +81,7 @@ class TimeSeriesFilter(CogniteFilter):
         asset_subtrees: List[int] = None,
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
+        **kwargs
     ):
         self.unit = unit
         self.is_string = is_string

@@ -67,7 +67,7 @@ class ClassGenerator:
                 if prop_name not in ignore:
                     constructor_params.append("{}: {}{}".format(prop_name, utils.get_type_hint(prop), req))
                     ignore.append(prop_name)
-        constructor_params = ", ".join(constructor_params) + "):"
+        constructor_params = ", ".join(constructor_params) + ", **kwargs):"
         constructor_body = ""
         ignore = [p for p in TO_EXCLUDE]
         for schema in schemas:

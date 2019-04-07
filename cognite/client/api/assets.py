@@ -39,6 +39,7 @@ class Asset(CogniteResource):
         depth: int = None,
         ref_id: str = None,
         parent_ref_id: str = None,
+        **kwargs
     ):
         self.external_id = external_id
         self.name = name
@@ -145,6 +146,7 @@ class AssetFilter(CogniteFilter):
         last_updated_time: Dict[str, Any] = None,
         asset_subtrees: List[int] = None,
         external_id_prefix: str = None,
+        **kwargs
     ):
         self.name = name
         self.parent_ids = parent_ids

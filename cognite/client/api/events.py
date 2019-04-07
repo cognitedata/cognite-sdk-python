@@ -32,6 +32,7 @@ class Event(CogniteResource):
         source: str = None,
         id: int = None,
         last_updated_time: int = None,
+        **kwargs
     ):
         self.external_id = external_id
         self.start_time = start_time
@@ -73,6 +74,7 @@ class EventFilter(CogniteFilter):
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
         external_id_prefix: str = None,
+        **kwargs
     ):
         self.start_time = start_time
         self.end_time = end_time

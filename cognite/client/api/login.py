@@ -5,7 +5,7 @@ from cognite.client._utils.api_client import APIClient
 from cognite.client._utils.base import CogniteResponse
 
 
-class LoginStatusResponse(CogniteResponse):
+class LoginStatus(CogniteResponse):
     """Current login status
 
     Args:
@@ -15,7 +15,7 @@ class LoginStatusResponse(CogniteResponse):
         project_id (str): Current project id
     """
 
-    def __init__(self, user: str, project: str, logged_in: bool, project_id: str):
+    def __init__(self, user: str, project: str, logged_in: bool, project_id: str, **kwargs):
         self.user = user
         self.project = project
         self.project_id = logged_in
@@ -30,11 +30,11 @@ class LoginStatusResponse(CogniteResponse):
 class LoginAPI(APIClient):
     _RESOURCE_PATH = "/login"
 
-    def status(self) -> LoginStatusResponse:
+    def status(self) -> LoginStatus:
         """Check login status
 
         Returns:
-            client.stable.login.LoginStatusResponse
+            LoginStatus: The login status of the current api key.
 
         Examples:
             Check the current login status and get the project::
@@ -45,4 +45,4 @@ class LoginAPI(APIClient):
                 >>> project = login_status.project
 
         """
-        return LoginStatusResponse._load(self._get(self._RESOURCE_PATH + "/status").json())
+        return LoginStatus._load(self._get(self._RESOURCE_PATH + "/status").json())
