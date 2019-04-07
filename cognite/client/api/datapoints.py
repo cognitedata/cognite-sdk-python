@@ -389,8 +389,7 @@ class DatapointsAPI(APIClient):
             This method is useful if you want to get multiple time series, but you want to specify different starts,
             ends, or granularities for each. e.g.::
 
-                >>> from cognite.client import CogniteClient
-                >>> from cognite.client.api.datapoints import DatapointsQuery
+                >>> from cognite.client import CogniteClient, DatapointsQuery
                 >>> c = CogniteClient()
                 >>> queries = [DatapointsQuery(id=1, start="2d-ago", end="now"),
                 ...             DatapointsQuery(external_id="abc",

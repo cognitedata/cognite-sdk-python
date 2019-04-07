@@ -1,5 +1,3 @@
-from typing import *
-
 from cognite.client._utils.api_client import APIClient
 from cognite.client._utils.base import *
 
@@ -303,8 +301,7 @@ class AssetsAPI(APIClient):
 
             Create new assets::
 
-                >>> from cognite.client import CogniteClient
-                >>> from cognite.client.api.assets import Asset
+                >>> from cognite.client import CogniteClient, Asset
                 >>> c = CogniteClient()
                 >>> assets = [Asset(name="asset1"), Asset(name="asset2")]
                 >>> res = c.assets.create(assets)
@@ -352,8 +349,7 @@ class AssetsAPI(APIClient):
 
             Perform a partial update on a asset, updating the description and adding a new field to metadata::
 
-                >>> from cognite.client import CogniteClient
-                >>> from cognite.client.api.assets import AssetUpdate
+                >>> from cognite.client import CogniteClient, AssetUpdate
                 >>> c = CogniteClient()
                 >>> my_update = AssetUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
                 >>> res = c.assets.update(my_update)

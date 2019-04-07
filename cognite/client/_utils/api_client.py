@@ -3,10 +3,8 @@ import json as _json
 import logging
 import os
 import re
-from decimal import Decimal
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Union
 
-import numpy
 from requests import Response, Session
 from requests.adapters import HTTPAdapter
 from urllib3 import Retry
