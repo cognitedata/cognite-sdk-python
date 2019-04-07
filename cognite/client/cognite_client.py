@@ -70,7 +70,7 @@ class CogniteClient:
 
         self.__api_key = api_key or thread_local_api_key or environment_api_key
         if self.__api_key is None:
-            raise ValueError("No Api Key has been specified")
+            raise ValueError("No API Key has been specified")
 
         self._base_url = base_url or environment_base_url or DEFAULT_BASE_URL
 
