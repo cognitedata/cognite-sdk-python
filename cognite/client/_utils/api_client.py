@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Union
 import requests.utils
 from requests import Response, Session
 from requests.adapters import HTTPAdapter
+from requests.structures import CaseInsensitiveDict
 from urllib3 import Retry
 
 from cognite.client._utils import utils
@@ -109,7 +110,8 @@ class APIClient:
         self._log_request(res, payload=json_payload)
         return res
 
-    def _configure_headers(self, headers):
+    def _configure_headers(self, additional_headers):
+        headers = CaseInsensitiveDict()
         headers.update(requests.utils.default_headers())
         headers["api-key"] = self._api_key
         headers["content-type"] = "application/json"
@@ -118,6 +120,7 @@ class APIClient:
             headers["User-Agent"] += " " + utils.get_user_agent()
         else:
             headers["User-Agent"] = utils.get_user_agent()
+        headers.update(additional_headers)
         return headers
 
     def _resolve_url(self, url_path: str):
