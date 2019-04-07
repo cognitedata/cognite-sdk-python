@@ -1,4 +1,5 @@
 import os
+from typing import *
 from typing import Dict, List
 
 from cognite.client._utils import utils
@@ -37,6 +38,7 @@ class FileMetadata(CogniteResource):
         uploaded_at: int = None,
         created_time: int = None,
         last_updated_time: int = None,
+        **kwargs
     ):
         self.external_id = external_id
         self.name = name
@@ -74,6 +76,7 @@ class FileMetadataFilter(CogniteFilter):
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
         external_id_prefix: str = None,
+        **kwargs
     ):
         self.metadata = metadata
         self.asset_ids = asset_ids
@@ -154,7 +157,7 @@ class FileMetadataList(CogniteResourceList):
 
 
 class FilesAPI(APIClient):
-    RESOURCE_PATH = "/files"
+    _RESOURCE_PATH = "/files"
 
     def __call__(
         self,
@@ -187,7 +190,7 @@ class FilesAPI(APIClient):
             metadata, asset_ids, source, created_time, last_updated_time, external_id_prefix
         ).dump(camel_case=True)
         return self._list_generator(
-            FileMetadataList, resource_path=self.RESOURCE_PATH, method="POST", chunk_size=chunk_size, filter=filter
+            FileMetadataList, resource_path=self._RESOURCE_PATH, method="POST", chunk_size=chunk_size, filter=filter
         )
 
     def __iter__(self) -> Generator[FileMetadata, None, None]:
@@ -227,7 +230,7 @@ class FilesAPI(APIClient):
                 >>> res = c.files.get(external_id=["1", "abc"])
         """
         return self._retrieve_multiple(
-            cls=FileMetadataList, resource_path=self.RESOURCE_PATH, ids=id, external_ids=external_id, wrap_ids=True
+            cls=FileMetadataList, resource_path=self._RESOURCE_PATH, ids=id, external_ids=external_id, wrap_ids=True
         )
 
     def list(
@@ -280,7 +283,7 @@ class FilesAPI(APIClient):
             metadata, asset_ids, source, created_time, last_updated_time, external_id_prefix
         ).dump(camel_case=True)
         return self._list(
-            cls=FileMetadataList, resource_path=self.RESOURCE_PATH, method="POST", limit=limit, filter=filter
+            cls=FileMetadataList, resource_path=self._RESOURCE_PATH, method="POST", limit=limit, filter=filter
         )
 
     def delete(self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None) -> None:
@@ -301,7 +304,7 @@ class FilesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.files.delete(id=[1,2,3], external_id="3")
         """
-        self._delete_multiple(resource_path=self.RESOURCE_PATH, wrap_ids=True, ids=id, external_ids=external_id)
+        self._delete_multiple(resource_path=self._RESOURCE_PATH, wrap_ids=True, ids=id, external_ids=external_id)
 
     def update(
         self, item: Union[FileMetadata, FileMetadataUpdate, List[Union[FileMetadata, FileMetadataUpdate]]]
@@ -331,7 +334,7 @@ class FilesAPI(APIClient):
                 >>> my_update = FileMetadataUpdate(id=1).name.set("New description").metadata.add({"key": "value"})
                 >>> res = c.files.update(my_update)
         """
-        return self._update_multiple(cls=FileMetadataList, resource_path=self.RESOURCE_PATH, items=item)
+        return self._update_multiple(cls=FileMetadataList, resource_path=self._RESOURCE_PATH, items=item)
 
     def upload(
         self,
@@ -443,7 +446,7 @@ class FilesAPI(APIClient):
             metadata=metadata,
             asset_ids=asset_ids,
         )
-        url_path = self.RESOURCE_PATH + "/initupload"
+        url_path = self._RESOURCE_PATH + "/initupload"
 
         res = self._post(url_path=url_path, json=file_metadata.dump(camel_case=True))
         returned_file_metadata = res.json()["data"]

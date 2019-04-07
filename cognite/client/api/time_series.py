@@ -38,6 +38,7 @@ class TimeSeries(CogniteResource):
         security_categories: List[int] = None,
         created_time: int = None,
         last_updated_time: int = None,
+        **kwargs
     ):
         self.id = id
         self.external_id = external_id
@@ -80,6 +81,7 @@ class TimeSeriesFilter(CogniteFilter):
         asset_subtrees: List[int] = None,
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
+        **kwargs
     ):
         self.unit = unit
         self.is_string = is_string
@@ -166,7 +168,7 @@ class TimeSeriesList(CogniteResourceList):
 
 
 class TimeSeriesAPI(APIClient):
-    RESOURCE_PATH = "/timeseries"
+    _RESOURCE_PATH = "/timeseries"
 
     def __call__(
         self, chunk_size: int = None, include_metadata: bool = False, asset_id: int = None
@@ -185,7 +187,7 @@ class TimeSeriesAPI(APIClient):
         """
         filter = {"includeMetadata": include_metadata, "assetId": asset_id}
         return self._list_generator(
-            TimeSeriesList, resource_path=self.RESOURCE_PATH, method="GET", chunk_size=chunk_size, filter=filter
+            TimeSeriesList, resource_path=self._RESOURCE_PATH, method="GET", chunk_size=chunk_size, filter=filter
         )
 
     def __iter__(self) -> Generator[TimeSeries, None, None]:
@@ -219,7 +221,7 @@ class TimeSeriesAPI(APIClient):
                 >>> res = c.time_series.get(id=[1,2])
         """
         return self._retrieve_multiple(
-            cls=TimeSeriesList, resource_path=self.RESOURCE_PATH, ids=id, external_ids=external_id, wrap_ids=True
+            cls=TimeSeriesList, resource_path=self._RESOURCE_PATH, ids=id, external_ids=external_id, wrap_ids=True
         )
 
     def list(self, include_metadata: bool = False, asset_id: int = None, limit: int = None) -> TimeSeriesList:
@@ -259,7 +261,7 @@ class TimeSeriesAPI(APIClient):
         """
         filter = {"includeMetadata": include_metadata, "assetId": asset_id}
         return self._list(
-            cls=TimeSeriesList, resource_path=self.RESOURCE_PATH, method="GET", filter=filter, limit=limit
+            cls=TimeSeriesList, resource_path=self._RESOURCE_PATH, method="GET", filter=filter, limit=limit
         )
 
     def create(self, time_series: Union[TimeSeries, List[TimeSeries]]) -> Union[TimeSeries, TimeSeriesList]:
@@ -279,7 +281,7 @@ class TimeSeriesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> ts = c.time_series.create(TimeSeries(name="my ts"))
         """
-        return self._create_multiple(cls=TimeSeriesList, resource_path=self.RESOURCE_PATH, items=time_series)
+        return self._create_multiple(cls=TimeSeriesList, resource_path=self._RESOURCE_PATH, items=time_series)
 
     def delete(self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None) -> None:
         """Delete one or more time series.
@@ -299,7 +301,7 @@ class TimeSeriesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.time_series.delete(id=[1,2,3], external_id="3")
         """
-        self._delete_multiple(resource_path=self.RESOURCE_PATH, wrap_ids=True, ids=id, external_ids=external_id)
+        self._delete_multiple(resource_path=self._RESOURCE_PATH, wrap_ids=True, ids=id, external_ids=external_id)
 
     def update(
         self, item: Union[TimeSeries, TimeSeriesUpdate, List[Union[TimeSeries, TimeSeriesUpdate]]]
@@ -329,7 +331,7 @@ class TimeSeriesAPI(APIClient):
                 >>> my_update = TimeSeriesUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
                 >>> res = c.time_series.update(my_update)
         """
-        return self._update_multiple(cls=TimeSeriesList, resource_path=self.RESOURCE_PATH, items=item)
+        return self._update_multiple(cls=TimeSeriesList, resource_path=self._RESOURCE_PATH, items=item)
 
     def search(
         self,
@@ -363,7 +365,7 @@ class TimeSeriesAPI(APIClient):
         filter = filter.dump(camel_case=True) if filter else None
         return self._search(
             cls=TimeSeriesList,
-            resource_path=self.RESOURCE_PATH,
+            resource_path=self._RESOURCE_PATH,
             json={
                 "search": {"name": name, "description": description, "query": query},
                 "filter": filter,

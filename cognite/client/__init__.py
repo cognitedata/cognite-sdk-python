@@ -1,3 +1,4 @@
+from cognite.client._utils.utils import global_client
 from cognite.client.api.assets import Asset, AssetFilter, AssetUpdate
 from cognite.client.api.datapoints import DatapointsQuery
 from cognite.client.api.events import Event, EventFilter, EventUpdate

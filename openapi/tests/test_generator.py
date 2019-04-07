@@ -71,7 +71,7 @@ class TestClassGenerator:
         ]
         constructor = CLASS_GENERATOR.generate_constructor(schemas, indentation=4)
         assert (
-            """    def __init__(self, external_id: str = None, name: str = None, parent_id: int = None, description: str = None, metadata: Dict[str, Any] = None, source: str = None, id: int = None, last_updated_time: int = None, path: List[int] = None, depth: int = None, ref_id: str = None, parent_ref_id: str = None):
+            """    def __init__(self, external_id: str = None, name: str = None, parent_id: int = None, description: str = None, metadata: Dict[str, Any] = None, source: str = None, id: int = None, last_updated_time: int = None, path: List[int] = None, depth: int = None, ref_id: str = None, parent_ref_id: str = None, **kwargs):
         self.external_id = external_id
         self.name = name
         self.parent_id = parent_id

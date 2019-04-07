@@ -1,3 +1,5 @@
+from typing import *
+
 from cognite.client._utils.api_client import APIClient
 from cognite.client._utils.base import *
 
@@ -35,6 +37,7 @@ class Asset(CogniteResource):
         depth: int = None,
         ref_id: str = None,
         parent_ref_id: str = None,
+        **kwargs
     ):
         self.external_id = external_id
         self.name = name
@@ -141,6 +144,7 @@ class AssetFilter(CogniteFilter):
         last_updated_time: Dict[str, Any] = None,
         asset_subtrees: List[int] = None,
         external_id_prefix: str = None,
+        **kwargs
     ):
         self.name = name
         self.parent_ids = parent_ids
@@ -155,7 +159,7 @@ class AssetFilter(CogniteFilter):
 
 
 class AssetsAPI(APIClient):
-    RESOURCE_PATH = "/assets"
+    _RESOURCE_PATH = "/assets"
 
     def __call__(
         self,
@@ -192,7 +196,7 @@ class AssetsAPI(APIClient):
             name, parent_ids, metadata, source, created_time, last_updated_time, asset_subtrees, external_id_prefix
         ).dump(camel_case=True)
         return self._list_generator(
-            AssetList, resource_path=self.RESOURCE_PATH, method="POST", chunk_size=chunk_size, filter=filter
+            AssetList, resource_path=self._RESOURCE_PATH, method="POST", chunk_size=chunk_size, filter=filter
         )
 
     def __iter__(self) -> Generator[Asset, None, None]:
@@ -231,7 +235,7 @@ class AssetsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.assets.get(external_id=["1", "abc"])
         """
-        return self._retrieve_multiple(AssetList, self.RESOURCE_PATH, ids=id, external_ids=external_id, wrap_ids=True)
+        return self._retrieve_multiple(AssetList, self._RESOURCE_PATH, ids=id, external_ids=external_id, wrap_ids=True)
 
     def list(
         self,
@@ -286,7 +290,7 @@ class AssetsAPI(APIClient):
         filter = AssetFilter(
             name, parent_ids, metadata, source, created_time, last_updated_time, asset_subtrees, external_id_prefix
         ).dump(camel_case=True)
-        return self._list(AssetList, resource_path=self.RESOURCE_PATH, method="POST", limit=limit, filter=filter)
+        return self._list(AssetList, resource_path=self._RESOURCE_PATH, method="POST", limit=limit, filter=filter)
 
     def create(self, asset: Union[Asset, List[Asset]]) -> Union[Asset, AssetList]:
         """Create one or more assets.
@@ -306,7 +310,7 @@ class AssetsAPI(APIClient):
                 >>> assets = [Asset(name="asset1"), Asset(name="asset2")]
                 >>> res = c.assets.create(assets)
         """
-        return self._create_multiple(AssetList, resource_path=self.RESOURCE_PATH, items=asset)
+        return self._create_multiple(AssetList, resource_path=self._RESOURCE_PATH, items=asset)
 
     def delete(self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None) -> None:
         """Delete one or more assets
@@ -326,7 +330,7 @@ class AssetsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.assets.delete(id=[1,2,3], external_id="3")
         """
-        self._delete_multiple(resource_path=self.RESOURCE_PATH, ids=id, external_ids=external_id, wrap_ids=True)
+        self._delete_multiple(resource_path=self._RESOURCE_PATH, ids=id, external_ids=external_id, wrap_ids=True)
 
     def update(self, item: Union[Asset, AssetUpdate, List[Union[Asset, AssetUpdate]]]) -> Union[Asset, AssetList]:
         """Update one or more assets
@@ -354,7 +358,7 @@ class AssetsAPI(APIClient):
                 >>> my_update = AssetUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
                 >>> res = c.assets.update(my_update)
         """
-        return self._update_multiple(cls=AssetList, resource_path=self.RESOURCE_PATH, items=item)
+        return self._update_multiple(cls=AssetList, resource_path=self._RESOURCE_PATH, items=item)
 
     def search(
         self, name: str = None, description: str = None, filter: AssetFilter = None, limit: int = None
@@ -381,6 +385,6 @@ class AssetsAPI(APIClient):
         filter = filter.dump(camel_case=True) if filter else None
         return self._search(
             cls=AssetList,
-            resource_path=self.RESOURCE_PATH,
+            resource_path=self._RESOURCE_PATH,
             json={"search": {"name": name, "description": description}, "filter": filter, "limit": limit},
         )

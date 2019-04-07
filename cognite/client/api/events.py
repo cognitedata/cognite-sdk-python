@@ -32,6 +32,7 @@ class Event(CogniteResource):
         source: str = None,
         id: int = None,
         last_updated_time: int = None,
+        **kwargs
     ):
         self.external_id = external_id
         self.start_time = start_time
@@ -73,6 +74,7 @@ class EventFilter(CogniteFilter):
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
         external_id_prefix: str = None,
+        **kwargs
     ):
         self.start_time = start_time
         self.end_time = end_time
@@ -160,7 +162,7 @@ class EventList(CogniteResourceList):
 
 
 class EventsAPI(APIClient):
-    RESOURCE_PATH = "/events"
+    _RESOURCE_PATH = "/events"
 
     def __call__(
         self,
@@ -206,7 +208,7 @@ class EventsAPI(APIClient):
             external_id_prefix,
         ).dump(camel_case=True)
         return self._list_generator(
-            EventList, resource_path=self.RESOURCE_PATH, method="POST", chunk_size=chunk_size, filter=filter
+            EventList, resource_path=self._RESOURCE_PATH, method="POST", chunk_size=chunk_size, filter=filter
         )
 
     def __iter__(self) -> Generator[Event, None, None]:
@@ -245,7 +247,7 @@ class EventsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.events.get(external_id="abc")
         """
-        return self._retrieve_multiple(EventList, self.RESOURCE_PATH, ids=id, external_ids=external_id, wrap_ids=True)
+        return self._retrieve_multiple(EventList, self._RESOURCE_PATH, ids=id, external_ids=external_id, wrap_ids=True)
 
     def list(
         self,
@@ -310,7 +312,7 @@ class EventsAPI(APIClient):
             last_updated_time,
             external_id_prefix,
         ).dump(camel_case=True)
-        return self._list(EventList, resource_path=self.RESOURCE_PATH, method="POST", limit=limit, filter=filter)
+        return self._list(EventList, resource_path=self._RESOURCE_PATH, method="POST", limit=limit, filter=filter)
 
     def create(self, event: Union[Event, List[Event]]) -> Union[Event, EventList]:
         """Create one or more events.
@@ -330,7 +332,7 @@ class EventsAPI(APIClient):
                 >>> events = [Event(start_time=0, end_time=1), Event(start_time=2, end_time=3)]
                 >>> res = c.events.create(events)
         """
-        return self._create_multiple(EventList, resource_path=self.RESOURCE_PATH, items=event)
+        return self._create_multiple(EventList, resource_path=self._RESOURCE_PATH, items=event)
 
     def delete(self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None) -> None:
         """Delete one or more events
@@ -349,7 +351,7 @@ class EventsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.events.delete(id=[1,2,3], external_id="3")
         """
-        self._delete_multiple(resource_path=self.RESOURCE_PATH, ids=id, external_ids=external_id, wrap_ids=True)
+        self._delete_multiple(resource_path=self._RESOURCE_PATH, ids=id, external_ids=external_id, wrap_ids=True)
 
     def update(self, item: Union[Event, EventUpdate, List[Union[Event, EventUpdate]]]) -> Union[Event, EventList]:
         """Update one or more events
@@ -377,7 +379,7 @@ class EventsAPI(APIClient):
                 >>> my_update = EventUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
                 >>> res = c.events.update(my_update)
         """
-        return self._update_multiple(cls=EventList, resource_path=self.RESOURCE_PATH, items=item)
+        return self._update_multiple(cls=EventList, resource_path=self._RESOURCE_PATH, items=item)
 
     def search(self, description: str = None, filter: EventFilter = None, limit: int = None) -> EventList:
         """Search for events
@@ -401,6 +403,6 @@ class EventsAPI(APIClient):
         filter = filter.dump(camel_case=True) if filter else None
         return self._search(
             cls=EventList,
-            resource_path=self.RESOURCE_PATH,
+            resource_path=self._RESOURCE_PATH,
             json={"search": {"description": description}, "filter": filter, "limit": limit},
         )

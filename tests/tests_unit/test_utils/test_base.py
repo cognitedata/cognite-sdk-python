@@ -1,5 +1,6 @@
 import pytest
 
+from cognite.client import CogniteClient, global_client
 from cognite.client._utils.base import *
 
 
@@ -108,6 +109,11 @@ class TestCogniteResource:
         with pytest.raises(NotImplementedError):
             MyResource(1).to_pandas()
 
+    def test_global_client_correct(self):
+        c = CogniteClient()
+        global_client.set(c)
+        assert MyResource(1)._client == c
+
 
 class TestCogniteResourceList:
     def test_dump(self):
@@ -158,6 +164,11 @@ class TestCogniteResourceList:
     def test_constructor_bad_type(self):
         with pytest.raises(TypeError, match="must be of type 'MyResource'"):
             MyResourceList([1, 2, 3])
+
+    def test_global_client_correct(self):
+        c = CogniteClient()
+        global_client.set(c)
+        assert MyResourceList([MyResource()])._client == c
 
 
 class TestCogniteFilter:
@@ -257,3 +268,8 @@ class TestCogniteResponse:
         assert MyResponse(1) == MyResponse(1)
         assert MyResponse(1) != MyResponse(2)
         assert MyResponse(1) != MyResponse()
+
+    def test_global_client_correct(self):
+        c = CogniteClient()
+        global_client.set(c)
+        assert MyResponse()._client == c
