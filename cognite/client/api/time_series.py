@@ -275,8 +275,7 @@ class TimeSeriesAPI(APIClient):
 
             Create a new time series::
 
-                >>> from cognite.client import CogniteClient
-                >>> from cognite.client.api.time_series import TimeSeries
+                >>> from cognite.client import CogniteClient, TimeSeries
                 >>> c = CogniteClient()
                 >>> ts = c.time_series.create(TimeSeries(name="my ts"))
         """
@@ -325,8 +324,7 @@ class TimeSeriesAPI(APIClient):
 
             Perform a partial update on a time series, updating the description and adding a new field to metadata::
 
-                >>> from cognite.client import CogniteClient
-                >>> from cognite.client.api.time_series import TimeSeriesUpdate
+                >>> from cognite.client import CogniteClient, TimeSeriesUpdate
                 >>> c = CogniteClient()
                 >>> my_update = TimeSeriesUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
                 >>> res = c.time_series.update(my_update)

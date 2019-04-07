@@ -1,6 +1,5 @@
 import os
-from typing import *
-from typing import Dict, List, Union
+from typing import Dict, List
 
 from cognite.client._utils import utils
 from cognite.client._utils.api_client import APIClient
@@ -327,8 +326,7 @@ class FilesAPI(APIClient):
 
             Perform a partial update on file metadata, updating the name and adding a new field to metadata::
 
-                >>> from cognite.client import CogniteClient
-                >>> from cognite.client.api.files import FileMetadataUpdate
+                >>> from cognite.client import CogniteClient, FileMetadataUpdate
                 >>> c = CogniteClient()
                 >>> my_update = FileMetadataUpdate(id=1).name.set("New description").metadata.add({"key": "value"})
                 >>> res = c.files.update(my_update)

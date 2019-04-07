@@ -325,8 +325,7 @@ class EventsAPI(APIClient):
 
             Create new events::
 
-                >>> from cognite.client import CogniteClient
-                >>> from cognite.client.api.events import Event
+                >>> from cognite.client import CogniteClient, Event
                 >>> c = CogniteClient()
                 >>> events = [Event(start_time=0, end_time=1), Event(start_time=2, end_time=3)]
                 >>> res = c.events.create(events)
@@ -373,8 +372,7 @@ class EventsAPI(APIClient):
 
             Perform a partial update on a event, updating the description and adding a new field to metadata::
 
-                >>> from cognite.client import CogniteClient
-                >>> from cognite.client.api.events import EventUpdate
+                >>> from cognite.client import CogniteClient, EventUpdate
                 >>> c = CogniteClient()
                 >>> my_update = EventUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
                 >>> res = c.events.update(my_update)
