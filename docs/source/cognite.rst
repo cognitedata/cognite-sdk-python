@@ -8,7 +8,7 @@ Set the environment variable COGNITE_API_KEY. All examples in this documentation
 
 Instantiate a client and get your login status like this
 
-.. code-block::
+.. code:: python
 
     >>> from cognite.client import CogniteClient
     >>> c = CogniteClient()
