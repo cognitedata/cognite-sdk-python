@@ -1,15 +1,26 @@
+Getting Started
+===============
+Set the environment variable COGNITE_API_KEY. All examples in this documentation require it.
+
+.. code:: bash
+
+    $ export COGNITE_API_KEY = <your-api-key>
+
+Instantiate a client and get your login status like this
+
+.. code-block::
+
+    >>> from cognite.client import CogniteClient
+    >>> c = CogniteClient()
+    >>> status = c.login.status()
+
+Read more about the `Cognite Client`_ below.
+
 Cognite Client
 ==============
 .. autoclass:: cognite.client.CogniteClient
     :members:
     :member-order: bysource
-
-Exceptions
-==========
-.. automodule:: cognite.client.exceptions
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
 API
 ===
@@ -203,3 +214,10 @@ Data Transfer Objects
     :undoc-members:
     :show-inheritance:
     :inherited-members:
+
+Exceptions
+==========
+.. automodule:: cognite.client.exceptions
+    :members:
+    :undoc-members:
+    :show-inheritance:
