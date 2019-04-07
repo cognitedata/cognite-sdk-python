@@ -16,6 +16,7 @@ RESPONSE = {"any": "ok"}
 
 API_CLIENT = APIClient(
     project="test-project",
+    api_key="abc",
     base_url=BASE_URL,
     max_workers=1,
     cookies={"a-cookie": "a-cookie-val"},
@@ -30,6 +31,7 @@ class TestBasicRequests:
         rsps.assert_all_requests_are_fired = False
         for method in [rsps.GET, rsps.PUT, rsps.POST, rsps.DELETE]:
             rsps.add(method, BASE_URL + URL_PATH, status=200, json=RESPONSE)
+        yield rsps
 
     @pytest.fixture
     def mock_all_requests_fail(self, rsps):
@@ -49,12 +51,17 @@ class TestBasicRequests:
         RequestCase(name="put", method=API_CLIENT._put, kwargs={"url_path": URL_PATH, "json": {"any": "ok"}}),
     ]
 
-    @pytest.mark.usefixtures("mock_all_requests_ok")
     @pytest.mark.parametrize("name, method, kwargs", request_cases)
-    def test_requests_ok(self, name, method, kwargs):
+    def test_requests_ok(self, name, method, kwargs, mock_all_requests_ok):
         response = method(**kwargs)
         assert response.status_code == 200
         assert response.json() == RESPONSE
+
+        request_headers = mock_all_requests_ok.calls[0].request.headers
+        assert "application/json" == request_headers["content-type"]
+        assert "application/json" == request_headers["accept"]
+        assert API_CLIENT._api_key == request_headers["api-key"]
+        assert "User-Agent" in request_headers
 
     @pytest.mark.usefixtures("mock_all_requests_fail")
     @pytest.mark.parametrize("name, method, kwargs", request_cases)

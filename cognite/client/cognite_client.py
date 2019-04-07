@@ -80,7 +80,7 @@ class CogniteClient:
 
         self._max_workers = int(max_workers or environment_max_workers or DEFAULT_MAX_WORKERS)
 
-        self._configure_headers(headers)
+        self._headers = headers or {}
 
         self._cookies = cookies or {}
 
@@ -94,6 +94,7 @@ class CogniteClient:
         self.project = project or thread_local_project
         self.login = LoginAPI(
             project=self.project,
+            api_key=self.__api_key,
             base_url=self._base_url,
             max_workers=self._max_workers,
             cookies=self._cookies,
@@ -108,6 +109,7 @@ class CogniteClient:
         self.assets = AssetsAPI(
             version=__api_version,
             project=self.project,
+            api_key=self.__api_key,
             base_url=self._base_url,
             max_workers=self._max_workers,
             cookies=self._cookies,
@@ -118,6 +120,7 @@ class CogniteClient:
         self.datapoints = DatapointsAPI(
             version=__api_version,
             project=self.project,
+            api_key=self.__api_key,
             base_url=self._base_url,
             max_workers=self._max_workers,
             cookies=self._cookies,
@@ -128,6 +131,7 @@ class CogniteClient:
         self.events = EventsAPI(
             version=__api_version,
             project=self.project,
+            api_key=self.__api_key,
             base_url=self._base_url,
             max_workers=self._max_workers,
             cookies=self._cookies,
@@ -138,6 +142,7 @@ class CogniteClient:
         self.files = FilesAPI(
             version=__api_version,
             project=self.project,
+            api_key=self.__api_key,
             base_url=self._base_url,
             max_workers=self._max_workers,
             cookies=self._cookies,
@@ -148,6 +153,7 @@ class CogniteClient:
         self.time_series = TimeSeriesAPI(
             version=__api_version,
             project=self.project,
+            api_key=self.__api_key,
             base_url=self._base_url,
             max_workers=self._max_workers,
             cookies=self._cookies,
@@ -157,6 +163,7 @@ class CogniteClient:
         )
         self._api_client = APIClient(
             project=self.project,
+            api_key=self.__api_key,
             base_url=self._base_url,
             max_workers=self._max_workers,
             cookies=self._cookies,
@@ -181,21 +188,6 @@ class CogniteClient:
     def delete(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
         """Perform a DELETE request to an arbitrary path in the API."""
         return self._api_client._delete(url, params=params, headers=headers)
-
-    def _configure_headers(self, user_defined_headers):
-        self._headers = {}
-        self._headers.update(requests.utils.default_headers())
-        self._headers.update(
-            {"api-key": self.__api_key, "content-type": "application/json", "accept": "application/json"}
-        )
-
-        if "User-Agent" in self._headers:
-            self._headers["User-Agent"] += " " + get_user_agent()
-        else:
-            self._headers["User-Agent"] = get_user_agent()
-
-        if user_defined_headers:
-            self._headers.update(user_defined_headers)
 
     @staticmethod
     def _get_thread_local_credentials():

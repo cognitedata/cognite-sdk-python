@@ -5,6 +5,7 @@ import os
 import re
 from typing import Any, Dict, List, Union
 
+import requests.utils
 from requests import Response, Session
 from requests.adapters import HTTPAdapter
 from urllib3 import Retry
@@ -46,6 +47,7 @@ class APIClient:
         self,
         version: str = None,
         project: str = None,
+        api_key: str = None,
         base_url: str = None,
         max_workers: int = None,
         cookies: Dict = None,
@@ -55,11 +57,12 @@ class APIClient:
     ):
         self._request_session = _REQUESTS_SESSION
         self._project = project
+        self._api_key = api_key
         __base_path = "/api/{}/projects/{}".format(version, project) if version else ""
         self._base_url = base_url + __base_path
         self._max_workers = max_workers
         self._cookies = cookies
-        self._headers = headers
+        self._headers = self._configure_headers(headers)
         self._timeout = timeout
         self._cognite_client = cognite_client
 
@@ -88,6 +91,7 @@ class APIClient:
 
         json_payload = kwargs.get("json")
         headers = self._headers.copy()
+        headers.update(kwargs.get("headers") or {})
 
         if json_payload:
             data = _json.dumps(json_payload, default=utils.json_dump_default)
@@ -96,7 +100,6 @@ class APIClient:
                 kwargs["data"] = gzip.compress(data.encode())
                 headers["Content-Encoding"] = "gzip"
 
-        headers.update(kwargs.get("headers") or {})
         kwargs["headers"] = headers
 
         res = self._request_session.request(method=method, url=full_url, **kwargs)
@@ -105,6 +108,17 @@ class APIClient:
             self._raise_API_error(res)
         self._log_request(res, payload=json_payload)
         return res
+
+    def _configure_headers(self, headers):
+        headers.update(requests.utils.default_headers())
+        headers["api-key"] = self._api_key
+        headers["content-type"] = "application/json"
+        headers["accept"] = "application/json"
+        if "User-Agent" in headers:
+            headers["User-Agent"] += " " + utils.get_user_agent()
+        else:
+            headers["User-Agent"] = utils.get_user_agent()
+        return headers
 
     def _resolve_url(self, url_path: str):
         if not url_path.startswith("/"):
@@ -358,7 +372,7 @@ class APIClient:
         status_code = res.status_code
 
         extra = kwargs.copy()
-        extra["headers"] = res.request.headers
+        extra["headers"] = res.request.headers.copy()
         if "api-key" in extra.get("headers", {}):
             extra["headers"]["api-key"] = None
         if extra["payload"] is None:
