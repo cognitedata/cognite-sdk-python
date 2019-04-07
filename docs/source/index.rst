@@ -10,6 +10,9 @@ Python SDK to ensure excellent user experience for developers and data scientist
 This package provides an interface to CDP in Python that is tightly integrated with Pandas.
 It lets you work with all the data in the platform in a simple and efficient manner.
 
+.. contents::
+   :local:
+
 Installation
 ^^^^^^^^^^^^
 To install this package run the following command
@@ -24,10 +27,9 @@ To install this package without the pandas and numpy support run the following c
 
    pip install cognite-sdk-core
 
+Contents
+^^^^^^^^
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents
-
    cognite
 
 Examples
