@@ -1,3 +1,4 @@
+import logging
 import os
 import random
 import sys
@@ -13,6 +14,7 @@ from cognite.client.api.assets import AssetList
 from cognite.client.api.events import EventList
 from cognite.client.api.files import FileMetadataList
 from cognite.client.api.time_series import TimeSeriesList
+from cognite.logger.logger import _CustomJsonFormatter
 
 
 @pytest.fixture
@@ -59,6 +61,17 @@ class TestCogniteClient:
         new_client = CogniteClient()
         global_client.set(new_client)
         assert global_client.get() == new_client
+
+    @pytest.fixture
+    def unset_env_api_key(self):
+        tmp = os.environ["COGNITE_API_KEY"]
+        del os.environ["COGNITE_API_KEY"]
+        yield
+        os.environ["COGNITE_API_KEY"] = tmp
+
+    def test_no_api_key_set(self, unset_env_api_key):
+        with pytest.raises(ValueError, match="No API Key has been specified"):
+            CogniteClient()
 
     def assert_config_is_correct(self, client, base_url, max_workers, timeout):
         assert client._base_url == base_url
@@ -111,6 +124,11 @@ class TestCogniteClient:
     def test_create_client_thread_local_config(self, thread_local_credentials_module):
         with ThreadPool() as pool:
             pool.map(self.create_client_and_check_config, list(range(16)))
+
+    def test_client_debug_mode(self):
+        CogniteClient(debug=True)
+        log = logging.getLogger("cognite-sdk")
+        assert isinstance(log.handlers[0].formatter, _CustomJsonFormatter)
 
 
 class TestInstantiateWithClient:
