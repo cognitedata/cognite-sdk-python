@@ -55,15 +55,11 @@ class Datapoint(CogniteResource):
         self.discrete_variance = discrete_variance
         self.total_variation = total_variation
 
-    def to_pandas(self, ignore: List[str] = None):
-        ignore = [] if ignore is None else ignore
+    def to_pandas(self):
         pd = utils.local_import("pandas")
 
         dumped = self.dump(camel_case=True)
         timestamp = dumped.pop("timestamp")
-        for k in ignore:
-            if k in dumped:
-                del dumped[k]
 
         for k, v in dumped.items():
             dumped[k] = [v]
@@ -275,7 +271,7 @@ class DatapointsAPI(APIClient):
         end: Union[int, str, datetime],
         id: Union[int, List[int], Dict[str, Union[int, List[str]]], List[Dict[str, Union[int, List[str]]]]] = None,
         external_id: Union[
-            int, List[int], Dict[str, Union[int, List[str]]], List[Dict[str, Union[int, List[str]]]]
+            str, List[str], Dict[str, Union[int, List[str]]], List[Dict[str, Union[int, List[str]]]]
         ] = None,
         aggregates: List[str] = None,
         granularity: str = None,
@@ -289,7 +285,7 @@ class DatapointsAPI(APIClient):
             end (Union[int, str, datetime]): Exclusive end.
             id (Union[int, List[int], Dict[str, Any], List[Dict[str, Any]]]: Id or list of ids. Can also be object
                 specifying aggregates. See example below.
-            external_id (Union[int, List[int], Dict[str, Any], List[Dict[str, Any]]]): External id or list of external
+            external_id (Union[str, List[str], Dict[str, Any], List[Dict[str, Any]]]): External id or list of external
                 ids. Can also be object specifying aggregates. See example below.
             aggregates (List[str]): List of aggregate functions to apply.
             granularity (str): The granularity to fetch aggregates at. e.g. '1s', '2h', '10d'.
@@ -628,11 +624,88 @@ class DatapointsAPI(APIClient):
     def _delete_datapoints_ranges(self, delete_range_objects):
         self._post(url_path=self._RESOURCE_PATH + "/delete", json={"items": delete_range_objects})
 
-    def get_dataframe(self):
-        raise NotImplementedError
+    def get_dataframe(
+        self,
+        start: Union[int, str, datetime],
+        end: Union[int, str, datetime],
+        id: Union[int, List[int], Dict[str, Union[int, List[str]]], List[Dict[str, Union[int, List[str]]]]] = None,
+        external_id: Union[
+            str, List[str], Dict[str, Union[int, List[str]]], List[Dict[str, Union[int, List[str]]]]
+        ] = None,
+        aggregates: List[str] = None,
+        granularity: str = None,
+        limit: int = None,
+    ):
+        """Get a pandas dataframe describing the requested data.
 
-    def insert_dataframe(self):
-        raise NotImplementedError
+        Args:
+            start (Union[int, str, datetime]): Inclusive start.
+            end (Union[int, str, datetime]): Exclusive end.
+            aggregates (List[str]): List of aggregate functions to apply.
+            granularity (str): The granularity to fetch aggregates at. e.g. '1s', '2h', '10d'.
+            id (Union[int, List[int], Dict[str, Any], List[Dict[str, Any]]]: Id or list of ids. Can also be object
+                specifying aggregates. See example below.
+            external_id (Union[str, List[str], Dict[str, Any], List[Dict[str, Any]]]): External id or list of external
+                ids. Can also be object specifying aggregates. See example below.
+            limit (int): Maximum number of datapoints to return for each time series.
+
+        Returns:
+            pandas.DataFrame: The requested dataframe
+
+        Examples:
+
+            Get a pandas dataframe::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> df = c.datapoints.get_dataframe(id=[1,2,3], start="2w-ago", end="now",
+                ...         aggregates=["average"], granularity="1h")
+        """
+        return self.get(
+            id=id,
+            external_id=external_id,
+            start=start,
+            end=end,
+            aggregates=aggregates,
+            granularity=granularity,
+            limit=limit,
+        ).to_pandas()
+
+    def insert_dataframe(self, dataframe):
+        """Insert a dataframe.
+
+        The index of the dataframe must contain the timestamps. The names of the remaining columns specify the ids of
+        the time series to which column contents will be written.
+
+        Said time series must already exist.
+
+        Args:
+            dataframe (pandas.DataFrame):  Pandas DataFrame Object containing the time series.
+
+        Returns:
+            None
+
+        Examples:
+            Post a dataframe with white noise::
+
+                >>> import numpy as np
+                >>> import pandas as pd
+                >>> from cognite.client import CogniteClient
+                >>> from datetime import datetime, timedelta
+                >>>
+                >>> c = CogniteClient()
+                >>> ts_id = 123
+                >>> start = datetime(2018, 1, 1)
+                >>> # The scaling by 1000 is important: timestamp() returns seconds
+                >>> x = [(start + timedelta(days=d)).timestamp() * 1000 for d in range(100)]
+                >>> y = np.random.normal(0, 1, 100)
+                >>> df = pd.DataFrame({ts_id: y}, index=x)
+                >>> res = c.datapoints.insert_dataframe(df)
+        """
+        dps = []
+        for col in dataframe.columns:
+            dps.append({"id": int(col), "datapoints": list(zip(dataframe.index, dataframe[col]))})
+        self.insert_multiple(dps)
 
     def _get_datapoints_concurrently(
         self,
@@ -801,7 +874,7 @@ class DatapointsAPI(APIClient):
             for i in range(0, len(dps_object["datapoints"]), self._LIMIT):
                 dps_object_chunk = dps_object.copy()
                 dps_object_chunk["datapoints"] = dps_object["datapoints"][i : i + self._LIMIT]
-                tasks.append((dps_object_chunk,))
+                tasks.append(([dps_object_chunk],))
         utils.execute_tasks_concurrently(self._insert_datapoints, tasks, max_workers=self._max_workers)
 
     def _insert_datapoints(self, post_dps_objects: List[Dict[str, Any]]):

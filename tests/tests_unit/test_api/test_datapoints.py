@@ -354,7 +354,7 @@ class TestInsertDatapoints:
         res = DPS_CLIENT.insert(dps, id=1)
         assert res is None
         assert {
-            "items": {"id": 1, "datapoints": [{"timestamp": int(i * 1e10), "value": i} for i in range(1, 11)]}
+            "items": [{"id": 1, "datapoints": [{"timestamp": int(i * 1e10), "value": i} for i in range(1, 11)]}]
         } == jsgz_load(mock_post_datapoints.calls[0].request.body)
 
     def test_insert_dicts(self, mock_post_datapoints):
@@ -362,14 +362,16 @@ class TestInsertDatapoints:
         res = DPS_CLIENT.insert(dps, id=1)
         assert res is None
         assert {
-            "items": {"id": 1, "datapoints": [{"timestamp": int(i * 1e10), "value": i} for i in range(1, 11)]}
+            "items": [{"id": 1, "datapoints": [{"timestamp": int(i * 1e10), "value": i} for i in range(1, 11)]}]
         } == jsgz_load(mock_post_datapoints.calls[0].request.body)
 
     def test_by_external_id(self, mock_post_datapoints):
         dps = [(i * 1e10, i) for i in range(1, 11)]
         DPS_CLIENT.insert(dps, external_id="1")
         assert {
-            "items": {"externalId": "1", "datapoints": [{"timestamp": int(i * 1e10), "value": i} for i in range(1, 11)]}
+            "items": [
+                {"externalId": "1", "datapoints": [{"timestamp": int(i * 1e10), "value": i} for i in range(1, 11)]}
+            ]
         } == jsgz_load(mock_post_datapoints.calls[0].request.body)
 
     def test_insert_datapoints_in_jan_1970(self):
@@ -390,10 +392,10 @@ class TestInsertDatapoints:
         assert res is None
         request_bodies = [jsgz_load(call.request.body) for call in mock_post_datapoints.calls]
         assert {
-            "items": {"id": 1, "datapoints": [{"timestamp": int(i * 1e10), "value": i} for i in range(1, 6)]}
+            "items": [{"id": 1, "datapoints": [{"timestamp": int(i * 1e10), "value": i} for i in range(1, 6)]}]
         } in request_bodies
         assert {
-            "items": {"id": 1, "datapoints": [{"timestamp": int(i * 1e10), "value": i} for i in range(6, 11)]}
+            "items": [{"id": 1, "datapoints": [{"timestamp": int(i * 1e10), "value": i} for i in range(6, 11)]}]
         } in request_bodies
 
     def test_insert_datapoints_no_data(self):
@@ -407,10 +409,12 @@ class TestInsertDatapoints:
         assert res is None
         request_bodies = [jsgz_load(call.request.body) for call in mock_post_datapoints.calls]
         assert {
-            "items": {"id": 1, "datapoints": [{"timestamp": int(i * 1e10), "value": i} for i in range(1, 11)]}
+            "items": [{"id": 1, "datapoints": [{"timestamp": int(i * 1e10), "value": i} for i in range(1, 11)]}]
         } in request_bodies
         assert {
-            "items": {"externalId": "1", "datapoints": [{"timestamp": int(i * 1e10), "value": i} for i in range(1, 11)]}
+            "items": [
+                {"externalId": "1", "datapoints": [{"timestamp": int(i * 1e10), "value": i} for i in range(1, 11)]}
+            ]
         } in request_bodies
 
     def test_insert_datapoints_in_multiple_time_series_invalid_key(self):
@@ -525,9 +529,6 @@ class TestPandasIntegration:
         expected_df = self.pd.DataFrame({"value": [2], "max": [3]}, index=[utils.ms_to_datetime(0)])
         self.pd.testing.assert_frame_equal(expected_df, d.to_pandas(), check_like=True)
 
-        expected_df = self.pd.DataFrame({"max": [3]}, index=[utils.ms_to_datetime(0)])
-        self.pd.testing.assert_frame_equal(expected_df, d.to_pandas(ignore=["value"]), check_like=True)
-
     def test_datapoints(self):
         d = Datapoints(id=1, timestamp=[1, 2, 3], average=[2, 3, 4], step_interpolation=[3, 4, 5])
         print(d.to_pandas())
@@ -573,6 +574,40 @@ class TestPandasIntegration:
     def test_datapoints_list_empty(self):
         dps_list = DatapointsList([])
         assert dps_list.to_pandas().empty
+
+    def test_get_dataframe(self, mock_get_datapoints):
+        df = DPS_CLIENT.get_dataframe(
+            id=[1, {"id": 2, "aggregates": ["max"]}],
+            external_id=["abc"],
+            start=1000000,
+            end=1100000,
+            aggregates=["average"],
+            granularity="10s",
+        )
+        assert {"1|average", "2|max", "-1|average"} == set(df.columns)
+        assert df.shape[0] > 0
+
+    def test_insert_dataframe(self, mock_post_datapoints):
+        timestamps = [1500000000000, 1510000000000, 1520000000000, 1530000000000]
+        df = self.pd.DataFrame(
+            {"123": [1, 2, 3, 4], "456": [5.0, 6.0, 7.0, 8.0]}, index=[utils.ms_to_datetime(ms) for ms in timestamps]
+        )
+        res = DPS_CLIENT.insert_dataframe(df)
+        assert res is None
+        request_bodies = [jsgz_load(call.request.body) for call in mock_post_datapoints.calls]
+        assert {
+            "items": [
+                {"id": 123, "datapoints": [{"timestamp": ts, "value": val} for ts, val in zip(timestamps, range(1, 5))]}
+            ]
+        } in request_bodies
+        assert {
+            "items": [
+                {
+                    "id": 456,
+                    "datapoints": [{"timestamp": ts, "value": float(val)} for ts, val in zip(timestamps, range(5, 9))],
+                }
+            ]
+        } in request_bodies
 
 
 class TestHelpers:
