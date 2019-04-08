@@ -1,11 +1,11 @@
 import pytest
 
-from cognite.client import CogniteClient, global_client
+from cognite.client import CogniteClient
 from cognite.client._utils.base import *
 
 
 class MyResource(CogniteResource):
-    def __init__(self, var_a=None, var_b=None):
+    def __init__(self, var_a=None, var_b=None, **kwargs):
         self.var_a = var_a
         self.var_b = var_b
 
@@ -105,9 +105,29 @@ class TestCogniteResource:
     def test_str_repr(self):
         assert json.dumps({"var_a": 1}, indent=4) == MyResource(1).__str__()
 
+    @pytest.mark.dsl
     def test_to_pandas(self):
-        with pytest.raises(NotImplementedError):
-            MyResource(1).to_pandas()
+        import pandas as pd
+
+        class SomeResource(CogniteResource):
+            def __init__(self, a_list, ob, ob_expand, ob_ignore, prim, prim_ignore, **kwargs):
+                self.a_list = a_list
+                self.ob = ob
+                self.ob_expand = ob_expand
+                self.ob_ignore = ob_ignore
+                self.prim = prim
+                self.prim_ignore = prim_ignore
+
+        expected_df = pd.DataFrame(columns=["value"])
+        expected_df.loc["prim"] = ["abc"]
+        expected_df.loc["aList"] = [[1, 2, 3]]
+        expected_df.loc["ob"] = [{"x": "y"}]
+        expected_df.loc["md_key"] = ["md_value"]
+
+        actual_df = SomeResource([1, 2, 3], {"x": "y"}, {"md_key": "md_value"}, {"bla": "bla"}, "abc", 1).to_pandas(
+            expand=["obExpand", "obIgnore"], ignore=["primIgnore", "obIgnore"]
+        )
+        pd.testing.assert_frame_equal(expected_df, actual_df, check_like=True)
 
     def test_global_client_correct(self):
         c = CogniteClient()
@@ -120,6 +140,13 @@ class TestCogniteResourceList:
         assert [{"var_a": 1, "var_b": 2}, {"var_a": 2, "var_b": 3}] == MyResourceList(
             [MyResource(1, 2), MyResource(2, 3)]
         ).dump()
+
+    def test_to_pandas(self):
+        import pandas as pd
+
+        resource_list = MyResourceList([MyResource(1), MyResource(2, 3)])
+        expected_df = pd.DataFrame({"varA": [1, 2], "varB": [None, 3]})
+        pd.testing.assert_frame_equal(resource_list.to_pandas(), expected_df)
 
     def test_load(self):
         resource_list = MyResourceList._load([{"varA": 1, "varB": 2}, {"varA": 2, "varB": 3}, {"varA": 3}])

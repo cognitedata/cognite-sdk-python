@@ -1,13 +1,9 @@
-import doctest
 import re
-from unittest import TestSuite, TextTestRunner, mock
 
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.api import time_series
 from cognite.client.api.time_series import TimeSeries, TimeSeriesFilter, TimeSeriesList, TimeSeriesUpdate
-from tests import utils
 from tests.utils import jsgz_load
 
 TS_API = CogniteClient().time_series
@@ -23,7 +19,7 @@ def mock_ts_response(rsps):
                     "externalId": "string",
                     "name": "string",
                     "isString": True,
-                    "metadata": {},
+                    "metadata": {"metadata-key": "metadata-value"},
                     "unit": "string",
                     "assetId": 0,
                     "isStep": True,
@@ -134,3 +130,35 @@ class TestTimeSeries:
             .unit.set(None),
             TimeSeriesUpdate,
         )
+
+
+@pytest.fixture
+def mock_time_series_empty(rsps):
+    url_pattern = re.compile(re.escape(TS_API._base_url) + "/.+")
+    rsps.assert_all_requests_are_fired = False
+    rsps.add(rsps.POST, url_pattern, status=200, json={"data": {"items": []}})
+    rsps.add(rsps.GET, url_pattern, status=200, json={"data": {"items": []}})
+    yield rsps
+
+
+@pytest.mark.dsl
+class TestPandasIntegration:
+    import pandas as pd
+
+    def test_time_series_list_to_pandas(self, mock_ts_response):
+        df = TS_API.list().to_pandas()
+        assert isinstance(df, self.pd.DataFrame)
+        assert 1 == df.shape[0]
+        assert {"metadata-key": "metadata-value"} == df["metadata"][0]
+
+    def test_time_series_list_to_pandas_empty(self, mock_time_series_empty):
+        df = TS_API.list().to_pandas()
+        assert isinstance(df, self.pd.DataFrame)
+        assert df.empty
+
+    def test_time_series_to_pandas(self, mock_ts_response):
+        df = TS_API.get(id=1).to_pandas()
+        assert isinstance(df, self.pd.DataFrame)
+        assert "metadata" not in df.columns
+        assert [0] == df.loc["securityCategories"][0]
+        assert "metadata-value" == df.loc["metadata-key"][0]

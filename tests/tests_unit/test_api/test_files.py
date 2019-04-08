@@ -21,7 +21,7 @@ def mock_files_response(rsps):
                     "name": "string",
                     "source": "string",
                     "mimeType": "string",
-                    "metadata": {},
+                    "metadata": {"metadata-key": "metadata-value"},
                     "assetIds": [1],
                     "id": 1,
                     "uploaded": True,
@@ -213,3 +213,33 @@ class TestFilesAPI:
             .source.set(None),
             FileMetadataUpdate,
         )
+
+
+@pytest.fixture
+def mock_files_empty(rsps):
+    url_pattern = re.compile(re.escape(FILES_API._base_url) + "/.+")
+    rsps.add(rsps.POST, url_pattern, status=200, json={"data": {"items": []}})
+    yield rsps
+
+
+@pytest.mark.dsl
+class TestPandasIntegration:
+    import pandas as pd
+
+    def test_file_list_to_pandas(self, mock_files_response):
+        df = FILES_API.list().to_pandas()
+        assert isinstance(df, self.pd.DataFrame)
+        assert 1 == df.shape[0]
+        assert {"metadata-key": "metadata-value"} == df["metadata"][0]
+
+    def test_file_list_to_pandas_empty(self, mock_files_empty):
+        df = FILES_API.list().to_pandas()
+        assert isinstance(df, self.pd.DataFrame)
+        assert df.empty
+
+    def test_file_to_pandas(self, mock_files_response):
+        df = FILES_API.get(id=1).to_pandas()
+        assert isinstance(df, self.pd.DataFrame)
+        assert "metadata" not in df.columns
+        assert [1] == df.loc["assetIds"][0]
+        assert "metadata-value" == df.loc["metadata-key"][0]

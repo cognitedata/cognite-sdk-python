@@ -53,24 +53,6 @@ class Asset(CogniteResource):
 
     # GenStop
 
-    def to_pandas(self):
-        pd = utils.local_import("pandas")
-        dumped = self.dump()
-
-        if "metadata" in dumped:
-            metadata = dumped.pop("metadata") or {}
-            dumped.update(metadata)
-        path = None
-        if "path" in dumped:
-            path = dumped.pop("path")
-
-        df = pd.DataFrame.from_dict(dumped, orient="index")
-
-        if path:
-            df.loc["path"] = [path]
-        df.columns = ["value"]
-        return df
-
 
 # GenUpdateClass: AssetChange
 class AssetUpdate(CogniteUpdate):
@@ -134,10 +116,6 @@ class ListUpdate(CogniteListUpdate):
 class AssetList(CogniteResourceList):
     _RESOURCE = Asset
     _UPDATE = AssetUpdate
-
-    def to_pandas(self):
-        pd = utils.local_import("pandas")
-        return pd.DataFrame(self.dump())
 
 
 # GenClass: AssetFilter.filter

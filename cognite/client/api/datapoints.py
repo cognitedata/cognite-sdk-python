@@ -55,6 +55,22 @@ class Datapoint(CogniteResource):
         self.discrete_variance = discrete_variance
         self.total_variation = total_variation
 
+    def to_pandas(self, ignore: List[str] = None):
+        ignore = [] if ignore is None else ignore
+        pd = utils.local_import("pandas")
+
+        dumped = self.dump(camel_case=True)
+        timestamp = dumped.pop("timestamp")
+        for k in ignore:
+            if k in dumped:
+                del dumped[k]
+
+        for k, v in dumped.items():
+            dumped[k] = [v]
+        df = pd.DataFrame(dumped, index=[utils.ms_to_datetime(timestamp)])
+
+        return df
+
 
 class Datapoints:
     """An object representing a list of datapoints.
@@ -148,6 +164,21 @@ class Datapoints:
             dumped = {utils.to_camel_case(key): value for key, value in dumped.items()}
         return {key: value for key, value in dumped.items() if value is not None}
 
+    def to_pandas(self):
+        pd = utils.local_import("pandas")
+        data_fields = {}
+        timestamps = []
+        identifier = self.id or self.external_id
+        for attr, value in self._get_non_empty_data_fields():
+            if attr == "timestamp":
+                timestamps = value
+            else:
+                id_with_agg = str(identifier)
+                if attr != "value":
+                    id_with_agg += "|{}".format(utils.to_camel_case(attr))
+                data_fields[id_with_agg] = value
+        return pd.DataFrame(data_fields, index=[utils.ms_to_datetime(ms) for ms in timestamps])
+
     @classmethod
     def _load(cls, dps_object):
         instance = cls()
@@ -186,6 +217,13 @@ class Datapoints:
 class DatapointsList(CogniteResourceList):
     _RESOURCE = Datapoints
     _ASSERT_CLASSES = False
+
+    def to_pandas(self):
+        pd = utils.local_import("pandas")
+        dfs = [df.to_pandas() for df in self.data]
+        if dfs:
+            return pd.concat(dfs, axis="columns")
+        return pd.DataFrame()
 
 
 class DatapointsQuery(CogniteResource):

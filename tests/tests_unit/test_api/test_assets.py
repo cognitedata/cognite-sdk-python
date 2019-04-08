@@ -132,7 +132,6 @@ class TestPandasIntegration:
 
     def test_asset_list_to_pandas(self, mock_assets_response):
         df = ASSETS_API.list().to_pandas()
-        print(df)
         assert isinstance(df, self.pd.DataFrame)
         assert 1 == df.shape[0]
         assert {"metadata-key": "metadata-value"} == df["metadata"][0]
@@ -144,7 +143,6 @@ class TestPandasIntegration:
 
     def test_asset_to_pandas(self, mock_assets_response):
         df = ASSETS_API.get(id=1).to_pandas()
-        print(df)
         assert isinstance(df, self.pd.DataFrame)
         assert "metadata" not in df.columns
         assert [0] == df.loc["path"][0]
