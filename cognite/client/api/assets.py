@@ -1,3 +1,4 @@
+from cognite.client._utils import utils
 from cognite.client._utils.api_client import APIClient
 from cognite.client._utils.base import *
 
@@ -51,6 +52,24 @@ class Asset(CogniteResource):
         self.parent_ref_id = parent_ref_id
 
     # GenStop
+
+    def to_pandas(self):
+        pd = utils.local_import("pandas")
+        dumped = self.dump()
+
+        if "metadata" in dumped:
+            metadata = dumped.pop("metadata") or {}
+            dumped.update(metadata)
+        path = None
+        if "path" in dumped:
+            path = dumped.pop("path")
+
+        df = pd.DataFrame.from_dict(dumped, orient="index")
+
+        if path:
+            df.loc["path"] = [path]
+        df.columns = ["value"]
+        return df
 
 
 # GenUpdateClass: AssetChange
@@ -115,6 +134,10 @@ class ListUpdate(CogniteListUpdate):
 class AssetList(CogniteResourceList):
     _RESOURCE = Asset
     _UPDATE = AssetUpdate
+
+    def to_pandas(self):
+        pd = utils.local_import("pandas")
+        return pd.DataFrame(self.dump())
 
 
 # GenClass: AssetFilter.filter
@@ -250,7 +273,6 @@ class AssetsAPI(APIClient):
         """List assets
 
         Args:
-            chunk_size (int, optional): Number of assets to return in each chunk. Defaults to yielding one event a time.
             name (str): Name of asset. Often referred to as tag.
             parent_ids (List[int]): No description.
             metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
