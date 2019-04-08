@@ -5,6 +5,6 @@ from cognite.client.api.events import Event, EventFilter, EventUpdate
 from cognite.client.api.files import FileMetadata, FileMetadataFilter, FileMetadataUpdate
 from cognite.client.api.time_series import TimeSeries, TimeSeriesFilter, TimeSeriesUpdate
 from cognite.client.cognite_client import CogniteClient
-from cognite.client.exceptions import APIError
+from cognite.client.exceptions import CogniteAPIError
 
 __version__ = "1.0.0a1"

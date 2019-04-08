@@ -7,6 +7,7 @@ from unittest import mock
 import pytest
 
 from cognite.client._utils import utils
+from cognite.client.exceptions import CogniteImportError
 
 
 class TestDatetimeToMs:
@@ -146,6 +147,26 @@ class TestCaseConversion:
         assert "snake_case" == utils.to_snake_case("snakeCase")
         assert "snake_case" == utils.to_snake_case("snake_case")
         assert "a" == utils.to_snake_case("a")
+
+
+class TestLocalImport:
+    def test_local_import_single_ok(self):
+        import pandas
+
+        assert pandas == utils.local_import("pandas")
+
+    def test_local_import_multiple_ok(self):
+        import pandas, numpy
+
+        assert (pandas, numpy) == utils.local_import("pandas", "numpy")
+
+    def test_local_import_single_fail(self):
+        with pytest.raises(CogniteImportError, match="requires 'not-a-module' to be installed"):
+            utils.local_import("not-a-module")
+
+    def test_local_import_multiple_fail(self):
+        with pytest.raises(CogniteImportError, match="requires 'not-a-module' to be installed"):
+            utils.local_import("pandas", "not-a-module")
 
 
 class TestJsonDumpDefault:

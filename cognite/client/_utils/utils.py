@@ -4,6 +4,7 @@ This module provides helper methods and different utilities for the Cognite API 
 
 This module is protected and should not used by end-users.
 """
+import importlib
 import platform
 import re
 import time
@@ -12,9 +13,8 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any, Callable, Dict, List, Tuple, Union
 
-import numpy
-
 import cognite.client
+from cognite.client.exceptions import CogniteImportError
 
 _unit_in_ms_without_week = {"s": 1000, "m": 60000, "h": 3600000, "d": 86400000}
 _unit_in_ms = {**_unit_in_ms_without_week, "w": 604800000}
@@ -101,11 +101,14 @@ def to_snake_case(camel_case_string: str):
 
 
 def json_dump_default(x):
-    if isinstance(x, numpy.integer):
-        return int(x)
+    try:
+        if isinstance(x, local_import("numpy").integer):
+            return int(x)
+    except CogniteImportError:
+        pass
     if isinstance(x, Decimal):
         return float(x)
-    elif hasattr(x, __dict__):
+    if hasattr(x, __dict__):
         return x.__dict__
     return x
 
@@ -141,6 +144,24 @@ def assert_type(var: Any, var_name: str, types: List, allow_none=False):
             raise TypeError("{} cannot be None".format(var_name))
     elif not isinstance(var, tuple(types)):
         raise TypeError("{} must be one of types {}".format(var_name, types))
+
+
+def local_import(*module: str):
+    assert_type(module, "module", [tuple])
+    if len(module) == 1:
+        name = module[0]
+        try:
+            return importlib.import_module(name)
+        except ImportError as e:
+            raise CogniteImportError(name) from e
+
+    modules = []
+    for name in module:
+        try:
+            modules.append(importlib.import_module(name))
+        except ImportError as e:
+            raise CogniteImportError(name) from e
+    return tuple(modules)
 
 
 class GlobalClient:

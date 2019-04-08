@@ -1,7 +1,8 @@
 import json
+from typing import Dict
 
 
-class APIError(Exception):
+class CogniteAPIError(Exception):
     """Cognite API Error
 
     Raised if a given request fails.
@@ -31,7 +32,7 @@ class APIError(Exception):
                 print("The message returned from the API: {}".format(e.message))
     """
 
-    def __init__(self, message, code=None, x_request_id=None, extra=None):
+    def __init__(self, message: str, code: int = None, x_request_id: str = None, extra: Dict = None):
         self.message = message
         self.code = code
         self.x_request_id = x_request_id
@@ -44,3 +45,23 @@ class APIError(Exception):
                 self.message, self.code, self.x_request_id, pretty_extra
             )
         return "{} | code: {} | X-Request-ID: {}".format(self.message, self.code, self.x_request_id)
+
+
+class CogniteImportError(Exception):
+    """Cognite Import Error
+
+    Raised if the user attempts to use functionality which requires an uninstalled package.
+
+    Args:
+        module (str): Name of the module which could not be imported
+        message (str): The error message to output.
+    """
+
+    def __init__(self, module: str, message: str = None):
+        self.module = module
+        self.message = message or "The functionality your are trying to use requires '{}' to be installed.".format(
+            self.module
+        )
+
+    def __str__(self):
+        return self.message
