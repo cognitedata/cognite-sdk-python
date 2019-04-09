@@ -1,6 +1,6 @@
 import pytest
 
-from cognite.client import APIError
+from cognite.client import CogniteAPIError
 
 
 class TestCogniteClient:
@@ -13,11 +13,11 @@ class TestCogniteClient:
         assert res.status_code == 200
 
     def test_put(self, client):
-        with pytest.raises(APIError) as e:
+        with pytest.raises(CogniteAPIError) as e:
             client.put("/login")
         assert e.value.code == 405
 
     def test_delete(self, client):
-        with pytest.raises(APIError) as e:
+        with pytest.raises(CogniteAPIError) as e:
             client.delete("/login")
         assert e.value.code == 405
