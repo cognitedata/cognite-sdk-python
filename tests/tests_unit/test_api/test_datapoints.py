@@ -354,7 +354,7 @@ class TestInsertDatapoints:
         res = DPS_CLIENT.insert(dps, id=1)
         assert res is None
         assert {
-            "items": {"id": 1, "datapoints": [{"timestamp": int(i * 1e10), "value": i} for i in range(1, 11)]}
+            "items": [{"id": 1, "datapoints": [{"timestamp": int(i * 1e10), "value": i} for i in range(1, 11)]}]
         } == jsgz_load(mock_post_datapoints.calls[0].request.body)
 
     def test_insert_dicts(self, mock_post_datapoints):
@@ -362,14 +362,16 @@ class TestInsertDatapoints:
         res = DPS_CLIENT.insert(dps, id=1)
         assert res is None
         assert {
-            "items": {"id": 1, "datapoints": [{"timestamp": int(i * 1e10), "value": i} for i in range(1, 11)]}
+            "items": [{"id": 1, "datapoints": [{"timestamp": int(i * 1e10), "value": i} for i in range(1, 11)]}]
         } == jsgz_load(mock_post_datapoints.calls[0].request.body)
 
     def test_by_external_id(self, mock_post_datapoints):
         dps = [(i * 1e10, i) for i in range(1, 11)]
         DPS_CLIENT.insert(dps, external_id="1")
         assert {
-            "items": {"externalId": "1", "datapoints": [{"timestamp": int(i * 1e10), "value": i} for i in range(1, 11)]}
+            "items": [
+                {"externalId": "1", "datapoints": [{"timestamp": int(i * 1e10), "value": i} for i in range(1, 11)]}
+            ]
         } == jsgz_load(mock_post_datapoints.calls[0].request.body)
 
     def test_insert_datapoints_in_jan_1970(self):
@@ -390,10 +392,10 @@ class TestInsertDatapoints:
         assert res is None
         request_bodies = [jsgz_load(call.request.body) for call in mock_post_datapoints.calls]
         assert {
-            "items": {"id": 1, "datapoints": [{"timestamp": int(i * 1e10), "value": i} for i in range(1, 6)]}
+            "items": [{"id": 1, "datapoints": [{"timestamp": int(i * 1e10), "value": i} for i in range(1, 6)]}]
         } in request_bodies
         assert {
-            "items": {"id": 1, "datapoints": [{"timestamp": int(i * 1e10), "value": i} for i in range(6, 11)]}
+            "items": [{"id": 1, "datapoints": [{"timestamp": int(i * 1e10), "value": i} for i in range(6, 11)]}]
         } in request_bodies
 
     def test_insert_datapoints_no_data(self):
@@ -407,10 +409,12 @@ class TestInsertDatapoints:
         assert res is None
         request_bodies = [jsgz_load(call.request.body) for call in mock_post_datapoints.calls]
         assert {
-            "items": {"id": 1, "datapoints": [{"timestamp": int(i * 1e10), "value": i} for i in range(1, 11)]}
+            "items": [{"id": 1, "datapoints": [{"timestamp": int(i * 1e10), "value": i} for i in range(1, 11)]}]
         } in request_bodies
         assert {
-            "items": {"externalId": "1", "datapoints": [{"timestamp": int(i * 1e10), "value": i} for i in range(1, 11)]}
+            "items": [
+                {"externalId": "1", "datapoints": [{"timestamp": int(i * 1e10), "value": i} for i in range(1, 11)]}
+            ]
         } in request_bodies
 
     def test_insert_datapoints_in_multiple_time_series_invalid_key(self):

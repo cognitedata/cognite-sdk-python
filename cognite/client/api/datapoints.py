@@ -763,7 +763,7 @@ class DatapointsAPI(APIClient):
             for i in range(0, len(dps_object["datapoints"]), self._LIMIT):
                 dps_object_chunk = dps_object.copy()
                 dps_object_chunk["datapoints"] = dps_object["datapoints"][i : i + self._LIMIT]
-                tasks.append((dps_object_chunk,))
+                tasks.append(([dps_object_chunk],))
         utils.execute_tasks_concurrently(self._insert_datapoints, tasks, max_workers=self._max_workers)
 
     def _insert_datapoints(self, post_dps_objects: List[Dict[str, Any]]):
