@@ -185,6 +185,16 @@ class TestJsonDumpDefault:
 
         assert json.dumps(Decimal(1), default=utils.json_dump_default)
 
+    def test_json_serializable_object(self):
+        class Obj:
+            def __init__(self):
+                self.x = 1
+
+        with pytest.raises(TypeError):
+            json.dumps(Obj())
+
+        assert json.dumps({"x": 1}) == json.dumps(Obj(), default=utils.json_dump_default)
+
     @pytest.mark.dsl
     def test_json_serialiable_numpy_integer(self):
         import numpy as np
