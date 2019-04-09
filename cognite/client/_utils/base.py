@@ -2,6 +2,7 @@ import json
 from collections import UserList
 from typing import *
 
+from cognite.client._utils import utils
 from cognite.client._utils.utils import global_client, to_camel_case, to_snake_case
 
 
@@ -77,7 +78,8 @@ class CogniteResourceList(UserList):
         return [resource.dump(camel_case) for resource in self.data]
 
     def to_pandas(self):
-        raise NotImplementedError
+        pd = utils.local_import("pandas")
+        return pd.DataFrame(self.dump(camel_case=True))
 
     @classmethod
     def _load(cls, resource_list: Union[List, str]):
@@ -123,8 +125,24 @@ class CogniteResource:
             return instance
         raise TypeError("Resource must be json str or Dict, not {}".format(type(resource)))
 
-    def to_pandas(self):
-        raise NotImplementedError
+    def to_pandas(self, expand: List[str] = None, ignore: List[str] = None):
+        expand = ["metadata"] if expand is None else expand
+        ignore = [] if ignore is None else ignore
+        pd = utils.local_import("pandas")
+        dumped = self.dump(camel_case=True)
+
+        for element in ignore:
+            del dumped[element]
+        for key in expand:
+            if key in dumped and isinstance(dumped[key], dict):
+                dumped.update(dumped.pop(key))
+            else:
+                raise AssertionError("Could not expand attribute '{}'".format(key))
+
+        df = pd.DataFrame(columns=["value"])
+        for name, value in dumped.items():
+            df.loc[name] = [value]
+        return df
 
 
 class CogniteUpdate:

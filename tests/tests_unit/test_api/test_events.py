@@ -19,7 +19,7 @@ def mock_events_response(rsps):
                     "startTime": 0,
                     "endTime": 0,
                     "description": "string",
-                    "metadata": {},
+                    "metadata": {"metadata-key": "metadata-value"},
                     "assetIds": [1],
                     "source": "string",
                     "id": 1,
@@ -122,3 +122,39 @@ class TestEvents:
             .start_time.set(None),
             EventUpdate,
         )
+
+
+@pytest.fixture
+def mock_events_empty(rsps):
+    url_pattern = re.compile(re.escape(EVENTS_API._base_url) + "/.+")
+    rsps.add(rsps.POST, url_pattern, status=200, json={"data": {"items": []}})
+    yield rsps
+
+
+@pytest.mark.dsl
+class TestPandasIntegration:
+    def test_event_list_to_pandas(self, mock_events_response):
+        import pandas as pd
+
+        df = EVENTS_API.list().to_pandas()
+        print(df)
+        assert isinstance(df, pd.DataFrame)
+        assert 1 == df.shape[0]
+        assert {"metadata-key": "metadata-value"} == df["metadata"][0]
+
+    def test_event_list_to_pandas_empty(self, mock_events_empty):
+        import pandas as pd
+
+        df = EVENTS_API.list().to_pandas()
+        assert isinstance(df, pd.DataFrame)
+        assert df.empty
+
+    def test_event_to_pandas(self, mock_events_response):
+        import pandas as pd
+
+        df = EVENTS_API.get(id=1).to_pandas()
+        print(df)
+        assert isinstance(df, pd.DataFrame)
+        assert "metadata" not in df.columns
+        assert [1] == df.loc["assetIds"][0]
+        assert "metadata-value" == df.loc["metadata-key"][0]

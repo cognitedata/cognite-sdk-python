@@ -4,18 +4,16 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-sphinx = "*"
+
 pandas = "*"
 requests = "*"
-protobuf = "*"
-sphinx-rtd-theme = "*"
 cognite-logger = "==0.4.*"
-pytest-mock = "*"
 
 [dev-packages]
+sphinx = "*"
+sphinx-rtd-theme = "*"
 pytest-cov = "*"
 twine = "*"
-"yolk3k" = "*"
 pytest = "*"
 black = "==19.3b0"
 strip-hints = "*"

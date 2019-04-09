@@ -5,12 +5,14 @@ import pytest
 import responses
 
 from cognite.client import CogniteClient
+from cognite.client._utils import utils
 from cognite.client.api.assets import AssetsAPI
 from cognite.client.api.datapoints import DatapointsAPI
 from cognite.client.api.events import EventsAPI
 from cognite.client.api.files import FilesAPI
 from cognite.client.api.login import LoginAPI
 from cognite.client.api.time_series import TimeSeriesAPI
+from cognite.client.exceptions import CogniteImportError
 from tests.utils import BASE_URL
 
 
@@ -56,3 +58,19 @@ def disable_gzip():
     os.environ["COGNITE_DISABLE_GZIP"] = "1"
     yield
     del os.environ["COGNITE_DISABLE_GZIP"]
+
+
+def pytest_addoption(parser):
+    parser.addoption(
+        "--test-deps-only-core", action="store_true", default=False, help="Test only core deps are installed"
+    )
+
+
+def pytest_collection_modifyitems(config, items):
+    if config.getoption("--test-deps-only-core"):
+        # --runslow given in cli: do not skip slow tests
+        return
+    skip_slow = pytest.mark.skip(reason="need ----test-deps-only-core option to run")
+    for item in items:
+        if "coredeps" in item.keywords:
+            item.add_marker(skip_slow)

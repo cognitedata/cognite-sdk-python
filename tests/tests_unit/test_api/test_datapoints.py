@@ -520,6 +520,104 @@ class TestDatapointsObject:
         assert [1] == res.timestamp
 
 
+@pytest.mark.dsl
+class TestPandasIntegration:
+    def test_datapoint(self):
+        import pandas as pd
+
+        d = Datapoint(timestamp=0, value=2, max=3)
+        expected_df = pd.DataFrame({"value": [2], "max": [3]}, index=[utils.ms_to_datetime(0)])
+        pd.testing.assert_frame_equal(expected_df, d.to_pandas(), check_like=True)
+
+    def test_datapoints(self):
+        import pandas as pd
+
+        d = Datapoints(id=1, timestamp=[1, 2, 3], average=[2, 3, 4], step_interpolation=[3, 4, 5])
+        print(d.to_pandas())
+        expected_df = pd.DataFrame(
+            {"1|average": [2, 3, 4], "1|stepInterpolation": [3, 4, 5]},
+            index=[utils.ms_to_datetime(ms) for ms in [1, 2, 3]],
+        )
+        pd.testing.assert_frame_equal(expected_df, d.to_pandas())
+
+    def test_datapoints_empty(self):
+        d = Datapoints(external_id="1", timestamp=[], value=[])
+        assert d.to_pandas().empty
+
+    def test_datapoints_list(self):
+        import pandas as pd
+
+        d1 = Datapoints(id=1, timestamp=[1, 2, 3], average=[2, 3, 4], step_interpolation=[3, 4, 5])
+        d2 = Datapoints(id=2, timestamp=[1, 2, 3], max=[2, 3, 4], step_interpolation=[3, 4, 5])
+        d3 = Datapoints(id=3, timestamp=[1, 3], value=[1, 3])
+        dps_list = DatapointsList([d1, d2, d3])
+        expected_df = pd.DataFrame(
+            {
+                "1|average": [2, 3, 4],
+                "1|stepInterpolation": [3, 4, 5],
+                "2|max": [2, 3, 4],
+                "2|stepInterpolation": [3, 4, 5],
+                "3": [1, None, 3],
+            },
+            index=[utils.ms_to_datetime(ms) for ms in [1, 2, 3]],
+        )
+        pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas())
+
+    def test_datapoints_list_non_aligned(self):
+        import pandas as pd
+
+        d1 = Datapoints(id=1, timestamp=[1, 2, 3], value=[1, 2, 3])
+        d2 = Datapoints(id=2, timestamp=[3, 4, 5], value=[3, 4, 5])
+
+        dps_list = DatapointsList([d1, d2])
+
+        expected_df = pd.DataFrame(
+            {"1": [1, 2, 3, None, None], "2": [None, None, 3, 4, 5]},
+            index=[utils.ms_to_datetime(ms) for ms in [1, 2, 3, 4, 5]],
+        )
+        pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas())
+
+    def test_datapoints_list_empty(self):
+        dps_list = DatapointsList([])
+        assert dps_list.to_pandas().empty
+
+    def test_get_dataframe(self, mock_get_datapoints):
+        df = DPS_CLIENT.get_dataframe(
+            id=[1, {"id": 2, "aggregates": ["max"]}],
+            external_id=["abc"],
+            start=1000000,
+            end=1100000,
+            aggregates=["average"],
+            granularity="10s",
+        )
+        assert {"1|average", "2|max", "-1|average"} == set(df.columns)
+        assert df.shape[0] > 0
+
+    def test_insert_dataframe(self, mock_post_datapoints):
+        import pandas as pd
+
+        timestamps = [1500000000000, 1510000000000, 1520000000000, 1530000000000]
+        df = pd.DataFrame(
+            {"123": [1, 2, 3, 4], "456": [5.0, 6.0, 7.0, 8.0]}, index=[utils.ms_to_datetime(ms) for ms in timestamps]
+        )
+        res = DPS_CLIENT.insert_dataframe(df)
+        assert res is None
+        request_bodies = [jsgz_load(call.request.body) for call in mock_post_datapoints.calls]
+        assert {
+            "items": [
+                {"id": 123, "datapoints": [{"timestamp": ts, "value": val} for ts, val in zip(timestamps, range(1, 5))]}
+            ]
+        } in request_bodies
+        assert {
+            "items": [
+                {
+                    "id": 456,
+                    "datapoints": [{"timestamp": ts, "value": float(val)} for ts, val in zip(timestamps, range(5, 9))],
+                }
+            ]
+        } in request_bodies
+
+
 class TestHelpers:
     @pytest.mark.parametrize(
         "start, end, granularity, num_of_workers, expected_output",
