@@ -105,7 +105,7 @@ def json_dump_default(x):
         return int(x)
     if isinstance(x, Decimal):
         return float(x)
-    elif hasattr(x, __dict__):
+    elif hasattr(x, "__dict__"):
         return x.__dict__
     return x
 

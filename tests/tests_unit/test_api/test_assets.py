@@ -1,11 +1,12 @@
 import json
+import queue
 import re
-import threading
+import time
 
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.api.assets import Asset, AssetList, AssetPoster, AssetPosterWorker, AssetQueue, AssetUpdate
+from cognite.client.api.assets import Asset, AssetList, AssetPoster, AssetPosterWorker, AssetUpdate
 from tests.utils import jsgz_load
 
 ASSETS_API = CogniteClient().assets
@@ -38,6 +39,16 @@ def mock_assets_response(rsps):
     rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
     rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
     yield rsps
+
+
+@pytest.fixture
+def set_limit():
+    def set_limit(limit):
+        ASSETS_API._LIMIT = limit
+
+    limit_tmp = ASSETS_API._LIMIT
+    yield set_limit
+    ASSETS_API._LIMIT = limit_tmp
 
 
 class TestAssets:
@@ -122,109 +133,71 @@ class TestAssets:
         )
 
 
-class TestAssetQueue:
-    def test_get_asset(self):
-        q = AssetQueue(assets=[Asset()])
-        assert Asset() == q.get_asset()
-        assert q.empty()
-
-
-@pytest.mark.usefixtures("mock_assets_response")
 class TestAssetPosterWorker:
-    @pytest.fixture
-    def asset_worker_and_queue(self):
-        q = AssetQueue([Asset(ref_id="1")])
-        remaining_assets = [Asset()]
-        ASSETS_API._LIMIT = 1
-        worker = AssetPosterWorker(ASSETS_API, q, remaining_assets, AssetList([]), threading.Lock())
-        yield worker, q
-        ASSETS_API._LIMIT = 1000
+    def test_run(self, mock_assets_response):
+        q_req = queue.Queue()
+        q_res = queue.Queue()
 
-    def test_worker_get_assets_from_queue(self, asset_worker_and_queue):
-        worker, q = asset_worker_and_queue
-        worker.start()
-        q.put(Asset())
-        worker.remaining_assets = []
-        worker.join()
-        assert q.empty()
-        assert 2 == len(worker.created_assets)
-
-    def test_fill_empty_buffer(self, asset_worker_and_queue):
-        worker, q = asset_worker_and_queue
-
-        worker.fill_buffer_with_assets_from_queue()
-        assert [Asset(ref_id="1")] == worker.asset_buffer
-        assert worker.buffer_is_full()
-
-        worker.empty_buffer()
-        assert [] == worker.asset_buffer
-        assert worker.buffer_is_empty()
-
-    def test_all_assets_posted(self, asset_worker_and_queue):
-        worker, q = asset_worker_and_queue
-        assert not worker.all_assets_posted()
-        worker.start()
-        worker.remaining_assets = []
-        worker.join()
-        assert worker.all_assets_posted()
-
-    def test_update_ref_id_map(self, asset_worker_and_queue):
-        worker, q = asset_worker_and_queue
-        worker.asset_buffer = (Asset(ref_id="1"), Asset(ref_id="2"))
-        worker.update_ref_id_map([1, 2])
-        assert {"1": 1, "2": 2} == worker.ref_id_map
-
-    def test_fill_queue_with_unblocked_assets(self, asset_worker_and_queue):
-        worker, q = asset_worker_and_queue
-        worker.remaining_assets = [Asset(parent_ref_id="1"), Asset(parent_ref_id="1")]
-        worker.fill_buffer_with_assets_from_queue()
-        worker.post_assets_in_buffer()
-        worker.fill_queue_with_unblocked_assets()
-        assert [Asset(parent_id=1), Asset(parent_id=1)] == [q.get_asset(), q.get_asset()]
+        AssetPosterWorker(
+            request_queue=q_req, response_queue=q_res, client=ASSETS_API, assets_remaining=lambda: True
+        ).start()
+        q_req.put([Asset()])
+        time.sleep(0.1)
+        assert [Asset._load(mock_assets_response.calls[0].response.json()["data"]["items"][0])] == q_res.get()
+        assert 1 == len(mock_assets_response.calls)
 
 
 class TestAssetPoster:
-    def test_get_unblocked_assets(self):
-        assets = [Asset(ref_id="1"), Asset(parent_ref_id="1"), Asset(parent_id=1), Asset()]
-        ap = AssetPoster(assets, ASSETS_API)
-        assert [Asset(ref_id="1"), Asset(parent_id=1), Asset()] == ap.get_unblocked_assets()
-
-    def test_initialize_queue(self):
-        assets = [Asset(ref_id="1"), Asset(parent_ref_id="1"), Asset(parent_id=1), Asset()]
-        ap = AssetPoster(assets, ASSETS_API)
-        ap.initialize_queue()
-        assert [Asset(ref_id="1"), Asset(parent_id=1), Asset()] == [ap.queue.get_asset() for i in range(3)]
-
     def test_validate_asset_hierarchy_parent_ref_null_pointer(self):
         assets = [Asset(parent_ref_id="1")]
-        ap = AssetPoster(assets, ASSETS_API)
         with pytest.raises(AssertionError, match="does not point"):
-            ap.validate_asset_hierarchy()
+            AssetPoster.validate_asset_hierarchy(assets)
 
     def test_validate_asset_hierarchy_asset_has_parent_id_and_parent_ref_id(self):
         assets = [Asset(ref_id="1"), Asset(parent_ref_id="1", parent_id=1)]
-        ap = AssetPoster(assets, ASSETS_API)
         with pytest.raises(AssertionError, match="has both"):
-            ap.validate_asset_hierarchy()
+            AssetPoster.validate_asset_hierarchy(assets)
+
+    def test_initialize_ref_id_to_remaining_children_map(self):
+        assets = [
+            Asset(ref_id="0"),
+            Asset(parent_ref_id="0", ref_id="1"),
+            Asset(parent_ref_id="1"),
+            Asset(parent_ref_id="1"),
+        ]
+
+        assert {
+            "0": [Asset(parent_ref_id="0", ref_id="1")],
+            "1": [Asset(parent_ref_id="1"), Asset(parent_ref_id="1")],
+        } == AssetPoster.initialize_ref_id_to_remaining_children_map(assets)
+
+    def test_(self):
+        pass
 
     @pytest.fixture
     def mock_post_asset_hierarchy(self, rsps):
-        ASSETS_API._LIMIT = 100
+        ASSETS_API._max_workers = 1
 
         def request_callback(request):
             items = jsgz_load(request.body)["items"]
             response_assets = []
             for item in items:
-                response_assets.append({"id": item["refId"] + "id", "parentId": item.get("parentId")})
+                parent_id = None
+                if "parentId" in item:
+                    parent_id = item["parentId"]
+                if "parentRefId" in item:
+                    parent_id = item["parentRefId"] + "id"
+                response_assets.append({"id": item["refId"] + "id", "parentId": parent_id})
             return 200, {}, json.dumps({"data": {"items": response_assets}})
 
         rsps.add_callback(
             rsps.POST, ASSETS_API._base_url + "/assets", callback=request_callback, content_type="application/json"
         )
         yield rsps
-        ASSETS_API._LIMIT = 1000
+        ASSETS_API._max_workers = 10
 
-    def test_post_hierarchy(self, mock_post_asset_hierarchy):
+    def test_post_hierarchy__depth_3__children_per_node_10(self, mock_post_asset_hierarchy, set_limit):
+        set_limit(100)
         assets = [Asset(ref_id="0")]
         for i in range(10):
             assets.append(Asset(parent_ref_id="0", ref_id="0{}".format(i)))
@@ -235,9 +208,24 @@ class TestAssetPoster:
 
         created_assets = ASSETS_API.create(assets)
         assert len(assets) == len(created_assets)
-        assert 13 == len(mock_post_asset_hierarchy.calls)
+        assert 12 == len(mock_post_asset_hierarchy.calls)
         for asset in created_assets:
             if asset.id == "0id":
                 assert asset.parent_id is None
             else:
                 assert asset.id[:-3] == asset.parent_id[:-2]
+
+    def test_post_hierarchy__depth_101__children_per_node_1(self, mock_post_asset_hierarchy, set_limit):
+        set_limit(100)
+        assets = [Asset(ref_id="0")]
+        for i in range(1, 101):
+            assets.append(Asset(ref_id=str(i), parent_ref_id=str(i - 1)))
+
+        created_assets = ASSETS_API.create(assets)
+        assert len(assets) == len(created_assets)
+        assert 2 == len(mock_post_asset_hierarchy.calls)
+        for asset in created_assets:
+            if asset.id == "0id":
+                assert asset.parent_id is None
+            else:
+                assert int(asset.id[:-2]) - 1 == int(asset.parent_id[:-2])

@@ -1,5 +1,6 @@
 import queue
 import threading
+from collections import defaultdict
 
 from cognite.client._utils import utils
 from cognite.client._utils.api_client import APIClient
@@ -395,126 +396,134 @@ class AssetsAPI(APIClient):
         )
 
 
-class AssetQueue(queue.Queue):
-    def __init__(self, assets: List[Asset]):
-        super().__init__()
-        for asset in assets:
-            self.put(asset)
-
-    def get_asset(self):
-        try:
-            return self.get_nowait()
-        except queue.Empty:
-            return
+lock = threading.Lock()
 
 
 class AssetPosterWorker(threading.Thread):
     def __init__(
-        self,
-        client: AssetsAPI,
-        asset_queue: AssetQueue,
-        remaining_assets: List[Asset],
-        created_assets: AssetList,
-        lock: threading.Lock,
+        self, client: AssetsAPI, request_queue: queue.Queue, response_queue: queue.Queue, assets_remaining: Callable
     ):
         self.client = client
-        self.asset_queue = asset_queue
-        self.remaining_assets = remaining_assets
-        self.asset_buffer = []
-        self.color = None
-        self.ref_id_map = {}
-        self.lock = lock
-        self.created_assets = created_assets
-        super().__init__()
+        self.request_queue = request_queue
+        self.response_queue = response_queue
+        self.assets_remaining = assets_remaining
+        super().__init__(daemon=True)
 
-    def buffer_is_full(self):
-        return len(self.asset_buffer) == self.client._LIMIT
-
-    def buffer_is_empty(self):
-        return len(self.asset_buffer) == 0
-
-    def all_assets_posted(self):
-        return len(self.remaining_assets) == 0 and self.asset_queue.empty()
-
-    def fill_buffer_with_assets_from_queue(self):
-        with self.lock:
-            while not self.asset_queue.empty() and not self.buffer_is_full():
-                asset = self.asset_queue.get_asset()
-                if asset:
-                    self.asset_buffer.append(asset)
-
-    def post_assets_in_buffer(self):
-        res = self.client.create(self.asset_buffer)
-        self.created_assets.extend(res)
-        self.update_ref_id_map([asset.id for asset in res])
-
-    def update_ref_id_map(self, ids):
-        for i, asset in enumerate(self.asset_buffer):
-            if asset.ref_id:
-                self.ref_id_map[asset.ref_id] = ids[i]
-
-    def empty_buffer(self):
-        self.asset_buffer = []
-
-    def fill_queue_with_unblocked_assets(self):
-        unblocked_assets = []
-        for asset in self.remaining_assets:
-            if asset.parent_ref_id in self.ref_id_map:
-                unblocked_assets.append(asset)
-        with self.lock:
-            for asset in unblocked_assets:
-                self.remaining_assets.remove(asset)
-                asset.parent_id = self.ref_id_map[asset.parent_ref_id]
-                asset.parent_ref_id = None
-                self.asset_queue.put(asset)
+    @staticmethod
+    def set_ref_id_on_assets_in_response(assets_in_request, assets_in_response):
+        for i, asset in enumerate(assets_in_request):
+            assets_in_response[i].ref_id = asset.ref_id
+            assets_in_response[i].parent_ref_id = asset.parent_ref_id
+        return assets_in_response
 
     def run(self):
-        while not self.all_assets_posted():
-            self.fill_buffer_with_assets_from_queue()
-            if not self.buffer_is_empty():
-                self.post_assets_in_buffer()
-                self.empty_buffer()
-                self.fill_queue_with_unblocked_assets()
+        while self.assets_remaining():
+            request = self.request_queue.get()
+            response = self.client.create(request)
+            assets = self.set_ref_id_on_assets_in_response(request, response)
+            self.response_queue.put(assets)
 
 
 class AssetPoster:
     def __init__(self, assets: List[Asset], client: AssetsAPI):
-        self.assets = [Asset._load(a.dump(camel_case=True)) for a in assets]
-        self.queue = None
+        self.validate_asset_hierarchy(assets)
+
+        self.remaining_assets = [Asset._load(a.dump(camel_case=True)) for a in assets]
         self.client = client
+
+        self.number_of_assets = len(assets)
+
+        self.ref_id_to_remaining_children = self.initialize_ref_id_to_remaining_children_map(self.remaining_assets)
+        self.ref_id_to_id = {}
+
+        self.request_queue = queue.Queue()
+        self.response_queue = queue.Queue()
+
         self.created_assets = AssetList([])
-        self.lock = threading.Lock()
 
-    def get_unblocked_assets(self):
-        assets_without_dependencies = []
-        for asset in self.assets:
-            if asset.parent_ref_id is None or asset.parent_id is not None:
-                assets_without_dependencies.append(asset)
-        return assets_without_dependencies
-
-    def initialize_queue(self):
-        unblocked_assets = self.get_unblocked_assets()
-        for asset in unblocked_assets:
-            self.assets.remove(asset)
-        self.queue = AssetQueue(unblocked_assets)
-
-    def validate_asset_hierarchy(self):
-        ref_ids = [asset.ref_id for asset in self.assets if asset.ref_id is not None]
-        for asset in self.assets:
+    @staticmethod
+    def validate_asset_hierarchy(assets: List[Asset]) -> None:
+        ref_ids = [asset.ref_id for asset in assets if asset.ref_id is not None]
+        for asset in assets:
             parent_ref = asset.parent_ref_id
             if parent_ref:
                 assert parent_ref in ref_ids, "parent_ref_id '{}' does not point to anything".format(parent_ref)
                 assert asset.parent_id is None, "An asset has both parent_id and parent_ref_id set."
 
+    @staticmethod
+    def initialize_ref_id_to_remaining_children_map(assets: List[Asset]) -> Dict[str, List[Asset]]:
+        ref_id_to_children = {asset.ref_id: [] for asset in assets if asset.ref_id is not None}
+        for asset in assets:
+            if asset.parent_ref_id in ref_id_to_children:
+                ref_id_to_children[asset.parent_ref_id].append(asset)
+        return ref_id_to_children
+
+    def get_descendants_unblocked_by_ref_id(self, assets: List[Asset], limit):
+        unblocked_children = []
+        for asset in assets:
+            if asset.ref_id in self.ref_id_to_remaining_children:
+                asset_children = self.ref_id_to_remaining_children[asset.ref_id].copy()
+                for child_asset in asset_children:
+                    unblocked_children.append(child_asset)
+                    self.ref_id_to_remaining_children[asset.ref_id].remove(child_asset)
+                    if len(unblocked_children) == limit:
+                        return unblocked_children
+
+                    max_descendents = limit - len(unblocked_children)
+                    unblocked_children.extend(self.get_descendants_unblocked_by_ref_id([child_asset], max_descendents))
+                    if len(unblocked_children) == limit:
+                        return unblocked_children
+        return unblocked_children
+
+    def get_unblocked_assets(self, limit) -> List[Asset]:
+        unblocked_assets = []
+
+        for asset in self.remaining_assets:
+            if asset.parent_ref_id is None or asset.parent_id is not None:
+                unblocked_assets.append(asset)
+            elif self.ref_id_to_id.get(asset.parent_ref_id) is not None:
+                asset.parent_id = self.ref_id_to_id[asset.parent_ref_id]
+                unblocked_assets.append(asset)
+            if len(unblocked_assets) == limit:
+                break
+
+        if len(unblocked_assets) < limit:
+            max_descendents = limit - len(unblocked_assets)
+            unblocked_assets.extend(self.get_descendants_unblocked_by_ref_id(unblocked_assets, max_descendents))
+
+        for unblocked_asset in unblocked_assets:
+            self.remaining_assets.remove(unblocked_asset)
+
+        return unblocked_assets
+
+    def update_ref_id_to_id_map(self, assets):
+        for asset in assets:
+            if asset.ref_id is not None:
+                self.ref_id_to_id[asset.ref_id] = asset.id
+
+    def assets_remaining(self):
+        return len(self.created_assets) < self.number_of_assets
+
+    def run(self):
+        unblocked_assets = self.get_unblocked_assets(self.client._LIMIT)
+        self.request_queue.put(unblocked_assets)
+        while self.assets_remaining():
+            posted_assets = self.response_queue.get()
+            self.update_ref_id_to_id_map(posted_assets)
+            self.created_assets.extend(posted_assets)
+            unblocked_assets = self.get_unblocked_assets(self.client._LIMIT)
+            self.request_queue.put(unblocked_assets)
+
     def post(self):
-        self.validate_asset_hierarchy()
-        self.initialize_queue()
         workers = []
         for _ in range(self.client._max_workers):
-            worker = AssetPosterWorker(self.client, self.queue, self.assets, self.created_assets, self.lock)
+            worker = AssetPosterWorker(self.client, self.request_queue, self.response_queue, self.assets_remaining)
             workers.append(worker)
             worker.start()
 
+        self.run()
+
         for worker in workers:
             worker.join()
+
         return self.created_assets
