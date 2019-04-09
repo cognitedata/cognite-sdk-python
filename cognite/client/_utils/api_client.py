@@ -13,7 +13,7 @@ from urllib3 import Retry
 
 from cognite.client._utils import utils
 from cognite.client._utils.base import CogniteResource, CogniteUpdate
-from cognite.client.exceptions import APIError
+from cognite.client.exceptions import CogniteAPIError
 
 log = logging.getLogger("cognite-sdk")
 
@@ -366,7 +366,7 @@ class APIClient:
             msg = res.content
 
         log.error("HTTP Error %s: %s", code, msg, extra={"X-Request-ID": x_request_id, "extra": extra})
-        raise APIError(msg, code, x_request_id, extra=extra)
+        raise CogniteAPIError(msg, code, x_request_id, extra=extra)
 
     @staticmethod
     def _log_request(res: Response, **kwargs):

@@ -1,7 +1,8 @@
 import json
+from typing import Dict
 
 
-class APIError(Exception):
+class CogniteAPIError(Exception):
     """Cognite API Error
 
     Raised if a given request fails.
@@ -31,7 +32,7 @@ class APIError(Exception):
                 print("The message returned from the API: {}".format(e.message))
     """
 
-    def __init__(self, message, code=None, x_request_id=None, extra=None):
+    def __init__(self, message: str, code: int = None, x_request_id: str = None, extra: Dict = None):
         self.message = message
         self.code = code
         self.x_request_id = x_request_id

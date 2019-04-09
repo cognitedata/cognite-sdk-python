@@ -4,7 +4,7 @@ from collections import namedtuple
 
 import pytest
 
-from cognite.client import APIError
+from cognite.client import CogniteAPIError
 from cognite.client._utils.api_client import APIClient
 from cognite.client._utils.base import *
 from tests.utils import jsgz_load
@@ -66,19 +66,19 @@ class TestBasicRequests:
     @pytest.mark.usefixtures("mock_all_requests_fail")
     @pytest.mark.parametrize("name, method, kwargs", request_cases)
     def test_requests_fail(self, name, method, kwargs):
-        with pytest.raises(APIError, match="Client error") as e:
+        with pytest.raises(CogniteAPIError, match="Client error") as e:
             method(**kwargs)
         assert e.value.code == 400
 
-        with pytest.raises(APIError, match="Server error") as e:
+        with pytest.raises(CogniteAPIError, match="Server error") as e:
             method(**kwargs)
         assert e.value.code == 500
 
-        with pytest.raises(APIError, match="Server error") as e:
+        with pytest.raises(CogniteAPIError, match="Server error") as e:
             method(**kwargs)
         assert e.value.code == 500
 
-        with pytest.raises(APIError, match="Client error | code: 400 | X-Request-ID:") as e:
+        with pytest.raises(CogniteAPIError, match="Client error | code: 400 | X-Request-ID:") as e:
             method(**kwargs)
         assert e.value.code == 400
         assert e.value.message == "Client error"
@@ -143,7 +143,7 @@ class TestStandardRetrieve:
 
     def test_standard_retrieve_fail(self, rsps):
         rsps.add(rsps.GET, BASE_URL + URL_PATH + "/1", status=400, json={"error": {"message": "Client Error"}})
-        with pytest.raises(APIError, match="Client Error") as e:
+        with pytest.raises(CogniteAPIError, match="Client Error") as e:
             API_CLIENT._retrieve(cls=SomeResource, resource_path=URL_PATH, id=1)
         assert "Client Error" == e.value.message
         assert 400 == e.value.code
@@ -210,7 +210,7 @@ class TestStandardRetrieveById:
 
     def test_standard_retrieve_multiple_fail(self, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH + "/byids", status=400, json={"error": {"message": "Client Error"}})
-        with pytest.raises(APIError, match="Client Error") as e:
+        with pytest.raises(CogniteAPIError, match="Client Error") as e:
             API_CLIENT._retrieve_multiple(cls=SomeResourceList, resource_path=URL_PATH, wrap_ids=True, ids=[1, 2])
         assert "Client Error" == e.value.message
         assert 400 == e.value.code
@@ -249,7 +249,7 @@ class TestStandardList:
 
     def test_standard_list_fail(self, rsps):
         rsps.add(rsps.GET, BASE_URL + URL_PATH, status=400, json={"error": {"message": "Client Error"}})
-        with pytest.raises(APIError, match="Client Error") as e:
+        with pytest.raises(CogniteAPIError, match="Client Error") as e:
             API_CLIENT._list(cls=SomeResourceList, resource_path=URL_PATH, method="GET")
         assert 400 == e.value.code
         assert "Client Error" == e.value.message
@@ -363,7 +363,7 @@ class TestStandardCreate:
 
     def test_standard_create_fail(self, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH, status=400, json={"error": {"message": "Client Error"}})
-        with pytest.raises(APIError, match="Client Error") as e:
+        with pytest.raises(CogniteAPIError, match="Client Error") as e:
             API_CLIENT._create_multiple(
                 cls=SomeResourceList, resource_path=URL_PATH, items=[SomeResource(1, 1), SomeResource(1)]
             )
@@ -401,7 +401,7 @@ class TestStandardDelete:
 
     def test_standard_delete_multiple_fail(self, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH + "/delete", status=400, json={"error": {"message": "Client Error"}})
-        with pytest.raises(APIError, match="Client Error") as e:
+        with pytest.raises(CogniteAPIError, match="Client Error") as e:
             API_CLIENT._delete_multiple(resource_path=URL_PATH, wrap_ids=False, ids=[1, 2])
         assert 400 == e.value.code
         assert "Client Error" == e.value.message
@@ -476,7 +476,7 @@ class TestStandardUpdate:
     def test_standard_update_fail(self, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH + "/update", status=400, json={"error": {"message": "Client Error"}})
 
-        with pytest.raises(APIError, match="Client Error"):
+        with pytest.raises(CogniteAPIError, match="Client Error"):
             API_CLIENT._update_multiple(SomeResourceList, resource_path=URL_PATH, items=[])
 
 
@@ -497,7 +497,7 @@ class TestStandardSearch:
     def test_standard_search_fail(self, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH + "/search", status=400, json={"error": {"message": "Client Error"}})
 
-        with pytest.raises(APIError, match="Client Error") as e:
+        with pytest.raises(CogniteAPIError, match="Client Error") as e:
             API_CLIENT._search(cls=SomeResourceList, resource_path=URL_PATH, json={})
         assert "Client Error" == e.value.message
         assert 400 == e.value.code
