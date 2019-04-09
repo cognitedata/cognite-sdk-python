@@ -396,9 +396,6 @@ class AssetsAPI(APIClient):
         )
 
 
-lock = threading.Lock()
-
-
 class AssetPosterWorker(threading.Thread):
     def __init__(
         self, client: AssetsAPI, request_queue: queue.Queue, response_queue: queue.Queue, assets_remaining: Callable
