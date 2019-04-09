@@ -171,6 +171,12 @@ class TestLocalImport:
         with pytest.raises(CogniteImportError, match="requires 'not-a-module' to be installed"):
             utils.local_import("pandas", "not-a-module")
 
+    @pytest.mark.coredeps
+    def test_dsl_deps_not_installed(self):
+        for dep in ["numpy", "pandas"]:
+            with pytest.raises(CogniteImportError, match=dep):
+                utils.local_import(dep)
+
 
 class TestJsonDumpDefault:
     def test_json_serializable_Decimal(self):
