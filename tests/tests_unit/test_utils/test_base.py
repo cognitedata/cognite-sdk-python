@@ -141,6 +141,7 @@ class TestCogniteResourceList:
             [MyResource(1, 2), MyResource(2, 3)]
         ).dump()
 
+    @pytest.mark.dsl
     def test_to_pandas(self):
         import pandas as pd
 

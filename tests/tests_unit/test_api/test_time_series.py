@@ -143,22 +143,26 @@ def mock_time_series_empty(rsps):
 
 @pytest.mark.dsl
 class TestPandasIntegration:
-    import pandas as pd
-
     def test_time_series_list_to_pandas(self, mock_ts_response):
+        import pandas as pd
+
         df = TS_API.list().to_pandas()
-        assert isinstance(df, self.pd.DataFrame)
+        assert isinstance(df, pd.DataFrame)
         assert 1 == df.shape[0]
         assert {"metadata-key": "metadata-value"} == df["metadata"][0]
 
     def test_time_series_list_to_pandas_empty(self, mock_time_series_empty):
+        import pandas as pd
+
         df = TS_API.list().to_pandas()
-        assert isinstance(df, self.pd.DataFrame)
+        assert isinstance(df, pd.DataFrame)
         assert df.empty
 
     def test_time_series_to_pandas(self, mock_ts_response):
+        import pandas as pd
+
         df = TS_API.get(id=1).to_pandas()
-        assert isinstance(df, self.pd.DataFrame)
+        assert isinstance(df, pd.DataFrame)
         assert "metadata" not in df.columns
         assert [0] == df.loc["securityCategories"][0]
         assert "metadata-value" == df.loc["metadata-key"][0]

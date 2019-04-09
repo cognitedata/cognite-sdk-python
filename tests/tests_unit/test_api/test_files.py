@@ -224,22 +224,26 @@ def mock_files_empty(rsps):
 
 @pytest.mark.dsl
 class TestPandasIntegration:
-    import pandas as pd
-
     def test_file_list_to_pandas(self, mock_files_response):
+        import pandas as pd
+
         df = FILES_API.list().to_pandas()
-        assert isinstance(df, self.pd.DataFrame)
+        assert isinstance(df, pd.DataFrame)
         assert 1 == df.shape[0]
         assert {"metadata-key": "metadata-value"} == df["metadata"][0]
 
     def test_file_list_to_pandas_empty(self, mock_files_empty):
+        import pandas as pd
+
         df = FILES_API.list().to_pandas()
-        assert isinstance(df, self.pd.DataFrame)
+        assert isinstance(df, pd.DataFrame)
         assert df.empty
 
     def test_file_to_pandas(self, mock_files_response):
+        import pandas as pd
+
         df = FILES_API.get(id=1).to_pandas()
-        assert isinstance(df, self.pd.DataFrame)
+        assert isinstance(df, pd.DataFrame)
         assert "metadata" not in df.columns
         assert [1] == df.loc["assetIds"][0]
         assert "metadata-value" == df.loc["metadata-key"][0]

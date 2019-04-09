@@ -133,24 +133,28 @@ def mock_events_empty(rsps):
 
 @pytest.mark.dsl
 class TestPandasIntegration:
-    import pandas as pd
-
     def test_event_list_to_pandas(self, mock_events_response):
+        import pandas as pd
+
         df = EVENTS_API.list().to_pandas()
         print(df)
-        assert isinstance(df, self.pd.DataFrame)
+        assert isinstance(df, pd.DataFrame)
         assert 1 == df.shape[0]
         assert {"metadata-key": "metadata-value"} == df["metadata"][0]
 
     def test_event_list_to_pandas_empty(self, mock_events_empty):
+        import pandas as pd
+
         df = EVENTS_API.list().to_pandas()
-        assert isinstance(df, self.pd.DataFrame)
+        assert isinstance(df, pd.DataFrame)
         assert df.empty
 
     def test_event_to_pandas(self, mock_events_response):
+        import pandas as pd
+
         df = EVENTS_API.get(id=1).to_pandas()
         print(df)
-        assert isinstance(df, self.pd.DataFrame)
+        assert isinstance(df, pd.DataFrame)
         assert "metadata" not in df.columns
         assert [1] == df.loc["assetIds"][0]
         assert "metadata-value" == df.loc["metadata-key"][0]
