@@ -46,7 +46,7 @@ podTemplate(
                 sh("pip3 install pipenv")
             }
             stage('Install core dependencies') {
-                sh("pipenv run pip install core-requirements.txt")
+                sh("pipenv run pip install -r core-requirements.txt")
             }
             stage('Test core') {
                 sh("pipenv run pytest tests -m 'not dsl' --test-deps-only-core")
