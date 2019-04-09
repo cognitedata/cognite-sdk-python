@@ -1,8 +1,6 @@
 import queue
 import threading
-from collections import defaultdict
 
-from cognite.client._utils import utils
 from cognite.client._utils.api_client import APIClient
 from cognite.client._utils.base import *
 
@@ -255,7 +253,6 @@ class AssetsAPI(APIClient):
         """List assets
 
         Args:
-            chunk_size (int, optional): Number of assets to return in each chunk. Defaults to yielding one event a time.
             name (str): Name of asset. Often referred to as tag.
             parent_ids (List[int]): No description.
             metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value

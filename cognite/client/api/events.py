@@ -1,4 +1,3 @@
-from typing import *
 from typing import List
 
 from cognite.client._utils.api_client import APIClient

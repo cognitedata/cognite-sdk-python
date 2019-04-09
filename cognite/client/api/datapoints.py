@@ -55,6 +55,18 @@ class Datapoint(CogniteResource):
         self.discrete_variance = discrete_variance
         self.total_variation = total_variation
 
+    def to_pandas(self):
+        pd = utils.local_import("pandas")
+
+        dumped = self.dump(camel_case=True)
+        timestamp = dumped.pop("timestamp")
+
+        for k, v in dumped.items():
+            dumped[k] = [v]
+        df = pd.DataFrame(dumped, index=[utils.ms_to_datetime(timestamp)])
+
+        return df
+
 
 class Datapoints:
     """An object representing a list of datapoints.
@@ -148,6 +160,21 @@ class Datapoints:
             dumped = {utils.to_camel_case(key): value for key, value in dumped.items()}
         return {key: value for key, value in dumped.items() if value is not None}
 
+    def to_pandas(self):
+        np, pd = utils.local_import("numpy", "pandas")
+        data_fields = {}
+        timestamps = []
+        identifier = self.id or self.external_id
+        for attr, value in self._get_non_empty_data_fields():
+            if attr == "timestamp":
+                timestamps = value
+            else:
+                id_with_agg = str(identifier)
+                if attr != "value":
+                    id_with_agg += "|{}".format(utils.to_camel_case(attr))
+                data_fields[id_with_agg] = value
+        return pd.DataFrame(data_fields, index=pd.DatetimeIndex(data=np.array(timestamps, dtype="datetime64[ms]")))
+
     @classmethod
     def _load(cls, dps_object):
         instance = cls()
@@ -186,6 +213,13 @@ class Datapoints:
 class DatapointsList(CogniteResourceList):
     _RESOURCE = Datapoints
     _ASSERT_CLASSES = False
+
+    def to_pandas(self):
+        pd = utils.local_import("pandas")
+        dfs = [df.to_pandas() for df in self.data]
+        if dfs:
+            return pd.concat(dfs, axis="columns")
+        return pd.DataFrame()
 
 
 class DatapointsQuery(CogniteResource):
@@ -237,7 +271,7 @@ class DatapointsAPI(APIClient):
         end: Union[int, str, datetime],
         id: Union[int, List[int], Dict[str, Union[int, List[str]]], List[Dict[str, Union[int, List[str]]]]] = None,
         external_id: Union[
-            int, List[int], Dict[str, Union[int, List[str]]], List[Dict[str, Union[int, List[str]]]]
+            str, List[str], Dict[str, Union[int, List[str]]], List[Dict[str, Union[int, List[str]]]]
         ] = None,
         aggregates: List[str] = None,
         granularity: str = None,
@@ -251,7 +285,7 @@ class DatapointsAPI(APIClient):
             end (Union[int, str, datetime]): Exclusive end.
             id (Union[int, List[int], Dict[str, Any], List[Dict[str, Any]]]: Id or list of ids. Can also be object
                 specifying aggregates. See example below.
-            external_id (Union[int, List[int], Dict[str, Any], List[Dict[str, Any]]]): External id or list of external
+            external_id (Union[str, List[str], Dict[str, Any], List[Dict[str, Any]]]): External id or list of external
                 ids. Can also be object specifying aggregates. See example below.
             aggregates (List[str]): List of aggregate functions to apply.
             granularity (str): The granularity to fetch aggregates at. e.g. '1s', '2h', '10d'.
@@ -590,11 +624,95 @@ class DatapointsAPI(APIClient):
     def _delete_datapoints_ranges(self, delete_range_objects):
         self._post(url_path=self._RESOURCE_PATH + "/delete", json={"items": delete_range_objects})
 
-    def get_dataframe(self):
-        raise NotImplementedError
+    def get_dataframe(
+        self,
+        start: Union[int, str, datetime],
+        end: Union[int, str, datetime],
+        aggregates: List[str],
+        granularity: str,
+        id: Union[int, List[int], Dict[str, Union[int, List[str]]], List[Dict[str, Union[int, List[str]]]]] = None,
+        external_id: Union[
+            str, List[str], Dict[str, Union[int, List[str]]], List[Dict[str, Union[int, List[str]]]]
+        ] = None,
+        limit: int = None,
+    ):
+        """Get a pandas dataframe describing the requested data.
 
-    def insert_dataframe(self):
-        raise NotImplementedError
+        Args:
+            start (Union[int, str, datetime]): Inclusive start.
+            end (Union[int, str, datetime]): Exclusive end.
+            aggregates (List[str]): List of aggregate functions to apply.
+            granularity (str): The granularity to fetch aggregates at. e.g. '1s', '2h', '10d'.
+            id (Union[int, List[int], Dict[str, Any], List[Dict[str, Any]]]: Id or list of ids. Can also be object
+                specifying aggregates. See example below.
+            external_id (Union[str, List[str], Dict[str, Any], List[Dict[str, Any]]]): External id or list of external
+                ids. Can also be object specifying aggregates. See example below.
+            limit (int): Maximum number of datapoints to return for each time series.
+
+        Returns:
+            pandas.DataFrame: The requested dataframe
+
+        Examples:
+
+            Get a pandas dataframe::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> df = c.datapoints.get_dataframe(id=[1,2,3], start="2w-ago", end="now",
+                ...         aggregates=["average"], granularity="1h")
+        """
+        return self.get(
+            id=id,
+            external_id=external_id,
+            start=start,
+            end=end,
+            aggregates=aggregates,
+            granularity=granularity,
+            limit=limit,
+        ).to_pandas()
+
+    def insert_dataframe(self, dataframe):
+        """Insert a dataframe.
+
+        The index of the dataframe must contain the timestamps. The names of the remaining columns specify the ids of
+        the time series to which column contents will be written.
+
+        Said time series must already exist.
+
+        Args:
+            dataframe (pandas.DataFrame):  Pandas DataFrame Object containing the time series.
+
+        Returns:
+            None
+
+        Examples:
+            Post a dataframe with white noise::
+
+                >>> import numpy as np
+                >>> import pandas as pd
+                >>> from cognite.client import CogniteClient
+                >>> from datetime import datetime, timedelta
+                >>>
+                >>> c = CogniteClient()
+                >>> ts_id = 123
+                >>> start = datetime(2018, 1, 1)
+                >>> # The scaling by 1000 is important: timestamp() returns seconds
+                >>> x = pd.DatetimeIndex([start + timedelta(days=d) for d in range(100)])
+                >>> y = np.random.normal(0, 1, 100)
+                >>> df = pd.DataFrame({ts_id: y}, index=x)
+                >>> res = c.datapoints.insert_dataframe(df)
+        """
+        dps = []
+        for col in dataframe.columns:
+            dps.append(
+                {
+                    "id": int(col),
+                    "datapoints": list(
+                        zip(dataframe.index.values.astype("datetime64[ms]").astype("int64").tolist(), dataframe[col])
+                    ),
+                }
+            )
+        self.insert_multiple(dps)
 
     def _get_datapoints_concurrently(
         self,

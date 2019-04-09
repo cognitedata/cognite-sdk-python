@@ -1,0 +1,5 @@
+requests>=2.21.0,<3.0.0
+cognite-logger==0.4.*
+pytest-cov
+pytest
+responses

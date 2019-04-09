@@ -20,6 +20,7 @@ class TestDocstringExamples:
     def test_assets(self):
         run_docstring_tests(assets)
 
+    @pytest.mark.dsl
     def test_datapoints(self):
         run_docstring_tests(datapoints)
 

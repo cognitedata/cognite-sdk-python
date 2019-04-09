@@ -18,15 +18,15 @@ def mock_assets_response(rsps):
         "data": {
             "items": [
                 {
+                    "path": [0],
                     "externalId": "string",
                     "name": "string",
                     "parentId": 1,
                     "description": "string",
-                    "metadata": {},
+                    "metadata": {"metadata-key": "metadata-value"},
                     "source": "string",
                     "id": 1,
                     "lastUpdatedTime": 0,
-                    "path": [0],
                     "depth": 0,
                 }
             ]
@@ -37,7 +37,6 @@ def mock_assets_response(rsps):
     rsps.assert_all_requests_are_fired = False
 
     rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
-    rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
     yield rsps
 
 
@@ -229,3 +228,37 @@ class TestAssetPoster:
                 assert asset.parent_id is None
             else:
                 assert int(asset.id[:-2]) - 1 == int(asset.parent_id[:-2])
+
+
+@pytest.fixture
+def mock_assets_empty(rsps):
+    url_pattern = re.compile(re.escape(ASSETS_API._base_url) + "/.+")
+    rsps.add(rsps.POST, url_pattern, status=200, json={"data": {"items": []}})
+    yield rsps
+
+
+@pytest.mark.dsl
+class TestPandasIntegration:
+    def test_asset_list_to_pandas(self, mock_assets_response):
+        import pandas as pd
+
+        df = ASSETS_API.list().to_pandas()
+        assert isinstance(df, pd.DataFrame)
+        assert 1 == df.shape[0]
+        assert {"metadata-key": "metadata-value"} == df["metadata"][0]
+
+    def test_asset_list_to_pandas_empty(self, mock_assets_empty):
+        import pandas as pd
+
+        df = ASSETS_API.list().to_pandas()
+        assert isinstance(df, pd.DataFrame)
+        assert df.empty
+
+    def test_asset_to_pandas(self, mock_assets_response):
+        import pandas as pd
+
+        df = ASSETS_API.get(id=1).to_pandas()
+        assert isinstance(df, pd.DataFrame)
+        assert "metadata" not in df.columns
+        assert [0] == df.loc["path"][0]
+        assert "metadata-value" == df.loc["metadata-key"][0]

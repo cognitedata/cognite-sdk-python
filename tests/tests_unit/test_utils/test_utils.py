@@ -7,6 +7,7 @@ from unittest import mock
 import pytest
 
 from cognite.client._utils import utils
+from cognite.client.exceptions import CogniteImportError
 
 
 class TestDatetimeToMs:
@@ -148,15 +149,59 @@ class TestCaseConversion:
         assert "a" == utils.to_snake_case("a")
 
 
+class TestLocalImport:
+    @pytest.mark.dsl
+    def test_local_import_single_ok(self):
+        import pandas
+
+        assert pandas == utils.local_import("pandas")
+
+    @pytest.mark.dsl
+    def test_local_import_multiple_ok(self):
+        import pandas, numpy
+
+        assert (pandas, numpy) == utils.local_import("pandas", "numpy")
+
+    def test_local_import_single_fail(self):
+        with pytest.raises(CogniteImportError, match="requires 'not-a-module' to be installed"):
+            utils.local_import("not-a-module")
+
+    @pytest.mark.dsl
+    def test_local_import_multiple_fail(self):
+        with pytest.raises(CogniteImportError, match="requires 'not-a-module' to be installed"):
+            utils.local_import("pandas", "not-a-module")
+
+    @pytest.mark.coredeps
+    def test_dsl_deps_not_installed(self):
+        for dep in ["numpy", "pandas"]:
+            with pytest.raises(CogniteImportError, match=dep):
+                utils.local_import(dep)
+
+
 class TestJsonDumpDefault:
-    import numpy as np
-
-    @pytest.mark.parametrize("input", [Decimal(1), np.int32(1), np.int64(1)])
-    def test_json_serializable(self, input):
+    def test_json_serializable_Decimal(self):
         with pytest.raises(TypeError):
-            json.dumps(input)
+            json.dumps(Decimal(1))
 
-        assert json.dumps(input, default=utils.json_dump_default)
+        assert json.dumps(Decimal(1), default=utils.json_dump_default)
+
+    def test_json_serializable_object(self):
+        class Obj:
+            def __init__(self):
+                self.x = 1
+
+        with pytest.raises(TypeError):
+            json.dumps(Obj())
+
+        assert json.dumps({"x": 1}) == json.dumps(Obj(), default=utils.json_dump_default)
+
+    @pytest.mark.dsl
+    def test_json_serialiable_numpy_integer(self):
+        import numpy as np
+
+        inputs = [np.int32(1), np.int64(1)]
+        for input in inputs:
+            assert json.dumps(input, default=utils.json_dump_default)
 
 
 class TestAssertions:

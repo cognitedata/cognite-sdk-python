@@ -30,7 +30,7 @@ Get login status
 ^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client.api.login.LoginAPI.status
 
-Data Transfer Objects
+Data Classes
 ^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: cognite.client.api.login
     :members:
@@ -61,7 +61,7 @@ Update Assets
 ^^^^^^^^^^^^^
 .. automethod:: cognite.client.api.assets.AssetsAPI.update
 
-Data Transfer Objects
+Data Classes
 ^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: cognite.client.api.assets
     :members:
@@ -92,7 +92,7 @@ Update Events
 ^^^^^^^^^^^^^
 .. automethod:: cognite.client.api.events.EventsAPI.update
 
-Data Transfer Objects
+Data Classes
 ^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: cognite.client.api.events
     :members:
@@ -136,7 +136,7 @@ Update Files metadata
 ^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client.api.files.FilesAPI.update
 
-Data Transfer Objects
+Data Classes
 ^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: cognite.client.api.files
     :members:
@@ -167,7 +167,7 @@ Update Time Series
 ^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client.api.time_series.TimeSeriesAPI.update
 
-Data Transfer Objects
+Data Classes
 ^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: cognite.client.api.time_series
     :members:
@@ -181,6 +181,10 @@ Datapoints
 Get datapoints
 ^^^^^^^^^^^^^^
 .. automethod:: cognite.client.api.datapoints.DatapointsAPI.get
+
+Get pandas dataframe
+^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client.api.datapoints.DatapointsAPI.get_dataframe
 
 Perform datapoints queries
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -198,6 +202,10 @@ Insert datapoints into multiple time series
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client.api.datapoints.DatapointsAPI.insert_multiple
 
+Insert pandas dataframe
+^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client.api.datapoints.DatapointsAPI.insert_dataframe
+
 Delete a range of datapoints
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client.api.datapoints.DatapointsAPI.delete_range
@@ -206,7 +214,8 @@ Delete ranges of datapoints
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client.api.datapoints.DatapointsAPI.delete_ranges
 
-Data Transfer Objects
+
+Data Classes
 ^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: cognite.client.api.datapoints
     :members:
