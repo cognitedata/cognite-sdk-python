@@ -130,33 +130,18 @@ class CogniteResource:
         ignore = [] if ignore is None else ignore
         pd = utils.local_import("pandas")
         dumped = self.dump(camel_case=True)
-        for key in expand:
-            if key in dumped:
-                if key in ignore:
-                    del dumped[key]
-                    continue
-                if isinstance(dumped[key], dict):
-                    dumped.update(dumped.pop(key))
-                    continue
-            raise AssertionError("Could not expand attribute '{}'".format(key))
 
-        remove = []
-        put_back = {}
-        for k, v in dumped.items():
-            if k in ignore or isinstance(v, (list, dict)):
-                remove.append(k)
-            if k not in ignore and isinstance(v, (list, dict)):
-                put_back[k] = v
-
-        for element in remove:
+        for element in ignore:
             del dumped[element]
+        for key in expand:
+            if key in dumped and isinstance(dumped[key], dict):
+                dumped.update(dumped.pop(key))
+            else:
+                raise AssertionError("Could not expand attribute '{}'".format(key))
 
-        df = pd.DataFrame.from_dict(dumped, orient="index")
-
-        for name, value in put_back.items():
+        df = pd.DataFrame(columns=["value"])
+        for name, value in dumped.items():
             df.loc[name] = [value]
-
-        df.columns = ["value"]
         return df
 
 

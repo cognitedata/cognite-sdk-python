@@ -125,7 +125,7 @@ class TestCogniteResource:
         expected_df.loc["md_key"] = ["md_value"]
 
         actual_df = SomeResource([1, 2, 3], {"x": "y"}, {"md_key": "md_value"}, {"bla": "bla"}, "abc", 1).to_pandas(
-            expand=["obExpand", "obIgnore"], ignore=["primIgnore", "obIgnore"]
+            expand=["obExpand"], ignore=["primIgnore", "obIgnore"]
         )
         pd.testing.assert_frame_equal(expected_df, actual_df, check_like=True)
 

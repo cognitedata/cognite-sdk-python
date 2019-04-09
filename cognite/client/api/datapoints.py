@@ -161,7 +161,7 @@ class Datapoints:
         return {key: value for key, value in dumped.items() if value is not None}
 
     def to_pandas(self):
-        pd = utils.local_import("pandas")
+        np, pd = utils.local_import("numpy", "pandas")
         data_fields = {}
         timestamps = []
         identifier = self.id or self.external_id
@@ -173,7 +173,7 @@ class Datapoints:
                 if attr != "value":
                     id_with_agg += "|{}".format(utils.to_camel_case(attr))
                 data_fields[id_with_agg] = value
-        return pd.DataFrame(data_fields, index=[utils.ms_to_datetime(ms) for ms in timestamps])
+        return pd.DataFrame(data_fields, index=pd.DatetimeIndex(data=np.array(timestamps, dtype="datetime64[ms]")))
 
     @classmethod
     def _load(cls, dps_object):
@@ -628,12 +628,12 @@ class DatapointsAPI(APIClient):
         self,
         start: Union[int, str, datetime],
         end: Union[int, str, datetime],
+        aggregates: List[str],
+        granularity: str,
         id: Union[int, List[int], Dict[str, Union[int, List[str]]], List[Dict[str, Union[int, List[str]]]]] = None,
         external_id: Union[
             str, List[str], Dict[str, Union[int, List[str]]], List[Dict[str, Union[int, List[str]]]]
         ] = None,
-        aggregates: List[str] = None,
-        granularity: str = None,
         limit: int = None,
     ):
         """Get a pandas dataframe describing the requested data.
@@ -697,14 +697,21 @@ class DatapointsAPI(APIClient):
                 >>> ts_id = 123
                 >>> start = datetime(2018, 1, 1)
                 >>> # The scaling by 1000 is important: timestamp() returns seconds
-                >>> x = [(start + timedelta(days=d)).timestamp() * 1000 for d in range(100)]
+                >>> x = pd.DatetimeIndex([start + timedelta(days=d) for d in range(100)])
                 >>> y = np.random.normal(0, 1, 100)
                 >>> df = pd.DataFrame({ts_id: y}, index=x)
                 >>> res = c.datapoints.insert_dataframe(df)
         """
         dps = []
         for col in dataframe.columns:
-            dps.append({"id": int(col), "datapoints": list(zip(dataframe.index, dataframe[col]))})
+            dps.append(
+                {
+                    "id": int(col),
+                    "datapoints": list(
+                        zip(dataframe.index.values.astype("datetime64[ms]").astype("int64").tolist(), dataframe[col])
+                    ),
+                }
+            )
         self.insert_multiple(dps)
 
     def _get_datapoints_concurrently(
