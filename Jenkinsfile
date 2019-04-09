@@ -80,6 +80,8 @@ podTemplate(
             stage('Build') {
                 sh("python3 setup.py sdist")
                 sh("python3 setup.py bdist_wheel")
+                sh("python3 setup-core.py sdist")
+                sh("python3 setup-core.py bdist_wheel")
             }
 
             def currentVersion = sh(returnStdout: true, script: 'sed -n -e "/^__version__/p" cognite/client/__init__.py | cut -d\\" -f2').trim()
