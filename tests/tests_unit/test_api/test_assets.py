@@ -132,6 +132,20 @@ class TestAssets:
         )
 
 
+class TestAssetPosterWorker:
+    def test_run(self, mock_assets_response):
+        q_req = queue.Queue()
+        q_res = queue.Queue()
+
+        w = AssetPosterWorker(request_queue=q_req, response_queue=q_res, client=ASSETS_API)
+        w.start()
+        q_req.put([Asset()])
+        time.sleep(0.1)
+        w.stop = True
+        assert [Asset._load(mock_assets_response.calls[0].response.json()["data"]["items"][0])] == q_res.get()
+        assert 1 == len(mock_assets_response.calls)
+
+
 class TestAssetPoster:
     def test_validate_asset_hierarchy_parent_ref_null_pointer(self):
         assets = [Asset(parent_ref_id="1")]
@@ -381,17 +395,3 @@ path: [2]
 """ == str(
             assets
         )
-
-
-class TestAssetPosterWorker:
-    def test_run(self, mock_assets_response):
-        q_req = queue.Queue()
-        q_res = queue.Queue()
-
-        AssetPosterWorker(
-            request_queue=q_req, response_queue=q_res, client=ASSETS_API, assets_remaining=lambda: True
-        ).start()
-        q_req.put([Asset()])
-        time.sleep(0.1)
-        assert [Asset._load(mock_assets_response.calls[0].response.json()["data"]["items"][0])] == q_res.get()
-        assert 1 == len(mock_assets_response.calls)

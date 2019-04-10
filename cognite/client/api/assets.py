@@ -319,7 +319,7 @@ class AssetsAPI(APIClient):
 
         Returns:
             AssetList: List of requested assets
-        
+
         Examples:
 
             List assets::
@@ -457,13 +457,11 @@ class AssetsAPI(APIClient):
 
 
 class AssetPosterWorker(threading.Thread):
-    def __init__(
-        self, client: AssetsAPI, request_queue: queue.Queue, response_queue: queue.Queue, assets_remaining: Callable
-    ):
+    def __init__(self, client: AssetsAPI, request_queue: queue.Queue, response_queue: queue.Queue):
         self.client = client
         self.request_queue = request_queue
         self.response_queue = response_queue
-        self.assets_remaining = assets_remaining
+        self.stop = False
         super().__init__(daemon=True)
 
     @staticmethod
@@ -474,8 +472,11 @@ class AssetPosterWorker(threading.Thread):
         return assets_in_response
 
     def run(self):
-        while self.assets_remaining():
-            request = self.request_queue.get()
+        while not self.stop:
+            try:
+                request = self.request_queue.get(timeout=0.1)
+            except queue.Empty:
+                continue
             response = self.client.create(request)
             assets = self.set_ref_id_on_assets_in_response(request, response)
             self.response_queue.put(assets)
@@ -534,7 +535,8 @@ class AssetPoster:
                         return unblocked_children
         return unblocked_children
 
-    def get_unblocked_assets(self, limit) -> List[Asset]:
+    def get_unblocked_assets(self, limit) -> List[List[Asset]]:
+        unblocked_assets_lists = []
         unblocked_assets = []
 
         for asset in self.remaining_assets:
@@ -544,16 +546,21 @@ class AssetPoster:
                 asset.parent_id = self.ref_id_to_id[asset.parent_ref_id]
                 unblocked_assets.append(asset)
             if len(unblocked_assets) == limit:
-                break
+                unblocked_assets_lists.append(unblocked_assets)
+                unblocked_assets = []
 
         if len(unblocked_assets) < limit:
             max_descendents = limit - len(unblocked_assets)
             unblocked_assets.extend(self.get_descendants_unblocked_by_ref_id(unblocked_assets, max_descendents))
 
-        for unblocked_asset in unblocked_assets:
-            self.remaining_assets.remove(unblocked_asset)
+        if len(unblocked_assets) > 0:
+            unblocked_assets_lists.append(unblocked_assets)
 
-        return unblocked_assets
+        for unblocked_assets in unblocked_assets_lists:
+            for unblocked_asset in unblocked_assets:
+                self.remaining_assets.remove(unblocked_asset)
+
+        return unblocked_assets_lists
 
     def update_ref_id_to_id_map(self, assets):
         for asset in assets:
@@ -564,24 +571,28 @@ class AssetPoster:
         return len(self.created_assets) < self.number_of_assets
 
     def run(self):
-        unblocked_assets = self.get_unblocked_assets(self.client._LIMIT)
-        self.request_queue.put(unblocked_assets)
+        unblocked_assets_lists = self.get_unblocked_assets(self.client._LIMIT)
+        for unblocked_assets in unblocked_assets_lists:
+            self.request_queue.put(unblocked_assets)
         while self.assets_remaining():
             posted_assets = self.response_queue.get()
             self.update_ref_id_to_id_map(posted_assets)
             self.created_assets.extend(posted_assets)
-            unblocked_assets = self.get_unblocked_assets(self.client._LIMIT)
-            self.request_queue.put(unblocked_assets)
+            unblocked_assets_lists = self.get_unblocked_assets(self.client._LIMIT)
+            for unblocked_assets in unblocked_assets_lists:
+                self.request_queue.put(unblocked_assets)
 
     def post(self):
         workers = []
         for _ in range(self.client._max_workers):
-            worker = AssetPosterWorker(self.client, self.request_queue, self.response_queue, self.assets_remaining)
+            worker = AssetPosterWorker(self.client, self.request_queue, self.response_queue)
             workers.append(worker)
             worker.start()
 
         self.run()
 
+        for worker in workers:
+            worker.stop = True
         for worker in workers:
             worker.join()
 
