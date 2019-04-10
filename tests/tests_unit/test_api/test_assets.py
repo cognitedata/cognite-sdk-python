@@ -132,20 +132,6 @@ class TestAssets:
         )
 
 
-class TestAssetPosterWorker:
-    def test_run(self, mock_assets_response):
-        q_req = queue.Queue()
-        q_res = queue.Queue()
-
-        AssetPosterWorker(
-            request_queue=q_req, response_queue=q_res, client=ASSETS_API, assets_remaining=lambda: True
-        ).start()
-        q_req.put([Asset()])
-        time.sleep(0.1)
-        assert [Asset._load(mock_assets_response.calls[0].response.json()["data"]["items"][0])] == q_res.get()
-        assert 1 == len(mock_assets_response.calls)
-
-
 class TestAssetPoster:
     def test_validate_asset_hierarchy_parent_ref_null_pointer(self):
         assets = [Asset(parent_ref_id="1")]
@@ -262,3 +248,147 @@ class TestPandasIntegration:
         assert "metadata" not in df.columns
         assert [0] == df.loc["path"][0]
         assert "metadata-value" == df.loc["metadata-key"][0]
+
+
+class TestAssetHierarchyVisualization:
+    def test_normal_tree(self):
+        assets = AssetList(
+            [Asset(id=1, path=[1]), Asset(id=2, path=[1, 2]), Asset(id=3, path=[1, 3]), Asset(id=4, path=[1, 3, 4])]
+        )
+        assert """
+1
+path: [1]
+|______ 2
+        path: [1, 2]
+|______ 3
+        path: [1, 3]
+        |______ 4
+                path: [1, 3, 4]
+""" == str(
+            assets
+        )
+
+    def test_multiple_root_nodes(self):
+        assets = AssetList(
+            [
+                Asset(id=1, path=[1]),
+                Asset(id=2, path=[2]),
+                Asset(id=3, path=[1, 3]),
+                Asset(id=4, path=[2, 4]),
+                Asset(id=5, path=[2, 4, 5]),
+            ]
+        )
+        assert """
+1
+path: [1]
+|______ 3
+        path: [1, 3]
+
+********************************************************************************
+
+2
+path: [2]
+|______ 4
+        path: [2, 4]
+        |______ 5
+                path: [2, 4, 5]
+""" == str(
+            assets
+        )
+
+    def test_parent_nodes_missing(self):
+        assets = AssetList(
+            [
+                Asset(id=1, path=[1]),
+                Asset(id=2, path=[1, 2]),
+                Asset(id=4, path=[1, 2, 3, 4]),
+                Asset(id=6, path=[1, 5, 6]),
+            ]
+        )
+        assert """
+1
+path: [1]
+|______ 2
+        path: [1, 2]
+
+--------------------------------------------------------------------------------
+
+                |______ 4
+                        path: [1, 2, 3, 4]
+
+--------------------------------------------------------------------------------
+
+        |______ 6
+                path: [1, 5, 6]
+""" == str(
+            assets
+        )
+
+    def test_expand_dicts(self):
+        assets = AssetList([Asset(id=1, path=[1], metadata={"a": "b", "c": "d"})])
+        assert """
+1
+metadata:
+ - a: b
+ - c: d
+path: [1]
+""" == str(
+            assets
+        )
+
+    def test_all_cases_combined(self):
+        assets = AssetList(
+            [
+                Asset(id=1, path=[1]),
+                Asset(id=3, path=[2, 3], metadata={"k1": "v1", "k2": "v2"}),
+                Asset(id=2, path=[2]),
+                Asset(id=4, path=[10, 4]),
+                Asset(id=99, path=[20, 99]),
+                Asset(id=5, path=[20, 10, 5]),
+            ]
+        )
+        assert """
+1
+path: [1]
+
+********************************************************************************
+
+2
+path: [2]
+|______ 3
+        metadata:
+         - k1: v1
+         - k2: v2
+        path: [2, 3]
+
+********************************************************************************
+
+|______ 4
+        path: [10, 4]
+
+********************************************************************************
+
+        |______ 5
+                path: [20, 10, 5]
+
+--------------------------------------------------------------------------------
+
+|______ 99
+        path: [20, 99]
+""" == str(
+            assets
+        )
+
+
+class TestAssetPosterWorker:
+    def test_run(self, mock_assets_response):
+        q_req = queue.Queue()
+        q_res = queue.Queue()
+
+        AssetPosterWorker(
+            request_queue=q_req, response_queue=q_res, client=ASSETS_API, assets_remaining=lambda: True
+        ).start()
+        q_req.put([Asset()])
+        time.sleep(0.1)
+        assert [Asset._load(mock_assets_response.calls[0].response.json()["data"]["items"][0])] == q_res.get()
+        assert 1 == len(mock_assets_response.calls)
