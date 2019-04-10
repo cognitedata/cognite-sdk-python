@@ -66,7 +66,7 @@ class TimeSeriesFilter(CogniteFilter):
         is_step (bool): Filter on isStep.
         metadata (Dict[str, Any]): Filter out timeseries that do not match these metadata fields and values (case-sensitive). Format is {"key1":"value1","key2":"value2"}.
         asset_ids (List[int]): Filter out time series that are not linked to any of these assets.
-        asset_subtrees (List[int]): Filter out time series that are not linked to assets in the subtree rooted at these assets. Format is [12,345,6,7890].
+        asset_subtrees (List[int]): Filter out time series that are not linked to assets in the subtree rooted at these assets. Format is list of ids.
         created_time (Dict[str, Any]): Filter out time series with createdTime before this. Format is milliseconds since epoch.
         last_updated_time (Dict[str, Any]): Filter out time series with lastUpdatedTime before this. Format is milliseconds since epoch.
     """
