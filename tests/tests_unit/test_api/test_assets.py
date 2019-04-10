@@ -191,7 +191,7 @@ class TestAssetPoster:
         return assets
 
     def test_get_unblocked_assets__assets_unblocked_by_default_less_than_limit(self):
-        assets = self.generate_asset_tree(root_ref_id="0", depth=3, children_per_node=10)
+        assets = self.generate_asset_tree(root_ref_id="0", depth=4, children_per_node=10)
         ap = AssetPoster(assets=assets, client=ASSETS_API)
         unblocked_assets_lists = ap.get_unblocked_assets(limit=ASSETS_API._LIMIT)
         assert 1 == len(unblocked_assets_lists)
@@ -201,7 +201,7 @@ class TestAssetPoster:
         set_limit(3)
         assets = []
         for i in range(4):
-            assets.extend(self.generate_asset_tree(root_ref_id=str(i), depth=2, children_per_node=1))
+            assets.extend(self.generate_asset_tree(root_ref_id=str(i), depth=2, children_per_node=2))
         ap = AssetPoster(assets=assets, client=ASSETS_API)
         unblocked_assets_lists = ap.get_unblocked_assets(limit=ASSETS_API._LIMIT)
         assert 2 == len(unblocked_assets_lists)
