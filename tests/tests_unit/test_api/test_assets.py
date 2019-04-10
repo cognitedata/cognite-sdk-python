@@ -175,6 +175,44 @@ class TestAssetPoster:
             "1": [Asset(parent_ref_id="1"), Asset(parent_ref_id="1")],
         } == AssetPoster.initialize_ref_id_to_remaining_children_map(assets)
 
+    def generate_asset_tree(self, root_ref_id: str, depth: int = 3):
+        assert 1 <= depth <= 3, "depth must be between 1 and 3"
+        assets = [Asset(ref_id=root_ref_id)]
+        for i in range(10):
+            assets.append(Asset(parent_ref_id=root_ref_id, ref_id="{}{}".format(root_ref_id, i)))
+            if depth > 1:
+                for j in range(10):
+                    assets.append(
+                        Asset(parent_ref_id="{}{}".format(root_ref_id, i), ref_id="{}{}{}".format(root_ref_id, i, j))
+                    )
+                    if depth > 2:
+                        for k in range(10):
+                            assets.append(
+                                Asset(
+                                    parent_ref_id="{}{}{}".format(root_ref_id, i, j),
+                                    ref_id="{}{}{}{}".format(root_ref_id, i, j, k),
+                                )
+                            )
+        return assets
+
+    def test_get_unblocked_assets__assets_unblocked_by_default_less_than_limit(self):
+        assets = self.generate_asset_tree(root_ref_id="0")
+        ap = AssetPoster(assets=assets, client=ASSETS_API)
+        unblocked_assets_lists = ap.get_unblocked_assets(limit=ASSETS_API._LIMIT)
+        assert 1 == len(unblocked_assets_lists)
+        assert 1000 == len(unblocked_assets_lists[0])
+
+    def test_get_unblocked_assets__assets_unblocked_by_default_more_than_limit(self, set_limit):
+        set_limit(3)
+        assets = []
+        for i in range(4):
+            assets.extend(self.generate_asset_tree(root_ref_id=str(i), depth=2))
+        ap = AssetPoster(assets=assets, client=ASSETS_API)
+        unblocked_assets_lists = ap.get_unblocked_assets(limit=ASSETS_API._LIMIT)
+        assert 2 == len(unblocked_assets_lists)
+        for li in unblocked_assets_lists:
+            assert 3 == len(li)
+
     @pytest.fixture
     def mock_post_asset_hierarchy(self, rsps):
         ASSETS_API._max_workers = 1
@@ -200,14 +238,7 @@ class TestAssetPoster:
 
     def test_post_hierarchy__depth_3__children_per_node_10(self, mock_post_asset_hierarchy, set_limit):
         set_limit(100)
-        assets = [Asset(ref_id="0")]
-        for i in range(10):
-            assets.append(Asset(parent_ref_id="0", ref_id="0{}".format(i)))
-            for j in range(10):
-                assets.append(Asset(parent_ref_id="0{}".format(i), ref_id="0{}{}".format(i, j)))
-                for k in range(10):
-                    assets.append(Asset(parent_ref_id="0{}{}".format(i, j), ref_id="0{}{}{}".format(i, j, k)))
-
+        assets = self.generate_asset_tree(root_ref_id="0")
         created_assets = ASSETS_API.create(assets)
         assert len(assets) == len(created_assets)
         assert 12 == len(mock_post_asset_hierarchy.calls)
