@@ -29,7 +29,7 @@ class TestFileMetadataUploadSignatures:
     def test_upload_signatures_same_as_file_metadata_signature(self):
         upload_parameters = dict(inspect.signature(files.FilesAPI.upload).parameters)
         del upload_parameters["path"]
-        upload_from_memory_parameters = dict(inspect.signature(files.FilesAPI.upload_from_memory).parameters)
+        upload_from_memory_parameters = dict(inspect.signature(files.FilesAPI.upload_bytes).parameters)
         del upload_from_memory_parameters["content"]
         file_metadata_parameters = dict(inspect.signature(files.FileMetadata.__init__).parameters)
         del file_metadata_parameters["id"]

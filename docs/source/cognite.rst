@@ -116,17 +116,17 @@ Upload a file or directory
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client.api.files.FilesAPI.upload
 
-Upload a string or bytes from memory
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client.api.files.FilesAPI.upload_from_memory
+Upload a string or bytes
+^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client.api.files.FilesAPI.upload_bytes
 
 Download files to disk
 ^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client.api.files.FilesAPI.download
 
-Download a file to memory
-^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client.api.files.FilesAPI.download_to_memory
+Download a file as bytes
+^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client.api.files.FilesAPI.download_bytes
 
 Delete Files
 ^^^^^^^^^^^^
