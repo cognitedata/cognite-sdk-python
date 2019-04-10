@@ -478,10 +478,12 @@ class AssetPoster:
     @staticmethod
     def validate_asset_hierarchy(assets: List[Asset]) -> None:
         ref_ids = [asset.ref_id for asset in assets if asset.ref_id is not None]
+        ref_ids_set = set(ref_ids)
+        assert sorted(ref_ids) == sorted(list(ref_ids_set)), "Duplicate ref_ids found"
         for asset in assets:
             parent_ref = asset.parent_ref_id
             if parent_ref:
-                assert parent_ref in ref_ids, "parent_ref_id '{}' does not point to anything".format(parent_ref)
+                assert parent_ref in ref_ids_set, "parent_ref_id '{}' does not point to anything".format(parent_ref)
                 assert asset.parent_id is None, "An asset has both parent_id and parent_ref_id set."
 
     @staticmethod
@@ -560,4 +562,6 @@ class AssetPoster:
         for worker in workers:
             worker.join()
 
-        return self.created_assets
+        for asset in self.created_assets:
+            print(asset.path)
+        return sorted(self.created_assets, key=lambda x: x.path)

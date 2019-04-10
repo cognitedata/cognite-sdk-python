@@ -143,6 +143,11 @@ class TestAssetPoster:
         with pytest.raises(AssertionError, match="has both"):
             AssetPoster.validate_asset_hierarchy(assets)
 
+    def test_validate_asset_hierarchy_duplicate_ref_ids(self):
+        assets = [Asset(ref_id="1"), Asset(parent_ref_id="1", ref_id="1")]
+        with pytest.raises(AssertionError, match="Duplicate"):
+            AssetPoster.validate_asset_hierarchy(assets)
+
     def test_initialize_ref_id_to_remaining_children_map(self):
         assets = [
             Asset(ref_id="0"),
@@ -155,9 +160,6 @@ class TestAssetPoster:
             "0": [Asset(parent_ref_id="0", ref_id="1")],
             "1": [Asset(parent_ref_id="1"), Asset(parent_ref_id="1")],
         } == AssetPoster.initialize_ref_id_to_remaining_children_map(assets)
-
-    def test_(self):
-        pass
 
     @pytest.fixture
     def mock_post_asset_hierarchy(self, rsps):
@@ -172,7 +174,8 @@ class TestAssetPoster:
                     parent_id = item["parentId"]
                 if "parentRefId" in item:
                     parent_id = item["parentRefId"] + "id"
-                response_assets.append({"id": item["refId"] + "id", "parentId": parent_id})
+                id = item["refId"] + "id"
+                response_assets.append({"id": id, "parentId": parent_id, "path": [parent_id or "", id]})
             return 200, {}, json.dumps({"data": {"items": response_assets}})
 
         rsps.add_callback(
