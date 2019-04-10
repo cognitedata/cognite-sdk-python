@@ -129,10 +129,10 @@ class AssetList(CogniteResourceList):
             s += marked_indent
         s += str(asset.id) + "\n"
         dumped = asset.dump()
-        for key, value in dumped.items():
+        for key, value in sorted(dumped.items()):
             if isinstance(value, dict):
                 s += single_indent * indent + "{}:\n".format(key)
-                for mkey, mvalue in value.items():
+                for mkey, mvalue in sorted(value.items()):
                     s += single_indent * indent + " - {}: {}\n".format(mkey, mvalue)
             elif key != "id":
                 s += single_indent * indent + key + ": " + str(value) + "\n"
