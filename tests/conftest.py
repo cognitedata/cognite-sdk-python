@@ -5,19 +5,17 @@ import pytest
 import responses
 
 from cognite.client import CogniteClient
-from cognite.client._utils import utils
 from cognite.client.api.assets import AssetsAPI
 from cognite.client.api.datapoints import DatapointsAPI
 from cognite.client.api.events import EventsAPI
 from cognite.client.api.files import FilesAPI
 from cognite.client.api.login import LoginAPI
 from cognite.client.api.time_series import TimeSeriesAPI
-from cognite.client.exceptions import CogniteImportError
 from tests.utils import BASE_URL
 
 
 @pytest.fixture
-def client():
+def client(rsps_with_login_mock):
     yield CogniteClient()
 
 

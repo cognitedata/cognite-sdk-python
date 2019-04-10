@@ -10,11 +10,10 @@ from time import sleep
 import pytest
 
 from cognite.client import Asset, CogniteClient, Event, FileMetadata, TimeSeries
+from cognite.client._utils.utils import DebugLogFormatter
 from cognite.client.api.assets import AssetList
-from cognite.client.api.events import EventList
 from cognite.client.api.files import FileMetadataList
 from cognite.client.api.time_series import TimeSeriesList
-from cognite.logger.logger import _CustomJsonFormatter
 
 
 @pytest.fixture
@@ -42,8 +41,9 @@ def environment_client_config():
 
 
 class TestCogniteClient:
-    def test_project_is_correct(self, client):
-        assert client.project == "mltest"
+    def test_project_is_correct(self, rsps_with_login_mock):
+        c = CogniteClient()
+        assert c.project == "test"
 
     def test_global_client_get(self, client):
 
@@ -125,10 +125,12 @@ class TestCogniteClient:
         with ThreadPool() as pool:
             pool.map(self.create_client_and_check_config, list(range(16)))
 
-    def test_client_debug_mode(self):
+    def test_client_debug_mode(self, rsps_with_login_mock):
         CogniteClient(debug=True)
         log = logging.getLogger("cognite-sdk")
-        assert isinstance(log.handlers[0].formatter, _CustomJsonFormatter)
+        assert isinstance(log.handlers[0].formatter, DebugLogFormatter)
+        log.handlers = []
+        log.propagate = False
 
 
 class TestInstantiateWithClient:
