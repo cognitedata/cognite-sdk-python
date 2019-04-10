@@ -405,10 +405,10 @@ class FilesAPI(APIClient):
 
     def _upload_file_from_path(self, file: FileMetadata, file_path: str):
         with open(file_path, "rb") as f:
-            file_metadata = self.upload_from_memory(f.read(), **file.dump(camel_case=True))
+            file_metadata = self.upload_bytes(f.read(), **file.dump(camel_case=True))
         return file_metadata
 
-    def upload_from_memory(
+    def upload_bytes(
         self,
         content: Union[str, bytes],
         external_id: str = None,
@@ -418,7 +418,7 @@ class FilesAPI(APIClient):
         metadata: Dict[str, Any] = None,
         asset_ids: List[int] = None,
     ):
-        """Upload a file from memory
+        """Upload bytes or string.
 
         Args:
             content (Union[str, bytes]): The content to upload.
@@ -435,7 +435,7 @@ class FilesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.files.upload_from_memory(b"some content", name="my_file", asset_ids=[1,2,3])
+                >>> res = c.files.upload_bytes(b"some content", name="my_file", asset_ids=[1,2,3])
 
         """
         file_metadata = FileMetadata(
@@ -496,8 +496,8 @@ class FilesAPI(APIClient):
 
         utils.execute_tasks_concurrently(self._download_file_to_path, download_tasks, self._max_workers)
 
-    def download_to_memory(self, id: int = None, external_id: str = None) -> bytes:
-        """Download a file to memory.
+    def download_bytes(self, id: int = None, external_id: str = None) -> bytes:
+        """Download a file as bytes.
 
         Args:
             id (int, optional): Id of the file
@@ -509,7 +509,7 @@ class FilesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> file_content = c.files.download_to_memory(id=1)
+                >>> file_content = c.files.download_bytes(id=1)
         """
         utils.assert_exactly_one_of_id_or_external_id(id, external_id)
         all_ids = self._process_ids(ids=id, external_ids=external_id, wrap_ids=True)
