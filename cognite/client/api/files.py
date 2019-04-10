@@ -20,7 +20,7 @@ class FileMetadata(CogniteResource):
         asset_ids (List[int]): No description.
         id (int): Javascript friendly internal ID given to the object.
         uploaded (bool): Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
-        uploaded_at (int): It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        uploaded_time (int): It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int): It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
     """
@@ -35,7 +35,7 @@ class FileMetadata(CogniteResource):
         asset_ids: List[int] = None,
         id: int = None,
         uploaded: bool = None,
-        uploaded_at: int = None,
+        uploaded_time: int = None,
         created_time: int = None,
         last_updated_time: int = None,
         **kwargs
@@ -48,7 +48,7 @@ class FileMetadata(CogniteResource):
         self.asset_ids = asset_ids
         self.id = id
         self.uploaded = uploaded
-        self.uploaded_at = uploaded_at
+        self.uploaded_time = uploaded_time
         self.created_time = created_time
         self.last_updated_time = last_updated_time
 
@@ -96,14 +96,6 @@ class FileMetadataUpdate(CogniteUpdate):
         id (int): ID given by the API to the file.
         external_id (str): No description.
     """
-
-    @property
-    def name(self):
-        return PrimitiveUpdate(self, "name")
-
-    @property
-    def mime_type(self):
-        return PrimitiveUpdate(self, "mimeType")
 
     @property
     def source(self):
@@ -327,11 +319,11 @@ class FilesAPI(APIClient):
                 >>> file_metadata.description = "New description"
                 >>> res = c.files.update(file_metadata)
 
-            Perform a partial update on file metadata, updating the name and adding a new field to metadata::
+            Perform a partial update on file metadata, updating the source and adding a new field to metadata::
 
                 >>> from cognite.client import CogniteClient, FileMetadataUpdate
                 >>> c = CogniteClient()
-                >>> my_update = FileMetadataUpdate(id=1).name.set("New description").metadata.add({"key": "value"})
+                >>> my_update = FileMetadataUpdate(id=1).source.set("new source").metadata.add({"key": "value"})
                 >>> res = c.files.update(my_update)
         """
         return self._update_multiple(cls=FileMetadataList, resource_path=self._RESOURCE_PATH, items=item)

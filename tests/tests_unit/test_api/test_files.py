@@ -25,7 +25,7 @@ def mock_files_response(rsps):
                     "assetIds": [1],
                     "id": 1,
                     "uploaded": True,
-                    "uploadedAt": 0,
+                    "uploadedTime": 0,
                     "createdTime": 0,
                     "lastUpdatedTime": 0,
                 }
@@ -53,7 +53,7 @@ def mock_file_upload_response(rsps):
             "assetIds": [1],
             "id": 1,
             "uploaded": True,
-            "uploadedAt": 0,
+            "uploadedTime": 0,
             "createdTime": 0,
             "lastUpdatedTime": 0,
             "uploadUrl": "https://upload.here",
@@ -109,26 +109,26 @@ class TestFilesAPI:
         assert res is None
 
     def test_update_with_resource_class(self, mock_files_response):
-        res = FILES_API.update(FileMetadata(id=1, name="bla"))
+        res = FILES_API.update(FileMetadata(id=1, source="bla"))
         assert isinstance(res, FileMetadata)
-        assert {"items": [{"id": 1, "update": {"name": {"set": "bla"}}}]} == jsgz_load(
+        assert {"items": [{"id": 1, "update": {"source": {"set": "bla"}}}]} == jsgz_load(
             mock_files_response.calls[0].request.body
         )
 
     def test_update_with_update_class(self, mock_files_response):
-        res = FILES_API.update(FileMetadataUpdate(id=1).name.set("bla"))
+        res = FILES_API.update(FileMetadataUpdate(id=1).source.set("bla"))
         assert isinstance(res, FileMetadata)
-        assert {"items": [{"id": 1, "update": {"name": {"set": "bla"}}}]} == jsgz_load(
+        assert {"items": [{"id": 1, "update": {"source": {"set": "bla"}}}]} == jsgz_load(
             mock_files_response.calls[0].request.body
         )
 
     def test_update_multiple(self, mock_files_response):
-        res = FILES_API.update([FileMetadataUpdate(id=1).name.set(None), FileMetadata(external_id="2", name="bla")])
+        res = FILES_API.update([FileMetadataUpdate(id=1).source.set(None), FileMetadata(external_id="2", source="bla")])
         assert isinstance(res, FileMetadataList)
         assert {
             "items": [
-                {"id": 1, "update": {"name": {"setNull": True}}},
-                {"externalId": "2", "update": {"name": {"set": "bla"}}},
+                {"id": 1, "update": {"source": {"setNull": True}}},
+                {"externalId": "2", "update": {"source": {"set": "bla"}}},
             ]
         } == jsgz_load(mock_files_response.calls[0].request.body)
 
@@ -216,8 +216,6 @@ class TestFilesAPI:
             .metadata.remove([])
             .metadata.set({})
             .metadata.set(None)
-            .mime_type.set("")
-            .mime_type.set(None)
             .source.set(1)
             .source.set(None),
             FileMetadataUpdate,

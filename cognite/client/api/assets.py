@@ -1,3 +1,5 @@
+from typing import *
+
 from cognite.client._utils import utils
 from cognite.client._utils.api_client import APIClient
 from cognite.client._utils.base import *
@@ -130,6 +132,7 @@ class AssetFilter(CogniteFilter):
         created_time (Dict[str, Any]): Range between two timestamps
         last_updated_time (Dict[str, Any]): Range between two timestamps
         asset_subtrees (List[int]): Filter out events that are not linked to assets in the subtree rooted at these assets.
+        depth (Dict[str, Any]): Range between two integers
         external_id_prefix (str): External Id provided by client. Should be unique within the project.
     """
 
@@ -142,6 +145,7 @@ class AssetFilter(CogniteFilter):
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
         asset_subtrees: List[int] = None,
+        depth: Dict[str, Any] = None,
         external_id_prefix: str = None,
         **kwargs
     ):
@@ -152,6 +156,7 @@ class AssetFilter(CogniteFilter):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.asset_subtrees = asset_subtrees
+        self.depth = depth
         self.external_id_prefix = external_id_prefix
 
     # GenStop
@@ -170,6 +175,7 @@ class AssetsAPI(APIClient):
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
         asset_subtrees: List[int] = None,
+        depth: Dict[str, Any] = None,
         external_id_prefix: str = None,
     ) -> Generator[Union[Asset, AssetList], None, None]:
         """Iterate over assets
@@ -185,6 +191,7 @@ class AssetsAPI(APIClient):
             created_time (Dict[str, Any]): Range between two timestamps
             last_updated_time (Dict[str, Any]): Range between two timestamps
             asset_subtrees (List[int]): Filter out events that are not linked to assets in the subtree rooted at these assets.
+            depth (Dict[str, Any]): Range between two integers
             external_id_prefix (str): External Id provided by client. Should be unique within the project
 
         Yields:
@@ -192,7 +199,15 @@ class AssetsAPI(APIClient):
         """
 
         filter = AssetFilter(
-            name, parent_ids, metadata, source, created_time, last_updated_time, asset_subtrees, external_id_prefix
+            name,
+            parent_ids,
+            metadata,
+            source,
+            created_time,
+            last_updated_time,
+            asset_subtrees,
+            depth,
+            external_id_prefix,
         ).dump(camel_case=True)
         return self._list_generator(
             AssetList, resource_path=self._RESOURCE_PATH, method="POST", chunk_size=chunk_size, filter=filter
@@ -245,6 +260,7 @@ class AssetsAPI(APIClient):
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
         asset_subtrees: List[int] = None,
+        depth: Dict[str, Any] = None,
         external_id_prefix: str = None,
         limit: int = None,
     ) -> AssetList:
@@ -258,6 +274,7 @@ class AssetsAPI(APIClient):
             created_time (Dict[str, Any]): Range between two timestamps
             last_updated_time (Dict[str, Any]): Range between two timestamps
             asset_subtrees (List[int]): Filter out events that are not linked to assets in the subtree rooted at these assets.
+            depth (Dict[str, Any]): Range between two integers
             limit (int, optional): Maximum number of assets to return. If not specified, all assets will be returned.
 
         Returns:
@@ -286,7 +303,15 @@ class AssetsAPI(APIClient):
                 ...     asset_list # do something with the assets
         """
         filter = AssetFilter(
-            name, parent_ids, metadata, source, created_time, last_updated_time, asset_subtrees, external_id_prefix
+            name,
+            parent_ids,
+            metadata,
+            source,
+            created_time,
+            last_updated_time,
+            asset_subtrees,
+            depth,
+            external_id_prefix,
         ).dump(camel_case=True)
         return self._list(AssetList, resource_path=self._RESOURCE_PATH, method="POST", limit=limit, filter=filter)
 

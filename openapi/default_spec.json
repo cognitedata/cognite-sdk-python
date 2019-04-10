@@ -98,6 +98,22 @@
           }
         }
       },
+      "IntegerRange": {
+        "description": "Range between two integers",
+        "type": "object",
+        "properties": {
+          "max": {
+            "type": "integer",
+            "minimum": 0,
+            "format": "int32"
+          },
+          "min": {
+            "type": "integer",
+            "minimum": 0,
+            "format": "int32"
+          }
+        }
+      },
       "CogniteInternalId": {
         "description": "Javascript friendly internal ID given to the object.",
         "type": "integer",
@@ -1016,6 +1032,22 @@
                   "format": "int64"
                 }
               },
+              "depth": {
+                "description": "Range between two integers",
+                "type": "object",
+                "properties": {
+                  "max": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "format": "int32"
+                  },
+                  "min": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "format": "int32"
+                  }
+                }
+              },
               "externalIdPrefix": {
                 "description": "External Id provided by client. Should be unique within the project.",
                 "type": "string",
@@ -1115,6 +1147,22 @@
                       "minimum": 1,
                       "maximum": 9007199254740991,
                       "format": "int64"
+                    }
+                  },
+                  "depth": {
+                    "description": "Range between two integers",
+                    "type": "object",
+                    "properties": {
+                      "max": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "format": "int32"
+                      },
+                      "min": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "format": "int32"
+                      }
                     }
                   },
                   "externalIdPrefix": {
@@ -1228,6 +1276,22 @@
                       "minimum": 1,
                       "maximum": 9007199254740991,
                       "format": "int64"
+                    }
+                  },
+                  "depth": {
+                    "description": "Range between two integers",
+                    "type": "object",
+                    "properties": {
+                      "max": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "format": "int32"
+                      },
+                      "min": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "format": "int32"
+                      }
                     }
                   },
                   "externalIdPrefix": {
@@ -4443,7 +4507,7 @@
                 "type": "boolean",
                 "description": "Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body."
               },
-              "uploadedAt": {
+              "uploadedTime": {
                 "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
                 "type": "integer",
                 "minimum": 0,
@@ -4579,40 +4643,6 @@
                   "type": "integer",
                   "description": "ID given by the API to the file.",
                   "format": "int64"
-                },
-                "name": {
-                  "type": "object",
-                  "properties": {
-                    "set": {
-                      "type": "string"
-                    }
-                  },
-                  "description": "Non removable string change.",
-                  "required": [
-                    "set"
-                  ]
-                },
-                "mimeType": {
-                  "type": "object",
-                  "oneOf": [
-                    {
-                      "type": "object",
-                      "properties": {
-                        "set": {
-                          "type": "string"
-                        }
-                      }
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "setNull": {
-                          "type": "boolean"
-                        }
-                      }
-                    }
-                  ],
-                  "description": "Removable string change."
                 },
                 "source": {
                   "type": "object",
@@ -4793,7 +4823,7 @@
                       "type": "boolean",
                       "description": "Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body."
                     },
-                    "uploadedAt": {
+                    "uploadedTime": {
                       "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
                       "type": "integer",
                       "minimum": 0,
@@ -4881,40 +4911,6 @@
             "type": "integer",
             "description": "ID given by the API to the file.",
             "format": "int64"
-          },
-          "name": {
-            "type": "object",
-            "properties": {
-              "set": {
-                "type": "string"
-              }
-            },
-            "description": "Non removable string change.",
-            "required": [
-              "set"
-            ]
-          },
-          "mimeType": {
-            "type": "object",
-            "oneOf": [
-              {
-                "type": "object",
-                "properties": {
-                  "set": {
-                    "type": "string"
-                  }
-                }
-              },
-              {
-                "type": "object",
-                "properties": {
-                  "setNull": {
-                    "type": "boolean"
-                  }
-                }
-              }
-            ],
-            "description": "Removable string change."
           },
           "source": {
             "type": "object",
@@ -5092,7 +5088,7 @@
                       "type": "boolean",
                       "description": "Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body."
                     },
-                    "uploadedAt": {
+                    "uploadedTime": {
                       "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
                       "type": "integer",
                       "minimum": 0,
@@ -5228,6 +5224,9 @@
           }
         }
       },
+      "EmptyResponse": {
+        "type": "object"
+      },
       "TimeSeriesResponse": {
         "type": "object",
         "properties": {
@@ -5312,186 +5311,226 @@
           "items": {
             "type": "array",
             "items": {
+              "type": "object",
               "required": [
                 "datapoints"
               ],
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "integer",
-                  "description": "Id of the timeseries to post the datapoints to",
-                  "format": "int64"
-                },
-                "externalId": {
-                  "type": "string",
-                  "description": "External id of the timeseries to post the datapoints to (Only if id is not set)"
-                },
-                "datapoints": {
-                  "type": "array",
-                  "description": "The list of datapoints",
-                  "items": {
-                    "required": [
-                      "timestamp",
-                      "value"
-                    ],
-                    "type": "object",
-                    "properties": {
-                      "timestamp": {
-                        "type": "integer",
-                        "description": "The data timestamp in milliseconds since the epoch (Jan 1, 1970).",
-                        "format": "int64"
-                      },
-                      "value": {
-                        "description": "The data value. Can be String or numeric depending on the metric",
-                        "oneOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "number"
+              "oneOf": [
+                {
+                  "required": [
+                    "id"
+                  ],
+                  "allOf": [
+                    {
+                      "properties": {
+                        "datapoints": {
+                          "type": "array",
+                          "description": "The list of datapoints",
+                          "items": {
+                            "required": [
+                              "timestamp",
+                              "value"
+                            ],
+                            "type": "object",
+                            "properties": {
+                              "timestamp": {
+                                "type": "integer",
+                                "description": "The data timestamp in milliseconds since the epoch (Jan 1, 1970).",
+                                "format": "int64"
+                              },
+                              "value": {
+                                "description": "The data value. Can be String or numeric depending on the metric",
+                                "oneOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "number"
+                                  }
+                                ]
+                              }
+                            }
                           }
-                        ]
+                        }
+                      }
+                    },
+                    {
+                      "properties": {
+                        "id": {
+                          "description": "Javascript friendly internal ID given to the object.",
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991,
+                          "format": "int64"
+                        }
                       }
                     }
-                  }
+                  ]
+                },
+                {
+                  "required": [
+                    "externalId"
+                  ],
+                  "allOf": [
+                    {
+                      "properties": {
+                        "datapoints": {
+                          "type": "array",
+                          "description": "The list of datapoints",
+                          "items": {
+                            "required": [
+                              "timestamp",
+                              "value"
+                            ],
+                            "type": "object",
+                            "properties": {
+                              "timestamp": {
+                                "type": "integer",
+                                "description": "The data timestamp in milliseconds since the epoch (Jan 1, 1970).",
+                                "format": "int64"
+                              },
+                              "value": {
+                                "description": "The data value. Can be String or numeric depending on the metric",
+                                "oneOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "number"
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "properties": {
+                        "externalId": {
+                          "description": "External Id provided by client. Should be unique within the project.",
+                          "type": "string",
+                          "maxLength": 255
+                        }
+                      }
+                    }
+                  ]
                 }
-              }
+              ]
             }
           }
         }
       },
-      "EmptyResponse": {
-        "type": "object"
-      },
-      "DatapointsMultiQuery": {
+      "DatapointsPostDatapoint": {
         "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "integer",
-                  "description": "Id of the timeseries to query",
-                  "format": "int64"
-                },
-                "externalId": {
-                  "type": "string",
-                  "description": "External id of the timeseries to query (Only if id is not set)"
-                },
-                "start": {
-                  "type": "string",
-                  "description": "Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s. Example: '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since epoch."
-                },
-                "end": {
-                  "type": "string",
-                  "description": "Get datapoints up to this time. The format is the same as for start."
-                },
-                "limit": {
-                  "type": "integer",
-                  "description": "Return up to this number of datapoints.",
-                  "format": "int32"
-                },
-                "aggregates": {
-                  "type": "array",
-                  "description": "The aggregates to be returned.  Use default if null. An empty string must be sent to get raw data if the default is a set of aggregates.",
-                  "items": {
-                    "type": "string",
-                    "description": "The aggregates to be returned.  Use default if null. An empty string must be sent to get raw data if the default is a set of aggregates."
-                  }
-                },
-                "granularity": {
-                  "type": "string",
-                  "description": "The granularity size and granularity of the aggregates."
-                },
-                "includeOutsidePoints": {
-                  "type": "boolean",
-                  "description": "Whether to include the last datapoint before the requested time period,and the first one after the requested period. This can be useful for interpolating data. Not available for aggregates.",
-                  "default": false
-                },
-                "aliases": {
-                  "type": "array",
-                  "items": {
-                    "required": [
-                      "id",
-                      "alias"
-                    ],
-                    "type": "object",
-                    "description": "Input alias for the function query",
-                    "properties": {
-                      "id": {
-                        "type": "integer",
-                        "format": "int64",
-                        "description": "The id of the timeseries that this alias references"
-                      },
-                      "alias": {
-                        "type": "string",
-                        "description": "The string value that is referenced in the function expression"
-                      },
-                      "aggregate": {
-                        "type": "string",
-                        "description": "The aggregate to fetch for this alias, empty means fetch non-aggregated data. Aggregate values will be interpolated for periods with no ground data. There are known inaccuracies in how the average value is interpolated."
-                      },
-                      "granularity": {
-                        "type": "string",
-                        "description": "The granularity of the aggregates, only relevant if property 'aggregate' is specified"
+        "required": [
+          "datapoints"
+        ],
+        "oneOf": [
+          {
+            "required": [
+              "id"
+            ],
+            "allOf": [
+              {
+                "properties": {
+                  "datapoints": {
+                    "type": "array",
+                    "description": "The list of datapoints",
+                    "items": {
+                      "required": [
+                        "timestamp",
+                        "value"
+                      ],
+                      "type": "object",
+                      "properties": {
+                        "timestamp": {
+                          "type": "integer",
+                          "description": "The data timestamp in milliseconds since the epoch (Jan 1, 1970).",
+                          "format": "int64"
+                        },
+                        "value": {
+                          "description": "The data value. Can be String or numeric depending on the metric",
+                          "oneOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        }
                       }
                     }
                   }
                 }
               },
-              "description": "Parameters describing a query for datapoints."
-            }
+              {
+                "properties": {
+                  "id": {
+                    "description": "Javascript friendly internal ID given to the object.",
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991,
+                    "format": "int64"
+                  }
+                }
+              }
+            ]
           },
-          "start": {
-            "type": "string",
-            "description": "Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s. Example: '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since epoch. Default '0'."
-          },
-          "end": {
-            "type": "string",
-            "description": "Get datapoints up to this time. Same format as for start. Default 'now'."
-          },
-          "limit": {
-            "type": "integer",
-            "description": "Return up to this number of datapoints. Default 100.",
-            "format": "int32"
-          },
-          "aggregates": {
-            "type": "array",
-            "description": "The aggregates to be applied. If both this field and the a query item aggregate field is left blank, un-aggregated data will be returned for that query.",
-            "items": {
-              "type": "string",
-              "description": "The aggregates to be applied. If both this field and the a query item aggregate field is left blank, un-aggregated data will be returned for that query."
-            }
-          },
-          "granularity": {
-            "type": "string",
-            "description": "The time granularity size and unit to aggregate over. For example '1h' for one hour."
-          },
-          "includeOutsidePoints": {
-            "type": "boolean",
-            "description": "Whether to include the last datapoint before the requested time period,and the first one after the requested period. This can be useful for interpolating data. Not available for aggregates.",
-            "default": false
+          {
+            "required": [
+              "externalId"
+            ],
+            "allOf": [
+              {
+                "properties": {
+                  "datapoints": {
+                    "type": "array",
+                    "description": "The list of datapoints",
+                    "items": {
+                      "required": [
+                        "timestamp",
+                        "value"
+                      ],
+                      "type": "object",
+                      "properties": {
+                        "timestamp": {
+                          "type": "integer",
+                          "description": "The data timestamp in milliseconds since the epoch (Jan 1, 1970).",
+                          "format": "int64"
+                        },
+                        "value": {
+                          "description": "The data value. Can be String or numeric depending on the metric",
+                          "oneOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "externalId": {
+                    "description": "External Id provided by client. Should be unique within the project.",
+                    "type": "string",
+                    "maxLength": 255
+                  }
+                }
+              }
+            ]
           }
-        },
-        "description": "Parameters describing a query for multiple datapoints. If fields in individual datapoint query items are omitted, values from the multiquery are used instead. For example, you can provide a default limit for all items (that do not have a limit set) by setting the limit field in the multiquery."
+        ]
       },
-      "DatapointsPostDatapoint": {
-        "required": [
-          "datapoints"
-        ],
-        "type": "object",
+      "DatapointsInsertProperties": {
         "properties": {
-          "id": {
-            "type": "integer",
-            "description": "Id of the timeseries to post the datapoints to",
-            "format": "int64"
-          },
-          "externalId": {
-            "type": "string",
-            "description": "External id of the timeseries to post the datapoints to (Only if id is not set)"
-          },
           "datapoints": {
             "type": "array",
             "description": "The list of datapoints",
@@ -5523,25 +5562,273 @@
           }
         }
       },
-      "DatapointsQuery": {
+      "DatapointsMultiQuery": {
         "type": "object",
+        "description": "Parameters describing a query for multiple datapoints. If fields in individual datapoint query items are omitted, values from the multiquery are used instead. For example, you can provide a default limit for all items (that do not have a limit set) by setting the limit field in the multiquery.",
         "properties": {
-          "id": {
-            "type": "integer",
-            "description": "Id of the timeseries to query",
-            "format": "int64"
-          },
-          "externalId": {
-            "type": "string",
-            "description": "External id of the timeseries to query (Only if id is not set)"
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "description": "Parameters describing a query for datapoints.",
+              "oneOf": [
+                {
+                  "required": [
+                    "id"
+                  ],
+                  "allOf": [
+                    {
+                      "properties": {
+                        "start": {
+                          "type": "string",
+                          "description": "Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s. Example: '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since epoch. Note that when using aggregates, the start time will be rounded down to a whole granularity unit (in UTC timezone). For granularity 2d it will be rounded to 0:00 AM on the same day, for 3h it will be rounded to the start of the hour, etc."
+                        },
+                        "end": {
+                          "type": "string",
+                          "description": "Get datapoints up to this time. Same format as for start. Note that when using aggregates, the end will be rounded up such that the last aggregate represents a full aggregation interval containing the original end, where the interval is the granularity unit times the granularity multiplier. For granularity 2d, the aggregation interval is 2 days, if end was originally 3 days after the start, it will be rounded to 4 days after the start."
+                        },
+                        "limit": {
+                          "type": "integer",
+                          "description": "Return up to this number of datapoints.",
+                          "format": "int32"
+                        },
+                        "aggregates": {
+                          "type": "array",
+                          "description": "The aggregates to be returned.  Use default if null. An empty string must be sent to get raw data if the default is a set of aggregates.",
+                          "items": {
+                            "type": "string",
+                            "description": "The aggregates to be returned.  Use default if null. An empty string must be sent to get raw data if the default is a set of aggregates."
+                          }
+                        },
+                        "granularity": {
+                          "type": "string",
+                          "description": "The granularity size and granularity of the aggregates."
+                        },
+                        "includeOutsidePoints": {
+                          "type": "boolean",
+                          "description": "Whether to include the last datapoint before the requested time period,and the first one after the requested period. This can be useful for interpolating data. Not available for aggregates.",
+                          "default": false
+                        }
+                      }
+                    },
+                    {
+                      "properties": {
+                        "id": {
+                          "description": "Javascript friendly internal ID given to the object.",
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991,
+                          "format": "int64"
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "required": [
+                    "externalId"
+                  ],
+                  "allOf": [
+                    {
+                      "properties": {
+                        "start": {
+                          "type": "string",
+                          "description": "Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s. Example: '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since epoch. Note that when using aggregates, the start time will be rounded down to a whole granularity unit (in UTC timezone). For granularity 2d it will be rounded to 0:00 AM on the same day, for 3h it will be rounded to the start of the hour, etc."
+                        },
+                        "end": {
+                          "type": "string",
+                          "description": "Get datapoints up to this time. Same format as for start. Note that when using aggregates, the end will be rounded up such that the last aggregate represents a full aggregation interval containing the original end, where the interval is the granularity unit times the granularity multiplier. For granularity 2d, the aggregation interval is 2 days, if end was originally 3 days after the start, it will be rounded to 4 days after the start."
+                        },
+                        "limit": {
+                          "type": "integer",
+                          "description": "Return up to this number of datapoints.",
+                          "format": "int32"
+                        },
+                        "aggregates": {
+                          "type": "array",
+                          "description": "The aggregates to be returned.  Use default if null. An empty string must be sent to get raw data if the default is a set of aggregates.",
+                          "items": {
+                            "type": "string",
+                            "description": "The aggregates to be returned.  Use default if null. An empty string must be sent to get raw data if the default is a set of aggregates."
+                          }
+                        },
+                        "granularity": {
+                          "type": "string",
+                          "description": "The granularity size and granularity of the aggregates."
+                        },
+                        "includeOutsidePoints": {
+                          "type": "boolean",
+                          "description": "Whether to include the last datapoint before the requested time period,and the first one after the requested period. This can be useful for interpolating data. Not available for aggregates.",
+                          "default": false
+                        }
+                      }
+                    },
+                    {
+                      "properties": {
+                        "externalId": {
+                          "description": "External Id provided by client. Should be unique within the project.",
+                          "type": "string",
+                          "maxLength": 255
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
           },
           "start": {
             "type": "string",
-            "description": "Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s. Example: '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since epoch."
+            "description": "Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s. Example: '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since epoch. Note that when using aggregates, the start time will be rounded down to a whole granularity unit (in UTC timezone). For granularity 2d it will be rounded to 0:00 AM on the same day, for 3h it will be rounded to the start of the hour, etc.",
+            "default": "0"
           },
           "end": {
             "type": "string",
-            "description": "Get datapoints up to this time. The format is the same as for start."
+            "description": "Get datapoints up to this time. Same format as for start. Note that when using aggregates, the end will be rounded up such that the last aggregate represents a full aggregation interval containing the original end, where the interval is the granularity unit times the granularity multiplier. For granularity 2d, the aggregation interval is 2 days, if end was originally 3 days after the start, it will be rounded to 4 days after the start.",
+            "default": "now"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Return up to this number of datapoints.",
+            "format": "int32",
+            "default": 100
+          },
+          "aggregates": {
+            "type": "array",
+            "description": "The aggregates to be applied. If both this field and the a query item aggregate field is left blank, un-aggregated data will be returned for that query.",
+            "items": {
+              "type": "string",
+              "description": "The aggregates to be applied. If both this field and the a query item aggregate field is left blank, un-aggregated data will be returned for that query."
+            }
+          },
+          "granularity": {
+            "type": "string",
+            "description": "The time granularity size and unit to aggregate over. For example '1h' for one hour."
+          },
+          "includeOutsidePoints": {
+            "type": "boolean",
+            "description": "Whether to include the last datapoint before the requested time period,and the first one after the requested period. This can be useful for interpolating data. Not available for aggregates.",
+            "default": false
+          }
+        }
+      },
+      "DatapointsQuery": {
+        "type": "object",
+        "description": "Parameters describing a query for datapoints.",
+        "oneOf": [
+          {
+            "required": [
+              "id"
+            ],
+            "allOf": [
+              {
+                "properties": {
+                  "start": {
+                    "type": "string",
+                    "description": "Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s. Example: '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since epoch. Note that when using aggregates, the start time will be rounded down to a whole granularity unit (in UTC timezone). For granularity 2d it will be rounded to 0:00 AM on the same day, for 3h it will be rounded to the start of the hour, etc."
+                  },
+                  "end": {
+                    "type": "string",
+                    "description": "Get datapoints up to this time. Same format as for start. Note that when using aggregates, the end will be rounded up such that the last aggregate represents a full aggregation interval containing the original end, where the interval is the granularity unit times the granularity multiplier. For granularity 2d, the aggregation interval is 2 days, if end was originally 3 days after the start, it will be rounded to 4 days after the start."
+                  },
+                  "limit": {
+                    "type": "integer",
+                    "description": "Return up to this number of datapoints.",
+                    "format": "int32"
+                  },
+                  "aggregates": {
+                    "type": "array",
+                    "description": "The aggregates to be returned.  Use default if null. An empty string must be sent to get raw data if the default is a set of aggregates.",
+                    "items": {
+                      "type": "string",
+                      "description": "The aggregates to be returned.  Use default if null. An empty string must be sent to get raw data if the default is a set of aggregates."
+                    }
+                  },
+                  "granularity": {
+                    "type": "string",
+                    "description": "The granularity size and granularity of the aggregates."
+                  },
+                  "includeOutsidePoints": {
+                    "type": "boolean",
+                    "description": "Whether to include the last datapoint before the requested time period,and the first one after the requested period. This can be useful for interpolating data. Not available for aggregates.",
+                    "default": false
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "id": {
+                    "description": "Javascript friendly internal ID given to the object.",
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991,
+                    "format": "int64"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "required": [
+              "externalId"
+            ],
+            "allOf": [
+              {
+                "properties": {
+                  "start": {
+                    "type": "string",
+                    "description": "Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s. Example: '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since epoch. Note that when using aggregates, the start time will be rounded down to a whole granularity unit (in UTC timezone). For granularity 2d it will be rounded to 0:00 AM on the same day, for 3h it will be rounded to the start of the hour, etc."
+                  },
+                  "end": {
+                    "type": "string",
+                    "description": "Get datapoints up to this time. Same format as for start. Note that when using aggregates, the end will be rounded up such that the last aggregate represents a full aggregation interval containing the original end, where the interval is the granularity unit times the granularity multiplier. For granularity 2d, the aggregation interval is 2 days, if end was originally 3 days after the start, it will be rounded to 4 days after the start."
+                  },
+                  "limit": {
+                    "type": "integer",
+                    "description": "Return up to this number of datapoints.",
+                    "format": "int32"
+                  },
+                  "aggregates": {
+                    "type": "array",
+                    "description": "The aggregates to be returned.  Use default if null. An empty string must be sent to get raw data if the default is a set of aggregates.",
+                    "items": {
+                      "type": "string",
+                      "description": "The aggregates to be returned.  Use default if null. An empty string must be sent to get raw data if the default is a set of aggregates."
+                    }
+                  },
+                  "granularity": {
+                    "type": "string",
+                    "description": "The granularity size and granularity of the aggregates."
+                  },
+                  "includeOutsidePoints": {
+                    "type": "boolean",
+                    "description": "Whether to include the last datapoint before the requested time period,and the first one after the requested period. This can be useful for interpolating data. Not available for aggregates.",
+                    "default": false
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "externalId": {
+                    "description": "External Id provided by client. Should be unique within the project.",
+                    "type": "string",
+                    "maxLength": 255
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "DatapointsQueryProperties": {
+        "properties": {
+          "start": {
+            "type": "string",
+            "description": "Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s. Example: '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since epoch. Note that when using aggregates, the start time will be rounded down to a whole granularity unit (in UTC timezone). For granularity 2d it will be rounded to 0:00 AM on the same day, for 3h it will be rounded to the start of the hour, etc."
+          },
+          "end": {
+            "type": "string",
+            "description": "Get datapoints up to this time. Same format as for start. Note that when using aggregates, the end will be rounded up such that the last aggregate represents a full aggregation interval containing the original end, where the interval is the granularity unit times the granularity multiplier. For granularity 2d, the aggregation interval is 2 days, if end was originally 3 days after the start, it will be rounded to 4 days after the start."
           },
           "limit": {
             "type": "integer",
@@ -5564,39 +5851,8 @@
             "type": "boolean",
             "description": "Whether to include the last datapoint before the requested time period,and the first one after the requested period. This can be useful for interpolating data. Not available for aggregates.",
             "default": false
-          },
-          "aliases": {
-            "type": "array",
-            "items": {
-              "required": [
-                "id",
-                "alias"
-              ],
-              "type": "object",
-              "description": "Input alias for the function query",
-              "properties": {
-                "id": {
-                  "type": "integer",
-                  "format": "int64",
-                  "description": "The id of the timeseries that this alias references"
-                },
-                "alias": {
-                  "type": "string",
-                  "description": "The string value that is referenced in the function expression"
-                },
-                "aggregate": {
-                  "type": "string",
-                  "description": "The aggregate to fetch for this alias, empty means fetch non-aggregated data. Aggregate values will be interpolated for periods with no ground data. There are known inaccuracies in how the average value is interpolated."
-                },
-                "granularity": {
-                  "type": "string",
-                  "description": "The granularity of the aggregates, only relevant if property 'aggregate' is specified"
-                }
-              }
-            }
           }
-        },
-        "description": "Parameters describing a query for datapoints."
+        }
       },
       "FunctionInputAlias": {
         "required": [
@@ -5625,26 +5881,6 @@
           }
         }
       },
-      "LatestDataBeforeRequest": {
-        "type": "object",
-        "description": "Describes the latest query. One and only one of id and externalId must be set.",
-        "properties": {
-          "id": {
-            "type": "integer",
-            "description": "Id of the timeseries to get the latest value for",
-            "format": "int64"
-          },
-          "externalId": {
-            "type": "string",
-            "description": "External id of the timeseries to get the latest value for (Only if id is not set)"
-          },
-          "before": {
-            "type": "string",
-            "description": "Get first datapoint before this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s. Example: '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since epoch.",
-            "default": "now"
-          }
-        }
-      },
       "DatapointsLatestQuery": {
         "type": "object",
         "required": [
@@ -5656,52 +5892,129 @@
             "description": "List of latest queries",
             "items": {
               "type": "object",
-              "description": "Describes the latest query. One and only one of id and externalId must be set.",
-              "properties": {
-                "id": {
-                  "type": "integer",
-                  "description": "Id of the timeseries to get the latest value for",
-                  "format": "int64"
+              "description": "Describes latest query",
+              "oneOf": [
+                {
+                  "required": [
+                    "id"
+                  ],
+                  "allOf": [
+                    {
+                      "properties": {
+                        "before": {
+                          "type": "string",
+                          "description": "Get first datapoint before this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s. Example: '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since epoch.",
+                          "default": "now"
+                        }
+                      }
+                    },
+                    {
+                      "properties": {
+                        "id": {
+                          "description": "Javascript friendly internal ID given to the object.",
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991,
+                          "format": "int64"
+                        }
+                      }
+                    }
+                  ]
                 },
-                "externalId": {
-                  "type": "string",
-                  "description": "External id of the timeseries to get the latest value for (Only if id is not set)"
-                },
-                "before": {
-                  "type": "string",
-                  "description": "Get first datapoint before this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s. Example: '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since epoch.",
-                  "default": "now"
+                {
+                  "required": [
+                    "externalId"
+                  ],
+                  "allOf": [
+                    {
+                      "properties": {
+                        "before": {
+                          "type": "string",
+                          "description": "Get first datapoint before this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s. Example: '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since epoch.",
+                          "default": "now"
+                        }
+                      }
+                    },
+                    {
+                      "properties": {
+                        "externalId": {
+                          "description": "External Id provided by client. Should be unique within the project.",
+                          "type": "string",
+                          "maxLength": 255
+                        }
+                      }
+                    }
+                  ]
                 }
-              }
+              ]
             }
           }
         }
       },
-      "DatapointsDeleteRequest": {
+      "LatestDataBeforeRequest": {
         "type": "object",
-        "required": [
-          "inclusiveBegin"
-        ],
-        "description": "Describes the latest query. One and only one of id and externalId must be set.",
+        "description": "Describes latest query",
+        "oneOf": [
+          {
+            "required": [
+              "id"
+            ],
+            "allOf": [
+              {
+                "properties": {
+                  "before": {
+                    "type": "string",
+                    "description": "Get first datapoint before this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s. Example: '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since epoch.",
+                    "default": "now"
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "id": {
+                    "description": "Javascript friendly internal ID given to the object.",
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991,
+                    "format": "int64"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "required": [
+              "externalId"
+            ],
+            "allOf": [
+              {
+                "properties": {
+                  "before": {
+                    "type": "string",
+                    "description": "Get first datapoint before this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s. Example: '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since epoch.",
+                    "default": "now"
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "externalId": {
+                    "description": "External Id provided by client. Should be unique within the project.",
+                    "type": "string",
+                    "maxLength": 255
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "LatestDataPropertyFilter": {
         "properties": {
-          "id": {
-            "type": "integer",
-            "description": "Id of the timeseries to get the latest value for",
-            "format": "int64"
-          },
-          "externalId": {
+          "before": {
             "type": "string",
-            "description": "External id of the timeseries to get the latest value for (Only if id is not set)"
-          },
-          "inclusiveBegin": {
-            "type": "integer",
-            "description": "The first datapoint to delete",
-            "format": "int64"
-          },
-          "exclusiveEnd": {
-            "type": "integer",
-            "description": "If set, the first datapoint after inclusiveBegin to not delete. If not set, only deletes the datapoint at inclusiveBegin.",
-            "format": "int64"
+            "description": "Get first datapoint before this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s. Example: '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since epoch.",
+            "default": "now"
           }
         }
       },
@@ -5713,48 +6026,172 @@
         "properties": {
           "items": {
             "type": "array",
-            "description": "List of deletes",
+            "description": "List of delete filters",
             "items": {
               "type": "object",
-              "required": [
-                "inclusiveBegin"
-              ],
-              "description": "Describes the latest query. One and only one of id and externalId must be set.",
-              "properties": {
-                "id": {
-                  "type": "integer",
-                  "description": "Id of the timeseries to get the latest value for",
-                  "format": "int64"
+              "description": "Select timeseries and datapoints to delete.",
+              "oneOf": [
+                {
+                  "required": [
+                    "id"
+                  ],
+                  "allOf": [
+                    {
+                      "required": [
+                        "inclusiveBegin"
+                      ],
+                      "properties": {
+                        "inclusiveBegin": {
+                          "type": "integer",
+                          "description": "The first datapoint to delete",
+                          "format": "int64"
+                        },
+                        "exclusiveEnd": {
+                          "type": "integer",
+                          "description": "If set, the first datapoint after inclusiveBegin to not delete. If not set, only deletes the datapoint at inclusiveBegin.",
+                          "format": "int64"
+                        }
+                      }
+                    },
+                    {
+                      "properties": {
+                        "id": {
+                          "description": "Javascript friendly internal ID given to the object.",
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991,
+                          "format": "int64"
+                        }
+                      }
+                    }
+                  ]
                 },
-                "externalId": {
-                  "type": "string",
-                  "description": "External id of the timeseries to get the latest value for (Only if id is not set)"
-                },
-                "inclusiveBegin": {
-                  "type": "integer",
-                  "description": "The first datapoint to delete",
-                  "format": "int64"
-                },
-                "exclusiveEnd": {
-                  "type": "integer",
-                  "description": "If set, the first datapoint after inclusiveBegin to not delete. If not set, only deletes the datapoint at inclusiveBegin.",
-                  "format": "int64"
+                {
+                  "required": [
+                    "externalId"
+                  ],
+                  "allOf": [
+                    {
+                      "required": [
+                        "inclusiveBegin"
+                      ],
+                      "properties": {
+                        "inclusiveBegin": {
+                          "type": "integer",
+                          "description": "The first datapoint to delete",
+                          "format": "int64"
+                        },
+                        "exclusiveEnd": {
+                          "type": "integer",
+                          "description": "If set, the first datapoint after inclusiveBegin to not delete. If not set, only deletes the datapoint at inclusiveBegin.",
+                          "format": "int64"
+                        }
+                      }
+                    },
+                    {
+                      "properties": {
+                        "externalId": {
+                          "description": "External Id provided by client. Should be unique within the project.",
+                          "type": "string",
+                          "maxLength": 255
+                        }
+                      }
+                    }
+                  ]
                 }
-              }
+              ]
             }
           }
         }
       },
-      "IdLookup": {
+      "DatapointsDeleteRequest": {
         "type": "object",
-        "description": "Object is required to provide only one from two available attributes (one or another). Id field maps to server side ID while externalId to user set identifier.",
+        "description": "Select timeseries and datapoints to delete.",
+        "oneOf": [
+          {
+            "required": [
+              "id"
+            ],
+            "allOf": [
+              {
+                "required": [
+                  "inclusiveBegin"
+                ],
+                "properties": {
+                  "inclusiveBegin": {
+                    "type": "integer",
+                    "description": "The first datapoint to delete",
+                    "format": "int64"
+                  },
+                  "exclusiveEnd": {
+                    "type": "integer",
+                    "description": "If set, the first datapoint after inclusiveBegin to not delete. If not set, only deletes the datapoint at inclusiveBegin.",
+                    "format": "int64"
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "id": {
+                    "description": "Javascript friendly internal ID given to the object.",
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991,
+                    "format": "int64"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "required": [
+              "externalId"
+            ],
+            "allOf": [
+              {
+                "required": [
+                  "inclusiveBegin"
+                ],
+                "properties": {
+                  "inclusiveBegin": {
+                    "type": "integer",
+                    "description": "The first datapoint to delete",
+                    "format": "int64"
+                  },
+                  "exclusiveEnd": {
+                    "type": "integer",
+                    "description": "If set, the first datapoint after inclusiveBegin to not delete. If not set, only deletes the datapoint at inclusiveBegin.",
+                    "format": "int64"
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "externalId": {
+                    "description": "External Id provided by client. Should be unique within the project.",
+                    "type": "string",
+                    "maxLength": 255
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "DatapointsDeleteRange": {
+        "required": [
+          "inclusiveBegin"
+        ],
         "properties": {
-          "id": {
+          "inclusiveBegin": {
             "type": "integer",
+            "description": "The first datapoint to delete",
             "format": "int64"
           },
-          "externalId": {
-            "type": "string"
+          "exclusiveEnd": {
+            "type": "integer",
+            "description": "If set, the first datapoint after inclusiveBegin to not delete. If not set, only deletes the datapoint at inclusiveBegin.",
+            "format": "int64"
           }
         }
       },
@@ -5771,16 +6208,26 @@
             "items": {
               "oneOf": [
                 {
-                  "description": "Javascript friendly internal ID given to the object.",
-                  "type": "integer",
-                  "minimum": 1,
-                  "maximum": 9007199254740991,
-                  "format": "int64"
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "description": "Javascript friendly internal ID given to the object.",
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 9007199254740991,
+                      "format": "int64"
+                    }
+                  }
                 },
                 {
-                  "description": "External Id provided by client. Should be unique within the project.",
-                  "type": "string",
-                  "maxLength": 255
+                  "type": "object",
+                  "properties": {
+                    "externalId": {
+                      "description": "External Id provided by client. Should be unique within the project.",
+                      "type": "string",
+                      "maxLength": 255
+                    }
+                  }
                 }
               ]
             },
@@ -7642,6 +8089,10 @@
           },
           "metadata": {
             "description": "Filter out timeseries that do not match these metadata fields and values (case-sensitive). Format is {\"key1\":\"value1\",\"key2\":\"value2\"}.",
+            "example": {
+              "key1": "value1",
+              "key2": "value2"
+            },
             "type": "object"
           },
           "assetIds": {
@@ -7654,7 +8105,13 @@
           },
           "assetSubtrees": {
             "type": "array",
-            "description": "Filter out time series that are not linked to assets in the subtree rooted at these assets. Format is [12,345,6,7890].",
+            "description": "Filter out time series that are not linked to assets in the subtree rooted at these assets. Format is list of ids.",
+            "example": [
+              12,
+              345,
+              6,
+              7890
+            ],
             "items": {
               "type": "integer",
               "format": "int64"
@@ -7728,6 +8185,10 @@
               },
               "metadata": {
                 "description": "Filter out timeseries that do not match these metadata fields and values (case-sensitive). Format is {\"key1\":\"value1\",\"key2\":\"value2\"}.",
+                "example": {
+                  "key1": "value1",
+                  "key2": "value2"
+                },
                 "type": "object"
               },
               "assetIds": {
@@ -7740,7 +8201,13 @@
               },
               "assetSubtrees": {
                 "type": "array",
-                "description": "Filter out time series that are not linked to assets in the subtree rooted at these assets. Format is [12,345,6,7890].",
+                "description": "Filter out time series that are not linked to assets in the subtree rooted at these assets. Format is list of ids.",
+                "example": [
+                  12,
+                  345,
+                  6,
+                  7890
+                ],
                 "items": {
                   "type": "integer",
                   "format": "int64"
@@ -7794,40 +8261,12 @@
               }
             }
           },
-          "sort": {
-            "description": "Field to be sorted. If not specified, results are sorted by relevance score.",
-            "type": "string",
-            "enum": [
-              "createdTime",
-              "lastUpdatedTime"
-            ]
-          },
-          "dir": {
-            "description": "Sort direction: descending or ascending. Only applicable if sort is specified. Default 'desc'.",
-            "type": "string",
-            "enum": [
-              "asc",
-              "desc"
-            ],
-            "default": "desc"
-          },
           "limit": {
             "description": "Return up to this many results. Maximum is 1000. Default is 25.",
             "maximum": 1000,
             "type": "integer",
             "format": "int32",
             "default": 25
-          },
-          "offset": {
-            "description": "Offset from the first result. Sum of limit and offset must not exceed 1000. Default is 0.",
-            "type": "integer",
-            "format": "int32",
-            "default": 0
-          },
-          "boostName": {
-            "description": "Whether or not boosting name field. This option is experimental and can be changed.",
-            "type": "boolean",
-            "default": false
           }
         }
       },
@@ -7867,6 +8306,377 @@
           }
         },
         "description": "Change that will be applied to description."
+      },
+      "RawDBTablesWithCursorResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "required": [
+                    "tableName"
+                  ],
+                  "type": "object",
+                  "properties": {
+                    "tableName": {
+                      "type": "string",
+                      "description": "Unique name of the table"
+                    }
+                  },
+                  "description": "A NoSQL database table to store customer data"
+                }
+              },
+              "previousCursor": {
+                "type": "string",
+                "description": "Cursor to get the previous page of results (if available)."
+              },
+              "nextCursor": {
+                "type": "string",
+                "description": "Cursor to get the next page of results (if available)."
+              }
+            },
+            "description": "A list of objects along with possible cursors to get the next, or previous, page of results"
+          }
+        }
+      },
+      "DataRawDB": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "dbName": {
+                  "type": "string",
+                  "description": "Unique name of a database."
+                }
+              },
+              "description": "A NoSQL database to store customer data."
+            }
+          }
+        }
+      },
+      "DataRawDBRow": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "required": [
+                "columns",
+                "key"
+              ],
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "description": "Unique row key"
+                },
+                "columns": {
+                  "type": "object",
+                  "description": "Row data stored as a JSON object."
+                }
+              },
+              "description": "A row to store in the Raw DB."
+            }
+          }
+        }
+      },
+      "RawDBRowsResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "required": [
+                    "columns",
+                    "key"
+                  ],
+                  "type": "object",
+                  "properties": {
+                    "key": {
+                      "type": "string",
+                      "description": "Unique row key"
+                    },
+                    "columns": {
+                      "type": "object",
+                      "description": "Row data stored as a JSON object."
+                    }
+                  },
+                  "description": "A row to store in the Raw DB."
+                }
+              }
+            }
+          }
+        }
+      },
+      "DataRawDBTable": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "required": [
+                "tableName"
+              ],
+              "type": "object",
+              "properties": {
+                "tableName": {
+                  "type": "string",
+                  "description": "Unique name of the table"
+                }
+              },
+              "description": "A NoSQL database table to store customer data"
+            }
+          }
+        }
+      },
+      "RawDBTablesResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "required": [
+                    "tableName"
+                  ],
+                  "type": "object",
+                  "properties": {
+                    "tableName": {
+                      "type": "string",
+                      "description": "Unique name of the table"
+                    }
+                  },
+                  "description": "A NoSQL database table to store customer data"
+                }
+              }
+            }
+          }
+        }
+      },
+      "RawDBsWithCursorResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "dbName": {
+                      "type": "string",
+                      "description": "Unique name of a database."
+                    }
+                  },
+                  "description": "A NoSQL database to store customer data."
+                }
+              },
+              "previousCursor": {
+                "type": "string",
+                "description": "Cursor to get the previous page of results (if available)."
+              },
+              "nextCursor": {
+                "type": "string",
+                "description": "Cursor to get the next page of results (if available)."
+              }
+            },
+            "description": "A list of objects along with possible cursors to get the next, or previous, page of results"
+          }
+        }
+      },
+      "DataWithCursorRawDBRow": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "required": [
+                "columns",
+                "key"
+              ],
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "description": "Unique row key"
+                },
+                "columns": {
+                  "type": "object",
+                  "description": "Row data stored as a JSON object."
+                }
+              },
+              "description": "A row to store in the Raw DB."
+            }
+          },
+          "previousCursor": {
+            "type": "string",
+            "description": "Cursor to get the previous page of results (if available)."
+          },
+          "nextCursor": {
+            "type": "string",
+            "description": "Cursor to get the next page of results (if available)."
+          }
+        },
+        "description": "A list of objects along with possible cursors to get the next, or previous, page of results"
+      },
+      "DataWithCursorRawDBTable": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "required": [
+                "tableName"
+              ],
+              "type": "object",
+              "properties": {
+                "tableName": {
+                  "type": "string",
+                  "description": "Unique name of the table"
+                }
+              },
+              "description": "A NoSQL database table to store customer data"
+            }
+          },
+          "previousCursor": {
+            "type": "string",
+            "description": "Cursor to get the previous page of results (if available)."
+          },
+          "nextCursor": {
+            "type": "string",
+            "description": "Cursor to get the next page of results (if available)."
+          }
+        },
+        "description": "A list of objects along with possible cursors to get the next, or previous, page of results"
+      },
+      "RawDBTable": {
+        "required": [
+          "tableName"
+        ],
+        "type": "object",
+        "properties": {
+          "tableName": {
+            "type": "string",
+            "description": "Unique name of the table"
+          }
+        },
+        "description": "A NoSQL database table to store customer data"
+      },
+      "RawRowCSV": {
+        "type": "object",
+        "properties": {
+          "columnHeaders": {
+            "type": "array",
+            "description": "Headers for the different columns in the response.",
+            "items": {
+              "type": "string",
+              "description": "Headers for the different columns in the response."
+            }
+          },
+          "rows": {
+            "type": "array",
+            "description": "Rows of column values, in same order as columnHeaders.",
+            "items": {
+              "type": "array",
+              "description": "Rows of column values, in same order as columnHeaders.",
+              "items": {
+                "type": "object",
+                "description": "Rows of column values, in same order as columnHeaders."
+              }
+            }
+          }
+        },
+        "description": "Raw row result written in CSV format, with column columnHeaders."
+      },
+      "RawDBsResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "dbName": {
+                      "type": "string",
+                      "description": "Unique name of a database."
+                    }
+                  },
+                  "description": "A NoSQL database to store customer data."
+                }
+              }
+            }
+          }
+        }
+      },
+      "DataWithCursorRawDB": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "dbName": {
+                  "type": "string",
+                  "description": "Unique name of a database."
+                }
+              },
+              "description": "A NoSQL database to store customer data."
+            }
+          },
+          "previousCursor": {
+            "type": "string",
+            "description": "Cursor to get the previous page of results (if available)."
+          },
+          "nextCursor": {
+            "type": "string",
+            "description": "Cursor to get the next page of results (if available)."
+          }
+        },
+        "description": "A list of objects along with possible cursors to get the next, or previous, page of results"
+      },
+      "RawDB": {
+        "type": "object",
+        "properties": {
+          "dbName": {
+            "type": "string",
+            "description": "Unique name of a database."
+          }
+        },
+        "description": "A NoSQL database to store customer data."
+      },
+      "RawDBRow": {
+        "required": [
+          "columns",
+          "key"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "Unique row key"
+          },
+          "columns": {
+            "type": "object",
+            "description": "Row data stored as a JSON object."
+          }
+        },
+        "description": "A row to store in the Raw DB."
       }
     },
     "parameters": {
@@ -8423,7 +9233,7 @@
                           "type": "boolean",
                           "description": "Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body."
                         },
-                        "uploadedAt": {
+                        "uploadedTime": {
                           "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
                           "type": "integer",
                           "minimum": 0,
@@ -8516,7 +9326,7 @@
                               "type": "boolean",
                               "description": "Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body."
                             },
-                            "uploadedAt": {
+                            "uploadedTime": {
                               "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
                               "type": "integer",
                               "minimum": 0,
@@ -8621,7 +9431,7 @@
                                 "type": "boolean",
                                 "description": "Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body."
                               },
-                              "uploadedAt": {
+                              "uploadedTime": {
                                 "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
                                 "type": "integer",
                                 "minimum": 0,
@@ -8724,7 +9534,7 @@
                                 "type": "boolean",
                                 "description": "Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body."
                               },
-                              "uploadedAt": {
+                              "uploadedTime": {
                                 "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
                                 "type": "integer",
                                 "minimum": 0,
@@ -9155,6 +9965,22 @@
                               "minimum": 1,
                               "maximum": 9007199254740991,
                               "format": "int64"
+                            }
+                          },
+                          "depth": {
+                            "description": "Range between two integers",
+                            "type": "object",
+                            "properties": {
+                              "max": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "format": "int32"
+                              },
+                              "min": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "format": "int32"
+                              }
                             }
                           },
                           "externalIdPrefix": {
@@ -10087,6 +10913,22 @@
                               "minimum": 1,
                               "maximum": 9007199254740991,
                               "format": "int64"
+                            }
+                          },
+                          "depth": {
+                            "description": "Range between two integers",
+                            "type": "object",
+                            "properties": {
+                              "max": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "format": "int32"
+                              },
+                              "min": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "format": "int32"
+                              }
                             }
                           },
                           "externalIdPrefix": {
@@ -12262,7 +13104,7 @@
                                     "type": "boolean",
                                     "description": "Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body."
                                   },
-                                  "uploadedAt": {
+                                  "uploadedTime": {
                                     "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
                                     "type": "integer",
                                     "minimum": 0,
@@ -12458,7 +13300,7 @@
                                   "type": "boolean",
                                   "description": "Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body."
                                 },
-                                "uploadedAt": {
+                                "uploadedTime": {
                                   "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
                                   "type": "integer",
                                   "minimum": 0,
@@ -12670,7 +13512,7 @@
                                     "type": "boolean",
                                     "description": "Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body."
                                   },
-                                  "uploadedAt": {
+                                  "uploadedTime": {
                                     "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
                                     "type": "integer",
                                     "minimum": 0,
@@ -12941,7 +13783,7 @@
                                     "type": "boolean",
                                     "description": "Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body."
                                   },
-                                  "uploadedAt": {
+                                  "uploadedTime": {
                                     "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
                                     "type": "integer",
                                     "minimum": 0,
@@ -13305,40 +14147,6 @@
                           "description": "ID given by the API to the file.",
                           "format": "int64"
                         },
-                        "name": {
-                          "type": "object",
-                          "properties": {
-                            "set": {
-                              "type": "string"
-                            }
-                          },
-                          "description": "Non removable string change.",
-                          "required": [
-                            "set"
-                          ]
-                        },
-                        "mimeType": {
-                          "type": "object",
-                          "oneOf": [
-                            {
-                              "type": "object",
-                              "properties": {
-                                "set": {
-                                  "type": "string"
-                                }
-                              }
-                            },
-                            {
-                              "type": "object",
-                              "properties": {
-                                "setNull": {
-                                  "type": "boolean"
-                                }
-                              }
-                            }
-                          ],
-                          "description": "Removable string change."
-                        },
                         "source": {
                           "type": "object",
                           "oneOf": [
@@ -13525,7 +14333,7 @@
                               "type": "boolean",
                               "description": "Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body."
                             },
-                            "uploadedAt": {
+                            "uploadedTime": {
                               "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
                               "type": "integer",
                               "minimum": 0,
@@ -13644,12 +14452,16 @@
             }
           },
           {
-            "name": "assetId",
+            "name": "assetIds",
             "in": "query",
-            "description": "Get time series related to this asset.",
+            "description": "Get time series related to these assets. Format is list of ids.",
+            "example": [
+              1,
+              2,
+              55
+            ],
             "schema": {
-              "type": "integer",
-              "format": "int64"
+              "type": "string"
             }
           }
         ],
@@ -13965,23 +14777,25 @@
             "description": "Timeseries with speficied externalId already exists",
             "content": {
               "application/json": {
-                "type": "object",
-                "properties": {
-                  "error": {
-                    "type": "object",
-                    "properties": {
-                      "code": {
-                        "type": "integer",
-                        "description": "HTTP status code",
-                        "format": "int32"
-                      },
-                      "message": {
-                        "type": "string",
-                        "description": "Error message"
-                      },
-                      "extra": {
-                        "type": "object",
-                        "description": "Additional data"
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "integer",
+                          "description": "HTTP status code",
+                          "format": "int32"
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "Error message"
+                        },
+                        "extra": {
+                          "type": "object",
+                          "description": "Additional data"
+                        }
                       }
                     }
                   }
@@ -14047,6 +14861,10 @@
                       },
                       "metadata": {
                         "description": "Filter out timeseries that do not match these metadata fields and values (case-sensitive). Format is {\"key1\":\"value1\",\"key2\":\"value2\"}.",
+                        "example": {
+                          "key1": "value1",
+                          "key2": "value2"
+                        },
                         "type": "object"
                       },
                       "assetIds": {
@@ -14059,7 +14877,13 @@
                       },
                       "assetSubtrees": {
                         "type": "array",
-                        "description": "Filter out time series that are not linked to assets in the subtree rooted at these assets. Format is [12,345,6,7890].",
+                        "description": "Filter out time series that are not linked to assets in the subtree rooted at these assets. Format is list of ids.",
+                        "example": [
+                          12,
+                          345,
+                          6,
+                          7890
+                        ],
                         "items": {
                           "type": "integer",
                           "format": "int64"
@@ -14113,40 +14937,12 @@
                       }
                     }
                   },
-                  "sort": {
-                    "description": "Field to be sorted. If not specified, results are sorted by relevance score.",
-                    "type": "string",
-                    "enum": [
-                      "createdTime",
-                      "lastUpdatedTime"
-                    ]
-                  },
-                  "dir": {
-                    "description": "Sort direction: descending or ascending. Only applicable if sort is specified. Default 'desc'.",
-                    "type": "string",
-                    "enum": [
-                      "asc",
-                      "desc"
-                    ],
-                    "default": "desc"
-                  },
                   "limit": {
                     "description": "Return up to this many results. Maximum is 1000. Default is 25.",
                     "maximum": 1000,
                     "type": "integer",
                     "format": "int32",
                     "default": 25
-                  },
-                  "offset": {
-                    "description": "Offset from the first result. Sum of limit and offset must not exceed 1000. Default is 0.",
-                    "type": "integer",
-                    "format": "int32",
-                    "default": 0
-                  },
-                  "boostName": {
-                    "description": "Whether or not boosting name field. This option is experimental and can be changed.",
-                    "type": "boolean",
-                    "default": false
                   }
                 }
               }
@@ -14289,16 +15085,26 @@
                     "items": {
                       "oneOf": [
                         {
-                          "description": "Javascript friendly internal ID given to the object.",
-                          "type": "integer",
-                          "minimum": 1,
-                          "maximum": 9007199254740991,
-                          "format": "int64"
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "description": "Javascript friendly internal ID given to the object.",
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 9007199254740991,
+                              "format": "int64"
+                            }
+                          }
                         },
                         {
-                          "description": "External Id provided by client. Should be unique within the project.",
-                          "type": "string",
-                          "maxLength": 255
+                          "type": "object",
+                          "properties": {
+                            "externalId": {
+                              "description": "External Id provided by client. Should be unique within the project.",
+                              "type": "string",
+                              "maxLength": 255
+                            }
+                          }
                         }
                       ]
                     },
@@ -14910,16 +15716,26 @@
                     "items": {
                       "oneOf": [
                         {
-                          "description": "Javascript friendly internal ID given to the object.",
-                          "type": "integer",
-                          "minimum": 1,
-                          "maximum": 9007199254740991,
-                          "format": "int64"
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "description": "Javascript friendly internal ID given to the object.",
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 9007199254740991,
+                              "format": "int64"
+                            }
+                          }
                         },
                         {
-                          "description": "External Id provided by client. Should be unique within the project.",
-                          "type": "string",
-                          "maxLength": 255
+                          "type": "object",
+                          "properties": {
+                            "externalId": {
+                              "description": "External Id provided by client. Should be unique within the project.",
+                              "type": "string",
+                              "maxLength": 255
+                            }
+                          }
                         }
                       ]
                     },
@@ -15058,50 +15874,112 @@
                   "items": {
                     "type": "array",
                     "items": {
+                      "type": "object",
                       "required": [
                         "datapoints"
                       ],
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "integer",
-                          "description": "Id of the timeseries to post the datapoints to",
-                          "format": "int64"
-                        },
-                        "externalId": {
-                          "type": "string",
-                          "description": "External id of the timeseries to post the datapoints to (Only if id is not set)"
-                        },
-                        "datapoints": {
-                          "type": "array",
-                          "description": "The list of datapoints",
-                          "items": {
-                            "required": [
-                              "timestamp",
-                              "value"
-                            ],
-                            "type": "object",
-                            "properties": {
-                              "timestamp": {
-                                "type": "integer",
-                                "description": "The data timestamp in milliseconds since the epoch (Jan 1, 1970).",
-                                "format": "int64"
-                              },
-                              "value": {
-                                "description": "The data value. Can be String or numeric depending on the metric",
-                                "oneOf": [
-                                  {
-                                    "type": "string"
-                                  },
-                                  {
-                                    "type": "number"
+                      "oneOf": [
+                        {
+                          "required": [
+                            "id"
+                          ],
+                          "allOf": [
+                            {
+                              "properties": {
+                                "datapoints": {
+                                  "type": "array",
+                                  "description": "The list of datapoints",
+                                  "items": {
+                                    "required": [
+                                      "timestamp",
+                                      "value"
+                                    ],
+                                    "type": "object",
+                                    "properties": {
+                                      "timestamp": {
+                                        "type": "integer",
+                                        "description": "The data timestamp in milliseconds since the epoch (Jan 1, 1970).",
+                                        "format": "int64"
+                                      },
+                                      "value": {
+                                        "description": "The data value. Can be String or numeric depending on the metric",
+                                        "oneOf": [
+                                          {
+                                            "type": "string"
+                                          },
+                                          {
+                                            "type": "number"
+                                          }
+                                        ]
+                                      }
+                                    }
                                   }
-                                ]
+                                }
+                              }
+                            },
+                            {
+                              "properties": {
+                                "id": {
+                                  "description": "Javascript friendly internal ID given to the object.",
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 9007199254740991,
+                                  "format": "int64"
+                                }
                               }
                             }
-                          }
+                          ]
+                        },
+                        {
+                          "required": [
+                            "externalId"
+                          ],
+                          "allOf": [
+                            {
+                              "properties": {
+                                "datapoints": {
+                                  "type": "array",
+                                  "description": "The list of datapoints",
+                                  "items": {
+                                    "required": [
+                                      "timestamp",
+                                      "value"
+                                    ],
+                                    "type": "object",
+                                    "properties": {
+                                      "timestamp": {
+                                        "type": "integer",
+                                        "description": "The data timestamp in milliseconds since the epoch (Jan 1, 1970).",
+                                        "format": "int64"
+                                      },
+                                      "value": {
+                                        "description": "The data value. Can be String or numeric depending on the metric",
+                                        "oneOf": [
+                                          {
+                                            "type": "string"
+                                          },
+                                          {
+                                            "type": "number"
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            },
+                            {
+                              "properties": {
+                                "externalId": {
+                                  "description": "External Id provided by client. Should be unique within the project.",
+                                  "type": "string",
+                                  "maxLength": 255
+                                }
+                              }
+                            }
+                          ]
                         }
-                      }
+                      ]
                     }
                   }
                 }
@@ -15262,97 +16140,134 @@
             "application/json": {
               "schema": {
                 "type": "object",
+                "description": "Parameters describing a query for multiple datapoints. If fields in individual datapoint query items are omitted, values from the multiquery are used instead. For example, you can provide a default limit for all items (that do not have a limit set) by setting the limit field in the multiquery.",
                 "properties": {
                   "items": {
                     "type": "array",
                     "items": {
                       "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "integer",
-                          "description": "Id of the timeseries to query",
-                          "format": "int64"
-                        },
-                        "externalId": {
-                          "type": "string",
-                          "description": "External id of the timeseries to query (Only if id is not set)"
-                        },
-                        "start": {
-                          "type": "string",
-                          "description": "Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s. Example: '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since epoch."
-                        },
-                        "end": {
-                          "type": "string",
-                          "description": "Get datapoints up to this time. The format is the same as for start."
-                        },
-                        "limit": {
-                          "type": "integer",
-                          "description": "Return up to this number of datapoints.",
-                          "format": "int32"
-                        },
-                        "aggregates": {
-                          "type": "array",
-                          "description": "The aggregates to be returned.  Use default if null. An empty string must be sent to get raw data if the default is a set of aggregates.",
-                          "items": {
-                            "type": "string",
-                            "description": "The aggregates to be returned.  Use default if null. An empty string must be sent to get raw data if the default is a set of aggregates."
-                          }
-                        },
-                        "granularity": {
-                          "type": "string",
-                          "description": "The granularity size and granularity of the aggregates."
-                        },
-                        "includeOutsidePoints": {
-                          "type": "boolean",
-                          "description": "Whether to include the last datapoint before the requested time period,and the first one after the requested period. This can be useful for interpolating data. Not available for aggregates.",
-                          "default": false
-                        },
-                        "aliases": {
-                          "type": "array",
-                          "items": {
-                            "required": [
-                              "id",
-                              "alias"
-                            ],
-                            "type": "object",
-                            "description": "Input alias for the function query",
-                            "properties": {
-                              "id": {
-                                "type": "integer",
-                                "format": "int64",
-                                "description": "The id of the timeseries that this alias references"
-                              },
-                              "alias": {
-                                "type": "string",
-                                "description": "The string value that is referenced in the function expression"
-                              },
-                              "aggregate": {
-                                "type": "string",
-                                "description": "The aggregate to fetch for this alias, empty means fetch non-aggregated data. Aggregate values will be interpolated for periods with no ground data. There are known inaccuracies in how the average value is interpolated."
-                              },
-                              "granularity": {
-                                "type": "string",
-                                "description": "The granularity of the aggregates, only relevant if property 'aggregate' is specified"
+                      "description": "Parameters describing a query for datapoints.",
+                      "oneOf": [
+                        {
+                          "required": [
+                            "id"
+                          ],
+                          "allOf": [
+                            {
+                              "properties": {
+                                "start": {
+                                  "type": "string",
+                                  "description": "Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s. Example: '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since epoch. Note that when using aggregates, the start time will be rounded down to a whole granularity unit (in UTC timezone). For granularity 2d it will be rounded to 0:00 AM on the same day, for 3h it will be rounded to the start of the hour, etc."
+                                },
+                                "end": {
+                                  "type": "string",
+                                  "description": "Get datapoints up to this time. Same format as for start. Note that when using aggregates, the end will be rounded up such that the last aggregate represents a full aggregation interval containing the original end, where the interval is the granularity unit times the granularity multiplier. For granularity 2d, the aggregation interval is 2 days, if end was originally 3 days after the start, it will be rounded to 4 days after the start."
+                                },
+                                "limit": {
+                                  "type": "integer",
+                                  "description": "Return up to this number of datapoints.",
+                                  "format": "int32"
+                                },
+                                "aggregates": {
+                                  "type": "array",
+                                  "description": "The aggregates to be returned.  Use default if null. An empty string must be sent to get raw data if the default is a set of aggregates.",
+                                  "items": {
+                                    "type": "string",
+                                    "description": "The aggregates to be returned.  Use default if null. An empty string must be sent to get raw data if the default is a set of aggregates."
+                                  }
+                                },
+                                "granularity": {
+                                  "type": "string",
+                                  "description": "The granularity size and granularity of the aggregates."
+                                },
+                                "includeOutsidePoints": {
+                                  "type": "boolean",
+                                  "description": "Whether to include the last datapoint before the requested time period,and the first one after the requested period. This can be useful for interpolating data. Not available for aggregates.",
+                                  "default": false
+                                }
+                              }
+                            },
+                            {
+                              "properties": {
+                                "id": {
+                                  "description": "Javascript friendly internal ID given to the object.",
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 9007199254740991,
+                                  "format": "int64"
+                                }
                               }
                             }
-                          }
+                          ]
+                        },
+                        {
+                          "required": [
+                            "externalId"
+                          ],
+                          "allOf": [
+                            {
+                              "properties": {
+                                "start": {
+                                  "type": "string",
+                                  "description": "Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s. Example: '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since epoch. Note that when using aggregates, the start time will be rounded down to a whole granularity unit (in UTC timezone). For granularity 2d it will be rounded to 0:00 AM on the same day, for 3h it will be rounded to the start of the hour, etc."
+                                },
+                                "end": {
+                                  "type": "string",
+                                  "description": "Get datapoints up to this time. Same format as for start. Note that when using aggregates, the end will be rounded up such that the last aggregate represents a full aggregation interval containing the original end, where the interval is the granularity unit times the granularity multiplier. For granularity 2d, the aggregation interval is 2 days, if end was originally 3 days after the start, it will be rounded to 4 days after the start."
+                                },
+                                "limit": {
+                                  "type": "integer",
+                                  "description": "Return up to this number of datapoints.",
+                                  "format": "int32"
+                                },
+                                "aggregates": {
+                                  "type": "array",
+                                  "description": "The aggregates to be returned.  Use default if null. An empty string must be sent to get raw data if the default is a set of aggregates.",
+                                  "items": {
+                                    "type": "string",
+                                    "description": "The aggregates to be returned.  Use default if null. An empty string must be sent to get raw data if the default is a set of aggregates."
+                                  }
+                                },
+                                "granularity": {
+                                  "type": "string",
+                                  "description": "The granularity size and granularity of the aggregates."
+                                },
+                                "includeOutsidePoints": {
+                                  "type": "boolean",
+                                  "description": "Whether to include the last datapoint before the requested time period,and the first one after the requested period. This can be useful for interpolating data. Not available for aggregates.",
+                                  "default": false
+                                }
+                              }
+                            },
+                            {
+                              "properties": {
+                                "externalId": {
+                                  "description": "External Id provided by client. Should be unique within the project.",
+                                  "type": "string",
+                                  "maxLength": 255
+                                }
+                              }
+                            }
+                          ]
                         }
-                      },
-                      "description": "Parameters describing a query for datapoints."
+                      ]
                     }
                   },
                   "start": {
                     "type": "string",
-                    "description": "Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s. Example: '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since epoch. Default '0'."
+                    "description": "Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s. Example: '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since epoch. Note that when using aggregates, the start time will be rounded down to a whole granularity unit (in UTC timezone). For granularity 2d it will be rounded to 0:00 AM on the same day, for 3h it will be rounded to the start of the hour, etc.",
+                    "default": "0"
                   },
                   "end": {
                     "type": "string",
-                    "description": "Get datapoints up to this time. Same format as for start. Default 'now'."
+                    "description": "Get datapoints up to this time. Same format as for start. Note that when using aggregates, the end will be rounded up such that the last aggregate represents a full aggregation interval containing the original end, where the interval is the granularity unit times the granularity multiplier. For granularity 2d, the aggregation interval is 2 days, if end was originally 3 days after the start, it will be rounded to 4 days after the start.",
+                    "default": "now"
                   },
                   "limit": {
                     "type": "integer",
-                    "description": "Return up to this number of datapoints. Default 100.",
-                    "format": "int32"
+                    "description": "Return up to this number of datapoints.",
+                    "format": "int32",
+                    "default": 100
                   },
                   "aggregates": {
                     "type": "array",
@@ -15371,8 +16286,7 @@
                     "description": "Whether to include the last datapoint before the requested time period,and the first one after the requested period. This can be useful for interpolating data. Not available for aggregates.",
                     "default": false
                   }
-                },
-                "description": "Parameters describing a query for multiple datapoints. If fields in individual datapoint query items are omitted, values from the multiquery are used instead. For example, you can provide a default limit for all items (that do not have a limit set) by setting the limit field in the multiquery."
+                }
               }
             }
           },
@@ -15645,23 +16559,61 @@
                     "description": "List of latest queries",
                     "items": {
                       "type": "object",
-                      "description": "Describes the latest query. One and only one of id and externalId must be set.",
-                      "properties": {
-                        "id": {
-                          "type": "integer",
-                          "description": "Id of the timeseries to get the latest value for",
-                          "format": "int64"
+                      "description": "Describes latest query",
+                      "oneOf": [
+                        {
+                          "required": [
+                            "id"
+                          ],
+                          "allOf": [
+                            {
+                              "properties": {
+                                "before": {
+                                  "type": "string",
+                                  "description": "Get first datapoint before this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s. Example: '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since epoch.",
+                                  "default": "now"
+                                }
+                              }
+                            },
+                            {
+                              "properties": {
+                                "id": {
+                                  "description": "Javascript friendly internal ID given to the object.",
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 9007199254740991,
+                                  "format": "int64"
+                                }
+                              }
+                            }
+                          ]
                         },
-                        "externalId": {
-                          "type": "string",
-                          "description": "External id of the timeseries to get the latest value for (Only if id is not set)"
-                        },
-                        "before": {
-                          "type": "string",
-                          "description": "Get first datapoint before this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s. Example: '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since epoch.",
-                          "default": "now"
+                        {
+                          "required": [
+                            "externalId"
+                          ],
+                          "allOf": [
+                            {
+                              "properties": {
+                                "before": {
+                                  "type": "string",
+                                  "description": "Get first datapoint before this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s. Example: '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since epoch.",
+                                  "default": "now"
+                                }
+                              }
+                            },
+                            {
+                              "properties": {
+                                "externalId": {
+                                  "description": "External Id provided by client. Should be unique within the project.",
+                                  "type": "string",
+                                  "maxLength": 255
+                                }
+                              }
+                            }
+                          ]
                         }
-                      }
+                      ]
                     }
                   }
                 }
@@ -15904,34 +16856,80 @@
                 "properties": {
                   "items": {
                     "type": "array",
-                    "description": "List of deletes",
+                    "description": "List of delete filters",
                     "items": {
                       "type": "object",
-                      "required": [
-                        "inclusiveBegin"
-                      ],
-                      "description": "Describes the latest query. One and only one of id and externalId must be set.",
-                      "properties": {
-                        "id": {
-                          "type": "integer",
-                          "description": "Id of the timeseries to get the latest value for",
-                          "format": "int64"
+                      "description": "Select timeseries and datapoints to delete.",
+                      "oneOf": [
+                        {
+                          "required": [
+                            "id"
+                          ],
+                          "allOf": [
+                            {
+                              "required": [
+                                "inclusiveBegin"
+                              ],
+                              "properties": {
+                                "inclusiveBegin": {
+                                  "type": "integer",
+                                  "description": "The first datapoint to delete",
+                                  "format": "int64"
+                                },
+                                "exclusiveEnd": {
+                                  "type": "integer",
+                                  "description": "If set, the first datapoint after inclusiveBegin to not delete. If not set, only deletes the datapoint at inclusiveBegin.",
+                                  "format": "int64"
+                                }
+                              }
+                            },
+                            {
+                              "properties": {
+                                "id": {
+                                  "description": "Javascript friendly internal ID given to the object.",
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 9007199254740991,
+                                  "format": "int64"
+                                }
+                              }
+                            }
+                          ]
                         },
-                        "externalId": {
-                          "type": "string",
-                          "description": "External id of the timeseries to get the latest value for (Only if id is not set)"
-                        },
-                        "inclusiveBegin": {
-                          "type": "integer",
-                          "description": "The first datapoint to delete",
-                          "format": "int64"
-                        },
-                        "exclusiveEnd": {
-                          "type": "integer",
-                          "description": "If set, the first datapoint after inclusiveBegin to not delete. If not set, only deletes the datapoint at inclusiveBegin.",
-                          "format": "int64"
+                        {
+                          "required": [
+                            "externalId"
+                          ],
+                          "allOf": [
+                            {
+                              "required": [
+                                "inclusiveBegin"
+                              ],
+                              "properties": {
+                                "inclusiveBegin": {
+                                  "type": "integer",
+                                  "description": "The first datapoint to delete",
+                                  "format": "int64"
+                                },
+                                "exclusiveEnd": {
+                                  "type": "integer",
+                                  "description": "If set, the first datapoint after inclusiveBegin to not delete. If not set, only deletes the datapoint at inclusiveBegin.",
+                                  "format": "int64"
+                                }
+                              }
+                            },
+                            {
+                              "properties": {
+                                "externalId": {
+                                  "description": "External Id provided by client. Should be unique within the project.",
+                                  "type": "string",
+                                  "maxLength": 255
+                                }
+                              }
+                            }
+                          ]
                         }
-                      }
+                      ]
                     }
                   }
                 }
@@ -16036,6 +17034,1108 @@
           "TimeseriesAcl:WRITE"
         ]
       }
+    },
+    "/api/v1/projects/{project}/raw/dbs": {
+      "get": {
+        "tags": [
+          "Raw"
+        ],
+        "summary": "List all databases",
+        "operationId": "getDBs",
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "description": "Project name.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Limit on the number of databases to be returned.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 25
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "description": "Cursor for paging through the results.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of databases.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "dbName": {
+                                "type": "string",
+                                "description": "Unique name of a database."
+                              }
+                            },
+                            "description": "A NoSQL database to store customer data."
+                          }
+                        },
+                        "previousCursor": {
+                          "type": "string",
+                          "description": "Cursor to get the previous page of results (if available)."
+                        },
+                        "nextCursor": {
+                          "type": "string",
+                          "description": "Cursor to get the next page of results (if available)."
+                        }
+                      },
+                      "description": "A list of objects along with possible cursors to get the next, or previous, page of results"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "api-key": []
+          },
+          {
+            "token": []
+          }
+        ],
+        "x-capability": [
+          "RawAcl:LIST"
+        ]
+      },
+      "post": {
+        "tags": [
+          "Raw"
+        ],
+        "summary": "Create databases",
+        "operationId": "createDBs",
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "description": "Project name.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "List of names of databases to be created.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "dbName": {
+                          "type": "string",
+                          "description": "Unique name of a database."
+                        }
+                      },
+                      "description": "A NoSQL database to store customer data."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "The created databases.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "dbName": {
+                                "type": "string",
+                                "description": "Unique name of a database."
+                              }
+                            },
+                            "description": "A NoSQL database to store customer data."
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "api-key": []
+          },
+          {
+            "token": []
+          }
+        ],
+        "x-capability": [
+          "RawAcl:WRITE"
+        ]
+      }
+    },
+    "/api/v1/projects/{project}/raw/dbs/delete": {
+      "post": {
+        "tags": [
+          "Raw"
+        ],
+        "summary": "Delete databases",
+        "operationId": "deleteDBs",
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "description": "Project name.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "recursive",
+            "in": "query",
+            "description": "Whether belonging tables and rows should be deleted recursively",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "List of names of the databases to be deleted.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "dbName": {
+                          "type": "string",
+                          "description": "Unique name of a database."
+                        }
+                      },
+                      "description": "A NoSQL database to store customer data."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Empty response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "api-key": []
+          },
+          {
+            "token": []
+          }
+        ],
+        "x-capability": [
+          "RawAcl:WRITE"
+        ]
+      }
+    },
+    "/api/v1/projects/{project}/raw/dbs/{dbName}/tables": {
+      "get": {
+        "tags": [
+          "Raw"
+        ],
+        "summary": "List all tables in a database",
+        "operationId": "getTables",
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "description": "Project name.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dbName",
+            "in": "path",
+            "description": "The name of a database to retrieve tables from.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Limit on the number of tables to be returned.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 25
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "description": "Cursor for paging through the results.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of tables in the database",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "required": [
+                              "tableName"
+                            ],
+                            "type": "object",
+                            "properties": {
+                              "tableName": {
+                                "type": "string",
+                                "description": "Unique name of the table"
+                              }
+                            },
+                            "description": "A NoSQL database table to store customer data"
+                          }
+                        },
+                        "previousCursor": {
+                          "type": "string",
+                          "description": "Cursor to get the previous page of results (if available)."
+                        },
+                        "nextCursor": {
+                          "type": "string",
+                          "description": "Cursor to get the next page of results (if available)."
+                        }
+                      },
+                      "description": "A list of objects along with possible cursors to get the next, or previous, page of results"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "api-key": []
+          },
+          {
+            "token": []
+          }
+        ],
+        "x-capability": [
+          "RawAcl:LIST"
+        ]
+      },
+      "post": {
+        "tags": [
+          "Raw"
+        ],
+        "summary": "Create tables in a database",
+        "operationId": "createTables",
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "description": "Project name.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dbName",
+            "in": "path",
+            "description": "Name of the database to create tables in.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ensureParent",
+            "in": "query",
+            "description": "Create database if it doesn't exist already",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "List of tables to create.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "required": [
+                        "tableName"
+                      ],
+                      "type": "object",
+                      "properties": {
+                        "tableName": {
+                          "type": "string",
+                          "description": "Unique name of the table"
+                        }
+                      },
+                      "description": "A NoSQL database table to store customer data"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "The created tables.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "required": [
+                              "tableName"
+                            ],
+                            "type": "object",
+                            "properties": {
+                              "tableName": {
+                                "type": "string",
+                                "description": "Unique name of the table"
+                              }
+                            },
+                            "description": "A NoSQL database table to store customer data"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing required fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "description": "HTTP status code",
+                      "format": "int32"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "extra": {
+                      "type": "object",
+                      "description": "Additional data"
+                    },
+                    "missingFields": {
+                      "uniqueItems": true,
+                      "type": "array",
+                      "description": "Fields that are missing.",
+                      "items": {
+                        "type": "object",
+                        "description": "Fields that are missing"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "api-key": []
+          },
+          {
+            "token": []
+          }
+        ],
+        "x-capability": [
+          "RawAcl:WRITE"
+        ]
+      }
+    },
+    "/api/v1/projects/{project}/raw/dbs/{dbName}/tables/delete": {
+      "post": {
+        "tags": [
+          "Raw"
+        ],
+        "summary": "Delete tables in a database",
+        "operationId": "deleteTables",
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "description": "Project name.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dbName",
+            "in": "path",
+            "description": "Name of the database to delete tables in.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "List of tables to delete.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "required": [
+                        "tableName"
+                      ],
+                      "type": "object",
+                      "properties": {
+                        "tableName": {
+                          "type": "string",
+                          "description": "Unique name of the table"
+                        }
+                      },
+                      "description": "A NoSQL database table to store customer data"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Empty response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing required fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "description": "HTTP status code",
+                      "format": "int32"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "extra": {
+                      "type": "object",
+                      "description": "Additional data"
+                    },
+                    "missingFields": {
+                      "uniqueItems": true,
+                      "type": "array",
+                      "description": "Fields that are missing.",
+                      "items": {
+                        "type": "object",
+                        "description": "Fields that are missing"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "api-key": []
+          },
+          {
+            "token": []
+          }
+        ],
+        "x-capability": [
+          "RawAcl:WRITE"
+        ]
+      }
+    },
+    "/api/v1/projects/{project}/raw/dbs/{dbName}/tables/{tableName}/rows": {
+      "get": {
+        "tags": [
+          "Raw"
+        ],
+        "summary": "Retrieve all rows from a table",
+        "operationId": "getRows",
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "description": "Project name.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dbName",
+            "in": "path",
+            "description": "Name of the database.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tableName",
+            "in": "path",
+            "description": "Name of the table.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Limit the number of results.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 25
+            }
+          },
+          {
+            "name": "columns",
+            "in": "query",
+            "description": "Ordered list of column keys, separated by commas. Leave empty for all, use single comma to retrieve only row keys.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "description": "Cursor for paging through rows.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Rows returned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "required": [
+                              "columns",
+                              "key"
+                            ],
+                            "type": "object",
+                            "properties": {
+                              "key": {
+                                "type": "string",
+                                "description": "Unique row key"
+                              },
+                              "columns": {
+                                "type": "object",
+                                "description": "Row data stored as a JSON object."
+                              }
+                            },
+                            "description": "A row to store in the Raw DB."
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "text/csv": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "columnHeaders": {
+                      "type": "array",
+                      "description": "Headers for the different columns in the response.",
+                      "items": {
+                        "type": "string",
+                        "description": "Headers for the different columns in the response."
+                      }
+                    },
+                    "rows": {
+                      "type": "array",
+                      "description": "Rows of column values, in same order as columnHeaders.",
+                      "items": {
+                        "type": "array",
+                        "description": "Rows of column values, in same order as columnHeaders.",
+                        "items": {
+                          "type": "object",
+                          "description": "Rows of column values, in same order as columnHeaders."
+                        }
+                      }
+                    }
+                  },
+                  "description": "Raw row result written in CSV format, with column columnHeaders."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "api-key": []
+          },
+          {
+            "token": []
+          }
+        ],
+        "x-capability": [
+          "RawAcl:READ"
+        ]
+      },
+      "post": {
+        "tags": [
+          "Raw"
+        ],
+        "summary": "Insert rows into a table",
+        "operationId": "postRows",
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "description": "Project name.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dbName",
+            "in": "path",
+            "description": "Name of the database.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tableName",
+            "in": "path",
+            "description": "Name of the table.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ensureParent",
+            "in": "query",
+            "description": "Create database/table if it doesn't exist already",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "List of rows to create.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "required": [
+                        "columns",
+                        "key"
+                      ],
+                      "type": "object",
+                      "properties": {
+                        "key": {
+                          "type": "string",
+                          "description": "Unique row key"
+                        },
+                        "columns": {
+                          "type": "object",
+                          "description": "Row data stored as a JSON object."
+                        }
+                      },
+                      "description": "A row to store in the Raw DB."
+                    }
+                  }
+                }
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "object"
+                  },
+                  "fileName": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Empty response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing required fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "description": "HTTP status code",
+                      "format": "int32"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Error message"
+                    },
+                    "extra": {
+                      "type": "object",
+                      "description": "Additional data"
+                    },
+                    "missingFields": {
+                      "uniqueItems": true,
+                      "type": "array",
+                      "description": "Fields that are missing.",
+                      "items": {
+                        "type": "object",
+                        "description": "Fields that are missing"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "api-key": []
+          },
+          {
+            "token": []
+          }
+        ],
+        "x-capability": [
+          "RawAcl:WRITE"
+        ]
+      }
+    },
+    "/api/v1/projects/{project}/raw/dbs/{dbName}/tables/{tableName}/rows/{rowKey}": {
+      "get": {
+        "tags": [
+          "Raw"
+        ],
+        "summary": "Retrieve a single row from a table",
+        "operationId": "getRow",
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "description": "Project name.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dbName",
+            "in": "path",
+            "description": "Name of the database to retrieve the row from.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tableName",
+            "in": "path",
+            "description": "Name of the table to retrieve the row from.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "rowKey",
+            "in": "path",
+            "description": "Row key of the row to retrieve.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of one row in the raw database table.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "required": [
+                              "columns",
+                              "key"
+                            ],
+                            "type": "object",
+                            "properties": {
+                              "key": {
+                                "type": "string",
+                                "description": "Unique row key"
+                              },
+                              "columns": {
+                                "type": "object",
+                                "description": "Row data stored as a JSON object."
+                              }
+                            },
+                            "description": "A row to store in the Raw DB."
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "api-key": []
+          },
+          {
+            "token": []
+          }
+        ],
+        "x-capability": [
+          "RawAcl:READ"
+        ]
+      }
+    },
+    "/api/v1/projects/{project}/raw/dbs/{dbName}/tables/{tableName}/rows/delete": {
+      "post": {
+        "tags": [
+          "Raw"
+        ],
+        "summary": "Delete rows in a table",
+        "operationId": "deleteRows",
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "description": "Project name.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dbName",
+            "in": "path",
+            "description": "Name of the database containing the rows.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tableName",
+            "in": "path",
+            "description": "Name of the table containing the rows.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Keys to the rows to delete.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "required": [
+                        "columns",
+                        "key"
+                      ],
+                      "type": "object",
+                      "properties": {
+                        "key": {
+                          "type": "string",
+                          "description": "Unique row key"
+                        },
+                        "columns": {
+                          "type": "object",
+                          "description": "Row data stored as a JSON object."
+                        }
+                      },
+                      "description": "A row to store in the Raw DB."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Empty response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "api-key": []
+          },
+          {
+            "token": []
+          }
+        ],
+        "x-capability": [
+          "RawAcl:WRITE"
+        ]
+      }
     }
   },
   "tags": [
@@ -16054,6 +18154,10 @@
     {
       "name": "Time series",
       "description": "A time series consists of a sequence of data points connected to a single asset. \n\nFor example: A water pump asset can have a temperature time series that records a data point in units of °C every second. \n\nA single asset can have several time series. The water pump could have additional time series measuring pressure within the pump, rpm, flow volume, power consumption, and more.\n\nTime series store data points as either number or strings. This is controlled by the is_string flag on the time series object. Numerical data points can be aggregated before they are returned from a query (e.g., to find the average temperature for a day). String data points, on the other hand, cannot be aggregated by CDP, but can store arbitrary information like states (e.g. “open”/”closed”) or more complex information (JSON).\n\nCognite stores discrete data points, but the underlying process measured by the data points can vary continuously. When interpolating between data points, we can either assume that each value stays the same until the next measurement, or that it linearly changes between the two measurements. This is controlled by the is_step flag on the time series object. For example, if we estimate the average over a time containing two data points, the average will either be close to the first (is step) or close to the mean of the two (not is step).\n\nA data point stores a single piece of information, a number or a string, associated with a specific time. Data points are identified by their timestamps, measured in milliseconds since the unix epoch -- 00:00, January 1st, 1970. Milliseconds is the finest time resolution supported by CDP i.e. fractional milliseconds are not supported. Leap seconds are not counted.\n\nNumerical data points can be aggregated before they are retrieved from CDP. This allows for faster queries by reducing the amount of data transferred. You can aggregate data points by specifying one or more aggregates (e.g. average, minimum, maximum) as well as the time granularity over which the aggregates should be applied (e.g. “1h” for one hour).\n\nAggregates are aligned to the start time modulo the granularity unit. For example, if you ask for daily average temperatures since monday afternoon last week, the first aggregated data point will contain averages for monday, the second for tuesday, etc. Determining aggregate alignment without considering data point timestamps allows CDP to pre-calculate aggregates (e.g. to quickly return daily average temperatures for a year). As a consequence, aggregating over 60 minutes can return a different result that aggregating over 1 hour because the two queries will be aligned differently.Deprecation warning: In the future, CDP will phase out name as a unique identifier for time series, and instead use a primary key of externalId. Time series names must currently be unique across across all time series in the same project. In version 1 of CDP, time series names will no longer be unique. "
+    },
+    {
+      "name": "Raw",
+      "description": "Manage data in the raw NoSQL database. Each project will have a variable number of raw databases, each of which will have a variable number of tables, each of which will have a variable number of key-value objects. Only queries on key are supported through this API."
     }
   ]
 }

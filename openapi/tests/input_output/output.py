@@ -149,6 +149,7 @@ class AssetFilter(CogniteFilter):
         created_time (Dict[str, Any]): Range between two timestamps
         last_updated_time (Dict[str, Any]): Range between two timestamps
         asset_subtrees (List[int]): Filter out events that are not linked to assets in the subtree rooted at these assets.
+        depth (Dict[str, Any]): Range between two integers
         external_id_prefix (str): External Id provided by client. Should be unique within the project.
     """
 
@@ -161,6 +162,7 @@ class AssetFilter(CogniteFilter):
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
         asset_subtrees: List[int] = None,
+        depth: Dict[str, Any] = None,
         external_id_prefix: str = None,
         **kwargs
     ):
@@ -171,6 +173,7 @@ class AssetFilter(CogniteFilter):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.asset_subtrees = asset_subtrees
+        self.depth = depth
         self.external_id_prefix = external_id_prefix
 
     # GenStop
