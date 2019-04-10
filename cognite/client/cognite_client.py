@@ -1,15 +1,16 @@
+import logging
 import os
 import sys
 from typing import Any, Dict
 
 from cognite.client._utils.api_client import APIClient
+from cognite.client._utils.utils import DebugLogFormatter
 from cognite.client.api.assets import AssetsAPI
 from cognite.client.api.datapoints import DatapointsAPI
 from cognite.client.api.events import EventsAPI
 from cognite.client.api.files import FilesAPI
 from cognite.client.api.login import LoginAPI
 from cognite.client.api.time_series import TimeSeriesAPI
-from cognite.logger import configure_logger
 
 DEFAULT_BASE_URL = "https://api.cognitedata.com"
 DEFAULT_MAX_WORKERS = 10
@@ -29,7 +30,7 @@ class CogniteClient:
         cookies (Dict): Cookies to append to all requests. Defaults to {}
         headers (Dict): Additional headers to add to all requests.
         timeout (int): Timeout on requests sent to the api. Defaults to 20 seconds.
-        debug (bool): Configures logger to log extra request details to stdout.
+        debug (bool): Configures logger to log extra request details to stderr.
 
 
     Examples:
@@ -83,7 +84,7 @@ class CogniteClient:
         self._timeout = int(timeout or environment_timeout or DEFAULT_TIMEOUT)
 
         if debug:
-            configure_logger("cognite-sdk", log_level="INFO", log_json=True)
+            self._configure_logger_for_debug_mode()
 
         __api_version = "1.0"
 
@@ -204,3 +205,13 @@ class CogniteClient:
 
         global_client.set(self)
         CogniteClient._GLOBAL_CLIENT_SET = True
+
+    def _configure_logger_for_debug_mode(self):
+        logger = logging.getLogger("cognite-sdk")
+        logger.setLevel("INFO")
+        log_handler = logging.StreamHandler()
+        formatter = DebugLogFormatter()
+        log_handler.setFormatter(formatter)
+        logger.handlers = []
+        logger.propagate = False
+        logger.addHandler(log_handler)

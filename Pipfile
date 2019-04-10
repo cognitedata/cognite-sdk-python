@@ -7,7 +7,6 @@ name = "pypi"
 
 pandas = "*"
 requests = "*"
-cognite-logger = "==0.4.*"
 
 [dev-packages]
 sphinx = "*"

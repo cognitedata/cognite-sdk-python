@@ -1,23 +1,25 @@
 import pytest
 
-from cognite.client import CogniteAPIError
+from cognite.client import CogniteAPIError, CogniteClient
+
+c = CogniteClient()
 
 
 class TestCogniteClient:
-    def test_get(self, client):
-        res = client.get("/login/status")
+    def test_get(self):
+        res = c.get("/login/status")
         assert res.status_code == 200
 
-    def test_post(self, client):
-        res = client.post("/login", json={"apiKey": client._CogniteClient__api_key})
+    def test_post(self):
+        res = c.post("/login", json={"apiKey": c._CogniteClient__api_key})
         assert res.status_code == 200
 
-    def test_put(self, client):
+    def test_put(self):
         with pytest.raises(CogniteAPIError) as e:
-            client.put("/login")
+            c.put("/login")
         assert e.value.code == 405
 
-    def test_delete(self, client):
+    def test_delete(self):
         with pytest.raises(CogniteAPIError) as e:
-            client.delete("/login")
+            c.delete("/login")
         assert e.value.code == 405
