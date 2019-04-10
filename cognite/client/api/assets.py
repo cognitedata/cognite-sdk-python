@@ -585,6 +585,4 @@ class AssetPoster:
         for worker in workers:
             worker.join()
 
-        for asset in self.created_assets:
-            print(asset.path)
         return sorted(self.created_assets, key=lambda x: x.path)
