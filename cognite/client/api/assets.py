@@ -1,3 +1,4 @@
+import heapq
 import queue
 import threading
 
@@ -54,6 +55,9 @@ class Asset(CogniteResource):
         self.parent_ref_id = parent_ref_id
 
     # GenStop
+
+    def __hash__(self):
+        return hash(self.ref_id)
 
 
 # GenUpdateClass: AssetChange
@@ -482,77 +486,119 @@ class AssetPosterWorker(threading.Thread):
             self.response_queue.put(assets)
 
 
+class PriorityQueue:
+    def __init__(self):
+        self.priority = 0
+        self.heap = []
+
+    def add(self, elem):
+        heapq.heappush(self.heap, (self.priority, elem))
+        self.priority += 1
+
+    def get(self):
+        _, elem = heapq.heappop(self.heap)
+        return elem
+
+    def __bool__(self):
+        return len(self.heap) > 0
+
+
 class AssetPoster:
     def __init__(self, assets: List[Asset], client: AssetsAPI):
-        self.validate_asset_hierarchy(assets)
+        self._validate_asset_hierarchy(assets)
 
         self.remaining_assets = [Asset._load(a.dump(camel_case=True)) for a in assets]
         self.client = client
 
-        self.number_of_assets = len(assets)
-
-        self.ref_id_to_remaining_children = self.initialize_ref_id_to_remaining_children_map(self.remaining_assets)
         self.ref_id_to_id = {}
+        self.ref_id_to_children = {asset.ref_id: set() for asset in assets}
+        self.asset_to_descendent_count = {asset: 0 for asset in assets}
+        self.remaining_assets_set = set()
 
+        self.num_of_assets = len(self.remaining_assets)
         self.request_queue = queue.Queue()
         self.response_queue = queue.Queue()
-
         self.created_assets = AssetList([])
+        self.assets_remaining = lambda: len(self.created_assets) < self.num_of_assets
+
+        self._initialize()
 
     @staticmethod
-    def validate_asset_hierarchy(assets: List[Asset]) -> None:
-        ref_ids = [asset.ref_id for asset in assets if asset.ref_id is not None]
-        ref_ids_set = set(ref_ids)
-        assert len(ref_ids) == len(ref_ids_set), "Duplicate ref_ids found"
+    def _validate_asset_hierarchy(assets) -> None:
+        ref_ids = set([asset.ref_id for asset in assets])
+        ref_ids_seen = set()
         for asset in assets:
+            if asset.ref_id is None and (asset.parent_id is None or asset.parent_ref_id is not None):
+                raise AssertionError("ref_id must be set on all assets when posting an asset hierarchy")
+
+            if asset.ref_id in ref_ids_seen:
+                raise AssertionError("Duplicate ref_id '' found".format(asset.ref_id))
+            if asset.ref_id is not None:
+                ref_ids_seen.add(asset.ref_id)
+
             parent_ref = asset.parent_ref_id
             if parent_ref:
-                assert parent_ref in ref_ids_set, "parent_ref_id '{}' does not point to anything".format(parent_ref)
-                assert asset.parent_id is None, "An asset has both parent_id and parent_ref_id set."
+                if parent_ref not in ref_ids:
+                    raise AssertionError("parent_ref_id '{}' does not point to anything".format(parent_ref))
+                if asset.parent_id is not None:
+                    raise AssertionError("An asset has both parent_id and parent_ref_id set.")
 
-    @staticmethod
-    def initialize_ref_id_to_remaining_children_map(assets: List[Asset]) -> Dict[str, List[Asset]]:
-        ref_id_to_children = {asset.ref_id: [] for asset in assets if asset.ref_id is not None}
-        for asset in assets:
-            if asset.parent_ref_id in ref_id_to_children:
-                ref_id_to_children[asset.parent_ref_id].append(asset)
-        return ref_id_to_children
-
-    def get_descendants_unblocked_by_ref_id(self, assets: List[Asset], limit):
-        unblocked_children = []
-        for asset in assets:
-            if asset.ref_id in self.ref_id_to_remaining_children:
-                asset_children = self.ref_id_to_remaining_children[asset.ref_id].copy()
-                for child_asset in asset_children:
-                    unblocked_children.append(child_asset)
-                    self.ref_id_to_remaining_children[asset.ref_id].remove(child_asset)
-                    if len(unblocked_children) == limit:
-                        return unblocked_children
-
-                    max_descendents = limit - len(unblocked_children)
-                    unblocked_children.extend(self.get_descendants_unblocked_by_ref_id([child_asset], max_descendents))
-                    if len(unblocked_children) == limit:
-                        return unblocked_children
-        return unblocked_children
-
-    def get_unblocked_assets(self, limit) -> List[List[Asset]]:
-        unblocked_assets_lists = []
-        unblocked_assets = []
-
+    def _initialize(self):
+        root_assets = set()
         for asset in self.remaining_assets:
             if asset.parent_ref_id is None or asset.parent_id is not None:
-                unblocked_assets.append(asset)
-            elif asset.parent_ref_id in self.ref_id_to_id:
-                asset.parent_id = self.ref_id_to_id[asset.parent_ref_id]
-                asset.parent_ref_id = None
-                unblocked_assets.append(asset)
-            if len(unblocked_assets) == limit:
-                unblocked_assets_lists.append(unblocked_assets)
-                unblocked_assets = []
+                root_assets.add(asset)
+            elif asset.parent_ref_id in self.ref_id_to_children:
+                self.ref_id_to_children[asset.parent_ref_id].add(asset)
 
-        if len(unblocked_assets) < limit:
-            max_descendents = limit - len(unblocked_assets)
-            unblocked_assets.extend(self.get_descendants_unblocked_by_ref_id(unblocked_assets, max_descendents))
+        for root_asset in root_assets:
+            self._initialize_asset_to_descendant_count(root_asset)
+
+        self.remaining_assets = self._sort_assets_by_descendant_count(self.remaining_assets)
+        self.remaining_assets_set = set(self.remaining_assets)
+
+    def _initialize_asset_to_descendant_count(self, asset):
+        for child in self.ref_id_to_children[asset.ref_id]:
+            self.asset_to_descendent_count[asset] += 1 + self._initialize_asset_to_descendant_count(child)
+        return self.asset_to_descendent_count[asset]
+
+    def _sort_assets_by_descendant_count(self, assets: List[Asset]):
+        return sorted(assets, key=lambda x: self.asset_to_descendent_count[x], reverse=True)
+
+    def _get_children_sorted_by_descendent_count(self, asset: Asset):
+        children = self.ref_id_to_children[asset.ref_id]
+        sorted_children = self._sort_assets_by_descendant_count(children)
+        return sorted_children
+
+    def _get_assets_unblocked_by_ref_id(self, asset: Asset, limit):
+        pq = PriorityQueue()
+        pq.add(asset)
+        unblocked_descendents = []
+        while pq:
+            if len(unblocked_descendents) == limit:
+                break
+            asset = pq.get()
+            unblocked_descendents.append(asset)
+            self.remaining_assets_set.remove(asset)
+            for child in self._get_children_sorted_by_descendent_count(asset):
+                pq.add(child)
+        return unblocked_descendents
+
+    def _get_unblocked_assets(self) -> List[List[Asset]]:
+        limit = self.client._LIMIT
+        unblocked_assets_lists = []
+        unblocked_assets = []
+        for asset in self.remaining_assets:
+            if asset in self.remaining_assets_set and (
+                asset.parent_ref_id is None or asset.parent_id is not None or asset.parent_ref_id in self.ref_id_to_id
+            ):
+                if asset.parent_ref_id in self.ref_id_to_id:
+                    asset.parent_id = self.ref_id_to_id[asset.parent_ref_id]
+                    asset.parent_ref_id = None
+                unblocked_assets.extend(self._get_assets_unblocked_by_ref_id(asset, limit - len(unblocked_assets)))
+                if len(unblocked_assets) == limit:
+                    unblocked_assets_lists.append(unblocked_assets)
+                    unblocked_assets = []
 
         if len(unblocked_assets) > 0:
             unblocked_assets_lists.append(unblocked_assets)
@@ -563,23 +609,20 @@ class AssetPoster:
 
         return unblocked_assets_lists
 
-    def update_ref_id_to_id_map(self, assets):
+    def _update_ref_id_to_id_map(self, assets):
         for asset in assets:
             if asset.ref_id is not None:
                 self.ref_id_to_id[asset.ref_id] = asset.id
 
-    def assets_remaining(self):
-        return len(self.created_assets) < self.number_of_assets
-
     def run(self):
-        unblocked_assets_lists = self.get_unblocked_assets(self.client._LIMIT)
+        unblocked_assets_lists = self._get_unblocked_assets()
         for unblocked_assets in unblocked_assets_lists:
             self.request_queue.put(unblocked_assets)
         while self.assets_remaining():
             posted_assets = self.response_queue.get()
-            self.update_ref_id_to_id_map(posted_assets)
+            self._update_ref_id_to_id_map(posted_assets)
             self.created_assets.extend(posted_assets)
-            unblocked_assets_lists = self.get_unblocked_assets(self.client._LIMIT)
+            unblocked_assets_lists = self._get_unblocked_assets()
             for unblocked_assets in unblocked_assets_lists:
                 self.request_queue.put(unblocked_assets)
 
@@ -594,7 +637,5 @@ class AssetPoster:
 
         for worker in workers:
             worker.stop = True
-        for worker in workers:
-            worker.join()
 
-        return sorted(self.created_assets, key=lambda x: x.path)
+        return AssetList(sorted(self.created_assets, key=lambda x: x.path))

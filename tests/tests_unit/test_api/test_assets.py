@@ -146,54 +146,93 @@ class TestAssetPosterWorker:
         assert 1 == len(mock_assets_response.calls)
 
 
+def generate_asset_tree(root_ref_id: str, depth: int, children_per_node: int, current_depth=1):
+    assert 1 <= children_per_node <= 10, "children_per_node must be between 1 and 10"
+    assets = []
+    if current_depth == 1:
+        assets = [Asset(ref_id=root_ref_id)]
+    if depth > current_depth:
+        for i in range(children_per_node):
+            asset = Asset(parent_ref_id=root_ref_id, ref_id="{}{}".format(root_ref_id, i))
+            assets.append(asset)
+            if depth > current_depth + 1:
+                assets.extend(generate_asset_tree(root_ref_id + str(i), depth, children_per_node, current_depth + 1))
+    return assets
+
+
 class TestAssetPoster:
-    def test_validate_asset_hierarchy_parent_ref_null_pointer(self):
+    def test_validate_asset_hierarchy_ref_id_not_set(self):
         assets = [Asset(parent_ref_id="1")]
+        with pytest.raises(AssertionError, match="must be set"):
+            AssetPoster(assets, ASSETS_API)
+
+    def test_validate_asset_hierarchy_parent_ref_null_pointer(self):
+        assets = [Asset(parent_ref_id="1", ref_id="2")]
         with pytest.raises(AssertionError, match="does not point"):
-            AssetPoster.validate_asset_hierarchy(assets)
+            AssetPoster(assets, ASSETS_API)
 
     def test_validate_asset_hierarchy_asset_has_parent_id_and_parent_ref_id(self):
-        assets = [Asset(ref_id="1"), Asset(parent_ref_id="1", parent_id=1)]
+        assets = [Asset(ref_id="1"), Asset(parent_ref_id="1", parent_id=1, ref_id="2")]
         with pytest.raises(AssertionError, match="has both"):
-            AssetPoster.validate_asset_hierarchy(assets)
+            AssetPoster(assets, ASSETS_API)
 
     def test_validate_asset_hierarchy_duplicate_ref_ids(self):
         assets = [Asset(ref_id="1"), Asset(parent_ref_id="1", ref_id="1")]
         with pytest.raises(AssertionError, match="Duplicate"):
-            AssetPoster.validate_asset_hierarchy(assets)
+            AssetPoster(assets, ASSETS_API)
 
-    def test_initialize_ref_id_to_remaining_children_map(self):
+    def test_validate_asset_hierarchy__more_than_limit(self, set_limit):
+        set_limit(1)
+        with pytest.raises(AssertionError, match="ref_id must be set"):
+            AssetPoster([Asset(), Asset()], ASSETS_API)
+
+    def test_validate_asset_hierarchy__more_than_limit_only_resolved_assets(self, set_limit):
+        set_limit(1)
+        AssetPoster([Asset(parent_id=1), Asset(parent_id=2)], ASSETS_API)
+
+    def test_validate_asset_hierarchy_circular_dependencies(self):
+        assets = [Asset(ref_id="1", parent_ref_id="2"), Asset(ref_id="2", parent_ref_id="1")]
+        with pytest.raises(AssertionError, match="circular dependencies"):
+            AssetPoster(assets, ASSETS_API)
+
+    def test_initialize(self):
         assets = [
-            Asset(ref_id="0"),
-            Asset(parent_ref_id="0", ref_id="1"),
-            Asset(parent_ref_id="1"),
-            Asset(parent_ref_id="1"),
+            Asset(ref_id="1"),
+            Asset(ref_id="3", parent_ref_id="1"),
+            Asset(ref_id="2", parent_ref_id="1"),
+            Asset(ref_id="4", parent_ref_id="2"),
         ]
 
+        ap = AssetPoster(assets, ASSETS_API)
+        assert [
+            Asset(ref_id="1"),
+            Asset(ref_id="2", parent_ref_id="1"),
+            Asset(ref_id="3", parent_ref_id="1"),
+            Asset(ref_id="4", parent_ref_id="2"),
+        ] == ap.remaining_assets
+        assert {} == ap.ref_id_to_id
         assert {
-            "0": [Asset(parent_ref_id="0", ref_id="1")],
-            "1": [Asset(parent_ref_id="1"), Asset(parent_ref_id="1")],
-        } == AssetPoster.initialize_ref_id_to_remaining_children_map(assets)
-
-    def generate_asset_tree(self, root_ref_id: str, depth: int, children_per_node: int, current_depth=1):
-        assert 1 <= children_per_node <= 10, "children_per_node must be between 1 and 10"
-        assets = []
-        if current_depth == 1:
-            assets = [Asset(ref_id=root_ref_id)]
-        if depth > current_depth:
-            for i in range(children_per_node):
-                asset = Asset(parent_ref_id=root_ref_id, ref_id="{}{}".format(root_ref_id, i))
-                assets.append(asset)
-                if depth > current_depth + 1:
-                    assets.extend(
-                        self.generate_asset_tree(root_ref_id + str(i), depth, children_per_node, current_depth + 1)
-                    )
-        return assets
+            "1": {Asset(ref_id="2", parent_ref_id="1"), Asset(ref_id="3", parent_ref_id="1")},
+            "2": {Asset(ref_id="4", parent_ref_id="2")},
+            "3": set(),
+            "4": set(),
+        } == ap.ref_id_to_children
+        assert {
+            Asset(ref_id="1"): 3,
+            Asset(ref_id="2", parent_ref_id="1"): 1,
+            Asset(ref_id="3", parent_ref_id="1"): 0,
+            Asset(ref_id="4", parent_ref_id="2"): 0,
+        } == ap.asset_to_descendent_count
+        assert ap.assets_remaining() is True
+        assert 0 == len(ap.created_assets)
+        assert ap.request_queue.empty()
+        assert ap.response_queue.empty()
+        assert set(assets) == ap.remaining_assets_set
 
     def test_get_unblocked_assets__assets_unblocked_by_default_less_than_limit(self):
-        assets = self.generate_asset_tree(root_ref_id="0", depth=4, children_per_node=10)
+        assets = generate_asset_tree(root_ref_id="0", depth=4, children_per_node=10)
         ap = AssetPoster(assets=assets, client=ASSETS_API)
-        unblocked_assets_lists = ap.get_unblocked_assets(limit=ASSETS_API._LIMIT)
+        unblocked_assets_lists = ap._get_unblocked_assets()
         assert 1 == len(unblocked_assets_lists)
         assert 1000 == len(unblocked_assets_lists[0])
 
@@ -201,10 +240,10 @@ class TestAssetPoster:
         set_limit(3)
         assets = []
         for i in range(4):
-            assets.extend(self.generate_asset_tree(root_ref_id=str(i), depth=2, children_per_node=2))
+            assets.extend(generate_asset_tree(root_ref_id=str(i), depth=2, children_per_node=2))
         ap = AssetPoster(assets=assets, client=ASSETS_API)
-        unblocked_assets_lists = ap.get_unblocked_assets(limit=ASSETS_API._LIMIT)
-        assert 2 == len(unblocked_assets_lists)
+        unblocked_assets_lists = ap._get_unblocked_assets()
+        assert 4 == len(unblocked_assets_lists)
         for li in unblocked_assets_lists:
             assert 3 == len(li)
 
@@ -233,13 +272,13 @@ class TestAssetPoster:
 
     @pytest.mark.parametrize(
         "limit, depth, children_per_node, expected_num_calls",
-        [(100, 4, 10, 12), (100, 102, 1, 2), (1, 10, 1, 10), (91, 3, 9, 1)],
+        [(100, 4, 10, 13), (9, 3, 9, 11), (100, 101, 1, 2), (1, 10, 1, 10)],
     )
     def test_post_hierarchy(
         self, limit, depth, children_per_node, expected_num_calls, mock_post_asset_hierarchy, set_limit
     ):
         set_limit(limit)
-        assets = self.generate_asset_tree(root_ref_id="0", depth=depth, children_per_node=children_per_node)
+        assets = generate_asset_tree(root_ref_id="0", depth=depth, children_per_node=children_per_node)
         created_assets = ASSETS_API.create(assets)
         assert len(assets) == len(created_assets)
         assert expected_num_calls == len(mock_post_asset_hierarchy.calls)
