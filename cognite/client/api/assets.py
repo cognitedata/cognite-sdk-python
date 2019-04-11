@@ -511,6 +511,8 @@ class AssetPoster:
         self.client = client
 
         self.ref_id_to_id = {}
+        self.ref_ids_without_circular_deps = set()
+        self.ref_id_to_asset = {asset.ref_id: asset for asset in assets if asset.ref_id is not None}
         self.ref_id_to_children = {asset.ref_id: set() for asset in assets}
         self.asset_to_descendent_count = {asset: 0 for asset in assets}
         self.remaining_assets_set = set()
@@ -532,16 +534,20 @@ class AssetPoster:
                 raise AssertionError("ref_id must be set on all assets when posting an asset hierarchy")
 
             if asset.ref_id in ref_ids_seen:
-                raise AssertionError("Duplicate ref_id '' found".format(asset.ref_id))
+                raise AssertionError("Duplicate ref_id '{}' found".format(asset.ref_id))
             if asset.ref_id is not None:
                 ref_ids_seen.add(asset.ref_id)
 
             parent_ref = asset.parent_ref_id
             if parent_ref:
                 if parent_ref not in ref_ids:
-                    raise AssertionError("parent_ref_id '{}' does not point to anything".format(parent_ref))
+                    raise AssertionError("parent_ref_id '{}' does not point to any asset".format(parent_ref))
                 if asset.parent_id is not None:
-                    raise AssertionError("An asset has both parent_id and parent_ref_id set.")
+                    raise AssertionError(
+                        "An asset has both parent_id '{}' and parent_ref_id '{}' set.".format(
+                            asset.parent_id, asset.parent_ref_id
+                        )
+                    )
 
     def _initialize(self):
         root_assets = set()
@@ -550,6 +556,7 @@ class AssetPoster:
                 root_assets.add(asset)
             elif asset.parent_ref_id in self.ref_id_to_children:
                 self.ref_id_to_children[asset.parent_ref_id].add(asset)
+            self._verify_asset_is_not_part_of_tree_with_circular_deps(asset)
 
         for root_asset in root_assets:
             self._initialize_asset_to_descendant_count(root_asset)
@@ -561,6 +568,19 @@ class AssetPoster:
         for child in self.ref_id_to_children[asset.ref_id]:
             self.asset_to_descendent_count[asset] += 1 + self._initialize_asset_to_descendant_count(child)
         return self.asset_to_descendent_count[asset]
+
+    def _verify_asset_is_not_part_of_tree_with_circular_deps(self, asset: Asset):
+        next_asset = asset
+        seen = {asset.ref_id}
+        while next_asset.parent_ref_id is not None:
+            next_asset = self.ref_id_to_asset[next_asset.parent_ref_id]
+            if next_asset.ref_id in self.ref_ids_without_circular_deps:
+                break
+            if next_asset.ref_id not in seen:
+                seen.add(next_asset.ref_id)
+            else:
+                raise AssertionError("The asset hierarchy has circular dependencies")
+        self.ref_ids_without_circular_deps.update(seen)
 
     def _sort_assets_by_descendant_count(self, assets: List[Asset]):
         return sorted(assets, key=lambda x: self.asset_to_descendent_count[x], reverse=True)

@@ -181,7 +181,7 @@ class TestAssetPoster:
         with pytest.raises(AssertionError, match="Duplicate"):
             AssetPoster(assets, ASSETS_API)
 
-    def test_validate_asset_hierarchy__more_than_limit(self, set_limit):
+    def test_validate_asset_hierarchy__more_than_limit_no_ref_ids(self, set_limit):
         set_limit(1)
         with pytest.raises(AssertionError, match="ref_id must be set"):
             AssetPoster([Asset(), Asset()], ASSETS_API)
@@ -190,8 +190,19 @@ class TestAssetPoster:
         set_limit(1)
         AssetPoster([Asset(parent_id=1), Asset(parent_id=2)], ASSETS_API)
 
-    def test_validate_asset_hierarchy_circular_dependencies(self):
-        assets = [Asset(ref_id="1", parent_ref_id="2"), Asset(ref_id="2", parent_ref_id="1")]
+    def test_validate_asset_hierarchy_circular_dependencies(self, set_limit):
+        set_limit(1)
+        assets = [
+            Asset(ref_id="1", parent_ref_id="3"),
+            Asset(ref_id="2", parent_ref_id="1"),
+            Asset(ref_id="3", parent_ref_id="2"),
+        ]
+        with pytest.raises(AssertionError, match="circular dependencies"):
+            AssetPoster(assets, ASSETS_API)
+
+    def test_validate_asset_hierarchy_self_dependency(self, set_limit):
+        set_limit(1)
+        assets = [Asset(ref_id="1"), Asset(ref_id="2", parent_ref_id="2")]
         with pytest.raises(AssertionError, match="circular dependencies"):
             AssetPoster(assets, ASSETS_API)
 
@@ -260,7 +271,7 @@ class TestAssetPoster:
                     parent_id = item["parentId"]
                 if "parentRefId" in item:
                     parent_id = item["parentRefId"] + "id"
-                id = item["refId"] + "id"
+                id = item.get("refId", "root_") + "id"
                 response_assets.append({"id": id, "parentId": parent_id, "path": [parent_id or "", id]})
             return 200, {}, json.dumps({"data": {"items": response_assets}})
 
@@ -287,6 +298,13 @@ class TestAssetPoster:
                 assert asset.parent_id is None
             else:
                 assert asset.id[:-3] == asset.parent_id[:-2]
+
+    def test_post_assets_over_limit_only_resolved(self, set_limit, mock_post_asset_hierarchy):
+        set_limit(1)
+        created_assets = AssetPoster([Asset(parent_id=1), Asset(parent_id=2)], ASSETS_API).post()
+        assert 2 == len(mock_post_asset_hierarchy.calls)
+        for asset in created_assets:
+            assert "root_id" == asset.id
 
 
 @pytest.fixture
