@@ -4,9 +4,17 @@ from random import random
 
 import pytest
 
-from cognite.client import CogniteClient
+from cognite.client import CogniteAPIError, CogniteClient
 from cognite.client._utils import utils
-from cognite.client.api.datapoints import Datapoint, Datapoints, DatapointsList, DatapointsQuery, _DPWindow
+from cognite.client.api.datapoints import (
+    Datapoint,
+    Datapoints,
+    DatapointsList,
+    DatapointsQuery,
+    _concatenate_datapoints,
+    _DatapointsFetcher,
+    _DPWindow,
+)
 from tests.utils import jsgz_load
 
 DPS_CLIENT = CogniteClient().datapoints
@@ -67,8 +75,8 @@ def mock_get_datapoints(rsps):
 
             dps = generate_datapoints(start, end, aggregates, granularity)
             dps = dps[:limit]
-            id_to_return = dps_query.get("id", -1)
-            external_id_to_return = dps_query.get("externalId", "-1")
+            id_to_return = dps_query.get("id", int(dps_query.get("externalId", "-1")))
+            external_id_to_return = dps_query.get("externalId", str(dps_query.get("id", -1)))
             items.append({"id": id_to_return, "externalId": external_id_to_return, "datapoints": dps})
         response = {"data": {"items": items}}
         return 200, {}, json.dumps(response)
@@ -138,6 +146,16 @@ class TestGetDatapoints:
         assert isinstance(dps_res, Datapoints)
         assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
 
+    def test_get_datapoints_500(self, rsps):
+        rsps.add(
+            rsps.POST,
+            DPS_CLIENT._base_url + "/timeseries/data/get",
+            json={"error": {"code": 500, "message": "Internal Server Error"}},
+            status=500,
+        )
+        with pytest.raises(CogniteAPIError):
+            DPS_CLIENT.get(id=123, start=1000000, end=1100000)
+
     def test_get_datapoints_by_external_id(self, mock_get_datapoints):
         dps_res = DPS_CLIENT.get(external_id="123", start=1000000, end=1100000)
         assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
@@ -151,7 +169,7 @@ class TestGetDatapoints:
     def test_get_datapoints_local_aggregates(self, mock_get_datapoints):
         dps_res_list = DPS_CLIENT.get(
             external_id={"externalId": "123", "aggregates": ["average"]},
-            id={"id": 123},
+            id={"id": 234},
             start=1000000,
             end=1100000,
             aggregates=["max"],
@@ -248,7 +266,7 @@ class TestQueryDatapoints:
         dps_res_list = DPS_CLIENT.query(
             query=[
                 DatapointsQuery(id=1, start=0, end=10000),
-                DatapointsQuery(external_id="1", start=10000, end=20000, aggregates=["average"], granularity="2s"),
+                DatapointsQuery(external_id="2", start=10000, end=20000, aggregates=["average"], granularity="2s"),
             ]
         )
         assert isinstance(dps_res_list, DatapointsList)
@@ -533,7 +551,6 @@ class TestPandasIntegration:
         import pandas as pd
 
         d = Datapoints(id=1, timestamp=[1, 2, 3], average=[2, 3, 4], step_interpolation=[3, 4, 5])
-        print(d.to_pandas())
         expected_df = pd.DataFrame(
             {"1|average": [2, 3, 4], "1|stepInterpolation": [3, 4, 5]},
             index=[utils.ms_to_datetime(ms) for ms in [1, 2, 3]],
@@ -584,13 +601,13 @@ class TestPandasIntegration:
     def test_get_dataframe(self, mock_get_datapoints):
         df = DPS_CLIENT.get_dataframe(
             id=[1, {"id": 2, "aggregates": ["max"]}],
-            external_id=["abc"],
+            external_id=["123"],
             start=1000000,
             end=1100000,
             aggregates=["average"],
             granularity="10s",
         )
-        assert {"1|average", "2|max", "-1|average"} == set(df.columns)
+        assert {"1|average", "2|max", "123|average"} == set(df.columns)
         assert df.shape[0] > 0
 
     def test_insert_dataframe(self, mock_post_datapoints):
@@ -629,13 +646,13 @@ class TestHelpers:
         ],
     )
     def test_get_datapoints_windows(self, start, end, granularity, num_of_workers, expected_output):
-        res = DPS_CLIENT._get_windows(start=start, end=end, granularity=granularity, max_windows=num_of_workers)
+        res = _DatapointsFetcher._get_windows(start=start, end=end, granularity=granularity, max_windows=num_of_workers)
         assert expected_output == res
 
     def test_concatenate_datapoints(self):
-        d1 = Datapoints(id=1, external_id="1", timestamp=[1, 2, 3], value=[1, 2, 3])
-        d2 = Datapoints(id=1, external_id="1", timestamp=[4, 5, 6], value=[4, 5, 6])
-        concatenated = DPS_CLIENT._concatenate_datapoints([d1, d2])
+        d1 = Datapoints(id=1, external_id="1", timestamp=[4, 5, 6], value=[4, 5, 6])
+        d2 = Datapoints(id=1, external_id="1", timestamp=[1, 2, 3], value=[1, 2, 3])
+        concatenated = _concatenate_datapoints([d1, d2])
         assert [1, 2, 3, 4, 5, 6] == concatenated.timestamp
         assert [1, 2, 3, 4, 5, 6] == concatenated.value
         assert 1 == concatenated.id
@@ -649,7 +666,7 @@ class TestHelpers:
             value=[0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 1],
             max=[0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 1],
         )
-        d_no_dupes = DPS_CLIENT._remove_duplicates(d)
+        d_no_dupes = _DatapointsFetcher._remove_duplicates(d)
         assert [1, 2, 3, 4, 5, 6, 7] == d_no_dupes.timestamp
         assert [0, 1, 0, 1, 1, 0, 1] == d_no_dupes.value
         assert [0, 1, 0, 1, 1, 0, 1] == d_no_dupes.max

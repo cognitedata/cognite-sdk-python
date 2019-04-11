@@ -1,4 +1,6 @@
 import json
+import queue
+import threading
 from collections import defaultdict, namedtuple
 from datetime import datetime
 from typing import *
@@ -199,7 +201,9 @@ class Datapoints:
             for i in range(len(self)):
                 dp_args = {}
                 for attr, value in self._get_non_empty_data_fields():
-                    dp_args[attr] = getattr(self, attr)[i]
+                    if len(value) == i:
+                        print("haha")
+                    dp_args[attr] = value[i]
                 self.__datapoint_objects.append(Datapoint(**dp_args))
         return self.__datapoint_objects
 
@@ -258,6 +262,9 @@ class DatapointsQuery(CogniteResource):
 
 
 _DPWindow = namedtuple("Window", ["start", "end"])
+_DPQuery = namedtuple(
+    "DPQuery", ["start", "end", "ts_item", "aggregates", "granularity", "include_outside_points", "limit"]
+)
 
 
 class DatapointsAPI(APIClient):
@@ -328,27 +335,11 @@ class DatapointsAPI(APIClient):
         end = utils.timestamp_to_ms(end)
         ts_items, is_single_id = self._process_ts_identifiers(id, external_id)
 
-        max_workers_per_ts = max(self._max_workers // len(ts_items), 1)
-
-        tasks = []
+        dps_queries = []
         for ts_item in ts_items:
-            tasks.append(
-                (start, end, ts_item, aggregates, granularity, include_outside_points, limit, max_workers_per_ts)
-            )
+            dps_queries.append(_DPQuery(start, end, ts_item, aggregates, granularity, include_outside_points, limit))
 
-        results = utils.execute_tasks_concurrently(
-            self._get_datapoints_concurrently, tasks, max_workers=min(self._max_workers, len(ts_items))
-        )
-
-        if limit:
-            for i, dps_res in enumerate(results):
-                results[i] = dps_res[:limit]
-
-        if include_outside_points:
-            for i, dps in enumerate(results):
-                results[i] = self._remove_duplicates(dps)
-
-        dps_list = DatapointsList(results)
+        dps_list = _DatapointsFetcher(client=self).fetch(dps_queries)
 
         if is_single_id:
             return dps_list[0]
@@ -408,7 +399,7 @@ class DatapointsAPI(APIClient):
 
     def query(self, query: Union[DatapointsQuery, List[DatapointsQuery]]) -> Union[Datapoints, DatapointsList]:
         """Get datapoints for one or more time series
-
+D
         This method is different from get() in that you can specify different start times, end times, and granularities
         for each requested time series.
 
@@ -438,10 +429,15 @@ class DatapointsAPI(APIClient):
             is_single_query = True
             query = [query]
 
-        tasks = []
+        dps_queries = []
         for q in query:
-            tasks.append((q.start, q.end, q.id, q.external_id, q.aggregates, q.granularity, q.include_outside_points))
-        results = utils.execute_tasks_concurrently(self.get, tasks, max_workers=self._max_workers)
+            start = utils.timestamp_to_ms(q.start)
+            end = utils.timestamp_to_ms(q.end)
+            ts_items, _ = self._process_ts_identifiers(q.id, q.external_id)
+            dps_queries.append(
+                _DPQuery(start, end, ts_items[0], q.aggregates, q.granularity, q.include_outside_points, q.limit)
+            )
+        results = _DatapointsFetcher(self).fetch(dps_queries)
         if is_single_query:
             return results[0]
         return DatapointsList(results)
@@ -661,6 +657,7 @@ class DatapointsAPI(APIClient):
                 >>> df = c.datapoints.get_dataframe(id=[1,2,3], start="2w-ago", end="now",
                 ...         aggregates=["average"], granularity="1h")
         """
+        utils.local_import("pandas")
         return self.get(
             id=id,
             external_id=external_id,
@@ -713,125 +710,6 @@ class DatapointsAPI(APIClient):
                 }
             )
         self.insert_multiple(dps)
-
-    def _get_datapoints_concurrently(
-        self,
-        start: int,
-        end: int,
-        ts_item: Dict[str, Any],
-        aggregates: List[str],
-        granularity: str,
-        include_outside_points: bool,
-        limit: int,
-        max_workers: int,
-    ) -> Datapoints:
-        windows = self._get_windows(start, end, granularity=granularity, max_windows=max_workers)
-        tasks = [(w.start, w.end, ts_item, aggregates, granularity, include_outside_points, limit) for w in windows]
-        dps_objects = utils.execute_tasks_concurrently(self._get_datapoints_with_paging, tasks, max_workers=max_workers)
-        return self._concatenate_datapoints(dps_objects)
-
-    def _get_datapoints_with_paging(
-        self,
-        start: int,
-        end: int,
-        ts_item: Dict[str, Any],
-        aggregates: List[str],
-        granularity: str,
-        include_outside_points: bool,
-        limit: int,
-    ) -> Datapoints:
-        per_request_limit = self._LIMIT_AGG if aggregates else self._LIMIT
-        next_start = start
-        datapoints = Datapoints(timestamp=[])
-        concatenated_datapoints = Datapoints(timestamp=[])
-        while (
-            (len(concatenated_datapoints) == 0 or len(datapoints) == per_request_limit)
-            and end > next_start
-            and len(concatenated_datapoints) < (limit or float("inf"))
-        ):
-            datapoints = self._get_datapoints(next_start, end, ts_item, aggregates, granularity, include_outside_points)
-            if len(datapoints) == 0:
-                break
-            latest_timestamp = int(datapoints.timestamp[-1])
-            next_start = latest_timestamp + (utils.granularity_to_ms(granularity) if granularity else 1)
-            concatenated_datapoints.id = datapoints.id
-            concatenated_datapoints.external_id = datapoints.external_id
-            concatenated_datapoints = self._concatenate_datapoints([concatenated_datapoints, datapoints])
-        return concatenated_datapoints
-
-    def _get_datapoints(
-        self,
-        start: int,
-        end: int,
-        ts_item: Dict[str, Any],
-        aggregates: List[str],
-        granularity: str,
-        include_outside_points: bool,
-    ) -> Datapoints:
-        payload = {
-            "items": [ts_item],
-            "start": start,
-            "end": end,
-            "aggregates": aggregates,
-            "granularity": granularity,
-            "includeOutsidePoints": include_outside_points,
-            "limit": self._LIMIT_AGG if aggregates else self._LIMIT,
-        }
-        res = self._post(self._RESOURCE_PATH + "/get", json=payload).json()["data"]["items"][0]
-        return Datapoints._load(res)
-
-    @staticmethod
-    def _concatenate_datapoints(dps_objects: List[Datapoints]) -> Datapoints:
-        assert 1 == len(set([dps.id for dps in dps_objects]))
-        assert 1 == len(set([dps.external_id for dps in dps_objects]))
-
-        concat_dps_object = dps_objects[0]
-        for dps in dps_objects[1:]:
-            for attr, value in dps._get_non_empty_data_fields():
-                current = getattr(concat_dps_object, attr) or []
-                current.extend(value)
-                setattr(concat_dps_object, attr, current)
-
-        return concat_dps_object
-
-    @staticmethod
-    def _remove_duplicates(dps_object: Datapoints) -> Datapoints:
-        frequencies = defaultdict(lambda: [0, []])
-        for i, timestamp in enumerate(dps_object.timestamp):
-            frequencies[timestamp][0] += 1
-            frequencies[timestamp][1].append(i)
-
-        indices_to_remove = []
-        for timestamp, freq in frequencies.items():
-            if freq[0] > 1:
-                indices_to_remove += freq[1][1:]
-
-        dps_object_without_duplicates = Datapoints(id=dps_object.id, external_id=dps_object.external_id)
-        for attr, values in dps_object._get_non_empty_data_fields():
-            filtered_values = [elem for i, elem in enumerate(values) if i not in indices_to_remove]
-            setattr(dps_object_without_duplicates, attr, filtered_values)
-
-        return dps_object_without_duplicates
-
-    @staticmethod
-    def _get_windows(start: int, end: int, granularity: str, max_windows: int) -> List[_DPWindow]:
-        diff = end - start
-        granularity_ms = utils.granularity_to_ms(granularity) if granularity else 1
-
-        # Ensure that number of steps is not greater than the number data points that will be returned
-        steps = min(max_windows, max(1, int(diff / granularity_ms)))
-
-        step_size = diff // steps
-        windows = []
-        next_start = start
-        next_end = next_start + step_size
-        while (not windows or windows[-1].end < end) and next_start < next_end:
-            windows.append(_DPWindow(start=next_start, end=next_end))
-            next_start += step_size + granularity_ms
-            next_end = next_start + step_size
-            if next_end > end:
-                next_end = end
-        return windows
 
     @staticmethod
     def _process_ts_identifiers(ids, external_ids) -> Tuple[List[Dict], bool]:
@@ -907,3 +785,207 @@ class DatapointsAPI(APIClient):
                 assert "value" in dp, "A datapoint is missing the 'value' key"
                 valid_datapoints.append({"timestamp": utils.timestamp_to_ms(dp["timestamp"]), "value": dp["value"]})
         return valid_datapoints
+
+
+def _concatenate_datapoints(dps_objects: List[Datapoints]) -> Datapoints:
+    assert 1 == len(set([dps.id for dps in dps_objects]))
+    assert 1 == len(set([dps.external_id for dps in dps_objects]))
+
+    dps_objects = sorted(dps_objects, key=lambda dps: dps.timestamp)
+
+    concat_dps_object = dps_objects[0]
+    for dps in dps_objects[1:]:
+        for attr, value in dps._get_non_empty_data_fields():
+            current = getattr(concat_dps_object, attr) or []
+            current.extend(value)
+            setattr(concat_dps_object, attr, current)
+
+    return concat_dps_object
+
+
+class _DatapointsFetcherWorker(threading.Thread):
+    def __init__(self, client: DatapointsAPI, request_queue: queue.Queue, response_queue: queue.Queue):
+        self.client = client
+        self.request_queue = request_queue
+        self.response_queue = response_queue
+        self.stop = False
+        self.exception = None
+        super().__init__(daemon=True)
+
+    def run(self):
+        try:
+            while not self.stop:
+                try:
+                    dps_query = self.request_queue.get(timeout=0.1)
+                except queue.Empty:
+                    continue
+                dps = self._get_datapoints_with_paging(*dps_query)
+                result = {"query": dps_query, "datapoints": dps}
+                self.response_queue.put(result)
+        except Exception as e:
+            self.response_queue.put(e)
+
+    def get_exception(self):
+        return self.exception
+
+    def _get_datapoints_with_paging(
+        self,
+        start: int,
+        end: int,
+        ts_item: Dict[str, Any],
+        aggregates: List[str],
+        granularity: str,
+        include_outside_points: bool,
+        limit: int,
+    ) -> Datapoints:
+        per_request_limit = self.client._LIMIT_AGG if aggregates else self.client._LIMIT
+        next_start = start
+        datapoints = Datapoints(timestamp=[])
+        concatenated_datapoints = Datapoints(timestamp=[])
+        while (
+            (len(concatenated_datapoints) == 0 or len(datapoints) == per_request_limit)
+            and end > next_start
+            and len(concatenated_datapoints) < (limit or float("inf"))
+        ):
+            datapoints = self._get_datapoints(next_start, end, ts_item, aggregates, granularity, include_outside_points)
+            if len(datapoints) == 0:
+                break
+            latest_timestamp = int(datapoints.timestamp[-1])
+            next_start = latest_timestamp + (utils.granularity_to_ms(granularity) if granularity else 1)
+            concatenated_datapoints.id = datapoints.id
+            concatenated_datapoints.external_id = datapoints.external_id
+            concatenated_datapoints = _concatenate_datapoints([concatenated_datapoints, datapoints])
+        return concatenated_datapoints
+
+    def _get_datapoints(
+        self,
+        start: int,
+        end: int,
+        ts_item: Dict[str, Any],
+        aggregates: List[str],
+        granularity: str,
+        include_outside_points: bool,
+    ) -> Datapoints:
+        payload = {
+            "items": [ts_item],
+            "start": start,
+            "end": end,
+            "aggregates": aggregates,
+            "granularity": granularity,
+            "includeOutsidePoints": include_outside_points,
+            "limit": self.client._LIMIT_AGG if aggregates else self.client._LIMIT,
+        }
+        res = self.client._post(self.client._RESOURCE_PATH + "/get", json=payload).json()["data"]["items"][0]
+        return Datapoints._load(res)
+
+
+class _DatapointsFetcher:
+    def __init__(self, client: DatapointsAPI):
+        self.client = client
+        self.request_queue = queue.Queue()
+        self.response_queue = queue.Queue()
+        self.number_of_queries = -1
+        self.workers = [
+            _DatapointsFetcherWorker(self.client, self.request_queue, self.response_queue)
+            for _ in range(self.client._max_workers)
+        ]
+
+    def fetch(self, dps_queries: List[Union[Tuple, dict]]) -> DatapointsList:
+        for dps_query in dps_queries:
+            split_queries = self._split_query_into_windows(*dps_query)
+            self.number_of_queries += len(split_queries)
+            for query in split_queries:
+                self.request_queue.put(query)
+
+        for worker in self.workers:
+            worker.start()
+
+        dps_list = self._get_results()
+
+        for worker in self.workers:
+            worker.stop = True
+
+        return dps_list
+
+    def _get_results(self) -> DatapointsList:
+        number_of_results = 0
+        worker_responses = defaultdict(lambda: [])
+        while number_of_results <= self.number_of_queries:
+            worker_response = self.response_queue.get()
+            if isinstance(worker_response, Exception):
+                raise worker_response
+            worker_responses[worker_response["datapoints"].id].append(worker_response)
+            number_of_results += 1
+
+        dps_list = []
+        for worker_response in worker_responses.values():
+            query = worker_response[0]["query"]
+            dps_objects = []
+            for partial_result in worker_response:
+                dps_objects.append(partial_result["datapoints"])
+
+            dps_object_concatenated = _concatenate_datapoints(dps_objects)
+
+            if query.limit:
+                dps_object_concatenated = dps_object_concatenated[: query.limit]
+
+            if query.include_outside_points:
+                dps_object_concatenated = self._remove_duplicates(dps_object_concatenated)
+
+            dps_list.append(dps_object_concatenated)
+
+        return DatapointsList(dps_list)
+
+    def _split_query_into_windows(
+        self,
+        start: int,
+        end: int,
+        ts_item: Dict[str, Any],
+        aggregates: List[str],
+        granularity: str,
+        include_outside_points: bool,
+        limit: int,
+    ) -> List[Tuple]:
+        windows = self._get_windows(start, end, granularity=granularity, max_windows=self.client._max_workers)
+        return [
+            _DPQuery(w.start, w.end, ts_item, aggregates, granularity, include_outside_points, limit) for w in windows
+        ]
+
+    @staticmethod
+    def _get_windows(start: int, end: int, granularity: str, max_windows: int) -> List[_DPWindow]:
+        diff = end - start
+        granularity_ms = utils.granularity_to_ms(granularity) if granularity else 1
+
+        # Ensure that number of steps is not greater than the number data points that will be returned
+        steps = min(max_windows, max(1, int(diff / granularity_ms)))
+
+        step_size = diff // steps
+        windows = []
+        next_start = start
+        next_end = next_start + step_size
+        while (not windows or windows[-1].end < end) and next_start < next_end:
+            windows.append(_DPWindow(start=next_start, end=next_end))
+            next_start += step_size + granularity_ms
+            next_end = next_start + step_size
+            if next_end > end:
+                next_end = end
+        return windows
+
+    @staticmethod
+    def _remove_duplicates(dps_object: Datapoints) -> Datapoints:
+        frequencies = defaultdict(lambda: [0, []])
+        for i, timestamp in enumerate(dps_object.timestamp):
+            frequencies[timestamp][0] += 1
+            frequencies[timestamp][1].append(i)
+
+        indices_to_remove = []
+        for timestamp, freq in frequencies.items():
+            if freq[0] > 1:
+                indices_to_remove += freq[1][1:]
+
+        dps_object_without_duplicates = Datapoints(id=dps_object.id, external_id=dps_object.external_id)
+        for attr, values in dps_object._get_non_empty_data_fields():
+            filtered_values = [elem for i, elem in enumerate(values) if i not in indices_to_remove]
+            setattr(dps_object_without_duplicates, attr, filtered_values)
+
+        return dps_object_without_duplicates
