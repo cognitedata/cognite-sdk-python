@@ -6,7 +6,7 @@ import time
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.api.assets import Asset, AssetList, AssetPoster, AssetPosterWorker, AssetUpdate
+from cognite.client.api.assets import Asset, AssetList, AssetUpdate, _AssetPoster, _AssetPosterWorker
 from tests.utils import jsgz_load
 
 ASSETS_API = CogniteClient().assets
@@ -137,7 +137,7 @@ class TestAssetPosterWorker:
         q_req = queue.Queue()
         q_res = queue.Queue()
 
-        w = AssetPosterWorker(request_queue=q_req, response_queue=q_res, client=ASSETS_API)
+        w = _AssetPosterWorker(request_queue=q_req, response_queue=q_res, client=ASSETS_API)
         w.start()
         q_req.put([Asset()])
         time.sleep(0.1)
@@ -164,31 +164,31 @@ class TestAssetPoster:
     def test_validate_asset_hierarchy_ref_id_not_set(self):
         assets = [Asset(parent_ref_id="1")]
         with pytest.raises(AssertionError, match="must be set"):
-            AssetPoster(assets, ASSETS_API)
+            _AssetPoster(assets, ASSETS_API)
 
     def test_validate_asset_hierarchy_parent_ref_null_pointer(self):
         assets = [Asset(parent_ref_id="1", ref_id="2")]
         with pytest.raises(AssertionError, match="does not point"):
-            AssetPoster(assets, ASSETS_API)
+            _AssetPoster(assets, ASSETS_API)
 
     def test_validate_asset_hierarchy_asset_has_parent_id_and_parent_ref_id(self):
         assets = [Asset(ref_id="1"), Asset(parent_ref_id="1", parent_id=1, ref_id="2")]
         with pytest.raises(AssertionError, match="has both"):
-            AssetPoster(assets, ASSETS_API)
+            _AssetPoster(assets, ASSETS_API)
 
     def test_validate_asset_hierarchy_duplicate_ref_ids(self):
         assets = [Asset(ref_id="1"), Asset(parent_ref_id="1", ref_id="1")]
         with pytest.raises(AssertionError, match="Duplicate"):
-            AssetPoster(assets, ASSETS_API)
+            _AssetPoster(assets, ASSETS_API)
 
     def test_validate_asset_hierarchy__more_than_limit_no_ref_ids(self, set_limit):
         set_limit(1)
         with pytest.raises(AssertionError, match="ref_id must be set"):
-            AssetPoster([Asset(), Asset()], ASSETS_API)
+            _AssetPoster([Asset(), Asset()], ASSETS_API)
 
     def test_validate_asset_hierarchy__more_than_limit_only_resolved_assets(self, set_limit):
         set_limit(1)
-        AssetPoster([Asset(parent_id=1), Asset(parent_id=2)], ASSETS_API)
+        _AssetPoster([Asset(parent_id=1), Asset(parent_id=2)], ASSETS_API)
 
     def test_validate_asset_hierarchy_circular_dependencies(self, set_limit):
         set_limit(1)
@@ -198,13 +198,13 @@ class TestAssetPoster:
             Asset(ref_id="3", parent_ref_id="2"),
         ]
         with pytest.raises(AssertionError, match="circular dependencies"):
-            AssetPoster(assets, ASSETS_API)
+            _AssetPoster(assets, ASSETS_API)
 
     def test_validate_asset_hierarchy_self_dependency(self, set_limit):
         set_limit(1)
         assets = [Asset(ref_id="1"), Asset(ref_id="2", parent_ref_id="2")]
         with pytest.raises(AssertionError, match="circular dependencies"):
-            AssetPoster(assets, ASSETS_API)
+            _AssetPoster(assets, ASSETS_API)
 
     def test_initialize(self):
         assets = [
@@ -214,7 +214,7 @@ class TestAssetPoster:
             Asset(ref_id="4", parent_ref_id="2"),
         ]
 
-        ap = AssetPoster(assets, ASSETS_API)
+        ap = _AssetPoster(assets, ASSETS_API)
         assert [
             Asset(ref_id="1"),
             Asset(ref_id="2", parent_ref_id="1"),
@@ -242,7 +242,7 @@ class TestAssetPoster:
 
     def test_get_unblocked_assets__assets_unblocked_by_default_less_than_limit(self):
         assets = generate_asset_tree(root_ref_id="0", depth=4, children_per_node=10)
-        ap = AssetPoster(assets=assets, client=ASSETS_API)
+        ap = _AssetPoster(assets=assets, client=ASSETS_API)
         unblocked_assets_lists = ap._get_unblocked_assets()
         assert 1 == len(unblocked_assets_lists)
         assert 1000 == len(unblocked_assets_lists[0])
@@ -252,7 +252,7 @@ class TestAssetPoster:
         assets = []
         for i in range(4):
             assets.extend(generate_asset_tree(root_ref_id=str(i), depth=2, children_per_node=2))
-        ap = AssetPoster(assets=assets, client=ASSETS_API)
+        ap = _AssetPoster(assets=assets, client=ASSETS_API)
         unblocked_assets_lists = ap._get_unblocked_assets()
         assert 4 == len(unblocked_assets_lists)
         for li in unblocked_assets_lists:
@@ -301,7 +301,7 @@ class TestAssetPoster:
 
     def test_post_assets_over_limit_only_resolved(self, set_limit, mock_post_asset_hierarchy):
         set_limit(1)
-        created_assets = AssetPoster([Asset(parent_id=1), Asset(parent_id=2)], ASSETS_API).post()
+        created_assets = _AssetPoster([Asset(parent_id=1), Asset(parent_id=2)], ASSETS_API).post()
         assert 2 == len(mock_post_asset_hierarchy.calls)
         for asset in created_assets:
             assert "root_id" == asset.id

@@ -4,6 +4,7 @@ This module provides helper methods and different utilities for the Cognite API 
 
 This module is protected and should not used by end-users.
 """
+import heapq
 import importlib
 import logging
 import platform
@@ -252,3 +253,20 @@ class DebugLogFormatter(logging.Formatter):
                 s = s + "\n"
             s = s + self.formatStack(record.stack_info)
         return s
+
+
+class PriorityQueue:
+    def __init__(self):
+        self.priority = 0
+        self.heap = []
+
+    def add(self, elem):
+        heapq.heappush(self.heap, (self.priority, elem))
+        self.priority += 1
+
+    def get(self):
+        _, elem = heapq.heappop(self.heap)
+        return elem
+
+    def __bool__(self):
+        return len(self.heap) > 0

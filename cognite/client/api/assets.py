@@ -1,9 +1,9 @@
-import heapq
 import queue
 import threading
 
 from cognite.client._utils.api_client import APIClient
 from cognite.client._utils.base import *
+from cognite.client._utils.utils import PriorityQueue
 
 
 # GenClass: Asset, ExternalAssetItem
@@ -380,7 +380,7 @@ class AssetsAPI(APIClient):
         utils.assert_type(asset, "asset", [Asset, list])
         if isinstance(asset, Asset) or len(asset) <= self._LIMIT:
             return self._create_multiple(AssetList, self._RESOURCE_PATH, asset)
-        return AssetPoster(asset, client=self).post()
+        return _AssetPoster(asset, client=self).post()
 
     def delete(self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None) -> None:
         """Delete one or more assets
@@ -460,7 +460,7 @@ class AssetsAPI(APIClient):
         )
 
 
-class AssetPosterWorker(threading.Thread):
+class _AssetPosterWorker(threading.Thread):
     def __init__(self, client: AssetsAPI, request_queue: queue.Queue, response_queue: queue.Queue):
         self.client = client
         self.request_queue = request_queue
@@ -486,24 +486,7 @@ class AssetPosterWorker(threading.Thread):
             self.response_queue.put(assets)
 
 
-class PriorityQueue:
-    def __init__(self):
-        self.priority = 0
-        self.heap = []
-
-    def add(self, elem):
-        heapq.heappush(self.heap, (self.priority, elem))
-        self.priority += 1
-
-    def get(self):
-        _, elem = heapq.heappop(self.heap)
-        return elem
-
-    def __bool__(self):
-        return len(self.heap) > 0
-
-
-class AssetPoster:
+class _AssetPoster:
     def __init__(self, assets: List[Asset], client: AssetsAPI):
         self._validate_asset_hierarchy(assets)
 
@@ -649,7 +632,7 @@ class AssetPoster:
     def post(self):
         workers = []
         for _ in range(self.client._max_workers):
-            worker = AssetPosterWorker(self.client, self.request_queue, self.response_queue)
+            worker = _AssetPosterWorker(self.client, self.request_queue, self.response_queue)
             workers.append(worker)
             worker.start()
 
