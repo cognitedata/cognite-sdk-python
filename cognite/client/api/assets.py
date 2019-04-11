@@ -503,7 +503,7 @@ class AssetPoster:
     def validate_asset_hierarchy(assets: List[Asset]) -> None:
         ref_ids = [asset.ref_id for asset in assets if asset.ref_id is not None]
         ref_ids_set = set(ref_ids)
-        assert sorted(ref_ids) == sorted(list(ref_ids_set)), "Duplicate ref_ids found"
+        assert len(ref_ids) == len(ref_ids_set), "Duplicate ref_ids found"
         for asset in assets:
             parent_ref = asset.parent_ref_id
             if parent_ref:
@@ -542,8 +542,9 @@ class AssetPoster:
         for asset in self.remaining_assets:
             if asset.parent_ref_id is None or asset.parent_id is not None:
                 unblocked_assets.append(asset)
-            elif self.ref_id_to_id.get(asset.parent_ref_id) is not None:
+            elif asset.parent_ref_id in self.ref_id_to_id:
                 asset.parent_id = self.ref_id_to_id[asset.parent_ref_id]
+                asset.parent_ref_id = None
                 unblocked_assets.append(asset)
             if len(unblocked_assets) == limit:
                 unblocked_assets_lists.append(unblocked_assets)
