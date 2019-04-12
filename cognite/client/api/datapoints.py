@@ -956,7 +956,8 @@ class _DatapointsFetcher:
         return True
 
     def _split_query_into_windows(self, dps_query: _DPQuery) -> List[_DPQuery]:
-        windows = self._get_windows(dps_query.start, dps_query.end, granularity=dps_query.granularity)
+        dps_per_window = self.client._LIMIT_AGG if dps_query.aggregates else self.client._LIMIT
+        windows = self._get_windows(dps_query.start, dps_query.end, dps_query.granularity, dps_per_window)
         return [
             _DPQuery(
                 w.start,
@@ -971,21 +972,19 @@ class _DatapointsFetcher:
         ]
 
     @staticmethod
-    def _get_windows(start: int, end: int, granularity: str, max_windows: int = 10) -> List[_DPWindow]:
-        diff = end - start
+    def _get_windows(start: int, end: int, granularity: str, dps_per_window: int) -> List[_DPWindow]:
         granularity_ms = utils.granularity_to_ms(granularity) if granularity else 1
-
-        # Ensure that number of steps is not greater than the number data points that will be returned
-        steps = min(max_windows, max(1, int(diff / granularity_ms)))
-
-        step_size = diff // steps
+        diff = end - start
+        estimated_num_of_dps = diff / granularity_ms
+        num_of_windows = max(1, int(estimated_num_of_dps // dps_per_window))
         windows = []
         next_start = start
-        next_end = next_start + step_size
+        window_size = diff // num_of_windows
+        next_end = next_start + window_size
         while (not windows or windows[-1].end < end) and next_start < next_end:
             windows.append(_DPWindow(start=next_start, end=next_end))
-            next_start += step_size + granularity_ms
-            next_end = next_start + step_size
+            next_start += window_size + granularity_ms
+            next_end = next_start + window_size
             if next_end > end:
                 next_end = end
         return windows
