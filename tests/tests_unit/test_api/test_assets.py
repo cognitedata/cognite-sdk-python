@@ -5,7 +5,7 @@ import time
 
 import pytest
 
-from cognite.client import CogniteClient
+from cognite.client import CogniteAPIError, CogniteClient
 from cognite.client.api.assets import Asset, AssetList, AssetUpdate, _AssetPoster, _AssetPosterWorker
 from tests.utils import jsgz_load
 
@@ -161,11 +161,6 @@ def generate_asset_tree(root_ref_id: str, depth: int, children_per_node: int, cu
 
 
 class TestAssetPoster:
-    def test_validate_asset_hierarchy_ref_id_not_set(self):
-        assets = [Asset(parent_ref_id="1")]
-        with pytest.raises(AssertionError, match="must be set"):
-            _AssetPoster(assets, ASSETS_API)
-
     def test_validate_asset_hierarchy_parent_ref_null_pointer(self):
         assets = [Asset(parent_ref_id="1", ref_id="2")]
         with pytest.raises(AssertionError, match="does not point"):
@@ -180,11 +175,6 @@ class TestAssetPoster:
         assets = [Asset(ref_id="1"), Asset(parent_ref_id="1", ref_id="1")]
         with pytest.raises(AssertionError, match="Duplicate"):
             _AssetPoster(assets, ASSETS_API)
-
-    def test_validate_asset_hierarchy__more_than_limit_no_ref_ids(self, set_limit):
-        set_limit(1)
-        with pytest.raises(AssertionError, match="ref_id must be set"):
-            _AssetPoster([Asset(), Asset()], ASSETS_API)
 
     def test_validate_asset_hierarchy__more_than_limit_only_resolved_assets(self, set_limit):
         set_limit(1)
@@ -220,7 +210,7 @@ class TestAssetPoster:
             Asset(ref_id="2", parent_ref_id="1"),
             Asset(ref_id="3", parent_ref_id="1"),
             Asset(ref_id="4", parent_ref_id="2"),
-        ] == ap.remaining_assets
+        ] == ap.remaining_ref_ids
         assert {} == ap.ref_id_to_id
         assert {
             "1": {Asset(ref_id="2", parent_ref_id="1"), Asset(ref_id="3", parent_ref_id="1")},
@@ -228,17 +218,12 @@ class TestAssetPoster:
             "3": set(),
             "4": set(),
         } == ap.ref_id_to_children
-        assert {
-            Asset(ref_id="1"): 3,
-            Asset(ref_id="2", parent_ref_id="1"): 1,
-            Asset(ref_id="3", parent_ref_id="1"): 0,
-            Asset(ref_id="4", parent_ref_id="2"): 0,
-        } == ap.asset_to_descendent_count
+        assert {"1": 3, "2": 1, "3": 0, "4": 0} == ap.ref_id_to_descendent_count
         assert ap.assets_remaining() is True
         assert 0 == len(ap.created_assets)
         assert ap.request_queue.empty()
         assert ap.response_queue.empty()
-        assert set(assets) == ap.remaining_assets_set
+        assert set(assets) == ap.remaining_ref_ids_set
 
     def test_get_unblocked_assets__assets_unblocked_by_default_less_than_limit(self):
         assets = generate_asset_tree(root_ref_id="0", depth=4, children_per_node=10)
@@ -273,6 +258,7 @@ class TestAssetPoster:
                     parent_id = item["parentRefId"] + "id"
                 id = item.get("refId", "root_") + "id"
                 response_assets.append({"id": id, "parentId": parent_id, "path": [parent_id or "", id]})
+            time.sleep(0.2)
             return 200, {}, json.dumps({"data": {"items": response_assets}})
 
         rsps.add_callback(
@@ -290,7 +276,9 @@ class TestAssetPoster:
     ):
         set_limit(limit)
         assets = generate_asset_tree(root_ref_id="0", depth=depth, children_per_node=children_per_node)
+
         created_assets = ASSETS_API.create(assets)
+
         assert len(assets) == len(created_assets)
         assert expected_num_calls == len(mock_post_asset_hierarchy.calls)
         for asset in created_assets:
@@ -301,10 +289,20 @@ class TestAssetPoster:
 
     def test_post_assets_over_limit_only_resolved(self, set_limit, mock_post_asset_hierarchy):
         set_limit(1)
-        created_assets = _AssetPoster([Asset(parent_id=1), Asset(parent_id=2)], ASSETS_API).post()
+        _AssetPoster([Asset(parent_id=1), Asset(parent_id=2)], ASSETS_API).post()
         assert 2 == len(mock_post_asset_hierarchy.calls)
-        for asset in created_assets:
-            assert "root_id" == asset.id
+
+    def test_post_500(self, rsps, set_limit):
+        rsps.add(
+            rsps.POST,
+            ASSETS_API._base_url + "/assets",
+            status=500,
+            json={"error": {"message": "Internal Error", "code": 500}},
+        )
+        set_limit(100)
+        assets = generate_asset_tree(root_ref_id="0", depth=4, children_per_node=10)
+        with pytest.raises(CogniteAPIError):
+            ASSETS_API.create(assets)
 
 
 @pytest.fixture

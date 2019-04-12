@@ -104,12 +104,15 @@ class CogniteResource:
         return self.__str__()
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
-        dumped = {
+        if camel_case:
+            return {
+                to_camel_case(key): value
+                for key, value in self.__dict__.items()
+                if value not in EXCLUDE_VALUE and key not in EXCLUDE_KEY
+            }
+        return {
             key: value for key, value in self.__dict__.items() if value not in EXCLUDE_VALUE and key not in EXCLUDE_KEY
         }
-        if camel_case:
-            dumped = {to_camel_case(key): value for key, value in dumped.items()}
-        return dumped
 
     @classmethod
     def _load(cls, resource: Union[Dict, str]):

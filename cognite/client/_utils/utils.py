@@ -4,11 +4,14 @@ This module provides helper methods and different utilities for the Cognite API 
 
 This module is protected and should not used by end-users.
 """
+import functools
 import heapq
 import importlib
 import logging
 import platform
+import random
 import re
+import string
 import time
 from concurrent.futures.thread import ThreadPoolExecutor
 from datetime import datetime
@@ -92,11 +95,13 @@ def timestamp_to_ms(t: Union[int, float, str, datetime]):
     return ms
 
 
+@functools.lru_cache(maxsize=128)
 def to_camel_case(snake_case_string: str):
     components = snake_case_string.split("_")
     return components[0] + "".join(x.title() for x in components[1:])
 
 
+@functools.lru_cache(maxsize=128)
 def to_snake_case(camel_case_string: str):
     s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", camel_case_string)
     return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
@@ -255,17 +260,21 @@ class DebugLogFormatter(logging.Formatter):
         return s
 
 
+def random_string(size=100):
+    return "".join(random.choice(string.ascii_uppercase + string.digits) for _ in range(size))
+
+
 class PriorityQueue:
     def __init__(self):
-        self.priority = 0
         self.heap = []
+        self.id = 0
 
-    def add(self, elem):
-        heapq.heappush(self.heap, (self.priority, elem))
-        self.priority += 1
+    def add(self, elem, priority):
+        heapq.heappush(self.heap, (-priority, self.id, elem))
+        self.id += 1
 
     def get(self):
-        _, elem = heapq.heappop(self.heap)
+        _, _, elem = heapq.heappop(self.heap)
         return elem
 
     def __bool__(self):
