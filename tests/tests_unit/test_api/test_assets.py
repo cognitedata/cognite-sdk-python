@@ -2,6 +2,7 @@ import json
 import queue
 import re
 import time
+from collections import OrderedDict
 
 import pytest
 
@@ -205,12 +206,7 @@ class TestAssetPoster:
         ]
 
         ap = _AssetPoster(assets, ASSETS_API)
-        assert [
-            Asset(ref_id="1"),
-            Asset(ref_id="2", parent_ref_id="1"),
-            Asset(ref_id="3", parent_ref_id="1"),
-            Asset(ref_id="4", parent_ref_id="2"),
-        ] == ap.remaining_ref_ids
+        assert OrderedDict({str(i): None for i in range(1, 5)}) == ap.remaining_ref_ids
         assert {} == ap.ref_id_to_id
         assert {
             "1": {Asset(ref_id="2", parent_ref_id="1"), Asset(ref_id="3", parent_ref_id="1")},
@@ -223,7 +219,7 @@ class TestAssetPoster:
         assert 0 == len(ap.created_assets)
         assert ap.request_queue.empty()
         assert ap.response_queue.empty()
-        assert set(assets) == ap.remaining_ref_ids_set
+        assert {"1", "2", "3", "4"} == ap.remaining_ref_ids_set
 
     def test_get_unblocked_assets__assets_unblocked_by_default_less_than_limit(self):
         assets = generate_asset_tree(root_ref_id="0", depth=4, children_per_node=10)
@@ -258,7 +254,6 @@ class TestAssetPoster:
                     parent_id = item["parentRefId"] + "id"
                 id = item.get("refId", "root_") + "id"
                 response_assets.append({"id": id, "parentId": parent_id, "path": [parent_id or "", id]})
-            time.sleep(0.2)
             return 200, {}, json.dumps({"data": {"items": response_assets}})
 
         rsps.add_callback(
@@ -280,7 +275,7 @@ class TestAssetPoster:
         created_assets = ASSETS_API.create(assets)
 
         assert len(assets) == len(created_assets)
-        assert expected_num_calls == len(mock_post_asset_hierarchy.calls)
+        assert expected_num_calls - 1 <= len(mock_post_asset_hierarchy.calls) <= expected_num_calls + 1
         for asset in created_assets:
             if asset.id == "0id":
                 assert asset.parent_id is None
