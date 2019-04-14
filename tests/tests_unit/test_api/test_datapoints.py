@@ -179,11 +179,11 @@ class TestGetDatapoints:
             assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
 
     def test_datapoints_paging(self, mock_get_datapoints, set_dps_limits, set_dps_workers):
-        set_dps_limits(1)
+        set_dps_limits(2)
         set_dps_workers(1)
         dps_res = DPS_CLIENT.get(id=123, start=0, end=10000, aggregates=["average"], granularity="1s")
         assert 5 == len(mock_get_datapoints.calls)
-        assert 5 == len(dps_res)
+        assert 10 == len(dps_res)
 
     def test_datapoints_concurrent(self, mock_get_datapoints, set_dps_limits):
         DPS_CLIENT._LIMIT_AGG = 20
@@ -196,14 +196,14 @@ class TestGetDatapoints:
             key=lambda x: x[0],
         )
 
-        assert [(0, 20000), (21000, 41000), (42000, 62000), (63000, 83000), (84000, 100000)] == requested_windows
+        assert [(0, 100000), (20000, 100000), (40000, 100000), (60000, 100000), (80000, 100000)] == requested_windows
         assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
 
     @pytest.mark.parametrize(
         "limit, aggregates, granularity, actual_windows_req",
         [
-            (2000, None, None, [(0, 2000), (2001, 4001), (4002, 6002), (6003, 8003), (8004, 10000)]),
-            (2, ["average"], "1s", [(0, 2000), (3000, 5000), (6000, 8000), (9000, 10000)]),
+            (10, None, None, [(0, 5000), (5001, 10000)]),
+            (2, ["average"], "1s", [(0, 10000), (2000, 10000), (4000, 10000), (6000, 10000), (8000, 10000)]),
         ],
     )
     def test_request_dps_spacing_correct(
@@ -637,7 +637,6 @@ class TestHelpers:
         res = _DatapointsFetcher._get_windows(
             start=start, end=end, granularity=granularity, dps_per_window=dps_per_window
         )
-        print(res)
         assert expected_output == res
 
     def test_concatenate_datapoints(self):

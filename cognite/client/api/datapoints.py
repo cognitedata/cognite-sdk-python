@@ -323,13 +323,21 @@ class DatapointsAPI(APIClient):
                 ...                         external_id={"externalId": "1", "aggregates": ["max"]},
                 ...                         start="1d-ago", end="now", granularity="1h")
         """
-        start = utils.timestamp_to_ms(start)
-        end = utils.timestamp_to_ms(end)
         ts_items, is_single_id = self._process_ts_identifiers(id, external_id)
 
         dps_queries = []
         for ts_item in ts_items:
-            dps_queries.append(_DPQuery(start, end, ts_item, aggregates, granularity, include_outside_points, limit))
+            dps_queries.append(
+                _DPQuery(
+                    utils.timestamp_to_ms(start),
+                    utils.timestamp_to_ms(end),
+                    ts_item,
+                    aggregates,
+                    granularity,
+                    include_outside_points,
+                    limit,
+                )
+            )
 
         dps_list = _DatapointsFetcher(client=self).fetch(dps_queries)
 
@@ -423,12 +431,18 @@ class DatapointsAPI(APIClient):
 
         dps_queries = []
         for q in query:
-            start = utils.timestamp_to_ms(q.start)
-            end = utils.timestamp_to_ms(q.end)
             utils.assert_exactly_one_of_id_or_external_id(q.id, q.external_id)
             ts_items, _ = self._process_ts_identifiers(q.id, q.external_id)
             dps_queries.append(
-                _DPQuery(start, end, ts_items[0], q.aggregates, q.granularity, q.include_outside_points, q.limit)
+                _DPQuery(
+                    utils.timestamp_to_ms(q.start),
+                    utils.timestamp_to_ms(q.end),
+                    ts_items[0],
+                    q.aggregates,
+                    q.granularity,
+                    q.include_outside_points,
+                    q.limit,
+                )
             )
         results = _DatapointsFetcher(self).fetch(dps_queries)
         if is_single_query:
@@ -796,6 +810,18 @@ def _concatenate_datapoints(dps_objects: List[Datapoints]) -> Datapoints:
     return concat_dps_object
 
 
+_DPWindow = namedtuple("Window", ["start", "end"])
+_DPQuery = namedtuple(
+    "DPQuery", ["start", "end", "ts_item", "aggregates", "granularity", "include_outside_points", "limit"]
+)
+
+
+class _DPTask:
+    def __init__(self, dps_query: _DPQuery):
+        self.query = dps_query
+        self.datapoints = None
+
+
 class _DatapointsFetcherWorker(threading.Thread):
     def __init__(self, client: DatapointsAPI, request_queue: queue.Queue, response_queue: queue.Queue):
         self.client = client
@@ -831,6 +857,7 @@ class _DatapointsFetcherWorker(threading.Thread):
         limit: int,
     ) -> Datapoints:
         per_request_limit = self.client._LIMIT_AGG if aggregates else self.client._LIMIT
+        limit_next_request = per_request_limit
         next_start = start
         datapoints = Datapoints(timestamp=[])
         concatenated_datapoints = Datapoints(timestamp=[])
@@ -840,10 +867,15 @@ class _DatapointsFetcherWorker(threading.Thread):
             and len(concatenated_datapoints) < (limit or float("inf"))
         ):
             datapoints = self._get_datapoints(
-                next_start, end, ts_item, aggregates, granularity, include_outside_points, limit
+                next_start, end, ts_item, aggregates, granularity, include_outside_points, limit_next_request
             )
             if len(datapoints) == 0:
                 break
+
+            if limit:
+                remaining_datapoints = limit - len(datapoints)
+                if remaining_datapoints < per_request_limit:
+                    limit_next_request = remaining_datapoints
             latest_timestamp = int(datapoints.timestamp[-1])
             next_start = latest_timestamp + (utils.granularity_to_ms(granularity) if granularity else 1)
             concatenated_datapoints.id = datapoints.id
@@ -874,77 +906,67 @@ class _DatapointsFetcherWorker(threading.Thread):
         return Datapoints._load(res)
 
 
-_DPWindow = namedtuple("Window", ["start", "end"])
-_DPQuery = namedtuple(
-    "DPQuery", ["start", "end", "ts_item", "aggregates", "granularity", "include_outside_points", "limit"]
-)
-
-
-class _DPSTask:
-    def __init__(self, dps_query: _DPQuery):
-        self.query = dps_query
-        self.datapoints = None
-
-
 class _DatapointsFetcher:
     def __init__(self, client: DatapointsAPI):
         self.client = client
         self.request_queue = queue.Queue()
         self.response_queue = queue.Queue()
-        self.number_of_queries = 0
+        self.number_of_tasks = 0
+        self.workers = []
 
     def fetch(self, dps_queries: List[_DPQuery]) -> DatapointsList:
+        self._put_tasks_on_queue(dps_queries)
+        self._start_workers()
+        dps_list = self._get_results()
+        self._stop_workers()
+        return dps_list
+
+    def _start_workers(self):
+        for _ in range(self.client._max_workers):
+            worker = _DatapointsFetcherWorker(self.client, self.request_queue, self.response_queue)
+            worker.start()
+            self.workers.append(worker)
+
+    def _stop_workers(self):
+        for worker in self.workers:
+            worker.stop = True
+
+    def _put_tasks_on_queue(self, dps_queries: List[_DPQuery]):
+        tasks = []
         for dps_query in dps_queries:
             if self._should_split(dps_query):
                 split_queries = self._split_query_into_windows(dps_query)
-                self.number_of_queries += len(split_queries)
                 for query in split_queries:
-                    self.request_queue.put(_DPSTask(query))
+                    tasks.append(_DPTask(query))
             else:
-                self.request_queue.put(_DPSTask(dps_query))
-                self.number_of_queries += 1
+                tasks.append(_DPTask(dps_query))
 
-        workers = [
-            _DatapointsFetcherWorker(self.client, self.request_queue, self.response_queue)
-            for _ in range(self.client._max_workers)
-        ]
-
-        for worker in workers:
-            worker.start()
-
-        dps_list = self._get_results()
-
-        for worker in workers:
-            worker.stop = True
-
-        return dps_list
+        for task in tasks:
+            self.request_queue.put(task)
+            self.number_of_tasks += 1
 
     def _get_results(self) -> DatapointsList:
-        number_of_results = 0
-        id_to_dps_tasks = defaultdict(lambda: [])
-        while number_of_results < self.number_of_queries:
+        number_of_completed_tasks = 0
+        id_to_completed_tasks = defaultdict(lambda: [])
+        while number_of_completed_tasks < self.number_of_tasks:
             dps_task = self.response_queue.get()
             if isinstance(dps_task, Exception):
                 raise dps_task
-            id_to_dps_tasks[dps_task.datapoints.id].append(dps_task)
-            number_of_results += 1
+            id_to_completed_tasks[dps_task.datapoints.id].append(dps_task)
+            number_of_completed_tasks += 1
 
         dps_list = DatapointsList([])
 
-        for dps_tasks in id_to_dps_tasks.values():
-            dps_object = self._join_results_and_remove_duplicates(dps_tasks)
+        for _, completed_tasks in id_to_completed_tasks.items():
+            dps_object = self._join_tasks_into_datapoints_object(completed_tasks)
             dps_list.append(dps_object)
 
         return dps_list
 
-    def _join_results_and_remove_duplicates(self, tasks: List[_DPSTask]):
+    def _join_tasks_into_datapoints_object(self, tasks: List[_DPTask]) -> Datapoints:
         query = tasks[0].query
 
-        partial_dps_objects = []
-        for dps_task in tasks:
-            partial_dps_objects.append(dps_task.datapoints)
-
-        dps_object = _concatenate_datapoints(partial_dps_objects)
+        dps_object = _concatenate_datapoints([dps_task.datapoints for dps_task in tasks])
 
         if query.include_outside_points:
             dps_object = self._remove_duplicates(dps_object)
@@ -956,7 +978,10 @@ class _DatapointsFetcher:
         return True
 
     def _split_query_into_windows(self, dps_query: _DPQuery) -> List[_DPQuery]:
-        dps_per_window = self.client._LIMIT_AGG if dps_query.aggregates else self.client._LIMIT
+        if dps_query.aggregates:
+            dps_per_window = self.client._LIMIT_AGG * 5
+        else:
+            dps_per_window = self.client._LIMIT * 500
         windows = self._get_windows(dps_query.start, dps_query.end, dps_query.granularity, dps_per_window)
         return [
             _DPQuery(
@@ -975,8 +1000,9 @@ class _DatapointsFetcher:
     def _get_windows(start: int, end: int, granularity: str, dps_per_window: int) -> List[_DPWindow]:
         granularity_ms = utils.granularity_to_ms(granularity) if granularity else 1
         diff = end - start
-        estimated_num_of_dps = diff / granularity_ms
+        estimated_num_of_dps = diff // granularity_ms
         num_of_windows = max(1, int(estimated_num_of_dps // dps_per_window))
+
         windows = []
         next_start = start
         window_size = diff // num_of_windows
