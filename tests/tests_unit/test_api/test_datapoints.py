@@ -1,5 +1,4 @@
 import json
-import time
 from datetime import datetime
 from random import random
 
