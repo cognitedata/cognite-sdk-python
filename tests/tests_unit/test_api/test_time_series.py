@@ -3,11 +3,12 @@ from unittest import mock
 
 import pytest
 
-from cognite.client import CogniteClient
+from cognite.client import CogniteClient, global_client
 from cognite.client.api.time_series import TimeSeries, TimeSeriesFilter, TimeSeriesList, TimeSeriesUpdate
 from tests.utils import jsgz_load
 
-TS_API = CogniteClient().time_series
+COGNITE_CLIENT = CogniteClient()
+TS_API = COGNITE_CLIENT.time_series
 
 
 @pytest.fixture
@@ -152,6 +153,7 @@ class TestPlotTimeSeries:
                 }
             },
         )
+        global_client.set(COGNITE_CLIENT)
 
     @mock.patch("matplotlib.pyplot.show")
     @mock.patch("pandas.core.frame.DataFrame.rename")
