@@ -164,7 +164,7 @@ class Datapoints:
         np, pd = utils.local_import("numpy", "pandas")
         data_fields = {}
         timestamps = []
-        identifier = self.id or self.external_id
+        identifier = self.id if self.id is not None else self.external_id
         for attr, value in self._get_non_empty_data_fields():
             if attr == "timestamp":
                 timestamps = value
@@ -174,6 +174,11 @@ class Datapoints:
                     id_with_agg += "|{}".format(utils.to_camel_case(attr))
                 data_fields[id_with_agg] = value
         return pd.DataFrame(data_fields, index=pd.DatetimeIndex(data=np.array(timestamps, dtype="datetime64[ms]")))
+
+    def plot(self):
+        plt = utils.local_import("matplotlib.pyplot")
+        self.to_pandas().plot()
+        plt.show()
 
     @classmethod
     def _load(cls, dps_object):
@@ -220,6 +225,11 @@ class DatapointsList(CogniteResourceList):
         if dfs:
             return pd.concat(dfs, axis="columns")
         return pd.DataFrame()
+
+    def plot(self):
+        plt = utils.local_import("matplotlib.pyplot")
+        self.to_pandas().plot()
+        plt.show()
 
 
 class DatapointsQuery(CogniteResource):

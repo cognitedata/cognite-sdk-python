@@ -130,6 +130,10 @@ def assert_exactly_one_of_id_or_external_id(id, external_id):
     assert_type(id, "id", [int], allow_none=True)
     assert_type(external_id, "external_id", [str], allow_none=True)
     assert (id or external_id) and not (id and external_id), "Exactly one of id and external id must be specified"
+    if id is not None:
+        return {"id": id}
+    elif external_id is not None:
+        return {"external_id": external_id}
 
 
 def assert_timestamp_not_in_jan_in_1970(timestamp: Union[int, float, str, datetime]):
@@ -154,14 +158,14 @@ def local_import(*module: str):
         try:
             return importlib.import_module(name)
         except ImportError as e:
-            raise CogniteImportError(name) from e
+            raise CogniteImportError(name.split(".")[0]) from e
 
     modules = []
     for name in module:
         try:
             modules.append(importlib.import_module(name))
         except ImportError as e:
-            raise CogniteImportError(name) from e
+            raise CogniteImportError(name.split(".")[0]) from e
     return tuple(modules)
 
 

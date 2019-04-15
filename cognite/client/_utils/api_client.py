@@ -309,7 +309,7 @@ class APIClient:
     def _process_ids(
         ids: Union[List[int], int, None], external_ids: Union[List[str], str, None], wrap_ids: bool
     ) -> List:
-        if not external_ids and not ids:
+        if external_ids is None and ids is None:
             raise ValueError("No ids specified")
         if external_ids and not wrap_ids:
             raise ValueError("externalIds must be wrapped")

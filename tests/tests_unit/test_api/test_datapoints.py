@@ -1,6 +1,7 @@
 import json
 from datetime import datetime
 from random import random
+from unittest import mock
 
 import pytest
 
@@ -521,6 +522,27 @@ class TestDatapointsObject:
 
 
 @pytest.mark.dsl
+class TestPlotDatapoints:
+    @mock.patch("matplotlib.pyplot.show")
+    @mock.patch("pandas.core.frame.DataFrame.plot")
+    def test_plot_datapoints(self, pandas_plot_mock, plt_show_mock):
+        d = Datapoints(id=1, timestamp=[1, 2, 3, 4, 5], value=[1, 2, 3, 4, 5])
+        d.plot()
+        assert 1 == pandas_plot_mock.call_count
+        assert 1 == plt_show_mock.call_count
+
+    @mock.patch("matplotlib.pyplot.show")
+    @mock.patch("pandas.core.frame.DataFrame.plot")
+    def test_plot_datapoints_list(self, pandas_plot_mock, plt_show_mock):
+        d1 = Datapoints(id=1, timestamp=[1, 2, 3, 4, 5], value=[1, 2, 3, 4, 5])
+        d2 = Datapoints(id=2, timestamp=[1, 2, 3, 4, 5], value=[6, 7, 8, 9, 10])
+        d = DatapointsList([d1, d2])
+        d.plot()
+        assert 1 == pandas_plot_mock.call_count
+        assert 1 == plt_show_mock.call_count
+
+
+@pytest.mark.dsl
 class TestPandasIntegration:
     def test_datapoint(self):
         import pandas as pd
@@ -536,6 +558,16 @@ class TestPandasIntegration:
         print(d.to_pandas())
         expected_df = pd.DataFrame(
             {"1|average": [2, 3, 4], "1|stepInterpolation": [3, 4, 5]},
+            index=[utils.ms_to_datetime(ms) for ms in [1, 2, 3]],
+        )
+        pd.testing.assert_frame_equal(expected_df, d.to_pandas())
+
+    def test_id_and_external_id_set(self):
+        import pandas as pd
+
+        d = Datapoints(id=0, external_id="abc", timestamp=[1, 2, 3], average=[2, 3, 4], step_interpolation=[3, 4, 5])
+        expected_df = pd.DataFrame(
+            {"0|average": [2, 3, 4], "0|stepInterpolation": [3, 4, 5]},
             index=[utils.ms_to_datetime(ms) for ms in [1, 2, 3]],
         )
         pd.testing.assert_frame_equal(expected_df, d.to_pandas())
