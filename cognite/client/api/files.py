@@ -337,6 +337,7 @@ class FilesAPI(APIClient):
         mime_type: str = None,
         metadata: Dict[str, Any] = None,
         asset_ids: List[int] = None,
+        recursive: bool = False,
     ) -> Union[FileMetadata, FileMetadataList]:
         """Upload a file
 
@@ -348,6 +349,7 @@ class FilesAPI(APIClient):
             mime_type (str): File type. E.g. pdf, css, spreadsheet, ..
             metadata (Dict[str, Any]): Customizable extra data about the file. String key -> String value.
             asset_ids (List[int]): No description.
+            recursive (bool): If path is a directory, upload all contained files recursively.
 
         Returns:
             Union[FileMetadata, FileMetadataList]: The file metadata of the uploaded file(s).
@@ -387,10 +389,17 @@ class FilesAPI(APIClient):
             return self._upload_file_from_path(file_metadata, path)
         elif os.path.isdir(path):
             tasks = []
-            for file_name in os.listdir(path):
-                file_path = os.path.join(path, file_name)
-                if os.path.isfile(file_path):
-                    tasks.append((FileMetadata(name=file_name), file_path))
+            if recursive:
+                for root, _, files in os.walk(path):
+                    for file in files:
+                        file_path = os.path.join(root, file)
+                        basename = os.path.basename(file_path)
+                        tasks.append((FileMetadata(name=basename), file_path))
+            else:
+                for file_name in os.listdir(path):
+                    file_path = os.path.join(path, file_name)
+                    if os.path.isfile(file_path):
+                        tasks.append((FileMetadata(name=file_name), file_path))
             file_metadata_list = utils.execute_tasks_concurrently(self._upload_file_from_path, tasks, self._max_workers)
             return FileMetadataList(file_metadata_list)
         raise ValueError("path '{}' does not exist".format(path))
