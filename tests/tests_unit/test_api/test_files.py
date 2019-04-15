@@ -163,15 +163,32 @@ class TestFilesAPI:
         response_body = mock_file_upload_response.calls[0].response.json()["data"]
         del response_body["uploadUrl"]
         assert FileMetadataList([FileMetadata._load(response_body), FileMetadata._load(response_body)]) == res
+        assert 4 == len(mock_file_upload_response.calls)
         for call in mock_file_upload_response.calls:
             payload = call.request.body
-            if b"content1\n" == payload:
+            if payload in [b"content1\n", b"content2\n"]:
                 continue
-            elif b"content2\n" == payload:
+            elif jsgz_load(payload)["name"] in ["file_for_test_upload_1.txt", "file_for_test_upload_2.txt"]:
                 continue
-            elif "file_for_test_upload_1.txt" == jsgz_load(payload)["name"]:
+            else:
+                raise AssertionError("incorrect payload: {}".format(payload))
+
+    def test_upload_from_directory_recursively(self, mock_file_upload_response):
+        path = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
+        res = FILES_API.upload(path=path, recursive=True)
+        response_body = mock_file_upload_response.calls[0].response.json()["data"]
+        del response_body["uploadUrl"]
+        assert FileMetadataList([FileMetadata._load(response_body) for _ in range(3)]) == res
+        assert 6 == len(mock_file_upload_response.calls)
+        for call in mock_file_upload_response.calls:
+            payload = call.request.body
+            if payload in [b"content1\n", b"content2\n", b"content3\n"]:
                 continue
-            elif "file_for_test_upload_2.txt" == jsgz_load(payload)["name"]:
+            elif jsgz_load(payload)["name"] in [
+                "file_for_test_upload_1.txt",
+                "file_for_test_upload_2.txt",
+                "file_for_test_upload_3.txt",
+            ]:
                 continue
             else:
                 raise AssertionError("incorrect payload: {}".format(payload))
