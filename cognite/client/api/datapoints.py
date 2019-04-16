@@ -106,6 +106,7 @@ class Datapoints:
         continuous_variance: List[float] = None,
         discrete_variance: List[float] = None,
         total_variation: List[float] = None,
+        **kwargs
     ):
         self.id = id
         self.external_id = external_id
@@ -123,6 +124,9 @@ class Datapoints:
         self.total_variation = total_variation
 
         self.__datapoint_objects = None
+        self._client = None
+        if "cognite_client" in kwargs:
+            self._client = kwargs["cognite_client"]
 
     def __str__(self):
         return json.dumps(self.dump(), indent=4)
@@ -178,8 +182,8 @@ class Datapoints:
         return pd.DataFrame(data_fields, index=pd.DatetimeIndex(data=np.array(timestamps, dtype="datetime64[ms]")))
 
     @classmethod
-    def _load(cls, dps_object):
-        instance = cls()
+    def _load(cls, dps_object, cognite_client=None):
+        instance = cls(cognite_client=cognite_client)
         instance.id = dps_object["id"]
         instance.external_id = dps_object["externalId"]
         for dp in dps_object["datapoints"]:
@@ -192,7 +196,7 @@ class Datapoints:
 
     def _get_non_empty_data_fields(self) -> Generator[Tuple[str, Any], None, None]:
         for attr, value in self.__dict__.copy().items():
-            if attr not in ["id", "external_id", "_Datapoints__datapoint_objects"] and value is not None:
+            if attr not in ["id", "external_id", "_Datapoints__datapoint_objects", "_client"] and value is not None:
                 yield attr, value
 
     def __get_datapoint_objects(self) -> List[Datapoint]:
@@ -394,8 +398,8 @@ class DatapointsAPI(APIClient):
 
         res = self._post(url_path=self._RESOURCE_PATH + "/latest", json={"items": all_ids}).json()["data"]["items"]
         if is_single_id:
-            return Datapoints._load(res[0])
-        return DatapointsList._load(res)
+            return Datapoints._load(res[0], cognite_client=self._cognite_client)
+        return DatapointsList._load(res, cognite_client=self._cognite_client)
 
     def query(self, query: Union[DatapointsQuery, List[DatapointsQuery]]) -> Union[Datapoints, DatapointsList]:
         """Get datapoints for one or more time series
@@ -447,7 +451,7 @@ class DatapointsAPI(APIClient):
         results = _DatapointsFetcher(self).fetch(dps_queries)
         if is_single_query:
             return results[0]
-        return DatapointsList(results)
+        return results
 
     def insert(
         self,
@@ -880,6 +884,7 @@ class _DatapointsFetcherWorker(threading.Thread):
             next_start = latest_timestamp + (utils.granularity_to_ms(granularity) if granularity else 1)
             concatenated_datapoints.id = datapoints.id
             concatenated_datapoints.external_id = datapoints.external_id
+            concatenated_datapoints._client = datapoints._client
             concatenated_datapoints = _concatenate_datapoints([concatenated_datapoints, datapoints])
         return concatenated_datapoints
 
@@ -903,7 +908,7 @@ class _DatapointsFetcherWorker(threading.Thread):
             "limit": limit or (self.client._LIMIT_AGG if aggregates else self.client._LIMIT),
         }
         res = self.client._post(self.client._RESOURCE_PATH + "/get", json=payload).json()["data"]["items"][0]
-        return Datapoints._load(res)
+        return Datapoints._load(res, cognite_client=self.client._cognite_client)
 
 
 class _DatapointsFetcher:
@@ -955,7 +960,7 @@ class _DatapointsFetcher:
             id_to_completed_tasks[dps_task.datapoints.id].append(dps_task)
             number_of_completed_tasks += 1
 
-        dps_list = DatapointsList([])
+        dps_list = DatapointsList([], cognite_client=self.client._cognite_client)
 
         for _, completed_tasks in id_to_completed_tasks.items():
             dps_object = self._join_tasks_into_datapoints_object(completed_tasks)
@@ -965,9 +970,7 @@ class _DatapointsFetcher:
 
     def _join_tasks_into_datapoints_object(self, tasks: List[_DPTask]) -> Datapoints:
         query = tasks[0].query
-
         dps_object = _concatenate_datapoints([dps_task.datapoints for dps_task in tasks])
-
         if query.include_outside_points:
             dps_object = self._remove_duplicates(dps_object)
         return dps_object

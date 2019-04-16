@@ -4,7 +4,7 @@ from random import random
 
 import pytest
 
-from cognite.client import CogniteAPIError, CogniteClient
+from cognite.client import CogniteAPIError, CogniteClient, global_client
 from cognite.client._utils import utils
 from cognite.client.api.datapoints import (
     Datapoint,
@@ -17,7 +17,9 @@ from cognite.client.api.datapoints import (
 )
 from tests.utils import jsgz_load
 
-DPS_CLIENT = CogniteClient().datapoints
+COGNITE_CLIENT = CogniteClient()
+global_client.set(None)
+DPS_CLIENT = COGNITE_CLIENT.datapoints
 
 
 def generate_datapoints(start: int, end: int, aggregates=None, granularity=None):
@@ -144,6 +146,7 @@ class TestGetDatapoints:
         dps_res = DPS_CLIENT.get(id=123, start=1000000, end=1100000)
         assert isinstance(dps_res, Datapoints)
         assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
+        assert COGNITE_CLIENT == dps_res._client
 
     def test_get_datapoints_500(self, rsps):
         rsps.add(
@@ -235,8 +238,10 @@ class TestGetDatapoints:
             if dps_res.external_id in external_ids:
                 external_ids.remove(dps_res.external_id)
             assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
+            assert COGNITE_CLIENT == dps_res._client
         assert 0 == len(ids)
         assert 0 == len(external_ids)
+        assert COGNITE_CLIENT == dps_res_list._client
 
     def test_get_datapoints_empty(self, mock_get_datapoints_empty):
         res = DPS_CLIENT.get(id=1, start=0, end=10000)
@@ -248,6 +253,7 @@ class TestQueryDatapoints:
         dps_res = DPS_CLIENT.query(query=DatapointsQuery(id=1, start=0, end=10000))
         assert isinstance(dps_res, Datapoints)
         assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
+        assert COGNITE_CLIENT == dps_res._client
 
     def test_query_multiple(self, mock_get_datapoints):
         dps_res_list = DPS_CLIENT.query(
@@ -259,6 +265,8 @@ class TestQueryDatapoints:
         assert isinstance(dps_res_list, DatapointsList)
         for dps_res in dps_res_list:
             assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
+            assert COGNITE_CLIENT == dps_res._client
+        assert COGNITE_CLIENT == dps_res_list._client
 
     def test_query_empty(self, mock_get_datapoints_empty):
         dps_res = DPS_CLIENT.query(query=DatapointsQuery(id=1, start=0, end=10000))
@@ -313,6 +321,7 @@ class TestGetLatest:
         assert isinstance(res, Datapoints)
         assert 10000 == res[0].timestamp
         assert isinstance(res[0].value, float)
+        assert COGNITE_CLIENT == res._client
 
     def test_get_latest_multiple_ts(self, mock_get_latest):
         res = DPS_CLIENT.get_latest(id=1, external_id="2")
@@ -320,6 +329,7 @@ class TestGetLatest:
         for dps in res:
             assert 10000 == dps[0].timestamp
             assert isinstance(dps[0].value, float)
+        assert COGNITE_CLIENT == res._client
 
     def test_get_latest_with_before(self, mock_get_latest):
         res = DPS_CLIENT.get_latest(id=1, before=10)
