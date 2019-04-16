@@ -55,6 +55,22 @@ class TimeSeries(CogniteResource):
 
     # GenStop
 
+    def plot(self, start="1d-ago", end="now", aggregates=None, granularity=None, id_labels: bool = False):
+        plt = utils.local_import("matplotlib.pyplot")
+        identifier = utils.assert_at_least_one_of_id_or_external_id(self.id, self.external_id)
+        dps = self._client.datapoints.get(
+            start=start, end=end, aggregates=aggregates, granularity=granularity, **identifier
+        )
+        if id_labels:
+            dps.plot()
+        else:
+            columns = {self.id: self.name}
+            for agg in aggregates or []:
+                columns["{}|{}".format(self.id, agg)] = "{}|{}".format(self.name, agg)
+            df = dps.to_pandas().rename(columns=columns)
+            df.plot()
+            plt.show()
+
 
 # GenClass: TimeSeriesSearchDTO.filter
 class TimeSeriesFilter(CogniteFilter):
@@ -165,6 +181,24 @@ class ListUpdate(CogniteListUpdate):
 class TimeSeriesList(CogniteResourceList):
     _RESOURCE = TimeSeries
     _UPDATE = TimeSeriesUpdate
+
+    def plot(self, start="52w-ago", end="now", aggregates=None, granularity="1d", id_labels: bool = False):
+        plt = utils.local_import("matplotlib.pyplot")
+        aggregates = aggregates or ["average"]
+        dps = self._client.datapoints.get(
+            id=[ts.id for ts in self.data], start=start, end=end, aggregates=aggregates, granularity=granularity
+        )
+        if id_labels:
+            dps.plot()
+        else:
+            columns = {}
+            for ts in self.data:
+                columns[ts.id] = ts.name
+                for agg in aggregates or []:
+                    columns["{}|{}".format(ts.id, agg)] = "{}|{}".format(ts.name, agg)
+            df = dps.to_pandas().rename(columns=columns)
+            df.plot()
+            plt.show()
 
 
 class TimeSeriesAPI(APIClient):

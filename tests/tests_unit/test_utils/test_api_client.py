@@ -3,7 +3,7 @@ from collections import namedtuple
 
 import pytest
 
-from cognite.client import CogniteAPIError
+from cognite.client import CogniteAPIError, CogniteClient
 from cognite.client._utils.api_client import APIClient
 from cognite.client._utils.base import *
 from tests.utils import jsgz_load
@@ -12,7 +12,8 @@ BASE_URL = "http://localtest.com/api/1.0/projects/test-project"
 URL_PATH = "/someurl"
 
 RESPONSE = {"any": "ok"}
-
+COGNITE_CLIENT = CogniteClient()
+global_client.set(None)
 API_CLIENT = APIClient(
     project="test-project",
     api_key="abc",
@@ -21,6 +22,7 @@ API_CLIENT = APIClient(
     cookies={"a-cookie": "a-cookie-val"},
     headers={},
     timeout=60,
+    cognite_client=COGNITE_CLIENT,
 )
 
 
@@ -120,7 +122,7 @@ class PrimitiveUpdate(CognitePrimitiveUpdate):
 
 
 class SomeResource(CogniteResource):
-    def __init__(self, x=None, y=None, id=None, external_id=None):
+    def __init__(self, x=None, y=None, id=None, external_id=None, **kwargs):
         self.x = x
         self.y = y
         self.id = id
@@ -137,7 +139,6 @@ class TestStandardRetrieve:
         rsps.add(
             rsps.GET, BASE_URL + URL_PATH + "/1", status=200, json={"data": {"items": [{"x": 1, "y": 2}, {"x": 1}]}}
         )
-
         assert SomeResource(1, 2) == API_CLIENT._retrieve(cls=SomeResource, resource_path=URL_PATH, id=1)
 
     def test_standard_retrieve_fail(self, rsps):
@@ -146,6 +147,12 @@ class TestStandardRetrieve:
             API_CLIENT._retrieve(cls=SomeResource, resource_path=URL_PATH, id=1)
         assert "Client Error" == e.value.message
         assert 400 == e.value.code
+
+    def test_cognite_client_is_set(self, rsps):
+        rsps.add(
+            rsps.GET, BASE_URL + URL_PATH + "/1", status=200, json={"data": {"items": [{"x": 1, "y": 2}, {"x": 1}]}}
+        )
+        assert COGNITE_CLIENT == API_CLIENT._retrieve(cls=SomeResource, resource_path=URL_PATH, id=1)._client
 
 
 class TestStandardRetrieveById:
@@ -217,6 +224,14 @@ class TestStandardRetrieveById:
     def test_ids_all_None(self):
         with pytest.raises(ValueError, match="No ids specified"):
             API_CLIENT._retrieve_multiple(cls=SomeResourceList, resource_path=URL_PATH, wrap_ids=False)
+
+    def test_cognite_client_is_set(self, mock_by_ids):
+        assert (
+            COGNITE_CLIENT
+            == API_CLIENT._retrieve_multiple(
+                cls=SomeResourceList, resource_path=URL_PATH, wrap_ids=True, ids=[1, 2]
+            )._client
+        )
 
 
 class TestStandardList:
@@ -337,6 +352,14 @@ class TestStandardList:
         res = API_CLIENT._list(cls=SomeResourceList, resource_path=URL_PATH, method="GET", limit=5333)
         assert 5333 == len(res)
 
+    def test_cognite_client_is_set(self, rsps):
+        rsps.add(
+            rsps.POST, BASE_URL + URL_PATH + "/list", status=200, json={"data": {"items": [{"x": 1, "y": 2}, {"x": 1}]}}
+        )
+        rsps.add(rsps.GET, BASE_URL + URL_PATH, status=200, json={"data": {"items": [{"x": 1, "y": 2}, {"x": 1}]}})
+        assert COGNITE_CLIENT == API_CLIENT._list(cls=SomeResourceList, resource_path=URL_PATH, method="POST")._client
+        assert COGNITE_CLIENT == API_CLIENT._list(cls=SomeResourceList, resource_path=URL_PATH, method="GET")._client
+
 
 class TestStandardCreate:
     def test_standard_create_ok(self, rsps):
@@ -380,6 +403,17 @@ class TestStandardCreate:
 
         assert {"items": [{"x": 1, "y": 2}]} == jsgz_load(rsps.calls[0].request.body)
         assert {"items": [{"x": 3, "y": 4}]} == jsgz_load(rsps.calls[1].request.body)
+
+    def test_cognite_client_is_set(self, rsps):
+        rsps.add(rsps.POST, BASE_URL + URL_PATH, status=200, json={"data": {"items": [{"x": 1, "y": 2}]}})
+        assert (
+            COGNITE_CLIENT
+            == API_CLIENT._create_multiple(cls=SomeResourceList, resource_path=URL_PATH, items=SomeResource())._client
+        )
+        assert (
+            COGNITE_CLIENT
+            == API_CLIENT._create_multiple(cls=SomeResourceList, resource_path=URL_PATH, items=[SomeResource()])._client
+        )
 
 
 class TestStandardDelete:
@@ -478,6 +512,20 @@ class TestStandardUpdate:
         with pytest.raises(CogniteAPIError, match="Client Error"):
             API_CLIENT._update_multiple(SomeResourceList, resource_path=URL_PATH, items=[])
 
+    def test_cognite_client_is_set(self, mock_update):
+        assert (
+            COGNITE_CLIENT
+            == API_CLIENT._update_multiple(
+                cls=SomeResourceList, resource_path=URL_PATH, items=SomeResource(id=0)
+            )._client
+        )
+        assert (
+            COGNITE_CLIENT
+            == API_CLIENT._update_multiple(
+                cls=SomeResourceList, resource_path=URL_PATH, items=[SomeResource(id=0)]
+            )._client
+        )
+
 
 class TestStandardSearch:
     def test_standard_search_ok(self, rsps):
@@ -500,6 +548,18 @@ class TestStandardSearch:
             API_CLIENT._search(cls=SomeResourceList, resource_path=URL_PATH, json={})
         assert "Client Error" == e.value.message
         assert 400 == e.value.code
+
+    def test_cognite_client_is_set(self, rsps):
+        rsps.add(rsps.POST, BASE_URL + URL_PATH + "/search", status=200, json={"data": {"items": [{"x": 1, "y": 2}]}})
+
+        assert (
+            COGNITE_CLIENT
+            == API_CLIENT._search(
+                cls=SomeResourceList,
+                resource_path=URL_PATH,
+                json={"search": {"name": "bla"}, "limit": 1000, "filter": {"name": "bla"}},
+            )._client
+        )
 
 
 class TestHelpers:

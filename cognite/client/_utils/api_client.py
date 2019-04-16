@@ -135,7 +135,8 @@ class APIClient:
         return cls._load(
             self._get(url_path=resource_path + "/{}".format(id), params=params, headers=headers).json()["data"][
                 "items"
-            ][0]
+            ][0],
+            cognite_client=self._cognite_client,
         )
 
     def _retrieve_multiple(
@@ -152,8 +153,8 @@ class APIClient:
             "items"
         ]
         if self._is_single_identifier(ids, external_ids):
-            return cls._RESOURCE._load(res[0])
-        return cls._load(res)
+            return cls._RESOURCE._load(res[0], cognite_client=self._cognite_client)
+        return cls._load(res, cognite_client=self._cognite_client)
 
     def _list_generator(
         self,
@@ -193,12 +194,12 @@ class APIClient:
 
             if not chunk_size:
                 for item in current_items:
-                    yield cls._RESOURCE._load(item)
+                    yield cls._RESOURCE._load(item, cognite_client=self._cognite_client)
                 total_items_retrieved += len(current_items)
                 current_items = []
             elif len(current_items) >= chunk_size or len(last_received_items) < self._LIMIT:
                 items_to_yield = current_items[:chunk_size]
-                yield cls._load(items_to_yield)
+                yield cls._load(items_to_yield, cognite_client=self._cognite_client)
                 total_items_retrieved += len(items_to_yield)
                 current_items = current_items[chunk_size:]
 
@@ -218,7 +219,7 @@ class APIClient:
             headers=headers,
         ):
             items.extend(resource_list.data)
-        return cls(items)
+        return cls(items, cognite_client=self._cognite_client)
 
     def _create_multiple(
         self,
@@ -245,8 +246,8 @@ class APIClient:
             created_resources.extend(res.json()["data"]["items"])
 
         if single_item:
-            return cls._RESOURCE._load(created_resources[0])
-        return cls._load(created_resources)
+            return cls._RESOURCE._load(created_resources[0], cognite_client=self._cognite_client)
+        return cls._load(created_resources, cognite_client=self._cognite_client)
 
     def _delete_multiple(
         self,
@@ -280,12 +281,12 @@ class APIClient:
         ).json()["data"]["items"]
 
         if single_item:
-            return cls._RESOURCE._load(res[0])
-        return cls._load(res)
+            return cls._RESOURCE._load(res[0], cognite_client=self._cognite_client)
+        return cls._load(res, cognite_client=self._cognite_client)
 
     def _search(self, cls: Any, resource_path: str, json: Dict, params: Dict = None, headers: Dict = None):
         res = self._post(url_path=resource_path + "/search", json=json, params=params, headers=headers)
-        return cls._load(res.json()["data"]["items"])
+        return cls._load(res.json()["data"]["items"], cognite_client=self._cognite_client)
 
     @staticmethod
     def _convert_resource_to_patch_object(resource, update_attributes):
@@ -309,7 +310,7 @@ class APIClient:
     def _process_ids(
         ids: Union[List[int], int, None], external_ids: Union[List[str], str, None], wrap_ids: bool
     ) -> List:
-        if not external_ids and not ids:
+        if external_ids is None and ids is None:
             raise ValueError("No ids specified")
         if external_ids and not wrap_ids:
             raise ValueError("externalIds must be wrapped")

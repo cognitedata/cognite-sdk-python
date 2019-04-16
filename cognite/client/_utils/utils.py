@@ -135,7 +135,29 @@ def execute_tasks_concurrently(func: Callable, tasks: Union[List[Tuple], List[Di
 def assert_exactly_one_of_id_or_external_id(id, external_id):
     assert_type(id, "id", [int], allow_none=True)
     assert_type(external_id, "external_id", [str], allow_none=True)
-    assert (id or external_id) and not (id and external_id), "Exactly one of id and external id must be specified"
+    has_id = id is not None
+    has_external_id = external_id is not None
+
+    assert (has_id or has_external_id) and not (
+        has_id and has_external_id
+    ), "Exactly one of id and external id must be specified"
+
+    if has_id:
+        return {"id": id}
+    elif has_external_id:
+        return {"external_id": external_id}
+
+
+def assert_at_least_one_of_id_or_external_id(id, external_id):
+    assert_type(id, "id", [int], allow_none=True)
+    assert_type(external_id, "external_id", [str], allow_none=True)
+    has_id = id is not None
+    has_external_id = external_id is not None
+    assert has_id or has_external_id, "At least one of id and external id must be specified"
+    if has_id:
+        return {"id": id}
+    elif has_external_id:
+        return {"external_id": external_id}
 
 
 def assert_timestamp_not_in_jan_in_1970(timestamp: Union[int, float, str, datetime]):
@@ -160,14 +182,14 @@ def local_import(*module: str):
         try:
             return importlib.import_module(name)
         except ImportError as e:
-            raise CogniteImportError(name) from e
+            raise CogniteImportError(name.split(".")[0]) from e
 
     modules = []
     for name in module:
         try:
             modules.append(importlib.import_module(name))
         except ImportError as e:
-            raise CogniteImportError(name) from e
+            raise CogniteImportError(name.split(".")[0]) from e
     return tuple(modules)
 
 

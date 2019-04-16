@@ -32,6 +32,14 @@ class CogniteResponse:
         return type(other) == type(self) and other.dump() == self.dump()
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+        """Dump the instance into a json serializable python data type.
+
+        Args:
+            camel_case (bool): Use camelCase for attribute names. Defaults to False.
+
+        Returns:
+            Dict[str, Any]: A dictionary representation of the instance.
+        """
         dumped = {
             key: value for key, value in self.__dict__.items() if value not in EXCLUDE_VALUE and key not in EXCLUDE_KEY
         }
@@ -75,19 +83,32 @@ class CogniteResourceList(UserList):
         return self.__str__()
 
     def dump(self, camel_case: bool = False) -> List[Dict[str, Any]]:
+        """Dump the instance into a json serializable Python data type.
+
+        Args:
+            camel_case (bool): Use camelCase for attribute names. Defaults to False.
+
+        Returns:
+            List[Dict[str, Any]]: A list of dicts representing the instance.
+        """
         return [resource.dump(camel_case) for resource in self.data]
 
-    def to_pandas(self):
+    def to_pandas(self) -> "pandas.DataFrame":
+        """Convert the instance into a pandas DataFrame.
+
+        Returns:
+            pandas.DataFrame: The dataframe.
+        """
         pd = utils.local_import("pandas")
         return pd.DataFrame(self.dump(camel_case=True))
 
     @classmethod
-    def _load(cls, resource_list: Union[List, str]):
+    def _load(cls, resource_list: Union[List, str], cognite_client=None):
         if isinstance(resource_list, str):
-            return cls._load(json.loads(resource_list))
+            return cls._load(json.loads(resource_list), cognite_client=cognite_client)
         elif isinstance(resource_list, List):
-            resources = [cls._RESOURCE._load(resource) for resource in resource_list]
-            return cls(resources)
+            resources = [cls._RESOURCE._load(resource, cognite_client=cognite_client) for resource in resource_list]
+            return cls(resources, cognite_client=cognite_client)
 
 
 class CogniteResource:
@@ -104,6 +125,14 @@ class CogniteResource:
         return self.__str__()
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+        """Dump the instance into a json serializable Python data type.
+
+        Args:
+            camel_case (bool): Use camelCase for attribute names. Defaults to False.
+
+        Returns:
+            Dict[str, Any]: A dictionary representation of the instance.
+        """
         if camel_case:
             return {
                 to_camel_case(key): value
@@ -115,11 +144,11 @@ class CogniteResource:
         }
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str]):
+    def _load(cls, resource: Union[Dict, str], cognite_client=None):
         if isinstance(resource, str):
-            return cls._load(json.loads(resource))
+            return cls._load(json.loads(resource), cognite_client=cognite_client)
         elif isinstance(resource, Dict):
-            instance = cls()
+            instance = cls(cognite_client=cognite_client)
             for key, value in resource.items():
                 snake_case_key = to_snake_case(key)
                 if not hasattr(instance, snake_case_key):
@@ -129,6 +158,11 @@ class CogniteResource:
         raise TypeError("Resource must be json str or Dict, not {}".format(type(resource)))
 
     def to_pandas(self, expand: List[str] = None, ignore: List[str] = None):
+        """Convert the instance into a pandas DataFrame.
+
+        Returns:
+            pandas.DataFrame: The dataframe.
+        """
         expand = ["metadata"] if expand is None else expand
         ignore = [] if ignore is None else ignore
         pd = utils.local_import("pandas")
@@ -176,6 +210,11 @@ class CogniteUpdate:
         self._update_object[name] = {"remove": value}
 
     def dump(self):
+        """Dump the instance into a json serializable Python data type.
+
+        Returns:
+            Dict[str, Any]: A dictionary representation of the instance.
+        """
         dumped = {"update": self._update_object}
         if self._id is not None:
             dumped["id"] = self._id

@@ -1,12 +1,14 @@
 import re
+from unittest import mock
 
 import pytest
 
-from cognite.client import CogniteClient
+from cognite.client import CogniteClient, global_client
 from cognite.client.api.time_series import TimeSeries, TimeSeriesFilter, TimeSeriesList, TimeSeriesUpdate
 from tests.utils import jsgz_load
 
-TS_API = CogniteClient().time_series
+COGNITE_CLIENT = CogniteClient()
+TS_API = COGNITE_CLIENT.time_series
 
 
 @pytest.fixture
@@ -17,7 +19,7 @@ def mock_ts_response(rsps):
                 {
                     "id": 0,
                     "externalId": "string",
-                    "name": "string",
+                    "name": "stringname",
                     "isString": True,
                     "metadata": {"metadata-key": "metadata-value"},
                     "unit": "string",
@@ -31,8 +33,7 @@ def mock_ts_response(rsps):
             ]
         }
     }
-
-    url_pattern = re.compile(re.escape(TS_API._base_url) + "/.+")
+    url_pattern = re.compile(re.escape(TS_API._base_url) + "/timeseries(?:/byids|/update|/delete|/search|$|\?.+)")
     rsps.assert_all_requests_are_fired = False
 
     rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
@@ -130,6 +131,70 @@ class TestTimeSeries:
             .unit.set(None),
             TimeSeriesUpdate,
         )
+
+
+@pytest.mark.dsl
+class TestPlotTimeSeries:
+    @pytest.fixture
+    def mock_get_dps(self, rsps):
+        rsps.add(
+            rsps.POST,
+            TS_API._base_url + "/timeseries/data/get",
+            status=200,
+            json={
+                "data": {
+                    "items": [
+                        {
+                            "id": 0,
+                            "externalId": "string1",
+                            "datapoints": [{"timestamp": i * 10000, "average": i} for i in range(5000)],
+                        }
+                    ]
+                }
+            },
+        )
+        global_client.set(COGNITE_CLIENT)
+
+    @mock.patch("matplotlib.pyplot.show")
+    @mock.patch("pandas.core.frame.DataFrame.rename")
+    def test_plot_time_series_name_labels(self, pandas_rename_mock, plt_show_mock, mock_ts_response, mock_get_dps):
+        res = TS_API.get(id=0)
+        df_mock = mock.MagicMock()
+        pandas_rename_mock.return_value = df_mock
+        res.plot(aggregates=["average"], granularity="1d")
+
+        assert {0: "stringname", "0|average": "stringname|average"} == pandas_rename_mock.call_args[1]["columns"]
+        assert 1 == df_mock.plot.call_count
+        assert 1 == plt_show_mock.call_count
+
+    @mock.patch("matplotlib.pyplot.show")
+    @mock.patch("pandas.core.frame.DataFrame.plot")
+    def test_plot_time_series_id_labels(self, pandas_plot_mock, plt_show_mock, mock_ts_response, mock_get_dps):
+        res = TS_API.get(id=0)
+        res.plot(id_labels=True)
+
+        assert 1 == pandas_plot_mock.call_count
+        assert 1 == plt_show_mock.call_count
+
+    @mock.patch("matplotlib.pyplot.show")
+    @mock.patch("pandas.core.frame.DataFrame.rename")
+    def test_plot_time_series_list_name_labels(self, pandas_rename_mock, plt_show_mock, mock_ts_response, mock_get_dps):
+        res = TS_API.get(id=[0])
+        df_mock = mock.MagicMock()
+        pandas_rename_mock.return_value = df_mock
+        res.plot(aggregates=["average"], granularity="1h")
+        assert {0: "stringname", "0|average": "stringname|average"} == pandas_rename_mock.call_args[1]["columns"]
+        assert 1 == df_mock.plot.call_count
+        assert 1 == plt_show_mock.call_count
+
+    @mock.patch("matplotlib.pyplot.show")
+    @mock.patch("pandas.core.frame.DataFrame.plot")
+    def test_plot_time_series_list_id_labels(self, pandas_plot_mock, plt_show_mock, mock_ts_response, mock_get_dps):
+        res = TS_API.get(id=[0])
+        res.plot(id_labels=True)
+
+        assert 1 == pandas_plot_mock.call_count
+        assert 1 == plt_show_mock.call_count
 
 
 @pytest.fixture
