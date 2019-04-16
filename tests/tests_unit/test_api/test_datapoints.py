@@ -5,12 +5,22 @@ from unittest import mock
 
 import pytest
 
-from cognite.client import CogniteClient
+from cognite.client import CogniteAPIError, CogniteClient, global_client
 from cognite.client._utils import utils
-from cognite.client.api.datapoints import Datapoint, Datapoints, DatapointsList, DatapointsQuery, _DPWindow
+from cognite.client.api.datapoints import (
+    Datapoint,
+    Datapoints,
+    DatapointsList,
+    DatapointsQuery,
+    _concatenate_datapoints,
+    _DatapointsFetcher,
+    _DPWindow,
+)
 from tests.utils import jsgz_load
 
-DPS_CLIENT = CogniteClient().datapoints
+COGNITE_CLIENT = CogniteClient()
+global_client.set(None)
+DPS_CLIENT = COGNITE_CLIENT.datapoints
 
 
 def generate_datapoints(start: int, end: int, aggregates=None, granularity=None):
@@ -68,8 +78,8 @@ def mock_get_datapoints(rsps):
 
             dps = generate_datapoints(start, end, aggregates, granularity)
             dps = dps[:limit]
-            id_to_return = dps_query.get("id", -1)
-            external_id_to_return = dps_query.get("externalId", "-1")
+            id_to_return = dps_query.get("id", int(dps_query.get("externalId", "-1")))
+            external_id_to_return = dps_query.get("externalId", str(dps_query.get("id", -1)))
             items.append({"id": id_to_return, "externalId": external_id_to_return, "datapoints": dps})
         response = {"data": {"items": items}}
         return 200, {}, json.dumps(response)
@@ -126,11 +136,10 @@ def assert_dps_response_is_correct(calls, dps_object):
             id = dps_response["id"]
             external_id = dps_response["externalId"]
 
-    assert {
-        "id": id,
-        "externalId": external_id,
-        "datapoints": sorted(datapoints, key=lambda x: x["timestamp"]),
-    } == dps_object.dump(camel_case=True)
+    expected_dps = sorted(datapoints, key=lambda x: x["timestamp"])
+    assert id == dps_object.id
+    assert external_id == dps_object.external_id
+    assert expected_dps == dps_object.dump(camel_case=True)["datapoints"]
 
 
 class TestGetDatapoints:
@@ -138,6 +147,17 @@ class TestGetDatapoints:
         dps_res = DPS_CLIENT.get(id=123, start=1000000, end=1100000)
         assert isinstance(dps_res, Datapoints)
         assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
+        assert COGNITE_CLIENT == dps_res._client
+
+    def test_get_datapoints_500(self, rsps):
+        rsps.add(
+            rsps.POST,
+            DPS_CLIENT._base_url + "/timeseries/data/get",
+            json={"error": {"code": 500, "message": "Internal Server Error"}},
+            status=500,
+        )
+        with pytest.raises(CogniteAPIError):
+            DPS_CLIENT.get(id=123, start=1000000, end=1100000)
 
     def test_get_datapoints_by_external_id(self, mock_get_datapoints):
         dps_res = DPS_CLIENT.get(external_id="123", start=1000000, end=1100000)
@@ -152,7 +172,7 @@ class TestGetDatapoints:
     def test_get_datapoints_local_aggregates(self, mock_get_datapoints):
         dps_res_list = DPS_CLIENT.get(
             external_id={"externalId": "123", "aggregates": ["average"]},
-            id={"id": 123},
+            id={"id": 234},
             start=1000000,
             end=1100000,
             aggregates=["max"],
@@ -162,14 +182,15 @@ class TestGetDatapoints:
             assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
 
     def test_datapoints_paging(self, mock_get_datapoints, set_dps_limits, set_dps_workers):
+        set_dps_limits(2)
         set_dps_workers(1)
-        set_dps_limits(1)
         dps_res = DPS_CLIENT.get(id=123, start=0, end=10000, aggregates=["average"], granularity="1s")
+        assert 5 == len(mock_get_datapoints.calls)
         assert 10 == len(dps_res)
 
-    def test_datapoints_concurrent(self, mock_get_datapoints, set_dps_workers, set_dps_limits):
-        set_dps_workers(5)
-        dps_res = DPS_CLIENT.get(id=123, start=0, end=20000, aggregates=["average"], granularity="1s")
+    def test_datapoints_concurrent(self, mock_get_datapoints, set_dps_limits):
+        DPS_CLIENT._LIMIT_AGG = 20
+        dps_res = DPS_CLIENT.get(id=123, start=0, end=100000, aggregates=["average"], granularity="1s")
         requested_windows = sorted(
             [
                 (jsgz_load(call.request.body)["start"], jsgz_load(call.request.body)["end"])
@@ -178,33 +199,21 @@ class TestGetDatapoints:
             key=lambda x: x[0],
         )
 
-        assert [(0, 4000), (5000, 9000), (10000, 14000), (15000, 19000)] == requested_windows
+        assert [(0, 100000), (20000, 100000), (40000, 100000), (60000, 100000), (80000, 100000)] == requested_windows
         assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
 
     @pytest.mark.parametrize(
-        "max_workers, aggregates, granularity, actual_windows_req",
+        "limit, aggregates, granularity, actual_windows_req",
         [
-            (1, None, None, [(0, 20000), (9001, 20000), (18002, 20000)]),
-            (2, None, None, [(0, 10000), (9001, 10000), (10001, 20000), (19002, 20000)]),
-            (3, None, None, [(0, 6666), (6667, 13333), (13334, 20000)]),
-            (4, ["average"], "1s", [(0, 5000), (6000, 11000), (12000, 17000), (18000, 20000)]),
-            (2, ["average"], "5s", [(0, 10000), (15000, 20000)]),
-            (4, ["average"], "5s", [(0, 5000), (10000, 15000)]),
+            (10, None, None, [(0, 5000), (5001, 10000)]),
+            (2, ["average"], "1s", [(0, 10000), (2000, 10000), (4000, 10000), (6000, 10000), (8000, 10000)]),
         ],
     )
     def test_request_dps_spacing_correct(
-        self,
-        mock_get_datapoints,
-        set_dps_workers,
-        set_dps_limits,
-        max_workers,
-        aggregates,
-        granularity,
-        actual_windows_req,
+        self, mock_get_datapoints, set_dps_workers, set_dps_limits, limit, aggregates, granularity, actual_windows_req
     ):
-        set_dps_limits(10)
-        set_dps_workers(max_workers)
-        DPS_CLIENT.get(id=123, start=0, end=20000, aggregates=aggregates, granularity=granularity)
+        set_dps_limits(limit)
+        DPS_CLIENT.get(id=123, start=0, end=10000, aggregates=aggregates, granularity=granularity)
         requested_windows = sorted(
             [
                 (jsgz_load(call.request.body)["start"], jsgz_load(call.request.body)["end"])
@@ -220,7 +229,6 @@ class TestGetDatapoints:
         assert 4 == len(dps_res)
 
     def test_get_datapoints_multiple_time_series(self, mock_get_datapoints, set_dps_limits):
-        set_dps_limits(10)
         ids = [1, 2, 3]
         external_ids = ["4", "5", "6"]
         dps_res_list = DPS_CLIENT.get(id=ids, external_id=external_ids, start=0, end=100000)
@@ -231,8 +239,10 @@ class TestGetDatapoints:
             if dps_res.external_id in external_ids:
                 external_ids.remove(dps_res.external_id)
             assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
+            assert COGNITE_CLIENT == dps_res._client
         assert 0 == len(ids)
         assert 0 == len(external_ids)
+        assert COGNITE_CLIENT == dps_res_list._client
 
     def test_get_datapoints_empty(self, mock_get_datapoints_empty):
         res = DPS_CLIENT.get(id=1, start=0, end=10000)
@@ -244,17 +254,20 @@ class TestQueryDatapoints:
         dps_res = DPS_CLIENT.query(query=DatapointsQuery(id=1, start=0, end=10000))
         assert isinstance(dps_res, Datapoints)
         assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
+        assert COGNITE_CLIENT == dps_res._client
 
     def test_query_multiple(self, mock_get_datapoints):
         dps_res_list = DPS_CLIENT.query(
             query=[
                 DatapointsQuery(id=1, start=0, end=10000),
-                DatapointsQuery(external_id="1", start=10000, end=20000, aggregates=["average"], granularity="2s"),
+                DatapointsQuery(external_id="2", start=10000, end=20000, aggregates=["average"], granularity="2s"),
             ]
         )
         assert isinstance(dps_res_list, DatapointsList)
         for dps_res in dps_res_list:
             assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
+            assert COGNITE_CLIENT == dps_res._client
+        assert COGNITE_CLIENT == dps_res_list._client
 
     def test_query_empty(self, mock_get_datapoints_empty):
         dps_res = DPS_CLIENT.query(query=DatapointsQuery(id=1, start=0, end=10000))
@@ -309,6 +322,7 @@ class TestGetLatest:
         assert isinstance(res, Datapoints)
         assert 10000 == res[0].timestamp
         assert isinstance(res[0].value, float)
+        assert COGNITE_CLIENT == res._client
 
     def test_get_latest_multiple_ts(self, mock_get_latest):
         res = DPS_CLIENT.get_latest(id=1, external_id="2")
@@ -316,6 +330,7 @@ class TestGetLatest:
         for dps in res:
             assert 10000 == dps[0].timestamp
             assert isinstance(dps[0].value, float)
+        assert COGNITE_CLIENT == res._client
 
     def test_get_latest_with_before(self, mock_get_latest):
         res = DPS_CLIENT.get_latest(id=1, before=10)
@@ -555,7 +570,6 @@ class TestPandasIntegration:
         import pandas as pd
 
         d = Datapoints(id=1, timestamp=[1, 2, 3], average=[2, 3, 4], step_interpolation=[3, 4, 5])
-        print(d.to_pandas())
         expected_df = pd.DataFrame(
             {"1|average": [2, 3, 4], "1|stepInterpolation": [3, 4, 5]},
             index=[utils.ms_to_datetime(ms) for ms in [1, 2, 3]],
@@ -616,13 +630,13 @@ class TestPandasIntegration:
     def test_get_dataframe(self, mock_get_datapoints):
         df = DPS_CLIENT.get_dataframe(
             id=[1, {"id": 2, "aggregates": ["max"]}],
-            external_id=["abc"],
+            external_id=["123"],
             start=1000000,
             end=1100000,
             aggregates=["average"],
             granularity="10s",
         )
-        assert {"1|average", "2|max", "-1|average"} == set(df.columns)
+        assert {"1|average", "2|max", "123|average"} == set(df.columns)
         assert df.shape[0] > 0
 
     def test_insert_dataframe(self, mock_post_datapoints):
@@ -652,22 +666,24 @@ class TestPandasIntegration:
 
 class TestHelpers:
     @pytest.mark.parametrize(
-        "start, end, granularity, num_of_workers, expected_output",
+        "start, end, granularity, dps_per_window, expected_output",
         [
             (1550241236999, 1550244237001, "1d", 1, [_DPWindow(1550241236999, 1550244237001)]),
-            (0, 10000, "1s", 10, [_DPWindow(i, i + 1000) for i in range(0, 10000, 2000)]),
-            (0, 2500, "1s", 3, [_DPWindow(0, 1250), _DPWindow(2250, 2500)]),
-            (0, 2500, None, 3, [_DPWindow(0, 833), _DPWindow(834, 1667), _DPWindow(1668, 2500)]),
+            (0, 10000, "1s", 1, [_DPWindow(i, i + 1000) for i in range(0, 10000, 2000)]),
+            (0, 2500, "1s", 1, [_DPWindow(0, 1250), _DPWindow(2250, 2500)]),
+            (0, 2500, None, 833, [_DPWindow(0, 833), _DPWindow(834, 1667), _DPWindow(1668, 2500)]),
         ],
     )
-    def test_get_datapoints_windows(self, start, end, granularity, num_of_workers, expected_output):
-        res = DPS_CLIENT._get_windows(start=start, end=end, granularity=granularity, max_windows=num_of_workers)
+    def test_get_datapoints_windows(self, start, end, granularity, dps_per_window, expected_output):
+        res = _DatapointsFetcher._get_windows(
+            start=start, end=end, granularity=granularity, dps_per_window=dps_per_window
+        )
         assert expected_output == res
 
     def test_concatenate_datapoints(self):
-        d1 = Datapoints(id=1, external_id="1", timestamp=[1, 2, 3], value=[1, 2, 3])
-        d2 = Datapoints(id=1, external_id="1", timestamp=[4, 5, 6], value=[4, 5, 6])
-        concatenated = DPS_CLIENT._concatenate_datapoints([d1, d2])
+        d1 = Datapoints(id=1, external_id="1", timestamp=[4, 5, 6], value=[4, 5, 6])
+        d2 = Datapoints(id=1, external_id="1", timestamp=[1, 2, 3], value=[1, 2, 3])
+        concatenated = _concatenate_datapoints([d1, d2])
         assert [1, 2, 3, 4, 5, 6] == concatenated.timestamp
         assert [1, 2, 3, 4, 5, 6] == concatenated.value
         assert 1 == concatenated.id
@@ -681,7 +697,7 @@ class TestHelpers:
             value=[0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 1],
             max=[0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 1],
         )
-        d_no_dupes = DPS_CLIENT._remove_duplicates(d)
+        d_no_dupes = _DatapointsFetcher._remove_duplicates(d)
         assert [1, 2, 3, 4, 5, 6, 7] == d_no_dupes.timestamp
         assert [0, 1, 0, 1, 1, 0, 1] == d_no_dupes.value
         assert [0, 1, 0, 1, 1, 0, 1] == d_no_dupes.max

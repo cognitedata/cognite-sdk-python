@@ -129,10 +129,16 @@ def execute_tasks_concurrently(func: Callable, tasks: Union[List[Tuple], List[Di
 def assert_exactly_one_of_id_or_external_id(id, external_id):
     assert_type(id, "id", [int], allow_none=True)
     assert_type(external_id, "external_id", [str], allow_none=True)
-    assert (id or external_id) and not (id and external_id), "Exactly one of id and external id must be specified"
-    if id is not None:
+    has_id = id is not None
+    has_external_id = external_id is not None
+
+    assert (has_id or has_external_id) and not (
+        has_id and has_external_id
+    ), "Exactly one of id and external id must be specified"
+
+    if has_id:
         return {"id": id}
-    elif external_id is not None:
+    elif has_external_id:
         return {"external_id": external_id}
 
 
