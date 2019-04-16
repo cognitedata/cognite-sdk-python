@@ -57,7 +57,12 @@ class Datapoint(CogniteResource):
         self.discrete_variance = discrete_variance
         self.total_variation = total_variation
 
-    def to_pandas(self):
+    def to_pandas(self) -> "pandas.DataFrame":
+        """Convert the datapoint into a pandas DataFrame.
+
+        Returns:
+            pandas.DataFrame: The dataframe.
+        """
         pd = utils.local_import("pandas")
 
         dumped = self.dump(camel_case=True)
@@ -157,6 +162,14 @@ class Datapoints:
         yield from self.__get_datapoint_objects()
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+        """Dump the datapoints into a json serializable Python data type.
+
+        Args:
+            camel_case (bool): Use camelCase for attribute names. Defaults to False.
+
+        Returns:
+            List[Dict[str, Any]]: A list of dicts representing the instance.
+        """
         dumped = {
             "id": self.id,
             "external_id": self.external_id,
@@ -166,7 +179,12 @@ class Datapoints:
             dumped = {utils.to_camel_case(key): value for key, value in dumped.items()}
         return {key: value for key, value in dumped.items() if value is not None}
 
-    def to_pandas(self):
+    def to_pandas(self) -> "pandas.DataFrame":
+        """Convert the datapoints into a pandas DataFrame.
+
+        Returns:
+            pandas.DataFrame: The dataframe.
+        """
         np, pd = utils.local_import("numpy", "pandas")
         data_fields = {}
         timestamps = []
@@ -181,7 +199,8 @@ class Datapoints:
                 data_fields[id_with_agg] = value
         return pd.DataFrame(data_fields, index=pd.DatetimeIndex(data=np.array(timestamps, dtype="datetime64[ms]")))
 
-    def plot(self):
+    def plot(self) -> None:
+        """Plot the datapoints."""
         plt = utils.local_import("matplotlib.pyplot")
         self.to_pandas().plot()
         plt.show()
@@ -225,14 +244,16 @@ class DatapointsList(CogniteResourceList):
     _RESOURCE = Datapoints
     _ASSERT_CLASSES = False
 
-    def to_pandas(self):
+    def to_pandas(self) -> "pandas.DataFrame":
+        """Convert the datapoints list into a pandas DataFrame."""
         pd = utils.local_import("pandas")
         dfs = [df.to_pandas() for df in self.data]
         if dfs:
             return pd.concat(dfs, axis="columns")
         return pd.DataFrame()
 
-    def plot(self):
+    def plot(self) -> None:
+        """Plot the list of datapoints."""
         plt = utils.local_import("matplotlib.pyplot")
         self.to_pandas().plot()
         plt.show()
