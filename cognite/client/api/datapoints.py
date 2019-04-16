@@ -1,5 +1,4 @@
 import json
-import queue
 import threading
 from collections import defaultdict, namedtuple
 from datetime import datetime
@@ -217,6 +216,34 @@ class Datapoints:
                 current_attr.append(value)
                 setattr(instance, snake_key, current_attr)
         return instance
+
+    def _insert(self, other_dps):
+        if not other_dps.timestamp:
+            return
+
+        if self._client is None:
+            self._client = other_dps._client
+        if self.id is None and self.external_id is None:
+            self.id = other_dps.id
+            self.external_id = other_dps.external_id
+
+        other_first_ts = other_dps.timestamp[0]
+        index_to_split_on = None
+        for i, ts in enumerate(self.timestamp):
+            if ts > other_first_ts:
+                index_to_split_on = i
+                break
+
+        for attr, other_value in other_dps._get_non_empty_data_fields():
+            value = getattr(self, attr)
+            if not value:
+                setattr(self, attr, other_value)
+            else:
+                if index_to_split_on is not None:
+                    new_value = value[:index_to_split_on] + other_value + value[index_to_split_on:]
+                else:
+                    new_value = value + other_value
+                setattr(self, attr, new_value)
 
     def _get_non_empty_data_fields(self) -> Generator[Tuple[str, Any], None, None]:
         for attr, value in self.__dict__.copy().items():
@@ -829,57 +856,47 @@ class DatapointsAPI(APIClient):
         return valid_datapoints
 
 
-def _concatenate_datapoints(dps_objects: List[Datapoints]) -> Datapoints:
-    assert 1 == len(set([dps.id for dps in dps_objects]))
-    assert 1 == len(set([dps.external_id for dps in dps_objects]))
-
-    dps_objects = sorted(dps_objects, key=lambda dps: dps.timestamp)
-
-    concat_dps_object = dps_objects[0]
-    for dps in dps_objects[1:]:
-        for attr, value in dps._get_non_empty_data_fields():
-            current = getattr(concat_dps_object, attr) or []
-            current.extend(value)
-            setattr(concat_dps_object, attr, current)
-
-    return concat_dps_object
-
-
 _DPWindow = namedtuple("Window", ["start", "end"])
 _DPQuery = namedtuple(
     "DPQuery", ["start", "end", "ts_item", "aggregates", "granularity", "include_outside_points", "limit"]
 )
 
 
-class _DPTask:
-    def __init__(self, dps_query: _DPQuery):
-        self.query = dps_query
-        self.datapoints = None
-
-
-class _DatapointsFetcherWorker(threading.Thread):
-    def __init__(self, client: DatapointsAPI, request_queue: queue.Queue, response_queue: queue.Queue):
+class _DatapointsFetcher:
+    def __init__(self, client: DatapointsAPI):
         self.client = client
-        self.request_queue = request_queue
-        self.response_queue = response_queue
-        self.stop = False
-        self.exception = None
-        super().__init__(daemon=True)
+        self.semaphore = threading.Semaphore(self.client._max_workers)
+        self.lock = threading.Lock()
+        self.id_to_datapoints = defaultdict(lambda: Datapoints())
+        self.id_to_include_outside_dps = defaultdict(lambda: False)
 
-    def run(self):
-        try:
-            while not self.stop:
-                try:
-                    dps_task = self.request_queue.get(timeout=0.1)
-                except queue.Empty:
-                    continue
-                dps_task.datapoints = self._get_datapoints_with_paging(*dps_task.query)
-                self.response_queue.put(dps_task)
-        except Exception as e:
-            self.response_queue.put(e)
+    def fetch(self, dps_queries: List[_DPQuery]) -> DatapointsList:
+        queries = []
+        for dps_query in dps_queries:
+            if self._should_split(dps_query):
+                split_queries = self._split_query_into_windows(dps_query)
+                for query in split_queries:
+                    queries.append((query,))
+            else:
+                queries.append((dps_query,))
 
-    def get_exception(self):
-        return self.exception
+        utils.execute_tasks_concurrently(self._do_dps_query, queries, max_workers=self.client._max_workers)
+
+        dps_list = DatapointsList([], cognite_client=self.client._cognite_client)
+
+        for id, dps in self.id_to_datapoints.items():
+            if self.id_to_include_outside_dps[id]:
+                dps = self._remove_duplicates(dps)
+            dps_list.append(dps)
+
+        return dps_list
+
+    def _do_dps_query(self, query: _DPQuery):
+        with self.semaphore:
+            dps = self._get_datapoints_with_paging(*query)
+        with self.lock:
+            self.id_to_datapoints[dps.id]._insert(dps)
+            self.id_to_include_outside_dps[dps.id] = query.include_outside_points
 
     def _get_datapoints_with_paging(
         self,
@@ -894,12 +911,12 @@ class _DatapointsFetcherWorker(threading.Thread):
         per_request_limit = self.client._LIMIT_AGG if aggregates else self.client._LIMIT
         limit_next_request = per_request_limit
         next_start = start
-        datapoints = Datapoints(timestamp=[])
-        concatenated_datapoints = Datapoints(timestamp=[])
+        datapoints = Datapoints()
+        all_datapoints = Datapoints()
         while (
-            (len(concatenated_datapoints) == 0 or len(datapoints) == per_request_limit)
+            (len(all_datapoints) == 0 or len(datapoints) == per_request_limit)
             and end > next_start
-            and len(concatenated_datapoints) < (limit or float("inf"))
+            and len(all_datapoints) < (limit or float("inf"))
         ):
             datapoints = self._get_datapoints(
                 next_start, end, ts_item, aggregates, granularity, include_outside_points, limit_next_request
@@ -913,11 +930,8 @@ class _DatapointsFetcherWorker(threading.Thread):
                     limit_next_request = remaining_datapoints
             latest_timestamp = int(datapoints.timestamp[-1])
             next_start = latest_timestamp + (utils.granularity_to_ms(granularity) if granularity else 1)
-            concatenated_datapoints.id = datapoints.id
-            concatenated_datapoints.external_id = datapoints.external_id
-            concatenated_datapoints._client = datapoints._client
-            concatenated_datapoints = _concatenate_datapoints([concatenated_datapoints, datapoints])
-        return concatenated_datapoints
+            all_datapoints._insert(datapoints)
+        return all_datapoints
 
     def _get_datapoints(
         self,
@@ -940,71 +954,6 @@ class _DatapointsFetcherWorker(threading.Thread):
         }
         res = self.client._post(self.client._RESOURCE_PATH + "/get", json=payload).json()["data"]["items"][0]
         return Datapoints._load(res, cognite_client=self.client._cognite_client)
-
-
-class _DatapointsFetcher:
-    def __init__(self, client: DatapointsAPI):
-        self.client = client
-        self.request_queue = queue.Queue()
-        self.response_queue = queue.Queue()
-        self.number_of_tasks = 0
-        self.workers = []
-
-    def fetch(self, dps_queries: List[_DPQuery]) -> DatapointsList:
-        self._put_tasks_on_queue(dps_queries)
-        self._start_workers()
-        dps_list = self._get_results()
-        self._stop_workers()
-        return dps_list
-
-    def _start_workers(self):
-        for _ in range(self.client._max_workers):
-            worker = _DatapointsFetcherWorker(self.client, self.request_queue, self.response_queue)
-            worker.start()
-            self.workers.append(worker)
-
-    def _stop_workers(self):
-        for worker in self.workers:
-            worker.stop = True
-
-    def _put_tasks_on_queue(self, dps_queries: List[_DPQuery]):
-        tasks = []
-        for dps_query in dps_queries:
-            if self._should_split(dps_query):
-                split_queries = self._split_query_into_windows(dps_query)
-                for query in split_queries:
-                    tasks.append(_DPTask(query))
-            else:
-                tasks.append(_DPTask(dps_query))
-
-        for task in tasks:
-            self.request_queue.put(task)
-            self.number_of_tasks += 1
-
-    def _get_results(self) -> DatapointsList:
-        number_of_completed_tasks = 0
-        id_to_completed_tasks = defaultdict(lambda: [])
-        while number_of_completed_tasks < self.number_of_tasks:
-            dps_task = self.response_queue.get()
-            if isinstance(dps_task, Exception):
-                raise dps_task
-            id_to_completed_tasks[dps_task.datapoints.id].append(dps_task)
-            number_of_completed_tasks += 1
-
-        dps_list = DatapointsList([], cognite_client=self.client._cognite_client)
-
-        for _, completed_tasks in id_to_completed_tasks.items():
-            dps_object = self._join_tasks_into_datapoints_object(completed_tasks)
-            dps_list.append(dps_object)
-
-        return dps_list
-
-    def _join_tasks_into_datapoints_object(self, tasks: List[_DPTask]) -> Datapoints:
-        query = tasks[0].query
-        dps_object = _concatenate_datapoints([dps_task.datapoints for dps_task in tasks])
-        if query.include_outside_points:
-            dps_object = self._remove_duplicates(dps_object)
-        return dps_object
 
     def _should_split(self, query: _DPQuery):
         if query.limit is not None:
