@@ -82,12 +82,12 @@ class CogniteResourceList(UserList):
         return pd.DataFrame(self.dump(camel_case=True))
 
     @classmethod
-    def _load(cls, resource_list: Union[List, str]):
+    def _load(cls, resource_list: Union[List, str], cognite_client=None):
         if isinstance(resource_list, str):
-            return cls._load(json.loads(resource_list))
+            return cls._load(json.loads(resource_list), cognite_client=cognite_client)
         elif isinstance(resource_list, List):
-            resources = [cls._RESOURCE._load(resource) for resource in resource_list]
-            return cls(resources)
+            resources = [cls._RESOURCE._load(resource, cognite_client=None) for resource in resource_list]
+            return cls(resources, cognite_client=cognite_client)
 
 
 class CogniteResource:
@@ -112,11 +112,11 @@ class CogniteResource:
         return dumped
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str]):
+    def _load(cls, resource: Union[Dict, str], cognite_client=None):
         if isinstance(resource, str):
-            return cls._load(json.loads(resource))
+            return cls._load(json.loads(resource), cognite_client=cognite_client)
         elif isinstance(resource, Dict):
-            instance = cls()
+            instance = cls(cognite_client=cognite_client)
             for key, value in resource.items():
                 snake_case_key = to_snake_case(key)
                 if not hasattr(instance, snake_case_key):
