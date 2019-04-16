@@ -57,7 +57,7 @@ class TimeSeries(CogniteResource):
 
     def plot(self, start="1d-ago", end="now", aggregates=None, granularity=None, id_labels: bool = False):
         plt = utils.local_import("matplotlib.pyplot")
-        identifier = utils.assert_exactly_one_of_id_or_external_id(self.id, self.external_id)
+        identifier = utils.assert_at_least_one_of_id_or_external_id(self.id, self.external_id)
         dps = self._client.datapoints.get(
             start=start, end=end, aggregates=aggregates, granularity=granularity, **identifier
         )

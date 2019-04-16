@@ -142,6 +142,18 @@ def assert_exactly_one_of_id_or_external_id(id, external_id):
         return {"external_id": external_id}
 
 
+def assert_at_least_one_of_id_or_external_id(id, external_id):
+    assert_type(id, "id", [int], allow_none=True)
+    assert_type(external_id, "external_id", [str], allow_none=True)
+    has_id = id is not None
+    has_external_id = external_id is not None
+    assert has_id or has_external_id, "At least one of id and external id must be specified"
+    if has_id:
+        return {"id": id}
+    elif has_external_id:
+        return {"external_id": external_id}
+
+
 def assert_timestamp_not_in_jan_in_1970(timestamp: Union[int, float, str, datetime]):
     dt = ms_to_datetime(timestamp_to_ms(timestamp))
     assert dt > datetime(
