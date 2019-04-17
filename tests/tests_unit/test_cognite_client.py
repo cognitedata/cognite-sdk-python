@@ -10,15 +10,15 @@ from time import sleep
 import pytest
 
 from cognite.client import Asset, CogniteClient, Event, FileMetadata, TimeSeries
+from cognite.client._api.assets import AssetList
+from cognite.client._api.files import FileMetadataList
+from cognite.client._api.time_series import TimeSeriesList
 from cognite.client._utils.utils import DebugLogFormatter
-from cognite.client.api.assets import AssetList
-from cognite.client.api.files import FileMetadataList
-from cognite.client.api.time_series import TimeSeriesList
 
 
 @pytest.fixture
 def default_client_config():
-    from cognite.client.cognite_client import DEFAULT_BASE_URL, DEFAULT_MAX_WORKERS, DEFAULT_TIMEOUT
+    from cognite.client._cognite_client import DEFAULT_BASE_URL, DEFAULT_MAX_WORKERS, DEFAULT_TIMEOUT
 
     yield DEFAULT_BASE_URL, DEFAULT_MAX_WORKERS, DEFAULT_TIMEOUT
 

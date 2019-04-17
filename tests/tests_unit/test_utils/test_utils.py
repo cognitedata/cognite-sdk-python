@@ -178,6 +178,12 @@ class TestLocalImport:
                 utils.local_import(dep)
 
 
+class TestUrlEncode:
+    def test_url_encode(self):
+        assert "/bla/yes%2Fno/bla" == utils.interpolate_and_url_encode("/bla/{}/bla", "yes/no")
+        assert "/bla/123/bla/456" == utils.interpolate_and_url_encode("/bla/{}/bla/{}", "123", "456")
+
+
 class TestJsonDumpDefault:
     def test_json_serializable_Decimal(self):
         with pytest.raises(TypeError):

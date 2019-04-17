@@ -129,42 +129,42 @@ class TestUpdateClassGenerator:
         assert (
             """    @property
     def external_id(self):
-        return PrimitiveUpdate(self, 'externalId')
+        return _PrimitiveUpdate(self, 'externalId')
 
     @property
     def start_time(self):
-        return PrimitiveUpdate(self, 'startTime')
+        return _PrimitiveUpdate(self, 'startTime')
 
     @property
     def end_time(self):
-        return PrimitiveUpdate(self, 'endTime')
+        return _PrimitiveUpdate(self, 'endTime')
 
     @property
     def description(self):
-        return PrimitiveUpdate(self, 'description')
+        return _PrimitiveUpdate(self, 'description')
 
     @property
     def metadata(self):
-        return ObjectUpdate(self, 'metadata')
+        return _ObjectUpdate(self, 'metadata')
 
     @property
     def asset_ids(self):
-        return ListUpdate(self, 'assetIds')
+        return _ListUpdate(self, 'assetIds')
 
     @property
     def source(self):
-        return PrimitiveUpdate(self, 'source')"""
+        return _PrimitiveUpdate(self, 'source')"""
             == setters
         )
 
     def test_generate_attr_update_classes(self):
         attr_update_classes = UPDATE_CLASS_GENERATOR.generate_attr_update_classes("AssetUpdate")
         assert (
-            """class PrimitiveUpdate(CognitePrimitiveUpdate):
+            """class _PrimitiveUpdate(CognitePrimitiveUpdate):
     def set(self, value: Any) -> AssetUpdate:
         return self._set(value)
 
-class ObjectUpdate(CogniteObjectUpdate):
+class _ObjectUpdate(CogniteObjectUpdate):
     def set(self, value: Dict) -> AssetUpdate:
         return self._set(value)
 
@@ -174,7 +174,7 @@ class ObjectUpdate(CogniteObjectUpdate):
     def remove(self, value: List) -> AssetUpdate:
         return self._remove(value)
 
-class ListUpdate(CogniteListUpdate):
+class _ListUpdate(CogniteListUpdate):
     def set(self, value: List) -> AssetUpdate:
         return self._set(value)
 

@@ -3,7 +3,7 @@ import re
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.api.events import Event, EventList, EventUpdate
+from cognite.client._api.events import Event, EventList, EventUpdate
 from tests.utils import jsgz_load
 
 EVENTS_API = CogniteClient().events
@@ -137,7 +137,6 @@ class TestPandasIntegration:
         import pandas as pd
 
         df = EVENTS_API.list().to_pandas()
-        print(df)
         assert isinstance(df, pd.DataFrame)
         assert 1 == df.shape[0]
         assert {"metadata-key": "metadata-value"} == df["metadata"][0]
@@ -153,7 +152,6 @@ class TestPandasIntegration:
         import pandas as pd
 
         df = EVENTS_API.get(id=1).to_pandas()
-        print(df)
         assert isinstance(df, pd.DataFrame)
         assert "metadata" not in df.columns
         assert [1] == df.loc["assetIds"][0]

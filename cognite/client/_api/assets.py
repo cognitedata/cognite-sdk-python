@@ -72,31 +72,31 @@ class AssetUpdate(CogniteUpdate):
 
     @property
     def external_id(self):
-        return PrimitiveUpdate(self, "externalId")
+        return _PrimitiveUpdate(self, "externalId")
 
     @property
     def name(self):
-        return PrimitiveUpdate(self, "name")
+        return _PrimitiveUpdate(self, "name")
 
     @property
     def description(self):
-        return PrimitiveUpdate(self, "description")
+        return _PrimitiveUpdate(self, "description")
 
     @property
     def metadata(self):
-        return ObjectUpdate(self, "metadata")
+        return _ObjectUpdate(self, "metadata")
 
     @property
     def source(self):
-        return PrimitiveUpdate(self, "source")
+        return _PrimitiveUpdate(self, "source")
 
 
-class PrimitiveUpdate(CognitePrimitiveUpdate):
+class _PrimitiveUpdate(CognitePrimitiveUpdate):
     def set(self, value: Any) -> AssetUpdate:
         return self._set(value)
 
 
-class ObjectUpdate(CogniteObjectUpdate):
+class _ObjectUpdate(CogniteObjectUpdate):
     def set(self, value: Dict) -> AssetUpdate:
         return self._set(value)
 
@@ -107,7 +107,7 @@ class ObjectUpdate(CogniteObjectUpdate):
         return self._remove(value)
 
 
-class ListUpdate(CogniteListUpdate):
+class _ListUpdate(CogniteListUpdate):
     def set(self, value: List) -> AssetUpdate:
         return self._set(value)
 
@@ -228,7 +228,7 @@ class AssetsAPI(APIClient):
         Fetches assets as they are iterated over, so you keep a limited number of assets in memory.
 
         Args:
-            chunk_size (int, optional): Number of assets to return in each chunk. Defaults to yielding one event a time.
+            chunk_size (int, optional): Number of assets to return in each chunk. Defaults to yielding one asset a time.
             name (str): Name of asset. Often referred to as tag.
             parent_ids (List[int]): No description.
             metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value

@@ -7,7 +7,7 @@ from collections import OrderedDict
 import pytest
 
 from cognite.client import CogniteAPIError, CogniteClient
-from cognite.client.api.assets import Asset, AssetList, AssetUpdate, _AssetPoster, _AssetPosterWorker
+from cognite.client._api.assets import Asset, AssetList, AssetUpdate, _AssetPoster, _AssetPosterWorker
 from tests.utils import jsgz_load
 
 ASSETS_API = CogniteClient().assets

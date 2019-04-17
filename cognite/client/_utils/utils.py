@@ -17,6 +17,7 @@ from concurrent.futures.thread import ThreadPoolExecutor
 from datetime import datetime
 from decimal import Decimal
 from typing import Any, Callable, Dict, List, Tuple, Union
+from urllib.parse import quote
 
 import cognite.client
 from cognite.client.exceptions import CogniteImportError
@@ -173,6 +174,10 @@ def assert_type(var: Any, var_name: str, types: List, allow_none=False):
             raise TypeError("{} cannot be None".format(var_name))
     elif not isinstance(var, tuple(types)):
         raise TypeError("{} must be one of types {}".format(var_name, types))
+
+
+def interpolate_and_url_encode(path, *args):
+    return path.format(*[quote(arg, safe="") for arg in args])
 
 
 def local_import(*module: str):

@@ -6,16 +6,15 @@ from unittest import mock
 import pytest
 
 from cognite.client import CogniteAPIError, CogniteClient, global_client
-from cognite.client._utils import utils
-from cognite.client.api.datapoints import (
+from cognite.client._api.datapoints import (
     Datapoint,
     Datapoints,
     DatapointsList,
     DatapointsQuery,
-    _concatenate_datapoints,
     _DatapointsFetcher,
     _DPWindow,
 )
+from cognite.client._utils import utils
 from tests.utils import jsgz_load
 
 COGNITE_CLIENT = CogniteClient()
@@ -198,7 +197,6 @@ class TestGetDatapoints:
             ],
             key=lambda x: x[0],
         )
-
         assert [(0, 100000), (20000, 100000), (40000, 100000), (60000, 100000), (80000, 100000)] == requested_windows
         assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
 
@@ -232,7 +230,7 @@ class TestGetDatapoints:
         ids = [1, 2, 3]
         external_ids = ["4", "5", "6"]
         dps_res_list = DPS_CLIENT.get(id=ids, external_id=external_ids, start=0, end=100000)
-        assert isinstance(dps_res_list, DatapointsList)
+        assert isinstance(dps_res_list, DatapointsList), type(dps_res_list)
         for dps_res in dps_res_list:
             if dps_res.id in ids:
                 ids.remove(dps_res.id)
@@ -535,6 +533,33 @@ class TestDatapointsObject:
         res = Datapoints(id=1, timestamp=[1, 2, 3])._slice(slice(None, 1))
         assert [1] == res.timestamp
 
+    def test_insert(self):
+        d0 = Datapoints()
+        d1 = Datapoints(id=1, external_id="1", timestamp=[7, 8, 9], value=[7, 8, 9])
+        d2 = Datapoints(id=1, external_id="1", timestamp=[1, 2, 3], value=[1, 2, 3])
+        d3 = Datapoints(id=1, external_id="1", timestamp=[4, 5, 6], value=[4, 5, 6])
+
+        d0._insert(d1)
+        assert [7, 8, 9] == d0.timestamp
+        assert [7, 8, 9] == d0.value
+        assert 1 == d0.id
+        assert "1" == d0.external_id
+        assert d0.sum is None
+
+        d0._insert(d2)
+        assert [1, 2, 3, 7, 8, 9] == d0.timestamp
+        assert [1, 2, 3, 7, 8, 9] == d0.value
+        assert 1 == d0.id
+        assert "1" == d0.external_id
+        assert d0.sum is None
+
+        d0._insert(d3)
+        assert [1, 2, 3, 4, 5, 6, 7, 8, 9] == d0.timestamp
+        assert [1, 2, 3, 4, 5, 6, 7, 8, 9] == d0.value
+        assert 1 == d0.id
+        assert "1" == d0.external_id
+        assert d0.sum is None
+
 
 @pytest.mark.dsl
 class TestPlotDatapoints:
@@ -679,16 +704,6 @@ class TestHelpers:
             start=start, end=end, granularity=granularity, dps_per_window=dps_per_window
         )
         assert expected_output == res
-
-    def test_concatenate_datapoints(self):
-        d1 = Datapoints(id=1, external_id="1", timestamp=[4, 5, 6], value=[4, 5, 6])
-        d2 = Datapoints(id=1, external_id="1", timestamp=[1, 2, 3], value=[1, 2, 3])
-        concatenated = _concatenate_datapoints([d1, d2])
-        assert [1, 2, 3, 4, 5, 6] == concatenated.timestamp
-        assert [1, 2, 3, 4, 5, 6] == concatenated.value
-        assert 1 == concatenated.id
-        assert "1" == concatenated.external_id
-        assert concatenated.sum is None
 
     def test_remove_duplicates_from_datapoints(self):
         d = Datapoints(

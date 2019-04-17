@@ -224,6 +224,57 @@ Data Classes
     :show-inheritance:
     :inherited-members:
 
+Raw
+---
+List databases
+^^^^^^^^^^^^^^
+.. automethod:: cognite.client.api.raw.RawDatabasesAPI.list
+
+Create new databases
+^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client.api.raw.RawDatabasesAPI.create
+
+Delete databases
+^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client.api.raw.RawDatabasesAPI.delete
+
+List tables in a database
+^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client.api.raw.RawTablesAPI.list
+
+Create new tables in a database
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client.api.raw.RawTablesAPI.create
+
+Delete tables from a database
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client.api.raw.RawTablesAPI.delete
+
+Get a row from a table
+^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client.api.raw.RawRowsAPI.get
+
+List rows in a table
+^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client.api.raw.RawRowsAPI.list
+
+Insert rows into a table
+^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client.api.raw.RawRowsAPI.insert
+
+Delete rows from a table
+^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client.api.raw.RawRowsAPI.delete
+
+Data Classes
+^^^^^^^^^^^^
+.. automodule:: cognite.client.api.raw
+    :members:
+    :exclude-members: RawRowsAPI, RawTablesAPI, RawDatabasesAPI, RawAPI
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+
 Exceptions
 ==========
 .. automodule:: cognite.client.exceptions

@@ -4,7 +4,7 @@ from unittest import mock
 import pytest
 
 from cognite.client import CogniteClient, global_client
-from cognite.client.api.time_series import TimeSeries, TimeSeriesFilter, TimeSeriesList, TimeSeriesUpdate
+from cognite.client._api.time_series import TimeSeries, TimeSeriesFilter, TimeSeriesList, TimeSeriesUpdate
 from tests.utils import jsgz_load
 
 COGNITE_CLIENT = CogniteClient()

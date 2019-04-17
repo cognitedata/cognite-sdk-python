@@ -131,11 +131,13 @@ class APIClient:
         full_url = self._apply_model_hosting_emulator_url_filter(full_url)
         return full_url
 
-    def _retrieve(self, cls, resource_path: str, id: int, params: Dict = None, headers: Dict = None):
+    def _retrieve(self, cls, resource_path: str, id: Union[int, str], params: Dict = None, headers: Dict = None):
         return cls._load(
-            self._get(url_path=resource_path + "/{}".format(id), params=params, headers=headers).json()["data"][
-                "items"
-            ][0],
+            self._get(
+                url_path=utils.interpolate_and_url_encode(resource_path + "/{}", str(id)),
+                params=params,
+                headers=headers,
+            ).json()["data"]["items"][0],
             cognite_client=self._cognite_client,
         )
 
@@ -237,7 +239,12 @@ class APIClient:
 
         items_split = []
         for i in range(0, len(items), limit):
-            items_split.append({"items": [item.dump(camel_case=True) for item in items[i : i + limit]]})
+            if isinstance(items[i], CogniteResource):
+                items_chunk = [item.dump(camel_case=True) for item in items[i : i + limit]]
+            else:
+                items_chunk = [item for item in items[i : i + limit]]
+            items_split.append({"items": items_chunk})
+
         tasks = [(resource_path, task_items, params, headers) for task_items in items_split]
         results = utils.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
 

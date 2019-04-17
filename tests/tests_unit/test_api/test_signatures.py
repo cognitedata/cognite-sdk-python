@@ -2,7 +2,7 @@ import inspect
 
 import pytest
 
-from cognite.client.api import assets, events, files
+from cognite.client._api import assets, events, files
 
 
 class TestListAndIterSignatures:
