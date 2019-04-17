@@ -3,7 +3,7 @@ import re
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.api.assets import Asset, AssetList, AssetUpdate
+from cognite.client._api.assets import Asset, AssetList, AssetUpdate
 from tests.utils import jsgz_load
 
 ASSETS_API = CogniteClient().assets

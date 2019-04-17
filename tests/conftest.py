@@ -5,12 +5,12 @@ import pytest
 import responses
 
 from cognite.client import CogniteClient
-from cognite.client.api.assets import AssetsAPI
-from cognite.client.api.datapoints import DatapointsAPI
-from cognite.client.api.events import EventsAPI
-from cognite.client.api.files import FilesAPI
-from cognite.client.api.login import LoginAPI
-from cognite.client.api.time_series import TimeSeriesAPI
+from cognite.client._api.assets import AssetsAPI
+from cognite.client._api.datapoints import DatapointsAPI
+from cognite.client._api.events import EventsAPI
+from cognite.client._api.files import FilesAPI
+from cognite.client._api.login import LoginAPI
+from cognite.client._api.time_series import TimeSeriesAPI
 from tests.utils import BASE_URL
 
 

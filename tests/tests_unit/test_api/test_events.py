@@ -3,7 +3,7 @@ import re
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.api.events import Event, EventList, EventUpdate
+from cognite.client._api.events import Event, EventList, EventUpdate
 from tests.utils import jsgz_load
 
 EVENTS_API = CogniteClient().events

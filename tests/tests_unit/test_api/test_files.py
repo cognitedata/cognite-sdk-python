@@ -5,7 +5,7 @@ from tempfile import TemporaryDirectory
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.api.files import FileMetadata, FileMetadataFilter, FileMetadataList, FileMetadataUpdate
+from cognite.client._api.files import FileMetadata, FileMetadataFilter, FileMetadataList, FileMetadataUpdate
 from tests.utils import jsgz_load
 
 FILES_API = CogniteClient().files
