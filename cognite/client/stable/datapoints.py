@@ -150,7 +150,8 @@ class DatapointsClient(APIClient):
             end (Union[str, int, datetime]):      Get datapoints up to this time. Same format as for start.
 
             aggregates (list):      The list of aggregate functions you wish to apply to the data. Valid aggregate functions
-                                    are: 'average/avg, max, min, count, sum, interpolation/int, stepinterpolation/step'.
+                                    are: 'average/avg, max, min, count, sum, interpolation/int, stepinterpolation/step,
+                                    continuousvariance/cv, discretevariance/dv, totalvariation/tv'.
 
             granularity (str):      The granularity of the aggregate values. Valid entries are : 'day/d, hour/h, minute/m,
                                     second/s', or a multiple of these indicated by a number as a prefix e.g. '12hour'.
@@ -237,7 +238,8 @@ class DatapointsClient(APIClient):
             name (str):       The name of the timeseries to retrieve data for.
 
             aggregates (list):      The list of aggregate functions you wish to apply to the data. Valid aggregate functions
-                                    are: 'average/avg, max, min, count, sum, interpolation/int, stepinterpolation/step'.
+                                    are: 'average/avg, max, min, count, sum, interpolation/int, stepinterpolation/step',
+                                    continuousvariance/cv, discretevariance/dv, totalvariation/tv'.
 
             granularity (str):      The granularity of the aggregate values. Valid entries are : 'day/d, hour/h, minute/m,
                                     second/s', or a multiple of these indicated by a number as a prefix e.g. '12hour'.
@@ -301,7 +303,8 @@ class DatapointsClient(APIClient):
             name (str):       The name of the timeseries to retrieve data for.
 
             aggregates (list):      The list of aggregate functions you wish to apply to the data. Valid aggregate functions
-                                    are: 'average/avg, max, min, count, sum, interpolation/int, stepinterpolation/step'.
+                                    are: 'average/avg, max, min, count, sum, interpolation/int, stepinterpolation/step',
+                                    continuousvariance/cv, discretevariance/dv, totalvariation/tv'.
 
             granularity (str):      The granularity of the aggregate values. Valid entries are : 'day/d, hour/h, minute/m,
                                     second/s', or a multiple of these indicated by a number as a prefix e.g. '12hour'.
@@ -500,7 +503,7 @@ class DatapointsClient(APIClient):
 
             aggregates (list, optional):    The list of aggregate functions you wish to apply to the data. Valid aggregate
                                             functions are: 'average/avg, max, min, count, sum, interpolation/int,
-                                            stepinterpolation/step'.
+                                            stepinterpolation/step, continuousvariance/cv, discretevariance/dv, totalvariation/tv'.
 
             granularity (str):              The granularity of the aggregate values. Valid entries are : 'day/d, hour/h,
                                             minute/m, second/s', or a multiple of these indicated by a number as a prefix
