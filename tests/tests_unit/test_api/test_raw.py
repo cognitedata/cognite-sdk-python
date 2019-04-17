@@ -3,7 +3,7 @@ import re
 import pytest
 
 from cognite.client import CogniteClient, global_client
-from cognite.client.api.raw import Database, DatabaseList, Row, RowList, Table, TableList
+from cognite.client._api.raw import Database, DatabaseList, Row, RowList, Table, TableList
 from tests.utils import jsgz_load
 
 COGNITE_CLIENT = CogniteClient()

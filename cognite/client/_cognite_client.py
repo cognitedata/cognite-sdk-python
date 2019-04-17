@@ -3,15 +3,15 @@ import os
 import sys
 from typing import Any, Dict
 
+from cognite.client._api.assets import AssetsAPI
+from cognite.client._api.datapoints import DatapointsAPI
+from cognite.client._api.events import EventsAPI
+from cognite.client._api.files import FilesAPI
+from cognite.client._api.login import LoginAPI
+from cognite.client._api.raw import RawAPI
+from cognite.client._api.time_series import TimeSeriesAPI
 from cognite.client._utils.api_client import APIClient
 from cognite.client._utils.utils import DebugLogFormatter
-from cognite.client.api.assets import AssetsAPI
-from cognite.client.api.datapoints import DatapointsAPI
-from cognite.client.api.events import EventsAPI
-from cognite.client.api.files import FilesAPI
-from cognite.client.api.login import LoginAPI
-from cognite.client.api.raw import RawAPI
-from cognite.client.api.time_series import TimeSeriesAPI
 
 DEFAULT_BASE_URL = "https://api.cognitedata.com"
 DEFAULT_MAX_WORKERS = 10
