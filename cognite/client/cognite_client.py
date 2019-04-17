@@ -10,6 +10,7 @@ from cognite.client.api.datapoints import DatapointsAPI
 from cognite.client.api.events import EventsAPI
 from cognite.client.api.files import FilesAPI
 from cognite.client.api.login import LoginAPI
+from cognite.client.api.raw import RawAPI
 from cognite.client.api.time_series import TimeSeriesAPI
 
 DEFAULT_BASE_URL = "https://api.cognitedata.com"
@@ -148,6 +149,17 @@ class CogniteClient:
             cognite_client=self,
         )
         self.time_series = TimeSeriesAPI(
+            version=__api_version,
+            project=self.project,
+            api_key=self.__api_key,
+            base_url=self._base_url,
+            max_workers=self._max_workers,
+            cookies=self._cookies,
+            headers=self._headers,
+            timeout=self._timeout,
+            cognite_client=self,
+        )
+        self.raw = RawAPI(
             version=__api_version,
             project=self.project,
             api_key=self.__api_key,

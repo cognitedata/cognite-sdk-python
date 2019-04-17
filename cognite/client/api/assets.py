@@ -183,7 +183,7 @@ class AssetsAPI(APIClient):
         Fetches assets as they are iterated over, so you keep a limited number of assets in memory.
 
         Args:
-            chunk_size (int, optional): Number of assets to return in each chunk. Defaults to yielding one event a time.
+            chunk_size (int, optional): Number of assets to return in each chunk. Defaults to yielding one asset a time.
             name (str): Name of asset. Often referred to as tag.
             parent_ids (List[int]): No description.
             metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
