@@ -310,6 +310,16 @@ class RawRowsAPI(APIClient):
         return rows, is_single
 
     def delete(self, db_name: str, table_name: str, key: Union[str, List[str]]) -> None:
+        """Delete rows from a table.
+
+        Args:
+            db_name (str): Name of the database.
+            table_name (str): Name of the table.
+            key (Union[str, List[str]]): The key(s) of the row(s) to delete.
+
+        Returns:
+            None
+        """
         utils.assert_type(key, "key", [str, list])
         if isinstance(key, str):
             key = [key]
