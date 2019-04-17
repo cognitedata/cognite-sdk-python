@@ -23,6 +23,30 @@ def mock_raw_db_response(rsps):
     yield rsps
 
 
+@pytest.fixture
+def mock_raw_table_response(rsps):
+    response_body = {"data": {"items": [{"name": "table1"}]}}
+
+    url_pattern = re.compile(re.escape(RAW_API._base_url) + "/raw/dbs/db1/tables(?:/delete|$|\?.+)")
+    rsps.assert_all_requests_are_fired = False
+
+    rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
+    rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
+    yield rsps
+
+
+@pytest.fixture
+def mock_raw_row_response(rsps):
+    response_body = {"data": {"items": [{"key": "row1", "columns": {"c1": 1, "c2": "2"}}]}}
+
+    url_pattern = re.compile(re.escape(RAW_API._base_url) + "/raw/dbs/db1/tables/table1/rows(?:/delete|/row1|$|\?.+)")
+    rsps.assert_all_requests_are_fired = False
+
+    rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
+    rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
+    yield rsps
+
+
 class TestRawDatabases:
     def test_create_single(self, mock_raw_db_response):
         res = RAW_API.databases.create(name="db1")
@@ -62,17 +86,10 @@ class TestRawDatabases:
         assert res is None
         assert [{"name": "db1"}] == jsgz_load(mock_raw_db_response.calls[0].request.body)["items"]
 
-
-@pytest.fixture
-def mock_raw_table_response(rsps):
-    response_body = {"data": {"items": [{"name": "table1"}]}}
-
-    url_pattern = re.compile(re.escape(RAW_API._base_url) + "/raw/dbs/db1/tables(?:/delete|$|\?.+)")
-    rsps.assert_all_requests_are_fired = False
-
-    rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
-    rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
-    yield rsps
+    def test_get_tables_in_db(self, mock_raw_db_response, mock_raw_table_response):
+        db = RAW_API.databases.list()[0]
+        tables = db.tables()
+        assert TableList([Table(name="table1")]) == tables
 
 
 class TestRawTables:
@@ -82,27 +99,35 @@ class TestRawTables:
         assert COGNITE_CLIENT == res._client
         assert mock_raw_table_response.calls[0].response.json()["data"]["items"][0] == res.dump(camel_case=True)
         assert [{"name": "table1"}] == jsgz_load(mock_raw_table_response.calls[0].request.body)["items"]
+        assert "db1" == res._db_name
 
     def test_create_multiple(self, mock_raw_table_response):
         res_list = RAW_API.tables.create("db1", name=["table1"])
         assert isinstance(res_list, TableList)
         for res in res_list:
             assert COGNITE_CLIENT == res._client
+            assert "db1" == res._db_name
         assert COGNITE_CLIENT == res_list._client
         assert [{"name": "table1"}] == jsgz_load(mock_raw_table_response.calls[0].request.body)["items"]
         assert mock_raw_table_response.calls[0].response.json()["data"]["items"] == res_list.dump(camel_case=True)
 
     def test_list(self, mock_raw_table_response):
         res_list = RAW_API.tables.list(db_name="db1")
+        for res in res_list:
+            assert "db1" == res._db_name
+            assert COGNITE_CLIENT == res._client
         assert TableList([Table("table1")]) == res_list
 
     def test_iter_single(self, mock_raw_table_response):
-        for db in RAW_API.tables(db_name="db1"):
-            assert mock_raw_table_response.calls[0].response.json()["data"]["items"][0] == db.dump(camel_case=True)
+        for table in RAW_API.tables(db_name="db1"):
+            assert mock_raw_table_response.calls[0].response.json()["data"]["items"][0] == table.dump(camel_case=True)
 
     def test_iter_chunk(self, mock_raw_table_response):
-        for db in RAW_API.tables("db1", chunk_size=1):
-            assert mock_raw_table_response.calls[0].response.json()["data"]["items"] == db.dump(camel_case=True)
+        for table_list in RAW_API.tables("db1", chunk_size=1):
+            for table in table_list:
+                assert "db1" == table._db_name
+                assert COGNITE_CLIENT == table._client
+            assert mock_raw_table_response.calls[0].response.json()["data"]["items"] == table_list.dump(camel_case=True)
 
     def test_delete(self, mock_raw_table_response):
         res = RAW_API.tables.delete("db1", name="table1")
@@ -114,17 +139,10 @@ class TestRawTables:
         assert res is None
         assert [{"name": "table1"}] == jsgz_load(mock_raw_table_response.calls[0].request.body)["items"]
 
-
-@pytest.fixture
-def mock_raw_row_response(rsps):
-    response_body = {"data": {"items": [{"key": "row1", "columns": {"c1": 1, "c2": "2"}}]}}
-
-    url_pattern = re.compile(re.escape(RAW_API._base_url) + "/raw/dbs/db1/tables/table1/rows(?:/delete|/row1|$|\?.+)")
-    rsps.assert_all_requests_are_fired = False
-
-    rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
-    rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
-    yield rsps
+    def test_get_rows_in_table(self, mock_raw_table_response, mock_raw_row_response):
+        tables = RAW_API.tables.list(db_name="db1")
+        rows = tables[0].rows()
+        assert RowList([Row._load({"key": "row1", "columns": {"c1": 1, "c2": "2"}})]) == rows
 
 
 class TestRawRows:

@@ -57,8 +57,9 @@ class Table(CogniteResource):
 
     def __init__(self, name: str = None, **kwargs):
         self.name = name
+        # GenStop
+        self._db_name = None
 
-    # GenStop
     def to_pandas(self):
         """Convert the instance into a pandas DataFrame.
 
@@ -66,6 +67,20 @@ class Table(CogniteResource):
             pandas.DataFrame: The pandas DataFrame representing this instance.
         """
         return super().to_pandas([])
+
+    def rows(self, key: str = None, limit: int = None) -> Union[Row, RowList]:
+        """Get the rows in this table.
+
+        Args:
+            key (str): Specify a key to return only that row.
+            limit (int): The number of rows to return.
+
+        Returns:
+            Union[Row, RowList]: List of tables in this database.
+        """
+        if key:
+            return self._client.raw.rows.get(db_name=self._db_name, table_name=self.name, key=key)
+        return self._client.raw.rows.list(db_name=self._db_name, table_name=self.name, limit=limit)
 
 
 class TableList(CogniteResourceList):
@@ -93,6 +108,17 @@ class Database(CogniteResource):
             pandas.DataFrame: The pandas DataFrame representing this instance.
         """
         return super().to_pandas([])
+
+    def tables(self, limit: int = None) -> TableList:
+        """Get the tables in this database.
+
+        Args:
+            limit (int): The number of tables to return.
+
+        Returns:
+            TableList: List of tables in this database.
+        """
+        return self._client.raw.tables.list(db_name=self.name, limit=limit)
 
 
 class DatabaseList(CogniteResourceList):
@@ -221,12 +247,13 @@ class RawTablesAPI(APIClient):
             db_name (str): Name of the database to iterate over tables for
             chunk_size (int, optional): Number of tables to return in each chunk. Defaults to yielding one table a time.
         """
-        return self._list_generator(
+        for tb in self._list_generator(
             cls=TableList,
             resource_path=utils.interpolate_and_url_encode(self._RESOURCE_PATH, db_name),
             chunk_size=chunk_size,
             method="GET",
-        )
+        ):
+            yield self._set_db_name_on_tables(tb, db_name)
 
     def create(self, db_name: str, name: Union[str, List[str]]) -> Union[Table, TableList]:
         """Create one or more tables.
@@ -251,9 +278,10 @@ class RawTablesAPI(APIClient):
             items = {"name": name}
         else:
             items = [{"name": n} for n in name]
-        return self._create_multiple(
+        tb = self._create_multiple(
             cls=TableList, resource_path=utils.interpolate_and_url_encode(self._RESOURCE_PATH, db_name), items=items
         )
+        return self._set_db_name_on_tables(tb, db_name)
 
     def delete(self, db_name: str, name: Union[str, List[str]]) -> None:
         """Delete one or more tables.
@@ -311,12 +339,23 @@ class RawTablesAPI(APIClient):
                 >>> for table_list in c.raw.tables(db_name="db1", chunk_size=2500):
                 ...     table_list # do something with the tables
         """
-        return self._list(
+        tb = self._list(
             cls=TableList,
             resource_path=utils.interpolate_and_url_encode(self._RESOURCE_PATH, db_name),
             method="GET",
             limit=limit,
         )
+        return self._set_db_name_on_tables(tb, db_name)
+
+    def _set_db_name_on_tables(self, tb: Union[Table, TableList], db_name: str) -> Union[Table, TableList]:
+        if isinstance(tb, Table):
+            tb._db_name = db_name
+            return tb
+        elif isinstance(tb, TableList):
+            for t in tb:
+                t._db_name = db_name
+            return tb
+        raise TypeError("tb must be Table or TableList")
 
 
 class RawRowsAPI(APIClient):

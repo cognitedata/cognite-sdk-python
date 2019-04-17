@@ -15,7 +15,6 @@ def instantiate_with_global_client(cls, super, *args, **kwargs):
 
 
 EXCLUDE_VALUE = [None]
-EXCLUDE_KEY = ["_client"]
 
 
 class CogniteResponse:
@@ -41,7 +40,7 @@ class CogniteResponse:
             Dict[str, Any]: A dictionary representation of the instance.
         """
         dumped = {
-            key: value for key, value in self.__dict__.items() if value not in EXCLUDE_VALUE and key not in EXCLUDE_KEY
+            key: value for key, value in self.__dict__.items() if value not in EXCLUDE_VALUE and not key.startswith("_")
         }
         if camel_case:
             dumped = {to_camel_case(key): value for key, value in dumped.items()}
@@ -134,7 +133,7 @@ class CogniteResource:
             Dict[str, Any]: A dictionary representation of the instance.
         """
         dumped = {
-            key: value for key, value in self.__dict__.items() if value not in EXCLUDE_VALUE and key not in EXCLUDE_KEY
+            key: value for key, value in self.__dict__.items() if value not in EXCLUDE_VALUE and not key.startswith("_")
         }
         if camel_case:
             dumped = {to_camel_case(key): value for key, value in dumped.items()}
