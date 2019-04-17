@@ -99,27 +99,27 @@ class FileMetadataUpdate(CogniteUpdate):
 
     @property
     def source(self):
-        return PrimitiveUpdate(self, "source")
+        return _PrimitiveUpdate(self, "source")
 
     @property
     def metadata(self):
-        return ObjectUpdate(self, "metadata")
+        return _ObjectUpdate(self, "metadata")
 
     @property
     def asset_ids(self):
-        return ListUpdate(self, "assetIds")
+        return _ListUpdate(self, "assetIds")
 
     @property
     def external_id(self):
-        return PrimitiveUpdate(self, "externalId")
+        return _PrimitiveUpdate(self, "externalId")
 
 
-class PrimitiveUpdate(CognitePrimitiveUpdate):
+class _PrimitiveUpdate(CognitePrimitiveUpdate):
     def set(self, value: Any) -> FileMetadataUpdate:
         return self._set(value)
 
 
-class ObjectUpdate(CogniteObjectUpdate):
+class _ObjectUpdate(CogniteObjectUpdate):
     def set(self, value: Dict) -> FileMetadataUpdate:
         return self._set(value)
 
@@ -130,7 +130,7 @@ class ObjectUpdate(CogniteObjectUpdate):
         return self._remove(value)
 
 
-class ListUpdate(CogniteListUpdate):
+class _ListUpdate(CogniteListUpdate):
     def set(self, value: List) -> FileMetadataUpdate:
         return self._set(value)
 

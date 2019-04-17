@@ -122,39 +122,39 @@ class TimeSeriesUpdate(CogniteUpdate):
 
     @property
     def external_id(self):
-        return PrimitiveUpdate(self, "externalId")
+        return _PrimitiveUpdate(self, "externalId")
 
     @property
     def name(self):
-        return PrimitiveUpdate(self, "name")
+        return _PrimitiveUpdate(self, "name")
 
     @property
     def metadata(self):
-        return ObjectUpdate(self, "metadata")
+        return _ObjectUpdate(self, "metadata")
 
     @property
     def unit(self):
-        return PrimitiveUpdate(self, "unit")
+        return _PrimitiveUpdate(self, "unit")
 
     @property
     def asset_id(self):
-        return PrimitiveUpdate(self, "assetId")
+        return _PrimitiveUpdate(self, "assetId")
 
     @property
     def description(self):
-        return PrimitiveUpdate(self, "description")
+        return _PrimitiveUpdate(self, "description")
 
     @property
     def security_categories(self):
-        return ListUpdate(self, "securityCategories")
+        return _ListUpdate(self, "securityCategories")
 
 
-class PrimitiveUpdate(CognitePrimitiveUpdate):
+class _PrimitiveUpdate(CognitePrimitiveUpdate):
     def set(self, value: Any) -> TimeSeriesUpdate:
         return self._set(value)
 
 
-class ObjectUpdate(CogniteObjectUpdate):
+class _ObjectUpdate(CogniteObjectUpdate):
     def set(self, value: Dict) -> TimeSeriesUpdate:
         return self._set(value)
 
@@ -165,7 +165,7 @@ class ObjectUpdate(CogniteObjectUpdate):
         return self._remove(value)
 
 
-class ListUpdate(CogniteListUpdate):
+class _ListUpdate(CogniteListUpdate):
     def set(self, value: List) -> TimeSeriesUpdate:
         return self._set(value)
 
