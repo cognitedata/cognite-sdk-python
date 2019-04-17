@@ -1,45 +1,7 @@
-from urllib.parse import quote
+from collections import defaultdict
 
 from cognite.client._utils.api_client import APIClient
 from cognite.client._utils.base import *
-
-
-# GenClass: RawDB
-class Database(CogniteResource):
-    """A NoSQL database to store customer data.
-
-    Args:
-        name (str): Unique name of a database.
-    """
-
-    def __init__(self, name: str = None, **kwargs):
-        self.name = name
-
-    # GenStop
-
-
-class DatabaseList(CogniteResourceList):
-    _RESOURCE = Database
-    _ASSERT_CLASSES = False
-
-
-# GenClass: RawDBTable
-class Table(CogniteResource):
-    """A NoSQL database table to store customer data
-
-    Args:
-        name (str): Unique name of the table
-    """
-
-    def __init__(self, name: str = None, **kwargs):
-        self.name = name
-
-    # GenStop
-
-
-class TableList(CogniteResourceList):
-    _RESOURCE = Table
-    _ASSERT_CLASSES = False
 
 
 # GenClass: RawDBRow
@@ -56,10 +18,85 @@ class Row(CogniteResource):
         self.columns = columns
 
     # GenStop
+    def to_pandas(self):
+        """Convert the instance into a pandas DataFrame.
+
+        Returns:
+            pandas.DataFrame: The pandas DataFrame representing this instance.
+        """
+        pd = utils.local_import("pandas")
+        return pd.DataFrame([self.columns], [self.key])
 
 
 class RowList(CogniteResourceList):
     _RESOURCE = Row
+    _ASSERT_CLASSES = False
+
+    def to_pandas(self):
+        """Convert the instance into a pandas DataFrame.
+
+        Returns:
+            pandas.DataFrame: The pandas DataFrame representing this instance.
+        """
+        pd = utils.local_import("pandas")
+        index = [row.key for row in self.data]
+        data = defaultdict(lambda: [])
+        for row in self.data:
+            for col_name, value in row.columns.items():
+                data[col_name].append(value)
+        return pd.DataFrame(data, index)
+
+
+# GenClass: RawDBTable
+class Table(CogniteResource):
+    """A NoSQL database table to store customer data
+
+    Args:
+        name (str): Unique name of the table
+    """
+
+    def __init__(self, name: str = None, **kwargs):
+        self.name = name
+
+    # GenStop
+    def to_pandas(self):
+        """Convert the instance into a pandas DataFrame.
+
+        Returns:
+            pandas.DataFrame: The pandas DataFrame representing this instance.
+        """
+        return super().to_pandas([])
+
+
+class TableList(CogniteResourceList):
+    _RESOURCE = Table
+    _ASSERT_CLASSES = False
+
+
+# GenClass: RawDB
+class Database(CogniteResource):
+    """A NoSQL database to store customer data.
+
+    Args:
+        name (str): Unique name of a database.
+    """
+
+    def __init__(self, name: str = None, **kwargs):
+        self.name = name
+
+    # GenStop
+
+    def to_pandas(self):
+        """Convert the instance into a pandas DataFrame.
+
+        Returns:
+            pandas.DataFrame: The pandas DataFrame representing this instance.
+        """
+        return super().to_pandas([])
+
+
+class DatabaseList(CogniteResourceList):
+    _RESOURCE = Database
     _ASSERT_CLASSES = False
 
 

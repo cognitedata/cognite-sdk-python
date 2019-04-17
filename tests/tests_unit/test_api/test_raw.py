@@ -186,3 +186,31 @@ class TestRawRows:
         res = RAW_API.rows.delete(db_name="db1", table_name="table1", key=["row1"])
         assert res is None
         assert [{"key": "row1"}] == jsgz_load(mock_raw_row_response.calls[0].request.body)["items"]
+
+
+@pytest.mark.dsl
+class TestPandasIntegration:
+    def test_dbs_to_pandas(self):
+        import pandas as pd
+
+        db_list = DatabaseList([Database("kar"), Database("car"), Database("dar")])
+
+        pd.testing.assert_frame_equal(pd.DataFrame({"name": ["kar", "car", "dar"]}), db_list.to_pandas())
+        pd.testing.assert_frame_equal(pd.DataFrame({"value": ["kar"]}, index=["name"]), db_list[0].to_pandas())
+
+    def test_tables_to_pandas(self):
+        import pandas as pd
+
+        table_list = TableList([Table("kar"), Table("car"), Table("dar")])
+
+        pd.testing.assert_frame_equal(pd.DataFrame({"name": ["kar", "car", "dar"]}), table_list.to_pandas())
+        pd.testing.assert_frame_equal(pd.DataFrame({"value": ["kar"]}, index=["name"]), table_list[0].to_pandas())
+
+    def test_rows_to_pandas(self):
+        import pandas as pd
+
+        row_list = RowList([Row("k1", {"c1": "v1", "c2": "v1"}), Row("k2", {"c1": "v2", "c2": "v2"})])
+        pd.testing.assert_frame_equal(
+            pd.DataFrame({"c1": ["v1", "v2"], "c2": ["v1", "v2"]}, index=["k1", "k2"]), row_list.to_pandas()
+        )
+        pd.testing.assert_frame_equal(pd.DataFrame({"c1": ["v1"], "c2": ["v1"]}, index=["k1"]), row_list[0].to_pandas())
