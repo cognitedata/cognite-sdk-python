@@ -3,7 +3,7 @@ from unittest import TextTestRunner
 
 import pytest
 
-from cognite.client.api import assets, datapoints, events, files, login, time_series
+from cognite.client.api import assets, datapoints, events, files, login, raw, time_series
 
 
 def run_docstring_tests(module):
@@ -32,3 +32,6 @@ class TestDocstringExamples:
 
     def test_login(self):
         run_docstring_tests(login)
+
+    def test_raw(self):
+        run_docstring_tests(raw)
