@@ -7,6 +7,7 @@ from cognite.client._api.assets import AssetsAPI
 from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api.events import EventsAPI
 from cognite.client._api.files import FilesAPI
+from cognite.client._api.iam import IAMAPI
 from cognite.client._api.login import LoginAPI
 from cognite.client._api.raw import RawAPI
 from cognite.client._api.time_series import TimeSeriesAPI
@@ -138,6 +139,17 @@ class CogniteClient:
             cognite_client=self,
         )
         self.files = FilesAPI(
+            version=__api_version,
+            project=self.project,
+            api_key=self.__api_key,
+            base_url=self._base_url,
+            max_workers=self._max_workers,
+            cookies=self._cookies,
+            headers=self._headers,
+            timeout=self._timeout,
+            cognite_client=self,
+        )
+        self.iam = IAMAPI(
             version=__api_version,
             project=self.project,
             api_key=self.__api_key,
