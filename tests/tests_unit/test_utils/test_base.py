@@ -165,6 +165,12 @@ class TestCogniteResourceList:
         assert MyResource(2, 3) == resource_list[1]
         assert MyResourceList([MyResource(1, 2), MyResource(2, 3)]) == resource_list[:]
 
+    def test_extend(self):
+        resource_list = MyResourceList([MyResource(1, 2), MyResource(2, 3)])
+        another_resource_list = MyResourceList([MyResource(4, 5), MyResource(6, 7)])
+        resource_list.extend(another_resource_list)
+        assert MyResourceList([MyResource(1, 2), MyResource(2, 3), MyResource(4, 5), MyResource(6, 7)]) == resource_list
+
     def test_len(self):
         resource_list = MyResourceList([MyResource(1, 2), MyResource(2, 3)])
         assert 2 == len(resource_list)

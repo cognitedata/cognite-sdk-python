@@ -132,12 +132,15 @@ class CogniteResource:
         Returns:
             Dict[str, Any]: A dictionary representation of the instance.
         """
-        dumped = {
+        if camel_case:
+            return {
+                to_camel_case(key): value
+                for key, value in self.__dict__.items()
+                if value not in EXCLUDE_VALUE and not key.startswith("_")
+            }
+        return {
             key: value for key, value in self.__dict__.items() if value not in EXCLUDE_VALUE and not key.startswith("_")
         }
-        if camel_case:
-            dumped = {to_camel_case(key): value for key, value in dumped.items()}
-        return dumped
 
     @classmethod
     def _load(cls, resource: Union[Dict, str], cognite_client=None):
