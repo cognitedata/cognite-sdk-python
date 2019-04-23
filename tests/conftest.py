@@ -10,6 +10,7 @@ from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api.events import EventsAPI
 from cognite.client._api.files import FilesAPI
 from cognite.client._api.login import LoginAPI
+from cognite.client._api.raw import RawAPI, RawDatabasesAPI, RawRowsAPI, RawTablesAPI
 from cognite.client._api.time_series import TimeSeriesAPI
 from tests.utils import BASE_URL
 
@@ -41,6 +42,11 @@ def mock_cognite_client():
         cog_client_mock.events = mock.MagicMock(spec=EventsAPI)
         cog_client_mock.files = mock.MagicMock(spec=FilesAPI)
         cog_client_mock.login = mock.MagicMock(spec=LoginAPI)
+        raw_mock = mock.MagicMock(spec=RawAPI)
+        raw_mock.databases = mock.MagicMock(spec=RawDatabasesAPI)
+        raw_mock.tables = mock.MagicMock(spec=RawTablesAPI)
+        raw_mock.rows = mock.MagicMock(spec=RawRowsAPI)
+        cog_client_mock.raw = raw_mock
         client_mock.return_value = cog_client_mock
         yield
 

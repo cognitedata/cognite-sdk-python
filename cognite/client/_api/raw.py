@@ -57,8 +57,9 @@ class Table(CogniteResource):
 
     def __init__(self, name: str = None, **kwargs):
         self.name = name
+        # GenStop
+        self._db_name = None
 
-    # GenStop
     def to_pandas(self):
         """Convert the instance into a pandas DataFrame.
 
@@ -66,6 +67,20 @@ class Table(CogniteResource):
             pandas.DataFrame: The pandas DataFrame representing this instance.
         """
         return super().to_pandas([])
+
+    def rows(self, key: str = None, limit: int = None) -> Union[Row, RowList]:
+        """Get the rows in this table.
+
+        Args:
+            key (str): Specify a key to return only that row.
+            limit (int): The number of rows to return.
+
+        Returns:
+            Union[Row, RowList]: List of tables in this database.
+        """
+        if key:
+            return self._client.raw.rows.get(db_name=self._db_name, table_name=self.name, key=key)
+        return self._client.raw.rows.list(db_name=self._db_name, table_name=self.name, limit=limit)
 
 
 class TableList(CogniteResourceList):
@@ -93,6 +108,17 @@ class Database(CogniteResource):
             pandas.DataFrame: The pandas DataFrame representing this instance.
         """
         return super().to_pandas([])
+
+    def tables(self, limit: int = None) -> TableList:
+        """Get the tables in this database.
+
+        Args:
+            limit (int): The number of tables to return.
+
+        Returns:
+            TableList: List of tables in this database.
+        """
+        return self._client.raw.tables.list(db_name=self.name, limit=limit)
 
 
 class DatabaseList(CogniteResourceList):
@@ -131,10 +157,18 @@ class RawDatabasesAPI(APIClient):
         """Create one or more databases.
 
         Args:
-            name (Union[str, List[str]]: A db name or list of db names to create.
+            name (Union[str, List[str]]): A db name or list of db names to create.
 
         Returns:
             Union[Database, DatabaseList]: Database or list of databases that has been created.
+
+        Examples:
+
+            Create a new database::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.raw.databases.create("db1")
         """
         utils.assert_type(name, "name", [str, list])
         if isinstance(name, str):
@@ -147,10 +181,18 @@ class RawDatabasesAPI(APIClient):
         """Delete one or more databases.
 
         Args:
-            name (Union[str, List[str]]: A db name or list of db names to delete.
+            name (Union[str, List[str]]): A db name or list of db names to delete.
 
         Returns:
             None
+
+        Examples:
+
+            Delete a list of databases::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.raw.databases.delete(["db1", "db2"])
         """
         utils.assert_type(name, "name", [str, list])
         if isinstance(name, str):
@@ -166,6 +208,28 @@ class RawDatabasesAPI(APIClient):
 
         Returns:
             DatabaseList: List of requested databases.
+
+        Examples:
+
+            List the first 5 databases::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> db_list = c.raw.databases.list(limit=5)
+
+            Iterate over databases::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> for db in c.raw.databases:
+                ...     db # do something with the db
+
+            Iterate over chunks of databases to reduce memory load::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> for db_list in c.raw.databases(chunk_size=2500):
+                ...     db_list # do something with the dbs
         """
         return self._list(cls=DatabaseList, resource_path=self._RESOURCE_PATH, method="GET", limit=limit)
 
@@ -183,41 +247,59 @@ class RawTablesAPI(APIClient):
             db_name (str): Name of the database to iterate over tables for
             chunk_size (int, optional): Number of tables to return in each chunk. Defaults to yielding one table a time.
         """
-        return self._list_generator(
+        for tb in self._list_generator(
             cls=TableList,
             resource_path=utils.interpolate_and_url_encode(self._RESOURCE_PATH, db_name),
             chunk_size=chunk_size,
             method="GET",
-        )
+        ):
+            yield self._set_db_name_on_tables(tb, db_name)
 
     def create(self, db_name: str, name: Union[str, List[str]]) -> Union[Table, TableList]:
         """Create one or more tables.
 
         Args:
             db_name (str): Database to create the tables in.
-            name (Union[str, List[str]]: A table name or list of table names to create.
+            name (Union[str, List[str]]): A table name or list of table names to create.
 
         Returns:
             Union[Table, TableList]: Table or list of tables that has been created.
+
+        Examples:
+
+            Create a new table in a database::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.raw.tables.create("db1", "table1")
         """
         utils.assert_type(name, "name", [str, list])
         if isinstance(name, str):
             items = {"name": name}
         else:
             items = [{"name": n} for n in name]
-        return self._create_multiple(
+        tb = self._create_multiple(
             cls=TableList, resource_path=utils.interpolate_and_url_encode(self._RESOURCE_PATH, db_name), items=items
         )
+        return self._set_db_name_on_tables(tb, db_name)
 
     def delete(self, db_name: str, name: Union[str, List[str]]) -> None:
         """Delete one or more tables.
 
         Args:
             db_name (str): Database to delete tables from.
-            name (Union[str, List[str]]: A table name or list of table names to delete.
+            name (Union[str, List[str]]): A table name or list of table names to delete.
 
         Returns:
             None
+
+        Examples:
+
+            Delete a list of tables::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.raw.tables.delete("db1", ["table1", "table2"])
         """
         utils.assert_type(name, "name", [str, list])
         if isinstance(name, str):
@@ -234,13 +316,46 @@ class RawTablesAPI(APIClient):
 
         Returns:
             TableList: List of requested tables.
+
+        Examples:
+
+            List the first 5 tables::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> table_list = c.raw.tables.list("db1", limit=5)
+
+            Iterate over tables::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> for table in c.raw.tables(db_name="db1"):
+                ...     table # do something with the table
+
+            Iterate over chunks of tables to reduce memory load::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> for table_list in c.raw.tables(db_name="db1", chunk_size=2500):
+                ...     table_list # do something with the tables
         """
-        return self._list(
+        tb = self._list(
             cls=TableList,
             resource_path=utils.interpolate_and_url_encode(self._RESOURCE_PATH, db_name),
             method="GET",
             limit=limit,
         )
+        return self._set_db_name_on_tables(tb, db_name)
+
+    def _set_db_name_on_tables(self, tb: Union[Table, TableList], db_name: str) -> Union[Table, TableList]:
+        if isinstance(tb, Table):
+            tb._db_name = db_name
+            return tb
+        elif isinstance(tb, TableList):
+            for t in tb:
+                t._db_name = db_name
+            return tb
+        raise TypeError("tb must be Table or TableList")
 
 
 class RawRowsAPI(APIClient):
@@ -279,6 +394,15 @@ class RawRowsAPI(APIClient):
 
         Returns:
             Union[Row, RowList]: The created row(s).
+
+        Examples:
+
+            Insert new rows into a table::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> rows = {"r1": {"col1": "val1", "col2": "val1"}, "r2": {"col1": "val2", "col2": "val2"}}
+                >>> res = c.raw.rows.insert("db1", "table1", rows)
         """
         items, is_single = self._process_row_input(row)
         if is_single:
@@ -319,6 +443,15 @@ class RawRowsAPI(APIClient):
 
         Returns:
             None
+
+        Examples:
+
+            Delete rows from table::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> keys_to_delete = ["k1", "k2", "k3"]
+                >>> res = c.raw.rows.delete("db1", "table1", keys_to_delete)
         """
         utils.assert_type(key, "key", [str, list])
         if isinstance(key, str):
@@ -339,6 +472,14 @@ class RawRowsAPI(APIClient):
 
         Returns:
             Row: The requested row.
+
+        Examples:
+
+            Retrieve a row with key 'k1' from tablew 't1' in database 'db1'::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> row = c.raw.rows.get("db1", "t1", "k1")
         """
         return self._retrieve(
             cls=Row, resource_path=utils.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name), id=key
@@ -354,6 +495,28 @@ class RawRowsAPI(APIClient):
 
         Returns:
             RowList: The requested rows.
+
+        Examples:
+
+            List rows::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> row_list = c.raw.rows.list("db1", "t1", limit=5)
+
+            Iterate over rows::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> for row in c.raw.rows(db_name="db1", table_name="t1"):
+                ...     row # do something with the row
+
+            Iterate over chunks of rows to reduce memory load::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> for row_list in c.raw.rows(db_name="db1", table_name="t1", chunk_size=2500):
+                ...     row_list # do something with the rows
         """
         return self._list(
             cls=RowList,
