@@ -16,7 +16,7 @@ def main(spec_url, spec_path):
     print(spec.info.description)
     print("=" * 100)
 
-    for root, dirs, files in os.walk("./cognite/client/api"):
+    for root, dirs, files in os.walk("./cognite/client/_api"):
         for file in files:
             file_path = os.path.join(root, file)
             if file_path.endswith(".py"):

@@ -10,7 +10,7 @@ class Event(CogniteResource):
     """An event represents something that happened at a given interval in time, e.g a failure, a work order etc.
 
     Args:
-        external_id (str): External Id provided by client. Should be unique within the project.
+        external_id (str): External Id provided by client. Should be unique within the project
         start_time (int): It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         end_time (int): It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         description (str): Textual description of the event.
@@ -47,9 +47,9 @@ class Event(CogniteResource):
     # GenStop
 
 
-# GenClass: EventFilter.filter
+# GenClass: EventFilter
 class EventFilter(CogniteFilter):
-    """No description.
+    """Filter on events fillter with exact match
 
     Args:
         start_time (Dict[str, Any]): Range between two timestamps
@@ -60,7 +60,7 @@ class EventFilter(CogniteFilter):
         source (str): The source of this event.
         created_time (Dict[str, Any]): Range between two timestamps
         last_updated_time (Dict[str, Any]): Range between two timestamps
-        external_id_prefix (str): External Id provided by client. Should be unique within the project.
+        external_id_prefix (str): External Id provided by client. Should be unique within the project
     """
 
     def __init__(
@@ -95,7 +95,7 @@ class EventUpdate(CogniteUpdate):
 
     Args:
         id (int): Javascript friendly internal ID given to the object.
-        external_id (str): External Id provided by client. Should be unique within the project.
+        external_id (str): External Id provided by client. Should be unique within the project
     """
 
     @property
