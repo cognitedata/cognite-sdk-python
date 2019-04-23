@@ -35,8 +35,6 @@ def mock_assets_response(rsps):
     }
 
     url_pattern = re.compile(re.escape(ASSETS_API._base_url) + "/.+")
-    rsps.assert_all_requests_are_fired = False
-
     rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
     yield rsps
 

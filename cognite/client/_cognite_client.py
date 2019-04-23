@@ -7,6 +7,7 @@ from cognite.client._api.assets import AssetsAPI
 from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api.events import EventsAPI
 from cognite.client._api.files import FilesAPI
+from cognite.client._api.iam import IAMAPI
 from cognite.client._api.login import LoginAPI
 from cognite.client._api.raw import RawAPI
 from cognite.client._api.time_series import TimeSeriesAPI
@@ -32,24 +33,6 @@ class CogniteClient:
         headers (Dict): Additional headers to add to all requests.
         timeout (int): Timeout on requests sent to the api. Defaults to 20 seconds.
         debug (bool): Configures logger to log extra request details to stderr.
-
-
-    Examples:
-            The CogniteClient is instantiated and used like this. This and all other examples assumes that the
-            environment variable 'COGNITE_API_KEY' has been set::
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.time_series.search(name="some name")
-
-            Default configurations may be set using the following environment variables::
-
-                export COGNITE_API_KEY = <your-api-key>
-                export COGNITE_BASE_URL = http://<host>:<port>
-                export COGNITE_MAX_RETRIES = <number-of-retries>
-                export COGNITE_MAX_WORKERS = <number-of-workers>
-                export COGNITE_TIMEOUT = <num-of-seconds>
-                export COGNITE_DISABLE_GZIP = "1"
     """
 
     def __init__(
@@ -138,6 +121,17 @@ class CogniteClient:
             cognite_client=self,
         )
         self.files = FilesAPI(
+            version=__api_version,
+            project=self.project,
+            api_key=self.__api_key,
+            base_url=self._base_url,
+            max_workers=self._max_workers,
+            cookies=self._cookies,
+            headers=self._headers,
+            timeout=self._timeout,
+            cognite_client=self,
+        )
+        self.iam = IAMAPI(
             version=__api_version,
             project=self.project,
             api_key=self.__api_key,

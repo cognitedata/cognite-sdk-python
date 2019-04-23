@@ -11,8 +11,7 @@ def main(spec_url, spec_path):
     spec = codegen.open_api_spec
 
     print("=" * 100)
-    print("OpenApi Spec: {}".format(spec.info.title))
-    print("Version: {}".format(spec.info.version))
+    print("{}: {}".format(spec.info.title, spec.info.version))
     print(spec.info.description)
     print("=" * 100)
 
