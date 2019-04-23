@@ -359,7 +359,7 @@ class DatapointsClient(APIClient):
             timeseries_with_datapoints (stable.datapoints.TimeseriesWithDatapoints): The timeseries with data to potentially split up.
 
         Returns:
-            A list of stable.datapoints.TimeSeriesWithDatapoints where each has a maximum number of datapoints equal to the limit given.
+            A list of stable.datapoints.TimeseriesWithDatapoints where each has a maximum number of datapoints equal to the limit given.
         """
         timeseries_with_datapoints_list = []
         if len(timeseries_with_datapoints.datapoints) > limit:
@@ -394,16 +394,16 @@ class DatapointsClient(APIClient):
 
                 start = 1514761200000
                 my_dummy_data_1 = [Datapoint(timestamp=ms, value=i) for i, ms in range(start, start+100)]
-                ts_with_datapoints_1 = TimeSeriesWithDatapoints(name="ts1", datapoints=my_dummy_data_1)
+                ts_with_datapoints_1 = TimeseriesWithDatapoints(name="ts1", datapoints=my_dummy_data_1)
 
                 start = 1503331800000
                 my_dummy_data_2 = [Datapoint(timestamp=ms, value=i) for i, ms in range(start, start+100)]
-                ts_with_datapoints_2 = TimeSeriesWithDatapoints(name="ts2", datapoints=my_dummy_data_2)
+                ts_with_datapoints_2 = TimeseriesWithDatapoints(name="ts2", datapoints=my_dummy_data_2)
 
                 my_dummy_data = [ts_with_datapoints_1, ts_with_datapoints_2]
 
                 client = CogniteClient()
-                res = client.datapoints.post_multi_time_series_datapoints(my_dummy_data)
+                client.datapoints.post_multi_time_series_datapoints(my_dummy_data)
         """
         url = "/timeseries/data"
 
