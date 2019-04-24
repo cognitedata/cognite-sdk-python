@@ -129,11 +129,12 @@ def set_dps_workers():
 def assert_dps_response_is_correct(calls, dps_object):
     datapoints = []
     for call in calls:
-        dps_response = call.response.json()["data"]["items"][0]
-        if dps_response["id"] == dps_object.id and dps_response["externalId"] == dps_object.external_id:
-            datapoints.extend(dps_response["datapoints"])
-            id = dps_response["id"]
-            external_id = dps_response["externalId"]
+        if jsgz_load(call.request.body)["limit"] > 1:
+            dps_response = call.response.json()["data"]["items"][0]
+            if dps_response["id"] == dps_object.id and dps_response["externalId"] == dps_object.external_id:
+                datapoints.extend(dps_response["datapoints"])
+                id = dps_response["id"]
+                external_id = dps_response["externalId"]
 
     expected_dps = sorted(datapoints, key=lambda x: x["timestamp"])
     assert id == dps_object.id
@@ -184,7 +185,7 @@ class TestGetDatapoints:
         set_dps_limits(2)
         set_dps_workers(1)
         dps_res = DPS_CLIENT.get(id=123, start=0, end=10000, aggregates=["average"], granularity="1s")
-        assert 5 == len(mock_get_datapoints.calls)
+        assert 6 == len(mock_get_datapoints.calls)
         assert 10 == len(dps_res)
 
     def test_datapoints_concurrent(self, mock_get_datapoints, set_dps_limits):
@@ -197,7 +198,10 @@ class TestGetDatapoints:
             ],
             key=lambda x: x[0],
         )
-        assert [(0, 100000), (20000, 100000), (40000, 100000), (60000, 100000), (80000, 100000)] == requested_windows
+        assert (0, 100000) == requested_windows[0]
+        assert [(0, 100000), (20000, 100000), (40000, 100000), (60000, 100000), (80000, 100000)] == requested_windows[
+            1:
+        ]
         assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
 
     @pytest.mark.parametrize(
@@ -219,7 +223,7 @@ class TestGetDatapoints:
             ],
             key=lambda x: x[0],
         )
-        assert actual_windows_req == requested_windows
+        assert actual_windows_req == requested_windows[1:]
 
     def test_datapoints_paging_with_limit(self, mock_get_datapoints, set_dps_limits):
         set_dps_limits(3)
