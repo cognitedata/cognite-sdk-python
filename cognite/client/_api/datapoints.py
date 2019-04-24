@@ -857,9 +857,28 @@ class DatapointsAPI(APIClient):
 
 
 _DPWindow = namedtuple("Window", ["start", "end"])
-_DPQuery = namedtuple(
-    "DPQuery", ["start", "end", "ts_item", "aggregates", "granularity", "include_outside_points", "limit"]
-)
+
+
+class _DPQuery:
+    def __init__(self, start, end, ts_item, aggregates, granularity, include_outside_points, limit):
+        self.start = start
+        self.end = end
+        self.ts_item = ts_item
+        self.aggregates = aggregates
+        self.granularity = granularity
+        self.include_outside_points = include_outside_points
+        self.limit = limit
+
+    def as_tuple(self):
+        return (
+            self.start,
+            self.end,
+            self.ts_item,
+            self.aggregates,
+            self.granularity,
+            self.include_outside_points,
+            self.limit,
+        )
 
 
 class _DatapointsFetcher:
@@ -873,7 +892,11 @@ class _DatapointsFetcher:
     def fetch(self, dps_queries: List[_DPQuery]) -> DatapointsList:
         queries = []
         for dps_query in dps_queries:
-            if self._should_split(dps_query):
+            first_timestamp = self._get_first_timestamp(dps_query)
+            if first_timestamp is not None:
+                dps_query.start = first_timestamp
+
+            if first_timestamp is not None and self._should_split(dps_query):
                 split_queries = self._split_query_into_windows(dps_query)
                 for query in split_queries:
                     queries.append((query,))
@@ -893,7 +916,7 @@ class _DatapointsFetcher:
 
     def _do_dps_query(self, query: _DPQuery):
         with self.semaphore:
-            dps = self._get_datapoints_with_paging(*query)
+            dps = self._get_datapoints_with_paging(*query.as_tuple())
         with self.lock:
             self.id_to_datapoints[dps.id]._insert(dps)
             self.id_to_include_outside_dps[dps.id] = query.include_outside_points
@@ -978,6 +1001,13 @@ class _DatapointsFetcher:
             )
             for w in windows
         ]
+
+    def _get_first_timestamp(self, dps_query: _DPQuery) -> Union[int, None]:
+        dps = self._get_datapoints(
+            dps_query.start, dps_query.end, dps_query.ts_item, dps_query.aggregates, dps_query.granularity, False, 1
+        )
+        if len(dps) > 0:
+            return dps[0].timestamp
 
     @staticmethod
     def _get_windows(start: int, end: int, granularity: str, dps_per_window: int) -> List[_DPWindow]:
