@@ -1,5 +1,5 @@
-Getting Started
-===============
+Quickstart
+==========
 Authenticating
 --------------
 The preferred way of authenticating towards the Cognite API is by setting the environment variable
@@ -16,8 +16,8 @@ You may also pass your api-key directly to the CogniteClient.
     >>> from cognite.client import CogniteClient
     >>> c = CogniteClient(api_key="your-key")
 
-Instantiating a client and getting your login status
-----------------------------------------------------
+Instantiating a new client
+--------------------------
 You can instantiate a client and get your login status like this. This will return an object with
 attributes describing which project and service account your api-key belongs to.
 
@@ -29,21 +29,92 @@ attributes describing which project and service account your api-key belongs to.
 
 Read more about the `Cognite Client`_ and what functionality it exposes below.
 
-FAQs
-====
-How do I post an asset hierarchy?
----------------------------------
-In order to post an asset hierarchy you need to build a tree by setting :code:`ref_id` and :code:`parent_ref_id`
-on all assets before passing them to :code:`assets.create()`. These relations will indicate which assets have which parents
-within your hierarchy.
+Plotting Time Series
+--------------------
+There are several ways of plotting a time series you have fetched from the API. The easiest is to call
+:code:`.plot()` on the returned :code:`TimeSeries` or :code:`TimeSeriesList` objects. This will by default plot the raw
+data points for the last 24h.
 
-What is the global client and what does it do?
-----------------------------------------------
+.. code:: python
+
+    >>> from cognite.client import CogniteClient
+    >>> c = CogniteClient()
+    >>> my_time_series = c.time_series.get(id=[1, 2])
+    >>> my_time_series.plot()
+
+You can also pass arguments to the plot method to change the start, end, aggregates, and granularity of the
+request.
+
+.. code:: python
+
+    >>> my_time_series.plot(start="365d-ago", end="now", aggregates=["avg"], granularity="1d")
+
+The :code:`Datapoints` and :code:`DatapointsList` objects returned when fetching datapoints also have :code:`.plot()`
+methods you can use to plot the data.
+
+.. code:: python
+
+    >>> from cognite.client import CogniteClient
+    >>> c = CogniteClient()
+    >>> my_datapoints = c.datapoints.get(
+    ...                     id=[1, 2],
+    ...                     start="10d-ago",
+    ...                     end="now",
+    ...                     aggregates=["max"],
+    ...                     granularity="1h"
+    ...                 )
+    >>> my_datapoints.plot()
+
+.. NOTE::
+    In order to use the :code:`.plot()` functionality you need to install :code:`matplotlib`
+
+Creating an Asset Hierarchy
+---------------------------
+When posting an asset to the API you may indicate that it is a root asset (has no parent) by not specifying a parent ID.
+You can also specify a parent ID, making it a child of an asset already in the API.
+
+.. code::
+
+    >>> from cognite.client import CogniteClient, Asset
+    >>> c = CogniteClient()
+    >>> my_asset = Asset(name="my first asset", parent_id=123)
+    >>> c.assets.create(my_asset)
+
+If you want to post an entire asset hierarchy, you can do this by describing the relations within your asset hierarchy
+using the :code:`ref_id` and :code:`parent_ref_id` attributes on the :code:`Asset` object. You can post
+an arbitrary number of assets like this, and the SDK will handle splitting this into multiple requests for you, resolving
+:code:`parent_ref_ids` as :code:`parent_ids` as it posts the assets.
+
+
+This example shows how to post an asset hierarchy of depth 3 consisting of three assets.
+
+.. code::
+
+    >>> from cognite.client import CogniteClient, Asset
+    >>> c = CogniteClient()
+    >>> root = Asset(name="root", ref_id="1")
+    >>> child = Asset(name="child", ref_id="2", parent_ref_id="1")
+    >>> descendant = Asset(name="descendant", ref_id="3", parent_ref_id="2")
+    >>> c.assets.create([root, child, descendant])
+
+Concepts
+========
+Pandas Integration
+------------------
+This library is tightly integrated with the `pandas <https://pandas.pydata.org/pandas-docs/stable/>`_ library.
+This means that you can use the :code:`.to_pandas()` method on pretty much any object and get a pandas data frame
+describing the data.
+
+This is particularly useful when working with time series data and tabular data from the Raw API.
+
+The Global Client
+-----------------
 The global client is the first client instantiated by the user.
 
 Certain data class methods, such as :code:`TimeSeries(id=...).plot()`, require that an instance of :code:`CogniteClient`
-is set on the object. When a an instance of a data class is returned from the CogniteClient, it will attach itself
-to the object. If you instantiate a data class yourself, the global client will be attached to the instance.
+is set on the object. When a an instance of a data class is returned from the :code:`CogniteClient`, the client instance
+will be set on the object. If you instantiate a data class yourself on the other hand, the `global client` will be
+attached to the instance.
 
 .. WARNING::
     The global client is not thread-safe and will always be set to the first client you instantiate.
@@ -61,8 +132,8 @@ You may update the global client by setting it yourself. The SDK will then exhib
     >>> global_client.set(c2)
     >>> assert global_client.get() == c2
 
-How can I set default configurations for the SDK?
--------------------------------------------------
+Setting Default Environment Configurations
+------------------------------------------
 Default configurations may be set using the following environment variables
 
 .. code:: bash
@@ -74,8 +145,8 @@ Default configurations may be set using the following environment variables
     $ export COGNITE_TIMEOUT = <num-of-seconds>
     $ export COGNITE_DISABLE_GZIP = "1"
 
-What is the difference between the :code:`cognite-sdk` and :code:`cognite-sdk-core` libraries?
-----------------------------------------------------------------------------------------------
+:code:`cognite-sdk` vs. :code:`cognite-sdk-core`
+------------------------------------------------
 The two libraries are exactly the same, except that :code:`cognite-sdk-core` does not specify :code:`pandas`
 or :code:`numpy` as dependencies. This means that :code:`cognite-sdk-core` will have only a subset
 of the features available through the :code:`cognite-sdk` package. If you attempt to use functionality
@@ -427,8 +498,10 @@ Data Classes
     :inherited-members:
 
 Exceptions
-==========
+----------
 .. automodule:: cognite.client.exceptions
     :members:
     :undoc-members:
     :show-inheritance:
+
+Exter
