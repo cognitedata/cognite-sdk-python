@@ -1,4 +1,5 @@
 from collections import defaultdict
+from typing import *
 
 from cognite.client._utils.api_client import APIClient
 from cognite.client._utils.base import *

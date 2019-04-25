@@ -20,8 +20,8 @@ class TimeSeries(CogniteResource):
         is_step (bool): Whether the time series is a step series or not.
         description (str): Description of the time series.
         security_categories (List[int]): Security categories required in order to access this time series.
-        created_time (int): Time when this time-series is created in CDP in milliseconds since Jan 1, 1970.
-        last_updated_time (int): The latest time when this time-series is updated in CDP in milliseconds since Jan 1, 1970.
+        created_time (int): Time when this time-series is created in CDF in milliseconds since Jan 1, 1970.
+        last_updated_time (int): The latest time when this time-series is updated in CDF in milliseconds since Jan 1, 1970.
     """
 
     def __init__(
