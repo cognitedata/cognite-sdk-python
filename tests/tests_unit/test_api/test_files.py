@@ -148,6 +148,10 @@ class TestFilesAPI:
             assert isinstance(file, FileMetadataList)
             assert mock_files_response.calls[0].response.json()["data"]["items"] == file.dump(camel_case=True)
 
+    def test_search(self, mock_files_response):
+        res = FILES_API.search()
+        assert mock_files_response.calls[0].response.json()["data"]["items"] == res.dump(camel_case=True)
+
     def test_upload(self, mock_file_upload_response):
         path = os.path.join(os.path.dirname(__file__), "files_for_test_upload", "file_for_test_upload_1.txt")
         res = FILES_API.upload(path, name="bla")
