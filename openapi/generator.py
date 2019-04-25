@@ -196,12 +196,14 @@ class UpdateClassGenerator:
         if "allOf" in schema:
             properties = {}
             for s in schema["allOf"]:
-                for prop_name, prop in s["properties"].items():
+                for prop_name, prop in UpdateClassGenerator._get_schema_properties(s).items():
                     properties[prop_name] = prop
             return properties
         if "oneOf" in schema:
-            assert len(schema["oneOf"]) == 2, "oneOf contains {} schemas, expected 2".format(len(schema["oneOf"]))
+            assert len(schema["oneOf"]) <= 2, "oneOf contains {} schemas, expected 1 or 2".format(len(schema["oneOf"]))
             first_schema_properties = UpdateClassGenerator._get_schema_properties(schema["oneOf"][0])
+            if len(schema["oneOf"]) == 1:
+                return first_schema_properties
             second_schema_properties = UpdateClassGenerator._get_schema_properties(schema["oneOf"][1])
             diff = list(set(first_schema_properties) - set(second_schema_properties))
             assert diff == ["id"] or diff == ["externalId"]
