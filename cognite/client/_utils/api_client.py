@@ -17,24 +17,39 @@ from cognite.client.exceptions import CogniteAPIError
 
 log = logging.getLogger("cognite-sdk")
 
+BACKOFF_MAX = 30
+DEFAULT_MAX_POOL_SIZE = 50
 DEFAULT_MAX_RETRIES = 5
-HTTP_METHODS_TO_RETRY = [429, 500, 502, 503]
+HTTP_STATUS_CODES_TO_RETRY = [429, 500, 502, 503]
+
+
+class RetryWithMaxBackoff(Retry):
+    def get_backoff_time(self):
+        return min(BACKOFF_MAX, super().get_backoff_time())
 
 
 def _init_requests_session():
     session = Session()
     num_of_retries = int(os.getenv("COGNITE_MAX_RETRIES", DEFAULT_MAX_RETRIES))
-    retry = Retry(
-        total=num_of_retries,
-        read=num_of_retries,
-        connect=num_of_retries,
-        backoff_factor=0.5,
-        status_forcelist=HTTP_METHODS_TO_RETRY,
-        raise_on_status=False,
+    adapter = HTTPAdapter(
+        max_retries=RetryWithMaxBackoff(
+            total=num_of_retries, connect=num_of_retries, read=0, status=0, backoff_factor=0.5, raise_on_status=False
+        ),
+        pool_maxsize=DEFAULT_MAX_POOL_SIZE,
     )
-    adapter = HTTPAdapter(max_retries=retry)
+    adapter_with_retry = HTTPAdapter(
+        max_retries=RetryWithMaxBackoff(
+            total=num_of_retries,
+            backoff_factor=0.5,
+            status_forcelist=HTTP_STATUS_CODES_TO_RETRY,
+            method_whitelist=False,
+            raise_on_status=False,
+        ),
+        pool_maxsize=DEFAULT_MAX_POOL_SIZE,
+    )
     session.mount("http://", adapter)
     session.mount("https://", adapter)
+    # TODO: mount adapter_with_retry on all retryable paths. This list of paths should be generated from openapi spec.
     return session
 
 
