@@ -482,14 +482,22 @@ class FilesAPI(APIClient):
         all_ids = self._process_ids(ids=id, external_ids=external_id, wrap_ids=True)
         res = self._post(url_path="/files/download", json={"items": all_ids})
 
+        ids = [id["id"] for id in all_ids if "id" in id]
+        external_ids = [id["externalId"] for id in all_ids if "externalId" in id]
+
+        files_metadata = self.get(id=ids, external_id=external_ids)
+
+        id_to_name = {f.id: f.name for f in files_metadata}
+        external_id_to_name = {f.external_id: f.name for f in files_metadata}
+
         download_tasks = []
         for item in res.json()["data"]["items"]:
             dl_link = item["link"]
             if "id" in item:
-                path = os.path.join(directory, str(item["id"]))
+                path = os.path.join(directory, id_to_name[item["id"]])
                 task = (dl_link, path)
             elif "externalId" in item:
-                path = os.path.join(directory, item["externalId"])
+                path = os.path.join(directory, external_id_to_name[item["externalId"]])
                 task = (dl_link, path)
             else:
                 raise AssertionError("FileMetadata download does not contain 'id' or 'externalId'")

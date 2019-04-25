@@ -66,11 +66,17 @@ def mock_file_upload_response(rsps):
 
 @pytest.fixture
 def mock_file_download_response(rsps):
+    rsps.add(
+        rsps.POST,
+        FILES_API._base_url + "/files/byids",
+        status=200,
+        json={"data": {"items": [{"id": 1, "name": "file1"}, {"externalId": "2", "name": "file2"}]}},
+    )
     response_body = {
         "data": {
             "items": [
                 {"id": 1, "link": "https://download.file1.here"},
-                {"id": 2, "link": "https://download.file2.here"},
+                {"externalId": "2", "link": "https://download.file2.here"},
             ]
         }
     }
@@ -208,11 +214,13 @@ class TestFilesAPI:
 
     def test_download(self, mock_file_download_response):
         with TemporaryDirectory() as dir:
-            res = FILES_API.download(directory=dir, id=[1, 2])
-            assert {"items": [{"id": 1}, {"id": 2}]} == jsgz_load(mock_file_download_response.calls[0].request.body)
+            res = FILES_API.download(directory=dir, id=[1], external_id=["2"])
+            assert {"items": [{"id": 1}, {"externalId": "2"}]} == jsgz_load(
+                mock_file_download_response.calls[0].request.body
+            )
             assert res is None
-            assert os.path.isfile(os.path.join(dir, "1"))
-            assert os.path.isfile(os.path.join(dir, "2"))
+            assert os.path.isfile(os.path.join(dir, "file1"))
+            assert os.path.isfile(os.path.join(dir, "file2"))
 
     def test_download_to_memory(self, mock_file_download_response):
         mock_file_download_response.assert_all_requests_are_fired = False
