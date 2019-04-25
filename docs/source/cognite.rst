@@ -188,6 +188,10 @@ List Assets
 ^^^^^^^^^^^
 .. automethod:: cognite.client._api.assets.AssetsAPI.list
 
+Search for Assets
+^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.assets.AssetsAPI.search
+
 Create Assets
 ^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.assets.AssetsAPI.create
@@ -218,6 +222,10 @@ Get Events
 List Events
 ^^^^^^^^^^^
 .. automethod:: cognite.client._api.events.EventsAPI.list
+
+Search for Events
+^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.events.EventsAPI.search
 
 Create Events
 ^^^^^^^^^^^^^
@@ -250,6 +258,10 @@ Get files metadata
 List Files metadata
 ^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.files.FilesAPI.list
+
+Search for Files
+^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.files.FilesAPI.search
 
 Upload a file or directory
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -293,6 +305,10 @@ Get Time Series
 List Time Series
 ^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.time_series.TimeSeriesAPI.list
+
+Search for Time Series
+^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.time_series.TimeSeriesAPI.search
 
 Create Time Series
 ^^^^^^^^^^^^^^^^^^
@@ -503,5 +519,3 @@ Exceptions
     :members:
     :undoc-members:
     :show-inheritance:
-
-Exter
