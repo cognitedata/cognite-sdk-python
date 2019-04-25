@@ -4,10 +4,10 @@ from unittest import mock
 import pytest
 
 from cognite.client import CogniteClient, global_client
-from cognite.client._api.time_series import TimeSeries, TimeSeriesFilter, TimeSeriesList, TimeSeriesUpdate
+from cognite.client._api.time_series import TimeSeries, TimeSeriesFilter, TimeSeriesList, TimeSeriesUpdate, utils
 from tests.utils import jsgz_load
 
-COGNITE_CLIENT = CogniteClient()
+COGNITE_CLIENT = CogniteClient(debug=True)
 TS_API = COGNITE_CLIENT.time_series
 
 
@@ -137,6 +137,22 @@ class TestTimeSeries:
 class TestPlotTimeSeries:
     @pytest.fixture
     def mock_get_dps(self, rsps):
+        rsps.add(
+            rsps.POST,
+            TS_API._base_url + "/timeseries/data/get",
+            status=200,
+            json={
+                "data": {
+                    "items": [
+                        {
+                            "id": 0,
+                            "externalId": "string1",
+                            "datapoints": [{"timestamp": utils.timestamp_to_ms("1d-ago"), "average": 1}],
+                        }
+                    ]
+                }
+            },
+        )
         rsps.add(
             rsps.POST,
             TS_API._base_url + "/timeseries/data/get",
