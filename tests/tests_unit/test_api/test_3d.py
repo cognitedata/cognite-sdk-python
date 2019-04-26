@@ -357,7 +357,5 @@ class Test3DReveal:
             model_id=1, revision_id=1, bounding_box={"max": [1, 1, 1], "min": [0, 0, 0]}, limit=None
         )
         assert isinstance(res, ThreeDRevealSectorList)
-        assert mock_list_reveal_sectors_response.calls[0].request.url.endswith(
-            "?boundingBox=%7B%22max%22%3A+%5B1%2C+1%2C+1%5D%2C+%22min%22%3A+%5B0%2C+0%2C+0%5D%7D&limit=1000"
-        )
+        assert "boundingBox=%7B" in mock_list_reveal_sectors_response.calls[0].request.url
         assert mock_list_reveal_sectors_response.calls[0].response.json()["data"]["items"] == res.dump(camel_case=True)
