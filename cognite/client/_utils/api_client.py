@@ -152,7 +152,7 @@ class APIClient:
                 url_path=utils.interpolate_and_url_encode(resource_path + "/{}", str(id)),
                 params=params,
                 headers=headers,
-            ).json()["data"]["items"][0],
+            ).json(),
             cognite_client=self._cognite_client,
         )
 

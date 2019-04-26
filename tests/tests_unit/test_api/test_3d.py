@@ -13,6 +13,9 @@ from cognite.client._api.three_d import (
     ThreeDModelRevisionUpdate,
     ThreeDModelUpdate,
     ThreeDNodeList,
+    ThreeDRevealNodeList,
+    ThreeDRevealRevision,
+    ThreeDRevealSectorList,
 )
 from tests.utils import jsgz_load
 
@@ -92,6 +95,24 @@ def mock_3d_model_revision_response(rsps):
 
 
 @pytest.fixture
+def mock_retrieve_3d_model_revision_response(rsps):
+    res = {
+        "id": 1000,
+        "fileId": 1000,
+        "published": False,
+        "rotation": [0, 0, 0],
+        "camera": {"target": [0, 0, 0], "position": [0, 0, 0]},
+        "status": "Done",
+        "thumbnailThreedFileId": 1000,
+        "thumbnailUrl": "https://api.cognitedata.com/api/v1/project/myproject/3d/files/1000",
+        "assetMappingCount": 0,
+        "createdTime": 0,
+    }
+    rsps.add(rsps.GET, THREE_D_API._base_url + "/3d/models/1/revisions/1", status=200, json=res)
+    yield rsps
+
+
+@pytest.fixture
 def mock_3d_model_revision_thumbnail_response(rsps):
     rsps.add(rsps.POST, THREE_D_API._base_url + "/3d/models/1/revisions/1/thumbnail", status=200, json={})
     yield rsps
@@ -149,10 +170,10 @@ class Test3DModelRevisions:
         assert {"items": [{"id": 1}]} == jsgz_load(mock_3d_model_revision_response.calls[1].request.body)
         assert res is None
 
-    def test_get(self, mock_3d_model_revision_response):
+    def test_get(self, mock_retrieve_3d_model_revision_response):
         res = THREE_D_API.revisions.get(model_id=1, id=1)
         assert isinstance(res, ThreeDModelRevision)
-        assert mock_3d_model_revision_response.calls[0].response.json()["data"]["items"][0] == res.dump(camel_case=True)
+        assert mock_retrieve_3d_model_revision_response.calls[0].response.json() == res.dump(camel_case=True)
 
     def test_create(self, mock_3d_model_revision_response):
         res = THREE_D_API.revisions.create(model_id=1, revision=ThreeDModelRevision(file_id=123))
@@ -186,28 +207,26 @@ class Test3DModelRevisions:
         )
 
 
-@pytest.fixture
-def mock_3d_files_response(rsps):
-    rsps.add(rsps.GET, THREE_D_API._base_url + "/3d/files/1", body="bla")
-
-
 class Test3DFiles:
+    @pytest.fixture
+    def mock_3d_files_response(self, rsps):
+        rsps.add(rsps.GET, THREE_D_API._base_url + "/3d/files/1", body="bla")
+
     def test_get(self, mock_3d_files_response):
         assert b"bla" == THREE_D_API.files.get(1)
 
 
-@pytest.fixture
-def mock_3d_asset_mappings_response(rsps):
-    response_body = {"data": {"items": [{"nodeId": 1003, "assetId": 3001, "treeIndex": 5, "subtreeSize": 7}]}}
-    url_pattern = re.compile(re.escape(THREE_D_API._base_url) + "/3d/models/1/revisions/1/mappings.*")
-
-    rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
-    rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
-    rsps.assert_all_requests_are_fired = False
-    yield rsps
-
-
 class Test3DAssetMappings:
+    @pytest.fixture
+    def mock_3d_asset_mappings_response(self, rsps):
+        response_body = {"data": {"items": [{"nodeId": 1003, "assetId": 3001, "treeIndex": 5, "subtreeSize": 7}]}}
+        url_pattern = re.compile(re.escape(THREE_D_API._base_url) + "/3d/models/1/revisions/1/mappings.*")
+
+        rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
+        rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
+        rsps.assert_all_requests_are_fired = False
+        yield rsps
+
     def test_list(self, mock_3d_asset_mappings_response):
         res = THREE_D_API.asset_mappings.list(model_id=1, revision_id=1, node_id=None, asset_id=None, limit=None)
         assert isinstance(res, ThreeDAssetMappingList)
@@ -240,3 +259,98 @@ class Test3DAssetMappings:
         assert [{"nodeId": 1, "assetId": 1}] == jsgz_load(mock_3d_asset_mappings_response.calls[0].request.body)[
             "items"
         ]
+
+
+class Test3DReveal:
+    @pytest.fixture
+    def mock_get_reveal_revision_response(self, rsps):
+        res = {
+            "id": 1000,
+            "fileId": 1000,
+            "published": False,
+            "rotation": [0, 0, 0],
+            "camera": {"target": [0, 0, 0], "position": [0, 0, 0]},
+            "status": "Done",
+            "thumbnailThreedFileId": 1000,
+            "thumbnailUrl": "https://api.cognitedata.com/api/v1/project/myproject/3d/files/1000",
+            "assetMappingCount": 0,
+            "createdTime": 0,
+            "sceneThreedFiles": [{"version": 1, "fileId": 1000}],
+        }
+        rsps.add(rsps.GET, THREE_D_API._base_url + "/3d/reveal/models/1/revisions/1", status=200, json=res)
+        yield rsps
+
+    def test_get_revision(self, mock_get_reveal_revision_response):
+        res = THREE_D_API.reveal.get_revision(model_id=1, revision_id=1)
+        assert isinstance(res, ThreeDRevealRevision)
+        assert mock_get_reveal_revision_response.calls[0].response.json() == res.dump(camel_case=True)
+
+    @pytest.fixture
+    def mock_list_reveal_nodes_response(self, rsps):
+        res = {
+            "data": {
+                "items": [
+                    {
+                        "id": 1000,
+                        "treeIndex": 3,
+                        "parentId": 2,
+                        "depth": 2,
+                        "name": "Node name",
+                        "subtreeSize": 4,
+                        "boundingBox": {"max": [0, 0, 0], "min": [0, 0, 0]},
+                        "sectorId": 1000,
+                    }
+                ]
+            }
+        }
+        rsps.add(
+            rsps.GET,
+            re.compile(re.escape(THREE_D_API._base_url) + "/3d/reveal/models/1/revisions/1/nodes.*"),
+            status=200,
+            json=res,
+        )
+        yield rsps
+
+    def test_list_nodes(self, mock_list_reveal_nodes_response):
+        res = THREE_D_API.reveal.list_nodes(model_id=1, revision_id=1, node_id=None, depth=None, limit=None)
+        assert isinstance(res, ThreeDRevealNodeList)
+        assert mock_list_reveal_nodes_response.calls[0].response.json()["data"]["items"] == res.dump(camel_case=True)
+
+    def test_list_ancestor_nodes(self, mock_list_reveal_nodes_response):
+        res = THREE_D_API.reveal.list_ancestor_nodes(model_id=1, revision_id=1, node_id=None, limit=None)
+        assert isinstance(res, ThreeDRevealNodeList)
+        assert mock_list_reveal_nodes_response.calls[0].response.json()["data"]["items"] == res.dump(camel_case=True)
+
+    @pytest.fixture
+    def mock_list_reveal_sectors_response(self, rsps):
+        res = {
+            "data": {
+                "items": [
+                    {
+                        "id": 1000,
+                        "parentId": 900,
+                        "path": "0/100/500/900/1000",
+                        "depth": 4,
+                        "boundingBox": {"max": [0, 0, 0], "min": [0, 0, 0]},
+                        "threedFiles": [{"version": 1, "fileId": 1000}],
+                    }
+                ]
+            }
+        }
+        rsps.add(
+            rsps.GET,
+            re.compile(re.escape(THREE_D_API._base_url) + "/3d/reveal/models/1/revisions/1/sectors"),
+            status=200,
+            json=res,
+        )
+        yield rsps
+
+    def test_list_sectors(self, mock_list_reveal_sectors_response):
+        res = THREE_D_API.reveal.list_sectors(
+            model_id=1, revision_id=1, bounding_box={"max": [1, 1, 1], "min": [0, 0, 0]}, limit=None
+        )
+        assert isinstance(res, ThreeDRevealSectorList)
+        assert mock_list_reveal_sectors_response.calls[0].request.url.endswith(
+            "?boundingBox=%7B%22max%22%3A+%5B1%2C+1%2C+1%5D%2C+%22min%22%3A+%5B0%2C+0%2C+0%5D%7D&limit=1000"
+        )
+        assert mock_list_reveal_sectors_response.calls[0].response.json()["data"]["items"] == res.dump(camel_case=True)

@@ -621,5 +621,137 @@ class ThreeDRevealRevision(CogniteResource):
     # GenStop
 
 
+# GenClass: Reveal3DNode
+class ThreeDRevealNode(CogniteResource):
+    """No description.
+
+    Args:
+        id (int): The ID of the node.
+        tree_index (int): The index of the node in the 3D model hierarchy, starting from 0. The tree is traversed in a depth-first order.
+        parent_id (int): The parent of the node, null if it is the root node.
+        depth (int): The depth of the node in the tree, starting from 0 at the root node.
+        name (str): The name of the node.
+        subtree_size (int): The number of descendants of the node, plus one (counting itself).
+        bounding_box (Dict[str, Any]): The bounding box of the subtree with this sector as the root sector. Is null if there are no geometries in the subtree.
+        sector_id (int): The sector the node is contained in.
+    """
+
+    def __init__(
+        self,
+        id: int = None,
+        tree_index: int = None,
+        parent_id: int = None,
+        depth: int = None,
+        name: str = None,
+        subtree_size: int = None,
+        bounding_box: Dict[str, Any] = None,
+        sector_id: int = None,
+        **kwargs
+    ):
+        self.id = id
+        self.tree_index = tree_index
+        self.parent_id = parent_id
+        self.depth = depth
+        self.name = name
+        self.subtree_size = subtree_size
+        self.bounding_box = bounding_box
+        self.sector_id = sector_id
+
+    # GenStop
+
+
+class ThreeDRevealNodeList(CogniteResourceList):
+    _RESOURCE = ThreeDRevealNode
+    _ASSERT_CLASSES = False
+
+
+# GenClass: Reveal3DSector
+class ThreeDRevealSector(CogniteResource):
+    """No description.
+
+    Args:
+        id (int): The id of the sector.
+        parent_id (int): The parent of the sector, null if it is the root sector.
+        path (str): String representing the path to the sector: 0/2/6/ etc.
+        depth (int): The depth of the sector in the sector tree, starting from 0 at the root sector.
+        bounding_box (Dict[str, Any]): The bounding box of the subtree with this sector as the root sector. Is null if there are no geometries in the subtree.
+        threed_files (List[Dict[str, Any]]): The file ID of the data file for this sector, with multiple versions supported. Use /3d/files/{id} to retrieve the file.
+    """
+
+    def __init__(
+        self,
+        id: int = None,
+        parent_id: int = None,
+        path: str = None,
+        depth: int = None,
+        bounding_box: Dict[str, Any] = None,
+        threed_files: List[Dict[str, Any]] = None,
+        **kwargs
+    ):
+        self.id = id
+        self.parent_id = parent_id
+        self.path = path
+        self.depth = depth
+        self.bounding_box = bounding_box
+        self.threed_files = threed_files
+
+    # GenStop
+
+
+class ThreeDRevealSectorList(CogniteResourceList):
+    _RESOURCE = ThreeDRevealSector
+    _ASSERT_CLASSES = False
+
+
 class ThreeDRevealAPI(APIClient):
-    pass
+    _RESOURCE_PATH = "/3d/reveal/models/{}/revisions"
+
+    def get_revision(self, model_id: int, revision_id: int):
+        """Retrieve a revision.
+
+        Args:
+            model_id (int): Id of the model.
+            revision_id (int): Id of the revision.
+        """
+        path = utils.interpolate_and_url_encode(self._RESOURCE_PATH, model_id)
+        return self._retrieve(ThreeDRevealRevision, path, revision_id)
+
+    def list_nodes(self, model_id: int, revision_id: int, depth: int = None, node_id: int = None, limit: int = None):
+        """List 3D nodes.
+
+        Args:
+            model_id (int): Id of the model.
+            revision_id (int): Id of the revision.
+            depth (int, optional): Get sub nodes up to this many levels below the specified node.
+            node_id (int, optional): ID of the root note of the subtree you request.
+            limit (int, optional): Maximun number of nodes to retrieve
+        """
+        path = utils.interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/nodes", model_id, revision_id)
+        return self._list(ThreeDRevealNodeList, path, "GET", filter={"depth": depth, "nodeId": node_id}, limit=limit)
+
+    def list_ancestor_nodes(self, model_id: int, revision_id: int, node_id: int, limit: int = None):
+        """Retrieve a revision.
+
+        Args:
+            model_id (int): Id of the model.
+            revision_id (int): Id of the revision.
+            node_id (int): ID of the node to get the ancestors of.
+            limit (int, optional): Maximun number of nodes to retrieve
+        """
+        path = utils.interpolate_and_url_encode(
+            self._RESOURCE_PATH + "/{}/nodes/{}/ancestors", model_id, revision_id, node_id
+        )
+        return self._list(ThreeDRevealNodeList, path, "GET", limit=limit)
+
+    def list_sectors(self, model_id: int, revision_id: int, bounding_box: Dict[str, List] = None, limit: int = None):
+        """Retrieve a revision.
+
+        Args:
+            model_id (int): Id of the model.
+            revision_id (int): Id of the revision.
+            bounding_box (Dict[str, List], optional): Bounding box to restrict search to. If given, only return sectors that intersect the given bounding box.
+        """
+        path = utils.interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/sectors", model_id, revision_id)
+        return self._list(
+            ThreeDRevealSectorList, path, "GET", filter={"boundingBox": json.dumps(bounding_box)}, limit=limit
+        )
