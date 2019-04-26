@@ -10,6 +10,7 @@ from cognite.client._api.files import FilesAPI
 from cognite.client._api.iam import IAMAPI
 from cognite.client._api.login import LoginAPI
 from cognite.client._api.raw import RawAPI
+from cognite.client._api.three_d import ThreeDAPI
 from cognite.client._api.time_series import TimeSeriesAPI
 from cognite.client._utils.api_client import APIClient
 from cognite.client._utils.utils import DebugLogFormatter
@@ -154,6 +155,17 @@ class CogniteClient:
             cognite_client=self,
         )
         self.raw = RawAPI(
+            version=__api_version,
+            project=self.project,
+            api_key=self.__api_key,
+            base_url=self._base_url,
+            max_workers=self._max_workers,
+            cookies=self._cookies,
+            headers=self._headers,
+            timeout=self._timeout,
+            cognite_client=self,
+        )
+        self.three_d = ThreeDAPI(
             version=__api_version,
             project=self.project,
             api_key=self.__api_key,

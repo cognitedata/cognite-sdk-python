@@ -80,7 +80,88 @@ class ThreeDModelList(CogniteResourceList):
 
 
 class ThreeDModelsAPI(APIClient):
-    pass
+    _RESOURCE_PATH = "/3d/models"
+
+    def __call__(
+        self, chunk_size: int = None, published: bool = False
+    ) -> Generator[Union[ThreeDModel, ThreeDModelList], None, None]:
+        """Iterate over 3d models
+
+        Fetches 3d models as they are iterated over, so you keep a limited number of 3d models in memory.
+
+        Args:
+            chunk_size (int, optional): Number of 3d models to return in each chunk. Defaults to yielding one model a time.
+            published (bool): Filter based on whether or not the model has published revisions.
+
+        Yields:
+            Union[ThreeDModel, ThreeDModelList]: yields ThreeDModel one by one if chunk is not specified, else ThreeDModelList objects.
+        """
+        return self._list_generator(
+            ThreeDModelList,
+            resource_path=self._RESOURCE_PATH,
+            method="GET",
+            chunk_size=chunk_size,
+            filter={"published": published},
+        )
+
+    def __iter__(self) -> Generator[ThreeDModel, None, None]:
+        """Iterate over 3d models
+
+        Fetches models as they are iterated over, so you keep a limited number of models in memory.
+
+        Yields:
+            ThreeDModel: yields models one by one.
+        """
+        return self.__call__()
+
+    def get(self, id: int) -> ThreeDModel:
+        """Retrieve a 3d model by id
+
+        Args:
+            id (int): Get the model with this id.
+
+        Returns:
+            ThreeDModel: The requested 3d model.
+        """
+        return self._retrieve(ThreeDModel, self._RESOURCE_PATH, id)
+
+    def list(self, published: bool = False, limit: int = None) -> ThreeDModelList:
+        """List 3d models.
+
+        Args:
+            published (bool): Filter based on whether or not the model has published revisions.
+            limit (int): Maximum number of models to retrieve.
+
+        Returns:
+            ThreeDModelList: The list of 3d models.
+        """
+        return self._list(
+            ThreeDModelList, self._RESOURCE_PATH, method="GET", filter={"published": published}, limit=limit
+        )
+
+    def update(
+        self, item: Union[ThreeDModel, ThreeDModelUpdate, List[Union[ThreeDModel, ThreeDModelList]]]
+    ) -> Union[ThreeDModel, ThreeDModelList]:
+        """Update 3d models.
+        
+        Args:
+            item (Union[ThreeDModel, ThreeDModelUpdate, List[Union[ThreeDModel, ThreeDModelUpdate]]]): ThreeDModel(s) to update
+
+        Returns:
+            Union[ThreeDModel, ThreeDModelList]: Updated ThreeDModel(s)
+        """
+        return self._update_multiple(cls=ThreeDModelList, resource_path=self._RESOURCE_PATH, items=item)
+
+    def delete(self, id: Union[int, List[int]]) -> None:
+        """Delete 3d models.
+
+        Args:
+            id (Union[int, List[int]]): ID or list of IDs to delete.
+
+        Returns:
+            None
+        """
+        self._delete_multiple(resource_path=self._RESOURCE_PATH, ids=id, wrap_ids=True)
 
 
 # GenClass: 3DRevision
