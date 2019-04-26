@@ -32,6 +32,13 @@ def mock_3d_model_response(rsps):
     yield rsps
 
 
+@pytest.fixture
+def mock_retrieve_3d_model_response(rsps):
+    response_body = {"name": "My Model", "id": 1000, "createdTime": 0}
+    rsps.add(rsps.GET, THREE_D_API._base_url + "/3d/models/1", status=200, json=response_body)
+    yield rsps
+
+
 class Test3DModels:
     def test_list(self, mock_3d_model_response):
         res = THREE_D_API.models.list(published=True, limit=100)
@@ -61,10 +68,10 @@ class Test3DModels:
         assert {"items": [{"id": 1}]} == jsgz_load(mock_3d_model_response.calls[1].request.body)
         assert res is None
 
-    def test_get(self, mock_3d_model_response):
+    def test_get(self, mock_retrieve_3d_model_response):
         res = THREE_D_API.models.get(id=1)
         assert isinstance(res, ThreeDModel)
-        assert mock_3d_model_response.calls[0].response.json()["data"]["items"][0] == res.dump(camel_case=True)
+        assert mock_retrieve_3d_model_response.calls[0].response.json() == res.dump(camel_case=True)
 
 
 @pytest.fixture
