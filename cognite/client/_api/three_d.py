@@ -42,15 +42,15 @@ class ThreeDModelUpdate(CogniteUpdate):
 
     @property
     def name(self):
-        return _PrimitiveUpdate(self, "name")
+        return _PrimitiveThreeDModelUpdate(self, "name")
 
 
-class _PrimitiveUpdate(CognitePrimitiveUpdate):
+class _PrimitiveThreeDModelUpdate(CognitePrimitiveUpdate):
     def set(self, value: Any) -> ThreeDModelUpdate:
         return self._set(value)
 
 
-class _ObjectUpdate(CogniteObjectUpdate):
+class _ObjectThreeDModelUpdate(CogniteObjectUpdate):
     def set(self, value: Dict) -> ThreeDModelUpdate:
         return self._set(value)
 
@@ -61,7 +61,7 @@ class _ObjectUpdate(CogniteObjectUpdate):
         return self._remove(value)
 
 
-class _ListUpdate(CogniteListUpdate):
+class _ListThreeDModelUpdate(CogniteListUpdate):
     def set(self, value: List) -> ThreeDModelUpdate:
         return self._set(value)
 
@@ -219,23 +219,23 @@ class ThreeDModelRevisionUpdate(CogniteUpdate):
 
     @property
     def published(self):
-        return _PrimitiveUpdate(self, "published")
+        return _PrimitiveThreeDModelRevisionUpdate(self, "published")
 
     @property
     def rotation(self):
-        return _ListUpdate(self, "rotation")
+        return _ListThreeDModelRevisionUpdate(self, "rotation")
 
     @property
     def camera(self):
-        return _ObjectUpdate(self, "camera")
+        return _ObjectThreeDModelRevisionUpdate(self, "camera")
 
 
-class _PrimitiveUpdate(CognitePrimitiveUpdate):
+class _PrimitiveThreeDModelRevisionUpdate(CognitePrimitiveUpdate):
     def set(self, value: Any) -> ThreeDModelRevisionUpdate:
         return self._set(value)
 
 
-class _ObjectUpdate(CogniteObjectUpdate):
+class _ObjectThreeDModelRevisionUpdate(CogniteObjectUpdate):
     def set(self, value: Dict) -> ThreeDModelRevisionUpdate:
         return self._set(value)
 
@@ -246,7 +246,7 @@ class _ObjectUpdate(CogniteObjectUpdate):
         return self._remove(value)
 
 
-class _ListUpdate(CogniteListUpdate):
+class _ListThreeDModelRevisionUpdate(CogniteListUpdate):
     def set(self, value: List) -> ThreeDModelRevisionUpdate:
         return self._set(value)
 

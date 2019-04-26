@@ -100,39 +100,39 @@ class EventUpdate(CogniteUpdate):
 
     @property
     def external_id(self):
-        return _PrimitiveUpdate(self, "externalId")
+        return _PrimitiveEventUpdate(self, "externalId")
 
     @property
     def start_time(self):
-        return _PrimitiveUpdate(self, "startTime")
+        return _PrimitiveEventUpdate(self, "startTime")
 
     @property
     def end_time(self):
-        return _PrimitiveUpdate(self, "endTime")
+        return _PrimitiveEventUpdate(self, "endTime")
 
     @property
     def description(self):
-        return _PrimitiveUpdate(self, "description")
+        return _PrimitiveEventUpdate(self, "description")
 
     @property
     def metadata(self):
-        return _ObjectUpdate(self, "metadata")
+        return _ObjectEventUpdate(self, "metadata")
 
     @property
     def asset_ids(self):
-        return _ListUpdate(self, "assetIds")
+        return _ListEventUpdate(self, "assetIds")
 
     @property
     def source(self):
-        return _PrimitiveUpdate(self, "source")
+        return _PrimitiveEventUpdate(self, "source")
 
 
-class _PrimitiveUpdate(CognitePrimitiveUpdate):
+class _PrimitiveEventUpdate(CognitePrimitiveUpdate):
     def set(self, value: Any) -> EventUpdate:
         return self._set(value)
 
 
-class _ObjectUpdate(CogniteObjectUpdate):
+class _ObjectEventUpdate(CogniteObjectUpdate):
     def set(self, value: Dict) -> EventUpdate:
         return self._set(value)
 
@@ -143,7 +143,7 @@ class _ObjectUpdate(CogniteObjectUpdate):
         return self._remove(value)
 
 
-class _ListUpdate(CogniteListUpdate):
+class _ListEventUpdate(CogniteListUpdate):
     def set(self, value: List) -> EventUpdate:
         return self._set(value)
 

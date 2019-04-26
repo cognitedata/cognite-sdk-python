@@ -73,31 +73,31 @@ class AssetUpdate(CogniteUpdate):
 
     @property
     def external_id(self):
-        return _PrimitiveUpdate(self, "externalId")
+        return _PrimitiveAssetUpdate(self, "externalId")
 
     @property
     def name(self):
-        return _PrimitiveUpdate(self, "name")
+        return _PrimitiveAssetUpdate(self, "name")
 
     @property
     def description(self):
-        return _PrimitiveUpdate(self, "description")
+        return _PrimitiveAssetUpdate(self, "description")
 
     @property
     def metadata(self):
-        return _ObjectUpdate(self, "metadata")
+        return _ObjectAssetUpdate(self, "metadata")
 
     @property
     def source(self):
-        return _PrimitiveUpdate(self, "source")
+        return _PrimitiveAssetUpdate(self, "source")
 
 
-class _PrimitiveUpdate(CognitePrimitiveUpdate):
+class _PrimitiveAssetUpdate(CognitePrimitiveUpdate):
     def set(self, value: Any) -> AssetUpdate:
         return self._set(value)
 
 
-class _ObjectUpdate(CogniteObjectUpdate):
+class _ObjectAssetUpdate(CogniteObjectUpdate):
     def set(self, value: Dict) -> AssetUpdate:
         return self._set(value)
 
@@ -108,7 +108,7 @@ class _ObjectUpdate(CogniteObjectUpdate):
         return self._remove(value)
 
 
-class _ListUpdate(CogniteListUpdate):
+class _ListAssetUpdate(CogniteListUpdate):
     def set(self, value: List) -> AssetUpdate:
         return self._set(value)
 
