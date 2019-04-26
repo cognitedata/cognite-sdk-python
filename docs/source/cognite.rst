@@ -432,7 +432,107 @@ Data Classes
 
 3D
 --
+Models
+^^^^^^
+Retrieve a model by id
+~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.three_d.ThreeDModelsAPI.get
 
+List Models
+~~~~~~~~~~~
+.. automethod:: cognite.client._api.three_d.ThreeDModelsAPI.list
+
+Update Models
+~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.three_d.ThreeDModelsAPI.update
+
+Delete Models
+~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.three_d.ThreeDModelsAPI.delete
+
+
+Revisions
+^^^^^^^^^
+Retrieve a Revision by ID
+~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.get
+
+Create a Revision
+~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.create
+
+List Revisions
+~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.list
+
+Update Revisions
+~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.update
+
+Delete Revisions
+~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.delete
+
+Update a Revision Thumbnail
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.update_thumbnail
+
+List Nodes
+~~~~~~~~~~
+.. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.list_nodes
+
+List Ancestor Nodes
+~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.list_ancestor_nodes
+
+
+Files
+^^^^^
+Retrieve a 3D File
+~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.three_d.ThreeDFilesAPI.get
+
+Asset Mappings
+^^^^^^^^^^^^^^
+Create an Asset Mapping
+~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.three_d.ThreeDAssetMappingAPI.create
+
+List Asset Mappings
+~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.three_d.ThreeDAssetMappingAPI.list
+
+Delete Asset Mappings
+~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.three_d.ThreeDAssetMappingAPI.delete
+
+
+Reveal
+^^^^^^
+Retrieve a Revision by ID
+~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.three_d.ThreeDRevealAPI.get_revision
+
+List Sectors
+~~~~~~~~~~~~
+.. automethod:: cognite.client._api.three_d.ThreeDRevealAPI.list_sectors
+
+List Nodes
+~~~~~~~~~~
+.. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.list_nodes
+
+List Ancestor Nodes
+~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.list_ancestor_nodes
+
+Data Classes
+^^^^^^^^^^^^
+.. automodule:: cognite.client._api.three_d
+    :members:
+    :exclude-members: ThreeDModelsAPI, ThreeDRevisionsAPI, ThreeDFilesAPI, ThreeDAssetMappingAPI, ThreeDRevealAPI, ThreeDAPI
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
 
 Identity and Access Managment
 -----------------------------
