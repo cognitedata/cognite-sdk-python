@@ -63,7 +63,7 @@ class ClassGenerator:
         for schema in schemas:
             for prop_name, prop in self._get_schema_properties(schema).items():
                 prop_name = utils.to_snake_case(prop_name)
-                req = "" if prop.get("required", False) else " = None"
+                req = " = None"  # TODO: check if prop is required or not
                 if prop_name not in ignore:
                     constructor_params.append("{}: {}{}".format(prop_name, utils.get_type_hint(prop), req))
                     ignore.append(prop_name)
@@ -108,7 +108,7 @@ class UpdateClassGenerator:
         for class_segment in self.gen_update_class_segments:
             schema = self._spec.components.schemas.get(class_segment.schema_name)
             docstring = self.generate_docstring(schema, indentation=4)
-            setters = self.generate_setters(schema, indentation=4)
+            setters = self.generate_setters(schema, class_segment.class_name, indentation=4)
             attr_update_classes = self.generate_attr_update_classes(class_segment.class_name)
             generated_segment = docstring + "\n" + setters + "\n" + attr_update_classes
             generated_segments[class_segment.class_name] = generated_segment
@@ -126,7 +126,7 @@ class UpdateClassGenerator:
         docstring += " " * indentation + '"""'
         return docstring
 
-    def generate_setters(self, schema, indentation):
+    def generate_setters(self, schema, class_name, indentation):
         setters = []
         schema_properties = self._get_schema_properties(schema)
         if "update" in schema_properties:
@@ -142,20 +142,20 @@ class UpdateClassGenerator:
                 setter = indent + "@property\n"
                 setter += indent + "def {}(self):\n".format(utils.to_snake_case(prop_name))
                 if update_prop_type_hints["set"] == "List":
-                    setter += indent + indent + "return _ListUpdate(self, '{}')".format(prop_name)
+                    setter += indent + indent + "return _List{}(self, '{}')".format(class_name, prop_name)
                 elif update_prop_type_hints["set"] == "Dict[str, Any]":
-                    setter += indent + indent + "return _ObjectUpdate(self, '{}')".format(prop_name)
+                    setter += indent + indent + "return _Object{}(self, '{}')".format(class_name, prop_name)
                 else:
-                    setter += indent + indent + "return _PrimitiveUpdate(self, '{}')".format(prop_name)
+                    setter += indent + indent + "return _Primitive{}(self, '{}')".format(class_name, prop_name)
                 setters.append(setter)
         return "\n\n".join(setters)
 
     def generate_attr_update_classes(self, class_name):
         update_classes = []
         update_class_methods = {
-            "_PrimitiveUpdate": [("set", "Any")],
-            "_ObjectUpdate": [("set", "Dict"), ("add", "Dict"), ("remove", "List")],
-            "_ListUpdate": [("set", "List"), ("add", "List"), ("remove", "List")],
+            "Primitive": [("set", "Any")],
+            "Object": [("set", "Dict"), ("add", "Dict"), ("remove", "List")],
+            "List": [("set", "List"), ("add", "List"), ("remove", "List")],
         }
         indent = " " * 4
         for update_class_name, methods in update_class_methods.items():
@@ -164,8 +164,9 @@ class UpdateClassGenerator:
                 update_method = indent + "def {}(self, value: {}) -> {}:\n".format(method, value_type, class_name)
                 update_method += indent + indent + "return self._{}(value)".format(method)
                 update_methods.append(update_method)
-            update_class = "class {}(Cognite{}):\n{}".format(
-                update_class_name, update_class_name.lstrip("_"), "\n\n".join(update_methods)
+            full_update_class_name = "_{}{}".format(update_class_name, class_name)
+            update_class = "class {}(Cognite{}Update):\n{}".format(
+                full_update_class_name, update_class_name, "\n\n".join(update_methods)
             )
             update_classes.append(update_class)
         return "\n\n".join(update_classes)
@@ -196,12 +197,14 @@ class UpdateClassGenerator:
         if "allOf" in schema:
             properties = {}
             for s in schema["allOf"]:
-                for prop_name, prop in s["properties"].items():
+                for prop_name, prop in UpdateClassGenerator._get_schema_properties(s).items():
                     properties[prop_name] = prop
             return properties
         if "oneOf" in schema:
-            assert len(schema["oneOf"]) == 2, "oneOf contains {} schemas, expected 2".format(len(schema["oneOf"]))
+            assert len(schema["oneOf"]) <= 2, "oneOf contains {} schemas, expected 1 or 2".format(len(schema["oneOf"]))
             first_schema_properties = UpdateClassGenerator._get_schema_properties(schema["oneOf"][0])
+            if len(schema["oneOf"]) == 1:
+                return first_schema_properties
             second_schema_properties = UpdateClassGenerator._get_schema_properties(schema["oneOf"][1])
             diff = list(set(first_schema_properties) - set(second_schema_properties))
             assert diff == ["id"] or diff == ["externalId"]

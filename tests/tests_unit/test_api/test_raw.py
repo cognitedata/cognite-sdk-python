@@ -47,6 +47,13 @@ def mock_raw_row_response(rsps):
     yield rsps
 
 
+@pytest.fixture
+def mock_retrieve_raw_row_response(rsps):
+    response_body = {"key": "row1", "columns": {"c1": 1, "c2": "2"}}
+    rsps.add(rsps.GET, RAW_API._base_url + "/raw/dbs/db1/tables/table1/rows/row1", status=200, json=response_body)
+    yield rsps
+
+
 class TestRawDatabases:
     def test_create_single(self, mock_raw_db_response):
         res = RAW_API.databases.create(name="db1")
@@ -146,10 +153,10 @@ class TestRawTables:
 
 
 class TestRawRows:
-    def test_get(self, mock_raw_row_response):
+    def test_get(self, mock_retrieve_raw_row_response):
         res = RAW_API.rows.get(db_name="db1", table_name="table1", key="row1")
-        assert mock_raw_row_response.calls[0].response.json()["data"]["items"][0] == res.dump(camel_case=True)
-        assert mock_raw_row_response.calls[0].request.url.endswith("/rows/row1")
+        assert mock_retrieve_raw_row_response.calls[0].response.json() == res.dump(camel_case=True)
+        assert mock_retrieve_raw_row_response.calls[0].request.url.endswith("/rows/row1")
 
     def test_insert_w_rows_as_dict(self, mock_raw_row_response):
         res = RAW_API.rows.insert(

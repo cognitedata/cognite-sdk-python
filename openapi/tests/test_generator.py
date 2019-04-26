@@ -124,47 +124,47 @@ class TestUpdateClassGenerator:
 
     def test_gen_setters(self):
         setters = UPDATE_CLASS_GENERATOR.generate_setters(
-            CLASS_GENERATOR._spec.components.schemas.get("EventChange"), indentation=4
+            CLASS_GENERATOR._spec.components.schemas.get("EventChange"), "EventUpdate", indentation=4
         )
         assert (
             """    @property
     def external_id(self):
-        return _PrimitiveUpdate(self, 'externalId')
+        return _PrimitiveEventUpdate(self, 'externalId')
 
     @property
     def start_time(self):
-        return _PrimitiveUpdate(self, 'startTime')
+        return _PrimitiveEventUpdate(self, 'startTime')
 
     @property
     def end_time(self):
-        return _PrimitiveUpdate(self, 'endTime')
+        return _PrimitiveEventUpdate(self, 'endTime')
 
     @property
     def description(self):
-        return _PrimitiveUpdate(self, 'description')
+        return _PrimitiveEventUpdate(self, 'description')
 
     @property
     def metadata(self):
-        return _ObjectUpdate(self, 'metadata')
+        return _ObjectEventUpdate(self, 'metadata')
 
     @property
     def asset_ids(self):
-        return _ListUpdate(self, 'assetIds')
+        return _ListEventUpdate(self, 'assetIds')
 
     @property
     def source(self):
-        return _PrimitiveUpdate(self, 'source')"""
+        return _PrimitiveEventUpdate(self, 'source')"""
             == setters
         )
 
     def test_generate_attr_update_classes(self):
         attr_update_classes = UPDATE_CLASS_GENERATOR.generate_attr_update_classes("AssetUpdate")
         assert (
-            """class _PrimitiveUpdate(CognitePrimitiveUpdate):
+            """class _PrimitiveAssetUpdate(CognitePrimitiveUpdate):
     def set(self, value: Any) -> AssetUpdate:
         return self._set(value)
 
-class _ObjectUpdate(CogniteObjectUpdate):
+class _ObjectAssetUpdate(CogniteObjectUpdate):
     def set(self, value: Dict) -> AssetUpdate:
         return self._set(value)
 
@@ -174,7 +174,7 @@ class _ObjectUpdate(CogniteObjectUpdate):
     def remove(self, value: List) -> AssetUpdate:
         return self._remove(value)
 
-class _ListUpdate(CogniteListUpdate):
+class _ListAssetUpdate(CogniteListUpdate):
     def set(self, value: List) -> AssetUpdate:
         return self._set(value)
 
@@ -189,7 +189,7 @@ class _ListUpdate(CogniteListUpdate):
     def test_generate_code(self):
         schema = UPDATE_CLASS_GENERATOR._spec.components.schemas.get("AssetChange")
         docstring = UPDATE_CLASS_GENERATOR.generate_docstring(schema, indentation=4)
-        setters = UPDATE_CLASS_GENERATOR.generate_setters(schema, indentation=4)
+        setters = UPDATE_CLASS_GENERATOR.generate_setters(schema, "AssetUpdate", indentation=4)
         attr_update_classes = UPDATE_CLASS_GENERATOR.generate_attr_update_classes("AssetUpdate")
 
         generated = UPDATE_CLASS_GENERATOR.generate_code_for_class_segments()["AssetUpdate"]

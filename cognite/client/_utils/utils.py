@@ -177,7 +177,7 @@ def assert_type(var: Any, var_name: str, types: List, allow_none=False):
 
 
 def interpolate_and_url_encode(path, *args):
-    return path.format(*[quote(arg, safe="") for arg in args])
+    return path.format(*[quote(str(arg), safe="") for arg in args])
 
 
 def local_import(*module: str):

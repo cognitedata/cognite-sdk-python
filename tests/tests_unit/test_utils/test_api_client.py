@@ -136,9 +136,7 @@ class SomeResourceList(CogniteResourceList):
 
 class TestStandardRetrieve:
     def test_standard_retrieve_OK(self, rsps):
-        rsps.add(
-            rsps.GET, BASE_URL + URL_PATH + "/1", status=200, json={"data": {"items": [{"x": 1, "y": 2}, {"x": 1}]}}
-        )
+        rsps.add(rsps.GET, BASE_URL + URL_PATH + "/1", status=200, json={"x": 1, "y": 2})
         assert SomeResource(1, 2) == API_CLIENT._retrieve(cls=SomeResource, resource_path=URL_PATH, id=1)
 
     def test_standard_retrieve_fail(self, rsps):
@@ -149,9 +147,7 @@ class TestStandardRetrieve:
         assert 400 == e.value.code
 
     def test_cognite_client_is_set(self, rsps):
-        rsps.add(
-            rsps.GET, BASE_URL + URL_PATH + "/1", status=200, json={"data": {"items": [{"x": 1, "y": 2}, {"x": 1}]}}
-        )
+        rsps.add(rsps.GET, BASE_URL + URL_PATH + "/1", status=200, json={"x": 1, "y": 2})
         assert COGNITE_CLIENT == API_CLIENT._retrieve(cls=SomeResource, resource_path=URL_PATH, id=1)._client
 
 
