@@ -63,7 +63,7 @@ class ClassGenerator:
         for schema in schemas:
             for prop_name, prop in self._get_schema_properties(schema).items():
                 prop_name = utils.to_snake_case(prop_name)
-                req = "" if prop.get("required", False) else " = None"
+                req = " = None"  # TODO: check if prop is required or not
                 if prop_name not in ignore:
                     constructor_params.append("{}: {}{}".format(prop_name, utils.get_type_hint(prop), req))
                     ignore.append(prop_name)

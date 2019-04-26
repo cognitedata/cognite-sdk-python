@@ -10,7 +10,7 @@ class ThreeDAPI(APIClient):
         self.models = ThreeDModelsAPI(*args, **kwargs)
         self.revisions = ThreeDRevisionsAPI(*args, **kwargs)
         self.files = ThreeDFilesAPI(*args, **kwargs)
-        self.asset_mapping = ThreeDAssetMappingAPI(*args, **kwargs)
+        self.asset_mappings = ThreeDAssetMappingAPI(*args, **kwargs)
         self.reveal = ThreeDRevealAPI(*args, **kwargs)
 
 
@@ -209,12 +209,281 @@ class ThreeDModelRevision(CogniteResource):
     # GenStop
 
 
+# GenUpdateClass: Update3DRevision
+class ThreeDModelRevisionUpdate(CogniteUpdate):
+    """No description.
+
+    Args:
+        id (int): Javascript friendly internal ID given to the object.
+    """
+
+    @property
+    def published(self):
+        return _PrimitiveUpdate(self, "published")
+
+    @property
+    def rotation(self):
+        return _ListUpdate(self, "rotation")
+
+    @property
+    def camera(self):
+        return _ObjectUpdate(self, "camera")
+
+
+class _PrimitiveUpdate(CognitePrimitiveUpdate):
+    def set(self, value: Any) -> ThreeDModelRevisionUpdate:
+        return self._set(value)
+
+
+class _ObjectUpdate(CogniteObjectUpdate):
+    def set(self, value: Dict) -> ThreeDModelRevisionUpdate:
+        return self._set(value)
+
+    def add(self, value: Dict) -> ThreeDModelRevisionUpdate:
+        return self._add(value)
+
+    def remove(self, value: List) -> ThreeDModelRevisionUpdate:
+        return self._remove(value)
+
+
+class _ListUpdate(CogniteListUpdate):
+    def set(self, value: List) -> ThreeDModelRevisionUpdate:
+        return self._set(value)
+
+    def add(self, value: List) -> ThreeDModelRevisionUpdate:
+        return self._add(value)
+
+    def remove(self, value: List) -> ThreeDModelRevisionUpdate:
+        return self._remove(value)
+
+    # GenStop
+
+
+class ThreeDModelRevisionList(CogniteResourceList):
+    _RESOURCE = ThreeDModelRevision
+    _UPDATE = ThreeDModelRevisionUpdate
+
+
+# GenClass: 3DNode
+class ThreeDNode(CogniteResource):
+    """No description.
+
+    Args:
+        id (int): The ID of the node.
+        tree_index (int): The index of the node in the 3D model hierarchy, starting from 0. The tree is traversed in a depth-first order.
+        parent_id (int): The parent of the node, null if it is the root node.
+        depth (int): The depth of the node in the tree, starting from 0 at the root node.
+        name (str): The name of the node.
+        subtree_size (int): The number of descendants of the node, plus one (counting itself).
+        bounding_box (Dict[str, Any]): The bounding box of the subtree with this sector as the root sector. Is null if there are no geometries in the subtree.
+    """
+
+    def __init__(
+        self,
+        id: int = None,
+        tree_index: int = None,
+        parent_id: int = None,
+        depth: int = None,
+        name: str = None,
+        subtree_size: int = None,
+        bounding_box: Dict[str, Any] = None,
+        **kwargs
+    ):
+        self.id = id
+        self.tree_index = tree_index
+        self.parent_id = parent_id
+        self.depth = depth
+        self.name = name
+        self.subtree_size = subtree_size
+        self.bounding_box = bounding_box
+
+    # GenStop
+
+
+class ThreeDNodeList(CogniteResourceList):
+    _RESOURCE = ThreeDNode
+    _ASSERT_CLASSES = False
+
+
 class ThreeDRevisionsAPI(APIClient):
-    pass
+    _RESOURCE_PATH = "/3d/models/{}/revisions"
+
+    def __call__(
+        self, model_id: int, chunk_size: int = None, published: bool = False
+    ) -> Generator[Union[ThreeDModelRevision, ThreeDModelRevisionList], None, None]:
+        """Iterate over 3d model revisions
+
+        Fetches 3d model revisions as they are iterated over, so you keep a limited number of 3d model revisions in memory.
+
+        Args:
+            model_id (int): Iterate over revisions for the model with this id.
+            chunk_size (int, optional): Number of 3d model revisions to return in each chunk. Defaults to yielding one model a time.
+            published (bool): Filter based on whether or not the revision has been published.
+
+        Yields:
+            Union[ThreeDModelRevision, ThreeDModelRevisionList]: yields ThreeDModelRevision one by one if chunk is not
+                specified, else ThreeDModelRevisionList objects.
+        """
+        return self._list_generator(
+            ThreeDModelRevisionList,
+            resource_path=self._RESOURCE_PATH,
+            method="GET",
+            chunk_size=chunk_size,
+            filter={"published": published},
+        )
+
+    def get(self, model_id: int, id: int) -> ThreeDModelRevision:
+        """Retrieve a 3d model revision by id
+
+        Args:
+            model_id (int): Get the revision under the model with this id.
+            id (int): Get the model revision with this id.
+
+        Returns:
+            ThreeDModelRevision: The requested 3d model revision.
+        """
+        return self._retrieve(ThreeDModelRevision, self._RESOURCE_PATH.format(model_id), id)
+
+    def create(
+        self, model_id: int, revision: Union[ThreeDModelRevision, List[ThreeDModelRevision]]
+    ) -> Union[ThreeDModelRevision, ThreeDModelRevisionList]:
+        """Create a revisions for a specified 3d model.
+
+        Args:
+            model_id (int): Create revisions for this model.
+            revision (Union[ThreeDModelRevision, List[ThreeDModelRevision]]): The revision(s) to create.
+
+        Returns:
+            Union[ThreeDModelRevision, ThreeDModelRevisionList]: The created revision(s)
+        """
+        return self._create_multiple(ThreeDModelRevisionList, self._RESOURCE_PATH.format(model_id), items=revision)
+
+    def list(self, model_id: int, published: bool = False, limit: int = None) -> ThreeDModelRevisionList:
+        """List 3d model revisions.
+
+        Args:
+            model_id (int): List revisions under the model with this id.
+            published (bool): Filter based on whether or not the revision is published.
+            limit (int): Maximum number of models to retrieve.
+
+        Returns:
+            ThreeDModelRevisionList: The list of 3d model revisions.
+        """
+        return self._list(
+            ThreeDModelRevisionList,
+            self._RESOURCE_PATH.format(model_id),
+            method="GET",
+            filter={"published": published},
+            limit=limit,
+        )
+
+    def update(
+        self,
+        model_id: int,
+        item: Union[
+            ThreeDModelRevision, ThreeDModelRevisionUpdate, List[Union[ThreeDModelRevision, ThreeDModelRevisionList]]
+        ],
+    ) -> Union[ThreeDModelRevision, ThreeDModelRevisionList]:
+        """Update 3d model revisions.
+
+        Args:
+            model_id (int): Update the revision under the model with this id.
+            item (Union[ThreeDModelRevision, ThreeDModelRevisionUpdate, List[Union[ThreeDModelRevision, ThreeDModelRevisionUpdate]]]):
+                ThreeDModelRevision(s) to update
+
+        Returns:
+            Union[ThreeDModelRevision, ThreeDModelRevisionList]: Updated ThreeDModelRevision(s)
+        """
+        return self._update_multiple(
+            cls=ThreeDModelRevisionList, resource_path=self._RESOURCE_PATH.format(model_id), items=item
+        )
+
+    def delete(self, model_id: int, id: Union[int, List[int]]) -> None:
+        """Delete 3d model revisions.
+
+        Args:
+            model_id (int): Delete the revision under the model with this id.
+            id (Union[int, List[int]]): ID or list of IDs to delete.
+
+        Returns:
+            None
+        """
+        self._delete_multiple(resource_path=self._RESOURCE_PATH.format(model_id), ids=id, wrap_ids=True)
+
+    def update_thumbnail(self, model_id: int, revision_id: int, file_id: int) -> None:
+        """Update a revision thumbnail.
+
+        Args:
+            model_id (int): Id of the model.
+            revision_id (int): Id of the revision.
+            file_id (int): Id of the thumbnail file in the Files API.
+
+        Returns:
+            None
+        """
+        resource_path = utils.interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/thumbnail", model_id, revision_id)
+        body = {"fileId": file_id}
+        self._post(resource_path, json=body)
+
+    def list_nodes(
+        self, model_id: int, revision_id: int, node_id: int = None, depth: int = None, limit: int = None
+    ) -> ThreeDNodeList:
+        """Retrieves a list of nodes from the hierarchy in the 3D Model.
+
+        You can also request a specific subtree with the 'nodeId' query parameter and limit the depth of
+        the resulting subtree with the 'depth' query parameter.
+
+        Args:
+            model_id (int): Id of the model.
+            revision_id (int): Id of the revision.
+            node_id (int): ID of the root node of the subtree you request (default is the root node).
+            depth (int): Get sub nodes up to this many levels below the specified node. Depth 0 is the root node.
+            limit (int): Maximun number of nodes to return.
+
+        Returns:
+            ThreeDNodeList: The list of 3d nodes.
+        """
+        resource_path = utils.interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/nodes", model_id, revision_id)
+        return self._list(
+            ThreeDNodeList, resource_path, method="GET", limit=limit, filter={"depth": depth, "nodeId": node_id}
+        )
+
+    def list_ancestor_nodes(
+        self, model_id: int, revision_id: int, node_id: int = None, limit: int = None
+    ) -> ThreeDNodeList:
+        """Retrieves a list of ancestor nodes of a given node, including itself, in the hierarchy of the 3D model
+
+        You can also request a specific subtree with the 'nodeId' query parameter and limit the depth of
+        the resulting subtree with the 'depth' query parameter.
+
+        Args:
+            model_id (int): Id of the model.
+            revision_id (int): Id of the revision.
+            node_id (int): ID of the node to get the ancestors of.
+            depth (int): Get sub nodes up to this many levels below the specified node. Depth 0 is the root node.
+            limit (int): Maximun number of nodes to return.
+
+        Returns:
+            ThreeDNodeList: The list of 3d nodes.
+        """
+        resource_path = utils.interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/nodes", model_id, revision_id)
+        return self._list(ThreeDNodeList, resource_path, method="GET", limit=limit, filter={"nodeId": node_id})
 
 
 class ThreeDFilesAPI(APIClient):
-    pass
+    _RESOURCE_PATH = "/3d/files"
+
+    def get(self, id: int) -> bytes:
+        """Retrieve the contents of a 3d file by id.
+
+        Args:
+            id (int): The id of the file to retrieve.
+
+        Returns:
+            bytes: The contents of the file.
+        """
+        path = utils.interpolate_and_url_encode(self._RESOURCE_PATH + "/{}", id)
+        return self._get(path).content
 
 
 # GenClass: 3DAssetMapping
@@ -245,7 +514,63 @@ class ThreeDAssetMappingList(CogniteResourceList):
 
 
 class ThreeDAssetMappingAPI(APIClient):
-    pass
+    _RESOURCE_PATH = "/3d/models/{}/revisions/{}/mappings"
+
+    def list(
+        self, model_id: int, revision_id: int, node_id: int = None, asset_id: int = None, limit: int = None
+    ) -> ThreeDAssetMappingList:
+        """List 3D node asset mappings.
+
+        Args:
+            model_id (int): Id of the model.
+            revision_id (int): Id of the revision.
+            node_id (int): List only asset mappings associated with this node.
+            asset_id (int): List only asset mappings associated with this asset.
+            limit (int): Maximum number of asset mappings to return.
+
+        Returns:
+            ThreeDAssetMappingList: The list of asset mappings.
+        """
+        path = utils.interpolate_and_url_encode(self._RESOURCE_PATH, model_id, revision_id)
+        return self._list(
+            ThreeDAssetMappingList, path, method="GET", filter={"nodeId": node_id, "assetId": asset_id}, limit=limit
+        )
+
+    def create(
+        self, model_id: int, revision_id: int, asset_mapping: Union[ThreeDAssetMapping, List[ThreeDAssetMapping]]
+    ) -> Union[ThreeDAssetMapping, ThreeDAssetMappingList]:
+        """Create 3d node asset mappings.
+
+        Args:
+            model_id (int): Id of the model.
+            revision_id (int): Id of the revision.
+            asset_mapping (Union[ThreeDAssetMapping, List[ThreeDAssetMapping]]): The asset mapping(s) to create.
+
+        Returns:
+            Union[ThreeDAssetMapping, ThreeDAssetMappingList]: The created asset mapping(s).
+        """
+        path = utils.interpolate_and_url_encode(self._RESOURCE_PATH, model_id, revision_id)
+        return self._create_multiple(ThreeDAssetMappingList, path, items=asset_mapping)
+
+    def delete(
+        self, model_id: int, revision_id: int, asset_mapping: Union[ThreeDAssetMapping, List[ThreeDAssetMapping]]
+    ) -> None:
+        """Delete 3d node asset mappings.
+
+        Args:
+            model_id (int): Id of the model.
+            revision_id (int): Id of the revision.
+            asset_mapping (Union[ThreeDAssetMapping, List[ThreeDAssetMapping]]): The asset mapping(s) to delete.
+
+        Returns:
+            None
+        """
+        path = utils.interpolate_and_url_encode(self._RESOURCE_PATH, model_id, revision_id)
+        utils.assert_type(asset_mapping, "asset_mapping", [list, ThreeDAssetMapping])
+        if isinstance(asset_mapping, ThreeDAssetMapping):
+            asset_mapping = [asset_mapping]
+        items = {"items": [a.dump(camel_case=True) for a in asset_mapping]}
+        self._post(path + "/delete", json=items)
 
 
 # GenClass: Reveal3DRevision
