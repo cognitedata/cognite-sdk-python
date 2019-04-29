@@ -5,8 +5,9 @@ from unittest import mock
 
 import pytest
 
-import cognite.client._utils as utils
-from cognite.client import CogniteClient, global_client
+from cognite.client import CogniteClient
+from cognite.client import _utils as utils
+from cognite.client import global_client
 from cognite.client._api.datapoints import (
     Datapoint,
     Datapoints,

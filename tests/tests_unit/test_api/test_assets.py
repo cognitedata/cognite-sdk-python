@@ -11,7 +11,8 @@ from cognite.client._api.assets import Asset, AssetList, AssetUpdate, _AssetPost
 from cognite.client.exceptions import CogniteAssetPostingError
 from tests.utils import jsgz_load
 
-ASSETS_API = CogniteClient().assets
+COGNITE_CLIENT = CogniteClient()
+ASSETS_API = COGNITE_CLIENT.assets
 
 
 @pytest.fixture
@@ -130,6 +131,16 @@ class TestAssets:
             .source.set(None),
             AssetUpdate,
         )
+
+    def test_asset_object_get_parent(self, mock_assets_response):
+        a1 = Asset(parent_id=1, cognite_client=COGNITE_CLIENT)
+        parent = a1.parent().dump(camel_case=True)
+        assert mock_assets_response.calls[0].response.json()["data"]["items"][0] == parent
+
+    def test_asset_object_get_subtree(self, mock_assets_response):
+        a1 = Asset(parent_id=1, cognite_client=COGNITE_CLIENT)
+        subtree = a1.subtree().dump(camel_case=True)
+        assert mock_assets_response.calls[0].response.json()["data"]["items"] == subtree
 
 
 class TestAssetPosterWorker:
