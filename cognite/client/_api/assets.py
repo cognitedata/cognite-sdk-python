@@ -178,6 +178,9 @@ class AssetList(CogniteResourceList):
         except:
             return super().__str__()
 
+        if len(sorted_assets) == 0:
+            return super().__str__()
+
         ids = set([asset.id for asset in sorted_assets])
 
         s = "\n"

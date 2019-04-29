@@ -71,7 +71,7 @@ class CogniteClient:
         if debug:
             self._configure_logger_for_debug_mode()
 
-        __api_version = "1.0"
+        __api_version = "v1"
 
         self.project = project or thread_local_project
         self.login = LoginAPI(

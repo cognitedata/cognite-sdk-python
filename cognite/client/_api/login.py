@@ -17,8 +17,8 @@ class LoginStatus(CogniteResponse):
     def __init__(self, user: str, project: str, logged_in: bool, project_id: str, **kwargs):
         self.user = user
         self.project = project
-        self.project_id = logged_in
-        self.logged_in = project_id
+        self.project_id = project_id
+        self.logged_in = logged_in
 
     @classmethod
     def _load(cls, api_response):
