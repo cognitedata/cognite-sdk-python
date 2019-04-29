@@ -5,6 +5,7 @@ from collections import OrderedDict
 from cognite.client._api_client import APIClient
 from cognite.client._base import *
 from cognite.client._utils import PriorityQueue
+from cognite.client.exceptions import CogniteAPIError, CogniteAssetPostingError
 
 
 # GenClass: Asset, ExternalAssetItem
@@ -59,6 +60,27 @@ class Asset(CogniteResource):
 
     def __hash__(self):
         return hash(self.ref_id)
+
+    def parent(self):
+        """Returns this assets parent.
+
+        Returns:
+            Asset: The parent asset.
+        """
+        if self.parent_id is None:
+            raise ValueError("parent_id is None")
+        return self._client.assets.get(id=self.parent_id)
+
+    def subtree(self, depth: int = 1):
+        """Returns the subtree of this asset.
+
+        Args:
+            depth (int): How many levels to descend into the subtree
+
+        Returns:
+            AssetList: The requested subtree
+        """
+        return self._client.assets.list(parent_ids=[self.id], depth={"min": 0, "max": depth})
 
 
 # GenUpdateClass: AssetChange
@@ -463,6 +485,12 @@ class AssetsAPI(APIClient):
         )
 
 
+class _AssetsFailedToPost:
+    def __init__(self, exc: Exception, assets: List[Asset]):
+        self.exc = exc
+        self.assets = assets
+
+
 class _AssetPosterWorker(threading.Thread):
     def __init__(self, client: AssetsAPI, request_queue: queue.Queue, response_queue: queue.Queue):
         self.client = client
@@ -480,6 +508,7 @@ class _AssetPosterWorker(threading.Thread):
 
     def run(self):
         try:
+            request = None
             while not self.stop:
                 try:
                     request = self.request_queue.get(timeout=0.1)
@@ -489,7 +518,7 @@ class _AssetPosterWorker(threading.Thread):
                 assets = self.set_ref_id_on_assets_in_response(request, response)
                 self.response_queue.put(assets)
         except Exception as e:
-            self.response_queue.put(e)
+            self.response_queue.put(_AssetsFailedToPost(e, request))
 
 
 class _AssetPoster:
@@ -516,8 +545,13 @@ class _AssetPoster:
         self.ref_ids_without_circular_deps = set()
         self.ref_id_to_children = {ref_id: set() for ref_id in self.remaining_ref_ids}
         self.ref_id_to_descendent_count = {ref_id: 0 for ref_id in self.remaining_ref_ids}
-        self.created_assets = AssetList([])
-        self.assets_remaining = lambda: len(self.created_assets) < self.num_of_assets
+        self.posted_assets = AssetList([])
+        self.may_have_been_posted_assets = AssetList([])
+        self.not_posted_assets = AssetList([])
+        self.assets_remaining = (
+            lambda: len(self.posted_assets) + len(self.may_have_been_posted_assets) + len(self.not_posted_assets)
+            < self.num_of_assets
+        )
 
         self.request_queue = queue.Queue()
         self.response_queue = queue.Queue()
@@ -559,12 +593,18 @@ class _AssetPoster:
             self._initialize_asset_to_descendant_count(root_asset)
 
         self.remaining_ref_ids = self._sort_ref_ids_by_descendant_count(self.remaining_ref_ids)
-        print("validated and initiliazed")
 
     def _initialize_asset_to_descendant_count(self, asset):
         for child in self.ref_id_to_children[asset.ref_id]:
             self.ref_id_to_descendent_count[asset.ref_id] += 1 + self._initialize_asset_to_descendant_count(child)
         return self.ref_id_to_descendent_count[asset.ref_id]
+
+    def _get_descendants(self, asset):
+        descendants = []
+        for child in self.ref_id_to_children[asset.ref_id]:
+            descendants.append(child)
+            descendants.extend(self._get_descendants(child))
+        return descendants
 
     def _verify_asset_is_not_part_of_tree_with_circular_deps(self, asset: Asset):
         next_asset = asset
@@ -633,14 +673,29 @@ class _AssetPoster:
         for unblocked_assets in unblocked_assets_lists:
             self.request_queue.put(unblocked_assets)
         while self.assets_remaining():
-            posted_assets = self.response_queue.get()
-            if isinstance(posted_assets, Exception):
-                raise posted_assets
-            self._update_ref_id_to_id_map(posted_assets)
-            self.created_assets.extend(posted_assets)
-            unblocked_assets_lists = self._get_unblocked_assets()
-            for unblocked_assets in unblocked_assets_lists:
-                self.request_queue.put(unblocked_assets)
+            res = self.response_queue.get()
+            if isinstance(res, _AssetsFailedToPost):
+                if isinstance(res.exc, CogniteAPIError):
+                    if res.exc.code >= 500:
+                        self.may_have_been_posted_assets.extend(AssetList(res.assets))
+                    elif res.exc.code >= 400:
+                        self.not_posted_assets.extend(AssetList(res.assets))
+                    for asset in res.assets:
+                        self.not_posted_assets.extend(self._get_descendants(asset))
+                else:
+                    raise res.exc
+            else:
+                self._update_ref_id_to_id_map(res)
+                self.posted_assets.extend(res)
+                unblocked_assets_lists = self._get_unblocked_assets()
+                for unblocked_assets in unblocked_assets_lists:
+                    self.request_queue.put(unblocked_assets)
+        if len(self.may_have_been_posted_assets) > 0 or len(self.not_posted_assets) > 0:
+            raise CogniteAssetPostingError(
+                posted=self.posted_assets,
+                may_have_been_posted=self.may_have_been_posted_assets,
+                not_posted=self.not_posted_assets,
+            )
 
     def post(self):
         workers = []
@@ -654,4 +709,4 @@ class _AssetPoster:
         for worker in workers:
             worker.stop = True
 
-        return AssetList(sorted(self.created_assets, key=lambda x: x.path))
+        return AssetList(sorted(self.posted_assets, key=lambda x: x.path))

@@ -2,7 +2,7 @@ import json
 from collections import UserList
 from typing import *
 
-import cognite.client._utils as utils
+from cognite.client import _utils as utils
 from cognite.client._utils import global_client, to_camel_case, to_snake_case
 
 

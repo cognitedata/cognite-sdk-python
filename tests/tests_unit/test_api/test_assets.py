@@ -8,10 +8,11 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client._api.assets import Asset, AssetList, AssetUpdate, _AssetPoster, _AssetPosterWorker
-from cognite.client.exceptions import CogniteAPIError
+from cognite.client.exceptions import CogniteAssetPostingError
 from tests.utils import jsgz_load
 
-ASSETS_API = CogniteClient().assets
+COGNITE_CLIENT = CogniteClient()
+ASSETS_API = COGNITE_CLIENT.assets
 
 
 @pytest.fixture
@@ -131,6 +132,16 @@ class TestAssets:
             AssetUpdate,
         )
 
+    def test_asset_object_get_parent(self, mock_assets_response):
+        a1 = Asset(parent_id=1, cognite_client=COGNITE_CLIENT)
+        parent = a1.parent().dump(camel_case=True)
+        assert mock_assets_response.calls[0].response.json()["data"]["items"][0] == parent
+
+    def test_asset_object_get_subtree(self, mock_assets_response):
+        a1 = Asset(parent_id=1, cognite_client=COGNITE_CLIENT)
+        subtree = a1.subtree().dump(camel_case=True)
+        assert mock_assets_response.calls[0].response.json()["data"]["items"] == subtree
+
 
 class TestAssetPosterWorker:
     def test_run(self, mock_assets_response):
@@ -215,7 +226,7 @@ class TestAssetPoster:
         } == ap.ref_id_to_children
         assert {"1": 3, "2": 1, "3": 0, "4": 0} == ap.ref_id_to_descendent_count
         assert ap.assets_remaining() is True
-        assert 0 == len(ap.created_assets)
+        assert 0 == len(ap.posted_assets)
         assert ap.request_queue.empty()
         assert ap.response_queue.empty()
         assert {"1", "2", "3", "4"} == ap.remaining_ref_ids_set
@@ -286,17 +297,51 @@ class TestAssetPoster:
         _AssetPoster([Asset(parent_id=1), Asset(parent_id=2)], ASSETS_API).post()
         assert 2 == len(mock_post_asset_hierarchy.calls)
 
-    def test_post_500(self, rsps, set_limit):
-        rsps.add(
-            rsps.POST,
-            ASSETS_API._base_url + "/assets",
-            status=500,
-            json={"error": {"message": "Internal Error", "code": 500}},
+    @pytest.fixture
+    def mock_post_asset_hierarchy_with_failures(self, rsps, set_limit):
+        set_limit(1)
+
+        def request_callback(request):
+            items = jsgz_load(request.body)["items"]
+            response_assets = []
+            item = items[0]
+            parent_id = None
+            if "parentId" in item:
+                parent_id = item["parentId"]
+            if "parentRefId" in item:
+                parent_id = item["parentRefId"] + "id"
+            id = item.get("refId", "root_") + "id"
+            response_assets.append({"id": id, "parentId": parent_id, "path": [parent_id or "", id]})
+
+            if item["name"] == "400":
+                return 400, {}, json.dumps({"error": {"message": "user error", "code": 400}})
+
+            if item["name"] == "500":
+                return 500, {}, json.dumps({"error": {"message": "internal server error", "code": 500}})
+
+            return 200, {}, json.dumps({"data": {"items": response_assets}})
+
+        rsps.add_callback(
+            rsps.POST, ASSETS_API._base_url + "/assets", callback=request_callback, content_type="application/json"
         )
-        set_limit(100)
-        assets = generate_asset_tree(root_ref_id="0", depth=4, children_per_node=10)
-        with pytest.raises(CogniteAPIError):
+        yield rsps
+
+    def test_post_with_failures(self, mock_post_asset_hierarchy_with_failures):
+        assets = [
+            Asset(name="200", ref_id="0"),
+            Asset(name="200", ref_id="01", parent_ref_id="0"),
+            Asset(name="400", ref_id="02", parent_ref_id="0"),
+            Asset(name="200", ref_id="021", parent_ref_id="02"),
+            Asset(name="200", ref_id="0211", parent_ref_id="021"),
+            Asset(name="500", ref_id="03", parent_ref_id="0"),
+            Asset(name="200", ref_id="031", parent_ref_id="03"),
+        ]
+        with pytest.raises(CogniteAssetPostingError, match="Some assets failed to post") as e:
             ASSETS_API.create(assets)
+
+        assert {a.ref_id for a in e.value.may_have_been_posted} == {"03"}
+        assert {a.ref_id for a in e.value.not_posted} == {"02", "021", "0211", "031"}
+        assert {a.ref_id for a in e.value.posted} == {"0", "01"}
 
 
 @pytest.fixture

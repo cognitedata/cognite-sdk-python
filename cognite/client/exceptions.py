@@ -66,3 +66,30 @@ class CogniteImportError(Exception):
 
     def __str__(self):
         return self.message
+
+
+class CogniteAssetPostingError(Exception):
+    """Cognite Asset Posting Error
+
+    Raised if error occurs while posting an asset hierarchy. Some assets may have been succesfully posted, so this
+    exception describes which assets we know have been posted (200), which may have been posted (5xx), and which have
+    not been posted (4xx).
+
+    Args:
+          posted (AssetList): List of Assets which were posted.
+          may_have_been_posted (AssetList): List of Assets which were maybe posted.
+          not_posted (AssetList): List of assets which were not posted.
+    """
+
+    def __init__(self, posted, may_have_been_posted, not_posted):
+        self.posted = posted
+        self.may_have_been_posted = may_have_been_posted
+        self.not_posted = not_posted
+
+    def __str__(self):
+        msg = "Some assets failed to post.\nSucessfully posted (2xx): {}\nMay have been posted (5xx): {}\nNot posted (4xx): {}".format(
+            [a.ref_id for a in self.posted],
+            [a.ref_id for a in self.may_have_been_posted],
+            [a.ref_id for a in self.not_posted],
+        )
+        return msg

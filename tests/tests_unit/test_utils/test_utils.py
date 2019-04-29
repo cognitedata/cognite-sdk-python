@@ -6,7 +6,7 @@ from unittest import mock
 
 import pytest
 
-import cognite.client._utils as utils
+from cognite.client import _utils as utils
 from cognite.client.exceptions import CogniteImportError
 
 
