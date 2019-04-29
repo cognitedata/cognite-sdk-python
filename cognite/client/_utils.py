@@ -231,8 +231,12 @@ class GlobalClient:
 global_client = GlobalClient
 
 
+def get_current_sdk_version():
+    return cognite.client.__version__
+
+
 def get_user_agent():
-    sdk_version = "CognitePythonSDK/{}".format(cognite.client.__version__)
+    sdk_version = "CognitePythonSDK/{}".format(get_current_sdk_version())
 
     python_version = "{}/{} ({};{})".format(
         platform.python_implementation(), platform.python_version(), platform.python_build(), platform.python_compiler()

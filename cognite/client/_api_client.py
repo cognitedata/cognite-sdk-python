@@ -131,6 +131,7 @@ class APIClient:
         headers["api-key"] = self._api_key
         headers["content-type"] = "application/json"
         headers["accept"] = "application/json"
+        headers["x-cognite-client"] = "CognitePythonSDK:{}".format(utils.get_current_sdk_version())
         if "User-Agent" in headers:
             headers["User-Agent"] += " " + utils.get_user_agent()
         else:
