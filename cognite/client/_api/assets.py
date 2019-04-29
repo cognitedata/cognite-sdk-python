@@ -61,7 +61,7 @@ class Asset(CogniteResource):
     def __hash__(self):
         return hash(self.ref_id)
 
-    def parent(self):
+    def parent(self) -> "Asset":
         """Returns this assets parent.
 
         Returns:
@@ -71,16 +71,21 @@ class Asset(CogniteResource):
             raise ValueError("parent_id is None")
         return self._client.assets.get(id=self.parent_id)
 
-    def subtree(self, depth: int = 1):
-        """Returns the subtree of this asset.
+    def children(self) -> "AssetList":
+        """Returns the children of this asset.
 
-        Args:
-            depth (int): How many levels to descend into the subtree
+        Returns:
+            AssetList: The requested assets
+        """
+        return self._client.assets.list(parent_ids=[self.id])
+
+    def subtree(self) -> "AssetList":
+        """Returns the subtree of this asset.
 
         Returns:
             AssetList: The requested subtree
         """
-        return self._client.assets.list(parent_ids=[self.id], depth={"min": 0, "max": depth})
+        return self._client.assets.list(asset_subtrees=[self.id])
 
 
 # GenUpdateClass: AssetChange

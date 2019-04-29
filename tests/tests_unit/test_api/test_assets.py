@@ -142,6 +142,11 @@ class TestAssets:
         subtree = a1.subtree().dump(camel_case=True)
         assert mock_assets_response.calls[0].response.json()["data"]["items"] == subtree
 
+    def test_asset_object_get_children(self, mock_assets_response):
+        a1 = Asset(parent_id=1, cognite_client=COGNITE_CLIENT)
+        children = a1.children().dump(camel_case=True)
+        assert mock_assets_response.calls[0].response.json()["data"]["items"] == children
+
 
 class TestAssetPosterWorker:
     def test_run(self, mock_assets_response):
