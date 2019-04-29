@@ -12,8 +12,8 @@ from cognite.client._api.login import LoginAPI
 from cognite.client._api.raw import RawAPI
 from cognite.client._api.three_d import ThreeDAPI
 from cognite.client._api.time_series import TimeSeriesAPI
-from cognite.client._utils.api_client import APIClient
-from cognite.client._utils.utils import DebugLogFormatter
+from cognite.client._api_client import APIClient
+from cognite.client._utils import DebugLogFormatter
 
 DEFAULT_BASE_URL = "https://api.cognitedata.com"
 DEFAULT_MAX_WORKERS = 10
@@ -219,7 +219,7 @@ class CogniteClient:
     def _set_global_client(self):
         if CogniteClient._GLOBAL_CLIENT_SET is True:
             return
-        from cognite.client._utils.utils import global_client
+        from cognite.client._utils import global_client
 
         global_client.set(self)
         CogniteClient._GLOBAL_CLIENT_SET = True

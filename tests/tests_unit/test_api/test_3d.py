@@ -268,6 +268,7 @@ class Test3DAssetMappings:
         ]
 
 
+@pytest.mark.skip
 class Test3DReveal:
     @pytest.fixture
     def mock_get_reveal_revision_response(self, rsps):

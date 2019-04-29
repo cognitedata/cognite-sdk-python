@@ -2,8 +2,9 @@ import re
 
 import pytest
 
-from cognite.client import APIKey, CogniteClient, Group, SecurityCategory, ServiceAccount
+from cognite.client import CogniteClient
 from cognite.client._api.iam import APIKeyList, GroupList, SecurityCategoryList, ServiceAccountList
+from cognite.client.data_classes import APIKey, Group, SecurityCategory, ServiceAccount
 from tests.utils import jsgz_load
 
 IAM_API = CogniteClient().iam

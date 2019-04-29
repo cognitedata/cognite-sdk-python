@@ -75,7 +75,8 @@ You can also specify a parent ID, making it a child of an asset already in the A
 
 .. code::
 
-    >>> from cognite.client import CogniteClient, Asset
+    >>> from cognite.client import CogniteClient
+    >>> from cognite.client.data_classes import Asset
     >>> c = CogniteClient()
     >>> my_asset = Asset(name="my first asset", parent_id=123)
     >>> c.assets.create(my_asset)
@@ -90,7 +91,8 @@ This example shows how to post an asset hierarchy of depth 3 consisting of three
 
 .. code::
 
-    >>> from cognite.client import CogniteClient, Asset
+    >>> from cognite.client import CogniteClient
+    >>> from cognite.client.data_classes import Asset
     >>> c = CogniteClient()
     >>> root = Asset(name="root", ref_id="1")
     >>> child = Asset(name="child", ref_id="2", parent_ref_id="1")
@@ -506,33 +508,33 @@ Delete Asset Mappings
 ~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.three_d.ThreeDAssetMappingAPI.delete
 
+..
+    Reveal
+    ^^^^^^
+    Retrieve a Revision by ID
+    ~~~~~~~~~~~~~~~~~~~~~~~~~
+    .. automethod:: cognite.client._api.three_d.ThreeDRevealAPI.get_revision
 
-Reveal
-^^^^^^
-Retrieve a Revision by ID
-~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.three_d.ThreeDRevealAPI.get_revision
+    List Sectors
+    ~~~~~~~~~~~~
+    .. automethod:: cognite.client._api.three_d.ThreeDRevealAPI.list_sectors
 
-List Sectors
-~~~~~~~~~~~~
-.. automethod:: cognite.client._api.three_d.ThreeDRevealAPI.list_sectors
+    List Nodes
+    ~~~~~~~~~~
+    .. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.list_nodes
 
-List Nodes
-~~~~~~~~~~
-.. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.list_nodes
+    List Ancestor Nodes
+    ~~~~~~~~~~~~~~~~~~~
+    .. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.list_ancestor_nodes
 
-List Ancestor Nodes
-~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.list_ancestor_nodes
-
-Data Classes
-^^^^^^^^^^^^
-.. automodule:: cognite.client._api.three_d
-    :members:
-    :exclude-members: ThreeDModelsAPI, ThreeDRevisionsAPI, ThreeDFilesAPI, ThreeDAssetMappingAPI, ThreeDRevealAPI, ThreeDAPI
-    :undoc-members:
-    :show-inheritance:
-    :inherited-members:
+    Data Classes
+    ^^^^^^^^^^^^
+    .. automodule:: cognite.client._api.three_d
+        :members:
+        :exclude-members: ThreeDModelsAPI, ThreeDRevisionsAPI, ThreeDFilesAPI, ThreeDAssetMappingAPI, ThreeDRevealAPI, ThreeDAPI
+        :undoc-members:
+        :show-inheritance:
+        :inherited-members:
 
 Identity and Access Managment
 -----------------------------
@@ -623,3 +625,13 @@ Exceptions
     :members:
     :undoc-members:
     :show-inheritance:
+
+Utils
+-----
+Convert timestamp to milliseconds since epoch
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. autofunction:: cognite.client.utils.timestamp_to_ms
+
+Convert milliseconds since epoch to datetime
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. autofunction:: cognite.client.utils.ms_to_datetime

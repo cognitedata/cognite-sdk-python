@@ -1,10 +1,8 @@
 import os
-from typing import *
 from typing import Dict, List
 
-from cognite.client._utils import utils
-from cognite.client._utils.api_client import APIClient
-from cognite.client._utils.base import *
+from cognite.client._api_client import APIClient
+from cognite.client._base import *
 
 
 # GenClass: FilesMetadata
@@ -321,7 +319,8 @@ class FilesAPI(APIClient):
 
             Perform a partial update on file metadata, updating the source and adding a new field to metadata::
 
-                >>> from cognite.client import CogniteClient, FileMetadataUpdate
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import FileMetadataUpdate
                 >>> c = CogniteClient()
                 >>> my_update = FileMetadataUpdate(id=1).source.set("new source").metadata.add({"key": "value"})
                 >>> res = c.files.update(my_update)

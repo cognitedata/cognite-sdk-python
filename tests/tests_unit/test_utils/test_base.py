@@ -1,7 +1,7 @@
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client._utils.base import *
+from cognite.client._base import *
 
 
 class MyResource(CogniteResource):

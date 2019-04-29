@@ -1,1 +1,1 @@
-from cognite.client._utils.utils import ms_to_datetime, timestamp_to_ms
+from cognite.client._utils import ms_to_datetime, timestamp_to_ms

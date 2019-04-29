@@ -1,4 +1,4 @@
-from cognite.client import CogniteAPIError
+from cognite.client.exceptions import CogniteAPIError
 
 
 class TestAPIError:

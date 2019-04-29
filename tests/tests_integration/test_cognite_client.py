@@ -1,6 +1,7 @@
 import pytest
 
-from cognite.client import CogniteAPIError, CogniteClient
+from cognite.client import CogniteClient
+from cognite.client.exceptions import CogniteAPIError
 
 c = CogniteClient()
 

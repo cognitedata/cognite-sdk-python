@@ -1,8 +1,7 @@
-from typing import *
 from typing import List
 
-from cognite.client._utils.api_client import APIClient
-from cognite.client._utils.base import *
+from cognite.client._api_client import APIClient
+from cognite.client._base import *
 
 
 # GenClass: GetTimeSeriesMetadataDTO
@@ -311,7 +310,8 @@ class TimeSeriesAPI(APIClient):
 
             Create a new time series::
 
-                >>> from cognite.client import CogniteClient, TimeSeries
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import TimeSeries
                 >>> c = CogniteClient()
                 >>> ts = c.time_series.create(TimeSeries(name="my ts"))
         """
@@ -360,7 +360,8 @@ class TimeSeriesAPI(APIClient):
 
             Perform a partial update on a time series, updating the description and adding a new field to metadata::
 
-                >>> from cognite.client import CogniteClient, TimeSeriesUpdate
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import TimeSeriesUpdate
                 >>> c = CogniteClient()
                 >>> my_update = TimeSeriesUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
                 >>> res = c.time_series.update(my_update)

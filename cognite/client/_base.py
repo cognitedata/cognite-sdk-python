@@ -2,8 +2,8 @@ import json
 from collections import UserList
 from typing import *
 
-from cognite.client._utils import utils
-from cognite.client._utils.utils import global_client, to_camel_case, to_snake_case
+import cognite.client._utils as utils
+from cognite.client._utils import global_client, to_camel_case, to_snake_case
 
 
 def instantiate_with_global_client(cls, super, *args, **kwargs):

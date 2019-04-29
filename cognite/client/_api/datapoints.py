@@ -1,13 +1,9 @@
-import json
 import threading
 from collections import defaultdict, namedtuple
 from datetime import datetime
-from typing import *
-from typing import List
 
-from cognite.client._utils import utils
-from cognite.client._utils.api_client import APIClient
-from cognite.client._utils.base import CogniteResource, CogniteResourceList
+from cognite.client._api_client import APIClient
+from cognite.client._base import *
 
 
 class Datapoint(CogniteResource):
@@ -476,7 +472,8 @@ class DatapointsAPI(APIClient):
             This method is useful if you want to get multiple time series, but you want to specify different starts,
             ends, or granularities for each. e.g.::
 
-                >>> from cognite.client import CogniteClient, DatapointsQuery
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import DatapointsQuery
                 >>> c = CogniteClient()
                 >>> queries = [DatapointsQuery(id=1, start="2d-ago", end="now"),
                 ...             DatapointsQuery(external_id="abc",

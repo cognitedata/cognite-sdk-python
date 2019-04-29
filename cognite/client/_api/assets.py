@@ -1,11 +1,10 @@
 import queue
 import threading
 from collections import OrderedDict
-from typing import *
 
-from cognite.client._utils.api_client import APIClient
-from cognite.client._utils.base import *
-from cognite.client._utils.utils import PriorityQueue
+from cognite.client._api_client import APIClient
+from cognite.client._base import *
+from cognite.client._utils import PriorityQueue
 
 
 # GenClass: Asset, ExternalAssetItem
@@ -374,7 +373,8 @@ class AssetsAPI(APIClient):
 
             Create new assets::
 
-                >>> from cognite.client import CogniteClient, Asset
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import Asset
                 >>> c = CogniteClient()
                 >>> assets = [Asset(name="asset1"), Asset(name="asset2")]
                 >>> res = c.assets.create(assets)
@@ -425,7 +425,8 @@ class AssetsAPI(APIClient):
 
             Perform a partial update on a asset, updating the description and adding a new field to metadata::
 
-                >>> from cognite.client import CogniteClient, AssetUpdate
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import AssetUpdate
                 >>> c = CogniteClient()
                 >>> my_update = AssetUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
                 >>> res = c.assets.update(my_update)

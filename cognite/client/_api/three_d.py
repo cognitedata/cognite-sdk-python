@@ -1,7 +1,5 @@
-from typing import *
-
-from cognite.client._utils.api_client import APIClient
-from cognite.client._utils.base import *
+from cognite.client._api_client import APIClient
+from cognite.client._base import *
 
 
 class ThreeDAPI(APIClient):
@@ -11,7 +9,7 @@ class ThreeDAPI(APIClient):
         self.revisions = ThreeDRevisionsAPI(*args, **kwargs)
         self.files = ThreeDFilesAPI(*args, **kwargs)
         self.asset_mappings = ThreeDAssetMappingAPI(*args, **kwargs)
-        self.reveal = ThreeDRevealAPI(*args, **kwargs)
+        # self.reveal = ThreeDRevealAPI(*args, **kwargs)
 
 
 # GenClass: 3DModel

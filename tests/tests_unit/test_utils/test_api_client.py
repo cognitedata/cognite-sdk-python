@@ -3,9 +3,10 @@ from collections import namedtuple
 
 import pytest
 
-from cognite.client import CogniteAPIError, CogniteClient
-from cognite.client._utils.api_client import APIClient
-from cognite.client._utils.base import *
+from cognite.client import CogniteClient
+from cognite.client._api_client import APIClient
+from cognite.client._base import *
+from cognite.client.exceptions import CogniteAPIError
 from tests.utils import jsgz_load
 
 BASE_URL = "http://localtest.com/api/1.0/projects/test-project"

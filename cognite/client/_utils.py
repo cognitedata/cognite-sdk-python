@@ -31,7 +31,16 @@ def datetime_to_ms(dt):
     return int((dt - epoch).total_seconds() * 1000.0)
 
 
-def ms_to_datetime(ms):
+def ms_to_datetime(ms: Union[int, float]) -> datetime:
+    """Converts milliseconds since epoch to datetime object.
+
+    Args:
+        ms (Union[int, float]): Milliseconds since epoch
+
+    Returns:
+        datetime: Datetime object.
+
+    """
     return datetime.utcfromtimestamp(ms / 1000)
 
 
@@ -75,18 +84,27 @@ def time_ago_to_ms(time_ago_string: str) -> int:
     return ms
 
 
-def timestamp_to_ms(t: Union[int, float, str, datetime]):
-    """Returns the ms representation of some timestamp given by milliseconds, time-ago format or datetime object"""
-    if isinstance(t, int):
-        ms = t
-    elif isinstance(t, float):
-        ms = int(t)
-    elif isinstance(t, str):
-        ms = int(round(time.time() * 1000)) - time_ago_to_ms(t)
-    elif isinstance(t, datetime):
-        ms = datetime_to_ms(t)
+def timestamp_to_ms(timestamp: Union[int, float, str, datetime]) -> int:
+    """Returns the ms representation of some timestamp given by milliseconds, time-ago format or datetime object
+
+    Args:
+        timestamp (Union[int, float, str, datetime]): Convert this timestamp to ms.
+
+    Returns:
+        int: Milliseconds since epoch representation of timestamp
+    """
+    if isinstance(timestamp, int):
+        ms = timestamp
+    elif isinstance(timestamp, float):
+        ms = int(timestamp)
+    elif isinstance(timestamp, str):
+        ms = int(round(time.time() * 1000)) - time_ago_to_ms(timestamp)
+    elif isinstance(timestamp, datetime):
+        ms = datetime_to_ms(timestamp)
     else:
-        raise TypeError("Timestamp `{}` was of type {}, but must be int, float, str or datetime,".format(t, type(t)))
+        raise TypeError(
+            "Timestamp `{}` was of type {}, but must be int, float, str or datetime,".format(timestamp, type(timestamp))
+        )
 
     if ms < 0:
         raise ValueError(

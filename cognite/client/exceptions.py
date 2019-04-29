@@ -16,12 +16,13 @@ class CogniteAPIError(Exception):
     Examples:
         Catching an API-error and handling it based on the error code::
 
-            from cognite.client import CogniteClient, APIError
+            from cognite.client import CogniteClient
+            from cognite.client.exceptions import CogniteAPIError
 
-            client = CogniteClient()
+            c = CogniteClient()
 
             try:
-                client.login.status()
+                c.login.status()
             except APIError as e:
                 if e.code == 401:
                     print("You are not authorized")

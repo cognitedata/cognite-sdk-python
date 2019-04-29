@@ -5,7 +5,8 @@ from unittest import mock
 
 import pytest
 
-from cognite.client import CogniteAPIError, CogniteClient, global_client
+import cognite.client._utils as utils
+from cognite.client import CogniteClient, global_client
 from cognite.client._api.datapoints import (
     Datapoint,
     Datapoints,
@@ -14,7 +15,7 @@ from cognite.client._api.datapoints import (
     _DatapointsFetcher,
     _DPWindow,
 )
-from cognite.client._utils import utils
+from cognite.client.exceptions import CogniteAPIError
 from tests.utils import jsgz_load
 
 COGNITE_CLIENT = CogniteClient()

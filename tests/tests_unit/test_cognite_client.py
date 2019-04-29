@@ -9,11 +9,12 @@ from time import sleep
 
 import pytest
 
-from cognite.client import Asset, CogniteClient, Event, FileMetadata, TimeSeries
+from cognite.client import CogniteClient
 from cognite.client._api.assets import AssetList
 from cognite.client._api.files import FileMetadataList
 from cognite.client._api.time_series import TimeSeriesList
-from cognite.client._utils.utils import DebugLogFormatter
+from cognite.client._utils import DebugLogFormatter
+from cognite.client.data_classes import Asset, Event, FileMetadata, TimeSeries
 
 
 @pytest.fixture
