@@ -1,3 +1,4 @@
+from typing import *
 from typing import List
 
 from cognite.client._api_client import APIClient
@@ -11,7 +12,7 @@ class TimeSeries(CogniteResource):
     Args:
         id (int): Generated id of the time series
         external_id (str): Externaly supplied id of the time series
-        name (str): Unique name of time series
+        name (str): Name of time series
         is_string (bool): Whether the time series is string valued or not.
         metadata (Dict[str, Any]): Additional metadata. String key -> String value.
         unit (str): The physical unit of the time series.

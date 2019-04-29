@@ -1,6 +1,7 @@
 import threading
 from collections import defaultdict, namedtuple
 from datetime import datetime
+from typing import *
 
 from cognite.client._api_client import APIClient
 from cognite.client._base import *

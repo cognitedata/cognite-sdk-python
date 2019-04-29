@@ -1,4 +1,5 @@
 import os
+from typing import *
 from typing import Dict, List
 
 from cognite.client._api_client import APIClient

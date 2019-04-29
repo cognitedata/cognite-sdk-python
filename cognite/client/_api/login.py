@@ -1,3 +1,5 @@
+from typing import *
+
 from cognite.client._api_client import APIClient
 from cognite.client._base import CogniteResponse
 
