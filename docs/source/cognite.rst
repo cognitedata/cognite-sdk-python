@@ -99,6 +99,23 @@ This example shows how to post an asset hierarchy of depth 3 consisting of three
     >>> descendant = Asset(name="descendant", ref_id="3", parent_ref_id="2")
     >>> c.assets.create([root, child, descendant])
 
+It is a good idea to wrap the .create() call in a try-except, in case posting certain assets fails.
+You will then get information about the following:
+
+- Which assets were definitely posted i.e. request yielded a 201
+- Which assets may have been posted i.e. request yielded 5xx
+- Which assets were definitely not posted i.e. request yielded 4xx or was a descendant of another asset which may or may not have been posted.
+
+.. code::
+
+    >>> from cognite.client.exceptions import CogniteAssetPostingError
+    >>> try:
+    ...     c.create([root, child, descendant])
+    >>> except CogniteAssetPostingError as e:
+    ...     assets_posted = e.posted_assets
+    ...     assets_may_have_been_posted = e.may_have_been_posted
+    ...     assets_not_posted = e.not_posted
+
 Concepts
 ========
 Pandas Integration
@@ -621,10 +638,17 @@ Data Classes
 
 Exceptions
 ----------
-.. automodule:: cognite.client.exceptions
-    :members:
-    :undoc-members:
-    :show-inheritance:
+API Error
+^^^^^^^^^
+.. autoexception:: cognite.client.exceptions.CogniteAPIError
+
+Import Error
+^^^^^^^^^^^^
+.. autoexception:: cognite.client.exceptions.CogniteImportError
+
+Asset Posting Error
+^^^^^^^^^^^^^^^^^^^
+.. autoexception:: cognite.client.exceptions.CogniteAssetPostingError
 
 Utils
 -----
