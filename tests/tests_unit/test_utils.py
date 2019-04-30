@@ -6,8 +6,8 @@ from unittest import mock
 
 import pytest
 
-from cognite.client import _utils as utils
 from cognite.client.exceptions import CogniteImportError
+from cognite.client.utils import _utils as utils
 
 
 class TestDatetimeToMs:
@@ -48,7 +48,7 @@ class TestTimestampToMs:
         assert 1514760000000 == utils.timestamp_to_ms(1514760000000.0)
         assert 1514764800000 == utils.timestamp_to_ms(1514764800000.0)
 
-    @mock.patch("cognite.client._utils.time.time")
+    @mock.patch("cognite.client.utils._utils.time.time")
     @pytest.mark.parametrize(
         "time_ago_string, expected_timestamp",
         [

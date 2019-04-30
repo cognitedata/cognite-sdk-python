@@ -2,9 +2,9 @@ import json
 from collections import UserList
 from typing import *
 
-from cognite.client import _utils as utils
-from cognite.client._utils import to_camel_case, to_snake_case
 from cognite.client.exceptions import CogniteMissingClientError
+from cognite.client.utils import _utils as utils
+from cognite.client.utils._utils import to_camel_case, to_snake_case
 
 EXCLUDE_VALUE = [None]
 

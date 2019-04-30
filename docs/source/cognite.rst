@@ -165,9 +165,8 @@ Get login status
 
 Data Classes
 ^^^^^^^^^^^^
-.. automodule:: cognite.client._api.login
+.. automodule:: cognite.client.data_classes.login
     :members:
-    :exclude-members: LoginAPI
     :undoc-members:
     :show-inheritance:
     :inherited-members:
@@ -200,9 +199,8 @@ Update Assets
 
 Data Classes
 ^^^^^^^^^^^^
-.. automodule:: cognite.client._api.assets
+.. automodule:: cognite.client.data_classes.assets
     :members:
-    :exclude-members: AssetsAPI
     :undoc-members:
     :show-inheritance:
     :inherited-members:
@@ -235,9 +233,8 @@ Update Events
 
 Data Classes
 ^^^^^^^^^^^^
-.. automodule:: cognite.client._api.events
+.. automodule:: cognite.client.data_classes.events
     :members:
-    :exclude-members: EventsAPI
     :undoc-members:
     :show-inheritance:
     :inherited-members:
@@ -283,9 +280,8 @@ Update Files metadata
 
 Data Classes
 ^^^^^^^^^^^^
-.. automodule:: cognite.client._api.files
+.. automodule:: cognite.client.data_classes.files
     :members:
-    :exclude-members: FilesAPI
     :undoc-members:
     :show-inheritance:
     :inherited-members:
@@ -318,9 +314,8 @@ Update Time Series
 
 Data Classes
 ^^^^^^^^^^^^
-.. automodule:: cognite.client._api.time_series
+.. automodule:: cognite.client.data_classes.time_series
     :members:
-    :exclude-members: TimeSeriesAPI
     :undoc-members:
     :show-inheritance:
     :inherited-members:
@@ -366,9 +361,8 @@ Delete ranges of datapoints
 
 Data Classes
 ^^^^^^^^^^^^
-.. automodule:: cognite.client._api.datapoints
+.. automodule:: cognite.client.data_classes.datapoints
     :members:
-    :exclude-members: DatapointsAPI
     :undoc-members:
     :show-inheritance:
     :inherited-members:
@@ -417,9 +411,8 @@ Delete rows from a table
 
 Data Classes
 ^^^^^^^^^^^^
-.. automodule:: cognite.client._api.raw
+.. automodule:: cognite.client.data_classes.raw
     :members:
-    :exclude-members: RawRowsAPI, RawTablesAPI, RawDatabasesAPI, RawAPI
     :undoc-members:
     :show-inheritance:
     :inherited-members:
@@ -519,14 +512,13 @@ Delete Asset Mappings
     ~~~~~~~~~~~~~~~~~~~
     .. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.list_ancestor_nodes
 
-    Data Classes
-    ^^^^^^^^^^^^
-    .. automodule:: cognite.client._api.three_d
-        :members:
-        :exclude-members: ThreeDModelsAPI, ThreeDRevisionsAPI, ThreeDFilesAPI, ThreeDAssetMappingAPI, ThreeDRevealAPI, ThreeDAPI
-        :undoc-members:
-        :show-inheritance:
-        :inherited-members:
+Data Classes
+^^^^^^^^^^^^
+.. automodule:: cognite.client.data_classes.three_d
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
 
 Identity and Access Managment
 -----------------------------
@@ -604,9 +596,8 @@ Delete Security Categories
 
 Data Classes
 ^^^^^^^^^^^^
-.. automodule:: cognite.client._api.iam
+.. automodule:: cognite.client.data_classes.iam
     :members:
-    :exclude-members: SecurityCategoriesAPI, ServiceAccountsAPI, GroupsAPI, APIKeysAPI, IAMAPI
     :undoc-members:
     :show-inheritance:
     :inherited-members:

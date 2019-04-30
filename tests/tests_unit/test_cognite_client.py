@@ -13,8 +13,8 @@ from cognite.client import CogniteClient
 from cognite.client._api.assets import AssetList
 from cognite.client._api.files import FileMetadataList
 from cognite.client._api.time_series import TimeSeriesList
-from cognite.client._utils import DebugLogFormatter
 from cognite.client.data_classes import Asset, Event, FileMetadata, TimeSeries
+from cognite.client.utils._utils import DebugLogFormatter
 
 
 @pytest.fixture

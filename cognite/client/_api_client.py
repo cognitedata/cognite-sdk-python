@@ -11,9 +11,9 @@ from requests.adapters import HTTPAdapter
 from requests.structures import CaseInsensitiveDict
 from urllib3 import Retry
 
-from cognite.client import _utils as utils
 from cognite.client._base import CogniteResource, CogniteUpdate
 from cognite.client.exceptions import CogniteAPIError
+from cognite.client.utils import _utils as utils
 
 log = logging.getLogger("cognite-sdk")
 

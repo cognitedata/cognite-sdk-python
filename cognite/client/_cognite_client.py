@@ -13,7 +13,7 @@ from cognite.client._api.raw import RawAPI
 from cognite.client._api.three_d import ThreeDAPI
 from cognite.client._api.time_series import TimeSeriesAPI
 from cognite.client._api_client import APIClient
-from cognite.client._utils import DebugLogFormatter
+from cognite.client.utils._utils import DebugLogFormatter
 
 DEFAULT_BASE_URL = "https://api.cognitedata.com"
 DEFAULT_MAX_WORKERS = 10
