@@ -14,7 +14,6 @@ URL_PATH = "/someurl"
 
 RESPONSE = {"any": "ok"}
 COGNITE_CLIENT = CogniteClient()
-global_client.set(None)
 API_CLIENT = APIClient(
     project="test-project",
     api_key="abc",
@@ -136,7 +135,7 @@ class PrimitiveUpdate(CognitePrimitiveUpdate):
 
 
 class SomeResource(CogniteResource):
-    def __init__(self, x=None, y=None, id=None, external_id=None, **kwargs):
+    def __init__(self, x=None, y=None, id=None, external_id=None, cognite_client=None):
         self.x = x
         self.y = y
         self.id = id
@@ -162,7 +161,7 @@ class TestStandardRetrieve:
 
     def test_cognite_client_is_set(self, rsps):
         rsps.add(rsps.GET, BASE_URL + URL_PATH + "/1", status=200, json={"x": 1, "y": 2})
-        assert COGNITE_CLIENT == API_CLIENT._retrieve(cls=SomeResource, resource_path=URL_PATH, id=1)._client
+        assert COGNITE_CLIENT == API_CLIENT._retrieve(cls=SomeResource, resource_path=URL_PATH, id=1)._cognite_client
 
 
 class TestStandardRetrieveById:
@@ -240,7 +239,7 @@ class TestStandardRetrieveById:
             COGNITE_CLIENT
             == API_CLIENT._retrieve_multiple(
                 cls=SomeResourceList, resource_path=URL_PATH, wrap_ids=True, ids=[1, 2]
-            )._client
+            )._cognite_client
         )
 
 
@@ -367,8 +366,14 @@ class TestStandardList:
             rsps.POST, BASE_URL + URL_PATH + "/list", status=200, json={"data": {"items": [{"x": 1, "y": 2}, {"x": 1}]}}
         )
         rsps.add(rsps.GET, BASE_URL + URL_PATH, status=200, json={"data": {"items": [{"x": 1, "y": 2}, {"x": 1}]}})
-        assert COGNITE_CLIENT == API_CLIENT._list(cls=SomeResourceList, resource_path=URL_PATH, method="POST")._client
-        assert COGNITE_CLIENT == API_CLIENT._list(cls=SomeResourceList, resource_path=URL_PATH, method="GET")._client
+        assert (
+            COGNITE_CLIENT
+            == API_CLIENT._list(cls=SomeResourceList, resource_path=URL_PATH, method="POST")._cognite_client
+        )
+        assert (
+            COGNITE_CLIENT
+            == API_CLIENT._list(cls=SomeResourceList, resource_path=URL_PATH, method="GET")._cognite_client
+        )
 
 
 class TestStandardCreate:
@@ -418,11 +423,15 @@ class TestStandardCreate:
         rsps.add(rsps.POST, BASE_URL + URL_PATH, status=200, json={"data": {"items": [{"x": 1, "y": 2}]}})
         assert (
             COGNITE_CLIENT
-            == API_CLIENT._create_multiple(cls=SomeResourceList, resource_path=URL_PATH, items=SomeResource())._client
+            == API_CLIENT._create_multiple(
+                cls=SomeResourceList, resource_path=URL_PATH, items=SomeResource()
+            )._cognite_client
         )
         assert (
             COGNITE_CLIENT
-            == API_CLIENT._create_multiple(cls=SomeResourceList, resource_path=URL_PATH, items=[SomeResource()])._client
+            == API_CLIENT._create_multiple(
+                cls=SomeResourceList, resource_path=URL_PATH, items=[SomeResource()]
+            )._cognite_client
         )
 
 
@@ -527,13 +536,13 @@ class TestStandardUpdate:
             COGNITE_CLIENT
             == API_CLIENT._update_multiple(
                 cls=SomeResourceList, resource_path=URL_PATH, items=SomeResource(id=0)
-            )._client
+            )._cognite_client
         )
         assert (
             COGNITE_CLIENT
             == API_CLIENT._update_multiple(
                 cls=SomeResourceList, resource_path=URL_PATH, items=[SomeResource(id=0)]
-            )._client
+            )._cognite_client
         )
 
 
@@ -568,7 +577,7 @@ class TestStandardSearch:
                 cls=SomeResourceList,
                 resource_path=URL_PATH,
                 json={"search": {"name": "bla"}, "limit": 1000, "filter": {"name": "bla"}},
-            )._client
+            )._cognite_client
         )
 
 

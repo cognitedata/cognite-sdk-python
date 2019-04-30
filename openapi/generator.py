@@ -54,6 +54,9 @@ class ClassGenerator:
                         utils.to_snake_case(prop_name), utils.get_type_hint(prop), self._get_schema_description(prop)
                     )
                     ignore.append(prop_name)
+        docstring += (
+            " " * (indentation + 4) + "cognite_client (CogniteClient): The client to associate with this object.\n"
+        )
         docstring += " " * indentation + '"""'
         return docstring
 
@@ -67,7 +70,7 @@ class ClassGenerator:
                 if prop_name not in ignore:
                     constructor_params.append("{}: {}{}".format(prop_name, utils.get_type_hint(prop), req))
                     ignore.append(prop_name)
-        constructor_params = ", ".join(constructor_params) + ", **kwargs):"
+        constructor_params = ", ".join(constructor_params) + ", cognite_client = None):"
         constructor_body = ""
         ignore = [p for p in TO_EXCLUDE]
         for schema in schemas:
@@ -76,6 +79,7 @@ class ClassGenerator:
                 if prop_name not in ignore:
                     constructor_body += " " * (indentation + 4) + "self.{} = {}\n".format(prop_name, prop_name)
                     ignore.append(prop_name)
+        constructor_body += " " * (indentation + 4) + "self._cognite_client = cognite_client\n"
         return constructor_params + "\n" + constructor_body[:-1]
 
     @staticmethod

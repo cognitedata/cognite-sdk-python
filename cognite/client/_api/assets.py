@@ -26,6 +26,7 @@ class Asset(CogniteResource):
         depth (int): Asset path depth (number of levels below root node).
         ref_id (str): Reference ID used only in post request to disambiguate references to duplicate names.
         parent_ref_id (str): Reference ID of parent, to disambiguate if multiple nodes have the same name.
+        cognite_client (CogniteClient): The client to associate with this object.
     """
 
     def __init__(
@@ -42,7 +43,7 @@ class Asset(CogniteResource):
         depth: int = None,
         ref_id: str = None,
         parent_ref_id: str = None,
-        **kwargs
+        cognite_client=None,
     ):
         self.external_id = external_id
         self.name = name
@@ -56,6 +57,7 @@ class Asset(CogniteResource):
         self.depth = depth
         self.ref_id = ref_id
         self.parent_ref_id = parent_ref_id
+        self._cognite_client = cognite_client
 
     # GenStop
 
@@ -70,7 +72,7 @@ class Asset(CogniteResource):
         """
         if self.parent_id is None:
             raise ValueError("parent_id is None")
-        return self._client.assets.get(id=self.parent_id)
+        return self._cognite_client.assets.get(id=self.parent_id)
 
     def children(self) -> "AssetList":
         """Returns the children of this asset.
@@ -78,7 +80,7 @@ class Asset(CogniteResource):
         Returns:
             AssetList: The requested assets
         """
-        return self._client.assets.list(parent_ids=[self.id])
+        return self._cognite_client.assets.list(parent_ids=[self.id])
 
     def subtree(self) -> "AssetList":
         """Returns the subtree of this asset.
@@ -86,7 +88,7 @@ class Asset(CogniteResource):
         Returns:
             AssetList: The requested subtree
         """
-        return self._client.assets.list(asset_subtrees=[self.id])
+        return self._cognite_client.assets.list(asset_subtrees=[self.id])
 
 
 # GenUpdateClass: AssetChange
@@ -210,6 +212,7 @@ class AssetFilter(CogniteFilter):
         asset_subtrees (List[int]): Filter out events that are not linked to assets in the subtree rooted at these assets.
         depth (Dict[str, Any]): Range between two integers
         external_id_prefix (str): External Id provided by client. Should be unique within the project.
+        cognite_client (CogniteClient): The client to associate with this object.
     """
 
     def __init__(
@@ -223,7 +226,7 @@ class AssetFilter(CogniteFilter):
         asset_subtrees: List[int] = None,
         depth: Dict[str, Any] = None,
         external_id_prefix: str = None,
-        **kwargs
+        cognite_client=None,
     ):
         self.name = name
         self.parent_ids = parent_ids
@@ -234,6 +237,7 @@ class AssetFilter(CogniteFilter):
         self.asset_subtrees = asset_subtrees
         self.depth = depth
         self.external_id_prefix = external_id_prefix
+        self._cognite_client = cognite_client
 
     # GenStop
 

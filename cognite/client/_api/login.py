@@ -14,7 +14,7 @@ class LoginStatus(CogniteResponse):
         project_id (str): Current project id
     """
 
-    def __init__(self, user: str, project: str, logged_in: bool, project_id: str, **kwargs):
+    def __init__(self, user: str, project: str, logged_in: bool, project_id: str):
         self.user = user
         self.project = project
         self.project_id = project_id

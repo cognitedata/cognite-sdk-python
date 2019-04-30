@@ -216,21 +216,6 @@ def local_import(*module: str):
     return tuple(modules)
 
 
-class GlobalClient:
-    _client = None
-
-    @staticmethod
-    def get():
-        return GlobalClient._client
-
-    @staticmethod
-    def set(client):
-        GlobalClient._client = client
-
-
-global_client = GlobalClient
-
-
 def get_current_sdk_version():
     return cognite.client.__version__
 

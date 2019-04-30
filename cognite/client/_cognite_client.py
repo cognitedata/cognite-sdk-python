@@ -186,7 +186,6 @@ class CogniteClient:
             timeout=self._timeout,
             cognite_client=self,
         )
-        self._set_global_client()
 
     def get(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
         """Perform a GET request to an arbitrary path in the API."""
@@ -213,16 +212,6 @@ class CogniteClient:
             thread_local_project = getattr(credentials, "project", None)
             return thread_local_api_key, thread_local_project
         return None, None
-
-    _GLOBAL_CLIENT_SET = False
-
-    def _set_global_client(self):
-        if CogniteClient._GLOBAL_CLIENT_SET is True:
-            return
-        from cognite.client._utils import global_client
-
-        global_client.set(self)
-        CogniteClient._GLOBAL_CLIENT_SET = True
 
     def _configure_logger_for_debug_mode(self):
         logger = logging.getLogger("cognite-sdk")

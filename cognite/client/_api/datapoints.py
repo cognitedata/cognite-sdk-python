@@ -107,7 +107,6 @@ class Datapoints:
         continuous_variance: List[float] = None,
         discrete_variance: List[float] = None,
         total_variation: List[float] = None,
-        **kwargs
     ):
         self.id = id
         self.external_id = external_id
@@ -125,9 +124,6 @@ class Datapoints:
         self.total_variation = total_variation
 
         self.__datapoint_objects = None
-        self._client = None
-        if "cognite_client" in kwargs:
-            self._client = kwargs["cognite_client"]
 
     def __str__(self):
         return json.dumps(self.dump(), indent=4)
@@ -203,7 +199,7 @@ class Datapoints:
 
     @classmethod
     def _load(cls, dps_object, cognite_client=None):
-        instance = cls(cognite_client=cognite_client)
+        instance = cls()
         instance.id = dps_object["id"]
         instance.external_id = dps_object["externalId"]
         for dp in dps_object["datapoints"]:
@@ -218,8 +214,6 @@ class Datapoints:
         if not other_dps.timestamp:
             return
 
-        if self._client is None:
-            self._client = other_dps._client
         if self.id is None and self.external_id is None:
             self.id = other_dps.id
             self.external_id = other_dps.external_id

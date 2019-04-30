@@ -60,6 +60,7 @@ class TestClassGenerator:
         depth (int): Asset path depth (number of levels below root node).
         ref_id (str): Reference ID used only in post request to disambiguate references to duplicate names.
         parent_ref_id (str): Reference ID of parent, to disambiguate if multiple nodes have the same name.
+        cognite_client (CogniteClient): The client to associate with this object.
     \"\"\""""
             == docstring
         )
@@ -71,7 +72,7 @@ class TestClassGenerator:
         ]
         constructor = CLASS_GENERATOR.generate_constructor(schemas, indentation=4)
         assert (
-            """    def __init__(self, external_id: str = None, name: str = None, parent_id: int = None, description: str = None, metadata: Dict[str, Any] = None, source: str = None, id: int = None, last_updated_time: int = None, path: List[int] = None, depth: int = None, ref_id: str = None, parent_ref_id: str = None, **kwargs):
+            """    def __init__(self, external_id: str = None, name: str = None, parent_id: int = None, description: str = None, metadata: Dict[str, Any] = None, source: str = None, id: int = None, last_updated_time: int = None, path: List[int] = None, depth: int = None, ref_id: str = None, parent_ref_id: str = None, cognite_client = None):
         self.external_id = external_id
         self.name = name
         self.parent_id = parent_id
@@ -83,7 +84,8 @@ class TestClassGenerator:
         self.path = path
         self.depth = depth
         self.ref_id = ref_id
-        self.parent_ref_id = parent_ref_id"""
+        self.parent_ref_id = parent_ref_id
+        self._cognite_client = cognite_client"""
             == constructor
         )
 

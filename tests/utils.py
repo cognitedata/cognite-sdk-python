@@ -4,7 +4,7 @@ import gzip
 import json
 from contextlib import contextmanager
 
-BASE_URL = "https://api.cognitedata.com"
+BASE_URL = "https://greenfield.cognitedata.com"
 
 
 def jsgz_load(s):

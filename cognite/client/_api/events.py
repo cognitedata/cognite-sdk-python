@@ -18,6 +18,7 @@ class Event(CogniteResource):
         source (str): The source of this event.
         id (int): Javascript friendly internal ID given to the object.
         last_updated_time (int): It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        cognite_client (CogniteClient): The client to associate with this object.
     """
 
     def __init__(
@@ -31,7 +32,7 @@ class Event(CogniteResource):
         source: str = None,
         id: int = None,
         last_updated_time: int = None,
-        **kwargs
+        cognite_client=None,
     ):
         self.external_id = external_id
         self.start_time = start_time
@@ -42,6 +43,7 @@ class Event(CogniteResource):
         self.source = source
         self.id = id
         self.last_updated_time = last_updated_time
+        self._cognite_client = cognite_client
 
     # GenStop
 
@@ -60,6 +62,7 @@ class EventFilter(CogniteFilter):
         created_time (Dict[str, Any]): Range between two timestamps
         last_updated_time (Dict[str, Any]): Range between two timestamps
         external_id_prefix (str): External Id provided by client. Should be unique within the project
+        cognite_client (CogniteClient): The client to associate with this object.
     """
 
     def __init__(
@@ -73,7 +76,7 @@ class EventFilter(CogniteFilter):
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
         external_id_prefix: str = None,
-        **kwargs
+        cognite_client=None,
     ):
         self.start_time = start_time
         self.end_time = end_time
@@ -84,6 +87,7 @@ class EventFilter(CogniteFilter):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.external_id_prefix = external_id_prefix
+        self._cognite_client = cognite_client
 
     # GenStop
 

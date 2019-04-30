@@ -12,11 +12,13 @@ class Row(CogniteResource):
     Args:
         key (str): Unique row key
         columns (Dict[str, Any]): Row data stored as a JSON object.
+        cognite_client (CogniteClient): The client to associate with this object.
     """
 
-    def __init__(self, key: str = None, columns: Dict[str, Any] = None, **kwargs):
+    def __init__(self, key: str = None, columns: Dict[str, Any] = None, cognite_client=None):
         self.key = key
         self.columns = columns
+        self._cognite_client = cognite_client
 
     # GenStop
     def to_pandas(self):
@@ -54,10 +56,12 @@ class Table(CogniteResource):
 
     Args:
         name (str): Unique name of the table
+        cognite_client (CogniteClient): The client to associate with this object.
     """
 
-    def __init__(self, name: str = None, **kwargs):
+    def __init__(self, name: str = None, cognite_client=None):
         self.name = name
+        self._cognite_client = cognite_client
         # GenStop
         self._db_name = None
 
@@ -80,8 +84,8 @@ class Table(CogniteResource):
             Union[Row, RowList]: List of tables in this database.
         """
         if key:
-            return self._client.raw.rows.get(db_name=self._db_name, table_name=self.name, key=key)
-        return self._client.raw.rows.list(db_name=self._db_name, table_name=self.name, limit=limit)
+            return self._cognite_client.raw.rows.get(db_name=self._db_name, table_name=self.name, key=key)
+        return self._cognite_client.raw.rows.list(db_name=self._db_name, table_name=self.name, limit=limit)
 
 
 class TableList(CogniteResourceList):
@@ -95,10 +99,12 @@ class Database(CogniteResource):
 
     Args:
         name (str): Unique name of a database.
+        cognite_client (CogniteClient): The client to associate with this object.
     """
 
-    def __init__(self, name: str = None, **kwargs):
+    def __init__(self, name: str = None, cognite_client=None):
         self.name = name
+        self._cognite_client = cognite_client
 
     # GenStop
 
@@ -119,7 +125,7 @@ class Database(CogniteResource):
         Returns:
             TableList: List of tables in this database.
         """
-        return self._client.raw.tables.list(db_name=self.name, limit=limit)
+        return self._cognite_client.raw.tables.list(db_name=self.name, limit=limit)
 
 
 class DatabaseList(CogniteResourceList):

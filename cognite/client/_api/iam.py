@@ -23,6 +23,7 @@ class ServiceAccount(CogniteResource):
         id (int): No description.
         is_deleted (bool): If this service account has been logically deleted
         deleted_time (int): Time of deletion
+        cognite_client (CogniteClient): The client to associate with this object.
     """
 
     def __init__(
@@ -32,13 +33,14 @@ class ServiceAccount(CogniteResource):
         id: int = None,
         is_deleted: bool = None,
         deleted_time: int = None,
-        **kwargs
+        cognite_client=None,
     ):
         self.unique_name = unique_name
         self.groups = groups
         self.id = id
         self.is_deleted = is_deleted
         self.deleted_time = deleted_time
+        self._cognite_client = cognite_client
 
     # GenStop
 
@@ -94,6 +96,7 @@ class APIKey(CogniteResource):
         created_time (int): Time of creating in unix ms
         status (str): The status of the api key.
         value (str): The api key to be used against the API
+        cognite_client (CogniteClient): The client to associate with this object.
     """
 
     def __init__(
@@ -103,13 +106,14 @@ class APIKey(CogniteResource):
         created_time: int = None,
         status: str = None,
         value: str = None,
-        **kwargs
+        cognite_client=None,
     ):
         self.id = id
         self.service_account_id = service_account_id
         self.created_time = created_time
         self.status = status
         self.value = value
+        self._cognite_client = cognite_client
 
     # GenStop
 
@@ -173,6 +177,7 @@ class Group(CogniteResource):
         id (int): No description.
         is_deleted (bool): No description.
         deleted_time (int): No description.
+        cognite_client (CogniteClient): The client to associate with this object.
     """
 
     def __init__(
@@ -183,7 +188,7 @@ class Group(CogniteResource):
         id: int = None,
         is_deleted: bool = None,
         deleted_time: int = None,
-        **kwargs
+        cognite_client=None,
     ):
         self.name = name
         self.source_id = source_id
@@ -191,6 +196,7 @@ class Group(CogniteResource):
         self.id = id
         self.is_deleted = is_deleted
         self.deleted_time = deleted_time
+        self._cognite_client = cognite_client
 
     # GenStop
 
@@ -283,11 +289,13 @@ class SecurityCategory(CogniteResource):
     Args:
         name (str): Name of the security category
         id (int): Id of the security category
+        cognite_client (CogniteClient): The client to associate with this object.
     """
 
-    def __init__(self, name: str = None, id: int = None, **kwargs):
+    def __init__(self, name: str = None, id: int = None, cognite_client=None):
         self.name = name
         self.id = id
+        self._cognite_client = cognite_client
 
     # GenStop
 

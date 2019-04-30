@@ -121,7 +121,7 @@ class APIClient:
         res = self._request_session.request(method=method, url=full_url, **kwargs)
 
         if not self._status_is_valid(res.status_code):
-            self._raise_API_error(res)
+            self._raise_API_error(res, payload=json_payload)
         self._log_request(res, payload=json_payload)
         return res
 
@@ -371,7 +371,7 @@ class APIClient:
         return status_code < 400
 
     @staticmethod
-    def _raise_API_error(res: Response):
+    def _raise_API_error(res: Response, payload: Dict):
         x_request_id = res.headers.get("X-Request-Id")
         code = res.status_code
         extra = {}
@@ -389,7 +389,11 @@ class APIClient:
         except:
             msg = res.content
 
-        log.error("HTTP Error %s: %s", code, msg, extra={"X-Request-ID": x_request_id, "extra": extra})
+        error_details = {"X-Request-ID": x_request_id, "extra": extra}
+        if payload is not None:
+            error_details["payload"] = payload
+
+        log.error("HTTP Error %s: %s", code, msg, extra=error_details)
         raise CogniteAPIError(msg, code, x_request_id, extra=extra)
 
     @staticmethod

@@ -22,6 +22,7 @@ class FileMetadata(CogniteResource):
         uploaded_time (int): It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int): It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        cognite_client (CogniteClient): The client to associate with this object.
     """
 
     def __init__(
@@ -37,7 +38,7 @@ class FileMetadata(CogniteResource):
         uploaded_time: int = None,
         created_time: int = None,
         last_updated_time: int = None,
-        **kwargs
+        cognite_client=None,
     ):
         self.external_id = external_id
         self.name = name
@@ -50,6 +51,7 @@ class FileMetadata(CogniteResource):
         self.uploaded_time = uploaded_time
         self.created_time = created_time
         self.last_updated_time = last_updated_time
+        self._cognite_client = cognite_client
 
     # GenStop
 
@@ -65,6 +67,7 @@ class FileMetadataFilter(CogniteFilter):
         created_time (Dict[str, Any]): Range between two timestamps
         last_updated_time (Dict[str, Any]): Range between two timestamps
         external_id_prefix (str): External Id provided by client. Should be unique within the project.
+        cognite_client (CogniteClient): The client to associate with this object.
     """
 
     def __init__(
@@ -75,7 +78,7 @@ class FileMetadataFilter(CogniteFilter):
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
         external_id_prefix: str = None,
-        **kwargs
+        cognite_client=None,
     ):
         self.metadata = metadata
         self.asset_ids = asset_ids
@@ -83,6 +86,7 @@ class FileMetadataFilter(CogniteFilter):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.external_id_prefix = external_id_prefix
+        self._cognite_client = cognite_client
 
     # GenStop
 

@@ -22,12 +22,14 @@ class ThreeDModel(CogniteResource):
         name (str): The name of the model.
         id (int): The ID of the model.
         created_time (int): The creation time of the resource, in milliseconds since January 1, 1970 at 00:00 UTC.
+        cognite_client (CogniteClient): The client to associate with this object.
     """
 
-    def __init__(self, name: str = None, id: int = None, created_time: int = None, **kwargs):
+    def __init__(self, name: str = None, id: int = None, created_time: int = None, cognite_client=None):
         self.name = name
         self.id = id
         self.created_time = created_time
+        self._cognite_client = cognite_client
 
     # GenStop
 
@@ -179,6 +181,7 @@ class ThreeDModelRevision(CogniteResource):
         thumbnail_url (str): The URL of a thumbnail for the revision.
         asset_mapping_count (int): The number of asset mappings for this revision.
         created_time (int): The creation time of the resource, in milliseconds since January 1, 1970 at 00:00 UTC.
+        cognite_client (CogniteClient): The client to associate with this object.
     """
 
     def __init__(
@@ -193,7 +196,7 @@ class ThreeDModelRevision(CogniteResource):
         thumbnail_url: str = None,
         asset_mapping_count: int = None,
         created_time: int = None,
-        **kwargs
+        cognite_client=None,
     ):
         self.id = id
         self.file_id = file_id
@@ -205,6 +208,7 @@ class ThreeDModelRevision(CogniteResource):
         self.thumbnail_url = thumbnail_url
         self.asset_mapping_count = asset_mapping_count
         self.created_time = created_time
+        self._cognite_client = cognite_client
 
     # GenStop
 
@@ -276,6 +280,7 @@ class ThreeDNode(CogniteResource):
         name (str): The name of the node.
         subtree_size (int): The number of descendants of the node, plus one (counting itself).
         bounding_box (Dict[str, Any]): The bounding box of the subtree with this sector as the root sector. Is null if there are no geometries in the subtree.
+        cognite_client (CogniteClient): The client to associate with this object.
     """
 
     def __init__(
@@ -287,7 +292,7 @@ class ThreeDNode(CogniteResource):
         name: str = None,
         subtree_size: int = None,
         bounding_box: Dict[str, Any] = None,
-        **kwargs
+        cognite_client=None,
     ):
         self.id = id
         self.tree_index = tree_index
@@ -296,6 +301,7 @@ class ThreeDNode(CogniteResource):
         self.name = name
         self.subtree_size = subtree_size
         self.bounding_box = bounding_box
+        self._cognite_client = cognite_client
 
     # GenStop
 
@@ -495,15 +501,22 @@ class ThreeDAssetMapping(CogniteResource):
         asset_id (int): The ID of the associated asset (Cognite's Assets API).
         tree_index (int): A number describing the position of this node in the 3D hierarchy, starting from 0. The tree is traversed in a depth-first order.
         subtree_size (int): The number of nodes in the subtree of this node (this number included the node itself).
+        cognite_client (CogniteClient): The client to associate with this object.
     """
 
     def __init__(
-        self, node_id: int = None, asset_id: int = None, tree_index: int = None, subtree_size: int = None, **kwargs
+        self,
+        node_id: int = None,
+        asset_id: int = None,
+        tree_index: int = None,
+        subtree_size: int = None,
+        cognite_client=None,
     ):
         self.node_id = node_id
         self.asset_id = asset_id
         self.tree_index = tree_index
         self.subtree_size = subtree_size
+        self._cognite_client = cognite_client
 
     # GenStop
 
@@ -589,6 +602,7 @@ class ThreeDRevealRevision(CogniteResource):
         asset_mapping_count (int): The number of asset mappings for this revision.
         created_time (int): The creation time of the resource, in milliseconds since January 1, 1970 at 00:00 UTC.
         scene_threed_files (List[Dict[str, Any]]): No description.
+        cognite_client (CogniteClient): The client to associate with this object.
     """
 
     def __init__(
@@ -604,7 +618,7 @@ class ThreeDRevealRevision(CogniteResource):
         asset_mapping_count: int = None,
         created_time: int = None,
         scene_threed_files: List[Dict[str, Any]] = None,
-        **kwargs
+        cognite_client=None,
     ):
         self.id = id
         self.file_id = file_id
@@ -617,6 +631,7 @@ class ThreeDRevealRevision(CogniteResource):
         self.asset_mapping_count = asset_mapping_count
         self.created_time = created_time
         self.scene_threed_files = scene_threed_files
+        self._cognite_client = cognite_client
 
     # GenStop
 
@@ -634,6 +649,7 @@ class ThreeDRevealNode(CogniteResource):
         subtree_size (int): The number of descendants of the node, plus one (counting itself).
         bounding_box (Dict[str, Any]): The bounding box of the subtree with this sector as the root sector. Is null if there are no geometries in the subtree.
         sector_id (int): The sector the node is contained in.
+        cognite_client (CogniteClient): The client to associate with this object.
     """
 
     def __init__(
@@ -646,7 +662,7 @@ class ThreeDRevealNode(CogniteResource):
         subtree_size: int = None,
         bounding_box: Dict[str, Any] = None,
         sector_id: int = None,
-        **kwargs
+        cognite_client=None,
     ):
         self.id = id
         self.tree_index = tree_index
@@ -656,6 +672,7 @@ class ThreeDRevealNode(CogniteResource):
         self.subtree_size = subtree_size
         self.bounding_box = bounding_box
         self.sector_id = sector_id
+        self._cognite_client = cognite_client
 
     # GenStop
 
@@ -676,6 +693,7 @@ class ThreeDRevealSector(CogniteResource):
         depth (int): The depth of the sector in the sector tree, starting from 0 at the root sector.
         bounding_box (Dict[str, Any]): The bounding box of the subtree with this sector as the root sector. Is null if there are no geometries in the subtree.
         threed_files (List[Dict[str, Any]]): The file ID of the data file for this sector, with multiple versions supported. Use /3d/files/{id} to retrieve the file.
+        cognite_client (CogniteClient): The client to associate with this object.
     """
 
     def __init__(
@@ -686,7 +704,7 @@ class ThreeDRevealSector(CogniteResource):
         depth: int = None,
         bounding_box: Dict[str, Any] = None,
         threed_files: List[Dict[str, Any]] = None,
-        **kwargs
+        cognite_client=None,
     ):
         self.id = id
         self.parent_id = parent_id
@@ -694,6 +712,7 @@ class ThreeDRevealSector(CogniteResource):
         self.depth = depth
         self.bounding_box = bounding_box
         self.threed_files = threed_files
+        self._cognite_client = cognite_client
 
     # GenStop
 

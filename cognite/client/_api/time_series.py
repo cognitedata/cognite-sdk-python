@@ -22,6 +22,7 @@ class TimeSeries(CogniteResource):
         security_categories (List[int]): Security categories required in order to access this time series.
         created_time (int): Time when this time-series is created in CDF in milliseconds since Jan 1, 1970.
         last_updated_time (int): The latest time when this time-series is updated in CDF in milliseconds since Jan 1, 1970.
+        cognite_client (CogniteClient): The client to associate with this object.
     """
 
     def __init__(
@@ -38,7 +39,7 @@ class TimeSeries(CogniteResource):
         security_categories: List[int] = None,
         created_time: int = None,
         last_updated_time: int = None,
-        **kwargs
+        cognite_client=None,
     ):
         self.id = id
         self.external_id = external_id
@@ -52,13 +53,14 @@ class TimeSeries(CogniteResource):
         self.security_categories = security_categories
         self.created_time = created_time
         self.last_updated_time = last_updated_time
+        self._cognite_client = cognite_client
 
     # GenStop
 
     def plot(self, start="1d-ago", end="now", aggregates=None, granularity=None, id_labels: bool = False):
         plt = utils.local_import("matplotlib.pyplot")
         identifier = utils.assert_at_least_one_of_id_or_external_id(self.id, self.external_id)
-        dps = self._client.datapoints.get(
+        dps = self._cognite_client.datapoints.get(
             start=start, end=end, aggregates=aggregates, granularity=granularity, **identifier
         )
         if id_labels:
@@ -85,6 +87,7 @@ class TimeSeriesFilter(CogniteFilter):
         asset_subtrees (List[int]): Filter out time series that are not linked to assets in the subtree rooted at these assets. Format is list of ids.
         created_time (Dict[str, Any]): Filter out time series with createdTime before this. Format is milliseconds since epoch.
         last_updated_time (Dict[str, Any]): Filter out time series with lastUpdatedTime before this. Format is milliseconds since epoch.
+        cognite_client (CogniteClient): The client to associate with this object.
     """
 
     def __init__(
@@ -97,7 +100,7 @@ class TimeSeriesFilter(CogniteFilter):
         asset_subtrees: List[int] = None,
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
-        **kwargs
+        cognite_client=None,
     ):
         self.unit = unit
         self.is_string = is_string
@@ -107,6 +110,7 @@ class TimeSeriesFilter(CogniteFilter):
         self.asset_subtrees = asset_subtrees
         self.created_time = created_time
         self.last_updated_time = last_updated_time
+        self._cognite_client = cognite_client
 
     # GenStop
 
@@ -185,7 +189,7 @@ class TimeSeriesList(CogniteResourceList):
     def plot(self, start="52w-ago", end="now", aggregates=None, granularity="1d", id_labels: bool = False):
         plt = utils.local_import("matplotlib.pyplot")
         aggregates = aggregates or ["average"]
-        dps = self._client.datapoints.get(
+        dps = self._cognite_client.datapoints.get(
             id=[ts.id for ts in self.data], start=start, end=end, aggregates=aggregates, granularity=granularity
         )
         if id_labels:

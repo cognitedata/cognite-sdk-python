@@ -1,13 +1,20 @@
+from unittest import mock
+
 import pytest
 
 from cognite.client import CogniteClient
 from cognite.client._base import *
+from cognite.client.exceptions import CogniteMissingClientError
 
 
 class MyResource(CogniteResource):
-    def __init__(self, var_a=None, var_b=None, **kwargs):
+    def __init__(self, var_a=None, var_b=None, cognite_client=None):
         self.var_a = var_a
         self.var_b = var_b
+        self._cognite_client = cognite_client
+
+    def use(self):
+        return self._cognite_client
 
 
 class MyUpdate(CogniteUpdate):
@@ -52,24 +59,35 @@ class ListUpdate(CogniteListUpdate):
 
 
 class MyFilter(CogniteFilter):
-    def __init__(self, var_a=None, var_b=None):
+    def __init__(self, var_a=None, var_b=None, cognite_client=None):
         self.var_a = var_a
         self.var_b = var_b
+        self._cognite_client = cognite_client
+
+    def use(self):
+        return self._cognite_client
 
 
 class MyResourceList(CogniteResourceList):
     _RESOURCE = MyResource
     _UPDATE = MyUpdate
 
+    def use(self):
+        return self._cognite_client
+
 
 class MyResponse(CogniteResponse):
-    def __init__(self, var_a=None):
+    def __init__(self, var_a=None, cognite_client=None):
         self.var_a = var_a
+        self._cognite_client = cognite_client
 
     @classmethod
     def _load(cls, api_response):
         data = api_response["data"]
         return cls(data["varA"])
+
+    def use(self):
+        return self._cognite_client
 
 
 class TestCogniteResource:
@@ -95,6 +113,7 @@ class TestCogniteResource:
 
     def test_eq(self):
         assert MyResource(1, "s") == MyResource(1, "s")
+        assert MyResource(1, "s") == MyResource(1, "s", cognite_client=mock.MagicMock())
         assert MyResource() == MyResource()
         assert MyResource(1, "s") != MyResource(1)
         assert MyResource(1, "s") != MyResource(2, "t")
@@ -110,7 +129,7 @@ class TestCogniteResource:
         import pandas as pd
 
         class SomeResource(CogniteResource):
-            def __init__(self, a_list, ob, ob_expand, ob_ignore, prim, prim_ignore, **kwargs):
+            def __init__(self, a_list, ob, ob_expand, ob_ignore, prim, prim_ignore):
                 self.a_list = a_list
                 self.ob = ob
                 self.ob_expand = ob_expand
@@ -129,10 +148,16 @@ class TestCogniteResource:
         )
         pd.testing.assert_frame_equal(expected_df, actual_df, check_like=True)
 
-    def test_global_client_correct(self):
+    def test_resource_client_correct(self):
         c = CogniteClient()
-        global_client.set(c)
-        assert MyResource(1)._client == c
+        with pytest.raises(CogniteMissingClientError):
+            MyResource(1)._cognite_client
+        assert MyResource(1, cognite_client=c)._cognite_client == c
+
+    def test_use_method_which_requires_cognite_client__client_not_set(self):
+        mr = MyResource()
+        with pytest.raises(CogniteMissingClientError):
+            mr.use()
 
 
 class TestCogniteResourceList:
@@ -199,10 +224,16 @@ class TestCogniteResourceList:
         with pytest.raises(TypeError, match="must be of type 'MyResource'"):
             MyResourceList([1, 2, 3])
 
-    def test_global_client_correct(self):
+    def test_resource_list_client_correct(self):
         c = CogniteClient()
-        global_client.set(c)
-        assert MyResourceList([MyResource()])._client == c
+        with pytest.raises(CogniteMissingClientError):
+            MyResource(1)._cognite_client
+        assert MyResource(1, cognite_client=c)._cognite_client == c
+
+    def test_use_method_which_requires_cognite_client__client_not_set(self):
+        mr = MyResourceList([])
+        with pytest.raises(CogniteMissingClientError):
+            mr.use()
 
 
 class TestCogniteFilter:
@@ -212,6 +243,7 @@ class TestCogniteFilter:
 
     def test_eq(self):
         assert MyFilter(1, 2) == MyFilter(1, 2)
+        assert MyFilter(1, 2) == MyFilter(1, 2, cognite_client=mock.MagicMock())
         assert MyFilter(1) != MyFilter(1, 2)
         assert MyFilter() == MyFilter()
 
@@ -220,6 +252,11 @@ class TestCogniteFilter:
 
     def test_repr(self):
         assert json.dumps({"var_a": 1}, indent=4) == MyFilter(1).__repr__()
+
+    def test_use_method_which_requires_cognite_client__client_not_set(self):
+        mr = MyFilter()
+        with pytest.raises(CogniteMissingClientError):
+            mr.use()
 
 
 class TestCogniteUpdate:
@@ -300,10 +337,17 @@ class TestCogniteResponse:
 
     def test_eq(self):
         assert MyResponse(1) == MyResponse(1)
+        assert MyResponse(1) == MyResponse(1, cognite_client=mock.MagicMock())
         assert MyResponse(1) != MyResponse(2)
         assert MyResponse(1) != MyResponse()
 
-    def test_global_client_correct(self):
+    def test_response_client_correct(self):
         c = CogniteClient()
-        global_client.set(c)
-        assert MyResponse()._client == c
+        with pytest.raises(CogniteMissingClientError):
+            MyResource(1)._cognite_client
+        assert MyResource(1, cognite_client=c)._cognite_client == c
+
+    def test_use_method_which_requires_cognite_client__client_not_set(self):
+        mr = MyResponse()
+        with pytest.raises(CogniteMissingClientError):
+            mr.use()

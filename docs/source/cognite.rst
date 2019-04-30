@@ -126,31 +126,6 @@ describing the data.
 
 This is particularly useful when working with time series data and tabular data from the Raw API.
 
-The Global Client
------------------
-The global client is the first client instantiated by the user.
-
-Certain data class methods, such as :code:`TimeSeries(id=...).plot()`, require that an instance of :code:`CogniteClient`
-is set on the object. When a an instance of a data class is returned from the :code:`CogniteClient`, the client instance
-will be set on the object. If you instantiate a data class yourself on the other hand, the `global client` will be
-attached to the instance.
-
-.. WARNING::
-    The global client is not thread-safe and will always be set to the first client you instantiate.
-    So beware if you are working against multiple Cognite projects.
-
-You may update the global client by setting it yourself. The SDK will then exhibit the following behaviour:
-
-.. code:: python
-
-    >>> from cognite.client import global_client, CogniteClient
-    >>> c1 = CogniteClient()
-    >>> assert global_client.get() == c1
-    >>> c2 = CogniteClient()
-    >>> assert global_client.get() == c1
-    >>> global_client.set(c2)
-    >>> assert global_client.get() == c2
-
 Setting Default Environment Configurations
 ------------------------------------------
 Default configurations may be set using the following environment variables
@@ -638,17 +613,21 @@ Data Classes
 
 Exceptions
 ----------
-API Error
-^^^^^^^^^
+CogniteAPIError
+^^^^^^^^^^^^^^^
 .. autoexception:: cognite.client.exceptions.CogniteAPIError
 
-Import Error
-^^^^^^^^^^^^
+CogniteImportError
+^^^^^^^^^^^^^^^^^^
 .. autoexception:: cognite.client.exceptions.CogniteImportError
 
-Asset Posting Error
-^^^^^^^^^^^^^^^^^^^
+CogniteAssetPostingError
+^^^^^^^^^^^^^^^^^^^^^^^^
 .. autoexception:: cognite.client.exceptions.CogniteAssetPostingError
+
+CogniteMissingClientError
+^^^^^^^^^^^^^^^^^^^^^^^^^
+.. autoexception:: cognite.client.exceptions.CogniteMissingClientError
 
 Utils
 -----
