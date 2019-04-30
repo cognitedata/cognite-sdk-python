@@ -2,12 +2,11 @@ import re
 
 import pytest
 
-from cognite.client import CogniteClient, global_client
+from cognite.client import CogniteClient
 from cognite.client._api.raw import Database, DatabaseList, Row, RowList, Table, TableList
 from tests.utils import jsgz_load
 
 COGNITE_CLIENT = CogniteClient()
-global_client.set(None)
 RAW_API = COGNITE_CLIENT.raw
 
 
@@ -58,7 +57,7 @@ class TestRawDatabases:
     def test_create_single(self, mock_raw_db_response):
         res = RAW_API.databases.create(name="db1")
         assert isinstance(res, Database)
-        assert COGNITE_CLIENT == res._client
+        assert COGNITE_CLIENT == res._cognite_client
         assert mock_raw_db_response.calls[0].response.json()["data"]["items"][0] == res.dump(camel_case=True)
         assert [{"name": "db1"}] == jsgz_load(mock_raw_db_response.calls[0].request.body)["items"]
 
@@ -66,8 +65,8 @@ class TestRawDatabases:
         res_list = RAW_API.databases.create(name=["db1"])
         assert isinstance(res_list, DatabaseList)
         for res in res_list:
-            assert COGNITE_CLIENT == res._client
-        assert COGNITE_CLIENT == res_list._client
+            assert COGNITE_CLIENT == res._cognite_client
+        assert COGNITE_CLIENT == res_list._cognite_client
         assert [{"name": "db1"}] == jsgz_load(mock_raw_db_response.calls[0].request.body)["items"]
         assert mock_raw_db_response.calls[0].response.json()["data"]["items"] == res_list.dump(camel_case=True)
 
@@ -103,7 +102,7 @@ class TestRawTables:
     def test_create_single(self, mock_raw_table_response):
         res = RAW_API.tables.create("db1", name="table1")
         assert isinstance(res, Table)
-        assert COGNITE_CLIENT == res._client
+        assert COGNITE_CLIENT == res._cognite_client
         assert mock_raw_table_response.calls[0].response.json()["data"]["items"][0] == res.dump(camel_case=True)
         assert [{"name": "table1"}] == jsgz_load(mock_raw_table_response.calls[0].request.body)["items"]
         assert "db1" == res._db_name
@@ -112,9 +111,9 @@ class TestRawTables:
         res_list = RAW_API.tables.create("db1", name=["table1"])
         assert isinstance(res_list, TableList)
         for res in res_list:
-            assert COGNITE_CLIENT == res._client
+            assert COGNITE_CLIENT == res._cognite_client
             assert "db1" == res._db_name
-        assert COGNITE_CLIENT == res_list._client
+        assert COGNITE_CLIENT == res_list._cognite_client
         assert [{"name": "table1"}] == jsgz_load(mock_raw_table_response.calls[0].request.body)["items"]
         assert mock_raw_table_response.calls[0].response.json()["data"]["items"] == res_list.dump(camel_case=True)
 
@@ -122,7 +121,7 @@ class TestRawTables:
         res_list = RAW_API.tables.list(db_name="db1")
         for res in res_list:
             assert "db1" == res._db_name
-            assert COGNITE_CLIENT == res._client
+            assert COGNITE_CLIENT == res._cognite_client
         assert TableList([Table("table1")]) == res_list
 
     def test_iter_single(self, mock_raw_table_response):
@@ -133,7 +132,7 @@ class TestRawTables:
         for table_list in RAW_API.tables("db1", chunk_size=1):
             for table in table_list:
                 assert "db1" == table._db_name
-                assert COGNITE_CLIENT == table._client
+                assert COGNITE_CLIENT == table._cognite_client
             assert mock_raw_table_response.calls[0].response.json()["data"]["items"] == table_list.dump(camel_case=True)
 
     def test_delete(self, mock_raw_table_response):
@@ -163,7 +162,7 @@ class TestRawRows:
             db_name="db1", table_name="table1", row={"row1": {"c1": 1, "c2": "2"}}, ensure_parent=True
         )
         assert isinstance(res, Row)
-        assert COGNITE_CLIENT == res._client
+        assert COGNITE_CLIENT == res._cognite_client
         assert mock_raw_row_response.calls[0].response.json()["data"]["items"][0] == res.dump(camel_case=True)
         assert [{"key": "row1", "columns": {"c1": 1, "c2": "2"}}] == jsgz_load(
             mock_raw_row_response.calls[0].request.body
@@ -182,8 +181,8 @@ class TestRawRows:
     def test_insert_multiple_DTO(self, mock_raw_row_response):
         res_list = RAW_API.rows.insert("db1", "table1", row=[Row(key="row1", columns={"c1": 1, "c2": "2"})])
         for res in res_list:
-            assert COGNITE_CLIENT == res._client
-        assert COGNITE_CLIENT == res_list._client
+            assert COGNITE_CLIENT == res._cognite_client
+        assert COGNITE_CLIENT == res_list._cognite_client
         assert isinstance(res_list, RowList)
         assert [{"key": "row1", "columns": {"c1": 1, "c2": "2"}}] == jsgz_load(
             mock_raw_row_response.calls[0].request.body

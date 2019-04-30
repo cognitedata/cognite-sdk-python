@@ -93,3 +93,13 @@ class CogniteAssetPostingError(Exception):
             [a.ref_id for a in self.not_posted],
         )
         return msg
+
+
+class CogniteMissingClientError(Exception):
+    """Cognite Missing Client Error
+
+    Raised if the user attempts to make use of a method which requires the cognite_client being set, but it is not.
+    """
+
+    def __str__(self):
+        return "A CogniteClient has not been set on this object. Pass it in the constructor to use it."

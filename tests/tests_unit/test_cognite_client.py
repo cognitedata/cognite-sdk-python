@@ -13,15 +13,15 @@ from cognite.client import CogniteClient
 from cognite.client._api.assets import AssetList
 from cognite.client._api.files import FileMetadataList
 from cognite.client._api.time_series import TimeSeriesList
-from cognite.client._utils import DebugLogFormatter
 from cognite.client.data_classes import Asset, Event, FileMetadata, TimeSeries
+from cognite.client.utils._utils import DebugLogFormatter
 
 
 @pytest.fixture
 def default_client_config():
-    from cognite.client._cognite_client import DEFAULT_BASE_URL, DEFAULT_MAX_WORKERS, DEFAULT_TIMEOUT
+    from cognite.client._cognite_client import DEFAULT_MAX_WORKERS, DEFAULT_TIMEOUT
 
-    yield DEFAULT_BASE_URL, DEFAULT_MAX_WORKERS, DEFAULT_TIMEOUT
+    yield "https://greenfield.cognitedata.com", DEFAULT_MAX_WORKERS, DEFAULT_TIMEOUT
 
 
 @pytest.fixture
@@ -30,13 +30,14 @@ def environment_client_config():
     num_of_workers = 1
     timeout = 10
 
+    tmp_base_url = os.environ["COGNITE_BASE_URL"]
     os.environ["COGNITE_BASE_URL"] = base_url
     os.environ["COGNITE_MAX_WORKERS"] = str(num_of_workers)
     os.environ["COGNITE_TIMEOUT"] = str(timeout)
 
     yield base_url, num_of_workers, timeout
 
-    del os.environ["COGNITE_BASE_URL"]
+    os.environ["COGNITE_BASE_URL"] = tmp_base_url
     del os.environ["COGNITE_MAX_WORKERS"]
     del os.environ["COGNITE_TIMEOUT"]
 
@@ -45,23 +46,6 @@ class TestCogniteClient:
     def test_project_is_correct(self, rsps_with_login_mock):
         c = CogniteClient()
         assert c.project == "test"
-
-    def test_global_client_get(self, client):
-
-        from cognite.client import global_client
-
-        CogniteClient._GLOBAL_CLIENT_SET = False
-        first_cl = CogniteClient()
-        assert global_client.get() == first_cl
-        CogniteClient()
-        assert global_client.get() == first_cl
-
-    def test_global_client_set(self, client):
-        from cognite.client import global_client
-
-        new_client = CogniteClient()
-        global_client.set(new_client)
-        assert global_client.get() == new_client
 
     @pytest.fixture
     def unset_env_api_key(self):
@@ -138,9 +122,9 @@ class TestInstantiateWithClient:
     @pytest.mark.parametrize("cls", [Asset, Event, FileMetadata, TimeSeries])
     def test_instantiate_resources_with_cognite_client(self, cls):
         c = CogniteClient()
-        assert cls(cognite_client=c)._client == c
+        assert cls(cognite_client=c)._cognite_client == c
 
     @pytest.mark.parametrize("cls", [AssetList, Event, FileMetadataList, TimeSeriesList])
     def test_intantiate_resource_lists_with_cognite_client(self, cls):
         c = CogniteClient()
-        assert cls([], cognite_client=c)._client == c
+        assert cls([], cognite_client=c)._cognite_client == c

@@ -21,6 +21,7 @@ isort = "*"
 tox = "*"
 tox-pyenv = "*"
 responses = "*"
+pytest-mock = "*"
 
 [pipenv]
 allow_prereleases = true

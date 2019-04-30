@@ -20,7 +20,7 @@ class TestListAndIterSignatures:
         list_parameters = dict(inspect.signature(api.list).parameters)
         del list_parameters["limit"]
         filter_parameters = dict(inspect.signature(filter.__init__).parameters)
-        del filter_parameters["kwargs"]
+        del filter_parameters["cognite_client"]
         assert iter_parameters == filter_parameters
         assert list_parameters == filter_parameters
 
@@ -38,7 +38,7 @@ class TestFileMetadataUploadSignatures:
         del file_metadata_parameters["created_time"]
         del file_metadata_parameters["last_updated_time"]
         del file_metadata_parameters["uploaded"]
-        del file_metadata_parameters["kwargs"]
+        del file_metadata_parameters["cognite_client"]
 
         assert upload_parameters == file_metadata_parameters
         assert upload_from_memory_parameters == file_metadata_parameters

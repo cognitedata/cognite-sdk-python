@@ -2,25 +2,14 @@ import json
 from collections import UserList
 from typing import *
 
-from cognite.client import _utils as utils
-from cognite.client._utils import global_client, to_camel_case, to_snake_case
-
-
-def instantiate_with_global_client(cls, super, *args, **kwargs):
-    obj = super.__new__(cls)
-    obj._client = global_client.get()
-    if "cognite_client" in kwargs:
-        obj._client = kwargs["cognite_client"]
-    return obj
-
+from cognite.client.exceptions import CogniteMissingClientError
+from cognite.client.utils import _utils as utils
+from cognite.client.utils._utils import to_camel_case, to_snake_case
 
 EXCLUDE_VALUE = [None]
 
 
 class CogniteResponse:
-    def __new__(cls, *args, **kwargs):
-        return instantiate_with_global_client(cls, super(), *args, **kwargs)
-
     def __str__(self):
         return json.dumps(self.dump(), indent=4)
 
@@ -29,6 +18,13 @@ class CogniteResponse:
 
     def __eq__(self, other):
         return type(other) == type(self) and other.dump() == self.dump()
+
+    def __getattribute__(self, item):
+        attr = super().__getattribute__(item)
+        if item == "_cognite_client":
+            if attr is None:
+                raise CogniteMissingClientError
+        return attr
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         """Dump the instance into a json serializable python data type.
@@ -59,10 +55,7 @@ class CogniteResourceList(UserList):
     _UPDATE = None
     _ASSERT_CLASSES = True
 
-    def __new__(cls, *args, **kwargs):
-        return instantiate_with_global_client(cls, super(), *args, **kwargs)
-
-    def __init__(self, resources: List[Any], **kwargs):
+    def __init__(self, resources: List[Any], cognite_client=None):
         if self._ASSERT_CLASSES:
             assert self._RESOURCE is not None, "{} does not have _RESOURCE set".format(self.__class__.__name__)
             assert self._UPDATE is not None, "{} does not have _UPDATE set".format(self.__class__.__name__)
@@ -73,7 +66,15 @@ class CogniteResourceList(UserList):
                         self.__class__.__name__, self._RESOURCE.__name__, type(resource)
                     )
                 )
+        self._cognite_client = cognite_client
         super().__init__(resources)
+
+    def __getattribute__(self, item):
+        attr = super().__getattribute__(item)
+        if item == "_cognite_client":
+            if attr is None:
+                raise CogniteMissingClientError
+        return attr
 
     def __str__(self):
         return json.dumps(self.dump(), default=lambda x: x.__dict__, indent=4)
@@ -112,7 +113,11 @@ class CogniteResourceList(UserList):
 
 class CogniteResource:
     def __new__(cls, *args, **kwargs):
-        return instantiate_with_global_client(cls, super(), *args, **kwargs)
+        obj = super().__new__(cls)
+        obj._cognite_client = None
+        if "cognite_client" in kwargs:
+            obj._cognite_client = kwargs["cognite_client"]
+        return obj
 
     def __eq__(self, other):
         return type(self) == type(other) and self.dump() == other.dump()
@@ -122,6 +127,13 @@ class CogniteResource:
 
     def __repr__(self):
         return self.__str__()
+
+    def __getattribute__(self, item):
+        attr = super().__getattribute__(item)
+        if item == "_cognite_client":
+            if attr is None:
+                raise CogniteMissingClientError
+        return attr
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
@@ -285,8 +297,20 @@ class CogniteFilter:
     def __repr__(self):
         return self.__str__()
 
+    def __getattribute__(self, item):
+        attr = super().__getattribute__(item)
+        if item == "_cognite_client":
+            if attr is None:
+                raise CogniteMissingClientError
+        return attr
+
     def dump(self, camel_case: bool = False):
-        dumped = {key: value for key, value in self.__dict__.items() if value is not None}
         if camel_case:
-            dumped = {to_camel_case(key): value for key, value in dumped.items()}
-        return dumped
+            return {
+                to_camel_case(key): value
+                for key, value in self.__dict__.items()
+                if value not in EXCLUDE_VALUE and not key.startswith("_")
+            }
+        return {
+            key: value for key, value in self.__dict__.items() if value not in EXCLUDE_VALUE and not key.startswith("_")
+        }

@@ -1,28 +1,6 @@
 from typing import *
 
-
-class CogniteResource:
-    pass
-
-
-class CogniteUpdate:
-    pass
-
-
-class CogniteFilter:
-    pass
-
-
-class CognitePrimitiveUpdate:
-    pass
-
-
-class CogniteObjectUpdate:
-    pass
-
-
-class CogniteListUpdate:
-    pass
+from cognite.client._base import *
 
 
 # GenClass: Asset, ExternalAssetItem
@@ -76,8 +54,35 @@ class Asset(CogniteResource):
         self._cognite_client = cognite_client
 
     # GenStop
-    def to_pandas(self):
-        pass
+
+    def __hash__(self):
+        return hash(self.ref_id)
+
+    def parent(self) -> "Asset":
+        """Returns this assets parent.
+
+        Returns:
+            Asset: The parent asset.
+        """
+        if self.parent_id is None:
+            raise ValueError("parent_id is None")
+        return self._cognite_client.assets.get(id=self.parent_id)
+
+    def children(self) -> "AssetList":
+        """Returns the children of this asset.
+
+        Returns:
+            AssetList: The requested assets
+        """
+        return self._cognite_client.assets.list(parent_ids=[self.id])
+
+    def subtree(self) -> "AssetList":
+        """Returns the subtree of this asset.
+
+        Returns:
+            AssetList: The requested subtree
+        """
+        return self._cognite_client.assets.list(asset_subtrees=[self.id])
 
 
 # GenUpdateClass: AssetChange
@@ -137,6 +142,54 @@ class _ListAssetUpdate(CogniteListUpdate):
         return self._remove(value)
 
     # GenStop
+
+
+class AssetList(CogniteResourceList):
+    _RESOURCE = Asset
+    _UPDATE = AssetUpdate
+
+    def _indented_asset_str(self, asset: Asset):
+        single_indent = " " * 8
+        marked_indent = "|______ "
+        indent = len(asset.path) - 1
+
+        s = single_indent * (indent - 1)
+        if indent > 0:
+            s += marked_indent
+        s += str(asset.id) + "\n"
+        dumped = asset.dump()
+        for key, value in sorted(dumped.items()):
+            if isinstance(value, dict):
+                s += single_indent * indent + "{}:\n".format(key)
+                for mkey, mvalue in sorted(value.items()):
+                    s += single_indent * indent + " - {}: {}\n".format(mkey, mvalue)
+            elif key != "id":
+                s += single_indent * indent + key + ": " + str(value) + "\n"
+
+        return s
+
+    def __str__(self):
+        try:
+            sorted_assets = sorted(self.data, key=lambda x: x.path)
+        except:
+            return super().__str__()
+
+        if len(sorted_assets) == 0:
+            return super().__str__()
+
+        ids = set([asset.id for asset in sorted_assets])
+
+        s = "\n"
+        root = sorted_assets[0].path[0]
+        for asset in sorted_assets:
+            this_root = asset.path[0]
+            if this_root != root:
+                s += "\n" + "*" * 80 + "\n\n"
+                root = this_root
+            elif len(asset.path) > 1 and asset.path[-2] not in ids:
+                s += "\n" + "-" * 80 + "\n\n"
+            s += self._indented_asset_str(asset)
+        return s
 
 
 # GenClass: AssetFilter.filter

@@ -3,7 +3,7 @@ import pytest
 from cognite.client import CogniteClient
 from cognite.client.exceptions import CogniteAPIError
 
-c = CogniteClient()
+c = CogniteClient(debug=True)
 
 
 class TestCogniteClient:
@@ -13,6 +13,7 @@ class TestCogniteClient:
 
     def test_post(self):
         res = c.post("/login", json={"apiKey": c._CogniteClient__api_key})
+        print(res.json())
         assert res.status_code == 200
 
     def test_put(self):

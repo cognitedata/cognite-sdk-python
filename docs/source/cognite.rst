@@ -126,31 +126,6 @@ describing the data.
 
 This is particularly useful when working with time series data and tabular data from the Raw API.
 
-The Global Client
------------------
-The global client is the first client instantiated by the user.
-
-Certain data class methods, such as :code:`TimeSeries(id=...).plot()`, require that an instance of :code:`CogniteClient`
-is set on the object. When a an instance of a data class is returned from the :code:`CogniteClient`, the client instance
-will be set on the object. If you instantiate a data class yourself on the other hand, the `global client` will be
-attached to the instance.
-
-.. WARNING::
-    The global client is not thread-safe and will always be set to the first client you instantiate.
-    So beware if you are working against multiple Cognite projects.
-
-You may update the global client by setting it yourself. The SDK will then exhibit the following behaviour:
-
-.. code:: python
-
-    >>> from cognite.client import global_client, CogniteClient
-    >>> c1 = CogniteClient()
-    >>> assert global_client.get() == c1
-    >>> c2 = CogniteClient()
-    >>> assert global_client.get() == c1
-    >>> global_client.set(c2)
-    >>> assert global_client.get() == c2
-
 Setting Default Environment Configurations
 ------------------------------------------
 Default configurations may be set using the following environment variables
@@ -190,9 +165,8 @@ Get login status
 
 Data Classes
 ^^^^^^^^^^^^
-.. automodule:: cognite.client._api.login
+.. automodule:: cognite.client.data_classes.login
     :members:
-    :exclude-members: LoginAPI
     :undoc-members:
     :show-inheritance:
     :inherited-members:
@@ -225,9 +199,8 @@ Update Assets
 
 Data Classes
 ^^^^^^^^^^^^
-.. automodule:: cognite.client._api.assets
+.. automodule:: cognite.client.data_classes.assets
     :members:
-    :exclude-members: AssetsAPI
     :undoc-members:
     :show-inheritance:
     :inherited-members:
@@ -260,9 +233,8 @@ Update Events
 
 Data Classes
 ^^^^^^^^^^^^
-.. automodule:: cognite.client._api.events
+.. automodule:: cognite.client.data_classes.events
     :members:
-    :exclude-members: EventsAPI
     :undoc-members:
     :show-inheritance:
     :inherited-members:
@@ -308,9 +280,8 @@ Update Files metadata
 
 Data Classes
 ^^^^^^^^^^^^
-.. automodule:: cognite.client._api.files
+.. automodule:: cognite.client.data_classes.files
     :members:
-    :exclude-members: FilesAPI
     :undoc-members:
     :show-inheritance:
     :inherited-members:
@@ -343,9 +314,8 @@ Update Time Series
 
 Data Classes
 ^^^^^^^^^^^^
-.. automodule:: cognite.client._api.time_series
+.. automodule:: cognite.client.data_classes.time_series
     :members:
-    :exclude-members: TimeSeriesAPI
     :undoc-members:
     :show-inheritance:
     :inherited-members:
@@ -391,9 +361,8 @@ Delete ranges of datapoints
 
 Data Classes
 ^^^^^^^^^^^^
-.. automodule:: cognite.client._api.datapoints
+.. automodule:: cognite.client.data_classes.datapoints
     :members:
-    :exclude-members: DatapointsAPI
     :undoc-members:
     :show-inheritance:
     :inherited-members:
@@ -442,9 +411,8 @@ Delete rows from a table
 
 Data Classes
 ^^^^^^^^^^^^
-.. automodule:: cognite.client._api.raw
+.. automodule:: cognite.client.data_classes.raw
     :members:
-    :exclude-members: RawRowsAPI, RawTablesAPI, RawDatabasesAPI, RawAPI
     :undoc-members:
     :show-inheritance:
     :inherited-members:
@@ -544,14 +512,13 @@ Delete Asset Mappings
     ~~~~~~~~~~~~~~~~~~~
     .. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.list_ancestor_nodes
 
-    Data Classes
-    ^^^^^^^^^^^^
-    .. automodule:: cognite.client._api.three_d
-        :members:
-        :exclude-members: ThreeDModelsAPI, ThreeDRevisionsAPI, ThreeDFilesAPI, ThreeDAssetMappingAPI, ThreeDRevealAPI, ThreeDAPI
-        :undoc-members:
-        :show-inheritance:
-        :inherited-members:
+Data Classes
+^^^^^^^^^^^^
+.. automodule:: cognite.client.data_classes.three_d
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
 
 Identity and Access Managment
 -----------------------------
@@ -629,26 +596,29 @@ Delete Security Categories
 
 Data Classes
 ^^^^^^^^^^^^
-.. automodule:: cognite.client._api.iam
+.. automodule:: cognite.client.data_classes.iam
     :members:
-    :exclude-members: SecurityCategoriesAPI, ServiceAccountsAPI, GroupsAPI, APIKeysAPI, IAMAPI
     :undoc-members:
     :show-inheritance:
     :inherited-members:
 
 Exceptions
 ----------
-API Error
-^^^^^^^^^
+CogniteAPIError
+^^^^^^^^^^^^^^^
 .. autoexception:: cognite.client.exceptions.CogniteAPIError
 
-Import Error
-^^^^^^^^^^^^
+CogniteImportError
+^^^^^^^^^^^^^^^^^^
 .. autoexception:: cognite.client.exceptions.CogniteImportError
 
-Asset Posting Error
-^^^^^^^^^^^^^^^^^^^
+CogniteAssetPostingError
+^^^^^^^^^^^^^^^^^^^^^^^^
 .. autoexception:: cognite.client.exceptions.CogniteAssetPostingError
+
+CogniteMissingClientError
+^^^^^^^^^^^^^^^^^^^^^^^^^
+.. autoexception:: cognite.client.exceptions.CogniteMissingClientError
 
 Utils
 -----
