@@ -56,20 +56,22 @@ class TimeSeries(CogniteResource):
 
     # GenStop
 
-    def plot(self, start="1d-ago", end="now", aggregates=None, granularity=None, id_labels: bool = False):
+    def plot(
+        self, start="1d-ago", end="now", aggregates=None, granularity=None, id_labels: bool = False, *args, **kwargs
+    ):
         plt = utils.local_import("matplotlib.pyplot")
         identifier = utils.assert_at_least_one_of_id_or_external_id(self.id, self.external_id)
         dps = self._cognite_client.datapoints.get(
             start=start, end=end, aggregates=aggregates, granularity=granularity, **identifier
         )
         if id_labels:
-            dps.plot()
+            dps.plot(*args, **kwargs)
         else:
             columns = {self.id: self.name}
             for agg in aggregates or []:
                 columns["{}|{}".format(self.id, agg)] = "{}|{}".format(self.name, agg)
             df = dps.to_pandas().rename(columns=columns)
-            df.plot()
+            df.plot(*args, **kwargs)
             plt.show()
 
 
@@ -185,14 +187,16 @@ class TimeSeriesList(CogniteResourceList):
     _RESOURCE = TimeSeries
     _UPDATE = TimeSeriesUpdate
 
-    def plot(self, start="52w-ago", end="now", aggregates=None, granularity="1d", id_labels: bool = False):
+    def plot(
+        self, start="52w-ago", end="now", aggregates=None, granularity="1d", id_labels: bool = False, *args, **kwargs
+    ):
         plt = utils.local_import("matplotlib.pyplot")
         aggregates = aggregates or ["average"]
         dps = self._cognite_client.datapoints.get(
             id=[ts.id for ts in self.data], start=start, end=end, aggregates=aggregates, granularity=granularity
         )
         if id_labels:
-            dps.plot()
+            dps.plot(*args, **kwargs)
         else:
             columns = {}
             for ts in self.data:
@@ -200,5 +204,5 @@ class TimeSeriesList(CogniteResourceList):
                 for agg in aggregates or []:
                     columns["{}|{}".format(ts.id, agg)] = "{}|{}".format(ts.name, agg)
             df = dps.to_pandas().rename(columns=columns)
-            df.plot()
+            df.plot(*args, **kwargs)
             plt.show()
