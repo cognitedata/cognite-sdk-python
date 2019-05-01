@@ -389,11 +389,13 @@ class APIClient:
         except:
             msg = res.content
 
-        error_details = {"X-Request-ID": x_request_id, "extra": extra}
-        if payload is not None:
+        error_details = {"X-Request-ID": x_request_id}
+        if payload:
             error_details["payload"] = payload
+        if extra:
+            error_details["extra"] = extra
 
-        log.error("HTTP Error %s: %s", code, msg, extra=error_details)
+        log.error("HTTP Error %s %s %s: %s", code, res.request.method, res.request.url, msg, extra=error_details)
         raise CogniteAPIError(msg, code, x_request_id, extra=extra)
 
     @staticmethod

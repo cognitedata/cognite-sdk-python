@@ -578,18 +578,7 @@ class _DatapointsFetcher:
         self.id_to_include_outside_dps = defaultdict(lambda: False)
 
     def fetch(self, dps_queries: List[_DPQuery]) -> DatapointsList:
-        queries = []
-        for dps_query in dps_queries:
-            first_timestamp = self._get_first_timestamp(dps_query)
-            if first_timestamp is not None:
-                dps_query.start = first_timestamp
-
-            if first_timestamp is not None and self._should_split(dps_query):
-                split_queries = self._split_query_into_windows(dps_query)
-                for query in split_queries:
-                    queries.append((query,))
-            else:
-                queries.append((dps_query,))
+        queries = self._optimize_queries(dps_queries)
 
         utils.execute_tasks_concurrently(self._do_dps_query, queries, max_workers=self.client._max_workers)
 
@@ -663,7 +652,7 @@ class _DatapointsFetcher:
             "includeOutsidePoints": include_outside_points,
             "limit": limit or (self.client._LIMIT_AGG if aggregates else self.client._LIMIT),
         }
-        res = self.client._post(self.client._RESOURCE_PATH + "/get", json=payload).json()["data"]["items"][0]
+        res = self.client._post(self.client._RESOURCE_PATH + "/list", json=payload).json()["data"]["items"][0]
         return Datapoints._load(res, cognite_client=self.client._cognite_client)
 
     def _should_split(self, query: _DPQuery):
@@ -689,6 +678,28 @@ class _DatapointsFetcher:
             )
             for w in windows
         ]
+
+    def _optimize_queries(self, dps_queries: List[_DPQuery]):
+        optimized_queries = []
+        for q_list in utils.execute_tasks_concurrently(
+            self._optimize_query, [(q,) for q in dps_queries], max_workers=self.client._max_workers
+        ):
+            optimized_queries.extend(q_list)
+        return optimized_queries
+
+    def _optimize_query(self, dps_query: _DPQuery):
+        queries = []
+        first_timestamp = self._get_first_timestamp(dps_query)
+        if first_timestamp is not None:
+            dps_query.start = first_timestamp
+
+        if first_timestamp is not None and self._should_split(dps_query):
+            split_queries = self._split_query_into_windows(dps_query)
+            for query in split_queries:
+                queries.append((query,))
+        else:
+            queries.append((dps_query,))
+        return queries
 
     def _get_first_timestamp(self, dps_query: _DPQuery) -> Union[int, None]:
         dps = self._get_datapoints(

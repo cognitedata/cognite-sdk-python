@@ -275,7 +275,7 @@ class DebugLogFormatter(logging.Formatter):
         s_extra_objs = []
         for attr, value in record.__dict__.items():
             if attr not in self.RESERVED_ATTRS:
-                s_extra_objs.append("\n{}: {}".format(attr, value))
+                s_extra_objs.append("\n    - {}: {}".format(attr, value))
         for s_extra in s_extra_objs:
             s += s_extra
         if record.exc_info:
