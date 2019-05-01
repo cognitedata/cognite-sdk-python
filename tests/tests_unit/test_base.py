@@ -189,6 +189,13 @@ class TestCogniteResourceList:
         assert MyResource(1, 2) == resource_list[0]
         assert MyResource(2, 3) == resource_list[1]
         assert MyResourceList([MyResource(1, 2), MyResource(2, 3)]) == resource_list[:]
+        assert isinstance(resource_list[:], MyResourceList)
+
+    def test_slice_list_client_remains(self):
+        mock_client = mock.MagicMock()
+        rl = MyResourceList([MyResource(1, 2)], cognite_client=mock_client)
+        rl_sliced = rl[:]
+        assert rl._cognite_client == rl_sliced._cognite_client
 
     def test_extend(self):
         resource_list = MyResourceList([MyResource(1, 2), MyResource(2, 3)])

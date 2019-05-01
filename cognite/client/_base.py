@@ -76,6 +76,15 @@ class CogniteResourceList(UserList):
                 raise CogniteMissingClientError
         return attr
 
+    def __getitem__(self, item):
+        value = super().__getitem__(item)
+        if isinstance(item, slice):
+            c = None
+            if super().__getattribute__("_cognite_client") is not None:
+                c = self._cognite_client
+            return self.__class__(value, cognite_client=c)
+        return value
+
     def __str__(self):
         return json.dumps(self.dump(), default=lambda x: x.__dict__, indent=4)
 
