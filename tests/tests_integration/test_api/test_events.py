@@ -3,16 +3,9 @@ import pytest
 from cognite.client import CogniteClient, utils
 from cognite.client.data_classes import Event, EventFilter, EventUpdate
 from cognite.client.exceptions import CogniteAPIError
+from tests.utils import set_request_limit
 
 COGNITE_CLIENT = CogniteClient(debug=True)
-
-
-@pytest.fixture(autouse=True, scope="module")
-def set_limit():
-    limit_tmp = COGNITE_CLIENT.events._LIMIT
-    COGNITE_CLIENT.events._LIMIT = 10
-    yield set_limit
-    COGNITE_CLIENT.events._LIMIT = limit_tmp
 
 
 @pytest.fixture
@@ -33,7 +26,8 @@ class TestEventsAPI:
     def test_list(self, mocker):
         mocker.spy(COGNITE_CLIENT.events, "_post")
 
-        res = COGNITE_CLIENT.events.list(limit=20)
+        with set_request_limit(10):
+            res = COGNITE_CLIENT.events.list(limit=20)
 
         assert 20 == len(res)
         assert 2 == COGNITE_CLIENT.events._post.call_count

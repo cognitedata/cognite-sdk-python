@@ -40,7 +40,7 @@ def new_ts():
 
 
 @contextmanager
-def set_limit(limit):
+def set_request_limit(limit):
     with mock.patch("cognite.client._api.datapoints.DatapointsAPI._LIMIT", new_callable=PropertyMock) as limit_mock:
         limit_mock.return_value = limit
         yield
@@ -129,7 +129,7 @@ class TestDatapointsAPI:
     def test_insert(self, new_ts, mocker):
         datapoints = [(datetime(year=2018, month=1, day=1, hour=1, minute=i), i) for i in range(60)]
         mocker.spy(COGNITE_CLIENT.datapoints, "_post")
-        with set_limit(30):
+        with set_request_limit(30):
             COGNITE_CLIENT.datapoints.insert(datapoints, id=new_ts.id)
         assert 2 == COGNITE_CLIENT.datapoints._post.call_count
 
@@ -139,7 +139,7 @@ class TestDatapointsAPI:
         y = numpy.random.normal(0, 1, 100)
         df = pandas.DataFrame({new_ts.id: y}, index=x)
         mocker.spy(COGNITE_CLIENT.datapoints, "_post")
-        with set_limit(50):
+        with set_request_limit(50):
             COGNITE_CLIENT.datapoints.insert_dataframe(df)
         assert 2 == COGNITE_CLIENT.datapoints._post.call_count
 

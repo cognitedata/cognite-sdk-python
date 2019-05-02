@@ -3,6 +3,8 @@ import functools
 import gzip
 import json
 from contextlib import contextmanager
+from unittest import mock
+from unittest.mock import PropertyMock
 
 BASE_URL = "https://greenfield.cognitedata.com"
 
@@ -27,3 +29,10 @@ def profile(method):
             method(*args, **kwargs)
 
     return wrapper
+
+
+@contextmanager
+def set_request_limit(limit):
+    with mock.patch("cognite.client._api_client.APIClient._LIMIT", new_callable=PropertyMock) as limit_mock:
+        limit_mock.return_value = limit
+        yield

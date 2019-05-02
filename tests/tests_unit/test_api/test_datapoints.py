@@ -1,7 +1,9 @@
 import json
+from contextlib import contextmanager
 from datetime import datetime
 from random import random
 from unittest import mock
+from unittest.mock import PropertyMock
 
 import pytest
 
@@ -79,7 +81,7 @@ def mock_get_datapoints(rsps):
 
     rsps.add_callback(
         rsps.POST,
-        DPS_CLIENT._base_url + "/timeseries/data/get",
+        DPS_CLIENT._base_url + "/timeseries/data/list",
         callback=request_callback,
         content_type="application/json",
     )
@@ -90,33 +92,31 @@ def mock_get_datapoints(rsps):
 def mock_get_datapoints_empty(rsps):
     rsps.add(
         rsps.POST,
-        DPS_CLIENT._base_url + "/timeseries/data/get",
+        DPS_CLIENT._base_url + "/timeseries/data/list",
         status=200,
         json={"data": {"items": [{"id": 1, "externalId": "1", "datapoints": []}]}},
     )
     yield rsps
 
 
-@pytest.fixture
-def set_dps_limits():
-    def set_limit(limit):
-        DPS_CLIENT._LIMIT_AGG = limit
-        DPS_CLIENT._LIMIT = limit
-
-    limit_agg_tmp = DPS_CLIENT._LIMIT_AGG
-    limit_tmp = DPS_CLIENT._LIMIT
-    yield set_limit
-    DPS_CLIENT._LIMIT_AGG = limit_agg_tmp
-    DPS_CLIENT._LIMIT = limit_tmp
+@contextmanager
+def set_request_limit(limit):
+    with mock.patch("cognite.client._api.datapoints.DatapointsAPI._LIMIT", new_callable=PropertyMock) as limit_mock:
+        with mock.patch(
+            "cognite.client._api.datapoints.DatapointsAPI._LIMIT_AGG", new_callable=PropertyMock
+        ) as limit_agg_mock:
+            limit_mock.return_value = limit
+            limit_agg_mock.return_value = limit
+            yield
 
 
 @pytest.fixture
 def set_dps_workers():
-    def set_limit(limit):
+    def set_workers(limit):
         DPS_CLIENT._max_workers = limit
 
     workers_tmp = DPS_CLIENT._max_workers
-    yield set_limit
+    yield set_workers
     DPS_CLIENT._max_workers = workers_tmp
 
 
@@ -138,6 +138,7 @@ def assert_dps_response_is_correct(calls, dps_object):
 
 class TestGetDatapoints:
     def test_get_datapoints_by_id(self, mock_get_datapoints):
+        print(DPS_CLIENT._base_url)
         dps_res = DPS_CLIENT.get(id=123, start=1000000, end=1100000)
         assert isinstance(dps_res, Datapoints)
         assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
@@ -145,7 +146,7 @@ class TestGetDatapoints:
     def test_get_datapoints_500(self, rsps):
         rsps.add(
             rsps.POST,
-            DPS_CLIENT._base_url + "/timeseries/data/get",
+            DPS_CLIENT._base_url + "/timeseries/data/list",
             json={"error": {"code": 500, "message": "Internal Server Error"}},
             status=500,
         )
@@ -174,14 +175,14 @@ class TestGetDatapoints:
         for dps_res in dps_res_list:
             assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
 
-    def test_datapoints_paging(self, mock_get_datapoints, set_dps_limits, set_dps_workers):
-        set_dps_limits(2)
+    def test_datapoints_paging(self, mock_get_datapoints, set_dps_workers):
         set_dps_workers(1)
-        dps_res = DPS_CLIENT.get(id=123, start=0, end=10000, aggregates=["average"], granularity="1s")
+        with set_request_limit(2):
+            dps_res = DPS_CLIENT.get(id=123, start=0, end=10000, aggregates=["average"], granularity="1s")
         assert 6 == len(mock_get_datapoints.calls)
         assert 10 == len(dps_res)
 
-    def test_datapoints_concurrent(self, mock_get_datapoints, set_dps_limits):
+    def test_datapoints_concurrent(self, mock_get_datapoints):
         DPS_CLIENT._LIMIT_AGG = 20
         dps_res = DPS_CLIENT.get(id=123, start=0, end=100000, aggregates=["average"], granularity="1s")
         requested_windows = sorted(
@@ -205,10 +206,10 @@ class TestGetDatapoints:
         ],
     )
     def test_request_dps_spacing_correct(
-        self, mock_get_datapoints, set_dps_workers, set_dps_limits, limit, aggregates, granularity, actual_windows_req
+        self, mock_get_datapoints, set_dps_workers, limit, aggregates, granularity, actual_windows_req
     ):
-        set_dps_limits(limit)
-        DPS_CLIENT.get(id=123, start=0, end=10000, aggregates=aggregates, granularity=granularity)
+        with set_request_limit(limit):
+            DPS_CLIENT.get(id=123, start=0, end=10000, aggregates=aggregates, granularity=granularity)
         requested_windows = sorted(
             [
                 (jsgz_load(call.request.body)["start"], jsgz_load(call.request.body)["end"])
@@ -218,12 +219,12 @@ class TestGetDatapoints:
         )
         assert actual_windows_req == requested_windows[1:]
 
-    def test_datapoints_paging_with_limit(self, mock_get_datapoints, set_dps_limits):
-        set_dps_limits(3)
-        dps_res = DPS_CLIENT.get(id=123, start=0, end=10000, aggregates=["average"], granularity="1s", limit=4)
+    def test_datapoints_paging_with_limit(self, mock_get_datapoints):
+        with set_request_limit(3):
+            dps_res = DPS_CLIENT.get(id=123, start=0, end=10000, aggregates=["average"], granularity="1s", limit=4)
         assert 4 == len(dps_res)
 
-    def test_get_datapoints_multiple_time_series(self, mock_get_datapoints, set_dps_limits):
+    def test_get_datapoints_multiple_time_series(self, mock_get_datapoints):
         ids = [1, 2, 3]
         external_ids = ["4", "5", "6"]
         dps_res_list = DPS_CLIENT.get(id=ids, external_id=external_ids, start=0, end=100000)
@@ -389,10 +390,10 @@ class TestInsertDatapoints:
         with pytest.raises(AssertionError, match="is missing the"):
             DPS_CLIENT.insert(dps, id=1)
 
-    def test_insert_datapoints_over_limit(self, set_dps_limits, mock_post_datapoints):
-        set_dps_limits(5)
+    def test_insert_datapoints_over_limit(self, mock_post_datapoints):
         dps = [(i * 1e10, i) for i in range(1, 11)]
-        res = DPS_CLIENT.insert(dps, id=1)
+        with set_request_limit(5):
+            res = DPS_CLIENT.insert(dps, id=1)
         assert res is None
         request_bodies = [jsgz_load(call.request.body) for call in mock_post_datapoints.calls]
         assert {
