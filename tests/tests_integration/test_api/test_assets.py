@@ -4,7 +4,7 @@ from cognite.client import CogniteClient
 from cognite.client.data_classes import Asset, AssetFilter, AssetUpdate
 from cognite.client.exceptions import CogniteAPIError
 
-COGNITE_CLIENT = CogniteClient(debug=True)
+COGNITE_CLIENT = CogniteClient()
 
 
 @pytest.fixture(autouse=True, scope="module")
