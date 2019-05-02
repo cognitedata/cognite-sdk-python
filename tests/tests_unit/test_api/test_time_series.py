@@ -140,7 +140,7 @@ class TestPlotTimeSeries:
     def mock_get_dps(self, rsps):
         rsps.add(
             rsps.POST,
-            TS_API._base_url + "/timeseries/data/get",
+            TS_API._base_url + "/timeseries/data/list",
             status=200,
             json={
                 "data": {
@@ -156,7 +156,7 @@ class TestPlotTimeSeries:
         )
         rsps.add(
             rsps.POST,
-            TS_API._base_url + "/timeseries/data/get",
+            TS_API._base_url + "/timeseries/data/list",
             status=200,
             json={
                 "data": {

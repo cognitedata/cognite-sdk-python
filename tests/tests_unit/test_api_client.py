@@ -118,7 +118,7 @@ class TestBasicRequests:
         pprint(dict(headers))
         assert "gzip, deflate" == headers["accept-encoding"]
         assert "gzip" == headers["content-encoding"]
-        assert "CognitePythonSDK:{}".format(utils.get_current_sdk_version()) == headers["x-cognite-client"]
+        assert "CognitePythonSDK:{}".format(utils.get_current_sdk_version()) == headers["x-cdp-sdk"]
         assert "abc" == headers["api-key"]
         assert "stuff" == headers["additional"]
 
