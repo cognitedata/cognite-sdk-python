@@ -108,11 +108,11 @@ class TestDatapointsAPI:
 
         for dps in res:
             if dps.id == test_time_series[0].id:
-                print(0, len(dps.to_pandas()))
+                assert 150000 < len(dps.to_pandas())
             if dps.id == test_time_series[1].id:
-                print(1, len(dps.to_pandas()))
+                assert 75000 < len(dps.to_pandas())
             if dps.id == test_time_series[2].id:
-                print(2, len(dps.to_pandas()))
+                assert 25 == len(dps.to_pandas())
 
     def test_get_latest(self, test_time_series):
         ids = [test_time_series[0].id, test_time_series[1].id]

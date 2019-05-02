@@ -138,7 +138,6 @@ def assert_dps_response_is_correct(calls, dps_object):
 
 class TestGetDatapoints:
     def test_get_datapoints_by_id(self, mock_get_datapoints):
-        print(DPS_CLIENT._base_url)
         dps_res = DPS_CLIENT.get(id=123, start=1000000, end=1100000)
         assert isinstance(dps_res, Datapoints)
         assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)

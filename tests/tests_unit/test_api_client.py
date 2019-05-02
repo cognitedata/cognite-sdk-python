@@ -112,10 +112,7 @@ class TestBasicRequests:
     def test_headers_correct(self, mock_all_requests_ok):
         API_CLIENT._post(URL_PATH, {"any": "OK"}, headers={"additional": "stuff"})
         headers = mock_all_requests_ok.calls[0].request.headers
-        from pprint import pprint
 
-        print(type(headers))
-        pprint(dict(headers))
         assert "gzip, deflate" == headers["accept-encoding"]
         assert "gzip" == headers["content-encoding"]
         assert "CognitePythonSDK:{}".format(utils.get_current_sdk_version()) == headers["x-cdp-sdk"]
