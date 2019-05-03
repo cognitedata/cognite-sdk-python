@@ -369,44 +369,52 @@ Data Classes
 
 Raw
 ---
+Databases
+^^^^^^^^^
 List databases
-^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.raw.RawDatabasesAPI.list
 
 Create new databases
-^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.raw.RawDatabasesAPI.create
 
 Delete databases
-^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.raw.RawDatabasesAPI.delete
 
+
+Tables
+^^^^^^
 List tables in a database
-^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.raw.RawTablesAPI.list
 
 Create new tables in a database
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.raw.RawTablesAPI.create
 
 Delete tables from a database
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.raw.RawTablesAPI.delete
 
+
+Rows
+^^^^
 Get a row from a table
-^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.raw.RawRowsAPI.retrieve
 
 List rows in a table
-^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.raw.RawRowsAPI.list
 
 Insert rows into a table
-^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.raw.RawRowsAPI.insert
 
 Delete rows from a table
-^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.raw.RawRowsAPI.delete
 
 Data Classes
