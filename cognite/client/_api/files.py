@@ -54,7 +54,7 @@ class FilesAPI(APIClient):
         """
         return self.__call__()
 
-    def get(
+    def retrieve(
         self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None
     ) -> Union[FileMetadata, FileMetadataList]:
         """Get files by id
@@ -72,13 +72,13 @@ class FilesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.files.get(id=1)
+                >>> res = c.files.retrieve(id=1)
 
             Get file meta data by external id::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.files.get(external_id=["1", "abc"])
+                >>> res = c.files.retrieve(external_id=["1", "abc"])
         """
         return self._retrieve_multiple(
             cls=FileMetadataList, resource_path=self._RESOURCE_PATH, ids=id, external_ids=external_id, wrap_ids=True
@@ -174,7 +174,7 @@ class FilesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> file_metadata = c.files.get(id=1)
+                >>> file_metadata = c.files.retrieve(id=1)
                 >>> file_metadata.description = "New description"
                 >>> res = c.files.update(file_metadata)
 
@@ -371,7 +371,7 @@ class FilesAPI(APIClient):
         ids = [id["id"] for id in all_ids if "id" in id]
         external_ids = [id["externalId"] for id in all_ids if "externalId" in id]
 
-        files_metadata = self.get(id=ids, external_id=external_ids)
+        files_metadata = self.retrieve(id=ids, external_id=external_ids)
 
         id_to_name = {f.id: f.name for f in files_metadata}
         external_id_to_name = {f.external_id: f.name for f in files_metadata}

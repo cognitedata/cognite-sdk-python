@@ -13,14 +13,14 @@ def new_file():
     yield res
     COGNITE_CLIENT.files.delete(id=res.id)
     with pytest.raises(CogniteAPIError) as e:
-        COGNITE_CLIENT.files.get(id=res.id)
+        COGNITE_CLIENT.files.retrieve(id=res.id)
     assert 400 == e.value.code
 
 
 class TestFilesAPI:
-    def test_get(self):
+    def test_retrieve(self):
         res = COGNITE_CLIENT.files.list(limit=1)
-        assert res[0] == COGNITE_CLIENT.files.get(res[0].id)
+        assert res[0] == COGNITE_CLIENT.files.retrieve(res[0].id)
 
     def test_list(self):
         res = COGNITE_CLIENT.files.list(limit=4)

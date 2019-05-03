@@ -137,12 +137,12 @@ def assert_dps_response_is_correct(calls, dps_object):
 
 
 class TestGetDatapoints:
-    def test_get_datapoints_by_id(self, mock_get_datapoints):
-        dps_res = DPS_CLIENT.get(id=123, start=1000000, end=1100000)
+    def test_retrieve_datapoints_by_id(self, mock_get_datapoints):
+        dps_res = DPS_CLIENT.retrieve(id=123, start=1000000, end=1100000)
         assert isinstance(dps_res, Datapoints)
         assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
 
-    def test_get_datapoints_500(self, rsps):
+    def test_retrieve_datapoints_500(self, rsps):
         rsps.add(
             rsps.POST,
             DPS_CLIENT._base_url + "/timeseries/data/list",
@@ -150,20 +150,20 @@ class TestGetDatapoints:
             status=500,
         )
         with pytest.raises(CogniteAPIError):
-            DPS_CLIENT.get(id=123, start=1000000, end=1100000)
+            DPS_CLIENT.retrieve(id=123, start=1000000, end=1100000)
 
-    def test_get_datapoints_by_external_id(self, mock_get_datapoints):
-        dps_res = DPS_CLIENT.get(external_id="123", start=1000000, end=1100000)
+    def test_retrieve_datapoints_by_external_id(self, mock_get_datapoints):
+        dps_res = DPS_CLIENT.retrieve(external_id="123", start=1000000, end=1100000)
         assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
 
-    def test_get_datapoints_aggregates(self, mock_get_datapoints):
-        dps_res = DPS_CLIENT.get(
+    def test_retrieve_datapoints_aggregates(self, mock_get_datapoints):
+        dps_res = DPS_CLIENT.retrieve(
             id=123, start=1000000, end=1100000, aggregates=["average", "stepInterpolation"], granularity="10s"
         )
         assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
 
-    def test_get_datapoints_local_aggregates(self, mock_get_datapoints):
-        dps_res_list = DPS_CLIENT.get(
+    def test_retrieve_datapoints_local_aggregates(self, mock_get_datapoints):
+        dps_res_list = DPS_CLIENT.retrieve(
             external_id={"externalId": "123", "aggregates": ["average"]},
             id={"id": 234},
             start=1000000,
@@ -177,13 +177,13 @@ class TestGetDatapoints:
     def test_datapoints_paging(self, mock_get_datapoints, set_dps_workers):
         set_dps_workers(1)
         with set_request_limit(2):
-            dps_res = DPS_CLIENT.get(id=123, start=0, end=10000, aggregates=["average"], granularity="1s")
+            dps_res = DPS_CLIENT.retrieve(id=123, start=0, end=10000, aggregates=["average"], granularity="1s")
         assert 6 == len(mock_get_datapoints.calls)
         assert 10 == len(dps_res)
 
     def test_datapoints_concurrent(self, mock_get_datapoints):
         DPS_CLIENT._LIMIT_AGG = 20
-        dps_res = DPS_CLIENT.get(id=123, start=0, end=100000, aggregates=["average"], granularity="1s")
+        dps_res = DPS_CLIENT.retrieve(id=123, start=0, end=100000, aggregates=["average"], granularity="1s")
         requested_windows = sorted(
             [
                 (jsgz_load(call.request.body)["start"], jsgz_load(call.request.body)["end"])
@@ -208,7 +208,7 @@ class TestGetDatapoints:
         self, mock_get_datapoints, set_dps_workers, limit, aggregates, granularity, actual_windows_req
     ):
         with set_request_limit(limit):
-            DPS_CLIENT.get(id=123, start=0, end=10000, aggregates=aggregates, granularity=granularity)
+            DPS_CLIENT.retrieve(id=123, start=0, end=10000, aggregates=aggregates, granularity=granularity)
         requested_windows = sorted(
             [
                 (jsgz_load(call.request.body)["start"], jsgz_load(call.request.body)["end"])
@@ -220,13 +220,13 @@ class TestGetDatapoints:
 
     def test_datapoints_paging_with_limit(self, mock_get_datapoints):
         with set_request_limit(3):
-            dps_res = DPS_CLIENT.get(id=123, start=0, end=10000, aggregates=["average"], granularity="1s", limit=4)
+            dps_res = DPS_CLIENT.retrieve(id=123, start=0, end=10000, aggregates=["average"], granularity="1s", limit=4)
         assert 4 == len(dps_res)
 
-    def test_get_datapoints_multiple_time_series(self, mock_get_datapoints):
+    def test_retrieve_datapoints_multiple_time_series(self, mock_get_datapoints):
         ids = [1, 2, 3]
         external_ids = ["4", "5", "6"]
-        dps_res_list = DPS_CLIENT.get(id=ids, external_id=external_ids, start=0, end=100000)
+        dps_res_list = DPS_CLIENT.retrieve(id=ids, external_id=external_ids, start=0, end=100000)
         assert isinstance(dps_res_list, DatapointsList), type(dps_res_list)
         for dps_res in dps_res_list:
             if dps_res.id in ids:
@@ -237,8 +237,8 @@ class TestGetDatapoints:
         assert 0 == len(ids)
         assert 0 == len(external_ids)
 
-    def test_get_datapoints_empty(self, mock_get_datapoints_empty):
-        res = DPS_CLIENT.get(id=1, start=0, end=10000)
+    def test_retrieve_datapoints_empty(self, mock_get_datapoints_empty):
+        res = DPS_CLIENT.retrieve(id=1, start=0, end=10000)
         assert 0 == len(res)
 
 
@@ -265,7 +265,7 @@ class TestQueryDatapoints:
 
 
 @pytest.fixture
-def mock_get_latest(rsps):
+def mock_retrieve_latest(rsps):
     def request_callback(request):
         payload = jsgz_load(request.body)
 
@@ -289,7 +289,7 @@ def mock_get_latest(rsps):
 
 
 @pytest.fixture
-def mock_get_latest_empty(rsps):
+def mock_retrieve_latest_empty(rsps):
     rsps.add(
         rsps.POST,
         DPS_CLIENT._base_url + "/timeseries/data/latest",
@@ -307,39 +307,39 @@ def mock_get_latest_empty(rsps):
 
 
 class TestGetLatest:
-    def test_get_latest(self, mock_get_latest):
-        res = DPS_CLIENT.get_latest(id=1)
+    def test_retrieve_latest(self, mock_retrieve_latest):
+        res = DPS_CLIENT.retrieve_latest(id=1)
         assert isinstance(res, Datapoints)
         assert 10000 == res[0].timestamp
         assert isinstance(res[0].value, float)
 
-    def test_get_latest_multiple_ts(self, mock_get_latest):
-        res = DPS_CLIENT.get_latest(id=1, external_id="2")
+    def test_retrieve_latest_multiple_ts(self, mock_retrieve_latest):
+        res = DPS_CLIENT.retrieve_latest(id=1, external_id="2")
         assert isinstance(res, DatapointsList)
         for dps in res:
             assert 10000 == dps[0].timestamp
             assert isinstance(dps[0].value, float)
 
-    def test_get_latest_with_before(self, mock_get_latest):
-        res = DPS_CLIENT.get_latest(id=1, before=10)
+    def test_retrieve_latest_with_before(self, mock_retrieve_latest):
+        res = DPS_CLIENT.retrieve_latest(id=1, before=10)
         assert isinstance(res, Datapoints)
         assert 9 == res[0].timestamp
         assert isinstance(res[0].value, float)
 
-    def test_get_latest_multiple_ts_with_before(self, mock_get_latest):
-        res = DPS_CLIENT.get_latest(id=[1, 2], external_id=["1", "2"], before=10)
+    def test_retrieve_latest_multiple_ts_with_before(self, mock_retrieve_latest):
+        res = DPS_CLIENT.retrieve_latest(id=[1, 2], external_id=["1", "2"], before=10)
         assert isinstance(res, DatapointsList)
         for dps in res:
             assert 9 == dps[0].timestamp
             assert isinstance(dps[0].value, float)
 
-    def test_get_latest_empty(self, mock_get_latest_empty):
-        res = DPS_CLIENT.get_latest(id=1)
+    def test_retrieve_latest_empty(self, mock_retrieve_latest_empty):
+        res = DPS_CLIENT.retrieve_latest(id=1)
         assert isinstance(res, Datapoints)
         assert 0 == len(res)
 
-    def test_get_latest_multiple_ts_empty(self, mock_get_latest_empty):
-        res_list = DPS_CLIENT.get_latest(id=[1, 2])
+    def test_retrieve_latest_multiple_ts_empty(self, mock_retrieve_latest_empty):
+        res_list = DPS_CLIENT.retrieve_latest(id=[1, 2])
         assert isinstance(res_list, DatapointsList)
         assert 2 == len(res_list)
         for res in res_list:
@@ -642,8 +642,8 @@ class TestPandasIntegration:
         dps_list = DatapointsList([])
         assert dps_list.to_pandas().empty
 
-    def test_get_dataframe(self, mock_get_datapoints):
-        df = DPS_CLIENT.get_dataframe(
+    def test_retrieve_dataframe(self, mock_get_datapoints):
+        df = DPS_CLIENT.retrieve_dataframe(
             id=[1, {"id": 2, "aggregates": ["max"]}],
             external_id=["123"],
             start=1000000,

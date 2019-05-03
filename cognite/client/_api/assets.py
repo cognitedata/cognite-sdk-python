@@ -70,7 +70,7 @@ class AssetsAPI(APIClient):
         """
         return self.__call__()
 
-    def get(
+    def retrieve(
         self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None
     ) -> Union[Asset, AssetList]:
         """Get assets
@@ -88,13 +88,13 @@ class AssetsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.assets.get(id=1)
+                >>> res = c.assets.retrieve(id=1)
 
             Get assets by external id::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.assets.get(external_id=["1", "abc"])
+                >>> res = c.assets.retrieve(external_id=["1", "abc"])
         """
         return self._retrieve_multiple(AssetList, self._RESOURCE_PATH, ids=id, external_ids=external_id, wrap_ids=True)
 
@@ -221,7 +221,7 @@ class AssetsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> asset = c.assets.get(id=1)
+                >>> asset = c.assets.retrieve(id=1)
                 >>> asset.description = "New description"
                 >>> res = c.assets.update(asset)
 

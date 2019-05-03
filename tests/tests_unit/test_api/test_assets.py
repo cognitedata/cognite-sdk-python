@@ -42,13 +42,13 @@ def mock_assets_response(rsps):
 
 
 class TestAssets:
-    def test_get_single(self, mock_assets_response):
-        res = ASSETS_API.get(id=1)
+    def test_retrieve_single(self, mock_assets_response):
+        res = ASSETS_API.retrieve(id=1)
         assert isinstance(res, Asset)
         assert mock_assets_response.calls[0].response.json()["data"]["items"][0] == res.dump(camel_case=True)
 
-    def test_get_multiple(self, mock_assets_response):
-        res = ASSETS_API.get(id=[1])
+    def test_retrieve_multiple(self, mock_assets_response):
+        res = ASSETS_API.retrieve(id=[1])
         assert isinstance(res, AssetList)
         assert mock_assets_response.calls[0].response.json()["data"]["items"] == res.dump(camel_case=True)
 
@@ -122,17 +122,17 @@ class TestAssets:
             AssetUpdate,
         )
 
-    def test_asset_object_get_parent(self, mock_assets_response):
+    def test_asset_object_retrieve_parent(self, mock_assets_response):
         a1 = Asset(parent_id=1, cognite_client=COGNITE_CLIENT)
         parent = a1.parent().dump(camel_case=True)
         assert mock_assets_response.calls[0].response.json()["data"]["items"][0] == parent
 
-    def test_asset_object_get_subtree(self, mock_assets_response):
+    def test_asset_object_retrieve_subtree(self, mock_assets_response):
         a1 = Asset(parent_id=1, cognite_client=COGNITE_CLIENT)
         subtree = a1.subtree().dump(camel_case=True)
         assert mock_assets_response.calls[0].response.json()["data"]["items"] == subtree
 
-    def test_asset_object_get_children(self, mock_assets_response):
+    def test_asset_object_retrieve_children(self, mock_assets_response):
         a1 = Asset(parent_id=1, cognite_client=COGNITE_CLIENT)
         children = a1.children().dump(camel_case=True)
         assert mock_assets_response.calls[0].response.json()["data"]["items"] == children
@@ -363,7 +363,7 @@ class TestPandasIntegration:
     def test_asset_to_pandas(self, mock_assets_response):
         import pandas as pd
 
-        df = ASSETS_API.get(id=1).to_pandas()
+        df = ASSETS_API.retrieve(id=1).to_pandas()
         assert isinstance(df, pd.DataFrame)
         assert "metadata" not in df.columns
         assert [0] == df.loc["path"][0]

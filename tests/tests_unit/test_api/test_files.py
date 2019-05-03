@@ -87,13 +87,13 @@ def mock_file_download_response(rsps):
 
 
 class TestFilesAPI:
-    def test_get_single(self, mock_files_response):
-        res = FILES_API.get(id=1)
+    def test_retrieve_single(self, mock_files_response):
+        res = FILES_API.retrieve(id=1)
         assert isinstance(res, FileMetadata)
         assert mock_files_response.calls[0].response.json()["data"]["items"][0] == res.dump(camel_case=True)
 
-    def test_get_multiple(self, mock_files_response):
-        res = FILES_API.get(id=[1])
+    def test_retrieve_multiple(self, mock_files_response):
+        res = FILES_API.retrieve(id=[1])
         assert isinstance(res, FileMetadataList)
         assert mock_files_response.calls[0].response.json()["data"]["items"] == res.dump(camel_case=True)
 
@@ -278,7 +278,7 @@ class TestPandasIntegration:
     def test_file_to_pandas(self, mock_files_response):
         import pandas as pd
 
-        df = FILES_API.get(id=1).to_pandas()
+        df = FILES_API.retrieve(id=1).to_pandas()
         assert isinstance(df, pd.DataFrame)
         assert "metadata" not in df.columns
         assert [1] == df.loc["assetIds"][0]

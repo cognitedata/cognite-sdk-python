@@ -14,14 +14,14 @@ def new_event():
     yield event
     COGNITE_CLIENT.events.delete(id=event.id)
     with pytest.raises(CogniteAPIError) as e:
-        COGNITE_CLIENT.events.get(event.id)
+        COGNITE_CLIENT.events.retrieve(event.id)
     assert 400 == e.value.code
 
 
 class TestEventsAPI:
-    def test_get(self):
+    def test_retrieve(self):
         res = COGNITE_CLIENT.events.list(limit=1)
-        assert res[0] == COGNITE_CLIENT.events.get(res[0].id)
+        assert res[0] == COGNITE_CLIENT.events.retrieve(res[0].id)
 
     def test_list(self, mocker):
         mocker.spy(COGNITE_CLIENT.events, "_post")

@@ -39,7 +39,7 @@ data points for the last 24h.
 
     >>> from cognite.client import CogniteClient
     >>> c = CogniteClient()
-    >>> my_time_series = c.time_series.get(id=[1, 2])
+    >>> my_time_series = c.time_series.retrieve(id=[1, 2])
     >>> my_time_series.plot()
 
 You can also pass arguments to the plot method to change the start, end, aggregates, and granularity of the
@@ -56,7 +56,7 @@ methods you can use to plot the data.
 
     >>> from cognite.client import CogniteClient
     >>> c = CogniteClient()
-    >>> my_datapoints = c.datapoints.get(
+    >>> my_datapoints = c.datapoints.retrieve(
     ...                     id=[1, 2],
     ...                     start="10d-ago",
     ...                     end="now",
@@ -175,7 +175,7 @@ Assets
 ------
 Get Assets
 ^^^^^^^^^^
-.. automethod:: cognite.client._api.assets.AssetsAPI.get
+.. automethod:: cognite.client._api.assets.AssetsAPI.retrieve
 
 List Assets
 ^^^^^^^^^^^
@@ -209,7 +209,7 @@ Events
 ------
 Get Events
 ^^^^^^^^^^
-.. automethod:: cognite.client._api.events.EventsAPI.get
+.. automethod:: cognite.client._api.events.EventsAPI.retrieve
 
 List Events
 ^^^^^^^^^^^
@@ -244,7 +244,7 @@ Files
 -----
 Get files metadata
 ^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.files.FilesAPI.get
+.. automethod:: cognite.client._api.files.FilesAPI.retrieve
 
 List Files metadata
 ^^^^^^^^^^^^^^^^^^^
@@ -290,7 +290,7 @@ Time Series
 -----------
 Get Time Series
 ^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.time_series.TimeSeriesAPI.get
+.. automethod:: cognite.client._api.time_series.TimeSeriesAPI.retrieve
 
 List Time Series
 ^^^^^^^^^^^^^^^^
@@ -324,11 +324,11 @@ Datapoints
 ----------
 Get datapoints
 ^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.datapoints.DatapointsAPI.get
+.. automethod:: cognite.client._api.datapoints.DatapointsAPI.retrieve
 
 Get pandas dataframe
 ^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.datapoints.DatapointsAPI.get_dataframe
+.. automethod:: cognite.client._api.datapoints.DatapointsAPI.retrieve_dataframe
 
 Perform datapoints queries
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -336,7 +336,7 @@ Perform datapoints queries
 
 Get latest
 ^^^^^^^^^^
-.. automethod:: cognite.client._api.datapoints.DatapointsAPI.get_latest
+.. automethod:: cognite.client._api.datapoints.DatapointsAPI.retrieve_latest
 
 Insert datapoints
 ^^^^^^^^^^^^^^^^^^
@@ -395,7 +395,7 @@ Delete tables from a database
 
 Get a row from a table
 ^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.raw.RawRowsAPI.get
+.. automethod:: cognite.client._api.raw.RawRowsAPI.retrieve
 
 List rows in a table
 ^^^^^^^^^^^^^^^^^^^^
@@ -423,7 +423,7 @@ Models
 ^^^^^^
 Retrieve a model by id
 ~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.three_d.ThreeDModelsAPI.get
+.. automethod:: cognite.client._api.three_d.ThreeDModelsAPI.retrieve
 
 List Models
 ~~~~~~~~~~~
@@ -446,7 +446,7 @@ Revisions
 ^^^^^^^^^
 Retrieve a Revision by ID
 ~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.get
+.. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.retrieve
 
 Create a Revision
 ~~~~~~~~~~~~~~~~~
@@ -481,7 +481,7 @@ Files
 ^^^^^
 Retrieve a 3D File
 ~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.three_d.ThreeDFilesAPI.get
+.. automethod:: cognite.client._api.three_d.ThreeDFilesAPI.retrieve
 
 Asset Mappings
 ^^^^^^^^^^^^^^
@@ -502,7 +502,7 @@ Delete Asset Mappings
     ^^^^^^
     Retrieve a Revision by ID
     ~~~~~~~~~~~~~~~~~~~~~~~~~
-    .. automethod:: cognite.client._api.three_d.ThreeDRevealAPI.get_revision
+    .. automethod:: cognite.client._api.three_d.ThreeDRevealAPI.retrieve_revision
 
     List Sectors
     ~~~~~~~~~~~~

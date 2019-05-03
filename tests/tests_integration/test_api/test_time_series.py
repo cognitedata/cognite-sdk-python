@@ -14,14 +14,14 @@ def new_ts():
     yield ts
     COGNITE_CLIENT.time_series.delete(id=ts.id)
     with pytest.raises(CogniteAPIError) as e:
-        COGNITE_CLIENT.time_series.get(ts.id)
-    assert 422 == e.value.code
+        COGNITE_CLIENT.time_series.retrieve(ts.id)
+    assert 400 == e.value.code
 
 
 class TestTimeSeriesAPI:
-    def test_get(self):
+    def test_retrieve(self):
         res = COGNITE_CLIENT.time_series.list(limit=1)
-        assert res[0] == COGNITE_CLIENT.time_series.get(res[0].id)
+        assert res[0] == COGNITE_CLIENT.time_series.retrieve(res[0].id)
 
     def test_list(self, mocker):
         mocker.spy(COGNITE_CLIENT.time_series, "_get")

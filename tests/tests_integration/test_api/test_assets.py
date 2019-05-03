@@ -21,7 +21,7 @@ def new_asset():
 class TestAssetsAPI:
     def test_get(self):
         res = COGNITE_CLIENT.assets.list(limit=1)
-        assert res[0] == COGNITE_CLIENT.assets.get(res[0].id)
+        assert res[0] == COGNITE_CLIENT.assets.retrieve(res[0].id)
 
     def test_list(self, mocker):
         mocker.spy(COGNITE_CLIENT.assets, "_post")

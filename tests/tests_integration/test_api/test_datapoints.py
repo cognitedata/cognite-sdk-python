@@ -35,8 +35,8 @@ def new_ts():
     yield ts
     COGNITE_CLIENT.time_series.delete(id=ts.id)
     with pytest.raises(CogniteAPIError) as e:
-        COGNITE_CLIENT.time_series.get(ts.id)
-    assert 422 == e.value.code
+        COGNITE_CLIENT.time_series.retrieve(ts.id)
+    assert 400 == e.value.code
 
 
 @contextmanager
@@ -58,15 +58,17 @@ def has_correct_timestamp_spacing(df: pandas.DataFrame, granularity: str):
 
 
 class TestDatapointsAPI:
-    def test_get(self, test_time_series):
+    def test_retrieve(self, test_time_series):
         ts = test_time_series[0]
-        dps = COGNITE_CLIENT.datapoints.get(id=ts.id, start="2d-ago", end="now")
+        dps = COGNITE_CLIENT.datapoints.retrieve(id=ts.id, start="2d-ago", end="now")
         assert len(dps) > 0
 
-    def test_get_multiple(self, test_time_series):
+    def test_retrieve_multiple(self, test_time_series):
         ids = [test_time_series[0].id, test_time_series[1].id, {"id": test_time_series[2].id, "aggregates": ["max"]}]
 
-        dps = COGNITE_CLIENT.datapoints.get(id=ids, start="2d-ago", end="now", aggregates=["min"], granularity="1s")
+        dps = COGNITE_CLIENT.datapoints.retrieve(
+            id=ids, start="2d-ago", end="now", aggregates=["min"], granularity="1s"
+        )
         df = dps.to_pandas()
         assert "{}|min".format(test_time_series[0].id) in df.columns
         assert "{}|min".format(test_time_series[1].id) in df.columns
@@ -75,21 +77,21 @@ class TestDatapointsAPI:
         assert 3 == df.shape[1]
         assert has_correct_timestamp_spacing(df, "1s")
 
-    def test_get_include_outside_points(self, test_time_series):
+    def test_retrieve_include_outside_points(self, test_time_series):
         ts = test_time_series[0]
-        dps_wo_outside = COGNITE_CLIENT.datapoints.get(
+        dps_wo_outside = COGNITE_CLIENT.datapoints.retrieve(
             id=ts.id, start="2d-ago", end="1d-ago", include_outside_points=False
         )
-        dps_w_outside = COGNITE_CLIENT.datapoints.get(
+        dps_w_outside = COGNITE_CLIENT.datapoints.retrieve(
             id=ts.id, start="2d-ago", end="1d-ago", include_outside_points=True
         )
         assert len(dps_wo_outside) + 1 <= len(dps_w_outside) <= len(dps_wo_outside) + 2
         assert not has_duplicates(dps_w_outside.to_pandas())
 
-    def test_get_dataframe(self, test_time_series):
+    def test_retrieve_dataframe(self, test_time_series):
         ts = test_time_series[0]
-        df = COGNITE_CLIENT.datapoints.get_dataframe(
-            id=ts.id, start="2d-ago", end="now", aggregates=["avg"], granularity="1s"
+        df = COGNITE_CLIENT.datapoints.retrieve_dataframe(
+            id=ts.id, start="2d-ago", end="now", aggregates=["average"], granularity="1s"
         )
         assert df.shape[0] > 0
         assert df.shape[1] == 1
@@ -99,7 +101,7 @@ class TestDatapointsAPI:
         dps_query1 = DatapointsQuery(id=test_time_series[0].id, start="2d-ago", end="now")
         dps_query2 = DatapointsQuery(id=test_time_series[1].id, start="1d-ago", end="now")
         dps_query3 = DatapointsQuery(
-            id=test_time_series[2].id, start="1d-ago", end="now", aggregates=["avg"], granularity="1h"
+            id=test_time_series[2].id, start="1d-ago", end="now", aggregates=["average"], granularity="1h"
         )
 
         res = COGNITE_CLIENT.datapoints.query([dps_query1, dps_query2, dps_query3])
@@ -114,15 +116,15 @@ class TestDatapointsAPI:
             if dps.id == test_time_series[2].id:
                 assert 25 == len(dps.to_pandas())
 
-    def test_get_latest(self, test_time_series):
+    def test_retrieve_latest(self, test_time_series):
         ids = [test_time_series[0].id, test_time_series[1].id]
-        res = COGNITE_CLIENT.datapoints.get_latest(id=ids)
+        res = COGNITE_CLIENT.datapoints.retrieve_latest(id=ids)
         for dps in res:
             assert 1 == len(dps)
 
-    def test_get_latest_before(self, test_time_series):
+    def test_retrieve_latest_before(self, test_time_series):
         ts = test_time_series[0]
-        res = COGNITE_CLIENT.datapoints.get_latest(id=ts.id, before="1h-ago")
+        res = COGNITE_CLIENT.datapoints.retrieve_latest(id=ts.id, before="1h-ago")
         assert 1 == len(res)
         assert res[0].timestamp < _utils.timestamp_to_ms("1h-ago")
 

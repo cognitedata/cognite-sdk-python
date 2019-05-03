@@ -61,7 +61,7 @@ class TimeSeries(CogniteResource):
     ):
         plt = utils.local_import("matplotlib.pyplot")
         identifier = utils.assert_at_least_one_of_id_or_external_id(self.id, self.external_id)
-        dps = self._cognite_client.datapoints.get(
+        dps = self._cognite_client.datapoints.retrieve(
             start=start, end=end, aggregates=aggregates, granularity=granularity, **identifier
         )
         if id_labels:
@@ -192,7 +192,7 @@ class TimeSeriesList(CogniteResourceList):
     ):
         plt = utils.local_import("matplotlib.pyplot")
         aggregates = aggregates or ["average"]
-        dps = self._cognite_client.datapoints.get(
+        dps = self._cognite_client.datapoints.retrieve(
             id=[ts.id for ts in self.data], start=start, end=end, aggregates=aggregates, granularity=granularity
         )
         if id_labels:

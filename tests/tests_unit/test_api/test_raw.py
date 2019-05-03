@@ -152,8 +152,8 @@ class TestRawTables:
 
 
 class TestRawRows:
-    def test_get(self, mock_retrieve_raw_row_response):
-        res = RAW_API.rows.get(db_name="db1", table_name="table1", key="row1")
+    def test_retrieve(self, mock_retrieve_raw_row_response):
+        res = RAW_API.rows.retrieve(db_name="db1", table_name="table1", key="row1")
         assert mock_retrieve_raw_row_response.calls[0].response.json() == res.dump(camel_case=True)
         assert mock_retrieve_raw_row_response.calls[0].request.url.endswith("/rows/row1")
 
@@ -161,9 +161,7 @@ class TestRawRows:
         res = RAW_API.rows.insert(
             db_name="db1", table_name="table1", row={"row1": {"c1": 1, "c2": "2"}}, ensure_parent=True
         )
-        assert isinstance(res, Row)
-        assert COGNITE_CLIENT == res._cognite_client
-        assert mock_raw_row_response.calls[0].response.json()["data"]["items"][0] == res.dump(camel_case=True)
+        assert res is None
         assert [{"key": "row1", "columns": {"c1": 1, "c2": "2"}}] == jsgz_load(
             mock_raw_row_response.calls[0].request.body
         )["items"]
@@ -172,22 +170,17 @@ class TestRawRows:
         res = RAW_API.rows.insert(
             db_name="db1", table_name="table1", row=Row(key="row1", columns={"c1": 1, "c2": "2"}), ensure_parent=False
         )
-        assert isinstance(res, Row)
-        assert mock_raw_row_response.calls[0].response.json()["data"]["items"][0] == res.dump(camel_case=True)
+        assert res is None
         assert [{"key": "row1", "columns": {"c1": 1, "c2": "2"}}] == jsgz_load(
             mock_raw_row_response.calls[0].request.body
         )["items"]
 
     def test_insert_multiple_DTO(self, mock_raw_row_response):
-        res_list = RAW_API.rows.insert("db1", "table1", row=[Row(key="row1", columns={"c1": 1, "c2": "2"})])
-        for res in res_list:
-            assert COGNITE_CLIENT == res._cognite_client
-        assert COGNITE_CLIENT == res_list._cognite_client
-        assert isinstance(res_list, RowList)
+        res = RAW_API.rows.insert("db1", "table1", row=[Row(key="row1", columns={"c1": 1, "c2": "2"})])
+        assert res is None
         assert [{"key": "row1", "columns": {"c1": 1, "c2": "2"}}] == jsgz_load(
             mock_raw_row_response.calls[0].request.body
         )["items"]
-        assert mock_raw_row_response.calls[0].response.json()["data"]["items"] == res_list.dump(camel_case=True)
 
     def test_list(self, mock_raw_row_response):
         res_list = RAW_API.rows.list(db_name="db1", table_name="table1")
