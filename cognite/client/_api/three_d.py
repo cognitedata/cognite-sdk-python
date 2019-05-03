@@ -64,7 +64,7 @@ class ThreeDModelsAPI(APIClient):
         """
         return self.__call__()
 
-    def get(self, id: int) -> ThreeDModel:
+    def retrieve(self, id: int) -> ThreeDModel:
         """Retrieve a 3d model by id
 
         Args:
@@ -88,6 +88,17 @@ class ThreeDModelsAPI(APIClient):
         return self._list(
             ThreeDModelList, self._RESOURCE_PATH, method="GET", filter={"published": published}, limit=limit
         )
+
+    def create(self, name: Union[str, List[str]]) -> Union[ThreeDModel, ThreeDModelList]:
+        """Create new 3d models.
+
+        Args:
+            name (Union[str, List[str]): The name of the 3d model(s) to create.
+
+        Returns:
+            Union[ThreeDModel, ThreeDModelList]: The created 3d model(s).
+        """
+        return self._create_multiple(ThreeDModelList, self._RESOURCE_PATH, items=name)
 
     def update(
         self, item: Union[ThreeDModel, ThreeDModelUpdate, List[Union[ThreeDModel, ThreeDModelList]]]
@@ -141,7 +152,7 @@ class ThreeDRevisionsAPI(APIClient):
             filter={"published": published},
         )
 
-    def get(self, model_id: int, id: int) -> ThreeDModelRevision:
+    def retrieve(self, model_id: int, id: int) -> ThreeDModelRevision:
         """Retrieve a 3d model revision by id
 
         Args:
@@ -282,7 +293,7 @@ class ThreeDRevisionsAPI(APIClient):
 class ThreeDFilesAPI(APIClient):
     _RESOURCE_PATH = "/3d/files"
 
-    def get(self, id: int) -> bytes:
+    def retrieve(self, id: int) -> bytes:
         """Retrieve the contents of a 3d file by id.
 
         Args:
@@ -358,7 +369,7 @@ class ThreeDAssetMappingAPI(APIClient):
 class ThreeDRevealAPI(APIClient):
     _RESOURCE_PATH = "/3d/reveal/models/{}/revisions"
 
-    def get_revision(self, model_id: int, revision_id: int):
+    def retrieve_revision(self, model_id: int, revision_id: int):
         """Retrieve a revision.
 
         Args:

@@ -3,16 +3,9 @@ import pytest
 from cognite.client import CogniteClient, utils
 from cognite.client.data_classes import TimeSeries, TimeSeriesFilter, TimeSeriesUpdate
 from cognite.client.exceptions import CogniteAPIError
+from tests.utils import set_request_limit
 
 COGNITE_CLIENT = CogniteClient()
-
-
-@pytest.fixture(autouse=True, scope="module")
-def set_limit():
-    limit_tmp = COGNITE_CLIENT.time_series._LIMIT
-    COGNITE_CLIENT.time_series._LIMIT = 10
-    yield set_limit
-    COGNITE_CLIENT.time_series._LIMIT = limit_tmp
 
 
 @pytest.fixture
@@ -21,19 +14,20 @@ def new_ts():
     yield ts
     COGNITE_CLIENT.time_series.delete(id=ts.id)
     with pytest.raises(CogniteAPIError) as e:
-        COGNITE_CLIENT.time_series.get(ts.id)
-    assert 422 == e.value.code
+        COGNITE_CLIENT.time_series.retrieve(ts.id)
+    assert 400 == e.value.code
 
 
 class TestTimeSeriesAPI:
-    def test_get(self):
+    def test_retrieve(self):
         res = COGNITE_CLIENT.time_series.list(limit=1)
-        assert res[0] == COGNITE_CLIENT.time_series.get(res[0].id)
+        assert res[0] == COGNITE_CLIENT.time_series.retrieve(res[0].id)
 
     def test_list(self, mocker):
         mocker.spy(COGNITE_CLIENT.time_series, "_get")
 
-        res = COGNITE_CLIENT.time_series.list(limit=20)
+        with set_request_limit(10):
+            res = COGNITE_CLIENT.time_series.list(limit=20)
 
         assert 20 == len(res)
         assert 2 == COGNITE_CLIENT.time_series._get.call_count

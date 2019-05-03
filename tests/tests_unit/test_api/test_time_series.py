@@ -43,13 +43,13 @@ def mock_ts_response(rsps):
 
 
 class TestTimeSeries:
-    def test_get_single(self, mock_ts_response):
-        res = TS_API.get(id=1)
+    def test_retrieve_single(self, mock_ts_response):
+        res = TS_API.retrieve(id=1)
         assert isinstance(res, TimeSeries)
         assert mock_ts_response.calls[0].response.json()["data"]["items"][0] == res.dump(camel_case=True)
 
-    def test_get_multiple(self, mock_ts_response):
-        res = TS_API.get(id=[1])
+    def test_retrieve_multiple(self, mock_ts_response):
+        res = TS_API.retrieve(id=[1])
         assert isinstance(res, TimeSeriesList)
         assert mock_ts_response.calls[0].response.json()["data"]["items"] == res.dump(camel_case=True)
 
@@ -140,7 +140,7 @@ class TestPlotTimeSeries:
     def mock_get_dps(self, rsps):
         rsps.add(
             rsps.POST,
-            TS_API._base_url + "/timeseries/data/get",
+            TS_API._base_url + "/timeseries/data/list",
             status=200,
             json={
                 "data": {
@@ -156,7 +156,7 @@ class TestPlotTimeSeries:
         )
         rsps.add(
             rsps.POST,
-            TS_API._base_url + "/timeseries/data/get",
+            TS_API._base_url + "/timeseries/data/list",
             status=200,
             json={
                 "data": {
@@ -174,7 +174,7 @@ class TestPlotTimeSeries:
     @mock.patch("matplotlib.pyplot.show")
     @mock.patch("pandas.core.frame.DataFrame.rename")
     def test_plot_time_series_name_labels(self, pandas_rename_mock, plt_show_mock, mock_ts_response, mock_get_dps):
-        res = TS_API.get(id=0)
+        res = TS_API.retrieve(id=0)
         df_mock = mock.MagicMock()
         pandas_rename_mock.return_value = df_mock
         res.plot(aggregates=["average"], granularity="1d")
@@ -186,7 +186,7 @@ class TestPlotTimeSeries:
     @mock.patch("matplotlib.pyplot.show")
     @mock.patch("pandas.core.frame.DataFrame.plot")
     def test_plot_time_series_id_labels(self, pandas_plot_mock, plt_show_mock, mock_ts_response, mock_get_dps):
-        res = TS_API.get(id=0)
+        res = TS_API.retrieve(id=0)
         res.plot(id_labels=True)
 
         assert 1 == pandas_plot_mock.call_count
@@ -195,7 +195,7 @@ class TestPlotTimeSeries:
     @mock.patch("matplotlib.pyplot.show")
     @mock.patch("pandas.core.frame.DataFrame.rename")
     def test_plot_time_series_list_name_labels(self, pandas_rename_mock, plt_show_mock, mock_ts_response, mock_get_dps):
-        res = TS_API.get(id=[0])
+        res = TS_API.retrieve(id=[0])
         df_mock = mock.MagicMock()
         pandas_rename_mock.return_value = df_mock
         res.plot(aggregates=["average"], granularity="1h")
@@ -206,7 +206,7 @@ class TestPlotTimeSeries:
     @mock.patch("matplotlib.pyplot.show")
     @mock.patch("pandas.core.frame.DataFrame.plot")
     def test_plot_time_series_list_id_labels(self, pandas_plot_mock, plt_show_mock, mock_ts_response, mock_get_dps):
-        res = TS_API.get(id=[0])
+        res = TS_API.retrieve(id=[0])
         res.plot(id_labels=True)
 
         assert 1 == pandas_plot_mock.call_count
@@ -242,7 +242,7 @@ class TestPandasIntegration:
     def test_time_series_to_pandas(self, mock_ts_response):
         import pandas as pd
 
-        df = TS_API.get(id=1).to_pandas()
+        df = TS_API.retrieve(id=1).to_pandas()
         assert isinstance(df, pd.DataFrame)
         assert "metadata" not in df.columns
         assert [0] == df.loc["securityCategories"][0]

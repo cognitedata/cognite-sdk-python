@@ -188,10 +188,10 @@ class Datapoints:
                 data_fields[id_with_agg] = value
         return pd.DataFrame(data_fields, index=pd.DatetimeIndex(data=np.array(timestamps, dtype="datetime64[ms]")))
 
-    def plot(self) -> None:
+    def plot(self, *args, **kwargs) -> None:
         """Plot the datapoints."""
         plt = utils.local_import("matplotlib.pyplot")
-        self.to_pandas().plot()
+        self.to_pandas().plot(*args, **kwargs)
         plt.show()
 
     @classmethod
@@ -267,10 +267,10 @@ class DatapointsList(CogniteResourceList):
             return pd.concat(dfs, axis="columns")
         return pd.DataFrame()
 
-    def plot(self) -> None:
+    def plot(self, *args, **kwargs) -> None:
         """Plot the list of datapoints."""
         plt = utils.local_import("matplotlib.pyplot")
-        self.to_pandas().plot()
+        self.to_pandas().plot(*args, **kwargs)
         plt.show()
 
 

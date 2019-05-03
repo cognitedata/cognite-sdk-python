@@ -83,7 +83,7 @@ class Table(CogniteResource):
             Union[Row, RowList]: List of tables in this database.
         """
         if key:
-            return self._cognite_client.raw.rows.get(db_name=self._db_name, table_name=self.name, key=key)
+            return self._cognite_client.raw.rows.retrieve(db_name=self._db_name, table_name=self.name, key=key)
         return self._cognite_client.raw.rows.list(db_name=self._db_name, table_name=self.name, limit=limit)
 
 

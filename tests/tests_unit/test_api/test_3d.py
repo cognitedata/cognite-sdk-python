@@ -68,10 +68,20 @@ class Test3DModels:
         assert {"items": [{"id": 1}]} == jsgz_load(mock_3d_model_response.calls[1].request.body)
         assert res is None
 
-    def test_get(self, mock_retrieve_3d_model_response):
-        res = THREE_D_API.models.get(id=1)
+    def test_retrieve(self, mock_retrieve_3d_model_response):
+        res = THREE_D_API.models.retrieve(id=1)
         assert isinstance(res, ThreeDModel)
         assert mock_retrieve_3d_model_response.calls[0].response.json() == res.dump(camel_case=True)
+
+    def test_create(self, mock_3d_model_response):
+        res = THREE_D_API.models.create(name="My Model")
+        assert isinstance(res, ThreeDModel)
+        assert mock_3d_model_response.calls[0].response.json()["data"]["items"][0] == res.dump(camel_case=True)
+
+    def test_create_multiple(self, mock_3d_model_response):
+        res = THREE_D_API.models.create(name=["My Model"])
+        assert isinstance(res, ThreeDModelList)
+        assert mock_3d_model_response.calls[0].response.json()["data"]["items"] == res.dump(camel_case=True)
 
 
 @pytest.fixture
@@ -177,8 +187,8 @@ class Test3DModelRevisions:
         assert {"items": [{"id": 1}]} == jsgz_load(mock_3d_model_revision_response.calls[1].request.body)
         assert res is None
 
-    def test_get(self, mock_retrieve_3d_model_revision_response):
-        res = THREE_D_API.revisions.get(model_id=1, id=1)
+    def test_retrieve(self, mock_retrieve_3d_model_revision_response):
+        res = THREE_D_API.revisions.retrieve(model_id=1, id=1)
         assert isinstance(res, ThreeDModelRevision)
         assert mock_retrieve_3d_model_revision_response.calls[0].response.json() == res.dump(camel_case=True)
 
@@ -219,8 +229,8 @@ class Test3DFiles:
     def mock_3d_files_response(self, rsps):
         rsps.add(rsps.GET, THREE_D_API._base_url + "/3d/files/1", body="bla")
 
-    def test_get(self, mock_3d_files_response):
-        assert b"bla" == THREE_D_API.files.get(1)
+    def test_retrieve(self, mock_3d_files_response):
+        assert b"bla" == THREE_D_API.files.retrieve(1)
 
 
 class Test3DAssetMappings:
@@ -288,8 +298,8 @@ class Test3DReveal:
         rsps.add(rsps.GET, THREE_D_API._base_url + "/3d/reveal/models/1/revisions/1", status=200, json=res)
         yield rsps
 
-    def test_get_revision(self, mock_get_reveal_revision_response):
-        res = THREE_D_API.reveal.get_revision(model_id=1, revision_id=1)
+    def test_retrieve_revision(self, mock_get_reveal_revision_response):
+        res = THREE_D_API.reveal.retrieve_revision(model_id=1, revision_id=1)
         assert isinstance(res, ThreeDRevealRevision)
         assert mock_get_reveal_revision_response.calls[0].response.json() == res.dump(camel_case=True)
 

@@ -42,7 +42,7 @@ class ServiceAccountsAPI(APIClient):
             service_account (Union[ServiceAccount, List[ServiceAccount]]): The service account(s) to create.
 
         Returns:
-            Union[ServiceAccount, List[ServiceAccount]]: The created service account(s).
+            Union[ServiceAccount, ServiceAccountList]: The created service account(s).
         """
         return self._create_multiple(ServiceAccountList, self._RESOURCE_PATH, items=service_account)
 

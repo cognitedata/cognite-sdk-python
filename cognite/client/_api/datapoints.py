@@ -13,7 +13,7 @@ class DatapointsAPI(APIClient):
     _LIMIT = 100000
     _RESOURCE_PATH = "/timeseries/data"
 
-    def get(
+    def retrieve(
         self,
         start: Union[int, str, datetime],
         end: Union[int, str, datetime],
@@ -50,14 +50,14 @@ class DatapointsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> dps = c.datapoints.get(id=1, start="2w-ago", end="now")
+                >>> dps = c.datapoints.retrieve(id=1, start="2w-ago", end="now")
 
             We can also get aggregated values, such as average. Here we are getting daily averages for all of 2018 for
             two different time series. Note that we arefetching them using their external ids::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> dps = c.datapoints.get(external_id=["abc", "def"],
+                >>> dps = c.datapoints.retrieve(external_id=["abc", "def"],
                 ...                         start=datetime(2018,1,1),
                 ...                         end=datetime(2019,1,1),
                 ...                         aggregates=["avg"],
@@ -67,7 +67,7 @@ class DatapointsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> dps = c.datapoints.get(id=[{"id": 1, "aggregates": ["avg"]},
+                >>> dps = c.datapoints.retrieve(id=[{"id": 1, "aggregates": ["avg"]},
                 ...                             {"id": 1, "aggregates": ["min"]}],
                 ...                         external_id={"externalId": "1", "aggregates": ["max"]},
                 ...                         start="1d-ago", end="now", granularity="1h")
@@ -94,7 +94,7 @@ class DatapointsAPI(APIClient):
             return dps_list[0]
         return dps_list
 
-    def get_latest(
+    def retrieve_latest(
         self,
         id: Union[int, List[int]] = None,
         external_id: Union[str, List[str]] = None,
@@ -117,20 +117,20 @@ class DatapointsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.datapoints.get_latest(id=1)[0]
+                >>> res = c.datapoints.retrieve_latest(id=1)[0]
 
             You can also get the first datapoint before a specific time::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.datapoints.get_latest(id=1, before="2d-ago")[0]
+                >>> res = c.datapoints.retrieve_latest(id=1, before="2d-ago")[0]
 
             If you need the latest datapoint for multiple time series simply give a list of ids. Note that we are
             using external ids here, but either will work::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.datapoints.get_latest(external_id=["abc", "def"])
+                >>> res = c.datapoints.retrieve_latest(external_id=["abc", "def"])
                 >>> latest_abc = res[0][0]
                 >>> latest_def = res[1][0]
         """
@@ -377,7 +377,7 @@ class DatapointsAPI(APIClient):
     def _delete_datapoints_ranges(self, delete_range_objects):
         self._post(url_path=self._RESOURCE_PATH + "/delete", json={"items": delete_range_objects})
 
-    def get_dataframe(
+    def retrieve_dataframe(
         self,
         start: Union[int, str, datetime],
         end: Union[int, str, datetime],
@@ -411,11 +411,11 @@ class DatapointsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> df = c.datapoints.get_dataframe(id=[1,2,3], start="2w-ago", end="now",
+                >>> df = c.datapoints.retrieve_dataframe(id=[1,2,3], start="2w-ago", end="now",
                 ...         aggregates=["average"], granularity="1h")
         """
         utils.local_import("pandas")
-        return self.get(
+        return self.retrieve(
             id=id,
             external_id=external_id,
             start=start,

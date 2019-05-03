@@ -38,13 +38,13 @@ def mock_events_response(rsps):
 
 
 class TestEvents:
-    def test_get_single(self, mock_events_response):
-        res = EVENTS_API.get(id=1)
+    def test_retrieve_single(self, mock_events_response):
+        res = EVENTS_API.retrieve(id=1)
         assert isinstance(res, Event)
         assert mock_events_response.calls[0].response.json()["data"]["items"][0] == res.dump(camel_case=True)
 
-    def test_get_multiple(self, mock_events_response):
-        res = EVENTS_API.get(id=[1])
+    def test_retrieve_multiple(self, mock_events_response):
+        res = EVENTS_API.retrieve(id=[1])
         assert isinstance(res, EventList)
         assert mock_events_response.calls[0].response.json()["data"]["items"] == res.dump(camel_case=True)
 
@@ -151,7 +151,7 @@ class TestPandasIntegration:
     def test_event_to_pandas(self, mock_events_response):
         import pandas as pd
 
-        df = EVENTS_API.get(id=1).to_pandas()
+        df = EVENTS_API.retrieve(id=1).to_pandas()
         assert isinstance(df, pd.DataFrame)
         assert "metadata" not in df.columns
         assert [1] == df.loc["assetIds"][0]

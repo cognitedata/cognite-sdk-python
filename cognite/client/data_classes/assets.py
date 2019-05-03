@@ -66,7 +66,7 @@ class Asset(CogniteResource):
         """
         if self.parent_id is None:
             raise ValueError("parent_id is None")
-        return self._cognite_client.assets.get(id=self.parent_id)
+        return self._cognite_client.assets.retrieve(id=self.parent_id)
 
     def children(self) -> "AssetList":
         """Returns the children of this asset.

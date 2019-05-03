@@ -64,7 +64,7 @@ class EventsAPI(APIClient):
         """
         return self.__call__()
 
-    def get(
+    def retrieve(
         self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None
     ) -> Union[Event, EventList]:
         """Get events by id
@@ -82,13 +82,13 @@ class EventsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.events.get(id=[1,2,3])
+                >>> res = c.events.retrieve(id=[1,2,3])
 
             Get an event by external id::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.events.get(external_id="abc")
+                >>> res = c.events.retrieve(external_id="abc")
         """
         return self._retrieve_multiple(EventList, self._RESOURCE_PATH, ids=id, external_ids=external_id, wrap_ids=True)
 
@@ -212,7 +212,7 @@ class EventsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> event = c.events.get(id=1)
+                >>> event = c.events.retrieve(id=1)
                 >>> event.description = "New description"
                 >>> res = c.events.update(event)
 

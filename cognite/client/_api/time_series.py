@@ -37,7 +37,7 @@ class TimeSeriesAPI(APIClient):
         """
         return self.__call__()
 
-    def get(
+    def retrieve(
         self, id: Union[int, List[int]] = None, external_id: Union[int, List[int]] = None
     ) -> Union[TimeSeries, TimeSeriesList]:
         """Returns an object containing the requested timeseries.
@@ -55,7 +55,7 @@ class TimeSeriesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.time_series.get(id=[1,2])
+                >>> res = c.time_series.retrieve(id=[1,2])
         """
         return self._retrieve_multiple(
             cls=TimeSeriesList, resource_path=self._RESOURCE_PATH, ids=id, external_ids=external_id, wrap_ids=True
@@ -158,7 +158,7 @@ class TimeSeriesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.time_series.get(id=1)
+                >>> res = c.time_series.retrieve(id=1)
                 >>> res.description = "New description"
                 >>> res = c.time_series.update(res)
 

@@ -9,7 +9,7 @@ import pytest
 from cognite.client import CogniteClient
 from cognite.client._api.assets import Asset, AssetList, AssetUpdate, _AssetPoster, _AssetPosterWorker
 from cognite.client.exceptions import CogniteAssetPostingError
-from tests.utils import jsgz_load
+from tests.utils import jsgz_load, set_request_limit
 
 COGNITE_CLIENT = CogniteClient()
 ASSETS_API = COGNITE_CLIENT.assets
@@ -41,24 +41,14 @@ def mock_assets_response(rsps):
     yield rsps
 
 
-@pytest.fixture
-def set_limit():
-    def set_limit(limit):
-        ASSETS_API._LIMIT = limit
-
-    limit_tmp = ASSETS_API._LIMIT
-    yield set_limit
-    ASSETS_API._LIMIT = limit_tmp
-
-
 class TestAssets:
-    def test_get_single(self, mock_assets_response):
-        res = ASSETS_API.get(id=1)
+    def test_retrieve_single(self, mock_assets_response):
+        res = ASSETS_API.retrieve(id=1)
         assert isinstance(res, Asset)
         assert mock_assets_response.calls[0].response.json()["data"]["items"][0] == res.dump(camel_case=True)
 
-    def test_get_multiple(self, mock_assets_response):
-        res = ASSETS_API.get(id=[1])
+    def test_retrieve_multiple(self, mock_assets_response):
+        res = ASSETS_API.retrieve(id=[1])
         assert isinstance(res, AssetList)
         assert mock_assets_response.calls[0].response.json()["data"]["items"] == res.dump(camel_case=True)
 
@@ -132,17 +122,17 @@ class TestAssets:
             AssetUpdate,
         )
 
-    def test_asset_object_get_parent(self, mock_assets_response):
+    def test_asset_object_retrieve_parent(self, mock_assets_response):
         a1 = Asset(parent_id=1, cognite_client=COGNITE_CLIENT)
         parent = a1.parent().dump(camel_case=True)
         assert mock_assets_response.calls[0].response.json()["data"]["items"][0] == parent
 
-    def test_asset_object_get_subtree(self, mock_assets_response):
+    def test_asset_object_retrieve_subtree(self, mock_assets_response):
         a1 = Asset(parent_id=1, cognite_client=COGNITE_CLIENT)
         subtree = a1.subtree().dump(camel_case=True)
         assert mock_assets_response.calls[0].response.json()["data"]["items"] == subtree
 
-    def test_asset_object_get_children(self, mock_assets_response):
+    def test_asset_object_retrieve_children(self, mock_assets_response):
         a1 = Asset(parent_id=1, cognite_client=COGNITE_CLIENT)
         children = a1.children().dump(camel_case=True)
         assert mock_assets_response.calls[0].response.json()["data"]["items"] == children
@@ -192,25 +182,25 @@ class TestAssetPoster:
         with pytest.raises(AssertionError, match="Duplicate"):
             _AssetPoster(assets, ASSETS_API)
 
-    def test_validate_asset_hierarchy__more_than_limit_only_resolved_assets(self, set_limit):
-        set_limit(1)
-        _AssetPoster([Asset(parent_id=1), Asset(parent_id=2)], ASSETS_API)
+    def test_validate_asset_hierarchy__more_than_limit_only_resolved_assets(self):
+        with set_request_limit(1):
+            _AssetPoster([Asset(parent_id=1), Asset(parent_id=2)], ASSETS_API)
 
-    def test_validate_asset_hierarchy_circular_dependencies(self, set_limit):
-        set_limit(1)
+    def test_validate_asset_hierarchy_circular_dependencies(self):
         assets = [
             Asset(ref_id="1", parent_ref_id="3"),
             Asset(ref_id="2", parent_ref_id="1"),
             Asset(ref_id="3", parent_ref_id="2"),
         ]
         with pytest.raises(AssertionError, match="circular dependencies"):
-            _AssetPoster(assets, ASSETS_API)
+            with set_request_limit(1):
+                _AssetPoster(assets, ASSETS_API)
 
-    def test_validate_asset_hierarchy_self_dependency(self, set_limit):
-        set_limit(1)
+    def test_validate_asset_hierarchy_self_dependency(self):
         assets = [Asset(ref_id="1"), Asset(ref_id="2", parent_ref_id="2")]
         with pytest.raises(AssertionError, match="circular dependencies"):
-            _AssetPoster(assets, ASSETS_API)
+            with set_request_limit(1):
+                _AssetPoster(assets, ASSETS_API)
 
     def test_initialize(self):
         assets = [
@@ -243,13 +233,13 @@ class TestAssetPoster:
         assert 1 == len(unblocked_assets_lists)
         assert 1000 == len(unblocked_assets_lists[0])
 
-    def test_get_unblocked_assets__assets_unblocked_by_default_more_than_limit(self, set_limit):
-        set_limit(3)
+    def test_get_unblocked_assets__assets_unblocked_by_default_more_than_limit(self):
         assets = []
         for i in range(4):
             assets.extend(generate_asset_tree(root_ref_id=str(i), depth=2, children_per_node=2))
-        ap = _AssetPoster(assets=assets, client=ASSETS_API)
-        unblocked_assets_lists = ap._get_unblocked_assets()
+        with set_request_limit(3):
+            ap = _AssetPoster(assets=assets, client=ASSETS_API)
+            unblocked_assets_lists = ap._get_unblocked_assets()
         assert 4 == len(unblocked_assets_lists)
         for li in unblocked_assets_lists:
             assert 3 == len(li)
@@ -281,13 +271,11 @@ class TestAssetPoster:
         "limit, depth, children_per_node, expected_num_calls",
         [(100, 4, 10, 13), (9, 3, 9, 11), (100, 101, 1, 2), (1, 10, 1, 10)],
     )
-    def test_post_hierarchy(
-        self, limit, depth, children_per_node, expected_num_calls, mock_post_asset_hierarchy, set_limit
-    ):
-        set_limit(limit)
+    def test_post_hierarchy(self, limit, depth, children_per_node, expected_num_calls, mock_post_asset_hierarchy):
         assets = generate_asset_tree(root_ref_id="0", depth=depth, children_per_node=children_per_node)
 
-        created_assets = ASSETS_API.create(assets)
+        with set_request_limit(limit):
+            created_assets = ASSETS_API.create(assets)
 
         assert len(assets) == len(created_assets)
         assert expected_num_calls - 1 <= len(mock_post_asset_hierarchy.calls) <= expected_num_calls + 1
@@ -297,15 +285,13 @@ class TestAssetPoster:
             else:
                 assert asset.id[:-3] == asset.parent_id[:-2]
 
-    def test_post_assets_over_limit_only_resolved(self, set_limit, mock_post_asset_hierarchy):
-        set_limit(1)
-        _AssetPoster([Asset(parent_id=1), Asset(parent_id=2)], ASSETS_API).post()
+    def test_post_assets_over_limit_only_resolved(self, mock_post_asset_hierarchy):
+        with set_request_limit(1):
+            _AssetPoster([Asset(parent_id=1), Asset(parent_id=2)], ASSETS_API).post()
         assert 2 == len(mock_post_asset_hierarchy.calls)
 
     @pytest.fixture
-    def mock_post_asset_hierarchy_with_failures(self, rsps, set_limit):
-        set_limit(1)
-
+    def mock_post_asset_hierarchy_with_failures(self, rsps):
         def request_callback(request):
             items = jsgz_load(request.body)["items"]
             response_assets = []
@@ -329,7 +315,8 @@ class TestAssetPoster:
         rsps.add_callback(
             rsps.POST, ASSETS_API._base_url + "/assets", callback=request_callback, content_type="application/json"
         )
-        yield rsps
+        with set_request_limit(1):
+            yield rsps
 
     def test_post_with_failures(self, mock_post_asset_hierarchy_with_failures):
         assets = [
@@ -376,7 +363,7 @@ class TestPandasIntegration:
     def test_asset_to_pandas(self, mock_assets_response):
         import pandas as pd
 
-        df = ASSETS_API.get(id=1).to_pandas()
+        df = ASSETS_API.retrieve(id=1).to_pandas()
         assert isinstance(df, pd.DataFrame)
         assert "metadata" not in df.columns
         assert [0] == df.loc["path"][0]

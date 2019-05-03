@@ -262,7 +262,7 @@ class RawRowsAPI(APIClient):
 
     def insert(
         self, db_name: str, table_name: str, row: Union[List[Row], Row, Dict], ensure_parent: bool = False
-    ) -> Union[Row, RowList]:
+    ) -> None:
         """Insert one or more rows into a table.
 
         Args:
@@ -272,7 +272,7 @@ class RawRowsAPI(APIClient):
             ensure_parent (bool): Create database/table if they don't already exist.
 
         Returns:
-            Union[Row, RowList]: The created row(s).
+            None
 
         Examples:
 
@@ -283,22 +283,17 @@ class RawRowsAPI(APIClient):
                 >>> rows = {"r1": {"col1": "val1", "col2": "val1"}, "r2": {"col1": "val2", "col2": "val2"}}
                 >>> res = c.raw.rows.insert("db1", "table1", rows)
         """
-        items, is_single = self._process_row_input(row)
-        if is_single:
-            items = items[0]
-        return self._create_multiple(
-            cls=RowList,
-            resource_path=utils.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
-            items=items,
+        items = self._process_row_input(row)
+        self._post(
+            url_path=utils.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
+            json={"items": items},
             params={"ensureParent": ensure_parent},
         )
 
     def _process_row_input(self, row: Union[List, Dict, Row]):
         utils.assert_type(row, "row", [list, dict, Row])
         rows = []
-        is_single = False
         if isinstance(row, dict):
-            is_single = len(row.keys()) == 1
             for key, columns in row.items():
                 rows.append({"key": key, "columns": columns})
         elif isinstance(row, list):
@@ -308,9 +303,8 @@ class RawRowsAPI(APIClient):
                 else:
                     raise TypeError("list elements must be Row objects.")
         elif isinstance(row, Row):
-            is_single = True
             rows.append(row.dump(camel_case=True))
-        return rows, is_single
+        return rows
 
     def delete(self, db_name: str, table_name: str, key: Union[str, List[str]]) -> None:
         """Delete rows from a table.
@@ -341,7 +335,7 @@ class RawRowsAPI(APIClient):
             json={"items": items},
         )
 
-    def get(self, db_name: str, table_name: str, key: str) -> Row:
+    def retrieve(self, db_name: str, table_name: str, key: str) -> Row:
         """Retrieve a single row by key.
 
         Args:
@@ -358,7 +352,7 @@ class RawRowsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> row = c.raw.rows.get("db1", "t1", "k1")
+                >>> row = c.raw.rows.retrieve("db1", "t1", "k1")
         """
         return self._retrieve(
             cls=Row, resource_path=utils.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name), id=key
