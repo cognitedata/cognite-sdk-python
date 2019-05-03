@@ -272,7 +272,7 @@ class RawRowsAPI(APIClient):
             ensure_parent (bool): Create database/table if they don't already exist.
 
         Returns:
-            Union[Row, RowList]: The created row(s).
+            None
 
         Examples:
 
@@ -286,10 +286,9 @@ class RawRowsAPI(APIClient):
         items, is_single = self._process_row_input(row)
         if is_single:
             items = items[0]
-        return self._create_multiple(
-            cls=RowList,
-            resource_path=utils.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
-            items=items,
+        return self._post(
+            url_path=utils.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
+            json={"items": items},
             params={"ensureParent": ensure_parent},
         )
 
