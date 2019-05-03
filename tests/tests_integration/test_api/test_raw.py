@@ -1,6 +1,13 @@
+import pytest
+
 from cognite.client import CogniteClient
 
 COGNITE_CLIENT = CogniteClient()
+
+
+@pytest.fixture
+def new_database():
+    db = COGNITE_CLIENT.raw.databases.create()
 
 
 class TestRawDatabasesAPI:

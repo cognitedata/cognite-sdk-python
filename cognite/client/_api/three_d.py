@@ -89,6 +89,17 @@ class ThreeDModelsAPI(APIClient):
             ThreeDModelList, self._RESOURCE_PATH, method="GET", filter={"published": published}, limit=limit
         )
 
+    def create(self, name: Union[str, List[str]]) -> Union[ThreeDModel, ThreeDModelList]:
+        """Create new 3d models.
+
+        Args:
+            name (Union[str, List[str]): The name of the 3d model(s) to create.
+
+        Returns:
+            Union[ThreeDModel, ThreeDModelList]: The created 3d model(s).
+        """
+        return self._create_multiple(ThreeDModelList, self._RESOURCE_PATH, items=name)
+
     def update(
         self, item: Union[ThreeDModel, ThreeDModelUpdate, List[Union[ThreeDModel, ThreeDModelList]]]
     ) -> Union[ThreeDModel, ThreeDModelList]:

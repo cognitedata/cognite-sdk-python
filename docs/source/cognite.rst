@@ -429,6 +429,10 @@ List Models
 ~~~~~~~~~~~
 .. automethod:: cognite.client._api.three_d.ThreeDModelsAPI.list
 
+Create Models
+~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.three_d.ThreeDModelsAPI.create
+
 Update Models
 ~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.three_d.ThreeDModelsAPI.update

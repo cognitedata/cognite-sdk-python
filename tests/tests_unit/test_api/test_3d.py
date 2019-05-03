@@ -73,6 +73,16 @@ class Test3DModels:
         assert isinstance(res, ThreeDModel)
         assert mock_retrieve_3d_model_response.calls[0].response.json() == res.dump(camel_case=True)
 
+    def test_create(self, mock_3d_model_response):
+        res = THREE_D_API.models.create(name="My Model")
+        assert isinstance(res, ThreeDModel)
+        assert mock_3d_model_response.calls[0].response.json()["data"]["items"][0] == res.dump(camel_case=True)
+
+    def test_create_multiple(self, mock_3d_model_response):
+        res = THREE_D_API.models.create(name=["My Model"])
+        assert isinstance(res, ThreeDModelList)
+        assert mock_3d_model_response.calls[0].response.json()["data"]["items"] == res.dump(camel_case=True)
+
 
 @pytest.fixture
 def mock_3d_model_revision_response(rsps):
