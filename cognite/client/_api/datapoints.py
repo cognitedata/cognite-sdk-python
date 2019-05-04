@@ -9,8 +9,8 @@ from cognite.client.utils import _utils as utils
 
 
 class DatapointsAPI(APIClient):
-    _LIMIT_AGG = 10000
-    _LIMIT = 100000
+    _DPS_LIMIT_AGG = 10000
+    _DPS_LIMIT = 100000
     _RESOURCE_PATH = "/timeseries/data"
 
     def retrieve(
@@ -513,9 +513,9 @@ class DatapointsAPI(APIClient):
     def _insert_datapoints_concurrently(self, post_dps_objects: List[Dict[str, Any]]):
         tasks = []
         for dps_object in post_dps_objects:
-            for i in range(0, len(dps_object["datapoints"]), self._LIMIT):
+            for i in range(0, len(dps_object["datapoints"]), self._DPS_LIMIT):
                 dps_object_chunk = dps_object.copy()
-                dps_object_chunk["datapoints"] = dps_object["datapoints"][i : i + self._LIMIT]
+                dps_object_chunk["datapoints"] = dps_object["datapoints"][i : i + self._DPS_LIMIT]
                 tasks.append(([dps_object_chunk],))
         utils.execute_tasks_concurrently(self._insert_datapoints, tasks, max_workers=self._max_workers)
 
@@ -572,7 +572,6 @@ class _DPQuery:
 class _DatapointsFetcher:
     def __init__(self, client: DatapointsAPI):
         self.client = client
-        self.semaphore = threading.Semaphore(self.client._max_workers)
         self.lock = threading.Lock()
         self.id_to_datapoints = defaultdict(lambda: Datapoints())
         self.id_to_include_outside_dps = defaultdict(lambda: False)
@@ -592,8 +591,7 @@ class _DatapointsFetcher:
         return dps_list
 
     def _do_dps_query(self, query: _DPQuery):
-        with self.semaphore:
-            dps = self._get_datapoints_with_paging(*query.as_tuple())
+        dps = self._get_datapoints_with_paging(*query.as_tuple())
         with self.lock:
             self.id_to_datapoints[dps.id]._insert(dps)
             self.id_to_include_outside_dps[dps.id] = query.include_outside_points
@@ -608,7 +606,7 @@ class _DatapointsFetcher:
         include_outside_points: bool,
         limit: int,
     ) -> Datapoints:
-        per_request_limit = self.client._LIMIT_AGG if aggregates else self.client._LIMIT
+        per_request_limit = self.client._DPS_LIMIT_AGG if aggregates else self.client._DPS_LIMIT
         limit_next_request = per_request_limit
         next_start = start
         datapoints = Datapoints()
@@ -650,7 +648,7 @@ class _DatapointsFetcher:
             "aggregates": aggregates,
             "granularity": granularity,
             "includeOutsidePoints": include_outside_points,
-            "limit": limit or (self.client._LIMIT_AGG if aggregates else self.client._LIMIT),
+            "limit": limit or (self.client._DPS_LIMIT_AGG if aggregates else self.client._DPS_LIMIT),
         }
         res = self.client._post(self.client._RESOURCE_PATH + "/list", json=payload).json()["data"]["items"][0]
         return Datapoints._load(res, cognite_client=self.client._cognite_client)
@@ -662,9 +660,9 @@ class _DatapointsFetcher:
 
     def _split_query_into_windows(self, dps_query: _DPQuery) -> List[_DPQuery]:
         if dps_query.aggregates:
-            dps_per_window = self.client._LIMIT_AGG * 5
+            dps_per_window = self.client._DPS_LIMIT_AGG * 5
         else:
-            dps_per_window = self.client._LIMIT * 500
+            dps_per_window = self.client._DPS_LIMIT * 500
         windows = self._get_windows(dps_query.start, dps_query.end, dps_query.granularity, dps_per_window)
         return [
             _DPQuery(

@@ -101,9 +101,9 @@ def mock_get_datapoints_empty(rsps):
 
 @contextmanager
 def set_request_limit(limit):
-    with mock.patch("cognite.client._api.datapoints.DatapointsAPI._LIMIT", new_callable=PropertyMock) as limit_mock:
+    with mock.patch("cognite.client._api.datapoints.DatapointsAPI._DPS_LIMIT", new_callable=PropertyMock) as limit_mock:
         with mock.patch(
-            "cognite.client._api.datapoints.DatapointsAPI._LIMIT_AGG", new_callable=PropertyMock
+            "cognite.client._api.datapoints.DatapointsAPI._DPS_LIMIT_AGG", new_callable=PropertyMock
         ) as limit_agg_mock:
             limit_mock.return_value = limit
             limit_agg_mock.return_value = limit
@@ -182,7 +182,7 @@ class TestGetDatapoints:
         assert 10 == len(dps_res)
 
     def test_datapoints_concurrent(self, mock_get_datapoints):
-        DPS_CLIENT._LIMIT_AGG = 20
+        DPS_CLIENT._DPS_LIMIT_AGG = 20
         dps_res = DPS_CLIENT.retrieve(id=123, start=0, end=100000, aggregates=["average"], granularity="1s")
         requested_windows = sorted(
             [
