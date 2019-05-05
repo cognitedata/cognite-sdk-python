@@ -7,7 +7,7 @@ from cognite.client import CogniteClient
 from cognite.client._api_client import APIClient
 from cognite.client._base import *
 from cognite.client.exceptions import CogniteAPIError
-from tests.utils import jsgz_load
+from tests.utils import jsgz_load, set_request_limit
 
 BASE_URL = "http://localtest.com/api/1.0/projects/test-project"
 URL_PATH = "/someurl"
@@ -161,7 +161,7 @@ class TestStandardRetrieve:
         assert COGNITE_CLIENT == API_CLIENT._retrieve(cls=SomeResource, resource_path=URL_PATH, id=1)._cognite_client
 
 
-class TestStandardRetrieveById:
+class TestStandardRetrieveMultiple:
     @pytest.fixture
     def mock_by_ids(self, rsps):
         rsps.add(
@@ -238,6 +238,16 @@ class TestStandardRetrieveById:
                 cls=SomeResourceList, resource_path=URL_PATH, wrap_ids=True, ids=[1, 2]
             )._cognite_client
         )
+
+    def test_over_limit_concurrent(self, rsps):
+        rsps.add(rsps.POST, BASE_URL + URL_PATH + "/byids", status=200, json={"data": {"items": [{"x": 1, "y": 2}]}})
+        rsps.add(rsps.POST, BASE_URL + URL_PATH + "/byids", status=200, json={"data": {"items": [{"x": 3, "y": 4}]}})
+
+        with set_request_limit(API_CLIENT, 1):
+            API_CLIENT._retrieve_multiple(cls=SomeResourceList, resource_path=URL_PATH, ids=[1, 2], wrap_ids=False)
+
+        assert {"items": [1]} == jsgz_load(rsps.calls[0].request.body)
+        assert {"items": [2]} == jsgz_load(rsps.calls[1].request.body)
 
 
 class TestStandardList:
@@ -455,6 +465,15 @@ class TestStandardDelete:
         assert 400 == e.value.code
         assert "Client Error" == e.value.message
 
+    def test_over_limit_concurrent(self, rsps):
+        rsps.add(rsps.POST, BASE_URL + URL_PATH + "/delete", status=200, json={})
+        rsps.add(rsps.POST, BASE_URL + URL_PATH + "/delete", status=200, json={})
+
+        with set_request_limit(API_CLIENT, 2):
+            API_CLIENT._delete_multiple(resource_path=URL_PATH, ids=[1, 2, 3, 4], wrap_ids=False)
+        assert {"items": [1, 2]} == jsgz_load(rsps.calls[0].request.body)
+        assert {"items": [3, 4]} == jsgz_load(rsps.calls[1].request.body)
+
 
 class TestStandardUpdate:
     @pytest.fixture
@@ -526,7 +545,7 @@ class TestStandardUpdate:
         rsps.add(rsps.POST, BASE_URL + URL_PATH + "/update", status=400, json={"error": {"message": "Client Error"}})
 
         with pytest.raises(CogniteAPIError, match="Client Error"):
-            API_CLIENT._update_multiple(SomeResourceList, resource_path=URL_PATH, items=[])
+            API_CLIENT._update_multiple(SomeResourceList, resource_path=URL_PATH, items=[SomeResource(id=0)])
 
     def test_cognite_client_is_set(self, mock_update):
         assert (
@@ -541,6 +560,18 @@ class TestStandardUpdate:
                 cls=SomeResourceList, resource_path=URL_PATH, items=[SomeResource(id=0)]
             )._cognite_client
         )
+
+    def test_over_limit_concurrent(self, rsps):
+        rsps.add(rsps.POST, BASE_URL + URL_PATH + "/update", status=200, json={"data": {"items": [{"x": 1, "y": 2}]}})
+        rsps.add(rsps.POST, BASE_URL + URL_PATH + "/update", status=200, json={"data": {"items": [{"x": 3, "y": 4}]}})
+
+        with set_request_limit(API_CLIENT, 1):
+            API_CLIENT._update_multiple(
+                cls=SomeResourceList, resource_path=URL_PATH, items=[SomeResource(1, 2, id=1), SomeResource(3, 4, id=2)]
+            )
+
+        assert {"items": [{"id": 1, "update": {"y": {"set": 2}}}]} == jsgz_load(rsps.calls[0].request.body)
+        assert {"items": [{"id": 2, "update": {"y": {"set": 4}}}]} == jsgz_load(rsps.calls[1].request.body)
 
 
 class TestStandardSearch:

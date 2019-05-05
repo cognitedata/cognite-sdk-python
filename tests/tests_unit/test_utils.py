@@ -210,6 +210,21 @@ class TestJsonDumpDefault:
             assert json.dumps(input, default=utils.json_dump_default)
 
 
+class TestSplitIntoChunks:
+    @pytest.mark.parametrize(
+        "input_list, chunk_size, expected_output",
+        [
+            (["a", "b", "c"], 1, [["a"], ["b"], ["c"]]),
+            (["a", "b", "c"], 2, [["a", "b"], ["c"]]),
+            ([], 1000, []),
+            (["a", "b", "c"], 3, [["a", "b", "c"]]),
+            (["a", "b", "c"], 10, [["a", "b", "c"]]),
+        ],
+    )
+    def test_split_into_chunks(self, input_list, chunk_size, expected_output):
+        assert expected_output == utils.split_into_chunks(input_list, chunk_size)
+
+
 class TestAssertions:
     @pytest.mark.parametrize("timestamp", [utils.timestamp_to_ms(datetime(2018, 1, 1)), datetime(1970, 2, 2), "now"])
     def test_assert_timestamp_not_in_jan_in_1970_ok(self, timestamp):

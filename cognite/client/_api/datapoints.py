@@ -9,9 +9,12 @@ from cognite.client.utils import _utils as utils
 
 
 class DatapointsAPI(APIClient):
-    _DPS_LIMIT_AGG = 10000
-    _DPS_LIMIT = 100000
     _RESOURCE_PATH = "/timeseries/data"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._DPS_LIMIT_AGG = 10000
+        self._DPS_LIMIT = 100000
 
     def retrieve(
         self,

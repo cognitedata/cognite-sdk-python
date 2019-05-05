@@ -313,3 +313,10 @@ class PriorityQueue:
 
     def __bool__(self):
         return len(self.heap) > 0
+
+
+def split_into_chunks(li: List, chunk_size: int):
+    chunks = []
+    for i in range(0, len(li), chunk_size):
+        chunks.append(li[i : i + chunk_size])
+    return chunks

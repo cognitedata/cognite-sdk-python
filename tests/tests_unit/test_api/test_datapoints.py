@@ -12,7 +12,7 @@ from cognite.client._api.datapoints import _DatapointsFetcher, _DPWindow
 from cognite.client.data_classes import Datapoint, Datapoints, DatapointsList, DatapointsQuery
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils import _utils as utils
-from tests.utils import jsgz_load
+from tests.utils import jsgz_load, set_request_limit
 
 COGNITE_CLIENT = CogniteClient()
 DPS_CLIENT = COGNITE_CLIENT.datapoints
@@ -99,17 +99,6 @@ def mock_get_datapoints_empty(rsps):
     yield rsps
 
 
-@contextmanager
-def set_request_limit(limit):
-    with mock.patch("cognite.client._api.datapoints.DatapointsAPI._DPS_LIMIT", new_callable=PropertyMock) as limit_mock:
-        with mock.patch(
-            "cognite.client._api.datapoints.DatapointsAPI._DPS_LIMIT_AGG", new_callable=PropertyMock
-        ) as limit_agg_mock:
-            limit_mock.return_value = limit
-            limit_agg_mock.return_value = limit
-            yield
-
-
 @pytest.fixture
 def set_dps_workers():
     def set_workers(limit):
@@ -176,7 +165,7 @@ class TestGetDatapoints:
 
     def test_datapoints_paging(self, mock_get_datapoints, set_dps_workers):
         set_dps_workers(1)
-        with set_request_limit(2):
+        with set_request_limit(DPS_CLIENT, 2):
             dps_res = DPS_CLIENT.retrieve(id=123, start=0, end=10000, aggregates=["average"], granularity="1s")
         assert 6 == len(mock_get_datapoints.calls)
         assert 10 == len(dps_res)
@@ -207,7 +196,7 @@ class TestGetDatapoints:
     def test_request_dps_spacing_correct(
         self, mock_get_datapoints, set_dps_workers, limit, aggregates, granularity, actual_windows_req
     ):
-        with set_request_limit(limit):
+        with set_request_limit(DPS_CLIENT, limit):
             DPS_CLIENT.retrieve(id=123, start=0, end=10000, aggregates=aggregates, granularity=granularity)
         requested_windows = sorted(
             [
@@ -219,7 +208,7 @@ class TestGetDatapoints:
         assert actual_windows_req == requested_windows[1:]
 
     def test_datapoints_paging_with_limit(self, mock_get_datapoints):
-        with set_request_limit(3):
+        with set_request_limit(DPS_CLIENT, 3):
             dps_res = DPS_CLIENT.retrieve(id=123, start=0, end=10000, aggregates=["average"], granularity="1s", limit=4)
         assert 4 == len(dps_res)
 
@@ -391,7 +380,7 @@ class TestInsertDatapoints:
 
     def test_insert_datapoints_over_limit(self, mock_post_datapoints):
         dps = [(i * 1e10, i) for i in range(1, 11)]
-        with set_request_limit(5):
+        with set_request_limit(DPS_CLIENT, 5):
             res = DPS_CLIENT.insert(dps, id=1)
         assert res is None
         request_bodies = [jsgz_load(call.request.body) for call in mock_post_datapoints.calls]

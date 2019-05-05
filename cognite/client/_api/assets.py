@@ -182,7 +182,7 @@ class AssetsAPI(APIClient):
                 >>> res = c.assets.create(assets)
         """
         utils.assert_type(asset, "asset", [Asset, list])
-        if isinstance(asset, Asset) or len(asset) <= self._LIMIT:
+        if isinstance(asset, Asset) or len(asset) <= self._CREATE_LIMIT:
             return self._create_multiple(AssetList, self._RESOURCE_PATH, asset)
         return _AssetPoster(asset, client=self).post()
 
@@ -418,7 +418,7 @@ class _AssetPoster:
         return unblocked_descendents
 
     def _get_unblocked_assets(self) -> List[List[Asset]]:
-        limit = self.client._LIMIT
+        limit = self.client._CREATE_LIMIT
         unblocked_assets_lists = []
         unblocked_assets = []
         for ref_id in self.remaining_ref_ids:

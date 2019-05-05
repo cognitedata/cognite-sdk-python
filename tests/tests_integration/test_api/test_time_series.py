@@ -26,7 +26,7 @@ class TestTimeSeriesAPI:
     def test_list(self, mocker):
         mocker.spy(COGNITE_CLIENT.time_series, "_get")
 
-        with set_request_limit(10):
+        with set_request_limit(COGNITE_CLIENT.time_series, 10):
             res = COGNITE_CLIENT.time_series.list(limit=20)
 
         assert 20 == len(res)

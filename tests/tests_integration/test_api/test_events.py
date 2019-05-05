@@ -26,7 +26,7 @@ class TestEventsAPI:
     def test_list(self, mocker):
         mocker.spy(COGNITE_CLIENT.events, "_post")
 
-        with set_request_limit(10):
+        with set_request_limit(COGNITE_CLIENT.events, 10):
             res = COGNITE_CLIENT.events.list(limit=20)
 
         assert 20 == len(res)

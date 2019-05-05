@@ -183,7 +183,7 @@ class TestAssetPoster:
             _AssetPoster(assets, ASSETS_API)
 
     def test_validate_asset_hierarchy__more_than_limit_only_resolved_assets(self):
-        with set_request_limit(1):
+        with set_request_limit(ASSETS_API, 1):
             _AssetPoster([Asset(parent_id=1), Asset(parent_id=2)], ASSETS_API)
 
     def test_validate_asset_hierarchy_circular_dependencies(self):
@@ -192,14 +192,14 @@ class TestAssetPoster:
             Asset(ref_id="2", parent_ref_id="1"),
             Asset(ref_id="3", parent_ref_id="2"),
         ]
-        with pytest.raises(AssertionError, match="circular dependencies"):
-            with set_request_limit(1):
+        with set_request_limit(ASSETS_API, 1):
+            with pytest.raises(AssertionError, match="circular dependencies"):
                 _AssetPoster(assets, ASSETS_API)
 
     def test_validate_asset_hierarchy_self_dependency(self):
         assets = [Asset(ref_id="1"), Asset(ref_id="2", parent_ref_id="2")]
-        with pytest.raises(AssertionError, match="circular dependencies"):
-            with set_request_limit(1):
+        with set_request_limit(ASSETS_API, 1):
+            with pytest.raises(AssertionError, match="circular dependencies"):
                 _AssetPoster(assets, ASSETS_API)
 
     def test_initialize(self):
@@ -237,7 +237,7 @@ class TestAssetPoster:
         assets = []
         for i in range(4):
             assets.extend(generate_asset_tree(root_ref_id=str(i), depth=2, children_per_node=2))
-        with set_request_limit(3):
+        with set_request_limit(ASSETS_API, 3):
             ap = _AssetPoster(assets=assets, client=ASSETS_API)
             unblocked_assets_lists = ap._get_unblocked_assets()
         assert 4 == len(unblocked_assets_lists)
@@ -274,7 +274,7 @@ class TestAssetPoster:
     def test_post_hierarchy(self, limit, depth, children_per_node, expected_num_calls, mock_post_asset_hierarchy):
         assets = generate_asset_tree(root_ref_id="0", depth=depth, children_per_node=children_per_node)
 
-        with set_request_limit(limit):
+        with set_request_limit(ASSETS_API, limit):
             created_assets = ASSETS_API.create(assets)
 
         assert len(assets) == len(created_assets)
@@ -286,7 +286,7 @@ class TestAssetPoster:
                 assert asset.id[:-3] == asset.parent_id[:-2]
 
     def test_post_assets_over_limit_only_resolved(self, mock_post_asset_hierarchy):
-        with set_request_limit(1):
+        with set_request_limit(ASSETS_API, 1):
             _AssetPoster([Asset(parent_id=1), Asset(parent_id=2)], ASSETS_API).post()
         assert 2 == len(mock_post_asset_hierarchy.calls)
 
@@ -315,7 +315,7 @@ class TestAssetPoster:
         rsps.add_callback(
             rsps.POST, ASSETS_API._base_url + "/assets", callback=request_callback, content_type="application/json"
         )
-        with set_request_limit(1):
+        with set_request_limit(ASSETS_API, 1):
             yield rsps
 
     def test_post_with_failures(self, mock_post_asset_hierarchy_with_failures):

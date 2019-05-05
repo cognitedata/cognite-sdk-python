@@ -57,7 +57,7 @@ _REQUESTS_SESSION = _init_requests_session()
 
 
 class APIClient:
-    _LIMIT = 1000
+    _RESOURCE_PATH = None
 
     def __init__(
         self,
@@ -81,6 +81,12 @@ class APIClient:
         self._headers = self._configure_headers(headers)
         self._timeout = timeout
         self._cognite_client = cognite_client
+
+        self._CREATE_LIMIT = 1000
+        self._LIST_LIMIT = 1000
+        self._RETRIEVE_LIMIT = 1000
+        self._DELETE_LIMIT = 1000
+        self._UPDATE_LIMIT = 1000
 
     def _delete(self, url_path: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
         return self._do_request(
@@ -167,12 +173,20 @@ class APIClient:
         headers: Dict = None,
     ):
         all_ids = self._process_ids(ids, external_ids, wrap_ids=wrap_ids)
-        res = self._post(url_path=resource_path + "/byids", json={"items": all_ids}, headers=headers).json()["data"][
-            "items"
+        id_chunks = utils.split_into_chunks(all_ids, self._RETRIEVE_LIMIT)
+
+        tasks = [
+            {"url_path": resource_path + "/byids", "json": {"items": id_chunk}, "headers": headers}
+            for id_chunk in id_chunks
         ]
+        res_list = utils.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
+        retrieved_items = []
+        for res in res_list:
+            retrieved_items.extend(res.json()["data"]["items"])
+
         if self._is_single_identifier(ids, external_ids):
-            return cls._RESOURCE._load(res[0], cognite_client=self._cognite_client)
-        return cls._load(res, cognite_client=self._cognite_client)
+            return cls._RESOURCE._load(retrieved_items[0], cognite_client=self._cognite_client)
+        return cls._load(retrieved_items, cognite_client=self._cognite_client)
 
     def _list_generator(
         self,
@@ -185,8 +199,8 @@ class APIClient:
         headers: Dict = None,
     ):
         total_items_retrieved = 0
-        current_limit = self._LIMIT
-        if chunk_size and chunk_size <= self._LIMIT:
+        current_limit = self._LIST_LIMIT
+        if chunk_size and chunk_size <= self._LIST_LIMIT:
             current_limit = chunk_size
         next_cursor = None
         filter = filter or {}
@@ -194,7 +208,7 @@ class APIClient:
         while True:
             if limit:
                 num_of_remaining_items = limit - total_items_retrieved
-                if num_of_remaining_items < self._LIMIT:
+                if num_of_remaining_items < self._LIST_LIMIT:
                     current_limit = num_of_remaining_items
 
             if method == "GET":
@@ -215,7 +229,7 @@ class APIClient:
                     yield cls._RESOURCE._load(item, cognite_client=self._cognite_client)
                 total_items_retrieved += len(current_items)
                 current_items = []
-            elif len(current_items) >= chunk_size or len(last_received_items) < self._LIMIT:
+            elif len(current_items) >= chunk_size or len(last_received_items) < self._LIST_LIMIT:
                 items_to_yield = current_items[:chunk_size]
                 yield cls._load(items_to_yield, cognite_client=self._cognite_client)
                 total_items_retrieved += len(items_to_yield)
@@ -232,7 +246,7 @@ class APIClient:
             resource_path=resource_path,
             method=method,
             limit=limit,
-            chunk_size=self._LIMIT,
+            chunk_size=self._LIST_LIMIT,
             filter=filter,
             headers=headers,
         ):
@@ -248,7 +262,7 @@ class APIClient:
         headers: Dict = None,
         limit=None,
     ):
-        limit = limit or self._LIMIT
+        limit = limit or self._CREATE_LIMIT
         single_item = not isinstance(items, list)
         if single_item:
             items = [items]
@@ -282,7 +296,12 @@ class APIClient:
         headers: Dict = None,
     ):
         all_ids = self._process_ids(ids, external_ids, wrap_ids)
-        self._post(resource_path + "/delete", json={"items": all_ids}, params=params, headers=headers)
+        id_chunks = utils.split_into_chunks(all_ids, self._DELETE_LIMIT)
+        tasks = [
+            {"url_path": resource_path + "/delete", "json": {"items": chunk}, "params": params, "headers": headers}
+            for chunk in id_chunks
+        ]
+        utils.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
 
     def _update_multiple(
         self, cls: Any, resource_path: str, items: Union[List[Any], Any], params: Dict = None, headers: Dict = None
@@ -299,13 +318,21 @@ class APIClient:
                 patch_objects.append(item.dump())
             else:
                 raise ValueError("update item must be of type CogniteResource or CogniteUpdate")
-        res = self._post(
-            resource_path + "/update", json={"items": patch_objects}, params=params, headers=headers
-        ).json()["data"]["items"]
+        patch_object_chunks = utils.split_into_chunks(patch_objects, self._UPDATE_LIMIT)
+
+        tasks = [
+            {"url_path": resource_path + "/update", "json": {"items": chunk}, "params": params, "headers": headers}
+            for chunk in patch_object_chunks
+        ]
+        res_list = utils.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
+
+        updated_items = []
+        for res in res_list:
+            updated_items.extend(res.json()["data"]["items"])
 
         if single_item:
-            return cls._RESOURCE._load(res[0], cognite_client=self._cognite_client)
-        return cls._load(res, cognite_client=self._cognite_client)
+            return cls._RESOURCE._load(updated_items[0], cognite_client=self._cognite_client)
+        return cls._load(updated_items, cognite_client=self._cognite_client)
 
     def _search(self, cls: Any, resource_path: str, json: Dict, params: Dict = None, headers: Dict = None):
         res = self._post(url_path=resource_path + "/search", json=json, params=params, headers=headers)

@@ -14,7 +14,7 @@ def new_asset():
     yield ts
     COGNITE_CLIENT.assets.delete(id=ts.id)
     with pytest.raises(CogniteAPIError) as e:
-        COGNITE_CLIENT.assets.get(ts.id)
+        COGNITE_CLIENT.assets.retrieve(ts.id)
     assert 400 == e.value.code
 
 
@@ -26,7 +26,7 @@ class TestAssetsAPI:
     def test_list(self, mocker):
         mocker.spy(COGNITE_CLIENT.assets, "_post")
 
-        with set_request_limit(10):
+        with set_request_limit(COGNITE_CLIENT.assets, 10):
             res = COGNITE_CLIENT.assets.list(limit=20)
 
         assert 20 == len(res)

@@ -15,7 +15,10 @@ class RawAPI(APIClient):
 
 class RawDatabasesAPI(APIClient):
     _RESOURCE_PATH = "/raw/dbs"
-    _LIMIT = 10000
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._LIST_LIMIT = 10000
 
     def __call__(self, chunk_size: int = None) -> Generator[Union[Database, DatabaseList], None, None]:
         """Iterate over databases
@@ -115,7 +118,7 @@ class RawDatabasesAPI(APIClient):
 
 class RawTablesAPI(APIClient):
     _RESOURCE_PATH = "/raw/dbs/{}/tables"
-    _LIMIT = 10000
+    _CREATE_LIMIT = 10000
 
     def __call__(self, db_name: str, chunk_size: int = None) -> Generator[Union[Table, TableList], None, None]:
         """Iterate over tables
@@ -239,7 +242,7 @@ class RawTablesAPI(APIClient):
 
 class RawRowsAPI(APIClient):
     _RESOURCE_PATH = "/raw/dbs/{}/tables/{}/rows"
-    _LIMIT = 10000
+    _CREATE_LIMIT = 10000
 
     def __call__(
         self, db_name: str, table_name: str, chunk_size: int = None
