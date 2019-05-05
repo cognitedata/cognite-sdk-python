@@ -24,6 +24,7 @@ class IAMAPI(APIClient):
 
 class ServiceAccountsAPI(APIClient):
     _RESOURCE_PATH = "/serviceaccounts"
+    _LIST_CLASS = ServiceAccountList
 
     def list(self) -> ServiceAccountList:
         """List service accounts.
@@ -31,7 +32,7 @@ class ServiceAccountsAPI(APIClient):
         Returns:
             ServiceAccountList: List of service accounts.
         """
-        return self._list(ServiceAccountList, self._RESOURCE_PATH, method="GET")
+        return self._list(method="GET")
 
     def create(
         self, service_account: Union[ServiceAccount, List[ServiceAccount]]
@@ -44,7 +45,7 @@ class ServiceAccountsAPI(APIClient):
         Returns:
             Union[ServiceAccount, ServiceAccountList]: The created service account(s).
         """
-        return self._create_multiple(ServiceAccountList, self._RESOURCE_PATH, items=service_account)
+        return self._create_multiple(items=service_account)
 
     def delete(self, id: Union[int, List[int]]) -> None:
         """Delete one or more service accounts.
@@ -55,11 +56,12 @@ class ServiceAccountsAPI(APIClient):
         Returns:
             None
         """
-        self._delete_multiple(self._RESOURCE_PATH, ids=id, wrap_ids=False)
+        self._delete_multiple(ids=id, wrap_ids=False)
 
 
 class APIKeysAPI(APIClient):
     _RESOURCE_PATH = "/apikeys"
+    _LIST_CLASS = APIKeyList
 
     def list(self, include_deleted: bool = False, all: bool = False, service_account_id: bool = None) -> APIKeyList:
         """List api keys.
@@ -87,7 +89,7 @@ class APIKeysAPI(APIClient):
         Returns:
             Union[APIKey, APIKeyList]: API key or list of api keys.
         """
-        return self._create_multiple(APIKeyList, self._RESOURCE_PATH, items=service_account_id)
+        return self._create_multiple(items=service_account_id)
 
     def delete(self, id: Union[int, List[int]]) -> None:
         """Delete one or more api keys.
@@ -98,11 +100,12 @@ class APIKeysAPI(APIClient):
         Returns:
             None
         """
-        self._delete_multiple(self._RESOURCE_PATH, ids=id, wrap_ids=False)
+        self._delete_multiple(ids=id, wrap_ids=False)
 
 
 class GroupsAPI(APIClient):
     _RESOURCE_PATH = "/groups"
+    _LIST_CLASS = GroupList
 
     def list(self, all: bool = False) -> GroupList:
         """List groups.
@@ -124,7 +127,7 @@ class GroupsAPI(APIClient):
         Returns:
             Union[Group, GroupList]: The created group(s).
         """
-        return self._create_multiple(GroupList, self._RESOURCE_PATH, group)
+        return self._create_multiple(group)
 
     def delete(self, id: Union[int, List[int]]) -> None:
         """Delete one or more groups.
@@ -135,7 +138,7 @@ class GroupsAPI(APIClient):
         Returns:
             None
         """
-        self._delete_multiple(self._RESOURCE_PATH, ids=id, wrap_ids=False)
+        self._delete_multiple(ids=id, wrap_ids=False)
 
     def list_service_accounts(self, id: int) -> ServiceAccountList:
         """List service accounts in a group.
@@ -160,7 +163,7 @@ class GroupsAPI(APIClient):
             None
         """
         resource_path = self._RESOURCE_PATH + "/{}/serviceaccounts".format(id)
-        self._create_multiple(ServiceAccountList, resource_path, items=service_account_id)
+        self._create_multiple(cls=ServiceAccountList, resource_path=resource_path, items=service_account_id)
 
     def remove_service_account(self, id: int, service_account_id: Union[int, List[int]]) -> None:
         """Remove one or more service accounts from a group.
@@ -179,6 +182,7 @@ class GroupsAPI(APIClient):
 
 class SecurityCategoriesAPI(APIClient):
     _RESOURCE_PATH = "/securitycategories"
+    _LIST_CLASS = SecurityCategoryList
 
     def list(self, limit: int = None) -> SecurityCategoryList:
         """List security categories.
@@ -189,7 +193,7 @@ class SecurityCategoriesAPI(APIClient):
         Returns:
             SecurityCategoryList: List of security categories
         """
-        return self._list(SecurityCategoryList, self._RESOURCE_PATH, method="GET", limit=limit)
+        return self._list(method="GET", limit=limit)
 
     def create(
         self, security_category: Union[SecurityCategory, List[SecurityCategory]]
@@ -202,7 +206,7 @@ class SecurityCategoriesAPI(APIClient):
         Returns:
             Union[SecurityCategory, SecurityCategoryList]: The created security category or categories.
         """
-        return self._create_multiple(SecurityCategoryList, self._RESOURCE_PATH, security_category)
+        return self._create_multiple(security_category)
 
     def delete(self, id: Union[int, List[int]]) -> None:
         """Delete one or more security categories.
@@ -213,4 +217,4 @@ class SecurityCategoriesAPI(APIClient):
         Returns:
             None
         """
-        self._delete_multiple(self._RESOURCE_PATH, ids=id, wrap_ids=False)
+        self._delete_multiple(ids=id, wrap_ids=False)

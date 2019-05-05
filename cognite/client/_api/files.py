@@ -9,6 +9,7 @@ from cognite.client.utils import _utils as utils
 
 class FilesAPI(APIClient):
     _RESOURCE_PATH = "/files"
+    _LIST_CLASS = FileMetadataList
 
     def __call__(
         self,
@@ -40,9 +41,7 @@ class FilesAPI(APIClient):
         filter = FileMetadataFilter(
             metadata, asset_ids, source, created_time, last_updated_time, external_id_prefix
         ).dump(camel_case=True)
-        return self._list_generator(
-            FileMetadataList, resource_path=self._RESOURCE_PATH, method="POST", chunk_size=chunk_size, filter=filter
-        )
+        return self._list_generator(method="POST", chunk_size=chunk_size, filter=filter)
 
     def __iter__(self) -> Generator[FileMetadata, None, None]:
         """Iterate over files
@@ -80,9 +79,7 @@ class FilesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.files.retrieve(external_id=["1", "abc"])
         """
-        return self._retrieve_multiple(
-            cls=FileMetadataList, resource_path=self._RESOURCE_PATH, ids=id, external_ids=external_id, wrap_ids=True
-        )
+        return self._retrieve_multiple(ids=id, external_ids=external_id, wrap_ids=True)
 
     def list(
         self,
@@ -133,9 +130,7 @@ class FilesAPI(APIClient):
         filter = FileMetadataFilter(
             metadata, asset_ids, source, created_time, last_updated_time, external_id_prefix
         ).dump(camel_case=True)
-        return self._list(
-            cls=FileMetadataList, resource_path=self._RESOURCE_PATH, method="POST", limit=limit, filter=filter
-        )
+        return self._list(method="POST", limit=limit, filter=filter)
 
     def delete(self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None) -> None:
         """Delete files
@@ -155,7 +150,7 @@ class FilesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.files.delete(id=[1,2,3], external_id="3")
         """
-        self._delete_multiple(resource_path=self._RESOURCE_PATH, wrap_ids=True, ids=id, external_ids=external_id)
+        self._delete_multiple(wrap_ids=True, ids=id, external_ids=external_id)
 
     def update(
         self, item: Union[FileMetadata, FileMetadataUpdate, List[Union[FileMetadata, FileMetadataUpdate]]]
@@ -208,11 +203,7 @@ class FilesAPI(APIClient):
                 >>> res = c.files.search(name="some name")
         """
         filter = filter.dump(camel_case=True) if filter else None
-        return self._search(
-            cls=FileMetadataList,
-            resource_path=self._RESOURCE_PATH,
-            json={"search": {"name": name}, "filter": filter, "limit": limit},
-        )
+        return self._search(json={"search": {"name": name}, "filter": filter, "limit": limit})
 
     def upload(
         self,

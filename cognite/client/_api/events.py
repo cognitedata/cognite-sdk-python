@@ -6,6 +6,7 @@ from cognite.client.data_classes import Event, EventFilter, EventList, EventUpda
 
 class EventsAPI(APIClient):
     _RESOURCE_PATH = "/events"
+    _LIST_CLASS = EventList
 
     def __call__(
         self,
@@ -50,9 +51,7 @@ class EventsAPI(APIClient):
             last_updated_time,
             external_id_prefix,
         ).dump(camel_case=True)
-        return self._list_generator(
-            EventList, resource_path=self._RESOURCE_PATH, method="POST", chunk_size=chunk_size, filter=filter
-        )
+        return self._list_generator(method="POST", chunk_size=chunk_size, filter=filter)
 
     def __iter__(self) -> Generator[Event, None, None]:
         """Iterate over events
@@ -90,7 +89,7 @@ class EventsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.events.retrieve(external_id="abc")
         """
-        return self._retrieve_multiple(EventList, self._RESOURCE_PATH, ids=id, external_ids=external_id, wrap_ids=True)
+        return self._retrieve_multiple(ids=id, external_ids=external_id, wrap_ids=True)
 
     def list(
         self,
@@ -155,7 +154,7 @@ class EventsAPI(APIClient):
             last_updated_time,
             external_id_prefix,
         ).dump(camel_case=True)
-        return self._list(EventList, resource_path=self._RESOURCE_PATH, method="POST", limit=limit, filter=filter)
+        return self._list(method="POST", limit=limit, filter=filter)
 
     def create(self, event: Union[Event, List[Event]]) -> Union[Event, EventList]:
         """Create one or more events.
@@ -176,7 +175,7 @@ class EventsAPI(APIClient):
                 >>> events = [Event(start_time=0, end_time=1), Event(start_time=2, end_time=3)]
                 >>> res = c.events.create(events)
         """
-        return self._create_multiple(EventList, resource_path=self._RESOURCE_PATH, items=event)
+        return self._create_multiple(items=event)
 
     def delete(self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None) -> None:
         """Delete one or more events
@@ -195,7 +194,7 @@ class EventsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.events.delete(id=[1,2,3], external_id="3")
         """
-        self._delete_multiple(resource_path=self._RESOURCE_PATH, ids=id, external_ids=external_id, wrap_ids=True)
+        self._delete_multiple(ids=id, external_ids=external_id, wrap_ids=True)
 
     def update(self, item: Union[Event, EventUpdate, List[Union[Event, EventUpdate]]]) -> Union[Event, EventList]:
         """Update one or more events
@@ -224,7 +223,7 @@ class EventsAPI(APIClient):
                 >>> my_update = EventUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
                 >>> res = c.events.update(my_update)
         """
-        return self._update_multiple(cls=EventList, resource_path=self._RESOURCE_PATH, items=item)
+        return self._update_multiple(items=item)
 
     def search(self, description: str = None, filter: EventFilter = None, limit: int = None) -> EventList:
         """Search for events
@@ -246,8 +245,4 @@ class EventsAPI(APIClient):
                 >>> res = c.events.search(description="some description")
         """
         filter = filter.dump(camel_case=True) if filter else None
-        return self._search(
-            cls=EventList,
-            resource_path=self._RESOURCE_PATH,
-            json={"search": {"description": description}, "filter": filter, "limit": limit},
-        )
+        return self._search(json={"search": {"description": description}, "filter": filter, "limit": limit})

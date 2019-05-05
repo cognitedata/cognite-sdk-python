@@ -31,6 +31,7 @@ class ThreeDAPI(APIClient):
 
 class ThreeDModelsAPI(APIClient):
     _RESOURCE_PATH = "/3d/models"
+    _LIST_CLASS = ThreeDModelList
 
     def __call__(
         self, chunk_size: int = None, published: bool = False
@@ -46,13 +47,7 @@ class ThreeDModelsAPI(APIClient):
         Yields:
             Union[ThreeDModel, ThreeDModelList]: yields ThreeDModel one by one if chunk is not specified, else ThreeDModelList objects.
         """
-        return self._list_generator(
-            ThreeDModelList,
-            resource_path=self._RESOURCE_PATH,
-            method="GET",
-            chunk_size=chunk_size,
-            filter={"published": published},
-        )
+        return self._list_generator(method="GET", chunk_size=chunk_size, filter={"published": published})
 
     def __iter__(self) -> Generator[ThreeDModel, None, None]:
         """Iterate over 3d models
@@ -73,7 +68,7 @@ class ThreeDModelsAPI(APIClient):
         Returns:
             ThreeDModel: The requested 3d model.
         """
-        return self._retrieve(ThreeDModel, self._RESOURCE_PATH, id)
+        return self._retrieve(id)
 
     def list(self, published: bool = False, limit: int = None) -> ThreeDModelList:
         """List 3d models.
@@ -85,9 +80,7 @@ class ThreeDModelsAPI(APIClient):
         Returns:
             ThreeDModelList: The list of 3d models.
         """
-        return self._list(
-            ThreeDModelList, self._RESOURCE_PATH, method="GET", filter={"published": published}, limit=limit
-        )
+        return self._list(method="GET", filter={"published": published}, limit=limit)
 
     def create(self, name: Union[str, List[str]]) -> Union[ThreeDModel, ThreeDModelList]:
         """Create new 3d models.
@@ -98,7 +91,7 @@ class ThreeDModelsAPI(APIClient):
         Returns:
             Union[ThreeDModel, ThreeDModelList]: The created 3d model(s).
         """
-        return self._create_multiple(ThreeDModelList, self._RESOURCE_PATH, items=name)
+        return self._create_multiple(items=name)
 
     def update(
         self, item: Union[ThreeDModel, ThreeDModelUpdate, List[Union[ThreeDModel, ThreeDModelList]]]
@@ -111,7 +104,7 @@ class ThreeDModelsAPI(APIClient):
         Returns:
             Union[ThreeDModel, ThreeDModelList]: Updated ThreeDModel(s)
         """
-        return self._update_multiple(cls=ThreeDModelList, resource_path=self._RESOURCE_PATH, items=item)
+        return self._update_multiple(items=item)
 
     def delete(self, id: Union[int, List[int]]) -> None:
         """Delete 3d models.
@@ -122,11 +115,12 @@ class ThreeDModelsAPI(APIClient):
         Returns:
             None
         """
-        self._delete_multiple(resource_path=self._RESOURCE_PATH, ids=id, wrap_ids=True)
+        self._delete_multiple(ids=id, wrap_ids=True)
 
 
 class ThreeDRevisionsAPI(APIClient):
     _RESOURCE_PATH = "/3d/models/{}/revisions"
+    _LIST_CLASS = ThreeDModelRevisionList
 
     def __call__(
         self, model_id: int, chunk_size: int = None, published: bool = False
@@ -145,8 +139,7 @@ class ThreeDRevisionsAPI(APIClient):
                 specified, else ThreeDModelRevisionList objects.
         """
         return self._list_generator(
-            ThreeDModelRevisionList,
-            resource_path=self._RESOURCE_PATH,
+            resource_path=self._RESOURCE_PATH.format(model_id),
             method="GET",
             chunk_size=chunk_size,
             filter={"published": published},
@@ -162,7 +155,7 @@ class ThreeDRevisionsAPI(APIClient):
         Returns:
             ThreeDModelRevision: The requested 3d model revision.
         """
-        return self._retrieve(ThreeDModelRevision, self._RESOURCE_PATH.format(model_id), id)
+        return self._retrieve(resource_path=self._RESOURCE_PATH.format(model_id), id=id)
 
     def create(
         self, model_id: int, revision: Union[ThreeDModelRevision, List[ThreeDModelRevision]]
@@ -176,7 +169,7 @@ class ThreeDRevisionsAPI(APIClient):
         Returns:
             Union[ThreeDModelRevision, ThreeDModelRevisionList]: The created revision(s)
         """
-        return self._create_multiple(ThreeDModelRevisionList, self._RESOURCE_PATH.format(model_id), items=revision)
+        return self._create_multiple(resource_path=self._RESOURCE_PATH.format(model_id), items=revision)
 
     def list(self, model_id: int, published: bool = False, limit: int = None) -> ThreeDModelRevisionList:
         """List 3d model revisions.
@@ -190,8 +183,7 @@ class ThreeDRevisionsAPI(APIClient):
             ThreeDModelRevisionList: The list of 3d model revisions.
         """
         return self._list(
-            ThreeDModelRevisionList,
-            self._RESOURCE_PATH.format(model_id),
+            resource_path=self._RESOURCE_PATH.format(model_id),
             method="GET",
             filter={"published": published},
             limit=limit,
@@ -214,9 +206,7 @@ class ThreeDRevisionsAPI(APIClient):
         Returns:
             Union[ThreeDModelRevision, ThreeDModelRevisionList]: Updated ThreeDModelRevision(s)
         """
-        return self._update_multiple(
-            cls=ThreeDModelRevisionList, resource_path=self._RESOURCE_PATH.format(model_id), items=item
-        )
+        return self._update_multiple(resource_path=self._RESOURCE_PATH.format(model_id), items=item)
 
     def delete(self, model_id: int, id: Union[int, List[int]]) -> None:
         """Delete 3d model revisions.
@@ -265,7 +255,11 @@ class ThreeDRevisionsAPI(APIClient):
         """
         resource_path = utils.interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/nodes", model_id, revision_id)
         return self._list(
-            ThreeDNodeList, resource_path, method="GET", limit=limit, filter={"depth": depth, "nodeId": node_id}
+            cls=ThreeDNodeList,
+            resource_path=resource_path,
+            method="GET",
+            limit=limit,
+            filter={"depth": depth, "nodeId": node_id},
         )
 
     def list_ancestor_nodes(
@@ -287,7 +281,9 @@ class ThreeDRevisionsAPI(APIClient):
             ThreeDNodeList: The list of 3d nodes.
         """
         resource_path = utils.interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/nodes", model_id, revision_id)
-        return self._list(ThreeDNodeList, resource_path, method="GET", limit=limit, filter={"nodeId": node_id})
+        return self._list(
+            cls=ThreeDNodeList, resource_path=resource_path, method="GET", limit=limit, filter={"nodeId": node_id}
+        )
 
 
 class ThreeDFilesAPI(APIClient):
@@ -308,6 +304,7 @@ class ThreeDFilesAPI(APIClient):
 
 class ThreeDAssetMappingAPI(APIClient):
     _RESOURCE_PATH = "/3d/models/{}/revisions/{}/mappings"
+    _LIST_CLASS = ThreeDAssetMappingList
 
     def list(
         self, model_id: int, revision_id: int, node_id: int = None, asset_id: int = None, limit: int = None
@@ -326,7 +323,7 @@ class ThreeDAssetMappingAPI(APIClient):
         """
         path = utils.interpolate_and_url_encode(self._RESOURCE_PATH, model_id, revision_id)
         return self._list(
-            ThreeDAssetMappingList, path, method="GET", filter={"nodeId": node_id, "assetId": asset_id}, limit=limit
+            resource_path=path, method="GET", filter={"nodeId": node_id, "assetId": asset_id}, limit=limit
         )
 
     def create(
@@ -343,7 +340,7 @@ class ThreeDAssetMappingAPI(APIClient):
             Union[ThreeDAssetMapping, ThreeDAssetMappingList]: The created asset mapping(s).
         """
         path = utils.interpolate_and_url_encode(self._RESOURCE_PATH, model_id, revision_id)
-        return self._create_multiple(ThreeDAssetMappingList, path, items=asset_mapping)
+        return self._create_multiple(resource_path=path, items=asset_mapping)
 
     def delete(
         self, model_id: int, revision_id: int, asset_mapping: Union[ThreeDAssetMapping, List[ThreeDAssetMapping]]
@@ -378,7 +375,7 @@ class ThreeDRevealAPI(APIClient):
             revision_id (int): Id of the revision.
         """
         path = utils.interpolate_and_url_encode(self._RESOURCE_PATH, model_id)
-        return self._retrieve(ThreeDRevealRevision, path, revision_id)
+        return self._retrieve(cls=ThreeDRevealRevision, resource_path=path, id=revision_id)
 
     def list_nodes(self, model_id: int, revision_id: int, depth: int = None, node_id: int = None, limit: int = None):
         """List 3D nodes.
@@ -391,7 +388,13 @@ class ThreeDRevealAPI(APIClient):
             limit (int, optional): Maximun number of nodes to retrieve
         """
         path = utils.interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/nodes", model_id, revision_id)
-        return self._list(ThreeDRevealNodeList, path, "GET", filter={"depth": depth, "nodeId": node_id}, limit=limit)
+        return self._list(
+            cls=ThreeDRevealNodeList,
+            resource_path=path,
+            method="GET",
+            filter={"depth": depth, "nodeId": node_id},
+            limit=limit,
+        )
 
     def list_ancestor_nodes(self, model_id: int, revision_id: int, node_id: int, limit: int = None):
         """Retrieve a revision.
@@ -405,7 +408,7 @@ class ThreeDRevealAPI(APIClient):
         path = utils.interpolate_and_url_encode(
             self._RESOURCE_PATH + "/{}/nodes/{}/ancestors", model_id, revision_id, node_id
         )
-        return self._list(ThreeDRevealNodeList, path, "GET", limit=limit)
+        return self._list(cls=ThreeDRevealNodeList, resource_path=path, method="GET", limit=limit)
 
     def list_sectors(self, model_id: int, revision_id: int, bounding_box: Dict[str, List] = None, limit: int = None):
         """Retrieve a revision.
@@ -417,5 +420,9 @@ class ThreeDRevealAPI(APIClient):
         """
         path = utils.interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/sectors", model_id, revision_id)
         return self._list(
-            ThreeDRevealSectorList, path, "GET", filter={"boundingBox": json.dumps(bounding_box)}, limit=limit
+            cls=ThreeDRevealSectorList,
+            resource_path=path,
+            method="GET",
+            filter={"boundingBox": json.dumps(bounding_box)},
+            limit=limit,
         )

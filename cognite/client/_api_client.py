@@ -59,6 +59,7 @@ _REQUESTS_SESSION = _init_requests_session()
 
 class APIClient:
     _RESOURCE_PATH = None
+    _LIST_CLASS = None
 
     def __init__(
         self,
@@ -144,7 +145,11 @@ class APIClient:
         full_url = self._apply_model_hosting_emulator_url_filter(full_url)
         return full_url
 
-    def _retrieve(self, cls, resource_path: str, id: Union[int, str], params: Dict = None, headers: Dict = None):
+    def _retrieve(
+        self, id: Union[int, str], cls=None, resource_path: str = None, params: Dict = None, headers: Dict = None
+    ):
+        cls = cls or self._LIST_CLASS._RESOURCE
+        resource_path = resource_path or self._RESOURCE_PATH
         return cls._load(
             self._get(
                 url_path=utils.interpolate_and_url_encode(resource_path + "/{}", str(id)),
@@ -156,13 +161,15 @@ class APIClient:
 
     def _retrieve_multiple(
         self,
-        cls,
-        resource_path: str,
         wrap_ids: bool,
+        cls=None,
+        resource_path: str = None,
         ids: Union[List[int], int] = None,
         external_ids: Union[List[str], str] = None,
         headers: Dict = None,
     ):
+        cls = cls or self._LIST_CLASS
+        resource_path = resource_path or self._RESOURCE_PATH
         all_ids = self._process_ids(ids, external_ids, wrap_ids=wrap_ids)
         id_chunks = utils.split_into_chunks(all_ids, self._RETRIEVE_LIMIT)
 
@@ -181,14 +188,16 @@ class APIClient:
 
     def _list_generator(
         self,
-        cls,
-        resource_path: str,
         method: str,
+        cls=None,
+        resource_path: str = None,
         limit: int = None,
         chunk_size: int = None,
         filter: Dict = None,
         headers: Dict = None,
     ):
+        cls = cls or self._LIST_CLASS
+        resource_path = resource_path or self._RESOURCE_PATH
         total_items_retrieved = 0
         current_limit = self._LIST_LIMIT
         if chunk_size and chunk_size <= self._LIST_LIMIT:
@@ -230,7 +239,17 @@ class APIClient:
             if total_items_retrieved == limit or next_cursor is None:
                 break
 
-    def _list(self, cls, resource_path: str, method: str, limit: int = None, filter: Dict = None, headers: Dict = None):
+    def _list(
+        self,
+        method: str,
+        cls=None,
+        resource_path: str = None,
+        limit: int = None,
+        filter: Dict = None,
+        headers: Dict = None,
+    ):
+        cls = cls or self._LIST_CLASS
+        resource_path = resource_path or self._RESOURCE_PATH
         items = []
         for resource_list in self._list_generator(
             cls=cls,
@@ -246,13 +265,15 @@ class APIClient:
 
     def _create_multiple(
         self,
-        cls: Any,
-        resource_path: str,
         items: Union[List[Any], Any],
+        cls: Any = None,
+        resource_path: str = None,
         params: Dict = None,
         headers: Dict = None,
         limit=None,
     ):
+        cls = cls or self._LIST_CLASS
+        resource_path = resource_path or self._RESOURCE_PATH
         limit = limit or self._CREATE_LIMIT
         single_item = not isinstance(items, list)
         if single_item:
@@ -279,13 +300,14 @@ class APIClient:
 
     def _delete_multiple(
         self,
-        resource_path: str,
         wrap_ids: bool,
+        resource_path: str = None,
         ids: Union[List[int], int] = None,
         external_ids: Union[List[str], str] = None,
         params: Dict = None,
         headers: Dict = None,
     ):
+        resource_path = resource_path or self._RESOURCE_PATH
         all_ids = self._process_ids(ids, external_ids, wrap_ids)
         id_chunks = utils.split_into_chunks(all_ids, self._DELETE_LIMIT)
         tasks = [
@@ -295,8 +317,15 @@ class APIClient:
         utils.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
 
     def _update_multiple(
-        self, cls: Any, resource_path: str, items: Union[List[Any], Any], params: Dict = None, headers: Dict = None
+        self,
+        items: Union[List[Any], Any],
+        cls: Any = None,
+        resource_path: str = None,
+        params: Dict = None,
+        headers: Dict = None,
     ):
+        cls = cls or self._LIST_CLASS
+        resource_path = resource_path or self._RESOURCE_PATH
         patch_objects = []
         single_item = not isinstance(items, list)
         if single_item:
@@ -325,7 +354,11 @@ class APIClient:
             return cls._RESOURCE._load(updated_items[0], cognite_client=self._cognite_client)
         return cls._load(updated_items, cognite_client=self._cognite_client)
 
-    def _search(self, cls: Any, resource_path: str, json: Dict, params: Dict = None, headers: Dict = None):
+    def _search(
+        self, json: Dict, cls: Any = None, resource_path: str = None, params: Dict = None, headers: Dict = None
+    ):
+        cls = cls or self._LIST_CLASS
+        resource_path = resource_path or self._RESOURCE_PATH
         res = self._post(url_path=resource_path + "/search", json=json, params=params, headers=headers)
         return cls._load(res.json()["data"]["items"], cognite_client=self._cognite_client)
 

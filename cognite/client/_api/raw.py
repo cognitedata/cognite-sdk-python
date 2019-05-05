@@ -15,6 +15,7 @@ class RawAPI(APIClient):
 
 class RawDatabasesAPI(APIClient):
     _RESOURCE_PATH = "/raw/dbs"
+    _LIST_CLASS = DatabaseList
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -28,9 +29,7 @@ class RawDatabasesAPI(APIClient):
         Args:
             chunk_size (int, optional): Number of dbs to return in each chunk. Defaults to yielding one db a time.
         """
-        return self._list_generator(
-            cls=DatabaseList, resource_path=self._RESOURCE_PATH, chunk_size=chunk_size, method="GET"
-        )
+        return self._list_generator(chunk_size=chunk_size, method="GET")
 
     def __iter__(self) -> Generator[Database, None, None]:
         return self.__call__()
@@ -57,7 +56,7 @@ class RawDatabasesAPI(APIClient):
             items = {"name": name}
         else:
             items = [{"name": n} for n in name]
-        return self._create_multiple(cls=DatabaseList, resource_path=self._RESOURCE_PATH, items=items)
+        return self._create_multiple(items=items)
 
     def delete(self, name: Union[str, List[str]]) -> None:
         """Delete one or more databases.
@@ -115,11 +114,12 @@ class RawDatabasesAPI(APIClient):
                 >>> for db_list in c.raw.databases(chunk_size=2500):
                 ...     db_list # do something with the dbs
         """
-        return self._list(cls=DatabaseList, resource_path=self._RESOURCE_PATH, method="GET", limit=limit)
+        return self._list(method="GET", limit=limit)
 
 
 class RawTablesAPI(APIClient):
     _RESOURCE_PATH = "/raw/dbs/{}/tables"
+    _LIST_CLASS = TableList
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -135,7 +135,6 @@ class RawTablesAPI(APIClient):
             chunk_size (int, optional): Number of tables to return in each chunk. Defaults to yielding one table a time.
         """
         for tb in self._list_generator(
-            cls=TableList,
             resource_path=utils.interpolate_and_url_encode(self._RESOURCE_PATH, db_name),
             chunk_size=chunk_size,
             method="GET",
@@ -166,7 +165,7 @@ class RawTablesAPI(APIClient):
         else:
             items = [{"name": n} for n in name]
         tb = self._create_multiple(
-            cls=TableList, resource_path=utils.interpolate_and_url_encode(self._RESOURCE_PATH, db_name), items=items
+            resource_path=utils.interpolate_and_url_encode(self._RESOURCE_PATH, db_name), items=items
         )
         return self._set_db_name_on_tables(tb, db_name)
 
@@ -235,10 +234,7 @@ class RawTablesAPI(APIClient):
                 ...     table_list # do something with the tables
         """
         tb = self._list(
-            cls=TableList,
-            resource_path=utils.interpolate_and_url_encode(self._RESOURCE_PATH, db_name),
-            method="GET",
-            limit=limit,
+            resource_path=utils.interpolate_and_url_encode(self._RESOURCE_PATH, db_name), method="GET", limit=limit
         )
         return self._set_db_name_on_tables(tb, db_name)
 
@@ -255,6 +251,7 @@ class RawTablesAPI(APIClient):
 
 class RawRowsAPI(APIClient):
     _RESOURCE_PATH = "/raw/dbs/{}/tables/{}/rows"
+    _LIST_CLASS = RowList
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -273,7 +270,6 @@ class RawRowsAPI(APIClient):
             chunk_size (int, optional): Number of rows to return in each chunk. Defaults to yielding one row a time.
         """
         return self._list_generator(
-            cls=RowList,
             resource_path=utils.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
             chunk_size=chunk_size,
             method="GET",
@@ -386,7 +382,7 @@ class RawRowsAPI(APIClient):
                 >>> row = c.raw.rows.retrieve("db1", "t1", "k1")
         """
         return self._retrieve(
-            cls=Row, resource_path=utils.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name), id=key
+            resource_path=utils.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name), id=key
         )
 
     def list(self, db_name: str, table_name: str, limit: int = None) -> RowList:
@@ -423,7 +419,6 @@ class RawRowsAPI(APIClient):
                 ...     row_list # do something with the rows
         """
         return self._list(
-            cls=RowList,
             resource_path=utils.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
             limit=limit,
             method="GET",

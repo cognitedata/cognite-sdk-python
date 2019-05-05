@@ -486,13 +486,15 @@ class TestStandardUpdate:
         yield rsps
 
     def test_standard_update_with_cognite_resource_OK(self, mock_update):
-        res = API_CLIENT._update_multiple(SomeResourceList, resource_path=URL_PATH, items=[SomeResource(id=1, y=100)])
+        res = API_CLIENT._update_multiple(
+            cls=SomeResourceList, resource_path=URL_PATH, items=[SomeResource(id=1, y=100)]
+        )
         assert SomeResourceList([SomeResource(id=1, x=1, y=100)]) == res
         assert {"items": [{"id": 1, "update": {"y": {"set": 100}}}]} == jsgz_load(mock_update.calls[0].request.body)
 
     def test_standard_update_with_cognite_resource__non_update_attributes(self, mock_update):
         res = API_CLIENT._update_multiple(
-            SomeResourceList, resource_path=URL_PATH, items=[SomeResource(id=1, y=100, x=1)]
+            cls=SomeResourceList, resource_path=URL_PATH, items=[SomeResource(id=1, y=100, x=1)]
         )
         assert SomeResourceList([SomeResource(id=1, x=1, y=100)]) == res
         assert {"items": [{"id": 1, "update": {"y": {"set": 100}}}]} == jsgz_load(mock_update.calls[0].request.body)
@@ -500,12 +502,12 @@ class TestStandardUpdate:
     def test_standard_update_with_cognite_resource__id_and_external_id_set(self):
         with pytest.raises(AssertionError, match="Exactly one of id and external id"):
             API_CLIENT._update_multiple(
-                SomeResourceList, resource_path=URL_PATH, items=[SomeResource(id=1, external_id="1", y=100, x=1)]
+                cls=SomeResourceList, resource_path=URL_PATH, items=[SomeResource(id=1, external_id="1", y=100, x=1)]
             )
 
     def test_standard_update_with_cognite_resource_and_external_id_OK(self, mock_update):
         res = API_CLIENT._update_multiple(
-            SomeResourceList, resource_path=URL_PATH, items=[SomeResource(external_id="1", y=100)]
+            cls=SomeResourceList, resource_path=URL_PATH, items=[SomeResource(external_id="1", y=100)]
         )
         assert SomeResourceList([SomeResource(id=1, x=1, y=100)]) == res
         assert {"items": [{"externalId": "1", "update": {"y": {"set": 100}}}]} == jsgz_load(
@@ -514,26 +516,30 @@ class TestStandardUpdate:
 
     def test_standard_update_with_cognite_resource__id_error(self):
         with pytest.raises(AssertionError, match="one of id and external id"):
-            API_CLIENT._update_multiple(SomeResourceList, resource_path=URL_PATH, items=[SomeResource(y=100)])
+            API_CLIENT._update_multiple(cls=SomeResourceList, resource_path=URL_PATH, items=[SomeResource(y=100)])
 
         with pytest.raises(AssertionError, match="one of id and external id"):
             API_CLIENT._update_multiple(
-                SomeResourceList, resource_path=URL_PATH, items=[SomeResource(id=1, external_id="1", y=100)]
+                cls=SomeResourceList, resource_path=URL_PATH, items=[SomeResource(id=1, external_id="1", y=100)]
             )
 
     def test_standard_update_with_cognite_update_object_OK(self, mock_update):
-        res = API_CLIENT._update_multiple(SomeResourceList, resource_path=URL_PATH, items=[SomeUpdate(id=1).y.set(100)])
+        res = API_CLIENT._update_multiple(
+            cls=SomeResourceList, resource_path=URL_PATH, items=[SomeUpdate(id=1).y.set(100)]
+        )
         assert SomeResourceList([SomeResource(id=1, x=1, y=100)]) == res
         assert {"items": [{"id": 1, "update": {"y": {"set": 100}}}]} == jsgz_load(mock_update.calls[0].request.body)
 
     def test_standard_update_single_object(self, mock_update):
-        res = API_CLIENT._update_multiple(SomeResourceList, resource_path=URL_PATH, items=SomeUpdate(id=1).y.set(100))
+        res = API_CLIENT._update_multiple(
+            cls=SomeResourceList, resource_path=URL_PATH, items=SomeUpdate(id=1).y.set(100)
+        )
         assert SomeResource(id=1, x=1, y=100) == res
         assert {"items": [{"id": 1, "update": {"y": {"set": 100}}}]} == jsgz_load(mock_update.calls[0].request.body)
 
     def test_standard_update_with_cognite_update_object_and_external_id_OK(self, mock_update):
         res = API_CLIENT._update_multiple(
-            SomeResourceList, resource_path=URL_PATH, items=[SomeUpdate(external_id="1").y.set(100)]
+            cls=SomeResourceList, resource_path=URL_PATH, items=[SomeUpdate(external_id="1").y.set(100)]
         )
         assert SomeResourceList([SomeResource(id=1, x=1, y=100)]) == res
         assert {"items": [{"externalId": "1", "update": {"y": {"set": 100}}}]} == jsgz_load(
@@ -544,7 +550,7 @@ class TestStandardUpdate:
         rsps.add(rsps.POST, BASE_URL + URL_PATH + "/update", status=400, json={"error": {"message": "Client Error"}})
 
         with pytest.raises(CogniteAPIError, match="Client Error"):
-            API_CLIENT._update_multiple(SomeResourceList, resource_path=URL_PATH, items=[SomeResource(id=0)])
+            API_CLIENT._update_multiple(cls=SomeResourceList, resource_path=URL_PATH, items=[SomeResource(id=0)])
 
     def test_cognite_client_is_set(self, mock_update):
         assert (

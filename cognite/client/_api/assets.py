@@ -11,6 +11,7 @@ from cognite.client.utils import _utils as utils
 
 class AssetsAPI(APIClient):
     _RESOURCE_PATH = "/assets"
+    _LIST_CLASS = AssetList
 
     def __call__(
         self,
@@ -56,9 +57,7 @@ class AssetsAPI(APIClient):
             depth,
             external_id_prefix,
         ).dump(camel_case=True)
-        return self._list_generator(
-            AssetList, resource_path=self._RESOURCE_PATH, method="POST", chunk_size=chunk_size, filter=filter
-        )
+        return self._list_generator(method="POST", chunk_size=chunk_size, filter=filter)
 
     def __iter__(self) -> Generator[Asset, None, None]:
         """Iterate over assets
@@ -96,7 +95,7 @@ class AssetsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.assets.retrieve(external_id=["1", "abc"])
         """
-        return self._retrieve_multiple(AssetList, self._RESOURCE_PATH, ids=id, external_ids=external_id, wrap_ids=True)
+        return self._retrieve_multiple(ids=id, external_ids=external_id, wrap_ids=True)
 
     def list(
         self,
@@ -160,7 +159,7 @@ class AssetsAPI(APIClient):
             depth,
             external_id_prefix,
         ).dump(camel_case=True)
-        return self._list(AssetList, resource_path=self._RESOURCE_PATH, method="POST", limit=limit, filter=filter)
+        return self._list(method="POST", limit=limit, filter=filter)
 
     def create(self, asset: Union[Asset, List[Asset]]) -> Union[Asset, AssetList]:
         """Create one or more assets.
@@ -183,7 +182,7 @@ class AssetsAPI(APIClient):
         """
         utils.assert_type(asset, "asset", [Asset, list])
         if isinstance(asset, Asset) or len(asset) <= self._CREATE_LIMIT:
-            return self._create_multiple(AssetList, self._RESOURCE_PATH, asset)
+            return self._create_multiple(asset)
         return _AssetPoster(asset, client=self).post()
 
     def delete(self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None) -> None:
@@ -204,7 +203,7 @@ class AssetsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.assets.delete(id=[1,2,3], external_id="3")
         """
-        self._delete_multiple(resource_path=self._RESOURCE_PATH, ids=id, external_ids=external_id, wrap_ids=True)
+        self._delete_multiple(ids=id, external_ids=external_id, wrap_ids=True)
 
     def update(self, item: Union[Asset, AssetUpdate, List[Union[Asset, AssetUpdate]]]) -> Union[Asset, AssetList]:
         """Update one or more assets
@@ -233,7 +232,7 @@ class AssetsAPI(APIClient):
                 >>> my_update = AssetUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
                 >>> res = c.assets.update(my_update)
         """
-        return self._update_multiple(cls=AssetList, resource_path=self._RESOURCE_PATH, items=item)
+        return self._update_multiple(items=item)
 
     def search(
         self, name: str = None, description: str = None, filter: AssetFilter = None, limit: int = None
@@ -259,9 +258,7 @@ class AssetsAPI(APIClient):
         """
         filter = filter.dump(camel_case=True) if filter else None
         return self._search(
-            cls=AssetList,
-            resource_path=self._RESOURCE_PATH,
-            json={"search": {"name": name, "description": description}, "filter": filter, "limit": limit},
+            json={"search": {"name": name, "description": description}, "filter": filter, "limit": limit}
         )
 
 

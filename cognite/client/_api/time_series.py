@@ -6,6 +6,7 @@ from cognite.client.data_classes import TimeSeries, TimeSeriesFilter, TimeSeries
 
 class TimeSeriesAPI(APIClient):
     _RESOURCE_PATH = "/timeseries"
+    _LIST_CLASS = TimeSeriesList
 
     def __call__(
         self, chunk_size: int = None, include_metadata: bool = False, asset_id: int = None
@@ -23,9 +24,7 @@ class TimeSeriesAPI(APIClient):
             Union[TimeSeries, TimeSeriesList]: yields TimeSeries one by one if chunk is not specified, else TimeSeriesList objects.
         """
         filter = {"includeMetadata": include_metadata, "assetId": asset_id}
-        return self._list_generator(
-            TimeSeriesList, resource_path=self._RESOURCE_PATH, method="GET", chunk_size=chunk_size, filter=filter
-        )
+        return self._list_generator(method="GET", chunk_size=chunk_size, filter=filter)
 
     def __iter__(self) -> Generator[TimeSeries, None, None]:
         """Iterate over time series
@@ -57,9 +56,7 @@ class TimeSeriesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.time_series.retrieve(id=[1,2])
         """
-        return self._retrieve_multiple(
-            cls=TimeSeriesList, resource_path=self._RESOURCE_PATH, ids=id, external_ids=external_id, wrap_ids=True
-        )
+        return self._retrieve_multiple(ids=id, external_ids=external_id, wrap_ids=True)
 
     def list(self, include_metadata: bool = False, asset_id: int = None, limit: int = None) -> TimeSeriesList:
         """Iterate over time series
@@ -97,9 +94,7 @@ class TimeSeriesAPI(APIClient):
                 ...     ts_list # do something with the time_series
         """
         filter = {"includeMetadata": include_metadata, "assetId": asset_id}
-        return self._list(
-            cls=TimeSeriesList, resource_path=self._RESOURCE_PATH, method="GET", filter=filter, limit=limit
-        )
+        return self._list(method="GET", filter=filter, limit=limit)
 
     def create(self, time_series: Union[TimeSeries, List[TimeSeries]]) -> Union[TimeSeries, TimeSeriesList]:
         """Create one or more time series.
@@ -119,7 +114,7 @@ class TimeSeriesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> ts = c.time_series.create(TimeSeries(name="my ts"))
         """
-        return self._create_multiple(cls=TimeSeriesList, resource_path=self._RESOURCE_PATH, items=time_series)
+        return self._create_multiple(items=time_series)
 
     def delete(self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None) -> None:
         """Delete one or more time series.
@@ -139,7 +134,7 @@ class TimeSeriesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.time_series.delete(id=[1,2,3], external_id="3")
         """
-        self._delete_multiple(resource_path=self._RESOURCE_PATH, wrap_ids=True, ids=id, external_ids=external_id)
+        self._delete_multiple(wrap_ids=True, ids=id, external_ids=external_id)
 
     def update(
         self, item: Union[TimeSeries, TimeSeriesUpdate, List[Union[TimeSeries, TimeSeriesUpdate]]]
@@ -170,7 +165,7 @@ class TimeSeriesAPI(APIClient):
                 >>> my_update = TimeSeriesUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
                 >>> res = c.time_series.update(my_update)
         """
-        return self._update_multiple(cls=TimeSeriesList, resource_path=self._RESOURCE_PATH, items=item)
+        return self._update_multiple(items=item)
 
     def search(
         self,
@@ -203,11 +198,9 @@ class TimeSeriesAPI(APIClient):
         """
         filter = filter.dump(camel_case=True) if filter else None
         return self._search(
-            cls=TimeSeriesList,
-            resource_path=self._RESOURCE_PATH,
             json={
                 "search": {"name": name, "description": description, "query": query},
                 "filter": filter,
                 "limit": limit,
-            },
+            }
         )
