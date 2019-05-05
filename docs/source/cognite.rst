@@ -162,7 +162,7 @@ This is particularly useful when working with time series data and tabular data 
 
 Matplotlib Integration
 ----------------------
-You can use the `.plot()` method on any time series or datapoints result the SDK returns. This method takes keyword
+You can use the :code:`.plot()` method on any time series or datapoints result the SDK returns. This method takes keyword
 arguments which are passed on to the underlying matplotlib plot function, allowing you to configure things such as the
 size and layout of your plots.
 

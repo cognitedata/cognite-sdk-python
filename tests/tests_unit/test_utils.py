@@ -219,6 +219,10 @@ class TestSplitIntoChunks:
             ([], 1000, []),
             (["a", "b", "c"], 3, [["a", "b", "c"]]),
             (["a", "b", "c"], 10, [["a", "b", "c"]]),
+            ({"a": 1, "b": 2}, 1, [{"a": 1}, {"b": 2}]),
+            ({"a": 1, "b": 2}, 2, [{"a": 1, "b": 2}]),
+            ({"a": 1, "b": 2}, 3, [{"a": 1, "b": 2}]),
+            ({}, 1, []),
         ],
     )
     def test_split_into_chunks(self, input_list, chunk_size, expected_output):

@@ -80,7 +80,9 @@ class RawDatabasesAPI(APIClient):
         if isinstance(name, str):
             name = [name]
         items = [{"name": n} for n in name]
-        self._post(self._RESOURCE_PATH + "/delete", json={"items": items})
+        chunks = utils.split_into_chunks(items, self._DELETE_LIMIT)
+        tasks = [{"url_path": self._RESOURCE_PATH + "/delete", "json": {"items": chunk}} for chunk in chunks]
+        utils.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
 
     def list(self, limit: int = None) -> DatabaseList:
         """List databases
@@ -190,7 +192,15 @@ class RawTablesAPI(APIClient):
         if isinstance(name, str):
             name = [name]
         items = [{"name": n} for n in name]
-        self._post(utils.interpolate_and_url_encode(self._RESOURCE_PATH, db_name) + "/delete", json={"items": items})
+        chunks = utils.split_into_chunks(items, self._DELETE_LIMIT)
+        tasks = [
+            {
+                "url_path": utils.interpolate_and_url_encode(self._RESOURCE_PATH, db_name) + "/delete",
+                "json": {"items": chunk},
+            }
+            for chunk in chunks
+        ]
+        utils.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
 
     def list(self, db_name: str, limit: int = None) -> TableList:
         """List tables
@@ -292,14 +302,19 @@ class RawRowsAPI(APIClient):
                 >>> rows = {"r1": {"col1": "val1", "col2": "val1"}, "r2": {"col1": "val2", "col2": "val2"}}
                 >>> res = c.raw.rows.insert("db1", "table1", rows)
         """
-        items = self._process_row_input(row)
-        self._post(
-            url_path=utils.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
-            json={"items": items},
-            params={"ensureParent": ensure_parent},
-        )
+        chunks = self._process_row_input(row)
 
-    def _process_row_input(self, row: Union[List, Dict, Row]):
+        tasks = [
+            {
+                "url_path": utils.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
+                "json": {"items": chunk},
+                "params": {"ensureParent": ensure_parent},
+            }
+            for chunk in chunks
+        ]
+        utils.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
+
+    def _process_row_input(self, row: List[Union[List, Dict, Row]]):
         utils.assert_type(row, "row", [list, dict, Row])
         rows = []
         if isinstance(row, dict):
@@ -313,7 +328,7 @@ class RawRowsAPI(APIClient):
                     raise TypeError("list elements must be Row objects.")
         elif isinstance(row, Row):
             rows.append(row.dump(camel_case=True))
-        return rows
+        return utils.split_into_chunks(rows, self._CREATE_LIMIT)
 
     def delete(self, db_name: str, table_name: str, key: Union[str, List[str]]) -> None:
         """Delete rows from a table.
@@ -339,10 +354,17 @@ class RawRowsAPI(APIClient):
         if isinstance(key, str):
             key = [key]
         items = [{"key": k} for k in key]
-        self._post(
-            utils.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name) + "/delete",
-            json={"items": items},
-        )
+        chunks = utils.split_into_chunks(items, self._DELETE_LIMIT)
+        tasks = [
+            (
+                {
+                    "url_path": utils.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name) + "/delete",
+                    "json": {"items": chunk},
+                }
+            )
+            for chunk in chunks
+        ]
+        utils.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
 
     def retrieve(self, db_name: str, table_name: str, key: str) -> Row:
         """Retrieve a single row by key.

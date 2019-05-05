@@ -315,8 +315,15 @@ class PriorityQueue:
         return len(self.heap) > 0
 
 
-def split_into_chunks(li: List, chunk_size: int):
+def split_into_chunks(collection: Union[List, Dict], chunk_size: int) -> List[Union[List, Dict]]:
     chunks = []
-    for i in range(0, len(li), chunk_size):
-        chunks.append(li[i : i + chunk_size])
-    return chunks
+    if isinstance(collection, list):
+        for i in range(0, len(collection), chunk_size):
+            chunks.append(collection[i : i + chunk_size])
+        return chunks
+    if isinstance(collection, dict):
+        collection = list(collection.items())
+        for i in range(0, len(collection), chunk_size):
+            chunks.append({k: v for k, v in collection[i : i + chunk_size]})
+        return chunks
+    raise ValueError("Can only split list or dict")

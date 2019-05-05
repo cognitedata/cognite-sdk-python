@@ -362,8 +362,9 @@ class ThreeDAssetMappingAPI(APIClient):
         utils.assert_type(asset_mapping, "asset_mapping", [list, ThreeDAssetMapping])
         if isinstance(asset_mapping, ThreeDAssetMapping):
             asset_mapping = [asset_mapping]
-        items = {"items": [a.dump(camel_case=True) for a in asset_mapping]}
-        self._post(path + "/delete", json=items)
+        chunks = utils.split_into_chunks([a.dump(camel_case=True) for a in asset_mapping], self._DELETE_LIMIT)
+        tasks = [{"url_path": path + "/delete", "json": {"items": chunk}} for chunk in chunks]
+        utils.execute_tasks_concurrently(self._post, tasks, self._max_workers)
 
 
 class ThreeDRevealAPI(APIClient):
