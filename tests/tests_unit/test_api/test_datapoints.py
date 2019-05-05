@@ -523,21 +523,21 @@ class TestDatapointsObject:
         assert [7, 8, 9] == d0.value
         assert 1 == d0.id
         assert "1" == d0.external_id
-        assert d0.sum is None
+        assert d0.sum == []
 
         d0._insert(d2)
         assert [1, 2, 3, 7, 8, 9] == d0.timestamp
         assert [1, 2, 3, 7, 8, 9] == d0.value
         assert 1 == d0.id
         assert "1" == d0.external_id
-        assert d0.sum is None
+        assert d0.sum == []
 
         d0._insert(d3)
         assert [1, 2, 3, 4, 5, 6, 7, 8, 9] == d0.timestamp
         assert [1, 2, 3, 4, 5, 6, 7, 8, 9] == d0.value
         assert 1 == d0.id
         assert "1" == d0.external_id
-        assert d0.sum is None
+        assert d0.sum == []
 
 
 @pytest.mark.dsl

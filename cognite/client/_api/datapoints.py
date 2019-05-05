@@ -656,30 +656,6 @@ class _DatapointsFetcher:
         res = self.client._post(self.client._RESOURCE_PATH + "/list", json=payload).json()["data"]["items"][0]
         return Datapoints._load(res, cognite_client=self.client._cognite_client)
 
-    def _should_split(self, query: _DPQuery):
-        if query.limit is not None:
-            return False
-        return True
-
-    def _split_query_into_windows(self, dps_query: _DPQuery) -> List[_DPQuery]:
-        if dps_query.aggregates:
-            dps_per_window = self.client._DPS_LIMIT_AGG * 5
-        else:
-            dps_per_window = self.client._DPS_LIMIT * 500
-        windows = self._get_windows(dps_query.start, dps_query.end, dps_query.granularity, dps_per_window)
-        return [
-            _DPQuery(
-                w.start,
-                w.end,
-                dps_query.ts_item,
-                dps_query.aggregates,
-                dps_query.granularity,
-                dps_query.include_outside_points,
-                dps_query.limit,
-            )
-            for w in windows
-        ]
-
     def _optimize_queries(self, dps_queries: List[_DPQuery]):
         optimized_queries = []
         for q_list in utils.execute_tasks_concurrently(
@@ -708,6 +684,47 @@ class _DatapointsFetcher:
         )
         if len(dps) > 0:
             return dps[0].timestamp
+
+    def _should_split(self, query: _DPQuery):
+        if query.limit is not None:
+            return False
+        return True
+
+    def _split_query_into_windows(self, dps_query: _DPQuery) -> List[_DPQuery]:
+        if dps_query.aggregates:
+            dps_per_window = self.client._DPS_LIMIT_AGG * 5
+        else:
+            dps_per_window = self.client._DPS_LIMIT * 500
+        windows = self._get_windows(dps_query.start, dps_query.end, dps_query.granularity, dps_per_window)
+        return [
+            _DPQuery(
+                w.start,
+                w.end,
+                dps_query.ts_item,
+                dps_query.aggregates,
+                dps_query.granularity,
+                dps_query.include_outside_points,
+                dps_query.limit,
+            )
+            for w in windows
+        ]
+
+    def _get_dps_count(self, dps_query):
+        res = self._get_datapoints_with_paging(
+            start=dps_query.start,
+            end=dps_query.end,
+            ts_item=dps_query.ts_item,
+            aggregates=["count"],
+            granularity=self._interval_to_day_granularity(dps_query.end - dps_query.start),
+            include_outside_points=False,
+            limit=None,
+        )
+        return sum(res.count)
+
+    @staticmethod
+    def _interval_to_day_granularity(diff: int):
+        days = diff / (60 * 60 * 24 * 1000)
+        return "{}d".format(int(max(1, days)))
 
     @staticmethod
     def _get_windows(start: int, end: int, granularity: str, dps_per_window: int) -> List[_DPWindow]:

@@ -108,17 +108,17 @@ class Datapoints:
         self.id = id
         self.external_id = external_id
         self.timestamp = timestamp or []
-        self.value = value
-        self.average = average
-        self.max = max
-        self.min = min
-        self.count = count
-        self.sum = sum
-        self.interpolation = interpolation
-        self.step_interpolation = step_interpolation
-        self.continuous_variance = continuous_variance
-        self.discrete_variance = discrete_variance
-        self.total_variation = total_variation
+        self.value = value or []
+        self.average = average or []
+        self.max = max or []
+        self.min = min or []
+        self.count = count or []
+        self.sum = sum or []
+        self.interpolation = interpolation or []
+        self.step_interpolation = step_interpolation or []
+        self.continuous_variance = continuous_variance or []
+        self.discrete_variance = discrete_variance or []
+        self.total_variation = total_variation or []
 
         self.__datapoint_objects = None
 
@@ -235,7 +235,9 @@ class Datapoints:
 
     def _get_non_empty_data_fields(self) -> Generator[Tuple[str, Any], None, None]:
         for attr, value in self.__dict__.copy().items():
-            if attr not in ["id", "external_id", "_Datapoints__datapoint_objects", "_client"] and value is not None:
+            if attr not in ["id", "external_id", "_Datapoints__datapoint_objects", "_client"] and (
+                len(value) > 0 or attr == "timestamp"
+            ):
                 yield attr, value
 
     def __get_datapoint_objects(self) -> List[Datapoint]:

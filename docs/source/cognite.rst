@@ -168,7 +168,7 @@ size and layout of your plots.
 
 This matplotlib extension is not supported out-of-the-box; it requires you to install the package manually
 
-.. :code:: bash
+.. code:: bash
 
     $ pip install matplotlib
 
