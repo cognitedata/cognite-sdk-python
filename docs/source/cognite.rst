@@ -137,6 +137,7 @@ Default configurations may be set using the following environment variables
     $ export COGNITE_MAX_RETRIES = <number-of-retries>
     $ export COGNITE_MAX_WORKERS = <number-of-workers>
     $ export COGNITE_TIMEOUT = <num-of-seconds>
+    $ export COGNITE_MAX_CONNECTION_POOL_SIZE = <number-of-connections-in-pool>
     $ export COGNITE_DISABLE_GZIP = "1"
 
 :code:`cognite-sdk` vs. :code:`cognite-sdk-core`

@@ -31,11 +31,12 @@ class RetryWithMaxBackoff(Retry):
 def _init_requests_session():
     session = Session()
     num_of_retries = int(os.getenv("COGNITE_MAX_RETRIES", DEFAULT_MAX_RETRIES))
+    max_pool_size = int(os.getenv("COGNITE_MAX_CONNECTION_POOL_SIZE", DEFAULT_MAX_POOL_SIZE))
     adapter = HTTPAdapter(
         max_retries=RetryWithMaxBackoff(
             total=num_of_retries, connect=num_of_retries, read=0, status=0, backoff_factor=0.5, raise_on_status=False
         ),
-        pool_maxsize=DEFAULT_MAX_POOL_SIZE,
+        pool_maxsize=max_pool_size,
     )
     adapter_with_retry = HTTPAdapter(
         max_retries=RetryWithMaxBackoff(
@@ -45,7 +46,7 @@ def _init_requests_session():
             method_whitelist=False,
             raise_on_status=False,
         ),
-        pool_maxsize=DEFAULT_MAX_POOL_SIZE,
+        pool_maxsize=max_pool_size,
     )
     session.mount("http://", adapter)
     session.mount("https://", adapter)

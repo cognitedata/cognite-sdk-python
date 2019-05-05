@@ -7,7 +7,7 @@ from cognite.client.exceptions import CogniteAPIError
 COGNITE_CLIENT = CogniteClient()
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def new_file():
     res = COGNITE_CLIENT.files.upload_bytes(content="blabla", name="myspecialfile")
     yield res
@@ -15,6 +15,15 @@ def new_file():
     with pytest.raises(CogniteAPIError) as e:
         COGNITE_CLIENT.files.retrieve(id=res.id)
     assert 400 == e.value.code
+
+
+@pytest.fixture(scope="session")
+def test_files():
+    files = {}
+    for file in COGNITE_CLIENT.files:
+        if file.name in ["a.txt", "b.txt", "c.txt", "big.txt"]:
+            files[file.name] = file
+    return files
 
 
 class TestFilesAPI:
@@ -34,3 +43,8 @@ class TestFilesAPI:
         update_file = FileMetadataUpdate(new_file.id).metadata.set({"bla": "bla"})
         res = COGNITE_CLIENT.files.update(update_file)
         assert {"bla": "bla"} == res.metadata
+
+    def test_download(self, test_files):
+        test_file = test_files["a.txt"]
+        res = COGNITE_CLIENT.files.download_bytes(id=test_file.id)
+        assert b"a" == res
