@@ -19,7 +19,6 @@ API_CLIENT = APIClient(
     api_key="abc",
     base_url=BASE_URL,
     max_workers=1,
-    cookies={"a-cookie": "a-cookie-val"},
     headers={},
     timeout=60,
     cognite_client=COGNITE_CLIENT,

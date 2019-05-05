@@ -67,7 +67,6 @@ class APIClient:
         api_key: str = None,
         base_url: str = None,
         max_workers: int = None,
-        cookies: Dict = None,
         headers: Dict = None,
         timeout: int = None,
         cognite_client=None,
@@ -78,7 +77,6 @@ class APIClient:
         __base_path = "/api/{}/projects/{}".format(version, project) if version else ""
         self._base_url = base_url + __base_path
         self._max_workers = max_workers
-        self._cookies = cookies
         self._headers = self._configure_headers(headers)
         self._timeout = timeout
         self._cognite_client = cognite_client
@@ -90,24 +88,16 @@ class APIClient:
         self._UPDATE_LIMIT = 1000
 
     def _delete(self, url_path: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
-        return self._do_request(
-            "DELETE", url_path, params=params, headers=headers, cookies=self._cookies, timeout=self._timeout
-        )
+        return self._do_request("DELETE", url_path, params=params, headers=headers, timeout=self._timeout)
 
     def _get(self, url_path: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
-        return self._do_request(
-            "GET", url_path, params=params, headers=headers, cookies=self._cookies, timeout=self._timeout
-        )
+        return self._do_request("GET", url_path, params=params, headers=headers, timeout=self._timeout)
 
     def _post(self, url_path: str, json: Dict[str, Any], params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
-        return self._do_request(
-            "POST", url_path, json=json, headers=headers, params=params, cookies=self._cookies, timeout=self._timeout
-        )
+        return self._do_request("POST", url_path, json=json, headers=headers, params=params, timeout=self._timeout)
 
     def _put(self, url_path: str, json: Dict[str, Any] = None, headers: Dict[str, Any] = None):
-        return self._do_request(
-            "PUT", url_path, json=json, headers=headers, cookies=self._cookies, timeout=self._timeout
-        )
+        return self._do_request("PUT", url_path, json=json, headers=headers, timeout=self._timeout)
 
     def _do_request(self, method: str, url_path: str, **kwargs):
         full_url = self._resolve_url(url_path)

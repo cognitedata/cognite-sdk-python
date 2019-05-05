@@ -30,7 +30,6 @@ class CogniteClient:
         project (str): Project. Defaults to project of given API key.
         base_url (str): Base url to send requests to. Defaults to "https://api.cognitedata.com"
         max_workers (int): Max number of workers to spawn when parallelizing data fetching. Defaults to 10.
-        cookies (Dict): Cookies to append to all requests. Defaults to {}
         headers (Dict): Additional headers to add to all requests.
         timeout (int): Timeout on requests sent to the api. Defaults to 10 seconds.
         debug (bool): Configures logger to log extra request details to stderr.
@@ -43,7 +42,6 @@ class CogniteClient:
         base_url: str = None,
         max_workers: int = None,
         headers: Dict[str, str] = None,
-        cookies: Dict[str, str] = None,
         timeout: int = None,
         debug: bool = None,
     ):
@@ -64,8 +62,6 @@ class CogniteClient:
 
         self._headers = headers or {}
 
-        self._cookies = cookies or {}
-
         self._timeout = int(timeout or environment_timeout or DEFAULT_TIMEOUT)
 
         if debug:
@@ -79,7 +75,6 @@ class CogniteClient:
             api_key=self.__api_key,
             base_url=self._base_url,
             max_workers=self._max_workers,
-            cookies=self._cookies,
             headers=self._headers,
             timeout=self._timeout,
             cognite_client=self,
@@ -94,7 +89,6 @@ class CogniteClient:
             api_key=self.__api_key,
             base_url=self._base_url,
             max_workers=self._max_workers,
-            cookies=self._cookies,
             headers=self._headers,
             timeout=self._timeout,
             cognite_client=self,
@@ -105,7 +99,6 @@ class CogniteClient:
             api_key=self.__api_key,
             base_url=self._base_url,
             max_workers=self._max_workers,
-            cookies=self._cookies,
             headers=self._headers,
             timeout=self._timeout,
             cognite_client=self,
@@ -116,7 +109,6 @@ class CogniteClient:
             api_key=self.__api_key,
             base_url=self._base_url,
             max_workers=self._max_workers,
-            cookies=self._cookies,
             headers=self._headers,
             timeout=self._timeout,
             cognite_client=self,
@@ -127,7 +119,6 @@ class CogniteClient:
             api_key=self.__api_key,
             base_url=self._base_url,
             max_workers=self._max_workers,
-            cookies=self._cookies,
             headers=self._headers,
             timeout=self._timeout,
             cognite_client=self,
@@ -138,7 +129,6 @@ class CogniteClient:
             api_key=self.__api_key,
             base_url=self._base_url,
             max_workers=self._max_workers,
-            cookies=self._cookies,
             headers=self._headers,
             timeout=self._timeout,
             cognite_client=self,
@@ -149,7 +139,6 @@ class CogniteClient:
             api_key=self.__api_key,
             base_url=self._base_url,
             max_workers=self._max_workers,
-            cookies=self._cookies,
             headers=self._headers,
             timeout=self._timeout,
             cognite_client=self,
@@ -160,7 +149,6 @@ class CogniteClient:
             api_key=self.__api_key,
             base_url=self._base_url,
             max_workers=self._max_workers,
-            cookies=self._cookies,
             headers=self._headers,
             timeout=self._timeout,
             cognite_client=self,
@@ -171,7 +159,6 @@ class CogniteClient:
             api_key=self.__api_key,
             base_url=self._base_url,
             max_workers=self._max_workers,
-            cookies=self._cookies,
             headers=self._headers,
             timeout=self._timeout,
             cognite_client=self,
@@ -181,7 +168,6 @@ class CogniteClient:
             api_key=self.__api_key,
             base_url=self._base_url,
             max_workers=self._max_workers,
-            cookies=self._cookies,
             headers=self._headers,
             timeout=self._timeout,
             cognite_client=self,
