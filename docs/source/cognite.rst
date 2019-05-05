@@ -27,7 +27,7 @@ attributes describing which project and service account your api-key belongs to.
     >>> c = CogniteClient()
     >>> status = c.login.status()
 
-Read more about the `Cognite Client`_ and what functionality it exposes below.
+Read more about the `CogniteClient`_ and what functionality it exposes below.
 
 Plotting Time Series
 --------------------
@@ -116,18 +116,16 @@ You will then get information about the following:
     ...     assets_may_have_been_posted = e.may_have_been_posted
     ...     assets_not_posted = e.not_posted
 
-Concepts
+Settings
 ========
-Pandas Integration
-------------------
-This library is tightly integrated with the `pandas <https://pandas.pydata.org/pandas-docs/stable/>`_ library.
-This means that you can use the :code:`.to_pandas()` method on pretty much any object and get a pandas data frame
-describing the data.
+Client Configuration
+--------------------
+Configuration arguments can be passed directly to the :code:`CogniteClient` constructor. This will allow you to configure
+things such as the base url of your requests and additional headers. For an exhaustive list of what can be configured,
+see the `CogniteClient`_ class definition.
 
-This is particularly useful when working with time series data and tabular data from the Raw API.
-
-Setting Default Environment Configurations
-------------------------------------------
+Environment Configuration
+-------------------------
 Default configurations may be set using the following environment variables
 
 .. code:: bash
@@ -140,19 +138,54 @@ Default configurations may be set using the following environment variables
     $ export COGNITE_MAX_CONNECTION_POOL_SIZE = <number-of-connections-in-pool>
     $ export COGNITE_DISABLE_GZIP = "1"
 
+Concurrency and Connection Pooling
+----------------------------------
+This library does not expose any API limits to the user. If your request exceeds API limits the SDK will split your
+request into chunks and perform the sub-requests in parallell. In order to control how many concurrent requests you send
+to the API, you can either pass the :code:`max_workers` attribute when instantiating the :code:`CogniteClient` or set the
+environment variable :code:`COGNITE_MAX_WORKERS`.
+
+If you have are working with multiple instances of :code:`CogniteClient`, these will all share the same connection pool.
+So if you have many of these, you may want to increase the max connection pool size in order to reuse connections if
+performing a large amount of concurrent requests. You can increase the connection pool size by setting the environment
+variable :code:`COGNITE_MAX_CONNECTION_POOL_SIZE`.
+
+Extensions and Core Library
+============================
+Pandas Integration
+------------------
+The SDK is tightly integrated with the `pandas <https://pandas.pydata.org/pandas-docs/stable/>`_ library.
+This means that you can use the :code:`.to_pandas()` method on pretty much any object and get a pandas data frame
+describing the data.
+
+This is particularly useful when working with time series data and tabular data from the Raw API.
+
+Matplotlib Integration
+----------------------
+You can use the `.plot()` method on any time series or datapoints result the SDK returns. This method takes keyword
+arguments which are passed on to the underlying matplotlib plot function, allowing you to configure things such as the
+size and layout of your plots.
+
+This matplotlib extension is not supported out-of-the-box; it requires you to install the package manually
+
+.. :code:: bash
+
+    $ pip install matplotlib
+
 :code:`cognite-sdk` vs. :code:`cognite-sdk-core`
 ------------------------------------------------
+Sometimes, your application does not require the functionality that these heavy dependencies gives you. In that case
+you will want to install the core library.
+
 The two libraries are exactly the same, except that :code:`cognite-sdk-core` does not specify :code:`pandas`
 or :code:`numpy` as dependencies. This means that :code:`cognite-sdk-core` will have only a subset
 of the features available through the :code:`cognite-sdk` package. If you attempt to use functionality
 that :code:`cognite-sdk-core` does not support, a :code:`CogniteImportError` will be raised.
 
-This is useful if you do not want to include those heavy dependencies in your project.
-
 API
 ===
-Cognite Client
---------------
+CogniteClient
+-------------
 .. autoclass:: cognite.client.CogniteClient
     :members:
     :member-order: bysource
