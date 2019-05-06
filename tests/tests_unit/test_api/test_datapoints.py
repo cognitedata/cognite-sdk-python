@@ -633,7 +633,6 @@ class TestPandasIntegration:
         assert dps_list.to_pandas().empty
 
     def test_retrieve_dataframe(self, mock_get_datapoints, set_dps_workers):
-        set_dps_workers(1)
         df = DPS_CLIENT.retrieve_dataframe(
             id=[1, {"id": 2, "aggregates": ["max"]}],
             external_id=["123"],

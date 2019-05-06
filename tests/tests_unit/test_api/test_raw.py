@@ -85,7 +85,6 @@ class TestRawDatabases:
     def test_delete(self, mock_raw_db_response):
         res = RAW_API.databases.delete(name="db1")
         assert res is None
-        print(jsgz_load(mock_raw_db_response.calls[0].request.body))
         assert [{"name": "db1"}] == jsgz_load(mock_raw_db_response.calls[0].request.body)["items"]
 
     def test_delete_multiple(self, mock_raw_db_response):
