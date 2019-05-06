@@ -1,3 +1,4 @@
+import math
 import threading
 from collections import defaultdict, namedtuple
 from datetime import datetime
@@ -692,10 +693,17 @@ class _DatapointsFetcher:
 
     def _split_query_into_windows(self, dps_query: _DPQuery) -> List[_DPQuery]:
         if dps_query.aggregates:
-            dps_per_window = self.client._DPS_LIMIT_AGG * 5
+            dps_per_window = self.client._DPS_LIMIT_AGG
         else:
-            dps_per_window = self.client._DPS_LIMIT * 500
-        windows = self._get_windows(dps_query.start, dps_query.end, dps_query.granularity, dps_per_window)
+            dps_per_window = self.client._DPS_LIMIT
+        windows = self._get_windows(
+            dps_query.start,
+            dps_query.end,
+            dps_query.granularity,
+            max_windows=self.client._max_workers,
+            dps_per_window=dps_per_window,
+            dps_count=self._get_dps_count(dps_query),
+        )
         return [
             _DPQuery(
                 w.start,
@@ -710,10 +718,15 @@ class _DatapointsFetcher:
         ]
 
     def _get_dps_count(self, dps_query):
+        ts_item = dps_query.ts_item
+        if isinstance(ts_item, dict) and "aggregates" in ts_item:
+            ts_item = ts_item.copy()
+            del ts_item["aggregates"]
+
         res = self._get_datapoints_with_paging(
             start=dps_query.start,
             end=dps_query.end,
-            ts_item=dps_query.ts_item,
+            ts_item=ts_item,
             aggregates=["count"],
             granularity=self._interval_to_day_granularity(dps_query.end - dps_query.start),
             include_outside_points=False,
@@ -727,22 +740,27 @@ class _DatapointsFetcher:
         return "{}d".format(int(max(1, days)))
 
     @staticmethod
-    def _get_windows(start: int, end: int, granularity: str, dps_per_window: int) -> List[_DPWindow]:
+    def _get_windows(
+        start: int, end: int, granularity: str, max_windows: int, dps_per_window: int, dps_count
+    ) -> List[_DPWindow]:
         granularity_ms = utils.granularity_to_ms(granularity) if granularity else 1
         diff = end - start
-        estimated_num_of_dps = diff // granularity_ms
-        num_of_windows = max(1, int(estimated_num_of_dps // dps_per_window))
+        if granularity_ms > 1:
+            dps_count = int(min(math.ceil(diff / granularity_ms), dps_count))
+        num_of_windows = int(min(max_windows, math.ceil(dps_count / dps_per_window)))
+        print("num_of_windows", num_of_windows)
 
         windows = []
-        next_start = start
-        window_size = diff // num_of_windows
-        next_end = next_start + window_size
-        while (not windows or windows[-1].end < end) and next_start < next_end:
-            windows.append(_DPWindow(start=next_start, end=next_end))
-            next_start += window_size + granularity_ms
+        if num_of_windows > 0:
+            next_start = start
+            window_size = diff // num_of_windows
             next_end = next_start + window_size
-            if next_end > end:
-                next_end = end
+            while (not windows or windows[-1].end < end) and next_start < next_end:
+                windows.append(_DPWindow(start=next_start, end=next_end))
+                next_start += window_size + granularity_ms
+                next_end = next_start + window_size
+                if next_end > end:
+                    next_end = end
         return windows
 
     @staticmethod

@@ -1,4 +1,5 @@
 import json
+import math
 from contextlib import contextmanager
 from datetime import datetime
 from random import random
@@ -24,8 +25,11 @@ def generate_datapoints(start: int, end: int, aggregates=None, granularity=None)
     for i in range(start, end, granularity):
         dp = {}
         if aggregates:
-            for agg in aggregates:
-                dp[agg] = random()
+            if aggregates == ["count"]:
+                dp["count"] = int(math.ceil((end - start) / 1000))
+            else:
+                for agg in aggregates:
+                    dp[agg] = random()
         else:
             dp["value"] = random()
         dp["timestamp"] = i
@@ -112,7 +116,7 @@ def set_dps_workers():
 def assert_dps_response_is_correct(calls, dps_object):
     datapoints = []
     for call in calls:
-        if jsgz_load(call.request.body)["limit"] > 1:
+        if jsgz_load(call.request.body)["limit"] > 1 and jsgz_load(call.request.body).get("aggregates") != ["count"]:
             dps_response = call.response.json()["data"]["items"][0]
             if dps_response["id"] == dps_object.id and dps_response["externalId"] == dps_object.external_id:
                 datapoints.extend(dps_response["datapoints"])
@@ -167,7 +171,7 @@ class TestGetDatapoints:
         set_dps_workers(1)
         with set_request_limit(DPS_CLIENT, 2):
             dps_res = DPS_CLIENT.retrieve(id=123, start=0, end=10000, aggregates=["average"], granularity="1s")
-        assert 6 == len(mock_get_datapoints.calls)
+        assert 7 == len(mock_get_datapoints.calls)
         assert 10 == len(dps_res)
 
     def test_datapoints_concurrent(self, mock_get_datapoints):
@@ -181,21 +185,18 @@ class TestGetDatapoints:
             key=lambda x: x[0],
         )
         assert (0, 100000) == requested_windows[0]
-        assert [(0, 100000), (20000, 100000), (40000, 100000), (60000, 100000), (80000, 100000)] == requested_windows[
-            1:
-        ]
+        assert (0, 100000) == requested_windows[1]
+        assert [(0, 20000), (21000, 41000), (42000, 62000), (63000, 83000), (84000, 100000)] == requested_windows[2:]
         assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
 
     @pytest.mark.parametrize(
         "limit, aggregates, granularity, actual_windows_req",
         [
-            (10, None, None, [(0, 5000), (5001, 10000)]),
-            (2, ["average"], "1s", [(0, 10000), (2000, 10000), (4000, 10000), (6000, 10000), (8000, 10000)]),
+            (6, None, None, [(0, 5000), (5001, 10000)]),
+            (2, ["average"], "1s", [(0, 2000), (3000, 5000), (6000, 8000), (9000, 10000)]),
         ],
     )
-    def test_request_dps_spacing_correct(
-        self, mock_get_datapoints, set_dps_workers, limit, aggregates, granularity, actual_windows_req
-    ):
+    def test_request_dps_spacing_correct(self, mock_get_datapoints, limit, aggregates, granularity, actual_windows_req):
         with set_request_limit(DPS_CLIENT, limit):
             DPS_CLIENT.retrieve(id=123, start=0, end=10000, aggregates=aggregates, granularity=granularity)
         requested_windows = sorted(
@@ -205,7 +206,7 @@ class TestGetDatapoints:
             ],
             key=lambda x: x[0],
         )
-        assert actual_windows_req == requested_windows[1:]
+        assert actual_windows_req == requested_windows[2:]
 
     def test_datapoints_paging_with_limit(self, mock_get_datapoints):
         with set_request_limit(DPS_CLIENT, 3):
@@ -631,7 +632,8 @@ class TestPandasIntegration:
         dps_list = DatapointsList([])
         assert dps_list.to_pandas().empty
 
-    def test_retrieve_dataframe(self, mock_get_datapoints):
+    def test_retrieve_dataframe(self, mock_get_datapoints, set_dps_workers):
+        set_dps_workers(1)
         df = DPS_CLIENT.retrieve_dataframe(
             id=[1, {"id": 2, "aggregates": ["max"]}],
             external_id=["123"],
@@ -640,6 +642,7 @@ class TestPandasIntegration:
             aggregates=["average"],
             granularity="10s",
         )
+
         assert {"1|average", "2|max", "123|average"} == set(df.columns)
         assert df.shape[0] > 0
 
@@ -670,17 +673,24 @@ class TestPandasIntegration:
 
 class TestHelpers:
     @pytest.mark.parametrize(
-        "start, end, granularity, dps_per_window, expected_output",
+        "start, end, granularity, max_windows, dps_count, dps_per_window, expected_output",
         [
-            (1550241236999, 1550244237001, "1d", 1, [_DPWindow(1550241236999, 1550244237001)]),
-            (0, 10000, "1s", 1, [_DPWindow(i, i + 1000) for i in range(0, 10000, 2000)]),
-            (0, 2500, "1s", 1, [_DPWindow(0, 1250), _DPWindow(2250, 2500)]),
-            (0, 2500, None, 833, [_DPWindow(0, 833), _DPWindow(834, 1667), _DPWindow(1668, 2500)]),
+            (1550241236999, 1550244237001, "1d", 1, 10, 1, [_DPWindow(1550241236999, 1550244237001)]),
+            (0, 10000, "1s", 10, 10, 1, [_DPWindow(i, i + 1000) for i in range(0, 10000, 2000)]),
+            (0, 2500, "1s", 10, 10, 2, [_DPWindow(0, 1250), _DPWindow(2250, 2500)]),
+            (0, 2500, None, 10, 2500, 1000, [_DPWindow(0, 833), _DPWindow(834, 1667), _DPWindow(1668, 2500)]),
         ],
     )
-    def test_get_datapoints_windows(self, start, end, granularity, dps_per_window, expected_output):
+    def test_get_datapoints_windows(
+        self, start, end, granularity, max_windows, dps_count, dps_per_window, expected_output
+    ):
         res = _DatapointsFetcher._get_windows(
-            start=start, end=end, granularity=granularity, dps_per_window=dps_per_window
+            start=start,
+            end=end,
+            granularity=granularity,
+            max_windows=max_windows,
+            dps_count=dps_count,
+            dps_per_window=dps_per_window,
         )
         assert expected_output == res
 
