@@ -6,22 +6,21 @@
 Cognite Python SDK Documentation
 ================================
 
-Python SDK to ensure excellent user experience for developers and data scientists working with the Cognite Data Platform.
-This package provides an interface to CDP in Python that is tightly integrated with Pandas.
-It lets you work with all the data in the platform in a simple and efficient manner.
+This is the Cognite Python SDK for developers and data scientists working with Cognite Data Fusion (CDF). 
+The package is tightly integrated with pandas, and provides a Python interface that lets you work efficiently with all data in CDF. 
 
 .. contents::
    :local:
 
 Installation
 ^^^^^^^^^^^^
-To install this package run the following command
+To install this package:
 
 .. code-block:: bash
 
    pip install cognite-sdk
 
-To install this package without the pandas and numpy support run the following command
+To install this package without the pandas and NumPy support:
 
 .. code-block:: bash
 
@@ -34,6 +33,5 @@ Contents
 
 Examples
 ^^^^^^^^
-Examples on using the Cognite Data Platform in Python can be found `here <https://github.com/cognitedata/cognite-python-docs>`__.
-This github repository contains a collection of scripts and Jupyter Notebooks explaining how
-to use the platform to perform different tasks.
+You can find examples of using Cognite Data Fusion in Python `here <https://github.com/cognitedata/cognite-python-docs>`__.
+The GitHub repository has a collection of scripts and Jupyter Notebooks that explain how to perform different tasks in CDF.

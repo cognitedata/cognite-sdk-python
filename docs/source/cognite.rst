@@ -1,25 +1,24 @@
 Quickstart
 ==========
-Authenticating
+Authenticate
 --------------
-The preferred way of authenticating towards the Cognite API is by setting the environment variable
-:code:`COGNITE_API_KEY`. All examples in this documentation require that it has been set.
+The preferred way to authenticate against the Cognite API is by setting the :code:`COGNITE_API_KEY` environment variable. All examples in this documentation require that the variable has been set.
 
 .. code:: bash
 
     $ export COGNITE_API_KEY = <your-api-key>
 
-You may also pass your api-key directly to the CogniteClient.
+You can also pass your API key directly to the CogniteClient.
 
 .. code:: python
 
     >>> from cognite.client import CogniteClient
     >>> c = CogniteClient(api_key="your-key")
 
-Instantiating a new client
+Instantiate a new client
 --------------------------
-You can instantiate a client and get your login status like this. This will return an object with
-attributes describing which project and service account your api-key belongs to.
+Use this code to instantiate a client and get your login status. CDF returns an object with
+attributes that describe which project and service account your API key belongs to.
 
 .. code:: python
 
@@ -27,13 +26,13 @@ attributes describing which project and service account your api-key belongs to.
     >>> c = CogniteClient()
     >>> status = c.login.status()
 
-Read more about the `CogniteClient`_ and what functionality it exposes below.
+Read more about the `CogniteClient`_ and the functionality it exposes below.
 
-Plotting Time Series
+Plot time series
 --------------------
 There are several ways of plotting a time series you have fetched from the API. The easiest is to call
-:code:`.plot()` on the returned :code:`TimeSeries` or :code:`TimeSeriesList` objects. This will by default plot the raw
-data points for the last 24h.
+:code:`.plot()` on the returned :code:`TimeSeries` or :code:`TimeSeriesList` objects. By default, this plots the raw
+data points for the last 24 hours.
 
 .. code:: python
 
@@ -42,14 +41,14 @@ data points for the last 24h.
     >>> my_time_series = c.time_series.retrieve(id=[1, 2])
     >>> my_time_series.plot()
 
-You can also pass arguments to the plot method to change the start, end, aggregates, and granularity of the
+You can also pass arguments to the :code:`.plot()` method to change the start, end, aggregates, and granularity of the
 request.
 
 .. code:: python
 
     >>> my_time_series.plot(start="365d-ago", end="now", aggregates=["avg"], granularity="1d")
 
-The :code:`Datapoints` and :code:`DatapointsList` objects returned when fetching datapoints also have :code:`.plot()`
+The :code:`Datapoints` and :code:`DatapointsList` objects that are returned when you fetch data points, also have :code:`.plot()`
 methods you can use to plot the data.
 
 .. code:: python
@@ -66,12 +65,12 @@ methods you can use to plot the data.
     >>> my_datapoints.plot()
 
 .. NOTE::
-    In order to use the :code:`.plot()` functionality you need to install :code:`matplotlib`
+    To use the :code:`.plot()` functionality you need to install :code:`matplotlib`
 
-Creating an Asset Hierarchy
+Create an asset hierarchy
 ---------------------------
-When posting an asset to the API you may indicate that it is a root asset (has no parent) by not specifying a parent ID.
-You can also specify a parent ID, making it a child of an asset already in the API.
+You can create a root asset (has no parent) by not specifying a parent ID when you post an asset to the API.
+To make the asset a child of an existing asset, you must specify a parent ID.
 
 .. code::
 
@@ -81,13 +80,12 @@ You can also specify a parent ID, making it a child of an asset already in the A
     >>> my_asset = Asset(name="my first asset", parent_id=123)
     >>> c.assets.create(my_asset)
 
-If you want to post an entire asset hierarchy, you can do this by describing the relations within your asset hierarchy
+To post an entire asset hierarchy, you can describe the relations within your asset hierarchy
 using the :code:`ref_id` and :code:`parent_ref_id` attributes on the :code:`Asset` object. You can post
-an arbitrary number of assets like this, and the SDK will handle splitting this into multiple requests for you, resolving
+an arbitrary number of assets, and the SDK will split the request into multiple requests for you and resolve
 :code:`parent_ref_ids` as :code:`parent_ids` as it posts the assets.
 
-
-This example shows how to post an asset hierarchy of depth 3 consisting of three assets.
+This example shows how to post a three levels deep asset hierarchy consisting of three assets.
 
 .. code::
 
@@ -99,12 +97,11 @@ This example shows how to post an asset hierarchy of depth 3 consisting of three
     >>> descendant = Asset(name="descendant", ref_id="3", parent_ref_id="2")
     >>> c.assets.create([root, child, descendant])
 
-It is a good idea to wrap the .create() call in a try-except, in case posting certain assets fails.
-You will then get information about the following:
+Wrap the .create() call in a try-except to get information if the posting of the assets fails:
 
-- Which assets were definitely posted i.e. request yielded a 201
-- Which assets may have been posted i.e. request yielded 5xx
-- Which assets were definitely not posted i.e. request yielded 4xx or was a descendant of another asset which may or may not have been posted.
+- Which assets were posted. The request yielded a 201.
+- Which assets may have been posted. The request yielded 5xx.
+- Which assets were not posted. The request yielded 4xx, or was a descendant of another asset which may or may not have been posted.
 
 .. code::
 
@@ -118,15 +115,14 @@ You will then get information about the following:
 
 Settings
 ========
-Client Configuration
+Client configuration
 --------------------
-Configuration arguments can be passed directly to the :code:`CogniteClient` constructor. This will allow you to configure
-things such as the base url of your requests and additional headers. For an exhaustive list of what can be configured,
+You can pass configuration arguments directly to the :code:`CogniteClient` constructor, for example to configure for example the base url of your requests and additional headers. For a list of all configuration arguments,
 see the `CogniteClient`_ class definition.
 
-Environment Configuration
+Environment configuration
 -------------------------
-Default configurations may be set using the following environment variables
+You can set default configurations by using these environment variables:
 
 .. code:: bash
 
@@ -140,33 +136,29 @@ Default configurations may be set using the following environment variables
 
 Concurrency and Connection Pooling
 ----------------------------------
-This library does not expose any API limits to the user. If your request exceeds API limits the SDK will split your
-request into chunks and perform the sub-requests in parallell. In order to control how many concurrent requests you send
-to the API, you can either pass the :code:`max_workers` attribute when instantiating the :code:`CogniteClient` or set the
-environment variable :code:`COGNITE_MAX_WORKERS`.
+This library does not expose API limits to the user. If your request exceeds API limits, the SDK splits your
+request into chunks and perform the sub-requests in parallel. To control how many concurrent requests you send
+to the API, you can either pass the :code:`max_workers` attribute when you instantiate the :code:`CogniteClient` or set the :code:`COGNITE_MAX_WORKERS` environment variable.
 
-If you have are working with multiple instances of :code:`CogniteClient`, these will all share the same connection pool.
-So if you have many of these, you may want to increase the max connection pool size in order to reuse connections if
-performing a large amount of concurrent requests. You can increase the connection pool size by setting the environment
-variable :code:`COGNITE_MAX_CONNECTION_POOL_SIZE`.
+If you are working with multiple instances of :code:`CogniteClient`, all instances will share the same connection pool.
+If you have many instances, you can increase the max connection pool size to reuse connections if you are performing a large amount of concurrent requests. You can increase the connection pool size by setting the :code:`COGNITE_MAX_CONNECTION_POOL_SIZE` environment variable.
 
-Extensions and Core Library
+Extensions and core library
 ============================
-Pandas Integration
+Pandas integration
 ------------------
 The SDK is tightly integrated with the `pandas <https://pandas.pydata.org/pandas-docs/stable/>`_ library.
-This means that you can use the :code:`.to_pandas()` method on pretty much any object and get a pandas data frame
-describing the data.
+You can use the :code:`.to_pandas()` method on pretty much any object and get a pandas data frame describing the data.
 
-This is particularly useful when working with time series data and tabular data from the Raw API.
+This is particularly useful when you are working with time series data and with tabular data from the Raw API.
 
-Matplotlib Integration
+Matplotlib integration
 ----------------------
-You can use the :code:`.plot()` method on any time series or datapoints result the SDK returns. This method takes keyword
+You can use the :code:`.plot()` method on any time series or data points result that the SDK returns. The method takes keyword
 arguments which are passed on to the underlying matplotlib plot function, allowing you to configure things such as the
 size and layout of your plots.
 
-This matplotlib extension is not supported out-of-the-box; it requires you to install the package manually
+You need to install the matplotlib package manually:
 
 .. code:: bash
 
@@ -174,13 +166,13 @@ This matplotlib extension is not supported out-of-the-box; it requires you to in
 
 :code:`cognite-sdk` vs. :code:`cognite-sdk-core`
 ------------------------------------------------
-Sometimes, your application does not require the functionality that these heavy dependencies gives you. In that case
-you will want to install the core library.
+If your application doesn't require the functionality from the :code:`pandas`
+or :code:`numpy` dependencies, you should install the :code:`cognite-sdk-core` library.
 
 The two libraries are exactly the same, except that :code:`cognite-sdk-core` does not specify :code:`pandas`
-or :code:`numpy` as dependencies. This means that :code:`cognite-sdk-core` will have only a subset
+or :code:`numpy` as dependencies. This means that :code:`cognite-sdk-core` only has a subset
 of the features available through the :code:`cognite-sdk` package. If you attempt to use functionality
-that :code:`cognite-sdk-core` does not support, a :code:`CogniteImportError` will be raised.
+that :code:`cognite-sdk-core` does not support, a :code:`CogniteImportError` is raised.
 
 API
 ===
@@ -197,7 +189,7 @@ Get login status
 .. automethod:: cognite.client._api.login.LoginAPI.status
 
 
-Data Classes
+Data classes
 ^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.login
     :members:
@@ -207,31 +199,31 @@ Data Classes
 
 Assets
 ------
-Get Assets
+Get assets
 ^^^^^^^^^^
 .. automethod:: cognite.client._api.assets.AssetsAPI.retrieve
 
-List Assets
+List assets
 ^^^^^^^^^^^
 .. automethod:: cognite.client._api.assets.AssetsAPI.list
 
-Search for Assets
+Search for assets
 ^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.assets.AssetsAPI.search
 
-Create Assets
+Create assets
 ^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.assets.AssetsAPI.create
 
-Delete Assets
+Delete assets
 ^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.assets.AssetsAPI.delete
 
-Update Assets
+Update assets
 ^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.assets.AssetsAPI.update
 
-Data Classes
+Data alasses
 ^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.assets
     :members:
@@ -241,31 +233,31 @@ Data Classes
 
 Events
 ------
-Get Events
+Get events
 ^^^^^^^^^^
 .. automethod:: cognite.client._api.events.EventsAPI.retrieve
 
-List Events
+List events
 ^^^^^^^^^^^
 .. automethod:: cognite.client._api.events.EventsAPI.list
 
-Search for Events
+Search for events
 ^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.events.EventsAPI.search
 
-Create Events
+Create events
 ^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.events.EventsAPI.create
 
-Delete Events
+Delete events
 ^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.events.EventsAPI.delete
 
-Update Events
+Update events
 ^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.events.EventsAPI.update
 
-Data Classes
+Data classes
 ^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.events
     :members:
@@ -280,11 +272,11 @@ Get files metadata
 ^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.files.FilesAPI.retrieve
 
-List Files metadata
+List files metadata
 ^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.files.FilesAPI.list
 
-Search for Files
+Search for files
 ^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.files.FilesAPI.search
 
@@ -304,15 +296,15 @@ Download a file as bytes
 ^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.files.FilesAPI.download_bytes
 
-Delete Files
+Delete files
 ^^^^^^^^^^^^
 .. automethod:: cognite.client._api.files.FilesAPI.delete
 
-Update Files metadata
+Update files metadata
 ^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.files.FilesAPI.update
 
-Data Classes
+Data classes
 ^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.files
     :members:
@@ -320,33 +312,33 @@ Data Classes
     :show-inheritance:
     :inherited-members:
 
-Time Series
+Time series
 -----------
-Get Time Series
+Get time series
 ^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.time_series.TimeSeriesAPI.retrieve
 
-List Time Series
+List time series
 ^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.time_series.TimeSeriesAPI.list
 
-Search for Time Series
+Search for time series
 ^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.time_series.TimeSeriesAPI.search
 
-Create Time Series
+Create time series
 ^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.time_series.TimeSeriesAPI.create
 
-Delete Time Series
+Delete time series
 ^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.time_series.TimeSeriesAPI.delete
 
-Update Time Series
+Update time series
 ^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.time_series.TimeSeriesAPI.update
 
-Data Classes
+Data classes
 ^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.time_series
     :members:
@@ -354,9 +346,9 @@ Data Classes
     :show-inheritance:
     :inherited-members:
 
-Datapoints
+Data points
 ----------
-Get datapoints
+Get data points
 ^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.datapoints.DatapointsAPI.retrieve
 
@@ -364,7 +356,7 @@ Get pandas dataframe
 ^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.datapoints.DatapointsAPI.retrieve_dataframe
 
-Perform datapoints queries
+Perform data points queries
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.datapoints.DatapointsAPI.query
 
@@ -376,7 +368,7 @@ Insert datapoints
 ^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.datapoints.DatapointsAPI.insert
 
-Insert datapoints into multiple time series
+Insert data points into multiple time series
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.datapoints.DatapointsAPI.insert_multiple
 
@@ -384,16 +376,16 @@ Insert pandas dataframe
 ^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.datapoints.DatapointsAPI.insert_dataframe
 
-Delete a range of datapoints
+Delete a range of data points
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.datapoints.DatapointsAPI.delete_range
 
-Delete ranges of datapoints
+Delete ranges of data points
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.datapoints.DatapointsAPI.delete_ranges
 
 
-Data Classes
+Data classes
 ^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.datapoints
     :members:
@@ -451,7 +443,7 @@ Delete rows from a table
 ~~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.raw.RawRowsAPI.delete
 
-Data Classes
+Data classes
 ^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.raw
     :members:
@@ -463,102 +455,102 @@ Data Classes
 --
 Models
 ^^^^^^
-Retrieve a model by id
+Retrieve a model by ID
 ~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.three_d.ThreeDModelsAPI.retrieve
 
-List Models
+List models
 ~~~~~~~~~~~
 .. automethod:: cognite.client._api.three_d.ThreeDModelsAPI.list
 
-Create Models
+Create models
 ~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.three_d.ThreeDModelsAPI.create
 
-Update Models
+Update models
 ~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.three_d.ThreeDModelsAPI.update
 
-Delete Models
+Delete models
 ~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.three_d.ThreeDModelsAPI.delete
 
 
 Revisions
 ^^^^^^^^^
-Retrieve a Revision by ID
+Retrieve a revision by ID
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.retrieve
 
-Create a Revision
+Create a revision
 ~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.create
 
-List Revisions
+List revisions
 ~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.list
 
-Update Revisions
+Update revisions
 ~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.update
 
-Delete Revisions
+Delete revisions
 ~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.delete
 
-Update a Revision Thumbnail
+Update a revision thumbnail
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.update_thumbnail
 
-List Nodes
+List nodes
 ~~~~~~~~~~
 .. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.list_nodes
 
-List Ancestor Nodes
+List ancestor nodes
 ~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.list_ancestor_nodes
 
 
 Files
 ^^^^^
-Retrieve a 3D File
+Retrieve a 3D file
 ~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.three_d.ThreeDFilesAPI.retrieve
 
-Asset Mappings
+Asset mMappings
 ^^^^^^^^^^^^^^
 Create an Asset Mapping
 ~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.three_d.ThreeDAssetMappingAPI.create
 
-List Asset Mappings
+List asset mappings
 ~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.three_d.ThreeDAssetMappingAPI.list
 
-Delete Asset Mappings
+Delete asset mappings
 ~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.three_d.ThreeDAssetMappingAPI.delete
 
 ..
     Reveal
     ^^^^^^
-    Retrieve a Revision by ID
+    Retrieve a revision by ID
     ~~~~~~~~~~~~~~~~~~~~~~~~~
     .. automethod:: cognite.client._api.three_d.ThreeDRevealAPI.retrieve_revision
 
-    List Sectors
+    List sectors
     ~~~~~~~~~~~~
     .. automethod:: cognite.client._api.three_d.ThreeDRevealAPI.list_sectors
 
-    List Nodes
+    List nodes
     ~~~~~~~~~~
     .. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.list_nodes
 
-    List Ancestor Nodes
+    List ancestor nodes
     ~~~~~~~~~~~~~~~~~~~
     .. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.list_ancestor_nodes
 
-Data Classes
+Data classes
 ^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.three_d
     :members:
@@ -566,49 +558,49 @@ Data Classes
     :show-inheritance:
     :inherited-members:
 
-Identity and Access Managment
+Identity and access management
 -----------------------------
-Service Accounts
+Service accounts
 ^^^^^^^^^^^^^^^^
-List Service Accounts
+List service accounts
 ~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.iam.ServiceAccountsAPI.list
 
-Create Service Accounts
+Create service accounts
 ~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.iam.ServiceAccountsAPI.create
 
-Delete Service Accounts
+Delete service accounts
 ~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.iam.ServiceAccountsAPI.delete
 
 
-API Keys
+API keys
 ^^^^^^^^
-List API Keys
+List API keys
 ~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.iam.APIKeysAPI.list
 
-Create API Keys
+Create API keys
 ~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.iam.APIKeysAPI.create
 
-Delete API Keys
+Delete API keys
 ~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.iam.APIKeysAPI.delete
 
 
 Groups
 ^^^^^^
-List Groups
+List groups
 ~~~~~~~~~~~
 .. automethod:: cognite.client._api.iam.GroupsAPI.list
 
-Create Groups
+Create groups
 ~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.iam.GroupsAPI.create
 
-Delete Groups
+Delete groups
 ~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.iam.GroupsAPI.delete
 
@@ -625,22 +617,22 @@ Remove service accounts from a group
 .. automethod:: cognite.client._api.iam.GroupsAPI.remove_service_account
 
 
-Security Categories
+Security categories
 ^^^^^^^^^^^^^^^^^^^
-List Security Categories
+List security categories
 ~~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.iam.SecurityCategoriesAPI.list
 
-Create Security Categories
+Create security categories
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.iam.SecurityCategoriesAPI.create
 
-Delete Security Categories
+Delete security categories
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.iam.SecurityCategoriesAPI.delete
 
 
-Data Classes
+Data classes
 ^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.iam
     :members:
