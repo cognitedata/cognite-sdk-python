@@ -65,12 +65,12 @@ methods you can use to plot the data.
     >>> my_datapoints.plot()
 
 .. NOTE::
-    To use the :code:`.plot()` functionality you need to install :code:`matplotlib`
+    To use the :code:`.plot()` functionality you need to install :code:`matplotlib`.
 
 Create an asset hierarchy
 ---------------------------
-You can create a root asset (has no parent) by not specifying a parent ID when you post an asset to the API.
-To make the asset a child of an existing asset, you must specify a parent ID.
+To create a root asset (an asset without a parent), omit the parent ID when you post the asset to the API.
+To make an asset a child of an existing asset, you must specify a parent ID.
 
 .. code::
 
@@ -82,7 +82,7 @@ To make the asset a child of an existing asset, you must specify a parent ID.
 
 To post an entire asset hierarchy, you can describe the relations within your asset hierarchy
 using the :code:`ref_id` and :code:`parent_ref_id` attributes on the :code:`Asset` object. You can post
-an arbitrary number of assets, and the SDK will split the request into multiple requests for you and resolve
+an arbitrary number of assets, and the SDK will split the request into multiple requests and resolve
 :code:`parent_ref_ids` as :code:`parent_ids` as it posts the assets.
 
 This example shows how to post a three levels deep asset hierarchy consisting of three assets.
@@ -97,11 +97,11 @@ This example shows how to post a three levels deep asset hierarchy consisting of
     >>> descendant = Asset(name="descendant", ref_id="3", parent_ref_id="2")
     >>> c.assets.create([root, child, descendant])
 
-Wrap the .create() call in a try-except to get information if the posting of the assets fails:
+Wrap the .create() call in a try-except to get information if posting the assets fails:
 
-- Which assets were posted. The request yielded a 201.
-- Which assets may have been posted. The request yielded 5xx.
-- Which assets were not posted. The request yielded 4xx, or was a descendant of another asset which may or may not have been posted.
+- Which assets were posted. (The request yielded a 201.)
+- Which assets may have been posted. (The request yielded 5xx.)
+- Which assets were not posted. (The request yielded 4xx, or was a descendant of another asset which may or may not have been posted.)
 
 .. code::
 
@@ -117,12 +117,11 @@ Settings
 ========
 Client configuration
 --------------------
-You can pass configuration arguments directly to the :code:`CogniteClient` constructor, for example to configure for example the base url of your requests and additional headers. For a list of all configuration arguments,
-see the `CogniteClient`_ class definition.
+You can pass configuration arguments directly to the :code:`CogniteClient` constructor, for example to configure the base url of your requests and additional headers. For a list of all configuration arguments, see the `CogniteClient`_ class definition.
 
 Environment configuration
 -------------------------
-You can set default configurations by using these environment variables:
+You can set default configurations with these environment variables:
 
 .. code:: bash
 
@@ -134,14 +133,14 @@ You can set default configurations by using these environment variables:
     $ export COGNITE_MAX_CONNECTION_POOL_SIZE = <number-of-connections-in-pool>
     $ export COGNITE_DISABLE_GZIP = "1"
 
-Concurrency and Connection Pooling
+Concurrency and connection pooling
 ----------------------------------
 This library does not expose API limits to the user. If your request exceeds API limits, the SDK splits your
-request into chunks and perform the sub-requests in parallel. To control how many concurrent requests you send
+request into chunks and performs the sub-requests in parallel. To control how many concurrent requests you send
 to the API, you can either pass the :code:`max_workers` attribute when you instantiate the :code:`CogniteClient` or set the :code:`COGNITE_MAX_WORKERS` environment variable.
 
 If you are working with multiple instances of :code:`CogniteClient`, all instances will share the same connection pool.
-If you have many instances, you can increase the max connection pool size to reuse connections if you are performing a large amount of concurrent requests. You can increase the connection pool size by setting the :code:`COGNITE_MAX_CONNECTION_POOL_SIZE` environment variable.
+If you have several instances, you can increase the max connection pool size to reuse connections if you are performing a large amount of concurrent requests. You can increase the max connection pool size by setting the :code:`COGNITE_MAX_CONNECTION_POOL_SIZE` environment variable.
 
 Extensions and core library
 ============================
@@ -155,7 +154,7 @@ This is particularly useful when you are working with time series data and with 
 Matplotlib integration
 ----------------------
 You can use the :code:`.plot()` method on any time series or data points result that the SDK returns. The method takes keyword
-arguments which are passed on to the underlying matplotlib plot function, allowing you to configure things such as the
+arguments which are passed on to the underlying matplotlib plot function, allowing you to configure for example the
 size and layout of your plots.
 
 You need to install the matplotlib package manually:
@@ -223,7 +222,7 @@ Update assets
 ^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.assets.AssetsAPI.update
 
-Data alasses
+Data classes
 ^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.assets
     :members:
@@ -364,7 +363,7 @@ Get latest
 ^^^^^^^^^^
 .. automethod:: cognite.client._api.datapoints.DatapointsAPI.retrieve_latest
 
-Insert datapoints
+Insert data points
 ^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.datapoints.DatapointsAPI.insert
 
@@ -381,7 +380,7 @@ Delete a range of data points
 .. automethod:: cognite.client._api.datapoints.DatapointsAPI.delete_range
 
 Delete ranges of data points
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.datapoints.DatapointsAPI.delete_ranges
 
 
@@ -517,9 +516,9 @@ Retrieve a 3D file
 ~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.three_d.ThreeDFilesAPI.retrieve
 
-Asset mMappings
+Asset mappings
 ^^^^^^^^^^^^^^
-Create an Asset Mapping
+Create an asset mapping
 ~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.three_d.ThreeDAssetMappingAPI.create
 
