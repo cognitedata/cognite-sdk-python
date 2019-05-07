@@ -24,7 +24,7 @@ podTemplate(
         configMapVolume(configMapName: 'codecov-script-configmap', mountPath: '/codecov-script'),
     ],
     envVars: [
-        secretEnvVar(key: 'COGNITE_API_KEY', secretName: 'ml-test-api-key', secretKey: 'testkey.txt'),
+        secretEnvVar(key: 'COGNITE_API_KEY', secretName: 'cognite-sdk-python', secretKey: 'integration-test-api-key'),
         secretEnvVar(key: 'CODECOV_TOKEN', secretName: 'codecov-token-cognite-sdk-python', secretKey: 'token.txt'),
         envVar(key: 'COGNITE_BASE_URL', value: "https://greenfield.cognitedata.com"),
         // /codecov-script/upload-report.sh relies on the following
