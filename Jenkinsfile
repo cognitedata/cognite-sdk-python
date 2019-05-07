@@ -50,7 +50,7 @@ podTemplate(
                 sh("pipenv run pip install -r core-requirements.txt")
             }
             stage('Test core') {
-                sh("pipenv run pytest tests -m 'not dsl' --test-deps-only-core")
+                sh("pipenv run pytest tests/tests_unit -m 'not dsl' --test-deps-only-core")
             }
             stage('Install all dependencies') {
                 sh("pipenv sync --dev")
