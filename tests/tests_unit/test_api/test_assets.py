@@ -18,22 +18,20 @@ ASSETS_API = COGNITE_CLIENT.assets
 @pytest.fixture
 def mock_assets_response(rsps):
     response_body = {
-        "data": {
-            "items": [
-                {
-                    "path": [0],
-                    "externalId": "string",
-                    "name": "string",
-                    "parentId": 1,
-                    "description": "string",
-                    "metadata": {"metadata-key": "metadata-value"},
-                    "source": "string",
-                    "id": 1,
-                    "lastUpdatedTime": 0,
-                    "depth": 0,
-                }
-            ]
-        }
+        "items": [
+            {
+                "path": [0],
+                "externalId": "string",
+                "name": "string",
+                "parentId": 1,
+                "description": "string",
+                "metadata": {"metadata-key": "metadata-value"},
+                "source": "string",
+                "id": 1,
+                "lastUpdatedTime": 0,
+                "depth": 0,
+            }
+        ]
     }
 
     url_pattern = re.compile(re.escape(ASSETS_API._base_url) + "/.+")
@@ -45,35 +43,35 @@ class TestAssets:
     def test_retrieve_single(self, mock_assets_response):
         res = ASSETS_API.retrieve(id=1)
         assert isinstance(res, Asset)
-        assert mock_assets_response.calls[0].response.json()["data"]["items"][0] == res.dump(camel_case=True)
+        assert mock_assets_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
     def test_retrieve_multiple(self, mock_assets_response):
         res = ASSETS_API.retrieve(id=[1])
         assert isinstance(res, AssetList)
-        assert mock_assets_response.calls[0].response.json()["data"]["items"] == res.dump(camel_case=True)
+        assert mock_assets_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
     def test_list(self, mock_assets_response):
         res = ASSETS_API.list(name="bla")
         assert "bla" == jsgz_load(mock_assets_response.calls[0].request.body)["filter"]["name"]
-        assert mock_assets_response.calls[0].response.json()["data"]["items"] == res.dump(camel_case=True)
+        assert mock_assets_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
     def test_create_single(self, mock_assets_response):
         res = ASSETS_API.create(Asset(external_id="1", name="blabla"))
         assert isinstance(res, Asset)
-        assert mock_assets_response.calls[0].response.json()["data"]["items"][0] == res.dump(camel_case=True)
+        assert mock_assets_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
     def test_create_multiple(self, mock_assets_response):
         res = ASSETS_API.create([Asset(external_id="1", name="blabla")])
         assert isinstance(res, AssetList)
-        assert mock_assets_response.calls[0].response.json()["data"]["items"] == res.dump(camel_case=True)
+        assert mock_assets_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
     def test_iter_single(self, mock_assets_response):
         for asset in ASSETS_API:
-            assert mock_assets_response.calls[0].response.json()["data"]["items"][0] == asset.dump(camel_case=True)
+            assert mock_assets_response.calls[0].response.json()["items"][0] == asset.dump(camel_case=True)
 
     def test_iter_chunk(self, mock_assets_response):
         for assets in ASSETS_API(chunk_size=1):
-            assert mock_assets_response.calls[0].response.json()["data"]["items"] == assets.dump(camel_case=True)
+            assert mock_assets_response.calls[0].response.json()["items"] == assets.dump(camel_case=True)
 
     def test_delete_single(self, mock_assets_response):
         res = ASSETS_API.delete(id=1)
@@ -88,21 +86,21 @@ class TestAssets:
     def test_update_with_resource_class(self, mock_assets_response):
         res = ASSETS_API.update(Asset(id=1))
         assert isinstance(res, Asset)
-        assert mock_assets_response.calls[0].response.json()["data"]["items"][0] == res.dump(camel_case=True)
+        assert mock_assets_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
     def test_update_with_update_class(self, mock_assets_response):
         res = ASSETS_API.update(AssetUpdate(id=1).description.set("blabla"))
         assert isinstance(res, Asset)
-        assert mock_assets_response.calls[0].response.json()["data"]["items"][0] == res.dump(camel_case=True)
+        assert mock_assets_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
     def test_update_multiple(self, mock_assets_response):
         res = ASSETS_API.update([AssetUpdate(id=1).description.set("blabla")])
         assert isinstance(res, AssetList)
-        assert mock_assets_response.calls[0].response.json()["data"]["items"] == res.dump(camel_case=True)
+        assert mock_assets_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
     def test_search(self, mock_assets_response):
         res = ASSETS_API.search()
-        assert mock_assets_response.calls[0].response.json()["data"]["items"] == res.dump(camel_case=True)
+        assert mock_assets_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
     def test_assets_update_object(self):
         assert isinstance(
@@ -125,17 +123,17 @@ class TestAssets:
     def test_asset_object_retrieve_parent(self, mock_assets_response):
         a1 = Asset(parent_id=1, cognite_client=COGNITE_CLIENT)
         parent = a1.parent().dump(camel_case=True)
-        assert mock_assets_response.calls[0].response.json()["data"]["items"][0] == parent
+        assert mock_assets_response.calls[0].response.json()["items"][0] == parent
 
     def test_asset_object_retrieve_subtree(self, mock_assets_response):
         a1 = Asset(parent_id=1, cognite_client=COGNITE_CLIENT)
         subtree = a1.subtree().dump(camel_case=True)
-        assert mock_assets_response.calls[0].response.json()["data"]["items"] == subtree
+        assert mock_assets_response.calls[0].response.json()["items"] == subtree
 
     def test_asset_object_retrieve_children(self, mock_assets_response):
         a1 = Asset(parent_id=1, cognite_client=COGNITE_CLIENT)
         children = a1.children().dump(camel_case=True)
-        assert mock_assets_response.calls[0].response.json()["data"]["items"] == children
+        assert mock_assets_response.calls[0].response.json()["items"] == children
 
 
 class TestAssetPosterWorker:
@@ -148,7 +146,7 @@ class TestAssetPosterWorker:
         q_req.put([Asset()])
         time.sleep(0.1)
         w.stop = True
-        assert [Asset._load(mock_assets_response.calls[0].response.json()["data"]["items"][0])] == q_res.get()
+        assert [Asset._load(mock_assets_response.calls[0].response.json()["items"][0])] == q_res.get()
         assert 1 == len(mock_assets_response.calls)
 
 
@@ -259,7 +257,7 @@ class TestAssetPoster:
                     parent_id = item["parentRefId"] + "id"
                 id = item.get("refId", "root_") + "id"
                 response_assets.append({"id": id, "parentId": parent_id, "path": [parent_id or "", id]})
-            return 200, {}, json.dumps({"data": {"items": response_assets}})
+            return 200, {}, json.dumps({"items": response_assets})
 
         rsps.add_callback(
             rsps.POST, ASSETS_API._base_url + "/assets", callback=request_callback, content_type="application/json"
@@ -310,7 +308,7 @@ class TestAssetPoster:
             if item["name"] == "500":
                 return 500, {}, json.dumps({"error": {"message": "internal server error", "code": 500}})
 
-            return 200, {}, json.dumps({"data": {"items": response_assets}})
+            return 200, {}, json.dumps({"items": response_assets})
 
         rsps.add_callback(
             rsps.POST, ASSETS_API._base_url + "/assets", callback=request_callback, content_type="application/json"
@@ -339,7 +337,7 @@ class TestAssetPoster:
 @pytest.fixture
 def mock_assets_empty(rsps):
     url_pattern = re.compile(re.escape(ASSETS_API._base_url) + "/.+")
-    rsps.add(rsps.POST, url_pattern, status=200, json={"data": {"items": []}})
+    rsps.add(rsps.POST, url_pattern, status=200, json={"items": []})
     yield rsps
 
 

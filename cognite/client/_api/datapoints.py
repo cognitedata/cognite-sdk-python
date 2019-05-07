@@ -135,7 +135,7 @@ class DatapointsAPI(APIClient):
             for id in all_ids:
                 id.update({"before": before})
 
-        res = self._post(url_path=self._RESOURCE_PATH + "/latest", json={"items": all_ids}).json()["data"]["items"]
+        res = self._post(url_path=self._RESOURCE_PATH + "/latest", json={"items": all_ids}).json()["items"]
         if is_single_id:
             return Datapoints._load(res[0], cognite_client=self._cognite_client)
         return DatapointsList._load(res, cognite_client=self._cognite_client)
@@ -785,5 +785,5 @@ class _DatapointsFetcher:
             "includeOutsidePoints": include_outside_points,
             "limit": limit or (self.client._DPS_LIMIT_AGG if aggregates else self.client._DPS_LIMIT),
         }
-        res = self.client._post(self.client._RESOURCE_PATH + "/list", json=payload).json()["data"]["items"][0]
+        res = self.client._post(self.client._RESOURCE_PATH + "/list", json=payload).json()["items"][0]
         return Datapoints._load(res, cognite_client=self.client._cognite_client)

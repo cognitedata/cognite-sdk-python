@@ -78,7 +78,7 @@ class APIKeysAPI(APIClient):
             self._RESOURCE_PATH,
             params={"all": all, "serviceAccountId": service_account_id, "includeDeleted": include_deleted},
         )
-        return APIKeyList._load(res.json()["data"]["items"])
+        return APIKeyList._load(res.json()["items"])
 
     def create(self, service_account_id: Union[int, List[int]]) -> Union[APIKey, APIKeyList]:
         """Create a new api key for one or more service accounts.
@@ -117,7 +117,7 @@ class GroupsAPI(APIClient):
             GroupList: List of groups.
         """
         res = self._get(self._RESOURCE_PATH, params={"all": all})
-        return GroupList._load(res.json()["data"]["items"])
+        return GroupList._load(res.json()["items"])
 
     def create(self, group: Union[Group, List[Group]]) -> Union[Group, GroupList]:
         """Create one or more groups.
@@ -150,7 +150,7 @@ class GroupsAPI(APIClient):
             ServiceAccountList: List of service accounts.
         """
         resource_path = self._RESOURCE_PATH + "/{}/serviceaccounts".format(id)
-        return ServiceAccountList._load(self._get(resource_path).json()["data"]["items"])
+        return ServiceAccountList._load(self._get(resource_path).json()["items"])
 
     def add_service_account(self, id: int, service_account_id: Union[int, List[int]]) -> None:
         """Add one or more service accounts to a group.

@@ -163,12 +163,7 @@ class TestStandardRetrieve:
 class TestStandardRetrieveMultiple:
     @pytest.fixture
     def mock_by_ids(self, rsps):
-        rsps.add(
-            rsps.POST,
-            BASE_URL + URL_PATH + "/byids",
-            status=200,
-            json={"data": {"items": [{"x": 1, "y": 2}, {"x": 1}]}},
-        )
+        rsps.add(rsps.POST, BASE_URL + URL_PATH + "/byids", status=200, json={"items": [{"x": 1, "y": 2}, {"x": 1}]})
         yield rsps
 
     def test_by_id_no_wrap_OK(self, mock_by_ids):
@@ -239,8 +234,8 @@ class TestStandardRetrieveMultiple:
         )
 
     def test_over_limit_concurrent(self, rsps):
-        rsps.add(rsps.POST, BASE_URL + URL_PATH + "/byids", status=200, json={"data": {"items": [{"x": 1, "y": 2}]}})
-        rsps.add(rsps.POST, BASE_URL + URL_PATH + "/byids", status=200, json={"data": {"items": [{"x": 3, "y": 4}]}})
+        rsps.add(rsps.POST, BASE_URL + URL_PATH + "/byids", status=200, json={"items": [{"x": 1, "y": 2}]})
+        rsps.add(rsps.POST, BASE_URL + URL_PATH + "/byids", status=200, json={"items": [{"x": 3, "y": 4}]})
 
         with set_request_limit(API_CLIENT, 1):
             API_CLIENT._retrieve_multiple(cls=SomeResourceList, resource_path=URL_PATH, ids=[1, 2], wrap_ids=False)
@@ -251,14 +246,14 @@ class TestStandardRetrieveMultiple:
 
 class TestStandardList:
     def test_standard_list_ok(self, rsps):
-        rsps.add(rsps.GET, BASE_URL + URL_PATH, status=200, json={"data": {"items": [{"x": 1, "y": 2}, {"x": 1}]}})
+        rsps.add(rsps.GET, BASE_URL + URL_PATH, status=200, json={"items": [{"x": 1, "y": 2}, {"x": 1}]})
         assert (
             SomeResourceList([SomeResource(1, 2), SomeResource(1)]).dump()
             == API_CLIENT._list(cls=SomeResourceList, resource_path=URL_PATH, method="GET").dump()
         )
 
     def test_standard_list_with_filter_GET_ok(self, rsps):
-        rsps.add(rsps.GET, BASE_URL + URL_PATH, status=200, json={"data": {"items": [{"x": 1, "y": 2}, {"x": 1}]}})
+        rsps.add(rsps.GET, BASE_URL + URL_PATH, status=200, json={"items": [{"x": 1, "y": 2}, {"x": 1}]})
         assert (
             SomeResourceList([SomeResource(1, 2), SomeResource(1)]).dump()
             == API_CLIENT._list(
@@ -268,9 +263,7 @@ class TestStandardList:
         assert "filter=bla" in rsps.calls[0].request.path_url
 
     def test_standard_list_with_filter_POST_ok(self, rsps):
-        rsps.add(
-            rsps.POST, BASE_URL + URL_PATH + "/list", status=200, json={"data": {"items": [{"x": 1, "y": 2}, {"x": 1}]}}
-        )
+        rsps.add(rsps.POST, BASE_URL + URL_PATH + "/list", status=200, json={"items": [{"x": 1, "y": 2}, {"x": 1}]})
         assert SomeResourceList([SomeResource(1, 2), SomeResource(1)]) == API_CLIENT._list(
             cls=SomeResourceList, resource_path=URL_PATH, method="POST", filter={"filter": "bla"}
         )
@@ -297,7 +290,7 @@ class TestStandardList:
                 next_cursor = None
             else:
                 next_cursor = cursor + limit
-            response = json.dumps({"data": {"nextCursor": next_cursor, "items": items}})
+            response = json.dumps({"nextCursor": next_cursor, "items": items})
             return 200, {}, response
 
         rsps.add_callback(rsps.GET, BASE_URL + URL_PATH, callback)
@@ -368,10 +361,8 @@ class TestStandardList:
         assert 5333 == len(res)
 
     def test_cognite_client_is_set(self, rsps):
-        rsps.add(
-            rsps.POST, BASE_URL + URL_PATH + "/list", status=200, json={"data": {"items": [{"x": 1, "y": 2}, {"x": 1}]}}
-        )
-        rsps.add(rsps.GET, BASE_URL + URL_PATH, status=200, json={"data": {"items": [{"x": 1, "y": 2}, {"x": 1}]}})
+        rsps.add(rsps.POST, BASE_URL + URL_PATH + "/list", status=200, json={"items": [{"x": 1, "y": 2}, {"x": 1}]})
+        rsps.add(rsps.GET, BASE_URL + URL_PATH, status=200, json={"items": [{"x": 1, "y": 2}, {"x": 1}]})
         assert (
             COGNITE_CLIENT
             == API_CLIENT._list(cls=SomeResourceList, resource_path=URL_PATH, method="POST")._cognite_client
@@ -384,7 +375,7 @@ class TestStandardList:
 
 class TestStandardCreate:
     def test_standard_create_ok(self, rsps):
-        rsps.add(rsps.POST, BASE_URL + URL_PATH, status=200, json={"data": {"items": [{"x": 1, "y": 2}, {"x": 1}]}})
+        rsps.add(rsps.POST, BASE_URL + URL_PATH, status=200, json={"items": [{"x": 1, "y": 2}, {"x": 1}]})
         res = API_CLIENT._create_multiple(
             cls=SomeResourceList, resource_path=URL_PATH, items=[SomeResource(1, 1), SomeResource(1)]
         )
@@ -393,13 +384,13 @@ class TestStandardCreate:
         assert SomeResource(1) == res[1]
 
     def test_standard_create_single_item_ok(self, rsps):
-        rsps.add(rsps.POST, BASE_URL + URL_PATH, status=200, json={"data": {"items": [{"x": 1, "y": 2}]}})
+        rsps.add(rsps.POST, BASE_URL + URL_PATH, status=200, json={"items": [{"x": 1, "y": 2}]})
         res = API_CLIENT._create_multiple(cls=SomeResourceList, resource_path=URL_PATH, items=SomeResource(1, 2))
         assert {"items": [{"x": 1, "y": 2}]} == jsgz_load(rsps.calls[0].request.body)
         assert SomeResource(1, 2) == res
 
     def test_standard_create_single_item_in_list_ok(self, rsps):
-        rsps.add(rsps.POST, BASE_URL + URL_PATH, status=200, json={"data": {"items": [{"x": 1, "y": 2}]}})
+        rsps.add(rsps.POST, BASE_URL + URL_PATH, status=200, json={"items": [{"x": 1, "y": 2}]})
         res = API_CLIENT._create_multiple(cls=SomeResourceList, resource_path=URL_PATH, items=[SomeResource(1, 2)])
         assert {"items": [{"x": 1, "y": 2}]} == jsgz_load(rsps.calls[0].request.body)
         assert SomeResourceList([SomeResource(1, 2)]) == res
@@ -414,8 +405,8 @@ class TestStandardCreate:
         assert "Client Error" == e.value.message
 
     def test_standard_create_concurrent(self, rsps):
-        rsps.add(rsps.POST, BASE_URL + URL_PATH, status=200, json={"data": {"items": [{"x": 1, "y": 2}]}})
-        rsps.add(rsps.POST, BASE_URL + URL_PATH, status=200, json={"data": {"items": [{"x": 3, "y": 4}]}})
+        rsps.add(rsps.POST, BASE_URL + URL_PATH, status=200, json={"items": [{"x": 1, "y": 2}]})
+        rsps.add(rsps.POST, BASE_URL + URL_PATH, status=200, json={"items": [{"x": 3, "y": 4}]})
 
         res = API_CLIENT._create_multiple(
             cls=SomeResourceList, resource_path=URL_PATH, items=[SomeResource(1, 2), SomeResource(3, 4)], limit=1
@@ -426,7 +417,7 @@ class TestStandardCreate:
         assert {"items": [{"x": 3, "y": 4}]} == jsgz_load(rsps.calls[1].request.body)
 
     def test_cognite_client_is_set(self, rsps):
-        rsps.add(rsps.POST, BASE_URL + URL_PATH, status=200, json={"data": {"items": [{"x": 1, "y": 2}]}})
+        rsps.add(rsps.POST, BASE_URL + URL_PATH, status=200, json={"items": [{"x": 1, "y": 2}]})
         assert (
             COGNITE_CLIENT
             == API_CLIENT._create_multiple(
@@ -477,12 +468,7 @@ class TestStandardDelete:
 class TestStandardUpdate:
     @pytest.fixture
     def mock_update(self, rsps):
-        rsps.add(
-            rsps.POST,
-            BASE_URL + URL_PATH + "/update",
-            status=200,
-            json={"data": {"items": [{"id": 1, "x": 1, "y": 100}]}},
-        )
+        rsps.add(rsps.POST, BASE_URL + URL_PATH + "/update", status=200, json={"items": [{"id": 1, "x": 1, "y": 100}]})
         yield rsps
 
     def test_standard_update_with_cognite_resource_OK(self, mock_update):
@@ -567,8 +553,8 @@ class TestStandardUpdate:
         )
 
     def test_over_limit_concurrent(self, rsps):
-        rsps.add(rsps.POST, BASE_URL + URL_PATH + "/update", status=200, json={"data": {"items": [{"x": 1, "y": 2}]}})
-        rsps.add(rsps.POST, BASE_URL + URL_PATH + "/update", status=200, json={"data": {"items": [{"x": 3, "y": 4}]}})
+        rsps.add(rsps.POST, BASE_URL + URL_PATH + "/update", status=200, json={"items": [{"x": 1, "y": 2}]})
+        rsps.add(rsps.POST, BASE_URL + URL_PATH + "/update", status=200, json={"items": [{"x": 3, "y": 4}]})
 
         with set_request_limit(API_CLIENT, 1):
             API_CLIENT._update_multiple(
@@ -581,7 +567,7 @@ class TestStandardUpdate:
 
 class TestStandardSearch:
     def test_standard_search_ok(self, rsps):
-        rsps.add(rsps.POST, BASE_URL + URL_PATH + "/search", status=200, json={"data": {"items": [{"x": 1, "y": 2}]}})
+        rsps.add(rsps.POST, BASE_URL + URL_PATH + "/search", status=200, json={"items": [{"x": 1, "y": 2}]})
 
         res = API_CLIENT._search(
             cls=SomeResourceList,
@@ -602,7 +588,7 @@ class TestStandardSearch:
         assert 400 == e.value.code
 
     def test_cognite_client_is_set(self, rsps):
-        rsps.add(rsps.POST, BASE_URL + URL_PATH + "/search", status=200, json={"data": {"items": [{"x": 1, "y": 2}]}})
+        rsps.add(rsps.POST, BASE_URL + URL_PATH + "/search", status=200, json={"items": [{"x": 1, "y": 2}]})
 
         assert (
             COGNITE_CLIENT

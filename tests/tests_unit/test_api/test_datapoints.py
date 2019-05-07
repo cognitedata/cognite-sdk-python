@@ -80,7 +80,7 @@ def mock_get_datapoints(rsps):
             id_to_return = dps_query.get("id", int(dps_query.get("externalId", "-1")))
             external_id_to_return = dps_query.get("externalId", str(dps_query.get("id", -1)))
             items.append({"id": id_to_return, "externalId": external_id_to_return, "datapoints": dps})
-        response = {"data": {"items": items}}
+        response = {"items": items}
         return 200, {}, json.dumps(response)
 
     rsps.add_callback(
@@ -98,7 +98,7 @@ def mock_get_datapoints_empty(rsps):
         rsps.POST,
         DPS_CLIENT._base_url + "/timeseries/data/list",
         status=200,
-        json={"data": {"items": [{"id": 1, "externalId": "1", "datapoints": []}]}},
+        json={"items": [{"id": 1, "externalId": "1", "datapoints": []}]},
     )
     yield rsps
 
@@ -117,7 +117,7 @@ def assert_dps_response_is_correct(calls, dps_object):
     datapoints = []
     for call in calls:
         if jsgz_load(call.request.body)["limit"] > 1 and jsgz_load(call.request.body).get("aggregates") != ["count"]:
-            dps_response = call.response.json()["data"]["items"][0]
+            dps_response = call.response.json()["items"][0]
             if dps_response["id"] == dps_object.id and dps_response["externalId"] == dps_object.external_id:
                 datapoints.extend(dps_response["datapoints"])
                 id = dps_response["id"]
@@ -247,7 +247,7 @@ def mock_retrieve_latest(rsps):
             items.append(
                 {"id": id, "externalId": external_id, "datapoints": [{"timestamp": before - 1, "value": random()}]}
             )
-        return 200, {}, json.dumps({"data": {"items": items}})
+        return 200, {}, json.dumps({"items": items})
 
     rsps.add_callback(
         rsps.POST,
@@ -265,12 +265,7 @@ def mock_retrieve_latest_empty(rsps):
         DPS_CLIENT._base_url + "/timeseries/data/latest",
         status=200,
         json={
-            "data": {
-                "items": [
-                    {"id": 1, "externalId": "1", "datapoints": []},
-                    {"id": 2, "externalId": "2", "datapoints": []},
-                ]
-            }
+            "items": [{"id": 1, "externalId": "1", "datapoints": []}, {"id": 2, "externalId": "2", "datapoints": []}]
         },
     )
     yield rsps
@@ -663,7 +658,7 @@ def mock_get_dps_count(rsps):
         assert utils.granularity_to_ms(payload["granularity"]) >= utils.granularity_to_ms("1d")
 
         dps = [{"timestamp": i, "count": 1000} for i in range(start, end, utils.granularity_to_ms(granularity))]
-        response = {"data": {"items": [{"id": 0, "externalId": "bla", "datapoints": dps}]}}
+        response = {"items": [{"id": 0, "externalId": "bla", "datapoints": dps}]}
         return 200, {}, json.dumps(response)
 
     rsps.add_callback(

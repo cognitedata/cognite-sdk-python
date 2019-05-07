@@ -180,7 +180,7 @@ class APIClient:
         res_list = utils.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
         retrieved_items = []
         for res in res_list:
-            retrieved_items.extend(res.json()["data"]["items"])
+            retrieved_items.extend(res.json()["items"])
 
         if self._is_single_identifier(ids, external_ids):
             return cls._RESOURCE._load(retrieved_items[0], cognite_client=self._cognite_client)
@@ -221,7 +221,7 @@ class APIClient:
                 res = self._post(url_path=resource_path + "/list", json=body, headers=headers)
             else:
                 raise ValueError("_list_generator parameter `method` must be GET or POST, not %s", method)
-            last_received_items = res.json()["data"]["items"]
+            last_received_items = res.json()["items"]
             current_items.extend(last_received_items)
 
             if not chunk_size:
@@ -235,7 +235,7 @@ class APIClient:
                 total_items_retrieved += len(items_to_yield)
                 current_items = current_items[chunk_size:]
 
-            next_cursor = res.json()["data"].get("nextCursor")
+            next_cursor = res.json().get("nextCursor")
             if total_items_retrieved == limit or next_cursor is None:
                 break
 
@@ -292,7 +292,7 @@ class APIClient:
 
         created_resources = []
         for res in results:
-            created_resources.extend(res.json()["data"]["items"])
+            created_resources.extend(res.json()["items"])
 
         if single_item:
             return cls._RESOURCE._load(created_resources[0], cognite_client=self._cognite_client)
@@ -348,7 +348,7 @@ class APIClient:
 
         updated_items = []
         for res in res_list:
-            updated_items.extend(res.json()["data"]["items"])
+            updated_items.extend(res.json()["items"])
 
         if single_item:
             return cls._RESOURCE._load(updated_items[0], cognite_client=self._cognite_client)
@@ -360,7 +360,7 @@ class APIClient:
         cls = cls or self._LIST_CLASS
         resource_path = resource_path or self._RESOURCE_PATH
         res = self._post(url_path=resource_path + "/search", json=json, params=params, headers=headers)
-        return cls._load(res.json()["data"]["items"], cognite_client=self._cognite_client)
+        return cls._load(res.json()["items"], cognite_client=self._cognite_client)
 
     @staticmethod
     def _convert_resource_to_patch_object(resource, update_attributes):

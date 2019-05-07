@@ -1,8 +1,5 @@
 import re
-from contextlib import contextmanager
 from datetime import datetime, timedelta
-from unittest import mock
-from unittest.mock import PropertyMock
 
 import numpy
 import pandas
@@ -51,6 +48,7 @@ def has_correct_timestamp_spacing(df: pandas.DataFrame, granularity: str):
     return (deltas != 0).all() and (deltas % granularity_ms == 0).all()
 
 
+@pytest.mark.xfail(strict=True)
 class TestDatapointsAPI:
     def test_retrieve(self, test_time_series):
         ts = test_time_series[0]

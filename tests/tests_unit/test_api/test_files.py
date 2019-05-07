@@ -14,23 +14,21 @@ FILES_API = CogniteClient().files
 @pytest.fixture
 def mock_files_response(rsps):
     response_body = {
-        "data": {
-            "items": [
-                {
-                    "externalId": "string",
-                    "name": "string",
-                    "source": "string",
-                    "mimeType": "string",
-                    "metadata": {"metadata-key": "metadata-value"},
-                    "assetIds": [1],
-                    "id": 1,
-                    "uploaded": True,
-                    "uploadedTime": 0,
-                    "createdTime": 0,
-                    "lastUpdatedTime": 0,
-                }
-            ]
-        }
+        "items": [
+            {
+                "externalId": "string",
+                "name": "string",
+                "source": "string",
+                "mimeType": "string",
+                "metadata": {"metadata-key": "metadata-value"},
+                "assetIds": [1],
+                "id": 1,
+                "uploaded": True,
+                "uploadedTime": 0,
+                "createdTime": 0,
+                "lastUpdatedTime": 0,
+            }
+        ]
     }
 
     url_pattern = re.compile(re.escape(FILES_API._base_url) + "/.+")
@@ -44,20 +42,18 @@ def mock_files_response(rsps):
 @pytest.fixture
 def mock_file_upload_response(rsps):
     response_body = {
-        "data": {
-            "externalId": "string",
-            "name": "string",
-            "source": "string",
-            "mimeType": "string",
-            "metadata": {},
-            "assetIds": [1],
-            "id": 1,
-            "uploaded": True,
-            "uploadedTime": 0,
-            "createdTime": 0,
-            "lastUpdatedTime": 0,
-            "uploadUrl": "https://upload.here",
-        }
+        "externalId": "string",
+        "name": "string",
+        "source": "string",
+        "mimeType": "string",
+        "metadata": {},
+        "assetIds": [1],
+        "id": 1,
+        "uploaded": True,
+        "uploadedTime": 0,
+        "createdTime": 0,
+        "lastUpdatedTime": 0,
+        "uploadUrl": "https://upload.here",
     }
     rsps.add(rsps.POST, FILES_API._base_url + "/files/initupload", status=200, json=response_body)
     rsps.add(rsps.PUT, "https://upload.here", status=200)
@@ -70,15 +66,13 @@ def mock_file_download_response(rsps):
         rsps.POST,
         FILES_API._base_url + "/files/byids",
         status=200,
-        json={"data": {"items": [{"id": 1, "name": "file1"}, {"externalId": "2", "name": "file2"}]}},
+        json={"items": [{"id": 1, "name": "file1"}, {"externalId": "2", "name": "file2"}]},
     )
     response_body = {
-        "data": {
-            "items": [
-                {"id": 1, "link": "https://download.file1.here"},
-                {"externalId": "2", "link": "https://download.file2.here"},
-            ]
-        }
+        "items": [
+            {"id": 1, "link": "https://download.file1.here"},
+            {"externalId": "2", "link": "https://download.file2.here"},
+        ]
     }
     rsps.add(rsps.POST, FILES_API._base_url + "/files/download", status=200, json=response_body)
     rsps.add(rsps.GET, "https://download.file1.here", status=200, body="content1")
@@ -90,17 +84,17 @@ class TestFilesAPI:
     def test_retrieve_single(self, mock_files_response):
         res = FILES_API.retrieve(id=1)
         assert isinstance(res, FileMetadata)
-        assert mock_files_response.calls[0].response.json()["data"]["items"][0] == res.dump(camel_case=True)
+        assert mock_files_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
     def test_retrieve_multiple(self, mock_files_response):
         res = FILES_API.retrieve(id=[1])
         assert isinstance(res, FileMetadataList)
-        assert mock_files_response.calls[0].response.json()["data"]["items"] == res.dump(camel_case=True)
+        assert mock_files_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
     def test_list(self, mock_files_response):
         res = FILES_API.list(source="bla", limit=10)
         assert isinstance(res, FileMetadataList)
-        assert mock_files_response.calls[0].response.json()["data"]["items"] == res.dump(camel_case=True)
+        assert mock_files_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
         assert "bla" == jsgz_load(mock_files_response.calls[0].request.body)["filter"]["source"]
         assert 10 == jsgz_load(mock_files_response.calls[0].request.body)["limit"]
 
@@ -141,21 +135,21 @@ class TestFilesAPI:
     def test_iter_single(self, mock_files_response):
         for file in FILES_API:
             assert isinstance(file, FileMetadata)
-            assert mock_files_response.calls[0].response.json()["data"]["items"][0] == file.dump(camel_case=True)
+            assert mock_files_response.calls[0].response.json()["items"][0] == file.dump(camel_case=True)
 
     def test_iter_chunk(self, mock_files_response):
         for file in FILES_API(chunk_size=1):
             assert isinstance(file, FileMetadataList)
-            assert mock_files_response.calls[0].response.json()["data"]["items"] == file.dump(camel_case=True)
+            assert mock_files_response.calls[0].response.json()["items"] == file.dump(camel_case=True)
 
     def test_search(self, mock_files_response):
         res = FILES_API.search()
-        assert mock_files_response.calls[0].response.json()["data"]["items"] == res.dump(camel_case=True)
+        assert mock_files_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
     def test_upload(self, mock_file_upload_response):
         path = os.path.join(os.path.dirname(__file__), "files_for_test_upload", "file_for_test_upload_1.txt")
         res = FILES_API.upload(path, name="bla")
-        response_body = mock_file_upload_response.calls[0].response.json()["data"]
+        response_body = mock_file_upload_response.calls[0].response.json()
         del response_body["uploadUrl"]
         assert FileMetadata._load(response_body) == res
         assert "https://upload.here/" == mock_file_upload_response.calls[1].request.url
@@ -170,7 +164,7 @@ class TestFilesAPI:
     def test_upload_from_directory(self, mock_file_upload_response):
         path = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
         res = FILES_API.upload(path=path)
-        response_body = mock_file_upload_response.calls[0].response.json()["data"]
+        response_body = mock_file_upload_response.calls[0].response.json()
         del response_body["uploadUrl"]
         assert FileMetadataList([FileMetadata._load(response_body), FileMetadata._load(response_body)]) == res
         assert 4 == len(mock_file_upload_response.calls)
@@ -186,7 +180,7 @@ class TestFilesAPI:
     def test_upload_from_directory_recursively(self, mock_file_upload_response):
         path = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
         res = FILES_API.upload(path=path, recursive=True)
-        response_body = mock_file_upload_response.calls[0].response.json()["data"]
+        response_body = mock_file_upload_response.calls[0].response.json()
         del response_body["uploadUrl"]
         assert FileMetadataList([FileMetadata._load(response_body) for _ in range(3)]) == res
         assert 6 == len(mock_file_upload_response.calls)
@@ -205,7 +199,7 @@ class TestFilesAPI:
 
     def test_upload_from_memory(self, mock_file_upload_response):
         res = FILES_API.upload_bytes(content=b"content", name="bla")
-        response_body = mock_file_upload_response.calls[0].response.json()["data"]
+        response_body = mock_file_upload_response.calls[0].response.json()
         del response_body["uploadUrl"]
         assert FileMetadata._load(response_body) == res
         assert "https://upload.here/" == mock_file_upload_response.calls[1].request.url
@@ -254,7 +248,7 @@ class TestFilesAPI:
 @pytest.fixture
 def mock_files_empty(rsps):
     url_pattern = re.compile(re.escape(FILES_API._base_url) + "/.+")
-    rsps.add(rsps.POST, url_pattern, status=200, json={"data": {"items": []}})
+    rsps.add(rsps.POST, url_pattern, status=200, json={"items": []})
     yield rsps
 
 
