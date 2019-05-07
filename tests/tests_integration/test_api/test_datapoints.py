@@ -73,14 +73,14 @@ class TestDatapointsAPI:
 
     def test_retrieve_include_outside_points(self, test_time_series):
         ts = test_time_series[0]
+        start = _utils.timestamp_to_ms("2d-ago")
+        end = _utils.timestamp_to_ms("1d-ago")
         dps_wo_outside = COGNITE_CLIENT.datapoints.retrieve(
-            id=ts.id, start="2d-ago", end="1d-ago", include_outside_points=False
+            id=ts.id, start=start, end=end, include_outside_points=False
         )
-        dps_w_outside = COGNITE_CLIENT.datapoints.retrieve(
-            id=ts.id, start="2d-ago", end="1d-ago", include_outside_points=True
-        )
-        assert len(dps_wo_outside) + 1 <= len(dps_w_outside) <= len(dps_wo_outside) + 2
+        dps_w_outside = COGNITE_CLIENT.datapoints.retrieve(id=ts.id, start=start, end=end, include_outside_points=True)
         assert not has_duplicates(dps_w_outside.to_pandas())
+        assert len(dps_wo_outside) + 1 <= len(dps_w_outside) <= len(dps_wo_outside) + 2
 
     def test_retrieve_dataframe(self, test_time_series):
         ts = test_time_series[0]
