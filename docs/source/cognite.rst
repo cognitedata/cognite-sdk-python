@@ -1,7 +1,7 @@
 Quickstart
 ==========
 Authenticate
---------------
+------------
 The preferred way to authenticate against the Cognite API is by setting the :code:`COGNITE_API_KEY` environment variable. All examples in this documentation require that the variable has been set.
 
 .. code:: bash
@@ -16,7 +16,7 @@ You can also pass your API key directly to the CogniteClient.
     >>> c = CogniteClient(api_key="your-key")
 
 Instantiate a new client
---------------------------
+------------------------
 Use this code to instantiate a client and get your login status. CDF returns an object with
 attributes that describe which project and service account your API key belongs to.
 
@@ -29,7 +29,7 @@ attributes that describe which project and service account your API key belongs 
 Read more about the `CogniteClient`_ and the functionality it exposes below.
 
 Plot time series
---------------------
+----------------
 There are several ways of plotting a time series you have fetched from the API. The easiest is to call
 :code:`.plot()` on the returned :code:`TimeSeries` or :code:`TimeSeriesList` objects. By default, this plots the raw
 data points for the last 24 hours.
@@ -68,7 +68,7 @@ methods you can use to plot the data.
     To use the :code:`.plot()` functionality you need to install :code:`matplotlib`.
 
 Create an asset hierarchy
----------------------------
+-------------------------
 To create a root asset (an asset without a parent), omit the parent ID when you post the asset to the API.
 To make an asset a child of an existing asset, you must specify a parent ID.
 
@@ -346,9 +346,9 @@ Data classes
     :inherited-members:
 
 Data points
-----------
+-----------
 Get data points
-^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.datapoints.DatapointsAPI.retrieve
 
 Get pandas dataframe
@@ -356,7 +356,7 @@ Get pandas dataframe
 .. automethod:: cognite.client._api.datapoints.DatapointsAPI.retrieve_dataframe
 
 Perform data points queries
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.datapoints.DatapointsAPI.query
 
 Get latest
@@ -368,7 +368,7 @@ Insert data points
 .. automethod:: cognite.client._api.datapoints.DatapointsAPI.insert
 
 Insert data points into multiple time series
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.datapoints.DatapointsAPI.insert_multiple
 
 Insert pandas dataframe
@@ -376,7 +376,7 @@ Insert pandas dataframe
 .. automethod:: cognite.client._api.datapoints.DatapointsAPI.insert_dataframe
 
 Delete a range of data points
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.datapoints.DatapointsAPI.delete_range
 
 Delete ranges of data points
@@ -558,7 +558,7 @@ Data classes
     :inherited-members:
 
 Identity and access management
------------------------------
+------------------------------
 Service accounts
 ^^^^^^^^^^^^^^^^
 List service accounts
