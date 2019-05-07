@@ -7,8 +7,8 @@ $ cd cognite-sdk-python
 ```
 Install dependencies and initialize a shell within the virtual environment.
 ```bash
-$ pipenv install -d
 $ pipenv shell
+$ pipenv sync -d
 ```
 Install pre-commit hooks
 ```bash
@@ -19,14 +19,18 @@ Set up tests for all new functionality. Running the tests will require setting t
 
 Initiate unit tests by running the following command from the root directory:
 
-`$ pytest`
+`$ pytest tests/tests_unit`
+
+If you have an appropriate API key, you can run the integratino tests like this:
+
+`$ pytest tests/tests_integration`
 
 If you want to generate code coverage reports run:
 
 ```
-pytest --cov-report html \
-       --cov-report xml \
-       --cov cognite
+pytest tests/tests_unit --cov-report html \
+                        --cov-report xml \
+                        --cov cognite
 ```
 
 Open `htmlcov/index.html` in the browser to navigate through the report.
