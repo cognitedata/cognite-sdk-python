@@ -18,6 +18,7 @@ def new_asset():
     assert 400 == e.value.code
 
 
+@pytest.mark.xfail(strict=True)
 class TestAssetsAPI:
     def test_get(self):
         res = COGNITE_CLIENT.assets.list(limit=1)
