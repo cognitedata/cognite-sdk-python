@@ -508,8 +508,8 @@ class DatapointsAPI(APIClient):
     def _insert_datapoints(self, post_dps_objects: List[Dict[str, Any]]):
         self._post(url_path=self._RESOURCE_PATH, json={"items": post_dps_objects})
 
+    @staticmethod
     def _validate_and_format_datapoints(
-        self,
         datapoints: Union[
             List[Dict[Union[int, float, datetime], Union[int, float, str]]],
             List[Tuple[Union[int, float, datetime], Union[int, float, str]]],
