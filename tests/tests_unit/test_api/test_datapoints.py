@@ -2,14 +2,14 @@ import json
 import math
 from contextlib import contextmanager
 from datetime import datetime
-from random import random
+from random import choice, random
 from unittest import mock
 from unittest.mock import PropertyMock
 
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client._api.datapoints import _DatapointsFetcher, _DPWindow
+from cognite.client._api.datapoints import _DatapointsFetcher, _DPQuery, _DPWindow
 from cognite.client.data_classes import Datapoint, Datapoints, DatapointsList, DatapointsQuery
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils import _utils as utils
@@ -171,7 +171,7 @@ class TestGetDatapoints:
         set_dps_workers(1)
         with set_request_limit(DPS_CLIENT, 2):
             dps_res = DPS_CLIENT.retrieve(id=123, start=0, end=10000, aggregates=["average"], granularity="1s")
-        assert 7 == len(mock_get_datapoints.calls)
+        assert 6 == len(mock_get_datapoints.calls)
         assert 10 == len(dps_res)
 
     def test_datapoints_concurrent(self, mock_get_datapoints):
@@ -185,28 +185,8 @@ class TestGetDatapoints:
             key=lambda x: x[0],
         )
         assert (0, 100000) == requested_windows[0]
-        assert (0, 100000) == requested_windows[1]
-        assert [(0, 20000), (21000, 41000), (42000, 62000), (63000, 83000), (84000, 100000)] == requested_windows[2:]
+        assert [(20000, 100000), (40000, 100000), (60000, 100000), (80000, 100000)] == requested_windows[2:]
         assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
-
-    @pytest.mark.parametrize(
-        "limit, aggregates, granularity, actual_windows_req",
-        [
-            (6, None, None, [(0, 5000), (5001, 10000)]),
-            (2, ["average"], "1s", [(0, 2000), (3000, 5000), (6000, 8000), (9000, 10000)]),
-        ],
-    )
-    def test_request_dps_spacing_correct(self, mock_get_datapoints, limit, aggregates, granularity, actual_windows_req):
-        with set_request_limit(DPS_CLIENT, limit):
-            DPS_CLIENT.retrieve(id=123, start=0, end=10000, aggregates=aggregates, granularity=granularity)
-        requested_windows = sorted(
-            [
-                (jsgz_load(call.request.body)["start"], jsgz_load(call.request.body)["end"])
-                for call in mock_get_datapoints.calls
-            ],
-            key=lambda x: x[0],
-        )
-        assert actual_windows_req == requested_windows[2:]
 
     def test_datapoints_paging_with_limit(self, mock_get_datapoints):
         with set_request_limit(DPS_CLIENT, 3):
@@ -670,28 +650,125 @@ class TestPandasIntegration:
         } in request_bodies
 
 
-class TestHelpers:
+@pytest.fixture
+def mock_get_dps_count(rsps):
+    def request_callback(request):
+        payload = jsgz_load(request.body)
+        granularity = payload["granularity"]
+        aggregates = payload["aggregates"]
+        start = payload["start"]
+        end = payload["end"]
+
+        assert payload["aggregates"] == ["count"]
+        assert utils.granularity_to_ms(payload["granularity"]) >= utils.granularity_to_ms("1d")
+
+        dps = [{"timestamp": i, "count": 1000} for i in range(start, end, utils.granularity_to_ms(granularity))]
+        response = {"data": {"items": [{"id": 0, "externalId": "bla", "datapoints": dps}]}}
+        return 200, {}, json.dumps(response)
+
+    rsps.add_callback(
+        rsps.POST,
+        DPS_CLIENT._base_url + "/timeseries/data/list",
+        callback=request_callback,
+        content_type="application/json",
+    )
+    yield rsps
+
+
+gms = lambda s: utils.granularity_to_ms(s)
+
+
+class TestDataFetcher:
     @pytest.mark.parametrize(
-        "start, end, granularity, max_windows, dps_count, dps_per_window, expected_output",
+        "q, expected_q",
         [
-            (1550241236999, 1550244237001, "1d", 1, 10, 1, [_DPWindow(1550241236999, 1550244237001)]),
-            (0, 10000, "1s", 10, 10, 1, [_DPWindow(i, i + 1000) for i in range(0, 10000, 2000)]),
-            (0, 2500, "1s", 10, 10, 2, [_DPWindow(0, 1250), _DPWindow(2250, 2500)]),
-            (0, 2500, None, 10, 2500, 1000, [_DPWindow(0, 833), _DPWindow(834, 1667), _DPWindow(1668, 2500)]),
+            ([_DPQuery(1, 2, None, None, None, None, None)], [_DPQuery(1, 2, None, None, None, None, None)]),
+            (
+                [_DPQuery(datetime(2018, 1, 1), datetime(2019, 1, 1), None, None, None, None, None)],
+                [_DPQuery(1514764800000, 1546300800000, None, None, None, None, None)],
+            ),
+            (
+                [_DPQuery(gms("1h"), gms(("25h")), None, ["average"], "1d", None, None)],
+                [_DPQuery(gms("1d"), gms("2d"), None, ["average"], "1d", None, None)],
+            ),
+        ],
+    )
+    def test_preprocess_queries(self, q, expected_q):
+        _DatapointsFetcher(DPS_CLIENT)._preprocess_queries(q)
+        for actual, expected in zip(q, expected_q):
+            assert expected.start == actual.start
+            assert expected.end == actual.end
+
+    @pytest.mark.parametrize(
+        "ts, granularity, expected_output",
+        [
+            (gms("1h"), "1d", gms("1d")),
+            (gms("23h"), "10d", gms("1d")),
+            (gms("24h"), "5d", gms("1d")),
+            (gms("25h"), "3d", gms("2d")),
+            (gms("1m"), "1h", gms("1h")),
+            (gms("90s"), "10m", gms("2m")),
+            (gms("90s"), "1s", gms("90s")),
+        ],
+    )
+    def test_align_with_granularity_unit(self, ts, granularity, expected_output):
+        assert expected_output == _DatapointsFetcher._align_with_granularity_unit(ts, granularity)
+
+    @pytest.mark.parametrize(
+        "start, end, granularity, request_limit, user_limit, expected_output",
+        [
+            (0, gms("20d"), "10d", 2, None, [_DPWindow(start=0, end=1728000000)]),
+            (
+                0,
+                gms("20d"),
+                "10d",
+                1,
+                None,
+                [_DPWindow(start=0, end=864000000), _DPWindow(start=864000000, end=1728000000)],
+            ),
+            (
+                0,
+                gms("6d"),
+                "1s",
+                2000,
+                None,
+                [_DPWindow(0, gms("2d")), _DPWindow(gms("2d"), gms("4d")), _DPWindow(gms("4d"), gms("6d"))],
+            ),
+            (
+                0,
+                gms("3d"),
+                None,
+                1000,
+                None,
+                [_DPWindow(0, gms("1d")), _DPWindow(gms("1d"), gms("2d")), _DPWindow(gms("2d"), gms("3d"))],
+            ),
+            (0, gms("1h"), None, 2000, None, [_DPWindow(start=0, end=3600000)]),
+            (0, gms("1s"), None, 1, None, [_DPWindow(start=0, end=1000)]),
+            (0, gms("1s"), None, 1, None, [_DPWindow(start=0, end=1000)]),
+            (0, gms("3d"), None, 1000, 500, [_DPWindow(0, gms("1d"))]),
         ],
     )
     def test_get_datapoints_windows(
-        self, start, end, granularity, max_windows, dps_count, dps_per_window, expected_output
+        self, start, end, granularity, request_limit, user_limit, expected_output, mock_get_dps_count
     ):
-        res = _DatapointsFetcher._get_windows(
-            start=start,
-            end=end,
-            granularity=granularity,
-            max_windows=max_windows,
-            dps_count=dps_count,
-            dps_per_window=dps_per_window,
+        res = _DatapointsFetcher(DPS_CLIENT)._get_windows(
+            id=0, start=start, end=end, granularity=granularity, request_limit=request_limit, user_limit=user_limit
         )
         assert expected_output == res
+
+    @pytest.mark.parametrize(
+        "start, end, granularity, expected_output",
+        [
+            (0, 10001, "1s", 10000),
+            (0, 10000, "1m", 0),
+            (0, 110000, "1m", gms("1m")),
+            (0, gms("10d") - 1, "2d", gms("8d")),
+            (0, gms("10d") - 1, "1m", gms("10d") - gms("1m")),
+            (0, 10000, "1s", 10000),
+        ],
+    )
+    def test_align_window_end(self, start, end, granularity, expected_output):
+        assert expected_output == _DatapointsFetcher._align_window_end(start, end, granularity)
 
     def test_remove_duplicates_from_datapoints(self):
         d = Datapoints(
@@ -705,6 +782,8 @@ class TestHelpers:
         assert [0, 1, 0, 1, 1, 0, 1] == d_no_dupes.value
         assert [0, 1, 0, 1, 1, 0, 1] == d_no_dupes.max
 
+
+class TestHelpers:
     @pytest.mark.parametrize(
         "ids, external_ids, expected_output",
         [

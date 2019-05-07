@@ -1,3 +1,5 @@
+import math
+import threading
 from collections import defaultdict, namedtuple
 from datetime import datetime
 from typing import *
@@ -528,7 +530,7 @@ class DatapointsAPI(APIClient):
         return valid_datapoints
 
 
-_DPWindow = namedtuple("Window", ["start", "end"])
+_DPWindow = namedtuple("_DPWindow", ["start", "end"])
 
 
 class _DPQuery:
@@ -558,26 +560,13 @@ class _DatapointsFetcher:
     def __init__(self, client: DatapointsAPI):
         self.client = client
         self.id_to_datapoints = defaultdict(lambda: Datapoints())
-        self.id_to_include_outside_dps = defaultdict(lambda: False)
+        self.id_to_finalized_query = {}
+        self.lock = threading.Lock()
 
     def fetch(self, dps_queries: List[_DPQuery]) -> DatapointsList:
         self._preprocess_queries(dps_queries)
-        res_list = utils.execute_tasks_concurrently(
-            self._initalize_dps_fetching, [(q,) for q in dps_queries], max_workers=self.client._max_workers
-        )
-        remaining_queries = []
-        for queries in res_list:
-            remaining_queries.extend(queries)
-        if len(remaining_queries) > 0:
-            self._process_remaining_queries(remaining_queries)
-
-        dps_list = DatapointsList([], cognite_client=self.client._cognite_client)
-
-        for id, dps in self.id_to_datapoints.items():
-            if self.id_to_include_outside_dps[id]:
-                dps = self._remove_duplicates(dps)
-            dps_list.append(dps)
-
+        self._fetch_datapoints(dps_queries)
+        dps_list = self._get_dps_results()
         return dps_list
 
     def _preprocess_queries(self, queries: List[_DPQuery]):
@@ -590,36 +579,65 @@ class _DatapointsFetcher:
             query.start = new_start
             query.end = new_end
 
-    def _initalize_dps_fetching(self, query: _DPQuery) -> List[_DPQuery]:
-        if query.limit is not None:
-            query.dps_result = self._get_datapoints_with_paging(*query.as_tuple())
-            self._store_dps_result(query)
-            return []
+    def _get_dps_results(self):
+        dps_list = DatapointsList([], cognite_client=self.client._cognite_client)
+        for id, dps in self.id_to_datapoints.items():
+            finalized_query = self.id_to_finalized_query[id]
+            if finalized_query.include_outside_points:
+                dps = self._remove_duplicates(dps)
+            if finalized_query.limit and len(dps) > finalized_query.limit:
+                dps = dps[: finalized_query.limit]
+            dps_list.append(dps)
+        return dps_list
 
-        query.dps_result = self._get_datapoints(*query.as_tuple())
-        self._store_dps_result(query)
+    def _fetch_datapoints(self, dps_queries: List[_DPQuery]):
+        res_list = utils.execute_tasks_concurrently(
+            self._fetch_dps_initial_and_return_remaining_queries,
+            [(q,) for q in dps_queries],
+            max_workers=self.client._max_workers,
+        )
+        remaining_queries = []
+        for queries in res_list:
+            remaining_queries.extend(queries)
+        if len(remaining_queries) > 0:
+            self._fetch_datapoints_for_remaining_queries(remaining_queries)
 
+    def _fetch_dps_initial_and_return_remaining_queries(self, query: _DPQuery) -> List[_DPQuery]:
         request_limit = self.client._DPS_LIMIT if query.aggregates is None else self.client._DPS_LIMIT_AGG
-        if len(query.dps_result) < request_limit:
+        if query.limit is not None and query.limit <= request_limit:
+            query.dps_result = self._get_datapoints_with_paging(*query.as_tuple())
+            self._store_finalized_query(query)
+            return []
+        user_limit = query.limit
+        query.limit = None
+        query.dps_result = self._get_datapoints(*query.as_tuple())
+        query.limit = user_limit
+        self._store_finalized_query(query)
+
+        dps_in_first_query = len(query.dps_result)
+        if dps_in_first_query < request_limit:
             return []
 
+        if user_limit:
+            user_limit -= dps_in_first_query
         next_start_offset = utils.granularity_to_ms(query.granularity) if query.granularity else 1
         query.start = query.dps_result[-1].timestamp + next_start_offset
-        queries = self._split_query_into_windows(query.dps_result.id, query, request_limit)
+        queries = self._split_query_into_windows(query.dps_result.id, query, request_limit, user_limit)
 
         return queries
 
-    def _process_remaining_queries(self, queries: List[_DPQuery]):
+    def _fetch_datapoints_for_remaining_queries(self, queries: List[_DPQuery]):
         res_list = utils.execute_tasks_concurrently(
             self._get_datapoints_with_paging, [q.as_tuple() for q in queries], max_workers=self.client._max_workers
         )
         for i, res in enumerate(res_list):
             queries[i].dps_result = res
-            self._store_dps_result(queries[i])
+            self._store_finalized_query(queries[i])
 
-    def _store_dps_result(self, query: _DPQuery):
-        self.id_to_datapoints[query.dps_result.id]._insert(query.dps_result)
-        self.id_to_include_outside_dps[query.dps_result.id] = query.include_outside_points
+    def _store_finalized_query(self, query: _DPQuery):
+        with self.lock:
+            self.id_to_datapoints[query.dps_result.id]._insert(query.dps_result)
+            self.id_to_finalized_query[query.dps_result.id] = query
 
     @staticmethod
     def _align_with_granularity_unit(ts: int, granularity: str):
@@ -628,8 +646,8 @@ class _DatapointsFetcher:
             return ts
         return ts - (ts % gms) + gms
 
-    def _split_query_into_windows(self, id: int, query: _DPQuery, request_limit):
-        windows = self._get_windows(id, query.start, query.end, query.granularity, request_limit)
+    def _split_query_into_windows(self, id: int, query: _DPQuery, request_limit, user_limit):
+        windows = self._get_windows(id, query.start, query.end, query.granularity, request_limit, user_limit)
         return [
             _DPQuery(
                 w.start,
@@ -643,38 +661,48 @@ class _DatapointsFetcher:
             for w in windows
         ]
 
-    def _get_windows(self, id, start, end, granularity, request_limit):
-        res = self._get_datapoints(
+    def _get_windows(self, id, start, end, granularity, request_limit, user_limit):
+        count_granularity = "1d"
+        if granularity and utils.granularity_to_ms("1d") < utils.granularity_to_ms(granularity):
+            count_granularity = granularity
+        res = self._get_datapoints_with_paging(
             start=start,
             end=end,
             ts_item={"id": id},
             aggregates=["count"],
-            granularity="1d",
+            granularity=count_granularity,
             include_outside_points=False,
             limit=None,
         )
         counts = list(zip(res.timestamp, res.count))
         windows = []
-        counter = 0
+        total_count = 0
+        current_window_count = 0
         window_start = start
         granularity_ms = utils.granularity_to_ms(granularity) if granularity else None
-        agg_count = lambda count: min(utils.granularity_to_ms("1d") / granularity_ms, count)
+        agg_count = lambda count: int(
+            min(math.ceil(utils.granularity_to_ms(count_granularity) / granularity_ms), count)
+        )
         for i, (ts, count) in enumerate(counts):
             if i < len(counts) - 1:
                 next_timestamp = counts[i + 1][0]
-                raw_count = counts[i + 1][1]
-                next_count = raw_count if granularity is None else agg_count(raw_count)
+                next_raw_count = counts[i + 1][1]
+                next_count = next_raw_count if granularity is None else agg_count(next_raw_count)
             else:
                 next_timestamp = end
                 next_count = 0
-            counter += count if granularity is None else agg_count(count)
-            if counter + next_count >= request_limit or i == len(counts) - 1:
-                counter = 0
+            current_count = count if granularity is None else agg_count(count)
+            total_count += current_count
+            current_window_count += current_count
+            if current_window_count + next_count > request_limit or i == len(counts) - 1:
                 window_end = next_timestamp
                 if granularity:
                     window_end = self._align_window_end(start, next_timestamp, granularity)
                 windows.append(_DPWindow(window_start, window_end))
                 window_start = window_end
+                current_window_count = 0
+                if user_limit and total_count >= user_limit:
+                    break
         return windows
 
     @staticmethod

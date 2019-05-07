@@ -148,30 +148,6 @@ class TestPlotTimeSeries:
                         {
                             "id": 0,
                             "externalId": "string1",
-                            "datapoints": [{"timestamp": utils.timestamp_to_ms("1d-ago"), "average": 1}],
-                        }
-                    ]
-                }
-            },
-        )
-        rsps.add(
-            rsps.POST,
-            TS_API._base_url + "/timeseries/data/list",
-            status=200,
-            json={
-                "data": {"items": [{"id": 0, "externalId": "string1", "datapoints": [{"timestamp": 0, "count": 5000}]}]}
-            },
-        )
-        rsps.add(
-            rsps.POST,
-            TS_API._base_url + "/timeseries/data/list",
-            status=200,
-            json={
-                "data": {
-                    "items": [
-                        {
-                            "id": 0,
-                            "externalId": "string1",
                             "datapoints": [{"timestamp": i * 10000, "average": i} for i in range(5000)],
                         }
                     ]
