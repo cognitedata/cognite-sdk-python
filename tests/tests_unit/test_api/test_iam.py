@@ -14,9 +14,7 @@ IAM_API = CogniteClient().iam
 def mock_service_accounts(rsps):
     response_body = {
         "data": {
-            "items": [
-                {"uniqueName": "service@bla.com", "groups": [1, 2, 3], "id": 0, "isDeleted": False, "deletedTime": 0}
-            ]
+            "items": [{"name": "service@bla.com", "groups": [1, 2, 3], "id": 0, "isDeleted": False, "deletedTime": 0}]
         }
     }
     url_pattern = re.compile(re.escape(IAM_API._base_url) + "/serviceaccounts.*")
@@ -33,17 +31,17 @@ class TestServiceAccounts:
         assert mock_service_accounts.calls[0].response.json()["data"]["items"] == res.dump(camel_case=True)
 
     def test_create(self, mock_service_accounts):
-        res = IAM_API.service_accounts.create(ServiceAccount(unique_name="service@bla.com", groups=[1, 2, 3]))
+        res = IAM_API.service_accounts.create(ServiceAccount(name="service@bla.com", groups=[1, 2, 3]))
         assert isinstance(res, ServiceAccount)
-        assert {"items": [{"uniqueName": "service@bla.com", "groups": [1, 2, 3]}]} == jsgz_load(
+        assert {"items": [{"name": "service@bla.com", "groups": [1, 2, 3]}]} == jsgz_load(
             mock_service_accounts.calls[0].request.body
         )
         assert mock_service_accounts.calls[0].response.json()["data"]["items"][0] == res.dump(camel_case=True)
 
     def test_create_multiple(self, mock_service_accounts):
-        res = IAM_API.service_accounts.create([ServiceAccount(unique_name="service@bla.com", groups=[1, 2, 3])])
+        res = IAM_API.service_accounts.create([ServiceAccount(name="service@bla.com", groups=[1, 2, 3])])
         assert isinstance(res, ServiceAccountList)
-        assert {"items": [{"uniqueName": "service@bla.com", "groups": [1, 2, 3]}]} == jsgz_load(
+        assert {"items": [{"name": "service@bla.com", "groups": [1, 2, 3]}]} == jsgz_load(
             mock_service_accounts.calls[0].request.body
         )
         assert mock_service_accounts.calls[0].response.json()["data"]["items"] == res.dump(camel_case=True)
@@ -127,7 +125,7 @@ def mock_group_service_account_response(rsps):
         "data": {
             "items": [
                 {
-                    "uniqueName": "some-internal-service@apple.com",
+                    "name": "some-internal-service@apple.com",
                     "groups": [1, 2, 3],
                     "id": 0,
                     "isDeleted": False,
