@@ -39,11 +39,13 @@ class TestFilesAPI:
         res = COGNITE_CLIENT.files.search(name="big.txt", filter=FileMetadataFilter(created_time={"min": 0}))
         assert len(res) > 0
 
+    @pytest.mark.xfail(strict=True)
     def test_update(self, new_file):
         update_file = FileMetadataUpdate(new_file.id).metadata.set({"bla": "bla"})
         res = COGNITE_CLIENT.files.update(update_file)
         assert {"bla": "bla"} == res.metadata
 
+    @pytest.mark.xfail(strict=True)
     def test_download(self, test_files):
         test_file = test_files["a.txt"]
         res = COGNITE_CLIENT.files.download_bytes(id=test_file.id)

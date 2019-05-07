@@ -18,6 +18,7 @@ def new_event():
     assert 400 == e.value.code
 
 
+@pytest.mark.xfail(strict=True)
 class TestEventsAPI:
     def test_retrieve(self):
         res = COGNITE_CLIENT.events.list(limit=1)
