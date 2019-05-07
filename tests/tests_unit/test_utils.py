@@ -212,7 +212,7 @@ class TestJsonDumpDefault:
 
 class TestSplitIntoChunks:
     @pytest.mark.parametrize(
-        "input_list, chunk_size, expected_output",
+        "input, chunk_size, expected_output",
         [
             (["a", "b", "c"], 1, [["a"], ["b"], ["c"]]),
             (["a", "b", "c"], 2, [["a", "b"], ["c"]]),
@@ -225,8 +225,11 @@ class TestSplitIntoChunks:
             ({}, 1, []),
         ],
     )
-    def test_split_into_chunks(self, input_list, chunk_size, expected_output):
-        assert expected_output == utils.split_into_chunks(input_list, chunk_size)
+    def test_split_into_chunks(self, input, chunk_size, expected_output):
+        actual_output = utils.split_into_chunks(input, chunk_size)
+        assert len(actual_output) == len(expected_output)
+        for element in expected_output:
+            assert element in actual_output
 
 
 class TestAssertions:
