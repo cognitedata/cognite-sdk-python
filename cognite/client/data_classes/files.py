@@ -60,7 +60,7 @@ class FileMetadataFilter(CogniteFilter):
 
     Args:
         metadata (Dict[str, Any]): Customizable extra data about the event. String key -> String value.
-        asset_ids (List[int]): Asset IDs of related equipments that this event relates to.
+        asset_ids (List[int]): Asset IDs of related equipment that this event relates to.
         source (str): The source of this event.
         created_time (Dict[str, Any]): Range between two timestamps
         last_updated_time (Dict[str, Any]): Range between two timestamps

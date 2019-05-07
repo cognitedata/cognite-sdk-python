@@ -12,11 +12,12 @@ class Event(CogniteResource):
         start_time (int): It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         end_time (int): It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         description (str): Textual description of the event.
-        metadata (Dict[str, Any]): Customizable extra data about the event. String key -> String value.
-        asset_ids (List[int]): Asset IDs of related equipments that this event relates to.
+        metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
+        asset_ids (List[int]): Asset IDs of related equipment that this event relates to.
         source (str): The source of this event.
         id (int): Javascript friendly internal ID given to the object.
         last_updated_time (int): It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time (int): It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
@@ -31,6 +32,7 @@ class Event(CogniteResource):
         source: str = None,
         id: int = None,
         last_updated_time: int = None,
+        created_time: int = None,
         cognite_client=None,
     ):
         self.external_id = external_id
@@ -42,6 +44,7 @@ class Event(CogniteResource):
         self.source = source
         self.id = id
         self.last_updated_time = last_updated_time
+        self.created_time = created_time
         self._cognite_client = cognite_client
 
     # GenStop
@@ -49,13 +52,13 @@ class Event(CogniteResource):
 
 # GenClass: EventFilter
 class EventFilter(CogniteFilter):
-    """Filter on events fillter with exact match
+    """Filter on events filter with exact match
 
     Args:
         start_time (Dict[str, Any]): Range between two timestamps
         end_time (Dict[str, Any]): Range between two timestamps
-        metadata (Dict[str, Any]): Customizable extra data about the event. String key -> String value.
-        asset_ids (List[int]): Asset IDs of related equipments that this event relates to.
+        metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
+        asset_ids (List[int]): Asset IDs of related equipment that this event relates to.
         asset_subtrees (List[int]): Filter out events that are not linked to assets in the subtree rooted at these assets.
         source (str): The source of this event.
         created_time (Dict[str, Any]): Range between two timestamps

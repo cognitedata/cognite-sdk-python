@@ -3,7 +3,7 @@ from typing import *
 from cognite.client._base import *
 
 
-# GenClass: 3DModel
+# GenClass: Model3D
 class ThreeDModel(CogniteResource):
     """No description.
 
@@ -23,7 +23,7 @@ class ThreeDModel(CogniteResource):
     # GenStop
 
 
-# GenUpdateClass: Update3DModel
+# GenUpdateClass: UpdateModel3D
 class ThreeDModelUpdate(CogniteUpdate):
     """No description.
 
@@ -70,7 +70,7 @@ class ThreeDModelList(CogniteResourceList):
     _UPDATE = ThreeDModelUpdate
 
 
-# GenClass: 3DRevision
+# GenClass: Revision3D
 class ThreeDModelRevision(CogniteResource):
     """No description.
 
@@ -117,7 +117,7 @@ class ThreeDModelRevision(CogniteResource):
     # GenStop
 
 
-# GenUpdateClass: Update3DRevision
+# GenUpdateClass: UpdateRevision3D
 class ThreeDModelRevisionUpdate(CogniteUpdate):
     """No description.
 
@@ -172,7 +172,7 @@ class ThreeDModelRevisionList(CogniteResourceList):
     _UPDATE = ThreeDModelRevisionUpdate
 
 
-# GenClass: 3DNode
+# GenClass: Node3D
 class ThreeDNode(CogniteResource):
     """No description.
 
@@ -215,7 +215,7 @@ class ThreeDNodeList(CogniteResourceList):
     _ASSERT_CLASSES = False
 
 
-# GenClass: 3DAssetMapping
+# GenClass: AssetMapping3D
 class ThreeDAssetMapping(CogniteResource):
     """No description.
 
@@ -249,7 +249,7 @@ class ThreeDAssetMappingList(CogniteResourceList):
     _ASSERT_CLASSES = False
 
 
-# GenClass: Reveal3DRevision
+# GenClass: RevealRevision3D
 class ThreeDRevealRevision(CogniteResource):
     """No description.
 
@@ -299,7 +299,7 @@ class ThreeDRevealRevision(CogniteResource):
     # GenStop
 
 
-# GenClass: Reveal3DNode
+# GenClass: RevealNode3D
 class ThreeDRevealNode(CogniteResource):
     """No description.
 
@@ -345,7 +345,7 @@ class ThreeDRevealNodeList(CogniteResourceList):
     _ASSERT_CLASSES = False
 
 
-# GenClass: Reveal3DSector
+# GenClass: RevealSector3D
 class ThreeDRevealSector(CogniteResource):
     """No description.
 

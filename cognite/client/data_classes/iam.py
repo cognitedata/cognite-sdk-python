@@ -8,7 +8,7 @@ class ServiceAccount(CogniteResource):
     """No description.
 
     Args:
-        unique_name (str): Unique name of the service account
+        name (str): Unique name of the service account
         groups (List[int]): List of group ids
         id (int): No description.
         is_deleted (bool): If this service account has been logically deleted
@@ -18,14 +18,14 @@ class ServiceAccount(CogniteResource):
 
     def __init__(
         self,
-        unique_name: str = None,
+        name: str = None,
         groups: List[int] = None,
         id: int = None,
         is_deleted: bool = None,
         deleted_time: int = None,
         cognite_client=None,
     ):
-        self.unique_name = unique_name
+        self.name = name
         self.groups = groups
         self.id = id
         self.is_deleted = is_deleted

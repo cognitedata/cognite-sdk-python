@@ -10,7 +10,7 @@ class TimeSeries(CogniteResource):
 
     Args:
         id (int): Generated id of the time series
-        external_id (str): Externaly supplied id of the time series
+        external_id (str): Externally supplied id of the time series
         name (str): Name of time series
         is_string (bool): Whether the time series is string valued or not.
         metadata (Dict[str, Any]): Additional metadata. String key -> String value.
@@ -86,8 +86,8 @@ class TimeSeriesFilter(CogniteFilter):
         metadata (Dict[str, Any]): Filter out timeseries that do not match these metadata fields and values (case-sensitive). Format is {"key1":"value1","key2":"value2"}.
         asset_ids (List[int]): Filter out time series that are not linked to any of these assets.
         asset_subtrees (List[int]): Filter out time series that are not linked to assets in the subtree rooted at these assets. Format is list of ids.
-        created_time (Dict[str, Any]): Filter out time series with createdTime before this. Format is milliseconds since epoch.
-        last_updated_time (Dict[str, Any]): Filter out time series with lastUpdatedTime before this. Format is milliseconds since epoch.
+        created_time (Dict[str, Any]): Filter out time series with createdTime outside this range.
+        last_updated_time (Dict[str, Any]): Filter out time series with lastUpdatedTime outside this range.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
