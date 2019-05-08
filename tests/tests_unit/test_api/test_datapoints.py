@@ -644,6 +644,16 @@ class TestPandasIntegration:
             ]
         } in request_bodies
 
+    def test_insert_dataframe_with_nans(self):
+        import pandas as pd
+
+        timestamps = [1500000000000, 1510000000000, 1520000000000, 1530000000000]
+        df = pd.DataFrame(
+            {"123": [1, 2, None, 4], "456": [5.0, 6.0, 7.0, 8.0]}, index=[utils.ms_to_datetime(ms) for ms in timestamps]
+        )
+        with pytest.raises(AssertionError, match="contains NaNs"):
+            DPS_CLIENT.insert_dataframe(df)
+
 
 @pytest.fixture
 def mock_get_dps_count(rsps):

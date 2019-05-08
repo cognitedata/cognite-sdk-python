@@ -442,6 +442,7 @@ class DatapointsAPI(APIClient):
                 >>> df = pd.DataFrame({ts_id: y}, index=x)
                 >>> res = c.datapoints.insert_dataframe(df)
         """
+        assert not dataframe.isnull().values.any(), "Dataframe contains NaNs. Remove them in order to insert the data."
         dps = []
         for col in dataframe.columns:
             dps.append(
