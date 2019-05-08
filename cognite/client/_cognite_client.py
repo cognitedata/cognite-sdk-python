@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+import warnings
 from typing import Any, Dict
 
 from cognite.client._api.assets import AssetsAPI
@@ -82,6 +83,9 @@ class CogniteClient:
 
         if self.project is None:
             self.project = self.login.status().project
+            warnings.warn(
+                "Authenticated towards project '{}'. Specify project to suppress warning.".format(self.project)
+            )
 
         self.assets = AssetsAPI(
             version=__api_version,
