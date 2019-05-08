@@ -83,11 +83,12 @@ class RawDatabasesAPI(APIClient):
         tasks = [{"url_path": self._RESOURCE_PATH + "/delete", "json": {"items": chunk}} for chunk in chunks]
         utils.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
 
-    def list(self, limit: int = None) -> DatabaseList:
+    def list(self, limit: int = 25) -> DatabaseList:
         """List databases
 
         Args:
-            limit (int, optional): Maximum number of databases to return. If not specified, all dbs will be returned.
+            limit (int, optional): Maximum number of databases to return. Defaults to 25. Set to -1, float("inf") or None
+                to return all items.
 
         Returns:
             DatabaseList: List of requested databases.
@@ -201,12 +202,13 @@ class RawTablesAPI(APIClient):
         ]
         utils.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
 
-    def list(self, db_name: str, limit: int = None) -> TableList:
+    def list(self, db_name: str, limit: int = 25) -> TableList:
         """List tables
 
         Args:
             db_name (str): The database to list tables from.
-            limit (int, optional): Maximum number of tables to return. If not specified, all tables will be returned.
+            limit (int, optional): Maximum number of tables to return. Defaults to 25. Set to -1, float("inf") or None
+                to return all items.
 
         Returns:
             TableList: List of requested tables.
@@ -385,13 +387,13 @@ class RawRowsAPI(APIClient):
             resource_path=utils.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name), id=key
         )
 
-    def list(self, db_name: str, table_name: str, limit: int = None) -> RowList:
+    def list(self, db_name: str, table_name: str, limit: int = 25) -> RowList:
         """List rows in a table.
 
         Args:
             db_name (str): Name of the database.
             table_name (str): Name of the table.
-            limit (int): The number of rows to retrieve.
+            limit (int): The number of rows to retrieve. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             RowList: The requested rows.

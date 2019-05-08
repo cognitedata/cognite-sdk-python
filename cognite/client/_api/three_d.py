@@ -70,12 +70,13 @@ class ThreeDModelsAPI(APIClient):
         """
         return self._retrieve(id)
 
-    def list(self, published: bool = False, limit: int = None) -> ThreeDModelList:
+    def list(self, published: bool = False, limit: int = 25) -> ThreeDModelList:
         """List 3d models.
 
         Args:
             published (bool): Filter based on whether or not the model has published revisions.
-            limit (int): Maximum number of models to retrieve.
+            limit (int): Maximum number of models to retrieve. Defaults to 25. Set to -1, float("inf") or None
+                to return all items.
 
         Returns:
             ThreeDModelList: The list of 3d models.
@@ -171,13 +172,14 @@ class ThreeDRevisionsAPI(APIClient):
         """
         return self._create_multiple(resource_path=self._RESOURCE_PATH.format(model_id), items=revision)
 
-    def list(self, model_id: int, published: bool = False, limit: int = None) -> ThreeDModelRevisionList:
+    def list(self, model_id: int, published: bool = False, limit: int = 25) -> ThreeDModelRevisionList:
         """List 3d model revisions.
 
         Args:
             model_id (int): List revisions under the model with this id.
             published (bool): Filter based on whether or not the revision is published.
-            limit (int): Maximum number of models to retrieve.
+            limit (int): Maximum number of models to retrieve. Defaults to 25. Set to -1, float("inf") or None
+                to return all items.
 
         Returns:
             ThreeDModelRevisionList: The list of 3d model revisions.
@@ -236,7 +238,7 @@ class ThreeDRevisionsAPI(APIClient):
         self._post(resource_path, json=body)
 
     def list_nodes(
-        self, model_id: int, revision_id: int, node_id: int = None, depth: int = None, limit: int = None
+        self, model_id: int, revision_id: int, node_id: int = None, depth: int = None, limit: int = 25
     ) -> ThreeDNodeList:
         """Retrieves a list of nodes from the hierarchy in the 3D Model.
 
@@ -248,7 +250,8 @@ class ThreeDRevisionsAPI(APIClient):
             revision_id (int): Id of the revision.
             node_id (int): ID of the root node of the subtree you request (default is the root node).
             depth (int): Get sub nodes up to this many levels below the specified node. Depth 0 is the root node.
-            limit (int): Maximun number of nodes to return.
+            limit (int): Maximun number of nodes to return. Defaults to 25. Set to -1, float("inf") or None
+                to return all items.
 
         Returns:
             ThreeDNodeList: The list of 3d nodes.
@@ -263,7 +266,7 @@ class ThreeDRevisionsAPI(APIClient):
         )
 
     def list_ancestor_nodes(
-        self, model_id: int, revision_id: int, node_id: int = None, limit: int = None
+        self, model_id: int, revision_id: int, node_id: int = None, limit: int = 25
     ) -> ThreeDNodeList:
         """Retrieves a list of ancestor nodes of a given node, including itself, in the hierarchy of the 3D model
 
@@ -275,7 +278,8 @@ class ThreeDRevisionsAPI(APIClient):
             revision_id (int): Id of the revision.
             node_id (int): ID of the node to get the ancestors of.
             depth (int): Get sub nodes up to this many levels below the specified node. Depth 0 is the root node.
-            limit (int): Maximun number of nodes to return.
+            limit (int): Maximun number of nodes to return. Defaults to 25. Set to -1, float("inf") or None
+                to return all items.
 
         Returns:
             ThreeDNodeList: The list of 3d nodes.
@@ -307,7 +311,7 @@ class ThreeDAssetMappingAPI(APIClient):
     _LIST_CLASS = ThreeDAssetMappingList
 
     def list(
-        self, model_id: int, revision_id: int, node_id: int = None, asset_id: int = None, limit: int = None
+        self, model_id: int, revision_id: int, node_id: int = None, asset_id: int = None, limit: int = 25
     ) -> ThreeDAssetMappingList:
         """List 3D node asset mappings.
 
@@ -316,7 +320,8 @@ class ThreeDAssetMappingAPI(APIClient):
             revision_id (int): Id of the revision.
             node_id (int): List only asset mappings associated with this node.
             asset_id (int): List only asset mappings associated with this asset.
-            limit (int): Maximum number of asset mappings to return.
+            limit (int): Maximum number of asset mappings to return. Defaults to 25. Set to -1, float("inf") or None
+                to return all items.
 
         Returns:
             ThreeDAssetMappingList: The list of asset mappings.
@@ -377,7 +382,7 @@ class ThreeDRevealAPI(APIClient):
         path = utils.interpolate_and_url_encode(self._RESOURCE_PATH, model_id)
         return self._retrieve(cls=ThreeDRevealRevision, resource_path=path, id=revision_id)
 
-    def list_nodes(self, model_id: int, revision_id: int, depth: int = None, node_id: int = None, limit: int = None):
+    def list_nodes(self, model_id: int, revision_id: int, depth: int = None, node_id: int = None, limit: int = 25):
         """List 3D nodes.
 
         Args:
@@ -385,7 +390,8 @@ class ThreeDRevealAPI(APIClient):
             revision_id (int): Id of the revision.
             depth (int, optional): Get sub nodes up to this many levels below the specified node.
             node_id (int, optional): ID of the root note of the subtree you request.
-            limit (int, optional): Maximun number of nodes to retrieve
+            limit (int, optional): Maximun number of nodes to retrieve. Defaults to 25. Set to -1, float("inf") or None
+                to return all items.
         """
         path = utils.interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/nodes", model_id, revision_id)
         return self._list(
@@ -396,27 +402,30 @@ class ThreeDRevealAPI(APIClient):
             limit=limit,
         )
 
-    def list_ancestor_nodes(self, model_id: int, revision_id: int, node_id: int, limit: int = None):
+    def list_ancestor_nodes(self, model_id: int, revision_id: int, node_id: int, limit: int = 25):
         """Retrieve a revision.
 
         Args:
             model_id (int): Id of the model.
             revision_id (int): Id of the revision.
             node_id (int): ID of the node to get the ancestors of.
-            limit (int, optional): Maximun number of nodes to retrieve
+            limit (int, optional): Maximun number of nodes to retrieve. Defaults to 25. Set to -1, float("inf") or None
+                to return all items.
         """
         path = utils.interpolate_and_url_encode(
             self._RESOURCE_PATH + "/{}/nodes/{}/ancestors", model_id, revision_id, node_id
         )
         return self._list(cls=ThreeDRevealNodeList, resource_path=path, method="GET", limit=limit)
 
-    def list_sectors(self, model_id: int, revision_id: int, bounding_box: Dict[str, List] = None, limit: int = None):
+    def list_sectors(self, model_id: int, revision_id: int, bounding_box: Dict[str, List] = None, limit: int = 25):
         """Retrieve a revision.
 
         Args:
             model_id (int): Id of the model.
             revision_id (int): Id of the revision.
             bounding_box (Dict[str, List], optional): Bounding box to restrict search to. If given, only return sectors that intersect the given bounding box.
+            limit (int, optional): Maximum number of items to return. Defaults to 25. Set to -1, float("inf") or None
+                to return all items.
         """
         path = utils.interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/sectors", model_id, revision_id)
         return self._list(

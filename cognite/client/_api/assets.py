@@ -108,7 +108,7 @@ class AssetsAPI(APIClient):
         asset_subtrees: List[int] = None,
         depth: Dict[str, Any] = None,
         external_id_prefix: str = None,
-        limit: int = None,
+        limit: int = 25,
     ) -> AssetList:
         """List assets
 
@@ -121,7 +121,8 @@ class AssetsAPI(APIClient):
             last_updated_time (Dict[str, Any]): Range between two timestamps
             asset_subtrees (List[int]): Filter out events that are not linked to assets in the subtree rooted at these assets.
             depth (Dict[str, Any]): Range between two integers
-            limit (int, optional): Maximum number of assets to return. If not specified, all assets will be returned.
+            limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None
+                to return all items.
 
         Returns:
             AssetList: List of requested assets

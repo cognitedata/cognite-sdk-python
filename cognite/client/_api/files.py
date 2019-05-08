@@ -89,7 +89,7 @@ class FilesAPI(APIClient):
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
         external_id_prefix: str = None,
-        limit: int = None,
+        limit: int = 25,
     ) -> FileMetadataList:
         """List files
 
@@ -100,7 +100,8 @@ class FilesAPI(APIClient):
             created_time (Dict[str, Any]): Range between two timestamps
             last_updated_time (Dict[str, Any]): Range between two timestamps
             external_id_prefix (str): External Id provided by client. Should be unique within the project
-            limit (int, optional): Max number of files to return.
+            limit (int, optional): Max number of files to return. Defaults to 25. Set to -1, float("inf") or None
+                to return all items.
 
         Returns:
             FileMetadataList: The requested files.

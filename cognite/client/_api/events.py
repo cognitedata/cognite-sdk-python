@@ -102,7 +102,7 @@ class EventsAPI(APIClient):
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
         external_id_prefix: str = None,
-        limit: int = None,
+        limit: int = 25,
     ) -> EventList:
         """List events
 
@@ -116,7 +116,8 @@ class EventsAPI(APIClient):
             created_time (Dict[str, Any]): Range between two timestamps
             last_updated_time (Dict[str, Any]): Range between two timestamps
             external_id_prefix (str): External Id provided by client. Should be unique within the project
-            limit (int, optional): Maximum number of events to return. If not specified, all events will be returned.
+            limit (int, optional): Maximum number of events to return. Defaults to 25. Set to -1, float("inf") or None
+                to return all items.
 
         Returns:
             EventList: List of requested events

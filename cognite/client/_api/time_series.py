@@ -58,7 +58,7 @@ class TimeSeriesAPI(APIClient):
         """
         return self._retrieve_multiple(ids=id, external_ids=external_id, wrap_ids=True)
 
-    def list(self, include_metadata: bool = False, asset_id: int = None, limit: int = None) -> TimeSeriesList:
+    def list(self, include_metadata: bool = False, asset_id: int = None, limit: int = 25) -> TimeSeriesList:
         """Iterate over time series
 
         Fetches time series as they are iterated over, so you keep a limited number of objects in memory.
@@ -66,7 +66,8 @@ class TimeSeriesAPI(APIClient):
         Args:
             include_metadata (bool, optional): Whether or not to include metadata
             asset_id (int, optional): List time series related to this asset.
-            limit (int, optional): Max number of time series to return.
+            limit (int, optional): Max number of time series to return. Defaults to 25. Set to -1, float("inf") or None
+                to return all items.
 
         Returns:
             TimeSeriesList: The requested time series.

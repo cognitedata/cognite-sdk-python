@@ -196,6 +196,8 @@ class APIClient:
         filter: Dict = None,
         headers: Dict = None,
     ):
+        if limit == -1 or limit == float("inf"):
+            limit = None
         cls = cls or self._LIST_CLASS
         resource_path = resource_path or self._RESOURCE_PATH
         total_items_retrieved = 0
