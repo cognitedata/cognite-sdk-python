@@ -87,12 +87,32 @@ class CogniteAssetPostingError(Exception):
         self.not_posted = not_posted
 
     def __str__(self):
-        msg = "Some assets failed to post.\nSucessfully posted (2xx): {}\nMay have been posted (5xx): {}\nNot posted (4xx): {}".format(
+        return "Some assets failed to post.\nSucessfully posted (2xx): {}\nMay have been posted (5xx): {}\nNot posted (4xx): {}".format(
             [a.ref_id for a in self.posted],
             [a.ref_id for a in self.may_have_been_posted],
             [a.ref_id for a in self.not_posted],
         )
-        return msg
+
+
+class CogniteFileFetchingError(Exception):
+    """Cognite File Fetching Error
+
+    Raised if one or more files failed to download. This exception provides information about which files failed and
+    which did were succesfully downloaded.
+
+    Args:
+        successful (FileMetadataList): List of identifiers of files which were successfully downloaded.
+        failed (FileMetadataList): List of identifiers of files which were not successfully downloaded.
+    """
+
+    def __init__(self, successful, failed):
+        self.successful = successful
+        self.failed = failed
+
+    def __str__(self):
+        return "Some assets failed to post.\nSuccessful: {}\nFailed: {}".format(
+            [f.id for f in self.successful], [f.id for f in self.failed]
+        )
 
 
 class CogniteMissingClientError(Exception):

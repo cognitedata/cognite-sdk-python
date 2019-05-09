@@ -19,7 +19,6 @@ def new_database_with_table():
     COGNITE_CLIENT.raw.databases.delete(db.name)
 
 
-@pytest.mark.xfail(strict=True)
 class TestRawDatabasesAPI:
     def test_list_databases(self):
         dbs = COGNITE_CLIENT.raw.databases.list()
@@ -29,7 +28,6 @@ class TestRawDatabasesAPI:
         pass
 
 
-@pytest.mark.xfail(strict=True)
 class TestRawTablesAPI:
     def test_list_tables(self):
         tables = COGNITE_CLIENT.raw.tables.list(db_name="test__database1")
@@ -45,16 +43,14 @@ class TestRawTablesAPI:
 
 
 class TestRawRowsAPI:
-    @pytest.mark.xfail(strict=True)
     def test_list_rows(self):
-        rows = COGNITE_CLIENT.raw.rows.list(db_name="test__database1", table_name="test__table_1")
+        rows = COGNITE_CLIENT.raw.rows.list(db_name="test__database1", table_name="test__table_1", limit=-1)
         assert 2000 == len(rows)
 
     def test_retrieve_row(self):
         row = COGNITE_CLIENT.raw.rows.retrieve(db_name="test__database1", table_name="test__table_1", key="1")
         assert {"c{}".format(i): "1_{}".format(i) for i in range(10)} == row.columns
 
-    @pytest.mark.xfail(strict=True)
     def test_insert_and_delete_rows(self, new_database_with_table):
         db, table = new_database_with_table
         rows = {"r1": {"c1": "v1", "c2": "v1"}, "r2": {"c1": "v2", "c2": "v2"}}

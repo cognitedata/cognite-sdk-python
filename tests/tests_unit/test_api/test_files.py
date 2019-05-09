@@ -1,3 +1,4 @@
+import json
 import os
 import re
 from tempfile import TemporaryDirectory
@@ -6,9 +7,10 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client._api.files import FileMetadata, FileMetadataFilter, FileMetadataList, FileMetadataUpdate
+from cognite.client.exceptions import CogniteFileFetchingError
 from tests.utils import jsgz_load, set_request_limit
 
-FILES_API = CogniteClient().files
+FILES_API = CogniteClient(max_workers=1).files
 
 
 @pytest.fixture
@@ -68,15 +70,56 @@ def mock_file_download_response(rsps):
         status=200,
         json={"items": [{"id": 1, "name": "file1"}, {"externalId": "2", "name": "file2"}]},
     )
-    response_body = {
-        "items": [
-            {"id": 1, "downloadUrl": "https://download.file1.here"},
-            {"externalId": "2", "downloadUrl": "https://download.file2.here"},
-        ]
-    }
-    rsps.add(rsps.POST, FILES_API._base_url + "/files/downloadlink", status=200, json=response_body)
+
+    def download_link_callback(request):
+        identifier = jsgz_load(request.body)["items"][0]
+        response = {}
+        if "id" in identifier:
+            response = {"items": [{"id": 1, "downloadUrl": "https://download.file1.here"}]}
+        elif "externalId" in identifier:
+            response = {"items": [{"externalId": "2", "downloadUrl": "https://download.file2.here"}]}
+        return 200, {}, json.dumps(response)
+
+    rsps.add_callback(
+        rsps.POST,
+        FILES_API._base_url + "/files/downloadlink",
+        callback=download_link_callback,
+        content_type="application/json",
+    )
     rsps.add(rsps.GET, "https://download.file1.here", status=200, body="content1")
     rsps.add(rsps.GET, "https://download.file2.here", status=200, body="content2")
+    yield rsps
+
+
+@pytest.fixture
+def mock_file_download_response_one_fails(rsps):
+    rsps.add(
+        rsps.POST,
+        FILES_API._base_url + "/files/byids",
+        status=200,
+        json={
+            "items": [
+                {"id": 1, "externalId": "success", "name": "file1"},
+                {"externalId": "fail", "id": 2, "name": "file2"},
+            ]
+        },
+    )
+
+    def download_link_callback(request):
+        identifier = jsgz_load(request.body)["items"][0]
+        response = {}
+        if "id" in identifier:
+            return 200, {}, json.dumps({"items": [{"id": 1, "downloadUrl": "https://download.file1.here"}]})
+        elif "externalId" in identifier:
+            return (400, {}, json.dumps({"error": {"message": "User error", "code": 400}}))
+
+    rsps.add_callback(
+        rsps.POST,
+        FILES_API._base_url + "/files/downloadlink",
+        callback=download_link_callback,
+        content_type="application/json",
+    )
+    rsps.add(rsps.GET, "https://download.file1.here", status=200, body="content1")
     yield rsps
 
 
@@ -219,6 +262,14 @@ class TestFilesAPI:
             assert res is None
             assert os.path.isfile(os.path.join(dir, "file1"))
             assert os.path.isfile(os.path.join(dir, "file2"))
+
+    def test_download_one_file_fails(self, mock_file_download_response_one_fails):
+        with TemporaryDirectory() as dir:
+            with pytest.raises(CogniteFileFetchingError) as e:
+                FILES_API.download(directory=dir, id=[1], external_id="fail")
+            assert [FileMetadata(id=1, name="file1", external_id="success")] == e.value.successful
+            assert [FileMetadata(id=2, name="file2", external_id="fail")] == e.value.failed
+            assert os.path.isfile(os.path.join(dir, "file1"))
 
     def test_download_to_memory(self, mock_file_download_response):
         mock_file_download_response.assert_all_requests_are_fired = False

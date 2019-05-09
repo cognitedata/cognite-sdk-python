@@ -653,6 +653,10 @@ CogniteAssetPostingError
 ^^^^^^^^^^^^^^^^^^^^^^^^
 .. autoexception:: cognite.client.exceptions.CogniteAssetPostingError
 
+CogniteFileFetchingError
+^^^^^^^^^^^^^^^^^^^^^^^^
+.. autoexception:: cognite.client.exceptions.CogniteFileFetchingError
+
 CogniteMissingClientError
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 .. autoexception:: cognite.client.exceptions.CogniteMissingClientError

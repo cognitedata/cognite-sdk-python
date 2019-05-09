@@ -285,8 +285,8 @@ class _AssetPosterWorker(threading.Thread):
         return assets_in_response
 
     def run(self):
+        request = None
         try:
-            request = None
             while not self.stop:
                 try:
                     request = self.request_queue.get(timeout=0.1)
@@ -323,9 +323,9 @@ class _AssetPoster:
         self.ref_ids_without_circular_deps = set()
         self.ref_id_to_children = {ref_id: set() for ref_id in self.remaining_ref_ids}
         self.ref_id_to_descendent_count = {ref_id: 0 for ref_id in self.remaining_ref_ids}
-        self.posted_assets = AssetList([])
-        self.may_have_been_posted_assets = AssetList([])
-        self.not_posted_assets = AssetList([])
+        self.posted_assets = set()
+        self.may_have_been_posted_assets = set()
+        self.not_posted_assets = set()
         self.exception = None
 
         self.assets_remaining = (
@@ -456,26 +456,28 @@ class _AssetPoster:
             res = self.response_queue.get()
             if isinstance(res, _AssetsFailedToPost):
                 if isinstance(res.exc, CogniteAPIError):
-                    if res.exc.code >= 500:
-                        self.may_have_been_posted_assets.extend(AssetList(res.assets))
-                    elif res.exc.code >= 400:
-                        self.not_posted_assets.extend(AssetList(res.assets))
                     self.exception = res.exc
                     for asset in res.assets:
-                        self.not_posted_assets.extend(self._get_descendants(asset))
+                        if res.exc.code >= 500:
+                            self.may_have_been_posted_assets.add(asset)
+                        elif res.exc.code >= 400:
+                            self.not_posted_assets.add(asset)
+                        for descendant in self._get_descendants(asset):
+                            self.not_posted_assets.add(descendant)
                 else:
                     raise res.exc
             else:
                 self._update_ref_id_to_id_map(res)
-                self.posted_assets.extend(res)
+                for asset in res:
+                    self.posted_assets.add(asset)
                 unblocked_assets_lists = self._get_unblocked_assets()
                 for unblocked_assets in unblocked_assets_lists:
                     self.request_queue.put(unblocked_assets)
         if len(self.may_have_been_posted_assets) > 0 or len(self.not_posted_assets) > 0:
             raise CogniteAssetPostingError(
-                posted=self.posted_assets,
-                may_have_been_posted=self.may_have_been_posted_assets,
-                not_posted=self.not_posted_assets,
+                posted=AssetList(list(self.posted_assets)),
+                may_have_been_posted=AssetList(list(self.may_have_been_posted_assets)),
+                not_posted=AssetList(list(self.not_posted_assets)),
             ) from self.exception
 
     def post(self):
