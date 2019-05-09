@@ -326,6 +326,8 @@ class _AssetPoster:
         self.posted_assets = AssetList([])
         self.may_have_been_posted_assets = AssetList([])
         self.not_posted_assets = AssetList([])
+        self.exception = None
+
         self.assets_remaining = (
             lambda: len(self.posted_assets) + len(self.may_have_been_posted_assets) + len(self.not_posted_assets)
             < self.num_of_assets
@@ -458,6 +460,7 @@ class _AssetPoster:
                         self.may_have_been_posted_assets.extend(AssetList(res.assets))
                     elif res.exc.code >= 400:
                         self.not_posted_assets.extend(AssetList(res.assets))
+                    self.exception = res.exc
                     for asset in res.assets:
                         self.not_posted_assets.extend(self._get_descendants(asset))
                 else:
@@ -473,7 +476,7 @@ class _AssetPoster:
                 posted=self.posted_assets,
                 may_have_been_posted=self.may_have_been_posted_assets,
                 not_posted=self.not_posted_assets,
-            )
+            ) from self.exception
 
     def post(self):
         workers = []

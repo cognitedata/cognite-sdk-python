@@ -360,7 +360,7 @@ class FilesAPI(APIClient):
         all_ids = self._process_ids(ids=id, external_ids=external_id, wrap_ids=True)
         id_chunks = utils.split_into_chunks(all_ids, self._RETRIEVE_LIMIT)
 
-        tasks = [{"url_path": "/files/download", "json": {"items": chunk}} for chunk in id_chunks]
+        tasks = [{"url_path": "/files/downloadlink", "json": {"items": chunk}} for chunk in id_chunks]
         res_list = utils.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
         dl_responses = []
         for res in res_list:
@@ -406,7 +406,7 @@ class FilesAPI(APIClient):
         """
         utils.assert_exactly_one_of_id_or_external_id(id, external_id)
         all_ids = self._process_ids(ids=id, external_ids=external_id, wrap_ids=True)
-        res = self._post(url_path="/files/download", json={"items": all_ids})
+        res = self._post(url_path="/files/downloadlink", json={"items": all_ids})
         dl_link = res.json()["items"][0]["link"]
         return self._download_file(dl_link)
 
