@@ -327,3 +327,24 @@ def split_into_chunks(collection: Union[List, Dict], chunk_size: int) -> List[Un
             chunks.append({k: v for k, v in collection[i : i + chunk_size]})
         return chunks
     raise ValueError("Can only split list or dict")
+
+
+def _convert_time_attributes_in_dict(item: Dict) -> Dict:
+    TIME_ATTRIBUTES = ["start_time", "end_time", "last_updated_time", "created_time", "timestamp"]
+    new_item = {}
+    for k, v in item.items():
+        if k in TIME_ATTRIBUTES:
+            v = ms_to_datetime(v).strftime("%Y-%m-%d %H:%M:%S")
+        new_item[k] = v
+    return new_item
+
+
+def convert_time_attributes_to_datetime(item: Union[Dict, List[Dict]]) -> Union[Dict, List[Dict]]:
+    if isinstance(item, dict):
+        return _convert_time_attributes_in_dict(item)
+    if isinstance(item, list):
+        new_items = []
+        for el in item:
+            new_items.append(_convert_time_attributes_in_dict(el))
+        return new_items
+    raise TypeError("item must be dict or list of dicts")

@@ -11,7 +11,8 @@ EXCLUDE_VALUE = [None]
 
 class CogniteResponse:
     def __str__(self):
-        return json.dumps(self.dump(), indent=4)
+        item = utils.convert_time_attributes_to_datetime(self.dump())
+        return json.dumps(item, indent=4)
 
     def __repr__(self):
         return self.__str__()
@@ -86,7 +87,8 @@ class CogniteResourceList(UserList):
         return value
 
     def __str__(self):
-        return json.dumps(self.dump(), default=lambda x: x.__dict__, indent=4)
+        item = utils.convert_time_attributes_to_datetime(self.dump())
+        return json.dumps(item, default=lambda x: x.__dict__, indent=4)
 
     def __repr__(self):
         return self.__str__()
@@ -132,7 +134,8 @@ class CogniteResource:
         return type(self) == type(other) and self.dump() == other.dump()
 
     def __str__(self):
-        return json.dumps(self.dump(), default=lambda x: x.__dict__, indent=4)
+        item = utils.convert_time_attributes_to_datetime(self.dump())
+        return json.dumps(item, default=lambda x: x.__dict__, indent=4)
 
     def __repr__(self):
         return self.__str__()
@@ -301,7 +304,8 @@ class CogniteFilter:
         return type(self) == type(other) and self.dump() == other.dump()
 
     def __str__(self):
-        return json.dumps(self.dump(), default=lambda x: x.__dict__, indent=4)
+        item = utils.convert_time_attributes_to_datetime(self.dump())
+        return json.dumps(item, default=lambda x: x.__dict__, indent=4)
 
     def __repr__(self):
         return self.__str__()

@@ -256,3 +256,23 @@ class TestAssertions:
             utils.assert_exactly_one_of_id_or_external_id(1, "1")
         utils.assert_exactly_one_of_id_or_external_id(1, None)
         utils.assert_exactly_one_of_id_or_external_id(None, "1")
+
+
+class TestObjectTimeConversion:
+    @pytest.mark.parametrize(
+        "item, expected_output",
+        [
+            ({"created_time": 0}, {"created_time": "1970-01-01 00:00:00"}),
+            ({"last_updated_time": 0}, {"last_updated_time": "1970-01-01 00:00:00"}),
+            ({"start_time": 0}, {"start_time": "1970-01-01 00:00:00"}),
+            ({"end_time": 0}, {"end_time": "1970-01-01 00:00:00"}),
+            ({"not_a_time": 0}, {"not_a_time": 0}),
+            ([{"created_time": 0}], [{"created_time": "1970-01-01 00:00:00"}]),
+            ([{"last_updated_time": 0}], [{"last_updated_time": "1970-01-01 00:00:00"}]),
+            ([{"start_time": 0}], [{"start_time": "1970-01-01 00:00:00"}]),
+            ([{"end_time": 0}], [{"end_time": "1970-01-01 00:00:00"}]),
+            ([{"not_a_time": 0}], [{"not_a_time": 0}]),
+        ],
+    )
+    def test_convert_time_attributes_to_datetime(self, item, expected_output):
+        assert expected_output == utils.convert_time_attributes_to_datetime(item)

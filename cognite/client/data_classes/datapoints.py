@@ -123,7 +123,9 @@ class Datapoints:
         self.__datapoint_objects = None
 
     def __str__(self):
-        return json.dumps(self.dump(), indent=4)
+        item = self.dump()
+        item["datapoints"] = utils.convert_time_attributes_to_datetime(item["datapoints"])
+        return json.dumps(item, indent=4)
 
     def __repr__(self):
         return self.__str__()
@@ -260,6 +262,12 @@ class Datapoints:
 class DatapointsList(CogniteResourceList):
     _RESOURCE = Datapoints
     _ASSERT_CLASSES = False
+
+    def __str__(self):
+        item = self.dump()
+        for i in item:
+            i["datapoints"] = utils.convert_time_attributes_to_datetime(i["datapoints"])
+        return json.dumps(item, default=lambda x: x.__dict__, indent=4)
 
     def to_pandas(self) -> "pandas.DataFrame":
         """Convert the datapoints list into a pandas DataFrame."""

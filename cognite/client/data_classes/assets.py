@@ -160,7 +160,7 @@ class AssetList(CogniteResourceList):
         if indent > 0:
             s += marked_indent
         s += str(asset.id) + "\n"
-        dumped = asset.dump()
+        dumped = utils.convert_time_attributes_to_datetime(asset.dump())
         for key, value in sorted(dumped.items()):
             if isinstance(value, dict):
                 s += single_indent * indent + "{}:\n".format(key)
