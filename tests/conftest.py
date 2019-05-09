@@ -27,7 +27,7 @@ def rsps_with_login_mock():
             responses.GET,
             BASE_URL + "/login/status",
             status=200,
-            json={"data": {"project": "test", "loggedIn": True, "user": "bla", "projectId": "bla"}},
+            json={"data": {"project": "test", "loggedIn": True, "user": "bla", "projectId": "bla", "apiKeyId": 1}},
         )
         yield rsps
 
