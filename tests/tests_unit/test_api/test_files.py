@@ -70,8 +70,8 @@ def mock_file_download_response(rsps):
     )
     response_body = {
         "items": [
-            {"id": 1, "link": "https://download.file1.here"},
-            {"externalId": "2", "link": "https://download.file2.here"},
+            {"id": 1, "downloadUrl": "https://download.file1.here"},
+            {"externalId": "2", "downloadUrl": "https://download.file2.here"},
         ]
     }
     rsps.add(rsps.POST, FILES_API._base_url + "/files/downloadlink", status=200, json=response_body)

@@ -376,7 +376,7 @@ class FilesAPI(APIClient):
 
         download_tasks = []
         for item in dl_responses:
-            dl_link = item["link"]
+            dl_link = item["downloadUrl"]
             if "id" in item:
                 path = os.path.join(directory, id_to_name[item["id"]])
                 task = (dl_link, path)
@@ -407,7 +407,7 @@ class FilesAPI(APIClient):
         utils.assert_exactly_one_of_id_or_external_id(id, external_id)
         all_ids = self._process_ids(ids=id, external_ids=external_id, wrap_ids=True)
         res = self._post(url_path="/files/downloadlink", json={"items": all_ids})
-        dl_link = res.json()["items"][0]["link"]
+        dl_link = res.json()["items"][0]["downloadUrl"]
         return self._download_file(dl_link)
 
     def _download_file_to_path(self, download_link: str, path: str, chunk_size: int = 2 ** 21):
