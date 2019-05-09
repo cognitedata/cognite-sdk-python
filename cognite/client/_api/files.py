@@ -358,7 +358,13 @@ class FilesAPI(APIClient):
                 >>> res = c.files.download(directory="my_directory", id=[1,2,3], external_id=["abc", "def"])
         """
         all_ids = self._process_ids(ids=id, external_ids=external_id, wrap_ids=True)
-        res = self._post(url_path="/files/download", json={"items": all_ids})
+        id_chunks = utils.split_into_chunks(all_ids, self._RETRIEVE_LIMIT)
+
+        tasks = [{"url_path": "/files/download", "json": {"items": chunk}} for chunk in id_chunks]
+        res_list = utils.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
+        dl_responses = []
+        for res in res_list:
+            dl_responses.extend(res.json()["items"])
 
         ids = [id["id"] for id in all_ids if "id" in id]
         external_ids = [id["externalId"] for id in all_ids if "externalId" in id]
@@ -369,7 +375,7 @@ class FilesAPI(APIClient):
         external_id_to_name = {f.external_id: f.name for f in files_metadata}
 
         download_tasks = []
-        for item in res.json()["items"]:
+        for item in dl_responses:
             dl_link = item["link"]
             if "id" in item:
                 path = os.path.join(directory, id_to_name[item["id"]])

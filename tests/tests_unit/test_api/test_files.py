@@ -6,7 +6,7 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client._api.files import FileMetadata, FileMetadataFilter, FileMetadataList, FileMetadataUpdate
-from tests.utils import jsgz_load
+from tests.utils import jsgz_load, set_request_limit
 
 FILES_API = CogniteClient().files
 
@@ -225,6 +225,17 @@ class TestFilesAPI:
         res = FILES_API.download_bytes(id=1)
         assert {"items": [{"id": 1}]} == jsgz_load(mock_file_download_response.calls[0].request.body)
         assert res == b"content1"
+
+    def test_download_ids_over_limit(self, mock_file_download_response):
+        with set_request_limit(FILES_API, 1):
+            with TemporaryDirectory() as dir:
+                res = FILES_API.download(directory=dir, id=[1], external_id=["2"])
+                bodies = [jsgz_load(mock_file_download_response.calls[i].request.body) for i in range(2)]
+                assert {"items": [{"id": 1}]} in bodies
+                assert {"items": [{"externalId": "2"}]} in bodies
+                assert res is None
+                assert os.path.isfile(os.path.join(dir, "file1"))
+                assert os.path.isfile(os.path.join(dir, "file2"))
 
     def test_files_update_object(self):
         assert isinstance(
