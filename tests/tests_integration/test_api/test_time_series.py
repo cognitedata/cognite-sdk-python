@@ -21,12 +21,14 @@ def new_ts():
 
 
 class TestTimeSeriesAPI:
+    @pytest.mark.xfail(strict=True)
     def test_retrieve(self):
         listed_asset = COGNITE_CLIENT.time_series.list(limit=1)[0]
         retrieved_asset = COGNITE_CLIENT.time_series.retrieve(listed_asset.id)
         retrieved_asset.external_id = listed_asset.external_id
         assert retrieved_asset == listed_asset
 
+    @pytest.mark.xfail(strict=True)
     def test_list(self, mocker):
         mocker.spy(COGNITE_CLIENT.time_series, "_get")
 
