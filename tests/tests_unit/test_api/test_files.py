@@ -225,7 +225,8 @@ class TestFilesAPI:
         path = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
         with pytest.raises(CogniteCompoundAPIError) as e:
             FILES_API.upload(path=path)
-        assert e.value.failed == ["file_for_test_upload_1.txt", "file_for_test_upload_2.txt"]
+        assert "file_for_test_upload_1.txt" in e.value.failed
+        assert "file_for_test_upload_2.txt" in e.value.failed
 
     def test_upload_from_directory_recursively(self, mock_file_upload_response):
         path = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
