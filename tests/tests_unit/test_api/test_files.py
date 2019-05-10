@@ -7,6 +7,7 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client._api.files import FileMetadata, FileMetadataList, FileMetadataUpdate
+from cognite.client.data_classes import FileMetadataFilter
 from cognite.client.exceptions import CogniteCompoundAPIError
 from tests.utils import jsgz_load, set_request_limit
 
@@ -186,8 +187,19 @@ class TestFilesAPI:
             assert mock_files_response.calls[0].response.json()["items"] == file.dump(camel_case=True)
 
     def test_search(self, mock_files_response):
-        res = FILES_API.search()
+        res = FILES_API.search(filter=FileMetadataFilter(external_id_prefix="abc"))
         assert mock_files_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
+        assert {"search": {"name": None}, "filter": {"externalIdPrefix": "abc"}, "limit": None} == jsgz_load(
+            mock_files_response.calls[0].request.body
+        )
+
+    @pytest.mark.parametrize("filter_field", ["external_id_prefix", "externalIdPrefix"])
+    def test_search_dict_filter(self, mock_files_response, filter_field):
+        res = FILES_API.search(filter={filter_field: "abc"})
+        assert mock_files_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
+        assert {"search": {"name": None}, "filter": {"externalIdPrefix": "abc"}, "limit": None} == jsgz_load(
+            mock_files_response.calls[0].request.body
+        )
 
     def test_upload(self, mock_file_upload_response):
         path = os.path.join(os.path.dirname(__file__), "files_for_test_upload", "file_for_test_upload_1.txt")

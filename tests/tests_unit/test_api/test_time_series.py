@@ -99,8 +99,23 @@ class TestTimeSeries:
         assert mock_ts_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
     def test_search(self, mock_ts_response):
-        res = TS_API.search()
+        res = TS_API.search(filter=TimeSeriesFilter(asset_subtrees=[1]))
         assert mock_ts_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
+        assert {
+            "search": {"name": None, "description": None, "query": None},
+            "filter": {"assetSubtrees": [1]},
+            "limit": None,
+        } == jsgz_load(mock_ts_response.calls[0].request.body)
+
+    @pytest.mark.parametrize("filter_field", ["asset_subtrees", "assetSubtrees"])
+    def test_search_dict_filter(self, mock_ts_response, filter_field):
+        res = TS_API.search(filter={filter_field: [1]})
+        assert mock_ts_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
+        assert {
+            "search": {"name": None, "description": None, "query": None},
+            "filter": {"assetSubtrees": [1]},
+            "limit": None,
+        } == jsgz_load(mock_ts_response.calls[0].request.body)
 
     def test_search_with_filter(self, mock_ts_response):
         res = TS_API.search(name="n", description="d", query="q", filter=TimeSeriesFilter(unit="bla"))

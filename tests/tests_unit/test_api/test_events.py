@@ -4,6 +4,7 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client._api.events import Event, EventList, EventUpdate
+from cognite.client.data_classes import EventFilter
 from tests.utils import jsgz_load
 
 EVENTS_API = CogniteClient().events
@@ -95,8 +96,19 @@ class TestEvents:
         assert mock_events_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
     def test_search(self, mock_events_response):
-        res = EVENTS_API.search()
+        res = EVENTS_API.search(filter=EventFilter(external_id_prefix="abc"))
         assert mock_events_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
+        assert {"search": {"description": None}, "filter": {"externalIdPrefix": "abc"}, "limit": None} == jsgz_load(
+            mock_events_response.calls[0].request.body
+        )
+
+    @pytest.mark.parametrize("filter_field", ["external_id_prefix", "externalIdPrefix"])
+    def test_search_dict_filter(self, mock_events_response, filter_field):
+        res = EVENTS_API.search(filter={filter_field: "bla"})
+        assert mock_events_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
+        assert {"search": {"description": None}, "filter": {"externalIdPrefix": "bla"}, "limit": None} == jsgz_load(
+            mock_events_response.calls[0].request.body
+        )
 
     def test_event_update_object(self):
 

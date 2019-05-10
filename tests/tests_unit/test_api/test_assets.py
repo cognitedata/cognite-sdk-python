@@ -8,6 +8,7 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client._api.assets import Asset, AssetList, AssetUpdate, _AssetPoster, _AssetPosterWorker
+from cognite.client.data_classes import AssetFilter
 from cognite.client.exceptions import CogniteCompoundAPIError
 from tests.utils import jsgz_load, set_request_limit
 
@@ -99,8 +100,21 @@ class TestAssets:
         assert mock_assets_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
     def test_search(self, mock_assets_response):
-        res = ASSETS_API.search()
+        res = ASSETS_API.search(filter=AssetFilter(name="1"))
         assert mock_assets_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
+        assert {"search": {"name": None, "description": None}, "filter": {"name": "1"}, "limit": None} == jsgz_load(
+            mock_assets_response.calls[0].request.body
+        )
+
+    @pytest.mark.parametrize("filter_field", ["asset_subtrees", "assetSubtrees"])
+    def test_search_dict_filter(self, mock_assets_response, filter_field):
+        res = ASSETS_API.search(filter={filter_field: "bla"})
+        assert mock_assets_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
+        assert {
+            "search": {"name": None, "description": None},
+            "filter": {"assetSubtrees": "bla"},
+            "limit": None,
+        } == jsgz_load(mock_assets_response.calls[0].request.body)
 
     def test_assets_update_object(self):
         assert isinstance(

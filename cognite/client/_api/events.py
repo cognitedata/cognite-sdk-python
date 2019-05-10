@@ -2,6 +2,7 @@ from typing import *
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Event, EventFilter, EventList, EventUpdate
+from cognite.client.utils import _utils as utils
 
 
 class EventsAPI(APIClient):
@@ -226,12 +227,12 @@ class EventsAPI(APIClient):
         """
         return self._update_multiple(items=item)
 
-    def search(self, description: str = None, filter: EventFilter = None, limit: int = None) -> EventList:
+    def search(self, description: str = None, filter: Union[EventFilter, Dict] = None, limit: int = None) -> EventList:
         """Search for events
 
         Args:
             description (str): Fuzzy match on description.
-            filter (EventFilter): Filter to apply. Performs exact match on these fields.
+            filter (Union[EventFilter, Dict]): Filter to apply. Performs exact match on these fields.
             limit (int): Maximum number of results to return.
 
         Returns:
@@ -245,5 +246,4 @@ class EventsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.events.search(description="some description")
         """
-        filter = filter.dump(camel_case=True) if filter else None
-        return self._search(json={"search": {"description": description}, "filter": filter, "limit": limit})
+        return self._search(search={"description": description}, filter=filter, limit=limit)

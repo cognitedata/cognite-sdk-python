@@ -11,7 +11,7 @@ from requests.adapters import HTTPAdapter
 from requests.structures import CaseInsensitiveDict
 from urllib3 import Retry
 
-from cognite.client._base import CogniteResource, CogniteUpdate
+from cognite.client._base import CogniteFilter, CogniteResource, CogniteUpdate
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils import _utils as utils
 
@@ -381,11 +381,28 @@ class APIClient:
         return cls._load(updated_items, cognite_client=self._cognite_client)
 
     def _search(
-        self, json: Dict, cls: Any = None, resource_path: str = None, params: Dict = None, headers: Dict = None
+        self,
+        search: Dict,
+        filter: Union[Dict, CogniteFilter],
+        limit: int,
+        cls: Any = None,
+        resource_path: str = None,
+        params: Dict = None,
+        headers: Dict = None,
     ):
+        utils.assert_type(filter, "filter", [dict, CogniteFilter], allow_none=True)
+        if isinstance(filter, CogniteFilter):
+            filter = filter.dump(camel_case=True)
+        elif isinstance(filter, dict):
+            filter = utils.convert_all_keys_to_camel_case(filter)
         cls = cls or self._LIST_CLASS
         resource_path = resource_path or self._RESOURCE_PATH
-        res = self._post(url_path=resource_path + "/search", json=json, params=params, headers=headers)
+        res = self._post(
+            url_path=resource_path + "/search",
+            json={"search": search, "filter": filter, "limit": limit},
+            params=params,
+            headers=headers,
+        )
         return cls._load(res.json()["items"], cognite_client=self._cognite_client)
 
     @staticmethod

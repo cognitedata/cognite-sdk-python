@@ -225,12 +225,14 @@ class FilesAPI(APIClient):
         """
         return self._update_multiple(cls=FileMetadataList, resource_path=self._RESOURCE_PATH, items=item)
 
-    def search(self, name: str = None, filter: FileMetadataFilter = None, limit: int = None) -> FileMetadataList:
+    def search(
+        self, name: str = None, filter: Union[FileMetadataFilter, dict] = None, limit: int = None
+    ) -> FileMetadataList:
         """Search for files.
 
         Args:
             name (str, optional): Prefix and fuzzy search on name.
-            filter (FileMetadataFilter, optional): Filter to apply. Performs exact match on these fields.
+            filter (Union[FileMetadataFilter, dict], optional): Filter to apply. Performs exact match on these fields.
             limit (int, optional): Max number of results to return.
 
         Returns:
@@ -244,8 +246,7 @@ class FilesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.files.search(name="some name")
         """
-        filter = filter.dump(camel_case=True) if filter else None
-        return self._search(json={"search": {"name": name}, "filter": filter, "limit": limit})
+        return self._search(search={"name": name}, filter=filter, limit=limit)
 
     def upload(
         self,

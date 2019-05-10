@@ -143,6 +143,12 @@ class SomeResourceList(CogniteResourceList):
     _UPDATE = SomeUpdate
 
 
+class SomeFilter(CogniteFilter):
+    def __init__(self, var_x, var_y):
+        self.var_x = var_x
+        self.var_y = var_y
+
+
 class TestStandardRetrieve:
     def test_standard_retrieve_OK(self, rsps):
         rsps.add(rsps.GET, BASE_URL + URL_PATH + "/1", status=200, json={"x": 1, "y": 2})
@@ -614,10 +620,27 @@ class TestStandardSearch:
         res = API_CLIENT._search(
             cls=SomeResourceList,
             resource_path=URL_PATH,
-            json={"search": {"name": "bla"}, "limit": 1000, "filter": {"name": "bla"}},
+            search={"name": "bla"},
+            filter=SomeFilter(var_x=1, var_y=1),
+            limit=1000,
         )
         assert SomeResourceList([SomeResource(1, 2)]) == res
-        assert {"search": {"name": "bla"}, "limit": 1000, "filter": {"name": "bla"}} == jsgz_load(
+        assert {"search": {"name": "bla"}, "limit": 1000, "filter": {"varX": 1, "varY": 1}} == jsgz_load(
+            rsps.calls[0].request.body
+        )
+
+    def test_standard_search_dict_filter_ok(self, rsps):
+        rsps.add(rsps.POST, BASE_URL + URL_PATH + "/search", status=200, json={"items": [{"x": 1, "y": 2}]})
+
+        res = API_CLIENT._search(
+            cls=SomeResourceList,
+            resource_path=URL_PATH,
+            search={"name": "bla"},
+            filter={"var_x": 1, "varY": 1},
+            limit=1000,
+        )
+        assert SomeResourceList([SomeResource(1, 2)]) == res
+        assert {"search": {"name": "bla"}, "limit": 1000, "filter": {"varX": 1, "varY": 1}} == jsgz_load(
             rsps.calls[0].request.body
         )
 
@@ -625,7 +648,7 @@ class TestStandardSearch:
         rsps.add(rsps.POST, BASE_URL + URL_PATH + "/search", status=400, json={"error": {"message": "Client Error"}})
 
         with pytest.raises(CogniteAPIError, match="Client Error") as e:
-            API_CLIENT._search(cls=SomeResourceList, resource_path=URL_PATH, json={})
+            API_CLIENT._search(cls=SomeResourceList, resource_path=URL_PATH, search=None, filter=None, limit=None)
         assert "Client Error" == e.value.message
         assert 400 == e.value.code
 
@@ -635,9 +658,7 @@ class TestStandardSearch:
         assert (
             COGNITE_CLIENT
             == API_CLIENT._search(
-                cls=SomeResourceList,
-                resource_path=URL_PATH,
-                json={"search": {"name": "bla"}, "limit": 1000, "filter": {"name": "bla"}},
+                cls=SomeResourceList, resource_path=URL_PATH, search={"name": "bla"}, filter={"name": "bla"}, limit=1000
             )._cognite_client
         )
 

@@ -236,14 +236,14 @@ class AssetsAPI(APIClient):
         return self._update_multiple(items=item)
 
     def search(
-        self, name: str = None, description: str = None, filter: AssetFilter = None, limit: int = None
+        self, name: str = None, description: str = None, filter: Union[AssetFilter, Dict] = None, limit: int = None
     ) -> AssetList:
         """Search for assets
 
         Args:
             name (str): Fuzzy match on name.
             description (str): Fuzzy match on description.
-            filter (AssetFilter): Filter to apply. Performs exact match on these fields.
+            filter (Union[AssetFilter, Dict]): Filter to apply. Performs exact match on these fields.
             limit (int): Maximum number of results to return.
 
         Returns:
@@ -257,10 +257,7 @@ class AssetsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.assets.search(name="some name")
         """
-        filter = filter.dump(camel_case=True) if filter else None
-        return self._search(
-            json={"search": {"name": name, "description": description}, "filter": filter, "limit": limit}
-        )
+        return self._search(search={"name": name, "description": description}, filter=filter, limit=limit)
 
 
 class _AssetsFailedToPost:

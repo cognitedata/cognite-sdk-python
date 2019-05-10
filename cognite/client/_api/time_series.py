@@ -177,7 +177,7 @@ class TimeSeriesAPI(APIClient):
         name: str = None,
         description: str = None,
         query: str = None,
-        filter: TimeSeriesFilter = None,
+        filter: Union[TimeSeriesFilter, Dict] = None,
         limit: int = None,
     ) -> TimeSeriesList:
         """Search for time series.
@@ -187,7 +187,7 @@ class TimeSeriesAPI(APIClient):
             description (str, optional): Prefix and fuzzy search on description.
             query (str, optional): Search on name and description using wildcard search on each of the words (separated
                 by spaces). Retrieves results where at least one word must match. Example: 'some other'
-            filter (TimeSeriesFilter, optional): Filter to apply. Performs exact match on these fields.
+            filter (Union[TimeSeriesFilter, Dict], optional): Filter to apply. Performs exact match on these fields.
             limit (int, optional): Max number of results to return.
 
         Returns:
@@ -201,11 +201,6 @@ class TimeSeriesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.time_series.search(name="some name")
         """
-        filter = filter.dump(camel_case=True) if filter else None
         return self._search(
-            json={
-                "search": {"name": name, "description": description, "query": query},
-                "filter": filter,
-                "limit": limit,
-            }
+            search={"name": name, "description": description, "query": query}, filter=filter, limit=limit
         )

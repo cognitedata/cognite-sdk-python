@@ -126,6 +126,13 @@ def to_snake_case(camel_case_string: str):
     return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
 
 
+def convert_all_keys_to_camel_case(d: Dict):
+    new_d = {}
+    for k, v in d.items():
+        new_d[to_camel_case(k)] = v
+    return new_d
+
+
 def json_dump_default(x):
     try:
         if isinstance(x, local_import("numpy").integer):
