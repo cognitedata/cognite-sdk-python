@@ -5,7 +5,7 @@ from typing import *
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Asset, AssetFilter, AssetList, AssetUpdate
-from cognite.client.exceptions import CogniteAPIError, CogniteAssetPostingError
+from cognite.client.exceptions import CogniteAPIError, CogniteCompoundAPIError
 from cognite.client.utils import _utils as utils
 
 
@@ -474,11 +474,19 @@ class _AssetPoster:
                 for unblocked_assets in unblocked_assets_lists:
                     self.request_queue.put(unblocked_assets)
         if len(self.may_have_been_posted_assets) > 0 or len(self.not_posted_assets) > 0:
-            raise CogniteAssetPostingError(
-                posted=AssetList(list(self.posted_assets)),
-                may_have_been_posted=AssetList(list(self.may_have_been_posted_assets)),
-                not_posted=AssetList(list(self.not_posted_assets)),
-            ) from self.exception
+            if isinstance(self.exception, CogniteAPIError):
+                raise CogniteCompoundAPIError(
+                    successful=AssetList(list(self.posted_assets)),
+                    unknown=AssetList(list(self.may_have_been_posted_assets)),
+                    failed=AssetList(list(self.not_posted_assets)),
+                    unwrap_fn=self._str_format_asset_error,
+                    raised_from=self.exception,
+                ) from self.exception
+            raise self.exception
+
+    @staticmethod
+    def _str_format_asset_error(a):
+        return a.external_id if a.external_id else a.dump()
 
     def post(self):
         workers = []

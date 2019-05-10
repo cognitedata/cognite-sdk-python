@@ -6,8 +6,8 @@ from tempfile import TemporaryDirectory
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client._api.files import FileMetadata, FileMetadataFilter, FileMetadataList, FileMetadataUpdate
-from cognite.client.exceptions import CogniteFileFetchingError
+from cognite.client._api.files import FileMetadata, FileMetadataList, FileMetadataUpdate
+from cognite.client.exceptions import CogniteCompoundAPIError
 from tests.utils import jsgz_load, set_request_limit
 
 FILES_API = CogniteClient(max_workers=1).files
@@ -220,6 +220,13 @@ class TestFilesAPI:
             else:
                 raise AssertionError("incorrect payload: {}".format(payload))
 
+    def test_upload_from_directory_fails(self, rsps):
+        rsps.add(rsps.POST, FILES_API._base_url + "/files/initupload", status=400, json={})
+        path = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
+        with pytest.raises(CogniteCompoundAPIError) as e:
+            FILES_API.upload(path=path)
+        assert e.value.failed == ["file_for_test_upload_1.txt", "file_for_test_upload_2.txt"]
+
     def test_upload_from_directory_recursively(self, mock_file_upload_response):
         path = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
         res = FILES_API.upload(path=path, recursive=True)
@@ -265,7 +272,7 @@ class TestFilesAPI:
 
     def test_download_one_file_fails(self, mock_file_download_response_one_fails):
         with TemporaryDirectory() as dir:
-            with pytest.raises(CogniteFileFetchingError) as e:
+            with pytest.raises(CogniteCompoundAPIError) as e:
                 FILES_API.download(directory=dir, id=[1], external_id="fail")
             assert [FileMetadata(id=1, name="file1", external_id="success")] == e.value.successful
             assert [FileMetadata(id=2, name="file2", external_id="fail")] == e.value.failed

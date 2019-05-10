@@ -48,6 +48,22 @@ class CogniteAPIError(Exception):
         return "{} | code: {} | X-Request-ID: {}".format(self.message, self.code, self.x_request_id)
 
 
+class CogniteCompoundAPIError(CogniteAPIError):
+    def __init__(self, successful, failed, unknown, unwrap_fn, raised_from: CogniteAPIError):
+        super().__init__(message=raised_from.message, code=raised_from.code, extra=raised_from.extra)
+        self.successful = successful
+        self.failed = failed
+        self.unknown = unknown
+        self.unwrap_fn = unwrap_fn or (lambda x: x)
+
+    def __str__(self):
+        return "The API Failed to process some items.\nSuccessful (2xx): {}\nUnknown (5xx): {}\nFailed (4xx): {}".format(
+            [self.unwrap_fn(f) for f in self.successful],
+            [self.unwrap_fn(f) for f in self.unknown],
+            [self.unwrap_fn(f) for f in self.failed],
+        )
+
+
 class CogniteImportError(Exception):
     """Cognite Import Error
 
@@ -66,53 +82,6 @@ class CogniteImportError(Exception):
 
     def __str__(self):
         return self.message
-
-
-class CogniteAssetPostingError(Exception):
-    """Cognite Asset Posting Error
-
-    Raised if error occurs while posting an asset hierarchy. Some assets may have been succesfully posted, so this
-    exception describes which assets we know have been posted (200), which may have been posted (5xx), and which have
-    not been posted (4xx).
-
-    Args:
-          posted (AssetList): List of Assets which were posted.
-          may_have_been_posted (AssetList): List of Assets which were maybe posted.
-          not_posted (AssetList): List of assets which were not posted.
-    """
-
-    def __init__(self, posted, may_have_been_posted, not_posted):
-        self.posted = posted
-        self.may_have_been_posted = may_have_been_posted
-        self.not_posted = not_posted
-
-    def __str__(self):
-        return "Some assets failed to post.\nSucessfully posted (2xx): {}\nMay have been posted (5xx): {}\nNot posted (4xx): {}".format(
-            [a.ref_id for a in self.posted],
-            [a.ref_id for a in self.may_have_been_posted],
-            [a.ref_id for a in self.not_posted],
-        )
-
-
-class CogniteFileFetchingError(Exception):
-    """Cognite File Fetching Error
-
-    Raised if one or more files failed to download. This exception provides information about which files failed and
-    which did were succesfully downloaded.
-
-    Args:
-        successful (FileMetadataList): List of identifiers of files which were successfully downloaded.
-        failed (FileMetadataList): List of identifiers of files which were not successfully downloaded.
-    """
-
-    def __init__(self, successful, failed):
-        self.successful = successful
-        self.failed = failed
-
-    def __str__(self):
-        return "Some assets failed to post.\nSuccessful: {}\nFailed: {}".format(
-            [f.id for f in self.successful], [f.id for f in self.failed]
-        )
 
 
 class CogniteMissingClientError(Exception):

@@ -17,6 +17,7 @@ from cognite.client._api.three_d import (
     ThreeDRevealRevision,
     ThreeDRevealSectorList,
 )
+from cognite.client.exceptions import CogniteCompoundAPIError
 from tests.utils import jsgz_load
 
 THREE_D_API = CogniteClient().three_d
@@ -268,6 +269,17 @@ class Test3DAssetMappings:
         assert [{"nodeId": 1, "assetId": 1}] == jsgz_load(mock_3d_asset_mappings_response.calls[0].request.body)[
             "items"
         ]
+
+    def test_delete_fails(self, rsps):
+        rsps.add(
+            rsps.POST,
+            THREE_D_API._base_url + "/3d/models/1/revisions/1/mappings/delete",
+            status=500,
+            json={"error": {"message": "Server Error", "code": 500}},
+        )
+        with pytest.raises(CogniteCompoundAPIError) as e:
+            THREE_D_API.asset_mappings.delete(model_id=1, revision_id=1, asset_mapping=[ThreeDAssetMapping(1, 1)])
+        assert e.value.unknown == [ThreeDAssetMapping._load({"assetId": 1, "nodeId": 1})]
 
 
 @pytest.mark.skip

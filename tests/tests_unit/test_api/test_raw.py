@@ -4,6 +4,7 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client._api.raw import Database, DatabaseList, Row, RowList, Table, TableList
+from cognite.client.exceptions import CogniteCompoundAPIError
 from tests.utils import jsgz_load
 
 COGNITE_CLIENT = CogniteClient()
@@ -92,6 +93,17 @@ class TestRawDatabases:
         assert res is None
         assert [{"name": "db1"}] == jsgz_load(mock_raw_db_response.calls[0].request.body)["items"]
 
+    def test_delete_fail(self, rsps):
+        rsps.add(
+            rsps.POST,
+            RAW_API._base_url + "/raw/dbs/delete",
+            status=400,
+            json={"error": {"message": "User Error", "code": 400}},
+        )
+        with pytest.raises(CogniteCompoundAPIError) as e:
+            RAW_API.databases.delete("db1")
+        assert e.value.failed == ["db1"]
+
     def test_get_tables_in_db(self, mock_raw_db_response, mock_raw_table_response):
         db = RAW_API.databases.list()[0]
         tables = db.tables()
@@ -145,6 +157,17 @@ class TestRawTables:
         assert res is None
         assert [{"name": "table1"}] == jsgz_load(mock_raw_table_response.calls[0].request.body)["items"]
 
+    def test_delete_fail(self, rsps):
+        rsps.add(
+            rsps.POST,
+            RAW_API._base_url + "/raw/dbs/db1/tables/delete",
+            status=400,
+            json={"error": {"message": "User Error", "code": 400}},
+        )
+        with pytest.raises(CogniteCompoundAPIError) as e:
+            RAW_API.tables.delete("db1", "table1")
+        assert e.value.failed == ["table1"]
+
     def test_get_rows_in_table(self, mock_raw_table_response, mock_raw_row_response):
         tables = RAW_API.tables.list(db_name="db1")
         rows = tables[0].rows()
@@ -182,6 +205,12 @@ class TestRawRows:
             mock_raw_row_response.calls[0].request.body
         )["items"]
 
+    def test_insert_fail(self, rsps):
+        rsps.add(rsps.POST, RAW_API._base_url + "/raw/dbs/db1/tables/table1/rows", status=400, json={})
+        with pytest.raises(CogniteCompoundAPIError) as e:
+            RAW_API.rows.insert("db1", "table1", {"row1": {"c1": 1}})
+        assert e.value.failed == ["row1"]
+
     def test_list(self, mock_raw_row_response):
         res_list = RAW_API.rows.list(db_name="db1", table_name="table1")
         assert RowList([Row(key="row1", columns={"c1": 1, "c2": "2"})]) == res_list
@@ -203,6 +232,17 @@ class TestRawRows:
         res = RAW_API.rows.delete(db_name="db1", table_name="table1", key=["row1"])
         assert res is None
         assert [{"key": "row1"}] == jsgz_load(mock_raw_row_response.calls[0].request.body)["items"]
+
+    def test_delete_fail(self, rsps):
+        rsps.add(
+            rsps.POST,
+            RAW_API._base_url + "/raw/dbs/db1/tables/table1/rows/delete",
+            status=400,
+            json={"error": {"message": "User Error", "code": 400}},
+        )
+        with pytest.raises(CogniteCompoundAPIError) as e:
+            RAW_API.rows.delete("db1", "table1", "key1")
+        assert e.value.failed == ["key1"]
 
 
 @pytest.mark.dsl

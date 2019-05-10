@@ -81,7 +81,10 @@ class RawDatabasesAPI(APIClient):
         items = [{"name": n} for n in name]
         chunks = utils.split_into_chunks(items, self._DELETE_LIMIT)
         tasks = [{"url_path": self._RESOURCE_PATH + "/delete", "json": {"items": chunk}} for chunk in chunks]
-        utils.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
+        summary = utils.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
+        summary.raise_compound_exception_if_failed_tasks(
+            task_unwrap_fn=lambda task: task["json"]["items"], task_list_element_unwrap_fn=lambda el: el["name"]
+        )
 
     def list(self, limit: int = 25) -> DatabaseList:
         """List databases
@@ -200,7 +203,10 @@ class RawTablesAPI(APIClient):
             }
             for chunk in chunks
         ]
-        utils.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
+        summary = utils.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
+        summary.raise_compound_exception_if_failed_tasks(
+            task_unwrap_fn=lambda task: task["json"]["items"], task_list_element_unwrap_fn=lambda el: el["name"]
+        )
 
     def list(self, db_name: str, limit: int = 25) -> TableList:
         """List tables
@@ -310,7 +316,10 @@ class RawRowsAPI(APIClient):
             }
             for chunk in chunks
         ]
-        utils.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
+        summary = utils.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
+        summary.raise_compound_exception_if_failed_tasks(
+            task_unwrap_fn=lambda task: task["json"]["items"], task_list_element_unwrap_fn=lambda row: row["key"]
+        )
 
     def _process_row_input(self, row: List[Union[List, Dict, Row]]):
         utils.assert_type(row, "row", [list, dict, Row])
@@ -362,7 +371,10 @@ class RawRowsAPI(APIClient):
             )
             for chunk in chunks
         ]
-        utils.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
+        summary = utils.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
+        summary.raise_compound_exception_if_failed_tasks(
+            task_unwrap_fn=lambda task: task["json"]["items"], task_list_element_unwrap_fn=lambda el: el["key"]
+        )
 
     def retrieve(self, db_name: str, table_name: str, key: str) -> Row:
         """Retrieve a single row by key.

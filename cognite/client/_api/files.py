@@ -6,7 +6,6 @@ from typing import Dict, List
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import FileMetadata, FileMetadataFilter, FileMetadataList, FileMetadataUpdate
-from cognite.client.exceptions import CogniteFileFetchingError
 from cognite.client.utils import _utils as utils
 
 
@@ -281,8 +280,9 @@ class FilesAPI(APIClient):
                     file_path = os.path.join(path, file_name)
                     if os.path.isfile(file_path):
                         tasks.append((FileMetadata(name=file_name), file_path))
-            file_metadata_list = utils.execute_tasks_concurrently(self._upload_file_from_path, tasks, self._max_workers)
-            return FileMetadataList(file_metadata_list)
+            tasks_summary = utils.execute_tasks_concurrently(self._upload_file_from_path, tasks, self._max_workers)
+            tasks_summary.raise_compound_exception_if_failed_tasks(task_unwrap_fn=lambda x: x[0].name)
+            return FileMetadataList(tasks_summary.results)
         raise ValueError("path '{}' does not exist".format(path))
 
     def _upload_file_from_path(self, file: FileMetadata, file_path: str):
@@ -360,7 +360,48 @@ class FilesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.files.download(directory="my_directory", id=[1,2,3], external_id=["abc", "def"])
         """
-        _FilesFetcher(self, id, external_id, directory).download_files()
+        all_ids = self._process_ids(ids=id, external_ids=external_id, wrap_ids=True)
+        id_to_metadata = self._get_id_to_metadata_map(all_ids)
+        self._download_files_to_directory(directory, all_ids, id_to_metadata)
+
+    def _get_id_to_metadata_map(self, all_ids):
+        ids = [id["id"] for id in all_ids if "id" in id]
+        external_ids = [id["externalId"] for id in all_ids if "externalId" in id]
+
+        files_metadata = self.retrieve(id=ids, external_id=external_ids)
+
+        id_to_metadata = {}
+        for f in files_metadata:
+            id_to_metadata[f.id] = f
+            id_to_metadata[f.external_id] = f
+
+        return id_to_metadata
+
+    def _download_files_to_directory(self, directory, all_ids, id_to_metadata):
+        tasks = [(directory, id, id_to_metadata) for id in all_ids]
+        tasks_summary = utils.execute_tasks_concurrently(
+            self._process_file_download, tasks, max_workers=self._max_workers
+        )
+        tasks_summary.raise_compound_exception_if_failed_tasks(
+            task_unwrap_fn=lambda task: id_to_metadata[utils.unwrap_identifer(task[1])],
+            str_format_element_fn=lambda metadata: metadata.id,
+        )
+
+    def _process_file_download(self, directory, identifier, id_to_metadata):
+        download_link = self._post(url_path="/files/downloadlink", json={"items": [identifier]}).json()["items"][0][
+            "downloadUrl"
+        ]
+        id = utils.unwrap_identifer(identifier)
+        file_metadata = id_to_metadata[id]
+        file_path = os.path.join(directory, file_metadata.name)
+        self._download_file_to_path(download_link, file_path)
+
+    def _download_file_to_path(self, download_link: str, path: str, chunk_size: int = 2 ** 21):
+        with self._request_session.get(download_link, stream=True) as r:
+            with open(path, "wb") as f:
+                for chunk in r.iter_content(chunk_size=chunk_size):
+                    if chunk:  # filter out keep-alive new chunks
+                        f.write(chunk)
 
     def download_bytes(self, id: int = None, external_id: str = None) -> bytes:
         """Download a file as bytes.
@@ -386,122 +427,3 @@ class FilesAPI(APIClient):
     def _download_file(self, download_link: str) -> bytes:
         res = self._request_session.get(download_link)
         return res.content
-
-
-class _FileFailedToDownload:
-    def __init__(self, file_metadata: FileMetadata, exc: Exception):
-        self.file_metadata = file_metadata
-        self.exc = exc
-
-
-class _FileFetcherWorker(threading.Thread):
-    def __init__(
-        self,
-        client: FilesAPI,
-        directory: str,
-        identifier_to_name: Dict,
-        request_queue: queue.Queue,
-        response_queue: queue.Queue,
-    ):
-        self.client = client
-        self.directory = directory
-        self.identifier_to_metadata = identifier_to_name
-        self.request_queue = request_queue
-        self.response_queue = response_queue
-        self.stop = False
-        super().__init__(daemon=True)
-
-    def run(self):
-        identifier = None
-        try:
-            while not self.stop:
-                try:
-                    identifier = self.request_queue.get(timeout=0.1)
-                except queue.Empty:
-                    continue
-                dl_link = self._get_download_link(identifier)
-                file_metadata = self._get_file_metadata_from_identifier(identifier)
-                file_path = os.path.join(self.directory, file_metadata.name)
-                self._download_file_to_path(dl_link, file_path)
-                self.response_queue.put(file_metadata)
-        except Exception as e:
-            self.response_queue.put(_FileFailedToDownload(self._get_file_metadata_from_identifier(identifier), e))
-
-    def _get_download_link(self, id):
-        return self.client._post(url_path="/files/downloadlink", json={"items": [id]}).json()["items"][0]["downloadUrl"]
-
-    def _get_file_metadata_from_identifier(self, identifier: Dict):
-        if "id" in identifier:
-            return self.identifier_to_metadata[identifier["id"]]
-        if "externalId" in identifier:
-            return self.identifier_to_metadata[identifier["externalId"]]
-
-    def _download_file_to_path(self, download_link: str, path: str, chunk_size: int = 2 ** 21):
-        with self.client._request_session.get(download_link, stream=True) as r:
-            with open(path, "wb") as f:
-                for chunk in r.iter_content(chunk_size=chunk_size):
-                    if chunk:  # filter out keep-alive new chunks
-                        f.write(chunk)
-
-
-class _FilesFetcher:
-    def __init__(self, client: FilesAPI, ids: List[int], external_ids: List[str], directory: str):
-        self.client = client
-        self.all_ids = self.client._process_ids(ids=ids, external_ids=external_ids, wrap_ids=True)
-        self.directory = directory
-        self.request_queue = queue.Queue()
-        self.response_queue = queue.Queue()
-        self.identifier_to_name = self._get_id_to_metadata_map(self.all_ids)
-        self.completed_files = []
-        self.failed_files = []
-
-        self.exception = None
-
-    def download_files(self):
-        workers = []
-        for _ in range(self.client._max_workers):
-            worker = _FileFetcherWorker(
-                self.client, self.directory, self.identifier_to_name, self.request_queue, self.response_queue
-            )
-            workers.append(worker)
-            worker.start()
-
-        self._run()
-
-        for worker in workers:
-            worker.stop = True
-
-        if self.exception:
-            raise CogniteFileFetchingError(
-                successful=self.completed_files, failed=self.failed_files
-            ) from self.exception
-
-    def _run(self):
-        self._populate_queue()
-        while self._files_remaining():
-            res = self.response_queue.get()
-            if isinstance(res, _FileFailedToDownload):
-                self.exception = res.exc
-                self.failed_files.append(res.file_metadata)
-            else:
-                self.completed_files.append(res)
-
-    def _populate_queue(self):
-        for identifier in self.all_ids:
-            self.request_queue.put(identifier)
-
-    def _files_remaining(self) -> bool:
-        return len(self.completed_files) + len(self.failed_files) < len(self.all_ids)
-
-    def _get_id_to_metadata_map(self, all_ids):
-        ids = [id["id"] for id in all_ids if "id" in id]
-        external_ids = [id["externalId"] for id in all_ids if "externalId" in id]
-
-        files_metadata = self.client.retrieve(id=ids, external_id=external_ids)
-
-        id_to_metadata = {}
-        for f in files_metadata:
-            id_to_metadata[f.id] = f
-            id_to_metadata[f.external_id] = f
-
-        return id_to_metadata

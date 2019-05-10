@@ -8,7 +8,7 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client._api.assets import Asset, AssetList, AssetUpdate, _AssetPoster, _AssetPosterWorker
-from cognite.client.exceptions import CogniteAssetPostingError
+from cognite.client.exceptions import CogniteCompoundAPIError
 from tests.utils import jsgz_load, set_request_limit
 
 COGNITE_CLIENT = CogniteClient()
@@ -318,20 +318,20 @@ class TestAssetPoster:
 
     def test_post_with_failures(self, mock_post_asset_hierarchy_with_failures):
         assets = [
-            Asset(name="200", ref_id="0"),
-            Asset(name="200", ref_id="01", parent_ref_id="0"),
-            Asset(name="400", ref_id="02", parent_ref_id="0"),
-            Asset(name="200", ref_id="021", parent_ref_id="02"),
-            Asset(name="200", ref_id="0211", parent_ref_id="021"),
-            Asset(name="500", ref_id="03", parent_ref_id="0"),
-            Asset(name="200", ref_id="031", parent_ref_id="03"),
+            Asset(name="200", ref_id="0", external_id="0"),
+            Asset(name="200", ref_id="01", parent_ref_id="0", external_id="01"),
+            Asset(name="400", ref_id="02", parent_ref_id="0", external_id="02"),
+            Asset(name="200", ref_id="021", parent_ref_id="02", external_id="021"),
+            Asset(name="200", ref_id="0211", parent_ref_id="021", external_id="0211"),
+            Asset(name="500", ref_id="03", parent_ref_id="0", external_id="03"),
+            Asset(name="200", ref_id="031", parent_ref_id="03", external_id="031"),
         ]
-        with pytest.raises(CogniteAssetPostingError, match="Some assets failed to post") as e:
+        with pytest.raises(CogniteCompoundAPIError) as e:
             ASSETS_API.create(assets)
 
-        assert {a.ref_id for a in e.value.may_have_been_posted} == {"03"}
-        assert {a.ref_id for a in e.value.not_posted} == {"02", "021", "0211", "031"}
-        assert {a.ref_id for a in e.value.posted} == {"0", "01"}
+        assert {a.ref_id for a in e.value.unknown} == {"03"}
+        assert {a.ref_id for a in e.value.failed} == {"02", "021", "0211", "031"}
+        assert {a.ref_id for a in e.value.successful} == {"0", "01"}
 
 
 @pytest.fixture

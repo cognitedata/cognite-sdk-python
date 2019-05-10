@@ -592,14 +592,15 @@ class _DatapointsFetcher:
         return dps_list
 
     def _fetch_datapoints(self, dps_queries: List[_DPQuery]):
-        res_list = utils.execute_tasks_concurrently(
+        tasks_summary = utils.execute_tasks_concurrently(
             self._fetch_dps_initial_and_return_remaining_queries,
             [(q,) for q in dps_queries],
             max_workers=self.client._max_workers,
         )
-        remaining_queries = []
-        for queries in res_list:
-            remaining_queries.extend(queries)
+        if tasks_summary.exceptions:
+            raise tasks_summary.exceptions[0]
+
+        remaining_queries = tasks_summary.joined_results()
         if len(remaining_queries) > 0:
             self._fetch_datapoints_for_remaining_queries(remaining_queries)
 
@@ -628,9 +629,12 @@ class _DatapointsFetcher:
         return queries
 
     def _fetch_datapoints_for_remaining_queries(self, queries: List[_DPQuery]):
-        res_list = utils.execute_tasks_concurrently(
+        tasks_summary = utils.execute_tasks_concurrently(
             self._get_datapoints_with_paging, [q.as_tuple() for q in queries], max_workers=self.client._max_workers
         )
+        if tasks_summary.exceptions:
+            raise tasks_summary.exceptions[0]
+        res_list = tasks_summary.results
         for i, res in enumerate(res_list):
             queries[i].dps_result = res
             self._store_finalized_query(queries[i])

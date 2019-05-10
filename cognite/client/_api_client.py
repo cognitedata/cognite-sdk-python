@@ -177,10 +177,12 @@ class APIClient:
             {"url_path": resource_path + "/byids", "json": {"items": id_chunk}, "headers": headers}
             for id_chunk in id_chunks
         ]
-        res_list = utils.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
-        retrieved_items = []
-        for res in res_list:
-            retrieved_items.extend(res.json()["items"])
+        tasks_summary = utils.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
+
+        if tasks_summary.exceptions:
+            raise tasks_summary.exceptions[0]
+
+        retrieved_items = tasks_summary.joined_results(lambda res: res.json()["items"])
 
         if self._is_single_identifier(ids, external_ids):
             return cls._RESOURCE._load(retrieved_items[0], cognite_client=self._cognite_client)
@@ -290,11 +292,28 @@ class APIClient:
             items_split.append({"items": items_chunk})
 
         tasks = [(resource_path, task_items, params, headers) for task_items in items_split]
-        results = utils.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
+        summary = utils.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
 
-        created_resources = []
-        for res in results:
-            created_resources.extend(res.json()["items"])
+        def unwrap_element(el):
+            if isinstance(el, dict):
+                return cls._RESOURCE._load(el)
+            else:
+                return el
+
+        def str_format_element(el):
+            if isinstance(el, CogniteResource):
+                dumped = el.dump()
+                if "external_id" in dumped:
+                    return dumped["external_id"]
+                return dumped
+            return el
+
+        summary.raise_compound_exception_if_failed_tasks(
+            task_unwrap_fn=lambda task: task[1]["items"],
+            task_list_element_unwrap_fn=unwrap_element,
+            str_format_element_fn=str_format_element,
+        )
+        created_resources = summary.joined_results(lambda res: res.json()["items"])
 
         if single_item:
             return cls._RESOURCE._load(created_resources[0], cognite_client=self._cognite_client)
@@ -316,7 +335,10 @@ class APIClient:
             {"url_path": resource_path + "/delete", "json": {"items": chunk}, "params": params, "headers": headers}
             for chunk in id_chunks
         ]
-        utils.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
+        summary = utils.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
+        summary.raise_compound_exception_if_failed_tasks(
+            task_unwrap_fn=lambda task: task["json"]["items"], task_list_element_unwrap_fn=lambda el: el
+        )
 
     def _update_multiple(
         self,
@@ -346,11 +368,13 @@ class APIClient:
             {"url_path": resource_path + "/update", "json": {"items": chunk}, "params": params, "headers": headers}
             for chunk in patch_object_chunks
         ]
-        res_list = utils.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
 
-        updated_items = []
-        for res in res_list:
-            updated_items.extend(res.json()["items"])
+        tasks_summary = utils.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
+        tasks_summary.raise_compound_exception_if_failed_tasks(
+            task_unwrap_fn=lambda task: task["json"]["items"],
+            task_list_element_unwrap_fn=lambda el: utils.unwrap_identifer(el),
+        )
+        updated_items = tasks_summary.joined_results(lambda res: res.json()["items"])
 
         if single_item:
             return cls._RESOURCE._load(updated_items[0], cognite_client=self._cognite_client)

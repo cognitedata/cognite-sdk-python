@@ -20,7 +20,7 @@ from typing import Any, Callable, Dict, List, Tuple, Union
 from urllib.parse import quote
 
 import cognite.client
-from cognite.client.exceptions import CogniteImportError
+from cognite.client.exceptions import CogniteAPIError, CogniteCompoundAPIError, CogniteImportError
 
 _unit_in_ms_without_week = {"s": 1000, "m": 60000, "h": 3600000, "d": 86400000}
 _unit_in_ms = {**_unit_in_ms_without_week, "w": 604800000}
@@ -139,6 +139,55 @@ def json_dump_default(x):
     return x
 
 
+class TasksSummary:
+    def __init__(self, successful_tasks, unknown_tasks, failed_tasks, results, exceptions):
+        self.successful_tasks = successful_tasks
+        self.unknown_tasks = unknown_tasks
+        self.failed_tasks = failed_tasks
+        self.results = results
+        self.exceptions = exceptions
+
+    def joined_results(self, unwrap_fn: Callable = None):
+        unwrap_fn = unwrap_fn or (lambda x: x)
+        joined_results = []
+        for result in self.results:
+            unwrapped = unwrap_fn(result)
+            if isinstance(unwrapped, list):
+                joined_results.extend(unwrapped)
+            else:
+                joined_results.append(unwrapped)
+        return joined_results
+
+    def raise_compound_exception_if_failed_tasks(
+        self,
+        task_unwrap_fn: Callable = None,
+        task_list_element_unwrap_fn: Callable = None,
+        str_format_element_fn: Callable = None,
+    ):
+        if self.exceptions:
+            unwrap_fn = task_unwrap_fn or (lambda x: x)
+            if task_list_element_unwrap_fn is not None:
+                el_unwrap = task_list_element_unwrap_fn
+                successful = []
+                for t in self.successful_tasks:
+                    successful.extend([el_unwrap(el) for el in unwrap_fn(t)])
+                unknown = []
+                for t in self.unknown_tasks:
+                    unknown.extend([el_unwrap(el) for el in unwrap_fn(t)])
+                failed = []
+                for t in self.failed_tasks:
+                    failed.extend([el_unwrap(el) for el in unwrap_fn(t)])
+            else:
+                successful = [unwrap_fn(t) for t in self.successful_tasks]
+                unknown = [unwrap_fn(t) for t in self.unknown_tasks]
+                failed = [unwrap_fn(t) for t in self.failed_tasks]
+            if isinstance(self.exceptions[0], CogniteAPIError):
+                raise CogniteCompoundAPIError(
+                    successful, failed, unknown, str_format_element_fn, self.exceptions[0]
+                ) from self.exceptions[0]
+            raise self.exceptions[0]
+
+
 def execute_tasks_concurrently(func: Callable, tasks: Union[List[Tuple], List[Dict]], max_workers: int):
     assert max_workers > 0, "Number of workers should be >= 1, was {}".format(max_workers)
     with ThreadPoolExecutor(max_workers) as p:
@@ -148,7 +197,28 @@ def execute_tasks_concurrently(func: Callable, tasks: Union[List[Tuple], List[Di
                 futures.append(p.submit(func, **task))
             elif isinstance(task, tuple):
                 futures.append(p.submit(func, *task))
-        return [future.result() for future in futures]
+
+        successful_tasks = []
+        failed_tasks = []
+        unknown_result_tasks = []
+        results = []
+        exceptions = []
+        for i, f in enumerate(futures):
+            try:
+                res = f.result()
+                successful_tasks.append(tasks[i])
+                results.append(res)
+            except Exception as e:
+                exceptions.append(e)
+                if isinstance(e, CogniteAPIError):
+                    if e.code < 500:
+                        failed_tasks.append(tasks[i])
+                    else:
+                        unknown_result_tasks.append(tasks[i])
+                else:
+                    failed_tasks.append(tasks[i])
+
+        return TasksSummary(successful_tasks, unknown_result_tasks, failed_tasks, results, exceptions)
 
 
 def assert_exactly_one_of_id_or_external_id(id, external_id):
@@ -177,6 +247,14 @@ def assert_at_least_one_of_id_or_external_id(id, external_id):
         return {"id": id}
     elif has_external_id:
         return {"external_id": external_id}
+
+
+def unwrap_identifer(identifier: Dict):
+    if "externalId" in identifier:
+        return identifier["externalId"]
+    if "id" in identifier:
+        return identifier["id"]
+    raise ValueError("{} does not contain 'id' or 'externalId'".format(identifier))
 
 
 def assert_timestamp_not_in_jan_in_1970(timestamp: Union[int, float, str, datetime]):
