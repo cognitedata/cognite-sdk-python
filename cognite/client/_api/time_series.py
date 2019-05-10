@@ -58,14 +58,16 @@ class TimeSeriesAPI(APIClient):
         """
         return self._retrieve_multiple(ids=id, external_ids=external_id, wrap_ids=True)
 
-    def list(self, include_metadata: bool = False, asset_id: int = None, limit: int = 25) -> TimeSeriesList:
+    def list(
+        self, include_metadata: bool = False, asset_id: Union[int, List[int]] = None, limit: int = 25
+    ) -> TimeSeriesList:
         """Iterate over time series
 
         Fetches time series as they are iterated over, so you keep a limited number of objects in memory.
 
         Args:
             include_metadata (bool, optional): Whether or not to include metadata
-            asset_id (int, optional): List time series related to this asset.
+            asset_id (Union[int, List[int]), optional): List time series related to these assets.
             limit (int, optional): Max number of time series to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all items.
 
@@ -94,7 +96,9 @@ class TimeSeriesAPI(APIClient):
                 >>> for ts_list in c.time_series(chunk_size=2500):
                 ...     ts_list # do something with the time_series
         """
-        filter = {"includeMetadata": include_metadata, "assetId": asset_id}
+        if isinstance(asset_id, int):
+            asset_id = [asset_id]
+        filter = {"includeMetadata": include_metadata, "assetIds": str(asset_id)}
         return self._list(method="GET", filter=filter, limit=limit)
 
     def create(self, time_series: Union[TimeSeries, List[TimeSeries]]) -> Union[TimeSeries, TimeSeriesList]:
