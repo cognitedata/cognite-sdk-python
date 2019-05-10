@@ -49,18 +49,30 @@ class CogniteAPIError(Exception):
 
 
 class CogniteCompoundAPIError(CogniteAPIError):
+    """Cognite Compound API Error
+
+    Raised if one or more of concurrent requests fails. Some items may have been succesfully processed by the API, so this
+    exception describes which assets we know have been processed (2xx), which may have been processed (5xx), and which have
+    not been proccessed (4xx).
+    
+    Args:
+        successful (List): List of items which were successfully proccessed.
+        failed (List): List of items which failed.
+        unknown (List): List of items which may or may not have been successfully processed.
+    """
+
     def __init__(self, successful, failed, unknown, unwrap_fn, raised_from: CogniteAPIError):
         super().__init__(message=raised_from.message, code=raised_from.code, extra=raised_from.extra)
         self.successful = successful
         self.failed = failed
         self.unknown = unknown
-        self.unwrap_fn = unwrap_fn or (lambda x: x)
+        self._unwrap_fn = unwrap_fn or (lambda x: x)
 
     def __str__(self):
         return "The API Failed to process some items.\nSuccessful (2xx): {}\nUnknown (5xx): {}\nFailed (4xx): {}".format(
-            [self.unwrap_fn(f) for f in self.successful],
-            [self.unwrap_fn(f) for f in self.unknown],
-            [self.unwrap_fn(f) for f in self.failed],
+            [self._unwrap_fn(f) for f in self.successful],
+            [self._unwrap_fn(f) for f in self.unknown],
+            [self._unwrap_fn(f) for f in self.failed],
         )
 
 

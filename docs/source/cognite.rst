@@ -105,13 +105,13 @@ Wrap the .create() call in a try-except to get information if posting the assets
 
 .. code::
 
-    >>> from cognite.client.exceptions import CogniteAssetPostingError
+    >>> from cognite.client.exceptions import CogniteCompoundAPIError
     >>> try:
     ...     c.create([root, child, descendant])
-    >>> except CogniteAssetPostingError as e:
-    ...     assets_posted = e.posted_assets
-    ...     assets_may_have_been_posted = e.may_have_been_posted
-    ...     assets_not_posted = e.not_posted
+    >>> except CogniteCompoundAPIError as e:
+    ...     assets_posted = e.successfull
+    ...     assets_may_have_been_posted = e.unknown
+    ...     assets_not_posted = e.failed
 
 Settings
 ========
@@ -645,17 +645,13 @@ CogniteAPIError
 ^^^^^^^^^^^^^^^
 .. autoexception:: cognite.client.exceptions.CogniteAPIError
 
+CogniteCompoundAPIError
+^^^^^^^^^^^^^^^^^^^^^^^
+.. autoexception:: cognite.client.exceptions.CogniteCompoundAPIError
+
 CogniteImportError
 ^^^^^^^^^^^^^^^^^^
 .. autoexception:: cognite.client.exceptions.CogniteImportError
-
-CogniteAssetPostingError
-^^^^^^^^^^^^^^^^^^^^^^^^
-.. autoexception:: cognite.client.exceptions.CogniteAssetPostingError
-
-CogniteFileFetchingError
-^^^^^^^^^^^^^^^^^^^^^^^^
-.. autoexception:: cognite.client.exceptions.CogniteFileFetchingError
 
 CogniteMissingClientError
 ^^^^^^^^^^^^^^^^^^^^^^^^^
