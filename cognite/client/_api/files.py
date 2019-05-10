@@ -16,12 +16,17 @@ class FilesAPI(APIClient):
     def __call__(
         self,
         chunk_size: int = None,
+        name: str = None,
+        mime_type: str = None,
         metadata: Dict[str, Any] = None,
         asset_ids: List[int] = None,
+        asset_subtrees: List[int] = None,
         source: str = None,
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
+        uploaded_time: Dict[str, Any] = None,
         external_id_prefix: str = None,
+        uploaded: bool = None,
     ) -> Generator[Union[FileMetadata, FileMetadataList], None, None]:
         """Iterate over files
 
@@ -29,19 +34,33 @@ class FilesAPI(APIClient):
 
         Args:
             chunk_size (int, optional): Number of files to return in each chunk. Defaults to yielding one event a time.
-            metadata (Dict[str, Any]): Customizable extra data about the event. String key -> String value.
-            asset_ids (List[int]): Asset IDs of related equipments that this event relates to.
+            name (str): Name of the file.
+            mime_type (str): File type. E.g. text/plain, application/pdf, ..
+            metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
+            asset_ids (List[int]): Only include files that reference these specific asset IDs.
+            asset_subtrees (List[int]): Only include files that reference these asset Ids or any  sub-nodes of the specified asset Ids.
             source (str): The source of this event.
             created_time (Dict[str, Any]): Range between two timestamps
             last_updated_time (Dict[str, Any]): Range between two timestamps
-            external_id_prefix (str): External Id provided by client. Should be unique within the project
-
+            uploaded_time (Dict[str, Any]): Range between two timestamps
+            external_id_prefix (str): External Id provided by client. Should be unique within the project.
+            uploaded (bool): Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
 
         Yields:
             Union[FileMetadata, FileMetadataList]: yields FileMetadata one by one if chunk is not specified, else FileMetadataList objects.
         """
         filter = FileMetadataFilter(
-            metadata, asset_ids, source, created_time, last_updated_time, external_id_prefix
+            name,
+            mime_type,
+            metadata,
+            asset_ids,
+            asset_subtrees,
+            source,
+            created_time,
+            last_updated_time,
+            uploaded_time,
+            external_id_prefix,
+            uploaded,
         ).dump(camel_case=True)
         return self._list_generator(method="POST", chunk_size=chunk_size, filter=filter)
 
@@ -85,23 +104,33 @@ class FilesAPI(APIClient):
 
     def list(
         self,
+        name: str = None,
+        mime_type: str = None,
         metadata: Dict[str, Any] = None,
         asset_ids: List[int] = None,
+        asset_subtrees: List[int] = None,
         source: str = None,
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
+        uploaded_time: Dict[str, Any] = None,
         external_id_prefix: str = None,
+        uploaded: bool = None,
         limit: int = 25,
     ) -> FileMetadataList:
         """List files
 
         Args:
-            metadata (Dict[str, Any]): Customizable extra data about the event. String key -> String value.
-            asset_ids (List[int]): Asset IDs of related equipments that this event relates to.
+            name (str): Name of the file.
+            mime_type (str): File type. E.g. text/plain, application/pdf, ..
+            metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
+            asset_ids (List[int]): Only include files that reference these specific asset IDs.
+            asset_subtrees (List[int]): Only include files that reference these asset Ids or any  sub-nodes of the specified asset Ids.
             source (str): The source of this event.
             created_time (Dict[str, Any]): Range between two timestamps
             last_updated_time (Dict[str, Any]): Range between two timestamps
-            external_id_prefix (str): External Id provided by client. Should be unique within the project
+            uploaded_time (Dict[str, Any]): Range between two timestamps
+            external_id_prefix (str): External Id provided by client. Should be unique within the project.
+            uploaded (bool): Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
             limit (int, optional): Max number of files to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all items.
 
@@ -131,7 +160,17 @@ class FilesAPI(APIClient):
                 ...     file_list # do something with the files
         """
         filter = FileMetadataFilter(
-            metadata, asset_ids, source, created_time, last_updated_time, external_id_prefix
+            name,
+            mime_type,
+            metadata,
+            asset_ids,
+            asset_subtrees,
+            source,
+            created_time,
+            last_updated_time,
+            uploaded_time,
+            external_id_prefix,
+            uploaded,
         ).dump(camel_case=True)
         return self._list(method="POST", limit=limit, filter=filter)
 
