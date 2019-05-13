@@ -98,7 +98,9 @@ class TimeSeriesAPI(APIClient):
         """
         if isinstance(asset_id, int):
             asset_id = [asset_id]
-        filter = {"includeMetadata": include_metadata, "assetIds": str(asset_id)}
+        if asset_id is not None:
+            asset_id = str(asset_id)
+        filter = {"includeMetadata": include_metadata, "assetIds": asset_id}
         return self._list(method="GET", filter=filter, limit=limit)
 
     def create(self, time_series: Union[TimeSeries, List[TimeSeries]]) -> Union[TimeSeries, TimeSeriesList]:
