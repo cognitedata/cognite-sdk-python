@@ -14,7 +14,9 @@ from cognite.client._api.assets import AssetList
 from cognite.client._api.files import FileMetadataList
 from cognite.client._api.time_series import TimeSeriesList
 from cognite.client.data_classes import Asset, Event, FileMetadata, TimeSeries
+from cognite.client.exceptions import CogniteAPIKeyError
 from cognite.client.utils._utils import DebugLogFormatter
+from tests.utils import BASE_URL
 
 
 @pytest.fixture
@@ -56,6 +58,16 @@ class TestCogniteClient:
 
     def test_no_api_key_set(self, unset_env_api_key):
         with pytest.raises(ValueError, match="No API Key has been specified"):
+            CogniteClient()
+
+    def test_invalid_api_key(self, rsps):
+        rsps.add(
+            rsps.GET,
+            BASE_URL + "/login/status",
+            status=200,
+            json={"data": {"project": "", "loggedIn": False, "user": "", "projectId": -1}},
+        )
+        with pytest.raises(CogniteAPIKeyError):
             CogniteClient()
 
     def assert_config_is_correct(self, client, base_url, max_workers, timeout):

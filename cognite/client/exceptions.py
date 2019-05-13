@@ -102,3 +102,13 @@ class CogniteMissingClientError(Exception):
 
     def __str__(self):
         return "A CogniteClient has not been set on this object. Pass it in the constructor to use it."
+
+
+class CogniteAPIKeyError(Exception):
+    """Cognite API Key Error.
+
+    Raised if an invalid API key has been used to authenticate.
+    """
+
+    def __str__(self):
+        return "Invalid API key."

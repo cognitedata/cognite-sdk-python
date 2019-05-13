@@ -14,6 +14,7 @@ from cognite.client._api.raw import RawAPI
 from cognite.client._api.three_d import ThreeDAPI
 from cognite.client._api.time_series import TimeSeriesAPI
 from cognite.client._api_client import APIClient
+from cognite.client.exceptions import CogniteAPIKeyError
 from cognite.client.utils._utils import DebugLogFormatter
 
 DEFAULT_BASE_URL = "https://api.cognitedata.com"
@@ -82,10 +83,14 @@ class CogniteClient:
         )
 
         if self.project is None:
-            self.project = self.login.status().project
-            warnings.warn(
-                "Authenticated towards project '{}'. Specify project to suppress warning.".format(self.project)
-            )
+            login_status = self.login.status()
+            if login_status.logged_in:
+                self.project = self.login.status().project
+                warnings.warn(
+                    "Authenticated towards project '{}'. Specify project to suppress warning.".format(self.project)
+                )
+            else:
+                raise CogniteAPIKeyError
 
         self.assets = AssetsAPI(
             version=__api_version,

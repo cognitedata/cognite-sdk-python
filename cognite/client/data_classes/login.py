@@ -28,5 +28,5 @@ class LoginStatus(CogniteResponse):
             project=data["project"],
             logged_in=data["loggedIn"],
             project_id=data["projectId"],
-            api_key_id=data["apiKeyId"],
+            api_key_id=data.get("apiKeyId"),
         )

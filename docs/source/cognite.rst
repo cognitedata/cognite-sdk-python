@@ -645,6 +645,10 @@ CogniteAPIError
 ^^^^^^^^^^^^^^^
 .. autoexception:: cognite.client.exceptions.CogniteAPIError
 
+CogniteAPIKeyError
+^^^^^^^^^^^^^^^^^^
+.. autoexception:: cognite.client.exceptions.CogniteAPIKeyError
+
 CogniteImportError
 ^^^^^^^^^^^^^^^^^^
 .. autoexception:: cognite.client.exceptions.CogniteImportError
