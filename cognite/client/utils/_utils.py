@@ -8,6 +8,7 @@ import functools
 import heapq
 import importlib
 import logging
+import numbers
 import platform
 import random
 import re
@@ -134,11 +135,8 @@ def convert_all_keys_to_camel_case(d: Dict):
 
 
 def json_dump_default(x):
-    try:
-        if isinstance(x, local_import("numpy").integer):
-            return int(x)
-    except CogniteImportError:
-        pass
+    if isinstance(x, numbers.Integral):
+        return int(x)
     if isinstance(x, Decimal):
         return float(x)
     if hasattr(x, "__dict__"):

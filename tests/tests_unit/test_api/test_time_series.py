@@ -5,10 +5,9 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes import TimeSeries, TimeSeriesFilter, TimeSeriesList, TimeSeriesUpdate
-from cognite.client.utils import _utils as utils
 from tests.utils import jsgz_load
 
-COGNITE_CLIENT = CogniteClient(debug=True)
+COGNITE_CLIENT = CogniteClient()
 TS_API = COGNITE_CLIENT.time_series
 
 
@@ -54,6 +53,17 @@ class TestTimeSeries:
     def test_list(self, mock_ts_response):
         res = TS_API.list()
         assert mock_ts_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
+
+    @pytest.mark.dsl
+    def test_list_with_asset_id(self, mock_ts_response):
+        import numpy
+
+        res = TS_API.list(asset_id=numpy.int64(1))
+        res = TS_API.list(asset_id=1)
+        res = TS_API.list(asset_id=[1])
+        res = TS_API.list(asset_id=[numpy.int64(1)])
+        for i in range(4):
+            assert "assetIds=%5B1%5D" in mock_ts_response.calls[i].request.url
 
     def test_create_single(self, mock_ts_response):
         res = TS_API.create(TimeSeries(external_id="1", name="blabla"))

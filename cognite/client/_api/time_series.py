@@ -1,3 +1,4 @@
+import numbers
 from typing import *
 
 from cognite.client._api_client import APIClient
@@ -96,7 +97,7 @@ class TimeSeriesAPI(APIClient):
                 >>> for ts_list in c.time_series(chunk_size=2500):
                 ...     ts_list # do something with the time_series
         """
-        if isinstance(asset_id, int):
+        if isinstance(asset_id, numbers.Integral):
             asset_id = [asset_id]
         if asset_id is not None:
             asset_id = str(asset_id)
