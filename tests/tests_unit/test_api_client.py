@@ -6,7 +6,7 @@ import pytest
 from cognite.client import CogniteClient
 from cognite.client._api_client import APIClient
 from cognite.client._base import *
-from cognite.client.exceptions import CogniteAPIError, CogniteCompoundAPIError
+from cognite.client.exceptions import CogniteAPIError
 from tests.utils import jsgz_load, set_request_limit
 
 BASE_URL = "http://localtest.com/api/1.0/projects/test-project"
@@ -408,7 +408,7 @@ class TestStandardCreate:
 
         rsps.add_callback(rsps.POST, BASE_URL + URL_PATH, callback=callback, content_type="application/json")
         with set_request_limit(API_CLIENT, 1):
-            with pytest.raises(CogniteCompoundAPIError) as e:
+            with pytest.raises(CogniteAPIError) as e:
                 API_CLIENT._create_multiple(
                     cls=SomeResourceList,
                     resource_path=URL_PATH,
@@ -469,7 +469,7 @@ class TestStandardDelete:
 
     def test_standard_delete_multiple_fail_4xx(self, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH + "/delete", status=400, json={"error": {"message": "Client Error"}})
-        with pytest.raises(CogniteCompoundAPIError) as e:
+        with pytest.raises(CogniteAPIError) as e:
             API_CLIENT._delete_multiple(resource_path=URL_PATH, wrap_ids=False, ids=[1, 2])
         assert 400 == e.value.code
         assert "Client Error" == e.value.message
@@ -477,7 +477,7 @@ class TestStandardDelete:
 
     def test_standard_delete_multiple_fail_5xx(self, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH + "/delete", status=500, json={"error": {"message": "Server Error"}})
-        with pytest.raises(CogniteCompoundAPIError) as e:
+        with pytest.raises(CogniteAPIError) as e:
             API_CLIENT._delete_multiple(resource_path=URL_PATH, wrap_ids=False, ids=[1, 2])
         assert 500 == e.value.code
         assert "Server Error" == e.value.message
@@ -563,7 +563,7 @@ class TestStandardUpdate:
 
     def test_standard_update_fail_4xx(self, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH + "/update", status=400, json={"error": {"message": "Client Error"}})
-        with pytest.raises(CogniteCompoundAPIError) as e:
+        with pytest.raises(CogniteAPIError) as e:
             API_CLIENT._update_multiple(
                 cls=SomeResourceList,
                 resource_path=URL_PATH,
@@ -575,7 +575,7 @@ class TestStandardUpdate:
 
     def test_standard_update_fail_5xx(self, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH + "/update", status=500, json={"error": {"message": "Server Error"}})
-        with pytest.raises(CogniteCompoundAPIError) as e:
+        with pytest.raises(CogniteAPIError) as e:
             API_CLIENT._update_multiple(
                 cls=SomeResourceList,
                 resource_path=URL_PATH,

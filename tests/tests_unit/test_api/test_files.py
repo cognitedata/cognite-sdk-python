@@ -8,7 +8,7 @@ import pytest
 from cognite.client import CogniteClient
 from cognite.client._api.files import FileMetadata, FileMetadataList, FileMetadataUpdate
 from cognite.client.data_classes import FileMetadataFilter
-from cognite.client.exceptions import CogniteCompoundAPIError
+from cognite.client.exceptions import CogniteAPIError
 from tests.utils import jsgz_load, set_request_limit
 
 FILES_API = CogniteClient(max_workers=1).files
@@ -235,7 +235,7 @@ class TestFilesAPI:
     def test_upload_from_directory_fails(self, rsps):
         rsps.add(rsps.POST, FILES_API._base_url + "/files/initupload", status=400, json={})
         path = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
-        with pytest.raises(CogniteCompoundAPIError) as e:
+        with pytest.raises(CogniteAPIError) as e:
             FILES_API.upload(path=path)
         assert "file_for_test_upload_1.txt" in e.value.failed
         assert "file_for_test_upload_2.txt" in e.value.failed
@@ -285,7 +285,7 @@ class TestFilesAPI:
 
     def test_download_one_file_fails(self, mock_file_download_response_one_fails):
         with TemporaryDirectory() as dir:
-            with pytest.raises(CogniteCompoundAPIError) as e:
+            with pytest.raises(CogniteAPIError) as e:
                 FILES_API.download(directory=dir, id=[1], external_id="fail")
             assert [FileMetadata(id=1, name="file1", external_id="success")] == e.value.successful
             assert [FileMetadata(id=2, name="file2", external_id="fail")] == e.value.failed

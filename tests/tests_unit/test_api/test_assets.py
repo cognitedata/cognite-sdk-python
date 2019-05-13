@@ -9,7 +9,7 @@ import pytest
 from cognite.client import CogniteClient
 from cognite.client._api.assets import Asset, AssetList, AssetUpdate, _AssetPoster, _AssetPosterWorker
 from cognite.client.data_classes import AssetFilter
-from cognite.client.exceptions import CogniteCompoundAPIError
+from cognite.client.exceptions import CogniteAPIError
 from tests.utils import jsgz_load, set_request_limit
 
 COGNITE_CLIENT = CogniteClient()
@@ -340,7 +340,7 @@ class TestAssetPoster:
             Asset(name="500", ref_id="03", parent_ref_id="0", external_id="03"),
             Asset(name="200", ref_id="031", parent_ref_id="03", external_id="031"),
         ]
-        with pytest.raises(CogniteCompoundAPIError) as e:
+        with pytest.raises(CogniteAPIError) as e:
             ASSETS_API.create(assets)
 
         assert {a.ref_id for a in e.value.unknown} == {"03"}

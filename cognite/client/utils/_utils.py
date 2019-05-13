@@ -20,7 +20,7 @@ from typing import Any, Callable, Dict, List, Tuple, Union
 from urllib.parse import quote
 
 import cognite.client
-from cognite.client.exceptions import CogniteAPIError, CogniteCompoundAPIError, CogniteImportError
+from cognite.client.exceptions import CogniteAPIError, CogniteImportError
 
 _unit_in_ms_without_week = {"s": 1000, "m": 60000, "h": 3600000, "d": 86400000}
 _unit_in_ms = {**_unit_in_ms_without_week, "w": 604800000}
@@ -189,9 +189,17 @@ class TasksSummary:
                 unknown = [unwrap_fn(t) for t in self.unknown_tasks]
                 failed = [unwrap_fn(t) for t in self.failed_tasks]
             if isinstance(self.exceptions[0], CogniteAPIError):
-                raise CogniteCompoundAPIError(
-                    successful, failed, unknown, str_format_element_fn, self.exceptions[0]
-                ) from self.exceptions[0]
+                exc = self.exceptions[0]
+                raise CogniteAPIError(
+                    exc.message,
+                    exc.code,
+                    exc.x_request_id,
+                    exc.extra,
+                    successful,
+                    failed,
+                    unknown,
+                    str_format_element_fn,
+                )
             raise self.exceptions[0]
 
 

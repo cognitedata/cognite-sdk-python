@@ -4,7 +4,7 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client._api.raw import Database, DatabaseList, Row, RowList, Table, TableList
-from cognite.client.exceptions import CogniteCompoundAPIError
+from cognite.client.exceptions import CogniteAPIError
 from tests.utils import jsgz_load
 
 COGNITE_CLIENT = CogniteClient()
@@ -100,7 +100,7 @@ class TestRawDatabases:
             status=400,
             json={"error": {"message": "User Error", "code": 400}},
         )
-        with pytest.raises(CogniteCompoundAPIError) as e:
+        with pytest.raises(CogniteAPIError) as e:
             RAW_API.databases.delete("db1")
         assert e.value.failed == ["db1"]
 
@@ -164,7 +164,7 @@ class TestRawTables:
             status=400,
             json={"error": {"message": "User Error", "code": 400}},
         )
-        with pytest.raises(CogniteCompoundAPIError) as e:
+        with pytest.raises(CogniteAPIError) as e:
             RAW_API.tables.delete("db1", "table1")
         assert e.value.failed == ["table1"]
 
@@ -207,7 +207,7 @@ class TestRawRows:
 
     def test_insert_fail(self, rsps):
         rsps.add(rsps.POST, RAW_API._base_url + "/raw/dbs/db1/tables/table1/rows", status=400, json={})
-        with pytest.raises(CogniteCompoundAPIError) as e:
+        with pytest.raises(CogniteAPIError) as e:
             RAW_API.rows.insert("db1", "table1", {"row1": {"c1": 1}})
         assert e.value.failed == ["row1"]
 
@@ -240,7 +240,7 @@ class TestRawRows:
             status=400,
             json={"error": {"message": "User Error", "code": 400}},
         )
-        with pytest.raises(CogniteCompoundAPIError) as e:
+        with pytest.raises(CogniteAPIError) as e:
             RAW_API.rows.delete("db1", "table1", "key1")
         assert e.value.failed == ["key1"]
 
