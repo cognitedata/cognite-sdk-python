@@ -21,14 +21,12 @@ def new_ts():
 
 
 class TestTimeSeriesAPI:
-    @pytest.mark.xfail(strict=True)
     def test_retrieve(self):
         listed_asset = COGNITE_CLIENT.time_series.list(limit=1)[0]
         retrieved_asset = COGNITE_CLIENT.time_series.retrieve(listed_asset.id)
         retrieved_asset.external_id = listed_asset.external_id
         assert retrieved_asset == listed_asset
 
-    @pytest.mark.xfail(strict=True)
     def test_list(self, mocker):
         mocker.spy(COGNITE_CLIENT.time_series, "_get")
 
@@ -38,10 +36,9 @@ class TestTimeSeriesAPI:
         assert 20 == len(res)
         assert 2 == COGNITE_CLIENT.time_series._get.call_count
 
-    @pytest.mark.xfail(strict=True)
     def test_search(self):
         res = COGNITE_CLIENT.time_series.search(
-            name="multiplied_by_2", filter=TimeSeriesFilter(created_time={"min": 0})
+            name="test__timestamp_multiplied", filter=TimeSeriesFilter(created_time={"min": 0})
         )
         assert len(res) > 0
 
@@ -50,7 +47,6 @@ class TestTimeSeriesAPI:
         res = COGNITE_CLIENT.time_series.update(update_ts)
         assert "newname" == res.name
 
-    @pytest.mark.xfail(strict=True)
     def test_list_created_ts(self, new_ts):
         tries = 8
         sleep_between_tries = 3

@@ -30,6 +30,7 @@ class RetryWithMaxBackoff(Retry):
 
 def _init_requests_session():
     session = Session()
+    session_with_retry = Session()
     num_of_retries = int(os.getenv("COGNITE_MAX_RETRIES", DEFAULT_MAX_RETRIES))
     max_pool_size = int(os.getenv("COGNITE_MAX_CONNECTION_POOL_SIZE", DEFAULT_MAX_POOL_SIZE))
     adapter = HTTPAdapter(
@@ -50,11 +51,12 @@ def _init_requests_session():
     )
     session.mount("http://", adapter)
     session.mount("https://", adapter)
-    # TODO: mount adapter_with_retry on all retryable paths. This list of paths should be generated from openapi spec.
-    return session
+    session_with_retry.mount("http://", adapter_with_retry)
+    session_with_retry.mount("https://", adapter_with_retry)
+    return session, session_with_retry
 
 
-_REQUESTS_SESSION = _init_requests_session()
+_REQUESTS_SESSION, _REQUESTS_SESSION_WITH_RETRY = _init_requests_session()
 
 
 class APIClient:
@@ -73,6 +75,7 @@ class APIClient:
         cognite_client=None,
     ):
         self._request_session = _REQUESTS_SESSION
+        self._request_session_with_retry = _REQUESTS_SESSION_WITH_RETRY
         self._project = project
         self._api_key = api_key
         __base_path = "/api/{}/projects/{}".format(version, project) if version else ""
@@ -101,7 +104,7 @@ class APIClient:
         return self._do_request("PUT", url_path, json=json, headers=headers, timeout=self._timeout)
 
     def _do_request(self, method: str, url_path: str, **kwargs):
-        full_url = self._resolve_url(url_path)
+        is_retryable, full_url = self._resolve_url(method, url_path)
 
         json_payload = kwargs.get("json")
         headers = self._headers.copy()
@@ -116,7 +119,10 @@ class APIClient:
 
         kwargs["headers"] = headers
 
-        res = self._request_session.request(method=method, url=full_url, **kwargs)
+        if is_retryable:
+            res = self._request_session_with_retry.request(method=method, url=full_url, **kwargs)
+        else:
+            res = self._request_session.request(method=method, url=full_url, **kwargs)
 
         if not self._status_is_valid(res.status_code):
             self._raise_API_error(res, payload=json_payload)
@@ -137,13 +143,49 @@ class APIClient:
         headers.update(additional_headers)
         return headers
 
-    def _resolve_url(self, url_path: str):
+    def _resolve_url(self, method: str, url_path: str):
         if not url_path.startswith("/"):
             raise ValueError("URL path must start with '/'")
         full_url = self._base_url + url_path
+        is_retryable = self._is_retryable(method, full_url)
         # Hack to allow running model hosting requests against local emulator
         full_url = self._apply_model_hosting_emulator_url_filter(full_url)
-        return full_url
+        return is_retryable, full_url
+
+    def _is_retryable(self, method, path):
+        valid_methods = ["GET", "POST", "PUT", "DELETE"]
+        match = re.match("(?:http|https)://[a-z\d.:]+(?:/api/v1/projects/[^/]+)?(/.+)", path)
+
+        if not match:
+            raise ValueError("Path {} is not valid. Cannot resolve whether or not it is retryable".format(path))
+        if method not in valid_methods:
+            raise ValueError("Method {} is not valid. Must be one of {}".format(method, valid_methods))
+        path_end = match.group(1)
+        # TODO: This following set should be generated from the openapi spec somehow.
+        retryable_post_endpoints = {
+            "/assets/list",
+            "/assets/byids",
+            "/assets/search",
+            "/events/list",
+            "/events/byids",
+            "/events/search",
+            "/files/list",
+            "/files/byids",
+            "/files/search",
+            "/files/initupload",
+            "/files/downloadlink",
+            "/timeseries/byids",
+            "/timeseries/search",
+            "/timeseries/data",
+            "/timeseries/data/list",
+            "/timeseries/data/latest",
+            "/timeseries/data/delete",
+        }
+        if method == "GET":
+            return True
+        if method == "POST" and path_end in retryable_post_endpoints:
+            return True
+        return False
 
     def _retrieve(
         self, id: Union[int, str], cls=None, resource_path: str = None, params: Dict = None, headers: Dict = None

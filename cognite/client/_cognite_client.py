@@ -85,7 +85,7 @@ class CogniteClient:
         if self.project is None:
             login_status = self.login.status()
             if login_status.logged_in:
-                self.project = self.login.status().project
+                self.project = login_status.project
                 warnings.warn(
                     "Authenticated towards project '{}'. Specify project to suppress warning.".format(self.project)
                 )

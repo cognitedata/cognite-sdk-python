@@ -742,3 +742,24 @@ class TestHelpers:
     )
     def test_is_single_identifier(self, id, external_id, expected):
         assert expected == API_CLIENT._is_single_identifier(id, external_id)
+
+    @pytest.mark.parametrize(
+        "method, path, expected",
+        [
+            ("GET", "https://api.cognitedata.com/login/status", True),
+            ("GET", "https://greenfield.cognitedata.com/api/v1/projects/blabla/assets", True),
+            ("POST", "https://localhost:8000/api/v1/projects/blabla/files/list", True),
+            ("PUT", "https://api.cognitedata.com/bla", False),
+            ("POST", "https://greenfield.cognitedata.com/api/v1/projects/blabla/assets", False),
+            ("PUT", "https://localhost:8000.com/api/v1/projects/blabla/assets", False),
+        ],
+    )
+    def test_is_retryable(self, method, path, expected):
+        assert expected == API_CLIENT._is_retryable(method, path)
+
+    @pytest.mark.parametrize(
+        "method, path", [("POST", "htt://bla/bla"), ("BLOP", "http://localhost:8000/login/status")]
+    )
+    def test_is_retryable_fail(self, method, path):
+        with pytest.raises(ValueError, match="is not valid"):
+            API_CLIENT._is_retryable(method, path)

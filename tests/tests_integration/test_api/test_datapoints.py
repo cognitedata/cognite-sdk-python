@@ -51,14 +51,14 @@ def has_correct_timestamp_spacing(df: pandas.DataFrame, granularity: str):
 class TestDatapointsAPI:
     def test_retrieve(self, test_time_series):
         ts = test_time_series[0]
-        dps = COGNITE_CLIENT.datapoints.retrieve(id=ts.id, start="2d-ago", end="now")
+        dps = COGNITE_CLIENT.datapoints.retrieve(id=ts.id, start="1d-ago", end="now")
         assert len(dps) > 0
 
     def test_retrieve_multiple(self, test_time_series):
         ids = [test_time_series[0].id, test_time_series[1].id, {"id": test_time_series[2].id, "aggregates": ["max"]}]
 
         dps = COGNITE_CLIENT.datapoints.retrieve(
-            id=ids, start="2d-ago", end="now", aggregates=["min"], granularity="1s"
+            id=ids, start="6h-ago", end="now", aggregates=["min"], granularity="1s"
         )
         df = dps.to_pandas()
         assert "{}|min".format(test_time_series[0].id) in df.columns
@@ -70,8 +70,8 @@ class TestDatapointsAPI:
 
     def test_retrieve_include_outside_points(self, test_time_series):
         ts = test_time_series[0]
-        start = _utils.timestamp_to_ms("2d-ago")
-        end = _utils.timestamp_to_ms("1d-ago")
+        start = _utils.timestamp_to_ms("6h-ago")
+        end = _utils.timestamp_to_ms("1h-ago")
         dps_wo_outside = COGNITE_CLIENT.datapoints.retrieve(
             id=ts.id, start=start, end=end, include_outside_points=False
         )
@@ -82,15 +82,15 @@ class TestDatapointsAPI:
     def test_retrieve_dataframe(self, test_time_series):
         ts = test_time_series[0]
         df = COGNITE_CLIENT.datapoints.retrieve_dataframe(
-            id=ts.id, start="2d-ago", end="now", aggregates=["average"], granularity="1s"
+            id=ts.id, start="6h-ago", end="now", aggregates=["average"], granularity="1s"
         )
         assert df.shape[0] > 0
         assert df.shape[1] == 1
         assert has_correct_timestamp_spacing(df, "1s")
 
     def test_query(self, test_time_series):
-        dps_query1 = DatapointsQuery(id=test_time_series[0].id, start="2d-ago", end="now")
-        dps_query2 = DatapointsQuery(id=test_time_series[1].id, start="1d-ago", end="now")
+        dps_query1 = DatapointsQuery(id=test_time_series[0].id, start="6h-ago", end="now")
+        dps_query2 = DatapointsQuery(id=test_time_series[1].id, start="3h-ago", end="now")
         dps_query3 = DatapointsQuery(
             id=test_time_series[2].id, start="1d-ago", end="now", aggregates=["average"], granularity="1h"
         )
@@ -101,9 +101,9 @@ class TestDatapointsAPI:
 
         for dps in res:
             if dps.id == test_time_series[0].id:
-                assert 150000 < len(dps.to_pandas())
+                assert 20000 < len(dps.to_pandas())
             if dps.id == test_time_series[1].id:
-                assert 75000 < len(dps.to_pandas())
+                assert 10000 < len(dps.to_pandas())
             if dps.id == test_time_series[2].id:
                 assert 24 == len(dps.to_pandas())
 
