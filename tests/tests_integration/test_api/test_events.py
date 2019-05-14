@@ -23,7 +23,6 @@ class TestEventsAPI:
         res = COGNITE_CLIENT.events.list(limit=1)
         assert res[0] == COGNITE_CLIENT.events.retrieve(res[0].id)
 
-    @pytest.mark.xfail(strict=True)
     def test_list(self, mocker):
         mocker.spy(COGNITE_CLIENT.events, "_post")
 
