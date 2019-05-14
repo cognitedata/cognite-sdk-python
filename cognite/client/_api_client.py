@@ -510,16 +510,16 @@ class APIClient:
     def _raise_API_error(res: Response, payload: Dict):
         x_request_id = res.headers.get("X-Request-Id")
         code = res.status_code
-        extra = {}
+        missing = None
+        duplicated = None
         try:
             error = res.json()["error"]
             if isinstance(error, str):
                 msg = error
             elif isinstance(error, Dict):
                 msg = error["message"]
-                extra = error.get("extra", {})
-                for key in set(error.keys()) - {"code", "message", "extra"}:
-                    extra[key] = error[key]
+                missing = error.get("missing")
+                duplicated = error.get("duplicated")
             else:
                 msg = res.content
         except:
@@ -528,11 +528,13 @@ class APIClient:
         error_details = {"X-Request-ID": x_request_id}
         if payload:
             error_details["payload"] = payload
-        if extra:
-            error_details["extra"] = extra
+        if missing:
+            error_details["missing"] = missing
+        if duplicated:
+            error_details["duplicated"] = duplicated
 
         log.error("HTTP Error %s %s %s: %s", code, res.request.method, res.request.url, msg, extra=error_details)
-        raise CogniteAPIError(msg, code, x_request_id, extra=extra)
+        raise CogniteAPIError(msg, code, x_request_id, missing=missing, duplicated=duplicated)
 
     @staticmethod
     def _log_request(res: Response, **kwargs):

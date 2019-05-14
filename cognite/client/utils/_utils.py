@@ -189,14 +189,15 @@ class TasksSummary:
             if isinstance(self.exceptions[0], CogniteAPIError):
                 exc = self.exceptions[0]
                 raise CogniteAPIError(
-                    exc.message,
-                    exc.code,
-                    exc.x_request_id,
-                    exc.extra,
-                    successful,
-                    failed,
-                    unknown,
-                    str_format_element_fn,
+                    message=exc.message,
+                    code=exc.code,
+                    x_request_id=exc.x_request_id,
+                    missing=exc.missing,
+                    duplicated=exc.duplicated,
+                    successful=successful,
+                    failed=failed,
+                    unknown=unknown,
+                    unwrap_fn=str_format_element_fn,
                 )
             raise self.exceptions[0]
 

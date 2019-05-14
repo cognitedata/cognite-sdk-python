@@ -43,7 +43,8 @@ class CogniteAPIError(Exception):
         message: str,
         code: int = None,
         x_request_id: str = None,
-        extra: Dict = None,
+        missing: List = None,
+        duplicated: List = None,
         successful: List = None,
         failed: List = None,
         unknown: List = None,
@@ -52,7 +53,8 @@ class CogniteAPIError(Exception):
         self.message = message
         self.code = code
         self.x_request_id = x_request_id
-        self.extra = extra
+        self.missing = missing
+        self.duplicated = duplicated
         self.successful = successful or []
         self.failed = failed or []
         self.unknown = unknown or []
@@ -60,11 +62,12 @@ class CogniteAPIError(Exception):
 
     def __str__(self):
         msg = "{} | code: {} | X-Request-ID: {}".format(self.message, self.code, self.x_request_id)
-        if self.extra:
-            pretty_extra = json.dumps(self.extra, indent=4, sort_keys=True)
-            msg = "{} | code: {} | X-Request-ID: {}\n{}".format(
-                self.message, self.code, self.x_request_id, pretty_extra
-            )
+        if self.missing:
+            pretty_missing = json.dumps(self.missing, indent=4, sort_keys=True)
+            msg += "\nMissing:\n{}".format(pretty_missing)
+        if self.duplicated:
+            pretty_duplicated = json.dumps(self.duplicated, indent=4, sort_keys=True)
+            msg += "\nDuplicated:\n{}".format(pretty_duplicated)
         if len(self.successful) > 0 or len(self.unknown) > 0 or len(self.failed) > 0:
             msg += "\nThe API Failed to process some items.\nSuccessful (2xx): {}\nUnknown (5xx): {}\nFailed (4xx): {}".format(
                 [self._unwrap_fn(f) for f in self.successful],
