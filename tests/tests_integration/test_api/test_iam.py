@@ -1,7 +1,7 @@
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import APIKey, Group, ServiceAccount, ServiceAccountList
+from cognite.client.data_classes import APIKey, Group, SecurityCategory, ServiceAccount, ServiceAccountList
 from cognite.client.utils._utils import random_string
 
 COGNITE_CLIENT = CogniteClient(debug=True)
@@ -69,3 +69,16 @@ class TestGroupsAPI:
     def test_list_service_accounts_in_group(self, group_id):
         service_accounts = COGNITE_CLIENT.iam.groups.list_service_accounts(group_id)
         assert len(service_accounts) > 0
+
+
+class TestSecurityCategoriesAPI:
+    def test_list(self):
+        res = COGNITE_CLIENT.iam.security_categories.list()
+        assert len(res) > 0
+
+    def test_create_and_delete(self):
+        random_name = "test_" + random_string(10)
+        res = COGNITE_CLIENT.iam.security_categories.create(SecurityCategory(name=random_name))
+        assert res.id in {s.id for s in COGNITE_CLIENT.iam.security_categories.list()}
+        COGNITE_CLIENT.iam.security_categories.delete(res.id)
+        assert res.id not in {s.id for s in COGNITE_CLIENT.iam.security_categories.list()}

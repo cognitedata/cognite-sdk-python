@@ -191,11 +191,11 @@ class SecurityCategoriesAPI(APIClient):
     _RESOURCE_PATH = "/securitycategories"
     _LIST_CLASS = SecurityCategoryList
 
-    def list(self, limit: int = None) -> SecurityCategoryList:
+    def list(self, limit: int = 25) -> SecurityCategoryList:
         """List security categories.
 
         Args:
-            limit (int): Max number of security categories to return.
+            limit (int): Max number of security categories to return. Defaults to 25.
 
         Returns:
             SecurityCategoryList: List of security categories
