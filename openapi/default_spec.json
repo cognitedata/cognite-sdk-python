@@ -3,7 +3,7 @@
   "info": {
     "title": "Cognite API",
     "description": "This is the reference documentation for the Cognite API. Here you can see an overview of all methods available through the API.",
-    "version": "v1 (Early Access)",
+    "version": "v1 early access",
     "contact": {
       "name": "Cognite Support",
       "url": "https://support.cognite.com",
@@ -45,6 +45,7 @@
           "code",
           "message"
         ],
+        "description": "Cognite API error",
         "properties": {
           "code": {
             "type": "integer",
@@ -57,9 +58,21 @@
             "description": "Error message",
             "example": "Could not authenticate."
           },
-          "extra": {
-            "type": "object",
-            "description": "Additional data"
+          "missing": {
+            "type": "array",
+            "description": "List of lookup objects that have not matched any results.",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "duplicated": {
+            "type": "array",
+            "description": "List of objects that violate the uniqueness constraint.",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
           }
         }
       },
@@ -5254,6 +5267,7 @@
               "code",
               "message"
             ],
+            "description": "Cognite API error",
             "properties": {
               "code": {
                 "type": "integer",
@@ -5266,9 +5280,21 @@
                 "description": "Error message",
                 "example": "Could not authenticate."
               },
-              "extra": {
-                "type": "object",
-                "description": "Additional data"
+              "missing": {
+                "type": "array",
+                "description": "List of lookup objects that have not matched any results.",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              },
+              "duplicated": {
+                "type": "array",
+                "description": "List of objects that violate the uniqueness constraint.",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
               }
             }
           }
@@ -5329,6 +5355,9 @@
       },
       "ExternalFilesMetadata": {
         "type": "object",
+        "required": [
+          "name"
+        ],
         "properties": {
           "externalId": {
             "description": "External Id provided by client. Should be unique within the project.",
@@ -5372,6 +5401,9 @@
         "allOf": [
           {
             "type": "object",
+            "required": [
+              "name"
+            ],
             "properties": {
               "externalId": {
                 "description": "External Id provided by client. Should be unique within the project.",
@@ -5660,28 +5692,6 @@
                               ],
                               "description": "Removable string change."
                             },
-                            "description": {
-                              "type": "object",
-                              "oneOf": [
-                                {
-                                  "type": "object",
-                                  "properties": {
-                                    "set": {
-                                      "type": "string"
-                                    }
-                                  }
-                                },
-                                {
-                                  "type": "object",
-                                  "properties": {
-                                    "setNull": {
-                                      "type": "boolean"
-                                    }
-                                  }
-                                }
-                              ],
-                              "description": "Removable string change."
-                            },
                             "source": {
                               "type": "object",
                               "oneOf": [
@@ -5834,28 +5844,6 @@
                           "type": "object",
                           "properties": {
                             "externalId": {
-                              "type": "object",
-                              "oneOf": [
-                                {
-                                  "type": "object",
-                                  "properties": {
-                                    "set": {
-                                      "type": "string"
-                                    }
-                                  }
-                                },
-                                {
-                                  "type": "object",
-                                  "properties": {
-                                    "setNull": {
-                                      "type": "boolean"
-                                    }
-                                  }
-                                }
-                              ],
-                              "description": "Removable string change."
-                            },
-                            "description": {
                               "type": "object",
                               "oneOf": [
                                 {
@@ -6059,28 +6047,6 @@
                         ],
                         "description": "Removable string change."
                       },
-                      "description": {
-                        "type": "object",
-                        "oneOf": [
-                          {
-                            "type": "object",
-                            "properties": {
-                              "set": {
-                                "type": "string"
-                              }
-                            }
-                          },
-                          {
-                            "type": "object",
-                            "properties": {
-                              "setNull": {
-                                "type": "boolean"
-                              }
-                            }
-                          }
-                        ],
-                        "description": "Removable string change."
-                      },
                       "source": {
                         "type": "object",
                         "oneOf": [
@@ -6233,28 +6199,6 @@
                     "type": "object",
                     "properties": {
                       "externalId": {
-                        "type": "object",
-                        "oneOf": [
-                          {
-                            "type": "object",
-                            "properties": {
-                              "set": {
-                                "type": "string"
-                              }
-                            }
-                          },
-                          {
-                            "type": "object",
-                            "properties": {
-                              "setNull": {
-                                "type": "boolean"
-                              }
-                            }
-                          }
-                        ],
-                        "description": "Removable string change."
-                      },
-                      "description": {
                         "type": "object",
                         "oneOf": [
                           {
@@ -6453,28 +6397,6 @@
                     ],
                     "description": "Removable string change."
                   },
-                  "description": {
-                    "type": "object",
-                    "oneOf": [
-                      {
-                        "type": "object",
-                        "properties": {
-                          "set": {
-                            "type": "string"
-                          }
-                        }
-                      },
-                      {
-                        "type": "object",
-                        "properties": {
-                          "setNull": {
-                            "type": "boolean"
-                          }
-                        }
-                      }
-                    ],
-                    "description": "Removable string change."
-                  },
                   "source": {
                     "type": "object",
                     "oneOf": [
@@ -6648,28 +6570,6 @@
                     ],
                     "description": "Removable string change."
                   },
-                  "description": {
-                    "type": "object",
-                    "oneOf": [
-                      {
-                        "type": "object",
-                        "properties": {
-                          "set": {
-                            "type": "string"
-                          }
-                        }
-                      },
-                      {
-                        "type": "object",
-                        "properties": {
-                          "setNull": {
-                            "type": "boolean"
-                          }
-                        }
-                      }
-                    ],
-                    "description": "Removable string change."
-                  },
                   "source": {
                     "type": "object",
                     "oneOf": [
@@ -6805,6 +6705,9 @@
               "allOf": [
                 {
                   "type": "object",
+                  "required": [
+                    "name"
+                  ],
                   "properties": {
                     "externalId": {
                       "description": "External Id provided by client. Should be unique within the project.",
@@ -6886,7 +6789,7 @@
       "FileLink": {
         "type": "object",
         "properties": {
-          "link": {
+          "downloadUrl": {
             "type": "string"
           }
         }
@@ -6898,6 +6801,9 @@
             "type": "array",
             "items": {
               "type": "object",
+              "required": [
+                "name"
+              ],
               "properties": {
                 "externalId": {
                   "description": "External Id provided by client. Should be unique within the project.",
@@ -6940,6 +6846,42 @@
           }
         }
       },
+      "FileLinkIds": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "description": "Javascript friendly internal ID given to the object.",
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 9007199254740991,
+                      "format": "int64"
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "externalId": {
+                      "description": "External Id provided by client. Should be unique within the project.",
+                      "type": "string",
+                      "maxLength": 255
+                    }
+                  }
+                }
+              ]
+            },
+            "maxItems": 100,
+            "minItems": 1
+          }
+        }
+      },
       "FileChange": {
         "type": "object",
         "description": "Changes will be applied to file.",
@@ -6951,28 +6893,6 @@
             "type": "object",
             "properties": {
               "externalId": {
-                "type": "object",
-                "oneOf": [
-                  {
-                    "type": "object",
-                    "properties": {
-                      "set": {
-                        "type": "string"
-                      }
-                    }
-                  },
-                  {
-                    "type": "object",
-                    "properties": {
-                      "setNull": {
-                        "type": "boolean"
-                      }
-                    }
-                  }
-                ],
-                "description": "Removable string change."
-              },
-              "description": {
                 "type": "object",
                 "oneOf": [
                   {
@@ -7127,6 +7047,9 @@
               "allOf": [
                 {
                   "type": "object",
+                  "required": [
+                    "name"
+                  ],
                   "properties": {
                     "externalId": {
                       "description": "External Id provided by client. Should be unique within the project.",
@@ -9022,6 +8945,7 @@
               "code",
               "message"
             ],
+            "description": "Cognite API error",
             "properties": {
               "code": {
                 "type": "integer",
@@ -9034,9 +8958,21 @@
                 "description": "Error message",
                 "example": "Could not authenticate."
               },
-              "extra": {
-                "type": "object",
-                "description": "Additional data"
+              "missing": {
+                "type": "array",
+                "description": "List of lookup objects that have not matched any results.",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              },
+              "duplicated": {
+                "type": "array",
+                "description": "List of objects that violate the uniqueness constraint.",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
               }
             }
           }
@@ -19080,29 +19016,24 @@
       "SecurityCategoryResponse": {
         "type": "object",
         "properties": {
-          "data": {
-            "type": "object",
-            "properties": {
-              "items": {
-                "type": "array",
-                "items": {
-                  "required": [
-                    "name",
-                    "id"
-                  ],
-                  "type": "object",
-                  "properties": {
-                    "name": {
-                      "type": "string",
-                      "description": "Name of the security category",
-                      "example": "Guarded by vendor x"
-                    },
-                    "id": {
-                      "type": "integer",
-                      "description": "Id of the security category",
-                      "format": "int64"
-                    }
-                  }
+          "items": {
+            "type": "array",
+            "items": {
+              "required": [
+                "name",
+                "id"
+              ],
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "Name of the security category",
+                  "example": "Guarded by vendor x"
+                },
+                "id": {
+                  "type": "integer",
+                  "description": "Id of the security category",
+                  "format": "int64"
                 }
               }
             }
@@ -19338,6 +19269,7 @@
                     "code",
                     "message"
                   ],
+                  "description": "Cognite API error",
                   "properties": {
                     "code": {
                       "type": "integer",
@@ -19350,9 +19282,21 @@
                       "description": "Error message",
                       "example": "Could not authenticate."
                     },
-                    "extra": {
-                      "type": "object",
-                      "description": "Additional data"
+                    "missing": {
+                      "type": "array",
+                      "description": "List of lookup objects that have not matched any results.",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true
+                      }
+                    },
+                    "duplicated": {
+                      "type": "array",
+                      "description": "List of objects that violate the uniqueness constraint.",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true
+                      }
                     }
                   }
                 }
@@ -19985,6 +19929,9 @@
               "allOf": [
                 {
                   "type": "object",
+                  "required": [
+                    "name"
+                  ],
                   "properties": {
                     "externalId": {
                       "description": "External Id provided by client. Should be unique within the project.",
@@ -20073,6 +20020,9 @@
                   "allOf": [
                     {
                       "type": "object",
+                      "required": [
+                        "name"
+                      ],
                       "properties": {
                         "externalId": {
                           "description": "External Id provided by client. Should be unique within the project.",
@@ -20174,6 +20124,9 @@
                     "allOf": [
                       {
                         "type": "object",
+                        "required": [
+                          "name"
+                        ],
                         "properties": {
                           "externalId": {
                             "description": "External Id provided by client. Should be unique within the project.",
@@ -20273,6 +20226,9 @@
                     "allOf": [
                       {
                         "type": "object",
+                        "required": [
+                          "name"
+                        ],
                         "properties": {
                           "externalId": {
                             "description": "External Id provided by client. Should be unique within the project.",
@@ -20355,7 +20311,7 @@
         }
       },
       "DataWithLinks": {
-        "description": "The response for successful files/download operations.",
+        "description": "The response for a successful files/downloadlink operations.",
         "content": {
           "application/json": {
             "schema": {
@@ -20368,7 +20324,7 @@
                       {
                         "type": "object",
                         "properties": {
-                          "link": {
+                          "downloadUrl": {
                             "type": "string"
                           }
                         }
@@ -20871,6 +20827,7 @@
                         "code",
                         "message"
                       ],
+                      "description": "Cognite API error",
                       "properties": {
                         "code": {
                           "type": "integer",
@@ -20883,9 +20840,21 @@
                           "description": "Error message",
                           "example": "Could not authenticate."
                         },
-                        "extra": {
-                          "type": "object",
-                          "description": "Additional data"
+                        "missing": {
+                          "type": "array",
+                          "description": "List of lookup objects that have not matched any results.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "duplicated": {
+                          "type": "array",
+                          "description": "List of objects that violate the uniqueness constraint.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
                         }
                       }
                     }
@@ -21108,6 +21077,7 @@
                         "code",
                         "message"
                       ],
+                      "description": "Cognite API error",
                       "properties": {
                         "code": {
                           "type": "integer",
@@ -21120,9 +21090,21 @@
                           "description": "Error message",
                           "example": "Could not authenticate."
                         },
-                        "extra": {
-                          "type": "object",
-                          "description": "Additional data"
+                        "missing": {
+                          "type": "array",
+                          "description": "List of lookup objects that have not matched any results.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "duplicated": {
+                          "type": "array",
+                          "description": "List of objects that violate the uniqueness constraint.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
                         }
                       }
                     }
@@ -21289,6 +21271,7 @@
                         "code",
                         "message"
                       ],
+                      "description": "Cognite API error",
                       "properties": {
                         "code": {
                           "type": "integer",
@@ -21301,9 +21284,21 @@
                           "description": "Error message",
                           "example": "Could not authenticate."
                         },
-                        "extra": {
-                          "type": "object",
-                          "description": "Additional data"
+                        "missing": {
+                          "type": "array",
+                          "description": "List of lookup objects that have not matched any results.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "duplicated": {
+                          "type": "array",
+                          "description": "List of objects that violate the uniqueness constraint.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
                         }
                       }
                     }
@@ -21776,6 +21771,7 @@
                         "code",
                         "message"
                       ],
+                      "description": "Cognite API error",
                       "properties": {
                         "code": {
                           "type": "integer",
@@ -21788,9 +21784,21 @@
                           "description": "Error message",
                           "example": "Could not authenticate."
                         },
-                        "extra": {
-                          "type": "object",
-                          "description": "Additional data"
+                        "missing": {
+                          "type": "array",
+                          "description": "List of lookup objects that have not matched any results.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "duplicated": {
+                          "type": "array",
+                          "description": "List of objects that violate the uniqueness constraint.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
                         }
                       }
                     }
@@ -22290,6 +22298,7 @@
                         "code",
                         "message"
                       ],
+                      "description": "Cognite API error",
                       "properties": {
                         "code": {
                           "type": "integer",
@@ -22302,9 +22311,21 @@
                           "description": "Error message",
                           "example": "Could not authenticate."
                         },
-                        "extra": {
-                          "type": "object",
-                          "description": "Additional data"
+                        "missing": {
+                          "type": "array",
+                          "description": "List of lookup objects that have not matched any results.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "duplicated": {
+                          "type": "array",
+                          "description": "List of objects that violate the uniqueness constraint.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
                         }
                       }
                     }
@@ -22704,6 +22725,7 @@
                         "code",
                         "message"
                       ],
+                      "description": "Cognite API error",
                       "properties": {
                         "code": {
                           "type": "integer",
@@ -22716,9 +22738,21 @@
                           "description": "Error message",
                           "example": "Could not authenticate."
                         },
-                        "extra": {
-                          "type": "object",
-                          "description": "Additional data"
+                        "missing": {
+                          "type": "array",
+                          "description": "List of lookup objects that have not matched any results.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "duplicated": {
+                          "type": "array",
+                          "description": "List of objects that violate the uniqueness constraint.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
                         }
                       }
                     }
@@ -22954,6 +22988,7 @@
                         "code",
                         "message"
                       ],
+                      "description": "Cognite API error",
                       "properties": {
                         "code": {
                           "type": "integer",
@@ -22966,9 +23001,21 @@
                           "description": "Error message",
                           "example": "Could not authenticate."
                         },
-                        "extra": {
-                          "type": "object",
-                          "description": "Additional data"
+                        "missing": {
+                          "type": "array",
+                          "description": "List of lookup objects that have not matched any results.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "duplicated": {
+                          "type": "array",
+                          "description": "List of objects that violate the uniqueness constraint.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
                         }
                       }
                     }
@@ -23284,6 +23331,7 @@
                         "code",
                         "message"
                       ],
+                      "description": "Cognite API error",
                       "properties": {
                         "code": {
                           "type": "integer",
@@ -23296,9 +23344,21 @@
                           "description": "Error message",
                           "example": "Could not authenticate."
                         },
-                        "extra": {
-                          "type": "object",
-                          "description": "Additional data"
+                        "missing": {
+                          "type": "array",
+                          "description": "List of lookup objects that have not matched any results.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "duplicated": {
+                          "type": "array",
+                          "description": "List of objects that violate the uniqueness constraint.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
                         }
                       }
                     }
@@ -23463,6 +23523,7 @@
                         "code",
                         "message"
                       ],
+                      "description": "Cognite API error",
                       "properties": {
                         "code": {
                           "type": "integer",
@@ -23475,9 +23536,21 @@
                           "description": "Error message",
                           "example": "Could not authenticate."
                         },
-                        "extra": {
-                          "type": "object",
-                          "description": "Additional data"
+                        "missing": {
+                          "type": "array",
+                          "description": "List of lookup objects that have not matched any results.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "duplicated": {
+                          "type": "array",
+                          "description": "List of objects that violate the uniqueness constraint.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
                         }
                       }
                     }
@@ -23990,6 +24063,7 @@
                         "code",
                         "message"
                       ],
+                      "description": "Cognite API error",
                       "properties": {
                         "code": {
                           "type": "integer",
@@ -24002,9 +24076,21 @@
                           "description": "Error message",
                           "example": "Could not authenticate."
                         },
-                        "extra": {
-                          "type": "object",
-                          "description": "Additional data"
+                        "missing": {
+                          "type": "array",
+                          "description": "List of lookup objects that have not matched any results.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "duplicated": {
+                          "type": "array",
+                          "description": "List of objects that violate the uniqueness constraint.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
                         }
                       }
                     }
@@ -24659,6 +24745,7 @@
                         "code",
                         "message"
                       ],
+                      "description": "Cognite API error",
                       "properties": {
                         "code": {
                           "type": "integer",
@@ -24671,9 +24758,21 @@
                           "description": "Error message",
                           "example": "Could not authenticate."
                         },
-                        "extra": {
-                          "type": "object",
-                          "description": "Additional data"
+                        "missing": {
+                          "type": "array",
+                          "description": "List of lookup objects that have not matched any results.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "duplicated": {
+                          "type": "array",
+                          "description": "List of objects that violate the uniqueness constraint.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
                         }
                       }
                     }
@@ -25081,6 +25180,7 @@
                         "code",
                         "message"
                       ],
+                      "description": "Cognite API error",
                       "properties": {
                         "code": {
                           "type": "integer",
@@ -25093,9 +25193,21 @@
                           "description": "Error message",
                           "example": "Could not authenticate."
                         },
-                        "extra": {
-                          "type": "object",
-                          "description": "Additional data"
+                        "missing": {
+                          "type": "array",
+                          "description": "List of lookup objects that have not matched any results.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "duplicated": {
+                          "type": "array",
+                          "description": "List of objects that violate the uniqueness constraint.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
                         }
                       }
                     }
@@ -25266,6 +25378,9 @@
                         "allOf": [
                           {
                             "type": "object",
+                            "required": [
+                              "name"
+                            ],
                             "properties": {
                               "externalId": {
                                 "description": "External Id provided by client. Should be unique within the project.",
@@ -25368,6 +25483,7 @@
                         "code",
                         "message"
                       ],
+                      "description": "Cognite API error",
                       "properties": {
                         "code": {
                           "type": "integer",
@@ -25380,9 +25496,21 @@
                           "description": "Error message",
                           "example": "Could not authenticate."
                         },
-                        "extra": {
-                          "type": "object",
-                          "description": "Additional data"
+                        "missing": {
+                          "type": "array",
+                          "description": "List of lookup objects that have not matched any results.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "duplicated": {
+                          "type": "array",
+                          "description": "List of objects that violate the uniqueness constraint.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
                         }
                       }
                     }
@@ -25445,6 +25573,9 @@
                   "allOf": [
                     {
                       "type": "object",
+                      "required": [
+                        "name"
+                      ],
                       "properties": {
                         "externalId": {
                           "description": "External Id provided by client. Should be unique within the project.",
@@ -25539,6 +25670,7 @@
                         "code",
                         "message"
                       ],
+                      "description": "Cognite API error",
                       "properties": {
                         "code": {
                           "type": "integer",
@@ -25551,9 +25683,21 @@
                           "description": "Error message",
                           "example": "Could not authenticate."
                         },
-                        "extra": {
-                          "type": "object",
-                          "description": "Additional data"
+                        "missing": {
+                          "type": "array",
+                          "description": "List of lookup objects that have not matched any results.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "duplicated": {
+                          "type": "array",
+                          "description": "List of objects that violate the uniqueness constraint.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
                         }
                       }
                     }
@@ -25763,6 +25907,9 @@
                         "allOf": [
                           {
                             "type": "object",
+                            "required": [
+                              "name"
+                            ],
                             "properties": {
                               "externalId": {
                                 "description": "External Id provided by client. Should be unique within the project.",
@@ -25865,6 +26012,7 @@
                         "code",
                         "message"
                       ],
+                      "description": "Cognite API error",
                       "properties": {
                         "code": {
                           "type": "integer",
@@ -25877,9 +26025,21 @@
                           "description": "Error message",
                           "example": "Could not authenticate."
                         },
-                        "extra": {
-                          "type": "object",
-                          "description": "Additional data"
+                        "missing": {
+                          "type": "array",
+                          "description": "List of lookup objects that have not matched any results.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "duplicated": {
+                          "type": "array",
+                          "description": "List of objects that violate the uniqueness constraint.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
                         }
                       }
                     }
@@ -25930,6 +26090,9 @@
                 "allOf": [
                   {
                     "type": "object",
+                    "required": [
+                      "name"
+                    ],
                     "properties": {
                       "externalId": {
                         "description": "External Id provided by client. Should be unique within the project.",
@@ -25976,7 +26139,7 @@
           "required": true
         },
         "responses": {
-          "200": {
+          "201": {
             "description": "The response for successful files/initupload operations",
             "content": {
               "application/json": {
@@ -25986,6 +26149,9 @@
                       "allOf": [
                         {
                           "type": "object",
+                          "required": [
+                            "name"
+                          ],
                           "properties": {
                             "externalId": {
                               "description": "External Id provided by client. Should be unique within the project.",
@@ -26090,6 +26256,7 @@
                         "code",
                         "message"
                       ],
+                      "description": "Cognite API error",
                       "properties": {
                         "code": {
                           "type": "integer",
@@ -26102,9 +26269,21 @@
                           "description": "Error message",
                           "example": "Could not authenticate."
                         },
-                        "extra": {
-                          "type": "object",
-                          "description": "Additional data"
+                        "missing": {
+                          "type": "array",
+                          "description": "List of lookup objects that have not matched any results.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "duplicated": {
+                          "type": "array",
+                          "description": "List of objects that violate the uniqueness constraint.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
                         }
                       }
                     }
@@ -26204,6 +26383,9 @@
                         "allOf": [
                           {
                             "type": "object",
+                            "required": [
+                              "name"
+                            ],
                             "properties": {
                               "externalId": {
                                 "description": "External Id provided by client. Should be unique within the project.",
@@ -26301,6 +26483,7 @@
                         "code",
                         "message"
                       ],
+                      "description": "Cognite API error",
                       "properties": {
                         "code": {
                           "type": "integer",
@@ -26313,9 +26496,21 @@
                           "description": "Error message",
                           "example": "Could not authenticate."
                         },
-                        "extra": {
-                          "type": "object",
-                          "description": "Additional data"
+                        "missing": {
+                          "type": "array",
+                          "description": "List of lookup objects that have not matched any results.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "duplicated": {
+                          "type": "array",
+                          "description": "List of objects that violate the uniqueness constraint.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
                         }
                       }
                     }
@@ -26530,6 +26725,9 @@
                         "allOf": [
                           {
                             "type": "object",
+                            "required": [
+                              "name"
+                            ],
                             "properties": {
                               "externalId": {
                                 "description": "External Id provided by client. Should be unique within the project.",
@@ -26715,6 +26913,7 @@
                         "code",
                         "message"
                       ],
+                      "description": "Cognite API error",
                       "properties": {
                         "code": {
                           "type": "integer",
@@ -26727,9 +26926,21 @@
                           "description": "Error message",
                           "example": "Could not authenticate."
                         },
-                        "extra": {
-                          "type": "object",
-                          "description": "Additional data"
+                        "missing": {
+                          "type": "array",
+                          "description": "List of lookup objects that have not matched any results.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "duplicated": {
+                          "type": "array",
+                          "description": "List of objects that violate the uniqueness constraint.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
                         }
                       }
                     }
@@ -26806,7 +27017,7 @@
                         }
                       ]
                     },
-                    "maxItems": 1000,
+                    "maxItems": 100,
                     "minItems": 1
                   }
                 }
@@ -26817,7 +27028,7 @@
         },
         "responses": {
           "200": {
-            "description": "The response for successful files/download operations.",
+            "description": "The response for a successful files/downloadlink operations.",
             "content": {
               "application/json": {
                 "schema": {
@@ -26830,7 +27041,7 @@
                           {
                             "type": "object",
                             "properties": {
-                              "link": {
+                              "downloadUrl": {
                                 "type": "string"
                               }
                             }
@@ -26885,6 +27096,7 @@
                         "code",
                         "message"
                       ],
+                      "description": "Cognite API error",
                       "properties": {
                         "code": {
                           "type": "integer",
@@ -26897,9 +27109,21 @@
                           "description": "Error message",
                           "example": "Could not authenticate."
                         },
-                        "extra": {
-                          "type": "object",
-                          "description": "Additional data"
+                        "missing": {
+                          "type": "array",
+                          "description": "List of lookup objects that have not matched any results.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "duplicated": {
+                          "type": "array",
+                          "description": "List of objects that violate the uniqueness constraint.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
                         }
                       }
                     }
@@ -26985,28 +27209,6 @@
                                   "type": "object",
                                   "properties": {
                                     "externalId": {
-                                      "type": "object",
-                                      "oneOf": [
-                                        {
-                                          "type": "object",
-                                          "properties": {
-                                            "set": {
-                                              "type": "string"
-                                            }
-                                          }
-                                        },
-                                        {
-                                          "type": "object",
-                                          "properties": {
-                                            "setNull": {
-                                              "type": "boolean"
-                                            }
-                                          }
-                                        }
-                                      ],
-                                      "description": "Removable string change."
-                                    },
-                                    "description": {
                                       "type": "object",
                                       "oneOf": [
                                         {
@@ -27201,28 +27403,6 @@
                                       ],
                                       "description": "Removable string change."
                                     },
-                                    "description": {
-                                      "type": "object",
-                                      "oneOf": [
-                                        {
-                                          "type": "object",
-                                          "properties": {
-                                            "set": {
-                                              "type": "string"
-                                            }
-                                          }
-                                        },
-                                        {
-                                          "type": "object",
-                                          "properties": {
-                                            "setNull": {
-                                              "type": "boolean"
-                                            }
-                                          }
-                                        }
-                                      ],
-                                      "description": "Removable string change."
-                                    },
                                     "source": {
                                       "type": "object",
                                       "oneOf": [
@@ -27367,6 +27547,9 @@
                   "allOf": [
                     {
                       "type": "object",
+                      "required": [
+                        "name"
+                      ],
                       "properties": {
                         "externalId": {
                           "description": "External Id provided by client. Should be unique within the project.",
@@ -27461,6 +27644,7 @@
                         "code",
                         "message"
                       ],
+                      "description": "Cognite API error",
                       "properties": {
                         "code": {
                           "type": "integer",
@@ -27473,9 +27657,21 @@
                           "description": "Error message",
                           "example": "Could not authenticate."
                         },
-                        "extra": {
-                          "type": "object",
-                          "description": "Additional data"
+                        "missing": {
+                          "type": "array",
+                          "description": "List of lookup objects that have not matched any results.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "duplicated": {
+                          "type": "array",
+                          "description": "List of objects that violate the uniqueness constraint.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
                         }
                       }
                     }
@@ -31405,6 +31601,7 @@
                         "code",
                         "message"
                       ],
+                      "description": "Cognite API error",
                       "properties": {
                         "code": {
                           "type": "integer",
@@ -31417,9 +31614,21 @@
                           "description": "Error message",
                           "example": "Could not authenticate."
                         },
-                        "extra": {
-                          "type": "object",
-                          "description": "Additional data"
+                        "missing": {
+                          "type": "array",
+                          "description": "List of lookup objects that have not matched any results.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "duplicated": {
+                          "type": "array",
+                          "description": "List of objects that violate the uniqueness constraint.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
                         }
                       }
                     }
@@ -33100,6 +33309,7 @@
                         "code",
                         "message"
                       ],
+                      "description": "Cognite API error",
                       "properties": {
                         "code": {
                           "type": "integer",
@@ -33112,9 +33322,21 @@
                           "description": "Error message",
                           "example": "Could not authenticate."
                         },
-                        "extra": {
-                          "type": "object",
-                          "description": "Additional data"
+                        "missing": {
+                          "type": "array",
+                          "description": "List of lookup objects that have not matched any results.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "duplicated": {
+                          "type": "array",
+                          "description": "List of objects that violate the uniqueness constraint.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
                         }
                       }
                     }
@@ -33484,6 +33706,7 @@
                         "code",
                         "message"
                       ],
+                      "description": "Cognite API error",
                       "properties": {
                         "code": {
                           "type": "integer",
@@ -33496,9 +33719,21 @@
                           "description": "Error message",
                           "example": "Could not authenticate."
                         },
-                        "extra": {
-                          "type": "object",
-                          "description": "Additional data"
+                        "missing": {
+                          "type": "array",
+                          "description": "List of lookup objects that have not matched any results.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "duplicated": {
+                          "type": "array",
+                          "description": "List of objects that violate the uniqueness constraint.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
                         }
                       }
                     }
@@ -34180,6 +34415,7 @@
                         "code",
                         "message"
                       ],
+                      "description": "Cognite API error",
                       "properties": {
                         "code": {
                           "type": "integer",
@@ -34192,9 +34428,21 @@
                           "description": "Error message",
                           "example": "Could not authenticate."
                         },
-                        "extra": {
-                          "type": "object",
-                          "description": "Additional data"
+                        "missing": {
+                          "type": "array",
+                          "description": "List of lookup objects that have not matched any results.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "duplicated": {
+                          "type": "array",
+                          "description": "List of objects that violate the uniqueness constraint.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
                         }
                       }
                     }
@@ -34573,6 +34821,7 @@
                         "code",
                         "message"
                       ],
+                      "description": "Cognite API error",
                       "properties": {
                         "code": {
                           "type": "integer",
@@ -34585,9 +34834,21 @@
                           "description": "Error message",
                           "example": "Could not authenticate."
                         },
-                        "extra": {
-                          "type": "object",
-                          "description": "Additional data"
+                        "missing": {
+                          "type": "array",
+                          "description": "List of lookup objects that have not matched any results.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "duplicated": {
+                          "type": "array",
+                          "description": "List of objects that violate the uniqueness constraint.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
                         }
                       }
                     }
@@ -34828,6 +35089,7 @@
                         "code",
                         "message"
                       ],
+                      "description": "Cognite API error",
                       "properties": {
                         "code": {
                           "type": "integer",
@@ -34840,9 +35102,21 @@
                           "description": "Error message",
                           "example": "Could not authenticate."
                         },
-                        "extra": {
-                          "type": "object",
-                          "description": "Additional data"
+                        "missing": {
+                          "type": "array",
+                          "description": "List of lookup objects that have not matched any results.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "duplicated": {
+                          "type": "array",
+                          "description": "List of objects that violate the uniqueness constraint.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
                         }
                       }
                     }
@@ -38476,7 +38750,7 @@
           "Projects"
         ],
         "summary": "Update a project",
-        "description": "Updates the specified project with the values provided.\n\nWarning: Even though this endpoint takes a list of items, it currently only supports updating one project at a time (i.e. the list of items has to have exactly one element).",
+        "description": "Updates the full project. Be careful with this operation, as it will also override any previously set field. This means every call to this endpoint needs to also include the oauth credentials, otherwise they get unset. The urlName property can not be changed.\n",
         "operationId": "putProject",
         "parameters": [
           {
@@ -38497,20 +38771,11 @@
                 "description": "Project object",
                 "title": "ProjectObject",
                 "type": "object",
-                "required": [
-                  "name",
-                  "urlName"
-                ],
                 "properties": {
                   "name": {
                     "type": "string",
                     "description": "The display name of the project.",
                     "example": "Open Industrial Data"
-                  },
-                  "urlName": {
-                    "type": "string",
-                    "description": "The url name of the project. This is used as part of API calls. It should only contain letters, digits and hyphens, as long as the hyphens are not at the start or end.",
-                    "example": "publicdata"
                   },
                   "defaultGroupId": {
                     "type": "integer",
@@ -39436,29 +39701,24 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "items": {
-                          "type": "array",
-                          "items": {
-                            "required": [
-                              "name",
-                              "id"
-                            ],
-                            "type": "object",
-                            "properties": {
-                              "name": {
-                                "type": "string",
-                                "description": "Name of the security category",
-                                "example": "Guarded by vendor x"
-                              },
-                              "id": {
-                                "type": "integer",
-                                "description": "Id of the security category",
-                                "format": "int64"
-                              }
-                            }
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "required": [
+                          "name",
+                          "id"
+                        ],
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "description": "Name of the security category",
+                            "example": "Guarded by vendor x"
+                          },
+                          "id": {
+                            "type": "integer",
+                            "description": "Id of the security category",
+                            "format": "int64"
                           }
                         }
                       }
@@ -39550,6 +39810,7 @@
                         "code",
                         "message"
                       ],
+                      "description": "Cognite API error",
                       "properties": {
                         "code": {
                           "type": "integer",
@@ -39562,9 +39823,21 @@
                           "description": "Error message",
                           "example": "Could not authenticate."
                         },
-                        "extra": {
-                          "type": "object",
-                          "description": "Additional data"
+                        "missing": {
+                          "type": "array",
+                          "description": "List of lookup objects that have not matched any results.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "duplicated": {
+                          "type": "array",
+                          "description": "List of objects that violate the uniqueness constraint.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
                         }
                       }
                     }

@@ -1,3 +1,4 @@
+import numbers
 from typing import *
 
 from cognite.client._api_client import APIClient
@@ -11,6 +12,7 @@ from cognite.client.data_classes import (
     ServiceAccount,
     ServiceAccountList,
 )
+from cognite.client.utils import _utils as utils
 
 
 class IAMAPI(APIClient):
@@ -32,7 +34,7 @@ class ServiceAccountsAPI(APIClient):
         Returns:
             ServiceAccountList: List of service accounts.
         """
-        return self._list(method="GET")
+        return ServiceAccountList._load(self._get(url_path=self._RESOURCE_PATH).json()["items"])
 
     def create(
         self, service_account: Union[ServiceAccount, List[ServiceAccount]]
@@ -89,7 +91,12 @@ class APIKeysAPI(APIClient):
         Returns:
             Union[APIKey, APIKeyList]: API key or list of api keys.
         """
-        return self._create_multiple(items=service_account_id)
+        utils.assert_type(service_account_id, "service_account_id", [numbers.Integral, list])
+        if isinstance(service_account_id, numbers.Integral):
+            items = {"serviceAccountId": service_account_id}
+        else:
+            items = [{"serviceAccountId": sa_id} for sa_id in service_account_id]
+        return self._create_multiple(items=items)
 
     def delete(self, id: Union[int, List[int]]) -> None:
         """Delete one or more api keys.

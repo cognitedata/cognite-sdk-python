@@ -116,10 +116,6 @@ class FileMetadataUpdate(CogniteUpdate):
         return _PrimitiveFileMetadataUpdate(self, "externalId")
 
     @property
-    def description(self):
-        return _PrimitiveFileMetadataUpdate(self, "description")
-
-    @property
     def source(self):
         return _PrimitiveFileMetadataUpdate(self, "source")
 

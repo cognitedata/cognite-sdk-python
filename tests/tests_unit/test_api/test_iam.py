@@ -74,13 +74,14 @@ class TestAPIKeys:
     def test_create(self, mock_api_keys):
         res = IAM_API.api_keys.create(1)
         assert isinstance(res, APIKey)
-        assert {"items": [1]} == jsgz_load(mock_api_keys.calls[0].request.body)
+        assert {"items": [{"serviceAccountId": 1}]} == jsgz_load(mock_api_keys.calls[0].request.body)
         assert mock_api_keys.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
     def test_create_multiple(self, mock_api_keys):
         res = IAM_API.api_keys.create([1])
+        print(type(res))
         assert isinstance(res, APIKeyList)
-        assert {"items": [1]} == jsgz_load(mock_api_keys.calls[0].request.body)
+        assert {"items": [{"serviceAccountId": 1}]} == jsgz_load(mock_api_keys.calls[0].request.body)
         assert mock_api_keys.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
     def test_delete(self, mock_api_keys):

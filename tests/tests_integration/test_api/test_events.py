@@ -32,7 +32,6 @@ class TestEventsAPI:
         assert 20 == len(res)
         assert 2 == COGNITE_CLIENT.events._post.call_count
 
-    @pytest.mark.xfail(strict=True)
     def test_search(self):
         res = COGNITE_CLIENT.events.search(filter=EventFilter(start_time={"min": utils.timestamp_to_ms("2d-ago")}))
         assert len(res) > 0
