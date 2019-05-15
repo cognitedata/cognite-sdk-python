@@ -192,7 +192,7 @@ class TestPlotTimeSeries:
     @mock.patch("pandas.core.frame.DataFrame.plot")
     def test_plot_time_series_id_labels(self, pandas_plot_mock, plt_show_mock, mock_ts_response, mock_get_dps):
         res = TS_API.retrieve(id=0)
-        res.plot(id_labels=True)
+        res.plot(id_labels=True, aggregates=["average"], granularity="1s")
 
         assert 1 == pandas_plot_mock.call_count
         assert 1 == plt_show_mock.call_count
