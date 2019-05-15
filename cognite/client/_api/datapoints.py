@@ -805,4 +805,13 @@ class _DatapointsFetcher:
             "limit": limit or (self.client._DPS_LIMIT_AGG if aggregates else self.client._DPS_LIMIT),
         }
         res = self.client._post(self.client._RESOURCE_PATH + "/list", json=payload).json()["items"][0]
-        return Datapoints._load(res, cognite_client=self.client._cognite_client)
+        dps = Datapoints._load(res, cognite_client=self.client._cognite_client)
+        aggs = ts_item.get("aggregates", aggregates)
+        if aggs:
+            for agg in aggs:
+                snake_agg = utils.to_snake_case(agg)
+                if getattr(dps, snake_agg) is None:
+                    setattr(dps, snake_agg, [])
+        elif dps.value is None:
+            dps.value = []
+        return dps

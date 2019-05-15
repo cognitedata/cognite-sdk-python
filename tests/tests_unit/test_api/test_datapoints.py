@@ -461,10 +461,18 @@ class TestDatapointsObject:
 
     def test_get_non_empty_data_fields(self):
         assert sorted([("timestamp", [1, 2, 3]), ("value", [1, 2, 3])]) == sorted(
-            list(Datapoints(id=1, timestamp=[1, 2, 3], value=[1, 2, 3])._get_non_empty_data_fields())
+            Datapoints(id=1, timestamp=[1, 2, 3], value=[1, 2, 3])._get_non_empty_data_fields()
         )
         assert sorted([("timestamp", [1, 2, 3]), ("max", [1, 2, 3]), ("sum", [1, 2, 3])]) == sorted(
-            list(Datapoints(id=1, timestamp=[1, 2, 3], sum=[1, 2, 3], max=[1, 2, 3])._get_non_empty_data_fields())
+            Datapoints(id=1, timestamp=[1, 2, 3], sum=[1, 2, 3], max=[1, 2, 3])._get_non_empty_data_fields()
+        )
+        assert sorted([("timestamp", [1, 2, 3]), ("max", [1, 2, 3])]) == sorted(
+            Datapoints(id=1, timestamp=[1, 2, 3], sum=[], max=[1, 2, 3])._get_non_empty_data_fields()
+        )
+        assert sorted([("timestamp", [1, 2, 3]), ("max", [1, 2, 3]), ("sum", [])]) == sorted(
+            Datapoints(id=1, timestamp=[1, 2, 3], sum=[], max=[1, 2, 3])._get_non_empty_data_fields(
+                get_empty_lists=True
+            )
         )
         assert [("timestamp", [])] == list(Datapoints(id=1)._get_non_empty_data_fields())
 
@@ -516,21 +524,21 @@ class TestDatapointsObject:
         assert [7, 8, 9] == d0.value
         assert 1 == d0.id
         assert "1" == d0.external_id
-        assert d0.sum == []
+        assert d0.sum == None
 
         d0._insert(d2)
         assert [1, 2, 3, 7, 8, 9] == d0.timestamp
         assert [1, 2, 3, 7, 8, 9] == d0.value
         assert 1 == d0.id
         assert "1" == d0.external_id
-        assert d0.sum == []
+        assert d0.sum == None
 
         d0._insert(d3)
         assert [1, 2, 3, 4, 5, 6, 7, 8, 9] == d0.timestamp
         assert [1, 2, 3, 4, 5, 6, 7, 8, 9] == d0.value
         assert 1 == d0.id
         assert "1" == d0.external_id
-        assert d0.sum == []
+        assert d0.sum == None
 
 
 @pytest.mark.dsl
@@ -679,7 +687,7 @@ class TestPandasIntegration:
 
     def test_retrieve_datapoints_one_ts_empty_correct_number_of_columns(self, mock_get_datapoints_one_ts_empty):
         res = DPS_CLIENT.retrieve(id=[1, 2], start=0, end=10000)
-        assert 2 == len(res.to_pandas())
+        assert 2 == len(res.to_pandas().columns)
 
 
 @pytest.fixture
