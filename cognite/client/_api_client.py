@@ -20,12 +20,18 @@ log = logging.getLogger("cognite-sdk")
 BACKOFF_MAX = 30
 DEFAULT_MAX_POOL_SIZE = 50
 DEFAULT_MAX_RETRIES = 5
-HTTP_STATUS_CODES_TO_RETRY = [429, 500, 502, 503]
 
 
 class RetryWithMaxBackoff(Retry):
     def get_backoff_time(self):
         return min(BACKOFF_MAX, super().get_backoff_time())
+
+
+def _get_status_codes_to_retry():
+    env_codes = os.getenv("COGNITE_STATUS_FORCELIST")
+    if env_codes is None:
+        return [429, 500, 502, 503]
+    return [int(c) for c in env_codes.split(",")]
 
 
 def _init_requests_session():
@@ -43,7 +49,7 @@ def _init_requests_session():
         max_retries=RetryWithMaxBackoff(
             total=num_of_retries,
             backoff_factor=0.5,
-            status_forcelist=HTTP_STATUS_CODES_TO_RETRY,
+            status_forcelist=_get_status_codes_to_retry(),
             method_whitelist=False,
             raise_on_status=False,
         ),

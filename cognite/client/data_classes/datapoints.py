@@ -210,12 +210,12 @@ class Datapoints:
         return instance
 
     def _insert(self, other_dps):
-        if not other_dps.timestamp:
-            return
-
         if self.id is None and self.external_id is None:
             self.id = other_dps.id
             self.external_id = other_dps.external_id
+
+        if not other_dps.timestamp:
+            return
 
         other_first_ts = other_dps.timestamp[0]
         index_to_split_on = None

@@ -568,6 +568,7 @@ class _DatapointsFetcher:
         self._preprocess_queries(dps_queries)
         self._fetch_datapoints(dps_queries)
         dps_list = self._get_dps_results()
+        dps_list = self._sort_dps_list_by_query_order(dps_list, dps_queries)
         return dps_list
 
     def _preprocess_queries(self, queries: List[_DPQuery]):
@@ -590,6 +591,19 @@ class _DatapointsFetcher:
                 dps = dps[: finalized_query.limit]
             dps_list.append(dps)
         return dps_list
+
+    def _sort_dps_list_by_query_order(self, dps_list: DatapointsList, queries: List[_DPQuery]):
+        order = {}
+        for i, q in enumerate(queries):
+            identifier = utils.unwrap_identifer(q.ts_item)
+            order[identifier] = i
+
+        def custom_sort_order(item):
+            if item.id in order:
+                return order[item.id]
+            return order[item.external_id]
+
+        return DatapointsList(sorted(dps_list, key=custom_sort_order))
 
     def _fetch_datapoints(self, dps_queries: List[_DPQuery]):
         tasks_summary = utils.execute_tasks_concurrently(

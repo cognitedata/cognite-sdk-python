@@ -127,10 +127,12 @@ You can set default configurations with these environment variables:
 
     $ export COGNITE_API_KEY = <your-api-key>
     $ export COGNITE_BASE_URL = http://<host>:<port>
-    $ export COGNITE_MAX_RETRIES = <number-of-retries>
     $ export COGNITE_MAX_WORKERS = <number-of-workers>
     $ export COGNITE_TIMEOUT = <num-of-seconds>
+
+    $ export COGNITE_MAX_RETRIES = <number-of-retries>
     $ export COGNITE_MAX_CONNECTION_POOL_SIZE = <number-of-connections-in-pool>
+    $ export COGNITE_STATUS_FORCELIST = "429,502,503"
     $ export COGNITE_DISABLE_GZIP = "1"
 
 Concurrency and connection pooling

@@ -4,7 +4,7 @@ from collections import namedtuple
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client._api_client import APIClient
+from cognite.client._api_client import APIClient, _get_status_codes_to_retry
 from cognite.client._base import *
 from cognite.client.exceptions import CogniteAPIError
 from tests.utils import jsgz_load, set_request_limit
@@ -763,3 +763,8 @@ class TestHelpers:
     def test_is_retryable_fail(self, method, path):
         with pytest.raises(ValueError, match="is not valid"):
             API_CLIENT._is_retryable(method, path)
+
+    def test_get_status_codes_to_retry(self):
+        os.environ["COGNITE_STATUS_FORCELIST"] = "1,2, 3,4"
+        assert [1, 2, 3, 4] == _get_status_codes_to_retry()
+        del os.environ["COGNITE_STATUS_FORCELIST"]

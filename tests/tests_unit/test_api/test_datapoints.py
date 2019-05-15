@@ -104,6 +104,23 @@ def mock_get_datapoints_empty(rsps):
 
 
 @pytest.fixture
+def mock_get_datapoints_one_ts_empty(rsps):
+    rsps.add(
+        rsps.POST,
+        DPS_CLIENT._base_url + "/timeseries/data/list",
+        status=200,
+        json={"items": [{"id": 1, "externalId": "1", "datapoints": [{"timestamp": 1, "value": 1}]}]},
+    )
+    rsps.add(
+        rsps.POST,
+        DPS_CLIENT._base_url + "/timeseries/data/list",
+        status=200,
+        json={"items": [{"id": 2, "externalId": "2", "datapoints": []}]},
+    )
+    yield rsps
+
+
+@pytest.fixture
 def set_dps_workers():
     def set_workers(limit):
         DPS_CLIENT._max_workers = limit
@@ -653,6 +670,16 @@ class TestPandasIntegration:
         )
         with pytest.raises(AssertionError, match="contains NaNs"):
             DPS_CLIENT.insert_dataframe(df)
+
+    def test_retrieve_datapoints_multiple_time_series_correct_ordering(self, mock_get_datapoints):
+        ids = [1, 2, 3]
+        external_ids = ["4", "5", "6"]
+        dps_res_list = DPS_CLIENT.retrieve(id=ids, external_id=external_ids, start=0, end=100000)
+        assert list(dps_res_list.to_pandas().columns) == ["1", "2", "3", "4", "5", "6"], "Incorrect column ordering"
+
+    def test_retrieve_datapoints_one_ts_empty_correct_number_of_columns(self, mock_get_datapoints_one_ts_empty):
+        res = DPS_CLIENT.retrieve(id=[1, 2], start=0, end=10000)
+        assert 2 == len(res.to_pandas())
 
 
 @pytest.fixture
