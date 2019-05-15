@@ -28,7 +28,6 @@ def service_account_id():
 
 
 class TestAPIKeysAPI:
-    @pytest.mark.xfail(strict=True)
     def test_list_with_sa_id(self, service_account_id):
         res = COGNITE_CLIENT.iam.api_keys.list(service_account_id=service_account_id)
         assert len(res) > 0
