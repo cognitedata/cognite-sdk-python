@@ -442,8 +442,16 @@
       },
       "ExternalAsset": {
         "type": "object",
+        "required": [
+          "name"
+        ],
         "properties": {
           "externalId": {
+            "description": "External Id provided by client. Should be unique within the project.",
+            "type": "string",
+            "maxLength": 255
+          },
+          "parentExternalId": {
             "description": "External Id provided by client. Should be unique within the project.",
             "type": "string",
             "maxLength": 255
@@ -483,8 +491,16 @@
         "allOf": [
           {
             "type": "object",
+            "required": [
+              "name"
+            ],
             "properties": {
               "externalId": {
+                "description": "External Id provided by client. Should be unique within the project.",
+                "type": "string",
+                "maxLength": 255
+              },
+              "parentExternalId": {
                 "description": "External Id provided by client. Should be unique within the project.",
                 "type": "string",
                 "maxLength": 255
@@ -575,8 +591,16 @@
               "allOf": [
                 {
                   "type": "object",
+                  "required": [
+                    "name"
+                  ],
                   "properties": {
                     "externalId": {
+                      "description": "External Id provided by client. Should be unique within the project.",
+                      "type": "string",
+                      "maxLength": 255
+                    },
+                    "parentExternalId": {
                       "description": "External Id provided by client. Should be unique within the project.",
                       "type": "string",
                       "maxLength": 255
@@ -672,7 +696,7 @@
                   "allOf": [
                     {
                       "type": "object",
-                      "description": "Changes will be applied to event.",
+                      "description": "Changes applied to asset",
                       "properties": {
                         "update": {
                           "type": "object",
@@ -832,7 +856,7 @@
                   "allOf": [
                     {
                       "type": "object",
-                      "description": "Changes will be applied to event.",
+                      "description": "Changes applied to asset",
                       "properties": {
                         "update": {
                           "type": "object",
@@ -991,126 +1015,57 @@
           }
         }
       },
-      "ExternalAssetItem": {
-        "allOf": [
-          {
-            "type": "object",
-            "properties": {
-              "externalId": {
-                "description": "External Id provided by client. Should be unique within the project.",
-                "type": "string",
-                "maxLength": 255
-              },
-              "name": {
-                "type": "string",
-                "description": "Name of asset. Often referred to as tag.",
-                "maxLength": 50
-              },
-              "parentId": {
-                "description": "Javascript friendly internal ID given to the object.",
-                "type": "integer",
-                "minimum": 1,
-                "maximum": 9007199254740991,
-                "format": "int64"
-              },
-              "description": {
-                "type": "string",
-                "description": "Description of asset.",
-                "maxLength": 500
-              },
-              "metadata": {
-                "type": "object",
-                "description": "Custom, application specific metadata. String key -> String value",
-                "additionalProperties": {
-                  "type": "string"
-                }
-              },
-              "source": {
-                "type": "string",
-                "description": "The source of this asset"
-              }
-            },
-            "description": "Representation of a physical asset, e.g plant or piece of equipment"
-          },
-          {
-            "type": "object",
-            "properties": {
-              "refId": {
-                "description": "Reference ID used only in post request to disambiguate references to duplicate names.",
-                "type": "string",
-                "maxLength": 50
-              },
-              "parentRefId": {
-                "description": "Reference ID of parent, to disambiguate if multiple nodes have the same name.",
-                "type": "string",
-                "maxLength": 50
-              }
-            }
-          }
-        ]
-      },
       "DataExternalAsset": {
         "type": "object",
         "properties": {
           "items": {
             "type": "array",
             "items": {
-              "allOf": [
-                {
-                  "type": "object",
-                  "properties": {
-                    "externalId": {
-                      "description": "External Id provided by client. Should be unique within the project.",
-                      "type": "string",
-                      "maxLength": 255
-                    },
-                    "name": {
-                      "type": "string",
-                      "description": "Name of asset. Often referred to as tag.",
-                      "maxLength": 50
-                    },
-                    "parentId": {
-                      "description": "Javascript friendly internal ID given to the object.",
-                      "type": "integer",
-                      "minimum": 1,
-                      "maximum": 9007199254740991,
-                      "format": "int64"
-                    },
-                    "description": {
-                      "type": "string",
-                      "description": "Description of asset.",
-                      "maxLength": 500
-                    },
-                    "metadata": {
-                      "type": "object",
-                      "description": "Custom, application specific metadata. String key -> String value",
-                      "additionalProperties": {
-                        "type": "string"
-                      }
-                    },
-                    "source": {
-                      "type": "string",
-                      "description": "The source of this asset"
-                    }
-                  },
-                  "description": "Representation of a physical asset, e.g plant or piece of equipment"
+              "type": "object",
+              "required": [
+                "name"
+              ],
+              "properties": {
+                "externalId": {
+                  "description": "External Id provided by client. Should be unique within the project.",
+                  "type": "string",
+                  "maxLength": 255
                 },
-                {
+                "parentExternalId": {
+                  "description": "External Id provided by client. Should be unique within the project.",
+                  "type": "string",
+                  "maxLength": 255
+                },
+                "name": {
+                  "type": "string",
+                  "description": "Name of asset. Often referred to as tag.",
+                  "maxLength": 50
+                },
+                "parentId": {
+                  "description": "Javascript friendly internal ID given to the object.",
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991,
+                  "format": "int64"
+                },
+                "description": {
+                  "type": "string",
+                  "description": "Description of asset.",
+                  "maxLength": 500
+                },
+                "metadata": {
                   "type": "object",
-                  "properties": {
-                    "refId": {
-                      "description": "Reference ID used only in post request to disambiguate references to duplicate names.",
-                      "type": "string",
-                      "maxLength": 50
-                    },
-                    "parentRefId": {
-                      "description": "Reference ID of parent, to disambiguate if multiple nodes have the same name.",
-                      "type": "string",
-                      "maxLength": 50
-                    }
+                  "description": "Custom, application specific metadata. String key -> String value",
+                  "additionalProperties": {
+                    "type": "string"
                   }
+                },
+                "source": {
+                  "type": "string",
+                  "description": "The source of this asset"
                 }
-              ]
+              },
+              "description": "Representation of a physical asset, e.g plant or piece of equipment"
             }
           }
         }
@@ -1124,8 +1079,16 @@
               "allOf": [
                 {
                   "type": "object",
+                  "required": [
+                    "name"
+                  ],
                   "properties": {
                     "externalId": {
+                      "description": "External Id provided by client. Should be unique within the project.",
+                      "type": "string",
+                      "maxLength": 255
+                    },
+                    "parentExternalId": {
                       "description": "External Id provided by client. Should be unique within the project.",
                       "type": "string",
                       "maxLength": 255
@@ -1289,7 +1252,7 @@
                 "minItems": 1,
                 "maxItems": 100,
                 "uniqueItems": true,
-                "description": "Filter out events that are not linked to assets in the subtree rooted at these assets.",
+                "description": "Only return assets that are in a subtree rooted at the given assets.",
                 "items": {
                   "description": "Javascript friendly internal ID given to the object.",
                   "type": "integer",
@@ -1322,7 +1285,7 @@
             }
           },
           "limit": {
-            "description": "<- TODO",
+            "description": "<- Limits the maximum number of results to be returned by single request. In case there are more results to the request 'nextCursor' attribute will be provided as part of response. Request may contain less results than request limit.",
             "type": "integer",
             "format": "int32",
             "minimum": 1,
@@ -1407,7 +1370,7 @@
                     "minItems": 1,
                     "maxItems": 100,
                     "uniqueItems": true,
-                    "description": "Filter out events that are not linked to assets in the subtree rooted at these assets.",
+                    "description": "Only return assets that are in a subtree rooted at the given assets.",
                     "items": {
                       "description": "Javascript friendly internal ID given to the object.",
                       "type": "integer",
@@ -1440,7 +1403,7 @@
                 }
               },
               "limit": {
-                "description": "<- TODO",
+                "description": "<- Limits the maximum number of results to be returned by single request. In case there are more results to the request 'nextCursor' attribute will be provided as part of response. Request may contain less results than request limit.",
                 "type": "integer",
                 "format": "int32",
                 "minimum": 1,
@@ -1461,7 +1424,7 @@
         ]
       },
       "AssetSearchFilter": {
-        "description": "Filter on events filter with exact match",
+        "description": "Search request with filter capabilities",
         "allOf": [
           {
             "description": "Filter on assets with exact match",
@@ -1537,7 +1500,7 @@
                     "minItems": 1,
                     "maxItems": 100,
                     "uniqueItems": true,
-                    "description": "Filter out events that are not linked to assets in the subtree rooted at these assets.",
+                    "description": "Only return assets that are in a subtree rooted at the given assets.",
                     "items": {
                       "description": "Javascript friendly internal ID given to the object.",
                       "type": "integer",
@@ -1570,7 +1533,7 @@
                 }
               },
               "limit": {
-                "description": "<- TODO",
+                "description": "<- Limits the maximum number of results to be returned by single request. In case there are more results to the request 'nextCursor' attribute will be provided as part of response. Request may contain less results than request limit.",
                 "type": "integer",
                 "format": "int32",
                 "minimum": 1,
@@ -1627,7 +1590,7 @@
             "allOf": [
               {
                 "type": "object",
-                "description": "Changes will be applied to event.",
+                "description": "Changes applied to asset",
                 "properties": {
                   "update": {
                     "type": "object",
@@ -1787,7 +1750,7 @@
             "allOf": [
               {
                 "type": "object",
-                "description": "Changes will be applied to event.",
+                "description": "Changes applied to asset",
                 "properties": {
                   "update": {
                     "type": "object",
@@ -1947,7 +1910,7 @@
         "allOf": [
           {
             "type": "object",
-            "description": "Changes will be applied to event.",
+            "description": "Changes applied to asset",
             "properties": {
               "update": {
                 "type": "object",
@@ -2107,7 +2070,7 @@
         "allOf": [
           {
             "type": "object",
-            "description": "Changes will be applied to event.",
+            "description": "Changes applied to asset",
             "properties": {
               "update": {
                 "type": "object",
@@ -2263,7 +2226,7 @@
       },
       "AssetPatch": {
         "type": "object",
-        "description": "Changes will be applied to event.",
+        "description": "Changes applied to asset",
         "properties": {
           "update": {
             "type": "object",
@@ -3464,7 +3427,7 @@
         "description": "An event represents something that happened at a given interval in time, e.g a failure, a work order etc."
       },
       "EventFilterRequest": {
-        "description": "ToDo",
+        "description": "Filter request for events. Filters exact field matching or timestamp ranges inclusive min and max.",
         "allOf": [
           {
             "type": "object",
@@ -3535,7 +3498,7 @@
                     "minItems": 1,
                     "maxItems": 100,
                     "uniqueItems": true,
-                    "description": "Filter out events that are not linked to assets in the subtree rooted at these assets.",
+                    "description": "Filter out events that are linked to assets in the subtree rooted at these assets.",
                     "items": {
                       "description": "Javascript friendly internal ID given to the object.",
                       "type": "integer",
@@ -3593,7 +3556,7 @@
                 }
               },
               "limit": {
-                "description": "<- TODO",
+                "description": "<- Limits the maximum number of results to be returned by single request. In case there are more results to the request 'nextCursor' attribute will be provided as part of response. Request may contain less results than request limit.",
                 "type": "integer",
                 "format": "int32",
                 "minimum": 1,
@@ -4839,7 +4802,7 @@
             "minItems": 1,
             "maxItems": 100,
             "uniqueItems": true,
-            "description": "Filter out events that are not linked to assets in the subtree rooted at these assets.",
+            "description": "Filter out events that are linked to assets in the subtree rooted at these assets.",
             "items": {
               "description": "Javascript friendly internal ID given to the object.",
               "type": "integer",
@@ -4976,7 +4939,7 @@
                 "minItems": 1,
                 "maxItems": 100,
                 "uniqueItems": true,
-                "description": "Filter out events that are not linked to assets in the subtree rooted at these assets.",
+                "description": "Filter out events that are linked to assets in the subtree rooted at these assets.",
                 "items": {
                   "description": "Javascript friendly internal ID given to the object.",
                   "type": "integer",
@@ -5044,7 +5007,7 @@
             }
           },
           "limit": {
-            "description": "<- TODO",
+            "description": "<- Limits the maximum number of results to be returned by single request. In case there are more results to the request 'nextCursor' attribute will be provided as part of response. Request may contain less results than request limit.",
             "type": "integer",
             "format": "int32",
             "minimum": 1,
@@ -5445,6 +5408,12 @@
           },
           {
             "type": "object",
+            "required": [
+              "id",
+              "uploaded",
+              "createdTime",
+              "lastUpdatedTime"
+            ],
             "properties": {
               "id": {
                 "description": "Javascript friendly internal ID given to the object.",
@@ -5512,6 +5481,11 @@
                     "maxItems": 100,
                     "uniqueItems": true,
                     "description": "Only include files that reference these specific asset IDs.",
+                    "example": [
+                      363848954441724,
+                      793045462540095,
+                      1261042166839739
+                    ],
                     "items": {
                       "description": "Javascript friendly internal ID given to the object.",
                       "type": "integer",
@@ -5525,7 +5499,12 @@
                     "minItems": 1,
                     "maxItems": 100,
                     "uniqueItems": true,
-                    "description": "Only include files that reference these asset Ids or any  sub-nodes of the specified asset Ids.",
+                    "description": "Only include files that reference these specific asset Ids or their sub-nodes.",
+                    "example": [
+                      363848954441724,
+                      793045462540095,
+                      1261042166839739
+                    ],
                     "items": {
                       "description": "Javascript friendly internal ID given to the object.",
                       "type": "integer",
@@ -6749,6 +6728,12 @@
                 },
                 {
                   "type": "object",
+                  "required": [
+                    "id",
+                    "uploaded",
+                    "createdTime",
+                    "lastUpdatedTime"
+                  ],
                   "properties": {
                     "id": {
                       "description": "Javascript friendly internal ID given to the object.",
@@ -7091,6 +7076,12 @@
                 },
                 {
                   "type": "object",
+                  "required": [
+                    "id",
+                    "uploaded",
+                    "createdTime",
+                    "lastUpdatedTime"
+                  ],
                   "properties": {
                     "id": {
                       "description": "Javascript friendly internal ID given to the object.",
@@ -7170,6 +7161,11 @@
                 "maxItems": 100,
                 "uniqueItems": true,
                 "description": "Only include files that reference these specific asset IDs.",
+                "example": [
+                  363848954441724,
+                  793045462540095,
+                  1261042166839739
+                ],
                 "items": {
                   "description": "Javascript friendly internal ID given to the object.",
                   "type": "integer",
@@ -7183,7 +7179,12 @@
                 "minItems": 1,
                 "maxItems": 100,
                 "uniqueItems": true,
-                "description": "Only include files that reference these asset Ids or any  sub-nodes of the specified asset Ids.",
+                "description": "Only include files that reference these specific asset Ids or their sub-nodes.",
+                "example": [
+                  363848954441724,
+                  793045462540095,
+                  1261042166839739
+                ],
                 "items": {
                   "description": "Javascript friendly internal ID given to the object.",
                   "type": "integer",
@@ -7270,6 +7271,44 @@
             "maximum": 1000,
             "default": 100
           }
+        }
+      },
+      "AssetSubtrees": {
+        "type": "array",
+        "minItems": 1,
+        "maxItems": 100,
+        "uniqueItems": true,
+        "description": "Only include files that reference these specific asset Ids or their sub-nodes.",
+        "example": [
+          363848954441724,
+          793045462540095,
+          1261042166839739
+        ],
+        "items": {
+          "description": "Javascript friendly internal ID given to the object.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991,
+          "format": "int64"
+        }
+      },
+      "AssetIds": {
+        "type": "array",
+        "minItems": 1,
+        "maxItems": 100,
+        "uniqueItems": true,
+        "description": "Only include files that reference these specific asset IDs.",
+        "example": [
+          363848954441724,
+          793045462540095,
+          1261042166839739
+        ],
+        "items": {
+          "description": "Javascript friendly internal ID given to the object.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991,
+          "format": "int64"
         }
       },
       "NextCursor": {
@@ -14590,6 +14629,10 @@
                   "properties": {
                     "groupsAcl": {
                       "type": "object",
+                      "required": [
+                        "actions",
+                        "scope"
+                      ],
                       "properties": {
                         "actions": {
                           "type": "array",
@@ -14638,6 +14681,10 @@
                   "properties": {
                     "assetsAcl": {
                       "type": "object",
+                      "required": [
+                        "actions",
+                        "scope"
+                      ],
                       "properties": {
                         "actions": {
                           "type": "array",
@@ -14671,6 +14718,10 @@
                   "properties": {
                     "eventsAcl": {
                       "type": "object",
+                      "required": [
+                        "actions",
+                        "scope"
+                      ],
                       "properties": {
                         "actions": {
                           "type": "array",
@@ -14704,6 +14755,10 @@
                   "properties": {
                     "filesAcl": {
                       "type": "object",
+                      "required": [
+                        "actions",
+                        "scope"
+                      ],
                       "properties": {
                         "actions": {
                           "type": "array",
@@ -14737,6 +14792,10 @@
                   "properties": {
                     "usersAcl": {
                       "type": "object",
+                      "required": [
+                        "actions",
+                        "scope"
+                      ],
                       "properties": {
                         "actions": {
                           "type": "array",
@@ -14783,6 +14842,10 @@
                   "properties": {
                     "projectsAcl": {
                       "type": "object",
+                      "required": [
+                        "actions",
+                        "scope"
+                      ],
                       "properties": {
                         "actions": {
                           "type": "array",
@@ -14818,6 +14881,10 @@
                   "properties": {
                     "securityCategoriesAcl": {
                       "type": "object",
+                      "required": [
+                        "actions",
+                        "scope"
+                      ],
                       "properties": {
                         "actions": {
                           "type": "array",
@@ -14853,6 +14920,10 @@
                   "properties": {
                     "rawAcl": {
                       "type": "object",
+                      "required": [
+                        "actions",
+                        "scope"
+                      ],
                       "properties": {
                         "actions": {
                           "type": "array",
@@ -14887,6 +14958,10 @@
                   "properties": {
                     "timeSeriesAcl": {
                       "type": "object",
+                      "required": [
+                        "actions",
+                        "scope"
+                      ],
                       "properties": {
                         "actions": {
                           "type": "array",
@@ -14942,6 +15017,10 @@
                   "properties": {
                     "apikeysAcl": {
                       "type": "object",
+                      "required": [
+                        "actions",
+                        "scope"
+                      ],
                       "properties": {
                         "actions": {
                           "type": "array",
@@ -14988,6 +15067,10 @@
                   "properties": {
                     "threedAcl": {
                       "type": "object",
+                      "required": [
+                        "actions",
+                        "scope"
+                      ],
                       "properties": {
                         "actions": {
                           "type": "array",
@@ -15023,6 +15106,10 @@
                   "properties": {
                     "sequencesAcl": {
                       "type": "object",
+                      "required": [
+                        "actions",
+                        "scope"
+                      ],
                       "properties": {
                         "actions": {
                           "type": "array",
@@ -15056,6 +15143,10 @@
                   "properties": {
                     "analyticsAcl": {
                       "type": "object",
+                      "required": [
+                        "actions",
+                        "scope"
+                      ],
                       "properties": {
                         "actions": {
                           "type": "array",
@@ -15139,6 +15230,10 @@
                         "properties": {
                           "groupsAcl": {
                             "type": "object",
+                            "required": [
+                              "actions",
+                              "scope"
+                            ],
                             "properties": {
                               "actions": {
                                 "type": "array",
@@ -15187,6 +15282,10 @@
                         "properties": {
                           "assetsAcl": {
                             "type": "object",
+                            "required": [
+                              "actions",
+                              "scope"
+                            ],
                             "properties": {
                               "actions": {
                                 "type": "array",
@@ -15220,6 +15319,10 @@
                         "properties": {
                           "eventsAcl": {
                             "type": "object",
+                            "required": [
+                              "actions",
+                              "scope"
+                            ],
                             "properties": {
                               "actions": {
                                 "type": "array",
@@ -15253,6 +15356,10 @@
                         "properties": {
                           "filesAcl": {
                             "type": "object",
+                            "required": [
+                              "actions",
+                              "scope"
+                            ],
                             "properties": {
                               "actions": {
                                 "type": "array",
@@ -15286,6 +15393,10 @@
                         "properties": {
                           "usersAcl": {
                             "type": "object",
+                            "required": [
+                              "actions",
+                              "scope"
+                            ],
                             "properties": {
                               "actions": {
                                 "type": "array",
@@ -15332,6 +15443,10 @@
                         "properties": {
                           "projectsAcl": {
                             "type": "object",
+                            "required": [
+                              "actions",
+                              "scope"
+                            ],
                             "properties": {
                               "actions": {
                                 "type": "array",
@@ -15367,6 +15482,10 @@
                         "properties": {
                           "securityCategoriesAcl": {
                             "type": "object",
+                            "required": [
+                              "actions",
+                              "scope"
+                            ],
                             "properties": {
                               "actions": {
                                 "type": "array",
@@ -15402,6 +15521,10 @@
                         "properties": {
                           "rawAcl": {
                             "type": "object",
+                            "required": [
+                              "actions",
+                              "scope"
+                            ],
                             "properties": {
                               "actions": {
                                 "type": "array",
@@ -15436,6 +15559,10 @@
                         "properties": {
                           "timeSeriesAcl": {
                             "type": "object",
+                            "required": [
+                              "actions",
+                              "scope"
+                            ],
                             "properties": {
                               "actions": {
                                 "type": "array",
@@ -15491,6 +15618,10 @@
                         "properties": {
                           "apikeysAcl": {
                             "type": "object",
+                            "required": [
+                              "actions",
+                              "scope"
+                            ],
                             "properties": {
                               "actions": {
                                 "type": "array",
@@ -15537,6 +15668,10 @@
                         "properties": {
                           "threedAcl": {
                             "type": "object",
+                            "required": [
+                              "actions",
+                              "scope"
+                            ],
                             "properties": {
                               "actions": {
                                 "type": "array",
@@ -15572,6 +15707,10 @@
                         "properties": {
                           "sequencesAcl": {
                             "type": "object",
+                            "required": [
+                              "actions",
+                              "scope"
+                            ],
                             "properties": {
                               "actions": {
                                 "type": "array",
@@ -15605,6 +15744,10 @@
                         "properties": {
                           "analyticsAcl": {
                             "type": "object",
+                            "required": [
+                              "actions",
+                              "scope"
+                            ],
                             "properties": {
                               "actions": {
                                 "type": "array",
@@ -15681,6 +15824,10 @@
                   "properties": {
                     "groupsAcl": {
                       "type": "object",
+                      "required": [
+                        "actions",
+                        "scope"
+                      ],
                       "properties": {
                         "actions": {
                           "type": "array",
@@ -15729,6 +15876,10 @@
                   "properties": {
                     "assetsAcl": {
                       "type": "object",
+                      "required": [
+                        "actions",
+                        "scope"
+                      ],
                       "properties": {
                         "actions": {
                           "type": "array",
@@ -15762,6 +15913,10 @@
                   "properties": {
                     "eventsAcl": {
                       "type": "object",
+                      "required": [
+                        "actions",
+                        "scope"
+                      ],
                       "properties": {
                         "actions": {
                           "type": "array",
@@ -15795,6 +15950,10 @@
                   "properties": {
                     "filesAcl": {
                       "type": "object",
+                      "required": [
+                        "actions",
+                        "scope"
+                      ],
                       "properties": {
                         "actions": {
                           "type": "array",
@@ -15828,6 +15987,10 @@
                   "properties": {
                     "usersAcl": {
                       "type": "object",
+                      "required": [
+                        "actions",
+                        "scope"
+                      ],
                       "properties": {
                         "actions": {
                           "type": "array",
@@ -15874,6 +16037,10 @@
                   "properties": {
                     "projectsAcl": {
                       "type": "object",
+                      "required": [
+                        "actions",
+                        "scope"
+                      ],
                       "properties": {
                         "actions": {
                           "type": "array",
@@ -15909,6 +16076,10 @@
                   "properties": {
                     "securityCategoriesAcl": {
                       "type": "object",
+                      "required": [
+                        "actions",
+                        "scope"
+                      ],
                       "properties": {
                         "actions": {
                           "type": "array",
@@ -15944,6 +16115,10 @@
                   "properties": {
                     "rawAcl": {
                       "type": "object",
+                      "required": [
+                        "actions",
+                        "scope"
+                      ],
                       "properties": {
                         "actions": {
                           "type": "array",
@@ -15978,6 +16153,10 @@
                   "properties": {
                     "timeSeriesAcl": {
                       "type": "object",
+                      "required": [
+                        "actions",
+                        "scope"
+                      ],
                       "properties": {
                         "actions": {
                           "type": "array",
@@ -16033,6 +16212,10 @@
                   "properties": {
                     "apikeysAcl": {
                       "type": "object",
+                      "required": [
+                        "actions",
+                        "scope"
+                      ],
                       "properties": {
                         "actions": {
                           "type": "array",
@@ -16079,6 +16262,10 @@
                   "properties": {
                     "threedAcl": {
                       "type": "object",
+                      "required": [
+                        "actions",
+                        "scope"
+                      ],
                       "properties": {
                         "actions": {
                           "type": "array",
@@ -16114,6 +16301,10 @@
                   "properties": {
                     "sequencesAcl": {
                       "type": "object",
+                      "required": [
+                        "actions",
+                        "scope"
+                      ],
                       "properties": {
                         "actions": {
                           "type": "array",
@@ -16147,6 +16338,10 @@
                   "properties": {
                     "analyticsAcl": {
                       "type": "object",
+                      "required": [
+                        "actions",
+                        "scope"
+                      ],
                       "properties": {
                         "actions": {
                           "type": "array",
@@ -16219,6 +16414,10 @@
                         "properties": {
                           "groupsAcl": {
                             "type": "object",
+                            "required": [
+                              "actions",
+                              "scope"
+                            ],
                             "properties": {
                               "actions": {
                                 "type": "array",
@@ -16267,6 +16466,10 @@
                         "properties": {
                           "assetsAcl": {
                             "type": "object",
+                            "required": [
+                              "actions",
+                              "scope"
+                            ],
                             "properties": {
                               "actions": {
                                 "type": "array",
@@ -16300,6 +16503,10 @@
                         "properties": {
                           "eventsAcl": {
                             "type": "object",
+                            "required": [
+                              "actions",
+                              "scope"
+                            ],
                             "properties": {
                               "actions": {
                                 "type": "array",
@@ -16333,6 +16540,10 @@
                         "properties": {
                           "filesAcl": {
                             "type": "object",
+                            "required": [
+                              "actions",
+                              "scope"
+                            ],
                             "properties": {
                               "actions": {
                                 "type": "array",
@@ -16366,6 +16577,10 @@
                         "properties": {
                           "usersAcl": {
                             "type": "object",
+                            "required": [
+                              "actions",
+                              "scope"
+                            ],
                             "properties": {
                               "actions": {
                                 "type": "array",
@@ -16412,6 +16627,10 @@
                         "properties": {
                           "projectsAcl": {
                             "type": "object",
+                            "required": [
+                              "actions",
+                              "scope"
+                            ],
                             "properties": {
                               "actions": {
                                 "type": "array",
@@ -16447,6 +16666,10 @@
                         "properties": {
                           "securityCategoriesAcl": {
                             "type": "object",
+                            "required": [
+                              "actions",
+                              "scope"
+                            ],
                             "properties": {
                               "actions": {
                                 "type": "array",
@@ -16482,6 +16705,10 @@
                         "properties": {
                           "rawAcl": {
                             "type": "object",
+                            "required": [
+                              "actions",
+                              "scope"
+                            ],
                             "properties": {
                               "actions": {
                                 "type": "array",
@@ -16516,6 +16743,10 @@
                         "properties": {
                           "timeSeriesAcl": {
                             "type": "object",
+                            "required": [
+                              "actions",
+                              "scope"
+                            ],
                             "properties": {
                               "actions": {
                                 "type": "array",
@@ -16571,6 +16802,10 @@
                         "properties": {
                           "apikeysAcl": {
                             "type": "object",
+                            "required": [
+                              "actions",
+                              "scope"
+                            ],
                             "properties": {
                               "actions": {
                                 "type": "array",
@@ -16617,6 +16852,10 @@
                         "properties": {
                           "threedAcl": {
                             "type": "object",
+                            "required": [
+                              "actions",
+                              "scope"
+                            ],
                             "properties": {
                               "actions": {
                                 "type": "array",
@@ -16652,6 +16891,10 @@
                         "properties": {
                           "sequencesAcl": {
                             "type": "object",
+                            "required": [
+                              "actions",
+                              "scope"
+                            ],
                             "properties": {
                               "actions": {
                                 "type": "array",
@@ -16685,6 +16928,10 @@
                         "properties": {
                           "analyticsAcl": {
                             "type": "object",
+                            "required": [
+                              "actions",
+                              "scope"
+                            ],
                             "properties": {
                               "actions": {
                                 "type": "array",
@@ -16769,6 +17016,10 @@
                         "properties": {
                           "groupsAcl": {
                             "type": "object",
+                            "required": [
+                              "actions",
+                              "scope"
+                            ],
                             "properties": {
                               "actions": {
                                 "type": "array",
@@ -16817,6 +17068,10 @@
                         "properties": {
                           "assetsAcl": {
                             "type": "object",
+                            "required": [
+                              "actions",
+                              "scope"
+                            ],
                             "properties": {
                               "actions": {
                                 "type": "array",
@@ -16850,6 +17105,10 @@
                         "properties": {
                           "eventsAcl": {
                             "type": "object",
+                            "required": [
+                              "actions",
+                              "scope"
+                            ],
                             "properties": {
                               "actions": {
                                 "type": "array",
@@ -16883,6 +17142,10 @@
                         "properties": {
                           "filesAcl": {
                             "type": "object",
+                            "required": [
+                              "actions",
+                              "scope"
+                            ],
                             "properties": {
                               "actions": {
                                 "type": "array",
@@ -16916,6 +17179,10 @@
                         "properties": {
                           "usersAcl": {
                             "type": "object",
+                            "required": [
+                              "actions",
+                              "scope"
+                            ],
                             "properties": {
                               "actions": {
                                 "type": "array",
@@ -16962,6 +17229,10 @@
                         "properties": {
                           "projectsAcl": {
                             "type": "object",
+                            "required": [
+                              "actions",
+                              "scope"
+                            ],
                             "properties": {
                               "actions": {
                                 "type": "array",
@@ -16997,6 +17268,10 @@
                         "properties": {
                           "securityCategoriesAcl": {
                             "type": "object",
+                            "required": [
+                              "actions",
+                              "scope"
+                            ],
                             "properties": {
                               "actions": {
                                 "type": "array",
@@ -17032,6 +17307,10 @@
                         "properties": {
                           "rawAcl": {
                             "type": "object",
+                            "required": [
+                              "actions",
+                              "scope"
+                            ],
                             "properties": {
                               "actions": {
                                 "type": "array",
@@ -17066,6 +17345,10 @@
                         "properties": {
                           "timeSeriesAcl": {
                             "type": "object",
+                            "required": [
+                              "actions",
+                              "scope"
+                            ],
                             "properties": {
                               "actions": {
                                 "type": "array",
@@ -17121,6 +17404,10 @@
                         "properties": {
                           "apikeysAcl": {
                             "type": "object",
+                            "required": [
+                              "actions",
+                              "scope"
+                            ],
                             "properties": {
                               "actions": {
                                 "type": "array",
@@ -17167,6 +17454,10 @@
                         "properties": {
                           "threedAcl": {
                             "type": "object",
+                            "required": [
+                              "actions",
+                              "scope"
+                            ],
                             "properties": {
                               "actions": {
                                 "type": "array",
@@ -17202,6 +17493,10 @@
                         "properties": {
                           "sequencesAcl": {
                             "type": "object",
+                            "required": [
+                              "actions",
+                              "scope"
+                            ],
                             "properties": {
                               "actions": {
                                 "type": "array",
@@ -17235,6 +17530,10 @@
                         "properties": {
                           "analyticsAcl": {
                             "type": "object",
+                            "required": [
+                              "actions",
+                              "scope"
+                            ],
                             "properties": {
                               "actions": {
                                 "type": "array",
@@ -17284,6 +17583,10 @@
               "properties": {
                 "groupsAcl": {
                   "type": "object",
+                  "required": [
+                    "actions",
+                    "scope"
+                  ],
                   "properties": {
                     "actions": {
                       "type": "array",
@@ -17332,6 +17635,10 @@
               "properties": {
                 "assetsAcl": {
                   "type": "object",
+                  "required": [
+                    "actions",
+                    "scope"
+                  ],
                   "properties": {
                     "actions": {
                       "type": "array",
@@ -17365,6 +17672,10 @@
               "properties": {
                 "eventsAcl": {
                   "type": "object",
+                  "required": [
+                    "actions",
+                    "scope"
+                  ],
                   "properties": {
                     "actions": {
                       "type": "array",
@@ -17398,6 +17709,10 @@
               "properties": {
                 "filesAcl": {
                   "type": "object",
+                  "required": [
+                    "actions",
+                    "scope"
+                  ],
                   "properties": {
                     "actions": {
                       "type": "array",
@@ -17431,6 +17746,10 @@
               "properties": {
                 "usersAcl": {
                   "type": "object",
+                  "required": [
+                    "actions",
+                    "scope"
+                  ],
                   "properties": {
                     "actions": {
                       "type": "array",
@@ -17477,6 +17796,10 @@
               "properties": {
                 "projectsAcl": {
                   "type": "object",
+                  "required": [
+                    "actions",
+                    "scope"
+                  ],
                   "properties": {
                     "actions": {
                       "type": "array",
@@ -17512,6 +17835,10 @@
               "properties": {
                 "securityCategoriesAcl": {
                   "type": "object",
+                  "required": [
+                    "actions",
+                    "scope"
+                  ],
                   "properties": {
                     "actions": {
                       "type": "array",
@@ -17547,6 +17874,10 @@
               "properties": {
                 "rawAcl": {
                   "type": "object",
+                  "required": [
+                    "actions",
+                    "scope"
+                  ],
                   "properties": {
                     "actions": {
                       "type": "array",
@@ -17581,6 +17912,10 @@
               "properties": {
                 "timeSeriesAcl": {
                   "type": "object",
+                  "required": [
+                    "actions",
+                    "scope"
+                  ],
                   "properties": {
                     "actions": {
                       "type": "array",
@@ -17636,6 +17971,10 @@
               "properties": {
                 "apikeysAcl": {
                   "type": "object",
+                  "required": [
+                    "actions",
+                    "scope"
+                  ],
                   "properties": {
                     "actions": {
                       "type": "array",
@@ -17682,6 +18021,10 @@
               "properties": {
                 "threedAcl": {
                   "type": "object",
+                  "required": [
+                    "actions",
+                    "scope"
+                  ],
                   "properties": {
                     "actions": {
                       "type": "array",
@@ -17717,6 +18060,10 @@
               "properties": {
                 "sequencesAcl": {
                   "type": "object",
+                  "required": [
+                    "actions",
+                    "scope"
+                  ],
                   "properties": {
                     "actions": {
                       "type": "array",
@@ -17750,6 +18097,10 @@
               "properties": {
                 "analyticsAcl": {
                   "type": "object",
+                  "required": [
+                    "actions",
+                    "scope"
+                  ],
                   "properties": {
                     "actions": {
                       "type": "array",
@@ -17785,6 +18136,10 @@
       },
       "cogniteanalytics_aclAcl": {
         "type": "object",
+        "required": [
+          "actions",
+          "scope"
+        ],
         "properties": {
           "actions": {
             "type": "array",
@@ -17834,6 +18189,10 @@
       },
       "cogniteapikeys_aclAcl": {
         "type": "object",
+        "required": [
+          "actions",
+          "scope"
+        ],
         "properties": {
           "actions": {
             "type": "array",
@@ -17907,6 +18266,10 @@
       },
       "cogniteassets_aclAcl": {
         "type": "object",
+        "required": [
+          "actions",
+          "scope"
+        ],
         "properties": {
           "actions": {
             "type": "array",
@@ -17968,6 +18331,10 @@
       },
       "cogniteevents_aclAcl": {
         "type": "object",
+        "required": [
+          "actions",
+          "scope"
+        ],
         "properties": {
           "actions": {
             "type": "array",
@@ -18015,6 +18382,10 @@
       },
       "cognitefiles_aclAcl": {
         "type": "object",
+        "required": [
+          "actions",
+          "scope"
+        ],
         "properties": {
           "actions": {
             "type": "array",
@@ -18062,6 +18433,10 @@
       },
       "cognitegroups_aclAcl": {
         "type": "object",
+        "required": [
+          "actions",
+          "scope"
+        ],
         "properties": {
           "actions": {
             "type": "array",
@@ -18139,6 +18514,10 @@
       },
       "cogniteprojects_aclAcl": {
         "type": "object",
+        "required": [
+          "actions",
+          "scope"
+        ],
         "properties": {
           "actions": {
             "type": "array",
@@ -18190,6 +18569,10 @@
       },
       "cogniteraw_aclAcl": {
         "type": "object",
+        "required": [
+          "actions",
+          "scope"
+        ],
         "properties": {
           "actions": {
             "type": "array",
@@ -18239,6 +18622,10 @@
       },
       "cognitesecuritycategories_aclAcl": {
         "type": "object",
+        "required": [
+          "actions",
+          "scope"
+        ],
         "properties": {
           "actions": {
             "type": "array",
@@ -18290,6 +18677,10 @@
       },
       "cognitesequences_aclAcl": {
         "type": "object",
+        "required": [
+          "actions",
+          "scope"
+        ],
         "properties": {
           "actions": {
             "type": "array",
@@ -18337,6 +18728,10 @@
       },
       "cognitethreed_aclAcl": {
         "type": "object",
+        "required": [
+          "actions",
+          "scope"
+        ],
         "properties": {
           "actions": {
             "type": "array",
@@ -18388,6 +18783,10 @@
       },
       "cognitetimeseries_aclAcl": {
         "type": "object",
+        "required": [
+          "actions",
+          "scope"
+        ],
         "properties": {
           "actions": {
             "type": "array",
@@ -18479,6 +18878,10 @@
       },
       "cogniteusers_aclAcl": {
         "type": "object",
+        "required": [
+          "actions",
+          "scope"
+        ],
         "properties": {
           "actions": {
             "type": "array",
@@ -19306,7 +19709,7 @@
         }
       },
       "AssetDataWithCursorResponse": {
-        "description": "TODO",
+        "description": "Paged response with list of assets",
         "content": {
           "application/json": {
             "schema": {
@@ -19318,8 +19721,16 @@
                     "allOf": [
                       {
                         "type": "object",
+                        "required": [
+                          "name"
+                        ],
                         "properties": {
                           "externalId": {
+                            "description": "External Id provided by client. Should be unique within the project.",
+                            "type": "string",
+                            "maxLength": 255
+                          },
+                          "parentExternalId": {
                             "description": "External Id provided by client. Should be unique within the project.",
                             "type": "string",
                             "maxLength": 255
@@ -19413,7 +19824,7 @@
         }
       },
       "AssetDataResponse": {
-        "description": "TODO",
+        "description": "Response with list of assets",
         "content": {
           "application/json": {
             "schema": {
@@ -19425,8 +19836,16 @@
                     "allOf": [
                       {
                         "type": "object",
+                        "required": [
+                          "name"
+                        ],
                         "properties": {
                           "externalId": {
+                            "description": "External Id provided by client. Should be unique within the project.",
+                            "type": "string",
+                            "maxLength": 255
+                          },
+                          "parentExternalId": {
                             "description": "External Id provided by client. Should be unique within the project.",
                             "type": "string",
                             "maxLength": 255
@@ -19515,15 +19934,23 @@
         }
       },
       "AssetResponse": {
-        "description": "TODO",
+        "description": "Single asset response",
         "content": {
           "application/json": {
             "schema": {
               "allOf": [
                 {
                   "type": "object",
+                  "required": [
+                    "name"
+                  ],
                   "properties": {
                     "externalId": {
+                      "description": "External Id provided by client. Should be unique within the project.",
+                      "type": "string",
+                      "maxLength": 255
+                    },
+                    "parentExternalId": {
                       "description": "External Id provided by client. Should be unique within the project.",
                       "type": "string",
                       "maxLength": 255
@@ -19609,7 +20036,7 @@
         }
       },
       "EventDataResponse": {
-        "description": "TODO",
+        "description": "Paged response with list of events",
         "content": {
           "application/json": {
             "schema": {
@@ -19716,7 +20143,7 @@
         }
       },
       "EventResponse": {
-        "description": "TODO",
+        "description": "response with list of events",
         "content": {
           "application/json": {
             "schema": {
@@ -19810,7 +20237,7 @@
         }
       },
       "EventDataWithCursorResponse": {
-        "description": "TODO",
+        "description": "single event response",
         "content": {
           "application/json": {
             "schema": {
@@ -19922,7 +20349,7 @@
         }
       },
       "FileMetadataResponse": {
-        "description": "The response for successful files/update operations",
+        "description": "The response for a successful GET files/id operation",
         "content": {
           "application/json": {
             "schema": {
@@ -19973,6 +20400,12 @@
                 },
                 {
                   "type": "object",
+                  "required": [
+                    "id",
+                    "uploaded",
+                    "createdTime",
+                    "lastUpdatedTime"
+                  ],
                   "properties": {
                     "id": {
                       "description": "Javascript friendly internal ID given to the object.",
@@ -20011,7 +20444,7 @@
         }
       },
       "UploadFileMetadataResponse": {
-        "description": "The response for successful files/initupload operations",
+        "description": "The response for a successful files/initupload operation",
         "content": {
           "application/json": {
             "schema": {
@@ -20064,6 +20497,12 @@
                     },
                     {
                       "type": "object",
+                      "required": [
+                        "id",
+                        "uploaded",
+                        "createdTime",
+                        "lastUpdatedTime"
+                      ],
                       "properties": {
                         "id": {
                           "description": "Javascript friendly internal ID given to the object.",
@@ -20100,8 +20539,12 @@
                 },
                 {
                   "type": "object",
+                  "required": [
+                    "uploadUrl"
+                  ],
                   "properties": {
                     "uploadUrl": {
+                      "description": "The URL where the file contents should be uploaded.",
                       "type": "string"
                     }
                   }
@@ -20112,7 +20555,7 @@
         }
       },
       "FileMetadataWithCursorResponse": {
-        "description": "The response for successful files/list operations",
+        "description": "The response for a successful files/list operation",
         "content": {
           "application/json": {
             "schema": {
@@ -20168,6 +20611,12 @@
                       },
                       {
                         "type": "object",
+                        "required": [
+                          "id",
+                          "uploaded",
+                          "createdTime",
+                          "lastUpdatedTime"
+                        ],
                         "properties": {
                           "id": {
                             "description": "Javascript friendly internal ID given to the object.",
@@ -20214,7 +20663,7 @@
         }
       },
       "FileResponse": {
-        "description": "The response for successful files/byIds and files/search operations",
+        "description": "The response for a successful files/byids, files/search or files/update operation",
         "content": {
           "application/json": {
             "schema": {
@@ -20270,6 +20719,12 @@
                       },
                       {
                         "type": "object",
+                        "required": [
+                          "id",
+                          "uploaded",
+                          "createdTime",
+                          "lastUpdatedTime"
+                        ],
                         "properties": {
                           "id": {
                             "description": "Javascript friendly internal ID given to the object.",
@@ -20311,7 +20766,7 @@
         }
       },
       "DataWithLinks": {
-        "description": "The response for a successful files/downloadlink operations.",
+        "description": "The response for a successful files/downloadlink operation.",
         "content": {
           "application/json": {
             "schema": {
@@ -20634,7 +21089,7 @@
             "schema": {
               "maxLength": 128,
               "type": "string",
-              "description": "The source of this event."
+              "description": "The source of this asset."
             }
           },
           {
@@ -20705,7 +21160,7 @@
         ],
         "responses": {
           "200": {
-            "description": "TODO",
+            "description": "Paged response with list of assets",
             "content": {
               "application/json": {
                 "schema": {
@@ -20717,8 +21172,16 @@
                         "allOf": [
                           {
                             "type": "object",
+                            "required": [
+                              "name"
+                            ],
                             "properties": {
                               "externalId": {
+                                "description": "External Id provided by client. Should be unique within the project.",
+                                "type": "string",
+                                "maxLength": 255
+                              },
+                              "parentExternalId": {
                                 "description": "External Id provided by client. Should be unique within the project.",
                                 "type": "string",
                                 "maxLength": 255
@@ -20894,62 +21357,51 @@
                   "items": {
                     "type": "array",
                     "items": {
-                      "allOf": [
-                        {
-                          "type": "object",
-                          "properties": {
-                            "externalId": {
-                              "description": "External Id provided by client. Should be unique within the project.",
-                              "type": "string",
-                              "maxLength": 255
-                            },
-                            "name": {
-                              "type": "string",
-                              "description": "Name of asset. Often referred to as tag.",
-                              "maxLength": 50
-                            },
-                            "parentId": {
-                              "description": "Javascript friendly internal ID given to the object.",
-                              "type": "integer",
-                              "minimum": 1,
-                              "maximum": 9007199254740991,
-                              "format": "int64"
-                            },
-                            "description": {
-                              "type": "string",
-                              "description": "Description of asset.",
-                              "maxLength": 500
-                            },
-                            "metadata": {
-                              "type": "object",
-                              "description": "Custom, application specific metadata. String key -> String value",
-                              "additionalProperties": {
-                                "type": "string"
-                              }
-                            },
-                            "source": {
-                              "type": "string",
-                              "description": "The source of this asset"
-                            }
-                          },
-                          "description": "Representation of a physical asset, e.g plant or piece of equipment"
+                      "type": "object",
+                      "required": [
+                        "name"
+                      ],
+                      "properties": {
+                        "externalId": {
+                          "description": "External Id provided by client. Should be unique within the project.",
+                          "type": "string",
+                          "maxLength": 255
                         },
-                        {
+                        "parentExternalId": {
+                          "description": "External Id provided by client. Should be unique within the project.",
+                          "type": "string",
+                          "maxLength": 255
+                        },
+                        "name": {
+                          "type": "string",
+                          "description": "Name of asset. Often referred to as tag.",
+                          "maxLength": 50
+                        },
+                        "parentId": {
+                          "description": "Javascript friendly internal ID given to the object.",
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991,
+                          "format": "int64"
+                        },
+                        "description": {
+                          "type": "string",
+                          "description": "Description of asset.",
+                          "maxLength": 500
+                        },
+                        "metadata": {
                           "type": "object",
-                          "properties": {
-                            "refId": {
-                              "description": "Reference ID used only in post request to disambiguate references to duplicate names.",
-                              "type": "string",
-                              "maxLength": 50
-                            },
-                            "parentRefId": {
-                              "description": "Reference ID of parent, to disambiguate if multiple nodes have the same name.",
-                              "type": "string",
-                              "maxLength": 50
-                            }
+                          "description": "Custom, application specific metadata. String key -> String value",
+                          "additionalProperties": {
+                            "type": "string"
                           }
+                        },
+                        "source": {
+                          "type": "string",
+                          "description": "The source of this asset"
                         }
-                      ]
+                      },
+                      "description": "Representation of a physical asset, e.g plant or piece of equipment"
                     }
                   }
                 }
@@ -20960,7 +21412,7 @@
         },
         "responses": {
           "200": {
-            "description": "TODO",
+            "description": "Response with list of assets",
             "content": {
               "application/json": {
                 "schema": {
@@ -20972,8 +21424,16 @@
                         "allOf": [
                           {
                             "type": "object",
+                            "required": [
+                              "name"
+                            ],
                             "properties": {
                               "externalId": {
+                                "description": "External Id provided by client. Should be unique within the project.",
+                                "type": "string",
+                                "maxLength": 255
+                              },
+                              "parentExternalId": {
                                 "description": "External Id provided by client. Should be unique within the project.",
                                 "type": "string",
                                 "maxLength": 255
@@ -21162,15 +21622,23 @@
         ],
         "responses": {
           "200": {
-            "description": "TODO",
+            "description": "Single asset response",
             "content": {
               "application/json": {
                 "schema": {
                   "allOf": [
                     {
                       "type": "object",
+                      "required": [
+                        "name"
+                      ],
                       "properties": {
                         "externalId": {
+                          "description": "External Id provided by client. Should be unique within the project.",
+                          "type": "string",
+                          "maxLength": 255
+                        },
+                        "parentExternalId": {
                           "description": "External Id provided by client. Should be unique within the project.",
                           "type": "string",
                           "maxLength": 255
@@ -21331,7 +21799,6 @@
           }
         ],
         "requestBody": {
-          "description": "TODO",
           "content": {
             "application/json": {
               "schema": {
@@ -21410,7 +21877,7 @@
                             "minItems": 1,
                             "maxItems": 100,
                             "uniqueItems": true,
-                            "description": "Filter out events that are not linked to assets in the subtree rooted at these assets.",
+                            "description": "Only return assets that are in a subtree rooted at the given assets.",
                             "items": {
                               "description": "Javascript friendly internal ID given to the object.",
                               "type": "integer",
@@ -21443,7 +21910,7 @@
                         }
                       },
                       "limit": {
-                        "description": "<- TODO",
+                        "description": "<- Limits the maximum number of results to be returned by single request. In case there are more results to the request 'nextCursor' attribute will be provided as part of response. Request may contain less results than request limit.",
                         "type": "integer",
                         "format": "int32",
                         "minimum": 1,
@@ -21468,7 +21935,7 @@
         },
         "responses": {
           "200": {
-            "description": "TODO",
+            "description": "Paged response with list of assets",
             "content": {
               "application/json": {
                 "schema": {
@@ -21480,8 +21947,16 @@
                         "allOf": [
                           {
                             "type": "object",
+                            "required": [
+                              "name"
+                            ],
                             "properties": {
                               "externalId": {
+                                "description": "External Id provided by client. Should be unique within the project.",
+                                "type": "string",
+                                "maxLength": 255
+                              },
+                              "parentExternalId": {
                                 "description": "External Id provided by client. Should be unique within the project.",
                                 "type": "string",
                                 "maxLength": 255
@@ -21654,7 +22129,7 @@
         },
         "responses": {
           "200": {
-            "description": "TODO",
+            "description": "Response with list of assets",
             "content": {
               "application/json": {
                 "schema": {
@@ -21666,8 +22141,16 @@
                         "allOf": [
                           {
                             "type": "object",
+                            "required": [
+                              "name"
+                            ],
                             "properties": {
                               "externalId": {
+                                "description": "External Id provided by client. Should be unique within the project.",
+                                "type": "string",
+                                "maxLength": 255
+                              },
+                              "parentExternalId": {
                                 "description": "External Id provided by client. Should be unique within the project.",
                                 "type": "string",
                                 "maxLength": 255
@@ -21856,7 +22339,7 @@
                           "allOf": [
                             {
                               "type": "object",
-                              "description": "Changes will be applied to event.",
+                              "description": "Changes applied to asset",
                               "properties": {
                                 "update": {
                                   "type": "object",
@@ -22016,7 +22499,7 @@
                           "allOf": [
                             {
                               "type": "object",
-                              "description": "Changes will be applied to event.",
+                              "description": "Changes applied to asset",
                               "properties": {
                                 "update": {
                                   "type": "object",
@@ -22181,7 +22664,7 @@
         },
         "responses": {
           "200": {
-            "description": "TODO",
+            "description": "Response with list of assets",
             "content": {
               "application/json": {
                 "schema": {
@@ -22193,8 +22676,16 @@
                         "allOf": [
                           {
                             "type": "object",
+                            "required": [
+                              "name"
+                            ],
                             "properties": {
                               "externalId": {
+                                "description": "External Id provided by client. Should be unique within the project.",
+                                "type": "string",
+                                "maxLength": 255
+                              },
+                              "parentExternalId": {
                                 "description": "External Id provided by client. Should be unique within the project.",
                                 "type": "string",
                                 "maxLength": 255
@@ -22373,7 +22864,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "description": "Filter on events filter with exact match",
+                "description": "Search request with filter capabilities",
                 "allOf": [
                   {
                     "description": "Filter on assets with exact match",
@@ -22449,7 +22940,7 @@
                             "minItems": 1,
                             "maxItems": 100,
                             "uniqueItems": true,
-                            "description": "Filter out events that are not linked to assets in the subtree rooted at these assets.",
+                            "description": "Only return assets that are in a subtree rooted at the given assets.",
                             "items": {
                               "description": "Javascript friendly internal ID given to the object.",
                               "type": "integer",
@@ -22482,7 +22973,7 @@
                         }
                       },
                       "limit": {
-                        "description": "<- TODO",
+                        "description": "<- Limits the maximum number of results to be returned by single request. In case there are more results to the request 'nextCursor' attribute will be provided as part of response. Request may contain less results than request limit.",
                         "type": "integer",
                         "format": "int32",
                         "minimum": 1,
@@ -22519,7 +23010,7 @@
         },
         "responses": {
           "200": {
-            "description": "TODO",
+            "description": "Response with list of assets",
             "content": {
               "application/json": {
                 "schema": {
@@ -22531,8 +23022,16 @@
                         "allOf": [
                           {
                             "type": "object",
+                            "required": [
+                              "name"
+                            ],
                             "properties": {
                               "externalId": {
+                                "description": "External Id provided by client. Should be unique within the project.",
+                                "type": "string",
+                                "maxLength": 255
+                              },
+                              "parentExternalId": {
                                 "description": "External Id provided by client. Should be unique within the project.",
                                 "type": "string",
                                 "maxLength": 255
@@ -22866,7 +23365,7 @@
         },
         "responses": {
           "200": {
-            "description": "TODO",
+            "description": "Paged response with list of events",
             "content": {
               "application/json": {
                 "schema": {
@@ -23204,7 +23703,7 @@
         ],
         "responses": {
           "200": {
-            "description": "TODO",
+            "description": "single event response",
             "content": {
               "application/json": {
                 "schema": {
@@ -23387,7 +23886,6 @@
           "Events"
         ],
         "summary": "Receive event by ID",
-        "description": "ToDo",
         "operationId": "getEventByInternalId",
         "parameters": [
           {
@@ -23414,7 +23912,7 @@
         ],
         "responses": {
           "200": {
-            "description": "TODO",
+            "description": "response with list of events",
             "content": {
               "application/json": {
                 "schema": {
@@ -23593,11 +24091,10 @@
           }
         ],
         "requestBody": {
-          "description": "TODO",
           "content": {
             "application/json": {
               "schema": {
-                "description": "ToDo",
+                "description": "Filter request for events. Filters exact field matching or timestamp ranges inclusive min and max.",
                 "allOf": [
                   {
                     "type": "object",
@@ -23668,7 +24165,7 @@
                             "minItems": 1,
                             "maxItems": 100,
                             "uniqueItems": true,
-                            "description": "Filter out events that are not linked to assets in the subtree rooted at these assets.",
+                            "description": "Filter out events that are linked to assets in the subtree rooted at these assets.",
                             "items": {
                               "description": "Javascript friendly internal ID given to the object.",
                               "type": "integer",
@@ -23726,7 +24223,7 @@
                         }
                       },
                       "limit": {
-                        "description": "<- TODO",
+                        "description": "<- Limits the maximum number of results to be returned by single request. In case there are more results to the request 'nextCursor' attribute will be provided as part of response. Request may contain less results than request limit.",
                         "type": "integer",
                         "format": "int32",
                         "minimum": 1,
@@ -23751,7 +24248,7 @@
         },
         "responses": {
           "200": {
-            "description": "TODO",
+            "description": "single event response",
             "content": {
               "application/json": {
                 "schema": {
@@ -23941,7 +24438,7 @@
         },
         "responses": {
           "200": {
-            "description": "TODO",
+            "description": "Paged response with list of events",
             "content": {
               "application/json": {
                 "schema": {
@@ -24623,7 +25120,7 @@
         },
         "responses": {
           "200": {
-            "description": "TODO",
+            "description": "Paged response with list of events",
             "content": {
               "application/json": {
                 "schema": {
@@ -24801,7 +25298,6 @@
           "Events"
         ],
         "summary": "Search within events",
-        "description": "TODO",
         "operationId": "searchEvents",
         "parameters": [
           {
@@ -24815,7 +25311,6 @@
           }
         ],
         "requestBody": {
-          "description": "TODO",
           "content": {
             "application/json": {
               "schema": {
@@ -24888,7 +25383,7 @@
                         "minItems": 1,
                         "maxItems": 100,
                         "uniqueItems": true,
-                        "description": "Filter out events that are not linked to assets in the subtree rooted at these assets.",
+                        "description": "Filter out events that are linked to assets in the subtree rooted at these assets.",
                         "items": {
                           "description": "Javascript friendly internal ID given to the object.",
                           "type": "integer",
@@ -24956,7 +25451,7 @@
                     }
                   },
                   "limit": {
-                    "description": "<- TODO",
+                    "description": "<- Limits the maximum number of results to be returned by single request. In case there are more results to the request 'nextCursor' attribute will be provided as part of response. Request may contain less results than request limit.",
                     "type": "integer",
                     "format": "int32",
                     "minimum": 1,
@@ -24970,7 +25465,7 @@
         },
         "responses": {
           "200": {
-            "description": "TODO",
+            "description": "Paged response with list of events",
             "content": {
               "application/json": {
                 "schema": {
@@ -25236,7 +25731,7 @@
           "Files"
         ],
         "summary": "List files with simple filtering",
-        "description": "GET /files can be used to return all files in a project.  Optionally add query parameters to retrieve a filtered set of the files  in the project.",
+        "description": "The GET /files operation can be used to return information for all files in a project.  Optionally you can add one or more of the following query parameters.  The filter query parameters will filter the results to only include files that match all filter parameters.",
         "operationId": "listFiles",
         "parameters": [
           {
@@ -25293,6 +25788,52 @@
               "maxLength": 128,
               "type": "string",
               "description": "The source of the file."
+            }
+          },
+          {
+            "in": "query",
+            "name": "assetSubtrees",
+            "schema": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 100,
+              "uniqueItems": true,
+              "description": "Only include files that reference these specific asset Ids or their sub-nodes.",
+              "example": [
+                363848954441724,
+                793045462540095,
+                1261042166839739
+              ],
+              "items": {
+                "description": "Javascript friendly internal ID given to the object.",
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991,
+                "format": "int64"
+              }
+            }
+          },
+          {
+            "in": "query",
+            "name": "assetIds",
+            "schema": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 100,
+              "uniqueItems": true,
+              "description": "Only include files that reference these specific asset IDs.",
+              "example": [
+                363848954441724,
+                793045462540095,
+                1261042166839739
+              ],
+              "items": {
+                "description": "Javascript friendly internal ID given to the object.",
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991,
+                "format": "int64"
+              }
             }
           },
           {
@@ -25357,6 +25898,17 @@
           },
           {
             "in": "query",
+            "name": "externalIdPrefix",
+            "schema": {
+              "description": "External Id provided by client. Should be unique within the project.",
+              "type": "string",
+              "maxLength": 255
+            },
+            "style": "form",
+            "explode": false
+          },
+          {
+            "in": "query",
             "name": "uploaded",
             "description": "Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.",
             "schema": {
@@ -25366,7 +25918,7 @@
         ],
         "responses": {
           "200": {
-            "description": "The response for successful files/list operations",
+            "description": "The response for a successful files/list operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -25422,6 +25974,12 @@
                           },
                           {
                             "type": "object",
+                            "required": [
+                              "id",
+                              "uploaded",
+                              "createdTime",
+                              "lastUpdatedTime"
+                            ],
                             "properties": {
                               "id": {
                                 "description": "Javascript friendly internal ID given to the object.",
@@ -25566,7 +26124,7 @@
         ],
         "responses": {
           "200": {
-            "description": "The response for successful files/update operations",
+            "description": "The response for a successful GET files/id operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -25617,6 +26175,12 @@
                     },
                     {
                       "type": "object",
+                      "required": [
+                        "id",
+                        "uploaded",
+                        "createdTime",
+                        "lastUpdatedTime"
+                      ],
                       "properties": {
                         "id": {
                           "description": "Javascript friendly internal ID given to the object.",
@@ -25725,7 +26289,7 @@
         "tags": [
           "Files"
         ],
-        "summary": "List all files with advanced filtering",
+        "summary": "List files with advanced filtering",
         "description": "Retrieves a list of all files in a project. Criteria can be supplied to select a subset of files. This operation supports pagination with cursors.",
         "operationId": "advancedListFiles",
         "parameters": [
@@ -25776,6 +26340,11 @@
                             "maxItems": 100,
                             "uniqueItems": true,
                             "description": "Only include files that reference these specific asset IDs.",
+                            "example": [
+                              363848954441724,
+                              793045462540095,
+                              1261042166839739
+                            ],
                             "items": {
                               "description": "Javascript friendly internal ID given to the object.",
                               "type": "integer",
@@ -25789,7 +26358,12 @@
                             "minItems": 1,
                             "maxItems": 100,
                             "uniqueItems": true,
-                            "description": "Only include files that reference these asset Ids or any  sub-nodes of the specified asset Ids.",
+                            "description": "Only include files that reference these specific asset Ids or their sub-nodes.",
+                            "example": [
+                              363848954441724,
+                              793045462540095,
+                              1261042166839739
+                            ],
                             "items": {
                               "description": "Javascript friendly internal ID given to the object.",
                               "type": "integer",
@@ -25895,7 +26469,7 @@
         },
         "responses": {
           "200": {
-            "description": "The response for successful files/list operations",
+            "description": "The response for a successful files/list operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -25951,6 +26525,12 @@
                           },
                           {
                             "type": "object",
+                            "required": [
+                              "id",
+                              "uploaded",
+                              "createdTime",
+                              "lastUpdatedTime"
+                            ],
                             "properties": {
                               "id": {
                                 "description": "Javascript friendly internal ID given to the object.",
@@ -26067,8 +26647,8 @@
         "tags": [
           "Files"
         ],
-        "summary": "Upload a file",
-        "description": "Updates information about multiple files. This operation does not support partial updates.\nIt is possible to  update a maximum of 1000 files per request and all file IDs must be unique.",
+        "summary": "Initiate file upload",
+        "description": "Create metadata information and get upload link for one file. The uploadUrl link which is returned in the response is a Google Cloud Storage (GCS) resumable upload URL.  It should be used in a separate request to upload the file, as documented in  https://cloud.google.com/storage/docs/json_api/v1/how-tos/resumable-upload  The 'Origin' header parameter is forwarded as a 'Origin' header to the GCS initiate upload session request. Also, the 'mimeType' query parameter is forwarded as a 'X-Upload-Content-Type' header.",
         "operationId": "initFileUpload",
         "parameters": [
           {
@@ -26079,10 +26659,18 @@
               "type": "string"
             },
             "required": true
+          },
+          {
+            "in": "header",
+            "name": "Origin",
+            "description": "The 'Origin' header parameter is required in a resumable upload request if there is a Cross Origin issue.",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
-          "description": "List of file IDs and corresponding metadata. It is possible to update a maximum of 1000 files per request and all file IDs must be unique.",
+          "description": "Fields to be set for the file. ",
           "content": {
             "application/json": {
               "schema": {
@@ -26140,7 +26728,7 @@
         },
         "responses": {
           "201": {
-            "description": "The response for successful files/initupload operations",
+            "description": "The response for a successful files/initupload operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -26193,6 +26781,12 @@
                         },
                         {
                           "type": "object",
+                          "required": [
+                            "id",
+                            "uploaded",
+                            "createdTime",
+                            "lastUpdatedTime"
+                          ],
                           "properties": {
                             "id": {
                               "description": "Javascript friendly internal ID given to the object.",
@@ -26229,8 +26823,12 @@
                     },
                     {
                       "type": "object",
+                      "required": [
+                        "uploadUrl"
+                      ],
                       "properties": {
                         "uploadUrl": {
+                          "description": "The URL where the file contents should be uploaded.",
                           "type": "string"
                         }
                       }
@@ -26312,7 +26910,7 @@
           "Files"
         ],
         "summary": "Retrieve multiple files’ metadata",
-        "description": "Retrieves information about multiple files in the same project. Results are returned in the same order as in the query. This operation does not return file contents. List of IDs to retrieve must be up to a maximum of 1000 and all of them must be unique.",
+        "description": "Retrieves metadata information about multiple specific files in the same project.  Results are returned in the same order as in the query.  This operation does not return file contents. List of IDs to retrieve must be up to a maximum of 1000 and all of them must be unique.",
         "operationId": "byIdsFiles",
         "parameters": [
           {
@@ -26371,7 +26969,7 @@
         },
         "responses": {
           "200": {
-            "description": "The response for successful files/byIds and files/search operations",
+            "description": "The response for a successful files/byids, files/search or files/update operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -26427,6 +27025,12 @@
                           },
                           {
                             "type": "object",
+                            "required": [
+                              "id",
+                              "uploaded",
+                              "createdTime",
+                              "lastUpdatedTime"
+                            ],
                             "properties": {
                               "id": {
                                 "description": "Javascript friendly internal ID given to the object.",
@@ -26589,6 +27193,11 @@
                             "maxItems": 100,
                             "uniqueItems": true,
                             "description": "Only include files that reference these specific asset IDs.",
+                            "example": [
+                              363848954441724,
+                              793045462540095,
+                              1261042166839739
+                            ],
                             "items": {
                               "description": "Javascript friendly internal ID given to the object.",
                               "type": "integer",
@@ -26602,7 +27211,12 @@
                             "minItems": 1,
                             "maxItems": 100,
                             "uniqueItems": true,
-                            "description": "Only include files that reference these asset Ids or any  sub-nodes of the specified asset Ids.",
+                            "description": "Only include files that reference these specific asset Ids or their sub-nodes.",
+                            "example": [
+                              363848954441724,
+                              793045462540095,
+                              1261042166839739
+                            ],
                             "items": {
                               "description": "Javascript friendly internal ID given to the object.",
                               "type": "integer",
@@ -26713,7 +27327,7 @@
         },
         "responses": {
           "200": {
-            "description": "The response for successful files/byIds and files/search operations",
+            "description": "The response for a successful files/byids, files/search or files/update operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -26769,6 +27383,12 @@
                           },
                           {
                             "type": "object",
+                            "required": [
+                              "id",
+                              "uploaded",
+                              "createdTime",
+                              "lastUpdatedTime"
+                            ],
                             "properties": {
                               "id": {
                                 "description": "Javascript friendly internal ID given to the object.",
@@ -27028,7 +27648,7 @@
         },
         "responses": {
           "200": {
-            "description": "The response for a successful files/downloadlink operations.",
+            "description": "The response for a successful files/downloadlink operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -27540,90 +28160,104 @@
         },
         "responses": {
           "200": {
-            "description": "The response for successful files/update operations",
+            "description": "The response for a successful files/byids, files/search or files/update operation",
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "type": "object",
-                      "required": [
-                        "name"
-                      ],
-                      "properties": {
-                        "externalId": {
-                          "description": "External Id provided by client. Should be unique within the project.",
-                          "type": "string",
-                          "maxLength": 255
-                        },
-                        "name": {
-                          "type": "string",
-                          "description": "Name of the file.",
-                          "maxLength": 50
-                        },
-                        "source": {
-                          "maxLength": 128,
-                          "type": "string",
-                          "description": "The source of the file."
-                        },
-                        "mimeType": {
-                          "maxLength": 64,
-                          "type": "string",
-                          "description": "File type. E.g. text/plain, application/pdf, .."
-                        },
-                        "metadata": {
-                          "type": "object",
-                          "description": "Customizable extra data about the file. String key -> String value."
-                        },
-                        "assetIds": {
-                          "type": "array",
-                          "items": {
-                            "description": "Javascript friendly internal ID given to the object.",
-                            "type": "integer",
-                            "minimum": 1,
-                            "maximum": 9007199254740991,
-                            "format": "int64"
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "allOf": [
+                          {
+                            "type": "object",
+                            "required": [
+                              "name"
+                            ],
+                            "properties": {
+                              "externalId": {
+                                "description": "External Id provided by client. Should be unique within the project.",
+                                "type": "string",
+                                "maxLength": 255
+                              },
+                              "name": {
+                                "type": "string",
+                                "description": "Name of the file.",
+                                "maxLength": 50
+                              },
+                              "source": {
+                                "maxLength": 128,
+                                "type": "string",
+                                "description": "The source of the file."
+                              },
+                              "mimeType": {
+                                "maxLength": 64,
+                                "type": "string",
+                                "description": "File type. E.g. text/plain, application/pdf, .."
+                              },
+                              "metadata": {
+                                "type": "object",
+                                "description": "Customizable extra data about the file. String key -> String value."
+                              },
+                              "assetIds": {
+                                "type": "array",
+                                "items": {
+                                  "description": "Javascript friendly internal ID given to the object.",
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 9007199254740991,
+                                  "format": "int64"
+                                },
+                                "maxItems": 100,
+                                "minItems": 1
+                              }
+                            }
                           },
-                          "maxItems": 100,
-                          "minItems": 1
-                        }
-                      }
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "description": "Javascript friendly internal ID given to the object.",
-                          "type": "integer",
-                          "minimum": 1,
-                          "maximum": 9007199254740991,
-                          "format": "int64"
-                        },
-                        "uploaded": {
-                          "type": "boolean",
-                          "description": "Whether or not the actual file is uploaded.  This field is returned only by the API, it has no effect in a post body."
-                        },
-                        "uploadedTime": {
-                          "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
-                          "type": "integer",
-                          "minimum": 0,
-                          "format": "int64"
-                        },
-                        "createdTime": {
-                          "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
-                          "type": "integer",
-                          "minimum": 0,
-                          "format": "int64"
-                        },
-                        "lastUpdatedTime": {
-                          "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
-                          "type": "integer",
-                          "minimum": 0,
-                          "format": "int64"
-                        }
+                          {
+                            "type": "object",
+                            "required": [
+                              "id",
+                              "uploaded",
+                              "createdTime",
+                              "lastUpdatedTime"
+                            ],
+                            "properties": {
+                              "id": {
+                                "description": "Javascript friendly internal ID given to the object.",
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 9007199254740991,
+                                "format": "int64"
+                              },
+                              "uploaded": {
+                                "type": "boolean",
+                                "description": "Whether or not the actual file is uploaded.  This field is returned only by the API, it has no effect in a post body."
+                              },
+                              "uploadedTime": {
+                                "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
+                                "type": "integer",
+                                "minimum": 0,
+                                "format": "int64"
+                              },
+                              "createdTime": {
+                                "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
+                                "type": "integer",
+                                "minimum": 0,
+                                "format": "int64"
+                              },
+                              "lastUpdatedTime": {
+                                "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
+                                "type": "integer",
+                                "minimum": 0,
+                                "format": "int64"
+                              }
+                            }
+                          }
+                        ]
                       }
                     }
-                  ]
+                  }
                 }
               }
             }
@@ -31452,7 +32086,7 @@
           "required": true
         },
         "responses": {
-          "200": {
+          "201": {
             "description": "The time series created",
             "content": {
               "application/json": {
@@ -35891,7 +36525,7 @@
           "Raw"
         ],
         "summary": "Insert rows into a table",
-        "description": "Insert rows into a table. It is possible to post a maximum of 10000 rows per request. \nIt will replace the columns of an existing row with the specified rowKey. \n",
+        "description": "Insert rows into a table. It is possible to post a maximum of 10000 rows per request.\nIt will replace the columns of an existing row if the rowKey already exists.\n\nThe rowKey is limited to 1024 characters which also includes Unicode characters.\nThe maximum size of columns is 10MiB, however the maximum size of column name and value is 2621440 characters each.\nIf you want to store more data per row or column use the Files API to upload blobs, then reference it from the Raw row.\n\nThe columns object is a key value object, where the key corresponds to the column name while the value is the column value.\nIt supports all the valid types of values in JSON, so number, string, array, and even nested JSON structure (see payload example to the right).\n",
         "operationId": "postRows",
         "parameters": [
           {
@@ -35958,6 +36592,28 @@
                       },
                       "description": "A row to store in the Raw DB."
                     }
+                  }
+                }
+              },
+              "example": {
+                "items": {
+                  "key": [
+                    "some rowKey"
+                  ],
+                  "columns": {
+                    "some int-col": 10,
+                    "some string-col": "string example",
+                    "some json-col": {
+                      "test": {
+                        "foo": "nested"
+                      }
+                    },
+                    "some array-col": [
+                      0,
+                      1,
+                      3,
+                      4
+                    ]
                   }
                 }
               }
@@ -36643,6 +37299,10 @@
                                   "properties": {
                                     "groupsAcl": {
                                       "type": "object",
+                                      "required": [
+                                        "actions",
+                                        "scope"
+                                      ],
                                       "properties": {
                                         "actions": {
                                           "type": "array",
@@ -36691,6 +37351,10 @@
                                   "properties": {
                                     "assetsAcl": {
                                       "type": "object",
+                                      "required": [
+                                        "actions",
+                                        "scope"
+                                      ],
                                       "properties": {
                                         "actions": {
                                           "type": "array",
@@ -36724,6 +37388,10 @@
                                   "properties": {
                                     "eventsAcl": {
                                       "type": "object",
+                                      "required": [
+                                        "actions",
+                                        "scope"
+                                      ],
                                       "properties": {
                                         "actions": {
                                           "type": "array",
@@ -36757,6 +37425,10 @@
                                   "properties": {
                                     "filesAcl": {
                                       "type": "object",
+                                      "required": [
+                                        "actions",
+                                        "scope"
+                                      ],
                                       "properties": {
                                         "actions": {
                                           "type": "array",
@@ -36790,6 +37462,10 @@
                                   "properties": {
                                     "usersAcl": {
                                       "type": "object",
+                                      "required": [
+                                        "actions",
+                                        "scope"
+                                      ],
                                       "properties": {
                                         "actions": {
                                           "type": "array",
@@ -36836,6 +37512,10 @@
                                   "properties": {
                                     "projectsAcl": {
                                       "type": "object",
+                                      "required": [
+                                        "actions",
+                                        "scope"
+                                      ],
                                       "properties": {
                                         "actions": {
                                           "type": "array",
@@ -36871,6 +37551,10 @@
                                   "properties": {
                                     "securityCategoriesAcl": {
                                       "type": "object",
+                                      "required": [
+                                        "actions",
+                                        "scope"
+                                      ],
                                       "properties": {
                                         "actions": {
                                           "type": "array",
@@ -36906,6 +37590,10 @@
                                   "properties": {
                                     "rawAcl": {
                                       "type": "object",
+                                      "required": [
+                                        "actions",
+                                        "scope"
+                                      ],
                                       "properties": {
                                         "actions": {
                                           "type": "array",
@@ -36940,6 +37628,10 @@
                                   "properties": {
                                     "timeSeriesAcl": {
                                       "type": "object",
+                                      "required": [
+                                        "actions",
+                                        "scope"
+                                      ],
                                       "properties": {
                                         "actions": {
                                           "type": "array",
@@ -36995,6 +37687,10 @@
                                   "properties": {
                                     "apikeysAcl": {
                                       "type": "object",
+                                      "required": [
+                                        "actions",
+                                        "scope"
+                                      ],
                                       "properties": {
                                         "actions": {
                                           "type": "array",
@@ -37041,6 +37737,10 @@
                                   "properties": {
                                     "threedAcl": {
                                       "type": "object",
+                                      "required": [
+                                        "actions",
+                                        "scope"
+                                      ],
                                       "properties": {
                                         "actions": {
                                           "type": "array",
@@ -37076,6 +37776,10 @@
                                   "properties": {
                                     "sequencesAcl": {
                                       "type": "object",
+                                      "required": [
+                                        "actions",
+                                        "scope"
+                                      ],
                                       "properties": {
                                         "actions": {
                                           "type": "array",
@@ -37109,6 +37813,10 @@
                                   "properties": {
                                     "analyticsAcl": {
                                       "type": "object",
+                                      "required": [
+                                        "actions",
+                                        "scope"
+                                      ],
                                       "properties": {
                                         "actions": {
                                           "type": "array",
@@ -37212,6 +37920,10 @@
                                 "properties": {
                                   "groupsAcl": {
                                     "type": "object",
+                                    "required": [
+                                      "actions",
+                                      "scope"
+                                    ],
                                     "properties": {
                                       "actions": {
                                         "type": "array",
@@ -37260,6 +37972,10 @@
                                 "properties": {
                                   "assetsAcl": {
                                     "type": "object",
+                                    "required": [
+                                      "actions",
+                                      "scope"
+                                    ],
                                     "properties": {
                                       "actions": {
                                         "type": "array",
@@ -37293,6 +38009,10 @@
                                 "properties": {
                                   "eventsAcl": {
                                     "type": "object",
+                                    "required": [
+                                      "actions",
+                                      "scope"
+                                    ],
                                     "properties": {
                                       "actions": {
                                         "type": "array",
@@ -37326,6 +38046,10 @@
                                 "properties": {
                                   "filesAcl": {
                                     "type": "object",
+                                    "required": [
+                                      "actions",
+                                      "scope"
+                                    ],
                                     "properties": {
                                       "actions": {
                                         "type": "array",
@@ -37359,6 +38083,10 @@
                                 "properties": {
                                   "usersAcl": {
                                     "type": "object",
+                                    "required": [
+                                      "actions",
+                                      "scope"
+                                    ],
                                     "properties": {
                                       "actions": {
                                         "type": "array",
@@ -37405,6 +38133,10 @@
                                 "properties": {
                                   "projectsAcl": {
                                     "type": "object",
+                                    "required": [
+                                      "actions",
+                                      "scope"
+                                    ],
                                     "properties": {
                                       "actions": {
                                         "type": "array",
@@ -37440,6 +38172,10 @@
                                 "properties": {
                                   "securityCategoriesAcl": {
                                     "type": "object",
+                                    "required": [
+                                      "actions",
+                                      "scope"
+                                    ],
                                     "properties": {
                                       "actions": {
                                         "type": "array",
@@ -37475,6 +38211,10 @@
                                 "properties": {
                                   "rawAcl": {
                                     "type": "object",
+                                    "required": [
+                                      "actions",
+                                      "scope"
+                                    ],
                                     "properties": {
                                       "actions": {
                                         "type": "array",
@@ -37509,6 +38249,10 @@
                                 "properties": {
                                   "timeSeriesAcl": {
                                     "type": "object",
+                                    "required": [
+                                      "actions",
+                                      "scope"
+                                    ],
                                     "properties": {
                                       "actions": {
                                         "type": "array",
@@ -37564,6 +38308,10 @@
                                 "properties": {
                                   "apikeysAcl": {
                                     "type": "object",
+                                    "required": [
+                                      "actions",
+                                      "scope"
+                                    ],
                                     "properties": {
                                       "actions": {
                                         "type": "array",
@@ -37610,6 +38358,10 @@
                                 "properties": {
                                   "threedAcl": {
                                     "type": "object",
+                                    "required": [
+                                      "actions",
+                                      "scope"
+                                    ],
                                     "properties": {
                                       "actions": {
                                         "type": "array",
@@ -37645,6 +38397,10 @@
                                 "properties": {
                                   "sequencesAcl": {
                                     "type": "object",
+                                    "required": [
+                                      "actions",
+                                      "scope"
+                                    ],
                                     "properties": {
                                       "actions": {
                                         "type": "array",
@@ -37678,6 +38434,10 @@
                                 "properties": {
                                   "analyticsAcl": {
                                     "type": "object",
+                                    "required": [
+                                      "actions",
+                                      "scope"
+                                    ],
                                     "properties": {
                                       "actions": {
                                         "type": "array",
@@ -37762,6 +38522,10 @@
                                   "properties": {
                                     "groupsAcl": {
                                       "type": "object",
+                                      "required": [
+                                        "actions",
+                                        "scope"
+                                      ],
                                       "properties": {
                                         "actions": {
                                           "type": "array",
@@ -37810,6 +38574,10 @@
                                   "properties": {
                                     "assetsAcl": {
                                       "type": "object",
+                                      "required": [
+                                        "actions",
+                                        "scope"
+                                      ],
                                       "properties": {
                                         "actions": {
                                           "type": "array",
@@ -37843,6 +38611,10 @@
                                   "properties": {
                                     "eventsAcl": {
                                       "type": "object",
+                                      "required": [
+                                        "actions",
+                                        "scope"
+                                      ],
                                       "properties": {
                                         "actions": {
                                           "type": "array",
@@ -37876,6 +38648,10 @@
                                   "properties": {
                                     "filesAcl": {
                                       "type": "object",
+                                      "required": [
+                                        "actions",
+                                        "scope"
+                                      ],
                                       "properties": {
                                         "actions": {
                                           "type": "array",
@@ -37909,6 +38685,10 @@
                                   "properties": {
                                     "usersAcl": {
                                       "type": "object",
+                                      "required": [
+                                        "actions",
+                                        "scope"
+                                      ],
                                       "properties": {
                                         "actions": {
                                           "type": "array",
@@ -37955,6 +38735,10 @@
                                   "properties": {
                                     "projectsAcl": {
                                       "type": "object",
+                                      "required": [
+                                        "actions",
+                                        "scope"
+                                      ],
                                       "properties": {
                                         "actions": {
                                           "type": "array",
@@ -37990,6 +38774,10 @@
                                   "properties": {
                                     "securityCategoriesAcl": {
                                       "type": "object",
+                                      "required": [
+                                        "actions",
+                                        "scope"
+                                      ],
                                       "properties": {
                                         "actions": {
                                           "type": "array",
@@ -38025,6 +38813,10 @@
                                   "properties": {
                                     "rawAcl": {
                                       "type": "object",
+                                      "required": [
+                                        "actions",
+                                        "scope"
+                                      ],
                                       "properties": {
                                         "actions": {
                                           "type": "array",
@@ -38059,6 +38851,10 @@
                                   "properties": {
                                     "timeSeriesAcl": {
                                       "type": "object",
+                                      "required": [
+                                        "actions",
+                                        "scope"
+                                      ],
                                       "properties": {
                                         "actions": {
                                           "type": "array",
@@ -38114,6 +38910,10 @@
                                   "properties": {
                                     "apikeysAcl": {
                                       "type": "object",
+                                      "required": [
+                                        "actions",
+                                        "scope"
+                                      ],
                                       "properties": {
                                         "actions": {
                                           "type": "array",
@@ -38160,6 +38960,10 @@
                                   "properties": {
                                     "threedAcl": {
                                       "type": "object",
+                                      "required": [
+                                        "actions",
+                                        "scope"
+                                      ],
                                       "properties": {
                                         "actions": {
                                           "type": "array",
@@ -38195,6 +38999,10 @@
                                   "properties": {
                                     "sequencesAcl": {
                                       "type": "object",
+                                      "required": [
+                                        "actions",
+                                        "scope"
+                                      ],
                                       "properties": {
                                         "actions": {
                                           "type": "array",
@@ -38228,6 +39036,10 @@
                                   "properties": {
                                     "analyticsAcl": {
                                       "type": "object",
+                                      "required": [
+                                        "actions",
+                                        "scope"
+                                      ],
                                       "properties": {
                                         "actions": {
                                           "type": "array",
@@ -39903,7 +40715,7 @@
     },
     {
       "name": "Files",
-      "description": "A file stores a sequence of bytes connected to one or more assets. For example, a file can contain a piping and instrumentation diagram (P&IDs) showing how multiple assets are connected.\nEach file is identified by the 'id' field, which is generated internally  for each new file. The file 'id' field is unique within a project. \nThe externalId field is optional, but can also be used to identify a file.  ExternalId (if used) must be unique within a project.\nFiles are created in two steps; First the metadata is stored in a file object, and then the file contents are uploaded. This means that files can exist in a non-uploaded state."
+      "description": "A file stores a sequence of bytes connected to one or more assets. For example, a file can contain a piping and instrumentation diagram (P&IDs) showing how multiple assets are connected.\nEach file is identified by the 'id' field, which is generated internally  for each new file. Each file's 'id' field is unique within a project.\nThe 'externalId' field is optional, but can also be used to identify a file.  The 'externalId' (if used) must be unique within a project.\nFiles are created in two steps; First the metadata is stored in a file object, and then the file contents are uploaded. This means that files can exist in a non-uploaded state. The upload state is reflected in the 'uploaded'  field in responses."
     },
     {
       "name": "3D",

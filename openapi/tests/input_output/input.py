@@ -22,7 +22,7 @@ class CogniteListUpdate:
     pass
 
 
-# GenClass: Asset, ExternalAssetItem
+# GenClass: Asset
 class Asset(CogniteResource):
     # GenStop
     def to_pandas(self):

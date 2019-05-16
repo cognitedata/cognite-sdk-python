@@ -32,23 +32,21 @@ CLASS_GENERATOR = ClassGenerator(CODE_GENERATOR.open_api_spec, INPUT)
 class TestClassGenerator:
     def test_get_gen_class_segments(self):
         segments = CLASS_GENERATOR.gen_class_segments
-        assert ("Asset, ExternalAssetItem", "Asset") == segments[0]
+        assert ("Asset", "Asset") == segments[0]
         assert ("AssetFilter.filter", "AssetFilter") == segments[1]
 
         assert "Asset" == segments[0].class_name
-        assert "Asset, ExternalAssetItem" == segments[0].schema_names
+        assert "Asset" == segments[0].schema_names
 
     def test_generate_docstring_from_schema(self):
-        schemas = [
-            CLASS_GENERATOR._spec.components.schemas.get("Asset"),
-            CLASS_GENERATOR._spec.components.schemas.get("ExternalAssetItem"),
-        ]
+        schemas = [CLASS_GENERATOR._spec.components.schemas.get("Asset")]
         docstring = CLASS_GENERATOR.generate_docstring(schemas, 4)
         assert (
             """    \"\"\"Representation of a physical asset, e.g plant or piece of equipment
 
     Args:
         external_id (str): External Id provided by client. Should be unique within the project.
+        parent_external_id (str): External Id provided by client. Should be unique within the project.
         name (str): Name of asset. Often referred to as tag.
         parent_id (int): Javascript friendly internal ID given to the object.
         description (str): Description of asset.
@@ -59,22 +57,18 @@ class TestClassGenerator:
         last_updated_time (int): It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         path (List[int]): IDs of assets on the path to the asset.
         depth (int): Asset path depth (number of levels below root node).
-        ref_id (str): Reference ID used only in post request to disambiguate references to duplicate names.
-        parent_ref_id (str): Reference ID of parent, to disambiguate if multiple nodes have the same name.
         cognite_client (CogniteClient): The client to associate with this object.
     \"\"\""""
             == docstring
         )
 
     def test_generate_constructor_from_schema(self):
-        schemas = [
-            CLASS_GENERATOR._spec.components.schemas.get("Asset"),
-            CLASS_GENERATOR._spec.components.schemas.get("ExternalAssetItem"),
-        ]
+        schemas = [CLASS_GENERATOR._spec.components.schemas.get("Asset")]
         constructor = CLASS_GENERATOR.generate_constructor(schemas, indentation=4)
         assert (
-            """    def __init__(self, external_id: str = None, name: str = None, parent_id: int = None, description: str = None, metadata: Dict[str, Any] = None, source: str = None, id: int = None, created_time: int = None, last_updated_time: int = None, path: List[int] = None, depth: int = None, ref_id: str = None, parent_ref_id: str = None, cognite_client = None):
+            """    def __init__(self, external_id: str = None, parent_external_id: str = None, name: str = None, parent_id: int = None, description: str = None, metadata: Dict[str, Any] = None, source: str = None, id: int = None, created_time: int = None, last_updated_time: int = None, path: List[int] = None, depth: int = None, cognite_client = None):
         self.external_id = external_id
+        self.parent_external_id = parent_external_id
         self.name = name
         self.parent_id = parent_id
         self.description = description
@@ -85,18 +79,13 @@ class TestClassGenerator:
         self.last_updated_time = last_updated_time
         self.path = path
         self.depth = depth
-        self.ref_id = ref_id
-        self.parent_ref_id = parent_ref_id
         self._cognite_client = cognite_client"""
             == constructor
         )
 
     def test_generate_code_for_class_segments(self):
         class_segments = CLASS_GENERATOR.generate_code_for_class_segments()
-        schemas = [
-            CLASS_GENERATOR._spec.components.schemas.get("Asset"),
-            CLASS_GENERATOR._spec.components.schemas.get("ExternalAssetItem"),
-        ]
+        schemas = [CLASS_GENERATOR._spec.components.schemas.get("Asset")]
         docstring = CLASS_GENERATOR.generate_docstring(schemas, indentation=4)
         constructor = CLASS_GENERATOR.generate_constructor(schemas, indentation=4)
         assert class_segments["Asset"] == docstring + "\n" + constructor
@@ -117,7 +106,7 @@ class TestUpdateClassGenerator:
             CLASS_GENERATOR._spec.components.schemas.get("AssetChange"), indentation=4
         )
         assert (
-            """    \"\"\"Changes will be applied to event.
+            """    \"\"\"Changes applied to asset
 
     Args:
         id (int): Javascript friendly internal ID given to the object.
