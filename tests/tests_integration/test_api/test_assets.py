@@ -8,7 +8,7 @@ from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils import _utils
 from tests.utils import set_request_limit
 
-COGNITE_CLIENT = CogniteClient(debug=True, max_workers=20)
+COGNITE_CLIENT = CogniteClient(debug=True)
 
 
 @pytest.fixture
@@ -21,18 +21,20 @@ def new_asset():
     assert 400 == e.value.code
 
 
-def generate_asset_tree(root_ref_id: str, depth: int, children_per_node: int, current_depth=1):
+def generate_asset_tree(root_external_id: str, depth: int, children_per_node: int, current_depth=1):
     assert 1 <= children_per_node <= 10, "children_per_node must be between 1 and 10"
     assets = []
     if current_depth == 1:
-        assets = [Asset(ref_id=root_ref_id, external_id=root_ref_id, name=root_ref_id)]
+        assets = [Asset(external_id=root_external_id, name=root_external_id)]
     if depth > current_depth:
         for i in range(children_per_node):
-            test_id = "{}{}".format(root_ref_id, i)
-            asset = Asset(parent_ref_id=root_ref_id, ref_id=test_id, external_id=test_id, name=test_id)
+            external_id = "{}{}".format(root_external_id, i)
+            asset = Asset(parent_external_id=root_external_id, external_id=external_id, name=external_id)
             assets.append(asset)
             if depth > current_depth + 1:
-                assets.extend(generate_asset_tree(root_ref_id + str(i), depth, children_per_node, current_depth + 1))
+                assets.extend(
+                    generate_asset_tree(root_external_id + str(i), depth, children_per_node, current_depth + 1)
+                )
     return assets
 
 

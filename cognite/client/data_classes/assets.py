@@ -56,7 +56,7 @@ class Asset(CogniteResource):
     # GenStop
 
     def __hash__(self):
-        return hash(self.ref_id)
+        return hash(self.external_id)
 
     def parent(self) -> "Asset":
         """Returns this assets parent.

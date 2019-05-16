@@ -164,33 +164,35 @@ class TestAssetPosterWorker:
         assert 1 == len(mock_assets_response.calls)
 
 
-def generate_asset_tree(root_ref_id: str, depth: int, children_per_node: int, current_depth=1):
+def generate_asset_tree(root_external_id: str, depth: int, children_per_node: int, current_depth=1):
     assert 1 <= children_per_node <= 10, "children_per_node must be between 1 and 10"
     assets = []
     if current_depth == 1:
-        assets = [Asset(ref_id=root_ref_id)]
+        assets = [Asset(external_id=root_external_id)]
     if depth > current_depth:
         for i in range(children_per_node):
-            asset = Asset(parent_ref_id=root_ref_id, ref_id="{}{}".format(root_ref_id, i))
+            asset = Asset(parent_external_id=root_external_id, external_id="{}{}".format(root_external_id, i))
             assets.append(asset)
             if depth > current_depth + 1:
-                assets.extend(generate_asset_tree(root_ref_id + str(i), depth, children_per_node, current_depth + 1))
+                assets.extend(
+                    generate_asset_tree(root_external_id + str(i), depth, children_per_node, current_depth + 1)
+                )
     return assets
 
 
 class TestAssetPoster:
     def test_validate_asset_hierarchy_parent_ref_null_pointer(self):
-        assets = [Asset(parent_ref_id="1", ref_id="2")]
+        assets = [Asset(parent_external_id="1", external_id="2")]
         with pytest.raises(AssertionError, match="does not point"):
             _AssetPoster(assets, ASSETS_API)
 
     def test_validate_asset_hierarchy_asset_has_parent_id_and_parent_ref_id(self):
-        assets = [Asset(ref_id="1"), Asset(parent_ref_id="1", parent_id=1, ref_id="2")]
+        assets = [Asset(external_id="1"), Asset(parent_external_id="1", parent_id=1, external_id="2")]
         with pytest.raises(AssertionError, match="has both"):
             _AssetPoster(assets, ASSETS_API)
 
     def test_validate_asset_hierarchy_duplicate_ref_ids(self):
-        assets = [Asset(ref_id="1"), Asset(parent_ref_id="1", ref_id="1")]
+        assets = [Asset(external_id="1"), Asset(parent_external_id="1", external_id="1")]
         with pytest.raises(AssertionError, match="Duplicate"):
             _AssetPoster(assets, ASSETS_API)
 
@@ -200,46 +202,46 @@ class TestAssetPoster:
 
     def test_validate_asset_hierarchy_circular_dependencies(self):
         assets = [
-            Asset(ref_id="1", parent_ref_id="3"),
-            Asset(ref_id="2", parent_ref_id="1"),
-            Asset(ref_id="3", parent_ref_id="2"),
+            Asset(external_id="1", parent_external_id="3"),
+            Asset(external_id="2", parent_external_id="1"),
+            Asset(external_id="3", parent_external_id="2"),
         ]
         with set_request_limit(ASSETS_API, 1):
             with pytest.raises(AssertionError, match="circular dependencies"):
                 _AssetPoster(assets, ASSETS_API)
 
     def test_validate_asset_hierarchy_self_dependency(self):
-        assets = [Asset(ref_id="1"), Asset(ref_id="2", parent_ref_id="2")]
+        assets = [Asset(external_id="1"), Asset(external_id="2", parent_external_id="2")]
         with set_request_limit(ASSETS_API, 1):
             with pytest.raises(AssertionError, match="circular dependencies"):
                 _AssetPoster(assets, ASSETS_API)
 
     def test_initialize(self):
         assets = [
-            Asset(ref_id="1"),
-            Asset(ref_id="3", parent_ref_id="1"),
-            Asset(ref_id="2", parent_ref_id="1"),
-            Asset(ref_id="4", parent_ref_id="2"),
+            Asset(external_id="1"),
+            Asset(external_id="3", parent_external_id="1"),
+            Asset(external_id="2", parent_external_id="1"),
+            Asset(external_id="4", parent_external_id="2"),
         ]
 
         ap = _AssetPoster(assets, ASSETS_API)
-        assert OrderedDict({str(i): None for i in range(1, 5)}) == ap.remaining_ref_ids
-        assert {} == ap.ref_id_to_id
+        assert OrderedDict({str(i): None for i in range(1, 5)}) == ap.remaining_external_ids
+        assert {} == ap.external_id_to_id
         assert {
-            "1": {Asset(ref_id="2", parent_ref_id="1"), Asset(ref_id="3", parent_ref_id="1")},
-            "2": {Asset(ref_id="4", parent_ref_id="2")},
+            "1": {Asset(external_id="2", parent_external_id="1"), Asset(external_id="3", parent_external_id="1")},
+            "2": {Asset(external_id="4", parent_external_id="2")},
             "3": set(),
             "4": set(),
-        } == ap.ref_id_to_children
-        assert {"1": 3, "2": 1, "3": 0, "4": 0} == ap.ref_id_to_descendent_count
+        } == ap.external_id_to_children
+        assert {"1": 3, "2": 1, "3": 0, "4": 0} == ap.external_id_to_descendent_count
         assert ap.assets_remaining() is True
         assert 0 == len(ap.posted_assets)
         assert ap.request_queue.empty()
         assert ap.response_queue.empty()
-        assert {"1", "2", "3", "4"} == ap.remaining_ref_ids_set
+        assert {"1", "2", "3", "4"} == ap.remaining_external_ids_set
 
     def test_get_unblocked_assets__assets_unblocked_by_default_less_than_limit(self):
-        assets = generate_asset_tree(root_ref_id="0", depth=4, children_per_node=10)
+        assets = generate_asset_tree(root_external_id="0", depth=4, children_per_node=10)
         ap = _AssetPoster(assets=assets, client=ASSETS_API)
         unblocked_assets_lists = ap._get_unblocked_assets()
         assert 1 == len(unblocked_assets_lists)
@@ -248,7 +250,7 @@ class TestAssetPoster:
     def test_get_unblocked_assets__assets_unblocked_by_default_more_than_limit(self):
         assets = []
         for i in range(4):
-            assets.extend(generate_asset_tree(root_ref_id=str(i), depth=2, children_per_node=2))
+            assets.extend(generate_asset_tree(root_external_id=str(i), depth=2, children_per_node=2))
         with set_request_limit(ASSETS_API, 3):
             ap = _AssetPoster(assets=assets, client=ASSETS_API)
             unblocked_assets_lists = ap._get_unblocked_assets()
@@ -267,10 +269,18 @@ class TestAssetPoster:
                 parent_id = None
                 if "parentId" in item:
                     parent_id = item["parentId"]
-                if "parentRefId" in item:
-                    parent_id = item["parentRefId"] + "id"
-                id = item.get("refId", "root_") + "id"
-                response_assets.append({"id": id, "parentId": parent_id, "path": [parent_id or "", id]})
+                if "parentExternalId" in item:
+                    parent_id = item["parentExternalId"] + "id"
+                id = item.get("externalId", "root_") + "id"
+                response_assets.append(
+                    {
+                        "id": id,
+                        "parentId": parent_id,
+                        "externalId": item["externalId"],
+                        "parentExternalId": item.get("parentExternalId"),
+                        "path": [parent_id or "", id],
+                    }
+                )
             return 200, {}, json.dumps({"items": response_assets})
 
         rsps.add_callback(
@@ -284,7 +294,7 @@ class TestAssetPoster:
         [(100, 4, 10, 13), (9, 3, 9, 11), (100, 101, 1, 2), (1, 10, 1, 10)],
     )
     def test_post_hierarchy(self, limit, depth, children_per_node, expected_num_calls, mock_post_asset_hierarchy):
-        assets = generate_asset_tree(root_ref_id="0", depth=depth, children_per_node=children_per_node)
+        assets = generate_asset_tree(root_external_id="0", depth=depth, children_per_node=children_per_node)
 
         with set_request_limit(ASSETS_API, limit):
             created_assets = ASSETS_API.create(assets)
@@ -311,10 +321,18 @@ class TestAssetPoster:
             parent_id = None
             if "parentId" in item:
                 parent_id = item["parentId"]
-            if "parentRefId" in item:
-                parent_id = item["parentRefId"] + "id"
+            if "parentExternalId" in item:
+                parent_id = item["parentExternalId"] + "id"
             id = item.get("refId", "root_") + "id"
-            response_assets.append({"id": id, "parentId": parent_id, "path": [parent_id or "", id]})
+            response_assets.append(
+                {
+                    "id": id,
+                    "parentId": parent_id,
+                    "externalId": item["externalId"],
+                    "parentExternalId": item.get("parentExternalId"),
+                    "path": [parent_id or "", id],
+                }
+            )
 
             if item["name"] == "400":
                 return 400, {}, json.dumps({"error": {"message": "user error", "code": 400}})
@@ -332,20 +350,20 @@ class TestAssetPoster:
 
     def test_post_with_failures(self, mock_post_asset_hierarchy_with_failures):
         assets = [
-            Asset(name="200", ref_id="0", external_id="0"),
-            Asset(name="200", ref_id="01", parent_ref_id="0", external_id="01"),
-            Asset(name="400", ref_id="02", parent_ref_id="0", external_id="02"),
-            Asset(name="200", ref_id="021", parent_ref_id="02", external_id="021"),
-            Asset(name="200", ref_id="0211", parent_ref_id="021", external_id="0211"),
-            Asset(name="500", ref_id="03", parent_ref_id="0", external_id="03"),
-            Asset(name="200", ref_id="031", parent_ref_id="03", external_id="031"),
+            Asset(name="200", external_id="0"),
+            Asset(name="200", parent_external_id="0", external_id="01"),
+            Asset(name="400", parent_external_id="0", external_id="02"),
+            Asset(name="200", parent_external_id="02", external_id="021"),
+            Asset(name="200", parent_external_id="021", external_id="0211"),
+            Asset(name="500", parent_external_id="0", external_id="03"),
+            Asset(name="200", parent_external_id="03", external_id="031"),
         ]
         with pytest.raises(CogniteAPIError) as e:
             ASSETS_API.create(assets)
 
-        assert {a.ref_id for a in e.value.unknown} == {"03"}
-        assert {a.ref_id for a in e.value.failed} == {"02", "021", "0211", "031"}
-        assert {a.ref_id for a in e.value.successful} == {"0", "01"}
+        assert {a.external_id for a in e.value.unknown} == {"03"}
+        assert {a.external_id for a in e.value.failed} == {"02", "021", "0211", "031"}
+        assert {a.external_id for a in e.value.successful} == {"0", "01"}
 
 
 @pytest.fixture

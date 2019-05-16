@@ -81,9 +81,9 @@ To make an asset a child of an existing asset, you must specify a parent ID.
     >>> c.assets.create(my_asset)
 
 To post an entire asset hierarchy, you can describe the relations within your asset hierarchy
-using the :code:`ref_id` and :code:`parent_ref_id` attributes on the :code:`Asset` object. You can post
-an arbitrary number of assets, and the SDK will split the request into multiple requests and resolve
-:code:`parent_ref_ids` as :code:`parent_ids` as it posts the assets.
+using the :code:`external_id` and :code:`parent_external_id` attributes on the :code:`Asset` object. You can post
+an arbitrary number of assets, and the SDK will split the request into multiple requests and create the assets
+in the correct order
 
 This example shows how to post a three levels deep asset hierarchy consisting of three assets.
 
@@ -92,9 +92,9 @@ This example shows how to post a three levels deep asset hierarchy consisting of
     >>> from cognite.client import CogniteClient
     >>> from cognite.client.data_classes import Asset
     >>> c = CogniteClient()
-    >>> root = Asset(name="root", ref_id="1")
-    >>> child = Asset(name="child", ref_id="2", parent_ref_id="1")
-    >>> descendant = Asset(name="descendant", ref_id="3", parent_ref_id="2")
+    >>> root = Asset(name="root", external_id="1")
+    >>> child = Asset(name="child", external_id="2", parent_external_id="1")
+    >>> descendant = Asset(name="descendant", external_id="3", parent_external_id="2")
     >>> c.assets.create([root, child, descendant])
 
 Wrap the .create() call in a try-except to get information if posting the assets fails:
