@@ -121,6 +121,51 @@ def mock_get_datapoints_one_ts_empty(rsps):
 
 
 @pytest.fixture
+def mock_get_datapoints_one_ts_has_missing_aggregates(rsps):
+    rsps.add(
+        rsps.POST,
+        DPS_CLIENT._base_url + "/timeseries/data/list",
+        status=200,
+        json={
+            "items": [
+                {
+                    "id": 1,
+                    "externalId": "abc",
+                    "datapoints": [
+                        {"timestamp": 0, "average": 0},
+                        {"timestamp": 1, "average": 1},
+                        {"timestamp": 2, "average": 2},
+                        {"timestamp": 3, "average": 3},
+                        {"timestamp": 4, "average": 4},
+                    ],
+                }
+            ]
+        },
+    )
+    rsps.add(
+        rsps.POST,
+        DPS_CLIENT._base_url + "/timeseries/data/list",
+        status=200,
+        json={
+            "items": [
+                {
+                    "id": 2,
+                    "externalId": "def",
+                    "datapoints": [
+                        {"timestamp": 0},
+                        {"timestamp": 1, "interpolation": 1},
+                        {"timestamp": 2},
+                        {"timestamp": 3, "interpolation": 3},
+                        {"timestamp": 4},
+                    ],
+                }
+            ]
+        },
+    )
+    yield rsps
+
+
+@pytest.fixture
 def set_dps_workers():
     def set_workers(limit):
         DPS_CLIENT._max_workers = limit
@@ -183,6 +228,21 @@ class TestGetDatapoints:
         )
         for dps_res in dps_res_list:
             assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
+
+    def test_retrieve_datapoints_some_aggregates_omitted(self, mock_get_datapoints_one_ts_has_missing_aggregates):
+        dps_res_list = DPS_CLIENT.retrieve(
+            id={"id": 1, "aggregates": ["average"]},
+            external_id={"externalId": "def", "aggregates": ["interpolation"]},
+            start=0,
+            end=1,
+            aggregates=[],
+            granularity="1s",
+        )
+        for dps in dps_res_list:
+            if dps.id == 1:
+                assert dps.average == [0, 1, 2, 3, 4]
+            elif dps.id == 2:
+                assert dps.interpolation == [None, 1, None, 3, None]
 
     def test_datapoints_paging(self, mock_get_datapoints, set_dps_workers):
         set_dps_workers(1)
@@ -644,6 +704,24 @@ class TestPandasIntegration:
 
         assert {"1|average", "2|max", "123|average"} == set(df.columns)
         assert df.shape[0] > 0
+
+    def test_retrieve_datapoints_some_aggregates_omitted(self, mock_get_datapoints_one_ts_has_missing_aggregates):
+        import pandas as pd
+
+        df = DPS_CLIENT.retrieve_dataframe(
+            id={"id": 1, "aggregates": ["average"]},
+            external_id={"externalId": "def", "aggregates": ["interpolation"]},
+            start=0,
+            end=1,
+            aggregates=[],
+            granularity="1s",
+        )
+
+        expected_df = pd.DataFrame(
+            {"1|average": [0, 1, 2, 3, 4], "def|interpolation": [None, 1, None, 3, None]},
+            index=[utils.ms_to_datetime(i) for i in range(5)],
+        )
+        pd.testing.assert_frame_equal(df, expected_df)
 
     def test_retrieve_dataframe_id_and_external_id_requested(self, rsps):
         rsps.add(

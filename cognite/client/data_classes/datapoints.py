@@ -182,12 +182,12 @@ class Datapoints:
         np, pd = utils.local_import("numpy", "pandas")
         data_fields = {}
         timestamps = []
-        if column_names == "name":
-            identifier = self.name if self.name is not None else self.id
         if column_names == "externalId":
             identifier = self.external_id if self.external_id is not None else self.id
-        else:
+        elif column_names == "id":
             identifier = self.id
+        else:
+            raise ValueError("column_names must be 'externalId' or 'id'")
         for attr, value in self._get_non_empty_data_fields(get_empty_lists=True):
             if attr == "timestamp":
                 timestamps = value
@@ -205,14 +205,16 @@ class Datapoints:
         plt.show()
 
     @classmethod
-    def _load(cls, dps_object, cognite_client=None):
+    def _load(cls, dps_object, expected_fields: List[str], cognite_client=None):
         instance = cls()
         instance.id = dps_object["id"]
         instance.external_id = dps_object["externalId"]
+        expected_fields.append("timestamp")
         for dp in dps_object["datapoints"]:
-            for key, value in dp.items():
+            for key in expected_fields:
                 snake_key = utils.to_snake_case(key)
                 current_attr = getattr(instance, snake_key) or []
+                value = dp.get(key)
                 current_attr.append(value)
                 setattr(instance, snake_key, current_attr)
         return instance
@@ -257,6 +259,7 @@ class Datapoints:
             self.__datapoint_objects = []
             for i in range(len(self)):
                 dp_args = {}
+                print(self._get_non_empty_data_fields())
                 for attr, value in self._get_non_empty_data_fields():
                     dp_args[attr] = value[i]
                 self.__datapoint_objects.append(Datapoint(**dp_args))
