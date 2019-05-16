@@ -19,7 +19,7 @@ log = logging.getLogger("cognite-sdk")
 
 BACKOFF_MAX = 30
 DEFAULT_MAX_POOL_SIZE = 50
-DEFAULT_MAX_RETRIES = 5
+DEFAULT_MAX_RETRIES = 10
 
 
 class RetryWithMaxBackoff(Retry):

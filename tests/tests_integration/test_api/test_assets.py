@@ -47,7 +47,7 @@ def new_asset_hierarchy(mocker):
     with set_request_limit(COGNITE_CLIENT.assets, 50):
         COGNITE_CLIENT.assets.create(assets)
 
-    assert 26 == COGNITE_CLIENT.assets._post.call_count
+    assert 16 == COGNITE_CLIENT.assets._post.call_count
 
     ext_ids = [a.external_id for a in assets]
     yield random_prefix, ext_ids
@@ -78,7 +78,6 @@ class TestAssetsAPI:
         res = COGNITE_CLIENT.assets.update(update_asset)
         assert "newname" == res.name
 
-    @pytest.mark.xfail(strict=True)
     def test_post_asset_hierarchy(self, new_asset_hierarchy):
         prefix, ext_ids = new_asset_hierarchy
         posted_assets = COGNITE_CLIENT.assets.retrieve(external_id=ext_ids)

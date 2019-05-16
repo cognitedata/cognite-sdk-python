@@ -19,7 +19,7 @@ from cognite.client.utils._utils import DebugLogFormatter
 
 DEFAULT_BASE_URL = "https://api.cognitedata.com"
 DEFAULT_MAX_WORKERS = 10
-DEFAULT_TIMEOUT = 20
+DEFAULT_TIMEOUT = 30
 
 
 class CogniteClient:
@@ -33,7 +33,7 @@ class CogniteClient:
         base_url (str): Base url to send requests to. Defaults to "https://api.cognitedata.com"
         max_workers (int): Max number of workers to spawn when parallelizing data fetching. Defaults to 10.
         headers (Dict): Additional headers to add to all requests.
-        timeout (int): Timeout on requests sent to the api. Defaults to 20 seconds.
+        timeout (int): Timeout on requests sent to the api. Defaults to 30 seconds.
         debug (bool): Configures logger to log extra request details to stderr.
     """
 

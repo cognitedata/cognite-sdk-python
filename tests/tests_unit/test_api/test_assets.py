@@ -226,7 +226,6 @@ class TestAssetPoster:
 
         ap = _AssetPoster(assets, ASSETS_API)
         assert OrderedDict({str(i): None for i in range(1, 5)}) == ap.remaining_external_ids
-        assert {} == ap.external_id_to_id
         assert {
             "1": {Asset(external_id="2", parent_external_id="1"), Asset(external_id="3", parent_external_id="1")},
             "2": {Asset(external_id="4", parent_external_id="2")},
@@ -295,7 +294,6 @@ class TestAssetPoster:
     )
     def test_post_hierarchy(self, limit, depth, children_per_node, expected_num_calls, mock_post_asset_hierarchy):
         assets = generate_asset_tree(root_external_id="0", depth=depth, children_per_node=children_per_node)
-
         with set_request_limit(ASSETS_API, limit):
             created_assets = ASSETS_API.create(assets)
 

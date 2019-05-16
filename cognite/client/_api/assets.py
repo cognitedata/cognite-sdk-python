@@ -308,7 +308,6 @@ class _AssetPoster:
         self.client = client
 
         self.num_of_assets = len(self.remaining_external_ids)
-        self.external_id_to_id = {}
         self.external_ids_without_circular_deps = set()
         self.external_id_to_children = {external_id: set() for external_id in self.remaining_external_ids}
         self.external_id_to_descendent_count = {external_id: 0 for external_id in self.remaining_external_ids}
@@ -394,15 +393,15 @@ class _AssetPoster:
         sorted_external_ids = sorted(external_ids, key=lambda x: self.external_id_to_descendent_count[x], reverse=True)
         return OrderedDict({external_id: None for external_id in sorted_external_ids})
 
-    def _get_assets_unblocked_by_external_id(self, asset: Asset, limit):
+    def _get_assets_unblocked_locally(self, asset: Asset, limit):
         pq = utils.PriorityQueue()
         pq.add(asset, self.external_id_to_descendent_count[asset.external_id])
-        unblocked_descendents = []
+        unblocked_descendents = set()
         while pq:
             if len(unblocked_descendents) == limit:
                 break
             asset = pq.get()
-            unblocked_descendents.append(asset)
+            unblocked_descendents.add(asset)
             self.remaining_external_ids_set.remove(asset.external_id)
             for child in self.external_id_to_children[asset.external_id]:
                 pq.add(child, self.external_id_to_descendent_count[child.external_id])
@@ -411,21 +410,19 @@ class _AssetPoster:
     def _get_unblocked_assets(self) -> List[List[Asset]]:
         limit = self.client._CREATE_LIMIT
         unblocked_assets_lists = []
-        unblocked_assets = []
+        unblocked_assets = set()
         for external_id in self.remaining_external_ids:
             asset = self.external_id_to_asset[external_id]
-            if external_id in self.remaining_external_ids_set and (
-                asset.parent_external_id is None
-                or asset.parent_id is not None
-                or asset.parent_external_id in self.external_id_to_id
-            ):
-                if asset.parent_external_id in self.external_id_to_id:
-                    asset.parent_id = self.external_id_to_id[asset.parent_external_id]
-                    asset.parent_external_id = None
-                unblocked_assets.extend(self._get_assets_unblocked_by_external_id(asset, limit - len(unblocked_assets)))
-                if len(unblocked_assets) == limit:
-                    unblocked_assets_lists.append(unblocked_assets)
-                    unblocked_assets = []
+            if external_id in self.remaining_external_ids_set:
+                if asset.parent_id is not None or (
+                    asset.parent_external_id not in self.remaining_external_ids
+                    and asset.parent_external_id not in unblocked_assets
+                ):
+                    locally_unblocked_assets = self._get_assets_unblocked_locally(asset, limit - len(unblocked_assets))
+                    unblocked_assets.update(locally_unblocked_assets)
+                    if len(unblocked_assets) == limit:
+                        unblocked_assets_lists.append(unblocked_assets)
+                        unblocked_assets = set()
 
         if len(unblocked_assets) > 0:
             unblocked_assets_lists.append(unblocked_assets)
@@ -436,15 +433,10 @@ class _AssetPoster:
 
         return unblocked_assets_lists
 
-    def _update_external_id_to_id_map(self, assets):
-        for asset in assets:
-            if asset.external_id is not None:
-                self.external_id_to_id[asset.external_id] = asset.id
-
     def run(self):
         unblocked_assets_lists = self._get_unblocked_assets()
         for unblocked_assets in unblocked_assets_lists:
-            self.request_queue.put(unblocked_assets)
+            self.request_queue.put(list(unblocked_assets))
         while self.assets_remaining():
             res = self.response_queue.get()
             if isinstance(res, _AssetsFailedToPost):
@@ -460,12 +452,11 @@ class _AssetPoster:
                 else:
                     raise res.exc
             else:
-                self._update_external_id_to_id_map(res)
                 for asset in res:
                     self.posted_assets.add(asset)
                 unblocked_assets_lists = self._get_unblocked_assets()
                 for unblocked_assets in unblocked_assets_lists:
-                    self.request_queue.put(unblocked_assets)
+                    self.request_queue.put(list(unblocked_assets))
         if len(self.may_have_been_posted_assets) > 0 or len(self.not_posted_assets) > 0:
             if isinstance(self.exception, CogniteAPIError):
                 raise CogniteAPIError(
