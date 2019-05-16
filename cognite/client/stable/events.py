@@ -262,7 +262,7 @@ class EventsClient(APIClient):
             "maxLastUpdatedTime": max_last_updated_time,
             "metadata": json.dumps(metadata),
             "assetIds": str(asset_ids or []),
-            "assetSubtrees": asset_subtrees,
+            "assetSubtrees": str(asset_subtrees) if asset_subtrees else None,
             "sort": kwargs.get("sort"),
             "dir": kwargs.get("dir"),
             "limit": kwargs.get("limit", self._LIMIT),
