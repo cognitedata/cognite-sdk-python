@@ -266,7 +266,7 @@ class FilesAPI(APIClient):
             external_id (str): External Id provided by client. Should be unique within the project.
             name (str): No description.
             source (str): The source of the file.
-            mime_type (str): File type. E.g. pdf, css, spreadsheet, ..
+            mime_type (str): File type. E.g. text/plain, application/pdf, ...
             metadata (Dict[str, Any]): Customizable extra data about the file. String key -> String value.
             asset_ids (List[int]): No description.
             recursive (bool): If path is a directory, upload all contained files recursively.
@@ -347,7 +347,7 @@ class FilesAPI(APIClient):
             external_id (str): External Id provided by client. Should be unique within the project.
             name (str): No description.
             source (str): The source of the file.
-            mime_type (str): File type. E.g. pdf, css, spreadsheet, ..
+            mime_type (str): File type. E.g. text/plain, application/pdf,...
             metadata (Dict[str, Any]): Customizable extra data about the file. String key -> String value.
             asset_ids (List[int]): No description.
 

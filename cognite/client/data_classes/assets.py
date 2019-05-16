@@ -3,12 +3,13 @@ from typing import *
 from cognite.client._base import *
 
 
-# GenClass: Asset, ExternalAssetItem
+# GenClass: Asset
 class Asset(CogniteResource):
     """Representation of a physical asset, e.g plant or piece of equipment
 
     Args:
         external_id (str): External Id provided by client. Should be unique within the project.
+        parent_external_id (str): External Id provided by client. Should be unique within the project.
         name (str): Name of asset. Often referred to as tag.
         parent_id (int): Javascript friendly internal ID given to the object.
         description (str): Description of asset.
@@ -19,14 +20,13 @@ class Asset(CogniteResource):
         last_updated_time (int): It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         path (List[int]): IDs of assets on the path to the asset.
         depth (int): Asset path depth (number of levels below root node).
-        ref_id (str): Reference ID used only in post request to disambiguate references to duplicate names.
-        parent_ref_id (str): Reference ID of parent, to disambiguate if multiple nodes have the same name.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
     def __init__(
         self,
         external_id: str = None,
+        parent_external_id: str = None,
         name: str = None,
         parent_id: int = None,
         description: str = None,
@@ -37,11 +37,10 @@ class Asset(CogniteResource):
         last_updated_time: int = None,
         path: List[int] = None,
         depth: int = None,
-        ref_id: str = None,
-        parent_ref_id: str = None,
         cognite_client=None,
     ):
         self.external_id = external_id
+        self.parent_external_id = parent_external_id
         self.name = name
         self.parent_id = parent_id
         self.description = description
@@ -52,8 +51,6 @@ class Asset(CogniteResource):
         self.last_updated_time = last_updated_time
         self.path = path
         self.depth = depth
-        self.ref_id = ref_id
-        self.parent_ref_id = parent_ref_id
         self._cognite_client = cognite_client
 
     # GenStop
@@ -90,7 +87,7 @@ class Asset(CogniteResource):
 
 # GenUpdateClass: AssetChange
 class AssetUpdate(CogniteUpdate):
-    """Changes will be applied to event.
+    """Changes applied to asset
 
     Args:
         id (int): Javascript friendly internal ID given to the object.
@@ -206,7 +203,7 @@ class AssetFilter(CogniteFilter):
         source (str): The source of this asset
         created_time (Dict[str, Any]): Range between two timestamps
         last_updated_time (Dict[str, Any]): Range between two timestamps
-        asset_subtrees (List[int]): Filter out events that are not linked to assets in the subtree rooted at these assets.
+        asset_subtrees (List[int]): Only return assets that are in a subtree rooted at the given assets.
         depth (Dict[str, Any]): Range between two integers
         external_id_prefix (str): External Id provided by client. Should be unique within the project.
         cognite_client (CogniteClient): The client to associate with this object.

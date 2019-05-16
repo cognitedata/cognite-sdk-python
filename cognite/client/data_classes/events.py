@@ -59,7 +59,7 @@ class EventFilter(CogniteFilter):
         end_time (Dict[str, Any]): Range between two timestamps
         metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
         asset_ids (List[int]): Asset IDs of related equipment that this event relates to.
-        asset_subtrees (List[int]): Filter out events that are not linked to assets in the subtree rooted at these assets.
+        asset_subtrees (List[int]): Filter out events that are linked to assets in the subtree rooted at these assets.
         source (str): The source of this event.
         created_time (Dict[str, Any]): Range between two timestamps
         last_updated_time (Dict[str, Any]): Range between two timestamps
