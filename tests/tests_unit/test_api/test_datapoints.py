@@ -122,45 +122,36 @@ def mock_get_datapoints_one_ts_empty(rsps):
 
 @pytest.fixture
 def mock_get_datapoints_one_ts_has_missing_aggregates(rsps):
-    rsps.add(
-        rsps.POST,
-        DPS_CLIENT._base_url + "/timeseries/data/list",
-        status=200,
-        json={
-            "items": [
-                {
-                    "id": 1,
-                    "externalId": "abc",
-                    "datapoints": [
-                        {"timestamp": 0, "average": 0},
-                        {"timestamp": 1, "average": 1},
-                        {"timestamp": 2, "average": 2},
-                        {"timestamp": 3, "average": 3},
-                        {"timestamp": 4, "average": 4},
-                    ],
-                }
-            ]
-        },
-    )
-    rsps.add(
-        rsps.POST,
-        DPS_CLIENT._base_url + "/timeseries/data/list",
-        status=200,
-        json={
-            "items": [
-                {
-                    "id": 2,
-                    "externalId": "def",
-                    "datapoints": [
-                        {"timestamp": 0},
-                        {"timestamp": 1, "interpolation": 1},
-                        {"timestamp": 2},
-                        {"timestamp": 3, "interpolation": 3},
-                        {"timestamp": 4},
-                    ],
-                }
-            ]
-        },
+    def callback(request):
+        item = jsgz_load(request.body)["items"][0]
+        if item["aggregates"] == ["average"]:
+            dps = {
+                "id": 1,
+                "externalId": "abc",
+                "datapoints": [
+                    {"timestamp": 0, "average": 0},
+                    {"timestamp": 1, "average": 1},
+                    {"timestamp": 2, "average": 2},
+                    {"timestamp": 3, "average": 3},
+                    {"timestamp": 4, "average": 4},
+                ],
+            }
+        else:
+            dps = {
+                "id": 2,
+                "externalId": "def",
+                "datapoints": [
+                    {"timestamp": 0},
+                    {"timestamp": 1, "interpolation": 1},
+                    {"timestamp": 2},
+                    {"timestamp": 3, "interpolation": 3},
+                    {"timestamp": 4},
+                ],
+            }
+        return 200, {}, json.dumps({"items": [dps]})
+
+    rsps.add_callback(
+        rsps.POST, DPS_CLIENT._base_url + "/timeseries/data/list", callback=callback, content_type="application/json"
     )
     yield rsps
 

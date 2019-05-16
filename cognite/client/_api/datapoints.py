@@ -631,10 +631,12 @@ class _DatapointsFetcher:
             query.dps_result = self._get_datapoints_with_paging(*query.as_tuple())
             self._store_finalized_query(query)
             return []
+
         user_limit = query.limit
         query.limit = None
         query.dps_result = self._get_datapoints(*query.as_tuple())
         query.limit = user_limit
+
         self._store_finalized_query(query)
 
         dps_in_first_query = len(query.dps_result)
@@ -674,6 +676,7 @@ class _DatapointsFetcher:
 
     def _split_query_into_windows(self, id: int, query: _DPQuery, request_limit, user_limit):
         windows = self._get_windows(id, query.start, query.end, query.granularity, request_limit, user_limit)
+
         return [
             _DPQuery(
                 w.start,
@@ -813,6 +816,6 @@ class _DatapointsFetcher:
         }
         res = self.client._post(self.client._RESOURCE_PATH + "/list", json=payload).json()["items"][0]
         aggs = ts_item.get("aggregates", aggregates)
-        expected_fields = aggs if aggs is not None else ["value"]
+        expected_fields = [a for a in aggs] if aggs is not None else ["value"]
         dps = Datapoints._load(res, expected_fields, cognite_client=self.client._cognite_client)
         return dps

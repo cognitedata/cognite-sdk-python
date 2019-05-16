@@ -205,18 +205,24 @@ class Datapoints:
         plt.show()
 
     @classmethod
-    def _load(cls, dps_object, expected_fields: List[str], cognite_client=None):
+    def _load(cls, dps_object, expected_fields: List[str] = None, cognite_client=None):
         instance = cls()
         instance.id = dps_object["id"]
         instance.external_id = dps_object["externalId"]
+        expected_fields = expected_fields or ["value"]
         expected_fields.append("timestamp")
-        for dp in dps_object["datapoints"]:
+        if len(dps_object["datapoints"]) == 0:
             for key in expected_fields:
                 snake_key = utils.to_snake_case(key)
-                current_attr = getattr(instance, snake_key) or []
-                value = dp.get(key)
-                current_attr.append(value)
-                setattr(instance, snake_key, current_attr)
+                setattr(instance, snake_key, [])
+        else:
+            for dp in dps_object["datapoints"]:
+                for key in expected_fields:
+                    snake_key = utils.to_snake_case(key)
+                    current_attr = getattr(instance, snake_key) or []
+                    value = dp.get(key)
+                    current_attr.append(value)
+                    setattr(instance, snake_key, current_attr)
         return instance
 
     def _insert(self, other_dps):
@@ -259,7 +265,6 @@ class Datapoints:
             self.__datapoint_objects = []
             for i in range(len(self)):
                 dp_args = {}
-                print(self._get_non_empty_data_fields())
                 for attr, value in self._get_non_empty_data_fields():
                     dp_args[attr] = value[i]
                 self.__datapoint_objects.append(Datapoint(**dp_args))
