@@ -311,6 +311,7 @@ class _AssetPoster:
         self.external_ids_without_circular_deps = set()
         self.external_id_to_children = {external_id: set() for external_id in self.remaining_external_ids}
         self.external_id_to_descendent_count = {external_id: 0 for external_id in self.remaining_external_ids}
+        self.successfully_posted_external_ids = set()
         self.posted_assets = set()
         self.may_have_been_posted_assets = set()
         self.not_posted_assets = set()
@@ -407,28 +408,30 @@ class _AssetPoster:
                 pq.add(child, self.external_id_to_descendent_count[child.external_id])
         return unblocked_descendents
 
-    def _get_unblocked_assets(self) -> List[List[Asset]]:
+    def _get_unblocked_assets(self) -> List[Set[Asset]]:
         limit = self.client._CREATE_LIMIT
         unblocked_assets_lists = []
-        unblocked_assets = set()
+        unblocked_assets_chunk = set()
         for external_id in self.remaining_external_ids:
             asset = self.external_id_to_asset[external_id]
+            parent_external_id = asset.parent_external_id
+
             if external_id in self.remaining_external_ids_set:
-                if asset.parent_id is not None or (
-                    asset.parent_external_id not in self.remaining_external_ids
-                    and asset.parent_external_id not in unblocked_assets
-                ):
-                    locally_unblocked_assets = self._get_assets_unblocked_locally(asset, limit - len(unblocked_assets))
-                    unblocked_assets.update(locally_unblocked_assets)
-                    if len(unblocked_assets) == limit:
-                        unblocked_assets_lists.append(unblocked_assets)
-                        unblocked_assets = set()
+                has_parent_id = asset.parent_id is not None
+                is_root = (not has_parent_id) and parent_external_id is None
+                is_unblocked = parent_external_id in self.successfully_posted_external_ids
+                if is_root or has_parent_id or is_unblocked:
+                    unblocked_assets_chunk.update(
+                        self._get_assets_unblocked_locally(asset, limit - len(unblocked_assets_chunk))
+                    )
+                    if len(unblocked_assets_chunk) == limit:
+                        unblocked_assets_lists.append(unblocked_assets_chunk)
+                        unblocked_assets_chunk = set()
+        if len(unblocked_assets_chunk) > 0:
+            unblocked_assets_lists.append(unblocked_assets_chunk)
 
-        if len(unblocked_assets) > 0:
-            unblocked_assets_lists.append(unblocked_assets)
-
-        for unblocked_assets in unblocked_assets_lists:
-            for unblocked_asset in unblocked_assets:
+        for unblocked_assets_chunk in unblocked_assets_lists:
+            for unblocked_asset in unblocked_assets_chunk:
                 del self.remaining_external_ids[unblocked_asset.external_id]
 
         return unblocked_assets_lists
@@ -454,6 +457,7 @@ class _AssetPoster:
             else:
                 for asset in res:
                     self.posted_assets.add(asset)
+                    self.successfully_posted_external_ids.add(asset.external_id)
                 unblocked_assets_lists = self._get_unblocked_assets()
                 for unblocked_assets in unblocked_assets_lists:
                     self.request_queue.put(list(unblocked_assets))

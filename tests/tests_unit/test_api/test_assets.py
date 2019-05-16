@@ -10,7 +10,7 @@ from cognite.client import CogniteClient
 from cognite.client._api.assets import Asset, AssetList, AssetUpdate, _AssetPoster, _AssetPosterWorker
 from cognite.client.data_classes import AssetFilter
 from cognite.client.exceptions import CogniteAPIError
-from tests.utils import jsgz_load, set_request_limit
+from tests.utils import jsgz_load, profilectx, set_request_limit
 
 COGNITE_CLIENT = CogniteClient()
 ASSETS_API = COGNITE_CLIENT.assets
