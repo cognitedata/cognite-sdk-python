@@ -36,7 +36,6 @@ class TestEventsAPI:
         res = COGNITE_CLIENT.events.search(filter=EventFilter(start_time={"min": utils.timestamp_to_ms("2d-ago")}))
         assert len(res) > 0
 
-    @pytest.mark.xfail(strict=True)
     def test_update(self, new_event):
         update_asset = EventUpdate(new_event.id).metadata.set({"bla": "bla"})
         res = COGNITE_CLIENT.events.update(update_asset)
