@@ -581,12 +581,12 @@ class TestPandasIntegration:
         )
         pd.testing.assert_frame_equal(expected_df, d.to_pandas())
 
-    def test_id_and_external_id_set(self):
+    def test_id_and_external_id_set_gives_external_id_columns(self):
         import pandas as pd
 
         d = Datapoints(id=0, external_id="abc", timestamp=[1, 2, 3], average=[2, 3, 4], step_interpolation=[3, 4, 5])
         expected_df = pd.DataFrame(
-            {"0|average": [2, 3, 4], "0|stepInterpolation": [3, 4, 5]},
+            {"abc|average": [2, 3, 4], "abc|stepInterpolation": [3, 4, 5]},
             index=[utils.ms_to_datetime(ms) for ms in [1, 2, 3]],
         )
         pd.testing.assert_frame_equal(expected_df, d.to_pandas())
@@ -632,7 +632,7 @@ class TestPandasIntegration:
         dps_list = DatapointsList([])
         assert dps_list.to_pandas().empty
 
-    def test_retrieve_dataframe(self, mock_get_datapoints, set_dps_workers):
+    def test_retrieve_dataframe(self, mock_get_datapoints):
         df = DPS_CLIENT.retrieve_dataframe(
             id=[1, {"id": 2, "aggregates": ["max"]}],
             external_id=["123"],
@@ -644,6 +644,24 @@ class TestPandasIntegration:
 
         assert {"1|average", "2|max", "123|average"} == set(df.columns)
         assert df.shape[0] > 0
+
+    def test_retrieve_dataframe_id_and_external_id_requested(self, rsps):
+        rsps.add(
+            rsps.POST,
+            DPS_CLIENT._base_url + "/timeseries/data/list",
+            status=200,
+            json={"items": [{"id": 1, "externalId": "abc", "datapoints": [{"timestamp": 0, "average": 1}]}]},
+        )
+        rsps.add(
+            rsps.POST,
+            DPS_CLIENT._base_url + "/timeseries/data/list",
+            status=200,
+            json={"items": [{"id": 2, "externalId": "def", "datapoints": [{"timestamp": 0, "average": 1}]}]},
+        )
+        res = DPS_CLIENT.retrieve_dataframe(
+            start=0, end="now", id=1, external_id=["def"], aggregates=["average"], granularity="1m"
+        )
+        assert {"1|average", "def|average"} == set(res.columns)
 
     def test_insert_dataframe(self, mock_post_datapoints):
         import pandas as pd

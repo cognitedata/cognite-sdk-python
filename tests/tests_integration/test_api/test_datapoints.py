@@ -60,7 +60,7 @@ class TestDatapointsAPI:
         dps = COGNITE_CLIENT.datapoints.retrieve(
             id=ids, start="6h-ago", end="now", aggregates=["min"], granularity="1s"
         )
-        df = dps.to_pandas()
+        df = dps.to_pandas(column_names="id")
         assert "{}|min".format(test_time_series[0].id) in df.columns
         assert "{}|min".format(test_time_series[1].id) in df.columns
         assert "{}|max".format(test_time_series[2].id) in df.columns

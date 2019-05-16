@@ -400,16 +400,23 @@ class DatapointsAPI(APIClient):
                 >>> df = c.datapoints.retrieve_dataframe(id=[1,2,3], start="2w-ago", end="now",
                 ...         aggregates=["average"], granularity="1h")
         """
-        utils.local_import("pandas")
-        return self.retrieve(
-            id=id,
-            external_id=external_id,
-            start=start,
-            end=end,
-            aggregates=aggregates,
-            granularity=granularity,
-            limit=limit,
-        ).to_pandas()
+        pd = utils.local_import("pandas")
+        id_df = pd.DataFrame()
+        external_id_df = pd.DataFrame()
+        if id is not None:
+            id_df = self.retrieve(
+                id=id, start=start, end=end, aggregates=aggregates, granularity=granularity, limit=limit
+            ).to_pandas(column_names="id")
+        if external_id is not None:
+            external_id_df = self.retrieve(
+                external_id=external_id,
+                start=start,
+                end=end,
+                aggregates=aggregates,
+                granularity=granularity,
+                limit=limit,
+            ).to_pandas()
+        return pd.concat([id_df, external_id_df], axis="columns")
 
     def insert_dataframe(self, dataframe):
         """Insert a dataframe.

@@ -170,8 +170,11 @@ class Datapoints:
             dumped = {utils.to_camel_case(key): value for key, value in dumped.items()}
         return {key: value for key, value in dumped.items() if value is not None}
 
-    def to_pandas(self) -> "pandas.DataFrame":
+    def to_pandas(self, column_names="externalId") -> "pandas.DataFrame":
         """Convert the datapoints into a pandas DataFrame.
+
+        Args:
+            column_names (str): Which field to use as column header. Defaults to "externalId", can also be "id".
 
         Returns:
             pandas.DataFrame: The dataframe.
@@ -179,7 +182,12 @@ class Datapoints:
         np, pd = utils.local_import("numpy", "pandas")
         data_fields = {}
         timestamps = []
-        identifier = self.id if self.id is not None else self.external_id
+        if column_names == "name":
+            identifier = self.name if self.name is not None else self.id
+        if column_names == "externalId":
+            identifier = self.external_id if self.external_id is not None else self.id
+        else:
+            identifier = self.id
         for attr, value in self._get_non_empty_data_fields(get_empty_lists=True):
             if attr == "timestamp":
                 timestamps = value
@@ -271,10 +279,16 @@ class DatapointsList(CogniteResourceList):
             i["datapoints"] = utils.convert_time_attributes_to_datetime(i["datapoints"])
         return json.dumps(item, default=lambda x: x.__dict__, indent=4)
 
-    def to_pandas(self) -> "pandas.DataFrame":
-        """Convert the datapoints list into a pandas DataFrame."""
+    def to_pandas(self, column_names="externalId") -> "pandas.DataFrame":
+        """Convert the datapoints list into a pandas DataFrame.
+
+        Args:
+            column_names (str): Which field to use as column header. Defaults to "externalId", can also be "id".
+        Returns:
+            pandas.DataFrame: The datapoints list as a pandas DataFrame.
+        """
         pd = utils.local_import("pandas")
-        dfs = [df.to_pandas() for df in self.data]
+        dfs = [df.to_pandas(column_names=column_names) for df in self.data]
         if dfs:
             return pd.concat(dfs, axis="columns")
         return pd.DataFrame()
