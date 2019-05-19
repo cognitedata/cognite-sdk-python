@@ -74,15 +74,19 @@ class Asset(CogniteResource):
         Returns:
             AssetList: The requested assets
         """
-        return self._cognite_client.assets.list(parent_ids=[self.id])
+        return self._cognite_client.assets.list(parent_ids=[self.id], limit=None)
 
-    def subtree(self) -> "AssetList":
+    def subtree(self, depth: Dict[str, int] = None, limit: int = 25) -> "AssetList":
         """Returns the subtree of this asset.
+
+        Args:
+            depth (str): Range between two integers e.g. {"min": 0, "max": 1}
+            limit (int): Max number of security categories to return. Defaults to 25.
 
         Returns:
             AssetList: The requested subtree
         """
-        return self._cognite_client.assets.list(asset_subtrees=[self.id])
+        return self._cognite_client.assets.list(asset_subtrees=[self.id], depth=depth, limit=limit)
 
 
 # GenUpdateClass: AssetChange

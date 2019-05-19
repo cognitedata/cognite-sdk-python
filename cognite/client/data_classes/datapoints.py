@@ -208,7 +208,7 @@ class Datapoints:
     def _load(cls, dps_object, expected_fields: List[str] = None, cognite_client=None):
         instance = cls()
         instance.id = dps_object["id"]
-        instance.external_id = dps_object["externalId"]
+        instance.external_id = dps_object.get("externalId")
         expected_fields = expected_fields or ["value"]
         expected_fields.append("timestamp")
         if len(dps_object["datapoints"]) == 0:
