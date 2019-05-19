@@ -10,12 +10,12 @@ def check_if_version_exists(package_name: str, version: str):
 
 
 def get_newest_version_in_major_release(package_name: str, version: str):
-    major, minor, newest_micro, newest_pr_cycle, newest_pr_version = _parse_version(version)
+    major, minor, micro, pr_cycle, pr_version = _parse_version(version)
     versions = get_all_versions(package_name)
     for v in versions:
         if _is_newer_major(v, version):
-            major, minor, newest_micro, newest_pr_cycle, newest_pr_version = _parse_version(v)
-    return _format_version(major, minor, newest_micro, newest_pr_cycle, newest_pr_version)
+            major, minor, micro, pr_cycle, pr_version = _parse_version(v)
+    return _format_version(major, minor, micro, pr_cycle, pr_version)
 
 
 def get_all_versions(package_name: str):

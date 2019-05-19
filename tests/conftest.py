@@ -23,6 +23,7 @@ def client(rsps_with_login_mock):
 @pytest.fixture
 def rsps_with_login_mock():
     with responses.RequestsMock() as rsps:
+        rsps.add(responses.GET, "https://pypi.python.org/simple/cognite-sdk/#history", status=200, body="")
         rsps.add(
             responses.GET,
             BASE_URL + "/login/status",

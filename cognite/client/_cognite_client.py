@@ -48,8 +48,6 @@ class CogniteClient:
         timeout: int = None,
         debug: bool = None,
     ):
-        self._check_client_has_newest_major_version()
-
         thread_local_api_key, thread_local_project = self._get_thread_local_credentials()
         environment_api_key = os.getenv("COGNITE_API_KEY")
         environment_base_url = os.getenv("COGNITE_BASE_URL")
@@ -95,6 +93,7 @@ class CogniteClient:
                 )
             else:
                 raise CogniteAPIKeyError
+        self._check_client_has_newest_major_version()
 
         self.assets = AssetsAPI(
             version=__api_version,
