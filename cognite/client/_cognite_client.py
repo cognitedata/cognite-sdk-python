@@ -87,7 +87,9 @@ class CogniteClient:
             if login_status.logged_in:
                 self.project = login_status.project
                 warnings.warn(
-                    "Authenticated towards project '{}'. Specify project to suppress warning.".format(self.project)
+                    "Authenticated towards inferred project '{}'. Pass project to CogniteClient constructor"
+                    " to suppress warning.".format(self.project),
+                    stacklevel=2,
                 )
             else:
                 raise CogniteAPIKeyError
