@@ -3,7 +3,7 @@ import pytest
 from cognite.client import CogniteClient
 from cognite.client.exceptions import CogniteAPIError
 
-c = CogniteClient(debug=True)
+c = CogniteClient()
 
 
 class TestCogniteClient:

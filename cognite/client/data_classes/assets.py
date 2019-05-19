@@ -81,7 +81,7 @@ class Asset(CogniteResource):
 
         Args:
             depth (str): Range between two integers e.g. {"min": 0, "max": 1}
-            limit (int): Max number of security categories to return. Defaults to 25.
+            limit (int): Max number of assets to return. Defaults to 25.
 
         Returns:
             AssetList: The requested subtree

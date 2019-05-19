@@ -4,7 +4,7 @@ from cognite.client import CogniteClient
 from cognite.client.data_classes import APIKey, Group, SecurityCategory, ServiceAccount, ServiceAccountList
 from cognite.client.utils._utils import random_string
 
-COGNITE_CLIENT = CogniteClient(debug=True)
+COGNITE_CLIENT = CogniteClient()
 
 
 class TestServiceAccountAPI:

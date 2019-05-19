@@ -8,7 +8,7 @@ from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils import _utils
 from tests.utils import set_request_limit
 
-COGNITE_CLIENT = CogniteClient(debug=True)
+COGNITE_CLIENT = CogniteClient()
 
 
 @pytest.fixture

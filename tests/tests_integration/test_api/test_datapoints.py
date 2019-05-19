@@ -11,10 +11,7 @@ from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils import _utils
 from tests.utils import set_request_limit
 
-COGNITE_CLIENT = CogniteClient(debug=True)
-pandas.set_option("display.max_rows", 500)
-pandas.set_option("display.max_columns", 500)
-pandas.set_option("display.width", 1000)
+COGNITE_CLIENT = CogniteClient()
 
 
 @pytest.fixture(scope="session")
