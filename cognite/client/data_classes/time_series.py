@@ -188,10 +188,9 @@ class TimeSeriesList(CogniteResourceList):
     _UPDATE = TimeSeriesUpdate
 
     def plot(
-        self, start="52w-ago", end="now", aggregates=None, granularity="1d", id_labels: bool = False, *args, **kwargs
+        self, start="1d-ago", end="now", aggregates=None, granularity=None, id_labels: bool = False, *args, **kwargs
     ):
         plt = utils.local_import("matplotlib.pyplot")
-        aggregates = aggregates or ["average"]
         dps = self._cognite_client.datapoints.retrieve(
             id=[ts.id for ts in self.data], start=start, end=end, aggregates=aggregates, granularity=granularity
         )
