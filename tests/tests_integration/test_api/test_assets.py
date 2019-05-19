@@ -47,7 +47,7 @@ def new_asset_hierarchy(mocker):
     with set_request_limit(COGNITE_CLIENT.assets, 50):
         COGNITE_CLIENT.assets.create(assets)
 
-    assert 26 == COGNITE_CLIENT.assets._post.call_count
+    assert 20 < COGNITE_CLIENT.assets._post.call_count < 30
 
     ext_ids = [a.external_id for a in assets]
     yield random_prefix, ext_ids

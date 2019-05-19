@@ -15,7 +15,8 @@ from cognite.client._api.three_d import ThreeDAPI
 from cognite.client._api.time_series import TimeSeriesAPI
 from cognite.client._api_client import APIClient
 from cognite.client.exceptions import CogniteAPIKeyError
-from cognite.client.utils._utils import DebugLogFormatter
+from cognite.client.utils._utils import DebugLogFormatter, get_current_sdk_version
+from cognite.client.utils._version_checker import get_newest_version_in_major_release
 
 DEFAULT_BASE_URL = "https://api.cognitedata.com"
 DEFAULT_MAX_WORKERS = 10
@@ -47,8 +48,9 @@ class CogniteClient:
         timeout: int = None,
         debug: bool = None,
     ):
-        thread_local_api_key, thread_local_project = self._get_thread_local_credentials()
+        self._check_client_has_newest_major_version()
 
+        thread_local_api_key, thread_local_project = self._get_thread_local_credentials()
         environment_api_key = os.getenv("COGNITE_API_KEY")
         environment_base_url = os.getenv("COGNITE_BASE_URL")
         environment_max_workers = os.getenv("COGNITE_MAX_WORKERS")
@@ -87,8 +89,8 @@ class CogniteClient:
             if login_status.logged_in:
                 self.project = login_status.project
                 warnings.warn(
-                    "Authenticated towards inferred project '{}'. Pass project to CogniteClient constructor"
-                    " to suppress warning.".format(self.project),
+                    "Authenticated towards inferred project '{}'. Pass project to the CogniteClient constructor"
+                    " to suppress this warning.".format(self.project),
                     stacklevel=2,
                 )
             else:
@@ -200,6 +202,15 @@ class CogniteClient:
         """Perform a DELETE request to an arbitrary path in the API."""
         return self._api_client._delete(url, params=params, headers=headers)
 
+    @property
+    def version(self) -> str:
+        """Returns the current SDK version.
+
+        Returns:
+            str: The current SDK version
+        """
+        return get_current_sdk_version()
+
     @staticmethod
     def _get_thread_local_credentials():
         if "cognite._thread_local" in sys.modules:
@@ -219,3 +230,12 @@ class CogniteClient:
         logger.handlers = []
         logger.propagate = False
         logger.addHandler(log_handler)
+
+    def _check_client_has_newest_major_version(self):
+        newest_version = get_newest_version_in_major_release("cognite-sdk", self.version)
+        if newest_version != self.version:
+            warnings.warn(
+                "You are using version {} of the SDK, however version {} is available. "
+                "Upgrade to suppress this warning.".format(self.version, newest_version),
+                stacklevel=3,
+            )
