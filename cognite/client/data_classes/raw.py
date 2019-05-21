@@ -11,12 +11,16 @@ class Row(CogniteResource):
     Args:
         key (str): Unique row key
         columns (Dict[str, Any]): Row data stored as a JSON object.
+        last_updated_time (int): It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
-    def __init__(self, key: str = None, columns: Dict[str, Any] = None, cognite_client=None):
+    def __init__(
+        self, key: str = None, columns: Dict[str, Any] = None, last_updated_time: int = None, cognite_client=None
+    ):
         self.key = key
         self.columns = columns
+        self.last_updated_time = last_updated_time
         self._cognite_client = cognite_client
 
     # GenStop

@@ -387,12 +387,21 @@ class RawRowsAPI(APIClient):
             resource_path=utils.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name), id=key
         )
 
-    def list(self, db_name: str, table_name: str, limit: int = 25) -> RowList:
+    def list(
+        self,
+        db_name: str,
+        table_name: str,
+        min_last_updated_time: int = None,
+        max_last_updated_time: int = None,
+        limit: int = 25,
+    ) -> RowList:
         """List rows in a table.
 
         Args:
             db_name (str): Name of the database.
             table_name (str): Name of the table.
+            min_last_updated_time (int): Rows must have been last updated after this time. ms since epoch.
+            max_last_updated_time (int): Rows must have been last updated before this time. ms since epoch.
             limit (int): The number of rows to retrieve. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
@@ -424,4 +433,5 @@ class RawRowsAPI(APIClient):
             resource_path=utils.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
             limit=limit,
             method="GET",
+            filter={"minLastUpdatedTime": min_last_updated_time, "maxLastUpdatedTime": max_last_updated_time},
         )

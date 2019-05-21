@@ -112,7 +112,12 @@ class CogniteResourceList(UserList):
             pandas.DataFrame: The dataframe.
         """
         pd = utils.local_import("pandas")
-        return pd.DataFrame(self.dump(camel_case=True))
+        df = pd.DataFrame(self.dump(camel_case=True))
+        nullable_int_fields = ["endTime", "assetId"]
+        for field in nullable_int_fields:
+            if field in df:
+                df[field] = df[field].astype(pd.Int64Dtype())
+        return df
 
     @classmethod
     def _load(cls, resource_list: Union[List, str], cognite_client=None):

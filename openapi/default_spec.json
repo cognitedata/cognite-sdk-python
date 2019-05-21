@@ -451,11 +451,6 @@
             "type": "string",
             "maxLength": 255
           },
-          "parentExternalId": {
-            "description": "External Id provided by client. Should be unique within the project.",
-            "type": "string",
-            "maxLength": 255
-          },
           "name": {
             "type": "string",
             "description": "Name of asset. Often referred to as tag.",
@@ -496,11 +491,6 @@
             ],
             "properties": {
               "externalId": {
-                "description": "External Id provided by client. Should be unique within the project.",
-                "type": "string",
-                "maxLength": 255
-              },
-              "parentExternalId": {
                 "description": "External Id provided by client. Should be unique within the project.",
                 "type": "string",
                 "maxLength": 255
@@ -596,11 +586,6 @@
                   ],
                   "properties": {
                     "externalId": {
-                      "description": "External Id provided by client. Should be unique within the project.",
-                      "type": "string",
-                      "maxLength": 255
-                    },
-                    "parentExternalId": {
                       "description": "External Id provided by client. Should be unique within the project.",
                       "type": "string",
                       "maxLength": 255
@@ -1021,51 +1006,60 @@
           "items": {
             "type": "array",
             "items": {
-              "type": "object",
-              "required": [
-                "name"
-              ],
-              "properties": {
-                "externalId": {
-                  "description": "External Id provided by client. Should be unique within the project.",
-                  "type": "string",
-                  "maxLength": 255
-                },
-                "parentExternalId": {
-                  "description": "External Id provided by client. Should be unique within the project.",
-                  "type": "string",
-                  "maxLength": 255
-                },
-                "name": {
-                  "type": "string",
-                  "description": "Name of asset. Often referred to as tag.",
-                  "maxLength": 50
-                },
-                "parentId": {
-                  "description": "Javascript friendly internal ID given to the object.",
-                  "type": "integer",
-                  "minimum": 1,
-                  "maximum": 9007199254740991,
-                  "format": "int64"
-                },
-                "description": {
-                  "type": "string",
-                  "description": "Description of asset.",
-                  "maxLength": 500
-                },
-                "metadata": {
+              "allOf": [
+                {
                   "type": "object",
-                  "description": "Custom, application specific metadata. String key -> String value",
-                  "additionalProperties": {
-                    "type": "string"
-                  }
+                  "required": [
+                    "name"
+                  ],
+                  "properties": {
+                    "externalId": {
+                      "description": "External Id provided by client. Should be unique within the project.",
+                      "type": "string",
+                      "maxLength": 255
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "Name of asset. Often referred to as tag.",
+                      "maxLength": 50
+                    },
+                    "parentId": {
+                      "description": "Javascript friendly internal ID given to the object.",
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 9007199254740991,
+                      "format": "int64"
+                    },
+                    "description": {
+                      "type": "string",
+                      "description": "Description of asset.",
+                      "maxLength": 500
+                    },
+                    "metadata": {
+                      "type": "object",
+                      "description": "Custom, application specific metadata. String key -> String value",
+                      "additionalProperties": {
+                        "type": "string"
+                      }
+                    },
+                    "source": {
+                      "type": "string",
+                      "description": "The source of this asset"
+                    }
+                  },
+                  "description": "Representation of a physical asset, e.g plant or piece of equipment"
                 },
-                "source": {
-                  "type": "string",
-                  "description": "The source of this asset"
+                {
+                  "type": "object",
+                  "properties": {
+                    "parentExternalId": {
+                      "description": "External Id provided by client. Should be unique within the project.",
+                      "type": "string",
+                      "maxLength": 255
+                    }
+                  }
                 }
-              },
-              "description": "Representation of a physical asset, e.g plant or piece of equipment"
+              ]
             }
           }
         }
@@ -1084,11 +1078,6 @@
                   ],
                   "properties": {
                     "externalId": {
-                      "description": "External Id provided by client. Should be unique within the project.",
-                      "type": "string",
-                      "maxLength": 255
-                    },
-                    "parentExternalId": {
                       "description": "External Id provided by client. Should be unique within the project.",
                       "type": "string",
                       "maxLength": 255
@@ -14211,6 +14200,12 @@
                 "columns": {
                   "type": "object",
                   "description": "Row data stored as a JSON object."
+                },
+                "lastUpdatedTime": {
+                  "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
+                  "type": "integer",
+                  "minimum": 0,
+                  "format": "int64"
                 }
               },
               "description": "A row to store in the Raw DB."
@@ -14279,6 +14274,12 @@
                 "columns": {
                   "type": "object",
                   "description": "Row data stored as a JSON object."
+                },
+                "lastUpdatedTime": {
+                  "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
+                  "type": "integer",
+                  "minimum": 0,
+                  "format": "int64"
                 }
               },
               "description": "A row to store in the Raw DB."
@@ -14409,6 +14410,12 @@
           "columns": {
             "type": "object",
             "description": "Row data stored as a JSON object."
+          },
+          "lastUpdatedTime": {
+            "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
+            "type": "integer",
+            "minimum": 0,
+            "format": "int64"
           }
         },
         "description": "A row to store in the Raw DB."
@@ -19730,11 +19737,6 @@
                             "type": "string",
                             "maxLength": 255
                           },
-                          "parentExternalId": {
-                            "description": "External Id provided by client. Should be unique within the project.",
-                            "type": "string",
-                            "maxLength": 255
-                          },
                           "name": {
                             "type": "string",
                             "description": "Name of asset. Often referred to as tag.",
@@ -19845,11 +19847,6 @@
                             "type": "string",
                             "maxLength": 255
                           },
-                          "parentExternalId": {
-                            "description": "External Id provided by client. Should be unique within the project.",
-                            "type": "string",
-                            "maxLength": 255
-                          },
                           "name": {
                             "type": "string",
                             "description": "Name of asset. Often referred to as tag.",
@@ -19946,11 +19943,6 @@
                   ],
                   "properties": {
                     "externalId": {
-                      "description": "External Id provided by client. Should be unique within the project.",
-                      "type": "string",
-                      "maxLength": 255
-                    },
-                    "parentExternalId": {
                       "description": "External Id provided by client. Should be unique within the project.",
                       "type": "string",
                       "maxLength": 255
@@ -21181,11 +21173,6 @@
                                 "type": "string",
                                 "maxLength": 255
                               },
-                              "parentExternalId": {
-                                "description": "External Id provided by client. Should be unique within the project.",
-                                "type": "string",
-                                "maxLength": 255
-                              },
                               "name": {
                                 "type": "string",
                                 "description": "Name of asset. Often referred to as tag.",
@@ -21357,51 +21344,60 @@
                   "items": {
                     "type": "array",
                     "items": {
-                      "type": "object",
-                      "required": [
-                        "name"
-                      ],
-                      "properties": {
-                        "externalId": {
-                          "description": "External Id provided by client. Should be unique within the project.",
-                          "type": "string",
-                          "maxLength": 255
-                        },
-                        "parentExternalId": {
-                          "description": "External Id provided by client. Should be unique within the project.",
-                          "type": "string",
-                          "maxLength": 255
-                        },
-                        "name": {
-                          "type": "string",
-                          "description": "Name of asset. Often referred to as tag.",
-                          "maxLength": 50
-                        },
-                        "parentId": {
-                          "description": "Javascript friendly internal ID given to the object.",
-                          "type": "integer",
-                          "minimum": 1,
-                          "maximum": 9007199254740991,
-                          "format": "int64"
-                        },
-                        "description": {
-                          "type": "string",
-                          "description": "Description of asset.",
-                          "maxLength": 500
-                        },
-                        "metadata": {
+                      "allOf": [
+                        {
                           "type": "object",
-                          "description": "Custom, application specific metadata. String key -> String value",
-                          "additionalProperties": {
-                            "type": "string"
-                          }
+                          "required": [
+                            "name"
+                          ],
+                          "properties": {
+                            "externalId": {
+                              "description": "External Id provided by client. Should be unique within the project.",
+                              "type": "string",
+                              "maxLength": 255
+                            },
+                            "name": {
+                              "type": "string",
+                              "description": "Name of asset. Often referred to as tag.",
+                              "maxLength": 50
+                            },
+                            "parentId": {
+                              "description": "Javascript friendly internal ID given to the object.",
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 9007199254740991,
+                              "format": "int64"
+                            },
+                            "description": {
+                              "type": "string",
+                              "description": "Description of asset.",
+                              "maxLength": 500
+                            },
+                            "metadata": {
+                              "type": "object",
+                              "description": "Custom, application specific metadata. String key -> String value",
+                              "additionalProperties": {
+                                "type": "string"
+                              }
+                            },
+                            "source": {
+                              "type": "string",
+                              "description": "The source of this asset"
+                            }
+                          },
+                          "description": "Representation of a physical asset, e.g plant or piece of equipment"
                         },
-                        "source": {
-                          "type": "string",
-                          "description": "The source of this asset"
+                        {
+                          "type": "object",
+                          "properties": {
+                            "parentExternalId": {
+                              "description": "External Id provided by client. Should be unique within the project.",
+                              "type": "string",
+                              "maxLength": 255
+                            }
+                          }
                         }
-                      },
-                      "description": "Representation of a physical asset, e.g plant or piece of equipment"
+                      ]
                     }
                   }
                 }
@@ -21429,11 +21425,6 @@
                             ],
                             "properties": {
                               "externalId": {
-                                "description": "External Id provided by client. Should be unique within the project.",
-                                "type": "string",
-                                "maxLength": 255
-                              },
-                              "parentExternalId": {
                                 "description": "External Id provided by client. Should be unique within the project.",
                                 "type": "string",
                                 "maxLength": 255
@@ -21634,11 +21625,6 @@
                       ],
                       "properties": {
                         "externalId": {
-                          "description": "External Id provided by client. Should be unique within the project.",
-                          "type": "string",
-                          "maxLength": 255
-                        },
-                        "parentExternalId": {
                           "description": "External Id provided by client. Should be unique within the project.",
                           "type": "string",
                           "maxLength": 255
@@ -21956,11 +21942,6 @@
                                 "type": "string",
                                 "maxLength": 255
                               },
-                              "parentExternalId": {
-                                "description": "External Id provided by client. Should be unique within the project.",
-                                "type": "string",
-                                "maxLength": 255
-                              },
                               "name": {
                                 "type": "string",
                                 "description": "Name of asset. Often referred to as tag.",
@@ -22146,11 +22127,6 @@
                             ],
                             "properties": {
                               "externalId": {
-                                "description": "External Id provided by client. Should be unique within the project.",
-                                "type": "string",
-                                "maxLength": 255
-                              },
-                              "parentExternalId": {
                                 "description": "External Id provided by client. Should be unique within the project.",
                                 "type": "string",
                                 "maxLength": 255
@@ -22685,11 +22661,6 @@
                                 "type": "string",
                                 "maxLength": 255
                               },
-                              "parentExternalId": {
-                                "description": "External Id provided by client. Should be unique within the project.",
-                                "type": "string",
-                                "maxLength": 255
-                              },
                               "name": {
                                 "type": "string",
                                 "description": "Name of asset. Often referred to as tag.",
@@ -23027,11 +22998,6 @@
                             ],
                             "properties": {
                               "externalId": {
-                                "description": "External Id provided by client. Should be unique within the project.",
-                                "type": "string",
-                                "maxLength": 255
-                              },
-                              "parentExternalId": {
                                 "description": "External Id provided by client. Should be unique within the project.",
                                 "type": "string",
                                 "maxLength": 255
@@ -36443,6 +36409,28 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "minLastUpdatedTime",
+            "in": "query",
+            "description": "It is an exclusive filter, specifed as the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
+            "schema": {
+              "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
+              "type": "integer",
+              "minimum": 0,
+              "format": "int64"
+            }
+          },
+          {
+            "name": "maxLastUpdatedTime",
+            "in": "query",
+            "description": "It is an inclusive filter, specifed as the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
+            "schema": {
+              "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
+              "type": "integer",
+              "minimum": 0,
+              "format": "int64"
+            }
           }
         ],
         "responses": {
@@ -36469,6 +36457,12 @@
                           "columns": {
                             "type": "object",
                             "description": "Row data stored as a JSON object."
+                          },
+                          "lastUpdatedTime": {
+                            "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
+                            "type": "integer",
+                            "minimum": 0,
+                            "format": "int64"
                           }
                         },
                         "description": "A row to store in the Raw DB."
@@ -36588,6 +36582,12 @@
                         "columns": {
                           "type": "object",
                           "description": "Row data stored as a JSON object."
+                        },
+                        "lastUpdatedTime": {
+                          "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
+                          "type": "integer",
+                          "minimum": 0,
+                          "format": "int64"
                         }
                       },
                       "description": "A row to store in the Raw DB."
@@ -36759,6 +36759,12 @@
                     "columns": {
                       "type": "object",
                       "description": "Row data stored as a JSON object."
+                    },
+                    "lastUpdatedTime": {
+                      "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
+                      "type": "integer",
+                      "minimum": 0,
+                      "format": "int64"
                     }
                   },
                   "description": "A row to store in the Raw DB."
