@@ -31,7 +31,6 @@ class Asset(CogniteResource):
 
     Args:
         external_id (str): External Id provided by client. Should be unique within the project.
-        parent_external_id (str): External Id provided by client. Should be unique within the project.
         name (str): Name of asset. Often referred to as tag.
         parent_id (int): Javascript friendly internal ID given to the object.
         description (str): Description of asset.
@@ -48,7 +47,6 @@ class Asset(CogniteResource):
     def __init__(
         self,
         external_id: str = None,
-        parent_external_id: str = None,
         name: str = None,
         parent_id: int = None,
         description: str = None,
@@ -62,7 +60,6 @@ class Asset(CogniteResource):
         cognite_client=None,
     ):
         self.external_id = external_id
-        self.parent_external_id = parent_external_id
         self.name = name
         self.parent_id = parent_id
         self.description = description

@@ -46,7 +46,6 @@ class TestClassGenerator:
 
     Args:
         external_id (str): External Id provided by client. Should be unique within the project.
-        parent_external_id (str): External Id provided by client. Should be unique within the project.
         name (str): Name of asset. Often referred to as tag.
         parent_id (int): Javascript friendly internal ID given to the object.
         description (str): Description of asset.
@@ -66,9 +65,8 @@ class TestClassGenerator:
         schemas = [CLASS_GENERATOR._spec.components.schemas.get("Asset")]
         constructor = CLASS_GENERATOR.generate_constructor(schemas, indentation=4)
         assert (
-            """    def __init__(self, external_id: str = None, parent_external_id: str = None, name: str = None, parent_id: int = None, description: str = None, metadata: Dict[str, Any] = None, source: str = None, id: int = None, created_time: int = None, last_updated_time: int = None, path: List[int] = None, depth: int = None, cognite_client = None):
+            """    def __init__(self, external_id: str = None, name: str = None, parent_id: int = None, description: str = None, metadata: Dict[str, Any] = None, source: str = None, id: int = None, created_time: int = None, last_updated_time: int = None, path: List[int] = None, depth: int = None, cognite_client = None):
         self.external_id = external_id
-        self.parent_external_id = parent_external_id
         self.name = name
         self.parent_id = parent_id
         self.description = description
