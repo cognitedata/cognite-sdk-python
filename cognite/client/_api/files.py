@@ -258,6 +258,7 @@ class FilesAPI(APIClient):
         metadata: Dict[str, Any] = None,
         asset_ids: List[int] = None,
         recursive: bool = False,
+        overwrite: bool = False,
     ) -> Union[FileMetadata, FileMetadataList]:
         """Upload a file
 
@@ -270,6 +271,13 @@ class FilesAPI(APIClient):
             metadata (Dict[str, Any]): Customizable extra data about the file. String key -> String value.
             asset_ids (List[int]): No description.
             recursive (bool): If path is a directory, upload all contained files recursively.
+            overwrite (bool): If 'overwrite' is set to true, and the POST body content specifies a 'externalId' field,
+                fields for the file found for externalId can be overwritten. The default setting is false.
+                If metadata is included in the request body, all of the original metadata will be overwritten.
+                The actual file will be overwritten after successful upload. If there is no successful upload, the
+                current file contents will be kept.
+                File-Asset mappings only change if explicitly stated in the assetIds field of the POST json body.
+                Do not set assetIds in request body if you want to keep the current file-asset mappings.
 
         Returns:
             Union[FileMetadata, FileMetadataList]: The file metadata of the uploaded file(s).
@@ -306,7 +314,7 @@ class FilesAPI(APIClient):
         if os.path.isfile(path):
             if not name:
                 file_metadata.name = os.path.basename(path)
-            return self._upload_file_from_path(file_metadata, path)
+            return self._upload_file_from_path(file_metadata, path, overwrite)
         elif os.path.isdir(path):
             tasks = []
             if recursive:
@@ -314,20 +322,20 @@ class FilesAPI(APIClient):
                     for file in files:
                         file_path = os.path.join(root, file)
                         basename = os.path.basename(file_path)
-                        tasks.append((FileMetadata(name=basename), file_path))
+                        tasks.append((FileMetadata(name=basename), file_path, overwrite))
             else:
                 for file_name in os.listdir(path):
                     file_path = os.path.join(path, file_name)
                     if os.path.isfile(file_path):
-                        tasks.append((FileMetadata(name=file_name), file_path))
+                        tasks.append((FileMetadata(name=file_name), file_path, overwrite))
             tasks_summary = utils.execute_tasks_concurrently(self._upload_file_from_path, tasks, self._max_workers)
             tasks_summary.raise_compound_exception_if_failed_tasks(task_unwrap_fn=lambda x: x[0].name)
             return FileMetadataList(tasks_summary.results)
         raise ValueError("path '{}' does not exist".format(path))
 
-    def _upload_file_from_path(self, file: FileMetadata, file_path: str):
+    def _upload_file_from_path(self, file: FileMetadata, file_path: str, overwrite: bool):
         with open(file_path, "rb") as f:
-            file_metadata = self.upload_bytes(f.read(), **file.dump(camel_case=True))
+            file_metadata = self.upload_bytes(f.read(), overwrite=overwrite, **file.dump(camel_case=True))
         return file_metadata
 
     def upload_bytes(
@@ -339,6 +347,7 @@ class FilesAPI(APIClient):
         mime_type: str = None,
         metadata: Dict[str, Any] = None,
         asset_ids: List[int] = None,
+        overwrite: bool = False,
     ):
         """Upload bytes or string.
 
@@ -350,6 +359,13 @@ class FilesAPI(APIClient):
             mime_type (str): File type. E.g. text/plain, application/pdf,...
             metadata (Dict[str, Any]): Customizable extra data about the file. String key -> String value.
             asset_ids (List[int]): No description.
+            overwrite (bool): If 'overwrite' is set to true, and the POST body content specifies a 'externalId' field,
+                fields for the file found for externalId can be overwritten. The default setting is false.
+                If metadata is included in the request body, all of the original metadata will be overwritten.
+                The actual file will be overwritten after successful upload. If there is no successful upload, the
+                current file contents will be kept.
+                File-Asset mappings only change if explicitly stated in the assetIds field of the POST json body.
+                Do not set assetIds in request body if you want to keep the current file-asset mappings.
 
         Examples:
 
@@ -368,9 +384,10 @@ class FilesAPI(APIClient):
             metadata=metadata,
             asset_ids=asset_ids,
         )
-        url_path = self._RESOURCE_PATH + "/initupload"
 
-        res = self._post(url_path=url_path, json=file_metadata.dump(camel_case=True))
+        res = self._post(
+            url_path=self._RESOURCE_PATH, json=file_metadata.dump(camel_case=True), params={"overwrite": overwrite}
+        )
         returned_file_metadata = res.json()
         upload_url = returned_file_metadata.pop("uploadUrl")
         headers = {"X-Upload-Content-Type": file_metadata.mime_type, "content-length": str(len(content))}

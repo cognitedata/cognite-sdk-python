@@ -58,7 +58,7 @@ def mock_file_upload_response(rsps):
         "lastUpdatedTime": 0,
         "uploadUrl": "https://upload.here",
     }
-    rsps.add(rsps.POST, FILES_API._base_url + "/files/initupload", status=200, json=response_body)
+    rsps.add(rsps.POST, FILES_API._base_url + "/files", status=200, json=response_body)
     rsps.add(rsps.PUT, "https://upload.here", status=200)
     yield rsps
 
@@ -233,7 +233,7 @@ class TestFilesAPI:
                 raise AssertionError("incorrect payload: {}".format(payload))
 
     def test_upload_from_directory_fails(self, rsps):
-        rsps.add(rsps.POST, FILES_API._base_url + "/files/initupload", status=400, json={})
+        rsps.add(rsps.POST, FILES_API._base_url + "/files", status=400, json={})
         path = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
         with pytest.raises(CogniteAPIError) as e:
             FILES_API.upload(path=path)
