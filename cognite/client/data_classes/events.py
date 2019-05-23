@@ -12,6 +12,8 @@ class Event(CogniteResource):
         start_time (int): It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         end_time (int): It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         description (str): Textual description of the event.
+        type (str):             Type of the event, e.g. 'failure'.
+        subtype (str):          Subtype of the event, e.g. 'electrical'.        
         metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
         asset_ids (List[int]): Asset IDs of related equipment that this event relates to.
         source (str): The source of this event.
@@ -27,6 +29,8 @@ class Event(CogniteResource):
         start_time: int = None,
         end_time: int = None,
         description: str = None,
+        type: str = None,
+        subtype: str = None,
         metadata: Dict[str, Any] = None,
         asset_ids: List[int] = None,
         source: str = None,
@@ -39,6 +43,8 @@ class Event(CogniteResource):
         self.start_time = start_time
         self.end_time = end_time
         self.description = description
+        self.type = type
+        self.subtype = subtype        
         self.metadata = metadata
         self.asset_ids = asset_ids
         self.source = source
