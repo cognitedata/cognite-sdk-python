@@ -20,7 +20,6 @@ class FilesAPI(APIClient):
         mime_type: str = None,
         metadata: Dict[str, Any] = None,
         asset_ids: List[int] = None,
-        asset_subtrees: List[int] = None,
         source: str = None,
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
@@ -38,7 +37,6 @@ class FilesAPI(APIClient):
             mime_type (str): File type. E.g. text/plain, application/pdf, ..
             metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
             asset_ids (List[int]): Only include files that reference these specific asset IDs.
-            asset_subtrees (List[int]): Only include files that reference these asset Ids or any  sub-nodes of the specified asset Ids.
             source (str): The source of this event.
             created_time (Dict[str, Any]): Range between two timestamps
             last_updated_time (Dict[str, Any]): Range between two timestamps
@@ -54,7 +52,6 @@ class FilesAPI(APIClient):
             mime_type,
             metadata,
             asset_ids,
-            asset_subtrees,
             source,
             created_time,
             last_updated_time,
@@ -108,7 +105,6 @@ class FilesAPI(APIClient):
         mime_type: str = None,
         metadata: Dict[str, Any] = None,
         asset_ids: List[int] = None,
-        asset_subtrees: List[int] = None,
         source: str = None,
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
@@ -124,7 +120,6 @@ class FilesAPI(APIClient):
             mime_type (str): File type. E.g. text/plain, application/pdf, ..
             metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
             asset_ids (List[int]): Only include files that reference these specific asset IDs.
-            asset_subtrees (List[int]): Only include files that reference these asset Ids or any  sub-nodes of the specified asset Ids.
             source (str): The source of this event.
             created_time (Dict[str, Any]): Range between two timestamps
             last_updated_time (Dict[str, Any]): Range between two timestamps
@@ -164,7 +159,6 @@ class FilesAPI(APIClient):
             mime_type,
             metadata,
             asset_ids,
-            asset_subtrees,
             source,
             created_time,
             last_updated_time,

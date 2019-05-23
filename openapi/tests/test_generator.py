@@ -144,7 +144,15 @@ class TestUpdateClassGenerator:
 
     @property
     def source(self):
-        return _PrimitiveEventUpdate(self, 'source')"""
+        return _PrimitiveEventUpdate(self, 'source')
+
+    @property
+    def type(self):
+        return _PrimitiveEventUpdate(self, 'type')
+
+    @property
+    def subtype(self):
+        return _PrimitiveEventUpdate(self, 'subtype')"""
             == setters
         )
 

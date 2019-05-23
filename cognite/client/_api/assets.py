@@ -22,7 +22,6 @@ class AssetsAPI(APIClient):
         source: str = None,
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
-        asset_subtrees: List[int] = None,
         depth: Dict[str, Any] = None,
         external_id_prefix: str = None,
     ) -> Generator[Union[Asset, AssetList], None, None]:
@@ -38,7 +37,6 @@ class AssetsAPI(APIClient):
             source (str): The source of this asset
             created_time (Dict[str, Any]): Range between two timestamps
             last_updated_time (Dict[str, Any]): Range between two timestamps
-            asset_subtrees (List[int]): Filter out events that are not linked to assets in the subtree rooted at these assets.
             depth (Dict[str, Any]): Range between two integers
             external_id_prefix (str): External Id provided by client. Should be unique within the project
 
@@ -47,15 +45,7 @@ class AssetsAPI(APIClient):
         """
 
         filter = AssetFilter(
-            name,
-            parent_ids,
-            metadata,
-            source,
-            created_time,
-            last_updated_time,
-            asset_subtrees,
-            depth,
-            external_id_prefix,
+            name, parent_ids, metadata, source, created_time, last_updated_time, depth, external_id_prefix
         ).dump(camel_case=True)
         return self._list_generator(method="POST", chunk_size=chunk_size, filter=filter)
 
@@ -105,7 +95,6 @@ class AssetsAPI(APIClient):
         source: str = None,
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
-        asset_subtrees: List[int] = None,
         depth: Dict[str, Any] = None,
         external_id_prefix: str = None,
         limit: int = 25,
@@ -119,7 +108,6 @@ class AssetsAPI(APIClient):
             source (str): The source of this asset
             created_time (Dict[str, Any]): Range between two timestamps
             last_updated_time (Dict[str, Any]): Range between two timestamps
-            asset_subtrees (List[int]): Filter out events that are not linked to assets in the subtree rooted at these assets.
             depth (Dict[str, Any]): Range between two integers
             limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all items.
@@ -150,15 +138,7 @@ class AssetsAPI(APIClient):
                 ...     asset_list # do something with the assets
         """
         filter = AssetFilter(
-            name,
-            parent_ids,
-            metadata,
-            source,
-            created_time,
-            last_updated_time,
-            asset_subtrees,
-            depth,
-            external_id_prefix,
+            name, parent_ids, metadata, source, created_time, last_updated_time, depth, external_id_prefix
         ).dump(camel_case=True)
         return self._list(method="POST", limit=limit, filter=filter)
 

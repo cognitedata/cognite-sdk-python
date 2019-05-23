@@ -14,9 +14,10 @@ class EventsAPI(APIClient):
         chunk_size: int = None,
         start_time: Dict[str, Any] = None,
         end_time: Dict[str, Any] = None,
+        type: str = None,
+        subtype: str = None,
         metadata: Dict[str, Any] = None,
         asset_ids: List[int] = None,
-        asset_subtrees: List[int] = None,
         source: str = None,
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
@@ -30,9 +31,10 @@ class EventsAPI(APIClient):
             chunk_size (int, optional): Number of events to return in each chunk. Defaults to yielding one event a time.
             start_time (Dict[str, Any]): Range between two timestamps
             end_time (Dict[str, Any]): Range between two timestamps
+            type (str): Type of the event, e.g 'failure'.
+            subtype (str): Subtype of the event, e.g 'electrical'.
             metadata (Dict[str, Any]): Customizable extra data about the event. String key -> String value.
             asset_ids (List[int]): Asset IDs of related equipments that this event relates to.
-            asset_subtrees (List[int]): Filter out events that are not linked to assets in the subtree rooted at these assets.
             source (str): The source of this event.
             created_time (Dict[str, Any]): Range between two timestamps
             last_updated_time (Dict[str, Any]): Range between two timestamps
@@ -42,15 +44,16 @@ class EventsAPI(APIClient):
             Union[Event, EventList]: yields Event one by one if chunk is not specified, else EventList objects.
         """
         filter = EventFilter(
-            start_time,
-            end_time,
-            metadata,
-            asset_ids,
-            asset_subtrees,
-            source,
-            created_time,
-            last_updated_time,
-            external_id_prefix,
+            start_time=start_time,
+            end_time=end_time,
+            metadata=metadata,
+            asset_ids=asset_ids,
+            source=source,
+            created_time=created_time,
+            last_updated_time=last_updated_time,
+            external_id_prefix=external_id_prefix,
+            type=type,
+            subtype=subtype,
         ).dump(camel_case=True)
         return self._list_generator(method="POST", chunk_size=chunk_size, filter=filter)
 
@@ -96,9 +99,10 @@ class EventsAPI(APIClient):
         self,
         start_time: Dict[str, Any] = None,
         end_time: Dict[str, Any] = None,
+        type: str = None,
+        subtype: str = None,
         metadata: Dict[str, Any] = None,
         asset_ids: List[int] = None,
-        asset_subtrees: List[int] = None,
         source: str = None,
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
@@ -110,9 +114,10 @@ class EventsAPI(APIClient):
         Args:
             start_time (Dict[str, Any]): Range between two timestamps
             end_time (Dict[str, Any]): Range between two timestamps
+            type (str): Type of the event, e.g 'failure'.
+            subtype (str): Subtype of the event, e.g 'electrical'.
             metadata (Dict[str, Any]): Customizable extra data about the event. String key -> String value.
             asset_ids (List[int]): Asset IDs of related equipments that this event relates to.
-            asset_subtrees (List[int]): Filter out events that are not linked to assets in the subtree rooted at these assets.
             source (str): The source of this event.
             created_time (Dict[str, Any]): Range between two timestamps
             last_updated_time (Dict[str, Any]): Range between two timestamps
@@ -146,15 +151,16 @@ class EventsAPI(APIClient):
                 ...     event_list # do something with the files
         """
         filter = EventFilter(
-            start_time,
-            end_time,
-            metadata,
-            asset_ids,
-            asset_subtrees,
-            source,
-            created_time,
-            last_updated_time,
-            external_id_prefix,
+            start_time=start_time,
+            end_time=end_time,
+            metadata=metadata,
+            asset_ids=asset_ids,
+            source=source,
+            created_time=created_time,
+            last_updated_time=last_updated_time,
+            external_id_prefix=external_id_prefix,
+            type=type,
+            subtype=subtype,
         ).dump(camel_case=True)
         return self._list(method="POST", limit=limit, filter=filter)
 
