@@ -106,13 +106,13 @@ class TestAssets:
             mock_assets_response.calls[0].request.body
         )
 
-    @pytest.mark.parametrize("filter_field", ["asset_subtrees", "assetSubtrees"])
+    @pytest.mark.parametrize("filter_field", ["parent_ids", "parentIds"])
     def test_search_dict_filter(self, mock_assets_response, filter_field):
         res = ASSETS_API.search(filter={filter_field: "bla"})
         assert mock_assets_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
         assert {
             "search": {"name": None, "description": None},
-            "filter": {"assetSubtrees": "bla"},
+            "filter": {"parentIds": "bla"},
             "limit": None,
         } == jsgz_load(mock_assets_response.calls[0].request.body)
 
@@ -138,11 +138,6 @@ class TestAssets:
         a1 = Asset(parent_id=1, cognite_client=COGNITE_CLIENT)
         parent = a1.parent().dump(camel_case=True)
         assert mock_assets_response.calls[0].response.json()["items"][0] == parent
-
-    def test_asset_object_retrieve_subtree(self, mock_assets_response):
-        a1 = Asset(parent_id=1, cognite_client=COGNITE_CLIENT)
-        subtree = a1.subtree().dump(camel_case=True)
-        assert mock_assets_response.calls[0].response.json()["items"] == subtree
 
     def test_asset_object_retrieve_children(self, mock_assets_response):
         a1 = Asset(parent_id=1, cognite_client=COGNITE_CLIENT)

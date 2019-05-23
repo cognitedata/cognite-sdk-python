@@ -85,7 +85,6 @@ class TimeSeriesFilter(CogniteFilter):
         is_step (bool): Filter on isStep.
         metadata (Dict[str, Any]): Filter out timeseries that do not match these metadata fields and values (case-sensitive). Format is {"key1":"value1","key2":"value2"}.
         asset_ids (List[int]): Filter out time series that are not linked to any of these assets.
-        asset_subtrees (List[int]): Filter out time series that are not linked to assets in the subtree rooted at these assets. Format is list of ids.
         created_time (Dict[str, Any]): Filter out time series with createdTime outside this range.
         last_updated_time (Dict[str, Any]): Filter out time series with lastUpdatedTime outside this range.
         cognite_client (CogniteClient): The client to associate with this object.
@@ -98,7 +97,6 @@ class TimeSeriesFilter(CogniteFilter):
         is_step: bool = None,
         metadata: Dict[str, Any] = None,
         asset_ids: List[int] = None,
-        asset_subtrees: List[int] = None,
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
         cognite_client=None,
@@ -108,7 +106,6 @@ class TimeSeriesFilter(CogniteFilter):
         self.is_step = is_step
         self.metadata = metadata
         self.asset_ids = asset_ids
-        self.asset_subtrees = asset_subtrees
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self._cognite_client = cognite_client

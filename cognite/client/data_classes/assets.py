@@ -76,18 +76,6 @@ class Asset(CogniteResource):
         """
         return self._cognite_client.assets.list(parent_ids=[self.id], limit=None)
 
-    def subtree(self, depth: Dict[str, int] = None, limit: int = 25) -> "AssetList":
-        """Returns the subtree of this asset.
-
-        Args:
-            depth (str): Range between two integers e.g. {"min": 0, "max": 1}
-            limit (int): Max number of assets to return. Defaults to 25.
-
-        Returns:
-            AssetList: The requested subtree
-        """
-        return self._cognite_client.assets.list(asset_subtrees=[self.id], depth=depth, limit=limit)
-
 
 # GenUpdateClass: AssetChange
 class AssetUpdate(CogniteUpdate):
@@ -207,7 +195,6 @@ class AssetFilter(CogniteFilter):
         source (str): The source of this asset
         created_time (Dict[str, Any]): Range between two timestamps
         last_updated_time (Dict[str, Any]): Range between two timestamps
-        asset_subtrees (List[int]): Only return assets that are in a subtree rooted at the given assets.
         depth (Dict[str, Any]): Range between two integers
         external_id_prefix (str): External Id provided by client. Should be unique within the project.
         cognite_client (CogniteClient): The client to associate with this object.
@@ -221,7 +208,6 @@ class AssetFilter(CogniteFilter):
         source: str = None,
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
-        asset_subtrees: List[int] = None,
         depth: Dict[str, Any] = None,
         external_id_prefix: str = None,
         cognite_client=None,
@@ -232,7 +218,6 @@ class AssetFilter(CogniteFilter):
         self.source = source
         self.created_time = created_time
         self.last_updated_time = last_updated_time
-        self.asset_subtrees = asset_subtrees
         self.depth = depth
         self.external_id_prefix = external_id_prefix
         self._cognite_client = cognite_client

@@ -6,7 +6,7 @@ from cognite.client._base import *
 
 # GenClass: RawDBRow
 class Row(CogniteResource):
-    """A row to store in the Raw DB.
+    """No description.
 
     Args:
         key (str): Unique row key

@@ -63,7 +63,6 @@ class FileMetadataFilter(CogniteFilter):
         mime_type (str): File type. E.g. text/plain, application/pdf, ..
         metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
         asset_ids (List[int]): Only include files that reference these specific asset IDs.
-        asset_subtrees (List[int]): Only include files that reference these specific asset Ids or their sub-nodes.
         source (str): The source of this event.
         created_time (Dict[str, Any]): Range between two timestamps
         last_updated_time (Dict[str, Any]): Range between two timestamps
@@ -79,7 +78,6 @@ class FileMetadataFilter(CogniteFilter):
         mime_type: str = None,
         metadata: Dict[str, Any] = None,
         asset_ids: List[int] = None,
-        asset_subtrees: List[int] = None,
         source: str = None,
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
@@ -92,7 +90,6 @@ class FileMetadataFilter(CogniteFilter):
         self.mime_type = mime_type
         self.metadata = metadata
         self.asset_ids = asset_ids
-        self.asset_subtrees = asset_subtrees
         self.source = source
         self.created_time = created_time
         self.last_updated_time = last_updated_time
