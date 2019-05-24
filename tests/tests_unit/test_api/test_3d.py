@@ -77,11 +77,13 @@ class Test3DModels:
     def test_create(self, mock_3d_model_response):
         res = THREE_D_API.models.create(name="My Model")
         assert isinstance(res, ThreeDModel)
+        assert jsgz_load(mock_3d_model_response.calls[0].request.body) == {"items": [{"name": "My Model"}]}
         assert mock_3d_model_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
     def test_create_multiple(self, mock_3d_model_response):
         res = THREE_D_API.models.create(name=["My Model"])
         assert isinstance(res, ThreeDModelList)
+        assert jsgz_load(mock_3d_model_response.calls[0].request.body) == {"items": [{"name": "My Model"}]}
         assert mock_3d_model_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
 

@@ -92,6 +92,11 @@ class ThreeDModelsAPI(APIClient):
         Returns:
             Union[ThreeDModel, ThreeDModelList]: The created 3d model(s).
         """
+        utils.assert_type(name, "name", [str, list])
+        if isinstance(name, str):
+            name = {"name": name}
+        else:
+            name = [{"name": n} for n in name]
         return self._create_multiple(items=name)
 
     def update(
