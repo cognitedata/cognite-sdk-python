@@ -70,6 +70,13 @@ class CogniteResourceList(UserList):
                 )
         self._cognite_client = cognite_client
         super().__init__(resources)
+        if self.data:
+            if hasattr(self.data[0], "external_id"):
+                self._external_id_to_item = {
+                    item.external_id: item for item in self.data if item.external_id is not None
+                }
+            if hasattr(self.data[0], "id"):
+                self._id_to_item = {item.id: item for item in self.data if item.id is not None}
 
     def __getattribute__(self, item):
         attr = super().__getattribute__(item)
@@ -104,6 +111,21 @@ class CogniteResourceList(UserList):
             List[Dict[str, Any]]: A list of dicts representing the instance.
         """
         return [resource.dump(camel_case) for resource in self.data]
+
+    def get(self, id: int = None, external_id: str = None):
+        """Get an item from this list by id or exernal_id.
+
+        Args:
+            id (int): The id of the item to get.
+            external_id (str): The external_id of the item to get.
+
+        Returns:
+            CogniteResource: The requested item
+        """
+        utils.assert_exactly_one_of_id_or_external_id(id, external_id)
+        if id:
+            return self._id_to_item[id]
+        return self._external_id_to_item[external_id]
 
     def to_pandas(self) -> "pandas.DataFrame":
         """Convert the instance into a pandas DataFrame.

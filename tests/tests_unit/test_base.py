@@ -8,9 +8,11 @@ from cognite.client.exceptions import CogniteMissingClientError
 
 
 class MyResource(CogniteResource):
-    def __init__(self, var_a=None, var_b=None, cognite_client=None):
+    def __init__(self, var_a=None, var_b=None, id=None, external_id=None, cognite_client=None):
         self.var_a = var_a
         self.var_b = var_b
+        self.id = id
+        self.external_id = external_id
         self._cognite_client = cognite_client
 
     def use(self):
@@ -226,6 +228,16 @@ class TestCogniteResourceList:
             counter += 1
             assert resource in [MyResource(1, 2), MyResource(2, 3)]
         assert 2 == counter
+
+    def test_get_item_by_id(self):
+        resource_list = MyResourceList([MyResource(id=1, external_id="1"), MyResource(id=2, external_id="2")])
+        assert MyResource(id=1, external_id="1") == resource_list.get(id=1)
+        assert MyResource(id=2, external_id="2") == resource_list.get(id=2)
+
+    def test_get_item_by_external_id(self):
+        resource_list = MyResourceList([MyResource(id=1, external_id="1"), MyResource(id=2, external_id="2")])
+        assert MyResource(id=1, external_id="1") == resource_list.get(external_id="1")
+        assert MyResource(id=2, external_id="2") == resource_list.get(external_id="2")
 
     def test_constructor_bad_type(self):
         with pytest.raises(TypeError, match="must be of type 'MyResource'"):
