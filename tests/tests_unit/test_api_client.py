@@ -19,7 +19,7 @@ API_CLIENT = APIClient(
     api_key="abc",
     base_url=BASE_URL,
     max_workers=1,
-    headers={},
+    headers={"x-cdp-app": "python-sdk-integration-tests"},
     timeout=60,
     cognite_client=COGNITE_CLIENT,
 )
@@ -61,6 +61,7 @@ class TestBasicRequests:
         assert "application/json" == request_headers["content-type"]
         assert "application/json" == request_headers["accept"]
         assert API_CLIENT._api_key == request_headers["api-key"]
+        assert "python-sdk-integration-tests" == request_headers["x-cdp-app"]
         assert "User-Agent" in request_headers
 
     @pytest.mark.usefixtures("mock_all_requests_fail")

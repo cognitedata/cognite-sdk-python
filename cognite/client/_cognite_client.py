@@ -31,7 +31,9 @@ class CogniteClient:
     Args:
         api_key (str): API key
         project (str): Project. Defaults to project of given API key.
+        client_name (str): A name for the client. Used to identify number of unique applications/scripts.
         base_url (str): Base url to send requests to. Defaults to "https://api.cognitedata.com"
+
         max_workers (int): Max number of workers to spawn when parallelizing data fetching. Defaults to 10.
         headers (Dict): Additional headers to add to all requests.
         timeout (int): Timeout on requests sent to the api. Defaults to 30 seconds.
@@ -42,6 +44,7 @@ class CogniteClient:
         self,
         api_key: str = None,
         project: str = None,
+        client_name: str = None,
         base_url: str = None,
         max_workers: int = None,
         headers: Dict[str, str] = None,
@@ -53,6 +56,7 @@ class CogniteClient:
         environment_base_url = os.getenv("COGNITE_BASE_URL")
         environment_max_workers = os.getenv("COGNITE_MAX_WORKERS")
         environment_timeout = os.getenv("COGNITE_TIMEOUT")
+        environment_client_name = os.getenv("COGNITE_CLIENT_NAME")
 
         self.__api_key = api_key or thread_local_api_key or environment_api_key
         if self.__api_key is None:
@@ -63,6 +67,13 @@ class CogniteClient:
         self._max_workers = int(max_workers or environment_max_workers or DEFAULT_MAX_WORKERS)
 
         self._headers = headers or {}
+
+        self._client_name = client_name if client_name is not None else environment_client_name
+        if self._client_name is None:
+            raise ValueError(
+                "No client name has been specified. Pass it to the CogniteClient or set the environment variable 'COGNITE_CLIENT_NAME'."
+            )
+        self._headers["x-cdp-app"] = client_name
 
         self._timeout = int(timeout or environment_timeout or DEFAULT_TIMEOUT)
 

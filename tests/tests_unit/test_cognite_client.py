@@ -23,7 +23,7 @@ from tests.utils import BASE_URL
 def default_client_config():
     from cognite.client._cognite_client import DEFAULT_MAX_WORKERS, DEFAULT_TIMEOUT
 
-    yield "https://greenfield.cognitedata.com", DEFAULT_MAX_WORKERS, DEFAULT_TIMEOUT
+    yield "https://greenfield.cognitedata.com", DEFAULT_MAX_WORKERS, DEFAULT_TIMEOUT, "python-sdk-integration-tests"
 
 
 @pytest.fixture
@@ -31,17 +31,21 @@ def environment_client_config():
     base_url = "blabla"
     num_of_workers = 1
     timeout = 10
+    client_name = "test-client"
 
     tmp_base_url = os.environ["COGNITE_BASE_URL"]
+    tmp_client_name = os.environ["COGNITE_CLIENT_NAME"]
     os.environ["COGNITE_BASE_URL"] = base_url
     os.environ["COGNITE_MAX_WORKERS"] = str(num_of_workers)
     os.environ["COGNITE_TIMEOUT"] = str(timeout)
+    os.environ["COGNITE_CLIENT_NAME"] = client_name
 
-    yield base_url, num_of_workers, timeout
+    yield base_url, num_of_workers, timeout, client_name
 
     os.environ["COGNITE_BASE_URL"] = tmp_base_url
     del os.environ["COGNITE_MAX_WORKERS"]
     del os.environ["COGNITE_TIMEOUT"]
+    os.environ["COGNITE_CLIENT_NAME"] = tmp_client_name
 
 
 class TestCogniteClient:
@@ -70,7 +74,18 @@ class TestCogniteClient:
         with pytest.raises(CogniteAPIKeyError):
             CogniteClient()
 
-    def assert_config_is_correct(self, client, base_url, max_workers, timeout):
+    @pytest.fixture
+    def unset_env_client_name(self):
+        tmp = os.environ["COGNITE_CLIENT_NAME"]
+        del os.environ["COGNITE_CLIENT_NAME"]
+        yield
+        os.environ["COGNITE_CLIENT_NAME"] = tmp
+
+    def test_no_client_name(self, unset_env_client_name):
+        with pytest.raises(ValueError, match="No client name has been specified"):
+            CogniteClient()
+
+    def assert_config_is_correct(self, client, base_url, max_workers, timeout, client_name):
         assert client._base_url == base_url
         assert type(client._base_url) is str
 
@@ -80,6 +95,9 @@ class TestCogniteClient:
         assert client._timeout == timeout
         assert type(client._timeout) is int
 
+        assert client._client_name == client_name
+        assert type(client._client_name) is str
+
     def test_default_config(self, client, default_client_config):
         self.assert_config_is_correct(client, *default_client_config)
 
@@ -87,9 +105,12 @@ class TestCogniteClient:
         base_url = "blabla"
         max_workers = 1
         timeout = 10
+        client_name = "test-client"
 
-        client = CogniteClient(project="something", base_url=base_url, max_workers=max_workers, timeout=timeout)
-        self.assert_config_is_correct(client, base_url, max_workers, timeout)
+        client = CogniteClient(
+            project="something", base_url=base_url, max_workers=max_workers, timeout=timeout, client_name=client_name
+        )
+        self.assert_config_is_correct(client, base_url, max_workers, timeout, client_name)
 
     def test_environment_config(self, environment_client_config):
         client = CogniteClient(project="something")
