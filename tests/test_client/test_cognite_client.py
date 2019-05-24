@@ -46,17 +46,18 @@ class TestCogniteClient:
         assert res.status_code == 200
 
     def test_post(self, client):
-        res = client.post("/login", body={"apiKey": client._CogniteClient__api_key})
-        assert res.status_code == 200
+        with pytest.raises(APIError) as e:
+            client.post("/login/status", body={"apiKey": client._CogniteClient__api_key})
+        assert e.value.code == 405
 
     def test_put(self, client):
         with pytest.raises(APIError) as e:
-            client.put("/login")
+            client.put("/login/status")
         assert e.value.code == 405
 
     def test_delete(self, client):
         with pytest.raises(APIError) as e:
-            client.delete("/login")
+            client.delete("/login/status")
         assert e.value.code == 405
 
     def test_project_is_correct(self, client):
