@@ -22,6 +22,13 @@ Changes are grouped as follows
 ### Changed
 - Rename methods so they reflect what the method does instead of what http method is used
 
+## [0.13.4] - 2019-05-24
+### Changed
+- Default number of workers to 1
+
+### Fixed
+- Fix handling of asset_subtrees argument for get_events()
+
 ## [0.13.3] - 2019-03-25
 ### Fixed
 - Make `upload_artifacts_from_directory` work on Windows
