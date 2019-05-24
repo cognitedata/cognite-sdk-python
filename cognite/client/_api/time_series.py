@@ -10,7 +10,7 @@ class TimeSeriesAPI(APIClient):
     _LIST_CLASS = TimeSeriesList
 
     def __call__(
-        self, chunk_size: int = None, include_metadata: bool = False, asset_id: int = None
+        self, chunk_size: int = None, include_metadata: bool = False, asset_ids: List[int] = None
     ) -> Generator[Union[TimeSeries, TimeSeriesList], None, None]:
         """Iterate over time series
 
@@ -24,7 +24,7 @@ class TimeSeriesAPI(APIClient):
         Yields:
             Union[TimeSeries, TimeSeriesList]: yields TimeSeries one by one if chunk is not specified, else TimeSeriesList objects.
         """
-        filter = {"includeMetadata": include_metadata, "assetId": asset_id}
+        filter = {"includeMetadata": include_metadata, "assetIds": str(asset_ids) if asset_ids else None}
         return self._list_generator(method="GET", chunk_size=chunk_size, filter=filter)
 
     def __iter__(self) -> Generator[TimeSeries, None, None]:
@@ -59,16 +59,14 @@ class TimeSeriesAPI(APIClient):
         """
         return self._retrieve_multiple(ids=id, external_ids=external_id, wrap_ids=True)
 
-    def list(
-        self, include_metadata: bool = False, asset_id: Union[int, List[int]] = None, limit: int = 25
-    ) -> TimeSeriesList:
+    def list(self, include_metadata: bool = False, asset_ids: List[int] = None, limit: int = 25) -> TimeSeriesList:
         """Iterate over time series
 
         Fetches time series as they are iterated over, so you keep a limited number of objects in memory.
 
         Args:
             include_metadata (bool, optional): Whether or not to include metadata
-            asset_id (Union[int, List[int]), optional): List time series related to these assets.
+            asset_ids (List[int], optional): List time series related to these assets.
             limit (int, optional): Max number of time series to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all items.
 
@@ -97,11 +95,7 @@ class TimeSeriesAPI(APIClient):
                 >>> for ts_list in c.time_series(chunk_size=2500):
                 ...     ts_list # do something with the time_series
         """
-        if isinstance(asset_id, numbers.Integral):
-            asset_id = [asset_id]
-        if asset_id is not None:
-            asset_id = str(asset_id)
-        filter = {"includeMetadata": include_metadata, "assetIds": asset_id}
+        filter = {"includeMetadata": include_metadata, "assetIds": str(asset_ids) if asset_ids else None}
         return self._list(method="GET", filter=filter, limit=limit)
 
     def create(self, time_series: Union[TimeSeries, List[TimeSeries]]) -> Union[TimeSeries, TimeSeriesList]:

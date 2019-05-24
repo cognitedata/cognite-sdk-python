@@ -2,8 +2,9 @@ from typing import *
 
 from cognite.client._base import *
 
-
 # GenClass: Asset
+
+
 class Asset(CogniteResource):
     """Representation of a physical asset, e.g plant or piece of equipment
 
@@ -75,6 +76,43 @@ class Asset(CogniteResource):
             AssetList: The requested assets
         """
         return self._cognite_client.assets.list(parent_ids=[self.id], limit=None)
+
+    def subtree(self, depth: int = None) -> "AssetList":
+        """Returns the subtree of this asset up to a specified depth.
+
+        Args:
+            depth (int, optional): Retrieve assets up to this depth below the asset.
+
+        Returns:
+            AssetList: The requested assets sorted topologically.
+        """
+        return self._cognite_client.assets.retrieve_subtree(id=self.id, depth=depth)
+
+    def time_series(self, **kwargs) -> "TimeSeriesList":
+        """Retrieve all time series related to this asset.
+
+        Returns:
+            TimeSeriesList: All time series related to this asset.
+        """
+        return self._cognite_client.time_series.list(asset_ids=[self.id], **kwargs)
+
+    def events(self, **kwargs) -> "EventList":
+        """Retrieve all events related to this asset.
+
+        Returns:
+            EventList: All events related to this asset.
+        """
+        from cognite.client.data_classes import EventList
+
+        return self._cognite_client.events.list(asset_ids=[self.id], **kwargs)
+
+    def files(self, **kwargs) -> "FileMetadataList":
+        """Retrieve all files metadata related to this asset.
+
+        Returns:
+            FileMetadataList: Metadata about all files related to this asset.
+        """
+        return self._cognite_client.files.list(asset_ids=[self.id], **kwargs)
 
 
 # GenUpdateClass: AssetChange
@@ -182,6 +220,48 @@ class AssetList(CogniteResourceList):
                 s += "\n" + "-" * 80 + "\n\n"
             s += self._indented_asset_str(asset)
         return s
+
+    def time_series(self) -> "TimeSeriesList":
+        """Retrieve all time series related to these assets.
+
+        Returns:
+            TimeSeriesList: All time series related to the assets in this AssetList.
+        """
+        from cognite.client.data_classes import TimeSeriesList
+
+        return self._retrieve_related_resources(TimeSeriesList, self._cognite_client.time_series)
+
+    def events(self) -> "EventList":
+        """Retrieve all events related to these assets.
+
+        Returns:
+            EventList: All events related to the assets in this AssetList.
+        """
+        from cognite.client.data_classes import EventList
+
+        return self._retrieve_related_resources(EventList, self._cognite_client.events)
+
+    def files(self) -> "FileMetadataList":
+        """Retrieve all files metadata related to these assets.
+
+        Returns:
+            FileMetadataList: Metadata about all files related to the assets in this AssetList.
+        """
+        from cognite.client.data_classes import FileMetadataList
+
+        return self._retrieve_related_resources(FileMetadataList, self._cognite_client.files)
+
+    def _retrieve_related_resources(self, resource_list_class, resource_api):
+        ids = [a.id for a in self.data]
+        tasks = []
+        chunk_size = 100
+        for i in range(0, len(ids), chunk_size):
+            tasks.append({"asset_ids": ids[i : i + chunk_size], "limit": -1})
+        res_list = utils.execute_tasks_concurrently(resource_api.list, tasks, resource_api._max_workers).results
+        resources = resource_list_class([])
+        for res in res_list:
+            resources.extend(res)
+        return resources
 
 
 # GenClass: AssetFilter.filter
