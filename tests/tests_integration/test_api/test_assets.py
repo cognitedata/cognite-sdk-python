@@ -55,6 +55,13 @@ def new_asset_hierarchy(mocker):
     COGNITE_CLIENT.assets.delete(external_id=random_prefix + "0")
 
 
+@pytest.fixture
+def root_test_asset():
+    for asset in COGNITE_CLIENT.assets(root=True):
+        if asset.name.startswith("test__"):
+            return asset
+
+
 class TestAssetsAPI:
     def test_get(self):
         res = COGNITE_CLIENT.assets.list(limit=1)
@@ -88,3 +95,7 @@ class TestAssetsAPI:
                 assert asset.parent_id is None
             else:
                 assert asset.parent_id == external_id_to_id[asset.external_id[:-1]]
+
+    def test_get_subtree(self, root_test_asset):
+        assert 781 == len(COGNITE_CLIENT.assets.retrieve_subtree(root_test_asset.id))
+        assert 6 == len(COGNITE_CLIENT.assets.retrieve_subtree(root_test_asset.id, depth=1))

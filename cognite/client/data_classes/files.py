@@ -13,7 +13,7 @@ class FileMetadata(CogniteResource):
         name (str): Name of the file.
         source (str): The source of the file.
         mime_type (str): File type. E.g. text/plain, application/pdf, ..
-        metadata (Dict[str, Any]): Customizable extra data about the file. String key -> String value.
+        metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
         asset_ids (List[int]): No description.
         id (int): Javascript friendly internal ID given to the object.
         uploaded (bool): Whether or not the actual file is uploaded.  This field is returned only by the API, it has no effect in a post body.

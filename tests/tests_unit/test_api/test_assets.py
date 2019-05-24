@@ -40,6 +40,48 @@ def mock_assets_response(rsps):
     yield rsps
 
 
+@pytest.fixture
+def mock_get_subtree(rsps):
+    rsps.add(
+        rsps.POST,
+        ASSETS_API._base_url + "/assets/byids",
+        status=200,
+        json={"items": [{"id": 1, "path": [1], "depth": 0}]},
+    )
+    rsps.add(
+        rsps.POST,
+        ASSETS_API._base_url + "/assets/list",
+        status=200,
+        json={
+            "items": [
+                {"id": 2, "path": [1, 2], "depth": 1},
+                {"id": 3, "path": [1, 3], "depth": 1},
+                {"id": 4, "path": [1, 4], "depth": 1},
+            ]
+        },
+    )
+    rsps.add(
+        rsps.POST,
+        ASSETS_API._base_url + "/assets/list",
+        status=200,
+        json={"items": [{"id": 5, "path": [1, 2, 5], "depth": 2}, {"id": 6, "path": [1, 2, 5], "depth": 2}]},
+    )
+    rsps.add(
+        rsps.POST,
+        ASSETS_API._base_url + "/assets/list",
+        status=200,
+        json={"items": [{"id": 7, "path": [1, 3, 7], "depth": 2}, {"id": 8, "path": [1, 3, 8], "depth": 2}]},
+    )
+    rsps.add(
+        rsps.POST,
+        ASSETS_API._base_url + "/assets/list",
+        status=200,
+        json={"items": [{"id": 9, "path": [1, 4, 9], "depth": 2}, {"id": 10, "path": [1, 4, 10], "depth": 2}]},
+    )
+    rsps.add(rsps.POST, ASSETS_API._base_url + "/assets/list", status=200, json={"items": []})
+    yield rsps
+
+
 class TestAssets:
     def test_retrieve_single(self, mock_assets_response):
         res = ASSETS_API.retrieve(id=1)
@@ -115,6 +157,19 @@ class TestAssets:
             "filter": {"parentIds": "bla"},
             "limit": None,
         } == jsgz_load(mock_assets_response.calls[0].request.body)
+
+    def test_get_subtree(self, mock_get_subtree):
+        assets = COGNITE_CLIENT.assets.retrieve_subtree(id=1)
+        assert len(assets) == 10
+        for i, asset in enumerate(assets):
+            assert asset.id == i + 1
+
+    def test_get_subtree_w_depth(self, mock_get_subtree):
+        mock_get_subtree.assert_all_requests_are_fired = False
+        assets = COGNITE_CLIENT.assets.retrieve_subtree(id=1, depth=1)
+        assert len(assets) == 4
+        for i, asset in enumerate(assets):
+            assert asset.id == i + 1
 
     def test_assets_update_object(self):
         assert isinstance(

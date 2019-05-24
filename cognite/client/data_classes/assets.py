@@ -195,7 +195,7 @@ class AssetFilter(CogniteFilter):
         source (str): The source of this asset
         created_time (Dict[str, Any]): Range between two timestamps
         last_updated_time (Dict[str, Any]): Range between two timestamps
-        depth (Dict[str, Any]): Range between two integers
+        root (bool): filtered assets are root assets or not
         external_id_prefix (str): External Id provided by client. Should be unique within the project.
         cognite_client (CogniteClient): The client to associate with this object.
     """
@@ -208,7 +208,7 @@ class AssetFilter(CogniteFilter):
         source: str = None,
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
-        depth: Dict[str, Any] = None,
+        root: bool = None,
         external_id_prefix: str = None,
         cognite_client=None,
     ):
@@ -218,7 +218,7 @@ class AssetFilter(CogniteFilter):
         self.source = source
         self.created_time = created_time
         self.last_updated_time = last_updated_time
-        self.depth = depth
+        self.root = root
         self.external_id_prefix = external_id_prefix
         self._cognite_client = cognite_client
 

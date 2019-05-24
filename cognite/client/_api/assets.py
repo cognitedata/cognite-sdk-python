@@ -22,7 +22,7 @@ class AssetsAPI(APIClient):
         source: str = None,
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
-        depth: Dict[str, Any] = None,
+        root: bool = None,
         external_id_prefix: str = None,
     ) -> Generator[Union[Asset, AssetList], None, None]:
         """Iterate over assets
@@ -37,7 +37,7 @@ class AssetsAPI(APIClient):
             source (str): The source of this asset
             created_time (Dict[str, Any]): Range between two timestamps
             last_updated_time (Dict[str, Any]): Range between two timestamps
-            depth (Dict[str, Any]): Range between two integers
+            root (bool): filtered assets are root assets or not
             external_id_prefix (str): External Id provided by client. Should be unique within the project
 
         Yields:
@@ -45,7 +45,7 @@ class AssetsAPI(APIClient):
         """
 
         filter = AssetFilter(
-            name, parent_ids, metadata, source, created_time, last_updated_time, depth, external_id_prefix
+            name, parent_ids, metadata, source, created_time, last_updated_time, root, external_id_prefix
         ).dump(camel_case=True)
         return self._list_generator(method="POST", chunk_size=chunk_size, filter=filter)
 
@@ -95,7 +95,7 @@ class AssetsAPI(APIClient):
         source: str = None,
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
-        depth: Dict[str, Any] = None,
+        root: bool = None,
         external_id_prefix: str = None,
         limit: int = 25,
     ) -> AssetList:
@@ -108,7 +108,7 @@ class AssetsAPI(APIClient):
             source (str): The source of this asset
             created_time (Dict[str, Any]): Range between two timestamps
             last_updated_time (Dict[str, Any]): Range between two timestamps
-            depth (Dict[str, Any]): Range between two integers
+            root (bool): filtered assets are root assets or not
             limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all items.
 
@@ -138,7 +138,7 @@ class AssetsAPI(APIClient):
                 ...     asset_list # do something with the assets
         """
         filter = AssetFilter(
-            name, parent_ids, metadata, source, created_time, last_updated_time, depth, external_id_prefix
+            name, parent_ids, metadata, source, created_time, last_updated_time, root, external_id_prefix
         ).dump(camel_case=True)
         return self._list(method="POST", limit=limit, filter=filter)
 
@@ -238,6 +238,43 @@ class AssetsAPI(APIClient):
                 >>> res = c.assets.search(name="some name")
         """
         return self._search(search={"name": name, "description": description}, filter=filter, limit=limit)
+
+    def retrieve_subtree(self, id: int = None, external_id: int = None, depth: int = None) -> AssetList:
+        """Retrieve the subtree for this asset up to a specified depth.
+
+        Args:
+            id (int): Id of the root asset in the subtree.
+            external_id (str): External id of the root asset in the subtree.
+            depth (int): Retrieve assets up to this depth below the root asset in the subtree. Omit to get the entire
+                subtree.
+
+        Returns:
+            AssetList: The requested assets sorted topologically.
+        """
+        utils.assert_exactly_one_of_id_or_external_id(id, external_id)
+        asset = self.retrieve(id=id, external_id=external_id)
+        subtree = self._get_asset_subtree(AssetList([asset]), current_depth=0, depth=depth)
+        return AssetList(sorted(subtree, key=lambda a: a.depth))
+
+    def _get_asset_subtree(self, assets: AssetList, current_depth: int, depth: int) -> AssetList:
+        subtree = assets
+        if depth is None or current_depth < depth:
+            children = self._get_children(assets)
+            if children:
+                subtree.extend(self._get_asset_subtree(children, current_depth + 1, depth))
+        return subtree
+
+    def _get_children(self, assets: AssetList) -> AssetList:
+        ids = [a.id for a in assets]
+        tasks = []
+        chunk_size = 100
+        for i in range(0, len(ids), chunk_size):
+            tasks.append({"parent_ids": ids[i : i + chunk_size], "limit": -1})
+        res_list = utils.execute_tasks_concurrently(self.list, tasks=tasks, max_workers=self._max_workers).results
+        children = AssetList([])
+        for res in res_list:
+            children.extend(res)
+        return children
 
 
 class _AssetsFailedToPost:

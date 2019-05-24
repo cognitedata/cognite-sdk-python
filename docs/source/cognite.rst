@@ -204,6 +204,10 @@ Get assets
 ^^^^^^^^^^
 .. automethod:: cognite.client._api.assets.AssetsAPI.retrieve
 
+Retrieve an asset subtree
+^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.assets.AssetsAPI.retrieve_subtree
+
 List assets
 ^^^^^^^^^^^
 .. automethod:: cognite.client._api.assets.AssetsAPI.list

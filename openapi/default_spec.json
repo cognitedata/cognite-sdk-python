@@ -857,21 +857,9 @@
                               }
                             }
                           },
-                          "depth": {
-                            "description": "Range between two integers",
-                            "type": "object",
-                            "properties": {
-                              "max": {
-                                "type": "integer",
-                                "minimum": 0,
-                                "format": "int32"
-                              },
-                              "min": {
-                                "type": "integer",
-                                "minimum": 0,
-                                "format": "int32"
-                              }
-                            }
+                          "root": {
+                            "type": "boolean",
+                            "description": "filtered assets are root assets or not"
                           },
                           "externalIdPrefix": {
                             "description": "External Id provided by client. Should be unique within the project.",
@@ -1869,21 +1857,9 @@
                               }
                             }
                           },
-                          "depth": {
-                            "description": "Range between two integers",
-                            "type": "object",
-                            "properties": {
-                              "max": {
-                                "type": "integer",
-                                "minimum": 0,
-                                "format": "int32"
-                              },
-                              "min": {
-                                "type": "integer",
-                                "minimum": 0,
-                                "format": "int32"
-                              }
-                            }
+                          "root": {
+                            "type": "boolean",
+                            "description": "filtered assets are root assets or not"
                           },
                           "externalIdPrefix": {
                             "description": "External Id provided by client. Should be unique within the project.",
@@ -4729,12 +4705,282 @@
       }
     },
     "/api/v1/projects/{project}/files": {
+      "post": {
+        "tags": [
+          "Files"
+        ],
+        "summary": "Initiate file upload",
+        "description": "Create metadata information and get upload link for one file.\n\nThe uploadUrl link which is returned in the response is a Google Cloud Storage (GCS) resumable upload URL. \nIt should be used in a separate request to upload the file, as documented in \nhttps://cloud.google.com/storage/docs/json_api/v1/how-tos/resumable-upload. \n\nThe 'Origin' header parameter is forwarded as a 'Origin' header to the GCS initiate upload session request.\nAlso, the 'mimeType' query parameter is forwarded as a 'X-Upload-Content-Type' header.",
+        "operationId": "initFileUpload",
+        "parameters": [
+          {
+            "name": "project",
+            "description": "Project name.",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "header",
+            "name": "Origin",
+            "description": "The 'Origin' header parameter is required in a resumable upload request if there is a Cross Origin issue.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "overwrite",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            },
+            "description": "If 'overwrite' is set to true, and the POST body content specifies a 'externalId' field, fields for the file found for externalId can be overwritten. The default setting is false. \n\nIf metadata is included in the request body, all of the original metadata will be overwritten.\nThe actual file will be overwritten after successful upload. If there is no successful upload, the current file contents will be kept. \n\nFile-Asset mappings only change if explicitly stated in the assetIds field of the POST json body. \nDo not set assetIds in request body if you want to keep the current file-asset mappings."
+          }
+        ],
+        "requestBody": {
+          "description": "Fields to be set for the file. ",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "allOf": [
+                  {
+                    "type": "object",
+                    "required": [
+                      "name"
+                    ],
+                    "properties": {
+                      "externalId": {
+                        "description": "External Id provided by client. Should be unique within the project.",
+                        "type": "string",
+                        "maxLength": 255
+                      },
+                      "name": {
+                        "type": "string",
+                        "description": "Name of the file.",
+                        "maxLength": 50
+                      },
+                      "source": {
+                        "maxLength": 128,
+                        "type": "string",
+                        "description": "The source of the file."
+                      },
+                      "mimeType": {
+                        "maxLength": 64,
+                        "type": "string",
+                        "example": "image/jpeg",
+                        "description": "File type. E.g. text/plain, application/pdf, .."
+                      },
+                      "metadata": {
+                        "type": "object",
+                        "description": "Custom, application specific metadata. String key -> String value",
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      },
+                      "assetIds": {
+                        "type": "array",
+                        "items": {
+                          "description": "Javascript friendly internal ID given to the object.",
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991,
+                          "format": "int64"
+                        },
+                        "maxItems": 100,
+                        "minItems": 1
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "The response for a successful files/initupload operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "allOf": [
+                        {
+                          "type": "object",
+                          "required": [
+                            "name"
+                          ],
+                          "properties": {
+                            "externalId": {
+                              "description": "External Id provided by client. Should be unique within the project.",
+                              "type": "string",
+                              "maxLength": 255
+                            },
+                            "name": {
+                              "type": "string",
+                              "description": "Name of the file.",
+                              "maxLength": 50
+                            },
+                            "source": {
+                              "maxLength": 128,
+                              "type": "string",
+                              "description": "The source of the file."
+                            },
+                            "mimeType": {
+                              "maxLength": 64,
+                              "type": "string",
+                              "example": "image/jpeg",
+                              "description": "File type. E.g. text/plain, application/pdf, .."
+                            },
+                            "metadata": {
+                              "type": "object",
+                              "description": "Custom, application specific metadata. String key -> String value",
+                              "additionalProperties": {
+                                "type": "string"
+                              }
+                            },
+                            "assetIds": {
+                              "type": "array",
+                              "items": {
+                                "description": "Javascript friendly internal ID given to the object.",
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 9007199254740991,
+                                "format": "int64"
+                              },
+                              "maxItems": 100,
+                              "minItems": 1
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "id",
+                            "uploaded",
+                            "createdTime",
+                            "lastUpdatedTime"
+                          ],
+                          "properties": {
+                            "id": {
+                              "description": "Javascript friendly internal ID given to the object.",
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 9007199254740991,
+                              "format": "int64"
+                            },
+                            "uploaded": {
+                              "type": "boolean",
+                              "description": "Whether or not the actual file is uploaded.  This field is returned only by the API, it has no effect in a post body.",
+                              "example": true
+                            },
+                            "uploadedTime": {
+                              "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
+                              "type": "integer",
+                              "minimum": 0,
+                              "format": "int64"
+                            },
+                            "createdTime": {
+                              "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
+                              "type": "integer",
+                              "minimum": 0,
+                              "format": "int64"
+                            },
+                            "lastUpdatedTime": {
+                              "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
+                              "type": "integer",
+                              "minimum": 0,
+                              "format": "int64"
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "uploadUrl"
+                      ],
+                      "properties": {
+                        "uploadUrl": {
+                          "description": "The URL where the file contents should be uploaded.",
+                          "type": "string"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The response for a failed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "description": "Cognite API error",
+                      "properties": {
+                        "code": {
+                          "type": "integer",
+                          "description": "HTTP status code",
+                          "format": "int32",
+                          "example": 401
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "Error message",
+                          "example": "Could not authenticate."
+                        },
+                        "missing": {
+                          "type": "array",
+                          "description": "List of lookup objects that have not matched any results.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "duplicated": {
+                          "type": "array",
+                          "description": "List of objects that violate the uniqueness constraint.",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-capability": [
+          "FilesAcl:WRITE"
+        ]
+      },
       "get": {
         "tags": [
           "Files"
         ],
         "summary": "List files with simple filtering",
-        "description": "The GET /files operation can be used to return information for all files in a project.  Optionally you can add one or more of the following query parameters.  The filter query parameters will filter the results to only include files that match all filter parameters.",
+        "description": "The GET /files operation can be used to return information for all files in a project. \n\nOptionally you can add one or more of the following query parameters. \nThe filter query parameters will filter the results to only include files that match all filter parameters.",
         "operationId": "listFiles",
         "parameters": [
           {
@@ -4781,8 +5027,10 @@
             "schema": {
               "maxLength": 64,
               "type": "string",
+              "example": "image/jpeg",
               "description": "File type. E.g. text/plain, application/pdf, .."
-            }
+            },
+            "example": "image/jpeg"
           },
           {
             "in": "query",
@@ -4893,7 +5141,8 @@
             "description": "Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.",
             "schema": {
               "type": "boolean"
-            }
+            },
+            "example": true
           }
         ],
         "responses": {
@@ -4932,11 +5181,15 @@
                               "mimeType": {
                                 "maxLength": 64,
                                 "type": "string",
+                                "example": "image/jpeg",
                                 "description": "File type. E.g. text/plain, application/pdf, .."
                               },
                               "metadata": {
                                 "type": "object",
-                                "description": "Customizable extra data about the file. String key -> String value."
+                                "description": "Custom, application specific metadata. String key -> String value",
+                                "additionalProperties": {
+                                  "type": "string"
+                                }
                               },
                               "assetIds": {
                                 "type": "array",
@@ -4970,7 +5223,8 @@
                               },
                               "uploaded": {
                                 "type": "boolean",
-                                "description": "Whether or not the actual file is uploaded.  This field is returned only by the API, it has no effect in a post body."
+                                "description": "Whether or not the actual file is uploaded.  This field is returned only by the API, it has no effect in a post body.",
+                                "example": true
                               },
                               "uploadedTime": {
                                 "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
@@ -5125,11 +5379,15 @@
                         "mimeType": {
                           "maxLength": 64,
                           "type": "string",
+                          "example": "image/jpeg",
                           "description": "File type. E.g. text/plain, application/pdf, .."
                         },
                         "metadata": {
                           "type": "object",
-                          "description": "Customizable extra data about the file. String key -> String value."
+                          "description": "Custom, application specific metadata. String key -> String value",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
                         },
                         "assetIds": {
                           "type": "array",
@@ -5163,7 +5421,8 @@
                         },
                         "uploaded": {
                           "type": "boolean",
-                          "description": "Whether or not the actual file is uploaded.  This field is returned only by the API, it has no effect in a post body."
+                          "description": "Whether or not the actual file is uploaded.  This field is returned only by the API, it has no effect in a post body.",
+                          "example": true
                         },
                         "uploadedTime": {
                           "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
@@ -5289,6 +5548,7 @@
                           "mimeType": {
                             "maxLength": 64,
                             "type": "string",
+                            "example": "image/jpeg",
                             "description": "File type. E.g. text/plain, application/pdf, .."
                           },
                           "metadata": {
@@ -5383,7 +5643,8 @@
                           },
                           "uploaded": {
                             "description": "Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.",
-                            "type": "boolean"
+                            "type": "boolean",
+                            "example": true
                           }
                         }
                       },
@@ -5448,11 +5709,15 @@
                               "mimeType": {
                                 "maxLength": 64,
                                 "type": "string",
+                                "example": "image/jpeg",
                                 "description": "File type. E.g. text/plain, application/pdf, .."
                               },
                               "metadata": {
                                 "type": "object",
-                                "description": "Customizable extra data about the file. String key -> String value."
+                                "description": "Custom, application specific metadata. String key -> String value",
+                                "additionalProperties": {
+                                  "type": "string"
+                                }
                               },
                               "assetIds": {
                                 "type": "array",
@@ -5486,7 +5751,8 @@
                               },
                               "uploaded": {
                                 "type": "boolean",
-                                "description": "Whether or not the actual file is uploaded.  This field is returned only by the API, it has no effect in a post body."
+                                "description": "Whether or not the actual file is uploaded.  This field is returned only by the API, it has no effect in a post body.",
+                                "example": true
                               },
                               "uploadedTime": {
                                 "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
@@ -5579,267 +5845,13 @@
         ]
       }
     },
-    "/api/v1/projects/{project}/files/initupload": {
-      "post": {
-        "tags": [
-          "Files"
-        ],
-        "summary": "Initiate file upload",
-        "description": "Create metadata information and get upload link for one file. The uploadUrl link which is returned in the response is a Google Cloud Storage (GCS) resumable upload URL.  It should be used in a separate request to upload the file, as documented in  https://cloud.google.com/storage/docs/json_api/v1/how-tos/resumable-upload  The 'Origin' header parameter is forwarded as a 'Origin' header to the GCS initiate upload session request. Also, the 'mimeType' query parameter is forwarded as a 'X-Upload-Content-Type' header.",
-        "operationId": "initFileUpload",
-        "parameters": [
-          {
-            "name": "project",
-            "description": "Project name.",
-            "in": "path",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          },
-          {
-            "in": "header",
-            "name": "Origin",
-            "description": "The 'Origin' header parameter is required in a resumable upload request if there is a Cross Origin issue.",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "description": "Fields to be set for the file. ",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "allOf": [
-                  {
-                    "type": "object",
-                    "required": [
-                      "name"
-                    ],
-                    "properties": {
-                      "externalId": {
-                        "description": "External Id provided by client. Should be unique within the project.",
-                        "type": "string",
-                        "maxLength": 255
-                      },
-                      "name": {
-                        "type": "string",
-                        "description": "Name of the file.",
-                        "maxLength": 50
-                      },
-                      "source": {
-                        "maxLength": 128,
-                        "type": "string",
-                        "description": "The source of the file."
-                      },
-                      "mimeType": {
-                        "maxLength": 64,
-                        "type": "string",
-                        "description": "File type. E.g. text/plain, application/pdf, .."
-                      },
-                      "metadata": {
-                        "type": "object",
-                        "description": "Customizable extra data about the file. String key -> String value."
-                      },
-                      "assetIds": {
-                        "type": "array",
-                        "items": {
-                          "description": "Javascript friendly internal ID given to the object.",
-                          "type": "integer",
-                          "minimum": 1,
-                          "maximum": 9007199254740991,
-                          "format": "int64"
-                        },
-                        "maxItems": 100,
-                        "minItems": 1
-                      }
-                    }
-                  }
-                ]
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "description": "The response for a successful files/initupload operation",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {
-                      "allOf": [
-                        {
-                          "type": "object",
-                          "required": [
-                            "name"
-                          ],
-                          "properties": {
-                            "externalId": {
-                              "description": "External Id provided by client. Should be unique within the project.",
-                              "type": "string",
-                              "maxLength": 255
-                            },
-                            "name": {
-                              "type": "string",
-                              "description": "Name of the file.",
-                              "maxLength": 50
-                            },
-                            "source": {
-                              "maxLength": 128,
-                              "type": "string",
-                              "description": "The source of the file."
-                            },
-                            "mimeType": {
-                              "maxLength": 64,
-                              "type": "string",
-                              "description": "File type. E.g. text/plain, application/pdf, .."
-                            },
-                            "metadata": {
-                              "type": "object",
-                              "description": "Customizable extra data about the file. String key -> String value."
-                            },
-                            "assetIds": {
-                              "type": "array",
-                              "items": {
-                                "description": "Javascript friendly internal ID given to the object.",
-                                "type": "integer",
-                                "minimum": 1,
-                                "maximum": 9007199254740991,
-                                "format": "int64"
-                              },
-                              "maxItems": 100,
-                              "minItems": 1
-                            }
-                          }
-                        },
-                        {
-                          "type": "object",
-                          "required": [
-                            "id",
-                            "uploaded",
-                            "createdTime",
-                            "lastUpdatedTime"
-                          ],
-                          "properties": {
-                            "id": {
-                              "description": "Javascript friendly internal ID given to the object.",
-                              "type": "integer",
-                              "minimum": 1,
-                              "maximum": 9007199254740991,
-                              "format": "int64"
-                            },
-                            "uploaded": {
-                              "type": "boolean",
-                              "description": "Whether or not the actual file is uploaded.  This field is returned only by the API, it has no effect in a post body."
-                            },
-                            "uploadedTime": {
-                              "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
-                              "type": "integer",
-                              "minimum": 0,
-                              "format": "int64"
-                            },
-                            "createdTime": {
-                              "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
-                              "type": "integer",
-                              "minimum": 0,
-                              "format": "int64"
-                            },
-                            "lastUpdatedTime": {
-                              "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
-                              "type": "integer",
-                              "minimum": 0,
-                              "format": "int64"
-                            }
-                          }
-                        }
-                      ]
-                    },
-                    {
-                      "type": "object",
-                      "required": [
-                        "uploadUrl"
-                      ],
-                      "properties": {
-                        "uploadUrl": {
-                          "description": "The URL where the file contents should be uploaded.",
-                          "type": "string"
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "The response for a failed request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "error"
-                  ],
-                  "properties": {
-                    "error": {
-                      "type": "object",
-                      "required": [
-                        "code",
-                        "message"
-                      ],
-                      "description": "Cognite API error",
-                      "properties": {
-                        "code": {
-                          "type": "integer",
-                          "description": "HTTP status code",
-                          "format": "int32",
-                          "example": 401
-                        },
-                        "message": {
-                          "type": "string",
-                          "description": "Error message",
-                          "example": "Could not authenticate."
-                        },
-                        "missing": {
-                          "type": "array",
-                          "description": "List of lookup objects that have not matched any results.",
-                          "items": {
-                            "type": "object",
-                            "additionalProperties": true
-                          }
-                        },
-                        "duplicated": {
-                          "type": "array",
-                          "description": "List of objects that violate the uniqueness constraint.",
-                          "items": {
-                            "type": "object",
-                            "additionalProperties": true
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "x-capability": [
-          "FilesAcl:WRITE"
-        ]
-      }
-    },
     "/api/v1/projects/{project}/files/byids": {
       "post": {
         "tags": [
           "Files"
         ],
         "summary": "Retrieve multiple files’ metadata",
-        "description": "Retrieves metadata information about multiple specific files in the same project.  Results are returned in the same order as in the query.  This operation does not return file contents. List of IDs to retrieve must be up to a maximum of 1000 and all of them must be unique.",
+        "description": "Retrieves metadata information about multiple specific files in the same project. \nResults are returned in the same order as in the request. This operation does not return the file contents.",
         "operationId": "byIdsFiles",
         "parameters": [
           {
@@ -5932,11 +5944,15 @@
                               "mimeType": {
                                 "maxLength": 64,
                                 "type": "string",
+                                "example": "image/jpeg",
                                 "description": "File type. E.g. text/plain, application/pdf, .."
                               },
                               "metadata": {
                                 "type": "object",
-                                "description": "Customizable extra data about the file. String key -> String value."
+                                "description": "Custom, application specific metadata. String key -> String value",
+                                "additionalProperties": {
+                                  "type": "string"
+                                }
                               },
                               "assetIds": {
                                 "type": "array",
@@ -5970,7 +5986,8 @@
                               },
                               "uploaded": {
                                 "type": "boolean",
-                                "description": "Whether or not the actual file is uploaded.  This field is returned only by the API, it has no effect in a post body."
+                                "description": "Whether or not the actual file is uploaded.  This field is returned only by the API, it has no effect in a post body.",
+                                "example": true
                               },
                               "uploadedTime": {
                                 "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
@@ -6099,6 +6116,7 @@
                           "mimeType": {
                             "maxLength": 64,
                             "type": "string",
+                            "example": "image/jpeg",
                             "description": "File type. E.g. text/plain, application/pdf, .."
                           },
                           "metadata": {
@@ -6193,7 +6211,8 @@
                           },
                           "uploaded": {
                             "description": "Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.",
-                            "type": "boolean"
+                            "type": "boolean",
+                            "example": true
                           }
                         }
                       },
@@ -6263,11 +6282,15 @@
                               "mimeType": {
                                 "maxLength": 64,
                                 "type": "string",
+                                "example": "image/jpeg",
                                 "description": "File type. E.g. text/plain, application/pdf, .."
                               },
                               "metadata": {
                                 "type": "object",
-                                "description": "Customizable extra data about the file. String key -> String value."
+                                "description": "Custom, application specific metadata. String key -> String value",
+                                "additionalProperties": {
+                                  "type": "string"
+                                }
                               },
                               "assetIds": {
                                 "type": "array",
@@ -6301,7 +6324,8 @@
                               },
                               "uploaded": {
                                 "type": "boolean",
-                                "description": "Whether or not the actual file is uploaded.  This field is returned only by the API, it has no effect in a post body."
+                                "description": "Whether or not the actual file is uploaded.  This field is returned only by the API, it has no effect in a post body.",
+                                "example": true
                               },
                               "uploadedTime": {
                                 "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
@@ -6650,7 +6674,7 @@
           "Files"
         ],
         "summary": "Update multiple files",
-        "description": "Updates the information for all files specified in the request body",
+        "description": "Updates the information for the files specified in the request body.\n\nFor primitive fields (String, Long, Int), use 'set': 'value' to update\nvalue; use 'setNull': true to set that field to null.\n\nFor the Json Array field (e.g. assetIds), use 'set': [value1, value2] to\nupdate value; use 'add': [v1, v2] to add values to current list of\nvalues; use 'remove': [v1, v2] to remove these values from current list\nof values if exists.",
         "operationId": "updateFiles",
         "parameters": [
           {
@@ -7072,11 +7096,15 @@
                               "mimeType": {
                                 "maxLength": 64,
                                 "type": "string",
+                                "example": "image/jpeg",
                                 "description": "File type. E.g. text/plain, application/pdf, .."
                               },
                               "metadata": {
                                 "type": "object",
-                                "description": "Customizable extra data about the file. String key -> String value."
+                                "description": "Custom, application specific metadata. String key -> String value",
+                                "additionalProperties": {
+                                  "type": "string"
+                                }
                               },
                               "assetIds": {
                                 "type": "array",
@@ -7110,7 +7138,8 @@
                               },
                               "uploaded": {
                                 "type": "boolean",
-                                "description": "Whether or not the actual file is uploaded.  This field is returned only by the API, it has no effect in a post body."
+                                "description": "Whether or not the actual file is uploaded.  This field is returned only by the API, it has no effect in a post body.",
+                                "example": true
                               },
                               "uploadedTime": {
                                 "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
@@ -20543,21 +20572,9 @@
                   }
                 }
               },
-              "depth": {
-                "description": "Range between two integers",
-                "type": "object",
-                "properties": {
-                  "max": {
-                    "type": "integer",
-                    "minimum": 0,
-                    "format": "int32"
-                  },
-                  "min": {
-                    "type": "integer",
-                    "minimum": 0,
-                    "format": "int32"
-                  }
-                }
+              "root": {
+                "type": "boolean",
+                "description": "filtered assets are root assets or not"
               },
               "externalIdPrefix": {
                 "description": "External Id provided by client. Should be unique within the project.",
@@ -20647,21 +20664,9 @@
                       }
                     }
                   },
-                  "depth": {
-                    "description": "Range between two integers",
-                    "type": "object",
-                    "properties": {
-                      "max": {
-                        "type": "integer",
-                        "minimum": 0,
-                        "format": "int32"
-                      },
-                      "min": {
-                        "type": "integer",
-                        "minimum": 0,
-                        "format": "int32"
-                      }
-                    }
+                  "root": {
+                    "type": "boolean",
+                    "description": "filtered assets are root assets or not"
                   },
                   "externalIdPrefix": {
                     "description": "External Id provided by client. Should be unique within the project.",
@@ -20763,21 +20768,9 @@
                       }
                     }
                   },
-                  "depth": {
-                    "description": "Range between two integers",
-                    "type": "object",
-                    "properties": {
-                      "max": {
-                        "type": "integer",
-                        "minimum": 0,
-                        "format": "int32"
-                      },
-                      "min": {
-                        "type": "integer",
-                        "minimum": 0,
-                        "format": "int32"
-                      }
-                    }
+                  "root": {
+                    "type": "boolean",
+                    "description": "filtered assets are root assets or not"
                   },
                   "externalIdPrefix": {
                     "description": "External Id provided by client. Should be unique within the project.",
@@ -24964,11 +24957,15 @@
           "mimeType": {
             "maxLength": 64,
             "type": "string",
+            "example": "image/jpeg",
             "description": "File type. E.g. text/plain, application/pdf, .."
           },
           "metadata": {
             "type": "object",
-            "description": "Customizable extra data about the file. String key -> String value."
+            "description": "Custom, application specific metadata. String key -> String value",
+            "additionalProperties": {
+              "type": "string"
+            }
           },
           "assetIds": {
             "type": "array",
@@ -25010,11 +25007,15 @@
               "mimeType": {
                 "maxLength": 64,
                 "type": "string",
+                "example": "image/jpeg",
                 "description": "File type. E.g. text/plain, application/pdf, .."
               },
               "metadata": {
                 "type": "object",
-                "description": "Customizable extra data about the file. String key -> String value."
+                "description": "Custom, application specific metadata. String key -> String value",
+                "additionalProperties": {
+                  "type": "string"
+                }
               },
               "assetIds": {
                 "type": "array",
@@ -25048,7 +25049,8 @@
               },
               "uploaded": {
                 "type": "boolean",
-                "description": "Whether or not the actual file is uploaded.  This field is returned only by the API, it has no effect in a post body."
+                "description": "Whether or not the actual file is uploaded.  This field is returned only by the API, it has no effect in a post body.",
+                "example": true
               },
               "uploadedTime": {
                 "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
@@ -25090,6 +25092,7 @@
                   "mimeType": {
                     "maxLength": 64,
                     "type": "string",
+                    "example": "image/jpeg",
                     "description": "File type. E.g. text/plain, application/pdf, .."
                   },
                   "metadata": {
@@ -25184,7 +25187,8 @@
                   },
                   "uploaded": {
                     "description": "Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.",
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": true
                   }
                 }
               },
@@ -26311,11 +26315,15 @@
                     "mimeType": {
                       "maxLength": 64,
                       "type": "string",
+                      "example": "image/jpeg",
                       "description": "File type. E.g. text/plain, application/pdf, .."
                     },
                     "metadata": {
                       "type": "object",
-                      "description": "Customizable extra data about the file. String key -> String value."
+                      "description": "Custom, application specific metadata. String key -> String value",
+                      "additionalProperties": {
+                        "type": "string"
+                      }
                     },
                     "assetIds": {
                       "type": "array",
@@ -26349,7 +26357,8 @@
                     },
                     "uploaded": {
                       "type": "boolean",
-                      "description": "Whether or not the actual file is uploaded.  This field is returned only by the API, it has no effect in a post body."
+                      "description": "Whether or not the actual file is uploaded.  This field is returned only by the API, it has no effect in a post body.",
+                      "example": true
                     },
                     "uploadedTime": {
                       "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
@@ -26413,11 +26422,15 @@
                 "mimeType": {
                   "maxLength": 64,
                   "type": "string",
+                  "example": "image/jpeg",
                   "description": "File type. E.g. text/plain, application/pdf, .."
                 },
                 "metadata": {
                   "type": "object",
-                  "description": "Customizable extra data about the file. String key -> String value."
+                  "description": "Custom, application specific metadata. String key -> String value",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
                 },
                 "assetIds": {
                   "type": "array",
@@ -26659,11 +26672,15 @@
                     "mimeType": {
                       "maxLength": 64,
                       "type": "string",
+                      "example": "image/jpeg",
                       "description": "File type. E.g. text/plain, application/pdf, .."
                     },
                     "metadata": {
                       "type": "object",
-                      "description": "Customizable extra data about the file. String key -> String value."
+                      "description": "Custom, application specific metadata. String key -> String value",
+                      "additionalProperties": {
+                        "type": "string"
+                      }
                     },
                     "assetIds": {
                       "type": "array",
@@ -26697,7 +26714,8 @@
                     },
                     "uploaded": {
                       "type": "boolean",
-                      "description": "Whether or not the actual file is uploaded.  This field is returned only by the API, it has no effect in a post body."
+                      "description": "Whether or not the actual file is uploaded.  This field is returned only by the API, it has no effect in a post body.",
+                      "example": true
                     },
                     "uploadedTime": {
                       "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
@@ -26729,7 +26747,7 @@
         },
         "description": "A list of objects along with possible cursors to get the next page of results"
       },
-      "FilesFilterMetadata": {
+      "FilesMetadataField": {
         "type": "object",
         "description": "Custom, application specific metadata. String key -> String value",
         "additionalProperties": {
@@ -26751,6 +26769,7 @@
               "mimeType": {
                 "maxLength": 64,
                 "type": "string",
+                "example": "image/jpeg",
                 "description": "File type. E.g. text/plain, application/pdf, .."
               },
               "metadata": {
@@ -26845,7 +26864,8 @@
               },
               "uploaded": {
                 "description": "Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.",
-                "type": "boolean"
+                "type": "boolean",
+                "example": true
               }
             }
           },
@@ -39970,11 +39990,15 @@
                     "mimeType": {
                       "maxLength": 64,
                       "type": "string",
+                      "example": "image/jpeg",
                       "description": "File type. E.g. text/plain, application/pdf, .."
                     },
                     "metadata": {
                       "type": "object",
-                      "description": "Customizable extra data about the file. String key -> String value."
+                      "description": "Custom, application specific metadata. String key -> String value",
+                      "additionalProperties": {
+                        "type": "string"
+                      }
                     },
                     "assetIds": {
                       "type": "array",
@@ -40008,7 +40032,8 @@
                     },
                     "uploaded": {
                       "type": "boolean",
-                      "description": "Whether or not the actual file is uploaded.  This field is returned only by the API, it has no effect in a post body."
+                      "description": "Whether or not the actual file is uploaded.  This field is returned only by the API, it has no effect in a post body.",
+                      "example": true
                     },
                     "uploadedTime": {
                       "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
@@ -40067,11 +40092,15 @@
                         "mimeType": {
                           "maxLength": 64,
                           "type": "string",
+                          "example": "image/jpeg",
                           "description": "File type. E.g. text/plain, application/pdf, .."
                         },
                         "metadata": {
                           "type": "object",
-                          "description": "Customizable extra data about the file. String key -> String value."
+                          "description": "Custom, application specific metadata. String key -> String value",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
                         },
                         "assetIds": {
                           "type": "array",
@@ -40105,7 +40134,8 @@
                         },
                         "uploaded": {
                           "type": "boolean",
-                          "description": "Whether or not the actual file is uploaded.  This field is returned only by the API, it has no effect in a post body."
+                          "description": "Whether or not the actual file is uploaded.  This field is returned only by the API, it has no effect in a post body.",
+                          "example": true
                         },
                         "uploadedTime": {
                           "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
@@ -40181,11 +40211,15 @@
                           "mimeType": {
                             "maxLength": 64,
                             "type": "string",
+                            "example": "image/jpeg",
                             "description": "File type. E.g. text/plain, application/pdf, .."
                           },
                           "metadata": {
                             "type": "object",
-                            "description": "Customizable extra data about the file. String key -> String value."
+                            "description": "Custom, application specific metadata. String key -> String value",
+                            "additionalProperties": {
+                              "type": "string"
+                            }
                           },
                           "assetIds": {
                             "type": "array",
@@ -40219,7 +40253,8 @@
                           },
                           "uploaded": {
                             "type": "boolean",
-                            "description": "Whether or not the actual file is uploaded.  This field is returned only by the API, it has no effect in a post body."
+                            "description": "Whether or not the actual file is uploaded.  This field is returned only by the API, it has no effect in a post body.",
+                            "example": true
                           },
                           "uploadedTime": {
                             "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
@@ -40289,11 +40324,15 @@
                           "mimeType": {
                             "maxLength": 64,
                             "type": "string",
+                            "example": "image/jpeg",
                             "description": "File type. E.g. text/plain, application/pdf, .."
                           },
                           "metadata": {
                             "type": "object",
-                            "description": "Customizable extra data about the file. String key -> String value."
+                            "description": "Custom, application specific metadata. String key -> String value",
+                            "additionalProperties": {
+                              "type": "string"
+                            }
                           },
                           "assetIds": {
                             "type": "array",
@@ -40327,7 +40366,8 @@
                           },
                           "uploaded": {
                             "type": "boolean",
-                            "description": "Whether or not the actual file is uploaded.  This field is returned only by the API, it has no effect in a post body."
+                            "description": "Whether or not the actual file is uploaded.  This field is returned only by the API, it has no effect in a post body.",
+                            "example": true
                           },
                           "uploadedTime": {
                             "description": "It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.",
@@ -40638,7 +40678,7 @@
     },
     {
       "name": "Files",
-      "description": "A file stores a sequence of bytes connected to one or more assets. For example, a file can contain a piping and instrumentation diagram (P&IDs) showing how multiple assets are connected.\nEach file is identified by the 'id' field, which is generated internally  for each new file. Each file's 'id' field is unique within a project.\nThe 'externalId' field is optional, but can also be used to identify a file.  The 'externalId' (if used) must be unique within a project.\nFiles are created in two steps; First the metadata is stored in a file object, and then the file contents are uploaded. This means that files can exist in a non-uploaded state. The upload state is reflected in the 'uploaded'  field in responses."
+      "description": "A file stores a sequence of bytes connected to one or more assets. For\nexample, a file can contain a piping and instrumentation diagram (P&IDs)\nshowing how multiple assets are connected.\n\nEach file is identified by the 'id' field, which is generated internally \nfor each new file. Each file's 'id' field is unique within a project.\n\nThe 'externalId' field is optional, but can also be used to identify a file. \nThe 'externalId' (if used) must be unique within a project.\n\nFiles are created in two steps; First the metadata is stored in a file\nobject, and then the file contents are uploaded. This means that files can\nexist in a non-uploaded state. The upload state is reflected in the 'uploaded' \nfield in responses."
     },
     {
       "name": "3D",
