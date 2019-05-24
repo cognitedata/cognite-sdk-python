@@ -4,7 +4,7 @@ from unittest.mock import call
 from cognite.client import CogniteClient
 from cognite.client.data_classes import Asset, AssetList
 
-c = CogniteClient(debug=True)
+c = CogniteClient()
 
 
 class TestAsset:

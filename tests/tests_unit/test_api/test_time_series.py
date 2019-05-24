@@ -55,14 +55,12 @@ class TestTimeSeries:
         assert mock_ts_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
     @pytest.mark.dsl
-    def test_list_with_asset_id(self, mock_ts_response):
+    def test_list_with_asset_ids(self, mock_ts_response):
         import numpy
 
-        res = TS_API.list(asset_id=numpy.int64(1))
-        res = TS_API.list(asset_id=1)
-        res = TS_API.list(asset_id=[1])
-        res = TS_API.list(asset_id=[numpy.int64(1)])
-        for i in range(4):
+        TS_API.list(asset_ids=[1])
+        TS_API.list(asset_ids=[numpy.int64(1)])
+        for i in range(len(mock_ts_response.calls)):
             assert "assetIds=%5B1%5D" in mock_ts_response.calls[i].request.url
 
     def test_create_single(self, mock_ts_response):
