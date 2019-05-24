@@ -18,7 +18,7 @@ from cognite.client.stable.time_series import TimeSeriesClient
 from cognite.logger import configure_logger
 
 DEFAULT_BASE_URL = "https://api.cognitedata.com"
-DEFAULT_NUM_OF_WORKERS = 10
+DEFAULT_NUM_OF_WORKERS = 1
 DEFAULT_TIMEOUT = 30
 
 
