@@ -6,7 +6,7 @@ import pytest
 from cognite.client import CogniteClient
 from cognite.client._api_client import APIClient, _get_status_codes_to_retry
 from cognite.client._base import *
-from cognite.client.exceptions import CogniteAPIError
+from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from tests.utils import jsgz_load, set_request_limit
 
 BASE_URL = "http://localtest.com/api/1.0/projects/test-project"
@@ -155,6 +155,10 @@ class TestStandardRetrieve:
         rsps.add(rsps.GET, BASE_URL + URL_PATH + "/1", status=200, json={"x": 1, "y": 2})
         assert SomeResource(1, 2) == API_CLIENT._retrieve(cls=SomeResource, resource_path=URL_PATH, id=1)
 
+    def test_standard_retrieve_not_found(self, rsps):
+        rsps.add(rsps.GET, BASE_URL + URL_PATH + "/1", status=404, json={"error": {"message": "Not Found."}})
+        assert API_CLIENT._retrieve(cls=SomeResource, resource_path=URL_PATH, id=1) is None
+
     def test_standard_retrieve_fail(self, rsps):
         rsps.add(rsps.GET, BASE_URL + URL_PATH + "/1", status=400, json={"error": {"message": "Client Error"}})
         with pytest.raises(CogniteAPIError, match="Client Error") as e:
@@ -231,6 +235,27 @@ class TestStandardRetrieveMultiple:
     def test_ids_all_None(self):
         with pytest.raises(ValueError, match="No ids specified"):
             API_CLIENT._retrieve_multiple(cls=SomeResourceList, resource_path=URL_PATH, wrap_ids=False)
+
+    def test_single_id_not_found(self, rsps):
+        rsps.add(
+            rsps.POST,
+            BASE_URL + URL_PATH + "/byids",
+            status=400,
+            json={"error": {"message": "Not Found", "missing": [{"id": 1}]}},
+        )
+        res = API_CLIENT._retrieve_multiple(cls=SomeResourceList, resource_path=URL_PATH, wrap_ids=True, ids=1)
+        assert res is None
+
+    def test_multiple_ids_not_found(self, rsps):
+        rsps.add(
+            rsps.POST,
+            BASE_URL + URL_PATH + "/byids",
+            status=400,
+            json={"error": {"message": "Not Found", "missing": [{"id": 1}]}},
+        )
+        with pytest.raises(CogniteNotFoundError) as e:
+            API_CLIENT._retrieve_multiple(cls=SomeResourceList, resource_path=URL_PATH, wrap_ids=True, ids=[1, 2])
+        assert e.value.not_found == [{"id": 1}]
 
     def test_cognite_client_is_set(self, mock_by_ids):
         assert (

@@ -37,17 +37,48 @@ class TimeSeriesAPI(APIClient):
         """
         return self.__call__()
 
+    @overload
     def retrieve(
         self, id: Union[int, List[int]] = None, external_id: Union[int, List[int]] = None
     ) -> Union[TimeSeries, TimeSeriesList]:
-        """Returns an object containing the requested timeseries.
+        """Returns an object containing the requested time series.
 
         Args:
             id (Union[int, List[int]], optional): Id or list of ids
             external_id(Union[str, List[str]], optional): str or list of str
 
         Returns:
-            Union[TimeSeries, TimeSeriesList]: The requested time series
+            Union[TimeSeries, TimeSeriesList, None]: The requested time series
+
+        Examples:
+
+            Retrieving time series by id::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.time_series.retrieve(id=[1,2])
+        """
+        ...
+
+    @overload
+    def retrieve(self, id: int = None, external_id: str = None) -> Union[TimeSeries, None]:
+        ...
+
+    @overload
+    def retrieve(self, id: List[int] = None, external_id: List[str] = None) -> TimeSeriesList:
+        ...
+
+    def retrieve(
+        self, id: Union[int, List[int]] = None, external_id: Union[int, List[int]] = None
+    ) -> Union[TimeSeries, TimeSeriesList]:
+        """Returns an object containing the requested time series.
+
+        Args:
+            id (Union[int, List[int]], optional): Id or list of ids
+            external_id(Union[str, List[str]], optional): str or list of str
+
+        Returns:
+            Union[TimeSeries, TimeSeriesList, None]: The requested time series
 
         Examples:
 

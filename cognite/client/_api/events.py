@@ -67,9 +67,10 @@ class EventsAPI(APIClient):
         """
         return self.__call__()
 
+    @overload
     def retrieve(
         self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None
-    ) -> Union[Event, EventList]:
+    ) -> Union[Event, EventList, None]:
         """Get events by id
 
         Args:
@@ -77,7 +78,43 @@ class EventsAPI(APIClient):
             external_id (Union[str, List[str]], optional): External ID or list of external ids
 
         Returns:
-            Union[Event, EventList]: Requested event(s)
+            Union[Event, EventList, None]: Requested event(s)
+
+        Examples:
+
+            Get events by id::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.events.retrieve(id=[1,2,3])
+
+            Get an event by external id::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.events.retrieve(external_id="abc")
+        """
+        ...
+
+    @overload
+    def retrieve(self, id: int = None, external_id: str = None) -> Union[Event, None]:
+        ...
+
+    @overload
+    def retrieve(self, id: List[int] = None, external_id: List[str] = None) -> EventList:
+        ...
+
+    def retrieve(
+        self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None
+    ) -> Union[Event, EventList, None]:
+        """Get events by id
+
+        Args:
+            id (Union[int, List[int], optional): Id or list of ids
+            external_id (Union[str, List[str]], optional): External ID or list of external ids
+
+        Returns:
+            Union[Event, EventList, None]: Requested event(s)
 
         Examples:
 

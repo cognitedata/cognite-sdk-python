@@ -364,7 +364,7 @@ class RawRowsAPI(APIClient):
             task_unwrap_fn=lambda task: task["json"]["items"], task_list_element_unwrap_fn=lambda el: el["key"]
         )
 
-    def retrieve(self, db_name: str, table_name: str, key: str) -> Row:
+    def retrieve(self, db_name: str, table_name: str, key: str) -> Union[Row, None]:
         """Retrieve a single row by key.
 
         Args:
@@ -373,7 +373,7 @@ class RawRowsAPI(APIClient):
             key (str): The key of the row to retrieve.
 
         Returns:
-            Row: The requested row.
+            Union[Row, None]: The requested row.
 
         Examples:
 

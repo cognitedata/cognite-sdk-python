@@ -59,9 +59,10 @@ class AssetsAPI(APIClient):
         """
         return self.__call__()
 
+    @overload
     def retrieve(
         self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None
-    ) -> Union[Asset, AssetList]:
+    ) -> Union[Asset, AssetList, None]:
         """Get assets
 
         Args:
@@ -69,7 +70,43 @@ class AssetsAPI(APIClient):
             external_id (Union[str, List[str]], optional): External ID or list of external ids
 
         Returns:
-            Union[Asset, AssetList]: Requested asset(s)
+            Union[Asset, AssetList, None]: Requested asset(s)
+
+        Examples:
+
+            Get assets by id::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.assets.retrieve(id=1)
+
+            Get assets by external id::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.assets.retrieve(external_id=["1", "abc"])
+        """
+        ...
+
+    @overload
+    def retrieve(self, id: int = None, external_id: str = None) -> Union[Asset, None]:
+        ...
+
+    @overload
+    def retrieve(self, id: List[int] = None, external_id: List[str] = None) -> AssetList:
+        ...
+
+    def retrieve(
+        self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None
+    ) -> Union[Asset, AssetList, None]:
+        """Get assets
+
+        Args:
+            id (Union[int, List[int], optional): Id or list of ids
+            external_id (Union[str, List[str]], optional): External ID or list of external ids
+
+        Returns:
+            Union[Asset, AssetList, None]: Requested asset(s)
 
         Examples:
 

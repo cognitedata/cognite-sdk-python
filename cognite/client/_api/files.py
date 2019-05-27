@@ -71,9 +71,10 @@ class FilesAPI(APIClient):
         """
         return self.__call__()
 
+    @overload
     def retrieve(
         self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None
-    ) -> Union[FileMetadata, FileMetadataList]:
+    ) -> Union[FileMetadata, FileMetadataList, None]:
         """Get files by id
 
         Args:
@@ -81,7 +82,43 @@ class FilesAPI(APIClient):
             external_id(Union[str, List[str]], optional): str or list of str
 
         Returns:
-            Union[FileMetadata, FileMetadataList]: The requested files
+            Union[FileMetadata, FileMetadataList, None]: The requested files
+
+        Examples:
+
+            Get file metadata by id::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.files.retrieve(id=1)
+
+            Get file meta data by external id::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.files.retrieve(external_id=["1", "abc"])
+        """
+        ...
+
+    @overload
+    def retrieve(self, id: int = None, external_id: str = None) -> Union[FileMetadata, None]:
+        ...
+
+    @overload
+    def retrieve(self, id: List[int] = None, external_id: List[str] = None) -> FileMetadataList:
+        ...
+
+    def retrieve(
+        self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None
+    ) -> Union[FileMetadata, FileMetadataList, None]:
+        """Get files by id
+
+        Args:
+            id (Union[int, List[int]], optional): Id or list of ids
+            external_id(Union[str, List[str]], optional): str or list of str
+
+        Returns:
+            Union[FileMetadata, FileMetadataList, None]: The requested files
 
         Examples:
 

@@ -63,11 +63,9 @@ class CogniteAPIError(Exception):
     def __str__(self):
         msg = "{} | code: {} | X-Request-ID: {}".format(self.message, self.code, self.x_request_id)
         if self.missing:
-            pretty_missing = json.dumps(self.missing, indent=4, sort_keys=True)
-            msg += "\nMissing:\n{}".format(pretty_missing)
+            msg += "\nMissing: {}".format(self.missing)
         if self.duplicated:
-            pretty_duplicated = json.dumps(self.duplicated, indent=4, sort_keys=True)
-            msg += "\nDuplicated:\n{}".format(pretty_duplicated)
+            msg += "\nDuplicated: {}".format(self.duplicated)
         if len(self.successful) > 0 or len(self.unknown) > 0 or len(self.failed) > 0:
             msg += "\nThe API Failed to process some items.\nSuccessful (2xx): {}\nUnknown (5xx): {}\nFailed (4xx): {}".format(
                 [self._unwrap_fn(f) for f in self.successful],
@@ -75,6 +73,22 @@ class CogniteAPIError(Exception):
                 [self._unwrap_fn(f) for f in self.failed],
             )
         return msg
+
+
+class CogniteNotFoundError(Exception):
+    """Cognite Not Found Error
+
+    Raised if one or more of the requested ids/external ids are not found.
+
+    Args:
+        not_found (List): The ids not found.
+    """
+
+    def __init__(self, not_found: List):
+        self.not_found = not_found
+
+    def __str__(self):
+        return str(self.not_found)
 
 
 class CogniteImportError(Exception):

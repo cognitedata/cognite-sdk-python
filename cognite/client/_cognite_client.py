@@ -233,7 +233,7 @@ class CogniteClient:
 
     def _configure_logger_for_debug_mode(self):
         logger = logging.getLogger("cognite-sdk")
-        logger.setLevel("INFO")
+        logger.setLevel("DEBUG")
         log_handler = logging.StreamHandler()
         formatter = DebugLogFormatter()
         log_handler.setFormatter(formatter)

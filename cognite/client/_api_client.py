@@ -12,7 +12,7 @@ from requests.structures import CaseInsensitiveDict
 from urllib3 import Retry
 
 from cognite.client._base import CogniteFilter, CogniteResource, CogniteUpdate
-from cognite.client.exceptions import CogniteAPIError
+from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils import _utils as utils
 
 log = logging.getLogger("cognite-sdk")
@@ -198,14 +198,16 @@ class APIClient:
     ):
         cls = cls or self._LIST_CLASS._RESOURCE
         resource_path = resource_path or self._RESOURCE_PATH
-        return cls._load(
-            self._get(
+        try:
+            res = self._get(
                 url_path=utils.interpolate_and_url_encode(resource_path + "/{}", str(id)),
                 params=params,
                 headers=headers,
-            ).json(),
-            cognite_client=self._cognite_client,
-        )
+            )
+            return cls._load(res.json(), cognite_client=self._cognite_client)
+        except CogniteAPIError as e:
+            if e.code == 404:
+                return None
 
     def _retrieve_multiple(
         self,
@@ -228,6 +230,11 @@ class APIClient:
         tasks_summary = utils.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
 
         if tasks_summary.exceptions:
+            e = tasks_summary.exceptions[0]
+            if isinstance(e, CogniteAPIError) and e.code == 400 and e.missing is not None:
+                if self._is_single_identifier(ids, external_ids):
+                    return None
+                raise CogniteNotFoundError(e.missing) from e
             raise tasks_summary.exceptions[0]
 
         retrieved_items = tasks_summary.joined_results(lambda res: res.json()["items"])
