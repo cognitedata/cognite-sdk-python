@@ -539,7 +539,7 @@ class APIClient:
         if duplicated:
             error_details["duplicated"] = duplicated
 
-        log.error("HTTP Error %s %s %s: %s", code, res.request.method, res.request.url, msg, extra=error_details)
+        log.debug("HTTP Error %s %s %s: %s", code, res.request.method, res.request.url, msg, extra=error_details)
         raise CogniteAPIError(msg, code, x_request_id, missing=missing, duplicated=duplicated)
 
     @staticmethod

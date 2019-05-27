@@ -109,6 +109,7 @@ class AssetsAPI(APIClient):
             created_time (Dict[str, Any]): Range between two timestamps
             last_updated_time (Dict[str, Any]): Range between two timestamps
             root (bool): filtered assets are root assets or not
+            external_id_prefix (str): External Id provided by client. Should be unique within the project
             limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all items.
 
@@ -239,7 +240,7 @@ class AssetsAPI(APIClient):
         """
         return self._search(search={"name": name, "description": description}, filter=filter, limit=limit)
 
-    def retrieve_subtree(self, id: int = None, external_id: int = None, depth: int = None) -> AssetList:
+    def retrieve_subtree(self, id: int = None, external_id: str = None, depth: int = None) -> AssetList:
         """Retrieve the subtree for this asset up to a specified depth.
 
         Args:

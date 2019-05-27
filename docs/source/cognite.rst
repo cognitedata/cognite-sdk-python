@@ -127,6 +127,7 @@ You can set default configurations with these environment variables:
 
     $ export COGNITE_API_KEY = <your-api-key>
     $ export COGNITE_BASE_URL = http://<host>:<port>
+    $ export COGNITE_CLIENT_NAME = <user-defined-client-or-app-name>
     $ export COGNITE_MAX_WORKERS = <number-of-workers>
     $ export COGNITE_TIMEOUT = <num-of-seconds>
 
