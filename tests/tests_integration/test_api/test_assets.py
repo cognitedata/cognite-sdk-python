@@ -16,9 +16,7 @@ def new_asset():
     ts = COGNITE_CLIENT.assets.create(Asset(name="any"))
     yield ts
     COGNITE_CLIENT.assets.delete(id=ts.id)
-    with pytest.raises(CogniteAPIError) as e:
-        COGNITE_CLIENT.assets.retrieve(ts.id)
-    assert 400 == e.value.code
+    assert COGNITE_CLIENT.assets.retrieve(ts.id) is None
 
 
 def generate_asset_tree(root_external_id: str, depth: int, children_per_node: int, current_depth=1):

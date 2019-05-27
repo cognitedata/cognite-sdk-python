@@ -13,9 +13,7 @@ def new_event():
     event = COGNITE_CLIENT.events.create(Event())
     yield event
     COGNITE_CLIENT.events.delete(id=event.id)
-    with pytest.raises(CogniteAPIError) as e:
-        COGNITE_CLIENT.events.retrieve(event.id)
-    assert 400 == e.value.code
+    assert COGNITE_CLIENT.events.retrieve(event.id) is None
 
 
 class TestEventsAPI:

@@ -10,14 +10,12 @@ from tests.utils import set_request_limit
 COGNITE_CLIENT = CogniteClient()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="class")
 def new_ts():
     ts = COGNITE_CLIENT.time_series.create(TimeSeries(name="any"))
     yield ts
     COGNITE_CLIENT.time_series.delete(id=ts.id)
-    with pytest.raises(CogniteAPIError) as e:
-        COGNITE_CLIENT.time_series.retrieve(ts.id)
-    assert 400 == e.value.code
+    assert COGNITE_CLIENT.time_series.retrieve(ts.id) is None
 
 
 class TestTimeSeriesAPI:

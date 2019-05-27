@@ -24,14 +24,12 @@ def test_time_series():
     yield time_series
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def new_ts():
     ts = COGNITE_CLIENT.time_series.create(TimeSeries())
     yield ts
     COGNITE_CLIENT.time_series.delete(id=ts.id)
-    with pytest.raises(CogniteAPIError) as e:
-        COGNITE_CLIENT.time_series.retrieve(ts.id)
-    assert 400 == e.value.code
+    assert COGNITE_CLIENT.time_series.retrieve(ts.id) is None
 
 
 def has_duplicates(df: pandas.DataFrame):
@@ -100,7 +98,7 @@ class TestDatapointsAPI:
             if dps.id == test_time_series[0].id:
                 assert 20000 < len(dps.to_pandas())
             if dps.id == test_time_series[1].id:
-                assert 10000 < len(dps.to_pandas())
+                assert 9000 < len(dps.to_pandas())
             if dps.id == test_time_series[2].id:
                 assert 24 == len(dps.to_pandas())
 
