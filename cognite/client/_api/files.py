@@ -73,8 +73,8 @@ class FilesAPI(APIClient):
 
     @overload
     def retrieve(
-        self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None
-    ) -> Union[FileMetadata, FileMetadataList, None]:
+        self, id: Optional[Union[int, List[int]]] = None, external_id: Optional[Union[str, List[str]]] = None
+    ) -> Optional[Union[FileMetadata, FileMetadataList]]:
         """Get files by id
 
         Args:
@@ -82,7 +82,7 @@ class FilesAPI(APIClient):
             external_id(Union[str, List[str]], optional): str or list of str
 
         Returns:
-            Union[FileMetadata, FileMetadataList, None]: The requested files
+            Optional[Union[FileMetadata, FileMetadataList]]: The requested files
 
         Examples:
 
@@ -101,16 +101,16 @@ class FilesAPI(APIClient):
         ...
 
     @overload
-    def retrieve(self, id: int = None, external_id: str = None) -> Union[FileMetadata, None]:
+    def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[FileMetadata]:
         ...
 
     @overload
-    def retrieve(self, id: List[int] = None, external_id: List[str] = None) -> FileMetadataList:
+    def retrieve(self, id: Optional[List[int]] = None, external_id: Optional[List[str]] = None) -> FileMetadataList:
         ...
 
     def retrieve(
-        self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None
-    ) -> Union[FileMetadata, FileMetadataList, None]:
+        self, id: Optional[Union[int, List[int]]] = None, external_id: Optional[Union[str, List[str]]] = None
+    ) -> Optional[Union[FileMetadata, FileMetadataList]]:
         """Get files by id
 
         Args:
@@ -118,7 +118,7 @@ class FilesAPI(APIClient):
             external_id(Union[str, List[str]], optional): str or list of str
 
         Returns:
-            Union[FileMetadata, FileMetadataList, None]: The requested files
+            Optional[Union[FileMetadata, FileMetadataList]]: The requested files
 
         Examples:
 

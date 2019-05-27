@@ -61,8 +61,8 @@ class AssetsAPI(APIClient):
 
     @overload
     def retrieve(
-        self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None
-    ) -> Union[Asset, AssetList, None]:
+        self, id: Optional[Union[int, List[int]]] = None, external_id: Optional[Union[str, List[str]]] = None
+    ) -> Optional[Union[Asset, AssetList]]:
         """Get assets
 
         Args:
@@ -70,7 +70,7 @@ class AssetsAPI(APIClient):
             external_id (Union[str, List[str]], optional): External ID or list of external ids
 
         Returns:
-            Union[Asset, AssetList, None]: Requested asset(s)
+            Optional[Union[Asset, AssetList]]: Requested asset(s)
 
         Examples:
 
@@ -89,16 +89,16 @@ class AssetsAPI(APIClient):
         ...
 
     @overload
-    def retrieve(self, id: int = None, external_id: str = None) -> Union[Asset, None]:
+    def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[Asset]:
         ...
 
     @overload
-    def retrieve(self, id: List[int] = None, external_id: List[str] = None) -> AssetList:
+    def retrieve(self, id: Optional[List[int]] = None, external_id: Optional[List[str]] = None) -> AssetList:
         ...
 
     def retrieve(
-        self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None
-    ) -> Union[Asset, AssetList, None]:
+        self, id: Optional[Union[int, List[int]]] = None, external_id: Optional[Union[str, List[str]]] = None
+    ) -> Optional[Union[Asset, AssetList]]:
         """Get assets
 
         Args:
@@ -106,7 +106,7 @@ class AssetsAPI(APIClient):
             external_id (Union[str, List[str]], optional): External ID or list of external ids
 
         Returns:
-            Union[Asset, AssetList, None]: Requested asset(s)
+            Optional[Union[Asset, AssetList]]: Requested asset(s)
 
         Examples:
 

@@ -201,8 +201,8 @@ Data classes
 
 Assets
 ------
-Get assets
-^^^^^^^^^^
+Retrieve assets by id
+^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.assets.AssetsAPI.retrieve
 
 Retrieve an asset subtree
@@ -239,8 +239,8 @@ Data classes
 
 Events
 ------
-Get events
-^^^^^^^^^^
+Retrieve events by id
+^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.events.EventsAPI.retrieve
 
 List events
@@ -274,8 +274,8 @@ Data classes
 
 Files
 -----
-Get files metadata
-^^^^^^^^^^^^^^^^^^
+Retrieve files metadata by id
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.files.FilesAPI.retrieve
 
 List files metadata
@@ -320,8 +320,8 @@ Data classes
 
 Time series
 -----------
-Get time series
-^^^^^^^^^^^^^^^
+Retrieve time series by id
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.time_series.TimeSeriesAPI.retrieve
 
 List time series
@@ -354,20 +354,20 @@ Data classes
 
 Data points
 -----------
-Get data points
-^^^^^^^^^^^^^^^
+Retrieve datapoints
+^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.datapoints.DatapointsAPI.retrieve
 
-Get pandas dataframe
-^^^^^^^^^^^^^^^^^^^^
+Retrieve pandas dataframe
+^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.datapoints.DatapointsAPI.retrieve_dataframe
 
 Perform data points queries
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.datapoints.DatapointsAPI.query
 
-Get latest
-^^^^^^^^^^
+Retrieve latest datapoint
+^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.datapoints.DatapointsAPI.retrieve_latest
 
 Insert data points
@@ -651,6 +651,10 @@ Exceptions
 CogniteAPIError
 ^^^^^^^^^^^^^^^
 .. autoexception:: cognite.client.exceptions.CogniteAPIError
+
+CogniteNotFoundError
+^^^^^^^^^^^^^^^^^^^^
+.. autoexception:: cognite.client.exceptions.CogniteNotFoundError
 
 CogniteAPIKeyError
 ^^^^^^^^^^^^^^^^^^

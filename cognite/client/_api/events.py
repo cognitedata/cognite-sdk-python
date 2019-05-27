@@ -69,8 +69,8 @@ class EventsAPI(APIClient):
 
     @overload
     def retrieve(
-        self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None
-    ) -> Union[Event, EventList, None]:
+        self, id: Optional[Union[int, List[int]]] = None, external_id: Optional[Union[str, List[str]]] = None
+    ) -> Optional[Union[Event, EventList]]:
         """Get events by id
 
         Args:
@@ -78,7 +78,7 @@ class EventsAPI(APIClient):
             external_id (Union[str, List[str]], optional): External ID or list of external ids
 
         Returns:
-            Union[Event, EventList, None]: Requested event(s)
+            Optional[Union[Event, EventList]]: Requested event(s)
 
         Examples:
 
@@ -97,16 +97,16 @@ class EventsAPI(APIClient):
         ...
 
     @overload
-    def retrieve(self, id: int = None, external_id: str = None) -> Union[Event, None]:
+    def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[Event]:
         ...
 
     @overload
-    def retrieve(self, id: List[int] = None, external_id: List[str] = None) -> EventList:
+    def retrieve(self, id: Optional[List[int]] = None, external_id: Optional[List[str]] = None) -> EventList:
         ...
 
     def retrieve(
-        self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None
-    ) -> Union[Event, EventList, None]:
+        self, id: Optional[Union[int, List[int]]] = None, external_id: Optional[Union[str, List[str]]] = None
+    ) -> Optional[Union[Event, EventList]]:
         """Get events by id
 
         Args:
@@ -114,7 +114,7 @@ class EventsAPI(APIClient):
             external_id (Union[str, List[str]], optional): External ID or list of external ids
 
         Returns:
-            Union[Event, EventList, None]: Requested event(s)
+            Optional[Union[Event, EventList]]: Requested event(s)
 
         Examples:
 

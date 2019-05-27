@@ -39,8 +39,8 @@ class TimeSeriesAPI(APIClient):
 
     @overload
     def retrieve(
-        self, id: Union[int, List[int]] = None, external_id: Union[int, List[int]] = None
-    ) -> Union[TimeSeries, TimeSeriesList]:
+        self, id: Optional[Union[int, List[int]]] = None, external_id: Optional[Union[str, List[str]]] = None
+    ) -> Optional[Union[TimeSeries, TimeSeriesList]]:
         """Returns an object containing the requested time series.
 
         Args:
@@ -48,7 +48,7 @@ class TimeSeriesAPI(APIClient):
             external_id(Union[str, List[str]], optional): str or list of str
 
         Returns:
-            Union[TimeSeries, TimeSeriesList, None]: The requested time series
+            Optional[Union[TimeSeries, TimeSeriesList]]: The requested time series
 
         Examples:
 
@@ -61,16 +61,16 @@ class TimeSeriesAPI(APIClient):
         ...
 
     @overload
-    def retrieve(self, id: int = None, external_id: str = None) -> Union[TimeSeries, None]:
+    def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[TimeSeries]:
         ...
 
     @overload
-    def retrieve(self, id: List[int] = None, external_id: List[str] = None) -> TimeSeriesList:
+    def retrieve(self, id: Optional[List[int]] = None, external_id: Optional[List[str]] = None) -> TimeSeriesList:
         ...
 
     def retrieve(
-        self, id: Union[int, List[int]] = None, external_id: Union[int, List[int]] = None
-    ) -> Union[TimeSeries, TimeSeriesList]:
+        self, id: Optional[Union[int, List[int]]] = None, external_id: Optional[Union[str, List[str]]] = None
+    ) -> Optional[Union[TimeSeries, TimeSeriesList]]:
         """Returns an object containing the requested time series.
 
         Args:
@@ -78,7 +78,7 @@ class TimeSeriesAPI(APIClient):
             external_id(Union[str, List[str]], optional): str or list of str
 
         Returns:
-            Union[TimeSeries, TimeSeriesList, None]: The requested time series
+            Optional[Union[TimeSeries, TimeSeriesList]]: The requested time series
 
         Examples:
 
@@ -90,7 +90,9 @@ class TimeSeriesAPI(APIClient):
         """
         return self._retrieve_multiple(ids=id, external_ids=external_id, wrap_ids=True)
 
-    def list(self, include_metadata: bool = False, asset_ids: List[int] = None, limit: int = 25) -> TimeSeriesList:
+    def list(
+        self, include_metadata: bool = False, asset_ids: Optional[List[int]] = None, limit: int = 25
+    ) -> TimeSeriesList:
         """Iterate over time series
 
         Fetches time series as they are iterated over, so you keep a limited number of objects in memory.
