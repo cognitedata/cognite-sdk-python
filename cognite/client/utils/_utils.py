@@ -236,7 +236,7 @@ def execute_tasks_concurrently(func: Callable, tasks: Union[List[Tuple], List[Di
 
 
 def assert_exactly_one_of_id_or_external_id(id, external_id):
-    assert_type(id, "id", [int], allow_none=True)
+    assert_type(id, "id", [numbers.Integral], allow_none=True)
     assert_type(external_id, "external_id", [str], allow_none=True)
     has_id = id is not None
     has_external_id = external_id is not None
@@ -252,7 +252,7 @@ def assert_exactly_one_of_id_or_external_id(id, external_id):
 
 
 def assert_at_least_one_of_id_or_external_id(id, external_id):
-    assert_type(id, "id", [int], allow_none=True)
+    assert_type(id, "id", [numbers.Integral], allow_none=True)
     assert_type(external_id, "external_id", [str], allow_none=True)
     has_id = id is not None
     has_external_id = external_id is not None
