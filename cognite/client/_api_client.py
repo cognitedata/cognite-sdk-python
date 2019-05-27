@@ -206,8 +206,8 @@ class APIClient:
             )
             return cls._load(res.json(), cognite_client=self._cognite_client)
         except CogniteAPIError as e:
-            if e.code == 404:
-                return None
+            if e.code != 404:
+                raise
 
     def _retrieve_multiple(
         self,
