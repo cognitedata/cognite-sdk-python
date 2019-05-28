@@ -271,11 +271,11 @@ def unwrap_identifer(identifier: Dict):
     raise ValueError("{} does not contain 'id' or 'externalId'".format(identifier))
 
 
-def assert_timestamp_not_in_jan_in_1970(timestamp: Union[int, float, str, datetime]):
+def assert_timestamp_not_in_1970(timestamp: Union[int, float, str, datetime]):
     dt = ms_to_datetime(timestamp_to_ms(timestamp))
     assert dt > datetime(
-        1970, 2, 1
-    ), "You are attempting to post data in January 1970. Have you forgotten to multiply your timestamps by 1000?"
+        1971, 1, 1
+    ), "You are attempting to post data in 1970. Have you forgotten to multiply your timestamps by 1000?"
 
 
 def assert_type(var: Any, var_name: str, types: List, allow_none=False):

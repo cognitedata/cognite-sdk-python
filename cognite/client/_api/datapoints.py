@@ -237,7 +237,7 @@ class DatapointsAPI(APIClient):
         """
         utils.assert_exactly_one_of_id_or_external_id(id, external_id)
         datapoints = self._validate_and_format_datapoints(datapoints)
-        utils.assert_timestamp_not_in_jan_in_1970(datapoints[0]["timestamp"])
+        utils.assert_timestamp_not_in_1970(datapoints[0]["timestamp"])
         post_dps_object = self._process_ids(id, external_id, wrap_ids=True)[0]
         post_dps_object.update({"datapoints": datapoints})
         self._insert_datapoints_concurrently([post_dps_object])
