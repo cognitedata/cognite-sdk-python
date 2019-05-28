@@ -91,18 +91,10 @@
           },
           {
             "in": "query",
-            "name": "minDepth",
+            "name": "root",
             "schema": {
-              "type": "integer",
-              "description": "Minimum depth."
-            }
-          },
-          {
-            "in": "query",
-            "name": "maxDepth",
-            "schema": {
-              "type": "integer",
-              "description": "Maximum depth."
+              "type": "boolean",
+              "description": "filtered assets are root assets or not"
             }
           },
           {
@@ -10926,31 +10918,36 @@
                 "schema": {
                   "type": "object",
                   "required": [
-                    "code",
-                    "message",
-                    "missingFields"
+                    "error"
                   ],
                   "properties": {
-                    "code": {
-                      "type": "integer",
-                      "description": "HTTP status code",
-                      "format": "int32"
-                    },
-                    "message": {
-                      "type": "string",
-                      "description": "Error message"
-                    },
-                    "extra": {
+                    "error": {
                       "type": "object",
-                      "description": "Additional data"
-                    },
-                    "missingFields": {
-                      "uniqueItems": true,
-                      "type": "array",
-                      "description": "Fields that are missing.",
-                      "items": {
-                        "type": "object",
-                        "description": "Fields that are missing"
+                      "required": [
+                        "code",
+                        "message",
+                        "missingFields"
+                      ],
+                      "properties": {
+                        "code": {
+                          "type": "integer",
+                          "description": "HTTP status code",
+                          "format": "int32",
+                          "example": 400
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "Error message"
+                        },
+                        "missingFields": {
+                          "uniqueItems": true,
+                          "type": "array",
+                          "description": "Fields that are missing.",
+                          "items": {
+                            "type": "object",
+                            "description": "Fields that are missing"
+                          }
+                        }
                       }
                     }
                   }
@@ -10970,37 +10967,40 @@
                   "properties": {
                     "error": {
                       "type": "object",
+                      "description": "Error details",
                       "required": [
                         "code",
-                        "message"
+                        "message",
+                        "duplicated"
                       ],
-                      "description": "Cognite API error",
                       "properties": {
                         "code": {
                           "type": "integer",
                           "description": "HTTP status code",
                           "format": "int32",
-                          "example": 401
+                          "example": 409
                         },
                         "message": {
                           "type": "string",
-                          "description": "Error message",
-                          "example": "Could not authenticate."
-                        },
-                        "missing": {
-                          "type": "array",
-                          "description": "List of lookup objects that have not matched any results.",
-                          "items": {
-                            "type": "object",
-                            "additionalProperties": true
-                          }
+                          "description": "Error message"
                         },
                         "duplicated": {
+                          "uniqueItems": true,
                           "type": "array",
-                          "description": "List of objects that violate the uniqueness constraint.",
+                          "description": "Items which are duplicated",
                           "items": {
+                            "description": "ExternalIds which already exist",
                             "type": "object",
-                            "additionalProperties": true
+                            "required": [
+                              "externalId"
+                            ],
+                            "properties": {
+                              "externalId": {
+                                "description": "External Id provided by client. Should be unique within the project.",
+                                "type": "string",
+                                "maxLength": 255
+                              }
+                            }
                           }
                         }
                       }
@@ -11011,7 +11011,7 @@
             }
           },
           "422": {
-            "description": "Ids duplicated.",
+            "description": "ExternalIds duplicated.",
             "content": {
               "application/json": {
                 "schema": {
@@ -11025,29 +11025,32 @@
                       "description": "Error details",
                       "required": [
                         "code",
-                        "message"
+                        "message",
+                        "duplicated"
                       ],
                       "properties": {
                         "code": {
                           "type": "integer",
                           "description": "HTTP status code",
-                          "format": "int32"
+                          "format": "int32",
+                          "example": 422
                         },
                         "message": {
                           "type": "string",
                           "description": "Error message"
                         },
-                        "extra": {
-                          "type": "object",
-                          "description": "Additional data",
-                          "properties": {
-                            "duplicated": {
-                              "uniqueItems": true,
-                              "type": "array",
-                              "description": "Items which are duplicated",
-                              "items": {
-                                "description": "Ids and ExternalIds which are duplicated in request",
+                        "duplicated": {
+                          "uniqueItems": true,
+                          "type": "array",
+                          "description": "Items which are duplicated",
+                          "items": {
+                            "description": "Ids and ExternalIds which are duplicated in request",
+                            "oneOf": [
+                              {
                                 "type": "object",
+                                "required": [
+                                  "id"
+                                ],
                                 "properties": {
                                   "id": {
                                     "description": "Javascript friendly internal ID given to the object.",
@@ -11055,7 +11058,15 @@
                                     "minimum": 1,
                                     "maximum": 9007199254740991,
                                     "format": "int64"
-                                  },
+                                  }
+                                }
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "externalId"
+                                ],
+                                "properties": {
                                   "externalId": {
                                     "description": "External Id provided by client. Should be unique within the project.",
                                     "type": "string",
@@ -11063,7 +11074,7 @@
                                   }
                                 }
                               }
-                            }
+                            ]
                           }
                         }
                       }
@@ -11496,54 +11507,56 @@
                       "description": "Error details",
                       "required": [
                         "code",
-                        "message"
+                        "message",
+                        "missing"
                       ],
                       "properties": {
                         "code": {
                           "type": "integer",
                           "description": "HTTP status code",
-                          "format": "int32"
+                          "format": "int32",
+                          "example": 400
                         },
                         "message": {
                           "type": "string",
                           "description": "Error message"
                         },
-                        "extra": {
-                          "type": "object",
-                          "description": "Additional data",
-                          "properties": {
-                            "notFound": {
-                              "uniqueItems": true,
-                              "type": "array",
-                              "description": "Items which are not found",
-                              "items": {
-                                "description": "Ids or ExternalIds which are not found",
-                                "oneOf": [
-                                  {
-                                    "type": "object",
-                                    "properties": {
-                                      "id": {
-                                        "description": "Javascript friendly internal ID given to the object.",
-                                        "type": "integer",
-                                        "minimum": 1,
-                                        "maximum": 9007199254740991,
-                                        "format": "int64"
-                                      }
-                                    }
-                                  },
-                                  {
-                                    "type": "object",
-                                    "properties": {
-                                      "externalId": {
-                                        "description": "External Id provided by client. Should be unique within the project.",
-                                        "type": "string",
-                                        "maxLength": 255
-                                      }
-                                    }
+                        "missing": {
+                          "uniqueItems": true,
+                          "type": "array",
+                          "description": "Items which are not found",
+                          "items": {
+                            "description": "Ids or ExternalIds which are not found",
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "required": [
+                                  "id"
+                                ],
+                                "properties": {
+                                  "id": {
+                                    "description": "Javascript friendly internal ID given to the object.",
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "maximum": 9007199254740991,
+                                    "format": "int64"
                                   }
-                                ]
+                                }
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "externalId"
+                                ],
+                                "properties": {
+                                  "externalId": {
+                                    "description": "External Id provided by client. Should be unique within the project.",
+                                    "type": "string",
+                                    "maxLength": 255
+                                  }
+                                }
                               }
-                            }
+                            ]
                           }
                         }
                       }
@@ -11568,29 +11581,32 @@
                       "description": "Error details",
                       "required": [
                         "code",
-                        "message"
+                        "message",
+                        "duplicated"
                       ],
                       "properties": {
                         "code": {
                           "type": "integer",
                           "description": "HTTP status code",
-                          "format": "int32"
+                          "format": "int32",
+                          "example": 422
                         },
                         "message": {
                           "type": "string",
                           "description": "Error message"
                         },
-                        "extra": {
-                          "type": "object",
-                          "description": "Additional data",
-                          "properties": {
-                            "duplicated": {
-                              "uniqueItems": true,
-                              "type": "array",
-                              "description": "Items which are duplicated",
-                              "items": {
-                                "description": "Ids and ExternalIds which are duplicated in request",
+                        "duplicated": {
+                          "uniqueItems": true,
+                          "type": "array",
+                          "description": "Items which are duplicated",
+                          "items": {
+                            "description": "Ids and ExternalIds which are duplicated in request",
+                            "oneOf": [
+                              {
                                 "type": "object",
+                                "required": [
+                                  "id"
+                                ],
                                 "properties": {
                                   "id": {
                                     "description": "Javascript friendly internal ID given to the object.",
@@ -11598,7 +11614,15 @@
                                     "minimum": 1,
                                     "maximum": 9007199254740991,
                                     "format": "int64"
-                                  },
+                                  }
+                                }
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "externalId"
+                                ],
+                                "properties": {
                                   "externalId": {
                                     "description": "External Id provided by client. Should be unique within the project.",
                                     "type": "string",
@@ -11606,7 +11630,7 @@
                                   }
                                 }
                               }
-                            }
+                            ]
                           }
                         }
                       }
@@ -12338,52 +12362,109 @@
                       "description": "Error details",
                       "required": [
                         "code",
-                        "message"
+                        "message",
+                        "missing"
                       ],
                       "properties": {
                         "code": {
                           "type": "integer",
                           "description": "HTTP status code",
-                          "format": "int32"
+                          "format": "int32",
+                          "example": 400
                         },
                         "message": {
                           "type": "string",
                           "description": "Error message"
                         },
-                        "extra": {
-                          "type": "object",
-                          "description": "Additional data",
-                          "properties": {
-                            "notFound": {
-                              "uniqueItems": true,
-                              "type": "array",
-                              "description": "Items which are not found",
-                              "items": {
-                                "description": "Ids or ExternalIds which are not found",
-                                "oneOf": [
-                                  {
-                                    "type": "object",
-                                    "properties": {
-                                      "id": {
-                                        "description": "Javascript friendly internal ID given to the object.",
-                                        "type": "integer",
-                                        "minimum": 1,
-                                        "maximum": 9007199254740991,
-                                        "format": "int64"
-                                      }
-                                    }
-                                  },
-                                  {
-                                    "type": "object",
-                                    "properties": {
-                                      "externalId": {
-                                        "description": "External Id provided by client. Should be unique within the project.",
-                                        "type": "string",
-                                        "maxLength": 255
-                                      }
-                                    }
+                        "missing": {
+                          "uniqueItems": true,
+                          "type": "array",
+                          "description": "Items which are not found",
+                          "items": {
+                            "description": "Ids or ExternalIds which are not found",
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "required": [
+                                  "id"
+                                ],
+                                "properties": {
+                                  "id": {
+                                    "description": "Javascript friendly internal ID given to the object.",
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "maximum": 9007199254740991,
+                                    "format": "int64"
                                   }
-                                ]
+                                }
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "externalId"
+                                ],
+                                "properties": {
+                                  "externalId": {
+                                    "description": "External Id provided by client. Should be unique within the project.",
+                                    "type": "string",
+                                    "maxLength": 255
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Timeseries with specified externalId already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "description": "Error details",
+                      "required": [
+                        "code",
+                        "message",
+                        "duplicated"
+                      ],
+                      "properties": {
+                        "code": {
+                          "type": "integer",
+                          "description": "HTTP status code",
+                          "format": "int32",
+                          "example": 409
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "Error message"
+                        },
+                        "duplicated": {
+                          "uniqueItems": true,
+                          "type": "array",
+                          "description": "Items which are duplicated",
+                          "items": {
+                            "description": "ExternalIds which already exist",
+                            "type": "object",
+                            "required": [
+                              "externalId"
+                            ],
+                            "properties": {
+                              "externalId": {
+                                "description": "External Id provided by client. Should be unique within the project.",
+                                "type": "string",
+                                "maxLength": 255
                               }
                             }
                           }
@@ -12410,29 +12491,32 @@
                       "description": "Error details",
                       "required": [
                         "code",
-                        "message"
+                        "message",
+                        "duplicated"
                       ],
                       "properties": {
                         "code": {
                           "type": "integer",
                           "description": "HTTP status code",
-                          "format": "int32"
+                          "format": "int32",
+                          "example": 422
                         },
                         "message": {
                           "type": "string",
                           "description": "Error message"
                         },
-                        "extra": {
-                          "type": "object",
-                          "description": "Additional data",
-                          "properties": {
-                            "duplicated": {
-                              "uniqueItems": true,
-                              "type": "array",
-                              "description": "Items which are duplicated",
-                              "items": {
-                                "description": "Ids and ExternalIds which are duplicated in request",
+                        "duplicated": {
+                          "uniqueItems": true,
+                          "type": "array",
+                          "description": "Items which are duplicated",
+                          "items": {
+                            "description": "Ids and ExternalIds which are duplicated in request",
+                            "oneOf": [
+                              {
                                 "type": "object",
+                                "required": [
+                                  "id"
+                                ],
                                 "properties": {
                                   "id": {
                                     "description": "Javascript friendly internal ID given to the object.",
@@ -12440,7 +12524,15 @@
                                     "minimum": 1,
                                     "maximum": 9007199254740991,
                                     "format": "int64"
-                                  },
+                                  }
+                                }
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "externalId"
+                                ],
+                                "properties": {
                                   "externalId": {
                                     "description": "External Id provided by client. Should be unique within the project.",
                                     "type": "string",
@@ -12448,7 +12540,7 @@
                                   }
                                 }
                               }
-                            }
+                            ]
                           }
                         }
                       }
@@ -12558,106 +12650,56 @@
                       "description": "Error details",
                       "required": [
                         "code",
-                        "message"
+                        "message",
+                        "missing"
                       ],
-                      "properties": {
-                        "code": {
-                          "type": "integer",
-                          "description": "HTTP status code",
-                          "format": "int32"
-                        },
-                        "message": {
-                          "type": "string",
-                          "description": "Error message"
-                        },
-                        "extra": {
-                          "type": "object",
-                          "description": "Additional data",
-                          "properties": {
-                            "notFound": {
-                              "uniqueItems": true,
-                              "type": "array",
-                              "description": "Items which are not found",
-                              "items": {
-                                "description": "Ids or ExternalIds which are not found",
-                                "oneOf": [
-                                  {
-                                    "type": "object",
-                                    "properties": {
-                                      "id": {
-                                        "description": "Javascript friendly internal ID given to the object.",
-                                        "type": "integer",
-                                        "minimum": 1,
-                                        "maximum": 9007199254740991,
-                                        "format": "int64"
-                                      }
-                                    }
-                                  },
-                                  {
-                                    "type": "object",
-                                    "properties": {
-                                      "externalId": {
-                                        "description": "External Id provided by client. Should be unique within the project.",
-                                        "type": "string",
-                                        "maxLength": 255
-                                      }
-                                    }
-                                  }
-                                ]
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "error"
-                  ],
-                  "properties": {
-                    "error": {
-                      "type": "object",
-                      "required": [
-                        "code",
-                        "message"
-                      ],
-                      "description": "Cognite API error",
                       "properties": {
                         "code": {
                           "type": "integer",
                           "description": "HTTP status code",
                           "format": "int32",
-                          "example": 401
+                          "example": 400
                         },
                         "message": {
                           "type": "string",
-                          "description": "Error message",
-                          "example": "Could not authenticate."
+                          "description": "Error message"
                         },
                         "missing": {
+                          "uniqueItems": true,
                           "type": "array",
-                          "description": "List of lookup objects that have not matched any results.",
+                          "description": "Items which are not found",
                           "items": {
-                            "type": "object",
-                            "additionalProperties": true
-                          }
-                        },
-                        "duplicated": {
-                          "type": "array",
-                          "description": "List of objects that violate the uniqueness constraint.",
-                          "items": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "description": "Ids or ExternalIds which are not found",
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "required": [
+                                  "id"
+                                ],
+                                "properties": {
+                                  "id": {
+                                    "description": "Javascript friendly internal ID given to the object.",
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "maximum": 9007199254740991,
+                                    "format": "int64"
+                                  }
+                                }
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "externalId"
+                                ],
+                                "properties": {
+                                  "externalId": {
+                                    "description": "External Id provided by client. Should be unique within the project.",
+                                    "type": "string",
+                                    "maxLength": 255
+                                  }
+                                }
+                              }
+                            ]
                           }
                         }
                       }
@@ -12682,29 +12724,32 @@
                       "description": "Error details",
                       "required": [
                         "code",
-                        "message"
+                        "message",
+                        "duplicated"
                       ],
                       "properties": {
                         "code": {
                           "type": "integer",
                           "description": "HTTP status code",
-                          "format": "int32"
+                          "format": "int32",
+                          "example": 422
                         },
                         "message": {
                           "type": "string",
                           "description": "Error message"
                         },
-                        "extra": {
-                          "type": "object",
-                          "description": "Additional data",
-                          "properties": {
-                            "duplicated": {
-                              "uniqueItems": true,
-                              "type": "array",
-                              "description": "Items which are duplicated",
-                              "items": {
-                                "description": "Ids and ExternalIds which are duplicated in request",
+                        "duplicated": {
+                          "uniqueItems": true,
+                          "type": "array",
+                          "description": "Items which are duplicated",
+                          "items": {
+                            "description": "Ids and ExternalIds which are duplicated in request",
+                            "oneOf": [
+                              {
                                 "type": "object",
+                                "required": [
+                                  "id"
+                                ],
                                 "properties": {
                                   "id": {
                                     "description": "Javascript friendly internal ID given to the object.",
@@ -12712,7 +12757,15 @@
                                     "minimum": 1,
                                     "maximum": 9007199254740991,
                                     "format": "int64"
-                                  },
+                                  }
+                                }
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "externalId"
+                                ],
+                                "properties": {
                                   "externalId": {
                                     "description": "External Id provided by client. Should be unique within the project.",
                                     "type": "string",
@@ -12720,7 +12773,7 @@
                                   }
                                 }
                               }
-                            }
+                            ]
                           }
                         }
                       }
@@ -12947,106 +13000,56 @@
                       "description": "Error details",
                       "required": [
                         "code",
-                        "message"
+                        "message",
+                        "missing"
                       ],
-                      "properties": {
-                        "code": {
-                          "type": "integer",
-                          "description": "HTTP status code",
-                          "format": "int32"
-                        },
-                        "message": {
-                          "type": "string",
-                          "description": "Error message"
-                        },
-                        "extra": {
-                          "type": "object",
-                          "description": "Additional data",
-                          "properties": {
-                            "notFound": {
-                              "uniqueItems": true,
-                              "type": "array",
-                              "description": "Items which are not found",
-                              "items": {
-                                "description": "Ids or ExternalIds which are not found",
-                                "oneOf": [
-                                  {
-                                    "type": "object",
-                                    "properties": {
-                                      "id": {
-                                        "description": "Javascript friendly internal ID given to the object.",
-                                        "type": "integer",
-                                        "minimum": 1,
-                                        "maximum": 9007199254740991,
-                                        "format": "int64"
-                                      }
-                                    }
-                                  },
-                                  {
-                                    "type": "object",
-                                    "properties": {
-                                      "externalId": {
-                                        "description": "External Id provided by client. Should be unique within the project.",
-                                        "type": "string",
-                                        "maxLength": 255
-                                      }
-                                    }
-                                  }
-                                ]
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "error"
-                  ],
-                  "properties": {
-                    "error": {
-                      "type": "object",
-                      "required": [
-                        "code",
-                        "message"
-                      ],
-                      "description": "Cognite API error",
                       "properties": {
                         "code": {
                           "type": "integer",
                           "description": "HTTP status code",
                           "format": "int32",
-                          "example": 401
+                          "example": 400
                         },
                         "message": {
                           "type": "string",
-                          "description": "Error message",
-                          "example": "Could not authenticate."
+                          "description": "Error message"
                         },
                         "missing": {
+                          "uniqueItems": true,
                           "type": "array",
-                          "description": "List of lookup objects that have not matched any results.",
+                          "description": "Items which are not found",
                           "items": {
-                            "type": "object",
-                            "additionalProperties": true
-                          }
-                        },
-                        "duplicated": {
-                          "type": "array",
-                          "description": "List of objects that violate the uniqueness constraint.",
-                          "items": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "description": "Ids or ExternalIds which are not found",
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "required": [
+                                  "id"
+                                ],
+                                "properties": {
+                                  "id": {
+                                    "description": "Javascript friendly internal ID given to the object.",
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "maximum": 9007199254740991,
+                                    "format": "int64"
+                                  }
+                                }
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "externalId"
+                                ],
+                                "properties": {
+                                  "externalId": {
+                                    "description": "External Id provided by client. Should be unique within the project.",
+                                    "type": "string",
+                                    "maxLength": 255
+                                  }
+                                }
+                              }
+                            ]
                           }
                         }
                       }
@@ -13071,29 +13074,32 @@
                       "description": "Error details",
                       "required": [
                         "code",
-                        "message"
+                        "message",
+                        "duplicated"
                       ],
                       "properties": {
                         "code": {
                           "type": "integer",
                           "description": "HTTP status code",
-                          "format": "int32"
+                          "format": "int32",
+                          "example": 422
                         },
                         "message": {
                           "type": "string",
                           "description": "Error message"
                         },
-                        "extra": {
-                          "type": "object",
-                          "description": "Additional data",
-                          "properties": {
-                            "duplicated": {
-                              "uniqueItems": true,
-                              "type": "array",
-                              "description": "Items which are duplicated",
-                              "items": {
-                                "description": "Ids and ExternalIds which are duplicated in request",
+                        "duplicated": {
+                          "uniqueItems": true,
+                          "type": "array",
+                          "description": "Items which are duplicated",
+                          "items": {
+                            "description": "Ids and ExternalIds which are duplicated in request",
+                            "oneOf": [
+                              {
                                 "type": "object",
+                                "required": [
+                                  "id"
+                                ],
                                 "properties": {
                                   "id": {
                                     "description": "Javascript friendly internal ID given to the object.",
@@ -13101,7 +13107,15 @@
                                     "minimum": 1,
                                     "maximum": 9007199254740991,
                                     "format": "int64"
-                                  },
+                                  }
+                                }
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "externalId"
+                                ],
+                                "properties": {
                                   "externalId": {
                                     "description": "External Id provided by client. Should be unique within the project.",
                                     "type": "string",
@@ -13109,7 +13123,7 @@
                                   }
                                 }
                               }
-                            }
+                            ]
                           }
                         }
                       }
@@ -13634,7 +13648,7 @@
             }
           },
           "400": {
-            "description": "Names not found.",
+            "description": "Ids not found.",
             "content": {
               "application/json": {
                 "schema": {
@@ -13648,106 +13662,56 @@
                       "description": "Error details",
                       "required": [
                         "code",
-                        "message"
+                        "message",
+                        "missing"
                       ],
-                      "properties": {
-                        "code": {
-                          "type": "integer",
-                          "description": "HTTP status code",
-                          "format": "int32"
-                        },
-                        "message": {
-                          "type": "string",
-                          "description": "Error message"
-                        },
-                        "extra": {
-                          "type": "object",
-                          "description": "Additional data",
-                          "properties": {
-                            "notFound": {
-                              "uniqueItems": true,
-                              "type": "array",
-                              "description": "Items which are not found",
-                              "items": {
-                                "description": "Ids or ExternalIds which are not found",
-                                "oneOf": [
-                                  {
-                                    "type": "object",
-                                    "properties": {
-                                      "id": {
-                                        "description": "Javascript friendly internal ID given to the object.",
-                                        "type": "integer",
-                                        "minimum": 1,
-                                        "maximum": 9007199254740991,
-                                        "format": "int64"
-                                      }
-                                    }
-                                  },
-                                  {
-                                    "type": "object",
-                                    "properties": {
-                                      "externalId": {
-                                        "description": "External Id provided by client. Should be unique within the project.",
-                                        "type": "string",
-                                        "maxLength": 255
-                                      }
-                                    }
-                                  }
-                                ]
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "error"
-                  ],
-                  "properties": {
-                    "error": {
-                      "type": "object",
-                      "required": [
-                        "code",
-                        "message"
-                      ],
-                      "description": "Cognite API error",
                       "properties": {
                         "code": {
                           "type": "integer",
                           "description": "HTTP status code",
                           "format": "int32",
-                          "example": 401
+                          "example": 400
                         },
                         "message": {
                           "type": "string",
-                          "description": "Error message",
-                          "example": "Could not authenticate."
+                          "description": "Error message"
                         },
                         "missing": {
+                          "uniqueItems": true,
                           "type": "array",
-                          "description": "List of lookup objects that have not matched any results.",
+                          "description": "Items which are not found",
                           "items": {
-                            "type": "object",
-                            "additionalProperties": true
-                          }
-                        },
-                        "duplicated": {
-                          "type": "array",
-                          "description": "List of objects that violate the uniqueness constraint.",
-                          "items": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "description": "Ids or ExternalIds which are not found",
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "required": [
+                                  "id"
+                                ],
+                                "properties": {
+                                  "id": {
+                                    "description": "Javascript friendly internal ID given to the object.",
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "maximum": 9007199254740991,
+                                    "format": "int64"
+                                  }
+                                }
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "externalId"
+                                ],
+                                "properties": {
+                                  "externalId": {
+                                    "description": "External Id provided by client. Should be unique within the project.",
+                                    "type": "string",
+                                    "maxLength": 255
+                                  }
+                                }
+                              }
+                            ]
                           }
                         }
                       }
@@ -14046,106 +14010,56 @@
                       "description": "Error details",
                       "required": [
                         "code",
-                        "message"
+                        "message",
+                        "missing"
                       ],
-                      "properties": {
-                        "code": {
-                          "type": "integer",
-                          "description": "HTTP status code",
-                          "format": "int32"
-                        },
-                        "message": {
-                          "type": "string",
-                          "description": "Error message"
-                        },
-                        "extra": {
-                          "type": "object",
-                          "description": "Additional data",
-                          "properties": {
-                            "notFound": {
-                              "uniqueItems": true,
-                              "type": "array",
-                              "description": "Items which are not found",
-                              "items": {
-                                "description": "Ids or ExternalIds which are not found",
-                                "oneOf": [
-                                  {
-                                    "type": "object",
-                                    "properties": {
-                                      "id": {
-                                        "description": "Javascript friendly internal ID given to the object.",
-                                        "type": "integer",
-                                        "minimum": 1,
-                                        "maximum": 9007199254740991,
-                                        "format": "int64"
-                                      }
-                                    }
-                                  },
-                                  {
-                                    "type": "object",
-                                    "properties": {
-                                      "externalId": {
-                                        "description": "External Id provided by client. Should be unique within the project.",
-                                        "type": "string",
-                                        "maxLength": 255
-                                      }
-                                    }
-                                  }
-                                ]
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "error"
-                  ],
-                  "properties": {
-                    "error": {
-                      "type": "object",
-                      "required": [
-                        "code",
-                        "message"
-                      ],
-                      "description": "Cognite API error",
                       "properties": {
                         "code": {
                           "type": "integer",
                           "description": "HTTP status code",
                           "format": "int32",
-                          "example": 401
+                          "example": 400
                         },
                         "message": {
                           "type": "string",
-                          "description": "Error message",
-                          "example": "Could not authenticate."
+                          "description": "Error message"
                         },
                         "missing": {
+                          "uniqueItems": true,
                           "type": "array",
-                          "description": "List of lookup objects that have not matched any results.",
+                          "description": "Items which are not found",
                           "items": {
-                            "type": "object",
-                            "additionalProperties": true
-                          }
-                        },
-                        "duplicated": {
-                          "type": "array",
-                          "description": "List of objects that violate the uniqueness constraint.",
-                          "items": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "description": "Ids or ExternalIds which are not found",
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "required": [
+                                  "id"
+                                ],
+                                "properties": {
+                                  "id": {
+                                    "description": "Javascript friendly internal ID given to the object.",
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "maximum": 9007199254740991,
+                                    "format": "int64"
+                                  }
+                                }
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "externalId"
+                                ],
+                                "properties": {
+                                  "externalId": {
+                                    "description": "External Id provided by client. Should be unique within the project.",
+                                    "type": "string",
+                                    "maxLength": 255
+                                  }
+                                }
+                              }
+                            ]
                           }
                         }
                       }
@@ -14306,106 +14220,56 @@
                       "description": "Error details",
                       "required": [
                         "code",
-                        "message"
+                        "message",
+                        "missing"
                       ],
-                      "properties": {
-                        "code": {
-                          "type": "integer",
-                          "description": "HTTP status code",
-                          "format": "int32"
-                        },
-                        "message": {
-                          "type": "string",
-                          "description": "Error message"
-                        },
-                        "extra": {
-                          "type": "object",
-                          "description": "Additional data",
-                          "properties": {
-                            "notFound": {
-                              "uniqueItems": true,
-                              "type": "array",
-                              "description": "Items which are not found",
-                              "items": {
-                                "description": "Ids or ExternalIds which are not found",
-                                "oneOf": [
-                                  {
-                                    "type": "object",
-                                    "properties": {
-                                      "id": {
-                                        "description": "Javascript friendly internal ID given to the object.",
-                                        "type": "integer",
-                                        "minimum": 1,
-                                        "maximum": 9007199254740991,
-                                        "format": "int64"
-                                      }
-                                    }
-                                  },
-                                  {
-                                    "type": "object",
-                                    "properties": {
-                                      "externalId": {
-                                        "description": "External Id provided by client. Should be unique within the project.",
-                                        "type": "string",
-                                        "maxLength": 255
-                                      }
-                                    }
-                                  }
-                                ]
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "error"
-                  ],
-                  "properties": {
-                    "error": {
-                      "type": "object",
-                      "required": [
-                        "code",
-                        "message"
-                      ],
-                      "description": "Cognite API error",
                       "properties": {
                         "code": {
                           "type": "integer",
                           "description": "HTTP status code",
                           "format": "int32",
-                          "example": 401
+                          "example": 400
                         },
                         "message": {
                           "type": "string",
-                          "description": "Error message",
-                          "example": "Could not authenticate."
+                          "description": "Error message"
                         },
                         "missing": {
+                          "uniqueItems": true,
                           "type": "array",
-                          "description": "List of lookup objects that have not matched any results.",
+                          "description": "Items which are not found",
                           "items": {
-                            "type": "object",
-                            "additionalProperties": true
-                          }
-                        },
-                        "duplicated": {
-                          "type": "array",
-                          "description": "List of objects that violate the uniqueness constraint.",
-                          "items": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "description": "Ids or ExternalIds which are not found",
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "required": [
+                                  "id"
+                                ],
+                                "properties": {
+                                  "id": {
+                                    "description": "Javascript friendly internal ID given to the object.",
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "maximum": 9007199254740991,
+                                    "format": "int64"
+                                  }
+                                }
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "externalId"
+                                ],
+                                "properties": {
+                                  "externalId": {
+                                    "description": "External Id provided by client. Should be unique within the project.",
+                                    "type": "string",
+                                    "maxLength": 255
+                                  }
+                                }
+                              }
+                            ]
                           }
                         }
                       }
@@ -14831,31 +14695,36 @@
                 "schema": {
                   "type": "object",
                   "required": [
-                    "code",
-                    "message",
-                    "missingFields"
+                    "error"
                   ],
                   "properties": {
-                    "code": {
-                      "type": "integer",
-                      "description": "HTTP status code",
-                      "format": "int32"
-                    },
-                    "message": {
-                      "type": "string",
-                      "description": "Error message"
-                    },
-                    "extra": {
+                    "error": {
                       "type": "object",
-                      "description": "Additional data"
-                    },
-                    "missingFields": {
-                      "uniqueItems": true,
-                      "type": "array",
-                      "description": "Fields that are missing.",
-                      "items": {
-                        "type": "object",
-                        "description": "Fields that are missing"
+                      "required": [
+                        "code",
+                        "message",
+                        "missingFields"
+                      ],
+                      "properties": {
+                        "code": {
+                          "type": "integer",
+                          "description": "HTTP status code",
+                          "format": "int32",
+                          "example": 400
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "Error message"
+                        },
+                        "missingFields": {
+                          "uniqueItems": true,
+                          "type": "array",
+                          "description": "Fields that are missing.",
+                          "items": {
+                            "type": "object",
+                            "description": "Fields that are missing"
+                          }
+                        }
                       }
                     }
                   }
@@ -14943,31 +14812,36 @@
                 "schema": {
                   "type": "object",
                   "required": [
-                    "code",
-                    "message",
-                    "missingFields"
+                    "error"
                   ],
                   "properties": {
-                    "code": {
-                      "type": "integer",
-                      "description": "HTTP status code",
-                      "format": "int32"
-                    },
-                    "message": {
-                      "type": "string",
-                      "description": "Error message"
-                    },
-                    "extra": {
+                    "error": {
                       "type": "object",
-                      "description": "Additional data"
-                    },
-                    "missingFields": {
-                      "uniqueItems": true,
-                      "type": "array",
-                      "description": "Fields that are missing.",
-                      "items": {
-                        "type": "object",
-                        "description": "Fields that are missing"
+                      "required": [
+                        "code",
+                        "message",
+                        "missingFields"
+                      ],
+                      "properties": {
+                        "code": {
+                          "type": "integer",
+                          "description": "HTTP status code",
+                          "format": "int32",
+                          "example": 400
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "Error message"
+                        },
+                        "missingFields": {
+                          "uniqueItems": true,
+                          "type": "array",
+                          "description": "Fields that are missing.",
+                          "items": {
+                            "type": "object",
+                            "description": "Fields that are missing"
+                          }
+                        }
                       }
                     }
                   }
@@ -15273,31 +15147,36 @@
                 "schema": {
                   "type": "object",
                   "required": [
-                    "code",
-                    "message",
-                    "missingFields"
+                    "error"
                   ],
                   "properties": {
-                    "code": {
-                      "type": "integer",
-                      "description": "HTTP status code",
-                      "format": "int32"
-                    },
-                    "message": {
-                      "type": "string",
-                      "description": "Error message"
-                    },
-                    "extra": {
+                    "error": {
                       "type": "object",
-                      "description": "Additional data"
-                    },
-                    "missingFields": {
-                      "uniqueItems": true,
-                      "type": "array",
-                      "description": "Fields that are missing.",
-                      "items": {
-                        "type": "object",
-                        "description": "Fields that are missing"
+                      "required": [
+                        "code",
+                        "message",
+                        "missingFields"
+                      ],
+                      "properties": {
+                        "code": {
+                          "type": "integer",
+                          "description": "HTTP status code",
+                          "format": "int32",
+                          "example": 400
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "Error message"
+                        },
+                        "missingFields": {
+                          "uniqueItems": true,
+                          "type": "array",
+                          "description": "Fields that are missing.",
+                          "items": {
+                            "type": "object",
+                            "description": "Fields that are missing"
+                          }
+                        }
                       }
                     }
                   }
@@ -28579,51 +28458,6 @@
         },
         "description": "Request body for the updateModelRevisionThumbnail endpoint."
       },
-      "ErrorResponse": {
-        "type": "object",
-        "required": [
-          "error"
-        ],
-        "properties": {
-          "error": {
-            "type": "object",
-            "required": [
-              "code",
-              "message"
-            ],
-            "description": "Cognite API error",
-            "properties": {
-              "code": {
-                "type": "integer",
-                "description": "HTTP status code",
-                "format": "int32",
-                "example": 401
-              },
-              "message": {
-                "type": "string",
-                "description": "Error message",
-                "example": "Could not authenticate."
-              },
-              "missing": {
-                "type": "array",
-                "description": "List of lookup objects that have not matched any results.",
-                "items": {
-                  "type": "object",
-                  "additionalProperties": true
-                }
-              },
-              "duplicated": {
-                "type": "array",
-                "description": "List of objects that violate the uniqueness constraint.",
-                "items": {
-                  "type": "object",
-                  "additionalProperties": true
-                }
-              }
-            }
-          }
-        }
-      },
       "TimeSeriesResponse": {
         "description": "List of responses. Order matches the requests order.",
         "type": "object",
@@ -31968,159 +31802,6 @@
           }
         }
       },
-      "MissingFieldError": {
-        "type": "object",
-        "required": [
-          "code",
-          "message",
-          "missingFields"
-        ],
-        "properties": {
-          "code": {
-            "type": "integer",
-            "description": "HTTP status code",
-            "format": "int32"
-          },
-          "message": {
-            "type": "string",
-            "description": "Error message"
-          },
-          "extra": {
-            "type": "object",
-            "description": "Additional data"
-          },
-          "missingFields": {
-            "uniqueItems": true,
-            "type": "array",
-            "description": "Fields that are missing.",
-            "items": {
-              "type": "object",
-              "description": "Fields that are missing"
-            }
-          }
-        }
-      },
-      "DuplicatedResponse": {
-        "type": "object",
-        "required": [
-          "error"
-        ],
-        "properties": {
-          "error": {
-            "type": "object",
-            "description": "Error details",
-            "required": [
-              "code",
-              "message"
-            ],
-            "properties": {
-              "code": {
-                "type": "integer",
-                "description": "HTTP status code",
-                "format": "int32"
-              },
-              "message": {
-                "type": "string",
-                "description": "Error message"
-              },
-              "extra": {
-                "type": "object",
-                "description": "Additional data",
-                "properties": {
-                  "duplicated": {
-                    "uniqueItems": true,
-                    "type": "array",
-                    "description": "Items which are duplicated",
-                    "items": {
-                      "description": "Ids and ExternalIds which are duplicated in request",
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "description": "Javascript friendly internal ID given to the object.",
-                          "type": "integer",
-                          "minimum": 1,
-                          "maximum": 9007199254740991,
-                          "format": "int64"
-                        },
-                        "externalId": {
-                          "description": "External Id provided by client. Should be unique within the project.",
-                          "type": "string",
-                          "maxLength": 255
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      "NotFoundResponse": {
-        "type": "object",
-        "required": [
-          "error"
-        ],
-        "properties": {
-          "error": {
-            "type": "object",
-            "description": "Error details",
-            "required": [
-              "code",
-              "message"
-            ],
-            "properties": {
-              "code": {
-                "type": "integer",
-                "description": "HTTP status code",
-                "format": "int32"
-              },
-              "message": {
-                "type": "string",
-                "description": "Error message"
-              },
-              "extra": {
-                "type": "object",
-                "description": "Additional data",
-                "properties": {
-                  "notFound": {
-                    "uniqueItems": true,
-                    "type": "array",
-                    "description": "Items which are not found",
-                    "items": {
-                      "description": "Ids or ExternalIds which are not found",
-                      "oneOf": [
-                        {
-                          "type": "object",
-                          "properties": {
-                            "id": {
-                              "description": "Javascript friendly internal ID given to the object.",
-                              "type": "integer",
-                              "minimum": 1,
-                              "maximum": 9007199254740991,
-                              "format": "int64"
-                            }
-                          }
-                        },
-                        {
-                          "type": "object",
-                          "properties": {
-                            "externalId": {
-                              "description": "External Id provided by client. Should be unique within the project.",
-                              "type": "string",
-                              "maxLength": 255
-                            }
-                          }
-                        }
-                      ]
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
       "DataGetTimeSeriesMetadataDTO": {
         "description": "List of responses. Order matches the requests order.",
         "type": "object",
@@ -33739,6 +33420,225 @@
           }
         ],
         "description": "Change that will be applied to description."
+      },
+      "MissingFieldError": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "object",
+            "required": [
+              "code",
+              "message",
+              "missingFields"
+            ],
+            "properties": {
+              "code": {
+                "type": "integer",
+                "description": "HTTP status code",
+                "format": "int32",
+                "example": 400
+              },
+              "message": {
+                "type": "string",
+                "description": "Error message"
+              },
+              "missingFields": {
+                "uniqueItems": true,
+                "type": "array",
+                "description": "Fields that are missing.",
+                "items": {
+                  "type": "object",
+                  "description": "Fields that are missing"
+                }
+              }
+            }
+          }
+        }
+      },
+      "DuplicatedIdsInRequestResponse": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "object",
+            "description": "Error details",
+            "required": [
+              "code",
+              "message",
+              "duplicated"
+            ],
+            "properties": {
+              "code": {
+                "type": "integer",
+                "description": "HTTP status code",
+                "format": "int32",
+                "example": 422
+              },
+              "message": {
+                "type": "string",
+                "description": "Error message"
+              },
+              "duplicated": {
+                "uniqueItems": true,
+                "type": "array",
+                "description": "Items which are duplicated",
+                "items": {
+                  "description": "Ids and ExternalIds which are duplicated in request",
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "required": [
+                        "id"
+                      ],
+                      "properties": {
+                        "id": {
+                          "description": "Javascript friendly internal ID given to the object.",
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991,
+                          "format": "int64"
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "externalId"
+                      ],
+                      "properties": {
+                        "externalId": {
+                          "description": "External Id provided by client. Should be unique within the project.",
+                          "type": "string",
+                          "maxLength": 255
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "ExternalIdsAlreadyExistResponse": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "object",
+            "description": "Error details",
+            "required": [
+              "code",
+              "message",
+              "duplicated"
+            ],
+            "properties": {
+              "code": {
+                "type": "integer",
+                "description": "HTTP status code",
+                "format": "int32",
+                "example": 409
+              },
+              "message": {
+                "type": "string",
+                "description": "Error message"
+              },
+              "duplicated": {
+                "uniqueItems": true,
+                "type": "array",
+                "description": "Items which are duplicated",
+                "items": {
+                  "description": "ExternalIds which already exist",
+                  "type": "object",
+                  "required": [
+                    "externalId"
+                  ],
+                  "properties": {
+                    "externalId": {
+                      "description": "External Id provided by client. Should be unique within the project.",
+                      "type": "string",
+                      "maxLength": 255
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "NotFoundResponse": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "object",
+            "description": "Error details",
+            "required": [
+              "code",
+              "message",
+              "missing"
+            ],
+            "properties": {
+              "code": {
+                "type": "integer",
+                "description": "HTTP status code",
+                "format": "int32",
+                "example": 400
+              },
+              "message": {
+                "type": "string",
+                "description": "Error message"
+              },
+              "missing": {
+                "uniqueItems": true,
+                "type": "array",
+                "description": "Items which are not found",
+                "items": {
+                  "description": "Ids or ExternalIds which are not found",
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "required": [
+                        "id"
+                      ],
+                      "properties": {
+                        "id": {
+                          "description": "Javascript friendly internal ID given to the object.",
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991,
+                          "format": "int64"
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "externalId"
+                      ],
+                      "properties": {
+                        "externalId": {
+                          "description": "External Id provided by client. Should be unique within the project.",
+                          "type": "string",
+                          "maxLength": 255
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
       },
       "DataRawDB": {
         "type": "object",

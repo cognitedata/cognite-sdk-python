@@ -89,7 +89,7 @@ class TestAssets:
         assert mock_assets_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
     def test_retrieve_multiple(self, mock_assets_response):
-        res = ASSETS_API.retrieve(id=[1])
+        res = ASSETS_API.retrieve_multiple(ids=[1])
         assert isinstance(res, AssetList)
         assert mock_assets_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 

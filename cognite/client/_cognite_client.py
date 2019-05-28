@@ -31,9 +31,9 @@ class CogniteClient:
     Args:
         api_key (str): API key
         project (str): Project. Defaults to project of given API key.
-        client_name (str): A name for the client. Used to identify number of unique applications/scripts.
+        client_name (str): A user-defined name for the client. Used to identify number of unique applications/scripts
+            running on top of CDF.
         base_url (str): Base url to send requests to. Defaults to "https://api.cognitedata.com"
-
         max_workers (int): Max number of workers to spawn when parallelizing data fetching. Defaults to 10.
         headers (Dict): Additional headers to add to all requests.
         timeout (int): Timeout on requests sent to the api. Defaults to 30 seconds.
@@ -233,7 +233,7 @@ class CogniteClient:
 
     def _configure_logger_for_debug_mode(self):
         logger = logging.getLogger("cognite-sdk")
-        logger.setLevel("INFO")
+        logger.setLevel("DEBUG")
         log_handler = logging.StreamHandler()
         formatter = DebugLogFormatter()
         log_handler.setFormatter(formatter)

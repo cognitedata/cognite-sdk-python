@@ -71,17 +71,15 @@ class FilesAPI(APIClient):
         """
         return self.__call__()
 
-    def retrieve(
-        self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None
-    ) -> Union[FileMetadata, FileMetadataList]:
-        """Get files by id
+    def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[FileMetadata]:
+        """Retrieve a single file metadata by id.
 
         Args:
-            id (Union[int, List[int]], optional): Id or list of ids
-            external_id(Union[str, List[str]], optional): str or list of str
+            id (int, optional): ID
+            external_id (str, optional): External ID
 
         Returns:
-            Union[FileMetadata, FileMetadataList]: The requested files
+            Optional[FileMetadata]: Requested file metadata or None if it does not exist.
 
         Examples:
 
@@ -91,13 +89,44 @@ class FilesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.files.retrieve(id=1)
 
-            Get file meta data by external id::
+            Get file metadata by external id::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.files.retrieve(external_id=["1", "abc"])
+                >>> res = c.files.retrieve(external_id="1")
         """
+        utils.assert_exactly_one_of_id_or_external_id(id, external_id)
         return self._retrieve_multiple(ids=id, external_ids=external_id, wrap_ids=True)
+
+    def retrieve_multiple(
+        self, ids: Optional[List[int]] = None, external_ids: Optional[List[str]] = None
+    ) -> FileMetadataList:
+        """Retrieve multiple file metadatas by id.
+
+        Args:
+            ids (List[int], optional): IDs
+            external_ids (List[str], optional): External IDs
+
+        Returns:
+            FileMetadataList: The requested file metadatas.
+
+        Examples:
+
+            Get file metadatas by id::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.files.retrieve_multiple(ids=[1, 2, 3])
+
+            Get file_metadatas by external id::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.files.retrieve_multiple(external_ids=["abc", "def"])
+        """
+        utils.assert_type(ids, "id", [List], allow_none=True)
+        utils.assert_type(external_ids, "external_id", [List], allow_none=True)
+        return self._retrieve_multiple(ids=ids, external_ids=external_ids, wrap_ids=True)
 
     def list(
         self,
@@ -419,7 +448,7 @@ class FilesAPI(APIClient):
         ids = [id["id"] for id in all_ids if "id" in id]
         external_ids = [id["externalId"] for id in all_ids if "externalId" in id]
 
-        files_metadata = self.retrieve(id=ids, external_id=external_ids)
+        files_metadata = self.retrieve_multiple(ids=ids, external_ids=external_ids)
 
         id_to_metadata = {}
         for f in files_metadata:
