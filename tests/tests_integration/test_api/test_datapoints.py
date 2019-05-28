@@ -96,7 +96,7 @@ class TestDatapointsAPI:
 
         for dps in res:
             if dps.id == test_time_series[0].id:
-                assert 20000 < len(dps.to_pandas())
+                assert 19000 < len(dps.to_pandas())
             if dps.id == test_time_series[1].id:
                 assert 9000 < len(dps.to_pandas())
             if dps.id == test_time_series[2].id:
