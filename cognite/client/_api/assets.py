@@ -59,54 +59,42 @@ class AssetsAPI(APIClient):
         """
         return self.__call__()
 
-    @overload
-    def retrieve(
-        self, id: Optional[Union[int, List[int]]] = None, external_id: Optional[Union[str, List[str]]] = None
-    ) -> Optional[Union[Asset, AssetList]]:
-        """Get assets
-
-        Args:
-            id (Union[int, List[int], optional): Id or list of ids
-            external_id (Union[str, List[str]], optional): External ID or list of external ids
-
-        Returns:
-            Optional[Union[Asset, AssetList]]: Requested asset(s)
-
-        Examples:
-
-            Get assets by id::
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.assets.retrieve(id=1)
-
-            Get assets by external id::
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.assets.retrieve(external_id=["1", "abc"])
-        """
-        ...
-
-    @overload
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[Asset]:
-        ...
-
-    @overload
-    def retrieve(self, id: Optional[List[int]] = None, external_id: Optional[List[str]] = None) -> AssetList:
-        ...
-
-    def retrieve(
-        self, id: Optional[Union[int, List[int]]] = None, external_id: Optional[Union[str, List[str]]] = None
-    ) -> Optional[Union[Asset, AssetList]]:
-        """Get assets
+        """Retrieve a single asset by id.
 
         Args:
-            id (Union[int, List[int], optional): Id or list of ids
-            external_id (Union[str, List[str]], optional): External ID or list of external ids
+            id (int, optional): ID
+            external_id (str, optional): External ID
 
         Returns:
-            Optional[Union[Asset, AssetList]]: Requested asset(s)
+            Optional[Asset]: Requested asset or None if it does not exist.
+
+        Examples:
+
+            Get asset by id::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.assets.retrieve(id=1)
+
+            Get asset by external id::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.assets.retrieve(external_id="1")
+        """
+        utils.assert_exactly_one_of_id_or_external_id(id, external_id)
+        return self._retrieve_multiple(ids=id, external_ids=external_id, wrap_ids=True)
+
+    def retrieve_multiple(self, ids: Optional[List[int]] = None, external_ids: Optional[List[str]] = None) -> AssetList:
+        """Retrieve multiple assets by id.
+
+        Args:
+            ids (List[int], optional): IDs
+            external_ids (List[str], optional): External IDs
+
+        Returns:
+            AssetList: The requested assets.
 
         Examples:
 
@@ -114,15 +102,17 @@ class AssetsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.assets.retrieve(id=1)
+                >>> res = c.assets.retrieve_multiple(ids=[1, 2, 3])
 
             Get assets by external id::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.assets.retrieve(external_id=["1", "abc"])
+                >>> res = c.assets.retrieve_multiple(external_ids=["abc", "def"])
         """
-        return self._retrieve_multiple(ids=id, external_ids=external_id, wrap_ids=True)
+        utils.assert_type(ids, "id", [List], allow_none=True)
+        utils.assert_type(external_ids, "external_id", [List], allow_none=True)
+        return self._retrieve_multiple(ids=ids, external_ids=external_ids, wrap_ids=True)
 
     def list(
         self,

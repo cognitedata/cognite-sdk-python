@@ -201,9 +201,13 @@ Data classes
 
 Assets
 ------
-Retrieve assets by id
-^^^^^^^^^^^^^^^^^^^^^
+Retrieve an asset by id
+^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.assets.AssetsAPI.retrieve
+
+Retrieve multiple assets by id
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.assets.AssetsAPI.retrieve_multiple
 
 Retrieve an asset subtree
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -239,9 +243,13 @@ Data classes
 
 Events
 ------
-Retrieve events by id
-^^^^^^^^^^^^^^^^^^^^^
+Retrieve an event by id
+^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.events.EventsAPI.retrieve
+
+Retrieve multiple events by id
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.events.EventsAPI.retrieve_multiple
 
 List events
 ^^^^^^^^^^^
@@ -274,9 +282,13 @@ Data classes
 
 Files
 -----
-Retrieve files metadata by id
+Retrieve file metadata by id
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.files.FilesAPI.retrieve
+
+Retrieve multiple files' metadata by id
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.files.FilesAPI.retrieve_multiple
 
 List files metadata
 ^^^^^^^^^^^^^^^^^^^
@@ -320,9 +332,13 @@ Data classes
 
 Time series
 -----------
-Retrieve time series by id
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+Retrieve a time series by id
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.time_series.TimeSeriesAPI.retrieve
+
+Retrieve multiple time series by id
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.time_series.TimeSeriesAPI.retrieve_multiple
 
 List time series
 ^^^^^^^^^^^^^^^^

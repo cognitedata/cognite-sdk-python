@@ -46,7 +46,7 @@ class TestTimeSeries:
         assert mock_ts_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
     def test_retrieve_multiple(self, mock_ts_response):
-        res = TS_API.retrieve(id=[1])
+        res = TS_API.retrieve_multiple(ids=[1])
         assert isinstance(res, TimeSeriesList)
         assert mock_ts_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
@@ -198,7 +198,7 @@ class TestPlotTimeSeries:
     @mock.patch("matplotlib.pyplot.show")
     @mock.patch("pandas.core.frame.DataFrame.rename")
     def test_plot_time_series_list_name_labels(self, pandas_rename_mock, plt_show_mock, mock_ts_response, mock_get_dps):
-        res = TS_API.retrieve(id=[0])
+        res = TS_API.retrieve_multiple(ids=[0])
         df_mock = mock.MagicMock()
         pandas_rename_mock.return_value = df_mock
         res.plot(aggregates=["average"], granularity="1h")
@@ -209,7 +209,7 @@ class TestPlotTimeSeries:
     @mock.patch("matplotlib.pyplot.show")
     @mock.patch("pandas.core.frame.DataFrame.plot")
     def test_plot_time_series_list_id_labels(self, pandas_plot_mock, plt_show_mock, mock_ts_response, mock_get_dps):
-        res = TS_API.retrieve(id=[0])
+        res = TS_API.retrieve_multiple(ids=[0])
         res.plot(id_labels=True)
 
         assert 1 == pandas_plot_mock.call_count

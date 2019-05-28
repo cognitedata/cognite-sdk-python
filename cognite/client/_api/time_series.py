@@ -3,6 +3,7 @@ from typing import *
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import TimeSeries, TimeSeriesFilter, TimeSeriesList, TimeSeriesUpdate
+from cognite.client.utils import _utils as utils
 
 
 class TimeSeriesAPI(APIClient):
@@ -37,58 +38,62 @@ class TimeSeriesAPI(APIClient):
         """
         return self.__call__()
 
-    @overload
-    def retrieve(
-        self, id: Optional[Union[int, List[int]]] = None, external_id: Optional[Union[str, List[str]]] = None
-    ) -> Optional[Union[TimeSeries, TimeSeriesList]]:
-        """Returns an object containing the requested time series.
-
-        Args:
-            id (Union[int, List[int]], optional): Id or list of ids
-            external_id(Union[str, List[str]], optional): str or list of str
-
-        Returns:
-            Optional[Union[TimeSeries, TimeSeriesList]]: The requested time series
-
-        Examples:
-
-            Retrieving time series by id::
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.time_series.retrieve(id=[1,2])
-        """
-        ...
-
-    @overload
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[TimeSeries]:
-        ...
-
-    @overload
-    def retrieve(self, id: Optional[List[int]] = None, external_id: Optional[List[str]] = None) -> TimeSeriesList:
-        ...
-
-    def retrieve(
-        self, id: Optional[Union[int, List[int]]] = None, external_id: Optional[Union[str, List[str]]] = None
-    ) -> Optional[Union[TimeSeries, TimeSeriesList]]:
-        """Returns an object containing the requested time series.
+        """Retrieve a single time series by id.
 
         Args:
-            id (Union[int, List[int]], optional): Id or list of ids
-            external_id(Union[str, List[str]], optional): str or list of str
+            id (int, optional): ID
+            external_id (str, optional): External ID
 
         Returns:
-            Optional[Union[TimeSeries, TimeSeriesList]]: The requested time series
+            Optional[TimeSeries]: Requested time series or None if it does not exist.
 
         Examples:
 
-            Retrieving time series by id::
+            Get time series by id::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.time_series.retrieve(id=[1,2])
+                >>> res = c.time_series.retrieve(id=1)
+
+            Get time series by external id::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.time_series.retrieve(external_id="1")
         """
+        utils.assert_exactly_one_of_id_or_external_id(id, external_id)
         return self._retrieve_multiple(ids=id, external_ids=external_id, wrap_ids=True)
+
+    def retrieve_multiple(
+        self, ids: Optional[List[int]] = None, external_ids: Optional[List[str]] = None
+    ) -> TimeSeriesList:
+        """Retrieve multiple time series by id.
+
+        Args:
+            ids (List[int], optional): IDs
+            external_ids (List[str], optional): External IDs
+
+        Returns:
+            TimeSeriesList: The requested time series.
+
+        Examples:
+
+            Get time series by id::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.time_series.retrieve_multiple(ids=[1, 2, 3])
+
+            Get time series by external id::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.time_series.retrieve_multiple(external_ids=["abc", "def"])
+        """
+        utils.assert_type(ids, "id", [List], allow_none=True)
+        utils.assert_type(external_ids, "external_id", [List], allow_none=True)
+        return self._retrieve_multiple(ids=ids, external_ids=external_ids, wrap_ids=True)
 
     def list(
         self, include_metadata: bool = False, asset_ids: Optional[List[int]] = None, limit: int = 25

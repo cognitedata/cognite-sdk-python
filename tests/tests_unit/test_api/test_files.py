@@ -131,7 +131,7 @@ class TestFilesAPI:
         assert mock_files_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
     def test_retrieve_multiple(self, mock_files_response):
-        res = FILES_API.retrieve(id=[1])
+        res = FILES_API.retrieve_multiple(ids=[1])
         assert isinstance(res, FileMetadataList)
         assert mock_files_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 

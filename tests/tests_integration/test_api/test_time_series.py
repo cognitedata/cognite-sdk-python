@@ -25,6 +25,13 @@ class TestTimeSeriesAPI:
         retrieved_asset.external_id = listed_asset.external_id
         assert retrieved_asset == listed_asset
 
+    def test_retrieve_multiple(self):
+        res = COGNITE_CLIENT.time_series.list(limit=2)
+        retrieved_assets = COGNITE_CLIENT.time_series.retrieve_multiple([t.id for t in res])
+        for listed_asset, retrieved_asset in zip(res, retrieved_assets):
+            retrieved_asset.external_id = listed_asset.external_id
+        assert res == retrieved_assets
+
     def test_list(self, mocker):
         mocker.spy(COGNITE_CLIENT.time_series, "_get")
 

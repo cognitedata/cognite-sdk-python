@@ -85,7 +85,7 @@ class TestAssetsAPI:
 
     def test_post_asset_hierarchy(self, new_asset_hierarchy):
         prefix, ext_ids = new_asset_hierarchy
-        posted_assets = COGNITE_CLIENT.assets.retrieve(external_id=ext_ids)
+        posted_assets = COGNITE_CLIENT.assets.retrieve_multiple(external_ids=ext_ids)
         external_id_to_id = {a.external_id: a.id for a in posted_assets}
 
         for asset in posted_assets:
@@ -94,7 +94,6 @@ class TestAssetsAPI:
             else:
                 assert asset.parent_id == external_id_to_id[asset.external_id[:-1]]
 
-    @pytest.mark.xfail(strict=True)
     def test_get_subtree(self, root_test_asset):
         assert 781 == len(COGNITE_CLIENT.assets.retrieve_subtree(root_test_asset.id))
         assert 6 == len(COGNITE_CLIENT.assets.retrieve_subtree(root_test_asset.id, depth=1))

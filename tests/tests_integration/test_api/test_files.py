@@ -29,6 +29,10 @@ class TestFilesAPI:
         res = COGNITE_CLIENT.files.list(limit=1)
         assert res[0] == COGNITE_CLIENT.files.retrieve(res[0].id)
 
+    def test_retrieve_multiple(self):
+        res = COGNITE_CLIENT.files.list(limit=2)
+        assert res == COGNITE_CLIENT.files.retrieve_multiple([f.id for f in res])
+
     def test_list(self):
         res = COGNITE_CLIENT.files.list(limit=4)
         assert 4 == len(res)

@@ -67,54 +67,42 @@ class EventsAPI(APIClient):
         """
         return self.__call__()
 
-    @overload
-    def retrieve(
-        self, id: Optional[Union[int, List[int]]] = None, external_id: Optional[Union[str, List[str]]] = None
-    ) -> Optional[Union[Event, EventList]]:
-        """Get events by id
-
-        Args:
-            id (Union[int, List[int], optional): Id or list of ids
-            external_id (Union[str, List[str]], optional): External ID or list of external ids
-
-        Returns:
-            Optional[Union[Event, EventList]]: Requested event(s)
-
-        Examples:
-
-            Get events by id::
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.events.retrieve(id=[1,2,3])
-
-            Get an event by external id::
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.events.retrieve(external_id="abc")
-        """
-        ...
-
-    @overload
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[Event]:
-        ...
-
-    @overload
-    def retrieve(self, id: Optional[List[int]] = None, external_id: Optional[List[str]] = None) -> EventList:
-        ...
-
-    def retrieve(
-        self, id: Optional[Union[int, List[int]]] = None, external_id: Optional[Union[str, List[str]]] = None
-    ) -> Optional[Union[Event, EventList]]:
-        """Get events by id
+        """Retrieve a single event by id.
 
         Args:
-            id (Union[int, List[int], optional): Id or list of ids
-            external_id (Union[str, List[str]], optional): External ID or list of external ids
+            id (int, optional): ID
+            external_id (str, optional): External ID
 
         Returns:
-            Optional[Union[Event, EventList]]: Requested event(s)
+            Optional[Event]: Requested event or None if it does not exist.
+
+        Examples:
+
+            Get event by id::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.events.retrieve(id=1)
+
+            Get event by external id::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.events.retrieve(external_id="1")
+        """
+        utils.assert_exactly_one_of_id_or_external_id(id, external_id)
+        return self._retrieve_multiple(ids=id, external_ids=external_id, wrap_ids=True)
+
+    def retrieve_multiple(self, ids: Optional[List[int]] = None, external_ids: Optional[List[str]] = None) -> EventList:
+        """Retrieve multiple events by id.
+
+        Args:
+            ids (List[int], optional): IDs
+            external_ids (List[str], optional): External IDs
+
+        Returns:
+            EventList: The requested events.
 
         Examples:
 
@@ -122,15 +110,17 @@ class EventsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.events.retrieve(id=[1,2,3])
+                >>> res = c.events.retrieve_multiple(ids=[1, 2, 3])
 
-            Get an event by external id::
+            Get events by external id::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.events.retrieve(external_id="abc")
+                >>> res = c.events.retrieve_multiple(external_ids=["abc", "def"])
         """
-        return self._retrieve_multiple(ids=id, external_ids=external_id, wrap_ids=True)
+        utils.assert_type(ids, "id", [List], allow_none=True)
+        utils.assert_type(external_ids, "external_id", [List], allow_none=True)
+        return self._retrieve_multiple(ids=ids, external_ids=external_ids, wrap_ids=True)
 
     def list(
         self,
