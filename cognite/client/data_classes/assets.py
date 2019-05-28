@@ -2,15 +2,13 @@ from typing import *
 
 from cognite.client._base import *
 
-# GenClass: Asset
 
-
+# GenClass: Asset, DataExternalAssetItem
 class Asset(CogniteResource):
     """Representation of a physical asset, e.g plant or piece of equipment
 
     Args:
         external_id (str): External Id provided by client. Should be unique within the project.
-        parent_external_id (str): External Id provided by client. Should be unique within the project.
         name (str): Name of asset. Often referred to as tag.
         parent_id (int): Javascript friendly internal ID given to the object.
         description (str): Description of asset.
@@ -21,13 +19,13 @@ class Asset(CogniteResource):
         last_updated_time (int): It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         path (List[int]): IDs of assets on the path to the asset.
         depth (int): Asset path depth (number of levels below root node).
+        parent_external_id (str): External Id provided by client. Should be unique within the project.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
     def __init__(
         self,
         external_id: str = None,
-        parent_external_id: str = None,
         name: str = None,
         parent_id: int = None,
         description: str = None,
@@ -38,10 +36,10 @@ class Asset(CogniteResource):
         last_updated_time: int = None,
         path: List[int] = None,
         depth: int = None,
+        parent_external_id: str = None,
         cognite_client=None,
     ):
         self.external_id = external_id
-        self.parent_external_id = parent_external_id
         self.name = name
         self.parent_id = parent_id
         self.description = description
@@ -52,6 +50,7 @@ class Asset(CogniteResource):
         self.last_updated_time = last_updated_time
         self.path = path
         self.depth = depth
+        self.parent_external_id = parent_external_id
         self._cognite_client = cognite_client
 
     # GenStop
