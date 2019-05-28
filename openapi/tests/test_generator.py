@@ -10,8 +10,8 @@ with open(input_path) as f:
 with open(output_path) as f:
     OUTPUT = f.read()
 
-spec_path = os.path.join(os.path.dirname(__file__), "../default_spec.json")
-CODE_GENERATOR = CodeGenerator(spec_path=spec_path)
+spec_url = "https://storage.googleapis.com/cognitedata-api-docs/dist/v1.json"
+CODE_GENERATOR = CodeGenerator(spec_url=spec_url)
 
 
 class TestCodeGenerator:

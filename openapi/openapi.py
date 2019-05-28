@@ -1,4 +1,7 @@
 import json
+import os
+from subprocess import check_output
+from tempfile import TemporaryDirectory
 
 import requests
 
@@ -64,4 +67,10 @@ class OpenAPISpec:
         self.paths = Paths(self._spec["paths"])
 
     def download_spec(self):
-        return requests.get(self._spec_url).json()
+        with TemporaryDirectory() as dir:
+            res = requests.get(self._spec_url).content
+            spec_path = os.path.join(dir, "spec.json")
+            with open(spec_path, "wb") as f:
+                f.write(res)
+            res = check_output("swagger-cli bundle -r {}".format(spec_path), shell=True)
+        return json.loads(res)

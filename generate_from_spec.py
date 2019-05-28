@@ -3,7 +3,7 @@ import os
 
 from openapi.generator import CodeGenerator
 
-DEFAULT_SPEC_PATH = "openapi/default_spec.json"
+DEFAULT_SPEC_URL = "https://storage.googleapis.com/cognitedata-api-docs/dist/v1.json"
 
 
 def main(spec_url, spec_path):
@@ -30,4 +30,4 @@ if __name__ == "__main__":
         "--path", help="The url or path to the spec you wish to generate from. Defaults to latest spec."
     )
     args = parser.parse_args()
-    main(args.url, args.path or DEFAULT_SPEC_PATH)
+    main(args.url or DEFAULT_SPEC_URL, args.path)
