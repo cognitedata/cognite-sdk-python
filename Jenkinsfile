@@ -17,6 +17,14 @@ podTemplate(
             resourceLimitCpu: '1000m',
             resourceLimitMemory: '800Mi',
             ttyEnabled: true),
+        containerTemplate(name: 'node',
+            image: 'node:slim',
+            command: '/bin/cat -',
+            resourceRequestCpu: '300m',
+            resourceRequestMemory: '300Mi',
+            resourceLimitCpu: '300m',
+            resourceLimitMemory: '300Mi',
+            ttyEnabled: true),
     ],
     volumes: [
         secretVolume(secretName: 'jenkins-docker-builder', mountPath: '/jenkins-docker-builder', readOnly: true),
@@ -28,6 +36,7 @@ podTemplate(
         secretEnvVar(key: 'CODECOV_TOKEN', secretName: 'codecov-token-cognite-sdk-python', secretKey: 'token.txt'),
         envVar(key: 'COGNITE_BASE_URL', value: "https://greenfield.cognitedata.com"),
         envVar(key: 'COGNITE_CLIENT_NAME', value: "python-sdk-integration-tests"),
+        envVar(key: 'CI', value: '1'),
         // /codecov-script/upload-report.sh relies on the following
         // Jenkins and Github environment variables.
         envVar(key: 'BRANCH_NAME', value: env.BRANCH_NAME),
@@ -41,6 +50,13 @@ podTemplate(
             stage('Checkout') {
                 checkout(scm)
                 gitCommit = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+            }
+        }
+        container('node'){
+            stage('Download and dereference OpenAPI Spec'){
+                sh('npm install -g swagger-cli')
+                sh('curl https://storage.googleapis.com/cognitedata-api-docs/dist/v1.json --output spec.json')
+                sh('swagger-cli bundle -r spec.json -o deref-spec.json')
             }
         }
         container('python') {
