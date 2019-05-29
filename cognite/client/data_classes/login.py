@@ -1,6 +1,4 @@
-from typing import *
-
-from cognite.client._base import CogniteResponse
+from cognite.client.data_classes._base import CogniteResponse
 
 
 class LoginStatus(CogniteResponse):

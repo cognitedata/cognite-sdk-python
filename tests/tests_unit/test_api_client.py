@@ -5,7 +5,7 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client._api_client import APIClient, _get_status_codes_to_retry
-from cognite.client._base import *
+from cognite.client.data_classes._base import *
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from tests.utils import jsgz_load, set_request_limit
 

@@ -11,7 +11,7 @@ from requests.adapters import HTTPAdapter
 from requests.structures import CaseInsensitiveDict
 from urllib3 import Retry
 
-from cognite.client._base import CogniteFilter, CogniteResource, CogniteUpdate
+from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteUpdate
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils import _utils as utils
 

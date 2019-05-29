@@ -1,6 +1,4 @@
-from typing import *
-
-from cognite.client._base import *
+from cognite.client.data_classes._base import *
 
 
 # GenClass: Asset, DataExternalAssetItem
@@ -101,7 +99,6 @@ class Asset(CogniteResource):
         Returns:
             EventList: All events related to this asset.
         """
-        from cognite.client.data_classes import EventList
 
         return self._cognite_client.events.list(asset_ids=[self.id], **kwargs)
 

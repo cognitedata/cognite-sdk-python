@@ -3,7 +3,7 @@ from unittest import mock
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client._base import *
+from cognite.client.data_classes._base import *
 from cognite.client.exceptions import CogniteMissingClientError
 
 

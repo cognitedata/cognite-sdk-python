@@ -91,16 +91,12 @@ class TestDatapointsAPI:
         )
 
         res = COGNITE_CLIENT.datapoints.query([dps_query1, dps_query2, dps_query3])
-
         assert len(res) == 3
-
-        for dps in res:
-            if dps.id == test_time_series[0].id:
-                assert 19000 < len(dps.to_pandas())
-            if dps.id == test_time_series[1].id:
-                assert 9000 < len(dps.to_pandas())
-            if dps.id == test_time_series[2].id:
-                assert 24 == len(dps.to_pandas())
+        assert (
+            len(res.get(test_time_series[2].id))
+            < len(res.get(test_time_series[1].id))
+            < len(res.get(test_time_series[0].id))
+        )
 
     def test_retrieve_latest(self, test_time_series):
         ids = [test_time_series[0].id, test_time_series[1].id]
