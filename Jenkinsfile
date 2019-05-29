@@ -17,6 +17,14 @@ podTemplate(
             resourceLimitCpu: '1000m',
             resourceLimitMemory: '800Mi',
             ttyEnabled: true),
+        containerTemplate(name: 'node',
+            image: 'node:slim',
+            command: '/bin/cat -',
+            resourceRequestCpu: '300m',
+            resourceRequestMemory: '300Mi',
+            resourceLimitCpu: '300m',
+            resourceLimitMemory: '300Mi',
+            ttyEnabled: true),
     ],
     volumes: [
         secretVolume(secretName: 'jenkins-docker-builder', mountPath: '/jenkins-docker-builder', readOnly: true),
@@ -24,8 +32,11 @@ podTemplate(
         configMapVolume(configMapName: 'codecov-script-configmap', mountPath: '/codecov-script'),
     ],
     envVars: [
-        secretEnvVar(key: 'COGNITE_API_KEY', secretName: 'ml-test-api-key', secretKey: 'testkey.txt'),
+        secretEnvVar(key: 'COGNITE_API_KEY', secretName: 'cognite-sdk-python', secretKey: 'integration-test-api-key'),
         secretEnvVar(key: 'CODECOV_TOKEN', secretName: 'codecov-token-cognite-sdk-python', secretKey: 'token.txt'),
+        envVar(key: 'COGNITE_BASE_URL', value: "https://greenfield.cognitedata.com"),
+        envVar(key: 'COGNITE_CLIENT_NAME', value: "python-sdk-integration-tests"),
+        envVar(key: 'CI', value: '1'),
         // /codecov-script/upload-report.sh relies on the following
         // Jenkins and Github environment variables.
         envVar(key: 'BRANCH_NAME', value: env.BRANCH_NAME),
@@ -41,11 +52,24 @@ podTemplate(
                 gitCommit = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
             }
         }
+        container('node'){
+            stage('Download and dereference OpenAPI Spec'){
+                sh('npm install -g swagger-cli')
+                sh('curl https://storage.googleapis.com/cognitedata-api-docs/dist/v1.json --output spec.json')
+                sh('swagger-cli bundle -r spec.json -o deref-spec.json')
+            }
+        }
         container('python') {
             stage('Install pipenv') {
                 sh("pip3 install pipenv")
             }
-            stage('Install dependencies') {
+            stage('Install core dependencies') {
+                sh("pipenv run pip install -r core-requirements.txt")
+            }
+            stage('Test core') {
+                sh("pipenv run pytest tests/tests_unit -m 'not dsl' --test-deps-only-core")
+            }
+            stage('Install all dependencies') {
                 sh("pipenv sync --dev")
             }
             stage('Check code') {
@@ -58,9 +82,12 @@ podTemplate(
                     sh("pipenv run sphinx-build -W -b html ./source ./build")
                 }
             }
-            stage('Test and coverage report') {
+            stage('Test OpenAPI Generator'){
+                sh('pipenv run pytest openapi/tests')
+            }
+            stage('Test Client') {
                 sh("pyenv local 3.5.0 3.6.6 3.7.2")
-                sh("pipenv run tox")
+                sh("pipenv run tox -p auto")
                 junit(allowEmptyResults: true, testResults: '**/test-report.xml')
                 summarizeTestResults()
             }
@@ -71,14 +98,15 @@ podTemplate(
             stage('Build') {
                 sh("python3 setup.py sdist")
                 sh("python3 setup.py bdist_wheel")
+                sh("python3 setup-core.py sdist")
+                sh("python3 setup-core.py bdist_wheel")
             }
 
-            def pipVersion = sh(returnStdout: true, script: 'pipenv run yolk -V cognite-sdk | sort -n | tail -1 | cut -d\\  -f 2').trim()
             def currentVersion = sh(returnStdout: true, script: 'sed -n -e "/^__version__/p" cognite/client/__init__.py | cut -d\\" -f2').trim()
-
             println("This version: " + currentVersion)
-            println("Latest pip version: " + pipVersion)
-            if (env.BRANCH_NAME == 'master' && currentVersion != pipVersion) {
+            def versionExists = sh(returnStdout: true, script: 'pipenv run python3 cognite/client/utils/_version_checker.py -p cognite-sdk -v ' + currentVersion)
+            println("Version Exists: " + versionExists)
+            if (env.BRANCH_NAME == 'master' && versionExists == 'no') {
                 stage('Release') {
                     sh("pipenv run twine upload --config-file /pypi/.pypirc dist/*")
                 }

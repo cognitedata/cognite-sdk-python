@@ -4,25 +4,24 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-sphinx = "*"
 pandas = "*"
 requests = "*"
-protobuf = "*"
-sphinx-rtd-theme = "*"
-cognite-logger = "==0.4.*"
-pytest-mock = "*"
+matplotlib = "*"
 
 [dev-packages]
+sphinx = "*"
+sphinx-rtd-theme = "*"
 pytest-cov = "*"
 twine = "*"
-"yolk3k" = "*"
 pytest = "*"
-black = "==18.6b4"
+black = "==19.3b0"
 strip-hints = "*"
 pre-commit = "*"
 isort = "*"
 tox = "*"
 tox-pyenv = "*"
+responses = "*"
+pytest-mock = "*"
 
 [pipenv]
 allow_prereleases = true

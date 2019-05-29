@@ -11,7 +11,9 @@ Cognite Python SDK
 [![tox](https://img.shields.io/badge/tox-3.5%2B-blue.svg)](https://www.python.org/downloads/release/python-350/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 
-Python SDK to ensure excellent user experience for developers and data scientists working with the Cognite Data Platform.
+This is the Cognite Python SDK for developers and data scientists working with Cognite Data Fusion (CDF). 
+The package is tightly integrated with pandas, and helps you work easily and efficiently with data in Cognite Data 
+Fusion (CDF).
 
 ## Documentation
 * [SDK Documentation](https://cognite-docs.readthedocs-hosted.com/en/latest/)
@@ -31,12 +33,19 @@ $ export COGNITE_API_KEY=<your API key>
 On Windows, you can follows [these instructions](https://www.computerhope.com/issues/ch000549.htm) to set the API key as an environment variable.
 
 ## Installation
+To install this package:
 ```bash
 $ pip install cognite-sdk
 ```
 
+To install this package without the pandas and NumPy support:
+```bash
+$ pip install cognite-sdk-core
+```
+
 ## Examples
-Examples on how to use the SDK can be found [here](https://github.com/cognitedata/cognite-python-docs)
+For a collection of scripts and Jupyter Notebooks that explain how to perform various tasks in Cognite Data Fusion (CDF) 
+using Python, see the GitHub repository [here](https://github.com/cognitedata/cognite-python-docs)
 
 ## Changelog
 Wondering about upcoming or previous changes to the SDK? Take a look at the [CHANGELOG](https://github.com/cognitedata/cognite-sdk-python/blob/master/CHANGELOG.md).

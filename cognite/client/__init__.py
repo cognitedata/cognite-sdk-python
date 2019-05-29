@@ -1,4 +1,3 @@
-from cognite.client.cognite_client import CogniteClient
-from cognite.client.exceptions import APIError
+from cognite.client._cognite_client import CogniteClient
 
-__version__ = "0.13.3"
+__version__ = "1.0.0a20"
