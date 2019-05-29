@@ -345,6 +345,11 @@ class CogniteFilter:
         return attr
 
     def dump(self, camel_case: bool = False):
+        """Dump the instance into a json serializable Python data type.
+
+        Returns:
+            Dict[str, Any]: A dictionary representation of the instance.
+        """
         if camel_case:
             return {
                 to_camel_case(key): value

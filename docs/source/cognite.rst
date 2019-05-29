@@ -237,9 +237,8 @@ Data classes
 ^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.assets
     :members:
-    :undoc-members:
     :show-inheritance:
-    :inherited-members:
+
 
 Events
 ------
@@ -275,9 +274,7 @@ Data classes
 ^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.events
     :members:
-    :undoc-members:
     :show-inheritance:
-    :inherited-members:
 
 
 Files
@@ -326,9 +323,8 @@ Data classes
 ^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.files
     :members:
-    :undoc-members:
     :show-inheritance:
-    :inherited-members:
+
 
 Time series
 -----------
@@ -364,9 +360,8 @@ Data classes
 ^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.time_series
     :members:
-    :undoc-members:
     :show-inheritance:
-    :inherited-members:
+
 
 Data points
 -----------
@@ -411,9 +406,8 @@ Data classes
 ^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.datapoints
     :members:
-    :undoc-members:
     :show-inheritance:
-    :inherited-members:
+
 
 Raw
 ---
@@ -469,9 +463,8 @@ Data classes
 ^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.raw
     :members:
-    :undoc-members:
     :show-inheritance:
-    :inherited-members:
+
 
 3D
 --
@@ -576,9 +569,8 @@ Data classes
 ^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.three_d
     :members:
-    :undoc-members:
     :show-inheritance:
-    :inherited-members:
+
 
 Identity and access management
 ------------------------------
@@ -658,9 +650,35 @@ Data classes
 ^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.iam
     :members:
-    :undoc-members:
     :show-inheritance:
-    :inherited-members:
+
+
+Base data classes
+-----------------
+CogniteResource
+^^^^^^^^^^^^^^^
+.. autoclass:: cognite.client.data_classes._base.CogniteResource
+    :members:
+
+CogniteResourceList
+^^^^^^^^^^^^^^^^^^^
+.. autoclass:: cognite.client.data_classes._base.CogniteResourceList
+    :members:
+
+CogniteResponse
+^^^^^^^^^^^^^^^
+.. autoclass:: cognite.client.data_classes._base.CogniteResponse
+    :members:
+
+CogniteFilter
+^^^^^^^^^^^^^
+.. autoclass:: cognite.client.data_classes._base.CogniteFilter
+    :members:
+
+CogniteUpdate
+^^^^^^^^^^^^^
+.. autoclass:: cognite.client.data_classes._base.CogniteUpdate
+    :members:
 
 Exceptions
 ----------
