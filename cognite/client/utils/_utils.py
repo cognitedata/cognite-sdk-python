@@ -17,11 +17,11 @@ import time
 from concurrent.futures.thread import ThreadPoolExecutor
 from datetime import datetime
 from decimal import Decimal
-from typing import Any, Callable, Dict, List, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from urllib.parse import quote
 
 import cognite.client
-from cognite.client.exceptions import CogniteAPIError, CogniteImportError
+from cognite.client.exceptions import CogniteAPIError, CogniteDuplicatedError, CogniteImportError, CogniteNotFoundError
 
 _unit_in_ms_without_week = {"s": 1000, "m": 60000, "h": 3600000, "d": 86400000}
 _unit_in_ms = {**_unit_in_ms_without_week, "w": 604800000}
@@ -169,37 +169,79 @@ class TasksSummary:
         task_list_element_unwrap_fn: Callable = None,
         str_format_element_fn: Callable = None,
     ):
-        if self.exceptions:
-            unwrap_fn = task_unwrap_fn or (lambda x: x)
-            if task_list_element_unwrap_fn is not None:
-                el_unwrap = task_list_element_unwrap_fn
-                successful = []
-                for t in self.successful_tasks:
-                    successful.extend([el_unwrap(el) for el in unwrap_fn(t)])
-                unknown = []
-                for t in self.unknown_tasks:
-                    unknown.extend([el_unwrap(el) for el in unwrap_fn(t)])
-                failed = []
-                for t in self.failed_tasks:
-                    failed.extend([el_unwrap(el) for el in unwrap_fn(t)])
+        if not self.exceptions:
+            return
+        unwrap_fn = task_unwrap_fn or (lambda x: x)
+        if task_list_element_unwrap_fn is not None:
+            el_unwrap = task_list_element_unwrap_fn
+            successful = []
+            for t in self.successful_tasks:
+                successful.extend([el_unwrap(el) for el in unwrap_fn(t)])
+            unknown = []
+            for t in self.unknown_tasks:
+                unknown.extend([el_unwrap(el) for el in unwrap_fn(t)])
+            failed = []
+            for t in self.failed_tasks:
+                failed.extend([el_unwrap(el) for el in unwrap_fn(t)])
+        else:
+            successful = [unwrap_fn(t) for t in self.successful_tasks]
+            unknown = [unwrap_fn(t) for t in self.unknown_tasks]
+            failed = [unwrap_fn(t) for t in self.failed_tasks]
+
+        collect_exc_info_and_raise(
+            self.exceptions, successful=successful, failed=failed, unknown=unknown, unwrap_fn=str_format_element_fn
+        )
+
+
+def collect_exc_info_and_raise(
+    exceptions: List[Exception],
+    successful: Optional[List] = None,
+    failed: Optional[List] = None,
+    unknown: Optional[List] = None,
+    unwrap_fn: Optional[Callable] = None,
+):
+    missing = []
+    duplicated = []
+    missing_exc = None
+    dup_exc = None
+    unknown_exc = None
+    for exc in exceptions:
+        if isinstance(exc, CogniteAPIError) and exc.code == 400:
+            if exc.missing is not None:
+                missing.extend(exc.missing)
+                missing_exc = exc
+            elif exc.duplicated is not None:
+                duplicated.extend(exc.duplicated)
+                dup_exc = exc
             else:
-                successful = [unwrap_fn(t) for t in self.successful_tasks]
-                unknown = [unwrap_fn(t) for t in self.unknown_tasks]
-                failed = [unwrap_fn(t) for t in self.failed_tasks]
-            if isinstance(self.exceptions[0], CogniteAPIError):
-                exc = self.exceptions[0]
-                raise CogniteAPIError(
-                    message=exc.message,
-                    code=exc.code,
-                    x_request_id=exc.x_request_id,
-                    missing=exc.missing,
-                    duplicated=exc.duplicated,
-                    successful=successful,
-                    failed=failed,
-                    unknown=unknown,
-                    unwrap_fn=str_format_element_fn,
-                )
-            raise self.exceptions[0]
+                unknown_exc = exc
+        else:
+            unknown_exc = exc
+
+    if unknown_exc:
+        if failed or unknown:
+            raise CogniteAPIError(
+                message=unknown_exc.message,
+                code=unknown_exc.code,
+                x_request_id=unknown_exc.x_request_id,
+                missing=missing,
+                duplicated=duplicated,
+                successful=successful,
+                failed=failed,
+                unknown=unknown,
+                unwrap_fn=unwrap_fn,
+            )
+        raise unknown_exc
+
+    if missing_exc:
+        raise CogniteNotFoundError(
+            not_found=missing, successful=successful, failed=failed, unknown=unknown, unwrap_fn=unwrap_fn
+        ) from missing_exc
+
+    if dup_exc:
+        raise CogniteDuplicatedError(
+            duplicated=duplicated, successful=successful, failed=failed, unknown=unknown, unwrap_fn=unwrap_fn
+        ) from dup_exc
 
 
 def execute_tasks_concurrently(func: Callable, tasks: Union[List[Tuple], List[Dict]], max_workers: int):
