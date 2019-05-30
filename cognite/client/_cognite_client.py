@@ -15,7 +15,8 @@ from cognite.client._api.three_d import ThreeDAPI
 from cognite.client._api.time_series import TimeSeriesAPI
 from cognite.client._api_client import APIClient
 from cognite.client.exceptions import CogniteAPIKeyError
-from cognite.client.utils._utils import DebugLogFormatter, get_current_sdk_version
+from cognite.client.utils._auxiliary import get_current_sdk_version
+from cognite.client.utils._logging import DebugLogFormatter
 from cognite.client.utils._version_checker import get_newest_version_in_major_release
 
 DEFAULT_BASE_URL = "https://api.cognitedata.com"

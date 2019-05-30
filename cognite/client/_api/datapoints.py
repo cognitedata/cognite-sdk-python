@@ -4,9 +4,10 @@ from collections import defaultdict, namedtuple
 from datetime import datetime
 from typing import *
 
+import cognite.client.utils._time
+from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Datapoints, DatapointsList, DatapointsQuery
-from cognite.client.utils import _utils as utils
 
 
 class DatapointsAPI(APIClient):
@@ -128,7 +129,7 @@ class DatapointsAPI(APIClient):
                 >>> latest_abc = res[0][0]
                 >>> latest_def = res[1][0]
         """
-        before = utils.timestamp_to_ms(before) if before else None
+        before = cognite.client.utils._time.timestamp_to_ms(before) if before else None
         all_ids = self._process_ids(id, external_id, wrap_ids=True)
         is_single_id = self._is_single_identifier(id, external_id)
         if before:
@@ -175,7 +176,7 @@ class DatapointsAPI(APIClient):
 
         dps_queries = []
         for q in query:
-            utils.assert_exactly_one_of_id_or_external_id(q.id, q.external_id)
+            utils._auxiliary.assert_exactly_one_of_id_or_external_id(q.id, q.external_id)
             ts_items, _ = self._process_ts_identifiers(q.id, q.external_id)
             dps_queries.append(
                 _DPQuery(q.start, q.end, ts_items[0], q.aggregates, q.granularity, q.include_outside_points, q.limit)
@@ -235,9 +236,9 @@ class DatapointsAPI(APIClient):
                 ...    {"timestamp": 160000000000, "value": 2000}]
                 >>> res2 = c.datapoints.insert(datapoints, external_id="def")
         """
-        utils.assert_exactly_one_of_id_or_external_id(id, external_id)
+        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
         datapoints = self._validate_and_format_datapoints(datapoints)
-        utils.assert_timestamp_not_in_1970(datapoints[0]["timestamp"])
+        utils._time.assert_timestamp_not_in_1970(datapoints[0]["timestamp"])
         post_dps_object = self._process_ids(id, external_id, wrap_ids=True)[0]
         post_dps_object.update({"datapoints": datapoints})
         self._insert_datapoints_concurrently([post_dps_object])
@@ -317,9 +318,9 @@ class DatapointsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.datapoints.delete_range(start="1w-ago", end="now", id=1)
         """
-        utils.assert_exactly_one_of_id_or_external_id(id, external_id)
-        start = utils.timestamp_to_ms(start)
-        end = utils.timestamp_to_ms(end)
+        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
+        start = utils._time.timestamp_to_ms(start)
+        end = utils._time.timestamp_to_ms(end)
         assert end > start, "end must be larger than start"
 
         delete_dps_object = self._process_ids(id, external_id, wrap_ids=True)[0]
@@ -354,7 +355,7 @@ class DatapointsAPI(APIClient):
                     )
             id = range.get("id")
             external_id = range.get("externalId")
-            utils.assert_exactly_one_of_id_or_external_id(id, external_id)
+            utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
             valid_range = self._process_ids(id, external_id, wrap_ids=True)[0]
             valid_range.update({"inclusiveBegin": range["start"], "exclusiveEnd": range["end"]})
             valid_ranges.append(valid_range)
@@ -400,7 +401,7 @@ class DatapointsAPI(APIClient):
                 >>> df = c.datapoints.retrieve_dataframe(id=[1,2,3], start="2w-ago", end="now",
                 ...         aggregates=["average"], granularity="1h")
         """
-        pd = utils.local_import("pandas")
+        pd = utils._auxiliary.local_import("pandas")
         id_df = pd.DataFrame()
         external_id_df = pd.DataFrame()
         if id is not None:
@@ -511,7 +512,7 @@ class DatapointsAPI(APIClient):
                 dps_object_chunk = dps_object.copy()
                 dps_object_chunk["datapoints"] = dps_object["datapoints"][i : i + self._DPS_LIMIT]
                 tasks.append(([dps_object_chunk],))
-        utils.execute_tasks_concurrently(self._insert_datapoints, tasks, max_workers=self._max_workers)
+        utils._concurrency.execute_tasks_concurrently(self._insert_datapoints, tasks, max_workers=self._max_workers)
 
     def _insert_datapoints(self, post_dps_objects: List[Dict[str, Any]]):
         self._post(url_path=self._RESOURCE_PATH, json={"items": post_dps_objects})
@@ -523,18 +524,22 @@ class DatapointsAPI(APIClient):
             List[Tuple[Union[int, float, datetime], Union[int, float, str]]],
         ],
     ) -> List[Dict[str, int]]:
-        utils.assert_type(datapoints, "datapoints", [list])
+        utils._auxiliary.assert_type(datapoints, "datapoints", [list])
         assert len(datapoints) > 0, "No datapoints provided"
-        utils.assert_type(datapoints[0], "datapoints element", [tuple, dict])
+        utils._auxiliary.assert_type(datapoints[0], "datapoints element", [tuple, dict])
 
         valid_datapoints = []
         if isinstance(datapoints[0], tuple):
-            valid_datapoints = [{"timestamp": utils.timestamp_to_ms(t), "value": v} for t, v in datapoints]
+            valid_datapoints = [
+                {"timestamp": cognite.client.utils._time.timestamp_to_ms(t), "value": v} for t, v in datapoints
+            ]
         elif isinstance(datapoints[0], dict):
             for dp in datapoints:
                 assert "timestamp" in dp, "A datapoint is missing the 'timestamp' key"
                 assert "value" in dp, "A datapoint is missing the 'value' key"
-                valid_datapoints.append({"timestamp": utils.timestamp_to_ms(dp["timestamp"]), "value": dp["value"]})
+                valid_datapoints.append(
+                    {"timestamp": cognite.client.utils._time.timestamp_to_ms(dp["timestamp"]), "value": dp["value"]}
+                )
         return valid_datapoints
 
 
@@ -543,8 +548,8 @@ _DPWindow = namedtuple("_DPWindow", ["start", "end"])
 
 class _DPQuery:
     def __init__(self, start, end, ts_item, aggregates, granularity, include_outside_points, limit):
-        self.start = utils.timestamp_to_ms(start)
-        self.end = utils.timestamp_to_ms(end)
+        self.start = cognite.client.utils._time.timestamp_to_ms(start)
+        self.end = cognite.client.utils._time.timestamp_to_ms(end)
         self.ts_item = ts_item
         self.aggregates = aggregates
         self.granularity = granularity
@@ -580,8 +585,8 @@ class _DatapointsFetcher:
 
     def _preprocess_queries(self, queries: List[_DPQuery]):
         for query in queries:
-            new_start = utils.timestamp_to_ms(query.start)
-            new_end = utils.timestamp_to_ms(query.end)
+            new_start = cognite.client.utils._time.timestamp_to_ms(query.start)
+            new_end = cognite.client.utils._time.timestamp_to_ms(query.end)
             if query.aggregates:
                 new_start = self._align_with_granularity_unit(new_start, query.granularity)
                 new_end = self._align_with_granularity_unit(new_end, query.granularity)
@@ -602,7 +607,7 @@ class _DatapointsFetcher:
     def _sort_dps_list_by_query_order(self, dps_list: DatapointsList, queries: List[_DPQuery]):
         order = {}
         for i, q in enumerate(queries):
-            identifier = utils.unwrap_identifer(q.ts_item)
+            identifier = utils._auxiliary.unwrap_identifer(q.ts_item)
             order[identifier] = i
 
         def custom_sort_order(item):
@@ -613,7 +618,7 @@ class _DatapointsFetcher:
         return DatapointsList(sorted(dps_list, key=custom_sort_order))
 
     def _fetch_datapoints(self, dps_queries: List[_DPQuery]):
-        tasks_summary = utils.execute_tasks_concurrently(
+        tasks_summary = utils._concurrency.execute_tasks_concurrently(
             self._fetch_dps_initial_and_return_remaining_queries,
             [(q,) for q in dps_queries],
             max_workers=self.client._max_workers,
@@ -645,14 +650,14 @@ class _DatapointsFetcher:
 
         if user_limit:
             user_limit -= dps_in_first_query
-        next_start_offset = utils.granularity_to_ms(query.granularity) if query.granularity else 1
+        next_start_offset = cognite.client.utils._time.granularity_to_ms(query.granularity) if query.granularity else 1
         query.start = query.dps_result[-1].timestamp + next_start_offset
         queries = self._split_query_into_windows(query.dps_result.id, query, request_limit, user_limit)
 
         return queries
 
     def _fetch_datapoints_for_remaining_queries(self, queries: List[_DPQuery]):
-        tasks_summary = utils.execute_tasks_concurrently(
+        tasks_summary = utils._concurrency.execute_tasks_concurrently(
             self._get_datapoints_with_paging, [q.as_tuple() for q in queries], max_workers=self.client._max_workers
         )
         if tasks_summary.exceptions:
@@ -669,7 +674,7 @@ class _DatapointsFetcher:
 
     @staticmethod
     def _align_with_granularity_unit(ts: int, granularity: str):
-        gms = utils.granularity_unit_to_ms(granularity)
+        gms = cognite.client.utils._time.granularity_unit_to_ms(granularity)
         if ts % gms == 0:
             return ts
         return ts - (ts % gms) + gms
@@ -692,7 +697,9 @@ class _DatapointsFetcher:
 
     def _get_windows(self, id, start, end, granularity, request_limit, user_limit):
         count_granularity = "1d"
-        if granularity and utils.granularity_to_ms("1d") < utils.granularity_to_ms(granularity):
+        if granularity and cognite.client.utils._time.granularity_to_ms(
+            "1d"
+        ) < cognite.client.utils._time.granularity_to_ms(granularity):
             count_granularity = granularity
         res = self._get_datapoints_with_paging(
             start=start,
@@ -708,9 +715,9 @@ class _DatapointsFetcher:
         total_count = 0
         current_window_count = 0
         window_start = start
-        granularity_ms = utils.granularity_to_ms(granularity) if granularity else None
+        granularity_ms = cognite.client.utils._time.granularity_to_ms(granularity) if granularity else None
         agg_count = lambda count: int(
-            min(math.ceil(utils.granularity_to_ms(count_granularity) / granularity_ms), count)
+            min(math.ceil(cognite.client.utils._time.granularity_to_ms(count_granularity) / granularity_ms), count)
         )
         for i, (ts, count) in enumerate(counts):
             if i < len(counts) - 1:
@@ -736,7 +743,7 @@ class _DatapointsFetcher:
 
     @staticmethod
     def _align_window_end(start: int, end: int, granularity: str):
-        gms = utils.granularity_to_ms(granularity)
+        gms = cognite.client.utils._time.granularity_to_ms(granularity)
         diff = end - start
         end -= diff % gms
         return end
@@ -791,7 +798,9 @@ class _DatapointsFetcher:
                 if remaining_datapoints < per_request_limit:
                     limit_next_request = remaining_datapoints
             latest_timestamp = int(datapoints.timestamp[-1])
-            next_start = latest_timestamp + (utils.granularity_to_ms(granularity) if granularity else 1)
+            next_start = latest_timestamp + (
+                cognite.client.utils._time.granularity_to_ms(granularity) if granularity else 1
+            )
             all_datapoints._insert(datapoints)
         return all_datapoints
 

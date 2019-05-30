@@ -1,8 +1,8 @@
 from typing import *
 
+from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Database, DatabaseList, Row, RowList, Table, TableList
-from cognite.client.utils import _utils as utils
 
 
 class RawAPI(APIClient):
@@ -47,7 +47,7 @@ class RawDatabasesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.raw.databases.create("db1")
         """
-        utils.assert_type(name, "name", [str, list])
+        utils._auxiliary.assert_type(name, "name", [str, list])
         if isinstance(name, str):
             items = {"name": name}
         else:
@@ -71,13 +71,13 @@ class RawDatabasesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.raw.databases.delete(["db1", "db2"])
         """
-        utils.assert_type(name, "name", [str, list])
+        utils._auxiliary.assert_type(name, "name", [str, list])
         if isinstance(name, str):
             name = [name]
         items = [{"name": n} for n in name]
-        chunks = utils.split_into_chunks(items, self._DELETE_LIMIT)
+        chunks = utils._auxiliary.split_into_chunks(items, self._DELETE_LIMIT)
         tasks = [{"url_path": self._RESOURCE_PATH + "/delete", "json": {"items": chunk}} for chunk in chunks]
-        summary = utils.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
+        summary = utils._concurrency.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: task["json"]["items"], task_list_element_unwrap_fn=lambda el: el["name"]
         )
@@ -131,7 +131,7 @@ class RawTablesAPI(APIClient):
             chunk_size (int, optional): Number of tables to return in each chunk. Defaults to yielding one table a time.
         """
         for tb in self._list_generator(
-            resource_path=utils.interpolate_and_url_encode(self._RESOURCE_PATH, db_name),
+            resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, db_name),
             chunk_size=chunk_size,
             method="GET",
         ):
@@ -155,13 +155,13 @@ class RawTablesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.raw.tables.create("db1", "table1")
         """
-        utils.assert_type(name, "name", [str, list])
+        utils._auxiliary.assert_type(name, "name", [str, list])
         if isinstance(name, str):
             items = {"name": name}
         else:
             items = [{"name": n} for n in name]
         tb = self._create_multiple(
-            resource_path=utils.interpolate_and_url_encode(self._RESOURCE_PATH, db_name), items=items
+            resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, db_name), items=items
         )
         return self._set_db_name_on_tables(tb, db_name)
 
@@ -183,19 +183,19 @@ class RawTablesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.raw.tables.delete("db1", ["table1", "table2"])
         """
-        utils.assert_type(name, "name", [str, list])
+        utils._auxiliary.assert_type(name, "name", [str, list])
         if isinstance(name, str):
             name = [name]
         items = [{"name": n} for n in name]
-        chunks = utils.split_into_chunks(items, self._DELETE_LIMIT)
+        chunks = utils._auxiliary.split_into_chunks(items, self._DELETE_LIMIT)
         tasks = [
             {
-                "url_path": utils.interpolate_and_url_encode(self._RESOURCE_PATH, db_name) + "/delete",
+                "url_path": utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, db_name) + "/delete",
                 "json": {"items": chunk},
             }
             for chunk in chunks
         ]
-        summary = utils.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
+        summary = utils._concurrency.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: task["json"]["items"], task_list_element_unwrap_fn=lambda el: el["name"]
         )
@@ -234,7 +234,9 @@ class RawTablesAPI(APIClient):
                 ...     table_list # do something with the tables
         """
         tb = self._list(
-            resource_path=utils.interpolate_and_url_encode(self._RESOURCE_PATH, db_name), method="GET", limit=limit
+            resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, db_name),
+            method="GET",
+            limit=limit,
         )
         return self._set_db_name_on_tables(tb, db_name)
 
@@ -266,7 +268,7 @@ class RawRowsAPI(APIClient):
             chunk_size (int, optional): Number of rows to return in each chunk. Defaults to yielding one row a time.
         """
         return self._list_generator(
-            resource_path=utils.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
+            resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
             chunk_size=chunk_size,
             method="GET",
         )
@@ -298,19 +300,19 @@ class RawRowsAPI(APIClient):
 
         tasks = [
             {
-                "url_path": utils.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
+                "url_path": utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
                 "json": {"items": chunk},
                 "params": {"ensureParent": ensure_parent},
             }
             for chunk in chunks
         ]
-        summary = utils.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
+        summary = utils._concurrency.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: task["json"]["items"], task_list_element_unwrap_fn=lambda row: row["key"]
         )
 
     def _process_row_input(self, row: List[Union[List, Dict, Row]]):
-        utils.assert_type(row, "row", [list, dict, Row])
+        utils._auxiliary.assert_type(row, "row", [list, dict, Row])
         rows = []
         if isinstance(row, dict):
             for key, columns in row.items():
@@ -323,7 +325,7 @@ class RawRowsAPI(APIClient):
                     raise TypeError("list elements must be Row objects.")
         elif isinstance(row, Row):
             rows.append(row.dump(camel_case=True))
-        return utils.split_into_chunks(rows, self._CREATE_LIMIT)
+        return utils._auxiliary.split_into_chunks(rows, self._CREATE_LIMIT)
 
     def delete(self, db_name: str, table_name: str, key: Union[str, List[str]]) -> None:
         """Delete rows from a table.
@@ -345,21 +347,22 @@ class RawRowsAPI(APIClient):
                 >>> keys_to_delete = ["k1", "k2", "k3"]
                 >>> res = c.raw.rows.delete("db1", "table1", keys_to_delete)
         """
-        utils.assert_type(key, "key", [str, list])
+        utils._auxiliary.assert_type(key, "key", [str, list])
         if isinstance(key, str):
             key = [key]
         items = [{"key": k} for k in key]
-        chunks = utils.split_into_chunks(items, self._DELETE_LIMIT)
+        chunks = utils._auxiliary.split_into_chunks(items, self._DELETE_LIMIT)
         tasks = [
             (
                 {
-                    "url_path": utils.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name) + "/delete",
+                    "url_path": utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name)
+                    + "/delete",
                     "json": {"items": chunk},
                 }
             )
             for chunk in chunks
         ]
-        summary = utils.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
+        summary = utils._concurrency.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: task["json"]["items"], task_list_element_unwrap_fn=lambda el: el["key"]
         )
@@ -384,7 +387,7 @@ class RawRowsAPI(APIClient):
                 >>> row = c.raw.rows.retrieve("db1", "t1", "k1")
         """
         return self._retrieve(
-            resource_path=utils.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name), id=key
+            resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name), id=key
         )
 
     def list(
@@ -430,7 +433,7 @@ class RawRowsAPI(APIClient):
                 ...     row_list # do something with the rows
         """
         return self._list(
-            resource_path=utils.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
+            resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
             limit=limit,
             method="GET",
             filter={"minLastUpdatedTime": min_last_updated_time, "maxLastUpdatedTime": max_last_updated_time},
