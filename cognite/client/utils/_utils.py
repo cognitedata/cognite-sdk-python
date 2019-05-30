@@ -219,7 +219,7 @@ def collect_exc_info_and_raise(
             unknown_exc = exc
 
     if unknown_exc:
-        if failed or unknown:
+        if isinstance(unknown_exc, CogniteAPIError) and (failed or unknown):
             raise CogniteAPIError(
                 message=unknown_exc.message,
                 code=unknown_exc.code,
