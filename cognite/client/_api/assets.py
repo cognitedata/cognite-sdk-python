@@ -3,10 +3,10 @@ import threading
 from collections import OrderedDict
 from typing import *
 
+from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Asset, AssetFilter, AssetList, AssetUpdate
 from cognite.client.exceptions import CogniteAPIError
-from cognite.client.utils import _utils as utils
 
 
 class AssetsAPI(APIClient):
@@ -83,7 +83,7 @@ class AssetsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.assets.retrieve(external_id="1")
         """
-        utils.assert_exactly_one_of_id_or_external_id(id, external_id)
+        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
         return self._retrieve_multiple(ids=id, external_ids=external_id, wrap_ids=True)
 
     def retrieve_multiple(self, ids: Optional[List[int]] = None, external_ids: Optional[List[str]] = None) -> AssetList:
@@ -110,8 +110,8 @@ class AssetsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.assets.retrieve_multiple(external_ids=["abc", "def"])
         """
-        utils.assert_type(ids, "id", [List], allow_none=True)
-        utils.assert_type(external_ids, "external_id", [List], allow_none=True)
+        utils._auxiliary.assert_type(ids, "id", [List], allow_none=True)
+        utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=True)
         return self._retrieve_multiple(ids=ids, external_ids=external_ids, wrap_ids=True)
 
     def list(
@@ -189,7 +189,7 @@ class AssetsAPI(APIClient):
                 >>> assets = [Asset(name="asset1"), Asset(name="asset2")]
                 >>> res = c.assets.create(assets)
         """
-        utils.assert_type(asset, "asset", [Asset, list])
+        utils._auxiliary.assert_type(asset, "asset", [Asset, list])
         if isinstance(asset, Asset) or len(asset) <= self._CREATE_LIMIT:
             return self._create_multiple(asset)
         return _AssetPoster(asset, client=self).post()
@@ -279,7 +279,7 @@ class AssetsAPI(APIClient):
         Returns:
             AssetList: The requested assets sorted topologically.
         """
-        utils.assert_exactly_one_of_id_or_external_id(id, external_id)
+        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
         asset = self.retrieve(id=id, external_id=external_id)
         subtree = self._get_asset_subtree(AssetList([asset]), current_depth=0, depth=depth)
         return AssetList(sorted(subtree, key=lambda a: a.depth), cognite_client=self._cognite_client)
@@ -298,7 +298,9 @@ class AssetsAPI(APIClient):
         chunk_size = 100
         for i in range(0, len(ids), chunk_size):
             tasks.append({"parent_ids": ids[i : i + chunk_size], "limit": -1})
-        res_list = utils.execute_tasks_concurrently(self.list, tasks=tasks, max_workers=self._max_workers).results
+        res_list = utils._concurrency.execute_tasks_concurrently(
+            self.list, tasks=tasks, max_workers=self._max_workers
+        ).results
         children = AssetList([])
         for res in res_list:
             children.extend(res)
@@ -344,7 +346,7 @@ class _AssetPoster:
             asset_copy = Asset(**asset.dump())
             external_id = asset.external_id
             if external_id is None:
-                external_id = utils.random_string()
+                external_id = utils._auxiliary.random_string()
                 asset_copy.external_id = external_id
             self.remaining_external_ids[external_id] = None
             self.remaining_external_ids_set.add(external_id)
@@ -440,7 +442,7 @@ class _AssetPoster:
         return OrderedDict({external_id: None for external_id in sorted_external_ids})
 
     def _get_assets_unblocked_locally(self, asset: Asset, limit):
-        pq = utils.PriorityQueue()
+        pq = utils._auxiliary.PriorityQueue()
         pq.add(asset, self.external_id_to_descendent_count[asset.external_id])
         unblocked_descendents = set()
         while pq:

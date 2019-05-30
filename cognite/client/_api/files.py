@@ -1,12 +1,10 @@
 import os
-import queue
-import threading
 from typing import *
 from typing import Dict, List
 
+from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import FileMetadata, FileMetadataFilter, FileMetadataList, FileMetadataUpdate
-from cognite.client.utils import _utils as utils
 
 
 class FilesAPI(APIClient):
@@ -95,7 +93,7 @@ class FilesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.files.retrieve(external_id="1")
         """
-        utils.assert_exactly_one_of_id_or_external_id(id, external_id)
+        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
         return self._retrieve_multiple(ids=id, external_ids=external_id, wrap_ids=True)
 
     def retrieve_multiple(
@@ -124,8 +122,8 @@ class FilesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.files.retrieve_multiple(external_ids=["abc", "def"])
         """
-        utils.assert_type(ids, "id", [List], allow_none=True)
-        utils.assert_type(external_ids, "external_id", [List], allow_none=True)
+        utils._auxiliary.assert_type(ids, "id", [List], allow_none=True)
+        utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=True)
         return self._retrieve_multiple(ids=ids, external_ids=external_ids, wrap_ids=True)
 
     def list(
@@ -351,7 +349,9 @@ class FilesAPI(APIClient):
                     file_path = os.path.join(path, file_name)
                     if os.path.isfile(file_path):
                         tasks.append((FileMetadata(name=file_name), file_path, overwrite))
-            tasks_summary = utils.execute_tasks_concurrently(self._upload_file_from_path, tasks, self._max_workers)
+            tasks_summary = utils._concurrency.execute_tasks_concurrently(
+                self._upload_file_from_path, tasks, self._max_workers
+            )
             tasks_summary.raise_compound_exception_if_failed_tasks(task_unwrap_fn=lambda x: x[0].name)
             return FileMetadataList(tasks_summary.results)
         raise ValueError("path '{}' does not exist".format(path))
@@ -459,11 +459,11 @@ class FilesAPI(APIClient):
 
     def _download_files_to_directory(self, directory, all_ids, id_to_metadata):
         tasks = [(directory, id, id_to_metadata) for id in all_ids]
-        tasks_summary = utils.execute_tasks_concurrently(
+        tasks_summary = utils._concurrency.execute_tasks_concurrently(
             self._process_file_download, tasks, max_workers=self._max_workers
         )
         tasks_summary.raise_compound_exception_if_failed_tasks(
-            task_unwrap_fn=lambda task: id_to_metadata[utils.unwrap_identifer(task[1])],
+            task_unwrap_fn=lambda task: id_to_metadata[utils._auxiliary.unwrap_identifer(task[1])],
             str_format_element_fn=lambda metadata: metadata.id,
         )
 
@@ -471,7 +471,7 @@ class FilesAPI(APIClient):
         download_link = self._post(url_path="/files/downloadlink", json={"items": [identifier]}).json()["items"][0][
             "downloadUrl"
         ]
-        id = utils.unwrap_identifer(identifier)
+        id = utils._auxiliary.unwrap_identifer(identifier)
         file_metadata = id_to_metadata[id]
         file_path = os.path.join(directory, file_metadata.name)
         self._download_file_to_path(download_link, file_path)
@@ -498,7 +498,7 @@ class FilesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> file_content = c.files.download_bytes(id=1)
         """
-        utils.assert_exactly_one_of_id_or_external_id(id, external_id)
+        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
         all_ids = self._process_ids(ids=id, external_ids=external_id, wrap_ids=True)
         res = self._post(url_path="/files/downloadlink", json={"items": all_ids})
         dl_link = res.json()["items"][0]["downloadUrl"]

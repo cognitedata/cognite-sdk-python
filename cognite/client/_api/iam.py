@@ -1,6 +1,7 @@
 import numbers
 from typing import *
 
+from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import (
     APIKey,
@@ -12,7 +13,6 @@ from cognite.client.data_classes import (
     ServiceAccount,
     ServiceAccountList,
 )
-from cognite.client.utils import _utils as utils
 
 
 class IAMAPI(APIClient):
@@ -91,7 +91,7 @@ class APIKeysAPI(APIClient):
         Returns:
             Union[APIKey, APIKeyList]: API key or list of api keys.
         """
-        utils.assert_type(service_account_id, "service_account_id", [numbers.Integral, list])
+        utils._auxiliary.assert_type(service_account_id, "service_account_id", [numbers.Integral, list])
         if isinstance(service_account_id, numbers.Integral):
             items = {"serviceAccountId": service_account_id}
         else:
@@ -208,7 +208,7 @@ class SecurityCategoriesAPI(APIClient):
         """Create one or more security categories.
 
         Args:
-            group (Union[SecurityCategory, List[SecurityCategory]]): Security category or list of categories to create.
+            security_category (Union[SecurityCategory, List[SecurityCategory]]): Security category or list of categories to create.
 
         Returns:
             Union[SecurityCategory, SecurityCategoryList]: The created security category or categories.

@@ -1,5 +1,6 @@
 from datetime import datetime
 
+import cognite.client.utils._time
 from cognite.client.data_classes._base import *
 
 
@@ -55,14 +56,14 @@ class Datapoint(CogniteResource):
         Returns:
             pandas.DataFrame: The dataframe.
         """
-        pd = utils.local_import("pandas")
+        pd = utils._auxiliary.local_import("pandas")
 
         dumped = self.dump(camel_case=True)
         timestamp = dumped.pop("timestamp")
 
         for k, v in dumped.items():
             dumped[k] = [v]
-        df = pd.DataFrame(dumped, index=[utils.ms_to_datetime(timestamp)])
+        df = pd.DataFrame(dumped, index=[cognite.client.utils._time.ms_to_datetime(timestamp)])
 
         return df
 
@@ -123,7 +124,7 @@ class Datapoints:
 
     def __str__(self):
         item = self.dump()
-        item["datapoints"] = utils.convert_time_attributes_to_datetime(item["datapoints"])
+        item["datapoints"] = utils._time.convert_time_attributes_to_datetime(item["datapoints"])
         return json.dumps(item, indent=4)
 
     def __repr__(self):
@@ -166,7 +167,7 @@ class Datapoints:
             "datapoints": [dp.dump(camel_case=camel_case) for dp in self.__get_datapoint_objects()],
         }
         if camel_case:
-            dumped = {utils.to_camel_case(key): value for key, value in dumped.items()}
+            dumped = {utils._auxiliary.to_camel_case(key): value for key, value in dumped.items()}
         return {key: value for key, value in dumped.items() if value is not None}
 
     def to_pandas(self, column_names="externalId") -> "pandas.DataFrame":
@@ -178,7 +179,7 @@ class Datapoints:
         Returns:
             pandas.DataFrame: The dataframe.
         """
-        np, pd = utils.local_import("numpy", "pandas")
+        np, pd = utils._auxiliary.local_import("numpy", "pandas")
         data_fields = {}
         timestamps = []
         if column_names == "externalId":
@@ -193,13 +194,13 @@ class Datapoints:
             else:
                 id_with_agg = str(identifier)
                 if attr != "value":
-                    id_with_agg += "|{}".format(utils.to_camel_case(attr))
+                    id_with_agg += "|{}".format(utils._auxiliary.to_camel_case(attr))
                 data_fields[id_with_agg] = value
         return pd.DataFrame(data_fields, index=pd.DatetimeIndex(data=np.array(timestamps, dtype="datetime64[ms]")))
 
     def plot(self, *args, **kwargs) -> None:
         """Plot the datapoints."""
-        plt = utils.local_import("matplotlib.pyplot")
+        plt = utils._auxiliary.local_import("matplotlib.pyplot")
         self.to_pandas().plot(*args, **kwargs)
         plt.show()
 
@@ -212,12 +213,12 @@ class Datapoints:
         expected_fields.append("timestamp")
         if len(dps_object["datapoints"]) == 0:
             for key in expected_fields:
-                snake_key = utils.to_snake_case(key)
+                snake_key = utils._auxiliary.to_snake_case(key)
                 setattr(instance, snake_key, [])
         else:
             for dp in dps_object["datapoints"]:
                 for key in expected_fields:
-                    snake_key = utils.to_snake_case(key)
+                    snake_key = utils._auxiliary.to_snake_case(key)
                     current_attr = getattr(instance, snake_key) or []
                     value = dp.get(key)
                     current_attr.append(value)
@@ -283,7 +284,7 @@ class DatapointsList(CogniteResourceList):
     def __str__(self):
         item = self.dump()
         for i in item:
-            i["datapoints"] = utils.convert_time_attributes_to_datetime(i["datapoints"])
+            i["datapoints"] = utils._time.convert_time_attributes_to_datetime(i["datapoints"])
         return json.dumps(item, default=lambda x: x.__dict__, indent=4)
 
     def to_pandas(self, column_names="externalId") -> "pandas.DataFrame":
@@ -294,7 +295,7 @@ class DatapointsList(CogniteResourceList):
         Returns:
             pandas.DataFrame: The datapoints list as a pandas DataFrame.
         """
-        pd = utils.local_import("pandas")
+        pd = utils._auxiliary.local_import("pandas")
         dfs = [df.to_pandas(column_names=column_names) for df in self.data]
         if dfs:
             return pd.concat(dfs, axis="columns")
@@ -302,7 +303,7 @@ class DatapointsList(CogniteResourceList):
 
     def plot(self, *args, **kwargs) -> None:
         """Plot the list of datapoints."""
-        plt = utils.local_import("matplotlib.pyplot")
+        plt = utils._auxiliary.local_import("matplotlib.pyplot")
         self.to_pandas().plot(*args, **kwargs)
         plt.show()
 

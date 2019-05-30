@@ -2,10 +2,8 @@ import time
 
 import pytest
 
-from cognite.client import CogniteClient
+from cognite.client import CogniteClient, utils
 from cognite.client.data_classes import Asset, AssetFilter, AssetUpdate
-from cognite.client.exceptions import CogniteAPIError
-from cognite.client.utils import _utils
 from tests.utils import set_request_limit
 
 COGNITE_CLIENT = CogniteClient()
@@ -38,7 +36,7 @@ def generate_asset_tree(root_external_id: str, depth: int, children_per_node: in
 
 @pytest.fixture
 def new_asset_hierarchy(mocker):
-    random_prefix = "test_{}_".format(_utils.random_string(10))
+    random_prefix = "test_{}_".format(utils._auxiliary.random_string(10))
     assets = generate_asset_tree(random_prefix + "0", depth=5, children_per_node=5)
     mocker.spy(COGNITE_CLIENT.assets, "_post")
 

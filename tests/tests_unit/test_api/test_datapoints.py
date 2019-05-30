@@ -8,11 +8,10 @@ from unittest.mock import PropertyMock
 
 import pytest
 
-from cognite.client import CogniteClient
+from cognite.client import CogniteClient, utils
 from cognite.client._api.datapoints import _DatapointsFetcher, _DPQuery, _DPWindow
 from cognite.client.data_classes import Datapoint, Datapoints, DatapointsList, DatapointsQuery
 from cognite.client.exceptions import CogniteAPIError
-from cognite.client.utils import _utils as utils
 from tests.utils import jsgz_load, set_request_limit
 
 COGNITE_CLIENT = CogniteClient()
@@ -21,7 +20,7 @@ DPS_CLIENT = COGNITE_CLIENT.datapoints
 
 def generate_datapoints(start: int, end: int, aggregates=None, granularity=None):
     dps = []
-    granularity = utils.granularity_to_ms(granularity) if granularity else 1000
+    granularity = utils._time.granularity_to_ms(granularity) if granularity else 1000
     for i in range(start, end, granularity):
         dp = {}
         if aggregates:
@@ -619,7 +618,7 @@ class TestPandasIntegration:
         import pandas as pd
 
         d = Datapoint(timestamp=0, value=2, max=3)
-        expected_df = pd.DataFrame({"value": [2], "max": [3]}, index=[utils.ms_to_datetime(0)])
+        expected_df = pd.DataFrame({"value": [2], "max": [3]}, index=[utils._time.ms_to_datetime(0)])
         pd.testing.assert_frame_equal(expected_df, d.to_pandas(), check_like=True)
 
     def test_datapoints(self):
@@ -628,7 +627,7 @@ class TestPandasIntegration:
         d = Datapoints(id=1, timestamp=[1, 2, 3], average=[2, 3, 4], step_interpolation=[3, 4, 5])
         expected_df = pd.DataFrame(
             {"1|average": [2, 3, 4], "1|stepInterpolation": [3, 4, 5]},
-            index=[utils.ms_to_datetime(ms) for ms in [1, 2, 3]],
+            index=[utils._time.ms_to_datetime(ms) for ms in [1, 2, 3]],
         )
         pd.testing.assert_frame_equal(expected_df, d.to_pandas())
 
@@ -638,7 +637,7 @@ class TestPandasIntegration:
         d = Datapoints(id=0, external_id="abc", timestamp=[1, 2, 3], average=[2, 3, 4], step_interpolation=[3, 4, 5])
         expected_df = pd.DataFrame(
             {"abc|average": [2, 3, 4], "abc|stepInterpolation": [3, 4, 5]},
-            index=[utils.ms_to_datetime(ms) for ms in [1, 2, 3]],
+            index=[utils._time.ms_to_datetime(ms) for ms in [1, 2, 3]],
         )
         pd.testing.assert_frame_equal(expected_df, d.to_pandas())
 
@@ -661,7 +660,7 @@ class TestPandasIntegration:
                 "2|stepInterpolation": [3, 4, 5],
                 "3": [1, None, 3],
             },
-            index=[utils.ms_to_datetime(ms) for ms in [1, 2, 3]],
+            index=[utils._time.ms_to_datetime(ms) for ms in [1, 2, 3]],
         )
         pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas())
 
@@ -675,7 +674,7 @@ class TestPandasIntegration:
 
         expected_df = pd.DataFrame(
             {"1": [1, 2, 3, None, None], "2": [None, None, 3, 4, 5]},
-            index=[utils.ms_to_datetime(ms) for ms in [1, 2, 3, 4, 5]],
+            index=[utils._time.ms_to_datetime(ms) for ms in [1, 2, 3, 4, 5]],
         )
         pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas())
 
@@ -710,7 +709,7 @@ class TestPandasIntegration:
 
         expected_df = pd.DataFrame(
             {"1|average": [0, 1, 2, 3, 4], "def|interpolation": [None, 1, None, 3, None]},
-            index=[utils.ms_to_datetime(i) for i in range(5)],
+            index=[utils._time.ms_to_datetime(i) for i in range(5)],
         )
         pd.testing.assert_frame_equal(df, expected_df)
 
@@ -737,7 +736,8 @@ class TestPandasIntegration:
 
         timestamps = [1500000000000, 1510000000000, 1520000000000, 1530000000000]
         df = pd.DataFrame(
-            {"123": [1, 2, 3, 4], "456": [5.0, 6.0, 7.0, 8.0]}, index=[utils.ms_to_datetime(ms) for ms in timestamps]
+            {"123": [1, 2, 3, 4], "456": [5.0, 6.0, 7.0, 8.0]},
+            index=[utils._time.ms_to_datetime(ms) for ms in timestamps],
         )
         res = DPS_CLIENT.insert_dataframe(df)
         assert res is None
@@ -761,7 +761,8 @@ class TestPandasIntegration:
 
         timestamps = [1500000000000, 1510000000000, 1520000000000, 1530000000000]
         df = pd.DataFrame(
-            {"123": [1, 2, None, 4], "456": [5.0, 6.0, 7.0, 8.0]}, index=[utils.ms_to_datetime(ms) for ms in timestamps]
+            {"123": [1, 2, None, 4], "456": [5.0, 6.0, 7.0, 8.0]},
+            index=[utils._time.ms_to_datetime(ms) for ms in timestamps],
         )
         with pytest.raises(AssertionError, match="contains NaNs"):
             DPS_CLIENT.insert_dataframe(df)
@@ -787,9 +788,9 @@ def mock_get_dps_count(rsps):
         end = payload["end"]
 
         assert payload["aggregates"] == ["count"]
-        assert utils.granularity_to_ms(payload["granularity"]) >= utils.granularity_to_ms("1d")
+        assert utils._time.granularity_to_ms(payload["granularity"]) >= utils._time.granularity_to_ms("1d")
 
-        dps = [{"timestamp": i, "count": 1000} for i in range(start, end, utils.granularity_to_ms(granularity))]
+        dps = [{"timestamp": i, "count": 1000} for i in range(start, end, utils._time.granularity_to_ms(granularity))]
         response = {"items": [{"id": 0, "externalId": "bla", "datapoints": dps}]}
         return 200, {}, json.dumps(response)
 
@@ -802,7 +803,7 @@ def mock_get_dps_count(rsps):
     yield rsps
 
 
-gms = lambda s: utils.granularity_to_ms(s)
+gms = lambda s: utils._time.granularity_to_ms(s)
 
 
 class TestDataFetcher:

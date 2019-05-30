@@ -29,7 +29,7 @@ class Row(CogniteResource):
         Returns:
             pandas.DataFrame: The pandas DataFrame representing this instance.
         """
-        pd = utils.local_import("pandas")
+        pd = utils._auxiliary.local_import("pandas")
         return pd.DataFrame([self.columns], [self.key])
 
 
@@ -43,7 +43,7 @@ class RowList(CogniteResourceList):
         Returns:
             pandas.DataFrame: The pandas DataFrame representing this instance.
         """
-        pd = utils.local_import("pandas")
+        pd = utils._auxiliary.local_import("pandas")
         index = [row.key for row in self.data]
         data = defaultdict(lambda: [])
         for row in self.data:

@@ -2,17 +2,15 @@ import time
 
 import pytest
 
-from cognite.client import CogniteClient
-from cognite.client.exceptions import CogniteAPIError
-from cognite.client.utils import _utils
+from cognite.client import CogniteClient, utils
 
 COGNITE_CLIENT = CogniteClient()
 
 
 @pytest.fixture(scope="session")
 def new_database_with_table():
-    db_name = "db_" + _utils.random_string(10)
-    table_name = "table_" + _utils.random_string(10)
+    db_name = "db_" + utils._auxiliary.random_string(10)
+    table_name = "table_" + utils._auxiliary.random_string(10)
     db = COGNITE_CLIENT.raw.databases.create(db_name)
     table = COGNITE_CLIENT.raw.tables.create(db_name, table_name)
     yield db, table
@@ -35,7 +33,7 @@ class TestRawTablesAPI:
 
     def test_create_and_delete_table(self, new_database_with_table):
         db, _ = new_database_with_table
-        table_name = "table_" + _utils.random_string(10)
+        table_name = "table_" + utils._auxiliary.random_string(10)
         table = COGNITE_CLIENT.raw.tables.create(db.name, table_name)
         assert table in COGNITE_CLIENT.raw.tables.list(db.name)
         COGNITE_CLIENT.raw.tables.delete(db.name, table.name)
