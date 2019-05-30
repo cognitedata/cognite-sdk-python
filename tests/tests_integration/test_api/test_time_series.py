@@ -51,18 +51,3 @@ class TestTimeSeriesAPI:
         update_ts = TimeSeriesUpdate(new_ts.id).name.set("newname")
         res = COGNITE_CLIENT.time_series.update(update_ts)
         assert "newname" == res.name
-
-    def test_list_created_ts(self, new_ts):
-        tries = 8
-        sleep_between_tries = 3
-        found = False
-        for i in range(tries):
-            for ts in COGNITE_CLIENT.time_series:
-                if ts.id == new_ts.id:
-                    found = True
-                    break
-            if found:
-                break
-            elif i < tries - 1:
-                time.sleep(sleep_between_tries)
-        assert found is True

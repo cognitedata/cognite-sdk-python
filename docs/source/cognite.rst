@@ -690,6 +690,10 @@ CogniteNotFoundError
 ^^^^^^^^^^^^^^^^^^^^
 .. autoexception:: cognite.client.exceptions.CogniteNotFoundError
 
+CogniteDuplicatedError
+^^^^^^^^^^^^^^^^^^^^^^
+.. autoexception:: cognite.client.exceptions.CogniteDuplicatedError
+
 CogniteAPIKeyError
 ^^^^^^^^^^^^^^^^^^
 .. autoexception:: cognite.client.exceptions.CogniteAPIKeyError

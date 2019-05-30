@@ -12,7 +12,7 @@ from requests.structures import CaseInsensitiveDict
 from urllib3 import Retry
 
 from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteUpdate
-from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
+from cognite.client.exceptions import CogniteAPIError, CogniteDuplicatedError, CogniteNotFoundError
 from cognite.client.utils import _utils as utils
 
 log = logging.getLogger("cognite-sdk")
@@ -230,12 +230,12 @@ class APIClient:
         tasks_summary = utils.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
 
         if tasks_summary.exceptions:
-            e = tasks_summary.exceptions[0]
-            if isinstance(e, CogniteAPIError) and e.code == 400 and e.missing is not None:
+            try:
+                utils.collect_exc_info_and_raise(tasks_summary.exceptions)
+            except CogniteNotFoundError:
                 if self._is_single_identifier(ids, external_ids):
                     return None
-                raise CogniteNotFoundError(e.missing) from e
-            raise tasks_summary.exceptions[0]
+                raise
 
         retrieved_items = tasks_summary.joined_results(lambda res: res.json()["items"])
 

@@ -253,9 +253,16 @@ class TestStandardRetrieveMultiple:
             status=400,
             json={"error": {"message": "Not Found", "missing": [{"id": 1}]}},
         )
-        with pytest.raises(CogniteNotFoundError) as e:
-            API_CLIENT._retrieve_multiple(cls=SomeResourceList, resource_path=URL_PATH, wrap_ids=True, ids=[1, 2])
-        assert e.value.not_found == [{"id": 1}]
+        rsps.add(
+            rsps.POST,
+            BASE_URL + URL_PATH + "/byids",
+            status=400,
+            json={"error": {"message": "Not Found", "missing": [{"id": 2}]}},
+        )
+        with set_request_limit(API_CLIENT, 1):
+            with pytest.raises(CogniteNotFoundError) as e:
+                API_CLIENT._retrieve_multiple(cls=SomeResourceList, resource_path=URL_PATH, wrap_ids=True, ids=[1, 2])
+        assert [{"id": 1}, {"id": 2}] == e.value.not_found
 
     def test_cognite_client_is_set(self, mock_by_ids):
         assert (
@@ -439,12 +446,12 @@ class TestStandardCreate:
                     cls=SomeResourceList,
                     resource_path=URL_PATH,
                     items=[
-                        SomeResource(1, 1, external_id="200"),
                         SomeResource(1, external_id="400"),
                         SomeResource(external_id="500"),
+                        SomeResource(1, 1, external_id="200"),
                     ],
                 )
-        assert 400 == e.value.code
+        assert 500 == e.value.code
         assert [SomeResource(1, external_id="400")] == e.value.failed
         assert [SomeResource(1, 1, external_id="200")] == e.value.successful
         assert [SomeResource(external_id="500")] == e.value.unknown
@@ -509,6 +516,26 @@ class TestStandardDelete:
         assert "Server Error" == e.value.message
         assert e.value.unknown == [1, 2]
         assert e.value.failed == []
+
+    def test_standard_delete_multiple_fail_missing_ids(self, rsps):
+        rsps.add(
+            rsps.POST,
+            BASE_URL + URL_PATH + "/delete",
+            status=400,
+            json={"error": {"message": "Missing ids", "missing": [{"id": 1}]}},
+        )
+        rsps.add(
+            rsps.POST,
+            BASE_URL + URL_PATH + "/delete",
+            status=400,
+            json={"error": {"message": "Missing ids", "missing": [{"id": 3}]}},
+        )
+        with set_request_limit(API_CLIENT, 2):
+            with pytest.raises(CogniteNotFoundError) as e:
+                API_CLIENT._delete_multiple(resource_path=URL_PATH, wrap_ids=False, ids=[1, 2, 3])
+
+        assert [{"id": 1}, {"id": 3}] == e.value.not_found
+        assert [1, 2, 3] == e.value.failed
 
     def test_over_limit_concurrent(self, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH + "/delete", status=200, json={})
@@ -611,6 +638,25 @@ class TestStandardUpdate:
         assert e.value.code == 500
         assert e.value.failed == []
         assert e.value.unknown == [0, "abc"]
+
+    def test_standard_update_fail_missing_and_5xx(self, rsps):
+        rsps.add(
+            rsps.POST,
+            BASE_URL + URL_PATH + "/update",
+            status=400,
+            json={"error": {"message": "Missing ids", "missing": [{"id": 0}]}},
+        )
+        rsps.add(rsps.POST, BASE_URL + URL_PATH + "/update", status=500, json={"error": {"message": "Server Error"}})
+        with set_request_limit(API_CLIENT, 1):
+            with pytest.raises(CogniteAPIError) as e:
+                API_CLIENT._update_multiple(
+                    cls=SomeResourceList,
+                    resource_path=URL_PATH,
+                    items=[SomeResource(id=0), SomeResource(external_id="abc")],
+                )
+        assert ["abc"] == e.value.unknown
+        assert [0] == e.value.failed
+        assert [{"id": 0}] == e.value.missing
 
     def test_cognite_client_is_set(self, mock_update):
         assert (
