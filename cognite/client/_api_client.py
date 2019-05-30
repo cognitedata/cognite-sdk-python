@@ -392,7 +392,7 @@ class APIClient:
         ]
         summary = utils.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
         summary.raise_compound_exception_if_failed_tasks(
-            task_unwrap_fn=lambda task: task["json"]["items"], task_list_element_unwrap_fn=lambda el: el
+            task_unwrap_fn=lambda task: task["json"]["items"], task_list_element_unwrap_fn=utils.unwrap_identifer
         )
 
     def _update_multiple(
