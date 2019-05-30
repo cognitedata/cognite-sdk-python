@@ -305,7 +305,9 @@ def assert_at_least_one_of_id_or_external_id(id, external_id):
         return {"external_id": external_id}
 
 
-def unwrap_identifer(identifier: Dict):
+def unwrap_identifer(identifier: Union[str, int, Dict]):
+    if type(identifier) in [str, int]:
+        return identifier
     if "externalId" in identifier:
         return identifier["externalId"]
     if "id" in identifier:

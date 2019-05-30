@@ -106,6 +106,7 @@ podTemplate(
             println("This version: " + currentVersion)
             def versionExists = sh(returnStdout: true, script: 'pipenv run python3 cognite/client/utils/_version_checker.py -p cognite-sdk -v ' + currentVersion)
             println("Version Exists: " + versionExists)
+            println("Branch name: " + env.BRANCH_NAME)
             if (env.BRANCH_NAME == 'master' && versionExists == 'no') {
                 stage('Release') {
                     sh("pipenv run twine upload --config-file /pypi/.pypirc dist/*")
