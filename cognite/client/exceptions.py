@@ -2,7 +2,24 @@ import json
 from typing import *
 
 
-class CogniteAPIError(Exception):
+class CogniteMultiException(Exception):
+    def __init__(self, successful: List = None, failed: List = None, unknown: List = None, unwrap_fn: Callable = None):
+        self.successful = successful or []
+        self.failed = failed or []
+        self.unknown = unknown or []
+        self._unwrap_fn = unwrap_fn or (lambda x: x)
+
+    def _get_multi_exception_summary(self):
+        if len(self.successful) > 0 or len(self.unknown) > 0 or len(self.failed) > 0:
+            return "\nThe API Failed to process some items.\nSuccessful (2xx): {}\nUnknown (5xx): {}\nFailed (4xx): {}".format(
+                [self._unwrap_fn(f) for f in self.successful],
+                [self._unwrap_fn(f) for f in self.unknown],
+                [self._unwrap_fn(f) for f in self.failed],
+            )
+        return ""
+
+
+class CogniteAPIError(CogniteMultiException):
     """Cognite API Error
 
     Raised if a given request fails. If one or more of concurrent requests fails, this exception will also contain
@@ -55,10 +72,7 @@ class CogniteAPIError(Exception):
         self.x_request_id = x_request_id
         self.missing = missing
         self.duplicated = duplicated
-        self.successful = successful or []
-        self.failed = failed or []
-        self.unknown = unknown or []
-        self._unwrap_fn = unwrap_fn or (lambda x: x)
+        super().__init__(successful, failed, unknown, unwrap_fn)
 
     def __str__(self):
         msg = "{} | code: {} | X-Request-ID: {}".format(self.message, self.code, self.x_request_id)
@@ -66,29 +80,66 @@ class CogniteAPIError(Exception):
             msg += "\nMissing: {}".format(self.missing)
         if self.duplicated:
             msg += "\nDuplicated: {}".format(self.duplicated)
-        if len(self.successful) > 0 or len(self.unknown) > 0 or len(self.failed) > 0:
-            msg += "\nThe API Failed to process some items.\nSuccessful (2xx): {}\nUnknown (5xx): {}\nFailed (4xx): {}".format(
-                [self._unwrap_fn(f) for f in self.successful],
-                [self._unwrap_fn(f) for f in self.unknown],
-                [self._unwrap_fn(f) for f in self.failed],
-            )
+        msg += self._get_multi_exception_summary()
         return msg
 
 
-class CogniteNotFoundError(Exception):
+class CogniteNotFoundError(CogniteMultiException):
     """Cognite Not Found Error
 
-    Raised if one or more of the requested ids/external ids are not found.
+    Raised if one or more of the referenced ids/external ids are not found.
 
     Args:
         not_found (List): The ids not found.
+        successful (List): List of items which were successfully proccessed.
+        failed (List): List of items which failed.
+        unknown (List): List of items which may or may not have been successfully processed.
     """
 
-    def __init__(self, not_found: List):
+    def __init__(
+        self,
+        not_found: List,
+        successful: List = None,
+        failed: List = None,
+        unknown: List = None,
+        unwrap_fn: Callable = None,
+    ):
         self.not_found = not_found
+        super().__init__(successful, failed, unknown, unwrap_fn)
 
     def __str__(self):
-        return str(self.not_found)
+        msg = "Not found: {}".format(self.not_found)
+        msg += self._get_multi_exception_summary()
+        return msg
+
+
+class CogniteDuplicatedError(CogniteMultiException):
+    """Cognite Duplicated Error
+
+    Raised if one or more of the referenced ids/external ids have been duplicated in the request.
+
+    Args:
+        duplicated (list): The duplicated ids.
+        successful (List): List of items which were successfully proccessed.
+        failed (List): List of items which failed.
+        unknown (List): List of items which may or may not have been successfully processed.
+    """
+
+    def __init__(
+        self,
+        duplicated: List,
+        successful: List = None,
+        failed: List = None,
+        unknown: List = None,
+        unwrap_fn: Callable = None,
+    ):
+        self.duplicated = duplicated
+        super().__init__(successful, failed, unknown, unwrap_fn)
+
+    def __str__(self):
+        msg = "Duplicated: {}".format(self.duplicated)
+        msg += self._get_multi_exception_summary()
+        return msg
 
 
 class CogniteImportError(Exception):
