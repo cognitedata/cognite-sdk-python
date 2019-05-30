@@ -1,0 +1,137 @@
+from concurrent.futures.thread import ThreadPoolExecutor
+from typing import Callable, Dict, List, Optional, Tuple, Union
+
+from cognite.client.exceptions import CogniteAPIError, CogniteDuplicatedError, CogniteNotFoundError
+
+
+class TasksSummary:
+    def __init__(self, successful_tasks, unknown_tasks, failed_tasks, results, exceptions):
+        self.successful_tasks = successful_tasks
+        self.unknown_tasks = unknown_tasks
+        self.failed_tasks = failed_tasks
+        self.results = results
+        self.exceptions = exceptions
+
+    def joined_results(self, unwrap_fn: Callable = None):
+        unwrap_fn = unwrap_fn or (lambda x: x)
+        joined_results = []
+        for result in self.results:
+            unwrapped = unwrap_fn(result)
+            if isinstance(unwrapped, list):
+                joined_results.extend(unwrapped)
+            else:
+                joined_results.append(unwrapped)
+        return joined_results
+
+    def raise_compound_exception_if_failed_tasks(
+        self,
+        task_unwrap_fn: Callable = None,
+        task_list_element_unwrap_fn: Callable = None,
+        str_format_element_fn: Callable = None,
+    ):
+        if not self.exceptions:
+            return
+        unwrap_fn = task_unwrap_fn or (lambda x: x)
+        if task_list_element_unwrap_fn is not None:
+            el_unwrap = task_list_element_unwrap_fn
+            successful = []
+            for t in self.successful_tasks:
+                successful.extend([el_unwrap(el) for el in unwrap_fn(t)])
+            unknown = []
+            for t in self.unknown_tasks:
+                unknown.extend([el_unwrap(el) for el in unwrap_fn(t)])
+            failed = []
+            for t in self.failed_tasks:
+                failed.extend([el_unwrap(el) for el in unwrap_fn(t)])
+        else:
+            successful = [unwrap_fn(t) for t in self.successful_tasks]
+            unknown = [unwrap_fn(t) for t in self.unknown_tasks]
+            failed = [unwrap_fn(t) for t in self.failed_tasks]
+
+        collect_exc_info_and_raise(
+            self.exceptions, successful=successful, failed=failed, unknown=unknown, unwrap_fn=str_format_element_fn
+        )
+
+
+def collect_exc_info_and_raise(
+    exceptions: List[Exception],
+    successful: Optional[List] = None,
+    failed: Optional[List] = None,
+    unknown: Optional[List] = None,
+    unwrap_fn: Optional[Callable] = None,
+):
+    missing = []
+    duplicated = []
+    missing_exc = None
+    dup_exc = None
+    unknown_exc = None
+    for exc in exceptions:
+        if isinstance(exc, CogniteAPIError) and exc.code == 400:
+            if exc.missing is not None:
+                missing.extend(exc.missing)
+                missing_exc = exc
+            elif exc.duplicated is not None:
+                duplicated.extend(exc.duplicated)
+                dup_exc = exc
+            else:
+                unknown_exc = exc
+        else:
+            unknown_exc = exc
+
+    if unknown_exc:
+        if isinstance(unknown_exc, CogniteAPIError) and (failed or unknown):
+            raise CogniteAPIError(
+                message=unknown_exc.message,
+                code=unknown_exc.code,
+                x_request_id=unknown_exc.x_request_id,
+                missing=missing,
+                duplicated=duplicated,
+                successful=successful,
+                failed=failed,
+                unknown=unknown,
+                unwrap_fn=unwrap_fn,
+            )
+        raise unknown_exc
+
+    if missing_exc:
+        raise CogniteNotFoundError(
+            not_found=missing, successful=successful, failed=failed, unknown=unknown, unwrap_fn=unwrap_fn
+        ) from missing_exc
+
+    if dup_exc:
+        raise CogniteDuplicatedError(
+            duplicated=duplicated, successful=successful, failed=failed, unknown=unknown, unwrap_fn=unwrap_fn
+        ) from dup_exc
+
+
+def execute_tasks_concurrently(func: Callable, tasks: Union[List[Tuple], List[Dict]], max_workers: int):
+    assert max_workers > 0, "Number of workers should be >= 1, was {}".format(max_workers)
+    with ThreadPoolExecutor(max_workers) as p:
+        futures = []
+        for task in tasks:
+            if isinstance(task, dict):
+                futures.append(p.submit(func, **task))
+            elif isinstance(task, tuple):
+                futures.append(p.submit(func, *task))
+
+        successful_tasks = []
+        failed_tasks = []
+        unknown_result_tasks = []
+        results = []
+        exceptions = []
+        for i, f in enumerate(futures):
+            try:
+                res = f.result()
+                successful_tasks.append(tasks[i])
+                results.append(res)
+            except Exception as e:
+                exceptions.append(e)
+                if isinstance(e, CogniteAPIError):
+                    if e.code < 500:
+                        failed_tasks.append(tasks[i])
+                    else:
+                        unknown_result_tasks.append(tasks[i])
+                else:
+                    failed_tasks.append(tasks[i])
+
+        return TasksSummary(successful_tasks, unknown_result_tasks, failed_tasks, results, exceptions)

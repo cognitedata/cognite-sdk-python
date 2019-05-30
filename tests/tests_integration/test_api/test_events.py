@@ -1,5 +1,6 @@
 import pytest
 
+import cognite.client.utils._time
 from cognite.client import CogniteClient, utils
 from cognite.client.data_classes import Event, EventFilter, EventUpdate
 from cognite.client.exceptions import CogniteAPIError
@@ -35,7 +36,9 @@ class TestEventsAPI:
         assert 2 == COGNITE_CLIENT.events._post.call_count
 
     def test_search(self):
-        res = COGNITE_CLIENT.events.search(filter=EventFilter(start_time={"min": utils.timestamp_to_ms("2d-ago")}))
+        res = COGNITE_CLIENT.events.search(
+            filter=EventFilter(start_time={"min": cognite.client.utils._time.timestamp_to_ms("2d-ago")})
+        )
         assert len(res) > 0
 
     def test_update(self, new_event):

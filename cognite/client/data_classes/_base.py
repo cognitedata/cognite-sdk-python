@@ -3,16 +3,15 @@ import json
 from collections import UserList
 from typing import *
 
+from cognite.client import utils
 from cognite.client.exceptions import CogniteMissingClientError
-from cognite.client.utils import _utils as utils
-from cognite.client.utils._utils import to_camel_case, to_snake_case
 
 EXCLUDE_VALUE = [None]
 
 
 class CogniteResponse:
     def __str__(self):
-        item = utils.convert_time_attributes_to_datetime(self.dump())
+        item = utils._time.convert_time_attributes_to_datetime(self.dump())
         return json.dumps(item, indent=4)
 
     def __repr__(self):
@@ -41,7 +40,7 @@ class CogniteResponse:
             key: value for key, value in self.__dict__.items() if value not in EXCLUDE_VALUE and not key.startswith("_")
         }
         if camel_case:
-            dumped = {to_camel_case(key): value for key, value in dumped.items()}
+            dumped = {utils._auxiliary.to_camel_case(key): value for key, value in dumped.items()}
         return dumped
 
     @classmethod
@@ -64,7 +63,7 @@ class CogniteResource:
         return type(self) == type(other) and self.dump() == other.dump()
 
     def __str__(self):
-        item = utils.convert_time_attributes_to_datetime(self.dump())
+        item = utils._time.convert_time_attributes_to_datetime(self.dump())
         return json.dumps(item, default=lambda x: x.__dict__, indent=4)
 
     def __repr__(self):
@@ -88,7 +87,7 @@ class CogniteResource:
         """
         if camel_case:
             return {
-                to_camel_case(key): value
+                utils._auxiliary.to_camel_case(key): value
                 for key, value in self.__dict__.items()
                 if value not in EXCLUDE_VALUE and not key.startswith("_")
             }
@@ -103,7 +102,7 @@ class CogniteResource:
         elif isinstance(resource, Dict):
             instance = cls(cognite_client=cognite_client)
             for key, value in resource.items():
-                snake_case_key = to_snake_case(key)
+                snake_case_key = utils._auxiliary.to_snake_case(key)
                 if not hasattr(instance, snake_case_key):
                     raise AttributeError("Attribute '{}' does not exist on '{}'".format(snake_case_key, cls.__name__))
                 setattr(instance, snake_case_key, value)
@@ -118,7 +117,7 @@ class CogniteResource:
         """
         expand = ["metadata"] if expand is None else expand
         ignore = [] if ignore is None else ignore
-        pd = utils.local_import("pandas")
+        pd = utils._auxiliary.local_import("pandas")
         dumped = self.dump(camel_case=True)
 
         for element in ignore:
@@ -177,7 +176,7 @@ class CogniteResourceList(UserList):
         return value
 
     def __str__(self):
-        item = utils.convert_time_attributes_to_datetime(self.dump())
+        item = utils._time.convert_time_attributes_to_datetime(self.dump())
         return json.dumps(item, default=lambda x: x.__dict__, indent=4)
 
     def __repr__(self):
@@ -204,7 +203,7 @@ class CogniteResourceList(UserList):
         Returns:
             Optional[CogniteResource]: The requested item
         """
-        utils.assert_exactly_one_of_id_or_external_id(id, external_id)
+        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
         if id:
             return self._id_to_item.get(id)
         return self._external_id_to_item.get(external_id)
@@ -215,7 +214,7 @@ class CogniteResourceList(UserList):
         Returns:
             pandas.DataFrame: The dataframe.
         """
-        pd = utils.local_import("pandas")
+        pd = utils._auxiliary.local_import("pandas")
         df = pd.DataFrame(self.dump(camel_case=True))
         nullable_int_fields = ["endTime", "assetId"]
         for field in nullable_int_fields:
@@ -331,7 +330,7 @@ class CogniteFilter:
         return type(self) == type(other) and self.dump() == other.dump()
 
     def __str__(self):
-        item = utils.convert_time_attributes_to_datetime(self.dump())
+        item = utils._time.convert_time_attributes_to_datetime(self.dump())
         return json.dumps(item, default=lambda x: x.__dict__, indent=4)
 
     def __repr__(self):
@@ -352,7 +351,7 @@ class CogniteFilter:
         """
         if camel_case:
             return {
-                to_camel_case(key): value
+                utils._auxiliary.to_camel_case(key): value
                 for key, value in self.__dict__.items()
                 if value not in EXCLUDE_VALUE and not key.startswith("_")
             }

@@ -58,8 +58,8 @@ class TimeSeries(CogniteResource):
     def plot(
         self, start="1d-ago", end="now", aggregates=None, granularity=None, id_labels: bool = False, *args, **kwargs
     ):
-        plt = utils.local_import("matplotlib.pyplot")
-        identifier = utils.assert_at_least_one_of_id_or_external_id(self.id, self.external_id)
+        plt = utils._auxiliary.local_import("matplotlib.pyplot")
+        identifier = utils._auxiliary.assert_at_least_one_of_id_or_external_id(self.id, self.external_id)
         dps = self._cognite_client.datapoints.retrieve(
             start=start, end=end, aggregates=aggregates, granularity=granularity, **identifier
         )
@@ -186,7 +186,7 @@ class TimeSeriesList(CogniteResourceList):
     def plot(
         self, start="1d-ago", end="now", aggregates=None, granularity=None, id_labels: bool = False, *args, **kwargs
     ):
-        plt = utils.local_import("matplotlib.pyplot")
+        plt = utils._auxiliary.local_import("matplotlib.pyplot")
         dps = self._cognite_client.datapoints.retrieve(
             id=[ts.id for ts in self.data], start=start, end=end, aggregates=aggregates, granularity=granularity
         )

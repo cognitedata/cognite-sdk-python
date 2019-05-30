@@ -1,8 +1,8 @@
 from typing import *
 
+from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Event, EventFilter, EventList, EventUpdate
-from cognite.client.utils import _utils as utils
 
 
 class EventsAPI(APIClient):
@@ -91,7 +91,7 @@ class EventsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.events.retrieve(external_id="1")
         """
-        utils.assert_exactly_one_of_id_or_external_id(id, external_id)
+        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
         return self._retrieve_multiple(ids=id, external_ids=external_id, wrap_ids=True)
 
     def retrieve_multiple(self, ids: Optional[List[int]] = None, external_ids: Optional[List[str]] = None) -> EventList:
@@ -118,8 +118,8 @@ class EventsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.events.retrieve_multiple(external_ids=["abc", "def"])
         """
-        utils.assert_type(ids, "id", [List], allow_none=True)
-        utils.assert_type(external_ids, "external_id", [List], allow_none=True)
+        utils._auxiliary.assert_type(ids, "id", [List], allow_none=True)
+        utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=True)
         return self._retrieve_multiple(ids=ids, external_ids=external_ids, wrap_ids=True)
 
     def list(

@@ -2,7 +2,7 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes import APIKey, Group, SecurityCategory, ServiceAccount, ServiceAccountList
-from cognite.client.utils._utils import random_string
+from cognite.client.utils._auxiliary import random_string
 
 COGNITE_CLIENT = CogniteClient()
 

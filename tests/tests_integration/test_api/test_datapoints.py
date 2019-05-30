@@ -5,10 +5,8 @@ import numpy
 import pandas
 import pytest
 
-from cognite.client import CogniteClient
-from cognite.client.data_classes import Datapoint, DatapointsQuery, TimeSeries
-from cognite.client.exceptions import CogniteAPIError
-from cognite.client.utils import _utils
+from cognite.client import CogniteClient, utils
+from cognite.client.data_classes import DatapointsQuery, TimeSeries
 from tests.utils import set_request_limit
 
 COGNITE_CLIENT = CogniteClient()
@@ -39,7 +37,7 @@ def has_duplicates(df: pandas.DataFrame):
 def has_correct_timestamp_spacing(df: pandas.DataFrame, granularity: str):
     timestamps = df.index.values.astype("datetime64[ms]").astype("int64")
     deltas = numpy.diff(timestamps, 1)
-    granularity_ms = _utils.granularity_to_ms(granularity)
+    granularity_ms = utils._time.granularity_to_ms(granularity)
     return (deltas != 0).all() and (deltas % granularity_ms == 0).all()
 
 
@@ -65,8 +63,8 @@ class TestDatapointsAPI:
 
     def test_retrieve_include_outside_points(self, test_time_series):
         ts = test_time_series[0]
-        start = _utils.timestamp_to_ms("6h-ago")
-        end = _utils.timestamp_to_ms("1h-ago")
+        start = utils._time.timestamp_to_ms("6h-ago")
+        end = utils._time.timestamp_to_ms("1h-ago")
         dps_wo_outside = COGNITE_CLIENT.datapoints.retrieve(
             id=ts.id, start=start, end=end, include_outside_points=False
         )
@@ -108,7 +106,7 @@ class TestDatapointsAPI:
         ts = test_time_series[0]
         res = COGNITE_CLIENT.datapoints.retrieve_latest(id=ts.id, before="1h-ago")
         assert 1 == len(res)
-        assert res[0].timestamp < _utils.timestamp_to_ms("1h-ago")
+        assert res[0].timestamp < utils._time.timestamp_to_ms("1h-ago")
 
     def test_insert(self, new_ts, mocker):
         datapoints = [(datetime(year=2018, month=1, day=1, hour=1, minute=i), i) for i in range(60)]

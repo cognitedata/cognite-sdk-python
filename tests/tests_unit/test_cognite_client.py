@@ -15,7 +15,7 @@ from cognite.client._api.files import FileMetadataList
 from cognite.client._api.time_series import TimeSeriesList
 from cognite.client.data_classes import Asset, Event, FileMetadata, TimeSeries
 from cognite.client.exceptions import CogniteAPIKeyError
-from cognite.client.utils._utils import DebugLogFormatter
+from cognite.client.utils._logging import DebugLogFormatter
 from tests.utils import BASE_URL
 
 

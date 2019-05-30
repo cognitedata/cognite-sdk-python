@@ -11,9 +11,9 @@ from requests.adapters import HTTPAdapter
 from requests.structures import CaseInsensitiveDict
 from urllib3 import Retry
 
+from cognite.client import utils
 from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteUpdate
-from cognite.client.exceptions import CogniteAPIError, CogniteDuplicatedError, CogniteNotFoundError
-from cognite.client.utils import _utils as utils
+from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 
 log = logging.getLogger("cognite-sdk")
 
@@ -117,7 +117,7 @@ class APIClient:
         headers.update(kwargs.get("headers") or {})
 
         if json_payload:
-            data = _json.dumps(json_payload, default=utils.json_dump_default)
+            data = _json.dumps(json_payload, default=utils._auxiliary.json_dump_default)
             kwargs["data"] = data
             if method in ["PUT", "POST"] and not os.getenv("COGNITE_DISABLE_GZIP", False):
                 kwargs["data"] = gzip.compress(data.encode())
@@ -141,11 +141,11 @@ class APIClient:
         headers["api-key"] = self._api_key
         headers["content-type"] = "application/json"
         headers["accept"] = "application/json"
-        headers["x-cdp-sdk"] = "CognitePythonSDK:{}".format(utils.get_current_sdk_version())
+        headers["x-cdp-sdk"] = "CognitePythonSDK:{}".format(utils._auxiliary.get_current_sdk_version())
         if "User-Agent" in headers:
-            headers["User-Agent"] += " " + utils.get_user_agent()
+            headers["User-Agent"] += " " + utils._auxiliary.get_user_agent()
         else:
-            headers["User-Agent"] = utils.get_user_agent()
+            headers["User-Agent"] = utils._auxiliary.get_user_agent()
         headers.update(additional_headers)
         return headers
 
@@ -200,7 +200,7 @@ class APIClient:
         resource_path = resource_path or self._RESOURCE_PATH
         try:
             res = self._get(
-                url_path=utils.interpolate_and_url_encode(resource_path + "/{}", str(id)),
+                url_path=utils._auxiliary.interpolate_and_url_encode(resource_path + "/{}", str(id)),
                 params=params,
                 headers=headers,
             )
@@ -221,17 +221,17 @@ class APIClient:
         cls = cls or self._LIST_CLASS
         resource_path = resource_path or self._RESOURCE_PATH
         all_ids = self._process_ids(ids, external_ids, wrap_ids=wrap_ids)
-        id_chunks = utils.split_into_chunks(all_ids, self._RETRIEVE_LIMIT)
+        id_chunks = utils._auxiliary.split_into_chunks(all_ids, self._RETRIEVE_LIMIT)
 
         tasks = [
             {"url_path": resource_path + "/byids", "json": {"items": id_chunk}, "headers": headers}
             for id_chunk in id_chunks
         ]
-        tasks_summary = utils.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
+        tasks_summary = utils._concurrency.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
 
         if tasks_summary.exceptions:
             try:
-                utils.collect_exc_info_and_raise(tasks_summary.exceptions)
+                utils._concurrency.collect_exc_info_and_raise(tasks_summary.exceptions)
             except CogniteNotFoundError:
                 if self._is_single_identifier(ids, external_ids):
                     return None
@@ -347,7 +347,7 @@ class APIClient:
             items_split.append({"items": items_chunk})
 
         tasks = [(resource_path, task_items, params, headers) for task_items in items_split]
-        summary = utils.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
+        summary = utils._concurrency.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
 
         def unwrap_element(el):
             if isinstance(el, dict):
@@ -385,14 +385,15 @@ class APIClient:
     ):
         resource_path = resource_path or self._RESOURCE_PATH
         all_ids = self._process_ids(ids, external_ids, wrap_ids)
-        id_chunks = utils.split_into_chunks(all_ids, self._DELETE_LIMIT)
+        id_chunks = utils._auxiliary.split_into_chunks(all_ids, self._DELETE_LIMIT)
         tasks = [
             {"url_path": resource_path + "/delete", "json": {"items": chunk}, "params": params, "headers": headers}
             for chunk in id_chunks
         ]
-        summary = utils.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
+        summary = utils._concurrency.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
         summary.raise_compound_exception_if_failed_tasks(
-            task_unwrap_fn=lambda task: task["json"]["items"], task_list_element_unwrap_fn=utils.unwrap_identifer
+            task_unwrap_fn=lambda task: task["json"]["items"],
+            task_list_element_unwrap_fn=utils._auxiliary.unwrap_identifer,
         )
 
     def _update_multiple(
@@ -417,17 +418,17 @@ class APIClient:
                 patch_objects.append(item.dump())
             else:
                 raise ValueError("update item must be of type CogniteResource or CogniteUpdate")
-        patch_object_chunks = utils.split_into_chunks(patch_objects, self._UPDATE_LIMIT)
+        patch_object_chunks = utils._auxiliary.split_into_chunks(patch_objects, self._UPDATE_LIMIT)
 
         tasks = [
             {"url_path": resource_path + "/update", "json": {"items": chunk}, "params": params, "headers": headers}
             for chunk in patch_object_chunks
         ]
 
-        tasks_summary = utils.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
+        tasks_summary = utils._concurrency.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
         tasks_summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: task["json"]["items"],
-            task_list_element_unwrap_fn=lambda el: utils.unwrap_identifer(el),
+            task_list_element_unwrap_fn=lambda el: utils._auxiliary.unwrap_identifer(el),
         )
         updated_items = tasks_summary.joined_results(lambda res: res.json()["items"])
 
@@ -445,11 +446,11 @@ class APIClient:
         params: Dict = None,
         headers: Dict = None,
     ):
-        utils.assert_type(filter, "filter", [dict, CogniteFilter], allow_none=True)
+        utils._auxiliary.assert_type(filter, "filter", [dict, CogniteFilter], allow_none=True)
         if isinstance(filter, CogniteFilter):
             filter = filter.dump(camel_case=True)
         elif isinstance(filter, dict):
-            filter = utils.convert_all_keys_to_camel_case(filter)
+            filter = utils._auxiliary.convert_all_keys_to_camel_case(filter)
         cls = cls or self._LIST_CLASS
         resource_path = resource_path or self._RESOURCE_PATH
         res = self._post(
@@ -465,7 +466,9 @@ class APIClient:
         dumped_resource = resource.dump(camel_case=True)
         has_id = "id" in dumped_resource
         has_external_id = "externalId" in dumped_resource
-        utils.assert_exactly_one_of_id_or_external_id(dumped_resource.get("id"), dumped_resource.get("externalId"))
+        utils._auxiliary.assert_exactly_one_of_id_or_external_id(
+            dumped_resource.get("id"), dumped_resource.get("externalId")
+        )
 
         patch_object = {"update": {}}
         if has_id:
