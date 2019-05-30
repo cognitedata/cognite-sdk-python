@@ -73,9 +73,8 @@ def pytest_addoption(parser):
 
 def pytest_collection_modifyitems(config, items):
     if config.getoption("--test-deps-only-core"):
-        # --runslow given in cli: do not skip slow tests
         return
-    skip_slow = pytest.mark.skip(reason="need ----test-deps-only-core option to run")
+    skip_core = pytest.mark.skip(reason="need --test-deps-only-core option to run")
     for item in items:
         if "coredeps" in item.keywords:
-            item.add_marker(skip_slow)
+            item.add_marker(skip_core)
