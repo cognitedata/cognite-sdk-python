@@ -78,12 +78,12 @@ class TestDatapoints:
         yield res
 
     def test_post_datapoints(self):
-        dps = [Datapoint(i, i * 100) for i in range(10)]
+        dps = [Datapoint(1e12 + i, i * 100) for i in range(10)]
         res = client.datapoints.post_datapoints(TS_NAME, datapoints=dps)
         assert res is None
 
     def test_post_datapoints_float_timestamp(self):
-        dps = [Datapoint(float(i), i * 100) for i in range(10)]
+        dps = [Datapoint(float(1e12 + i), i * 100) for i in range(10)]
         res = client.datapoints.post_datapoints(TS_NAME, datapoints=dps)
         assert res is None
 

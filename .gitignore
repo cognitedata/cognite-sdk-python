@@ -30,6 +30,7 @@ wheels/
 # Other
 test.py
 .env
+do_release.py
 
 # Coverage
 .coverage
