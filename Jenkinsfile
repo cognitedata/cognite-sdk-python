@@ -75,7 +75,7 @@ podTemplate(
 
             def currentVersion = sh(returnStdout: true, script: 'sed -n -e "/^__version__/p" cognite/client/__init__.py | cut -d\\" -f2').trim()
             println("This version: " + currentVersion)
-            def versionExists = sh(returnStdout: true, script: 'pipenv run python3 version_checker.py -p cognite-sdk -v' + currentVersion)
+            def versionExists = sh(returnStdout: true, script: 'pipenv run python3 version_checker.py -p cognite-sdk -v' + currentVersion).trim()
             println("Version Exists: " + versionExists)
             if (env.BRANCH_NAME == '0.13' && versionExists == 'no') {
                 stage('Release') {
