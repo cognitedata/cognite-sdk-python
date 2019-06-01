@@ -69,6 +69,13 @@ methods you can use to plot the data.
 
 Create an asset hierarchy
 -------------------------
+CDF organizes digital information about the physical world. Assets are digital representations of physical objects or
+groups of objects, and assets are organized into an asset hierarchy. For example, an asset can represent a water pump
+which is part of a subsystem on an oil platform.
+
+At the top of an asset hierarchy is a root asset (e.g., the oil platform). Each project can have multiple root assets.
+All assets have a name and a parent asset. No assets with the same parent can have the same name.
+
 To create a root asset (an asset without a parent), omit the parent ID when you post the asset to the API.
 To make an asset a child of an existing asset, you must specify a parent ID.
 
@@ -112,6 +119,33 @@ Wrap the .create() call in a try-except to get information if posting the assets
     ...     assets_posted = e.successful
     ...     assets_may_have_been_posted = e.unknown
     ...     assets_not_posted = e.failed
+
+Retrieve all events related to an asset subtree
+-----------------------------------------------
+Assets are used to connect related data together, even if the data comes from different sources; Time series of data
+points, events and files are all connected to one or more assets. A pump asset can be connected to a time series
+measuring pressure within the pump, as well as events recording maintenance operations, and a file with a 3D diagram
+of the pump.
+
+To retrieve all events related to a given subtree of assets, we first fetch the subtree under a given asset using the
+:code:`.subtree()` method. This returns an :code:`AssetList` object, which has a :code:`.events()` method. This method will
+return events related to any asset in the :code:`AssetList`.
+
+.. code::
+
+    >>> from cognite.client import CogniteClient
+    >>> from cognite.client.data_classes import Asset
+    >>> c = CogniteClient()
+    >>> subtree_root_asset="some-external-id"
+    >>> subtree = c.assets.retrieve(external_id=subtree_root_asset).subtree()
+    >>> related_events = subtree.events()
+
+You can use the same pattern to retrieve all time series or files related to a set of assets.
+
+.. code::
+
+    >>> related_files = subtree.files()
+    >>> related_time_series = subtree.time_series()
 
 Settings
 ========
