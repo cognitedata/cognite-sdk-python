@@ -6,7 +6,7 @@ from concurrent.futures import ThreadPoolExecutor as Pool
 from copy import copy
 from datetime import datetime
 from functools import partial
-from typing import List
+from typing import Iterable, List
 from urllib.parse import quote
 
 import pandas as pd
@@ -377,11 +377,11 @@ class DatapointsClient(APIClient):
 
         return timeseries_with_datapoints_list
 
-    def post_multi_time_series_datapoints(self, timeseries_with_datapoints: List[TimeseriesWithDatapoints]) -> None:
+    def post_multi_time_series_datapoints(self, timeseries_with_datapoints: Iterable[TimeseriesWithDatapoints]) -> None:
         """Insert data into multiple timeseries.
 
         Args:
-            timeseries_with_datapoints (List[stable.datapoints.TimeseriesWithDatapoints]): The timeseries with data to insert.
+            timeseries_with_datapoints (Iterable[stable.datapoints.TimeseriesWithDatapoints]): The timeseries with data to insert.
 
         Returns:
             None
