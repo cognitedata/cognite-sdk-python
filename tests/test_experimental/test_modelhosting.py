@@ -3,12 +3,14 @@ import json
 import os
 import time
 from random import randint
+from tempfile import TemporaryDirectory
 from unittest import mock
 
 import pytest
 
 from cognite.client import APIError, CogniteClient
 from cognite.client.experimental.model_hosting.models import (
+    EmptyAritfactsDirectory,
     ModelArtifactCollectionResponse,
     ModelArtifactResponse,
     ModelCollectionResponse,
@@ -352,6 +354,11 @@ class TestVersions:
         ]
         assert {"name": "artifact1.txt"} in post_artifacts_call_args
         assert {"name": "sub_dir/artifact2.txt"} in post_artifacts_call_args
+
+    def test_upload_artifacts_from_directory_no_artifacts(self):
+        with TemporaryDirectory() as tmp:
+            with pytest.raises(EmptyAritfactsDirectory, match="directory is empty"):
+                models.upload_artifacts_from_directory(model_id=1, version_id=1, directory=tmp)
 
     @mock.patch("requests.sessions.Session.put")
     def test_deprecate_model_version(self, mock_put):
