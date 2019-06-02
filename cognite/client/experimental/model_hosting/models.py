@@ -76,6 +76,10 @@ class PredictionError(APIError):
     pass
 
 
+class EmptyAritfactsDirectory(Exception):
+    pass
+
+
 class ModelsClient(APIClient):
     def __init__(self, **kwargs):
         super().__init__(version="0.6", **kwargs)
@@ -499,6 +503,9 @@ class ModelsClient(APIClient):
                 file_path = os.path.join(root, file_name)
                 full_file_name = os.path.relpath(file_path, directory)
                 upload_tasks.append((model_id, version_id, full_file_name, file_path))
+
+        if len(upload_tasks) == 0:
+            raise EmptyAritfactsDirectory("Artifacts directory is empty.")
         self._execute_tasks_concurrently(self.upload_artifact_from_file, upload_tasks)
 
     @staticmethod

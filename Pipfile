@@ -23,6 +23,7 @@ pre-commit = "*"
 isort = "*"
 tox = "*"
 tox-pyenv = "*"
+responses = "*"
 
 [pipenv]
 allow_prereleases = true

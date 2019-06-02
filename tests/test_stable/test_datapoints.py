@@ -66,6 +66,12 @@ class TestDatapoints:
         )
         yield res
 
+    def test_start_greater_than_or_equal_to_end(self):
+        with pytest.raises(ValueError, match="must be greater than"):
+            client.datapoints.get_datapoints(name=TEST_TS_1_NAME, aggregates=["avg"], granularity="1m", start=0, end=0)
+        with pytest.raises(ValueError, match="must be greater than"):
+            client.datapoints.get_datapoints(name=TEST_TS_1_NAME, aggregates=["avg"], granularity="1m", start=1, end=0)
+
     @pytest.fixture(scope="class")
     def get_dps_aggregates_response_obj(self):
         res = client.datapoints.get_datapoints(
@@ -103,6 +109,13 @@ class TestDatapoints:
 
         res = client.datapoints.post_datapoints_frame(data)
         assert res is None
+
+    def test_post_datapoints_frame_with_nans(self):
+        data = pd.DataFrame()
+        data["timestamp"] = [int(1537208777557 + 1000 * i) for i in range(0, 100)]
+        data["hasNans"] = [None for _ in range(0, 100)]
+        with pytest.raises(AssertionError, match="contains NaNs"):
+            client.datapoints.post_datapoints_frame(data)
 
     def test_get_datapoints(self, get_dps_response_obj):
         assert isinstance(get_dps_response_obj, DatapointsResponse)
@@ -157,6 +170,16 @@ class TestDatapointsFrame:
             granularity="1m",
         )
 
+    def test_start_greater_than_or_equal_to_end(self):
+        with pytest.raises(ValueError, match="must be greater than"):
+            client.datapoints.get_datapoints_frame(
+                time_series=[TEST_TS_1_NAME], aggregates=["avg"], granularity="1m", start=0, end=0
+            )
+        with pytest.raises(ValueError, match="must be greater than"):
+            client.datapoints.get_datapoints_frame(
+                time_series=[TEST_TS_1_NAME], aggregates=["avg"], granularity="1m", start=1, end=0
+            )
+
     def test_get_dps_frame_output_format(self, get_datapoints_frame_response_obj):
         assert isinstance(get_datapoints_frame_response_obj, pd.DataFrame)
 
@@ -194,6 +217,17 @@ class TestMultiTimeseriesDatapoints:
 
         for val, val_c in zip(dq2.__dict__.values(), dq2_copy.__dict__.values()):
             assert val == val_c
+
+    def test_start_greater_than_or_equal_to_end(self):
+        dq1 = DatapointsQuery(TEST_TS_1_NAME)
+        with pytest.raises(ValueError, match="must be greater than"):
+            client.datapoints.get_multi_time_series_datapoints(
+                [dq1], aggregates=["avg"], granularity="1m", start=0, end=0
+            )
+        with pytest.raises(ValueError, match="must be greater than"):
+            client.datapoints.get_multi_time_series_datapoints(
+                [dq1], aggregates=["avg"], granularity="1m", start=1, end=0
+            )
 
     def test_post_multitag_datapoints(self):
         timeseries_with_too_many_datapoints = TimeseriesWithDatapoints(

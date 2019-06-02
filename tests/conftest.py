@@ -9,6 +9,7 @@ from unittest import mock
 from unittest.mock import MagicMock
 
 import pytest
+import responses
 from requests.structures import CaseInsensitiveDict
 
 from cognite.client import CogniteClient
@@ -30,6 +31,12 @@ TEST_TS_1_NAME = "SDK_TEST_TS_1_DO_NOT_DELETE"
 TEST_TS_2_NAME = "SDK_TEST_TS_2_DO_NOT_DELETE"
 TEST_TS_1_ID = None
 TEST_TS_2_ID = None
+
+
+@pytest.fixture
+def rsps():
+    with responses.RequestsMock() as rsps:
+        yield rsps
 
 
 @pytest.fixture(scope="session", autouse=True)

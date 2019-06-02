@@ -360,7 +360,7 @@ class AssetsClient(APIClient):
             "description": description,
             "query": query,
             "metadata": json.dumps(metadata),
-            "assetSubtrees": asset_subtrees,
+            "assetSubtrees": str(asset_subtrees) if asset_subtrees is not None else None,
             "minCreatedTime": min_created_time,
             "maxCreatedTime": max_created_time,
             "minLastUpdatedTime": min_last_updated_time,

@@ -6,7 +6,7 @@ from concurrent.futures import ThreadPoolExecutor as Pool
 from copy import copy
 from datetime import datetime
 from functools import partial
-from typing import List
+from typing import Iterable, List
 from urllib.parse import quote
 
 import pandas as pd
@@ -179,6 +179,9 @@ class DatapointsClient(APIClient):
                 print(res.to_pandas())
         """
         start, end = _utils.interval_to_ms(start, end)
+
+        if start >= end:
+            raise ValueError("end must be greater than start")
 
         if aggregates:
             aggregates = ",".join(aggregates)
@@ -377,11 +380,11 @@ class DatapointsClient(APIClient):
 
         return timeseries_with_datapoints_list
 
-    def post_multi_time_series_datapoints(self, timeseries_with_datapoints: List[TimeseriesWithDatapoints]) -> None:
+    def post_multi_time_series_datapoints(self, timeseries_with_datapoints: Iterable[TimeseriesWithDatapoints]) -> None:
         """Insert data into multiple timeseries.
 
         Args:
-            timeseries_with_datapoints (List[stable.datapoints.TimeseriesWithDatapoints]): The timeseries with data to insert.
+            timeseries_with_datapoints (Iterable[stable.datapoints.TimeseriesWithDatapoints]): The timeseries with data to insert.
 
         Returns:
             None
@@ -517,6 +520,8 @@ class DatapointsClient(APIClient):
         """
         url = "/timeseries/dataquery"
         start, end = _utils.interval_to_ms(start, end)
+        if start >= end:
+            raise ValueError("end must be greater than start")
 
         datapoints_queries = [copy(dpq) for dpq in datapoints_queries]
         num_of_dpqs_with_agg = 0
@@ -626,6 +631,9 @@ class DatapointsClient(APIClient):
         if not isinstance(time_series, list):
             raise ValueError("time_series should be a list")
         start, end = _utils.interval_to_ms(start, end)
+
+        if start >= end:
+            raise ValueError("end must be greater than start")
 
         if kwargs.get("limit"):
             return self._get_datapoints_frame_user_defined_limit(
@@ -812,6 +820,7 @@ class DatapointsClient(APIClient):
             raise ValueError("DataFrame not on a correct format")
 
         for name in names:
+            assert not dataframe[name].hasnans, "Dataframe contains NaNs"
             data_points = [Datapoint(int(timestamp.iloc[i]), dataframe[name].iloc[i]) for i in range(0, len(dataframe))]
             self.post_datapoints(name, data_points)
 

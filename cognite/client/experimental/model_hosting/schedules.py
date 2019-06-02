@@ -57,7 +57,7 @@ class SchedulesClient(APIClient):
 
         body = {
             "name": name,
-            "description": description,
+            "description": description or "",
             "modelId": model_id,
             "args": args or {},
             "dataSpec": schedule_data_spec,

@@ -102,3 +102,13 @@ def test_delete_assets(created_asset):
 def test_search_for_assets():
     res = assets.search_for_assets()
     assert len(res.to_json()) > 0
+
+
+def test_search_for_asset_in_subtree(rsps):
+    rsps.add(
+        rsps.GET, assets._base_url + "/assets/search", status=200, json={"data": {"items": [{"id": 1, "name": "bla"}]}}
+    )
+    assets.search_for_assets(asset_subtrees=[1, 2, 3])
+    assets.search_for_assets()
+    assert "assetSubtrees=%5B1%2C+2%2C+3%5D" in rsps.calls[0].request.url
+    assert "assetSubtrees" not in rsps.calls[1].request.url
