@@ -54,6 +54,7 @@ class CogniteClient:
     ):
         thread_local_api_key, thread_local_project = self._get_thread_local_credentials()
         environment_api_key = os.getenv("COGNITE_API_KEY")
+        environment_project = os.getenv("COGNITE_PROJECT")
         environment_base_url = os.getenv("COGNITE_BASE_URL")
         environment_max_workers = os.getenv("COGNITE_MAX_WORKERS")
         environment_timeout = os.getenv("COGNITE_TIMEOUT")
@@ -83,7 +84,7 @@ class CogniteClient:
 
         __api_version = "v1"
 
-        self.project = project or thread_local_project
+        self.project = project or thread_local_project or environment_project
         self.login = LoginAPI(
             project=self.project,
             api_key=self.__api_key,
@@ -99,8 +100,8 @@ class CogniteClient:
             if login_status.logged_in:
                 self.project = login_status.project
                 warnings.warn(
-                    "Authenticated towards inferred project '{}'. Pass project to the CogniteClient constructor"
-                    " to suppress this warning.".format(self.project),
+                    "Authenticated towards inferred project '{}'. Pass project to the CogniteClient constructor or set"
+                    " the environment variable 'COGNITE_PROJECT' to suppress this warning.".format(self.project),
                     stacklevel=2,
                 )
             else:
