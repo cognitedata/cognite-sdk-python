@@ -23,7 +23,7 @@ from tests.utils import BASE_URL
 def default_client_config():
     from cognite.client._cognite_client import DEFAULT_MAX_WORKERS, DEFAULT_TIMEOUT
 
-    yield "https://greenfield.cognitedata.com", DEFAULT_MAX_WORKERS, DEFAULT_TIMEOUT, "python-sdk-integration-tests"
+    yield "https://greenfield.cognitedata.com", DEFAULT_MAX_WORKERS, DEFAULT_TIMEOUT, "python-sdk-integration-tests", "test"
 
 
 @pytest.fixture
@@ -32,20 +32,29 @@ def environment_client_config():
     num_of_workers = 1
     timeout = 10
     client_name = "test-client"
+    project = "test-project"
 
     tmp_base_url = os.environ["COGNITE_BASE_URL"]
     tmp_client_name = os.environ["COGNITE_CLIENT_NAME"]
+    tmp_project_name = os.getenv("COGNITE_PROJECT")
+
     os.environ["COGNITE_BASE_URL"] = base_url
     os.environ["COGNITE_MAX_WORKERS"] = str(num_of_workers)
     os.environ["COGNITE_TIMEOUT"] = str(timeout)
     os.environ["COGNITE_CLIENT_NAME"] = client_name
+    os.environ["COGNITE_PROJECT"] = project
 
-    yield base_url, num_of_workers, timeout, client_name
+    yield base_url, num_of_workers, timeout, client_name, project
 
     os.environ["COGNITE_BASE_URL"] = tmp_base_url
     del os.environ["COGNITE_MAX_WORKERS"]
     del os.environ["COGNITE_TIMEOUT"]
     os.environ["COGNITE_CLIENT_NAME"] = tmp_client_name
+
+    if tmp_project_name is not None:
+        os.environ["COGNITE_PROJECT"] = tmp_project_name
+    else:
+        del os.environ["COGNITE_PROJECT"]
 
 
 class TestCogniteClient:
@@ -85,7 +94,7 @@ class TestCogniteClient:
         with pytest.raises(ValueError, match="No client name has been specified"):
             CogniteClient()
 
-    def assert_config_is_correct(self, client, base_url, max_workers, timeout, client_name):
+    def assert_config_is_correct(self, client, base_url, max_workers, timeout, client_name, project):
         assert client._base_url == base_url
         assert type(client._base_url) is str
 
@@ -98,6 +107,9 @@ class TestCogniteClient:
         assert client._client_name == client_name
         assert type(client._client_name) is str
 
+        assert client.project == project
+        assert type(client.project) is str
+
     def test_default_config(self, client, default_client_config):
         self.assert_config_is_correct(client, *default_client_config)
 
@@ -106,14 +118,15 @@ class TestCogniteClient:
         max_workers = 1
         timeout = 10
         client_name = "test-client"
+        project = "something"
 
         client = CogniteClient(
-            project="something", base_url=base_url, max_workers=max_workers, timeout=timeout, client_name=client_name
+            project=project, base_url=base_url, max_workers=max_workers, timeout=timeout, client_name=client_name
         )
-        self.assert_config_is_correct(client, base_url, max_workers, timeout, client_name)
+        self.assert_config_is_correct(client, base_url, max_workers, timeout, client_name, project)
 
     def test_environment_config(self, environment_client_config):
-        client = CogniteClient(project="something")
+        client = CogniteClient()
         self.assert_config_is_correct(client, *environment_client_config)
 
     @pytest.fixture
