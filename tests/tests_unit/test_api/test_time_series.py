@@ -132,7 +132,7 @@ class TestTimeSeries:
         assert "bla" == req_body["filter"]["unit"]
         assert {"name": "n", "description": "d", "query": "q"} == req_body["search"]
 
-    def test_events_update_object(self):
+    def test_update_object(self):
         assert isinstance(
             TimeSeriesUpdate(1)
             .asset_id.set(1)
