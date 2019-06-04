@@ -163,6 +163,26 @@ class TestCogniteClient:
         log.handlers = []
         log.propagate = False
 
+    @pytest.fixture
+    def set_env_disable_version_check(self):
+        tmp = os.getenv("COGNITE_DISABLE_PYPI_VERSION_CHECK")
+        os.environ["COGNITE_DISABLE_PYPI_VERSION_CHECK"] = "1"
+        yield
+        if tmp is not None:
+            os.environ["COGNITE_DISABLE_PYPI_VERSION_CHECK"] = tmp
+        else:
+            del os.environ["COGNITE_DISABLE_PYPI_VERSION_CHECK"]
+
+    def test_version_check_disabled(self, set_env_disable_version_check, rsps_with_login_mock):
+        rsps_with_login_mock.assert_all_requests_are_fired = False
+        CogniteClient()
+        assert len(rsps_with_login_mock.calls) == 1
+        assert rsps_with_login_mock.calls[0].request.url.startswith("https://greenfield.cognitedata.com")
+
+    def test_version_check_enabled(self, rsps_with_login_mock):
+        CogniteClient()
+        assert len(rsps_with_login_mock.calls) == 2
+
 
 class TestInstantiateWithClient:
     @pytest.mark.parametrize("cls", [Asset, Event, FileMetadata, TimeSeries])

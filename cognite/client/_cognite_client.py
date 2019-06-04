@@ -59,6 +59,7 @@ class CogniteClient:
         environment_max_workers = os.getenv("COGNITE_MAX_WORKERS")
         environment_timeout = os.getenv("COGNITE_TIMEOUT")
         environment_client_name = os.getenv("COGNITE_CLIENT_NAME")
+        environment_disable_version_check = os.getenv("COGNITE_DISABLE_PYPI_VERSION_CHECK", False)
 
         self.__api_key = api_key or thread_local_api_key or environment_api_key
         if self.__api_key is None:
@@ -106,7 +107,9 @@ class CogniteClient:
                 )
             else:
                 raise CogniteAPIKeyError
-        self._check_client_has_newest_major_version()
+
+        if not environment_disable_version_check:
+            self._check_client_has_newest_major_version()
 
         self.assets = AssetsAPI(
             version=__api_version,
