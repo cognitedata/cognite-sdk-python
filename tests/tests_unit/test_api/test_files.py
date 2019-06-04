@@ -1,6 +1,7 @@
 import json
 import os
 import re
+from io import BufferedReader, TextIOWrapper
 from tempfile import TemporaryDirectory
 
 import pytest
@@ -209,7 +210,7 @@ class TestFilesAPI:
         assert FileMetadata._load(response_body) == res
         assert "https://upload.here/" == mock_file_upload_response.calls[1].request.url
         assert {"name": "bla"} == jsgz_load(mock_file_upload_response.calls[0].request.body)
-        assert b"content1\n" == mock_file_upload_response.calls[1].request.body
+        assert isinstance(mock_file_upload_response.calls[1].request.body, BufferedReader)
 
     def test_upload_no_name(self, mock_file_upload_response):
         path = os.path.join(os.path.dirname(__file__), "files_for_test_upload", "file_for_test_upload_1.txt")
@@ -225,7 +226,7 @@ class TestFilesAPI:
         assert 4 == len(mock_file_upload_response.calls)
         for call in mock_file_upload_response.calls:
             payload = call.request.body
-            if payload in [b"content1\n", b"content2\n"]:
+            if isinstance(payload, BufferedReader):
                 continue
             elif jsgz_load(payload)["name"] in ["file_for_test_upload_1.txt", "file_for_test_upload_2.txt"]:
                 continue
@@ -249,7 +250,7 @@ class TestFilesAPI:
         assert 6 == len(mock_file_upload_response.calls)
         for call in mock_file_upload_response.calls:
             payload = call.request.body
-            if payload in [b"content1\n", b"content2\n", b"content3\n"]:
+            if isinstance(payload, BufferedReader):
                 continue
             elif jsgz_load(payload)["name"] in [
                 "file_for_test_upload_1.txt",
@@ -268,6 +269,17 @@ class TestFilesAPI:
         assert "https://upload.here/" == mock_file_upload_response.calls[1].request.url
         assert {"name": "bla"} == jsgz_load(mock_file_upload_response.calls[0].request.body)
         assert b"content" == mock_file_upload_response.calls[1].request.body
+
+    def test_upload_using_file_handle(self, mock_file_upload_response):
+        path = os.path.join(os.path.dirname(__file__), "files_for_test_upload", "file_for_test_upload_1.txt")
+        with open(path) as fh:
+            res = FILES_API.upload_bytes(fh, name="bla")
+        response_body = mock_file_upload_response.calls[0].response.json()
+        del response_body["uploadUrl"]
+        assert FileMetadata._load(response_body) == res
+        assert "https://upload.here/" == mock_file_upload_response.calls[1].request.url
+        assert {"name": "bla"} == jsgz_load(mock_file_upload_response.calls[0].request.body)
+        assert isinstance(mock_file_upload_response.calls[1].request.body, TextIOWrapper)
 
     def test_upload_path_does_not_exist(self):
         with pytest.raises(ValueError, match="does not exist"):

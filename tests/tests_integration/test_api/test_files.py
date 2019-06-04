@@ -1,3 +1,5 @@
+import time
+
 import pytest
 
 from cognite.client import CogniteClient
@@ -9,6 +11,10 @@ COGNITE_CLIENT = CogniteClient()
 @pytest.fixture(scope="class")
 def new_file():
     res = COGNITE_CLIENT.files.upload_bytes(content="blabla", name="myspecialfile")
+    while True:
+        if COGNITE_CLIENT.files.retrieve(id=res.id).uploaded:
+            break
+        time.sleep(0.5)
     yield res
     COGNITE_CLIENT.files.delete(id=res.id)
     assert COGNITE_CLIENT.files.retrieve(id=res.id) is None
@@ -49,3 +55,6 @@ class TestFilesAPI:
         test_file = test_files["a.txt"]
         res = COGNITE_CLIENT.files.download_bytes(id=test_file.id)
         assert b"a" == res
+
+    def test_download_new_file(self, new_file):
+        assert b"blabla" == COGNITE_CLIENT.files.download_bytes(id=new_file.id)
