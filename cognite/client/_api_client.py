@@ -466,9 +466,6 @@ class APIClient:
         dumped_resource = resource.dump(camel_case=True)
         has_id = "id" in dumped_resource
         has_external_id = "externalId" in dumped_resource
-        utils._auxiliary.assert_exactly_one_of_id_or_external_id(
-            dumped_resource.get("id"), dumped_resource.get("externalId")
-        )
 
         patch_object = {"update": {}}
         if has_id:
@@ -477,7 +474,7 @@ class APIClient:
             patch_object["externalId"] = dumped_resource.pop("externalId")
 
         for key, value in dumped_resource.items():
-            if key in update_attributes:
+            if utils._auxiliary.to_snake_case(key) in update_attributes:
                 patch_object["update"][key] = {"set": value}
         return patch_object
 

@@ -125,6 +125,10 @@ class SomeUpdate(CogniteUpdate):
     def y(self):
         return PrimitiveUpdate(self, "y")
 
+    @property
+    def external_id(self):
+        return PrimitiveUpdate(self, "externalId")
+
 
 class PrimitiveUpdate(CognitePrimitiveUpdate):
     def set(self, value: Any) -> SomeUpdate:
@@ -560,6 +564,14 @@ class TestStandardUpdate:
         assert SomeResourceList([SomeResource(id=1, x=1, y=100)]) == res
         assert {"items": [{"id": 1, "update": {"y": {"set": 100}}}]} == jsgz_load(mock_update.calls[0].request.body)
 
+    def test_standard_update_with_cognite_resource__subject_to_camel_case_issue(self, mock_update):
+        res = API_CLIENT._update_multiple(
+            cls=SomeResourceList, resource_path=URL_PATH, items=[SomeResource(id=1, external_id="abc", y=100)]
+        )
+        assert {"items": [{"id": 1, "update": {"y": {"set": 100}, "externalId": {"set": "abc"}}}]} == jsgz_load(
+            mock_update.calls[0].request.body
+        )
+
     def test_standard_update_with_cognite_resource__non_update_attributes(self, mock_update):
         res = API_CLIENT._update_multiple(
             cls=SomeResourceList, resource_path=URL_PATH, items=[SomeResource(id=1, y=100, x=1)]
@@ -567,11 +579,13 @@ class TestStandardUpdate:
         assert SomeResourceList([SomeResource(id=1, x=1, y=100)]) == res
         assert {"items": [{"id": 1, "update": {"y": {"set": 100}}}]} == jsgz_load(mock_update.calls[0].request.body)
 
-    def test_standard_update_with_cognite_resource__id_and_external_id_set(self):
-        with pytest.raises(AssertionError, match="Exactly one of id and external id"):
-            API_CLIENT._update_multiple(
-                cls=SomeResourceList, resource_path=URL_PATH, items=[SomeResource(id=1, external_id="1", y=100, x=1)]
-            )
+    def test_standard_update_with_cognite_resource__id_and_external_id_set(self, mock_update):
+        API_CLIENT._update_multiple(
+            cls=SomeResourceList, resource_path=URL_PATH, items=[SomeResource(id=1, external_id="1", y=100, x=1)]
+        )
+        assert {"items": [{"id": 1, "update": {"y": {"set": 100}, "externalId": {"set": "1"}}}]} == jsgz_load(
+            mock_update.calls[0].request.body
+        )
 
     def test_standard_update_with_cognite_resource_and_external_id_OK(self, mock_update):
         res = API_CLIENT._update_multiple(
@@ -581,15 +595,6 @@ class TestStandardUpdate:
         assert {"items": [{"externalId": "1", "update": {"y": {"set": 100}}}]} == jsgz_load(
             mock_update.calls[0].request.body
         )
-
-    def test_standard_update_with_cognite_resource__id_error(self):
-        with pytest.raises(AssertionError, match="one of id and external id"):
-            API_CLIENT._update_multiple(cls=SomeResourceList, resource_path=URL_PATH, items=[SomeResource(y=100)])
-
-        with pytest.raises(AssertionError, match="one of id and external id"):
-            API_CLIENT._update_multiple(
-                cls=SomeResourceList, resource_path=URL_PATH, items=[SomeResource(id=1, external_id="1", y=100)]
-            )
 
     def test_standard_update_with_cognite_update_object_OK(self, mock_update):
         res = API_CLIENT._update_multiple(
