@@ -3,11 +3,11 @@ from collections import namedtuple
 
 import pytest
 
-from client.utils._client_config import ClientConfig
 from cognite.client import CogniteClient
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes._base import *
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
+from cognite.client.utils._client_config import ClientConfig
 from tests.utils import jsgz_load, set_request_limit
 
 BASE_URL = "http://localtest.com/api/1.0/projects/test-project"
