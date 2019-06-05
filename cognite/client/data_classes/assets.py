@@ -254,7 +254,7 @@ class AssetList(CogniteResourceList):
         for i in range(0, len(ids), chunk_size):
             tasks.append({"asset_ids": ids[i : i + chunk_size], "limit": -1})
         res_list = utils._concurrency.execute_tasks_concurrently(
-            resource_api.list, tasks, resource_api._max_workers
+            resource_api.list, tasks, resource_api._config.max_workers
         ).results
         resources = resource_list_class([])
         for res in res_list:

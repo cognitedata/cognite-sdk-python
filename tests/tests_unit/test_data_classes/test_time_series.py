@@ -28,7 +28,7 @@ def mock_ts_by_ids_response(rsps):
             }
         ]
     }
-    rsps.add(rsps.POST, TS_CLIENT._base_url + "/timeseries/byids", status=200, json=res)
+    rsps.add(rsps.POST, TS_CLIENT._get_base_url_with_base_path() + "/timeseries/byids", status=200, json=res)
     yield rsps
 
 
@@ -36,7 +36,7 @@ def mock_ts_by_ids_response(rsps):
 def mock_count_dps_in_ts(mock_ts_by_ids_response):
     mock_ts_by_ids_response.add(
         mock_ts_by_ids_response.POST,
-        TS_CLIENT._base_url + "/timeseries/data/list",
+        TS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/list",
         status=200,
         json={
             "items": [
@@ -55,7 +55,7 @@ def mock_count_dps_in_ts(mock_ts_by_ids_response):
 def mock_get_latest_dp_in_ts(mock_ts_by_ids_response):
     mock_ts_by_ids_response.add(
         mock_ts_by_ids_response.POST,
-        TS_CLIENT._base_url + "/timeseries/data/latest",
+        TS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/latest",
         status=200,
         json={"items": [{"id": 1, "externalId": "1", "datapoints": [{"timestamp": 1, "value": 10}]}]},
     )
@@ -66,7 +66,7 @@ def mock_get_latest_dp_in_ts(mock_ts_by_ids_response):
 def mock_get_first_dp_in_ts(mock_ts_by_ids_response):
     mock_ts_by_ids_response.add(
         mock_ts_by_ids_response.POST,
-        TS_CLIENT._base_url + "/timeseries/data/list",
+        TS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/list",
         status=200,
         json={"items": [{"id": 1, "externalId": "1", "datapoints": [{"timestamp": 1, "value": 10}]}]},
     )

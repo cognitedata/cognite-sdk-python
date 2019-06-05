@@ -1,4 +1,3 @@
-import json
 from typing import *
 
 
@@ -175,8 +174,7 @@ class CogniteMissingClientError(Exception):
 class CogniteAPIKeyError(Exception):
     """Cognite API Key Error.
 
-    Raised if an invalid API key has been used to authenticate.
+    Raised if the API key is missing or invalid.
     """
 
-    def __str__(self):
-        return "Invalid API key."
+    pass

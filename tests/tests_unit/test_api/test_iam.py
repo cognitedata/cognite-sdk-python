@@ -15,7 +15,7 @@ def mock_service_accounts(rsps):
     response_body = {
         "items": [{"name": "service@bla.com", "groups": [1, 2, 3], "id": 0, "isDeleted": False, "deletedTime": 0}]
     }
-    url_pattern = re.compile(re.escape(IAM_API._base_url) + "/serviceaccounts.*")
+    url_pattern = re.compile(re.escape(IAM_API._get_base_url_with_base_path()) + "/serviceaccounts.*")
     rsps.assert_all_requests_are_fired = False
     rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
     rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
@@ -58,7 +58,7 @@ class TestServiceAccounts:
 @pytest.fixture
 def mock_api_keys(rsps):
     response_body = {"items": [{"id": 1, "serviceAccountId": 1, "createdTime": 0, "status": "ACTIVE"}]}
-    url_pattern = re.compile(re.escape(IAM_API._base_url) + "/apikeys.*")
+    url_pattern = re.compile(re.escape(IAM_API._get_base_url_with_base_path()) + "/apikeys.*")
     rsps.assert_all_requests_are_fired = False
     rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
     rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
@@ -108,7 +108,7 @@ def mock_groups(rsps):
             }
         ]
     }
-    url_pattern = re.compile(re.escape(IAM_API._base_url) + "/groups.*")
+    url_pattern = re.compile(re.escape(IAM_API._get_base_url_with_base_path()) + "/groups.*")
     rsps.assert_all_requests_are_fired = False
     rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
     rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
@@ -128,7 +128,7 @@ def mock_group_service_account_response(rsps):
             }
         ]
     }
-    url_pattern = re.compile(re.escape(IAM_API._base_url) + "/groups/1/serviceaccounts.*")
+    url_pattern = re.compile(re.escape(IAM_API._get_base_url_with_base_path()) + "/groups/1/serviceaccounts.*")
     rsps.assert_all_requests_are_fired = False
     rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
     rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
@@ -192,7 +192,7 @@ class TestGroups:
 @pytest.fixture
 def mock_security_categories(rsps):
     response_body = {"items": [{"name": "bla", "id": 1}]}
-    url_pattern = re.compile(re.escape(IAM_API._base_url) + "/securitycategories.*")
+    url_pattern = re.compile(re.escape(IAM_API._get_base_url_with_base_path()) + "/securitycategories.*")
     rsps.assert_all_requests_are_fired = False
     rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
     rsps.add(rsps.GET, url_pattern, status=200, json=response_body)

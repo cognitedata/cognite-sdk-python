@@ -26,7 +26,7 @@ THREE_D_API = CogniteClient().three_d
 @pytest.fixture
 def mock_3d_model_response(rsps):
     response_body = {"items": [{"name": "My Model", "id": 1000, "createdTime": 0}]}
-    url_pattern = re.compile(re.escape(THREE_D_API._base_url) + "/3d/models.*")
+    url_pattern = re.compile(re.escape(THREE_D_API._get_base_url_with_base_path()) + "/3d/models.*")
     rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
     rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
     rsps.assert_all_requests_are_fired = False
@@ -36,7 +36,7 @@ def mock_3d_model_response(rsps):
 @pytest.fixture
 def mock_retrieve_3d_model_response(rsps):
     response_body = {"name": "My Model", "id": 1000, "createdTime": 0}
-    rsps.add(rsps.GET, THREE_D_API._base_url + "/3d/models/1", status=200, json=response_body)
+    rsps.add(rsps.GET, THREE_D_API._get_base_url_with_base_path() + "/3d/models/1", status=200, json=response_body)
     yield rsps
 
 
@@ -105,7 +105,7 @@ def mock_3d_model_revision_response(rsps):
             }
         ]
     }
-    url_pattern = re.compile(re.escape(THREE_D_API._base_url) + "/3d/models/1/revisions.*")
+    url_pattern = re.compile(re.escape(THREE_D_API._get_base_url_with_base_path()) + "/3d/models/1/revisions.*")
     rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
     rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
     rsps.assert_all_requests_are_fired = False
@@ -126,13 +126,18 @@ def mock_retrieve_3d_model_revision_response(rsps):
         "assetMappingCount": 0,
         "createdTime": 0,
     }
-    rsps.add(rsps.GET, THREE_D_API._base_url + "/3d/models/1/revisions/1", status=200, json=res)
+    rsps.add(rsps.GET, THREE_D_API._get_base_url_with_base_path() + "/3d/models/1/revisions/1", status=200, json=res)
     yield rsps
 
 
 @pytest.fixture
 def mock_3d_model_revision_thumbnail_response(rsps):
-    rsps.add(rsps.POST, THREE_D_API._base_url + "/3d/models/1/revisions/1/thumbnail", status=200, json={})
+    rsps.add(
+        rsps.POST,
+        THREE_D_API._get_base_url_with_base_path() + "/3d/models/1/revisions/1/thumbnail",
+        status=200,
+        json={},
+    )
     yield rsps
 
 
@@ -151,9 +156,17 @@ def mock_3d_model_revision_node_response(rsps):
             }
         ]
     }
-    rsps.add(rsps.GET, THREE_D_API._base_url + "/3d/models/1/revisions/1/nodes", status=200, json=response_body)
     rsps.add(
-        rsps.GET, THREE_D_API._base_url + "/3d/models/1/revisions/1/nodes/ancestors", status=200, json=response_body
+        rsps.GET,
+        THREE_D_API._get_base_url_with_base_path() + "/3d/models/1/revisions/1/nodes",
+        status=200,
+        json=response_body,
+    )
+    rsps.add(
+        rsps.GET,
+        THREE_D_API._get_base_url_with_base_path() + "/3d/models/1/revisions/1/nodes/ancestors",
+        status=200,
+        json=response_body,
     )
     rsps.assert_all_requests_are_fired = False
     yield rsps
@@ -222,7 +235,7 @@ class Test3DModelRevisions:
 class Test3DFiles:
     @pytest.fixture
     def mock_3d_files_response(self, rsps):
-        rsps.add(rsps.GET, THREE_D_API._base_url + "/3d/files/1", body="bla")
+        rsps.add(rsps.GET, THREE_D_API._get_base_url_with_base_path() + "/3d/files/1", body="bla")
 
     def test_retrieve(self, mock_3d_files_response):
         assert b"bla" == THREE_D_API.files.retrieve(1)
@@ -232,7 +245,9 @@ class Test3DAssetMappings:
     @pytest.fixture
     def mock_3d_asset_mappings_response(self, rsps):
         response_body = {"items": [{"nodeId": 1003, "assetId": 3001, "treeIndex": 5, "subtreeSize": 7}]}
-        url_pattern = re.compile(re.escape(THREE_D_API._base_url) + "/3d/models/1/revisions/1/mappings.*")
+        url_pattern = re.compile(
+            re.escape(THREE_D_API._get_base_url_with_base_path()) + "/3d/models/1/revisions/1/mappings.*"
+        )
 
         rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
         rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
@@ -275,7 +290,7 @@ class Test3DAssetMappings:
     def test_delete_fails(self, rsps):
         rsps.add(
             rsps.POST,
-            THREE_D_API._base_url + "/3d/models/1/revisions/1/mappings/delete",
+            THREE_D_API._get_base_url_with_base_path() + "/3d/models/1/revisions/1/mappings/delete",
             status=500,
             json={"error": {"message": "Server Error", "code": 500}},
         )
@@ -301,7 +316,12 @@ class Test3DReveal:
             "createdTime": 0,
             "sceneThreedFiles": [{"version": 1, "fileId": 1000}],
         }
-        rsps.add(rsps.GET, THREE_D_API._base_url + "/3d/reveal/models/1/revisions/1", status=200, json=res)
+        rsps.add(
+            rsps.GET,
+            THREE_D_API._get_base_url_with_base_path() + "/3d/reveal/models/1/revisions/1",
+            status=200,
+            json=res,
+        )
         yield rsps
 
     def test_retrieve_revision(self, mock_get_reveal_revision_response):
@@ -327,7 +347,9 @@ class Test3DReveal:
         }
         rsps.add(
             rsps.GET,
-            re.compile(re.escape(THREE_D_API._base_url) + "/3d/reveal/models/1/revisions/1/nodes.*"),
+            re.compile(
+                re.escape(THREE_D_API._get_base_url_with_base_path()) + "/3d/reveal/models/1/revisions/1/nodes.*"
+            ),
             status=200,
             json=res,
         )
@@ -361,7 +383,9 @@ class Test3DReveal:
         }
         rsps.add(
             rsps.GET,
-            re.compile(re.escape(THREE_D_API._base_url) + "/3d/reveal/models/1/revisions/1/sectors"),
+            re.compile(
+                re.escape(THREE_D_API._get_base_url_with_base_path()) + "/3d/reveal/models/1/revisions/1/sectors"
+            ),
             status=200,
             json=res,
         )

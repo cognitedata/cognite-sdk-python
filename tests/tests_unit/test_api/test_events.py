@@ -28,7 +28,7 @@ def mock_events_response(rsps):
         ]
     }
 
-    url_pattern = re.compile(re.escape(EVENTS_API._base_url) + "/.+")
+    url_pattern = re.compile(re.escape(EVENTS_API._get_base_url_with_base_path()) + "/.+")
     rsps.assert_all_requests_are_fired = False
 
     rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
@@ -136,7 +136,7 @@ class TestEvents:
 
 @pytest.fixture
 def mock_events_empty(rsps):
-    url_pattern = re.compile(re.escape(EVENTS_API._base_url) + "/.+")
+    url_pattern = re.compile(re.escape(EVENTS_API._get_base_url_with_base_path()) + "/.+")
     rsps.add(rsps.POST, url_pattern, status=200, json={"items": []})
     yield rsps
 

@@ -17,43 +17,36 @@ from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 
 log = logging.getLogger("cognite-sdk")
 
-BACKOFF_MAX = 30
-DEFAULT_MAX_POOL_SIZE = 50
-DEFAULT_MAX_RETRIES = 10
-
 
 class RetryWithMaxBackoff(Retry):
     def get_backoff_time(self):
-        return min(BACKOFF_MAX, super().get_backoff_time())
-
-
-def _get_status_codes_to_retry():
-    env_codes = os.getenv("COGNITE_STATUS_FORCELIST")
-    if env_codes is None:
-        return [429, 500, 502, 503]
-    return [int(c) for c in env_codes.split(",")]
+        return min(utils._client_config.DefaultConfig().max_retry_backoff, super().get_backoff_time())
 
 
 def _init_requests_session():
     session = Session()
     session_with_retry = Session()
-    num_of_retries = int(os.getenv("COGNITE_MAX_RETRIES", DEFAULT_MAX_RETRIES))
-    max_pool_size = int(os.getenv("COGNITE_MAX_CONNECTION_POOL_SIZE", DEFAULT_MAX_POOL_SIZE))
+    default_config = utils._client_config.DefaultConfig()
     adapter = HTTPAdapter(
         max_retries=RetryWithMaxBackoff(
-            total=num_of_retries, connect=num_of_retries, read=0, status=0, backoff_factor=0.5, raise_on_status=False
+            total=default_config.max_retries,
+            connect=default_config.max_retries,
+            read=0,
+            status=0,
+            backoff_factor=0.5,
+            raise_on_status=False,
         ),
-        pool_maxsize=max_pool_size,
+        pool_maxsize=default_config.max_connection_pool_size,
     )
     adapter_with_retry = HTTPAdapter(
         max_retries=RetryWithMaxBackoff(
-            total=num_of_retries,
+            total=default_config.max_retries,
             backoff_factor=0.5,
-            status_forcelist=_get_status_codes_to_retry(),
+            status_forcelist=default_config.status_forcelist,
             method_whitelist=False,
             raise_on_status=False,
         ),
-        pool_maxsize=max_pool_size,
+        pool_maxsize=default_config.max_connection_pool_size,
     )
     session.mount("http://", adapter)
     session.mount("https://", adapter)
@@ -69,26 +62,12 @@ class APIClient:
     _RESOURCE_PATH = None
     _LIST_CLASS = None
 
-    def __init__(
-        self,
-        version: str = None,
-        project: str = None,
-        api_key: str = None,
-        base_url: str = None,
-        max_workers: int = None,
-        headers: Dict = None,
-        timeout: int = None,
-        cognite_client=None,
-    ):
+    def __init__(self, config: utils._client_config.ClientConfig, api_version: str = None, cognite_client=None):
         self._request_session = _REQUESTS_SESSION
         self._request_session_with_retry = _REQUESTS_SESSION_WITH_RETRY
-        self._project = project
-        self._api_key = api_key
-        __base_path = "/api/{}/projects/{}".format(version, project) if version else ""
-        self._base_url = base_url + __base_path
-        self._max_workers = max_workers
-        self._headers = self._configure_headers(headers)
-        self._timeout = timeout
+
+        self._config = config
+        self._api_version = api_version
         self._cognite_client = cognite_client
 
         self._CREATE_LIMIT = 1000
@@ -98,22 +77,24 @@ class APIClient:
         self._UPDATE_LIMIT = 1000
 
     def _delete(self, url_path: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
-        return self._do_request("DELETE", url_path, params=params, headers=headers, timeout=self._timeout)
+        return self._do_request("DELETE", url_path, params=params, headers=headers, timeout=self._config.timeout)
 
     def _get(self, url_path: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
-        return self._do_request("GET", url_path, params=params, headers=headers, timeout=self._timeout)
+        return self._do_request("GET", url_path, params=params, headers=headers, timeout=self._config.timeout)
 
     def _post(self, url_path: str, json: Dict[str, Any], params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
-        return self._do_request("POST", url_path, json=json, headers=headers, params=params, timeout=self._timeout)
+        return self._do_request(
+            "POST", url_path, json=json, headers=headers, params=params, timeout=self._config.timeout
+        )
 
     def _put(self, url_path: str, json: Dict[str, Any] = None, headers: Dict[str, Any] = None):
-        return self._do_request("PUT", url_path, json=json, headers=headers, timeout=self._timeout)
+        return self._do_request("PUT", url_path, json=json, headers=headers, timeout=self._config.timeout)
 
     def _do_request(self, method: str, url_path: str, **kwargs):
         is_retryable, full_url = self._resolve_url(method, url_path)
 
         json_payload = kwargs.get("json")
-        headers = self._headers.copy()
+        headers = self._configure_headers(self._config.headers.copy())
         headers.update(kwargs.get("headers") or {})
 
         if json_payload:
@@ -138,10 +119,11 @@ class APIClient:
     def _configure_headers(self, additional_headers):
         headers = CaseInsensitiveDict()
         headers.update(requests.utils.default_headers())
-        headers["api-key"] = self._api_key
+        headers["api-key"] = self._config.api_key
         headers["content-type"] = "application/json"
         headers["accept"] = "application/json"
         headers["x-cdp-sdk"] = "CognitePythonSDK:{}".format(utils._auxiliary.get_current_sdk_version())
+        headers["x-cdp-app"] = self._config.client_name
         if "User-Agent" in headers:
             headers["User-Agent"] += " " + utils._auxiliary.get_user_agent()
         else:
@@ -152,11 +134,16 @@ class APIClient:
     def _resolve_url(self, method: str, url_path: str):
         if not url_path.startswith("/"):
             raise ValueError("URL path must start with '/'")
-        full_url = self._base_url + url_path
+        base_url = self._get_base_url_with_base_path()
+        full_url = base_url + url_path
         is_retryable = self._is_retryable(method, full_url)
         # Hack to allow running model hosting requests against local emulator
         full_url = self._apply_model_hosting_emulator_url_filter(full_url)
         return is_retryable, full_url
+
+    def _get_base_url_with_base_path(self):
+        base_path = "/api/{}/projects/{}".format(self._api_version, self._config.project) if self._api_version else ""
+        return self._config.base_url + base_path
 
     def _is_retryable(self, method, path):
         valid_methods = ["GET", "POST", "PUT", "DELETE"]
@@ -227,7 +214,9 @@ class APIClient:
             {"url_path": resource_path + "/byids", "json": {"items": id_chunk}, "headers": headers}
             for id_chunk in id_chunks
         ]
-        tasks_summary = utils._concurrency.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
+        tasks_summary = utils._concurrency.execute_tasks_concurrently(
+            self._post, tasks, max_workers=self._config.max_workers
+        )
 
         if tasks_summary.exceptions:
             try:
@@ -347,7 +336,7 @@ class APIClient:
             items_split.append({"items": items_chunk})
 
         tasks = [(resource_path, task_items, params, headers) for task_items in items_split]
-        summary = utils._concurrency.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
+        summary = utils._concurrency.execute_tasks_concurrently(self._post, tasks, max_workers=self._config.max_workers)
 
         def unwrap_element(el):
             if isinstance(el, dict):
@@ -390,7 +379,7 @@ class APIClient:
             {"url_path": resource_path + "/delete", "json": {"items": chunk}, "params": params, "headers": headers}
             for chunk in id_chunks
         ]
-        summary = utils._concurrency.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
+        summary = utils._concurrency.execute_tasks_concurrently(self._post, tasks, max_workers=self._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: task["json"]["items"],
             task_list_element_unwrap_fn=utils._auxiliary.unwrap_identifer,
@@ -425,7 +414,9 @@ class APIClient:
             for chunk in patch_object_chunks
         ]
 
-        tasks_summary = utils._concurrency.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
+        tasks_summary = utils._concurrency.execute_tasks_concurrently(
+            self._post, tasks, max_workers=self._config.max_workers
+        )
         tasks_summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: task["json"]["items"],
             task_list_element_unwrap_fn=lambda el: utils._auxiliary.unwrap_identifer(el),
@@ -569,9 +560,9 @@ class APIClient:
     def _apply_model_hosting_emulator_url_filter(self, full_url):
         mlh_emul_url = os.getenv("MODEL_HOSTING_EMULATOR_URL")
         if mlh_emul_url is not None:
-            pattern = "{}/analytics/models(.*)".format(self._base_url)
+            pattern = "{}/analytics/models(.*)".format(self._get_base_url_with_base_path())
             res = re.match(pattern, full_url)
             if res is not None:
                 path = res.group(1)
-                return "{}/projects/{}/models{}".format(mlh_emul_url, self._project, path)
+                return "{}/projects/{}/models{}".format(mlh_emul_url, self._config.project, path)
         return full_url

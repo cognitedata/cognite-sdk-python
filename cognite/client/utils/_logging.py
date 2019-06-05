@@ -58,3 +58,14 @@ class DebugLogFormatter(logging.Formatter):
                 s = s + "\n"
             s = s + self.formatStack(record.stack_info)
         return s
+
+
+def _configure_logger_for_debug_mode():
+    logger = logging.getLogger("cognite-sdk")
+    logger.setLevel("DEBUG")
+    log_handler = logging.StreamHandler()
+    formatter = DebugLogFormatter()
+    log_handler.setFormatter(formatter)
+    logger.handlers = []
+    logger.propagate = False
+    logger.addHandler(log_handler)

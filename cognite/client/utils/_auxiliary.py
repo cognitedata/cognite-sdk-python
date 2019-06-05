@@ -12,6 +12,7 @@ import platform
 import random
 import re
 import string
+import warnings
 from decimal import Decimal
 from typing import Any, Dict, List, Union
 from urllib.parse import quote
@@ -134,6 +135,20 @@ def get_user_agent():
     operating_system = "{}/{}".format(platform.system(), os_version_info)
 
     return "{} {} {}".format(sdk_version, python_version, operating_system)
+
+
+def _check_client_has_newest_major_version():
+    this_version = cognite.client.utils._auxiliary.get_current_sdk_version()
+    newest_version = cognite.client.utils._version_checker.get_newest_version_in_major_release(
+        "cognite-sdk", this_version
+    )
+    if newest_version != this_version:
+        warnings.warn(
+            "You are using version {} of the SDK, however version {} is available. "
+            "Upgrade or set the environment variable 'COGNITE_DISABLE_PYPI_VERSION_CHECK' to suppress this "
+            "warning.".format(this_version, newest_version),
+            stacklevel=3,
+        )
 
 
 def random_string(size=100):

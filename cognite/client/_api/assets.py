@@ -299,7 +299,7 @@ class AssetsAPI(APIClient):
         for i in range(0, len(ids), chunk_size):
             tasks.append({"parent_ids": ids[i : i + chunk_size], "limit": -1})
         res_list = utils._concurrency.execute_tasks_concurrently(
-            self.list, tasks=tasks, max_workers=self._max_workers
+            self.list, tasks=tasks, max_workers=self._config.max_workers
         ).results
         children = AssetList([])
         for res in res_list:
@@ -525,7 +525,7 @@ class _AssetPoster:
 
     def post(self):
         workers = []
-        for _ in range(self.client._max_workers):
+        for _ in range(self.client._config.max_workers):
             worker = _AssetPosterWorker(self.client, self.request_queue, self.response_queue)
             workers.append(worker)
             worker.start()
