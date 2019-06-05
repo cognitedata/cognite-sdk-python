@@ -9,7 +9,7 @@ from time import sleep
 
 import pytest
 
-from cognite.client import CogniteClient
+from cognite.client import CogniteClient, utils
 from cognite.client._api.assets import AssetList
 from cognite.client._api.files import FileMetadataList
 from cognite.client._api.time_series import TimeSeriesList
@@ -21,9 +21,15 @@ from tests.utils import BASE_URL
 
 @pytest.fixture
 def default_client_config():
-    from cognite.client._cognite_client import DEFAULT_MAX_WORKERS, DEFAULT_TIMEOUT
+    default_config = utils._client_config.DefaultConfig()
 
-    yield "https://greenfield.cognitedata.com", DEFAULT_MAX_WORKERS, DEFAULT_TIMEOUT, "python-sdk-integration-tests", "test"
+    yield (
+        "https://greenfield.cognitedata.com",
+        default_config.max_workers,
+        default_config.timeout,
+        "python-sdk-integration-tests",
+        "test",
+    )
 
 
 @pytest.fixture
@@ -70,7 +76,7 @@ class TestCogniteClient:
         os.environ["COGNITE_API_KEY"] = tmp
 
     def test_no_api_key_set(self, unset_env_api_key):
-        with pytest.raises(ValueError, match="No API Key has been specified"):
+        with pytest.raises(CogniteAPIKeyError, match="No API key has been specified"):
             CogniteClient()
 
     def test_invalid_api_key(self, rsps):
@@ -94,24 +100,24 @@ class TestCogniteClient:
         with pytest.raises(ValueError, match="No client name has been specified"):
             CogniteClient()
 
-    def assert_config_is_correct(self, client, base_url, max_workers, timeout, client_name, project):
-        assert client._base_url == base_url
-        assert type(client._base_url) is str
+    def assert_config_is_correct(self, config, base_url, max_workers, timeout, client_name, project):
+        assert config.base_url == base_url
+        assert type(config.base_url) is str
 
-        assert client._max_workers == max_workers
-        assert type(client._max_workers) is int
+        assert config.max_workers == max_workers
+        assert type(config.max_workers) is int
 
-        assert client._timeout == timeout
-        assert type(client._timeout) is int
+        assert config.timeout == timeout
+        assert type(config.timeout) is int
 
-        assert client._client_name == client_name
-        assert type(client._client_name) is str
+        assert config.client_name == client_name
+        assert type(config.client_name) is str
 
-        assert client.project == project
-        assert type(client.project) is str
+        assert config.project == project
+        assert type(config.project) is str
 
     def test_default_config(self, client, default_client_config):
-        self.assert_config_is_correct(client, *default_client_config)
+        self.assert_config_is_correct(client._config, *default_client_config)
 
     def test_parameter_config(self):
         base_url = "blabla"
@@ -123,11 +129,11 @@ class TestCogniteClient:
         client = CogniteClient(
             project=project, base_url=base_url, max_workers=max_workers, timeout=timeout, client_name=client_name
         )
-        self.assert_config_is_correct(client, base_url, max_workers, timeout, client_name, project)
+        self.assert_config_is_correct(client._config, base_url, max_workers, timeout, client_name, project)
 
     def test_environment_config(self, environment_client_config):
         client = CogniteClient()
-        self.assert_config_is_correct(client, *environment_client_config)
+        self.assert_config_is_correct(client._config, *environment_client_config)
 
     @pytest.fixture
     def thread_local_credentials_module(self):
@@ -149,7 +155,7 @@ class TestCogniteClient:
         sleep(random.random())
         client = CogniteClient()
 
-        assert api_key == client._CogniteClient__api_key
+        assert api_key == client._config.api_key
         assert project == client.project
 
     def test_create_client_thread_local_config(self, thread_local_credentials_module):

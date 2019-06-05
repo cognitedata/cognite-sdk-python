@@ -350,7 +350,7 @@ class FilesAPI(APIClient):
                     if os.path.isfile(file_path):
                         tasks.append((FileMetadata(name=file_name), file_path, overwrite))
             tasks_summary = utils._concurrency.execute_tasks_concurrently(
-                self._upload_file_from_path, tasks, self._max_workers
+                self._upload_file_from_path, tasks, self._config.max_workers
             )
             tasks_summary.raise_compound_exception_if_failed_tasks(task_unwrap_fn=lambda x: x[0].name)
             return FileMetadataList(tasks_summary.results)
@@ -462,7 +462,7 @@ class FilesAPI(APIClient):
     def _download_files_to_directory(self, directory, all_ids, id_to_metadata):
         tasks = [(directory, id, id_to_metadata) for id in all_ids]
         tasks_summary = utils._concurrency.execute_tasks_concurrently(
-            self._process_file_download, tasks, max_workers=self._max_workers
+            self._process_file_download, tasks, max_workers=self._config.max_workers
         )
         tasks_summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: id_to_metadata[utils._auxiliary.unwrap_identifer(task[1])],

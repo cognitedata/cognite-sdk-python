@@ -77,7 +77,7 @@ class RawDatabasesAPI(APIClient):
         items = [{"name": n} for n in name]
         chunks = utils._auxiliary.split_into_chunks(items, self._DELETE_LIMIT)
         tasks = [{"url_path": self._RESOURCE_PATH + "/delete", "json": {"items": chunk}} for chunk in chunks]
-        summary = utils._concurrency.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
+        summary = utils._concurrency.execute_tasks_concurrently(self._post, tasks, max_workers=self._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: task["json"]["items"], task_list_element_unwrap_fn=lambda el: el["name"]
         )
@@ -195,7 +195,7 @@ class RawTablesAPI(APIClient):
             }
             for chunk in chunks
         ]
-        summary = utils._concurrency.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
+        summary = utils._concurrency.execute_tasks_concurrently(self._post, tasks, max_workers=self._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: task["json"]["items"], task_list_element_unwrap_fn=lambda el: el["name"]
         )
@@ -306,7 +306,7 @@ class RawRowsAPI(APIClient):
             }
             for chunk in chunks
         ]
-        summary = utils._concurrency.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
+        summary = utils._concurrency.execute_tasks_concurrently(self._post, tasks, max_workers=self._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: task["json"]["items"], task_list_element_unwrap_fn=lambda row: row["key"]
         )
@@ -362,7 +362,7 @@ class RawRowsAPI(APIClient):
             )
             for chunk in chunks
         ]
-        summary = utils._concurrency.execute_tasks_concurrently(self._post, tasks, max_workers=self._max_workers)
+        summary = utils._concurrency.execute_tasks_concurrently(self._post, tasks, max_workers=self._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: task["json"]["items"], task_list_element_unwrap_fn=lambda el: el["key"]
         )

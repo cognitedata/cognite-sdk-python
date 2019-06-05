@@ -35,7 +35,7 @@ def mock_assets_response(rsps):
         ]
     }
 
-    url_pattern = re.compile(re.escape(ASSETS_API._base_url) + "/.+")
+    url_pattern = re.compile(re.escape(ASSETS_API._get_base_url_with_base_path()) + "/.+")
     rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
     yield rsps
 
@@ -44,13 +44,13 @@ def mock_assets_response(rsps):
 def mock_get_subtree(rsps):
     rsps.add(
         rsps.POST,
-        ASSETS_API._base_url + "/assets/byids",
+        ASSETS_API._get_base_url_with_base_path() + "/assets/byids",
         status=200,
         json={"items": [{"id": 1, "path": [1], "depth": 0}]},
     )
     rsps.add(
         rsps.POST,
-        ASSETS_API._base_url + "/assets/list",
+        ASSETS_API._get_base_url_with_base_path() + "/assets/list",
         status=200,
         json={
             "items": [
@@ -62,23 +62,23 @@ def mock_get_subtree(rsps):
     )
     rsps.add(
         rsps.POST,
-        ASSETS_API._base_url + "/assets/list",
+        ASSETS_API._get_base_url_with_base_path() + "/assets/list",
         status=200,
         json={"items": [{"id": 5, "path": [1, 2, 5], "depth": 2}, {"id": 6, "path": [1, 2, 5], "depth": 2}]},
     )
     rsps.add(
         rsps.POST,
-        ASSETS_API._base_url + "/assets/list",
+        ASSETS_API._get_base_url_with_base_path() + "/assets/list",
         status=200,
         json={"items": [{"id": 7, "path": [1, 3, 7], "depth": 2}, {"id": 8, "path": [1, 3, 8], "depth": 2}]},
     )
     rsps.add(
         rsps.POST,
-        ASSETS_API._base_url + "/assets/list",
+        ASSETS_API._get_base_url_with_base_path() + "/assets/list",
         status=200,
         json={"items": [{"id": 9, "path": [1, 4, 9], "depth": 2}, {"id": 10, "path": [1, 4, 10], "depth": 2}]},
     )
-    rsps.add(rsps.POST, ASSETS_API._base_url + "/assets/list", status=200, json={"items": []})
+    rsps.add(rsps.POST, ASSETS_API._get_base_url_with_base_path() + "/assets/list", status=200, json={"items": []})
     yield rsps
 
 
@@ -299,7 +299,7 @@ class TestAssetPoster:
 
     @pytest.fixture
     def mock_post_asset_hierarchy(self, rsps):
-        ASSETS_API._max_workers = 1
+        ASSETS_API._config.max_workers = 1
 
         def request_callback(request):
             items = jsgz_load(request.body)["items"]
@@ -323,10 +323,13 @@ class TestAssetPoster:
             return 200, {}, json.dumps({"items": response_assets})
 
         rsps.add_callback(
-            rsps.POST, ASSETS_API._base_url + "/assets", callback=request_callback, content_type="application/json"
+            rsps.POST,
+            ASSETS_API._get_base_url_with_base_path() + "/assets",
+            callback=request_callback,
+            content_type="application/json",
         )
         yield rsps
-        ASSETS_API._max_workers = 10
+        ASSETS_API._config.max_workers = 10
 
     @pytest.mark.parametrize(
         "limit, depth, children_per_node, expected_num_calls",
@@ -381,7 +384,10 @@ class TestAssetPoster:
             return 200, {}, json.dumps({"items": response_assets})
 
         rsps.add_callback(
-            rsps.POST, ASSETS_API._base_url + "/assets", callback=request_callback, content_type="application/json"
+            rsps.POST,
+            ASSETS_API._get_base_url_with_base_path() + "/assets",
+            callback=request_callback,
+            content_type="application/json",
         )
         with set_request_limit(ASSETS_API, 1):
             yield rsps
@@ -406,7 +412,7 @@ class TestAssetPoster:
 
 @pytest.fixture
 def mock_assets_empty(rsps):
-    url_pattern = re.compile(re.escape(ASSETS_API._base_url) + "/.+")
+    url_pattern = re.compile(re.escape(ASSETS_API._get_base_url_with_base_path()) + "/.+")
     rsps.add(rsps.POST, url_pattern, status=200, json={"items": []})
     yield rsps
 

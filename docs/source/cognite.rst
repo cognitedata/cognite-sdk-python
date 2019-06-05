@@ -159,17 +159,22 @@ You can set default configurations with these environment variables:
 
 .. code:: bash
 
+    # Can be overrided by Client Configuration
     $ export COGNITE_API_KEY = <your-api-key>
     $ export COGNITE_PROJECT = <your-default-project>
     $ export COGNITE_BASE_URL = http://<host>:<port>
     $ export COGNITE_CLIENT_NAME = <user-defined-client-or-app-name>
     $ export COGNITE_MAX_WORKERS = <number-of-workers>
     $ export COGNITE_TIMEOUT = <num-of-seconds>
+
+    # Global Configuration
     $ export COGNITE_DISABLE_PYPI_VERSION_CHECK = "1"
+    $ export COGNITE_DISABLE_GZIP = "1"
     $ export COGNITE_MAX_RETRIES = <number-of-retries>
+    $ export COGNITE_MAX_RETRY_BACKOFF = <number-of-seconds>
     $ export COGNITE_MAX_CONNECTION_POOL_SIZE = <number-of-connections-in-pool>
     $ export COGNITE_STATUS_FORCELIST = "429,502,503"
-    $ export COGNITE_DISABLE_GZIP = "1"
+
 
 Concurrency and connection pooling
 ----------------------------------
