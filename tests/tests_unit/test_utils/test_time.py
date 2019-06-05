@@ -148,6 +148,7 @@ class TestObjectTimeConversion:
             ([{"start_time": 0}], [{"start_time": "1970-01-01 00:00:00"}]),
             ([{"end_time": 0}], [{"end_time": "1970-01-01 00:00:00"}]),
             ([{"not_a_time": 0}], [{"not_a_time": 0}]),
+            ([{"created_time": int(1e15)}], [{"created_time": int(1e15)}]),
         ],
     )
     def test_convert_time_attributes_to_datetime(self, item, expected_output):
