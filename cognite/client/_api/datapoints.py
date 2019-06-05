@@ -512,7 +512,9 @@ class DatapointsAPI(APIClient):
                 dps_object_chunk = dps_object.copy()
                 dps_object_chunk["datapoints"] = dps_object["datapoints"][i : i + self._DPS_LIMIT]
                 tasks.append(([dps_object_chunk],))
-        utils._concurrency.execute_tasks_concurrently(self._insert_datapoints, tasks, max_workers=self._max_workers)
+        utils._concurrency.execute_tasks_concurrently(
+            self._insert_datapoints, tasks, max_workers=self._config.max_workers
+        )
 
     def _insert_datapoints(self, post_dps_objects: List[Dict[str, Any]]):
         self._post(url_path=self._RESOURCE_PATH, json={"items": post_dps_objects})
@@ -621,7 +623,7 @@ class _DatapointsFetcher:
         tasks_summary = utils._concurrency.execute_tasks_concurrently(
             self._fetch_dps_initial_and_return_remaining_queries,
             [(q,) for q in dps_queries],
-            max_workers=self.client._max_workers,
+            max_workers=self.client._config.max_workers,
         )
         if tasks_summary.exceptions:
             raise tasks_summary.exceptions[0]
@@ -658,7 +660,9 @@ class _DatapointsFetcher:
 
     def _fetch_datapoints_for_remaining_queries(self, queries: List[_DPQuery]):
         tasks_summary = utils._concurrency.execute_tasks_concurrently(
-            self._get_datapoints_with_paging, [q.as_tuple() for q in queries], max_workers=self.client._max_workers
+            self._get_datapoints_with_paging,
+            [q.as_tuple() for q in queries],
+            max_workers=self.client._config.max_workers,
         )
         if tasks_summary.exceptions:
             raise tasks_summary.exceptions[0]

@@ -31,7 +31,9 @@ def mock_ts_response(rsps):
             }
         ]
     }
-    url_pattern = re.compile(re.escape(TS_API._base_url) + "/timeseries(?:/byids|/update|/delete|/search|$|\?.+)")
+    url_pattern = re.compile(
+        re.escape(TS_API._get_base_url_with_base_path()) + "/timeseries(?:/byids|/update|/delete|/search|$|\?.+)"
+    )
     rsps.assert_all_requests_are_fired = False
 
     rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
@@ -161,7 +163,7 @@ class TestPlotTimeSeries:
     def mock_get_dps(self, rsps):
         rsps.add(
             rsps.POST,
-            TS_API._base_url + "/timeseries/data/list",
+            TS_API._get_base_url_with_base_path() + "/timeseries/data/list",
             status=200,
             json={
                 "items": [
@@ -218,7 +220,7 @@ class TestPlotTimeSeries:
 
 @pytest.fixture
 def mock_time_series_empty(rsps):
-    url_pattern = re.compile(re.escape(TS_API._base_url) + "/.+")
+    url_pattern = re.compile(re.escape(TS_API._get_base_url_with_base_path()) + "/.+")
     rsps.assert_all_requests_are_fired = False
     rsps.add(rsps.POST, url_pattern, status=200, json={"items": []})
     rsps.add(rsps.GET, url_pattern, status=200, json={"items": []})

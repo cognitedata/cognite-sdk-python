@@ -35,7 +35,7 @@ def mock_files_response(rsps):
         ]
     }
 
-    url_pattern = re.compile(re.escape(FILES_API._base_url) + "/.+")
+    url_pattern = re.compile(re.escape(FILES_API._get_base_url_with_base_path()) + "/.+")
     rsps.assert_all_requests_are_fired = False
 
     rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
@@ -59,7 +59,7 @@ def mock_file_upload_response(rsps):
         "lastUpdatedTime": 0,
         "uploadUrl": "https://upload.here",
     }
-    rsps.add(rsps.POST, FILES_API._base_url + "/files", status=200, json=response_body)
+    rsps.add(rsps.POST, FILES_API._get_base_url_with_base_path() + "/files", status=200, json=response_body)
     rsps.add(rsps.PUT, "https://upload.here", status=200)
     yield rsps
 
@@ -68,7 +68,7 @@ def mock_file_upload_response(rsps):
 def mock_file_download_response(rsps):
     rsps.add(
         rsps.POST,
-        FILES_API._base_url + "/files/byids",
+        FILES_API._get_base_url_with_base_path() + "/files/byids",
         status=200,
         json={"items": [{"id": 1, "name": "file1"}, {"externalId": "2", "name": "file2"}]},
     )
@@ -84,7 +84,7 @@ def mock_file_download_response(rsps):
 
     rsps.add_callback(
         rsps.POST,
-        FILES_API._base_url + "/files/downloadlink",
+        FILES_API._get_base_url_with_base_path() + "/files/downloadlink",
         callback=download_link_callback,
         content_type="application/json",
     )
@@ -97,7 +97,7 @@ def mock_file_download_response(rsps):
 def mock_file_download_response_one_fails(rsps):
     rsps.add(
         rsps.POST,
-        FILES_API._base_url + "/files/byids",
+        FILES_API._get_base_url_with_base_path() + "/files/byids",
         status=200,
         json={
             "items": [
@@ -117,7 +117,7 @@ def mock_file_download_response_one_fails(rsps):
 
     rsps.add_callback(
         rsps.POST,
-        FILES_API._base_url + "/files/downloadlink",
+        FILES_API._get_base_url_with_base_path() + "/files/downloadlink",
         callback=download_link_callback,
         content_type="application/json",
     )
@@ -234,7 +234,7 @@ class TestFilesAPI:
                 raise AssertionError("incorrect payload: {}".format(payload))
 
     def test_upload_from_directory_fails(self, rsps):
-        rsps.add(rsps.POST, FILES_API._base_url + "/files", status=400, json={})
+        rsps.add(rsps.POST, FILES_API._get_base_url_with_base_path() + "/files", status=400, json={})
         path = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
         with pytest.raises(CogniteAPIError) as e:
             FILES_API.upload(path=path)
@@ -341,7 +341,7 @@ class TestFilesAPI:
 
 @pytest.fixture
 def mock_files_empty(rsps):
-    url_pattern = re.compile(re.escape(FILES_API._base_url) + "/.+")
+    url_pattern = re.compile(re.escape(FILES_API._get_base_url_with_base_path()) + "/.+")
     rsps.add(rsps.POST, url_pattern, status=200, json={"items": []})
     yield rsps
 

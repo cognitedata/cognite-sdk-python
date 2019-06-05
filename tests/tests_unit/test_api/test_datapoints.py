@@ -84,7 +84,7 @@ def mock_get_datapoints(rsps):
 
     rsps.add_callback(
         rsps.POST,
-        DPS_CLIENT._base_url + "/timeseries/data/list",
+        DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/list",
         callback=request_callback,
         content_type="application/json",
     )
@@ -95,7 +95,7 @@ def mock_get_datapoints(rsps):
 def mock_get_datapoints_empty(rsps):
     rsps.add(
         rsps.POST,
-        DPS_CLIENT._base_url + "/timeseries/data/list",
+        DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/list",
         status=200,
         json={"items": [{"id": 1, "externalId": "1", "datapoints": []}]},
     )
@@ -106,13 +106,13 @@ def mock_get_datapoints_empty(rsps):
 def mock_get_datapoints_one_ts_empty(rsps):
     rsps.add(
         rsps.POST,
-        DPS_CLIENT._base_url + "/timeseries/data/list",
+        DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/list",
         status=200,
         json={"items": [{"id": 1, "externalId": "1", "datapoints": [{"timestamp": 1, "value": 1}]}]},
     )
     rsps.add(
         rsps.POST,
-        DPS_CLIENT._base_url + "/timeseries/data/list",
+        DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/list",
         status=200,
         json={"items": [{"id": 2, "externalId": "2", "datapoints": []}]},
     )
@@ -150,7 +150,10 @@ def mock_get_datapoints_one_ts_has_missing_aggregates(rsps):
         return 200, {}, json.dumps({"items": [dps]})
 
     rsps.add_callback(
-        rsps.POST, DPS_CLIENT._base_url + "/timeseries/data/list", callback=callback, content_type="application/json"
+        rsps.POST,
+        DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/list",
+        callback=callback,
+        content_type="application/json",
     )
     yield rsps
 
@@ -158,11 +161,11 @@ def mock_get_datapoints_one_ts_has_missing_aggregates(rsps):
 @pytest.fixture
 def set_dps_workers():
     def set_workers(limit):
-        DPS_CLIENT._max_workers = limit
+        DPS_CLIENT._config.max_workers = limit
 
-    workers_tmp = DPS_CLIENT._max_workers
+    workers_tmp = DPS_CLIENT._config.max_workers
     yield set_workers
-    DPS_CLIENT._max_workers = workers_tmp
+    DPS_CLIENT._config.max_workers = workers_tmp
 
 
 def assert_dps_response_is_correct(calls, dps_object):
@@ -190,7 +193,7 @@ class TestGetDatapoints:
     def test_retrieve_datapoints_500(self, rsps):
         rsps.add(
             rsps.POST,
-            DPS_CLIENT._base_url + "/timeseries/data/list",
+            DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/list",
             json={"error": {"code": 500, "message": "Internal Server Error"}},
             status=500,
         )
@@ -318,7 +321,7 @@ def mock_retrieve_latest(rsps):
 
     rsps.add_callback(
         rsps.POST,
-        DPS_CLIENT._base_url + "/timeseries/data/latest",
+        DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/latest",
         callback=request_callback,
         content_type="application/json",
     )
@@ -329,7 +332,7 @@ def mock_retrieve_latest(rsps):
 def mock_retrieve_latest_empty(rsps):
     rsps.add(
         rsps.POST,
-        DPS_CLIENT._base_url + "/timeseries/data/latest",
+        DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/latest",
         status=200,
         json={
             "items": [{"id": 1, "externalId": "1", "datapoints": []}, {"id": 2, "externalId": "2", "datapoints": []}]
@@ -380,7 +383,7 @@ class TestGetLatest:
 
 @pytest.fixture
 def mock_post_datapoints(rsps):
-    rsps.add(rsps.POST, DPS_CLIENT._base_url + "/timeseries/data", status=200, json={})
+    rsps.add(rsps.POST, DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/data", status=200, json={})
     yield rsps
 
 
@@ -462,7 +465,7 @@ class TestInsertDatapoints:
 
 @pytest.fixture
 def mock_delete_datapoints(rsps):
-    rsps.add(rsps.POST, DPS_CLIENT._base_url + "/timeseries/data/delete", status=200, json={})
+    rsps.add(rsps.POST, DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/delete", status=200, json={})
     yield rsps
 
 
@@ -716,13 +719,13 @@ class TestPandasIntegration:
     def test_retrieve_dataframe_id_and_external_id_requested(self, rsps):
         rsps.add(
             rsps.POST,
-            DPS_CLIENT._base_url + "/timeseries/data/list",
+            DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/list",
             status=200,
             json={"items": [{"id": 1, "externalId": "abc", "datapoints": [{"timestamp": 0, "average": 1}]}]},
         )
         rsps.add(
             rsps.POST,
-            DPS_CLIENT._base_url + "/timeseries/data/list",
+            DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/list",
             status=200,
             json={"items": [{"id": 2, "externalId": "def", "datapoints": [{"timestamp": 0, "average": 1}]}]},
         )
@@ -796,7 +799,7 @@ def mock_get_dps_count(rsps):
 
     rsps.add_callback(
         rsps.POST,
-        DPS_CLIENT._base_url + "/timeseries/data/list",
+        DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/list",
         callback=request_callback,
         content_type="application/json",
     )

@@ -15,7 +15,7 @@ RAW_API = COGNITE_CLIENT.raw
 def mock_raw_db_response(rsps):
     response_body = {"items": [{"name": "db1"}]}
 
-    url_pattern = re.compile(re.escape(RAW_API._base_url) + "/raw/dbs(?:/delete|$|\?.+)")
+    url_pattern = re.compile(re.escape(RAW_API._get_base_url_with_base_path()) + "/raw/dbs(?:/delete|$|\?.+)")
     rsps.assert_all_requests_are_fired = False
 
     rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
@@ -27,7 +27,9 @@ def mock_raw_db_response(rsps):
 def mock_raw_table_response(rsps):
     response_body = {"items": [{"name": "table1"}]}
 
-    url_pattern = re.compile(re.escape(RAW_API._base_url) + "/raw/dbs/db1/tables(?:/delete|$|\?.+)")
+    url_pattern = re.compile(
+        re.escape(RAW_API._get_base_url_with_base_path()) + "/raw/dbs/db1/tables(?:/delete|$|\?.+)"
+    )
     rsps.assert_all_requests_are_fired = False
 
     rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
@@ -39,7 +41,9 @@ def mock_raw_table_response(rsps):
 def mock_raw_row_response(rsps):
     response_body = {"items": [{"key": "row1", "columns": {"c1": 1, "c2": "2"}}]}
 
-    url_pattern = re.compile(re.escape(RAW_API._base_url) + "/raw/dbs/db1/tables/table1/rows(?:/delete|/row1|$|\?.+)")
+    url_pattern = re.compile(
+        re.escape(RAW_API._get_base_url_with_base_path()) + "/raw/dbs/db1/tables/table1/rows(?:/delete|/row1|$|\?.+)"
+    )
     rsps.assert_all_requests_are_fired = False
 
     rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
@@ -50,7 +54,12 @@ def mock_raw_row_response(rsps):
 @pytest.fixture
 def mock_retrieve_raw_row_response(rsps):
     response_body = {"key": "row1", "columns": {"c1": 1, "c2": "2"}}
-    rsps.add(rsps.GET, RAW_API._base_url + "/raw/dbs/db1/tables/table1/rows/row1", status=200, json=response_body)
+    rsps.add(
+        rsps.GET,
+        RAW_API._get_base_url_with_base_path() + "/raw/dbs/db1/tables/table1/rows/row1",
+        status=200,
+        json=response_body,
+    )
     yield rsps
 
 
@@ -96,7 +105,7 @@ class TestRawDatabases:
     def test_delete_fail(self, rsps):
         rsps.add(
             rsps.POST,
-            RAW_API._base_url + "/raw/dbs/delete",
+            RAW_API._get_base_url_with_base_path() + "/raw/dbs/delete",
             status=400,
             json={"error": {"message": "User Error", "code": 400}},
         )
@@ -160,7 +169,7 @@ class TestRawTables:
     def test_delete_fail(self, rsps):
         rsps.add(
             rsps.POST,
-            RAW_API._base_url + "/raw/dbs/db1/tables/delete",
+            RAW_API._get_base_url_with_base_path() + "/raw/dbs/db1/tables/delete",
             status=400,
             json={"error": {"message": "User Error", "code": 400}},
         )
@@ -206,7 +215,9 @@ class TestRawRows:
         )["items"]
 
     def test_insert_fail(self, rsps):
-        rsps.add(rsps.POST, RAW_API._base_url + "/raw/dbs/db1/tables/table1/rows", status=400, json={})
+        rsps.add(
+            rsps.POST, RAW_API._get_base_url_with_base_path() + "/raw/dbs/db1/tables/table1/rows", status=400, json={}
+        )
         with pytest.raises(CogniteAPIError) as e:
             RAW_API.rows.insert("db1", "table1", {"row1": {"c1": 1}})
         assert e.value.failed == ["row1"]
@@ -236,7 +247,7 @@ class TestRawRows:
     def test_delete_fail(self, rsps):
         rsps.add(
             rsps.POST,
-            RAW_API._base_url + "/raw/dbs/db1/tables/table1/rows/delete",
+            RAW_API._get_base_url_with_base_path() + "/raw/dbs/db1/tables/table1/rows/delete",
             status=400,
             json={"error": {"message": "User Error", "code": 400}},
         )

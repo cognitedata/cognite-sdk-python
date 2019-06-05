@@ -1,9 +1,6 @@
-import logging
-import os
-import sys
-import warnings
 from typing import Any, Dict
 
+from cognite.client import utils
 from cognite.client._api.assets import AssetsAPI
 from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api.events import EventsAPI
@@ -14,14 +11,8 @@ from cognite.client._api.raw import RawAPI
 from cognite.client._api.three_d import ThreeDAPI
 from cognite.client._api.time_series import TimeSeriesAPI
 from cognite.client._api_client import APIClient
-from cognite.client.exceptions import CogniteAPIKeyError
-from cognite.client.utils._auxiliary import get_current_sdk_version
-from cognite.client.utils._logging import DebugLogFormatter
-from cognite.client.utils._version_checker import get_newest_version_in_major_release
 
-DEFAULT_BASE_URL = "https://api.cognitedata.com"
-DEFAULT_MAX_WORKERS = 10
-DEFAULT_TIMEOUT = 30
+API_VERSION = "v1"
 
 
 class CogniteClient:
@@ -50,156 +41,29 @@ class CogniteClient:
         max_workers: int = None,
         headers: Dict[str, str] = None,
         timeout: int = None,
-        debug: bool = None,
+        debug: bool = False,
     ):
-        thread_local_api_key, thread_local_project = self._get_thread_local_credentials()
-        environment_api_key = os.getenv("COGNITE_API_KEY")
-        environment_project = os.getenv("COGNITE_PROJECT")
-        environment_base_url = os.getenv("COGNITE_BASE_URL")
-        environment_max_workers = os.getenv("COGNITE_MAX_WORKERS")
-        environment_timeout = os.getenv("COGNITE_TIMEOUT")
-        environment_client_name = os.getenv("COGNITE_CLIENT_NAME")
-        environment_disable_version_check = os.getenv("COGNITE_DISABLE_PYPI_VERSION_CHECK", False)
-
-        self.__api_key = api_key or thread_local_api_key or environment_api_key
-        if self.__api_key is None:
-            raise ValueError("No API Key has been specified")
-
-        self._base_url = base_url or environment_base_url or DEFAULT_BASE_URL
-
-        self._max_workers = int(max_workers or environment_max_workers or DEFAULT_MAX_WORKERS)
-
-        self._headers = headers or {}
-
-        self._client_name = client_name if client_name is not None else environment_client_name
-        if self._client_name is None:
-            raise ValueError(
-                "No client name has been specified. Pass it to the CogniteClient or set the environment variable 'COGNITE_CLIENT_NAME'."
-            )
-        self._headers["x-cdp-app"] = client_name
-
-        self._timeout = int(timeout or environment_timeout or DEFAULT_TIMEOUT)
-
-        if debug:
-            self._configure_logger_for_debug_mode()
-
-        __api_version = "v1"
-
-        self.project = project or thread_local_project or environment_project
-        self.login = LoginAPI(
-            project=self.project,
-            api_key=self.__api_key,
-            base_url=self._base_url,
-            max_workers=self._max_workers,
-            headers=self._headers,
-            timeout=self._timeout,
-            cognite_client=self,
+        self._config = utils._client_config.ClientConfig(
+            api_key=api_key,
+            project=project,
+            client_name=client_name,
+            base_url=base_url,
+            max_workers=max_workers,
+            headers=headers,
+            timeout=timeout,
+            debug=debug,
         )
 
-        if self.project is None:
-            login_status = self.login.status()
-            if login_status.logged_in:
-                self.project = login_status.project
-                warnings.warn(
-                    "Authenticated towards inferred project '{}'. Pass project to the CogniteClient constructor or set"
-                    " the environment variable 'COGNITE_PROJECT' to suppress this warning.".format(self.project),
-                    stacklevel=2,
-                )
-            else:
-                raise CogniteAPIKeyError
-
-        if not environment_disable_version_check:
-            self._check_client_has_newest_major_version()
-
-        self.assets = AssetsAPI(
-            version=__api_version,
-            project=self.project,
-            api_key=self.__api_key,
-            base_url=self._base_url,
-            max_workers=self._max_workers,
-            headers=self._headers,
-            timeout=self._timeout,
-            cognite_client=self,
-        )
-        self.datapoints = DatapointsAPI(
-            version=__api_version,
-            project=self.project,
-            api_key=self.__api_key,
-            base_url=self._base_url,
-            max_workers=self._max_workers,
-            headers=self._headers,
-            timeout=self._timeout,
-            cognite_client=self,
-        )
-        self.events = EventsAPI(
-            version=__api_version,
-            project=self.project,
-            api_key=self.__api_key,
-            base_url=self._base_url,
-            max_workers=self._max_workers,
-            headers=self._headers,
-            timeout=self._timeout,
-            cognite_client=self,
-        )
-        self.files = FilesAPI(
-            version=__api_version,
-            project=self.project,
-            api_key=self.__api_key,
-            base_url=self._base_url,
-            max_workers=self._max_workers,
-            headers=self._headers,
-            timeout=self._timeout,
-            cognite_client=self,
-        )
-        self.iam = IAMAPI(
-            version=__api_version,
-            project=self.project,
-            api_key=self.__api_key,
-            base_url=self._base_url,
-            max_workers=self._max_workers,
-            headers=self._headers,
-            timeout=self._timeout,
-            cognite_client=self,
-        )
-        self.time_series = TimeSeriesAPI(
-            version=__api_version,
-            project=self.project,
-            api_key=self.__api_key,
-            base_url=self._base_url,
-            max_workers=self._max_workers,
-            headers=self._headers,
-            timeout=self._timeout,
-            cognite_client=self,
-        )
-        self.raw = RawAPI(
-            version=__api_version,
-            project=self.project,
-            api_key=self.__api_key,
-            base_url=self._base_url,
-            max_workers=self._max_workers,
-            headers=self._headers,
-            timeout=self._timeout,
-            cognite_client=self,
-        )
-        self.three_d = ThreeDAPI(
-            version=__api_version,
-            project=self.project,
-            api_key=self.__api_key,
-            base_url=self._base_url,
-            max_workers=self._max_workers,
-            headers=self._headers,
-            timeout=self._timeout,
-            cognite_client=self,
-        )
-        self._api_client = APIClient(
-            project=self.project,
-            api_key=self.__api_key,
-            base_url=self._base_url,
-            max_workers=self._max_workers,
-            headers=self._headers,
-            timeout=self._timeout,
-            cognite_client=self,
-        )
+        self.login = LoginAPI(self._config, cognite_client=self)
+        self.assets = AssetsAPI(self._config, api_version=API_VERSION, cognite_client=self)
+        self.datapoints = DatapointsAPI(self._config, api_version=API_VERSION, cognite_client=self)
+        self.events = EventsAPI(self._config, api_version=API_VERSION, cognite_client=self)
+        self.files = FilesAPI(self._config, api_version=API_VERSION, cognite_client=self)
+        self.iam = IAMAPI(self._config, api_version=API_VERSION, cognite_client=self)
+        self.time_series = TimeSeriesAPI(self._config, api_version=API_VERSION, cognite_client=self)
+        self.raw = RawAPI(self._config, api_version=API_VERSION, cognite_client=self)
+        self.three_d = ThreeDAPI(self._config, api_version=API_VERSION, cognite_client=self)
+        self._api_client = APIClient(self._config, cognite_client=self)
 
     def get(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
         """Perform a GET request to an arbitrary path in the API."""
@@ -224,33 +88,13 @@ class CogniteClient:
         Returns:
             str: The current SDK version
         """
-        return get_current_sdk_version()
+        return utils._auxiliary.get_current_sdk_version()
 
-    @staticmethod
-    def _get_thread_local_credentials():
-        if "cognite._thread_local" in sys.modules:
-            from cognite._thread_local import credentials
+    @property
+    def project(self) -> str:
+        """Returns the project you are currently authenticated towards.
 
-            thread_local_api_key = getattr(credentials, "api_key", None)
-            thread_local_project = getattr(credentials, "project", None)
-            return thread_local_api_key, thread_local_project
-        return None, None
-
-    def _configure_logger_for_debug_mode(self):
-        logger = logging.getLogger("cognite-sdk")
-        logger.setLevel("DEBUG")
-        log_handler = logging.StreamHandler()
-        formatter = DebugLogFormatter()
-        log_handler.setFormatter(formatter)
-        logger.handlers = []
-        logger.propagate = False
-        logger.addHandler(log_handler)
-
-    def _check_client_has_newest_major_version(self):
-        newest_version = get_newest_version_in_major_release("cognite-sdk", self.version)
-        if newest_version != self.version:
-            warnings.warn(
-                "You are using version {} of the SDK, however version {} is available. "
-                "Upgrade to suppress this warning.".format(self.version, newest_version),
-                stacklevel=3,
-            )
+        Returns:
+            str: The current project you are authenticated to.
+        """
+        return self._config.project

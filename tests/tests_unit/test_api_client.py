@@ -3,8 +3,9 @@ from collections import namedtuple
 
 import pytest
 
+from client.utils._client_config import ClientConfig
 from cognite.client import CogniteClient
-from cognite.client._api_client import APIClient, _get_status_codes_to_retry
+from cognite.client._api_client import APIClient
 from cognite.client.data_classes._base import *
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from tests.utils import jsgz_load, set_request_limit
@@ -14,15 +15,14 @@ URL_PATH = "/someurl"
 
 RESPONSE = {"any": "ok"}
 COGNITE_CLIENT = CogniteClient()
-API_CLIENT = APIClient(
+CLIENT_CONFIG = ClientConfig(
     project="test-project",
     api_key="abc",
     base_url=BASE_URL,
     max_workers=1,
     headers={"x-cdp-app": "python-sdk-integration-tests"},
-    timeout=60,
-    cognite_client=COGNITE_CLIENT,
 )
+API_CLIENT = APIClient(CLIENT_CONFIG, cognite_client=COGNITE_CLIENT)
 
 
 class TestBasicRequests:
@@ -60,7 +60,7 @@ class TestBasicRequests:
         request_headers = mock_all_requests_ok.calls[0].request.headers
         assert "application/json" == request_headers["content-type"]
         assert "application/json" == request_headers["accept"]
-        assert API_CLIENT._api_key == request_headers["api-key"]
+        assert API_CLIENT._config.api_key == request_headers["api-key"]
         assert "python-sdk-integration-tests" == request_headers["x-cdp-app"]
         assert "User-Agent" in request_headers
 
@@ -843,5 +843,5 @@ class TestHelpers:
 
     def test_get_status_codes_to_retry(self):
         os.environ["COGNITE_STATUS_FORCELIST"] = "1,2, 3,4"
-        assert [1, 2, 3, 4] == _get_status_codes_to_retry()
+        assert [1, 2, 3, 4] == utils._client_config.DefaultConfig().status_forcelist
         del os.environ["COGNITE_STATUS_FORCELIST"]
