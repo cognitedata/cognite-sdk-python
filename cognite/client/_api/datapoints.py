@@ -633,7 +633,7 @@ class _DatapointsFetcher:
     def _fetch_dps_initial_and_return_remaining_queries(self, query: _DPQuery) -> List[_DPQuery]:
         request_limit = self.client._DPS_LIMIT if query.aggregates is None else self.client._DPS_LIMIT_AGG
         if query.limit is not None and query.limit <= request_limit:
-            query.dps_result = self._get_datapoints_with_paging(*query.as_tuple())
+            query.dps_result = self._get_datapoints(*query.as_tuple())
             self._store_finalized_query(query)
             return []
 

@@ -73,6 +73,44 @@ class TimeSeries(CogniteResource):
             df.plot(*args, **kwargs)
             plt.show()
 
+    def count(self) -> int:
+        """Returns the number of datapoints in this time series.
+
+        This result may not be completely accurate, as it is based on aggregates which may be occasionally out of date.
+
+        Returns:
+            int: The number of datapoints in this time series.
+        """
+        identifier = utils._auxiliary.assert_at_least_one_of_id_or_external_id(self.id, self.external_id)
+        dps = self._cognite_client.datapoints.retrieve(
+            start=0, end="now", aggregates=["count"], granularity="10d", **identifier
+        )
+        return sum(dps.count)
+
+    def latest(self) -> Optional["Datapoint"]:
+        """Returns the latest datapoint in this time series
+
+        Returns:
+            Datapoint: A datapoint object containing the value and timestamp of the latest datapoint.
+        """
+        identifier = utils._auxiliary.assert_at_least_one_of_id_or_external_id(self.id, self.external_id)
+        dps = self._cognite_client.datapoints.retrieve_latest(**identifier)
+        if len(dps) > 0:
+            return list(dps)[0]
+        return None
+
+    def first(self) -> Optional["Datapoint"]:
+        """Returns the first datapoint in this time series.
+
+        Returns:
+            Datapoint: A datapoint object containing the value and timestamp of the first datapoint.
+        """
+        identifier = utils._auxiliary.assert_at_least_one_of_id_or_external_id(self.id, self.external_id)
+        dps = self._cognite_client.datapoints.retrieve(**identifier, start=0, end="now", limit=1)
+        if len(dps) > 0:
+            return list(dps)[0]
+        return None
+
 
 # GenClass: TimeSeriesSearchDTO.filter
 class TimeSeriesFilter(CogniteFilter):
