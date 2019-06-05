@@ -1,6 +1,6 @@
 import os
 from typing import *
-from typing import Dict, List
+from typing.io import BinaryIO, TextIO
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -357,13 +357,13 @@ class FilesAPI(APIClient):
         raise ValueError("path '{}' does not exist".format(path))
 
     def _upload_file_from_path(self, file: FileMetadata, file_path: str, overwrite: bool):
-        with open(file_path, "rb") as f:
-            file_metadata = self.upload_bytes(f.read(), overwrite=overwrite, **file.dump(camel_case=True))
+        with open(file_path, "rb") as fh:
+            file_metadata = self.upload_bytes(fh, overwrite=overwrite, **file.dump(camel_case=True))
         return file_metadata
 
     def upload_bytes(
         self,
-        content: Union[str, bytes],
+        content: Union[str, bytes, TextIO, BinaryIO],
         external_id: str = None,
         name: str = None,
         source: str = None,
@@ -374,8 +374,10 @@ class FilesAPI(APIClient):
     ):
         """Upload bytes or string.
 
+        You can also pass a file handle to content.
+
         Args:
-            content (Union[str, bytes]): The content to upload.
+            content (Union[str, bytes, TextIO, BinaryIO]): The content to upload.
             external_id (str): External Id provided by client. Should be unique within the project.
             name (str): No description.
             source (str): The source of the file.
@@ -413,7 +415,7 @@ class FilesAPI(APIClient):
         )
         returned_file_metadata = res.json()
         upload_url = returned_file_metadata.pop("uploadUrl")
-        headers = {"X-Upload-Content-Type": file_metadata.mime_type, "content-length": str(len(content))}
+        headers = {"X-Upload-Content-Type": file_metadata.mime_type}
         self._request_session.put(upload_url, data=content, headers=headers)
         return FileMetadata._load(returned_file_metadata)
 
