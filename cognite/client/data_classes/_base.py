@@ -216,7 +216,7 @@ class CogniteResourceList(UserList):
         """
         pd = utils._auxiliary.local_import("pandas")
         df = pd.DataFrame(self.dump(camel_case=True))
-        nullable_int_fields = ["endTime", "assetId"]
+        nullable_int_fields = ["endTime", "assetId", "parentId"]
         for field in nullable_int_fields:
             if field in df:
                 df[field] = df[field].astype(pd.Int64Dtype())

@@ -100,7 +100,10 @@ def _convert_time_attributes_in_dict(item: Dict) -> Dict:
     new_item = {}
     for k, v in item.items():
         if k in TIME_ATTRIBUTES:
-            v = ms_to_datetime(v).strftime("%Y-%m-%d %H:%M:%S")
+            try:
+                v = ms_to_datetime(v).strftime("%Y-%m-%d %H:%M:%S")
+            except ValueError:
+                pass
         new_item[k] = v
     return new_item
 
