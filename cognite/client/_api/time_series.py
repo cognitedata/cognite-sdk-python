@@ -95,7 +95,7 @@ class TimeSeriesAPI(APIClient):
         return self._retrieve_multiple(ids=ids, external_ids=external_ids, wrap_ids=True)
 
     def list(
-        self, include_metadata: bool = False, asset_ids: Optional[List[int]] = None, limit: int = 25
+        self, include_metadata: bool = True, asset_ids: Optional[List[int]] = None, limit: int = 25
     ) -> TimeSeriesList:
         """Iterate over time series
 
