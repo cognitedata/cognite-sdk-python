@@ -228,7 +228,6 @@ class TestGetDatapoints:
             external_id={"externalId": "def", "aggregates": ["interpolation"]},
             start=0,
             end=1,
-            aggregates=[],
             granularity="1s",
         )
         for dps in dps_res_list:
@@ -810,6 +809,21 @@ gms = lambda s: utils._time.granularity_to_ms(s)
 
 
 class TestDataFetcher:
+    @pytest.mark.parametrize(
+        "q, exc, message",
+        [
+            (
+                _DPQuery(1, 2, {"id": 1}, ["average"], None, None, None),
+                AssertionError,
+                "granularity must also be provided",
+            ),
+            (_DPQuery(1, 2, {"id": 1}, None, "1d", None, None), AssertionError, "aggregates must also be provided"),
+        ],
+    )
+    def test_validate_queries(self, q, exc, message):
+        with pytest.raises(exc, match=message):
+            _DatapointsFetcher(DPS_CLIENT).fetch([q])
+
     @pytest.mark.parametrize(
         "q, expected_q",
         [
