@@ -121,7 +121,6 @@ def convert_time_attributes_to_datetime(item: Union[Dict, List[Dict]]) -> Union[
 
 def assert_timestamp_not_in_1970(timestamp: Union[int, float, str, datetime]):
     dt = ms_to_datetime(timestamp_to_ms(timestamp))
-    print(dt)
     assert dt > datetime(
         1971, 1, 1
     ), "You are attempting to post data in 1970. Have you forgotten to multiply your timestamps by 1000?"

@@ -244,8 +244,8 @@ class TestGetDatapoints:
         assert 10 == len(dps_res)
 
     def test_datapoints_concurrent(self, mock_get_datapoints):
-        DPS_CLIENT._DPS_LIMIT_AGG = 20
-        dps_res = DPS_CLIENT.retrieve(id=123, start=0, end=100000, aggregates=["average"], granularity="1s")
+        with set_request_limit(DPS_CLIENT, 20):
+            dps_res = DPS_CLIENT.retrieve(id=123, start=0, end=100000, aggregates=["average"], granularity="1s")
         requested_windows = sorted(
             [
                 (jsgz_load(call.request.body)["start"], jsgz_load(call.request.body)["end"])
@@ -279,6 +279,14 @@ class TestGetDatapoints:
     def test_retrieve_datapoints_empty(self, mock_get_datapoints_empty):
         res = DPS_CLIENT.retrieve(id=1, start=0, end=10000)
         assert 0 == len(res)
+
+    def test_aggregate_limits_correct(self, mock_get_datapoints):
+        DPS_CLIENT.retrieve(id={"id": 1, "aggregates": ["average"]}, start=0, end=10, granularity="1d")
+        DPS_CLIENT.retrieve(id=1, start=0, end=10, granularity="1d", aggregates=["max"])
+        DPS_CLIENT.retrieve(id=1, start=0, end=10)
+        assert 10000 == jsgz_load(mock_get_datapoints.calls[0].request.body)["limit"]
+        assert 10000 == jsgz_load(mock_get_datapoints.calls[1].request.body)["limit"]
+        assert 100000 == jsgz_load(mock_get_datapoints.calls[2].request.body)["limit"]
 
 
 class TestQueryDatapoints:
@@ -813,16 +821,29 @@ class TestDataFetcher:
         "q, exc, message",
         [
             (
-                _DPQuery(1, 2, {"id": 1}, ["average"], None, None, None),
+                [_DPQuery(1, 2, {"id": 1}, ["average"], None, None, None)],
                 AssertionError,
                 "granularity must also be provided",
             ),
-            (_DPQuery(1, 2, {"id": 1}, None, "1d", None, None), AssertionError, "aggregates must also be provided"),
+            ([_DPQuery(1, 2, {"id": 1}, None, "1d", None, None)], AssertionError, "aggregates must also be provided"),
+            (
+                [_DPQuery(1, 2, {"id": 1}, None, None, None, None), _DPQuery(1, 2, {"id": 1}, None, None, None, None)],
+                AssertionError,
+                "identifier '1' is duplicated in the request",
+            ),
+            (
+                [
+                    _DPQuery(1, 2, {"id": 1}, None, None, None, None),
+                    _DPQuery(1, 2, {"id": 1, "aggregates": ["average"]}, None, "1d", None, None),
+                ],
+                AssertionError,
+                "identifier '1' is duplicated in the request",
+            ),
         ],
     )
     def test_validate_queries(self, q, exc, message):
         with pytest.raises(exc, match=message):
-            _DatapointsFetcher(DPS_CLIENT).fetch([q])
+            _DatapointsFetcher(DPS_CLIENT).fetch(q)
 
     @pytest.mark.parametrize(
         "q, expected_q",

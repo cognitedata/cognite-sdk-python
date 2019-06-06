@@ -36,6 +36,7 @@ podTemplate(
         secretEnvVar(key: 'CODECOV_TOKEN', secretName: 'codecov-token-cognite-sdk-python', secretKey: 'token.txt'),
         envVar(key: 'COGNITE_BASE_URL', value: "https://greenfield.cognitedata.com"),
         envVar(key: 'COGNITE_CLIENT_NAME', value: "python-sdk-integration-tests"),
+        envVar(key: 'COGNITE_PROJECT', value: "python-sdk-test"),
         envVar(key: 'CI', value: '1'),
         // /codecov-script/upload-report.sh relies on the following
         // Jenkins and Github environment variables.
