@@ -20,33 +20,33 @@ log = logging.getLogger("cognite-sdk")
 
 class RetryWithMaxBackoff(Retry):
     def get_backoff_time(self):
-        return min(utils._client_config.DefaultConfig().max_retry_backoff, super().get_backoff_time())
+        return min(utils._client_config._DefaultConfig().max_retry_backoff, super().get_backoff_time())
 
 
 def _init_requests_session():
     session = Session()
     session_with_retry = Session()
-    default_config = utils._client_config.DefaultConfig()
+    config = utils._client_config._DefaultConfig()
     adapter = HTTPAdapter(
         max_retries=RetryWithMaxBackoff(
-            total=default_config.max_retries,
-            connect=default_config.max_retries,
+            total=config.max_retries,
+            connect=config.max_retries,
             read=0,
             status=0,
             backoff_factor=0.5,
             raise_on_status=False,
         ),
-        pool_maxsize=default_config.max_connection_pool_size,
+        pool_maxsize=config.max_connection_pool_size,
     )
     adapter_with_retry = HTTPAdapter(
         max_retries=RetryWithMaxBackoff(
-            total=default_config.max_retries,
+            total=config.max_retries,
             backoff_factor=0.5,
-            status_forcelist=default_config.status_forcelist,
+            status_forcelist=config.status_forcelist,
             method_whitelist=False,
             raise_on_status=False,
         ),
-        pool_maxsize=default_config.max_connection_pool_size,
+        pool_maxsize=config.max_connection_pool_size,
     )
     session.mount("http://", adapter)
     session.mount("https://", adapter)

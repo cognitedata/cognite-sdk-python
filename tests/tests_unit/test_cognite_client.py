@@ -21,7 +21,7 @@ from tests.utils import BASE_URL
 
 @pytest.fixture
 def default_client_config():
-    default_config = utils._client_config.DefaultConfig()
+    default_config = utils._client_config._DefaultConfig()
 
     yield (
         "https://greenfield.cognitedata.com",
@@ -80,6 +80,7 @@ class TestCogniteClient:
             CogniteClient()
 
     def test_invalid_api_key(self, rsps):
+        rsps.add(rsps.GET, "https://pypi.python.org/simple/cognite-sdk/#history", status=200, body="")
         rsps.add(
             rsps.GET,
             BASE_URL + "/login/status",
