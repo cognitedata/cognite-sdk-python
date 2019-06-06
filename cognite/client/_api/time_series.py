@@ -10,7 +10,7 @@ class TimeSeriesAPI(APIClient):
     _LIST_CLASS = TimeSeriesList
 
     def __call__(
-        self, chunk_size: int = None, include_metadata: bool = False, asset_ids: List[int] = None
+        self, chunk_size: int = None, include_metadata: bool = False, asset_ids: List[int] = None, limit: int = None
     ) -> Generator[Union[TimeSeries, TimeSeriesList], None, None]:
         """Iterate over time series
 
@@ -20,12 +20,14 @@ class TimeSeriesAPI(APIClient):
             chunk_size (int, optional): Number of time series to return in each chunk. Defaults to yielding one event a time.
             include_metadata (bool, optional): Whether or not to include metadata
             asset_id (int, optional): List time series related to this asset.
+            limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None
+                to return all items.
 
         Yields:
             Union[TimeSeries, TimeSeriesList]: yields TimeSeries one by one if chunk is not specified, else TimeSeriesList objects.
         """
         filter = {"includeMetadata": include_metadata, "assetIds": str(asset_ids) if asset_ids else None}
-        return self._list_generator(method="GET", chunk_size=chunk_size, filter=filter)
+        return self._list_generator(method="GET", chunk_size=chunk_size, filter=filter, limit=limit)
 
     def __iter__(self) -> Generator[TimeSeries, None, None]:
         """Iterate over time series

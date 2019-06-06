@@ -22,6 +22,7 @@ class EventsAPI(APIClient):
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
         external_id_prefix: str = None,
+        limit: int = None,
     ) -> Generator[Union[Event, EventList], None, None]:
         """Iterate over events
 
@@ -39,6 +40,8 @@ class EventsAPI(APIClient):
             created_time (Dict[str, Any]): Range between two timestamps
             last_updated_time (Dict[str, Any]): Range between two timestamps
             external_id_prefix (str): External Id provided by client. Should be unique within the project
+            limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None
+                to return all items.
 
         Yields:
             Union[Event, EventList]: yields Event one by one if chunk is not specified, else EventList objects.
@@ -55,7 +58,7 @@ class EventsAPI(APIClient):
             type=type,
             subtype=subtype,
         ).dump(camel_case=True)
-        return self._list_generator(method="POST", chunk_size=chunk_size, filter=filter)
+        return self._list_generator(method="POST", chunk_size=chunk_size, filter=filter, limit=limit)
 
     def __iter__(self) -> Generator[Event, None, None]:
         """Iterate over events

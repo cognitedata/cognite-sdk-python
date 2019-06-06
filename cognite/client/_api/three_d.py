@@ -34,7 +34,7 @@ class ThreeDModelsAPI(APIClient):
     _LIST_CLASS = ThreeDModelList
 
     def __call__(
-        self, chunk_size: int = None, published: bool = False
+        self, chunk_size: int = None, published: bool = False, limit: int = None
     ) -> Generator[Union[ThreeDModel, ThreeDModelList], None, None]:
         """Iterate over 3d models
 
@@ -43,11 +43,13 @@ class ThreeDModelsAPI(APIClient):
         Args:
             chunk_size (int, optional): Number of 3d models to return in each chunk. Defaults to yielding one model a time.
             published (bool): Filter based on whether or not the model has published revisions.
+            limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None
+                to return all items.
 
         Yields:
             Union[ThreeDModel, ThreeDModelList]: yields ThreeDModel one by one if chunk is not specified, else ThreeDModelList objects.
         """
-        return self._list_generator(method="GET", chunk_size=chunk_size, filter={"published": published})
+        return self._list_generator(method="GET", chunk_size=chunk_size, filter={"published": published}, limit=limit)
 
     def __iter__(self) -> Generator[ThreeDModel, None, None]:
         """Iterate over 3d models
@@ -129,7 +131,7 @@ class ThreeDRevisionsAPI(APIClient):
     _LIST_CLASS = ThreeDModelRevisionList
 
     def __call__(
-        self, model_id: int, chunk_size: int = None, published: bool = False
+        self, model_id: int, chunk_size: int = None, published: bool = False, limit: int = None
     ) -> Generator[Union[ThreeDModelRevision, ThreeDModelRevisionList], None, None]:
         """Iterate over 3d model revisions
 
@@ -139,6 +141,8 @@ class ThreeDRevisionsAPI(APIClient):
             model_id (int): Iterate over revisions for the model with this id.
             chunk_size (int, optional): Number of 3d model revisions to return in each chunk. Defaults to yielding one model a time.
             published (bool): Filter based on whether or not the revision has been published.
+            limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None
+                to return all items.
 
         Yields:
             Union[ThreeDModelRevision, ThreeDModelRevisionList]: yields ThreeDModelRevision one by one if chunk is not
@@ -149,6 +153,7 @@ class ThreeDRevisionsAPI(APIClient):
             method="GET",
             chunk_size=chunk_size,
             filter={"published": published},
+            limit=limit,
         )
 
     def retrieve(self, model_id: int, id: int) -> ThreeDModelRevision:

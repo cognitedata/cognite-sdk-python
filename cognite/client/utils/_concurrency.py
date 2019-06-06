@@ -66,11 +66,11 @@ def collect_exc_info_and_raise(
     dup_exc = None
     unknown_exc = None
     for exc in exceptions:
-        if isinstance(exc, CogniteAPIError) and exc.code == 400:
-            if exc.missing is not None:
+        if isinstance(exc, CogniteAPIError):
+            if exc.code in [400, 422] and exc.missing is not None:
                 missing.extend(exc.missing)
                 missing_exc = exc
-            elif exc.duplicated is not None:
+            elif exc.code == 409 and exc.duplicated is not None:
                 duplicated.extend(exc.duplicated)
                 dup_exc = exc
             else:

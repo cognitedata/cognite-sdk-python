@@ -24,6 +24,7 @@ class AssetsAPI(APIClient):
         last_updated_time: Dict[str, Any] = None,
         root: bool = None,
         external_id_prefix: str = None,
+        limit: int = None,
     ) -> Generator[Union[Asset, AssetList], None, None]:
         """Iterate over assets
 
@@ -39,6 +40,8 @@ class AssetsAPI(APIClient):
             last_updated_time (Dict[str, Any]): Range between two timestamps
             root (bool): filtered assets are root assets or not
             external_id_prefix (str): External Id provided by client. Should be unique within the project
+            limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None
+                to return all items.
 
         Yields:
             Union[Asset, AssetList]: yields Asset one by one if chunk is not specified, else AssetList objects.
@@ -47,7 +50,7 @@ class AssetsAPI(APIClient):
         filter = AssetFilter(
             name, parent_ids, metadata, source, created_time, last_updated_time, root, external_id_prefix
         ).dump(camel_case=True)
-        return self._list_generator(method="POST", chunk_size=chunk_size, filter=filter)
+        return self._list_generator(method="POST", chunk_size=chunk_size, filter=filter, limit=limit)
 
     def __iter__(self) -> Generator[Asset, None, None]:
         """Iterate over assets
