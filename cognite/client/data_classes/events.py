@@ -1,3 +1,5 @@
+from typing import *
+
 from cognite.client.data_classes._base import *
 
 
@@ -7,8 +9,8 @@ class Event(CogniteResource):
 
     Args:
         external_id (str): External Id provided by client. Should be unique within the project
-        start_time (int): It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        end_time (int): It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        start_time (int): It is the number of milliseconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        end_time (int): It is the number of milliseconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         type (str): Type of the event, e.g 'failure'.
         subtype (str): Subtype of the event, e.g 'electrical'.
         description (str): Textual description of the event.
@@ -16,8 +18,8 @@ class Event(CogniteResource):
         asset_ids (List[int]): Asset IDs of related equipment that this event relates to.
         source (str): The source of this event.
         id (int): Javascript friendly internal ID given to the object.
-        last_updated_time (int): It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time (int): It is the number of milliseconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time (int): It is the number of milliseconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
