@@ -17,6 +17,7 @@ class TestListAndIterSignatures:
     def test_list_and_iter_signatures_same_as_filter_signature(self, api, filter):
         iter_parameters = dict(inspect.signature(api.__call__).parameters)
         del iter_parameters["chunk_size"]
+        del iter_parameters["limit"]
         list_parameters = dict(inspect.signature(api.list).parameters)
         del list_parameters["limit"]
         filter_parameters = dict(inspect.signature(filter.__init__).parameters)

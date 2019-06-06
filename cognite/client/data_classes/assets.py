@@ -1,3 +1,5 @@
+from typing import *
+
 from cognite.client.data_classes._base import *
 
 
@@ -13,8 +15,8 @@ class Asset(CogniteResource):
         metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
         source (str): The source of this asset
         id (int): Javascript friendly internal ID given to the object.
-        created_time (int): It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        last_updated_time (int): It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time (int): It is the number of milliseconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time (int): It is the number of milliseconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         path (List[int]): IDs of assets on the path to the asset.
         depth (int): Asset path depth (number of levels below root node).
         parent_external_id (str): External Id provided by client. Should be unique within the project.

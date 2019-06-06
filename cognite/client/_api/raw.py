@@ -17,15 +17,19 @@ class RawDatabasesAPI(APIClient):
     _RESOURCE_PATH = "/raw/dbs"
     _LIST_CLASS = DatabaseList
 
-    def __call__(self, chunk_size: int = None) -> Generator[Union[Database, DatabaseList], None, None]:
+    def __call__(
+        self, chunk_size: int = None, limit: int = None
+    ) -> Generator[Union[Database, DatabaseList], None, None]:
         """Iterate over databases
 
         Fetches dbs as they are iterated over, so you keep a limited number of dbs in memory.
 
         Args:
             chunk_size (int, optional): Number of dbs to return in each chunk. Defaults to yielding one db a time.
+            limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None
+                to return all items.
         """
-        return self._list_generator(chunk_size=chunk_size, method="GET")
+        return self._list_generator(chunk_size=chunk_size, method="GET", limit=limit)
 
     def __iter__(self) -> Generator[Database, None, None]:
         return self.__call__()
@@ -121,7 +125,9 @@ class RawTablesAPI(APIClient):
     _RESOURCE_PATH = "/raw/dbs/{}/tables"
     _LIST_CLASS = TableList
 
-    def __call__(self, db_name: str, chunk_size: int = None) -> Generator[Union[Table, TableList], None, None]:
+    def __call__(
+        self, db_name: str, chunk_size: int = None, limit: int = None
+    ) -> Generator[Union[Table, TableList], None, None]:
         """Iterate over tables
 
         Fetches tables as they are iterated over, so you keep a limited number of tables in memory.
@@ -129,11 +135,14 @@ class RawTablesAPI(APIClient):
         Args:
             db_name (str): Name of the database to iterate over tables for
             chunk_size (int, optional): Number of tables to return in each chunk. Defaults to yielding one table a time.
+            limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None
+                to return all items.
         """
         for tb in self._list_generator(
             resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, db_name),
             chunk_size=chunk_size,
             method="GET",
+            limit=limit,
         ):
             yield self._set_db_name_on_tables(tb, db_name)
 
@@ -256,7 +265,7 @@ class RawRowsAPI(APIClient):
     _LIST_CLASS = RowList
 
     def __call__(
-        self, db_name: str, table_name: str, chunk_size: int = None
+        self, db_name: str, table_name: str, chunk_size: int = None, limit: int = None
     ) -> Generator[Union[Row, RowList], None, None]:
         """Iterate over rows.
 
@@ -266,11 +275,14 @@ class RawRowsAPI(APIClient):
             db_name (str): Name of the database
             table_name (str): Name of the table to iterate over rows for
             chunk_size (int, optional): Number of rows to return in each chunk. Defaults to yielding one row a time.
+            limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None
+                to return all items.
         """
         return self._list_generator(
             resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
             chunk_size=chunk_size,
             method="GET",
+            limit=limit,
         )
 
     def insert(

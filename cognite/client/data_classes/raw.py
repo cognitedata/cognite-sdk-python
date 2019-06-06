@@ -1,4 +1,5 @@
 from collections import defaultdict
+from typing import *
 
 from cognite.client.data_classes._base import *
 
@@ -10,7 +11,7 @@ class Row(CogniteResource):
     Args:
         key (str): Unique row key
         columns (Dict[str, Any]): Row data stored as a JSON object.
-        last_updated_time (int): It is the number of seconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time (int): It is the number of milliseconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 

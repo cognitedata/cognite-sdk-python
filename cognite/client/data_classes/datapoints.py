@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import *
 
 import cognite.client.utils._time
 from cognite.client.data_classes._base import *

@@ -26,10 +26,5 @@ from cognite.client.data_classes.three_d import (
     ThreeDModelUpdate,
     ThreeDNode,
     ThreeDNodeList,
-    ThreeDRevealNode,
-    ThreeDRevealNodeList,
-    ThreeDRevealRevision,
-    ThreeDRevealSector,
-    ThreeDRevealSectorList,
 )
 from cognite.client.data_classes.time_series import TimeSeries, TimeSeriesFilter, TimeSeriesList, TimeSeriesUpdate
