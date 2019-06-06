@@ -18,6 +18,7 @@ from typing import Any, Dict, List, Union
 from urllib.parse import quote
 
 import cognite.client
+from cognite.client import utils
 from cognite.client.exceptions import CogniteImportError
 
 
@@ -138,10 +139,8 @@ def get_user_agent():
 
 
 def _check_client_has_newest_major_version():
-    this_version = cognite.client.utils._auxiliary.get_current_sdk_version()
-    newest_version = cognite.client.utils._version_checker.get_newest_version_in_major_release(
-        "cognite-sdk", this_version
-    )
+    this_version = utils._auxiliary.get_current_sdk_version()
+    newest_version = utils._version_checker.get_newest_version_in_major_release("cognite-sdk", this_version)
     if newest_version != this_version:
         warnings.warn(
             "You are using version {} of the SDK, however version {} is available. "

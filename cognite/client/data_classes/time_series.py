@@ -1,3 +1,4 @@
+from typing import *
 from typing import List
 
 from cognite.client.data_classes._base import *

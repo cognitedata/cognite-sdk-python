@@ -1,3 +1,4 @@
+import warnings
 from typing import Any, Dict
 
 from cognite.client import utils
@@ -11,6 +12,8 @@ from cognite.client._api.raw import RawAPI
 from cognite.client._api.three_d import ThreeDAPI
 from cognite.client._api.time_series import TimeSeriesAPI
 from cognite.client._api_client import APIClient
+from cognite.client.exceptions import CogniteAPIKeyError
+from cognite.client.utils._client_config import ClientConfig
 
 API_VERSION = "v1"
 
@@ -43,7 +46,7 @@ class CogniteClient:
         timeout: int = None,
         debug: bool = False,
     ):
-        self._config = utils._client_config.ClientConfig(
+        self._config = ClientConfig(
             api_key=api_key,
             project=project,
             client_name=client_name,
@@ -53,8 +56,9 @@ class CogniteClient:
             timeout=timeout,
             debug=debug,
         )
-
         self.login = LoginAPI(self._config, cognite_client=self)
+        if self._config.project is None:
+            self._config.project = self._infer_project()
         self.assets = AssetsAPI(self._config, api_version=API_VERSION, cognite_client=self)
         self.datapoints = DatapointsAPI(self._config, api_version=API_VERSION, cognite_client=self)
         self.events = EventsAPI(self._config, api_version=API_VERSION, cognite_client=self)
@@ -98,3 +102,25 @@ class CogniteClient:
             str: The current project you are authenticated to.
         """
         return self._config.project
+
+    @property
+    def config(self) -> ClientConfig:
+        """Returns a config object containing the configuration for the current client.
+
+        Returns:
+            ClientConfig: The configuration object.
+        """
+        return self._config
+
+    def _infer_project(self):
+        login_status = self.login.status()
+        if login_status.logged_in:
+            warnings.warn(
+                "Authenticated towards inferred project '{}'. Pass project to the CogniteClient constructor or set"
+                " the environment variable 'COGNITE_PROJECT' to suppress this warning.".format(login_status.project),
+                stacklevel=3,
+            )
+            return login_status.project
+
+        else:
+            raise CogniteAPIKeyError("Invalid API key")

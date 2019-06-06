@@ -843,5 +843,5 @@ class TestHelpers:
 
     def test_get_status_codes_to_retry(self):
         os.environ["COGNITE_STATUS_FORCELIST"] = "1,2, 3,4"
-        assert [1, 2, 3, 4] == utils._client_config.DefaultConfig().status_forcelist
+        assert [1, 2, 3, 4] == utils._client_config._DefaultConfig().status_forcelist
         del os.environ["COGNITE_STATUS_FORCELIST"]

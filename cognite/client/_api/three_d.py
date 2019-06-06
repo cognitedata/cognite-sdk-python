@@ -13,9 +13,6 @@ from cognite.client.data_classes import (
     ThreeDModelRevisionUpdate,
     ThreeDModelUpdate,
     ThreeDNodeList,
-    ThreeDRevealNodeList,
-    ThreeDRevealRevision,
-    ThreeDRevealSectorList,
 )
 
 
@@ -26,7 +23,6 @@ class ThreeDAPI(APIClient):
         self.revisions = ThreeDRevisionsAPI(*args, **kwargs)
         self.files = ThreeDFilesAPI(*args, **kwargs)
         self.asset_mappings = ThreeDAssetMappingAPI(*args, **kwargs)
-        # self.reveal = ThreeDRevealAPI(*args, **kwargs)
 
 
 class ThreeDModelsAPI(APIClient):
@@ -34,7 +30,7 @@ class ThreeDModelsAPI(APIClient):
     _LIST_CLASS = ThreeDModelList
 
     def __call__(
-        self, chunk_size: int = None, published: bool = False
+        self, chunk_size: int = None, published: bool = False, limit: int = None
     ) -> Generator[Union[ThreeDModel, ThreeDModelList], None, None]:
         """Iterate over 3d models
 
@@ -43,11 +39,13 @@ class ThreeDModelsAPI(APIClient):
         Args:
             chunk_size (int, optional): Number of 3d models to return in each chunk. Defaults to yielding one model a time.
             published (bool): Filter based on whether or not the model has published revisions.
+            limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None
+                to return all items.
 
         Yields:
             Union[ThreeDModel, ThreeDModelList]: yields ThreeDModel one by one if chunk is not specified, else ThreeDModelList objects.
         """
-        return self._list_generator(method="GET", chunk_size=chunk_size, filter={"published": published})
+        return self._list_generator(method="GET", chunk_size=chunk_size, filter={"published": published}, limit=limit)
 
     def __iter__(self) -> Generator[ThreeDModel, None, None]:
         """Iterate over 3d models
@@ -129,7 +127,7 @@ class ThreeDRevisionsAPI(APIClient):
     _LIST_CLASS = ThreeDModelRevisionList
 
     def __call__(
-        self, model_id: int, chunk_size: int = None, published: bool = False
+        self, model_id: int, chunk_size: int = None, published: bool = False, limit: int = None
     ) -> Generator[Union[ThreeDModelRevision, ThreeDModelRevisionList], None, None]:
         """Iterate over 3d model revisions
 
@@ -139,6 +137,8 @@ class ThreeDRevisionsAPI(APIClient):
             model_id (int): Iterate over revisions for the model with this id.
             chunk_size (int, optional): Number of 3d model revisions to return in each chunk. Defaults to yielding one model a time.
             published (bool): Filter based on whether or not the revision has been published.
+            limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None
+                to return all items.
 
         Yields:
             Union[ThreeDModelRevision, ThreeDModelRevisionList]: yields ThreeDModelRevision one by one if chunk is not
@@ -149,6 +149,7 @@ class ThreeDRevisionsAPI(APIClient):
             method="GET",
             chunk_size=chunk_size,
             filter={"published": published},
+            limit=limit,
         )
 
     def retrieve(self, model_id: int, id: int) -> ThreeDModelRevision:
@@ -383,72 +384,4 @@ class ThreeDAssetMappingAPI(APIClient):
             task_unwrap_fn=lambda task: task["json"]["items"],
             task_list_element_unwrap_fn=lambda el: ThreeDAssetMapping._load(el),
             str_format_element_fn=lambda el: (el.asset_id, el.node_id),
-        )
-
-
-class ThreeDRevealAPI(APIClient):
-    _RESOURCE_PATH = "/3d/reveal/models/{}/revisions"
-
-    def retrieve_revision(self, model_id: int, revision_id: int):
-        """Retrieve a revision.
-
-        Args:
-            model_id (int): Id of the model.
-            revision_id (int): Id of the revision.
-        """
-        path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id)
-        return self._retrieve(cls=ThreeDRevealRevision, resource_path=path, id=revision_id)
-
-    def list_nodes(self, model_id: int, revision_id: int, depth: int = None, node_id: int = None, limit: int = 25):
-        """List 3D nodes.
-
-        Args:
-            model_id (int): Id of the model.
-            revision_id (int): Id of the revision.
-            depth (int, optional): Get sub nodes up to this many levels below the specified node.
-            node_id (int, optional): ID of the root note of the subtree you request.
-            limit (int, optional): Maximun number of nodes to retrieve. Defaults to 25. Set to -1, float("inf") or None
-                to return all items.
-        """
-        path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/nodes", model_id, revision_id)
-        return self._list(
-            cls=ThreeDRevealNodeList,
-            resource_path=path,
-            method="GET",
-            filter={"depth": depth, "nodeId": node_id},
-            limit=limit,
-        )
-
-    def list_ancestor_nodes(self, model_id: int, revision_id: int, node_id: int, limit: int = 25):
-        """Retrieve a revision.
-
-        Args:
-            model_id (int): Id of the model.
-            revision_id (int): Id of the revision.
-            node_id (int): ID of the node to get the ancestors of.
-            limit (int, optional): Maximun number of nodes to retrieve. Defaults to 25. Set to -1, float("inf") or None
-                to return all items.
-        """
-        path = utils._auxiliary.interpolate_and_url_encode(
-            self._RESOURCE_PATH + "/{}/nodes/{}/ancestors", model_id, revision_id, node_id
-        )
-        return self._list(cls=ThreeDRevealNodeList, resource_path=path, method="GET", limit=limit)
-
-    def list_sectors(self, model_id: int, revision_id: int, bounding_box: Dict[str, List] = None, limit: int = 25):
-        """Retrieve a revision.
-
-        Args:
-            model_id (int): Id of the model.
-            revision_id (int): Id of the revision.
-            bounding_box (Dict[str, List], optional): Bounding box to restrict search to. If given, only return sectors that intersect the given bounding box.
-            limit (int, optional): Maximum number of items to return. Defaults to 25. Set to -1, float("inf") or None
-                to return all items.
-        """
-        path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/sectors", model_id, revision_id)
-        return self._list(
-            cls=ThreeDRevealSectorList,
-            resource_path=path,
-            method="GET",
-            filter={"boundingBox": json.dumps(bounding_box)},
-            limit=limit,
         )

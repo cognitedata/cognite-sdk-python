@@ -65,14 +65,14 @@ class DatapointsAPI(APIClient):
                 >>> dps = c.datapoints.retrieve(external_id=["abc", "def"],
                 ...                         start=datetime(2018,1,1),
                 ...                         end=datetime(2019,1,1),
-                ...                         aggregates=["avg"],
+                ...                         aggregates=["average"],
                 ...                         granularity="1d")
 
             If you want different aggregates for different time series specify your ids like this::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> dps = c.datapoints.retrieve(id=[{"id": 1, "aggregates": ["avg"]},
+                >>> dps = c.datapoints.retrieve(id=[{"id": 1, "aggregates": ["average"]},
                 ...                             {"id": 1, "aggregates": ["min"]}],
                 ...                         external_id={"externalId": "1", "aggregates": ["max"]},
                 ...                         start="1d-ago", end="now", granularity="1h")
@@ -165,7 +165,7 @@ class DatapointsAPI(APIClient):
                 ...             DatapointsQuery(external_id="abc",
                 ...                             start="10d-ago",
                 ...                             end="now",
-                ...                             aggregates=["avg"],
+                ...                             aggregates=["average"],
                 ...                             granularity="1m")]
                 >>> res = c.datapoints.query(queries)
         """
@@ -579,11 +579,21 @@ class _DatapointsFetcher:
         self.lock = threading.Lock()
 
     def fetch(self, dps_queries: List[_DPQuery]) -> DatapointsList:
+        self._validate_queries(dps_queries)
         self._preprocess_queries(dps_queries)
         self._fetch_datapoints(dps_queries)
         dps_list = self._get_dps_results()
         dps_list = self._sort_dps_list_by_query_order(dps_list, dps_queries)
         return dps_list
+
+    def _validate_queries(self, queries: List[_DPQuery]):
+        for q in queries:
+            if q.aggregates is not None:
+                assert q.granularity is not None, "When specifying aggregates, granularity must also be provided."
+            if q.granularity is not None:
+                assert (
+                    q.aggregates or "aggregates" in q.ts_item
+                ), "When specifying granularity, aggregates must also be provided."
 
     def _preprocess_queries(self, queries: List[_DPQuery]):
         for query in queries:
