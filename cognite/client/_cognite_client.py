@@ -121,6 +121,5 @@ class CogniteClient:
                 stacklevel=3,
             )
             return login_status.project
-
         else:
             raise CogniteAPIKeyError("Invalid API key")

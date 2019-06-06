@@ -16,11 +16,6 @@ from tests.utils import BASE_URL
 
 
 @pytest.fixture
-def client(rsps_with_login_mock):
-    yield CogniteClient()
-
-
-@pytest.fixture
 def rsps_with_login_mock():
     with responses.RequestsMock() as rsps:
         rsps.add(rsps.GET, "https://pypi.python.org/simple/cognite-sdk/#history", status=200, body="")
