@@ -587,7 +587,13 @@ class _DatapointsFetcher:
         return dps_list
 
     def _validate_queries(self, queries: List[_DPQuery]):
+        identifiers_seen = set()
         for q in queries:
+            identifier = utils._auxiliary.unwrap_identifer(q.ts_item)
+            assert (
+                identifier not in identifiers_seen
+            ), "Time series identifier '{}' is duplicated in the request".format(identifier)
+            identifiers_seen.add(identifier)
             if q.aggregates is not None:
                 assert q.granularity is not None, "When specifying aggregates, granularity must also be provided."
             if q.granularity is not None:
@@ -643,7 +649,8 @@ class _DatapointsFetcher:
             self._fetch_datapoints_for_remaining_queries(remaining_queries)
 
     def _fetch_dps_initial_and_return_remaining_queries(self, query: _DPQuery) -> List[_DPQuery]:
-        request_limit = self.client._DPS_LIMIT if query.aggregates is None else self.client._DPS_LIMIT_AGG
+        is_aggregated = query.aggregates is not None or "aggregates" in query.ts_item
+        request_limit = self.client._DPS_LIMIT_AGG if is_aggregated else self.client._DPS_LIMIT
         if query.limit is not None and query.limit <= request_limit:
             query.dps_result = self._get_datapoints(*query.as_tuple())
             self._store_finalized_query(query)
@@ -791,7 +798,8 @@ class _DatapointsFetcher:
         include_outside_points: bool,
         limit: int,
     ) -> Datapoints:
-        per_request_limit = self.client._DPS_LIMIT_AGG if aggregates else self.client._DPS_LIMIT
+        is_aggregated = aggregates or "aggregates" in ts_item
+        per_request_limit = self.client._DPS_LIMIT_AGG if is_aggregated else self.client._DPS_LIMIT
         limit_next_request = per_request_limit
         next_start = start
         datapoints = Datapoints()
@@ -828,6 +836,7 @@ class _DatapointsFetcher:
         include_outside_points: bool,
         limit: int,
     ) -> Datapoints:
+        is_aggregated = aggregates or "aggregates" in ts_item
         payload = {
             "items": [ts_item],
             "start": start,
@@ -835,7 +844,7 @@ class _DatapointsFetcher:
             "aggregates": aggregates,
             "granularity": granularity,
             "includeOutsidePoints": include_outside_points,
-            "limit": limit or (self.client._DPS_LIMIT_AGG if aggregates else self.client._DPS_LIMIT),
+            "limit": limit or (self.client._DPS_LIMIT_AGG if is_aggregated else self.client._DPS_LIMIT),
         }
         res = self.client._post(self.client._RESOURCE_PATH + "/list", json=payload).json()["items"][0]
         aggs = ts_item.get("aggregates", aggregates)

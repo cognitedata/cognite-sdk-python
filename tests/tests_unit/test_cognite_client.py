@@ -16,7 +16,7 @@ from cognite.client._api.time_series import TimeSeriesList
 from cognite.client.data_classes import Asset, Event, FileMetadata, TimeSeries
 from cognite.client.exceptions import CogniteAPIKeyError
 from cognite.client.utils._logging import DebugLogFormatter
-from tests.utils import BASE_URL
+from tests.utils import BASE_URL, unset_env_var
 
 
 @pytest.fixture
@@ -65,19 +65,14 @@ def environment_client_config():
 
 class TestCogniteClient:
     def test_project_is_correct(self, rsps_with_login_mock):
-        c = CogniteClient()
+        with unset_env_var("COGNITE_PROJECT"):
+            c = CogniteClient()
         assert c.project == "test"
 
-    @pytest.fixture
-    def unset_env_api_key(self):
-        tmp = os.environ["COGNITE_API_KEY"]
-        del os.environ["COGNITE_API_KEY"]
-        yield
-        os.environ["COGNITE_API_KEY"] = tmp
-
-    def test_no_api_key_set(self, unset_env_api_key):
-        with pytest.raises(CogniteAPIKeyError, match="No API key has been specified"):
-            CogniteClient()
+    def test_no_api_key_set(self):
+        with unset_env_var("COGNITE_API_KEY"):
+            with pytest.raises(CogniteAPIKeyError, match="No API key has been specified"):
+                CogniteClient()
 
     def test_invalid_api_key(self, rsps):
         rsps.add(rsps.GET, "https://pypi.python.org/simple/cognite-sdk/#history", status=200, body="")
@@ -87,19 +82,14 @@ class TestCogniteClient:
             status=200,
             json={"data": {"project": "", "loggedIn": False, "user": "", "projectId": -1}},
         )
-        with pytest.raises(CogniteAPIKeyError):
-            CogniteClient()
+        with unset_env_var("COGNITE_PROJECT"):
+            with pytest.raises(CogniteAPIKeyError):
+                CogniteClient()
 
-    @pytest.fixture
-    def unset_env_client_name(self):
-        tmp = os.environ["COGNITE_CLIENT_NAME"]
-        del os.environ["COGNITE_CLIENT_NAME"]
-        yield
-        os.environ["COGNITE_CLIENT_NAME"] = tmp
-
-    def test_no_client_name(self, unset_env_client_name):
-        with pytest.raises(ValueError, match="No client name has been specified"):
-            CogniteClient()
+    def test_no_client_name(self):
+        with unset_env_var("COGNITE_CLIENT_NAME"):
+            with pytest.raises(ValueError, match="No client name has been specified"):
+                CogniteClient()
 
     def assert_config_is_correct(self, config, base_url, max_workers, timeout, client_name, project):
         assert config.base_url == base_url
@@ -117,8 +107,10 @@ class TestCogniteClient:
         assert config.project == project
         assert type(config.project) is str
 
-    def test_default_config(self, client, default_client_config):
-        self.assert_config_is_correct(client._config, *default_client_config)
+    def test_default_config(self, rsps_with_login_mock, default_client_config):
+        with unset_env_var("COGNITE_PROJECT"):
+            client = CogniteClient()
+        self.assert_config_is_correct(client.config, *default_client_config)
 
     def test_parameter_config(self):
         base_url = "blabla"
@@ -164,7 +156,8 @@ class TestCogniteClient:
             pool.map(self.create_client_and_check_config, list(range(16)))
 
     def test_client_debug_mode(self, rsps_with_login_mock):
-        CogniteClient(debug=True)
+        with unset_env_var("COGNITE_PROJECT"):
+            CogniteClient(debug=True)
         log = logging.getLogger("cognite-sdk")
         assert isinstance(log.handlers[0].formatter, DebugLogFormatter)
         log.handlers = []
@@ -182,12 +175,14 @@ class TestCogniteClient:
 
     def test_version_check_disabled(self, set_env_disable_version_check, rsps_with_login_mock):
         rsps_with_login_mock.assert_all_requests_are_fired = False
-        CogniteClient()
+        with unset_env_var("COGNITE_PROJECT"):
+            CogniteClient()
         assert len(rsps_with_login_mock.calls) == 1
         assert rsps_with_login_mock.calls[0].request.url.startswith("https://greenfield.cognitedata.com")
 
     def test_version_check_enabled(self, rsps_with_login_mock):
-        CogniteClient()
+        with unset_env_var("COGNITE_PROJECT"):
+            CogniteClient()
         assert len(rsps_with_login_mock.calls) == 2
 
 

@@ -14,6 +14,19 @@ Install pre-commit hooks
 ```bash
 $ pre-commit install
 ```
+
+### Environment Variables
+Set the following environment variables:
+```bash
+$ COGNITE_CLIENT_NAME = python-sdk-integration-tests
+$ COGNITE_MAX_RETRIES = 20
+
+# Only necessary for running integration tests
+COGNITE_PROJECT = python-sdk-test
+COGNITE_API_KEY = <api-key>
+COGNITE_BASE_URL = https://greenfield.cognitedata.com
+```
+
 ### Testing
 Set up tests for all new functionality. Running the tests will require setting the environment variable 'COGNITE_API_KEY'.
 
