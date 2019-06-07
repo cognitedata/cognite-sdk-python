@@ -89,3 +89,6 @@ class ClientConfig(_DefaultConfig):
 
     def __str__(self):
         return json.dumps(self.__dict__, indent=4)
+
+    def __repr__(self):
+        return self.__str__()
