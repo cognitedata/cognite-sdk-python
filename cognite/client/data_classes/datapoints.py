@@ -218,7 +218,7 @@ class Datapoints:
                 setattr(instance, snake_key, [])
         else:
             for key in expected_fields:
-                data = [dp[key] for dp in dps_object["datapoints"]]
+                data = [dp[key] if key in dp else None for dp in dps_object["datapoints"]]
                 snake_key = utils._auxiliary.to_snake_case(key)
                 setattr(instance, snake_key, data)
         return instance
