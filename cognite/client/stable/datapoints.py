@@ -283,7 +283,10 @@ class DatapointsClient(APIClient):
             if use_protobuf:
                 ts_data = _api_timeseries_data_v2_pb2.TimeseriesData()
                 ts_data.ParseFromString(res.content)
-                res = [{"timestamp": p.timestamp, "value": p.value} for p in ts_data.numericData.points]
+                parsed_dps = ts_data.numericData.points
+                if not parsed_dps:
+                    parsed_dps = ts_data.stringData.points
+                res = [{"timestamp": p.timestamp, "value": p.value} for p in parsed_dps]
             else:
                 res = res.json()["data"]["items"][0]["datapoints"]
 
@@ -346,7 +349,10 @@ class DatapointsClient(APIClient):
         if use_protobuf:
             ts_data = _api_timeseries_data_v2_pb2.TimeseriesData()
             ts_data.ParseFromString(res.content)
-            res = [{"timestamp": p.timestamp, "value": p.value} for p in ts_data.numericData.points]
+            parsed_dps = ts_data.numericData.points
+            if not parsed_dps:
+                parsed_dps = ts_data.stringData.points
+            res = [{"timestamp": p.timestamp, "value": p.value} for p in parsed_dps]
         else:
             res = res.json()["data"]["items"][0]["datapoints"]
 
