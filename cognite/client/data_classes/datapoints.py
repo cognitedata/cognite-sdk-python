@@ -217,13 +217,12 @@ class Datapoints:
                 snake_key = utils._auxiliary.to_snake_case(key)
                 setattr(instance, snake_key, [])
         else:
-            for dp in dps_object["datapoints"]:
-                for key in expected_fields:
-                    snake_key = utils._auxiliary.to_snake_case(key)
-                    current_attr = getattr(instance, snake_key) or []
-                    value = dp.get(key)
-                    current_attr.append(value)
-                    setattr(instance, snake_key, current_attr)
+            for key in expected_fields:
+                data = []
+                for dp in dps_object["datapoints"]:
+                    data.append(dp.get(key))
+                snake_key = utils._auxiliary.to_snake_case(key)
+                setattr(instance, snake_key, data)
         return instance
 
     def _insert(self, other_dps):
