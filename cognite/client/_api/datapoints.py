@@ -31,7 +31,9 @@ class DatapointsAPI(APIClient):
         include_outside_points: bool = None,
         limit: int = None,
     ) -> Union[Datapoints, DatapointsList]:
-        """Get datapoints for one or more time series
+        """Get datapoints for one or more time series.
+
+        Note that you cannot specify the same ids/external_ids multiple times.
 
         Args:
             start (Union[int, str, datetime]): Inclusive start.
@@ -58,7 +60,7 @@ class DatapointsAPI(APIClient):
                 >>> dps = c.datapoints.retrieve(id=1, start="2w-ago", end="now")
 
             We can also get aggregated values, such as average. Here we are getting daily averages for all of 2018 for
-            two different time series. Note that we arefetching them using their external ids::
+            two different time series. Note that we are fetching them using their external ids::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
@@ -145,7 +147,7 @@ class DatapointsAPI(APIClient):
         """Get datapoints for one or more time series
 
         This method is different from get() in that you can specify different start times, end times, and granularities
-        for each requested time series.
+        for each requested time series. Note that you cannot specify the same ids/external_ids multiple times.
 
         Args:
             query (Union[DatapointsQuery, List[DatapointsQuery]): List of datapoint queries.
@@ -377,6 +379,8 @@ class DatapointsAPI(APIClient):
         limit: int = None,
     ):
         """Get a pandas dataframe describing the requested data.
+
+        Note that you cannot specify the same ids/external_ids multiple times.
 
         Args:
             start (Union[int, str, datetime]): Inclusive start.
