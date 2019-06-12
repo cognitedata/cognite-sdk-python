@@ -38,7 +38,7 @@ data points for the last 24 hours.
 
     >>> from cognite.client import CogniteClient
     >>> c = CogniteClient()
-    >>> my_time_series = c.time_series.retrieve(id=[1, 2])
+    >>> my_time_series = c.time_series.retrieve(id=1)
     >>> my_time_series.plot()
 
 You can also pass arguments to the :code:`.plot()` method to change the start, end, aggregates, and granularity of the
@@ -55,7 +55,7 @@ methods you can use to plot the data.
 
     >>> from cognite.client import CogniteClient
     >>> c = CogniteClient()
-    >>> my_datapoints = c.datapoints.retrieve(
+    >>> my_datapoints = c.datapoints.retrieve_multiple(
     ...                     id=[1, 2],
     ...                     start="10d-ago",
     ...                     end="now",
