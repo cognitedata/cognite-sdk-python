@@ -19,8 +19,8 @@ Instantiate a new client
 ------------------------
 Use this code to instantiate a client and get your login status. CDF returns an object with
 attributes that describe which project and service account your API key belongs to. The client_name
-is used to give a unique identifier to the client. You can choose any string for the client_name. The client_name
-can also be provided through the :code: `COGNITE_CLIENT_NAME` environment variable.
+is used to give a unique identifier to the client. You can choose any string for the client_name. You
+can also provide the client_name through the :code: `COGNITE_CLIENT_NAME` environment variable.
 All examples in this documentation assumes that `COGNITE_CLIENT_NAME` has been set.
 
 .. code:: python
@@ -33,7 +33,7 @@ Read more about the `CogniteClient`_ and the functionality it exposes below.
 
 Discovering time series
 -----------------------
-For the next examples, you will need to supply ids for the time series that you want to retrieve. This can be done by
+For the next examples, you will need to supply ids for the time series that you want to retrieve. You can do this by
 running the following code.
 
 .. code:: python
@@ -46,7 +46,7 @@ Plot time series
 ----------------
 There are several ways of plotting a time series you have fetched from the API. The easiest is to call
 :code:`.plot()` on the returned :code:`TimeSeries` or :code:`TimeSeriesList` objects. By default, this plots the raw
-data points for the last 24 hours. If there are no data points for the last 24 hours, then plot will throw an exception.
+data points for the last 24 hours. If there are no data points for the last 24 hours, plot will throw an exception.
 
 .. code:: python
 
