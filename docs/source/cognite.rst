@@ -21,11 +21,12 @@ Use this code to instantiate a client and get your login status. CDF returns an 
 attributes that describe which project and service account your API key belongs to. The client_name
 is used to give a unique identifier to the client. You can choose any string for the client_name. The client_name
 can also be provided through the :code: `COGNITE_CLIENT_NAME` environment variable.
+All examples in this documentation assumes that `COGNITE_CLIENT_NAME` has been set.
 
 .. code:: python
 
     >>> from cognite.client import CogniteClient
-    >>> c = CogniteClient(client_name="your-client-name")
+    >>> c = CogniteClient()
     >>> status = c.login.status()
 
 Read more about the `CogniteClient`_ and the functionality it exposes below.
@@ -38,7 +39,7 @@ running the following code.
 .. code:: python
 
     >>> from cognite.client import CogniteClient
-    >>> c = CogniteClient(client_name="your-client-name")
+    >>> c = CogniteClient()
     >>> c.time_series.list(include_metadata=False, limit=2)
     
 Plot time series
@@ -50,7 +51,7 @@ data points for the last 24 hours. If there are no data points for the last 24 h
 .. code:: python
 
     >>> from cognite.client import CogniteClient
-    >>> c = CogniteClient(client_name="your-client-name")
+    >>> c = CogniteClient()
     >>> my_time_series = c.time_series.retrieve(id=<time-series-id>)
     >>> my_time_series.plot()
 
@@ -67,8 +68,8 @@ methods you can use to plot the data.
 .. code:: python
 
     >>> from cognite.client import CogniteClient
-    >>> c = CogniteClient(client_name="your-client-name")
-    >>> my_datapoints = c.datapoints.retrieve_dataframe(
+    >>> c = CogniteClient()
+    >>> my_datapoints = c.datapoints.retrieve(
     ...                     id=[<time-series-ids>],
     ...                     start="10d-ago",
     ...                     end="now",
