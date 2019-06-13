@@ -8,8 +8,8 @@ from typing import Any, Dict, List, Union
 import requests.utils
 from requests import Response, Session
 from requests.adapters import HTTPAdapter
+from requests.packages.urllib3 import Retry
 from requests.structures import CaseInsensitiveDict
-from urllib3 import Retry
 
 from cognite.client import utils
 from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteUpdate
