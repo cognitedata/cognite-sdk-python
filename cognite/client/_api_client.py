@@ -9,7 +9,7 @@ from typing import Any, Dict
 import numpy
 from requests import Response, Session
 from requests.adapters import HTTPAdapter
-from urllib3 import Retry
+from requests.packages.urllib3 import Retry
 
 from cognite.client.exceptions import APIError
 
