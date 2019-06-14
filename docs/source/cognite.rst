@@ -13,15 +13,15 @@ You can also pass your API key directly to the CogniteClient.
 .. code:: python
 
     >>> from cognite.client import CogniteClient
-    >>> c = CogniteClient(api_key="<your-api-key>", client_name="your-client-name")
+    >>> c = CogniteClient(api_key="<your-api-key>", client_name="<your-client-name>")
 
 Instantiate a new client
 ------------------------
 Use this code to instantiate a client and get your login status. CDF returns an object with
-attributes that describe which project and service account your API key belongs to. The client_name
-is used to give a unique identifier to the client. You can choose any string for the client_name. You
-can also provide the client_name through the :code: `COGNITE_CLIENT_NAME` environment variable.
-All examples in this documentation assumes that `COGNITE_CLIENT_NAME` has been set.
+attributes that describe which project and service account your API key belongs to. The :code:`client_name`
+is an user-defined string intended to give the client a unique identifier. You
+can provide the :code:`client_name` through the :code:`COGNITE_CLIENT_NAME` environment variable or by passing it directly to the :code:`CogniteClient` constructor.
+All examples in this documentation assume that :code:`COGNITE_CLIENT_NAME` has been set.
 
 .. code:: python
 
@@ -31,22 +31,21 @@ All examples in this documentation assumes that `COGNITE_CLIENT_NAME` has been s
 
 Read more about the `CogniteClient`_ and the functionality it exposes below.
 
-Discovering time series
------------------------
-For the next examples, you will need to supply ids for the time series that you want to retrieve. You can do this by
-running the following code.
+Discover time series
+--------------------
+For the next examples, you will need to supply ids for the time series that you want to retrieve. You can find some ids by listing the available time series. Limits for listing resources default to 25, so the following code will return the first 25 time series resources.
 
 .. code:: python
 
     >>> from cognite.client import CogniteClient
     >>> c = CogniteClient()
-    >>> c.time_series.list(include_metadata=False, limit=2)
+    >>> ts_list = c.time_series.list(include_metadata=False)
     
 Plot time series
 ----------------
 There are several ways of plotting a time series you have fetched from the API. The easiest is to call
 :code:`.plot()` on the returned :code:`TimeSeries` or :code:`TimeSeriesList` objects. By default, this plots the raw
-data points for the last 24 hours. If there are no data points for the last 24 hours, plot will throw an exception.
+data points for the last 24 hours. If there are no data points for the last 24 hours, :code:`plot` will throw an exception.
 
 .. code:: python
 
