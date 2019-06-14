@@ -287,7 +287,7 @@ class AssetsAPI(APIClient):
         subtree = self._get_asset_subtree(AssetList([asset]), current_depth=0, depth=depth)
         return AssetList(sorted(subtree, key=lambda a: a.depth), cognite_client=self._cognite_client)
 
-    def _get_asset_subtree(self, assets: AssetList, current_depth: int, depth: int) -> AssetList:
+    def _get_asset_subtree(self, assets: AssetList, current_depth: int, depth: Optional[int]) -> AssetList:
         subtree = assets
         if depth is None or current_depth < depth:
             children = self._get_children(assets)
@@ -301,9 +301,11 @@ class AssetsAPI(APIClient):
         chunk_size = 100
         for i in range(0, len(ids), chunk_size):
             tasks.append({"parent_ids": ids[i : i + chunk_size], "limit": -1})
-        res_list = utils._concurrency.execute_tasks_concurrently(
+        tasks_summary = utils._concurrency.execute_tasks_concurrently(
             self.list, tasks=tasks, max_workers=self._config.max_workers
-        ).results
+        )
+        tasks_summary.raise_compound_exception_if_failed_tasks()
+        res_list = tasks_summary.results
         children = AssetList([])
         for res in res_list:
             children.extend(res)
