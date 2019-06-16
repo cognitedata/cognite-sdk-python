@@ -41,7 +41,7 @@ def mock_assets_response(rsps):
 
 
 @pytest.fixture
-def mock_get_subtree(rsps):
+def mock_get_subtree_base(rsps):
     rsps.add(
         rsps.POST,
         ASSETS_API._get_base_url_with_base_path() + "/assets/byids",
@@ -78,8 +78,29 @@ def mock_get_subtree(rsps):
         status=200,
         json={"items": [{"id": 9, "path": [1, 4, 9], "depth": 2}, {"id": 10, "path": [1, 4, 10], "depth": 2}]},
     )
-    rsps.add(rsps.POST, ASSETS_API._get_base_url_with_base_path() + "/assets/list", status=200, json={"items": []})
     yield rsps
+
+
+@pytest.fixture
+def mock_get_subtree(mock_get_subtree_base):
+    mock_get_subtree_base.add(
+        mock_get_subtree_base.POST,
+        ASSETS_API._get_base_url_with_base_path() + "/assets/list",
+        status=200,
+        json={"items": []},
+    )
+    yield mock_get_subtree_base
+
+
+@pytest.fixture
+def mock_get_subtree_w_request_failure(mock_get_subtree_base):
+    mock_get_subtree_base.add(
+        mock_get_subtree_base.POST,
+        ASSETS_API._get_base_url_with_base_path() + "/assets/list",
+        status=503,
+        json={"error": {"message": "Service Unavailable"}},
+    )
+    yield mock_get_subtree_base
 
 
 class TestAssets:
@@ -170,6 +191,10 @@ class TestAssets:
         assert len(assets) == 4
         for i, asset in enumerate(assets):
             assert asset.id == i + 1
+
+    def test_get_subtree_w_error(self, mock_get_subtree_w_request_failure):
+        with pytest.raises(CogniteAPIError):
+            COGNITE_CLIENT.assets.retrieve_subtree(id=1)
 
     def test_assets_update_object(self):
         assert isinstance(
