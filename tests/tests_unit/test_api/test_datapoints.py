@@ -11,7 +11,7 @@ import pytest
 from cognite.client import CogniteClient, utils
 from cognite.client._api.datapoints import _DatapointsFetcher, _DPQuery, _DPWindow
 from cognite.client.data_classes import Datapoint, Datapoints, DatapointsList, DatapointsQuery
-from cognite.client.exceptions import CogniteAPIError
+from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from tests.utils import jsgz_load, set_request_limit
 
 COGNITE_CLIENT = CogniteClient()
@@ -394,6 +394,17 @@ def mock_post_datapoints(rsps):
     yield rsps
 
 
+@pytest.fixture
+def mock_post_datapoints_400(rsps):
+    rsps.add(
+        rsps.POST,
+        DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/data",
+        status=400,
+        json={"error": {"message": "Ts not found", "missing": [{"externalId": "does_not_exist"}]}},
+    )
+    yield rsps
+
+
 class TestInsertDatapoints:
     def test_insert_tuples(self, mock_post_datapoints):
         dps = [(i * 1e11, i) for i in range(1, 11)]
@@ -468,6 +479,10 @@ class TestInsertDatapoints:
         dps_objects = [{"extId": "1", "datapoints": dps}]
         with pytest.raises(AssertionError, match="Invalid key 'extId'"):
             DPS_CLIENT.insert_multiple(dps_objects)
+
+    def test_insert_datapoints_ts_does_not_exist(self, mock_post_datapoints_400):
+        with pytest.raises(CogniteNotFoundError):
+            DPS_CLIENT.insert(datapoints=[(1e14, 1)], external_id="does_not_exist")
 
 
 @pytest.fixture
