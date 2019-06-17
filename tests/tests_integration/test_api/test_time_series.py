@@ -1,4 +1,5 @@
 import time
+from unittest import mock
 
 import pytest
 
@@ -18,6 +19,12 @@ def new_ts():
     assert COGNITE_CLIENT.time_series.retrieve(ts.id) is None
 
 
+@pytest.fixture
+def get_spy():
+    with mock.patch.object(COGNITE_CLIENT.time_series, "_get", wraps=COGNITE_CLIENT.time_series._get) as _:
+        yield
+
+
 class TestTimeSeriesAPI:
     def test_retrieve(self):
         listed_asset = COGNITE_CLIENT.time_series.list(limit=1)[0]
@@ -32,9 +39,7 @@ class TestTimeSeriesAPI:
             retrieved_asset.external_id = listed_asset.external_id
         assert res == retrieved_assets
 
-    def test_list(self, mocker):
-        mocker.spy(COGNITE_CLIENT.time_series, "_get")
-
+    def test_list(self, get_spy):
         with set_request_limit(COGNITE_CLIENT.time_series, 10):
             res = COGNITE_CLIENT.time_series.list(limit=20)
 

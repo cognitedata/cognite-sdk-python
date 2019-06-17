@@ -22,6 +22,8 @@ def ms_to_datetime(ms: Union[int, float]) -> datetime:
         datetime: Datetime object.
 
     """
+    if ms < 0:
+        raise ValueError("ms must be greater than or equal to zero.")
     return datetime.utcfromtimestamp(ms / 1000)
 
 
@@ -102,7 +104,7 @@ def _convert_time_attributes_in_dict(item: Dict) -> Dict:
         if k in TIME_ATTRIBUTES:
             try:
                 v = ms_to_datetime(v).strftime("%Y-%m-%d %H:%M:%S")
-            except ValueError:
+            except (ValueError, OSError):
                 pass
         new_item[k] = v
     return new_item
