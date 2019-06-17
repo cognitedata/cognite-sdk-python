@@ -1,3 +1,5 @@
+from unittest import mock
+
 import pytest
 
 import cognite.client.utils._time
@@ -17,6 +19,12 @@ def new_event():
     assert COGNITE_CLIENT.events.retrieve(event.id) is None
 
 
+@pytest.fixture
+def post_spy():
+    with mock.patch.object(COGNITE_CLIENT.events, "_post", wraps=COGNITE_CLIENT.events._post) as _:
+        yield
+
+
 class TestEventsAPI:
     def test_retrieve(self):
         res = COGNITE_CLIENT.events.list(limit=1)
@@ -26,9 +34,7 @@ class TestEventsAPI:
         res = COGNITE_CLIENT.events.list(limit=2)
         assert res == COGNITE_CLIENT.events.retrieve_multiple([e.id for e in res])
 
-    def test_list(self, mocker):
-        mocker.spy(COGNITE_CLIENT.events, "_post")
-
+    def test_list(self, post_spy):
         with set_request_limit(COGNITE_CLIENT.events, 10):
             res = COGNITE_CLIENT.events.list(limit=20)
 

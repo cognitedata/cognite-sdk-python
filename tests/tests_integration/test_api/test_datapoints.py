@@ -1,5 +1,6 @@
 import re
 from datetime import datetime, timedelta
+from unittest import mock
 
 import numpy
 import pandas
@@ -39,6 +40,12 @@ def has_correct_timestamp_spacing(df: pandas.DataFrame, granularity: str):
     deltas = numpy.diff(timestamps, 1)
     granularity_ms = utils._time.granularity_to_ms(granularity)
     return (deltas != 0).all() and (deltas % granularity_ms == 0).all()
+
+
+@pytest.fixture
+def post_spy():
+    with mock.patch.object(COGNITE_CLIENT.datapoints, "_post", wraps=COGNITE_CLIENT.datapoints._post) as _:
+        yield
 
 
 class TestDatapointsAPI:
@@ -108,19 +115,17 @@ class TestDatapointsAPI:
         assert 1 == len(res)
         assert res[0].timestamp < utils._time.timestamp_to_ms("1h-ago")
 
-    def test_insert(self, new_ts, mocker):
+    def test_insert(self, new_ts, post_spy):
         datapoints = [(datetime(year=2018, month=1, day=1, hour=1, minute=i), i) for i in range(60)]
-        mocker.spy(COGNITE_CLIENT.datapoints, "_post")
         with set_request_limit(COGNITE_CLIENT.datapoints, 30):
             COGNITE_CLIENT.datapoints.insert(datapoints, id=new_ts.id)
         assert 2 == COGNITE_CLIENT.datapoints._post.call_count
 
-    def test_insert_pandas_dataframe(self, new_ts, mocker):
+    def test_insert_pandas_dataframe(self, new_ts, post_spy):
         start = datetime(2018, 1, 1)
         x = pandas.DatetimeIndex([start + timedelta(days=d) for d in range(100)])
         y = numpy.random.normal(0, 1, 100)
         df = pandas.DataFrame({new_ts.id: y}, index=x)
-        mocker.spy(COGNITE_CLIENT.datapoints, "_post")
         with set_request_limit(COGNITE_CLIENT.datapoints, 50):
             COGNITE_CLIENT.datapoints.insert_dataframe(df)
         assert 2 == COGNITE_CLIENT.datapoints._post.call_count

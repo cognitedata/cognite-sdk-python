@@ -22,7 +22,8 @@ class TestDatetimeToMs:
 
         assert utils._time.ms_to_datetime(1517356800000) == datetime(2018, 1, 31)
         assert utils._time.ms_to_datetime(1517397071000) == datetime(2018, 1, 31, 11, 11, 11)
-        assert utils._time.ms_to_datetime(-59008867200000) == datetime(100, 1, 31)
+        with pytest.raises(ValueError, match="greater than"):
+            utils._time.ms_to_datetime(-59008867200000)
         with pytest.raises(TypeError):
             utils._time.ms_to_datetime(None)
 

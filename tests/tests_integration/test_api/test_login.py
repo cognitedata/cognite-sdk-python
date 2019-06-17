@@ -5,10 +5,7 @@ c = CogniteClient()
 
 class TestLoginAPI:
     def test_login_status(self):
-        assert {
-            "user": "python-sdk-integration-tester",
-            "project": "python-sdk-test",
-            "project_id": 2561337318642649,
-            "logged_in": True,
-            "api_key_id": 4131947729676274,
-        } == c.login.status().dump()
+        result = c.login.status().dump()
+        assert result["logged_in"] is True
+        assert 2561337318642649 == result["project_id"]
+        assert "python-sdk-test" == result["project"]
