@@ -938,7 +938,7 @@ class DataFrameFetcher:
                 for c in q.aggregates:
                     if c not in q.result.columns:
                         q.result[c] = self.np.nan
-            name = list(q.ts_item.values())[0]  # id or external_id
+            name = q.ts_item.get("externalId") or q.ts_item.get("id")
             q.result.rename(
                 mapper=lambda agg: "{}|{}".format(name, cognite.client.utils._auxiliary.to_camel_case(agg)),
                 axis="columns",
