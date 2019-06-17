@@ -1,4 +1,5 @@
 import time
+from unittest import mock
 
 import pytest
 
@@ -35,10 +36,15 @@ def generate_asset_tree(root_external_id: str, depth: int, children_per_node: in
 
 
 @pytest.fixture
-def new_asset_hierarchy(mocker):
+def post_spy():
+    with mock.patch.object(COGNITE_CLIENT.assets, "_post", wraps=COGNITE_CLIENT.assets._post) as _:
+        yield
+
+
+@pytest.fixture
+def new_asset_hierarchy(post_spy):
     random_prefix = "test_{}_".format(utils._auxiliary.random_string(10))
     assets = generate_asset_tree(random_prefix + "0", depth=5, children_per_node=5)
-    mocker.spy(COGNITE_CLIENT.assets, "_post")
 
     with set_request_limit(COGNITE_CLIENT.assets, 50):
         COGNITE_CLIENT.assets.create(assets)
@@ -63,9 +69,7 @@ class TestAssetsAPI:
         res = COGNITE_CLIENT.assets.list(limit=1)
         assert res[0] == COGNITE_CLIENT.assets.retrieve(res[0].id)
 
-    def test_list(self, mocker):
-        mocker.spy(COGNITE_CLIENT.assets, "_post")
-
+    def test_list(self, post_spy):
         with set_request_limit(COGNITE_CLIENT.assets, 10):
             res = COGNITE_CLIENT.assets.list(limit=20)
 
