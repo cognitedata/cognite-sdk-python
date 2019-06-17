@@ -339,3 +339,21 @@ class DatapointsQuery(CogniteResource):
         self.aggregates = aggregates
         self.granularity = granularity
         self.include_outside_points = include_outside_points
+
+
+class DataFrameQuery:
+    def __init__(
+        self,
+        start: Union[str, int, datetime],
+        end: Union[str, int, datetime],
+        aggregates: List[str],
+        granularity: str,
+        id: Union[int, List[int]] = None,
+        external_id: Union[str, List[str]] = None,
+    ):
+        self.start = cognite.client.utils._time.timestamp_to_ms(start)
+        self.end = cognite.client.utils._time.timestamp_to_ms(end)
+        self.id = id
+        self.external_id = external_id
+        self.aggregates = aggregates
+        self.granularity = granularity
