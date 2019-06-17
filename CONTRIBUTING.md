@@ -16,10 +16,10 @@ $ pre-commit install
 ```
 
 ### Environment Variables
-Set the following environment variables:
+Set the following environment variables in a .env file:
 ```bash
-$ COGNITE_CLIENT_NAME = python-sdk-integration-tests
-$ COGNITE_MAX_RETRIES = 20
+COGNITE_CLIENT_NAME = python-sdk-integration-tests
+COGNITE_MAX_RETRIES = 20
 
 # Only necessary for running integration tests
 COGNITE_PROJECT = python-sdk-test
