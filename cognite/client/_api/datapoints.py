@@ -374,63 +374,6 @@ class DatapointsAPI(APIClient):
         end: Union[int, str, datetime],
         aggregates: List[str],
         granularity: str,
-        id: Union[int, List[int], Dict[str, Union[int, List[str]]], List[Dict[str, Union[int, List[str]]]]] = None,
-        external_id: Union[
-            str, List[str], Dict[str, Union[int, List[str]]], List[Dict[str, Union[int, List[str]]]]
-        ] = None,
-        limit: int = None,
-    ):
-        """Get a pandas dataframe describing the requested data.
-
-        Note that you cannot specify the same ids/external_ids multiple times.
-
-        Args:
-            start (Union[int, str, datetime]): Inclusive start.
-            end (Union[int, str, datetime]): Exclusive end.
-            aggregates (List[str]): List of aggregate functions to apply.
-            granularity (str): The granularity to fetch aggregates at. e.g. '1s', '2h', '10d'.
-            id (Union[int, List[int], Dict[str, Any], List[Dict[str, Any]]]: Id or list of ids. Can also be object
-                specifying aggregates. See example below.
-            external_id (Union[str, List[str], Dict[str, Any], List[Dict[str, Any]]]): External id or list of external
-                ids. Can also be object specifying aggregates. See example below.
-            limit (int): Maximum number of datapoints to return for each time series.
-
-        Returns:
-            pandas.DataFrame: The requested dataframe
-
-        Examples:
-
-            Get a pandas dataframe::
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> df = c.datapoints.retrieve_dataframe(id=[1,2,3], start="2w-ago", end="now",
-                ...         aggregates=["average"], granularity="1h")
-        """
-        pd = utils._auxiliary.local_import("pandas")
-        id_df = pd.DataFrame()
-        external_id_df = pd.DataFrame()
-        if id is not None:
-            id_df = self.retrieve(
-                id=id, start=start, end=end, aggregates=aggregates, granularity=granularity, limit=limit
-            ).to_pandas(column_names="id")
-        if external_id is not None:
-            external_id_df = self.retrieve(
-                external_id=external_id,
-                start=start,
-                end=end,
-                aggregates=aggregates,
-                granularity=granularity,
-                limit=limit,
-            ).to_pandas()
-        return pd.concat([id_df, external_id_df], axis="columns")
-
-    def new_retrieve_dataframe(
-        self,
-        start: Union[int, str, datetime],
-        end: Union[int, str, datetime],
-        aggregates: List[str],
-        granularity: str,
         id: Union[int, List[int]] = None,
         external_id: Union[str, List[str]] = None,
     ):
@@ -466,8 +409,11 @@ class DatapointsAPI(APIClient):
 
         dataframes = DataFrameFetcher(client=self).fetch(dps_queries)
         if is_single_id:
-            return dataframes[0]
-        return pd.concat(dataframes, axis="columns")
+            df = dataframes[0]
+        else:
+            df = pd.concat(dataframes, axis="columns")
+        df.index = pd.to_datetime(df.index, unit="ms")
+        return df
 
     def query_dataframe(self, query: Union[DataFrameQuery, List[DataFrameQuery]]):
         """Get several dataframes in parallel
@@ -506,7 +452,8 @@ class DatapointsAPI(APIClient):
 
         DataFrameFetcher(client=self).fetch(sum(results, []))
         results = [pd.concat([dfc.result for dfc in list_cols], axis="columns") for list_cols in results]
-
+        for df in results:
+            df.index = pd.to_datetime(df.index, unit="ms")
         if is_single_query:
             return results[0]
         return results
@@ -986,13 +933,14 @@ class DataFrameFetcher:
                 q.result.sort(key=lambda df: df.loc[0, "timestamp"])  # sort dataframes, not rows
                 q.result = self.pd.concat(q.result, axis="rows", sort=False)
             q.result.set_index("timestamp", inplace=True)
+            q.result.index.name = None  # mainly for tests and consistency with .to_pandas()
             if len(q.result.columns) != len(q.aggregates):
                 for c in q.aggregates:
                     if c not in q.result.columns:
                         q.result[c] = self.np.nan
             name = list(q.ts_item.values())[0]  # id or external_id
             q.result.rename(
-                mapper=lambda agg: name + "|" + cognite.client.utils._auxiliary.to_camel_case(agg),
+                mapper=lambda agg: "{}|{}".format(name, cognite.client.utils._auxiliary.to_camel_case(agg)),
                 axis="columns",
                 inplace=True,
             )

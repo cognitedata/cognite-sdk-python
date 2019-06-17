@@ -10,7 +10,7 @@ import pytest
 
 from cognite.client import CogniteClient, utils
 from cognite.client._api.datapoints import _DatapointsFetcher, _DPQuery, _DPWindow
-from cognite.client.data_classes import Datapoint, Datapoints, DatapointsList, DatapointsQuery
+from cognite.client.data_classes import DataFrameQuery, Datapoint, Datapoints, DatapointsList, DatapointsQuery
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from tests.utils import jsgz_load, set_request_limit
 
@@ -719,6 +719,26 @@ class TestPandasIntegration:
 
         assert {"1|average", "2|max", "123|average"} == set(df.columns)
         assert df.shape[0] > 0
+
+    def test_query_dataframe_single(self, mock_get_datapoints):
+        q = DataFrameQuery(
+            id=[1, 2], external_id=["123"], start=1000000, end=1100000, aggregates=["average"], granularity="10s"
+        )
+        df = DPS_CLIENT.query_dataframe(q)
+        assert {"1|average", "2|average", "123|average"} == set(df.columns)
+        assert df.shape[0] > 0
+
+    def test_query_dataframe_multiple(self, mock_get_datapoints):
+        import pandas as pd
+
+        q = DataFrameQuery(
+            id=[1, 2], external_id=["123"], start=1000000, end=1100000, aggregates=["average"], granularity="10s"
+        )
+        queries = [q, q, q]
+        dfs = DPS_CLIENT.query_dataframe(queries)
+        for i in range(len(queries)):
+            assert {"1|average", "2|average", "123|average"} == set(dfs[i].columns)
+            assert dfs[i].shape[0] > 0
 
     def test_retrieve_datapoints_some_aggregates_omitted(self, mock_get_datapoints_one_ts_has_missing_aggregates):
         import pandas as pd
