@@ -10,7 +10,7 @@ from unittest.mock import PropertyMock
 import pytest
 
 from cognite.client import CogniteClient, utils
-from cognite.client._api.datapoints import DatapointsFetcher, _DPTask, _DPWindow
+from cognite.client._api.datapoints import DatapointsBin, DatapointsFetcher, _DPTask, _DPWindow
 from cognite.client.data_classes import Datapoint, Datapoints, DatapointsList, DatapointsQuery
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from tests.utils import jsgz_load, set_request_limit
@@ -434,11 +434,6 @@ class TestInsertDatapoints:
             ]
         } == jsgz_load(mock_post_datapoints.calls[0].request.body)
 
-    def test_insert_datapoints_in_jan_1970(self):
-        dps = [{"timestamp": i, "value": i} for i in range(1, 11)]
-        with pytest.raises(AssertionError):
-            DPS_CLIENT.insert(dps, id=1)
-
     @pytest.mark.parametrize("ts_key, value_key", [("timestamp", "values"), ("timstamp", "value")])
     def test_invalid_datapoints_keys(self, ts_key, value_key):
         dps = [{ts_key: i * 1e11, value_key: i} for i in range(1, 11)]
@@ -467,15 +462,13 @@ class TestInsertDatapoints:
         dps_objects = [{"externalId": "1", "datapoints": dps}, {"id": 1, "datapoints": dps}]
         res = DPS_CLIENT.insert_multiple(dps_objects)
         assert res is None
-        request_bodies = [jsgz_load(call.request.body) for call in mock_post_datapoints.calls]
-        assert {
-            "items": [{"id": 1, "datapoints": [{"timestamp": int(i * 1e11), "value": i} for i in range(1, 11)]}]
-        } in request_bodies
+        request_body = jsgz_load(mock_post_datapoints.calls[0].request.body)
         assert {
             "items": [
-                {"externalId": "1", "datapoints": [{"timestamp": int(i * 1e11), "value": i} for i in range(1, 11)]}
+                {"externalId": "1", "datapoints": [{"timestamp": int(i * 1e11), "value": i} for i in range(1, 11)]},
+                {"id": 1, "datapoints": [{"timestamp": int(i * 1e11), "value": i} for i in range(1, 11)]},
             ]
-        } in request_bodies
+        } == request_body
 
     def test_insert_datapoints_in_multiple_time_series_invalid_key(self):
         dps = [{"timestamp": i * 1e11, "value": i} for i in range(1, 11)]
@@ -486,6 +479,36 @@ class TestInsertDatapoints:
     def test_insert_datapoints_ts_does_not_exist(self, mock_post_datapoints_400):
         with pytest.raises(CogniteNotFoundError):
             DPS_CLIENT.insert(datapoints=[(1e14, 1)], external_id="does_not_exist")
+
+    def test_insert_multiple_ts__below_ts_and_dps_limit(self, mock_post_datapoints):
+        dps = [{"timestamp": i * 1e11, "value": i} for i in range(1, 2)]
+        dps_objects = [{"id": i, "datapoints": dps} for i in range(100)]
+        DPS_CLIENT.insert_multiple(dps_objects)
+        assert 1 == len(mock_post_datapoints.calls)
+        request_body = jsgz_load(mock_post_datapoints.calls[0].request.body)
+        for i, dps in enumerate(request_body["items"]):
+            assert i == dps["id"]
+
+    @pytest.fixture
+    def set_post_dps_objects_limit_to_100(self):
+        tmp = DPS_CLIENT._POST_DPS_OBJECTS_LIMIT
+        DPS_CLIENT._POST_DPS_OBJECTS_LIMIT = 100
+        yield
+        DPS_CLIENT._POST_DPS_OBJECTS_LIMIT = tmp
+
+    def test_insert_multiple_ts_single_call__below_dps_limit_above_ts_limit(
+        self, mock_post_datapoints, set_post_dps_objects_limit_to_100
+    ):
+        dps = [{"timestamp": i * 1e11, "value": i} for i in range(1, 2)]
+        dps_objects = [{"id": i, "datapoints": dps} for i in range(101)]
+        DPS_CLIENT.insert_multiple(dps_objects)
+        assert 2 == len(mock_post_datapoints.calls)
+
+    def test_insert_multiple_ts_single_call__above_dps_limit_below_ts_limit(self, mock_post_datapoints):
+        dps = [{"timestamp": i * 1e11, "value": i} for i in range(1, 1002)]
+        dps_objects = [{"id": i, "datapoints": dps} for i in range(10)]
+        DPS_CLIENT.insert_multiple(dps_objects)
+        assert 2 == len(mock_post_datapoints.calls)
 
 
 @pytest.fixture
@@ -769,20 +792,19 @@ class TestPandasIntegration:
         )
         res = DPS_CLIENT.insert_dataframe(df)
         assert res is None
-        request_bodies = [jsgz_load(call.request.body) for call in mock_post_datapoints.calls]
-        assert {
-            "items": [
-                {"id": 123, "datapoints": [{"timestamp": ts, "value": val} for ts, val in zip(timestamps, range(1, 5))]}
-            ]
-        } in request_bodies
+        request_body = jsgz_load(mock_post_datapoints.calls[0].request.body)
         assert {
             "items": [
                 {
+                    "id": 123,
+                    "datapoints": [{"timestamp": ts, "value": val} for ts, val in zip(timestamps, range(1, 5))],
+                },
+                {
                     "id": 456,
                     "datapoints": [{"timestamp": ts, "value": float(val)} for ts, val in zip(timestamps, range(5, 9))],
-                }
+                },
             ]
-        } in request_bodies
+        } == request_body
 
     def test_insert_dataframe_with_nans(self):
         import pandas as pd
@@ -829,6 +851,32 @@ def mock_get_dps_count(rsps):
         content_type="application/json",
     )
     yield rsps
+
+
+class TestDataPoster:
+    def test_datapoints_bin_add_dps_object(self):
+        bin = DatapointsBin(10, 10)
+        dps_object = {"id": 100, "datapoints": [{"timestamp": 1, "value": 1}]}
+        bin.add(dps_object)
+        assert 1 == bin.current_num_datapoints
+        assert [dps_object] == bin.dps_object_list
+
+    def test_datapoints_bin_will_fit__below_dps_and_ts_limit(self):
+        bin = DatapointsBin(10, 10)
+        assert bin.will_fit(10)
+        assert not bin.will_fit(11)
+
+    def test_datapoints_bin_will_fit__below_dps_limit_above_ts_limit(self):
+        bin = DatapointsBin(1, 100)
+        dps_object = {"id": 100, "datapoints": [{"timestamp": 1, "value": 1}]}
+        bin.add(dps_object)
+        assert not bin.will_fit(10)
+
+    def test_datapoints_bin_will_fit__above_dps_limit_above_ts_limit(self):
+        bin = DatapointsBin(1, 1)
+        dps_object = {"id": 100, "datapoints": [{"timestamp": 1, "value": 1}]}
+        bin.add(dps_object)
+        assert not bin.will_fit(1)
 
 
 gms = lambda s: utils._time.granularity_to_ms(s)

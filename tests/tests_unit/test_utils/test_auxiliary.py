@@ -105,19 +105,6 @@ class TestSplitIntoChunks:
 
 
 class TestAssertions:
-    @pytest.mark.parametrize(
-        "timestamp", [utils._time.timestamp_to_ms(datetime(2018, 1, 1)), datetime(1971, 1, 2), "now"]
-    )
-    def test_assert_timestamp_not_in_1970_ok(self, timestamp):
-        cognite.client.utils._time.assert_timestamp_not_in_1970(timestamp)
-
-    @pytest.mark.parametrize(
-        "timestamp", [utils._time.timestamp_to_ms(datetime(2018, 1, 1)) / 1000, datetime(1970, 2, 1)]
-    )
-    def test_assert_timestamp_not_in_1970_fail(self, timestamp):
-        with pytest.raises(AssertionError, match="You are attempting to post data in 1970"):
-            cognite.client.utils._time.assert_timestamp_not_in_1970(timestamp)
-
     @pytest.mark.parametrize("var, var_name, types", [(1, "var1", [int]), ("1", "var2", [int, str])])
     def test_assert_type_ok(self, var, var_name, types):
         utils._auxiliary.assert_type(var, var_name, types=types)
