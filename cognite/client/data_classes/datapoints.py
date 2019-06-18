@@ -298,8 +298,10 @@ class DatapointsQuery(CogniteResource):
     Args:
         start (Union[str, int, datetime]): Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s. Example: '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since epoch.
         end (Union[str, int, datetime]): Get datapoints up to this time. The format is the same as for start.
-        id (int): Id of the timeseries to query
-        external_id (str): External id of the timeseries to query (Only if id is not set)
+        id (Union[int, List[int], Dict[str, Any], List[Dict[str, Any]]]: Id or list of ids. Can also be object
+                specifying aggregates. See example below.
+            external_id (Union[str, List[str], Dict[str, Any], List[Dict[str, Any]]]): External id or list of external
+                ids. Can also be object specifying aggregates. See example below.
         limit (int): Return up to this number of datapoints.
         aggregates (List[str]): The aggregates to be returned.  Use default if null. An empty string must be sent to get raw data if the default is a set of aggregates.
         granularity (str): The granularity size and granularity of the aggregates.
@@ -310,8 +312,10 @@ class DatapointsQuery(CogniteResource):
         self,
         start: Union[str, int, datetime],
         end: Union[str, int, datetime],
-        id: int = None,
-        external_id: str = None,
+        id: Union[int, List[int], Dict[str, Union[int, List[str]]], List[Dict[str, Union[int, List[str]]]]] = None,
+        external_id: Union[
+            str, List[str], Dict[str, Union[int, List[str]]], List[Dict[str, Union[int, List[str]]]]
+        ] = None,
         limit: int = None,
         aggregates: List[str] = None,
         granularity: str = None,

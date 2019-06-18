@@ -3,13 +3,14 @@ import math
 from contextlib import contextmanager
 from datetime import datetime
 from random import choice, random
+from typing import List
 from unittest import mock
 from unittest.mock import PropertyMock
 
 import pytest
 
 from cognite.client import CogniteClient, utils
-from cognite.client._api.datapoints import _DatapointsFetcher, _DPQuery, _DPWindow
+from cognite.client._api.datapoints import DatapointsFetcher, _DPTask, _DPWindow
 from cognite.client.data_classes import Datapoint, Datapoints, DatapointsList, DatapointsQuery
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from tests.utils import jsgz_load, set_request_limit
@@ -292,8 +293,8 @@ class TestGetDatapoints:
 class TestQueryDatapoints:
     def test_query_single(self, mock_get_datapoints):
         dps_res = DPS_CLIENT.query(query=DatapointsQuery(id=1, start=0, end=10000))
-        assert isinstance(dps_res, Datapoints)
-        assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
+        assert isinstance(dps_res, DatapointsList)
+        assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res[0])
 
     def test_query_multiple(self, mock_get_datapoints):
         dps_res_list = DPS_CLIENT.query(
@@ -302,13 +303,15 @@ class TestQueryDatapoints:
                 DatapointsQuery(external_id="2", start=10000, end=20000, aggregates=["average"], granularity="2s"),
             ]
         )
-        assert isinstance(dps_res_list, DatapointsList)
+        assert isinstance(dps_res_list, List)
         for dps_res in dps_res_list:
-            assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
+            assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res[0])
 
     def test_query_empty(self, mock_get_datapoints_empty):
         dps_res = DPS_CLIENT.query(query=DatapointsQuery(id=1, start=0, end=10000))
-        assert 0 == len(dps_res)
+        assert isinstance(dps_res, DatapointsList)
+        assert 1 == len(dps_res)
+        assert 0 == len(dps_res[0])
 
 
 @pytest.fixture
@@ -836,46 +839,49 @@ class TestDataFetcher:
         "q, exc, message",
         [
             (
-                [_DPQuery(1, 2, {"id": 1}, ["average"], None, None, None)],
+                DatapointsQuery(start=1, end=2, id=1, aggregates=["average"]),
                 AssertionError,
                 "granularity must also be provided",
             ),
-            ([_DPQuery(1, 2, {"id": 1}, None, "1d", None, None)], AssertionError, "aggregates must also be provided"),
             (
-                [_DPQuery(1, 2, {"id": 1}, None, None, None, None), _DPQuery(1, 2, {"id": 1}, None, None, None, None)],
+                DatapointsQuery(start=1, end=2, id=1, granularity="1d"),
                 AssertionError,
-                "identifier '1' is duplicated in the request",
+                "aggregates must also be provided",
             ),
             (
-                [
-                    _DPQuery(1, 2, {"id": 1}, None, None, None, None),
-                    _DPQuery(1, 2, {"id": 1, "aggregates": ["average"]}, None, "1d", None, None),
-                ],
+                DatapointsQuery(start=1, end=2, id=[1, 1], granularity="1d", aggregates=["average"]),
                 AssertionError,
-                "identifier '1' is duplicated in the request",
+                "identifier '1' is duplicated in query",
+            ),
+            (
+                DatapointsQuery(
+                    start=1, end=2, id=[1, {"id": 1, "aggregates": ["max"]}], granularity="1d", aggregates=["average"]
+                ),
+                AssertionError,
+                "identifier '1' is duplicated in query",
             ),
         ],
     )
-    def test_validate_queries(self, q, exc, message):
+    def test_validate_query(self, q, exc, message):
         with pytest.raises(exc, match=message):
-            _DatapointsFetcher(DPS_CLIENT).fetch(q)
+            DatapointsFetcher(DPS_CLIENT).fetch(q)
 
     @pytest.mark.parametrize(
         "q, expected_q",
         [
-            ([_DPQuery(1, 2, None, None, None, None, None)], [_DPQuery(1, 2, None, None, None, None, None)]),
+            ([_DPTask(1, 2, None, None, None, None, None)], [_DPTask(1, 2, None, None, None, None, None)]),
             (
-                [_DPQuery(datetime(2018, 1, 1), datetime(2019, 1, 1), None, None, None, None, None)],
-                [_DPQuery(1514764800000, 1546300800000, None, None, None, None, None)],
+                [_DPTask(datetime(2018, 1, 1), datetime(2019, 1, 1), None, None, None, None, None)],
+                [_DPTask(1514764800000, 1546300800000, None, None, None, None, None)],
             ),
             (
-                [_DPQuery(gms("1h"), gms(("25h")), None, ["average"], "1d", None, None)],
-                [_DPQuery(gms("1d"), gms("2d"), None, ["average"], "1d", None, None)],
+                [_DPTask(gms("1h"), gms(("25h")), None, ["average"], "1d", None, None)],
+                [_DPTask(gms("1d"), gms("2d"), None, ["average"], "1d", None, None)],
             ),
         ],
     )
-    def test_preprocess_queries(self, q, expected_q):
-        _DatapointsFetcher(DPS_CLIENT)._preprocess_queries(q)
+    def test_preprocess_tasks(self, q, expected_q):
+        DatapointsFetcher(DPS_CLIENT)._preprocess_tasks(q)
         for actual, expected in zip(q, expected_q):
             assert expected.start == actual.start
             assert expected.end == actual.end
@@ -893,7 +899,7 @@ class TestDataFetcher:
         ],
     )
     def test_align_with_granularity_unit(self, ts, granularity, expected_output):
-        assert expected_output == _DatapointsFetcher._align_with_granularity_unit(ts, granularity)
+        assert expected_output == DatapointsFetcher._align_with_granularity_unit(ts, granularity)
 
     @pytest.mark.parametrize(
         "start, end, granularity, request_limit, user_limit, expected_output",
@@ -932,7 +938,7 @@ class TestDataFetcher:
     def test_get_datapoints_windows(
         self, start, end, granularity, request_limit, user_limit, expected_output, mock_get_dps_count
     ):
-        res = _DatapointsFetcher(DPS_CLIENT)._get_windows(
+        res = DatapointsFetcher(DPS_CLIENT)._get_windows(
             id=0, start=start, end=end, granularity=granularity, request_limit=request_limit, user_limit=user_limit
         )
         assert expected_output == res
@@ -949,7 +955,7 @@ class TestDataFetcher:
         ],
     )
     def test_align_window_end(self, start, end, granularity, expected_output):
-        assert expected_output == _DatapointsFetcher._align_window_end(start, end, granularity)
+        assert expected_output == DatapointsFetcher._align_window_end(start, end, granularity)
 
     def test_remove_duplicates_from_datapoints(self):
         d = Datapoints(
@@ -958,13 +964,11 @@ class TestDataFetcher:
             value=[0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 1],
             max=[0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 1],
         )
-        d_no_dupes = _DatapointsFetcher._remove_duplicates(d)
+        d_no_dupes = DatapointsFetcher._remove_duplicates(d)
         assert [1, 2, 3, 4, 5, 6, 7] == d_no_dupes.timestamp
         assert [0, 1, 0, 1, 1, 0, 1] == d_no_dupes.value
         assert [0, 1, 0, 1, 1, 0, 1] == d_no_dupes.max
 
-
-class TestHelpers:
     @pytest.mark.parametrize(
         "ids, external_ids, expected_output",
         [
@@ -983,7 +987,7 @@ class TestHelpers:
         ],
     )
     def test_process_time_series_input_ok(self, ids, external_ids, expected_output):
-        assert expected_output == DPS_CLIENT._process_ts_identifiers(ids, external_ids)
+        assert expected_output == DatapointsFetcher._process_ts_identifiers(ids, external_ids)
 
     @pytest.mark.parametrize(
         "ids, external_ids, exception, match",
@@ -1000,4 +1004,4 @@ class TestHelpers:
     )
     def test_process_time_series_input_fail(self, ids, external_ids, exception, match):
         with pytest.raises(exception, match=match):
-            DPS_CLIENT._process_ts_identifiers(ids, external_ids)
+            DatapointsFetcher._process_ts_identifiers(ids, external_ids)
