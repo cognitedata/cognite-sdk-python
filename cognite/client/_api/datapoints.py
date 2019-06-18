@@ -1071,7 +1071,7 @@ class DataFrameFetcher:
         self._idle = [False] * self.nworkers
 
     def fetch(self, dps_queries):
-        self.jobs = queue.SimpleQueue()
+        self.jobs = queue.Queue()
         self._submit_initial_jobs(dps_queries)
         self._threadpool = [threading.Thread(target=self._run_jobs, args=[tid]) for tid in range(self.nworkers)]
         for t in self._threadpool:
