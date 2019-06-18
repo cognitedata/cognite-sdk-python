@@ -446,7 +446,6 @@ class TestInsertDatapoints:
             res = DPS_CLIENT.insert(dps, id=1)
         assert res is None
         request_bodies = [jsgz_load(call.request.body) for call in mock_post_datapoints.calls]
-        print(request_bodies)
         assert {
             "items": [{"id": 1, "datapoints": [{"timestamp": int(i * 1e11), "value": i} for i in range(1, 6)]}]
         } in request_bodies
