@@ -1,6 +1,7 @@
 import copy
 import math
 import threading
+import time
 from collections import defaultdict, namedtuple
 from concurrent.futures.thread import ThreadPoolExecutor
 from datetime import datetime
@@ -374,8 +375,8 @@ class DatapointsAPI(APIClient):
         end: Union[int, str, datetime],
         aggregates: List[str],
         granularity: str,
-        id: Union[int, List[int]] = None,
-        external_id: Union[str, List[str]] = None,
+        id: Union[int, List[int], Dict[str, Any], List[Dict[str, Any]]] = None,
+        external_id: Union[str, List[str], Dict[str, Any], List[Dict[str, Any]]] = None,
     ):
         """Get a pandas dataframe describing the requested data.
 
@@ -425,7 +426,7 @@ class DatapointsAPI(APIClient):
             query (Union[DataFrameQuery, List[DataFrameQuery]): List of dataframe queries.
 
         Returns:
-            Union[Datapoints, DatapointsList]: A Datapoints object containing the requested data, or a list of such objects.
+            Union[pd.DataFrame, List[pd.DataFrame]]: A Datapoints object containing the requested data, or a list of such objects.
 
         Examples:
 
@@ -906,18 +907,17 @@ class _DFColQuery:
 
 class DataFrameFetcher:
     START_JOBS_PER_THREAD = 2  # how many jobs per worker thread to aim for at the start
-    SLEEP_WAIT_NEW_JOBS = 0.010  # how long to sleep while waiting for new jobs
+    SLEEP_WAIT_NEW_JOBS = 0.01
 
     def __init__(self, client):
         self.np, self.pd = utils._auxiliary.local_import("numpy", "pandas")
         self.client = client
-        self.jobs = []
         self.lock = threading.Lock()
-
-    def fetch(self, dps_queries, max_workers=None):
-        self.nworkers = max_workers or self.client._config.max_workers
-        self._preprocess_queries(dps_queries)
+        self.nworkers = self.client._config.max_workers
         self.idle = [False] * self.nworkers
+
+    def fetch(self, dps_queries):
+        self._preprocess_queries(dps_queries)
 
         with ThreadPoolExecutor(self.nworkers) as p:
             for i in range(self.nworkers):
@@ -952,7 +952,7 @@ class DataFrameFetcher:
                 with self.lock:  # lock here to prevent idle from being inconsistent
                     q = self.jobs.pop()
                     self.idle[tid] = False
-                self.get_datapoints(q, tid)
+                self.get_datapoints(q)
             except IndexError:  # no more jobs - empty not thread safe
                 self.idle[tid] = True
                 if all(self.idle):
@@ -973,7 +973,7 @@ class DataFrameFetcher:
     def _split_query(self, query, nparts=1):
         npt = (query.end - query.start) / query.granularity_ms
         nparts = min(nparts, math.ceil(npt / self.client._DPS_LIMIT_AGG))  # no more parts than
-        if nparts == 1:
+        if nparts == 1 or query.start == 0:  # don't split queries from start since first part will likely be empty
             return [query]
         chunk_size = math.ceil(npt / nparts) * query.granularity_ms
         new_queries = []
@@ -985,7 +985,7 @@ class DataFrameFetcher:
         new_queries[-1].end = query.end
         return new_queries
 
-    def get_datapoints(self, query, tid):
+    def get_datapoints(self, query):
         if query.exception:
             return  # don't waste time on failed queries
         payload = {

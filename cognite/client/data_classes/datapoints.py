@@ -351,8 +351,8 @@ class DataFrameQuery:
         id: Union[int, List[int]] = None,
         external_id: Union[str, List[str]] = None,
     ):
-        self.start = cognite.client.utils._time.timestamp_to_ms(start)
-        self.end = cognite.client.utils._time.timestamp_to_ms(end)
+        self.start = start
+        self.end = end
         self.id = id
         self.external_id = external_id
         self.aggregates = aggregates
