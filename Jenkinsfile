@@ -75,7 +75,6 @@ podTemplate(
             }
             stage('Check code') {
                 sh("pipenv run black -l 120 --check .")
-                sh("pipenv run python3 type_hint_remover.py --check")
             }
             stage('Build Docs'){
                 sh("pipenv run pip install .")
