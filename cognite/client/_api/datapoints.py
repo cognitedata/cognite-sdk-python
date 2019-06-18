@@ -615,7 +615,7 @@ class _DPQuery:
 class _DatapointsFetcher:
     def __init__(self, client: DatapointsAPI):
         self.client = client
-        self.id_to_datapoints = defaultdict(lambda: Datapoints())
+        self.id_to_datapoints_objects = defaultdict(lambda: [])
         self.id_to_finalized_query = {}
         self.lock = threading.Lock()
 
@@ -653,8 +653,16 @@ class _DatapointsFetcher:
             query.end = new_end
 
     def _get_dps_results(self):
+        def custom_sort_key(x):
+            if x.timestamp:
+                return x.timestamp[0]
+            return 0
+
         dps_list = DatapointsList([], cognite_client=self.client._cognite_client)
-        for id, dps in self.id_to_datapoints.items():
+        for id, dps_objects in self.id_to_datapoints_objects.items():
+            dps = Datapoints()
+            for dps_object in sorted(dps_objects, key=custom_sort_key):
+                dps._extend(dps_object)
             finalized_query = self.id_to_finalized_query[id]
             if finalized_query.include_outside_points:
                 dps = self._remove_duplicates(dps)
@@ -730,7 +738,7 @@ class _DatapointsFetcher:
 
     def _store_finalized_query(self, query: _DPQuery):
         with self.lock:
-            self.id_to_datapoints[query.dps_result.id]._insert(query.dps_result)
+            self.id_to_datapoints_objects[query.dps_result.id].append(query.dps_result)
             self.id_to_finalized_query[query.dps_result.id] = query
 
     @staticmethod
@@ -863,7 +871,7 @@ class _DatapointsFetcher:
             next_start = latest_timestamp + (
                 cognite.client.utils._time.granularity_to_ms(granularity) if granularity else 1
             )
-            all_datapoints._insert(datapoints)
+            all_datapoints._extend(datapoints)
         return all_datapoints
 
     def _get_datapoints(

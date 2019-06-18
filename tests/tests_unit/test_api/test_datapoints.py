@@ -588,29 +588,29 @@ class TestDatapointsObject:
         res = Datapoints(id=1, timestamp=[1, 2, 3])._slice(slice(None, 1))
         assert [1] == res.timestamp
 
-    def test_insert(self):
+    def test_extend(self):
         d0 = Datapoints()
-        d1 = Datapoints(id=1, external_id="1", timestamp=[7, 8, 9], value=[7, 8, 9])
-        d2 = Datapoints(id=1, external_id="1", timestamp=[1, 2, 3], value=[1, 2, 3])
-        d3 = Datapoints(id=1, external_id="1", timestamp=[4, 5, 6], value=[4, 5, 6])
+        d1 = Datapoints(id=1, external_id="1", timestamp=[1, 2, 3], value=[1, 2, 3])
+        d2 = Datapoints(id=1, external_id="1", timestamp=[4, 5, 6], value=[4, 5, 6])
+        d3 = Datapoints(id=1, external_id="1", timestamp=[7, 8, 9, 10], value=[7, 8, 9, 10])
 
-        d0._insert(d1)
-        assert [7, 8, 9] == d0.timestamp
-        assert [7, 8, 9] == d0.value
+        d0._extend(d1)
+        assert [1, 2, 3] == d0.timestamp
+        assert [1, 2, 3] == d0.value
         assert 1 == d0.id
         assert "1" == d0.external_id
         assert d0.sum == None
 
-        d0._insert(d2)
-        assert [1, 2, 3, 7, 8, 9] == d0.timestamp
-        assert [1, 2, 3, 7, 8, 9] == d0.value
+        d0._extend(d2)
+        assert [1, 2, 3, 4, 5, 6] == d0.value
+        assert [1, 2, 3, 4, 5, 6] == d0.timestamp
         assert 1 == d0.id
         assert "1" == d0.external_id
         assert d0.sum == None
 
-        d0._insert(d3)
-        assert [1, 2, 3, 4, 5, 6, 7, 8, 9] == d0.timestamp
-        assert [1, 2, 3, 4, 5, 6, 7, 8, 9] == d0.value
+        d0._extend(d3)
+        assert [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] == d0.timestamp
+        assert [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] == d0.value
         assert 1 == d0.id
         assert "1" == d0.external_id
         assert d0.sum == None

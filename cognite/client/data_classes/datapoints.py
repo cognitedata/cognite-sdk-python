@@ -223,31 +223,17 @@ class Datapoints:
                 setattr(instance, snake_key, data)
         return instance
 
-    def _insert(self, other_dps):
+    def _extend(self, other_dps):
         if self.id is None and self.external_id is None:
             self.id = other_dps.id
             self.external_id = other_dps.external_id
-
-        if other_dps.timestamp:
-            other_first_ts = other_dps.timestamp[0]
-            index_to_split_on = None
-            for i, ts in enumerate(self.timestamp):
-                if ts > other_first_ts:
-                    index_to_split_on = i
-                    break
-        else:
-            index_to_split_on = 0
 
         for attr, other_value in other_dps._get_non_empty_data_fields(get_empty_lists=True):
             value = getattr(self, attr)
             if not value:
                 setattr(self, attr, other_value)
             else:
-                if index_to_split_on is not None:
-                    new_value = value[:index_to_split_on] + other_value + value[index_to_split_on:]
-                else:
-                    new_value = value + other_value
-                setattr(self, attr, new_value)
+                value.extend(other_value)
 
     def _get_non_empty_data_fields(self, get_empty_lists=False) -> List[Tuple[str, Any]]:
         non_empty_data_fields = []
