@@ -17,6 +17,7 @@ class DatapointsAPI(APIClient):
         super().__init__(*args, **kwargs)
         self._DPS_LIMIT_AGG = 10000
         self._DPS_LIMIT = 100000
+        self._POST_DPS_OBJECTS_LIMIT = 10000
 
     def retrieve(
         self,
@@ -457,17 +458,20 @@ class DatapointsAPI(APIClient):
 
 
 class DatapointsBin:
-    def __init__(self, limit: int):
-        self.limit = limit
-        self.current_size = 0
+    def __init__(self, dps_objects_limit: int, dps_limit: int):
+        self.dps_objects_limit = dps_objects_limit
+        self.dps_limit = dps_limit
+        self.current_num_datapoints = 0
         self.dps_object_list = []
 
     def add(self, dps_object):
-        self.current_size += len(dps_object["datapoints"])
+        self.current_num_datapoints += len(dps_object["datapoints"])
         self.dps_object_list.append(dps_object)
 
     def will_fit(self, number_of_dps: int):
-        return (self.current_size + number_of_dps) <= self.limit
+        will_fit_dps = (self.current_num_datapoints + number_of_dps) <= self.dps_limit
+        will_fit_dps_objects = (len(self.dps_object_list) + 1) <= self.dps_objects_limit
+        return will_fit_dps and will_fit_dps_objects
 
 
 class DatapointsPoster:
@@ -529,7 +533,7 @@ class DatapointsPoster:
                         bin.add(dps_object_chunk)
                         break
                 else:
-                    bin = DatapointsBin(self.client._DPS_LIMIT)
+                    bin = DatapointsBin(self.client._DPS_LIMIT, self.client._POST_DPS_OBJECTS_LIMIT)
                     bin.add(dps_object_chunk)
                     self.bins.append(bin)
         binned_dps_object_list = []
@@ -544,7 +548,10 @@ class DatapointsPoster:
         summary = utils._concurrency.execute_tasks_concurrently(
             self._insert_datapoints, tasks, max_workers=self.client._config.max_workers
         )
-        summary.raise_compound_exception_if_failed_tasks()
+        summary.raise_compound_exception_if_failed_tasks(
+            task_unwrap_fn=lambda x: x[0],
+            task_list_element_unwrap_fn=lambda x: {k: x[k] for k in ["id", "externalId"] if k in x},
+        )
 
     def _insert_datapoints(self, post_dps_objects: List[Dict[str, Any]]):
         self.client._post(url_path=self.client._RESOURCE_PATH, json={"items": post_dps_objects})
