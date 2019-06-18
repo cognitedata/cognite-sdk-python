@@ -1,4 +1,6 @@
+import copy
 import math
+import queue
 import threading
 from collections import defaultdict, namedtuple
 from datetime import datetime
@@ -7,7 +9,7 @@ from typing import *
 import cognite.client.utils._time
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes import Datapoints, DatapointsList, DatapointsQuery
+from cognite.client.data_classes import DataFrameQuery, Datapoints, DatapointsList, DatapointsQuery
 
 
 class DatapointsAPI(APIClient):
@@ -455,6 +457,96 @@ class DatapointsAPI(APIClient):
                 }
             )
         self.insert_multiple(dps)
+
+    def _retrieve_dataframe_alt(
+        self,
+        start: Union[int, str, datetime],
+        end: Union[int, str, datetime],
+        aggregates: List[str],
+        granularity: str,
+        id: Union[int, List[int], Dict[str, Any], List[Dict[str, Any]]] = None,
+        external_id: Union[str, List[str], Dict[str, Any], List[Dict[str, Any]]] = None,
+    ):
+        """Get a pandas dataframe describing the requested data.
+
+        Args:
+            start (Union[int, str, datetime]): Inclusive start.
+            end (Union[int, str, datetime]): Exclusive end.
+            aggregates (List[str]): List of aggregate functions to apply.
+            granularity (str): The granularity to fetch aggregates at. e.g. '1s', '2h', '10d'.
+            id (Union[int, List[int], Dict[str, Any], List[Dict[str, Any]]]: Id or list of ids. Can also be object
+                specifying aggregates. See example below.
+            external_id (Union[str, List[str], Dict[str, Any], List[Dict[str, Any]]]): External id or list of external
+                ids. Can also be object specifying aggregates. See example below.
+
+        Returns:
+            pandas.DataFrame: The requested dataframe
+
+        Examples:
+
+            Get a pandas dataframe::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> df = c.datapoints.retrieve_dataframe(id=[1,2,3], start="2w-ago", end="now",
+                ...         aggregates=["average"], granularity="1h")
+        """
+        pd = utils._auxiliary.local_import("pandas")
+        ts_items, is_single_id = DatapointsFetcher._process_ts_identifiers(id, external_id)
+        dps_queries = []
+        for ts_item in ts_items:
+            dps_queries.append(_DFColQuery(start, end, ts_item, aggregates, granularity))
+
+        dataframes = DataFrameFetcher(client=self).fetch(dps_queries)
+        if is_single_id:
+            df = dataframes[0]
+        else:
+            df = pd.concat(dataframes, axis="columns")
+        df.index = pd.to_datetime(df.index, unit="ms")
+        return df
+
+    def query_dataframe(self, query: Union[DataFrameQuery, List[DataFrameQuery]]):
+        """Get several dataframes in parallel
+
+        This method allows you to specify different start times, end times, ids and granularities, and will efficiently
+        retrieve all data.
+
+        Args:
+            query (Union[DataFrameQuery, List[DataFrameQuery]): List of dataframe queries.
+
+        Returns:
+            Union[pd.DataFrame, List[pd.DataFrame]]: A Datapoints object containing the requested data, or a list of such objects.
+
+        Examples:
+
+            This method is useful if you want to get multiple disjoint blocks of data for time series
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import DataFrameQuery
+                >>> c = CogniteClient()
+                >>> queries = [DataFrameQuery(id=[1,2,3], start="50w-ago", end="40w-ago",aggregates=["interpolation"],granularity="1s"),
+                ...            DataFrameQuery(id=[1,2,3], start="20w-ago", end="10w-ago",aggregates=["interpolation"],granularity="1s")]
+                >>> res = c.datapoints.query_dataframe(queries)
+        """
+        pd = utils._auxiliary.local_import("pandas")
+        is_single_query = False
+        if isinstance(query, DataFrameQuery):
+            is_single_query = True
+            query = [query]
+
+        results = [[] for q in query]
+        for i, q in enumerate(query):
+            ts_items, is_single_id = DatapointsFetcher._process_ts_identifiers(q.id, q.external_id)
+            for ts_item in ts_items:
+                results[i].append(_DFColQuery(q.start, q.end, ts_item, q.aggregates, q.granularity))
+
+        DataFrameFetcher(client=self).fetch(sum(results, []))
+        results = [pd.concat([dfc.result for dfc in list_cols], axis="columns") for list_cols in results]
+        for df in results:
+            df.index = pd.to_datetime(df.index, unit="ms")
+        if is_single_query:
+            return results[0]
+        return results
 
 
 class DatapointsBin:
@@ -957,3 +1049,136 @@ class DatapointsFetcher:
                 )
             return item
         raise TypeError("Invalid type '{}' for argument '{}'".format(type(item), item_type))
+
+
+class _DFColQuery:
+    def __init__(self, start, end, ts_item, aggregates, granularity):
+        self.start = cognite.client.utils._time.timestamp_to_ms(start)
+        self.end = cognite.client.utils._time.timestamp_to_ms(end)
+        self.ts_item = ts_item
+        self.aggregates = aggregates
+        self.granularity = granularity
+        self.granularity_ms = cognite.client.utils._time.granularity_to_ms(granularity)
+        self.result = None
+        self.exceptions = None
+
+
+class DataFrameFetcher:
+    def __init__(self, client):
+        self.np, self.pd = utils._auxiliary.local_import("numpy", "pandas")
+        self.client = client
+        self.nworkers = self.client._config.max_workers
+        self._idle = [False] * self.nworkers
+
+    def fetch(self, dps_queries):
+        self.jobs = queue.SimpleQueue()
+        self._submit_initial_jobs(dps_queries)
+        self._threadpool = [threading.Thread(target=self._run_jobs, args=[tid]) for tid in range(self.nworkers)]
+        for t in self._threadpool:
+            t.start()
+        for t in self._threadpool:
+            t.join()
+
+        exceptions = [q.exceptions[0] for q in dps_queries if q.exceptions]
+        if exceptions:
+            raise exceptions[0]
+
+        for q in dps_queries:
+            if not q.result:
+                q.result = self.pd.DataFrame(columns=["timestamp"] + q.aggregates)
+            else:
+                q.result.sort(key=lambda df: df.loc[0, "timestamp"])  # sort dataframes, not rows
+                q.result = self.pd.concat(q.result, axis="rows", sort=False)
+            q.result.set_index("timestamp", inplace=True)
+            q.result.index.name = None  # mainly for tests and consistency with .to_pandas()
+            if len(q.result.columns) != len(q.aggregates):
+                for c in q.aggregates:
+                    if c not in q.result.columns:
+                        q.result[c] = self.np.nan
+            name = q.ts_item.get("externalId") or q.ts_item.get("id")
+            q.result.rename(
+                mapper=lambda agg: "{}|{}".format(name, cognite.client.utils._auxiliary.to_camel_case(agg)),
+                axis="columns",
+                inplace=True,
+            )
+        return [q.result for q in dps_queries]
+
+    def _run_jobs(self, tid):
+        while True:
+            try:
+                self._idle[tid] = False
+                query = self.jobs.get(block=False)
+            except queue.Empty:
+                self._idle[tid] = True
+                if sum(self._idle) == self.nworkers:
+                    self.jobs.put(None)  # flag done
+                    return
+                query = self.jobs.get(block=True)
+                self._idle[tid] = False
+            if query:
+                self._get_datapoints(query)
+            else:  # got a None
+                self.jobs.put(None)  # notify others
+                return
+
+    def _submit_initial_jobs(self, dps_queries):
+        split_n = math.ceil(self.nworkers / len(dps_queries))
+        for q in dps_queries:
+            q.start = self._align_with_granularity_unit(q.start, q.granularity)
+            q.end = self._align_with_granularity_unit(q.end, q.granularity)
+            q.result = []
+            q.exceptions = []
+            for q in self._split_query(q, split_n):
+                self.jobs.put(q)
+
+    def _split_query(self, query, nparts=1):
+        npt = (query.end - query.start) / query.granularity_ms
+        if npt == 0:
+            return []
+        nparts = min(nparts, math.ceil(npt / self.client._DPS_LIMIT_AGG))  # no more parts than DPS_LIMIT per part
+        if nparts == 1 or query.start == 0:  # don't split queries from start since first part will likely be empty
+            return [query]
+        chunk_size = math.ceil(npt / nparts) * query.granularity_ms
+        new_queries = []
+        for i in range(nparts):
+            qc = copy.copy(query)
+            qc.start = query.start + i * chunk_size
+            qc.end = query.start + (i + 1) * chunk_size
+            new_queries.append(qc)
+        new_queries[-1].end = query.end
+        return new_queries
+
+    def _get_datapoints(self, query):
+        if query.exceptions:
+            return  # don't waste time on failed queries
+        try:
+            while True:
+                payload = {
+                    "items": [query.ts_item],
+                    "start": query.start,
+                    "end": query.end,
+                    "aggregates": query.aggregates,
+                    "granularity": query.granularity,
+                    "limit": self.client._DPS_LIMIT_AGG,
+                }
+                result = self.client._post(self.client._RESOURCE_PATH + "/list", json=payload)
+                data = result.json()["items"][0]["datapoints"]
+                if data:
+                    query.result.append(self.pd.DataFrame(data))
+                if len(data) == self.client._DPS_LIMIT_AGG:  # paging/splitting job if threads are available
+                    query.start = data[-1]["timestamp"] + query.granularity_ms
+                    queries = self._split_query(query, 1 + sum(self._idle))
+                    query = queries[0]  # continue in loop
+                    for q in queries[1:]:
+                        self.jobs.put(q)
+                else:
+                    break
+        except Exception as e:
+            query.exceptions.append(e)
+
+    @staticmethod
+    def _align_with_granularity_unit(ts: int, granularity: str):
+        gms = cognite.client.utils._time.granularity_unit_to_ms(granularity)
+        if ts % gms == 0:
+            return ts
+        return ts - (ts % gms) + gms

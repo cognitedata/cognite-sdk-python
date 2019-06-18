@@ -7,7 +7,7 @@ import pandas
 import pytest
 
 from cognite.client import CogniteClient, utils
-from cognite.client.data_classes import DatapointsQuery, TimeSeries
+from cognite.client.data_classes import DataFrameQuery, DatapointsQuery, TimeSeries
 from tests.utils import set_request_limit
 
 COGNITE_CLIENT = CogniteClient()
@@ -87,6 +87,28 @@ class TestDatapointsAPI:
         assert df.shape[0] > 0
         assert df.shape[1] == 1
         assert has_correct_timestamp_spacing(df, "1s")
+
+    def test_retrieve_dataframe_alt(self, test_time_series):
+        ts = test_time_series[0]
+        df = COGNITE_CLIENT.datapoints._retrieve_dataframe_alt(
+            id=ts.id, start="6h-ago", end="now", aggregates=["average"], granularity="1s"
+        )
+        assert df.shape[0] > 0
+        assert df.shape[1] == 1
+        assert has_correct_timestamp_spacing(df, "1s")
+
+    def test_query_dataframe(self, test_time_series):
+        import pandas as pd
+
+        ts = test_time_series[0]
+        query = DataFrameQuery(start="6h-ago", end="now", aggregates=["average"], granularity="1s", id=ts.id)
+        dfs = COGNITE_CLIENT.datapoints.query_dataframe([query, query])
+        assert len(dfs) == 2
+        for df in dfs:
+            assert df.shape[0] > 0
+            assert df.shape[1] == 1
+            assert has_correct_timestamp_spacing(df, "1s")
+        pd.testing.assert_frame_equal(dfs[0], dfs[1])
 
     def test_query(self, test_time_series):
         dps_query1 = DatapointsQuery(id=test_time_series[0].id, start="6h-ago", end="now")

@@ -746,6 +746,19 @@ class TestPandasIntegration:
         assert {"1|average", "2|max", "123|average"} == set(df.columns)
         assert df.shape[0] > 0
 
+    def test_retrieve_dataframe_alt(self, mock_get_datapoints):
+        df = DPS_CLIENT._retrieve_dataframe_alt(
+            id=[1, {"id": 2, "aggregates": ["max"]}],
+            external_id=["123"],
+            start=1000000,
+            end=1100000,
+            aggregates=["average"],
+            granularity="10s",
+        )
+
+        assert {"1|average", "2|max", "123|average"} == set(df.columns)
+        assert df.shape[0] > 0
+
     def test_retrieve_datapoints_some_aggregates_omitted(self, mock_get_datapoints_one_ts_has_missing_aggregates):
         import pandas as pd
 

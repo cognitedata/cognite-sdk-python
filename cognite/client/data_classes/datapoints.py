@@ -329,3 +329,13 @@ class DatapointsQuery(CogniteResource):
         self.aggregates = aggregates
         self.granularity = granularity
         self.include_outside_points = include_outside_points
+
+
+class DataFrameQuery:
+    def __init__(self, start, end, aggregates, granularity, id=None, external_id=None):
+        self.start = start
+        self.end = end
+        self.id = id
+        self.external_id = external_id
+        self.aggregates = aggregates
+        self.granularity = granularity
