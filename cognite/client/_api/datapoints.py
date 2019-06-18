@@ -237,11 +237,10 @@ class DatapointsAPI(APIClient):
                 >>> res2 = c.datapoints.insert(datapoints, external_id="def")
         """
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
-        datapoints = self._validate_and_format_datapoints(datapoints)
-        utils._time.assert_timestamp_not_in_1970(datapoints[0]["timestamp"])
         post_dps_object = self._process_ids(id, external_id, wrap_ids=True)[0]
         post_dps_object.update({"datapoints": datapoints})
-        self._insert_datapoints_concurrently([post_dps_object])
+        dps_poster = DatapointsPoster(self)
+        dps_poster.insert([post_dps_object])
 
     def insert_multiple(self, datapoints: List[Dict[str, Union[str, int, List]]]) -> None:
         """Insert datapoints into multiple time series
@@ -284,17 +283,8 @@ class DatapointsAPI(APIClient):
 
                 >>> res = c.datapoints.insert_multiple(datapoints)
         """
-        valid_dps_objects = []
-        for dps_object in datapoints:
-            for key in dps_object:
-                if key not in ("id", "externalId", "datapoints"):
-                    raise AssertionError(
-                        "Invalid key '{}' in datapoints. Must contain 'datapoints', and 'id' or 'externalId".format(key)
-                    )
-            valid_dps_object = dps_object.copy()
-            valid_dps_object["datapoints"] = self._validate_and_format_datapoints(dps_object["datapoints"])
-            valid_dps_objects.append(valid_dps_object)
-        self._insert_datapoints_concurrently(valid_dps_objects)
+        dps_poster = DatapointsPoster(self)
+        dps_poster.insert(datapoints)
 
     def delete_range(
         self, start: Union[int, str, datetime], end: Union[int, str, datetime], id: int = None, external_id: str = None
@@ -465,20 +455,44 @@ class DatapointsAPI(APIClient):
             )
         self.insert_multiple(dps)
 
-    def _insert_datapoints_concurrently(self, post_dps_objects: List[Dict[str, Any]]):
-        tasks = []
-        for dps_object in post_dps_objects:
-            for i in range(0, len(dps_object["datapoints"]), self._DPS_LIMIT):
-                dps_object_chunk = dps_object.copy()
-                dps_object_chunk["datapoints"] = dps_object["datapoints"][i : i + self._DPS_LIMIT]
-                tasks.append(([dps_object_chunk],))
-        summary = utils._concurrency.execute_tasks_concurrently(
-            self._insert_datapoints, tasks, max_workers=self._config.max_workers
-        )
-        summary.raise_compound_exception_if_failed_tasks()
 
-    def _insert_datapoints(self, post_dps_objects: List[Dict[str, Any]]):
-        self._post(url_path=self._RESOURCE_PATH, json={"items": post_dps_objects})
+class DatapointsBin:
+    def __init__(self, limit: int):
+        self.limit = limit
+        self.current_size = 0
+        self.dps_object_list = []
+
+    def add(self, dps_object):
+        self.current_size += len(dps_object["datapoints"])
+        self.dps_object_list.append(dps_object)
+
+    def will_fit(self, number_of_dps: int):
+        return (self.current_size + number_of_dps) <= self.limit
+
+
+class DatapointsPoster:
+    def __init__(self, client: DatapointsAPI):
+        self.client = client
+        self.bins = []
+
+    def insert(self, dps_object_list: List[Dict[str, Any]]):
+        valid_dps_object_list = self._validate_dps_objects(dps_object_list)
+        binned_dps_object_lists = self._bin_datapoints(valid_dps_object_list)
+        self._insert_datapoints_concurrently(binned_dps_object_lists)
+
+    @staticmethod
+    def _validate_dps_objects(dps_object_list):
+        valid_dps_objects = []
+        for dps_object in dps_object_list:
+            for key in dps_object:
+                if key not in ("id", "externalId", "datapoints"):
+                    raise AssertionError(
+                        "Invalid key '{}' in datapoints. Must contain 'datapoints', and 'id' or 'externalId".format(key)
+                    )
+            valid_dps_object = {k: dps_object[k] for k in ["id", "externalId"] if k in dps_object}
+            valid_dps_object["datapoints"] = DatapointsPoster._validate_and_format_datapoints(dps_object["datapoints"])
+            valid_dps_objects.append(valid_dps_object)
+        return valid_dps_objects
 
     @staticmethod
     def _validate_and_format_datapoints(
@@ -504,6 +518,36 @@ class DatapointsAPI(APIClient):
                     {"timestamp": cognite.client.utils._time.timestamp_to_ms(dp["timestamp"]), "value": dp["value"]}
                 )
         return valid_datapoints
+
+    def _bin_datapoints(self, dps_object_list: List[Dict[str, Any]]) -> List[List[Dict[str, Any]]]:
+        for dps_object in dps_object_list:
+            for i in range(0, len(dps_object["datapoints"]), self.client._DPS_LIMIT):
+                dps_object_chunk = {k: dps_object[k] for k in ["id", "externalId"] if k in dps_object}
+                dps_object_chunk["datapoints"] = dps_object["datapoints"][i : i + self.client._DPS_LIMIT]
+                for bin in self.bins:
+                    if bin.will_fit(len(dps_object_chunk["datapoints"])):
+                        bin.add(dps_object_chunk)
+                        break
+                else:
+                    bin = DatapointsBin(self.client._DPS_LIMIT)
+                    bin.add(dps_object_chunk)
+                    self.bins.append(bin)
+        binned_dps_object_list = []
+        for bin in self.bins:
+            binned_dps_object_list.append(bin.dps_object_list)
+        return binned_dps_object_list
+
+    def _insert_datapoints_concurrently(self, dps_object_lists: List[List[Dict[str, Any]]]):
+        tasks = []
+        for dps_object_list in dps_object_lists:
+            tasks.append((dps_object_list,))
+        summary = utils._concurrency.execute_tasks_concurrently(
+            self._insert_datapoints, tasks, max_workers=self.client._config.max_workers
+        )
+        summary.raise_compound_exception_if_failed_tasks()
+
+    def _insert_datapoints(self, post_dps_objects: List[Dict[str, Any]]):
+        self.client._post(url_path=self.client._RESOURCE_PATH, json={"items": post_dps_objects})
 
 
 _DPWindow = namedtuple("_DPWindow", ["start", "end"])

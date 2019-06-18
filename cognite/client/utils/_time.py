@@ -119,10 +119,3 @@ def convert_time_attributes_to_datetime(item: Union[Dict, List[Dict]]) -> Union[
             new_items.append(_convert_time_attributes_in_dict(el))
         return new_items
     raise TypeError("item must be dict or list of dicts")
-
-
-def assert_timestamp_not_in_1970(timestamp: Union[int, float, str, datetime]):
-    dt = ms_to_datetime(timestamp_to_ms(timestamp))
-    assert dt > datetime(
-        1971, 1, 1
-    ), "You are attempting to post data in 1970. Have you forgotten to multiply your timestamps by 1000?"
