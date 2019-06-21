@@ -11,13 +11,22 @@ class ThreeDModel(CogniteResource):
         name (str): The name of the model.
         id (int): The ID of the model.
         created_time (int): The creation time of the resource, in milliseconds since January 1, 1970 at 00:00 UTC.
+        metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
-    def __init__(self, name: str = None, id: int = None, created_time: int = None, cognite_client=None):
+    def __init__(
+        self,
+        name: str = None,
+        id: int = None,
+        created_time: int = None,
+        metadata: Dict[str, Any] = None,
+        cognite_client=None,
+    ):
         self.name = name
         self.id = id
         self.created_time = created_time
+        self.metadata = metadata
         self._cognite_client = cognite_client
 
     # GenStop
@@ -34,6 +43,10 @@ class ThreeDModelUpdate(CogniteUpdate):
     @property
     def name(self):
         return _PrimitiveThreeDModelUpdate(self, "name")
+
+    @property
+    def metadata(self):
+        return _ObjectThreeDModelUpdate(self, "metadata")
 
 
 class _PrimitiveThreeDModelUpdate(CognitePrimitiveUpdate):
