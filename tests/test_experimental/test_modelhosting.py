@@ -20,7 +20,11 @@ from cognite.client.experimental.model_hosting.models import (
     ModelVersionResponse,
     PredictionError,
 )
-from cognite.client.experimental.model_hosting.schedules import ScheduleCollectionResponse, ScheduleResponse
+from cognite.client.experimental.model_hosting.schedules import (
+    ScheduleCollectionResponse,
+    ScheduleLog,
+    ScheduleResponse,
+)
 from cognite.client.experimental.model_hosting.source_packages import (
     SourcePackageCollectionResponse,
     SourcePackageResponse,
@@ -485,3 +489,21 @@ class TestSchedules:
         mock_delete.return_value = MockReturnValue()
         res = schedules.delete_schedule(id=1)
         assert res is None
+
+    schedule_log_response = {
+        "data": {
+            "failed": [{"timestamp": 123, "scheduledExecutionTime": 345, "message": "you made mistake"}],
+            "completed": [],
+        }
+    }
+
+    @mock.patch("requests.sessions.Session.get")
+    def test_get_log(self, mock_get):
+        mock_get.return_value = MockReturnValue(json_data=self.schedule_log_response)
+        res = schedules.get_log(id=1)
+        assert isinstance(res, ScheduleLog)
+        assert 1 == len(res.failed)
+        assert 0 == len(res.completed)
+        assert 123 == res.failed[0].timestamp
+        assert 345 == res.failed[0].scheduled_execution_time
+        assert "you made mistake" == res.failed[0].message
