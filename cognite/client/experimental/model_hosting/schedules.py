@@ -26,8 +26,6 @@ class LogEntry(CogniteResponse):
     def __init__(self, internal_representation):
         super().__init__(internal_representation)
         item = self.to_json()
-        print("hey hey")
-        print(item)
         self.timestamp = item["timestamp"]
         self.scheduled_execution_time = item["scheduledExecutionTime"]
         self.message = item["message"]
@@ -149,7 +147,8 @@ class SchedulesClient(APIClient):
         self._delete(url=url)
 
     def get_log(self, id: int) -> ScheduleLog:
-        """Return schedule log by id.
+        """Return schedule log by id. The ScheduleLog object contains two logs, one for failed scheduled
+        predictions and one for successful. 
 
         Args:
             id (int):  The id of the schedule to get logs from.
