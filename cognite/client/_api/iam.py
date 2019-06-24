@@ -33,6 +33,14 @@ class ServiceAccountsAPI(APIClient):
 
         Returns:
             ServiceAccountList: List of service accounts.
+
+        Example:
+
+            List service accounts::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.iam.service_accounts.list()
         """
         return ServiceAccountList._load(self._get(url_path=self._RESOURCE_PATH).json()["items"])
 
@@ -46,6 +54,16 @@ class ServiceAccountsAPI(APIClient):
 
         Returns:
             Union[ServiceAccount, ServiceAccountList]: The created service account(s).
+
+        Example:
+
+            Create service account::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import ServiceAccount
+                >>> c = CogniteClient()
+                >>> my_account = ServiceAccount(name="my@service.com", groups=[1, 2, 3])
+                >>> res = c.iam.service_accounts.create(my_account)
         """
         return self._create_multiple(items=service_account)
 
@@ -57,6 +75,14 @@ class ServiceAccountsAPI(APIClient):
 
         Returns:
             None
+
+        Example:
+
+            Delete service account by id::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.iam.service_accounts.delete(1)
         """
         self._delete_multiple(ids=id, wrap_ids=False)
 
@@ -75,6 +101,14 @@ class APIKeysAPI(APIClient):
 
         Returns:
             APIKeyList: List of api keys.
+
+        Example:
+
+            List api keys::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.iam.api_keys.list()
         """
         res = self._get(
             self._RESOURCE_PATH,
@@ -90,6 +124,14 @@ class APIKeysAPI(APIClient):
 
         Returns:
             Union[APIKey, APIKeyList]: API key or list of api keys.
+
+        Example:
+
+            Create new api key for a given service account::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.iam.api_keys.create(1)
         """
         utils._auxiliary.assert_type(service_account_id, "service_account_id", [numbers.Integral, list])
         if isinstance(service_account_id, numbers.Integral):
@@ -106,6 +148,14 @@ class APIKeysAPI(APIClient):
 
         Returns:
             None
+
+        Example:
+
+            Delete api key for a given service account::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.iam.api_keys.delete(1)
         """
         self._delete_multiple(ids=id, wrap_ids=False)
 
@@ -122,6 +172,14 @@ class GroupsAPI(APIClient):
 
         Returns:
             GroupList: List of groups.
+
+        Example:
+
+            List groups::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.iam.groups.list()
         """
         res = self._get(self._RESOURCE_PATH, params={"all": all})
         return GroupList._load(res.json()["items"])
@@ -133,6 +191,17 @@ class GroupsAPI(APIClient):
             group (Union[Group, List[Group]]): Group or list of groups to create.
         Returns:
             Union[Group, GroupList]: The created group(s).
+
+        Example:
+
+            Create group::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import Group
+                >>> c = CogniteClient()
+                >>> my_capabilities = [{"groupsAcl": {"actions": ["LIST"],"scope": {"all": { }}}}]
+                >>> my_group = Group(name="My Group", capabilities=my_capabilities)
+                >>> res = c.iam.groups.create(my_group)
         """
         return self._create_multiple(group)
 
@@ -144,6 +213,14 @@ class GroupsAPI(APIClient):
 
         Returns:
             None
+
+        Example:
+
+            Delete group::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.iam.groups.delete(1)
         """
         self._delete_multiple(ids=id, wrap_ids=False)
 
@@ -155,6 +232,14 @@ class GroupsAPI(APIClient):
 
         Returns:
             ServiceAccountList: List of service accounts.
+
+        Example:
+
+            List service accounts in a group::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.iam.groups.list_service_accounts(1)
         """
         resource_path = self._RESOURCE_PATH + "/{}/serviceaccounts".format(id)
         return ServiceAccountList._load(self._get(resource_path).json()["items"])
@@ -168,6 +253,14 @@ class GroupsAPI(APIClient):
 
         Returns:
             None
+
+        Example:
+
+            Add service account to group::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.iam.groups.add_service_account(id=1, service_account_id=1)
         """
         resource_path = self._RESOURCE_PATH + "/{}/serviceaccounts".format(id)
         self._create_multiple(cls=ServiceAccountList, resource_path=resource_path, items=service_account_id)
@@ -181,6 +274,14 @@ class GroupsAPI(APIClient):
 
         Returns:
             None
+
+        Example:
+
+            Remove service account from group::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.iam.groups.remove_service_account(id=1, service_account_id=1)
         """
         url_path = self._RESOURCE_PATH + "/{}/serviceaccounts/remove".format(id)
         all_ids = self._process_ids(service_account_id, None, False)
@@ -199,6 +300,14 @@ class SecurityCategoriesAPI(APIClient):
 
         Returns:
             SecurityCategoryList: List of security categories
+
+        Example:
+
+            List security categories::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.iam.security_categories.list()
         """
         return self._list(method="GET", limit=limit)
 
@@ -212,6 +321,16 @@ class SecurityCategoriesAPI(APIClient):
 
         Returns:
             Union[SecurityCategory, SecurityCategoryList]: The created security category or categories.
+
+        Example:
+
+            Create security category::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import SecurityCategory
+                >>> c = CogniteClient()
+                >>> my_category = SecurityCategory(name="My Category")
+                >>> res = c.iam.security_categories.create(my_category)
         """
         return self._create_multiple(security_category)
 
@@ -223,5 +342,13 @@ class SecurityCategoriesAPI(APIClient):
 
         Returns:
             None
+
+        Example:
+
+            Delete security category::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.iam.security_categories.delete(1)
         """
         self._delete_multiple(ids=id, wrap_ids=False)

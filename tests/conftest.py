@@ -9,8 +9,16 @@ from cognite.client._api.assets import AssetsAPI
 from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api.events import EventsAPI
 from cognite.client._api.files import FilesAPI
+from cognite.client._api.iam import IAMAPI, APIKeysAPI, GroupsAPI, SecurityCategoriesAPI, ServiceAccountsAPI
 from cognite.client._api.login import LoginAPI
 from cognite.client._api.raw import RawAPI, RawDatabasesAPI, RawRowsAPI, RawTablesAPI
+from cognite.client._api.three_d import (
+    ThreeDAPI,
+    ThreeDAssetMappingAPI,
+    ThreeDFilesAPI,
+    ThreeDModelsAPI,
+    ThreeDRevisionsAPI,
+)
 from cognite.client._api.time_series import TimeSeriesAPI
 from tests.utils import BASE_URL
 
@@ -38,6 +46,16 @@ def mock_cognite_client():
         cog_client_mock.events = mock.MagicMock(spec=EventsAPI)
         cog_client_mock.files = mock.MagicMock(spec=FilesAPI)
         cog_client_mock.login = mock.MagicMock(spec=LoginAPI)
+        cog_client_mock.three_d = mock.MagicMock(spec=ThreeDAPI)
+        cog_client_mock.three_d.models = mock.MagicMock(spec=ThreeDModelsAPI)
+        cog_client_mock.three_d.revisions = mock.MagicMock(spec=ThreeDRevisionsAPI)
+        cog_client_mock.three_d.files = mock.MagicMock(spec=ThreeDFilesAPI)
+        cog_client_mock.three_d.asset_mappings = mock.MagicMock(spec=ThreeDAssetMappingAPI)
+        cog_client_mock.iam = mock.MagicMock(spec=IAMAPI)
+        cog_client_mock.iam.service_accounts = mock.MagicMock(spec=ServiceAccountsAPI)
+        cog_client_mock.iam.api_keys = mock.MagicMock(spec=APIKeysAPI)
+        cog_client_mock.iam.groups = mock.MagicMock(spec=GroupsAPI)
+        cog_client_mock.iam.security_categories = mock.MagicMock(spec=SecurityCategoriesAPI)
         raw_mock = mock.MagicMock(spec=RawAPI)
         raw_mock.databases = mock.MagicMock(spec=RawDatabasesAPI)
         raw_mock.tables = mock.MagicMock(spec=RawTablesAPI)
