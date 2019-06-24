@@ -142,9 +142,13 @@ class TestGroups:
         assert mock_groups.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
     def test_create(self, mock_groups):
-        res = IAM_API.groups.create(1)
+        my_capabilities = [{"groupsAcl": {"actions": ["LIST"], "scope": {"all": {}}}}]
+        my_group = Group(name="My Group", capabilities=my_capabilities)
+        res = IAM_API.groups.create(my_group)
         assert isinstance(res, Group)
-        assert {"items": [1]} == jsgz_load(mock_groups.calls[0].request.body)
+        assert {"items": [{"name": "My Group", "capabilities": my_capabilities}]} == jsgz_load(
+            mock_groups.calls[0].request.body
+        )
         assert mock_groups.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
     def test_create_multiple(self, mock_groups):
@@ -206,9 +210,9 @@ class TestSecurityCategories:
         assert mock_security_categories.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
     def test_create(self, mock_security_categories):
-        res = IAM_API.security_categories.create(1)
+        res = IAM_API.security_categories.create(SecurityCategory(name="My Category"))
         assert isinstance(res, SecurityCategory)
-        assert {"items": [1]} == jsgz_load(mock_security_categories.calls[0].request.body)
+        assert {"items": [{"name": "My Category"}]} == jsgz_load(mock_security_categories.calls[0].request.body)
         assert mock_security_categories.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
     def test_create_multiple(self, mock_security_categories):
