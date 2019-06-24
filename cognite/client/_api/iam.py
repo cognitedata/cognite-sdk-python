@@ -82,7 +82,7 @@ class ServiceAccountsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> c.iam.service_accounts.delete(1)
+                >>> res = c.iam.service_accounts.delete(1)
         """
         self._delete_multiple(ids=id, wrap_ids=False)
 
@@ -155,7 +155,7 @@ class APIKeysAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> c.iam.api_keys.delete(1)
+                >>> res = c.iam.api_keys.delete(1)
         """
         self._delete_multiple(ids=id, wrap_ids=False)
 
@@ -220,7 +220,7 @@ class GroupsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> c.iam.groups.delete(1)
+                >>> res = c.iam.groups.delete(1)
         """
         self._delete_multiple(ids=id, wrap_ids=False)
 
@@ -260,7 +260,7 @@ class GroupsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> c.iam.groups.add_service_account(id=1, service_account_id=1)
+                >>> res = c.iam.groups.add_service_account(id=1, service_account_id=1)
         """
         resource_path = self._RESOURCE_PATH + "/{}/serviceaccounts".format(id)
         self._create_multiple(cls=ServiceAccountList, resource_path=resource_path, items=service_account_id)
@@ -281,7 +281,7 @@ class GroupsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> c.iam.groups.remove_service_account(id=1, service_account_id=1)
+                >>> res = c.iam.groups.remove_service_account(id=1, service_account_id=1)
         """
         url_path = self._RESOURCE_PATH + "/{}/serviceaccounts/remove".format(id)
         all_ids = self._process_ids(service_account_id, None, False)
@@ -349,6 +349,6 @@ class SecurityCategoriesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> c.iam.security_categories.delete(1)
+                >>> res = c.iam.security_categories.delete(1)
         """
         self._delete_multiple(ids=id, wrap_ids=False)
