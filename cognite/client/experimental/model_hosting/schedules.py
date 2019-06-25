@@ -22,6 +22,31 @@ class ScheduleCollectionResponse(CogniteCollectionResponse):
     _RESPONSE_CLASS = ScheduleResponse
 
 
+class LogEntry(CogniteResponse):
+    def __init__(self, internal_representation):
+        super().__init__(internal_representation)
+        item = self.to_json()
+        self.timestamp = item["timestamp"]
+        self.scheduled_execution_time = item["scheduledExecutionTime"]
+        self.message = item["message"]
+
+    def to_json(self):
+        """Returns data as a json object"""
+        return self.internal_representation
+
+
+class ScheduleLog(CogniteResponse):
+    def __init__(self, internal_representation):
+        super().__init__(internal_representation)
+        item = self.to_json()
+        self.failed = [LogEntry(elem) for elem in item["failed"]]
+        self.completed = [LogEntry(elem) for elem in item["completed"]]
+
+    def to_json(self):
+        """Returns data as a json object"""
+        return self.internal_representation["data"]
+
+
 class SchedulesClient(APIClient):
     def __init__(self, **kwargs):
         super().__init__(version="0.6", **kwargs)
@@ -120,3 +145,18 @@ class SchedulesClient(APIClient):
         """
         url = "/analytics/models/schedules/{}".format(id)
         self._delete(url=url)
+
+    def get_log(self, id: int) -> ScheduleLog:
+        """Return schedule log by id. The ScheduleLog object contains two logs, one for failed scheduled
+        predictions and one for successful. 
+
+        Args:
+            id (int):  The id of the schedule to get logs from.
+
+        Returns:
+            experimental.model_hosting.schedules.ScheduleLog: An object containing the schedule logs.
+        """
+        url = "/analytics/models/schedules/{}/log".format(id)
+        res = self._get(url)
+        log = ScheduleLog(res.json())
+        return log
