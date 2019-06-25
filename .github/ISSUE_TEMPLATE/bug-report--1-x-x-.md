@@ -1,9 +1,9 @@
 ---
-name: Bug report
+name: Bug report (1.x.x)
 about: Create a report to help us improve
 title: ''
-labels: ''
-assignees: ''
+labels: 1.x, bug
+assignees: erlendvollset
 
 ---
 
