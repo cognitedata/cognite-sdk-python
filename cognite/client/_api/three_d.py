@@ -65,6 +65,14 @@ class ThreeDModelsAPI(APIClient):
 
         Returns:
             ThreeDModel: The requested 3d model.
+
+        Example:
+
+            Get 3d model by id::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.three_d.models.retrieve(id=1)
         """
         return self._retrieve(id)
 
@@ -78,6 +86,28 @@ class ThreeDModelsAPI(APIClient):
 
         Returns:
             ThreeDModelList: The list of 3d models.
+
+        Examples:
+
+            List 3d models::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> three_d_model_list = c.three_d.models.list()
+
+            Iterate over 3d models::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> for three_d_model in c.three_d.models:
+                ...     three_d_model # do something with the 3d model
+
+            Iterate over chunks of 3d models to reduce memory load::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> for three_d_model in c.three_d.models(chunk_size=50):
+                ...     three_d_model # do something with the 3d model
         """
         return self._list(method="GET", filter={"published": published}, limit=limit)
 
@@ -89,6 +119,14 @@ class ThreeDModelsAPI(APIClient):
 
         Returns:
             Union[ThreeDModel, ThreeDModelList]: The created 3d model(s).
+
+        Example:
+
+            Create new 3d models::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.three_d.models.create(name="My Model")
         """
         utils._auxiliary.assert_type(name, "name", [str, list])
         if isinstance(name, str):
@@ -107,6 +145,25 @@ class ThreeDModelsAPI(APIClient):
 
         Returns:
             Union[ThreeDModel, ThreeDModelList]: Updated ThreeDModel(s)
+
+        Examples:
+
+            Update 3d model that you have fetched. This will perform a full update of the model::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> three_d_model = c.three_d.models.retrieve(id=1)
+                >>> three_d_model.name = "New Name"
+                >>> res = c.three_d.models.update(three_d_model)
+
+            Perform a partial update on a 3d model::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import ThreeDModelUpdate
+                >>> c = CogniteClient()
+                >>> my_update = ThreeDModelUpdate(id=1).name.set("New Name")
+                >>> res = c.three_d.models.update(my_update)
+
         """
         return self._update_multiple(items=item)
 
@@ -118,6 +175,14 @@ class ThreeDModelsAPI(APIClient):
 
         Returns:
             None
+
+        Example:
+
+            Delete 3d model by id::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.three_d.models.delete(id=1)
         """
         self._delete_multiple(ids=id, wrap_ids=True)
 
@@ -161,6 +226,14 @@ class ThreeDRevisionsAPI(APIClient):
 
         Returns:
             ThreeDModelRevision: The requested 3d model revision.
+
+        Example:
+
+            Retrieve 3d model revision by model id and revision id::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.three_d.revisions.retrieve(model_id=1, id=1)
         """
         return self._retrieve(resource_path=self._RESOURCE_PATH.format(model_id), id=id)
 
@@ -175,6 +248,16 @@ class ThreeDRevisionsAPI(APIClient):
 
         Returns:
             Union[ThreeDModelRevision, ThreeDModelRevisionList]: The created revision(s)
+
+        Example:
+
+            Create 3d model revision::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import ThreeDModelRevision
+                >>> c = CogniteClient()
+                >>> my_revision = ThreeDModelRevision(file_id=1)
+                >>> res = c.three_d.revisions.create(model_id=1, revision=my_revision)
         """
         return self._create_multiple(resource_path=self._RESOURCE_PATH.format(model_id), items=revision)
 
@@ -189,6 +272,14 @@ class ThreeDRevisionsAPI(APIClient):
 
         Returns:
             ThreeDModelRevisionList: The list of 3d model revisions.
+
+        Example:
+
+            List 3d model revisions::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.three_d.revisions.list(model_id=1, published=True, limit=100)
         """
         return self._list(
             resource_path=self._RESOURCE_PATH.format(model_id),
@@ -213,6 +304,24 @@ class ThreeDRevisionsAPI(APIClient):
 
         Returns:
             Union[ThreeDModelRevision, ThreeDModelRevisionList]: Updated ThreeDModelRevision(s)
+            
+        Examples:
+
+            Update a revision that you have fetched. This will perform a full update of the revision::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> revision = c.three_d.revisions.retrieve(model_id=1, id=1)
+                >>> revision.status = "New Status"
+                >>> res = c.three_d.revisions.update(model_id=1, item=revision)
+
+            Perform a partial update on a revision, updating the published property and adding a new field to metadata::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import ThreeDModelRevisionUpdate
+                >>> c = CogniteClient()
+                >>> my_update = ThreeDModelRevisionUpdate(id=1).published.set(False).metadata.add({"key": "value"})
+                >>> res = c.three_d.revisions.update(model_id=1, item=my_update)
         """
         return self._update_multiple(resource_path=self._RESOURCE_PATH.format(model_id), items=item)
 
@@ -225,6 +334,14 @@ class ThreeDRevisionsAPI(APIClient):
 
         Returns:
             None
+
+        Example:
+
+            Delete 3d model revision by id::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.three_d.revisions.delete(model_id=1, id=1)
         """
         self._delete_multiple(resource_path=self._RESOURCE_PATH.format(model_id), ids=id, wrap_ids=True)
 
@@ -238,6 +355,14 @@ class ThreeDRevisionsAPI(APIClient):
 
         Returns:
             None
+
+        Example:
+
+            Update revision thumbnail::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.three_d.revisions.update_thumbnail(model_id=1, revision_id=1, file_id=1)
         """
         resource_path = utils._auxiliary.interpolate_and_url_encode(
             self._RESOURCE_PATH + "/{}/thumbnail", model_id, revision_id
@@ -263,6 +388,14 @@ class ThreeDRevisionsAPI(APIClient):
 
         Returns:
             ThreeDNodeList: The list of 3d nodes.
+
+        Example:
+
+            List nodes from the hierarchy in the 3d model::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.three_d.revisions.list_nodes(model_id=1, revision_id=1, limit=10)
         """
         resource_path = utils._auxiliary.interpolate_and_url_encode(
             self._RESOURCE_PATH + "/{}/nodes", model_id, revision_id
@@ -292,6 +425,14 @@ class ThreeDRevisionsAPI(APIClient):
 
         Returns:
             ThreeDNodeList: The list of 3d nodes.
+            
+        Example:
+
+            Get a list of ancestor nodes of a given node::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.three_d.revisions.list_ancestor_nodes(model_id=1, revision_id=1, node_id=5, limit=10)
         """
         resource_path = utils._auxiliary.interpolate_and_url_encode(
             self._RESOURCE_PATH + "/{}/nodes", model_id, revision_id
@@ -312,6 +453,14 @@ class ThreeDFilesAPI(APIClient):
 
         Returns:
             bytes: The contents of the file.
+
+        Example:
+
+            Retrieve the contents of a 3d file by id::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.three_d.files.retrieve(1)
         """
         path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH + "/{}", id)
         return self._get(path).content
@@ -336,6 +485,14 @@ class ThreeDAssetMappingAPI(APIClient):
 
         Returns:
             ThreeDAssetMappingList: The list of asset mappings.
+
+        Example:
+
+            List 3d node asset mappings::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.three_d.asset_mappings.list(model_id=1, revision_id=1)
         """
         path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id, revision_id)
         return self._list(
@@ -354,6 +511,16 @@ class ThreeDAssetMappingAPI(APIClient):
 
         Returns:
             Union[ThreeDAssetMapping, ThreeDAssetMappingList]: The created asset mapping(s).
+
+        Example:
+
+            Create new 3d node asset mapping::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import ThreeDAssetMapping
+                >>> my_mapping = ThreeDAssetMapping(node_id=1, asset_id=1)
+                >>> c = CogniteClient()
+                >>> res = c.three_d.asset_mappings.create(model_id=1, revision_id=1, asset_mapping=my_mapping)
         """
         path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id, revision_id)
         return self._create_multiple(resource_path=path, items=asset_mapping)
@@ -370,6 +537,15 @@ class ThreeDAssetMappingAPI(APIClient):
 
         Returns:
             None
+
+        Example:
+
+            Delete 3d node asset mapping::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> mapping_to_delete = c.three_d.asset_mappings.list(model_id=1, revision_id=1)[0]
+                >>> res = c.three_d.asset_mappings.delete(model_id=1, revision_id=1, asset_mapping=mapping_to_delete)
         """
         path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id, revision_id)
         utils._auxiliary.assert_type(asset_mapping, "asset_mapping", [list, ThreeDAssetMapping])
