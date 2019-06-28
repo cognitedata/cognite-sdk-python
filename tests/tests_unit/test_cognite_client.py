@@ -5,7 +5,9 @@ import sys
 import threading
 import types
 from multiprocessing.pool import ThreadPool
+from ssl import SSLError
 from time import sleep
+from unittest.mock import patch
 
 import pytest
 
@@ -184,6 +186,14 @@ class TestCogniteClient:
         with unset_env_var("COGNITE_PROJECT"):
             CogniteClient()
         assert len(rsps_with_login_mock.calls) == 2
+
+    @patch("cognite.client.utils._version_checker.requests")
+    def test_version_check_pypi_not_reached_should_not_raise_exception(self, mock_requests):
+        mock_requests.get.side_effect = SSLError("Max retries exceeded.")
+        try:
+            CogniteClient()
+        except SSLError:
+            assert False, "_version_checker.get_all_versions() raised exception unexpectedly"
 
 
 class TestInstantiateWithClient:
