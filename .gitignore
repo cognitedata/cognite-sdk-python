@@ -21,8 +21,9 @@ wheels/
 .installed.cfg
 *.egg
 
-# idea
+# ide
 .idea/
+.vscode/
 
 # DS_Store
 .DS_Store
