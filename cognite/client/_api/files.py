@@ -361,7 +361,7 @@ class FilesAPI(APIClient):
 
     def _upload_file_from_path(self, file: FileMetadata, file_path: str, overwrite: bool):
         with open(file_path, "rb") as fh:
-            file_metadata = self.upload_bytes(fh, overwrite=overwrite, **file.dump(camel_case=True))
+            file_metadata = self.upload_bytes(fh, overwrite=overwrite, **file.dump())
         return file_metadata
 
     def upload_bytes(
