@@ -9,17 +9,19 @@ def check_if_version_exists(package_name: str, version: str):
     return version in versions
 
 
-def get_newest_version_in_major_release(package_name: str, version: str):
+def get_newest_version_in_major_release(package_name: str, version: str, verify_ssl: bool):
     major, minor, micro, pr_cycle, pr_version = _parse_version(version)
-    versions = get_all_versions(package_name)
+    versions = get_all_versions(package_name, verify_ssl)
     for v in versions:
         if _is_newer_major(v, version):
             major, minor, micro, pr_cycle, pr_version = _parse_version(v)
     return _format_version(major, minor, micro, pr_cycle, pr_version)
 
 
-def get_all_versions(package_name: str):
-    res = requests.get("https://pypi.python.org/simple/{}/#history".format(package_name))
+def get_all_versions(package_name: str, verify_ssl: bool):
+    session = requests.Session()
+    session.verify = verify_ssl
+    res = session.get("https://pypi.python.org/simple/{}/#history".format(package_name))
     versions = re.findall("cognite-sdk-(\d+\.\d+.[\dabrc]+)", res.content.decode())
     return versions
 

@@ -61,6 +61,7 @@ class ClientConfig(_DefaultConfig):
         headers: Dict[str, str] = None,
         timeout: int = None,
         debug: bool = False,
+        verify_ssl: bool = True,
     ):
         super().__init__()
 
@@ -71,6 +72,7 @@ class ClientConfig(_DefaultConfig):
         self.max_workers = max_workers or self.max_workers
         self.headers = headers or self.headers
         self.timeout = timeout or self.timeout
+        self.verify_ssl = verify_ssl
 
         if self.api_key is None:
             raise CogniteAPIKeyError("No API key has been specified")
@@ -85,7 +87,7 @@ class ClientConfig(_DefaultConfig):
             utils._logging._configure_logger_for_debug_mode()
 
         if not self.disable_pypi_version_check:
-            utils._auxiliary._check_client_has_newest_major_version()
+            utils._auxiliary._check_client_has_newest_major_version(verify_ssl)
 
     def __str__(self):
         return json.dumps(self.__dict__, indent=4)
