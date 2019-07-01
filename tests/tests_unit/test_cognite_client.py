@@ -188,6 +188,18 @@ class TestCogniteClient:
 
     @patch("cognite.client.utils._version_checker.re.findall")
     @patch("cognite.client.utils._version_checker.requests")
+    def test_verify_ssl_enabled_by_default(self, mock_requests, mock_findall):
+        mock_session = Mock()
+        mock_requests.Session.return_value = mock_session
+
+        c = CogniteClient()
+
+        assert mock_session.verify == True
+        assert c._api_client._request_session.verify == True
+        assert c._api_client._request_session_with_retry.verify == True
+
+    @patch("cognite.client.utils._version_checker.re.findall")
+    @patch("cognite.client.utils._version_checker.requests")
     def test_verify_ssl_disabled(self, mock_requests, mock_findall):
         mock_session = Mock()
         mock_requests.Session.return_value = mock_session
