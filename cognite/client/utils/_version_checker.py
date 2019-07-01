@@ -5,7 +5,7 @@ import requests
 
 
 def check_if_version_exists(package_name: str, version: str):
-    versions = get_all_versions(package_name)
+    versions = get_all_versions(package_name=package_name, verify_ssl=True)
     return version in versions
 
 
