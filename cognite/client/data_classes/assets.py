@@ -259,7 +259,10 @@ class AssetList(CogniteResourceList):
             resource_api.list, tasks, resource_api._config.max_workers
         ).results
         resources = resource_list_class([])
+        file_ids = []
         for res in res_list:
+            res = resource_list_class([item for item in res if item.id not in file_ids])
+            file_ids += [item.id for item in res]
             resources.extend(res)
         return resources
 
