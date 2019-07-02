@@ -19,6 +19,8 @@ from cognite.client.exceptions import CogniteAPIKeyError
 from cognite.client.utils._logging import DebugLogFormatter
 from tests.utils import BASE_URL, unset_env_var
 
+_PYPI_ADDRESS = "https://pypi.python.org/simple/cognite-sdk/#history"
+
 
 @pytest.fixture
 def default_client_config():
@@ -76,7 +78,7 @@ class TestCogniteClient:
                 CogniteClient()
 
     def test_invalid_api_key(self, rsps):
-        rsps.add(rsps.GET, "https://pypi.python.org/simple/cognite-sdk/#history", status=200, body="")
+        rsps.add(rsps.GET, _PYPI_ADDRESS, status=200, body="")
         rsps.add(
             rsps.GET,
             BASE_URL + "/login/status",
@@ -189,24 +191,20 @@ class TestCogniteClient:
     @patch("cognite.client.utils._version_checker.re.findall")
     @patch("cognite.client.utils._version_checker.requests")
     def test_verify_ssl_enabled_by_default(self, mock_requests, mock_findall):
-        mock_session = Mock()
-        mock_requests.Session.return_value = mock_session
 
         c = CogniteClient()
 
-        assert mock_session.verify == True
+        mock_requests.get.assert_called_with(_PYPI_ADDRESS, verify=True)
         assert c._api_client._request_session.verify == True
         assert c._api_client._request_session_with_retry.verify == True
 
     @patch("cognite.client.utils._version_checker.re.findall")
     @patch("cognite.client.utils._version_checker.requests")
     def test_verify_ssl_disabled(self, mock_requests, mock_findall):
-        mock_session = Mock()
-        mock_requests.Session.return_value = mock_session
 
         c = CogniteClient(verify_ssl=False)
 
-        assert mock_session.verify == False
+        mock_requests.get.assert_called_with(_PYPI_ADDRESS, verify=False)
         assert c._api_client._request_session.verify == False
         assert c._api_client._request_session_with_retry.verify == False
 

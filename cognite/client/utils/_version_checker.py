@@ -19,9 +19,7 @@ def get_newest_version_in_major_release(package_name: str, version: str, verify_
 
 
 def get_all_versions(package_name: str, verify_ssl: bool):
-    session = requests.Session()
-    session.verify = verify_ssl
-    res = session.get("https://pypi.python.org/simple/{}/#history".format(package_name))
+    res = requests.get("https://pypi.python.org/simple/{}/#history".format(package_name), verify=verify_ssl)
     versions = re.findall("cognite-sdk-(\d+\.\d+.[\dabrc]+)", res.content.decode())
     return versions
 
