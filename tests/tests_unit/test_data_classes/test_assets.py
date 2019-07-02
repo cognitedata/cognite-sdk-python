@@ -1,8 +1,8 @@
 from unittest import mock
-from unittest.mock import call
+from unittest.mock import MagicMock, call, patch
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import Asset, AssetList
+from cognite.client.data_classes import Asset, AssetList, Event, EventList, FileMetadata, FileMetadataList
 
 c = CogniteClient()
 
@@ -72,6 +72,44 @@ class TestAssetList:
         a.files()
         assert c.files.list.call_args == call(asset_ids=[1])
         assert c.files.list.call_count == 1
+
+    @patch("cognite.client.utils._concurrency")
+    def test_assetlist_files_should_not_return_duplicates(self, mock_concurrency):
+        mock_client = MagicMock()
+        assets = AssetList(
+            [Asset(id=1, path=[1]), Asset(id=2, path=[1, 2]), Asset(id=3, path=[1, 3])], cognite_client=mock_client
+        )
+        f1 = FileMetadata(name="file1", id=1)
+        f2 = FileMetadata(name="file2", id=2)
+        f3 = FileMetadata(name="file3", id=3)
+        files_asset1 = FileMetadataList([f1])
+        files_asset2 = FileMetadataList([f2, f3])
+        files_asset3 = FileMetadataList([f2, f3])
+        mock_concurrency.execute_tasks_concurrently.return_value.results = [files_asset1, files_asset2, files_asset3]
+
+        files = assets.files()
+
+        expected = [f1, f2, f3]
+        assert expected == files
+
+    @patch("cognite.client.utils._concurrency")
+    def test_assetlist_events_should_not_return_duplicates(self, mock_concurrency):
+        mock_client = MagicMock()
+        assets = AssetList(
+            [Asset(id=1, path=[1]), Asset(id=2, path=[1, 2]), Asset(id=3, path=[1, 3])], cognite_client=mock_client
+        )
+        e1 = Event(description="event1", id=1)
+        e2 = Event(description="event2", id=2)
+        e3 = Event(description="event3", id=3)
+        events_asset1 = EventList([e1])
+        events_asset2 = EventList([e2, e3])
+        events_asset3 = EventList([e2, e3])
+        mock_concurrency.execute_tasks_concurrently.return_value.results = [events_asset1, events_asset2, events_asset3]
+
+        events = assets.events()
+
+        expected = [e1, e2, e3]
+        assert expected == events
 
 
 class TestAssetHierarchyVisualization:
