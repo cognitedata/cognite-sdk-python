@@ -23,7 +23,7 @@ class RetryWithMaxBackoff(Retry):
         return min(utils._client_config._DefaultConfig().max_retry_backoff, super().get_backoff_time())
 
 
-def _init_requests_session():
+def _init_requests_session(verify_ssl: bool):
     session = Session()
     session_with_retry = Session()
     config = utils._client_config._DefaultConfig()
@@ -52,10 +52,15 @@ def _init_requests_session():
     session.mount("https://", adapter)
     session_with_retry.mount("http://", adapter_with_retry)
     session_with_retry.mount("https://", adapter_with_retry)
+
+    if not verify_ssl:
+        import urllib3
+
+        urllib3.disable_warnings()
+        session.verify = False
+        session_with_retry.verify = False
+
     return session, session_with_retry
-
-
-_REQUESTS_SESSION, _REQUESTS_SESSION_WITH_RETRY = _init_requests_session()
 
 
 class APIClient:
@@ -63,8 +68,7 @@ class APIClient:
     _LIST_CLASS = None
 
     def __init__(self, config: utils._client_config.ClientConfig, api_version: str = None, cognite_client=None):
-        self._request_session = _REQUESTS_SESSION
-        self._request_session_with_retry = _REQUESTS_SESSION_WITH_RETRY
+        (self._request_session, self._request_session_with_retry) = _init_requests_session(config.verify_ssl)
 
         self._config = config
         self._api_version = api_version
