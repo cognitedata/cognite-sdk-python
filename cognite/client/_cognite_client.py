@@ -45,6 +45,7 @@ class CogniteClient:
         headers: Dict[str, str] = None,
         timeout: int = None,
         debug: bool = False,
+        verify_ssl=True,
     ):
         self._config = ClientConfig(
             api_key=api_key,
@@ -55,6 +56,7 @@ class CogniteClient:
             headers=headers,
             timeout=timeout,
             debug=debug,
+            verify_ssl=verify_ssl,
         )
         self.login = LoginAPI(self._config, cognite_client=self)
         if self._config.project is None:
