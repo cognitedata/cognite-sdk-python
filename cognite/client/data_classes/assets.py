@@ -17,8 +17,7 @@ class Asset(CogniteResource):
         id (int): Javascript friendly internal ID given to the object.
         created_time (int): It is the number of milliseconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int): It is the number of milliseconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        path (List[int]): IDs of assets on the path to the asset.
-        depth (int): Asset path depth (number of levels below root node).
+        root_id (int): Javascript friendly internal ID given to the object.
         parent_external_id (str): External Id provided by client. Should be unique within the project.
         cognite_client (CogniteClient): The client to associate with this object.
     """
@@ -34,8 +33,7 @@ class Asset(CogniteResource):
         id: int = None,
         created_time: int = None,
         last_updated_time: int = None,
-        path: List[int] = None,
-        depth: int = None,
+        root_id: int = None,
         parent_external_id: str = None,
         cognite_client=None,
     ):
@@ -48,8 +46,7 @@ class Asset(CogniteResource):
         self.id = id
         self.created_time = created_time
         self.last_updated_time = last_updated_time
-        self.path = path
-        self.depth = depth
+        self.root_id = root_id
         self.parent_external_id = parent_external_id
         self._cognite_client = cognite_client
 
