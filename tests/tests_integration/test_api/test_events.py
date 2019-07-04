@@ -26,10 +26,12 @@ def post_spy():
 
 
 class TestEventsAPI:
+    @pytest.mark.skip
     def test_retrieve(self):
         res = COGNITE_CLIENT.events.list(limit=1)
         assert res[0] == COGNITE_CLIENT.events.retrieve(res[0].id)
 
+    @pytest.mark.skip
     def test_retrieve_multiple(self):
         res = COGNITE_CLIENT.events.list(limit=2)
         assert res == COGNITE_CLIENT.events.retrieve_multiple([e.id for e in res])
