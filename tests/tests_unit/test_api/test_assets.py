@@ -21,7 +21,6 @@ def mock_assets_response(rsps):
     response_body = {
         "items": [
             {
-                "path": [0],
                 "externalId": "string",
                 "name": "string",
                 "parentId": 1,
@@ -30,7 +29,7 @@ def mock_assets_response(rsps):
                 "source": "string",
                 "id": 1,
                 "lastUpdatedTime": 0,
-                "depth": 0,
+                "rootId": 1,
             }
         ]
     }
