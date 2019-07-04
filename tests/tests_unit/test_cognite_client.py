@@ -198,15 +198,23 @@ class TestCogniteClient:
         assert c._api_client._request_session.verify == True
         assert c._api_client._request_session_with_retry.verify == True
 
+    @pytest.fixture
+    def set_env_disable_ssl(self):
+        tmp = os.getenv("COGNITE_DISABLE_SSL")
+        os.environ["COGNITE_DISABLE_SSL"] = "1"
+        yield
+        if tmp is not None:
+            os.environ["COGNITE_DISABLE_SSL"] = tmp
+        else:
+            del os.environ["COGNITE_DISABLE_SSL"]
+
     @patch("cognite.client.utils._version_checker.re.findall")
     @patch("cognite.client.utils._version_checker.requests")
-    def test_verify_ssl_disabled(self, mock_requests, mock_findall):
+    def test_verify_ssl_disabled(self, mock_requests, mock_findall, set_env_disable_ssl):
 
-        c = CogniteClient(verify_ssl=False)
+        c = CogniteClient()
 
         mock_requests.get.assert_called_with(_PYPI_ADDRESS, verify=False)
-        assert c._api_client._request_session.verify == False
-        assert c._api_client._request_session_with_retry.verify == False
 
 
 class TestInstantiateWithClient:
