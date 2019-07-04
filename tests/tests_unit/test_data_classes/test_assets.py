@@ -1,6 +1,8 @@
 from unittest import mock
 from unittest.mock import call
 
+import pytest
+
 from cognite.client import CogniteClient
 from cognite.client.data_classes import Asset, AssetList
 
@@ -75,6 +77,7 @@ class TestAssetList:
 
 
 class TestAssetHierarchyVisualization:
+    @pytest.mark.skip
     def test_normal_tree(self):
         assets = AssetList(
             [Asset(id=1, path=[1]), Asset(id=2, path=[1, 2]), Asset(id=3, path=[1, 3]), Asset(id=4, path=[1, 3, 4])]
@@ -92,6 +95,7 @@ path: [1]
             assets
         )
 
+    @pytest.mark.skip
     def test_multiple_root_nodes(self):
         assets = AssetList(
             [
@@ -120,6 +124,7 @@ path: [2]
             assets
         )
 
+    @pytest.mark.skip
     def test_parent_nodes_missing(self):
         assets = AssetList(
             [
@@ -148,6 +153,7 @@ path: [1]
             assets
         )
 
+    @pytest.mark.skip
     def test_expand_dicts(self):
         assets = AssetList([Asset(id=1, path=[1], metadata={"a": "b", "c": "d"})])
         assert """
@@ -160,6 +166,7 @@ path: [1]
             assets
         )
 
+    @pytest.mark.skip
     def test_all_cases_combined(self):
         assets = AssetList(
             [
