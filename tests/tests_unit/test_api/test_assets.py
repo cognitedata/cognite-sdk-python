@@ -39,67 +39,67 @@ def mock_assets_response(rsps):
     yield rsps
 
 
-@pytest.fixture
-def mock_get_subtree_base(rsps):
-    rsps.add(
-        rsps.POST,
-        ASSETS_API._get_base_url_with_base_path() + "/assets/byids",
-        status=200,
-        json={"items": [{"id": 1, "path": [1], "depth": 0}]},
-    )
-    rsps.add(
-        rsps.POST,
-        ASSETS_API._get_base_url_with_base_path() + "/assets/list",
-        status=200,
-        json={
-            "items": [
-                {"id": 2, "path": [1, 2], "depth": 1},
-                {"id": 3, "path": [1, 3], "depth": 1},
-                {"id": 4, "path": [1, 4], "depth": 1},
-            ]
-        },
-    )
-    rsps.add(
-        rsps.POST,
-        ASSETS_API._get_base_url_with_base_path() + "/assets/list",
-        status=200,
-        json={"items": [{"id": 5, "path": [1, 2, 5], "depth": 2}, {"id": 6, "path": [1, 2, 5], "depth": 2}]},
-    )
-    rsps.add(
-        rsps.POST,
-        ASSETS_API._get_base_url_with_base_path() + "/assets/list",
-        status=200,
-        json={"items": [{"id": 7, "path": [1, 3, 7], "depth": 2}, {"id": 8, "path": [1, 3, 8], "depth": 2}]},
-    )
-    rsps.add(
-        rsps.POST,
-        ASSETS_API._get_base_url_with_base_path() + "/assets/list",
-        status=200,
-        json={"items": [{"id": 9, "path": [1, 4, 9], "depth": 2}, {"id": 10, "path": [1, 4, 10], "depth": 2}]},
-    )
-    yield rsps
+# @pytest.fixture
+# def mock_get_subtree_base(rsps):
+#     rsps.add(
+#         rsps.POST,
+#         ASSETS_API._get_base_url_with_base_path() + "/assets/byids",
+#         status=200,
+#         json={"items": [{"id": 1, "path": [1], "depth": 0}]},
+#     )
+#     rsps.add(
+#         rsps.POST,
+#         ASSETS_API._get_base_url_with_base_path() + "/assets/list",
+#         status=200,
+#         json={
+#             "items": [
+#                 {"id": 2, "path": [1, 2], "depth": 1},
+#                 {"id": 3, "path": [1, 3], "depth": 1},
+#                 {"id": 4, "path": [1, 4], "depth": 1},
+#             ]
+#         },
+#     )
+#     rsps.add(
+#         rsps.POST,
+#         ASSETS_API._get_base_url_with_base_path() + "/assets/list",
+#         status=200,
+#         json={"items": [{"id": 5, "path": [1, 2, 5], "depth": 2}, {"id": 6, "path": [1, 2, 5], "depth": 2}]},
+#     )
+#     rsps.add(
+#         rsps.POST,
+#         ASSETS_API._get_base_url_with_base_path() + "/assets/list",
+#         status=200,
+#         json={"items": [{"id": 7, "path": [1, 3, 7], "depth": 2}, {"id": 8, "path": [1, 3, 8], "depth": 2}]},
+#     )
+#     rsps.add(
+#         rsps.POST,
+#         ASSETS_API._get_base_url_with_base_path() + "/assets/list",
+#         status=200,
+#         json={"items": [{"id": 9, "path": [1, 4, 9], "depth": 2}, {"id": 10, "path": [1, 4, 10], "depth": 2}]},
+#     )
+#     yield rsps
 
 
-@pytest.fixture
-def mock_get_subtree(mock_get_subtree_base):
-    mock_get_subtree_base.add(
-        mock_get_subtree_base.POST,
-        ASSETS_API._get_base_url_with_base_path() + "/assets/list",
-        status=200,
-        json={"items": []},
-    )
-    yield mock_get_subtree_base
+# @pytest.fixture
+# def mock_get_subtree(mock_get_subtree_base):
+#     mock_get_subtree_base.add(
+#         mock_get_subtree_base.POST,
+#         ASSETS_API._get_base_url_with_base_path() + "/assets/list",
+#         status=200,
+#         json={"items": []},
+#     )
+#     yield mock_get_subtree_base
 
 
-@pytest.fixture
-def mock_get_subtree_w_request_failure(mock_get_subtree_base):
-    mock_get_subtree_base.add(
-        mock_get_subtree_base.POST,
-        ASSETS_API._get_base_url_with_base_path() + "/assets/list",
-        status=503,
-        json={"error": {"message": "Service Unavailable"}},
-    )
-    yield mock_get_subtree_base
+# @pytest.fixture
+# def mock_get_subtree_w_request_failure(mock_get_subtree_base):
+#     mock_get_subtree_base.add(
+#         mock_get_subtree_base.POST,
+#         ASSETS_API._get_base_url_with_base_path() + "/assets/list",
+#         status=503,
+#         json={"error": {"message": "Service Unavailable"}},
+#     )
+#     yield mock_get_subtree_base
 
 
 class TestAssets:
@@ -324,39 +324,39 @@ class TestAssetPoster:
         for li in unblocked_assets_lists:
             assert 3 == len(li)
 
-    @pytest.fixture
-    def mock_post_asset_hierarchy(self, rsps):
-        ASSETS_API._config.max_workers = 1
+    # @pytest.fixture
+    # def mock_post_asset_hierarchy(self, rsps):
+    #     ASSETS_API._config.max_workers = 1
 
-        def request_callback(request):
-            items = jsgz_load(request.body)["items"]
-            response_assets = []
-            for item in items:
-                parent_id = None
-                if "parentId" in item:
-                    parent_id = item["parentId"]
-                if "parentExternalId" in item:
-                    parent_id = item["parentExternalId"] + "id"
-                id = item.get("externalId", "root_") + "id"
-                response_assets.append(
-                    {
-                        "id": id,
-                        "parentId": parent_id,
-                        "externalId": item["externalId"],
-                        "parentExternalId": item.get("parentExternalId"),
-                        "path": [parent_id or "", id],
-                    }
-                )
-            return 200, {}, json.dumps({"items": response_assets})
+    #     def request_callback(request):
+    #         items = jsgz_load(request.body)["items"]
+    #         response_assets = []
+    #         for item in items:
+    #             parent_id = None
+    #             if "parentId" in item:
+    #                 parent_id = item["parentId"]
+    #             if "parentExternalId" in item:
+    #                 parent_id = item["parentExternalId"] + "id"
+    #             id = item.get("externalId", "root_") + "id"
+    #             response_assets.append(
+    #                 {
+    #                     "id": id,
+    #                     "parentId": parent_id,
+    #                     "externalId": item["externalId"],
+    #                     "parentExternalId": item.get("parentExternalId"),
+    #                     "path": [parent_id or "", id],
+    #                 }
+    #             )
+    #         return 200, {}, json.dumps({"items": response_assets})
 
-        rsps.add_callback(
-            rsps.POST,
-            ASSETS_API._get_base_url_with_base_path() + "/assets",
-            callback=request_callback,
-            content_type="application/json",
-        )
-        yield rsps
-        ASSETS_API._config.max_workers = 10
+    #     rsps.add_callback(
+    #         rsps.POST,
+    #         ASSETS_API._get_base_url_with_base_path() + "/assets",
+    #         callback=request_callback,
+    #         content_type="application/json",
+    #     )
+    #     yield rsps
+    #     ASSETS_API._config.max_workers = 10
 
     @pytest.mark.skip
     @pytest.mark.parametrize(
@@ -383,7 +383,7 @@ class TestAssetPoster:
         assert 2 == len(mock_post_asset_hierarchy.calls)
 
     @pytest.fixture
-    def mock_post_asset_hierarchy_with_failures(self, rsps):
+    def mock_post_assets_failures(self, rsps):
         def request_callback(request):
             items = jsgz_load(request.body)["items"]
             response_assets = []
@@ -400,7 +400,6 @@ class TestAssetPoster:
                     "parentId": parent_id,
                     "externalId": item["externalId"],
                     "parentExternalId": item.get("parentExternalId"),
-                    "path": [parent_id or "", id],
                 }
             )
 
@@ -421,8 +420,7 @@ class TestAssetPoster:
         with set_request_limit(ASSETS_API, 1):
             yield rsps
 
-    @pytest.mark.skip
-    def test_post_with_failures(self, mock_post_asset_hierarchy_with_failures):
+    def test_post_with_failures(self, mock_post_assets_failures):
         assets = [
             Asset(name="200", external_id="0"),
             Asset(name="200", parent_external_id="0", external_id="01"),
@@ -464,12 +462,11 @@ class TestPandasIntegration:
         assert isinstance(df, pd.DataFrame)
         assert df.empty
 
-    @pytest.mark.skip
     def test_asset_to_pandas(self, mock_assets_response):
         import pandas as pd
 
         df = ASSETS_API.retrieve(id=1).to_pandas()
         assert isinstance(df, pd.DataFrame)
         assert "metadata" not in df.columns
-        assert [0] == df.loc["path"][0]
+        assert 1 == df.loc["id"][0]
         assert "metadata-value" == df.loc["metadata-key"][0]

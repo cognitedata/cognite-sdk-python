@@ -85,7 +85,6 @@ class TestAssetsAPI:
         res = COGNITE_CLIENT.assets.update(update_asset)
         assert "newname" == res.name
 
-    @pytest.mark.skip
     def test_post_asset_hierarchy(self, new_asset_hierarchy):
         prefix, ext_ids = new_asset_hierarchy
         posted_assets = COGNITE_CLIENT.assets.retrieve_multiple(external_ids=ext_ids)
