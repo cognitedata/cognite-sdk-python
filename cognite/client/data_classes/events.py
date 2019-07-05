@@ -9,8 +9,8 @@ class Event(CogniteResource):
 
     Args:
         external_id (str): External Id provided by client. Should be unique within the project
-        start_time (int): It is the number of milliseconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        end_time (int): It is the number of milliseconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        start_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        end_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         type (str): Type of the event, e.g 'failure'.
         subtype (str): Subtype of the event, e.g 'electrical'.
         description (str): Textual description of the event.
@@ -18,8 +18,8 @@ class Event(CogniteResource):
         asset_ids (List[int]): Asset IDs of related equipment that this event relates to.
         source (str): The source of this event.
         id (int): Javascript friendly internal ID given to the object.
-        last_updated_time (int): It is the number of milliseconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): It is the number of milliseconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
@@ -61,15 +61,15 @@ class EventFilter(CogniteFilter):
     """Filter on events filter with exact match
 
     Args:
-        start_time (Dict[str, Any]): Range between two timestamps
-        end_time (Dict[str, Any]): Range between two timestamps
+        start_time (Dict[str, Any]): Range between two timestamps.
+        end_time (Dict[str, Any]): Range between two timestamps.
         metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
         asset_ids (List[int]): Asset IDs of related equipment that this event relates to.
         source (str): The source of this event.
         type (str): The event type
         subtype (str): The event subtype
-        created_time (Dict[str, Any]): Range between two timestamps
-        last_updated_time (Dict[str, Any]): Range between two timestamps
+        created_time (Dict[str, Any]): Range between two timestamps.
+        last_updated_time (Dict[str, Any]): Range between two timestamps.
         external_id_prefix (str): External Id provided by client. Should be unique within the project
         cognite_client (CogniteClient): The client to associate with this object.
     """
