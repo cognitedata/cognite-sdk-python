@@ -540,4 +540,4 @@ class _AssetPoster:
         for worker in workers:
             worker.stop = True
 
-        return AssetList(sorted(self.posted_assets, key=lambda x: x.path))
+        return AssetList(self.posted_assets)
