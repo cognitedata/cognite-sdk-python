@@ -9,18 +9,18 @@ class TimeSeries(CogniteResource):
     """No description.
 
     Args:
-        id (int): Generated id of the time series
-        external_id (str): Externally supplied id of the time series
-        name (str): Name of time series
+        id (int): The generated ID for the time series.
+        external_id (str): The externally supplied ID for the time series.
+        name (str): The name of the time series.
         is_string (bool): Whether the time series is string valued or not.
         metadata (Dict[str, Any]): Additional metadata. String key -> String value
         unit (str): The physical unit of the time series.
-        asset_id (int): Asset that this time series belongs to.
+        asset_id (int): The asset that this time series belongs to.
         is_step (bool): Whether the time series is a step series or not.
         description (str): Description of the time series.
-        security_categories (List[int]): Security categories required in order to access this time series.
-        created_time (int): Time when this time-series is created in CDF in milliseconds since Jan 1, 1970.
-        last_updated_time (int): The latest time when this time-series is updated in CDF in milliseconds since Jan 1, 1970.
+        security_categories (List[int]): The required security categories to access this time series.
+        created_time (int): Time when this time series was created in CDF in milliseconds since Jan 1, 1970.
+        last_updated_time (int): The latest time when this time series was updated in CDF in milliseconds since Jan 1, 1970.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
@@ -122,7 +122,7 @@ class TimeSeriesFilter(CogniteFilter):
         unit (str): Filter on unit.
         is_string (bool): Filter on isString.
         is_step (bool): Filter on isStep.
-        metadata (Dict[str, Any]): Filter out timeseries that do not match these metadata fields and values. Format is {"key1":"value1","key2":"value2"}.
+        metadata (Dict[str, Any]): Filter out timeseries that do not match these metadata fields and values (case-sensitive). The format is {"key1":"value1","key2":"value2"}.
         asset_ids (List[int]): Filter out time series that are not linked to any of these assets.
         external_id_prefix (str): Prefix filter on externalId. (case-sensitive)
         created_time (Dict[str, Any]): Filter out time series with createdTime outside this range.
@@ -159,11 +159,11 @@ class TimeSeriesFilter(CogniteFilter):
 
 # GenUpdateClass: TimeSeriesUpdate
 class TimeSeriesUpdate(CogniteUpdate):
-    """Changes will be applied to timeseries.
+    """Changes will be applied to time series.
 
     Args:
-        id (int): Javascript friendly internal ID given to the object.
-        external_id (str): External Id provided by client. Should be unique within the project.
+        id (int): A JavaScript-friendly internal ID for the object.
+        external_id (str): The external ID provided by the client. Must be unique within the project.
     """
 
     @property

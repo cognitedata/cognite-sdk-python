@@ -44,19 +44,19 @@ class TestClassGenerator:
         schemas = [CLASS_GENERATOR._spec.components.schemas.get("Asset")]
         docstring = CLASS_GENERATOR.generate_docstring(schemas, 4)
         assert (
-            """    \"\"\"Representation of a physical asset, e.g plant or piece of equipment
+            """    \"\"\"A representation of a physical asset, for example a factory or a piece of equipment.
 
     Args:
-        external_id (str): External Id provided by client. Should be unique within the project.
-        name (str): Name of asset. Often referred to as tag.
-        parent_id (int): Javascript friendly internal ID given to the object.
-        description (str): Description of asset.
+        external_id (str): The external ID provided by the client. Must be unique within the project.
+        name (str): The name of the asset. Often referred to as a tag.
+        parent_id (int): A JavaScript-friendly internal ID for the object.
+        description (str): The description of the asset.
         metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
-        source (str): The source of this asset
-        id (int): Javascript friendly internal ID given to the object.
-        created_time (int): It is the number of milliseconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        last_updated_time (int): It is the number of milliseconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        root_id (int): Javascript friendly internal ID given to the object.
+        source (str): The source of the asset.
+        id (int): A JavaScript-friendly internal ID for the object.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        root_id (int): A JavaScript-friendly internal ID for the object.
         cognite_client (CogniteClient): The client to associate with this object.
     \"\"\""""
             == docstring
@@ -107,8 +107,8 @@ class TestUpdateClassGenerator:
             """    \"\"\"Changes applied to asset
 
     Args:
-        id (int): Javascript friendly internal ID given to the object.
-        external_id (str): External Id provided by client. Should be unique within the project.
+        id (int): A JavaScript-friendly internal ID for the object.
+        external_id (str): The external ID provided by the client. Must be unique within the project.
     \"\"\""""
             == docstring
         )
