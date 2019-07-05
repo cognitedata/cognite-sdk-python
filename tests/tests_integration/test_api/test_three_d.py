@@ -11,7 +11,7 @@ from cognite.client.data_classes import (
 COGNITE_CLIENT = CogniteClient()
 
 
-@pytest.fixture
+@pytest.fixture(scope="class")
 def test_revision():
     model_id = COGNITE_CLIENT.three_d.models.list(limit=1)[0].id
     revision = COGNITE_CLIENT.three_d.revisions.list(model_id=model_id, limit=1)[0]
@@ -27,9 +27,8 @@ def new_model():
 
 
 @pytest.fixture(scope="class")
-def new_revision():
-    model_id = COGNITE_CLIENT.three_d.models.list(limit=1)[0].id
-    revision = COGNITE_CLIENT.three_d.revisions.list(model_id=model_id, limit=1)[0]
+def new_revision(test_revision):
+    revision, model_id = test_revision
 
     new_revision = ThreeDModelRevision(file_id=revision.file_id)
     res = COGNITE_CLIENT.three_d.revisions.create(model_id=model_id, revision=new_revision)
@@ -39,9 +38,9 @@ def new_revision():
 
 
 @pytest.fixture(scope="class")
-def new_asset_mapping():
-    model_id = COGNITE_CLIENT.three_d.models.list(limit=1)[0].id
-    revision = COGNITE_CLIENT.three_d.revisions.list(model_id=model_id, limit=1)[0]
+def new_asset_mapping(test_revision):
+    revision, model_id = test_revision
+
     node_id = COGNITE_CLIENT.three_d.revisions.list_nodes(model_id=model_id, revision_id=revision.id)[0].id
     asset_id = COGNITE_CLIENT.assets.list(limit=1)[0].id
     asset_mapping = ThreeDAssetMapping(node_id=node_id, asset_id=asset_id)
