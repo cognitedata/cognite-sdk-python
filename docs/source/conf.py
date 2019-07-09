@@ -44,7 +44,7 @@ master_doc = "index"
 
 # General information about the project.
 project = "cognite-sdk"
-copyright = "2018, Erlend Vollset"
+copyright = "2019, Cognite"
 author = "Erlend Vollset"
 
 # The version info for the project you're documenting, acts as replacement for
@@ -134,7 +134,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, "cognite-sdk-python.tex", "cognite-sdk-python Documentation", "Erlend Vollset", "manual")
+    (master_doc, "cognite-sdk-python.tex", "cognite-sdk-python Documentation", "Cognite", "manual")
 ]
 
 
