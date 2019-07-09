@@ -285,7 +285,7 @@ class AssetsAPI(APIClient):
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
         asset = self.retrieve(id=id, external_id=external_id)
         subtree = self._get_asset_subtree(AssetList([asset]), current_depth=0, depth=depth)
-        return AssetList(sorted(subtree, key=lambda a: a.depth), cognite_client=self._cognite_client)
+        return AssetList(subtree, cognite_client=self._cognite_client)
 
     def _get_asset_subtree(self, assets: AssetList, current_depth: int, depth: Optional[int]) -> AssetList:
         subtree = assets
