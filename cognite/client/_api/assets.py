@@ -280,7 +280,7 @@ class AssetsAPI(APIClient):
                 subtree.
 
         Returns:
-            AssetList: The requested assets sorted topologically.
+            AssetList: The requested assets.
         """
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
         asset = self.retrieve(id=id, external_id=external_id)
