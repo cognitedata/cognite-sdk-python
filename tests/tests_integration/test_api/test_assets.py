@@ -54,7 +54,7 @@ def new_asset_hierarchy(post_spy):
     ext_ids = [a.external_id for a in assets]
     yield random_prefix, ext_ids
 
-    COGNITE_CLIENT.assets.delete(external_id=random_prefix + "0")
+    COGNITE_CLIENT.assets.delete(external_id=random_prefix + "0", recursive=True)
 
 
 @pytest.fixture
@@ -96,7 +96,6 @@ class TestAssetsAPI:
             else:
                 assert asset.parent_id == external_id_to_id[asset.external_id[:-1]]
 
-    @pytest.mark.skip
     def test_get_subtree(self, root_test_asset):
         assert 781 == len(COGNITE_CLIENT.assets.retrieve_subtree(root_test_asset.id))
         assert 6 == len(COGNITE_CLIENT.assets.retrieve_subtree(root_test_asset.id, depth=1))

@@ -1,3 +1,5 @@
+import time
+
 import pytest
 
 from cognite.client import CogniteClient
@@ -54,16 +56,15 @@ def group_id():
 
 
 class TestGroupsAPI:
-    @pytest.mark.xfail(strict=True)
     def test_list(self):
         res = COGNITE_CLIENT.iam.groups.list(all=True)
         assert len(res) > 0
 
-    @pytest.mark.xfail(strict=True)
-    def test_create_and_delete(self):
-        group = COGNITE_CLIENT.iam.groups.create(Group(name="bla"))
-        COGNITE_CLIENT.iam.groups.delete(group.id)
-        assert group.id not in {g.id for g in COGNITE_CLIENT.iam.groups.list(all=True)}
+    def test_create(self):
+        group = COGNITE_CLIENT.iam.groups.create(
+            Group(name="bla", capabilities=[{"eventsAcl": {"actions": ["READ"], "scope": {"all": {}}}}])
+        )
+        assert "bla" == group.name
 
     def test_list_service_accounts_in_group(self, group_id):
         service_accounts = COGNITE_CLIENT.iam.groups.list_service_accounts(group_id)
