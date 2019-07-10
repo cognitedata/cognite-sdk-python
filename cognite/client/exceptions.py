@@ -44,7 +44,7 @@ class CogniteAPIError(CogniteMultiException):
 
             try:
                 c.login.status()
-            except APIError as e:
+            except CogniteAPIError as e:
                 if e.code == 401:
                     print("You are not authorized")
                 elif e.code == 400:
