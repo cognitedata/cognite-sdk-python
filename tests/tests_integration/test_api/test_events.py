@@ -25,16 +25,25 @@ def post_spy():
         yield
 
 
+@pytest.fixture
+def root_test_asset():
+    for asset in COGNITE_CLIENT.assets(root=True):
+        if asset.name.startswith("test__"):
+            return asset
+
+
 class TestEventsAPI:
-    @pytest.mark.skip
     def test_retrieve(self):
         res = COGNITE_CLIENT.events.list(limit=1)
         assert res[0] == COGNITE_CLIENT.events.retrieve(res[0].id)
 
-    @pytest.mark.skip
-    def test_retrieve_multiple(self):
-        res = COGNITE_CLIENT.events.list(limit=2)
-        assert res == COGNITE_CLIENT.events.retrieve_multiple([e.id for e in res])
+    def test_retrieve_multiple(self, root_test_asset):
+        res_listed_ids = [
+            e.id for e in COGNITE_CLIENT.events.list(limit=2, root_asset_ids=[{"id": root_test_asset.id}])
+        ]
+        res_lookup_ids = [e.id for e in COGNITE_CLIENT.events.retrieve_multiple(res_listed_ids)]
+        for listed_id in res_listed_ids:
+            assert listed_id in res_lookup_ids
 
     def test_list(self, post_spy):
         with set_request_limit(COGNITE_CLIENT.events, 10):

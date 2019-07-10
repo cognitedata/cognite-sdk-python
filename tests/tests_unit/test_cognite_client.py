@@ -70,7 +70,7 @@ class TestCogniteClient:
     def test_project_is_correct(self, rsps_with_login_mock):
         with unset_env_var("COGNITE_PROJECT"):
             c = CogniteClient()
-        assert c.project == "test"
+        assert c.config.project == "test"
 
     def test_no_api_key_set(self):
         with unset_env_var("COGNITE_API_KEY"):
@@ -151,8 +151,8 @@ class TestCogniteClient:
         sleep(random.random())
         client = CogniteClient()
 
-        assert api_key == client._config.api_key
-        assert project == client.project
+        assert api_key == client.config.api_key
+        assert project == client.config.project
 
     def test_create_client_thread_local_config(self, thread_local_credentials_module):
         with ThreadPool() as pool:
