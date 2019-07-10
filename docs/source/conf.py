@@ -44,7 +44,7 @@ master_doc = "index"
 
 # General information about the project.
 project = "cognite-sdk"
-copyright = "2018, Erlend Vollset"
+copyright = "2019, Cognite AS"
 author = "Erlend Vollset"
 
 # The version info for the project you're documenting, acts as replacement for
@@ -133,9 +133,7 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
-latex_documents = [
-    (master_doc, "cognite-sdk-python.tex", "cognite-sdk-python Documentation", "Erlend Vollset", "manual")
-]
+latex_documents = [(master_doc, "cognite-sdk-python.tex", "cognite-sdk-python Documentation", "Cognite", "manual")]
 
 
 # -- Options for manual page output ---------------------------------------
