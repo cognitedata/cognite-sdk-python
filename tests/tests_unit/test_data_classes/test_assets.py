@@ -4,7 +4,7 @@ from unittest.mock import call
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import Asset, AssetList
+from cognite.client.data_classes import Asset, AssetList, Event, EventList, FileMetadata, FileMetadataList
 
 c = CogniteClient()
 
@@ -74,3 +74,24 @@ class TestAssetList:
         a.files()
         assert c.files.list.call_args == call(asset_ids=[1], limit=-1)
         assert c.files.list.call_count == 1
+
+    @pytest.mark.parametrize(
+        "resource_class, resource_list_class, method",
+        [(FileMetadata, FileMetadataList, "files"), (Event, EventList, "events")],
+    )
+    @mock.patch("cognite.client.utils._concurrency")
+    def test_get_related_resources_should_not_return_duplicates(
+        self, mock_concurrency, resource_class, resource_list_class, method
+    ):
+        assets = AssetList([Asset(id=1), Asset(id=2), Asset(id=3)], cognite_client=mock.MagicMock())
+        r1 = resource_class(id=1)
+        r2 = resource_class(id=2)
+        r3 = resource_class(id=3)
+        resources_a1 = resource_list_class([r1])
+        resources_a2 = resource_list_class([r2, r3])
+        resources_a3 = resource_list_class([r2, r3])
+
+        mock_concurrency.execute_tasks_concurrently.return_value.results = [resources_a1, resources_a2, resources_a3]
+        resources = getattr(assets, method)()
+        expected = [r1, r2, r3]
+        assert expected == resources

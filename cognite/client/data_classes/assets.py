@@ -213,8 +213,12 @@ class AssetList(CogniteResourceList):
             resource_api.list, tasks, resource_api._config.max_workers
         ).results
         resources = resource_list_class([])
+        seen = set()
         for res in res_list:
-            resources.extend(res)
+            for resource in res:
+                if resource.id not in seen:
+                    resources.append(resource)
+                    seen.add(resource.id)
         return resources
 
 
