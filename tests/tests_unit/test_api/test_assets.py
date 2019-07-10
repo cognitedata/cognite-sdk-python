@@ -39,67 +39,58 @@ def mock_assets_response(rsps):
     yield rsps
 
 
-# @pytest.fixture
-# def mock_get_subtree_base(rsps):
-#     rsps.add(
-#         rsps.POST,
-#         ASSETS_API._get_base_url_with_base_path() + "/assets/byids",
-#         status=200,
-#         json={"items": [{"id": 1, "path": [1], "depth": 0}]},
-#     )
-#     rsps.add(
-#         rsps.POST,
-#         ASSETS_API._get_base_url_with_base_path() + "/assets/list",
-#         status=200,
-#         json={
-#             "items": [
-#                 {"id": 2, "path": [1, 2], "depth": 1},
-#                 {"id": 3, "path": [1, 3], "depth": 1},
-#                 {"id": 4, "path": [1, 4], "depth": 1},
-#             ]
-#         },
-#     )
-#     rsps.add(
-#         rsps.POST,
-#         ASSETS_API._get_base_url_with_base_path() + "/assets/list",
-#         status=200,
-#         json={"items": [{"id": 5, "path": [1, 2, 5], "depth": 2}, {"id": 6, "path": [1, 2, 5], "depth": 2}]},
-#     )
-#     rsps.add(
-#         rsps.POST,
-#         ASSETS_API._get_base_url_with_base_path() + "/assets/list",
-#         status=200,
-#         json={"items": [{"id": 7, "path": [1, 3, 7], "depth": 2}, {"id": 8, "path": [1, 3, 8], "depth": 2}]},
-#     )
-#     rsps.add(
-#         rsps.POST,
-#         ASSETS_API._get_base_url_with_base_path() + "/assets/list",
-#         status=200,
-#         json={"items": [{"id": 9, "path": [1, 4, 9], "depth": 2}, {"id": 10, "path": [1, 4, 10], "depth": 2}]},
-#     )
-#     yield rsps
+@pytest.fixture
+def mock_get_subtree_base(rsps):
+    rsps.add(
+        rsps.POST, ASSETS_API._get_base_url_with_base_path() + "/assets/byids", status=200, json={"items": [{"id": 1}]}
+    )
+    rsps.add(
+        rsps.POST,
+        ASSETS_API._get_base_url_with_base_path() + "/assets/list",
+        status=200,
+        json={"items": [{"id": 2, "parentId": 1}, {"id": 3, "parentId": 1}, {"id": 4, "parentId": 1}]},
+    )
+    rsps.add(
+        rsps.POST,
+        ASSETS_API._get_base_url_with_base_path() + "/assets/list",
+        status=200,
+        json={"items": [{"id": 5, "parentId": 2}, {"id": 6, "parentId": 2}]},
+    )
+    rsps.add(
+        rsps.POST,
+        ASSETS_API._get_base_url_with_base_path() + "/assets/list",
+        status=200,
+        json={"items": [{"id": 7, "parentId": 3}, {"id": 8, "parentId": 3}]},
+    )
+    rsps.add(
+        rsps.POST,
+        ASSETS_API._get_base_url_with_base_path() + "/assets/list",
+        status=200,
+        json={"items": [{"id": 9, "parentId": 4}, {"id": 10, "parentId": 4}]},
+    )
+    yield rsps
 
 
-# @pytest.fixture
-# def mock_get_subtree(mock_get_subtree_base):
-#     mock_get_subtree_base.add(
-#         mock_get_subtree_base.POST,
-#         ASSETS_API._get_base_url_with_base_path() + "/assets/list",
-#         status=200,
-#         json={"items": []},
-#     )
-#     yield mock_get_subtree_base
+@pytest.fixture
+def mock_get_subtree(mock_get_subtree_base):
+    mock_get_subtree_base.add(
+        mock_get_subtree_base.POST,
+        ASSETS_API._get_base_url_with_base_path() + "/assets/list",
+        status=200,
+        json={"items": []},
+    )
+    yield mock_get_subtree_base
 
 
-# @pytest.fixture
-# def mock_get_subtree_w_request_failure(mock_get_subtree_base):
-#     mock_get_subtree_base.add(
-#         mock_get_subtree_base.POST,
-#         ASSETS_API._get_base_url_with_base_path() + "/assets/list",
-#         status=503,
-#         json={"error": {"message": "Service Unavailable"}},
-#     )
-#     yield mock_get_subtree_base
+@pytest.fixture
+def mock_get_subtree_w_request_failure(mock_get_subtree_base):
+    mock_get_subtree_base.add(
+        mock_get_subtree_base.POST,
+        ASSETS_API._get_base_url_with_base_path() + "/assets/list",
+        status=503,
+        json={"error": {"message": "Service Unavailable"}},
+    )
+    yield mock_get_subtree_base
 
 
 class TestAssets:
@@ -138,12 +129,17 @@ class TestAssets:
 
     def test_delete_single(self, mock_assets_response):
         res = ASSETS_API.delete(id=1)
-        assert {"items": [{"id": 1}]} == jsgz_load(mock_assets_response.calls[0].request.body)
+        assert {"items": [{"id": 1}], "recursive": False} == jsgz_load(mock_assets_response.calls[0].request.body)
+        assert res is None
+
+    def test_delete_single_recursive(self, mock_assets_response):
+        res = ASSETS_API.delete(id=1, recursive=True)
+        assert {"items": [{"id": 1}], "recursive": True} == jsgz_load(mock_assets_response.calls[0].request.body)
         assert res is None
 
     def test_delete_multiple(self, mock_assets_response):
         res = ASSETS_API.delete(id=[1])
-        assert {"items": [{"id": 1}]} == jsgz_load(mock_assets_response.calls[0].request.body)
+        assert {"items": [{"id": 1}], "recursive": False} == jsgz_load(mock_assets_response.calls[0].request.body)
         assert res is None
 
     def test_update_with_resource_class(self, mock_assets_response):
@@ -178,14 +174,12 @@ class TestAssets:
             "limit": None,
         } == jsgz_load(mock_assets_response.calls[0].request.body)
 
-    @pytest.mark.skip
     def test_get_subtree(self, mock_get_subtree):
         assets = COGNITE_CLIENT.assets.retrieve_subtree(id=1)
         assert len(assets) == 10
         for i, asset in enumerate(assets):
             assert asset.id == i + 1
 
-    @pytest.mark.skip
     def test_get_subtree_w_depth(self, mock_get_subtree):
         mock_get_subtree.assert_all_requests_are_fired = False
         assets = COGNITE_CLIENT.assets.retrieve_subtree(id=1, depth=1)
@@ -193,7 +187,6 @@ class TestAssets:
         for i, asset in enumerate(assets):
             assert asset.id == i + 1
 
-    @pytest.mark.skip
     def test_get_subtree_w_error(self, mock_get_subtree_w_request_failure):
         with pytest.raises(CogniteAPIError):
             COGNITE_CLIENT.assets.retrieve_subtree(id=1)
@@ -324,41 +317,39 @@ class TestAssetPoster:
         for li in unblocked_assets_lists:
             assert 3 == len(li)
 
-    # @pytest.fixture
-    # def mock_post_asset_hierarchy(self, rsps):
-    #     ASSETS_API._config.max_workers = 1
+    @pytest.fixture
+    def mock_post_asset_hierarchy(self, rsps):
+        ASSETS_API._config.max_workers = 1
 
-    #     def request_callback(request):
-    #         items = jsgz_load(request.body)["items"]
-    #         response_assets = []
-    #         for item in items:
-    #             parent_id = None
-    #             if "parentId" in item:
-    #                 parent_id = item["parentId"]
-    #             if "parentExternalId" in item:
-    #                 parent_id = item["parentExternalId"] + "id"
-    #             id = item.get("externalId", "root_") + "id"
-    #             response_assets.append(
-    #                 {
-    #                     "id": id,
-    #                     "parentId": parent_id,
-    #                     "externalId": item["externalId"],
-    #                     "parentExternalId": item.get("parentExternalId"),
-    #                     "path": [parent_id or "", id],
-    #                 }
-    #             )
-    #         return 200, {}, json.dumps({"items": response_assets})
+        def request_callback(request):
+            items = jsgz_load(request.body)["items"]
+            response_assets = []
+            for item in items:
+                parent_id = None
+                if "parentId" in item:
+                    parent_id = item["parentId"]
+                if "parentExternalId" in item:
+                    parent_id = item["parentExternalId"] + "id"
+                id = item.get("externalId", "root_") + "id"
+                response_assets.append(
+                    {
+                        "id": id,
+                        "parentId": parent_id,
+                        "externalId": item["externalId"],
+                        "parentExternalId": item.get("parentExternalId"),
+                    }
+                )
+            return 200, {}, json.dumps({"items": response_assets})
 
-    #     rsps.add_callback(
-    #         rsps.POST,
-    #         ASSETS_API._get_base_url_with_base_path() + "/assets",
-    #         callback=request_callback,
-    #         content_type="application/json",
-    #     )
-    #     yield rsps
-    #     ASSETS_API._config.max_workers = 10
+        rsps.add_callback(
+            rsps.POST,
+            ASSETS_API._get_base_url_with_base_path() + "/assets",
+            callback=request_callback,
+            content_type="application/json",
+        )
+        yield rsps
+        ASSETS_API._config.max_workers = 10
 
-    @pytest.mark.skip
     @pytest.mark.parametrize(
         "limit, depth, children_per_node, expected_num_calls",
         [(100, 4, 10, 13), (9, 3, 9, 11), (100, 101, 1, 2), (1, 10, 1, 10)],
@@ -376,7 +367,6 @@ class TestAssetPoster:
             else:
                 assert asset.id[:-3] == asset.parent_id[:-2]
 
-    @pytest.mark.skip
     def test_post_assets_over_limit_only_resolved(self, mock_post_asset_hierarchy):
         with set_request_limit(ASSETS_API, 1):
             _AssetPoster([Asset(parent_id=1), Asset(parent_id=2)], ASSETS_API).post()

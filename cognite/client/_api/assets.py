@@ -18,6 +18,7 @@ class AssetsAPI(APIClient):
         chunk_size: int = None,
         name: str = None,
         parent_ids: List[int] = None,
+        root_ids: List[Dict[str, Any]] = None,
         metadata: Dict[str, Any] = None,
         source: str = None,
         created_time: Dict[str, Any] = None,
@@ -34,6 +35,7 @@ class AssetsAPI(APIClient):
             chunk_size (int, optional): Number of assets to return in each chunk. Defaults to yielding one asset a time.
             name (str): Name of asset. Often referred to as tag.
             parent_ids (List[int]): No description.
+            root_ids (List[Dict[str, Any]]): List of root ids/external ids to filter on.
             metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
             source (str): The source of this asset
             created_time (Dict[str, Any]): Range between two timestamps
@@ -48,7 +50,15 @@ class AssetsAPI(APIClient):
         """
 
         filter = AssetFilter(
-            name, parent_ids, metadata, source, created_time, last_updated_time, root, external_id_prefix
+            name=name,
+            parent_ids=parent_ids,
+            root_ids=root_ids,
+            metadata=metadata,
+            source=source,
+            created_time=created_time,
+            last_updated_time=last_updated_time,
+            root=root,
+            external_id_prefix=external_id_prefix,
         ).dump(camel_case=True)
         return self._list_generator(method="POST", chunk_size=chunk_size, filter=filter, limit=limit)
 
@@ -121,6 +131,7 @@ class AssetsAPI(APIClient):
         self,
         name: str = None,
         parent_ids: List[int] = None,
+        root_ids: List[Dict[str, Any]] = None,
         metadata: Dict[str, Any] = None,
         source: str = None,
         created_time: Dict[str, Any] = None,
@@ -133,7 +144,8 @@ class AssetsAPI(APIClient):
 
         Args:
             name (str): Name of asset. Often referred to as tag.
-            parent_ids (List[int]): No description.
+            parent_ids (List[int]): List of parent ids to filter on.
+            root_ids (List[Dict[str, Any]]): List of root ids/external ids to filter on.
             metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
             source (str): The source of this asset
             created_time (Dict[str, Any]): Range between two timestamps
@@ -169,7 +181,15 @@ class AssetsAPI(APIClient):
                 ...     asset_list # do something with the assets
         """
         filter = AssetFilter(
-            name, parent_ids, metadata, source, created_time, last_updated_time, root, external_id_prefix
+            name=name,
+            parent_ids=parent_ids,
+            root_ids=root_ids,
+            metadata=metadata,
+            source=source,
+            created_time=created_time,
+            last_updated_time=last_updated_time,
+            root=root,
+            external_id_prefix=external_id_prefix,
         ).dump(camel_case=True)
         return self._list(method="POST", limit=limit, filter=filter)
 
@@ -197,12 +217,15 @@ class AssetsAPI(APIClient):
             return self._create_multiple(asset)
         return _AssetPoster(asset, client=self).post()
 
-    def delete(self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None) -> None:
+    def delete(
+        self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None, recursive: bool = False
+    ) -> None:
         """Delete one or more assets
 
         Args:
             id (Union[int, List[int]): Id or list of ids
             external_id (Union[str, List[str]]): External ID or list of exgernal ids
+            recursive (bool): Recursively delete whole asset subtrees under given ids. Defaults to False.
 
         Returns:
             None
@@ -215,7 +238,9 @@ class AssetsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.assets.delete(id=[1,2,3], external_id="3")
         """
-        self._delete_multiple(ids=id, external_ids=external_id, wrap_ids=True)
+        self._delete_multiple(
+            ids=id, external_ids=external_id, wrap_ids=True, extra_body_fields={"recursive": recursive}
+        )
 
     def update(self, item: Union[Asset, AssetUpdate, List[Union[Asset, AssetUpdate]]]) -> Union[Asset, AssetList]:
         """Update one or more assets
@@ -280,12 +305,13 @@ class AssetsAPI(APIClient):
                 subtree.
 
         Returns:
-            AssetList: The requested assets sorted topologically.
+            AssetList: The requested assets.
         """
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
         asset = self.retrieve(id=id, external_id=external_id)
         subtree = self._get_asset_subtree(AssetList([asset]), current_depth=0, depth=depth)
-        return AssetList(sorted(subtree, key=lambda a: a.depth), cognite_client=self._cognite_client)
+        subtree._cognite_client = self._cognite_client
+        return subtree
 
     def _get_asset_subtree(self, assets: AssetList, current_depth: int, depth: Optional[int]) -> AssetList:
         subtree = assets

@@ -103,9 +103,8 @@ class CogniteResource:
             instance = cls(cognite_client=cognite_client)
             for key, value in resource.items():
                 snake_case_key = utils._auxiliary.to_snake_case(key)
-                if not hasattr(instance, snake_case_key):
-                    raise AttributeError("Attribute '{}' does not exist on '{}'".format(snake_case_key, cls.__name__))
-                setattr(instance, snake_case_key, value)
+                if hasattr(instance, snake_case_key):
+                    setattr(instance, snake_case_key, value)
             return instance
         raise TypeError("Resource must be json str or Dict, not {}".format(type(resource)))
 

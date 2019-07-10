@@ -379,12 +379,18 @@ class APIClient:
         external_ids: Union[List[str], str] = None,
         params: Dict = None,
         headers: Dict = None,
+        extra_body_fields: Dict = None,
     ):
         resource_path = resource_path or self._RESOURCE_PATH
         all_ids = self._process_ids(ids, external_ids, wrap_ids)
         id_chunks = utils._auxiliary.split_into_chunks(all_ids, self._DELETE_LIMIT)
         tasks = [
-            {"url_path": resource_path + "/delete", "json": {"items": chunk}, "params": params, "headers": headers}
+            {
+                "url_path": resource_path + "/delete",
+                "json": {"items": chunk, **(extra_body_fields or {})},
+                "params": params,
+                "headers": headers,
+            }
             for chunk in id_chunks
         ]
         summary = utils._concurrency.execute_tasks_concurrently(self._post, tasks, max_workers=self._config.max_workers)

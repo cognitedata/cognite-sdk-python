@@ -173,49 +173,6 @@ class AssetList(CogniteResourceList):
     _RESOURCE = Asset
     _UPDATE = AssetUpdate
 
-    def _indented_asset_str(self, asset: Asset):
-        single_indent = " " * 8
-        marked_indent = "|______ "
-        indent = len(asset.path) - 1
-
-        s = single_indent * (indent - 1)
-        if indent > 0:
-            s += marked_indent
-        s += str(asset.id) + "\n"
-        dumped = utils._time.convert_time_attributes_to_datetime(asset.dump())
-        for key, value in sorted(dumped.items()):
-            if isinstance(value, dict):
-                s += single_indent * indent + "{}:\n".format(key)
-                for mkey, mvalue in sorted(value.items()):
-                    s += single_indent * indent + " - {}: {}\n".format(mkey, mvalue)
-            elif key != "id":
-                s += single_indent * indent + key + ": " + str(value) + "\n"
-
-        return s
-
-    def __str__(self):
-        try:
-            sorted_assets = sorted(self.data, key=lambda x: x.path)
-        except:
-            return super().__str__()
-
-        if len(sorted_assets) == 0:
-            return super().__str__()
-
-        ids = set([asset.id for asset in sorted_assets])
-
-        s = "\n"
-        root = sorted_assets[0].path[0]
-        for asset in sorted_assets:
-            this_root = asset.path[0]
-            if this_root != root:
-                s += "\n" + "*" * 80 + "\n\n"
-                root = this_root
-            elif len(asset.path) > 1 and asset.path[-2] not in ids:
-                s += "\n" + "-" * 80 + "\n\n"
-            s += self._indented_asset_str(asset)
-        return s
-
     def time_series(self) -> "TimeSeriesList":
         """Retrieve all time series related to these assets.
 
