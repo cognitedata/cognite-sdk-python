@@ -17,7 +17,7 @@ from cognite.client._api.time_series import TimeSeriesList
 from cognite.client.data_classes import Asset, Event, FileMetadata, TimeSeries
 from cognite.client.exceptions import CogniteAPIKeyError
 from cognite.client.utils._logging import DebugLogFormatter
-from tests.utils import BASE_URL, unset_env_var
+from tests.utils import BASE_URL, set_env_var, unset_env_var
 
 _PYPI_ADDRESS = "https://pypi.python.org/simple/cognite-sdk/#history"
 
@@ -166,20 +166,11 @@ class TestCogniteClient:
         log.handlers = []
         log.propagate = False
 
-    @pytest.fixture
-    def set_env_disable_version_check(self):
-        tmp = os.getenv("COGNITE_DISABLE_PYPI_VERSION_CHECK")
-        os.environ["COGNITE_DISABLE_PYPI_VERSION_CHECK"] = "1"
-        yield
-        if tmp is not None:
-            os.environ["COGNITE_DISABLE_PYPI_VERSION_CHECK"] = tmp
-        else:
-            del os.environ["COGNITE_DISABLE_PYPI_VERSION_CHECK"]
-
-    def test_version_check_disabled(self, set_env_disable_version_check, rsps_with_login_mock):
+    def test_version_check_disabled(self, rsps_with_login_mock):
         rsps_with_login_mock.assert_all_requests_are_fired = False
         with unset_env_var("COGNITE_PROJECT"):
-            CogniteClient()
+            with set_env_var("COGNITE_DISABLE_PYPI_VERSION_CHECK", "1"):
+                CogniteClient()
         assert len(rsps_with_login_mock.calls) == 1
         assert rsps_with_login_mock.calls[0].request.url.startswith("https://greenfield.cognitedata.com")
 
@@ -198,23 +189,12 @@ class TestCogniteClient:
         assert c._api_client._request_session.verify == True
         assert c._api_client._request_session_with_retry.verify == True
 
-    @pytest.fixture
-    def set_env_disable_ssl(self):
-        tmp = os.getenv("COGNITE_DISABLE_SSL")
-        os.environ["COGNITE_DISABLE_SSL"] = "1"
-        yield
-        if tmp is not None:
-            os.environ["COGNITE_DISABLE_SSL"] = tmp
-        else:
-            del os.environ["COGNITE_DISABLE_SSL"]
-
     @patch("cognite.client.utils._version_checker.re.findall")
     @patch("cognite.client.utils._version_checker.requests")
-    def test_verify_ssl_disabled(self, mock_requests, mock_findall, set_env_disable_ssl):
-
-        c = CogniteClient()
-
-        mock_requests.get.assert_called_with(_PYPI_ADDRESS, verify=False)
+    def test_verify_ssl_disabled(self, mock_requests, mock_findall):
+        with set_env_var("COGNITE_DISABLE_SSL", "1"):
+            c = CogniteClient()
+            mock_requests.get.assert_called_with(_PYPI_ADDRESS, verify=False)
 
 
 class TestInstantiateWithClient:
