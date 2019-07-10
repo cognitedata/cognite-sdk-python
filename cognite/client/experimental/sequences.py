@@ -177,14 +177,14 @@ class SequenceDataRequest:
 
     Args:
         inclusive_from (int):    Row number to get from (inclusive).
-        inclusive_to (int):      Row number to get to (inclusive).
+        exclusive_to (int):      Row number to get to (exclusive).
         limit (int):             How many rows to return.
         column_ids (List[int]):  ids of the columns to get data for.
     """
 
-    def __init__(self, inclusive_from: int, inclusive_to: int, limit: int = 100, column_ids: List[int] = None):
+    def __init__(self, inclusive_from: int, exclusive_to: int, limit: int = 100, column_ids: List[int] = None):
         self.inclusiveFrom = inclusive_from
-        self.inclusiveTo = inclusive_to
+        self.exclusiveTo = exclusive_to
         self.limit = limit
         self.columnIds = column_ids or []
 
@@ -294,7 +294,7 @@ class SequencesClient(APIClient):
         self,
         id: int,
         inclusive_from: int = None,
-        inclusive_to: int = None,
+        exclusive_to: int = None,
         limit: int = 100,
         column_ids: List[int] = None,
     ) -> SequenceDataResponse:
@@ -304,7 +304,7 @@ class SequencesClient(APIClient):
             id (int):                id of the sequence.
             inclusive_from (int):    Row number to get from (inclusive). If set to None, you'll get data from the first row
                                      that exists.
-            inclusive_to (int):      Row number to get to (inclusive). If set to None, you'll get data to the last row that
+            exclusive_to (int):      Row number to get to (exclusive). If set to None, you'll get data to the last row that
                                      exists (depending on the limit).
             limit (int):             How many rows to return.
             column_ids (List[int]):  ids of the columns to get data for.
@@ -314,7 +314,7 @@ class SequencesClient(APIClient):
         """
         url = "/sequences/{}/getdata".format(id)
         sequenceDataRequest = SequenceDataRequest(
-            inclusive_from=inclusive_from, inclusive_to=inclusive_to, limit=limit, column_ids=column_ids or []
+            inclusive_from=inclusive_from, exclusive_to=exclusive_to, limit=limit, column_ids=column_ids or []
         )
         body = {"items": [sequenceDataRequest.__dict__]}
         res = self._post(url=url, body=body)
