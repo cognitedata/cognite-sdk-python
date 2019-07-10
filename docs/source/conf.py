@@ -44,7 +44,7 @@ master_doc = "index"
 
 # General information about the project.
 project = "cognite-sdk"
-copyright = "2019, Cognite"
+copyright = "2019, Cognite AS"
 author = "Erlend Vollset"
 
 # The version info for the project you're documenting, acts as replacement for
