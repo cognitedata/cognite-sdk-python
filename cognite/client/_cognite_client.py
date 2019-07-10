@@ -95,15 +95,6 @@ class CogniteClient:
         return utils._auxiliary.get_current_sdk_version()
 
     @property
-    def project(self) -> str:
-        """Returns the project you are currently authenticated towards.
-
-        Returns:
-            str: The current project you are authenticated to.
-        """
-        return self._config.project
-
-    @property
     def config(self) -> ClientConfig:
         """Returns a config object containing the configuration for the current client.
 
