@@ -70,3 +70,14 @@ def unset_env_var(name: Union[str, List[str]]):
     for n in name:
         if tmp[n] is not None:
             os.environ[n] = tmp[n]
+
+
+@contextmanager
+def set_env_var(name: str, value: str):
+    tmp = os.getenv(name)
+    os.environ[name] = value
+    yield
+    if tmp is not None:
+        os.environ[name] = tmp
+    else:
+        del os.environ[name]
