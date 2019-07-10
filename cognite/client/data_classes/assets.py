@@ -9,10 +9,10 @@ class Asset(CogniteResource):
 
     Args:
         external_id (str): The external ID provided by the client. Must be unique within the project.
-        name (str): The name of the asset. Often referred to as a tag.
+        name (str): The name of the asset.
         parent_id (int): A JavaScript-friendly internal ID for the object.
         description (str): The description of the asset.
-        metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
+        metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         source (str): The source of the asset.
         id (int): A JavaScript-friendly internal ID for the object.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -227,10 +227,10 @@ class AssetFilter(CogniteFilter):
     """Filter on assets with strict matching.
 
     Args:
-        name (str): The name of the asset. Often referred to as a tag.
+        name (str): The name of the asset.
         parent_ids (List[int]): No description.
         root_ids (List[Union[Dict[str, Any], Dict[str, Any]]]): No description.
-        metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
+        metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         source (str): The source of the asset.
         created_time (Dict[str, Any]): Range between two timestamps.
         last_updated_time (Dict[str, Any]): Range between two timestamps.

@@ -13,7 +13,7 @@ class FileMetadata(CogniteResource):
         name (str): Name of the file.
         source (str): The source of the file.
         mime_type (str): File type. E.g. text/plain, application/pdf, ..
-        metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
+        metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         asset_ids (List[int]): No description.
         id (int): A JavaScript-friendly internal ID for the object.
         uploaded (bool): Whether or not the actual file is uploaded.  This field is returned only by the API, it has no effect in a post body.
@@ -61,7 +61,7 @@ class FileMetadataFilter(CogniteFilter):
     Args:
         name (str): Name of the file.
         mime_type (str): File type. E.g. text/plain, application/pdf, ..
-        metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
+        metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         asset_ids (List[int]): Only include files that reference these specific asset IDs.
         source (str): The source of this event.
         created_time (Dict[str, Any]): Range between two timestamps.

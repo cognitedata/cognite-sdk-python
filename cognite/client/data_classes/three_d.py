@@ -11,7 +11,7 @@ class ThreeDModel(CogniteResource):
         name (str): The name of the model.
         id (int): The ID of the model.
         created_time (int): The creation time of the resource, in milliseconds since January 1, 1970 at 00:00 UTC.
-        metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
+        metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
@@ -94,7 +94,7 @@ class ThreeDModelRevision(CogniteResource):
         rotation (List[float]): No description.
         camera (Dict[str, Any]): Initial camera position and target.
         status (str): The status of the revision.
-        metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
+        metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         thumbnail_threed_file_id (int): The threed file ID of a thumbnail for the revision. Use /3d/files/{id} to retrieve the file.
         thumbnail_url (str): The URL of a thumbnail for the revision.
         asset_mapping_count (int): The number of asset mappings for this revision.

@@ -4,7 +4,7 @@ from typing import List
 from cognite.client.data_classes._base import *
 
 
-# GenClass: GetTimeSeriesMetadataDTO
+# GenClass: GetTimeSeriesMetadataDTO, PostTimeSeriesMetadataDTO
 class TimeSeries(CogniteResource):
     """No description.
 
@@ -13,7 +13,7 @@ class TimeSeries(CogniteResource):
         external_id (str): The externally supplied ID for the time series.
         name (str): The name of the time series.
         is_string (bool): Whether the time series is string valued or not.
-        metadata (Dict[str, Any]): Additional metadata. String key -> String value
+        metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         unit (str): The physical unit of the time series.
         asset_id (int): The asset that this time series belongs to.
         is_step (bool): Whether the time series is a step series or not.
@@ -21,6 +21,7 @@ class TimeSeries(CogniteResource):
         security_categories (List[int]): The required security categories to access this time series.
         created_time (int): Time when this time series was created in CDF in milliseconds since Jan 1, 1970.
         last_updated_time (int): The latest time when this time series was updated in CDF in milliseconds since Jan 1, 1970.
+        legacy_name (str): Set a value for legacyName to allow applications using API v0.3, v04, v05, and v0.6 to access this time series. The legacy name is the human-readable name for the time series and is mapped to the name field used in API versions 0.3-0.6. The legacyName field value must be unique, and setting this value to an already existing value will return an error. We recommend that you set this field to the same value as externalId.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
@@ -38,6 +39,7 @@ class TimeSeries(CogniteResource):
         security_categories: List[int] = None,
         created_time: int = None,
         last_updated_time: int = None,
+        legacy_name: str = None,
         cognite_client=None,
     ):
         self.id = id
@@ -52,6 +54,7 @@ class TimeSeries(CogniteResource):
         self.security_categories = security_categories
         self.created_time = created_time
         self.last_updated_time = last_updated_time
+        self.legacy_name = legacy_name
         self._cognite_client = cognite_client
 
     # GenStop
