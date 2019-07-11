@@ -13,22 +13,17 @@ This is the Cognite Python SDK for developers and data scientists working with C
 
 Installation
 ^^^^^^^^^^^^
-.. note::
-
-   The SDK version 1.0.0 is currently in alpha so you need to include the :code:`--pre` flag in order to install it.
-   If you already have the the SDK installed in your environment, include the :code:`-U` flag to upgrade aswell.
-
 To install this package:
 
 .. code-block:: bash
 
-   pip install --pre cognite-sdk
+   pip install cognite-sdk
 
 To install this package without the pandas and NumPy support:
 
 .. code-block:: bash
 
-   pip install --pre cognite-sdk-core
+   pip install cognite-sdk-core
 
 Contents
 ^^^^^^^^

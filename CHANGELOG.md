@@ -16,8 +16,10 @@ Changes are grouped as follows
 
 ## [Unreleased]
 - Concurrent reads for all resource types using `/cursors` endpoints
+- Upserts for all resource types
+- Separate read/write fields on data classes
 
-## [1.0.0 [alpha]]
+## [1.0.0] - 2019-07-11
 ### Added
 - Support for all endpoints in Cognite API
 - Generator with hidden cursor for all resource types
@@ -25,6 +27,7 @@ Changes are grouped as follows
 - Distribution of "core" sdk which does not depend on pandas and numpy
 - Typehints for all methods
 - Support for posting an entire asset hierarchy, resolving ref_id/parent_ref_id automatically
+- config attribute on CogniteClient to view current configuration. 
 
 ### Removed
 - `experimental` client in order to ensure sdk stability.
@@ -35,7 +38,3 @@ Changes are grouped as follows
 - Renamed `stable` namespace to `api`
 - Rewrote logic for concurrent reads of datapoints
 - Renamed CogniteClient parameter `num_of_workers` to `max_workers`
-- Empty artifacts folder now raises exception when building source package in `model_hosting`.
- 
-## Fixed
-- Bug causing `create_schedule` to yield 400 if description is not set
