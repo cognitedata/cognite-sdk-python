@@ -7,7 +7,7 @@ from cognite.client import CogniteClient
 from cognite.client.stable.assets import Asset, AssetListResponse, AssetResponse
 from tests.conftest import generate_random_string
 
-assets = CogniteClient(debug=True).assets
+assets = CogniteClient().assets
 
 
 @pytest.fixture(scope="module")

@@ -103,7 +103,7 @@ class ModelsClient(APIClient):
             metadata (Dict[str, Any]):          Metadata about model
             input_fields (List[str]):   List of input fields the model accepts
             output_fields (List[str]):   List of output fields the model produces
-            webhook_url (str): Webhook url to send notifications to upon failing scheduled predictions.
+            webhook_url (str): Webhook url to send notifications to upon failing scheduled predictions
 
         Returns:
             experimental.model_hosting.models.ModelResponse: The created model.
