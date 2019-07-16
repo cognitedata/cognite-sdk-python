@@ -32,7 +32,7 @@ from cognite.client.experimental.model_hosting.source_packages import (
 from tests.conftest import MockReturnValue
 from tests.utils import get_call_args_data_from_mock
 
-modelhosting_client = CogniteClient().experimental.model_hosting
+modelhosting_client = CogniteClient(debug=True).experimental.model_hosting
 
 models = modelhosting_client.models
 schedules = modelhosting_client.schedules
@@ -135,7 +135,7 @@ class TestModels:
     @pytest.fixture
     def created_model(self):
         model_name = "test-model-{}".format(randint(0, 1e5))
-        model = models.create_model(name=model_name)
+        model = models.create_model(name=model_name, webhook_url="https://bla.bla")
         yield model
         models.delete_model(model.id)
 

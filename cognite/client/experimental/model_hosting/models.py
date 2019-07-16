@@ -20,6 +20,7 @@ class ModelResponse(CogniteResponse):
         self.active_version_id = item["activeVersionId"]
         self.input_fields = item["inputFields"]
         self.output_fields = item["outputFields"]
+        self.webhook_url = item["webhookUrl"]
 
 
 class ModelCollectionResponse(CogniteCollectionResponse):
@@ -92,6 +93,7 @@ class ModelsClient(APIClient):
         metadata: Dict[str, Any] = None,
         input_fields: List[Dict[str, str]] = None,
         output_fields: List[Dict[str, str]] = None,
+        webhook_url: str = None,
     ) -> ModelResponse:
         """Creates a new model
 
@@ -100,7 +102,8 @@ class ModelsClient(APIClient):
             description (str):      Description
             metadata (Dict[str, Any]):          Metadata about model
             input_fields (List[str]):   List of input fields the model accepts
-            output_fields (List[str]:   List of output fields the model produces
+            output_fields (List[str]):   List of output fields the model produces
+            webhook_url (str): Webhook url to send notifications to upon failing scheduled predictions.
 
         Returns:
             experimental.model_hosting.models.ModelResponse: The created model.
@@ -113,6 +116,8 @@ class ModelsClient(APIClient):
             "inputFields": input_fields or [],
             "outputFields": output_fields or [],
         }
+        if webhook_url is not None:
+            model_body["webhookUrl"] = webhook_url
         res = self._post(url, body=model_body)
         return ModelResponse(res.json())
 
@@ -146,7 +151,12 @@ class ModelsClient(APIClient):
         return ModelResponse(res.json())
 
     def update_model(
-        self, id: int, description: str = None, metadata: Dict[str, str] = None, active_version_id: int = None
+        self,
+        id: int,
+        description: str = None,
+        metadata: Dict[str, str] = None,
+        active_version_id: int = None,
+        webhook_url: str = None,
     ) -> ModelResponse:
         """Update a model.
 
@@ -155,6 +165,7 @@ class ModelsClient(APIClient):
             description (str): Description of model.
             metadata (Dict[str, str]): metadata about model.
             active_version_id (int): Active version of model.
+            webhook_url (str): Webhook url to send notifications to upon failing scheduled predictions.
 
         Returns:
             experimental.model_hosting.models.ModelResponse: Updated model
@@ -167,6 +178,8 @@ class ModelsClient(APIClient):
             body.update({"metadata": {"set": metadata}})
         if active_version_id:
             body.update({"activeVersionId": {"set": active_version_id}})
+        if webhook_url:
+            body.update({"webhookUrl": {"set": webhook_url}})
         res = self._put(url, body=body)
         return ModelResponse(res.json())
 
