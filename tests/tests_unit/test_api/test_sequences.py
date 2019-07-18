@@ -1,3 +1,4 @@
+import math
 import re
 from unittest import mock
 
@@ -70,6 +71,22 @@ def mock_get_datapoints(rsps):
 
 
 @pytest.fixture
+def mock_get_datapoints_with_null(rsps):
+    json = {
+        "items": [
+            {
+                "id": 0,
+                "externalId": "eid",
+                "columns": [{"id": 0, "externalId": "intcol"}, {"id": 1, "externalId": "strcol"}],
+                "rows": [{"rowNumber": 0, "values": [1, None]}, {"rowNumber": 0, "values": [None, "blah"]}],
+            }
+        ]
+    }
+    rsps.add(rsps.POST, SEQ_API._get_base_url_with_base_path() + "/sequences/data/list", status=200, json=json)
+    yield rsps
+
+
+@pytest.fixture
 def mock_delete_datapoints(rsps):
     rsps.add(rsps.POST, SEQ_API._get_base_url_with_base_path() + "/sequences/data/delete", status=200, json={})
     yield rsps
@@ -105,7 +122,7 @@ class TestSequences:
         assert mock_seq_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
     def test_create_multiple(self, mock_seq_response):
-        res = SEQ_API.create([Sequence(external_id="1", name="blabla", columns=[{}])])
+        res = SEQ_API.create([Sequence(external_id="1", name="blabla", columns=[{"externalId": "cid"}])])
         assert isinstance(res, SequenceList)
         assert mock_seq_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
@@ -199,14 +216,28 @@ class TestSequences:
         } == jsgz_load(mock_post_datapoints.calls[0].request.body)
 
     def test_retrieve_by_id(self, mock_get_datapoints):
-        data = SEQ_API.data.retrieve(id=123, start=1000000, end=1100000)
+        data = SEQ_API.data.retrieve(id=123)
         assert isinstance(data, list)
         assert 1 == len(data)
 
     def test_retrieve_by_external_id(self, mock_get_datapoints):
-        data = SEQ_API.data.retrieve(external_id="foo", start=1000000, end=1100000)
+        data = SEQ_API.data.retrieve(external_id="foo", start=1, end=1000)
         assert isinstance(data, list)
         assert 1 == len(data)
+
+    def test_retrieve_dataframe(self, mock_get_datapoints):
+        df = SEQ_API.data.retrieve_dataframe(external_id="foo", start=1000000, end=1100000)
+        assert {"ceid"} == set(df.columns)
+        assert df.shape[0] > 0
+        assert df.index == [0]
+
+    def test_retrieve_dataframe_convert_null(self, mock_get_datapoints_with_null):
+        df = SEQ_API.data.retrieve_dataframe(external_id="foo")
+        assert {"strcol", "intcol"} == set(df.columns)
+        assert "None" not in df.strcol
+        assert df.strcol.isna().any()
+        assert df.intcol.isna().any()
+        assert 2 == df.shape[0]
 
     def test_delete_by_id(self, mock_delete_datapoints):
         res = SEQ_API.data.delete(id=1, rows=[1, 2, 3])

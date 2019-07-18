@@ -1,3 +1,4 @@
+import math
 from typing import *
 
 from cognite.client import utils
@@ -138,11 +139,11 @@ class SequencesAPI(APIClient):
         filter = {"assetIds": str(asset_ids) if asset_ids else None}
         return self._list(method="GET", filter=filter, limit=limit)
 
-    def create(self, time_series: Union[Sequence, List[Sequence]]) -> Union[Sequence, SequenceList]:
+    def create(self, sequences: Union[Sequence, List[Sequence]]) -> Union[Sequence, SequenceList]:
         """Create one or more sequences.
 
         Args:
-            time_series (Union[Sequence, List[Sequence]]): Sequence or list of Sequence to create.
+            sequences (Union[Sequence, List[Sequence]]): Sequence or list of Sequence to create.
 
         Returns:
             Union[Sequence, SequenceList]: The created sequences.
@@ -156,7 +157,7 @@ class SequencesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> ts = c.sequences.create(Sequence(name="my ts"))
         """
-        return self._create_multiple(items=time_series)
+        return self._create_multiple(items=sequences)
 
     def delete(self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None) -> None:
         """Delete one or more sequences.
@@ -257,13 +258,13 @@ class SequencesDataAPI(APIClient):
         id: int = None,
         external_id: str = None,
     ) -> None:
-        """Insert datapoints into a sequence
+        """Insert rows into a sequence
 
         Args:
             columns: list of id or external id for the columns of the sequence
             rows: dictionary of row number => data, where data is a list corresponding to the given columns
-            id (int): Id of sequence to insert datapoints into.
-            external_id (str): External id of sequence to insert datapoint into.
+            id (int): Id of sequence to insert rows into.
+            external_id (str): External id of sequence to insert rows into.
 
         Returns:
             None
@@ -361,7 +362,9 @@ class SequencesDataAPI(APIClient):
         """
         pd = utils._auxiliary.local_import("pandas")
         col, data = self._retrieve_with_columns(start, end, columns, external_id, id)
-        data_dict = {k: list(v) for k, v in zip(col, zip(*[d["values"] for d in data]))}
+
+        transposed_data = zip(*[[d or math.nan for d in row["values"]] for row in data]) # make sure string columns don't have 'None'
+        data_dict = {k: list(v) for k, v in zip(col, transposed_data)}
         return pd.DataFrame(index=[d["rowNumber"] for d in data], data=data_dict)
 
     def _retrieve_with_columns(
