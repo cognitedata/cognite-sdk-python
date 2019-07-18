@@ -8,6 +8,7 @@ import pytest
 from cognite.client import CogniteClient
 from cognite.client.data_classes import Sequence, SequenceFilter, SequenceList, SequenceUpdate
 from tests.utils import jsgz_load
+import pandas as pd
 
 COGNITE_CLIENT = CogniteClient()
 SEQ_API = COGNITE_CLIENT.sequences
