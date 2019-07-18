@@ -187,7 +187,6 @@ You can set default configurations with these environment variables:
     $ export COGNITE_MAX_RETRY_BACKOFF = <number-of-seconds>
     $ export COGNITE_MAX_CONNECTION_POOL_SIZE = <number-of-connections-in-pool>
     $ export COGNITE_STATUS_FORCELIST = "429,502,503"
-    $ export COGNITE_EXPERIMENTAL_MODE = "1"
 
 Concurrency and connection pooling
 ----------------------------------
@@ -759,9 +758,6 @@ CogniteMissingClientError
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 .. autoexception:: cognite.client.exceptions.CogniteMissingClientError
 
-CogniteExperimentalFeature
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. autoexception:: cognite.client.exceptions.CogniteExperimentalFeature
 
 Utils
 -----

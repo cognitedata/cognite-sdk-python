@@ -9,7 +9,6 @@ from cognite.client import CogniteClient
 from cognite.client.data_classes import Sequence, SequenceFilter, SequenceList, SequenceUpdate
 from tests.utils import jsgz_load
 
-os.environ['COGNITE_EXPERIMENTAL_MODE'] = '1'
 COGNITE_CLIENT = CogniteClient()
 SEQ_API = COGNITE_CLIENT.sequences
 
