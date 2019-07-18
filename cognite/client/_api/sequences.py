@@ -1,11 +1,12 @@
 import math
 from typing import *
+from cognite.client.utils._experimental_warning import experimental_api
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Sequence, SequenceFilter, SequenceList, SequenceUpdate
 
-
+@experimental_api(api_name="Sequences")
 class SequencesAPI(APIClient):
     _RESOURCE_PATH = "/sequences"
     _LIST_CLASS = SequenceList
