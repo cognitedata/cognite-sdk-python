@@ -4,10 +4,12 @@ import os
 from openapi.generator import CodeGenerator
 
 DEFAULT_SPEC_URL = "https://storage.googleapis.com/cognitedata-api-docs/dist/v1.json"
-
+PLAYGROUND_SPEC_URL = "https://storage.googleapis.com/cognitedata-api-docs/dist/playground.json"
 
 def main(spec_url, spec_path):
     codegen = CodeGenerator(spec_url, spec_path)
+    codegen_playground = CodeGenerator(PLAYGROUND_SPEC_URL)
+
     spec = codegen.open_api_spec
 
     print("=" * 100)
@@ -19,8 +21,12 @@ def main(spec_url, spec_path):
         for file in files:
             file_path = os.path.join(root, file)
             if file_path.endswith(".py"):
-                print("* Generating code in {}".format(file_path))
-                codegen.generate(file_path, file_path)
+                if 'sequence' in file_path:
+                    print("* Generating playground code in {}".format(file_path))
+                    codegen_playground.generate(file_path, file_path)
+                else:
+                    print("* Generating normal code in {}".format(file_path))
+                    codegen.generate(file_path, file_path)
 
 
 if __name__ == "__main__":
