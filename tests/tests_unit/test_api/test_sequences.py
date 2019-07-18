@@ -1,6 +1,6 @@
 import math
-import re
 import os
+import re
 from unittest import mock
 
 import pytest
@@ -8,10 +8,10 @@ import pytest
 from cognite.client import CogniteClient
 from cognite.client.data_classes import Sequence, SequenceFilter, SequenceList, SequenceUpdate
 from tests.utils import jsgz_load
-import pandas as pd
 
 COGNITE_CLIENT = CogniteClient()
 SEQ_API = COGNITE_CLIENT.sequences
+
 
 @pytest.fixture
 def mock_seq_response(rsps):
@@ -226,6 +226,21 @@ class TestSequences:
         assert isinstance(data, list)
         assert 1 == len(data)
 
+    def test_delete_by_id(self, mock_delete_datapoints):
+        res = SEQ_API.data.delete(id=1, rows=[1, 2, 3])
+        assert res is None
+        assert {"items": [{"id": 1, "rows": [1, 2, 3]}]} == jsgz_load(mock_delete_datapoints.calls[0].request.body)
+
+    def test_delete_by_external_id(self, mock_delete_datapoints):
+        res = SEQ_API.data.delete(external_id="foo", rows=[1])
+        assert res is None
+        assert {"items": [{"externalId": "foo", "rows": [1]}]} == jsgz_load(
+            mock_delete_datapoints.calls[0].request.body
+        )
+
+
+@pytest.mark.dsl
+class TestSequencesPandasIntegration:
     def test_retrieve_dataframe(self, mock_get_datapoints):
         df = SEQ_API.data.retrieve_dataframe(external_id="foo", start=1000000, end=1100000)
         assert {"ceid"} == set(df.columns)
@@ -239,15 +254,3 @@ class TestSequences:
         assert df.strcol.isna().any()
         assert df.intcol.isna().any()
         assert 2 == df.shape[0]
-
-    def test_delete_by_id(self, mock_delete_datapoints):
-        res = SEQ_API.data.delete(id=1, rows=[1, 2, 3])
-        assert res is None
-        assert {"items": [{"id": 1, "rows": [1, 2, 3]}]} == jsgz_load(mock_delete_datapoints.calls[0].request.body)
-
-    def test_delete_by_external_id(self, mock_delete_datapoints):
-        res = SEQ_API.data.delete(external_id="foo", rows=[1])
-        assert res is None
-        assert {"items": [{"externalId": "foo", "rows": [1]}]} == jsgz_load(
-            mock_delete_datapoints.calls[0].request.body
-        )
