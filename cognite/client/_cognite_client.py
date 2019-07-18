@@ -69,7 +69,6 @@ class CogniteClient:
         self.raw = RawAPI(self._config, api_version=self.API_VERSION, cognite_client=self)
         self.three_d = ThreeDAPI(self._config, api_version=self.API_VERSION, cognite_client=self)
         self.sequences = SequencesAPI(self._config, api_version=self.API_VERSION, cognite_client=self)
-
         self._api_client = APIClient(self._config, cognite_client=self)
 
     def get(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
