@@ -6,6 +6,7 @@ from openapi.generator import CodeGenerator
 DEFAULT_SPEC_URL = "https://storage.googleapis.com/cognitedata-api-docs/dist/v1.json"
 PLAYGROUND_SPEC_URL = "https://storage.googleapis.com/cognitedata-api-docs/dist/playground.json"
 
+
 def main(spec_url, spec_path):
     codegen = CodeGenerator(spec_url, spec_path)
     codegen_playground = CodeGenerator(PLAYGROUND_SPEC_URL)
@@ -21,7 +22,7 @@ def main(spec_url, spec_path):
         for file in files:
             file_path = os.path.join(root, file)
             if file_path.endswith(".py"):
-                if 'sequence' in file_path:
+                if "sequence" in file_path:
                     print("* Generating playground code in {}".format(file_path))
                     codegen_playground.generate(file_path, file_path)
                 else:

@@ -1,10 +1,11 @@
 import math
 from typing import *
-from cognite.client.utils._experimental_warning import experimental_api
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Sequence, SequenceFilter, SequenceList, SequenceUpdate
+from cognite.client.utils._experimental_warning import experimental_api
+
 
 @experimental_api(api_name="Sequences")
 class SequencesAPI(APIClient):
@@ -364,7 +365,9 @@ class SequencesDataAPI(APIClient):
         pd = utils._auxiliary.local_import("pandas")
         col, data = self._retrieve_with_columns(start, end, columns, external_id, id)
 
-        transposed_data = zip(*[[d or math.nan for d in row["values"]] for row in data]) # make sure string columns don't have 'None'
+        transposed_data = zip(
+            *[[d or math.nan for d in row["values"]] for row in data]
+        )  # make sure string columns don't have 'None'
         data_dict = {k: list(v) for k, v in zip(col, transposed_data)}
         return pd.DataFrame(index=[d["rowNumber"] for d in data], data=data_dict)
 
