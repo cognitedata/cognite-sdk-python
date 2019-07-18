@@ -42,7 +42,6 @@ class _DefaultConfig:
         self.max_retry_backoff = int(os.getenv("COGNITE_MAX_RETRY_BACKOFF", 30))
         self.max_connection_pool_size = int(os.getenv("COGNITE_MAX_CONNECTION_POOL_SIZE", 50))
         self.disable_ssl = os.getenv("COGNITE_DISABLE_SSL", False)
-        self.enable_experimental = os.getenv("COGNITE_EXPERIMENTAL_MODE", False)
 
     @staticmethod
     def _get_status_forcelist():

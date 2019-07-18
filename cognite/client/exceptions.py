@@ -178,12 +178,3 @@ class CogniteAPIKeyError(Exception):
     """
 
     pass
-
-
-class CogniteExperimentalFeature(Exception):
-    """Cognite Experimental Feature
-
-    Raised if an experimental feature is attempted used without having set the environment variable 'COGNITE_EXPERIMENTAL_MODE'
-    """
-
-    pass
