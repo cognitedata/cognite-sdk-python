@@ -30,7 +30,7 @@ def mock_seq_response(rsps):
                 "columns": [
                     {
                         "id": 0,
-                        "valueTye": "STRING",
+                        "valueType": "STRING",
                         "metadata": {"column-metadata-key": "column-metadata-value"},
                         "createdTime": 0,
                         "lastUpdatedTime": 0,
@@ -79,6 +79,59 @@ def mock_get_datapoints(rsps):
                 "rows": [{"rowNumber": 0, "values": [1]}],
             }
         ]
+    }
+    rsps.add(rsps.POST, SEQ_API._get_base_url_with_base_path() + "/sequences/data/list", status=200, json=json)
+    yield rsps
+
+
+@pytest.fixture
+def mock_get_datapoints_many_columns(rsps):
+    response_body = {
+        "items": [
+            {
+                "id": 0,
+                "externalId": "string",
+                "name": "stringname",
+                "metadata": {"metadata-key": "metadata-value"},
+                "assetId": 0,
+                "description": "string",
+                #                "securityCategories": [0],
+                "createdTime": 0,
+                "lastUpdatedTime": 0,
+                "columns": [
+                    {
+                        "id": i,
+                        "externalId": "ceid" + str(i),
+                        "valueType": "STRING",
+                        "metadata": {},
+                        "createdTime": 0,
+                        "lastUpdatedTime": 0,
+                    }
+                    for i in range(0, 200)
+                ],
+            }
+        ]
+    }
+    rsps.add(rsps.POST, SEQ_API._get_base_url_with_base_path() + "/sequences/byids", status=200, json=response_body)
+
+    json = {
+        "items": [
+            {
+                "id": 0,
+                "externalId": "eid",
+                "columns": [{"id": i, "externalId": "ceid" + str(i)} for i in range(0, 200)],
+                "rows": [{"rowNumber": 0, "values": [1]}],
+            }
+        ]
+    }
+    rsps.add(rsps.POST, SEQ_API._get_base_url_with_base_path() + "/sequences/data/list", status=200, json=json)
+    yield rsps
+
+
+@pytest.fixture
+def mock_get_datapoints_no_extid_in_columns(rsps):
+    json = {
+        "items": [{"id": 0, "externalId": "eid", "columns": [{"id": 0}], "rows": [{"rowNumber": 0, "values": [1]}]}]
     }
     rsps.add(rsps.POST, SEQ_API._get_base_url_with_base_path() + "/sequences/data/list", status=200, json=json)
     yield rsps
@@ -220,13 +273,18 @@ class TestSequences:
             ]
         } == jsgz_load(mock_post_datapoints.calls[0].request.body)
 
-    def test_retrieve_by_id(self, mock_get_datapoints):
+    def test_retrieve_by_id(self, mock_seq_response, mock_get_datapoints):
         data = SEQ_API.data.retrieve(id=123, start=123, end=None)
         assert isinstance(data, list)
         assert 1 == len(data)
 
-    def test_retrieve_by_external_id(self, mock_get_datapoints):
+    def test_retrieve_by_external_id(self, mock_seq_response, mock_get_datapoints):
         data = SEQ_API.data.retrieve(external_id="foo", start=1, end=1000)
+        assert isinstance(data, list)
+        assert 1 == len(data)
+
+    def test_retrieve_missing_column_external_id(self, mock_seq_response, mock_get_datapoints_no_extid_in_columns):
+        data = SEQ_API.data.retrieve(id=123, start=123, end=None)
         assert isinstance(data, list)
         assert 1 == len(data)
 
@@ -242,16 +300,25 @@ class TestSequences:
             mock_delete_datapoints.calls[0].request.body
         )
 
+    def test_retrieve_automatic_limit(self, mock_get_datapoints_many_columns):
+        data = SEQ_API.data.retrieve(id=1, start=0, end=None)
+        assert isinstance(data, list)
+        assert 1 == len(data)
+        # 6MB limit / (200 columns x 256 bytes) = 117
+        for call in mock_get_datapoints_many_columns.calls:
+            if "/data/list" in call.request.url:
+                assert 117 == jsgz_load(call.request.body)["items"][0]["limit"]
+
 
 @pytest.mark.dsl
 class TestSequencesPandasIntegration:
-    def test_retrieve_dataframe(self, mock_get_datapoints):
+    def test_retrieve_dataframe(self, mock_seq_response, mock_get_datapoints):
         df = SEQ_API.data.retrieve_dataframe(external_id="foo", start=1000000, end=1100000)
         assert {"ceid"} == set(df.columns)
         assert df.shape[0] > 0
         assert df.index == [0]
 
-    def test_retrieve_dataframe_convert_null(self, mock_get_datapoints_with_null):
+    def test_retrieve_dataframe_convert_null(self, mock_seq_response, mock_get_datapoints_with_null):
         df = SEQ_API.data.retrieve_dataframe(external_id="foo", start=0, end=None)
         assert {"strcol", "intcol"} == set(df.columns)
         assert "None" not in df.strcol

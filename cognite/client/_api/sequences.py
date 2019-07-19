@@ -14,7 +14,7 @@ class SequencesAPI(APIClient):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.data = SequencesDataAPI(*args, **kwargs)
+        self.data = SequencesDataAPI(self, *args, **kwargs)
 
     def __call__(
         self, chunk_size: int = None, limit: int = None
@@ -244,9 +244,12 @@ class SequencesAPI(APIClient):
 class SequencesDataAPI(APIClient):
     _DATA_PATH = "/sequences/data"
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, sequences_api, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._sequences_api = sequences_api
         self._SEQ_POST_LIMIT = 10000
+        self._REQUEST_SIZE_LIMIT = 6000000
+        self._COLUMN_SIZE = {"STRING": 256, "DOUBLE": 8, "LONG": 8}
 
     def insert(
         self,
@@ -367,15 +370,21 @@ class SequencesDataAPI(APIClient):
 
     def _fetch_data(self, task):
         seqdata = []
+        task["limit"] = task.get("limit") or self._calculate_limit(task)
         while True:
             items = self._post(url_path=self._DATA_PATH + "/list", json={"items": [task]}).json()["items"]
             data = items[0]["rows"]
-            columns = [c["externalId"] or c["id"] for c in items[0]["columns"]]
+            columns = [c.get("externalId") or c["id"] for c in items[0]["columns"]]
             seqdata.extend(data)
-            if len(data) < self._SEQ_POST_LIMIT:
+            if len(data) < task["limit"]:
                 break
             task["inclusiveFrom"] = data[-1]["rowNumber"] + 1
         return columns, seqdata
+
+    def _calculate_limit(self, task):
+        sequence = self._sequences_api.retrieve(id=task.get("id"), external_id=task.get("externalId"))
+        row_size = sum([self._COLUMN_SIZE[c["valueType"]] for c in sequence.columns])
+        return min(self._SEQ_POST_LIMIT, math.floor(self._REQUEST_SIZE_LIMIT / row_size))
 
     def _process_columns(self, columns):
         if columns is None:
