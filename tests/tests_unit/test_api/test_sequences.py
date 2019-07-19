@@ -5,7 +5,7 @@ from unittest import mock
 
 import pytest
 
-from cognite.client import CogniteClient
+from cognite.client.experimental import CogniteClient
 from cognite.client.data_classes import Sequence, SequenceFilter, SequenceList, SequenceUpdate
 from tests.utils import jsgz_load
 
@@ -38,6 +38,20 @@ def mock_seq_response(rsps):
                 ],
             }
         ]
+    }
+    url_pattern = re.compile(
+        re.escape(SEQ_API._get_base_url_with_base_path()) + "/sequences(?:/byids|/update|/delete|/search|$|\?.+)"
+    )
+    rsps.assert_all_requests_are_fired = False
+
+    rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
+    rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
+    yield rsps
+
+@pytest.fixture
+def mock_sequences_empty(rsps):
+    response_body = {
+        "items": [  ]
     }
     url_pattern = re.compile(
         re.escape(SEQ_API._get_base_url_with_base_path()) + "/sequences(?:/byids|/update|/delete|/search|$|\?.+)"
@@ -254,3 +268,28 @@ class TestSequencesPandasIntegration:
         assert df.strcol.isna().any()
         assert df.intcol.isna().any()
         assert 2 == df.shape[0]
+
+    def test_sequences_list_to_pandas(self, mock_seq_response):
+        import pandas as pd
+        df = SEQ_API.list().to_pandas()
+        assert isinstance(df, pd.DataFrame)
+        assert 1 == df.shape[0]
+        assert {"metadata-key": "metadata-value"} == df["metadata"][0]
+
+    def test_sequences_list_to_pandas_empty(self, mock_sequences_empty):
+        import pandas as pd
+
+        df = SEQ_API.list().to_pandas()
+        assert isinstance(df, pd.DataFrame)
+        assert df.empty
+
+    def test_sequencess_to_pandas(self, mock_seq_response):
+        import pandas as pd
+
+        df = SEQ_API.retrieve(id=1).to_pandas()
+        assert isinstance(df, pd.DataFrame)
+        assert "metadata" not in df.columns
+        assert "string" == df.loc["description"][0]
+        assert "metadata-value" == df.loc["metadata-key"][0]
+
+

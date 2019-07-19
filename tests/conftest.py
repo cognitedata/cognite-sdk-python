@@ -12,6 +12,7 @@ from cognite.client._api.files import FilesAPI
 from cognite.client._api.iam import IAMAPI, APIKeysAPI, GroupsAPI, SecurityCategoriesAPI, ServiceAccountsAPI
 from cognite.client._api.login import LoginAPI
 from cognite.client._api.raw import RawAPI, RawDatabasesAPI, RawRowsAPI, RawTablesAPI
+from cognite.client._api.sequences import SequencesAPI
 from cognite.client._api.three_d import (
     ThreeDAPI,
     ThreeDAssetMappingAPI,
@@ -42,6 +43,7 @@ def mock_cognite_client():
         cog_client_mock = mock.MagicMock(spec=CogniteClient)
         cog_client_mock.time_series = mock.MagicMock(spec=TimeSeriesAPI)
         cog_client_mock.datapoints = mock.MagicMock(spec=DatapointsAPI)
+        cog_client_mock.sequences = mock.MagicMock(spec=SequencesAPI)
         cog_client_mock.assets = mock.MagicMock(spec=AssetsAPI)
         cog_client_mock.events = mock.MagicMock(spec=EventsAPI)
         cog_client_mock.files = mock.MagicMock(spec=FilesAPI)
