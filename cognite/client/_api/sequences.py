@@ -59,13 +59,13 @@ class SequencesAPI(APIClient):
 
             Get sequences by id::
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.experimental import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.sequences.retrieve(id=1)
 
             Get sequences by external id::
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.experimental import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.sequences.retrieve(external_id="1")
         """
@@ -88,13 +88,13 @@ class SequencesAPI(APIClient):
 
             Get sequences by id::
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.experimental import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.sequences.retrieve_multiple(ids=[1, 2, 3])
 
             Get sequences by external id::
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.experimental import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.sequences.retrieve_multiple(external_ids=["abc", "def"])
         """
@@ -120,20 +120,20 @@ class SequencesAPI(APIClient):
 
             List sequences::
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.experimental import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.sequences.list(limit=5)
 
             Iterate over sequences::
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.experimental import CogniteClient
                 >>> c = CogniteClient()
                 >>> for seq in c.sequences:
                 ...     seq # do something with the sequences
 
             Iterate over chunks of sequences to reduce memory load::
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.experimental import CogniteClient
                 >>> c = CogniteClient()
                 >>> for seq_list in c.sequences(chunk_size=2500):
                 ...     seq_list # do something with the sequences
@@ -154,7 +154,7 @@ class SequencesAPI(APIClient):
 
             Create a new sequences::
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.experimental import CogniteClient
                 >>> from cognite.client.data_classes import Sequence
                 >>> c = CogniteClient()
                 >>> ts = c.sequences.create(Sequence(name="my ts"))
@@ -175,7 +175,7 @@ class SequencesAPI(APIClient):
 
             Delete sequences by id or external id::
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.experimental import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.sequences.delete(id=[1,2,3], external_id="3")
         """
@@ -196,7 +196,7 @@ class SequencesAPI(APIClient):
 
             Update a sequences that you have fetched. This will perform a full update of the sequences::
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.experimental import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.sequences.retrieve(id=1)
                 >>> res.description = "New description"
@@ -204,7 +204,7 @@ class SequencesAPI(APIClient):
 
             Perform a partial update on a sequences, updating the description and adding a new field to metadata::
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.experimental import CogniteClient
                 >>> from cognite.client.data_classes import SequenceUpdate
                 >>> c = CogniteClient()
                 >>> my_update = SequenceUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
@@ -237,7 +237,7 @@ class SequencesAPI(APIClient):
 
             Search for a sequences::
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.experimental import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.sequences.search(name="some name")
         """
@@ -273,7 +273,7 @@ class SequencesDataAPI(APIClient):
 
         Examples:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.experimental import CogniteClient
                 >>> c = CogniteClient()
                 >>> # with datetime objects
                 >>> data = {123 : ['str',3], 456 : ['bar',42] }
@@ -309,7 +309,7 @@ class SequencesDataAPI(APIClient):
 
         Examples:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.experimental import CogniteClient
                 >>> c = CogniteClient()
                 >>> res1 = c.sequences.data.delete(id=0, rows=[1,2,42])
         """
