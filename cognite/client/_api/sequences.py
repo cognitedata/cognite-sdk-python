@@ -4,7 +4,6 @@ from typing import *
 from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Sequence, SequenceFilter, SequenceList, SequenceUpdate
-from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._experimental_warning import experimental_api
 
 
@@ -379,7 +378,6 @@ class SequencesDataAPI(APIClient):
             seqdata.extend(data)
             if len(data) < task["limit"]:
                 break
-            print([r["rowNumber"] for r in data])
             task["inclusiveFrom"] = data[-1]["rowNumber"] + 1
         return columns, seqdata
 
