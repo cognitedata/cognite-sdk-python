@@ -5,8 +5,8 @@ from unittest import mock
 
 import pytest
 
-from cognite.client.experimental import CogniteClient
 from cognite.client.data_classes import Sequence, SequenceFilter, SequenceList, SequenceUpdate
+from cognite.client.experimental import CogniteClient
 from tests.utils import jsgz_load
 
 COGNITE_CLIENT = CogniteClient()
@@ -48,11 +48,10 @@ def mock_seq_response(rsps):
     rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
     yield rsps
 
+
 @pytest.fixture
 def mock_sequences_empty(rsps):
-    response_body = {
-        "items": [  ]
-    }
+    response_body = {"items": []}
     url_pattern = re.compile(
         re.escape(SEQ_API._get_base_url_with_base_path()) + "/sequences(?:/byids|/update|/delete|/search|$|\?.+)"
     )
@@ -271,6 +270,7 @@ class TestSequencesPandasIntegration:
 
     def test_sequences_list_to_pandas(self, mock_seq_response):
         import pandas as pd
+
         df = SEQ_API.list().to_pandas()
         assert isinstance(df, pd.DataFrame)
         assert 1 == df.shape[0]
@@ -291,5 +291,3 @@ class TestSequencesPandasIntegration:
         assert "metadata" not in df.columns
         assert "string" == df.loc["description"][0]
         assert "metadata-value" == df.loc["metadata-key"][0]
-
-
