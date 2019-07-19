@@ -315,12 +315,7 @@ class SequencesDataAPI(APIClient):
         self._post(url_path=self._DATA_PATH + "/delete", json={"items": [post_obj]})
 
     def retrieve(
-        self,
-        start: int = 0,
-        end: int = None,
-        columns: List[Union[int, str]] = None,
-        external_id: str = None,
-        id: int = None,
+        self, start: int, end: int, columns: List[Union[int, str]] = None, external_id: str = None, id: int = None
     ) -> List[dict]:
         """Retrieve data from a sequence
 
@@ -338,12 +333,7 @@ class SequencesDataAPI(APIClient):
         return data
 
     def retrieve_dataframe(
-        self,
-        start: int = 0,
-        end: int = None,
-        columns: List[Union[int, str]] = None,
-        external_id: str = None,
-        id: int = None,
+        self, start: int, end: int, columns: List[Union[int, str]] = None, external_id: str = None, id: int = None
     ):
         """Retrieve data from a sequence as a pandas dataframe
 
@@ -367,12 +357,7 @@ class SequencesDataAPI(APIClient):
         return pd.DataFrame(index=[d["rowNumber"] for d in data], data=data_dict)
 
     def _retrieve_with_columns(
-        self,
-        start: int = 0,
-        end: int = None,
-        columns: List[Union[int, str]] = None,
-        external_id: str = None,
-        id: int = None,
+        self, start: int, end: int, columns: List[Union[int, str]] = None, external_id: str = None, id: int = None
     ) -> Tuple[List, List[dict]]:
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
         post_obj = self._process_ids(id, external_id, wrap_ids=True)[0]

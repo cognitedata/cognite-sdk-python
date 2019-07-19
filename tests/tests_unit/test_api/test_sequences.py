@@ -221,7 +221,7 @@ class TestSequences:
         } == jsgz_load(mock_post_datapoints.calls[0].request.body)
 
     def test_retrieve_by_id(self, mock_get_datapoints):
-        data = SEQ_API.data.retrieve(id=123)
+        data = SEQ_API.data.retrieve(id=123, start=123, end=None)
         assert isinstance(data, list)
         assert 1 == len(data)
 
@@ -252,7 +252,7 @@ class TestSequencesPandasIntegration:
         assert df.index == [0]
 
     def test_retrieve_dataframe_convert_null(self, mock_get_datapoints_with_null):
-        df = SEQ_API.data.retrieve_dataframe(external_id="foo")
+        df = SEQ_API.data.retrieve_dataframe(external_id="foo", start=0, end=None)
         assert {"strcol", "intcol"} == set(df.columns)
         assert "None" not in df.strcol
         assert df.strcol.isna().any()
