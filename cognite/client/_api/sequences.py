@@ -17,7 +17,7 @@ class SequencesAPI(APIClient):
         self.data = SequencesDataAPI(*args, **kwargs)
 
     def __call__(
-        self, chunk_size: int = None, asset_ids: List[int] = None, limit: int = None
+        self, chunk_size: int = None, limit: int = None
     ) -> Generator[Union[Sequence, SequenceList], None, None]:
         """Iterate over sequences
 
@@ -25,15 +25,13 @@ class SequencesAPI(APIClient):
 
         Args:
             chunk_size (int, optional): Number of sequences to return in each chunk. Defaults to yielding one event a time.
-            asset_id (int, optional): List sequences related to this asset.
             limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all items.
 
         Yields:
             Union[Sequence, SequenceList]: yields Sequence one by one if chunk is not specified, else SequenceList objects.
         """
-        filter = {"assetIds": str(asset_ids) if asset_ids else None}
-        return self._list_generator(method="GET", chunk_size=chunk_size, filter=filter, limit=limit)
+        return self._list_generator(method="GET", chunk_size=chunk_size, filter=None, limit=limit)
 
     def __iter__(self) -> Generator[Sequence, None, None]:
         """Iterate over sequences
@@ -102,14 +100,12 @@ class SequencesAPI(APIClient):
         utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=True)
         return self._retrieve_multiple(ids=ids, external_ids=external_ids, wrap_ids=True)
 
-    def list(self, asset_ids: Optional[List[int]] = None, limit: int = 25) -> SequenceList:
+    def list(self, limit: int = 25) -> SequenceList:
         """Iterate over sequences
 
         Fetches sequences as they are iterated over, so you keep a limited number of objects in memory.
 
         Args:
-            include_metadata (bool, optional): Whether or not to include metadata
-            asset_ids (List[int], optional): List sequences related to these assets.
             limit (int, optional): Max number of sequences to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all items.
 
@@ -138,8 +134,7 @@ class SequencesAPI(APIClient):
                 >>> for seq_list in c.sequences(chunk_size=2500):
                 ...     seq_list # do something with the sequences
         """
-        filter = {"assetIds": str(asset_ids) if asset_ids else None}
-        return self._list(method="GET", filter=filter, limit=limit)
+        return self._list(method="GET", filter=None, limit=limit)
 
     def create(self, sequences: Union[Sequence, List[Sequence]]) -> Union[Sequence, SequenceList]:
         """Create one or more sequences.
@@ -187,7 +182,7 @@ class SequencesAPI(APIClient):
         """Update one or more sequences.
 
         Args:
-            item (Union[Sequence, SequenceUpdate, List[Union[Sequence, SequenceUpdate]]]): sequences to update
+            item (Union[Sequence, SequenceUpdate, List[Union[Sequence, SequenceUpdate]]]): Sequences to update
 
         Returns:
             Union[Sequence, SequenceList]: Updated sequences.
@@ -263,8 +258,8 @@ class SequencesDataAPI(APIClient):
         """Insert rows into a sequence
 
         Args:
-            columns: list of id or external id for the columns of the sequence
-            rows: dictionary of row number => data, where data is a list corresponding to the given columns
+            columns (List[Union[int, str]]): List of id or external id for the columns of the sequence
+            rows (Dict[int, List[Union[int, float, str]]]): Dictionary of row number => data, where data is a list corresponding to the given columns
             id (int): Id of sequence to insert rows into.
             external_id (str): External id of sequence to insert rows into.
 
@@ -300,7 +295,7 @@ class SequencesDataAPI(APIClient):
         """Delete rows from a sequence
 
         Args:
-            rows: list of row numbers
+            rows (List[int]): List of row numbers
             id (int): Id of sequence to delete rows from
             external_id (str): External id of sequence to delete rows from
 
@@ -330,9 +325,9 @@ class SequencesDataAPI(APIClient):
         """Retrieve data from a sequence
 
         Args:
-            start: (inclusive) row number to start from
-            end: (exclusive) upper limit on the row number
-            columns: list of id or external id for the columns of the sequence. Defaults to all if None is passed.
+            start (int): Row number to start from (inclusive)
+            end (int): Upper limit on the row number (exclusive)
+            columns (List[Union[int, str]]): List of id or external id for the columns of the sequence. Defaults to all if None is passed.
             id (int): Id of sequence
             external_id (str): External id of sequence
 

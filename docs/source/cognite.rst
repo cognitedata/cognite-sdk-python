@@ -772,7 +772,7 @@ Convert milliseconds since epoch to datetime
 
 Experimental features
 =====================
-These features are not part of the core v1.0.0 API, and subject to breaking changes.
+These features are subject to breaking changes and should not be used in production code.
 
 Sequences
 ---------

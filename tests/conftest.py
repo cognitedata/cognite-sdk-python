@@ -70,29 +70,8 @@ def mock_cognite_client():
 def mock_cognite_experimental_client(mock_cognite_client):
     with mock.patch("cognite.client.experimental.CogniteClient") as client_mock:
         cog_client_mock = mock.MagicMock(spec=CogniteClient)
-        cog_client_mock.time_series = mock.MagicMock(spec=TimeSeriesAPI)
-        cog_client_mock.datapoints = mock.MagicMock(spec=DatapointsAPI)
-        cog_client_mock.assets = mock.MagicMock(spec=AssetsAPI)
-        cog_client_mock.events = mock.MagicMock(spec=EventsAPI)
-        cog_client_mock.files = mock.MagicMock(spec=FilesAPI)
-        cog_client_mock.login = mock.MagicMock(spec=LoginAPI)
-        cog_client_mock.three_d = mock.MagicMock(spec=ThreeDAPI)
-        cog_client_mock.three_d.models = mock.MagicMock(spec=ThreeDModelsAPI)
-        cog_client_mock.three_d.revisions = mock.MagicMock(spec=ThreeDRevisionsAPI)
-        cog_client_mock.three_d.files = mock.MagicMock(spec=ThreeDFilesAPI)
-        cog_client_mock.three_d.asset_mappings = mock.MagicMock(spec=ThreeDAssetMappingAPI)
-        cog_client_mock.iam = mock.MagicMock(spec=IAMAPI)
-        cog_client_mock.iam.service_accounts = mock.MagicMock(spec=ServiceAccountsAPI)
-        cog_client_mock.iam.api_keys = mock.MagicMock(spec=APIKeysAPI)
-        cog_client_mock.iam.groups = mock.MagicMock(spec=GroupsAPI)
-        cog_client_mock.iam.security_categories = mock.MagicMock(spec=SecurityCategoriesAPI)
         cog_client_mock.sequences = mock.MagicMock(spec=SequencesAPI)
         cog_client_mock.sequences.data = mock.MagicMock(spec=SequencesDataAPI)
-        raw_mock = mock.MagicMock(spec=RawAPI)
-        raw_mock.databases = mock.MagicMock(spec=RawDatabasesAPI)
-        raw_mock.tables = mock.MagicMock(spec=RawTablesAPI)
-        raw_mock.rows = mock.MagicMock(spec=RawRowsAPI)
-        cog_client_mock.raw = raw_mock
         client_mock.return_value = cog_client_mock
         yield
 

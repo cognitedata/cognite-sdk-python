@@ -121,15 +121,6 @@ class TestSequences:
         res = SEQ_API.list()
         assert mock_seq_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
-    @pytest.mark.dsl
-    def test_list_with_asset_ids(self, mock_seq_response):
-        import numpy
-
-        SEQ_API.list(asset_ids=[1])
-        SEQ_API.list(asset_ids=[numpy.int64(1)])
-        for i in range(len(mock_seq_response.calls)):
-            assert "assetIds=%5B1%5D" in mock_seq_response.calls[i].request.url
-
     def test_create_single(self, mock_seq_response):
         res = SEQ_API.create(Sequence(external_id="1", name="blabla", columns=[{}]))
         assert isinstance(res, Sequence)
