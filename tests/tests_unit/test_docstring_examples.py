@@ -17,9 +17,6 @@ class TestDocstringExamples:
     def test_time_series(self):
         run_docstring_tests(time_series)
 
-    def test_sequences(self):
-        run_docstring_tests(sequences)
-
     def test_assets(self):
         run_docstring_tests(assets)
 
@@ -44,3 +41,9 @@ class TestDocstringExamples:
 
     def test_iam(self):
         run_docstring_tests(iam)
+
+
+@pytest.mark.usefixtures("mock_cognite_experimental_client")
+class TestDocstringExamplesExperimental:
+    def test_sequences(self):
+        run_docstring_tests(sequences)
