@@ -277,7 +277,7 @@ class SequencesDataAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> # with datetime objects
                 >>> data = {123 : ['str',3], 456 : ['bar',42] }
-                >>> res1 = c.sequences.insert(columns=['stringColumn','intColumn'], rows=data, id=1)
+                >>> res1 = c.sequences.data.insert(columns=['stringColumn','intColumn'], rows=data, id=1)
         """
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
         base_obj = self._process_ids(id, external_id, wrap_ids=True)[0]
