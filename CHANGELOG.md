@@ -31,7 +31,6 @@ Changes are grouped as follows
 - Experimental client
 - Support for sequences exposed through experimental client
 
-
 ## [1.0.0] - 2019-07-11
 ### Added
 - Support for all endpoints in Cognite API
