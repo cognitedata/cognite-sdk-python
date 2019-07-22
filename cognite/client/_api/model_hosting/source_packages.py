@@ -34,7 +34,7 @@ class SourcePackagesAPI(APIClient):
             file_path (str): File path of source package distribution. If not specified, a download url will be returned.
 
         Returns:
-            experimental.model_hosting.source_packages.CreateSourcePackageResponse: An response object containing Source package ID
+            CreateSourcePackageResponse: An response object containing Source package ID
             if file_path was specified. Else, both source package id and upload url.
 
         """
@@ -109,7 +109,7 @@ class SourcePackagesAPI(APIClient):
             package_directory (str): Absolute path of directory containing your setup.py file.
 
         Returns:
-            experimental.model_hosting.source_packages.CreateSourcePackageResponse: An response object containing Source package ID
+            CreateSourcePackageResponse: An response object containing Source package ID
             if file_path was specified. Else, both source package id and upload url.
         """
         package_name, available_operations = self._find_model_file_and_extract_details(package_directory)

@@ -266,7 +266,7 @@ class ModelsAPI(APIClient):
             metadata (Dict[str, str]): New metadata
 
         Returns:
-            ModelVersionResponse: The updated model version.
+            ModelVersion: The updated model version.
         """
         url = "/analytics/models/{}/versions/{}/update".format(model_id, version_id)
         body = {}

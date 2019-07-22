@@ -101,7 +101,7 @@ class SchedulesAPI(APIClient):
             id (int):  The id of the schedule to get logs from.
 
         Returns:
-            experimental.model_hosting.schedules.ScheduleLog: An object containing the schedule logs.
+            ScheduleLog: An object containing the schedule logs.
         """
         res = self._get("/analytics/models/schedules/{}/log".format(id))
         return ScheduleLog._load(res.json())
