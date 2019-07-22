@@ -779,6 +779,7 @@ Model Hosting
 -------------
 .. WARNING::
     The model hosting API is experimental and subject to breaking changes. It should not be used in production code.
+
 Models
 ^^^^^^
 Retrieve model by id
@@ -944,6 +945,7 @@ Sequences
 ---------
 .. WARNING::
     The sequences API is experimental and subject to breaking changes. It should not be used in production code.
+
 Retrieve a sequence by id
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.sequences.SequencesAPI.retrieve
