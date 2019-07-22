@@ -7,9 +7,9 @@ from cognite.client.data_classes.model_hosting.models import (
     Model,
     ModelArtifactList,
     ModelList,
-    ModelLog,
     ModelVersion,
     ModelVersionList,
+    ModelVersionLog,
 )
 from cognite.client.exceptions import CogniteAPIError
 
@@ -419,7 +419,7 @@ class ModelsAPI(APIClient):
             response = self._request_session.put(upload_url, data=mydata)
         return response
 
-    def get_logs(self, model_id: int, version_id: int, log_type: str = None) -> ModelLog:
+    def get_logs(self, model_id: int, version_id: int, log_type: str = None) -> ModelVersionLog:
         """Get logs for prediction and/or training routine of a specific model version.
 
         Args:
@@ -428,9 +428,9 @@ class ModelsAPI(APIClient):
             log_type (str): Which routine to get logs from. Must be 'train’, 'predict’, or ‘both’. Defaults to 'both'.
 
         Returns:
-            ModelLog: An object containing the requested logs.
+            ModelVersionLog: An object containing the requested logs.
         """
         url = "/analytics/models/{}/versions/{}/log".format(model_id, version_id)
         params = {"logType": log_type}
         res = self._get(url, params=params)
-        return ModelLog._load(res.json())
+        return ModelVersionLog._load(res.json())

@@ -4,6 +4,13 @@ from cognite.client.data_classes._base import CogniteResource, CogniteResourceLi
 
 
 class CreateSourcePackageResponse(CogniteResponse):
+    """The response returned from the API when creating a new source package.
+
+    Args:
+        id (int): The id of the source package
+        upload_url (str): The url to upload the source package distribution to.
+    """
+
     def __init__(self, id: int = None, upload_url: str = None):
         self.id = id
         self.upload_url = upload_url
@@ -14,6 +21,22 @@ class CreateSourcePackageResponse(CogniteResponse):
 
 
 class SourcePackage(CogniteResource):
+    """A representation of a source package in the model hosting environment.
+
+    Args:
+        id (int): Id of the source package.
+        name (str): Name of the source package.
+        description (str): Description of the schedule.
+        is_deprecated (bool): Whether or not the source package is deprecated.
+        package_name (str): The name of the package containing the model.py file.
+        is_uploaded (bool): Whether or not the source package has been uploaded
+        available_operations (List[str]): The available operations on this source package. Can be any of [PREDICT, TRAIN].
+        created_time (int): Created time in UNIX.
+        runtime_version (str): The runtime version this source package should be deployed with. Can be any of ["0.1"]
+        metadata (Dict): User-defined metadata about the source package.
+        cognite_client (CogniteClient): An optional CogniteClient to associate with this data class.
+    """
+
     def __init__(
         self,
         id: int = None,

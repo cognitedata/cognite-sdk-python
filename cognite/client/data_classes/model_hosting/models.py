@@ -4,6 +4,22 @@ from cognite.client.data_classes._base import CogniteResource, CogniteResourceLi
 
 
 class Model(CogniteResource):
+    """A representation of a Model in the model hosting environment.
+
+    Args:
+        id (int): Id of the model.
+        name (str): Name of the model.
+        description (str): Description of the model.
+        created_time (int): Created time in UNIX.
+        metadata (Dict): User-defined metadata about the model.
+        is_deprecated (bool): Whether or not the model is deprecated.
+        active_version_id (int): The id of the active version on this model.
+        input_fields (List): A list of input fields this model takes.
+        output_fields (List): A list of output fields this model defines.
+        webhook_url (str): A url used to catch webhooks which are reported upon failing scheduled predictions.
+        cognite_client (CogniteClient): An optional CogniteClient to associate with this data class.
+    """
+
     def __init__(
         self,
         id: int = None,
@@ -38,6 +54,24 @@ class ModelList(CogniteResourceList):
 
 
 class ModelVersion(CogniteResource):
+    """A representation of a Model version in the model hosting environment.
+
+    Args:
+        id (int): Id of the model version.
+        is_deprecated (bool): Whether or not the model version is deprecated.
+        training_details (Dict): The training details for this model version. None if the associated source package
+            does not define a .train() method.
+        name (str): Name of the model version.
+        error_msg (str): The error message produced when trying to deploy the model version.
+        model_id (int): The id of the model associated with this version.
+        created_time (int): Created time in UNIX.
+        metadata (Dict): User-defined metadata about the model.
+        source_package_id (int): The id of the source package associated with this version.
+        status (str): The current status of the model version deployment.
+        description (str): Description of the model.
+        cognite_client (CogniteClient): An optional CogniteClient to associate with this data class.
+    """
+
     def __init__(
         self,
         id: int = None,
@@ -84,7 +118,14 @@ class ModelArtifactList(CogniteResourceList):
     _ASSERT_CLASSES = False
 
 
-class ModelLog(CogniteResponse):
+class ModelVersionLog(CogniteResponse):
+    """An object containing the logs for a model version.
+
+    Args:
+        prediction_logs (List): A list of log entries for the prediction routine
+        training_logs (List): A list of log entries for the training routine
+    """
+
     def __init__(self, prediction_logs: List = None, training_logs: List = None):
         self.prediction_logs = prediction_logs
         self.training_logs = training_logs

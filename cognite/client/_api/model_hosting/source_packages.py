@@ -11,7 +11,7 @@ from cognite.client.data_classes.model_hosting.source_packages import (
 )
 
 
-class SourcePackageAPI(APIClient):
+class SourcePackagesAPI(APIClient):
     def upload_source_package(
         self,
         name: str,

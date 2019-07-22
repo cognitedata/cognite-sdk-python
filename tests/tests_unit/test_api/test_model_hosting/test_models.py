@@ -15,9 +15,9 @@ from cognite.client.data_classes.model_hosting.models import (
     ModelArtifact,
     ModelArtifactList,
     ModelList,
-    ModelLog,
     ModelVersion,
     ModelVersionList,
+    ModelVersionLog,
 )
 from cognite.client.experimental import CogniteClient
 from tests.utils import jsgz_load
@@ -359,7 +359,7 @@ class TestVersions:
 
     def test_get_model_version_log(self, mock_get_log):
         res = MODELS_API.get_logs(model_id=1, version_id=1, log_type="both")
-        assert isinstance(res, ModelLog)
+        assert isinstance(res, ModelVersionLog)
         assert res.prediction_logs == ["l1", "l2", "l3"]
         assert res.training_logs == ["l1", "l2", "l3"]
         assert {"prediction_logs": ["l1", "l2", "l3"], "training_logs": ["l1", "l2", "l3"]} == res.dump()

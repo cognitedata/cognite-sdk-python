@@ -4,6 +4,21 @@ from cognite.client.data_classes._base import CogniteResource, CogniteResourceLi
 
 
 class Schedule(CogniteResource):
+    """A representation of a Schedule in the model hosting environment.
+
+    Args:
+        id (int): Id of the schedule.
+        model_id (int): The id of the model associated with this schedule.
+        name (str): Name of the schedule.
+        description (str): Description of the schedule.
+        schedule_data_spec (Union[Dict, ScheduleDataSpec]): The data spec for the schedule.
+        is_deprecated (bool): Whether or not the model version is deprecated.
+        created_time (int): Created time in UNIX.
+        metadata (Dict): User-defined metadata about the model.
+        args (Dict): Additional arguments passed to the predict routine.
+        cognite_client (CogniteClient): An optional CogniteClient to associate with this data class.
+    """
+
     def __init__(
         self,
         id: int = None,
@@ -35,6 +50,14 @@ class ScheduleList(CogniteResourceList):
 
 
 class LogEntry(CogniteResponse):
+    """An object containing a log entry for a schedule.
+
+    Args:
+        timestamp (int): The time the log entry was recorded.
+        scheduled_execution_time (int): The time the prediction was scheduled to run.
+        message (str): The log message.
+    """
+
     def __init__(self, timestamp: int = None, scheduled_execution_time: int = None, message: str = None):
         self.timestamp = timestamp
         self.scheduled_execution_time = scheduled_execution_time
@@ -50,6 +73,13 @@ class LogEntry(CogniteResponse):
 
 
 class ScheduleLog(CogniteResponse):
+    """An object containing the logs for a schedule.
+
+    Args:
+        failed (List[LogEntry]): A list of log entries for failed executions.
+        completed (List[LogEntry]): A list of log entries for succesful executions.
+    """
+
     def __init__(self, failed: List = None, completed: List = None):
         self.failed = failed
         self.completed = completed
