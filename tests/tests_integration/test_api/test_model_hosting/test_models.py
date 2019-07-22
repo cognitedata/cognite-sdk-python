@@ -1,11 +1,7 @@
-import gzip
-import json
 import os
-import time
 from copy import deepcopy
 from random import randint
 from tempfile import TemporaryDirectory
-from unittest import mock
 
 import pytest
 
@@ -22,9 +18,7 @@ from cognite.client.data_classes.model_hosting.models import (
 from cognite.client.experimental import CogniteClient
 from tests.utils import jsgz_load
 
-MODELS_API = CogniteClient(
-    api_key=os.getenv("COGNITE_MLTEST_API_KEY"), project="mltest", base_url="https://api.cognitedata.com"
-).model_hosting.models
+MODELS_API = CogniteClient().model_hosting.models
 
 
 class TestModels:

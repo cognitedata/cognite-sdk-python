@@ -9,9 +9,7 @@ from cognite.client.data_classes.model_hosting.source_packages import SourcePack
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.experimental import CogniteClient
 
-SOURCE_PACKAGES_API = CogniteClient(
-    api_key=os.getenv("COGNITE_MLTEST_API_KEY"), project="mltest", base_url="https://api.cognitedata.com"
-).model_hosting.source_packages
+SOURCE_PACKAGES_API = CogniteClient().model_hosting.source_packages
 
 
 class TestSourcePackages:
