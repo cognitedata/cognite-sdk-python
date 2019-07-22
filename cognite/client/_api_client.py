@@ -182,7 +182,7 @@ class APIClient:
             "/timeseries/data/latest",
             "/timeseries/data/delete",
         }
-        if method == "GET":
+        if method in ["GET", "PUT"]:
             return True
         if method == "POST" and path_end in retryable_post_endpoints:
             return True
