@@ -826,9 +826,9 @@ class TestHelpers:
             ("GET", "https://api.cognitedata.com/login/status", True),
             ("GET", "https://greenfield.cognitedata.com/api/v1/projects/blabla/assets", True),
             ("POST", "https://localhost:8000/api/v1/projects/blabla/files/list", True),
-            ("PUT", "https://api.cognitedata.com/bla", False),
+            ("PUT", "https://api.cognitedata.com/bla", True),
             ("POST", "https://greenfield.cognitedata.com/api/v1/projects/blabla/assets", False),
-            ("PUT", "https://localhost:8000.com/api/v1/projects/blabla/assets", False),
+            ("PUT", "https://localhost:8000.com/api/v1/projects/blabla/assets", True),
         ],
     )
     def test_is_retryable(self, method, path, expected):

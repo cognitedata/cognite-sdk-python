@@ -19,6 +19,18 @@ Changes are grouped as follows
 - Upserts for all resource types
 - Separate read/write fields on data classes
 
+## [1.0.2] - 2019-07-22
+### Added
+- Support for model hosting exposed through experimental client
+
+### Fixed
+- Handling dynamic limits in Sequences API
+
+## [1.0.1] - 2019-07-19
+### Added
+- Experimental client
+- Support for sequences exposed through experimental client
+
 ## [1.0.0] - 2019-07-11
 ### Added
 - Support for all endpoints in Cognite API
