@@ -152,7 +152,7 @@ class SequencesAPI(APIClient):
                 >>> from cognite.client.experimental import CogniteClient
                 >>> from cognite.client.data_classes import Sequence
                 >>> c = CogniteClient()
-                >>> ts = c.sequences.create(Sequence(name="my ts"))
+                >>> ts = c.sequences.create(Sequence(name="my sequence", columns=[{'valueType':'STRING'},{'valueType':'DOUBLE'}]))
         """
         return self._create_multiple(items=sequences)
 
