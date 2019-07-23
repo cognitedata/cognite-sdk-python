@@ -171,11 +171,12 @@ class TestVersions:
         assert {"description": "", "metadata": {}, "name": "mymodel", "sourcePackageId": 1} == jsgz_load(
             calls[0].request.body
         )
-        post_artifacts_call_args = [jsgz_load(calls[1].request.body), jsgz_load(calls[2].request.body)]
-        assert {"name": "artifact1.txt"} in post_artifacts_call_args
-        assert {"name": "sub_dir/artifact2.txt"} in post_artifacts_call_args
-        assert b"content\n" == calls[3].request.body
-        assert b"content\n" == calls[4].request.body
+        for call in calls[1:5]:
+            try:
+                res = jsgz_load(call.request.body)
+                assert res in [{"name": "artifact1.txt"}, {"name": "sub_dir/artifact2.txt"}]
+            except OSError:
+                assert b"content\n" == call.request.body
         assert b"{}" == calls[5].request.body
 
     @pytest.fixture
@@ -296,16 +297,12 @@ class TestVersions:
     def test_upload_artifacts_from_directory(self, mock_upload_artifact):
         artifacts_directory = os.path.join(os.path.dirname(__file__), "source_package_for_tests/artifacts")
         MODELS_API.upload_artifacts_from_directory(model_id=1, version_id=1, directory=artifacts_directory)
-
-        post_artifacts_call_args = [
-            jsgz_load(mock_upload_artifact.calls[0].request.body),
-            jsgz_load(mock_upload_artifact.calls[1].request.body),
-            mock_upload_artifact.calls[2].request.body,
-            mock_upload_artifact.calls[3].request.body,
-        ]
-        assert {"name": "artifact1.txt"} in post_artifacts_call_args
-        assert {"name": "sub_dir/artifact2.txt"} in post_artifacts_call_args
-        assert b"content\n" in post_artifacts_call_args
+        for call in mock_upload_artifact.calls:
+            try:
+                res = jsgz_load(call.request.body)
+                assert res in [{"name": "artifact1.txt"}, {"name": "sub_dir/artifact2.txt"}]
+            except OSError:
+                assert b"content\n" == call.request.body
 
     def test_upload_artifacts_from_directory_no_artifacts(self):
         with TemporaryDirectory() as tmp:
