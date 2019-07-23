@@ -14,7 +14,7 @@ COGNITE_CLIENT = CogniteClient()
 
 @pytest.fixture(scope="class")
 def new_seq():
-    seq = COGNITE_CLIENT.sequences.create(Sequence(name="test_temp"))
+    seq = COGNITE_CLIENT.sequences.create(Sequence(name="test_temp", columns=[{}]))
     yield seq
     COGNITE_CLIENT.sequences.delete(id=seq.id)
     assert COGNITE_CLIENT.sequences.retrieve(seq.id) is None
