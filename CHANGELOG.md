@@ -38,3 +38,12 @@ Changes are grouped as follows
 - Renamed `stable` namespace to `api`
 - Rewrote logic for concurrent reads of datapoints
 - Renamed CogniteClient parameter `num_of_workers` to `max_workers`
+
+## [1.0.1] - 2019-07-19
+### Added
+- Support for experimental endpoints
+- Experimental support for Sequences
+
+## [1.0.2] - 2019-07-23
+### Fixed
+- Bug fixes for Sequences
