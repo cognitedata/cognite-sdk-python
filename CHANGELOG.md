@@ -14,10 +14,14 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [Unreleased]
+## [Planned]
 - Concurrent reads for all resource types using `/cursors` endpoints
 - Upserts for all resource types
 - Separate read/write fields on data classes
+
+## [Unreleased]
+### Fixed
+- Renamed Model.schedule_data_spec to Model.data_spec so the field from the API will be included on the object.
 
 ## [1.0.2] - 2019-07-22
 ### Added

@@ -11,7 +11,7 @@ class Schedule(CogniteResource):
         model_id (int): The id of the model associated with this schedule.
         name (str): Name of the schedule.
         description (str): Description of the schedule.
-        schedule_data_spec (Union[Dict, ScheduleDataSpec]): The data spec for the schedule.
+        data_spec (Union[Dict, ScheduleDataSpec]): The data spec for the schedule.
         is_deprecated (bool): Whether or not the model version is deprecated.
         created_time (int): Created time in UNIX.
         metadata (Dict): User-defined metadata about the model.
@@ -25,7 +25,7 @@ class Schedule(CogniteResource):
         model_id: int = None,
         name: str = None,
         description: str = None,
-        schedule_data_spec: Union["ScheduleDataSpec", Dict] = None,
+        data_spec: Union["ScheduleDataSpec", Dict] = None,
         is_deprecated: bool = None,
         created_time: int = None,
         metadata: Dict = None,
@@ -36,7 +36,7 @@ class Schedule(CogniteResource):
         self.model_id = model_id
         self.name = name
         self.description = description
-        self.schedule_data_spec = schedule_data_spec
+        self.data_spec = data_spec
         self.is_deprecated = is_deprecated
         self.created_time = created_time
         self.metadata = metadata
