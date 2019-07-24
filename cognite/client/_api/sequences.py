@@ -379,6 +379,8 @@ class SequencesDataAPI(APIClient):
             if len(data) < task["limit"]:
                 break
             task["inclusiveFrom"] = data[-1]["rowNumber"] + 1
+            if task["exclusiveTo"] and task["inclusiveFrom"] >= task["exclusiveTo"]:
+                break
         return columns, seqdata
 
     def _calculate_limit(self, task):
