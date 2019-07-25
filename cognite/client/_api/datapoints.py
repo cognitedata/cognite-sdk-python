@@ -8,6 +8,7 @@ import cognite.client.utils._time
 from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Datapoints, DatapointsList, DatapointsQuery
+from cognite.client.exceptions import CogniteAPIError
 
 
 class DatapointsAPI(APIClient):
@@ -786,15 +787,20 @@ class DatapointsFetcher:
             "1d"
         ) < cognite.client.utils._time.granularity_to_ms(granularity):
             count_granularity = granularity
-        res = self._get_datapoints_with_paging(
-            start=start,
-            end=end,
-            ts_item={"id": id},
-            aggregates=["count"],
-            granularity=count_granularity,
-            include_outside_points=False,
-            limit=None,
-        )
+        try:
+            res = self._get_datapoints_with_paging(
+                start=start,
+                end=end,
+                ts_item={"id": id},
+                aggregates=["count"],
+                granularity=count_granularity,
+                include_outside_points=False,
+                limit=None,
+            )
+        except CogniteAPIError:
+            res = []
+        if not res:  # string based series or aggregates not yet calculates
+            return [_DPWindow(start, end)]
         counts = list(zip(res.timestamp, res.count))
         windows = []
         total_count = 0
