@@ -26,6 +26,7 @@ Changes are grouped as follows
 - Renamed Model.schedule_data_spec to Model.data_spec so the field from the API will be included on the object.
 - Handling edge case in Sequences pagination when last datapoint retrieved is at requested end
 - Fixing data points retrieval when count aggregates are missing
+- Displays unexpected fields on error response from API when raising CogniteAPIError
 
 ## [1.0.2] - 2019-07-22
 ### Added
