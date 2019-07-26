@@ -88,6 +88,10 @@ class TestDatapointsAPI:
         assert df.shape[1] == 1
         assert has_correct_timestamp_spacing(df, "1s")
 
+    def test_retrieve_string(self):
+        dps = COGNITE_CLIENT.datapoints.retrieve(external_id="test__string_b", start=1563000000000, end=1564100000000)
+        assert len(dps) > 100000
+
     def test_query(self, test_time_series):
         dps_query1 = DatapointsQuery(id=test_time_series[0].id, start="6h-ago", end="now")
         dps_query2 = DatapointsQuery(id=test_time_series[1].id, start="3h-ago", end="now")
