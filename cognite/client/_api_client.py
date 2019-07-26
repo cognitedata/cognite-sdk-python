@@ -530,6 +530,7 @@ class APIClient:
         code = res.status_code
         missing = None
         duplicated = None
+        extra = {}
         try:
             error = res.json()["error"]
             if isinstance(error, str):
@@ -538,6 +539,9 @@ class APIClient:
                 msg = error["message"]
                 missing = error.get("missing")
                 duplicated = error.get("duplicated")
+                for k, v in error.items():
+                    if k not in ["message", "missing", "duplicated", "code"]:
+                        extra[k] = v
             else:
                 msg = res.content
         except:
@@ -552,7 +556,7 @@ class APIClient:
             error_details["duplicated"] = duplicated
 
         log.debug("HTTP Error %s %s %s: %s", code, res.request.method, res.request.url, msg, extra=error_details)
-        raise CogniteAPIError(msg, code, x_request_id, missing=missing, duplicated=duplicated)
+        raise CogniteAPIError(msg, code, x_request_id, missing=missing, duplicated=duplicated, extra=extra)
 
     @staticmethod
     def _log_request(res: Response, **kwargs):
