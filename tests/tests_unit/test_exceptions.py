@@ -24,7 +24,6 @@ class TestAPIError:
     def test_unknown_fields_in_api_error(self, rsps):
         with set_env_var("COGNITE_DISABLE_PYPI_VERSION_CHECK", "1"):
             c = CogniteClient()
-        print(c.assets._get_base_url_with_base_path() + "/any")
         rsps.add(
             rsps.GET,
             c.assets._get_base_url_with_base_path() + "/any",
