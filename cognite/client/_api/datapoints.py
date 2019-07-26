@@ -799,7 +799,7 @@ class DatapointsFetcher:
             )
         except CogniteAPIError:
             res = []
-        if not res:  # string based series or aggregates not yet calculates
+        if not res:  # string based series or aggregates not yet calculated
             return [_DPWindow(start, end)]
         counts = list(zip(res.timestamp, res.count))
         windows = []
