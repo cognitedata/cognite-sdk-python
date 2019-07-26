@@ -85,3 +85,7 @@ class TestSequencesDataAPI:
         assert 1 == len(dps)
         assert isinstance(dps[0]["values"][0], int)
         assert isinstance(dps[0]["values"][1], str)
+
+    def test_retrieve_paginate_end_coinciding_with_page(self, string200, post_spy):
+        data = COGNITE_CLIENT.sequences.data.retrieve(start=1, end=118, id=string200.id)
+        assert 1 == COGNITE_CLIENT.sequences.data._post.call_count
