@@ -20,6 +20,8 @@ Changes are grouped as follows
 - Separate read/write fields on data classes
 
 ## [Unreleased]
+### Fixed
+- Removed faulty validation of parent_external_id in AssetPoster that prevented posting of assets attached to another asset referenced by parent_external_id
 
 ## [1.0.3] - 2019-07-26
 ### Fixed

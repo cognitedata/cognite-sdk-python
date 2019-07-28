@@ -407,7 +407,6 @@ class _AssetPoster:
 
     @staticmethod
     def _validate_asset_hierarchy(assets) -> None:
-        external_ids = set([asset.external_id for asset in assets])
         external_ids_seen = set()
         for asset in assets:
             if asset.external_id:
@@ -415,16 +414,12 @@ class _AssetPoster:
                     raise AssertionError("Duplicate external_id '{}' found".format(asset.external_id))
                 external_ids_seen.add(asset.external_id)
 
-            parent_ref = asset.parent_external_id
-            if parent_ref:
-                if parent_ref not in external_ids:
-                    raise AssertionError("parent_external_id '{}' does not point to any asset".format(parent_ref))
-                if asset.parent_id is not None:
-                    raise AssertionError(
-                        "An asset has both parent_id '{}' and parent_external_id '{}' set.".format(
-                            asset.parent_id, asset.parent_external_id
-                        )
+            if asset.parent_external_id and asset.parent_id is not None:
+                raise AssertionError(
+                    "An asset has both parent_id '{}' and parent_external_id '{}' set.".format(
+                        asset.parent_id, asset.parent_external_id
                     )
+                )
 
     def _initialize(self):
         root_assets = set()
