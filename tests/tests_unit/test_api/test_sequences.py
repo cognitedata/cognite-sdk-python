@@ -5,7 +5,7 @@ from unittest import mock
 
 import pytest
 
-from cognite.client.data_classes import Sequence, SequenceFilter, SequenceList, SequenceUpdate
+from cognite.client.data_classes import Sequence, SequenceData, SequenceFilter, SequenceList, SequenceUpdate
 from cognite.client.experimental import CogniteClient
 from tests.utils import jsgz_load
 
@@ -34,7 +34,15 @@ def mock_seq_response(rsps):
                         "metadata": {"column-metadata-key": "column-metadata-value"},
                         "createdTime": 0,
                         "lastUpdatedTime": 0,
-                    }
+                    },
+                    {
+                        "id": 1,
+                        "externalId": "column2",
+                        "valueType": "DOUBLE",
+                        "metadata": {"column-metadata-key": "column-metadata-value"},
+                        "createdTime": 0,
+                        "lastUpdatedTime": 0,
+                    },
                 ],
             }
         ]
@@ -145,7 +153,7 @@ def mock_get_datapoints_with_null(rsps):
                 "id": 0,
                 "externalId": "eid",
                 "columns": [{"id": 0, "externalId": "intcol"}, {"id": 1, "externalId": "strcol"}],
-                "rows": [{"rowNumber": 0, "values": [1, None]}, {"rowNumber": 0, "values": [None, "blah"]}],
+                "rows": [{"rowNumber": 0, "values": [1, None]}, {"rowNumber": 1, "values": [None, "blah"]}],
             }
         ]
     }
@@ -164,6 +172,13 @@ class TestSequences:
         res = SEQ_API.retrieve(id=1)
         assert isinstance(res, Sequence)
         assert mock_seq_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
+
+    def test_column_ids(self, mock_seq_response):
+        seq = SEQ_API.retrieve(id=1)
+        assert isinstance(seq, Sequence)
+        assert [0, 1] == seq.column_ids()
+        assert [None, "column2"] == seq.column_external_ids()
+        assert ["STRING", "DOUBLE"] == seq.column_value_types()
 
     def test_retrieve_multiple(self, mock_seq_response):
         res = SEQ_API.retrieve_multiple(ids=[1])
@@ -273,19 +288,32 @@ class TestSequences:
             ]
         } == jsgz_load(mock_post_datapoints.calls[0].request.body)
 
+    def test_insert_tuple(self, mock_post_datapoints):
+        data = [(i, [2 * i]) for i in range(1, 11)]
+        SEQ_API.data.insert(columns=[0], rows=data, external_id="eid")
+        assert {
+            "items": [
+                {
+                    "externalId": "eid",
+                    "columns": [{"id": 0}],
+                    "rows": [{"rowNumber": i, "values": [2 * i]} for i in range(1, 11)],
+                }
+            ]
+        } == jsgz_load(mock_post_datapoints.calls[0].request.body)
+
     def test_retrieve_by_id(self, mock_seq_response, mock_get_datapoints):
         data = SEQ_API.data.retrieve(id=123, start=123, end=None)
-        assert isinstance(data, list)
+        assert isinstance(data, SequenceData)
         assert 1 == len(data)
 
     def test_retrieve_by_external_id(self, mock_seq_response, mock_get_datapoints):
         data = SEQ_API.data.retrieve(external_id="foo", start=1, end=1000)
-        assert isinstance(data, list)
+        assert isinstance(data, SequenceData)
         assert 1 == len(data)
 
     def test_retrieve_missing_column_external_id(self, mock_seq_response, mock_get_datapoints_no_extid_in_columns):
         data = SEQ_API.data.retrieve(id=123, start=123, end=None)
-        assert isinstance(data, list)
+        assert isinstance(data, SequenceData)
         assert 1 == len(data)
 
     def test_delete_by_id(self, mock_delete_datapoints):
@@ -302,12 +330,26 @@ class TestSequences:
 
     def test_retrieve_automatic_limit(self, mock_get_datapoints_many_columns):
         data = SEQ_API.data.retrieve(id=1, start=0, end=None)
-        assert isinstance(data, list)
+        assert isinstance(data, SequenceData)
         assert 1 == len(data)
         # 6MB limit / (200 columns x 256 bytes) = 117
         for call in mock_get_datapoints_many_columns.calls:
             if "/data/list" in call.request.url:
                 assert 117 == jsgz_load(call.request.body)["items"][0]["limit"]
+
+    def test_retrieve_rows(self, mock_seq_response, mock_get_datapoints):
+        seq = SEQ_API.retrieve(id=1)
+        data = seq.rows(start=0, end=None)
+        assert isinstance(data, SequenceData)
+        assert 1 == len(data)
+
+    def test_helper_functions(self, mock_seq_response, mock_get_datapoints):
+        seq = SEQ_API.retrieve(id=1)
+        data = seq.rows(start=0, end=None)
+        assert [1] == data[0]
+        for r, v in data:
+            assert 0 == r
+            assert [1] == v
 
 
 @pytest.mark.dsl

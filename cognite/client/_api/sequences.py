@@ -3,7 +3,7 @@ from typing import *
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes import Sequence, SequenceFilter, SequenceList, SequenceUpdate
+from cognite.client.data_classes import Sequence, SequenceData, SequenceFilter, SequenceList, SequenceUpdate
 from cognite.client.utils._experimental_warning import experimental_api
 
 
@@ -254,7 +254,7 @@ class SequencesDataAPI(APIClient):
     def insert(
         self,
         columns: List[Union[int, str]],
-        rows: Dict[int, List[Union[int, float, str]]],
+        rows: Union[Dict[int, List[Union[int, float, str]]], List[Tuple[int, Union[int, float, str]]]],
         id: int = None,
         external_id: str = None,
     ) -> None:
@@ -262,7 +262,8 @@ class SequencesDataAPI(APIClient):
 
         Args:
             columns (List[Union[int, str]]): List of id or external id for the columns of the sequence
-            rows (Dict[int, List[Union[int, float, str]]]): Dictionary of row number => data, where data is a list corresponding to the given columns
+            rows (Union[ Dict[int, List[Union[int, float, str]]], List[Tuple[int,Union[int, float, str]]]]):  The rows you wish to insert. Can either be a list of tuples or
+                a dictionary of rowNumber: data. See examples below.
             id (int): Id of sequence to insert rows into.
             external_id (str): External id of sequence to insert rows into.
 
@@ -270,10 +271,20 @@ class SequencesDataAPI(APIClient):
             None
 
         Examples:
+            Your rows of data can be a list of tuples where the first element is the rownumber and the second element is the data to be inserted::
 
                 >>> from cognite.client.experimental import CogniteClient
                 >>> c = CogniteClient()
-                >>> # with datetime objects
+                >>> # with a dictionary
+                >>> seq = c.sequences.create(Sequence(columns=[{"valueType": "STRING","valueType": "DOUBLE"}]))
+                >>> data = [(1, ['pi',3.14]), (2, ['e',2.72]) ]
+                >>> res1 = c.sequences.data.insert(columns=seq.column_ids(), rows=data, id=1)
+
+            Or they can be a given as a dictionary with row number as the key, and the value is the data to be inserted at that row::
+
+                >>> from cognite.client.experimental import CogniteClient
+                >>> c = CogniteClient()
+                >>> # with a dictionary
                 >>> data = {123 : ['str',3], 456 : ['bar',42] }
                 >>> res1 = c.sequences.data.insert(columns=['stringColumn','intColumn'], rows=data, id=1)
         """
@@ -281,7 +292,11 @@ class SequencesDataAPI(APIClient):
         base_obj = self._process_ids(id, external_id, wrap_ids=True)[0]
         base_obj.update(self._process_columns(columns))
 
-        all_rows = [{"rowNumber": k, "values": v} for k, v in rows.items()]
+        if isinstance(rows, dict):
+            all_rows = [{"rowNumber": k, "values": v} for k, v in rows.items()]
+        elif isinstance(rows, list):
+            all_rows = [{"rowNumber": k, "values": v} for k, v in rows]
+
         row_objs = [
             {"rows": all_rows[i : i + self._SEQ_POST_LIMIT]} for i in range(0, len(all_rows), self._SEQ_POST_LIMIT)
         ]
@@ -317,9 +332,37 @@ class SequencesDataAPI(APIClient):
 
         self._post(url_path=self._DATA_PATH + "/delete", json={"items": [post_obj]})
 
+    def delete_range(self, start, end, id: int = None, external_id: str = None) -> None:
+        """Delete a range of rows from a sequence. Note this operation is potentially slow, as retrieves each row before deleting.
+
+        Args:
+            start (int): Row number to start from (inclusive)
+            end (int): Upper limit on the row number (exclusive)
+            id (int): Id of sequence to delete rows from
+            external_id (str): External id of sequence to delete rows from
+
+        Returns:
+            None
+
+        Examples:
+
+                >>> from cognite.client.experimental import CogniteClient
+                >>> c = CogniteClient()
+                >>> res1 = c.sequences.data.delete_range(id=0, start=0, end=None)
+        """
+        deleter = lambda data: self.delete(rows=[r["rowNumber"] for r in data], external_id=external_id, id=id)
+        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
+        sequence = self._sequences_api.retrieve(id=id, external_id=external_id)
+        col_sizes = [self._COLUMN_SIZE[t] for t in sequence.column_value_types()]
+        smallest_column_id = [id for id, _ in sorted(zip(sequence.column_ids(), col_sizes))][0]
+        post_obj = self._process_ids(id, external_id, wrap_ids=True)[0]
+        post_obj.update(self._process_columns([smallest_column_id]))
+        post_obj.update({"inclusiveFrom": start, "exclusiveTo": end})
+        self._fetch_data(post_obj, deleter)
+
     def retrieve(
         self, start: int, end: int, columns: List[Union[int, str]] = None, external_id: str = None, id: int = None
-    ) -> List[dict]:
+    ) -> SequenceData:
         """Retrieve data from a sequence
 
         Args:
@@ -332,8 +375,13 @@ class SequencesDataAPI(APIClient):
         Returns:
             List of sequence data
         """
-        col, data = self._retrieve_with_columns(start, end, columns, external_id, id)
-        return data
+        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
+        post_obj = self._process_ids(id, external_id, wrap_ids=True)[0]
+        post_obj.update(self._process_columns(columns))
+        post_obj.update({"inclusiveFrom": start, "exclusiveTo": end})
+        seqdata = []
+        column_response = self._fetch_data(post_obj, lambda data: seqdata.extend(data))
+        return SequenceData(id=id, external_id=external_id, rows=seqdata, columns=column_response)
 
     def retrieve_dataframe(
         self, start: int, end: int, columns: List[Union[int, str]] = None, external_id: str = None, id: int = None
@@ -350,38 +398,22 @@ class SequencesDataAPI(APIClient):
         Returns:
              pandas.DataFrame
         """
-        pd = utils._auxiliary.local_import("pandas")
-        col, data = self._retrieve_with_columns(start, end, columns, external_id, id)
+        return self.retrieve(start, end, columns, external_id, id).to_pandas()
 
-        transposed_data = zip(
-            *[[d or math.nan for d in row["values"]] for row in data]
-        )  # make sure string columns don't have 'None'
-        data_dict = {k: list(v) for k, v in zip(col, transposed_data)}
-        return pd.DataFrame(index=[d["rowNumber"] for d in data], data=data_dict)
-
-    def _retrieve_with_columns(
-        self, start: int, end: int, columns: List[Union[int, str]] = None, external_id: str = None, id: int = None
-    ) -> Tuple[List, List[dict]]:
-        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
-        post_obj = self._process_ids(id, external_id, wrap_ids=True)[0]
-        post_obj.update(self._process_columns(columns))
-        post_obj.update({"inclusiveFrom": start, "exclusiveTo": end})
-        return self._fetch_data(post_obj)
-
-    def _fetch_data(self, task):
-        seqdata = []
+    def _fetch_data(self, task, callback):
         task["limit"] = task.get("limit") or self._calculate_limit(task)
+        columns = []
         while True:
             items = self._post(url_path=self._DATA_PATH + "/list", json={"items": [task]}).json()["items"]
             data = items[0]["rows"]
-            columns = [c.get("externalId") or c["id"] for c in items[0]["columns"]]
-            seqdata.extend(data)
+            columns = columns or items[0]["columns"]
+            callback(data)
             if len(data) < task["limit"]:
                 break
             task["inclusiveFrom"] = data[-1]["rowNumber"] + 1
             if task["exclusiveTo"] and task["inclusiveFrom"] >= task["exclusiveTo"]:
                 break
-        return columns, seqdata
+        return columns
 
     def _calculate_limit(self, task):
         sequence = self._sequences_api.retrieve(id=task.get("id"), external_id=task.get("externalId"))

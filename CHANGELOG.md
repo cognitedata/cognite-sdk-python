@@ -20,6 +20,12 @@ Changes are grouped as follows
 - Separate read/write fields on data classes
 
 ## [Unreleased]
+### Changed
+- Sequences data retrieval now returns a SequenceData object
+
+### Added
+- Variety of useful helper functions for Sequence and SequenceData objects
+- Sequences delete_range function
 
 ## [1.0.3] - 2019-07-26
 ### Fixed

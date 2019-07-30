@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 
 from cognite.client import CogniteClient, utils
-from cognite.client.data_classes import Sequence
+from cognite.client.data_classes import Sequence, SequenceData
 from cognite.client.experimental import CogniteClient
 from tests.utils import set_request_limit
 
@@ -50,6 +50,14 @@ def new_seq():
     assert COGNITE_CLIENT.sequences.retrieve(seq.id) is None
 
 
+@pytest.fixture(scope="session")
+def new_seq_long():
+    seq = COGNITE_CLIENT.sequences.create(Sequence(columns=[{"valueType": "LONG"}]))
+    yield seq
+    COGNITE_CLIENT.sequences.delete(id=seq.id)
+    assert COGNITE_CLIENT.sequences.retrieve(seq.id) is None
+
+
 @pytest.fixture
 def post_spy():
     with mock.patch.object(COGNITE_CLIENT.sequences.data, "_post", wraps=COGNITE_CLIENT.sequences.data._post) as _:
@@ -59,6 +67,7 @@ def post_spy():
 class TestSequencesDataAPI:
     def test_retrieve(self, small_sequence):
         dps = COGNITE_CLIENT.sequences.data.retrieve(id=small_sequence.id, start=0, end=None)
+        assert isinstance(dps, SequenceData)
         assert len(dps) > 0
 
     def test_retrieve_dataframe(self, small_sequence):
@@ -76,16 +85,37 @@ class TestSequencesDataAPI:
 
     def test_retrieve_paginate(self, string200, post_spy):
         data = COGNITE_CLIENT.sequences.data.retrieve(start=0, end=1000, id=string200.id)
-        assert 200 == len(data[0]["values"])
+        assert 200 == len(data.values[0])
         assert 999 == len(data)
         assert 9 == COGNITE_CLIENT.sequences.data._post.call_count
+
+    def test_retrieve_one_column(self, named_long_str):
+        dps = COGNITE_CLIENT.sequences.data.retrieve(id=named_long_str.id, start=42, end=43, columns=["strcol"])
+        assert 1 == len(dps)
+        assert 1 == len(dps.column_external_ids())
+        assert 1 == len(dps.column_ids())
+        assert isinstance(dps.values[0][0], str)
 
     def test_retrieve_mixed(self, named_long_str):
         dps = COGNITE_CLIENT.sequences.data.retrieve(id=named_long_str.id, start=42, end=43)
         assert 1 == len(dps)
-        assert isinstance(dps[0]["values"][0], int)
-        assert isinstance(dps[0]["values"][1], str)
+        assert isinstance(dps.values[0][0], int)
+        assert isinstance(dps.values[0][1], str)
+        assert 1 == len(dps.longcol)
+        assert isinstance(dps.longcol[0], int)
+        assert isinstance(dps.strcol[0], str)
+        with pytest.raises(ValueError):
+            dps.missingcol
 
     def test_retrieve_paginate_end_coinciding_with_page(self, string200, post_spy):
         data = COGNITE_CLIENT.sequences.data.retrieve(start=1, end=118, id=string200.id)
         assert 1 == COGNITE_CLIENT.sequences.data._post.call_count
+
+    def test_delete_range(self, new_seq_long):
+        data = [(i, [10 * i]) for i in [1, 2, 3, 5, 8, 13, 21, 34]]
+        COGNITE_CLIENT.sequences.data.insert(columns=new_seq_long.column_ids(), rows=data, id=new_seq_long.id)
+        COGNITE_CLIENT.sequences.data.delete_range(start=4, end=15, id=new_seq_long.id)
+        dps = COGNITE_CLIENT.sequences.data.retrieve(start=0, end=None, id=new_seq_long.id)
+        # potential delay, so can't assert, but tested in notebook
+        # assert [10, 20, 30, 210, 340] == [d[0] for d in dps.values]
+        # assert [1, 2, 3, 21, 34] == dps.row_numbers

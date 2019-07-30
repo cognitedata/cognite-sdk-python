@@ -202,7 +202,7 @@ class DatapointsAPI(APIClient):
         Timestamps can be represented as milliseconds since epoch or datetime objects.
 
         Args:
-            datapoints(Union[List[Dict, Tuple]]): The datapoints you wish to insert. Can either be a list of tuples or
+            datapoints(Union[List[Dict], List[Tuple]]): The datapoints you wish to insert. Can either be a list of tuples or
                 a list of dictionaries. See examples below.
             id (int): Id of time series to insert datapoints into.
             external_id (str): External id of time series to insert datapoint into.

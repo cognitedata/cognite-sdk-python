@@ -1,3 +1,4 @@
+import math
 from typing import *
 from typing import List
 
@@ -46,6 +47,39 @@ class Sequence(CogniteResource):
         self._cognite_client = cognite_client
 
     # GenStop
+
+    def rows(self, start, end) -> List[dict]:
+        """Retrieves rows from this sequence.
+
+        Returns:
+            List of sequence data.
+        """
+        identifier = utils._auxiliary.assert_at_least_one_of_id_or_external_id(self.id, self.external_id)
+        return self._cognite_client.sequences.data.retrieve(**identifier, start=start, end=end)
+
+    def column_ids(self):
+        """Retrieves list of column ids for the sequence, for use in e.g. data retrieve or insert methods
+
+        Returns:
+            List of sequence column ids.
+        """
+        return [c.get("id") for c in self.columns]
+
+    def column_external_ids(self):
+        """Retrieves list of column external ids for the sequence, for use in e.g. data retrieve or insert methods
+
+        Returns:
+            List of sequence column external ids
+        """
+        return [c.get("externalId") for c in self.columns]
+
+    def column_value_types(self):
+        """Retrieves list of column value types
+
+        Returns:
+            List of column value types
+        """
+        return [c.get("valueType") for c in self.columns]
 
 
 # GenClass: SequenceFilter
@@ -145,3 +179,137 @@ class _ListSequenceUpdate(CogniteListUpdate):
 class SequenceList(CogniteResourceList):
     _RESOURCE = Sequence
     _UPDATE = SequenceUpdate
+
+
+class SequenceData:
+    """An object representing a list of rows from a sequence.
+
+    Args:
+        id (int): Id of the sequence the data belong to
+        external_id (str): External id of the sequence the data belong to
+        rows (List[dict]): combined row numbers and row data object from the API. If you pass this, row_numbers/values are ignored.
+        row_numbers (List[int]): The data row numbers.
+        values (List[List[ Union[int, str, float]]]): The data values, one row at a time.
+        columns: List[dict]: The column information, in the format returned by the API
+    """
+
+    def __init__(
+        self,
+        id: int = None,
+        external_id: str = None,
+        rows: List[dict] = None,
+        row_numbers: List[int] = None,
+        values: List[List[Union[int, str, float]]] = None,
+        columns: List[dict] = None,
+    ):
+        if rows:
+            row_numbers = [r["rowNumber"] for r in rows]
+            values = [r["values"] for r in rows]
+        self.id = id
+        self.external_id = external_id
+        self.row_numbers = row_numbers or []
+        self.values = values or []
+        self.columns = columns
+
+    def __str__(self):
+        return json.dumps(self.dump(), indent=4)
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __len__(self) -> int:
+        return len(self.row_numbers)
+
+    def __eq__(self, other):
+        return (
+            type(self) == type(other)
+            and self.id == other.id
+            and self.external_id == other.external_id
+            and self.row_numbers == other.row_numbers
+            and self.values == other.values
+        )
+
+    def __getitem__(self, item) -> List[Union[int, str, float]]:
+        # slow, should be replaced by dict cache if it sees more than incidental use
+        return self.values[self.row_numbers.index(item)]
+
+    def __getattr__(self, item) -> List[Union[int, str, float]]:
+        """Get a column by externalId
+        """
+        try:
+            ix = self.column_external_ids().index(item)
+        except ValueError as e:
+            raise ValueError(
+                "Column {} not found, Sequence column external ids are {}".format(item, self.column_external_ids())
+            )
+        return [r[ix] for r in self.values]
+
+    def __iter__(self) -> Generator[Tuple[int, List[Union[int, str, float]]], None, None]:
+        for row, values in zip(self.row_numbers, self.values):
+            yield row, values
+
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+        """Dump the sequence data into a json serializable Python data type.
+
+        Args:
+            camel_case (bool): Use camelCase for attribute names. Defaults to False.
+
+        Returns:
+            List[Dict[str, Any]]: A list of dicts representing the instance.
+        """
+        dumped = {
+            "id": self.id,
+            "external_id": self.external_id,
+            "columns": self.columns,
+            "rows": [{"rowNumber": r, "values": v} for r, v in zip(self.row_numbers, self.values)],
+        }
+        if camel_case:
+            dumped = {utils._auxiliary.to_camel_case(key): value for key, value in dumped.items()}
+        return {key: value for key, value in dumped.items() if value is not None}
+
+    def to_pandas(self, column_names="externalIdIfExists") -> "pandas.DataFrame":
+        """Convert the sequence data into a pandas DataFrame.
+
+        Args:
+            column_names (str): Which field to use as column header. Either "externalId", "id" or "externalIdIfExists" for externalId if it exists and id otherwise.
+
+        Returns:
+            pandas.DataFrame: The dataframe.
+        """
+        pd = utils._auxiliary.local_import("pandas")
+        if column_names == "externalId":
+            identifiers = self.column_external_ids()
+        elif column_names == "id":
+            identifiers = self.column_ids()
+        elif column_names == "externalIdIfExists":
+            identifiers = [eid or id for eid, id in zip(self.column_external_ids(), self.column_ids())]
+        else:
+            raise ValueError("column_names must be 'externalId' or 'id'")
+        return pd.DataFrame(
+            [[x or math.nan for x in r] for r in self.values], index=self.row_numbers, columns=identifiers
+        )
+
+    def column_ids(self):
+        """Retrieves list of column ids for the sequence, for use in e.g. data retrieve or insert methods
+
+        Returns:
+            List of sequence column ids.
+        """
+        return [c.get("id") for c in self.columns]
+
+    def column_external_ids(self):
+        """Retrieves list of column external ids for the sequence, for use in e.g. data retrieve or insert methods
+
+        Returns:
+            List of sequence column external ids
+        """
+        print(self.columns)
+        return [c.get("externalId") for c in self.columns]
+
+    def column_value_types(self):
+        """Retrieves list of column value types
+
+        Returns:
+            List of column value types
+        """
+        return [c.get("valueType") for c in self.columns]
