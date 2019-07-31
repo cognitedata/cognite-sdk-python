@@ -270,7 +270,9 @@ class SequencesDataAPI(APIClient):
 
     def insert(
         self,
-        rows: Union[Dict[int, List[Union[int, float, str]]], List[Tuple[int, Union[int, float, str]]]],
+        rows: Union[
+            Dict[int, List[Union[int, float, str]]], List[Tuple[int, Union[int, float, str]]], List[Dict[str, Any]]
+        ],
         columns: List[Union[int, str]] = None,
         id: int = None,
         external_id: str = None,
@@ -279,8 +281,8 @@ class SequencesDataAPI(APIClient):
 
         Args:
             columns (List[Union[int, str]]): List of id or external id for the columns of the sequence. If 'None' is passed, all columns ids will be retrieved from metadata and used in that order.
-            rows (Union[ Dict[int, List[Union[int, float, str]]], List[Tuple[int,Union[int, float, str]]]]):  The rows you wish to insert. Can either be a list of tuples or
-                a dictionary of rowNumber: data. See examples below.
+            rows (Union[ Dict[int, List[Union[int, float, str]]], List[Tuple[int,Union[int, float, str]]], List[Dict[str,Any]]]):  The rows you wish to insert.
+                Can either be a list of tuples, a list of {"rowNumber":... ,"values": ...} objects or a dictionary of rowNumber: data. See examples below.
             id (int): Id of sequence to insert rows into.
             external_id (str): External id of sequence to insert rows into.
 
@@ -292,16 +294,21 @@ class SequencesDataAPI(APIClient):
 
                 >>> from cognite.client.experimental import CogniteClient
                 >>> c = CogniteClient()
-                >>> # with a dictionary
                 >>> seq = c.sequences.create(Sequence(columns=[{"valueType": "STRING","valueType": "DOUBLE"}]))
                 >>> data = [(1, ['pi',3.14]), (2, ['e',2.72]) ]
                 >>> res1 = c.sequences.data.insert(columns=seq.column_ids(), rows=data, id=1)
+
+            They can also be provided as a list of API-style objects with a rowNumber and values field::
+
+                >>> from cognite.client.experimental import CogniteClient
+                >>> c = CogniteClient()
+                >>> data = [{"rowNumber": 123, "values": ['str',3]}, {"rowNUmber": 456, "values": ["bar",42]} ]
+                >>> res1 = c.sequences.data.insert(data, id=1) # implicit columns are retrieved from metadata
 
             Or they can be a given as a dictionary with row number as the key, and the value is the data to be inserted at that row::
 
                 >>> from cognite.client.experimental import CogniteClient
                 >>> c = CogniteClient()
-                >>> # with a dictionary
                 >>> data = {123 : ['str',3], 456 : ['bar',42] }
                 >>> res1 = c.sequences.data.insert(columns=['stringColumn','intColumn'], rows=data, id=1)
         """
@@ -311,8 +318,12 @@ class SequencesDataAPI(APIClient):
 
         if isinstance(rows, dict):
             all_rows = [{"rowNumber": k, "values": v} for k, v in rows.items()]
-        elif isinstance(rows, list):
+        elif isinstance(rows, list) and len(rows) > 0 and isinstance(rows[0], dict):
+            all_rows = rows
+        elif isinstance(rows, list) and (len(rows) == 0 or isinstance(rows[0], tuple)):
             all_rows = [{"rowNumber": k, "values": v} for k, v in rows]
+        else:
+            raise ValueError("Invalid format for 'rows', expected a list of tuples, list of dict or dict")
 
         base_obj = self._process_ids(id, external_id, wrap_ids=True)[0]
         base_obj.update(self._process_columns(columns))

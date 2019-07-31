@@ -316,6 +316,19 @@ class TestSequences:
             ]
         } == jsgz_load(mock_post_sequence_data.calls[0].request.body)
 
+    def test_insert_raw(self, mock_post_sequence_data):
+        data = [{"rowNumber": i, "values": [2 * i, "str"]} for i in range(1, 11)]
+        SEQ_API.data.insert(columns=[0], rows=data, external_id="eid")
+        assert {
+            "items": [
+                {
+                    "externalId": "eid",
+                    "columns": [{"id": 0}],
+                    "rows": [{"rowNumber": i, "values": [2 * i, "str"]} for i in range(1, 11)],
+                }
+            ]
+        } == jsgz_load(mock_post_sequence_data.calls[0].request.body)
+
     def test_retrieve_by_id(self, mock_seq_response, mock_get_sequence_data):
         data = SEQ_API.data.retrieve(id=123, start=123, end=None)
         assert isinstance(data, SequenceData)
@@ -367,12 +380,26 @@ class TestSequences:
             assert [1] == v
 
     def test_sequence_builtins(self, mock_seq_response):
-        r1 = SEQ_API.retrieve(id=1)
-        r2 = SEQ_API.retrieve(id=1)
+        r1 = SEQ_API.retrieve(id=0)
+        r2 = SEQ_API.retrieve(id=0)
         assert r1 == r2
         assert r1.__eq__(r2)
         assert str(r1) == str(r2)
         assert mock_seq_response.calls[0].response.json()["items"][0] == r1.dump(camel_case=True)
+
+    def test_sequence_data_builtins(self, mock_seq_response, mock_get_sequence_data):
+        r1 = SEQ_API.data.retrieve(id=0, start=0, end=None)
+        r2 = SEQ_API.data.retrieve(id=0, start=0, end=None)
+        assert r1 == r2
+        assert r1.__eq__(r2)
+        assert str(r1) == str(r2)
+        assert r1.dump() == r2.dump()
+        list_request = [call for call in mock_get_sequence_data.calls if "/data/list" in call.request.url][0]
+        response = list_request.response.json()["items"][0]
+        data_dump = r1.dump(camel_case=True)
+        print(response)
+        for f in ["columns", "rows", "id"]:
+            assert response[f] == data_dump[f]
 
 
 @pytest.mark.dsl
