@@ -100,6 +100,10 @@ class TestSequencesDataAPI:
         data = {i: ["str"] for i in range(1, 61)}
         COGNITE_CLIENT.sequences.data.insert(rows=data, columns=new_seq.column_ids(), id=new_seq.id)
 
+    def test_insert_raw(self, new_seq):
+        data = [{"rowNumber": i, "values": ["str"]} for i in range(1, 61)]
+        COGNITE_CLIENT.sequences.data.insert(rows=data, columns=new_seq.column_ids(), id=new_seq.id)
+
     def test_insert_implicit_rows_cols(self, new_seq_mixed):
         data = {i: [i, "str"] for i in range(1, 10)}
         COGNITE_CLIENT.sequences.data.insert(data, id=new_seq_mixed.id)
