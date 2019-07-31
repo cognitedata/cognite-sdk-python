@@ -23,10 +23,11 @@ Changes are grouped as follows
 ### Changed
 - Sequences data retrieval now returns a SequenceData object.
 - Sequences insert takes its parameters row data first, and no longer requires columns to be passed.
+- Sequences insert now accepts tuples and raw-style data input
 - Sequences create now clears invalid fields such as 'id' in columns specification, so sequences can more easily re-use existing specifications.
 
 ### Added
-- Variety of useful helper functions for Sequence and SequenceData objects.
+- Variety of useful helper functions for Sequence and SequenceData objects, particularly .column_ids() and .column_external_ids()
 - Sequences insert_dataframe function
 - Sequences delete_range function.
 
