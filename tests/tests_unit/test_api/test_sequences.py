@@ -1,3 +1,4 @@
+import json
 import math
 import os
 import re
@@ -71,13 +72,13 @@ def mock_sequences_empty(rsps):
 
 
 @pytest.fixture
-def mock_post_sequencedata(rsps):
+def mock_post_sequence_data(rsps):
     rsps.add(rsps.POST, SEQ_API._get_base_url_with_base_path() + "/sequences/data", status=200, json={})
     yield rsps
 
 
 @pytest.fixture
-def mock_get_sequencedata(rsps):
+def mock_get_sequence_data(rsps):
     json = {
         "items": [
             {
@@ -93,7 +94,7 @@ def mock_get_sequencedata(rsps):
 
 
 @pytest.fixture
-def mock_get_sequencedata_many_columns(rsps):
+def mock_get_sequence_data_many_columns(rsps):
     response_body = {
         "items": [
             {
@@ -137,16 +138,23 @@ def mock_get_sequencedata_many_columns(rsps):
 
 
 @pytest.fixture
-def mock_get_sequencedata_no_extid_in_columns(rsps):
+def mock_get_sequence_data_no_extid_in_columns(rsps):
     json = {
-        "items": [{"id": 0, "externalId": "eid", "columns": [{"id": 0}], "rows": [{"rowNumber": 0, "values": [1]}]}]
+        "items": [
+            {
+                "id": 0,
+                "externalId": "eid",
+                "columns": [{"id": 0}, {"id": 1, "externalId": "col2"}],
+                "rows": [{"rowNumber": 0, "values": [1, 2]}],
+            }
+        ]
     }
     rsps.add(rsps.POST, SEQ_API._get_base_url_with_base_path() + "/sequences/data/list", status=200, json=json)
     yield rsps
 
 
 @pytest.fixture
-def mock_get_sequencedata_with_null(rsps):
+def mock_get_sequence_data_with_null(rsps):
     json = {
         "items": [
             {
@@ -162,7 +170,7 @@ def mock_get_sequencedata_with_null(rsps):
 
 
 @pytest.fixture
-def mock_delete_datapoints(rsps):
+def mock_delete_sequence_data(rsps):
     rsps.add(rsps.POST, SEQ_API._get_base_url_with_base_path() + "/sequences/data/delete", status=200, json={})
     yield rsps
 
@@ -282,7 +290,7 @@ class TestSequences:
             SequenceUpdate,
         )
 
-    def test_insert(self, mock_post_sequencedata):
+    def test_insert(self, mock_post_sequence_data):
         data = {i: [2 * i] for i in range(1, 11)}
         SEQ_API.data.insert(columns=[0], rows=data, external_id="eid")
         assert {
@@ -293,9 +301,9 @@ class TestSequences:
                     "rows": [{"rowNumber": i, "values": [2 * i]} for i in range(1, 11)],
                 }
             ]
-        } == jsgz_load(mock_post_sequencedata.calls[0].request.body)
+        } == jsgz_load(mock_post_sequence_data.calls[0].request.body)
 
-    def test_insert_tuple(self, mock_post_sequencedata):
+    def test_insert_tuple(self, mock_post_sequence_data):
         data = [(i, [2 * i]) for i in range(1, 11)]
         SEQ_API.data.insert(columns=[0], rows=data, external_id="eid")
         assert {
@@ -306,51 +314,51 @@ class TestSequences:
                     "rows": [{"rowNumber": i, "values": [2 * i]} for i in range(1, 11)],
                 }
             ]
-        } == jsgz_load(mock_post_sequencedata.calls[0].request.body)
+        } == jsgz_load(mock_post_sequence_data.calls[0].request.body)
 
-    def test_retrieve_by_id(self, mock_seq_response, mock_get_sequencedata):
+    def test_retrieve_by_id(self, mock_seq_response, mock_get_sequence_data):
         data = SEQ_API.data.retrieve(id=123, start=123, end=None)
         assert isinstance(data, SequenceData)
         assert 1 == len(data)
 
-    def test_retrieve_by_external_id(self, mock_seq_response, mock_get_sequencedata):
+    def test_retrieve_by_external_id(self, mock_seq_response, mock_get_sequence_data):
         data = SEQ_API.data.retrieve(external_id="foo", start=1, end=1000)
         assert isinstance(data, SequenceData)
         assert 1 == len(data)
 
-    def test_retrieve_missing_column_external_id(self, mock_seq_response, mock_get_sequencedata_no_extid_in_columns):
+    def test_retrieve_missing_column_external_id(self, mock_seq_response, mock_get_sequence_data_no_extid_in_columns):
         data = SEQ_API.data.retrieve(id=123, start=123, end=None)
         assert isinstance(data, SequenceData)
         assert 1 == len(data)
 
-    def test_delete_by_id(self, mock_delete_datapoints):
+    def test_delete_by_id(self, mock_delete_sequence_data):
         res = SEQ_API.data.delete(id=1, rows=[1, 2, 3])
         assert res is None
-        assert {"items": [{"id": 1, "rows": [1, 2, 3]}]} == jsgz_load(mock_delete_datapoints.calls[0].request.body)
+        assert {"items": [{"id": 1, "rows": [1, 2, 3]}]} == jsgz_load(mock_delete_sequence_data.calls[0].request.body)
 
-    def test_delete_by_external_id(self, mock_delete_datapoints):
+    def test_delete_by_external_id(self, mock_delete_sequence_data):
         res = SEQ_API.data.delete(external_id="foo", rows=[1])
         assert res is None
         assert {"items": [{"externalId": "foo", "rows": [1]}]} == jsgz_load(
-            mock_delete_datapoints.calls[0].request.body
+            mock_delete_sequence_data.calls[0].request.body
         )
 
-    def test_retrieve_automatic_limit(self, mock_get_sequencedata_many_columns):
+    def test_retrieve_automatic_limit(self, mock_get_sequence_data_many_columns):
         data = SEQ_API.data.retrieve(id=1, start=0, end=None)
         assert isinstance(data, SequenceData)
         assert 1 == len(data)
         # 6MB limit / (200 columns x 256 bytes) = 117
-        for call in mock_get_sequencedata_many_columns.calls:
+        for call in mock_get_sequence_data_many_columns.calls:
             if "/data/list" in call.request.url:
                 assert 117 == jsgz_load(call.request.body)["items"][0]["limit"]
 
-    def test_retrieve_rows(self, mock_seq_response, mock_get_sequencedata):
+    def test_retrieve_rows(self, mock_seq_response, mock_get_sequence_data):
         seq = SEQ_API.retrieve(id=1)
         data = seq.rows(start=0, end=None)
         assert isinstance(data, SequenceData)
         assert 1 == len(data)
 
-    def test_helper_functions(self, mock_seq_response, mock_get_sequencedata):
+    def test_rows_helper_functions(self, mock_seq_response, mock_get_sequence_data):
         seq = SEQ_API.retrieve(id=1)
         data = seq.rows(start=0, end=None)
         assert [1] == data[0]
@@ -358,16 +366,33 @@ class TestSequences:
             assert 0 == r
             assert [1] == v
 
+    def test_sequence_builtins(self, mock_seq_response):
+        r1 = SEQ_API.retrieve(id=1)
+        r2 = SEQ_API.retrieve(id=1)
+        assert r1 == r2
+        assert r1.__eq__(r2)
+        assert str(r1) == str(r2)
+        assert mock_seq_response.calls[0].response.json()["items"][0] == r1.dump(camel_case=True)
+
 
 @pytest.mark.dsl
 class TestSequencesPandasIntegration:
-    def test_retrieve_dataframe(self, mock_seq_response, mock_get_sequencedata):
+    def test_retrieve_dataframe(self, mock_seq_response, mock_get_sequence_data):
         df = SEQ_API.data.retrieve_dataframe(external_id="foo", start=1000000, end=1100000)
         assert {"ceid"} == set(df.columns)
         assert df.shape[0] > 0
         assert df.index == [0]
 
-    def test_retrieve_dataframe_convert_null(self, mock_seq_response, mock_get_sequencedata_with_null):
+    def test_retrieve_dataframe_columns(self, mock_seq_response, mock_get_sequence_data_no_extid_in_columns):
+        data = SEQ_API.data.retrieve(external_id="foo", start=1000000, end=1100000)
+        assert isinstance(data, SequenceData)
+        assert [0, "col2"] == list(data.to_pandas().columns)
+        assert [0, 1] == list(data.to_pandas(column_names="id").columns)
+        assert [None, "col2"] == list(data.to_pandas(column_names="externalId").columns)
+        with pytest.raises(ValueError):
+            data.to_pandas(column_names="badvalue")
+
+    def test_retrieve_dataframe_convert_null(self, mock_seq_response, mock_get_sequence_data_with_null):
         df = SEQ_API.data.retrieve_dataframe(external_id="foo", start=0, end=None)
         assert {"strcol", "intcol"} == set(df.columns)
         assert "None" not in df.strcol
@@ -399,13 +424,13 @@ class TestSequencesPandasIntegration:
         assert "string" == df.loc["description"][0]
         assert "metadata-value" == df.loc["metadata-key"][0]
 
-    def test_insert_dataframe(self, mock_post_sequencedata):
+    def test_insert_dataframe(self, mock_post_sequence_data):
         import pandas as pd
 
         df = pd.DataFrame({"foo": [1, 2], 4: [5.0, 6.0]}, index=[123, 456])
         res = SEQ_API.data.insert_dataframe(df, id=42)
         assert res is None
-        request_body = jsgz_load(mock_post_sequencedata.calls[0].request.body)
+        request_body = jsgz_load(mock_post_sequence_data.calls[0].request.body)
         assert {
             "items": [
                 {
