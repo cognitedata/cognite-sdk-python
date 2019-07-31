@@ -454,7 +454,9 @@ class TestSequencesPandasIntegration:
     def test_insert_dataframe(self, mock_post_sequence_data):
         import pandas as pd
 
-        df = pd.DataFrame({"foo": [1, 2], 4: [5.0, 6.0]}, index=[123, 456])
+        df = pd.DataFrame(index=[123, 456])
+        df["foo"] = [1, 2]
+        df[4] = [5.0, 6.0]
         res = SEQ_API.data.insert_dataframe(df, id=42)
         assert res is None
         request_body = jsgz_load(mock_post_sequence_data.calls[0].request.body)
