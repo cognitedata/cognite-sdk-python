@@ -1,3 +1,4 @@
+import copy
 import math
 from typing import *
 
@@ -147,14 +148,30 @@ class SequencesAPI(APIClient):
 
         Examples:
 
-            Create a new sequences::
+            Create a new sequence::
 
                 >>> from cognite.client.experimental import CogniteClient
                 >>> from cognite.client.data_classes import Sequence
                 >>> c = CogniteClient()
-                >>> ts = c.sequences.create(Sequence(name="my sequence", columns=[{'valueType':'STRING'},{'valueType':'DOUBLE'}]))
+                >>> seq = c.sequences.create(Sequence(external_id="my_sequence", columns=[{'valueType':'STRING'},{'valueType':'DOUBLE'}]))
+
+            Create a new sequence with the same column specifications as an existing sequence::
+
+                >>> seq2 = c.sequences.create(Sequence(external_id="my_copied_sequence", columns=seq.columns))
+
         """
+        if isinstance(sequences, list):
+            sequences = [self._clean_columns(seq) for seq in sequences]
+        else:
+            sequences = self._clean_columns(sequences)
         return self._create_multiple(items=sequences)
+
+    def _clean_columns(self, sequence):
+        sequence = copy.copy(sequence)
+        sequence.columns = [
+            {v: col[v] for v in ["externalId", "valueType", "metadata"] if v in col} for col in sequence.columns
+        ]
+        return sequence
 
     def delete(self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None) -> None:
         """Delete one or more sequences.
@@ -253,15 +270,15 @@ class SequencesDataAPI(APIClient):
 
     def insert(
         self,
-        columns: List[Union[int, str]],
         rows: Union[Dict[int, List[Union[int, float, str]]], List[Tuple[int, Union[int, float, str]]]],
+        columns: List[Union[int, str]] = None,
         id: int = None,
         external_id: str = None,
     ) -> None:
         """Insert rows into a sequence
 
         Args:
-            columns (List[Union[int, str]]): List of id or external id for the columns of the sequence
+            columns (List[Union[int, str]]): List of id or external id for the columns of the sequence. If 'None' is passed, all columns ids will be retrieved from metadata and used in that order.
             rows (Union[ Dict[int, List[Union[int, float, str]]], List[Tuple[int,Union[int, float, str]]]]):  The rows you wish to insert. Can either be a list of tuples or
                 a dictionary of rowNumber: data. See examples below.
             id (int): Id of sequence to insert rows into.
@@ -289,14 +306,16 @@ class SequencesDataAPI(APIClient):
                 >>> res1 = c.sequences.data.insert(columns=['stringColumn','intColumn'], rows=data, id=1)
         """
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
-        base_obj = self._process_ids(id, external_id, wrap_ids=True)[0]
-        base_obj.update(self._process_columns(columns))
+        if columns is None:
+            columns = self._sequences_api.retrieve(id=id, external_id=external_id).column_ids()
 
         if isinstance(rows, dict):
             all_rows = [{"rowNumber": k, "values": v} for k, v in rows.items()]
         elif isinstance(rows, list):
             all_rows = [{"rowNumber": k, "values": v} for k, v in rows]
 
+        base_obj = self._process_ids(id, external_id, wrap_ids=True)[0]
+        base_obj.update(self._process_columns(columns))
         row_objs = [
             {"rows": all_rows[i : i + self._SEQ_POST_LIMIT]} for i in range(0, len(all_rows), self._SEQ_POST_LIMIT)
         ]
@@ -305,6 +324,32 @@ class SequencesDataAPI(APIClient):
             self._insert_data, tasks, max_workers=self._config.max_workers
         )
         summary.raise_compound_exception_if_failed_tasks()
+
+    def insert_dataframe(self, dataframe, id=None, external_id=None):
+        """Insert a Pandas dataframe.
+
+        The index of the dataframe must contain the row numbers. The names of the remaining columns specify the column ids or external ids (depending on their type).
+        The sequence and columns must already exist.
+
+        Args:
+            dataframe (pandas.DataFrame):  Pandas DataFrame object containing the sequence data.
+            id (int): Id of sequence to insert rows into.
+            external_id (str): External id of sequence to insert rows into.
+
+        Returns:
+            None
+
+        Examples:
+            Multiply data in the sequence by 2::
+
+                >>> from cognite.client.experimental import CogniteClient
+                >>> c = CogniteClient()
+                >>> df = c.sequences.data.retrieve_dataframe(id=123, start=0, end=None)
+                >>> c.sequences.data.insert_dataframe(df*2, id=123) and None
+        """
+        dataframe = dataframe.replace({math.nan: None})
+        data = [(v[0], list(v[1:])) for v in dataframe.itertuples()]
+        self.insert(rows=data, columns=list(dataframe.columns), id=id, external_id=external_id)
 
     def _insert_data(self, task):
         self._post(url_path=self._DATA_PATH, json={"items": [task]})

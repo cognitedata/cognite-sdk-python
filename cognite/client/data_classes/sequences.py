@@ -303,7 +303,6 @@ class SequenceData:
         Returns:
             List of sequence column external ids
         """
-        print(self.columns)
         return [c.get("externalId") for c in self.columns]
 
     def column_value_types(self):

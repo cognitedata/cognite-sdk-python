@@ -51,8 +51,24 @@ def new_seq():
 
 
 @pytest.fixture(scope="session")
+def new_small_seq(small_sequence):
+    seq = COGNITE_CLIENT.sequences.create(Sequence(columns=small_sequence.columns))
+    yield seq
+    COGNITE_CLIENT.sequences.delete(id=seq.id)
+    assert COGNITE_CLIENT.sequences.retrieve(seq.id) is None
+
+
+@pytest.fixture(scope="session")
 def new_seq_long():
     seq = COGNITE_CLIENT.sequences.create(Sequence(columns=[{"valueType": "LONG"}]))
+    yield seq
+    COGNITE_CLIENT.sequences.delete(id=seq.id)
+    assert COGNITE_CLIENT.sequences.retrieve(seq.id) is None
+
+
+@pytest.fixture(scope="session")
+def new_seq_mixed():
+    seq = COGNITE_CLIENT.sequences.create(Sequence(columns=[{"valueType": "DOUBLE"}, {"valueType": "STRING"}]))
     yield seq
     COGNITE_CLIENT.sequences.delete(id=seq.id)
     assert COGNITE_CLIENT.sequences.retrieve(seq.id) is None
@@ -76,9 +92,17 @@ class TestSequencesDataAPI:
         assert df.shape[1] == 2
         assert np.diff(df.index).all()
 
+    def test_insert_dataframe(self, small_sequence, new_small_seq):
+        df = COGNITE_CLIENT.sequences.data.retrieve_dataframe(id=small_sequence.id, start=0, end=5)
+        COGNITE_CLIENT.sequences.data.insert_dataframe(df, id=new_small_seq.id)
+
     def test_insert(self, new_seq):
         data = {i: ["str"] for i in range(1, 61)}
-        COGNITE_CLIENT.sequences.data.insert(rows=data, columns=[new_seq.columns[0]["id"]], id=new_seq.id)
+        COGNITE_CLIENT.sequences.data.insert(rows=data, columns=new_seq.column_ids(), id=new_seq.id)
+
+    def test_insert_implicit_rows_cols(self, new_seq_mixed):
+        data = {i: [i, "str"] for i in range(1, 10)}
+        COGNITE_CLIENT.sequences.data.insert(data, id=new_seq_mixed.id)
 
     def test_delete_multiple(self, new_seq):
         COGNITE_CLIENT.sequences.data.delete(rows=[1, 2, 42, 3524], id=new_seq.id)

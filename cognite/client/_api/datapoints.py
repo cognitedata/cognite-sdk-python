@@ -438,7 +438,6 @@ class DatapointsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> ts_id = 123
                 >>> start = datetime(2018, 1, 1)
-                >>> # The scaling by 1000 is important: timestamp() returns seconds
                 >>> x = pd.DatetimeIndex([start + timedelta(days=d) for d in range(100)])
                 >>> y = np.random.normal(0, 1, 100)
                 >>> df = pd.DataFrame({ts_id: y}, index=x)
