@@ -20,6 +20,8 @@ Changes are grouped as follows
 - Separate read/write fields on data classes
 
 ## [Unreleased]
+### Added
+- Support for external id column headers in datapoints.insert_dataframe()
 
 ## [1.0.3] - 2019-07-26
 ### Fixed
