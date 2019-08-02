@@ -20,6 +20,7 @@ Changes are grouped as follows
 - Separate read/write fields on data classes
 
 ## [Unreleased]
+
 ### Changed
 - Sequences data retrieval now returns a SequenceData object.
 - Sequences insert takes its parameters row data first, and no longer requires columns to be passed.
@@ -30,6 +31,7 @@ Changes are grouped as follows
 - Variety of useful helper functions for Sequence and SequenceData objects, particularly .column_ids() and .column_external_ids()
 - Sequences insert_dataframe function
 - Sequences delete_range function.
+- Support for external id column headers in datapoints.insert_dataframe()
 
 ## [1.0.3] - 2019-07-26
 ### Fixed

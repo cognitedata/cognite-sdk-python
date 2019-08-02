@@ -413,16 +413,18 @@ class DatapointsAPI(APIClient):
             ).to_pandas()
         return pd.concat([id_df, external_id_df], axis="columns")
 
-    def insert_dataframe(self, dataframe):
+    def insert_dataframe(self, dataframe, external_id_headers: bool = False):
         """Insert a dataframe.
 
-        The index of the dataframe must contain the timestamps. The names of the remaining columns specify the ids of
+        The index of the dataframe must contain the timestamps. The names of the remaining columns specify the ids or external ids of
         the time series to which column contents will be written.
 
         Said time series must already exist.
 
         Args:
             dataframe (pandas.DataFrame):  Pandas DataFrame Object containing the time series.
+            external_id_headers (bool): Set to True if the column headers are external ids rather than internal ids.
+                Defaults to False.
 
         Returns:
             None
@@ -446,14 +448,16 @@ class DatapointsAPI(APIClient):
         assert not dataframe.isnull().values.any(), "Dataframe contains NaNs. Remove them in order to insert the data."
         dps = []
         for col in dataframe.columns:
-            dps.append(
-                {
-                    "id": int(col),
-                    "datapoints": list(
-                        zip(dataframe.index.values.astype("datetime64[ms]").astype("int64").tolist(), dataframe[col])
-                    ),
-                }
-            )
+            dps_object = {
+                "datapoints": list(
+                    zip(dataframe.index.values.astype("datetime64[ms]").astype("int64").tolist(), dataframe[col])
+                )
+            }
+            if external_id_headers:
+                dps_object["externalId"] = col
+            else:
+                dps_object["id"] = int(col)
+            dps.append(dps_object)
         self.insert_multiple(dps)
 
 
