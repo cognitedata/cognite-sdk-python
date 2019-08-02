@@ -221,6 +221,16 @@ class TestFilesAPI:
         FILES_API.upload(path)
         assert {"name": "file_for_test_upload_1.txt"} == jsgz_load(mock_file_upload_response.calls[0].request.body)
 
+    def test_upload_no_path(self, mock_file_upload_response):
+        res = FILES_API.upload(name="bla", external_id="blabla")
+        response_body = mock_file_upload_response.calls[0].response.json()
+        assert 1 == len(mock_file_upload_response.calls)
+        assert FileMetadata._load(response_body) == res
+
+    def test_upload_no_path_fails(self):
+        with pytest.raises(ValueError, match="path or name"):
+            FILES_API.upload()
+
     def test_upload_from_directory(self, mock_file_upload_response):
         path = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
         res = FILES_API.upload(path=path)

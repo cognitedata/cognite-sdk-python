@@ -274,7 +274,7 @@ class FilesAPI(APIClient):
 
     def upload(
         self,
-        path: str,
+        path: str = None,
         external_id: str = None,
         name: str = None,
         source: str = None,
@@ -326,6 +326,12 @@ class FilesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.files.upload("/path/to/my/directory")
 
+            If path is not given, it will only create the metadata for the file::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.files.upload(external_id="my_file", mime_type="application/pdf", name="my_file.pdf")
+
         """
         file_metadata = FileMetadata(
             name=name,
@@ -335,7 +341,14 @@ class FilesAPI(APIClient):
             metadata=metadata,
             asset_ids=asset_ids,
         )
-        if os.path.isfile(path):
+        if path is None:
+            if name is None:
+                raise ValueError("Either path or name must be given")
+            res = self._post(
+                url_path=self._RESOURCE_PATH, json=file_metadata.dump(camel_case=True), params={"overwrite": overwrite}
+            )
+            return FileMetadata._load(res.json())
+        elif os.path.isfile(path):
             if not name:
                 file_metadata.name = os.path.basename(path)
             return self._upload_file_from_path(file_metadata, path, overwrite)
