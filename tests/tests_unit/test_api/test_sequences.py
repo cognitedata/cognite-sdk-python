@@ -184,9 +184,9 @@ class TestSequences:
     def test_column_ids(self, mock_seq_response):
         seq = SEQ_API.retrieve(id=1)
         assert isinstance(seq, Sequence)
-        assert [0, 1] == seq.column_ids()
-        assert [None, "column2"] == seq.column_external_ids()
-        assert ["STRING", "DOUBLE"] == seq.column_value_types()
+        assert [0, 1] == seq.column_ids
+        assert [None, "column2"] == seq.column_external_ids
+        assert ["STRING", "DOUBLE"] == seq.column_value_types
 
     def test_retrieve_multiple(self, mock_seq_response):
         res = SEQ_API.retrieve_multiple(ids=[1])
@@ -203,7 +203,7 @@ class TestSequences:
         assert mock_seq_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
     def test_create_columnid_passed(self, mock_seq_response):
-        res = SEQ_API.create(Sequence(external_id="1", name="blabla", columns=[{id: 1, "valueType": "STRING"}]))
+        res = SEQ_API.create(Sequence(external_id="1", name="blabla", columns=[{"id": 1, "valueType": "STRING"}]))
         assert isinstance(res, Sequence)
         assert {"items": [{"name": "blabla", "externalId": "1", "columns": [{"valueType": "STRING"}]}]} == jsgz_load(
             mock_seq_response.calls[0].request.body
@@ -292,7 +292,7 @@ class TestSequences:
 
     def test_insert(self, mock_post_sequence_data):
         data = {i: [2 * i] for i in range(1, 11)}
-        SEQ_API.data.insert(columns=[0], rows=data, external_id="eid")
+        SEQ_API.data.insert(column_ids=[0], rows=data, external_id="eid")
         assert {
             "items": [
                 {
@@ -303,9 +303,27 @@ class TestSequences:
             ]
         } == jsgz_load(mock_post_sequence_data.calls[0].request.body)
 
+    def test_insert_missing_extid(self, mock_seq_response, mock_post_sequence_data):
+        seq = SEQ_API.retrieve(id=1)
+        with pytest.raises(ValueError):
+            SEQ_API.data.insert(column_external_ids=seq.column_external_ids, rows={1: [0]}, external_id="eid")
+
+    def test_insert_extid(self, mock_post_sequence_data):
+        data = {i: [2 * i] for i in range(1, 11)}
+        SEQ_API.data.insert(column_external_ids=["blah"], rows=data, external_id="eid")
+        assert {
+            "items": [
+                {
+                    "externalId": "eid",
+                    "columns": [{"externalId": "blah"}],
+                    "rows": [{"rowNumber": i, "values": [2 * i]} for i in range(1, 11)],
+                }
+            ]
+        } == jsgz_load(mock_post_sequence_data.calls[0].request.body)
+
     def test_insert_tuple(self, mock_post_sequence_data):
         data = [(i, [2 * i]) for i in range(1, 11)]
-        SEQ_API.data.insert(columns=[0], rows=data, external_id="eid")
+        SEQ_API.data.insert(column_ids=[0], rows=data, external_id="eid")
         assert {
             "items": [
                 {
@@ -318,7 +336,7 @@ class TestSequences:
 
     def test_insert_raw(self, mock_post_sequence_data):
         data = [{"rowNumber": i, "values": [2 * i, "str"]} for i in range(1, 11)]
-        SEQ_API.data.insert(columns=[0], rows=data, external_id="eid")
+        SEQ_API.data.insert(column_ids=[0], rows=data, external_id="eid")
         assert {
             "items": [
                 {
@@ -451,11 +469,11 @@ class TestSequencesPandasIntegration:
         assert "string" == df.loc["description"][0]
         assert "metadata-value" == df.loc["metadata-key"][0]
 
-    def test_insert_dataframe(self, mock_post_sequence_data):
+    def test_insert_dataframe_ids(self, mock_post_sequence_data):
         import pandas as pd
 
         df = pd.DataFrame(index=[123, 456])
-        df["foo"] = [1, 2]
+        df[3] = [1, 2]
         df[4] = [5.0, 6.0]
         res = SEQ_API.data.insert_dataframe(df, id=42)
         assert res is None
@@ -464,7 +482,26 @@ class TestSequencesPandasIntegration:
             "items": [
                 {
                     "id": 42,
-                    "columns": [{"externalId": "foo"}, {"id": 4}],
+                    "columns": [{"id": 3}, {"id": 4}],
+                    "rows": [{"rowNumber": 123, "values": [1, 5.0]}, {"rowNumber": 456, "values": [2, 6.0]}],
+                }
+            ]
+        } == request_body
+
+    def test_insert_dataframe_extids(self, mock_post_sequence_data):
+        import pandas as pd
+
+        df = pd.DataFrame(index=[123, 456])
+        df["aa"] = [1, 2]
+        df["bb"] = [5.0, 6.0]
+        res = SEQ_API.data.insert_dataframe(df, id=42)
+        assert res is None
+        request_body = jsgz_load(mock_post_sequence_data.calls[0].request.body)
+        assert {
+            "items": [
+                {
+                    "id": 42,
+                    "columns": [{"externalId": "aa"}, {"externalId": "bb"}],
                     "rows": [{"rowNumber": 123, "values": [1, 5.0]}, {"rowNumber": 456, "values": [2, 6.0]}],
                 }
             ]
