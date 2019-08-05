@@ -12,6 +12,7 @@ from cognite.client._api.files import FilesAPI
 from cognite.client._api.iam import IAMAPI, APIKeysAPI, GroupsAPI, SecurityCategoriesAPI, ServiceAccountsAPI
 from cognite.client._api.login import LoginAPI
 from cognite.client._api.raw import RawAPI, RawDatabasesAPI, RawRowsAPI, RawTablesAPI
+from cognite.client._api.sequences import SequencesAPI, SequencesDataAPI
 from cognite.client._api.three_d import (
     ThreeDAPI,
     ThreeDAssetMappingAPI,
@@ -61,6 +62,16 @@ def mock_cognite_client():
         raw_mock.tables = mock.MagicMock(spec=RawTablesAPI)
         raw_mock.rows = mock.MagicMock(spec=RawRowsAPI)
         cog_client_mock.raw = raw_mock
+        client_mock.return_value = cog_client_mock
+        yield
+
+
+@pytest.fixture
+def mock_cognite_experimental_client(mock_cognite_client):
+    with mock.patch("cognite.client.experimental.CogniteClient") as client_mock:
+        cog_client_mock = mock.MagicMock(spec=CogniteClient)
+        cog_client_mock.sequences = mock.MagicMock(spec=SequencesAPI)
+        cog_client_mock.sequences.data = mock.MagicMock(spec=SequencesDataAPI)
         client_mock.return_value = cog_client_mock
         yield
 

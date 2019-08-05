@@ -4,23 +4,24 @@ from typing import List
 from cognite.client.data_classes._base import *
 
 
-# GenClass: GetTimeSeriesMetadataDTO
+# GenClass: GetTimeSeriesMetadataDTO, PostTimeSeriesMetadataDTO
 class TimeSeries(CogniteResource):
     """No description.
 
     Args:
-        id (int): Generated id of the time series
-        external_id (str): Externally supplied id of the time series
-        name (str): Name of time series
+        id (int): The generated ID for the time series.
+        external_id (str): The externally supplied ID for the time series.
+        name (str): The name of the time series.
         is_string (bool): Whether the time series is string valued or not.
-        metadata (Dict[str, Any]): Additional metadata. String key -> String value.
+        metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         unit (str): The physical unit of the time series.
-        asset_id (int): Asset that this time series belongs to.
+        asset_id (int): The asset that this time series belongs to.
         is_step (bool): Whether the time series is a step series or not.
         description (str): Description of the time series.
-        security_categories (List[int]): Security categories required in order to access this time series.
-        created_time (int): Time when this time-series is created in CDF in milliseconds since Jan 1, 1970.
-        last_updated_time (int): The latest time when this time-series is updated in CDF in milliseconds since Jan 1, 1970.
+        security_categories (List[int]): The required security categories to access this time series.
+        created_time (int): Time when this time series was created in CDF in milliseconds since Jan 1, 1970.
+        last_updated_time (int): The latest time when this time series was updated in CDF in milliseconds since Jan 1, 1970.
+        legacy_name (str): Set a value for legacyName to allow applications using API v0.3, v04, v05, and v0.6 to access this time series. The legacy name is the human-readable name for the time series and is mapped to the name field used in API versions 0.3-0.6. The legacyName field value must be unique, and setting this value to an already existing value will return an error. We recommend that you set this field to the same value as externalId.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
@@ -38,6 +39,7 @@ class TimeSeries(CogniteResource):
         security_categories: List[int] = None,
         created_time: int = None,
         last_updated_time: int = None,
+        legacy_name: str = None,
         cognite_client=None,
     ):
         self.id = id
@@ -52,6 +54,7 @@ class TimeSeries(CogniteResource):
         self.security_categories = security_categories
         self.created_time = created_time
         self.last_updated_time = last_updated_time
+        self.legacy_name = legacy_name
         self._cognite_client = cognite_client
 
     # GenStop
@@ -118,11 +121,14 @@ class TimeSeriesFilter(CogniteFilter):
     """Filtering parameters
 
     Args:
-        unit (str): Filter on unit (case-sensitive).
+        name (str): Filter on name.
+        unit (str): Filter on unit.
         is_string (bool): Filter on isString.
         is_step (bool): Filter on isStep.
-        metadata (Dict[str, Any]): Filter out timeseries that do not match these metadata fields and values (case-sensitive). Format is {"key1":"value1","key2":"value2"}.
+        metadata (Dict[str, Any]): Filter out timeseries that do not match these metadata fields and values (case-sensitive). The format is {"key1":"value1","key2":"value2"}.
         asset_ids (List[int]): Filter out time series that are not linked to any of these assets.
+        root_asset_ids (List[int]): The IDs of the root assets that the related assets should be children of.
+        external_id_prefix (str): Prefix filter on externalId. (case-sensitive)
         created_time (Dict[str, Any]): Filter out time series with createdTime outside this range.
         last_updated_time (Dict[str, Any]): Filter out time series with lastUpdatedTime outside this range.
         cognite_client (CogniteClient): The client to associate with this object.
@@ -130,20 +136,26 @@ class TimeSeriesFilter(CogniteFilter):
 
     def __init__(
         self,
+        name: str = None,
         unit: str = None,
         is_string: bool = None,
         is_step: bool = None,
         metadata: Dict[str, Any] = None,
         asset_ids: List[int] = None,
+        root_asset_ids: List[int] = None,
+        external_id_prefix: str = None,
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
         cognite_client=None,
     ):
+        self.name = name
         self.unit = unit
         self.is_string = is_string
         self.is_step = is_step
         self.metadata = metadata
         self.asset_ids = asset_ids
+        self.root_asset_ids = root_asset_ids
+        self.external_id_prefix = external_id_prefix
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self._cognite_client = cognite_client
@@ -153,11 +165,11 @@ class TimeSeriesFilter(CogniteFilter):
 
 # GenUpdateClass: TimeSeriesUpdate
 class TimeSeriesUpdate(CogniteUpdate):
-    """Changes will be applied to timeseries.
+    """Changes will be applied to time series.
 
     Args:
-        id (int): Javascript friendly internal ID given to the object.
-        external_id (str): External Id provided by client. Should be unique within the project.
+        id (int): A JavaScript-friendly internal ID for the object.
+        external_id (str): The external ID provided by the client. Must be unique within the project.
     """
 
     @property

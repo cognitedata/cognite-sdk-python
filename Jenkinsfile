@@ -33,7 +33,7 @@ podTemplate(
     ],
     envVars: [
         secretEnvVar(key: 'COGNITE_API_KEY', secretName: 'cognite-sdk-python', secretKey: 'integration-test-api-key'),
-        secretEnvVar(key: 'CODECOV_TOKEN', secretName: 'codecov-token-cognite-sdk-python', secretKey: 'token.txt'),
+        secretEnvVar(key: 'CODECOV_TOKEN', secretName: 'codecov-tokens', secretKey: 'cognite-sdk-python'),
         envVar(key: 'COGNITE_BASE_URL', value: "https://greenfield.cognitedata.com"),
         envVar(key: 'COGNITE_CLIENT_NAME', value: "python-sdk-integration-tests"),
         envVar(key: 'COGNITE_PROJECT', value: "python-sdk-test"),

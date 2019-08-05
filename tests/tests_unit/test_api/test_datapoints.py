@@ -806,6 +806,30 @@ class TestPandasIntegration:
             ]
         } == request_body
 
+    def test_insert_dataframe_external_ids(self, mock_post_datapoints):
+        import pandas as pd
+
+        timestamps = [1500000000000, 1510000000000, 1520000000000, 1530000000000]
+        df = pd.DataFrame(
+            {"123": [1, 2, 3, 4], "456": [5.0, 6.0, 7.0, 8.0]},
+            index=[utils._time.ms_to_datetime(ms) for ms in timestamps],
+        )
+        res = DPS_CLIENT.insert_dataframe(df, external_id_headers=True)
+        assert res is None
+        request_body = jsgz_load(mock_post_datapoints.calls[0].request.body)
+        assert {
+            "items": [
+                {
+                    "externalId": "123",
+                    "datapoints": [{"timestamp": ts, "value": val} for ts, val in zip(timestamps, range(1, 5))],
+                },
+                {
+                    "externalId": "456",
+                    "datapoints": [{"timestamp": ts, "value": float(val)} for ts, val in zip(timestamps, range(5, 9))],
+                },
+            ]
+        } == request_body
+
     def test_insert_dataframe_with_nans(self):
         import pandas as pd
 

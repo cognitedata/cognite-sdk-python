@@ -54,7 +54,7 @@ def new_asset_hierarchy(post_spy):
     ext_ids = [a.external_id for a in assets]
     yield random_prefix, ext_ids
 
-    COGNITE_CLIENT.assets.delete(external_id=random_prefix + "0")
+    COGNITE_CLIENT.assets.delete(external_id=random_prefix + "0", recursive=True)
 
 
 @pytest.fixture

@@ -23,7 +23,7 @@ class RetryWithMaxBackoff(Retry):
         return min(utils._client_config._DefaultConfig().max_retry_backoff, super().get_backoff_time())
 
 
-def _init_requests_session(verify_ssl: bool):
+def _init_requests_session():
     session = Session()
     session_with_retry = Session()
     config = utils._client_config._DefaultConfig()
@@ -53,7 +53,7 @@ def _init_requests_session(verify_ssl: bool):
     session_with_retry.mount("http://", adapter_with_retry)
     session_with_retry.mount("https://", adapter_with_retry)
 
-    if not verify_ssl:
+    if config.disable_ssl:
         import urllib3
 
         urllib3.disable_warnings()
@@ -63,12 +63,16 @@ def _init_requests_session(verify_ssl: bool):
     return session, session_with_retry
 
 
+_REQUESTS_SESSION, _REQUESTS_SESSION_WITH_RETRY = _init_requests_session()
+
+
 class APIClient:
     _RESOURCE_PATH = None
     _LIST_CLASS = None
 
     def __init__(self, config: utils._client_config.ClientConfig, api_version: str = None, cognite_client=None):
-        (self._request_session, self._request_session_with_retry) = _init_requests_session(config.verify_ssl)
+        self._request_session = _REQUESTS_SESSION
+        self._request_session_with_retry = _REQUESTS_SESSION_WITH_RETRY
 
         self._config = config
         self._api_version = api_version
@@ -178,7 +182,7 @@ class APIClient:
             "/timeseries/data/latest",
             "/timeseries/data/delete",
         }
-        if method == "GET":
+        if method in ["GET", "PUT"]:
             return True
         if method == "POST" and path_end in retryable_post_endpoints:
             return True
@@ -375,12 +379,18 @@ class APIClient:
         external_ids: Union[List[str], str] = None,
         params: Dict = None,
         headers: Dict = None,
+        extra_body_fields: Dict = None,
     ):
         resource_path = resource_path or self._RESOURCE_PATH
         all_ids = self._process_ids(ids, external_ids, wrap_ids)
         id_chunks = utils._auxiliary.split_into_chunks(all_ids, self._DELETE_LIMIT)
         tasks = [
-            {"url_path": resource_path + "/delete", "json": {"items": chunk}, "params": params, "headers": headers}
+            {
+                "url_path": resource_path + "/delete",
+                "json": {"items": chunk, **(extra_body_fields or {})},
+                "params": params,
+                "headers": headers,
+            }
             for chunk in id_chunks
         ]
         summary = utils._concurrency.execute_tasks_concurrently(self._post, tasks, max_workers=self._config.max_workers)
@@ -520,6 +530,7 @@ class APIClient:
         code = res.status_code
         missing = None
         duplicated = None
+        extra = {}
         try:
             error = res.json()["error"]
             if isinstance(error, str):
@@ -528,6 +539,9 @@ class APIClient:
                 msg = error["message"]
                 missing = error.get("missing")
                 duplicated = error.get("duplicated")
+                for k, v in error.items():
+                    if k not in ["message", "missing", "duplicated", "code"]:
+                        extra[k] = v
             else:
                 msg = res.content
         except:
@@ -542,7 +556,7 @@ class APIClient:
             error_details["duplicated"] = duplicated
 
         log.debug("HTTP Error %s %s %s: %s", code, res.request.method, res.request.url, msg, extra=error_details)
-        raise CogniteAPIError(msg, code, x_request_id, missing=missing, duplicated=duplicated)
+        raise CogniteAPIError(msg, code, x_request_id, missing=missing, duplicated=duplicated, extra=extra)
 
     @staticmethod
     def _log_request(res: Response, **kwargs):

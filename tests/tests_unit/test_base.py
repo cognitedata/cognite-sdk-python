@@ -103,12 +103,10 @@ class TestCogniteResource:
     def test_load(self):
         assert MyResource(1).dump() == MyResource._load({"varA": 1}).dump()
         assert MyResource(1, 2).dump() == MyResource._load({"var_a": 1, "var_b": 2}).dump()
-        with pytest.raises(AttributeError, match="'var_c' does not exist"):
-            MyResource._load({"var_a": 1, "var_c": 1}).dump()
+        assert {"var_a": 1} == MyResource._load({"var_a": 1, "var_c": 1}).dump()
 
     def test_load_unknown_attribute(self):
-        with pytest.raises(AttributeError, match="var_c"):
-            MyResource._load({"varA": 1, "varB": 2, "varC": 3})
+        assert {"var_a": 1, "var_b": 2} == MyResource._load({"varA": 1, "varB": 2, "varC": 3}).dump()
 
     def test_load_object_attr(self):
         assert {"var_a": 1, "var_b": {"camelCase": 1}} == MyResource._load({"varA": 1, "varB": {"camelCase": 1}}).dump()
@@ -183,8 +181,7 @@ class TestCogniteResourceList:
         assert [{"var_a": 1, "var_b": 2}, {"var_a": 2, "var_b": 3}, {"var_a": 3}] == resource_list.dump()
 
     def test_load_unknown_attribute(self):
-        with pytest.raises(AttributeError, match="var_c"):
-            MyResourceList._load([{"varA": 1, "varB": 2, "varC": 3}])
+        assert [{"var_a": 1, "var_b": 2}] == MyResourceList._load([{"varA": 1, "varB": 2, "varC": 3}]).dump()
 
     def test_indexing(self):
         resource_list = MyResourceList([MyResource(1, 2), MyResource(2, 3)])

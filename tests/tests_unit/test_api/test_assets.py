@@ -21,7 +21,6 @@ def mock_assets_response(rsps):
     response_body = {
         "items": [
             {
-                "path": [0],
                 "externalId": "string",
                 "name": "string",
                 "parentId": 1,
@@ -30,7 +29,7 @@ def mock_assets_response(rsps):
                 "source": "string",
                 "id": 1,
                 "lastUpdatedTime": 0,
-                "depth": 0,
+                "rootId": 1,
             }
         ]
     }
@@ -43,40 +42,31 @@ def mock_assets_response(rsps):
 @pytest.fixture
 def mock_get_subtree_base(rsps):
     rsps.add(
-        rsps.POST,
-        ASSETS_API._get_base_url_with_base_path() + "/assets/byids",
-        status=200,
-        json={"items": [{"id": 1, "path": [1], "depth": 0}]},
+        rsps.POST, ASSETS_API._get_base_url_with_base_path() + "/assets/byids", status=200, json={"items": [{"id": 1}]}
     )
     rsps.add(
         rsps.POST,
         ASSETS_API._get_base_url_with_base_path() + "/assets/list",
         status=200,
-        json={
-            "items": [
-                {"id": 2, "path": [1, 2], "depth": 1},
-                {"id": 3, "path": [1, 3], "depth": 1},
-                {"id": 4, "path": [1, 4], "depth": 1},
-            ]
-        },
+        json={"items": [{"id": 2, "parentId": 1}, {"id": 3, "parentId": 1}, {"id": 4, "parentId": 1}]},
     )
     rsps.add(
         rsps.POST,
         ASSETS_API._get_base_url_with_base_path() + "/assets/list",
         status=200,
-        json={"items": [{"id": 5, "path": [1, 2, 5], "depth": 2}, {"id": 6, "path": [1, 2, 5], "depth": 2}]},
+        json={"items": [{"id": 5, "parentId": 2}, {"id": 6, "parentId": 2}]},
     )
     rsps.add(
         rsps.POST,
         ASSETS_API._get_base_url_with_base_path() + "/assets/list",
         status=200,
-        json={"items": [{"id": 7, "path": [1, 3, 7], "depth": 2}, {"id": 8, "path": [1, 3, 8], "depth": 2}]},
+        json={"items": [{"id": 7, "parentId": 3}, {"id": 8, "parentId": 3}]},
     )
     rsps.add(
         rsps.POST,
         ASSETS_API._get_base_url_with_base_path() + "/assets/list",
         status=200,
-        json={"items": [{"id": 9, "path": [1, 4, 9], "depth": 2}, {"id": 10, "path": [1, 4, 10], "depth": 2}]},
+        json={"items": [{"id": 9, "parentId": 4}, {"id": 10, "parentId": 4}]},
     )
     yield rsps
 
@@ -139,12 +129,17 @@ class TestAssets:
 
     def test_delete_single(self, mock_assets_response):
         res = ASSETS_API.delete(id=1)
-        assert {"items": [{"id": 1}]} == jsgz_load(mock_assets_response.calls[0].request.body)
+        assert {"items": [{"id": 1}], "recursive": False} == jsgz_load(mock_assets_response.calls[0].request.body)
+        assert res is None
+
+    def test_delete_single_recursive(self, mock_assets_response):
+        res = ASSETS_API.delete(id=1, recursive=True)
+        assert {"items": [{"id": 1}], "recursive": True} == jsgz_load(mock_assets_response.calls[0].request.body)
         assert res is None
 
     def test_delete_multiple(self, mock_assets_response):
         res = ASSETS_API.delete(id=[1])
-        assert {"items": [{"id": 1}]} == jsgz_load(mock_assets_response.calls[0].request.body)
+        assert {"items": [{"id": 1}], "recursive": False} == jsgz_load(mock_assets_response.calls[0].request.body)
         assert res is None
 
     def test_update_with_resource_class(self, mock_assets_response):
@@ -342,7 +337,6 @@ class TestAssetPoster:
                         "parentId": parent_id,
                         "externalId": item["externalId"],
                         "parentExternalId": item.get("parentExternalId"),
-                        "path": [parent_id or "", id],
                     }
                 )
             return 200, {}, json.dumps({"items": response_assets})
@@ -379,7 +373,7 @@ class TestAssetPoster:
         assert 2 == len(mock_post_asset_hierarchy.calls)
 
     @pytest.fixture
-    def mock_post_asset_hierarchy_with_failures(self, rsps):
+    def mock_post_assets_failures(self, rsps):
         def request_callback(request):
             items = jsgz_load(request.body)["items"]
             response_assets = []
@@ -396,7 +390,6 @@ class TestAssetPoster:
                     "parentId": parent_id,
                     "externalId": item["externalId"],
                     "parentExternalId": item.get("parentExternalId"),
-                    "path": [parent_id or "", id],
                 }
             )
 
@@ -417,7 +410,7 @@ class TestAssetPoster:
         with set_request_limit(ASSETS_API, 1):
             yield rsps
 
-    def test_post_with_failures(self, mock_post_asset_hierarchy_with_failures):
+    def test_post_with_failures(self, mock_post_assets_failures):
         assets = [
             Asset(name="200", external_id="0"),
             Asset(name="200", parent_external_id="0", external_id="01"),
@@ -465,5 +458,5 @@ class TestPandasIntegration:
         df = ASSETS_API.retrieve(id=1).to_pandas()
         assert isinstance(df, pd.DataFrame)
         assert "metadata" not in df.columns
-        assert [0] == df.loc["path"][0]
+        assert 1 == df.loc["id"][0]
         assert "metadata-value" == df.loc["metadata-key"][0]

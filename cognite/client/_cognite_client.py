@@ -15,8 +15,6 @@ from cognite.client._api_client import APIClient
 from cognite.client.exceptions import CogniteAPIKeyError
 from cognite.client.utils._client_config import ClientConfig
 
-API_VERSION = "v1"
-
 
 class CogniteClient:
     """Main entrypoint into Cognite Python SDK.
@@ -35,6 +33,8 @@ class CogniteClient:
         debug (bool): Configures logger to log extra request details to stderr.
     """
 
+    _API_VERSION = "v1"
+
     def __init__(
         self,
         api_key: str = None,
@@ -45,7 +45,6 @@ class CogniteClient:
         headers: Dict[str, str] = None,
         timeout: int = None,
         debug: bool = False,
-        verify_ssl=True,
     ):
         self._config = ClientConfig(
             api_key=api_key,
@@ -56,19 +55,18 @@ class CogniteClient:
             headers=headers,
             timeout=timeout,
             debug=debug,
-            verify_ssl=verify_ssl,
         )
         self.login = LoginAPI(self._config, cognite_client=self)
         if self._config.project is None:
             self._config.project = self._infer_project()
-        self.assets = AssetsAPI(self._config, api_version=API_VERSION, cognite_client=self)
-        self.datapoints = DatapointsAPI(self._config, api_version=API_VERSION, cognite_client=self)
-        self.events = EventsAPI(self._config, api_version=API_VERSION, cognite_client=self)
-        self.files = FilesAPI(self._config, api_version=API_VERSION, cognite_client=self)
-        self.iam = IAMAPI(self._config, api_version=API_VERSION, cognite_client=self)
-        self.time_series = TimeSeriesAPI(self._config, api_version=API_VERSION, cognite_client=self)
-        self.raw = RawAPI(self._config, api_version=API_VERSION, cognite_client=self)
-        self.three_d = ThreeDAPI(self._config, api_version=API_VERSION, cognite_client=self)
+        self.assets = AssetsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
+        self.datapoints = DatapointsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
+        self.events = EventsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
+        self.files = FilesAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
+        self.iam = IAMAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
+        self.time_series = TimeSeriesAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
+        self.raw = RawAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
+        self.three_d = ThreeDAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self._api_client = APIClient(self._config, cognite_client=self)
 
     def get(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
@@ -95,15 +93,6 @@ class CogniteClient:
             str: The current SDK version
         """
         return utils._auxiliary.get_current_sdk_version()
-
-    @property
-    def project(self) -> str:
-        """Returns the project you are currently authenticated towards.
-
-        Returns:
-            str: The current project you are authenticated to.
-        """
-        return self._config.project
 
     @property
     def config(self) -> ClientConfig:

@@ -5,21 +5,20 @@ from cognite.client.data_classes._base import *
 
 # GenClass: Asset, DataExternalAssetItem
 class Asset(CogniteResource):
-    """Representation of a physical asset, e.g plant or piece of equipment
+    """A representation of a physical asset, for example a factory or a piece of equipment.
 
     Args:
-        external_id (str): External Id provided by client. Should be unique within the project.
-        name (str): Name of asset. Often referred to as tag.
-        parent_id (int): Javascript friendly internal ID given to the object.
-        description (str): Description of asset.
-        metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
-        source (str): The source of this asset
-        id (int): Javascript friendly internal ID given to the object.
-        created_time (int): It is the number of milliseconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        last_updated_time (int): It is the number of milliseconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        path (List[int]): IDs of assets on the path to the asset.
-        depth (int): Asset path depth (number of levels below root node).
-        parent_external_id (str): External Id provided by client. Should be unique within the project.
+        external_id (str): The external ID provided by the client. Must be unique within the project.
+        name (str): The name of the asset.
+        parent_id (int): A JavaScript-friendly internal ID for the object.
+        description (str): The description of the asset.
+        metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        source (str): The source of the asset.
+        id (int): A JavaScript-friendly internal ID for the object.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        root_id (int): A JavaScript-friendly internal ID for the object.
+        parent_external_id (str): The external ID provided by the client. Must be unique within the project.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
@@ -34,8 +33,7 @@ class Asset(CogniteResource):
         id: int = None,
         created_time: int = None,
         last_updated_time: int = None,
-        path: List[int] = None,
-        depth: int = None,
+        root_id: int = None,
         parent_external_id: str = None,
         cognite_client=None,
     ):
@@ -48,8 +46,7 @@ class Asset(CogniteResource):
         self.id = id
         self.created_time = created_time
         self.last_updated_time = last_updated_time
-        self.path = path
-        self.depth = depth
+        self.root_id = root_id
         self.parent_external_id = parent_external_id
         self._cognite_client = cognite_client
 
@@ -118,8 +115,8 @@ class AssetUpdate(CogniteUpdate):
     """Changes applied to asset
 
     Args:
-        id (int): Javascript friendly internal ID given to the object.
-        external_id (str): External Id provided by client. Should be unique within the project.
+        id (int): A JavaScript-friendly internal ID for the object.
+        external_id (str): The external ID provided by the client. Must be unique within the project.
     """
 
     @property
@@ -176,49 +173,6 @@ class AssetList(CogniteResourceList):
     _RESOURCE = Asset
     _UPDATE = AssetUpdate
 
-    def _indented_asset_str(self, asset: Asset):
-        single_indent = " " * 8
-        marked_indent = "|______ "
-        indent = len(asset.path) - 1
-
-        s = single_indent * (indent - 1)
-        if indent > 0:
-            s += marked_indent
-        s += str(asset.id) + "\n"
-        dumped = utils._time.convert_time_attributes_to_datetime(asset.dump())
-        for key, value in sorted(dumped.items()):
-            if isinstance(value, dict):
-                s += single_indent * indent + "{}:\n".format(key)
-                for mkey, mvalue in sorted(value.items()):
-                    s += single_indent * indent + " - {}: {}\n".format(mkey, mvalue)
-            elif key != "id":
-                s += single_indent * indent + key + ": " + str(value) + "\n"
-
-        return s
-
-    def __str__(self):
-        try:
-            sorted_assets = sorted(self.data, key=lambda x: x.path)
-        except:
-            return super().__str__()
-
-        if len(sorted_assets) == 0:
-            return super().__str__()
-
-        ids = set([asset.id for asset in sorted_assets])
-
-        s = "\n"
-        root = sorted_assets[0].path[0]
-        for asset in sorted_assets:
-            this_root = asset.path[0]
-            if this_root != root:
-                s += "\n" + "*" * 80 + "\n\n"
-                root = this_root
-            elif len(asset.path) > 1 and asset.path[-2] not in ids:
-                s += "\n" + "-" * 80 + "\n\n"
-            s += self._indented_asset_str(asset)
-        return s
-
     def time_series(self) -> "TimeSeriesList":
         """Retrieve all time series related to these assets.
 
@@ -259,24 +213,29 @@ class AssetList(CogniteResourceList):
             resource_api.list, tasks, resource_api._config.max_workers
         ).results
         resources = resource_list_class([])
+        seen = set()
         for res in res_list:
-            resources.extend(res)
+            for resource in res:
+                if resource.id not in seen:
+                    resources.append(resource)
+                    seen.add(resource.id)
         return resources
 
 
 # GenClass: AssetFilter.filter
 class AssetFilter(CogniteFilter):
-    """No description.
+    """Filter on assets with strict matching.
 
     Args:
-        name (str): Name of asset. Often referred to as tag.
+        name (str): The name of the asset.
         parent_ids (List[int]): No description.
-        metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
-        source (str): The source of this asset
-        created_time (Dict[str, Any]): Range between two timestamps
-        last_updated_time (Dict[str, Any]): Range between two timestamps
-        root (bool): filtered assets are root assets or not
-        external_id_prefix (str): External Id provided by client. Should be unique within the project.
+        root_ids (List[Union[Dict[str, Any], Dict[str, Any]]]): No description.
+        metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        source (str): The source of the asset.
+        created_time (Dict[str, Any]): Range between two timestamps.
+        last_updated_time (Dict[str, Any]): Range between two timestamps.
+        root (bool): Whether the filtered assets are root assets, or not.
+        external_id_prefix (str): The external ID provided by the client. Must be unique within the project.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
@@ -284,6 +243,7 @@ class AssetFilter(CogniteFilter):
         self,
         name: str = None,
         parent_ids: List[int] = None,
+        root_ids: List[Union[Dict[str, Any], Dict[str, Any]]] = None,
         metadata: Dict[str, Any] = None,
         source: str = None,
         created_time: Dict[str, Any] = None,
@@ -294,6 +254,7 @@ class AssetFilter(CogniteFilter):
     ):
         self.name = name
         self.parent_ids = parent_ids
+        self.root_ids = root_ids
         self.metadata = metadata
         self.source = source
         self.created_time = created_time

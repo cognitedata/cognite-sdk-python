@@ -9,17 +9,17 @@ class FileMetadata(CogniteResource):
     """No description.
 
     Args:
-        external_id (str): External Id provided by client. Should be unique within the project.
+        external_id (str): The external ID provided by the client. Must be unique within the project.
         name (str): Name of the file.
         source (str): The source of the file.
         mime_type (str): File type. E.g. text/plain, application/pdf, ..
-        metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
+        metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         asset_ids (List[int]): No description.
-        id (int): Javascript friendly internal ID given to the object.
+        id (int): A JavaScript-friendly internal ID for the object.
         uploaded (bool): Whether or not the actual file is uploaded.  This field is returned only by the API, it has no effect in a post body.
-        uploaded_time (int): It is the number of milliseconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): It is the number of milliseconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        last_updated_time (int): It is the number of milliseconds that have elapsed since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        uploaded_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
@@ -61,13 +61,13 @@ class FileMetadataFilter(CogniteFilter):
     Args:
         name (str): Name of the file.
         mime_type (str): File type. E.g. text/plain, application/pdf, ..
-        metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
+        metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         asset_ids (List[int]): Only include files that reference these specific asset IDs.
         source (str): The source of this event.
-        created_time (Dict[str, Any]): Range between two timestamps
-        last_updated_time (Dict[str, Any]): Range between two timestamps
-        uploaded_time (Dict[str, Any]): Range between two timestamps
-        external_id_prefix (str): External Id provided by client. Should be unique within the project.
+        created_time (Dict[str, Any]): Range between two timestamps.
+        last_updated_time (Dict[str, Any]): Range between two timestamps.
+        uploaded_time (Dict[str, Any]): Range between two timestamps.
+        external_id_prefix (str): The external ID provided by the client. Must be unique within the project.
         uploaded (bool): Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
         cognite_client (CogniteClient): The client to associate with this object.
     """

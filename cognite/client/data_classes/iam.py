@@ -45,11 +45,11 @@ class APIKey(CogniteResource):
     """No description.
 
     Args:
-        id (int): Internal id for the api key
-        service_account_id (int): id of the service account
-        created_time (int): Time of creating in unix ms
-        status (str): The status of the api key.
-        value (str): The api key to be used against the API
+        id (int): The internal ID for the API key.
+        service_account_id (int): The ID of the service account.
+        created_time (int): The time of creation in Unix milliseconds.
+        status (str): The status of the API key.
+        value (str): The API key to be used against the API.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 

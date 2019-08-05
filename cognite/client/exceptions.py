@@ -1,3 +1,4 @@
+import json
 from typing import *
 
 
@@ -44,7 +45,7 @@ class CogniteAPIError(CogniteMultiException):
 
             try:
                 c.login.status()
-            except APIError as e:
+            except CogniteAPIError as e:
                 if e.code == 401:
                     print("You are not authorized")
                 elif e.code == 400:
@@ -65,12 +66,14 @@ class CogniteAPIError(CogniteMultiException):
         failed: List = None,
         unknown: List = None,
         unwrap_fn: Callable = None,
+        extra: Dict = None,
     ):
         self.message = message
         self.code = code
         self.x_request_id = x_request_id
         self.missing = missing
         self.duplicated = duplicated
+        self.extra = extra
         super().__init__(successful, failed, unknown, unwrap_fn)
 
     def __str__(self):
@@ -80,6 +83,9 @@ class CogniteAPIError(CogniteMultiException):
         if self.duplicated:
             msg += "\nDuplicated: {}".format(self.duplicated)
         msg += self._get_multi_exception_summary()
+        if self.extra:
+            pretty_extra = json.dumps(self.extra, indent=4, sort_keys=True)
+            msg += "\nAdditional error info: {}".format(pretty_extra)
         return msg
 
 
