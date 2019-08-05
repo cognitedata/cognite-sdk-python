@@ -235,7 +235,7 @@ class SequenceData:
     def __getitem__(self, item: int) -> List[Union[int, str, float]]:
         # slow, should be replaced by dict cache if it sees more than incidental use
         if isinstance(item, slice):
-            raise ValueError("Slicing SequenceData not supported")
+            raise TypeError("Slicing SequenceData not supported")
         return self.values[self.row_numbers.index(item)]
 
     def get_column(self, external_id: str = None, id: int = None) -> List[Union[int, str, float]]:

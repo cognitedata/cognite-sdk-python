@@ -415,7 +415,7 @@ class TestSequences:
         col = data.get_column("ceid")
         assert isinstance(col, list)
         assert 1 == len(col)
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             sliced = data[1:23]
         with pytest.raises(ValueError):
             missingcol = data.get_column("doesnotexist")
