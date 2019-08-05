@@ -15,7 +15,7 @@ from cognite.client.data_classes.iam import (
     ServiceAccountList,
 )
 from cognite.client.data_classes.raw import Database, DatabaseList, Row, RowList, Table, TableList
-from cognite.client.data_classes.sequences import Sequence, SequenceFilter, SequenceList, SequenceUpdate
+from cognite.client.data_classes.sequences import Sequence, SequenceData, SequenceFilter, SequenceList, SequenceUpdate
 from cognite.client.data_classes.three_d import (
     ThreeDAssetMapping,
     ThreeDAssetMappingList,
