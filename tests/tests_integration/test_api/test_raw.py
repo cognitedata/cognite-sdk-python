@@ -22,6 +22,7 @@ class TestRawDatabasesAPI:
         dbs = COGNITE_CLIENT.raw.databases.list()
         assert len(dbs) > 0
 
+    @pytest.mark.skip(reason="RAW API changed")
     def test_create_and_delete_database(self, new_database_with_table):
         pass
 
@@ -31,6 +32,7 @@ class TestRawTablesAPI:
         tables = COGNITE_CLIENT.raw.tables.list(db_name="test__database1")
         assert len(tables) == 3
 
+    @pytest.mark.skip(reason="RAW API changed")
     def test_create_and_delete_table(self, new_database_with_table):
         db, _ = new_database_with_table
         table_name = "table_" + utils._auxiliary.random_string(10)
@@ -49,6 +51,7 @@ class TestRawRowsAPI:
         row = COGNITE_CLIENT.raw.rows.retrieve(db_name="test__database1", table_name="test__table_1", key="1")
         assert {"c{}".format(i): "1_{}".format(i) for i in range(10)} == row.columns
 
+    @pytest.mark.skip(reason="RAW API changed")
     def test_insert_and_delete_rows(self, new_database_with_table):
         db, table = new_database_with_table
         rows = {"r1": {"c1": "v1", "c2": "v1"}, "r2": {"c1": "v2", "c2": "v2"}}

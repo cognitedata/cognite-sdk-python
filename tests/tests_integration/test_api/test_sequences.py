@@ -30,7 +30,6 @@ class TestSequencesAPI:
     def test_retrieve(self):
         listed_asset = COGNITE_CLIENT.sequences.list(limit=1)[0]
         retrieved_asset = COGNITE_CLIENT.sequences.retrieve(listed_asset.id)
-        retrieved_asset.external_id = listed_asset.external_id
         assert retrieved_asset == listed_asset
 
     def test_retrieve_multiple(self):

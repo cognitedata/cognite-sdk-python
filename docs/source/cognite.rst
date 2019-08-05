@@ -986,9 +986,17 @@ Insert rows into a sequence
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.sequences.SequencesDataAPI.insert
 
+Insert a pandas dataframe into a sequence
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.sequences.SequencesDataAPI.insert_dataframe
+
 Delete rows from a sequence
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.sequences.SequencesDataAPI.delete
+
+Delete a range of rows from a sequence
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.sequences.SequencesDataAPI.delete_range
 
 Data classes
 ^^^^^^^^^^^^
