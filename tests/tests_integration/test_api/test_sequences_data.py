@@ -94,7 +94,7 @@ class TestSequencesDataAPI:
 
     def test_insert_dataframe(self, small_sequence, new_small_seq):
         df = COGNITE_CLIENT.sequences.data.retrieve_dataframe(id=small_sequence.id, start=0, end=5)
-        COGNITE_CLIENT.sequences.data.insert_dataframe(df, id=new_small_seq.id)
+        COGNITE_CLIENT.sequences.data.insert_dataframe(df, id=new_small_seq.id, external_id_headers=True)
 
     def test_insert(self, new_seq):
         data = {i: ["str"] for i in range(1, 61)}

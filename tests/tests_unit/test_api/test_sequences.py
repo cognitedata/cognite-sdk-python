@@ -94,6 +94,15 @@ def mock_get_sequence_data(rsps):
 
 
 @pytest.fixture
+def mock_get_sequence_empty_data(rsps):
+    json = {
+        "items": [{"id": 0, "externalId": "eid", "columns": [{"id": 0, "externalId": "ceid"}, {"id": 1}], "rows": []}]
+    }
+    rsps.add(rsps.POST, SEQ_API._get_base_url_with_base_path() + "/sequences/data/list", status=200, json=json)
+    yield rsps
+
+
+@pytest.fixture
 def mock_get_sequence_data_many_columns(rsps):
     response_body = {
         "items": [
@@ -129,7 +138,7 @@ def mock_get_sequence_data_many_columns(rsps):
                 "id": 0,
                 "externalId": "eid",
                 "columns": [{"id": i, "externalId": "ceid" + str(i)} for i in range(0, 200)],
-                "rows": [{"rowNumber": 0, "values": [1]}],
+                "rows": [{"rowNumber": 0, "values": ["str"] * 200}],
             }
         ]
     }
@@ -347,6 +356,13 @@ class TestSequences:
             ]
         } == jsgz_load(mock_post_sequence_data.calls[0].request.body)
 
+    def test_retrieve_no_data(self, mock_seq_response, mock_get_sequence_empty_data):
+        data = SEQ_API.data.retrieve(id=1, start=0, end=None)
+        assert isinstance(data, SequenceData)
+        assert 0 == len(data)
+        assert 2 == len(data.column_ids)
+        assert 2 == len(data.column_external_ids)
+
     def test_retrieve_by_id(self, mock_seq_response, mock_get_sequence_data):
         data = SEQ_API.data.retrieve(id=123, start=123, end=None)
         assert isinstance(data, SequenceData)
@@ -393,9 +409,16 @@ class TestSequences:
         seq = SEQ_API.retrieve(id=1)
         data = seq.rows(start=0, end=None)
         assert [1] == data[0]
-        for r, v in data:
+        for r, v in data.iteritems():
             assert 0 == r
             assert [1] == v
+        col = data.get_column("ceid")
+        assert isinstance(col, list)
+        assert 1 == len(col)
+        with pytest.raises(ValueError):
+            sliced = data[1:23]
+        with pytest.raises(ValueError):
+            missingcol = data.get_column("doesnotexist")
 
     def test_sequence_builtins(self, mock_seq_response):
         r1 = SEQ_API.retrieve(id=0)
@@ -428,14 +451,22 @@ class TestSequencesPandasIntegration:
         assert df.shape[0] > 0
         assert df.index == [0]
 
-    def test_retrieve_dataframe_columns(self, mock_seq_response, mock_get_sequence_data_no_extid_in_columns):
+    def test_retrieve_dataframe_columns_mixed(self, mock_seq_response, mock_get_sequence_data_no_extid_in_columns):
         data = SEQ_API.data.retrieve(external_id="foo", start=1000000, end=1100000)
         assert isinstance(data, SequenceData)
-        assert [0, "col2"] == list(data.to_pandas().columns)
+        assert [0, 1] == list(data.to_pandas().columns)
         assert [0, 1] == list(data.to_pandas(column_names="id").columns)
         assert [None, "col2"] == list(data.to_pandas(column_names="externalId").columns)
         with pytest.raises(ValueError):
             data.to_pandas(column_names="badvalue")
+
+    def test_retrieve_dataframe_columns_many_extid(self, mock_get_sequence_data_many_columns):
+        data = SEQ_API.data.retrieve(external_id="foo", start=1000000, end=1100000)
+        assert isinstance(data, SequenceData)
+        print(data.to_pandas())
+        assert ["ceid" + str(i) for i in range(200)] == list(data.to_pandas().columns)
+        assert ["ceid" + str(i) for i in range(200)] == list(data.to_pandas(column_names="externalId").columns)
+        assert list(range(200)) == list(data.to_pandas(column_names="id").columns)
 
     def test_retrieve_dataframe_convert_null(self, mock_seq_response, mock_get_sequence_data_with_null):
         df = SEQ_API.data.retrieve_dataframe(external_id="foo", start=0, end=None)
@@ -444,6 +475,14 @@ class TestSequencesPandasIntegration:
         assert df.strcol.isna().any()
         assert df.intcol.isna().any()
         assert 2 == df.shape[0]
+
+    def test_retrieve_empty_dataframe(self, mock_seq_response, mock_get_sequence_empty_data):
+        import pandas as pd
+
+        df = SEQ_API.data.retrieve_dataframe(id=1, start=0, end=None)
+        assert isinstance(df, pd.DataFrame)
+        assert df.empty
+        assert 2 == len(df.columns)
 
     def test_sequences_list_to_pandas(self, mock_seq_response):
         import pandas as pd
@@ -494,7 +533,7 @@ class TestSequencesPandasIntegration:
         df = pd.DataFrame(index=[123, 456])
         df["aa"] = [1, 2]
         df["bb"] = [5.0, 6.0]
-        res = SEQ_API.data.insert_dataframe(df, id=42)
+        res = SEQ_API.data.insert_dataframe(df, id=42, external_id_headers=True)
         assert res is None
         request_body = jsgz_load(mock_post_sequence_data.calls[0].request.body)
         assert {

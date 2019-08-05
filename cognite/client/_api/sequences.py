@@ -319,7 +319,6 @@ class SequencesDataAPI(APIClient):
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
         if column_ids is None and column_external_ids is None:
             column_ids = self._sequences_api.retrieve(id=id, external_id=external_id).column_ids
-        print("ids", column_ids, "ext", column_external_ids)
         if isinstance(rows, dict):
             all_rows = [{"rowNumber": k, "values": v} for k, v in rows.items()]
         elif isinstance(rows, list) and len(rows) > 0 and isinstance(rows[0], dict):
@@ -340,7 +339,9 @@ class SequencesDataAPI(APIClient):
         )
         summary.raise_compound_exception_if_failed_tasks()
 
-    def insert_dataframe(self, dataframe, id: int = None, external_id: str = None):
+    def insert_dataframe(
+        self, dataframe, external_id_headers: bool = False, id: int = None, external_id: str = None
+    ) -> None:
         """Insert a Pandas dataframe.
 
         The index of the dataframe must contain the row numbers. The names of the remaining columns specify the column ids or external ids (no mixed values allowed, and ids should be integers).
@@ -348,6 +349,7 @@ class SequencesDataAPI(APIClient):
 
         Args:
             dataframe (pandas.DataFrame):  Pandas DataFrame object containing the sequence data.
+            external_id_headers (bool): Headers are external ids
             id (int): Id of sequence to insert rows into.
             external_id (str): External id of sequence to insert rows into.
 
@@ -360,21 +362,16 @@ class SequencesDataAPI(APIClient):
                 >>> from cognite.client.experimental import CogniteClient
                 >>> c = CogniteClient()
                 >>> df = c.sequences.data.retrieve_dataframe(id=123, start=0, end=None)
-                >>> c.sequences.data.insert_dataframe(df*2, id=123) and None
+                >>> c.sequences.data.insert_dataframe(df*2, id=123, external_id_headers=True) and None
         """
         dataframe = dataframe.replace({math.nan: None})
         data = [(v[0], list(v[1:])) for v in dataframe.itertuples()]
-        columns = list(dataframe.columns)
-        if all([isinstance(c, int) for c in columns]):
-            column_ids = columns
-            column_external_ids = None
-        else:
-            if any([isinstance(c, int) for c in columns]):
-                raise ValueError(
-                    "Mixed types detected in columns {}, should either all be integets or all strings".format(columns)
-                )
+        if external_id_headers:
             column_ids = None
-            column_external_ids = columns
+            column_external_ids = list(dataframe.columns)
+        else:
+            column_ids = [int(h) for h in list(dataframe.columns)]
+            column_external_ids = None
         self.insert(
             rows=data, column_ids=column_ids, column_external_ids=column_external_ids, id=id, external_id=external_id
         )

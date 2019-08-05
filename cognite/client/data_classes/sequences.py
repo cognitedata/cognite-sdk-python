@@ -234,6 +234,8 @@ class SequenceData:
 
     def __getitem__(self, item: int) -> List[Union[int, str, float]]:
         # slow, should be replaced by dict cache if it sees more than incidental use
+        if isinstance(item, slice):
+            raise ValueError("Slicing SequenceData not supported")
         return self.values[self.row_numbers.index(item)]
 
     def get_column(self, external_id: str = None, id: int = None) -> List[Union[int, str, float]]:
@@ -261,7 +263,8 @@ class SequenceData:
             )
         return [r[ix] for r in self.values]
 
-    def __iter__(self) -> Generator[Tuple[int, List[Union[int, str, float]]], None, None]:
+    def iteritems(self) -> Generator[Tuple[int, List[Union[int, str, float]]], None, None]:
+        """Returns an iterator over tuples of (row number, values)."""
         for row, values in zip(self.row_numbers, self.values):
             yield row, values
 
@@ -288,20 +291,21 @@ class SequenceData:
         """Convert the sequence data into a pandas DataFrame.
 
         Args:
-            column_names (str): Which field to use as column header. Either "externalId", "id" or "externalIdIfExists" for externalId if it exists and id otherwise.
+            column_names (str): Which field to use as column header. Either "externalId", "id" or "externalIdIfExists" for externalId if it exists for all columns and id otherwise.
 
         Returns:
             pandas.DataFrame: The dataframe.
         """
         pd = utils._auxiliary.local_import("pandas")
+        if column_names == "externalIdIfExists":
+            column_names = "externalId" if None not in self.column_external_ids else "id"
+
         if column_names == "externalId":
             identifiers = self.column_external_ids
         elif column_names == "id":
             identifiers = self.column_ids
-        elif column_names == "externalIdIfExists":
-            identifiers = [eid or id for eid, id in zip(self.column_external_ids, self.column_ids)]
         else:
-            raise ValueError("column_names must be 'externalId' or 'id'")
+            raise ValueError("column_names must be 'externalIdIfExists', 'externalId' or 'id'")
         return pd.DataFrame(
             [[x or math.nan for x in r] for r in self.values], index=self.row_numbers, columns=identifiers
         )
