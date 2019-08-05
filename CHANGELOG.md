@@ -21,6 +21,7 @@ Changes are grouped as follows
 
 ## [Unreleased]
 
+## [1.0.4] - 2019-08-05
 ### Changed
 - Sequences data retrieval now returns a SequenceData object.
 - Sequences insert takes its parameters row data first, and no longer requires columns to be passed.
