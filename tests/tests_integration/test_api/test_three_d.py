@@ -27,17 +27,6 @@ def new_model():
 
 
 @pytest.fixture(scope="class")
-def new_revision(test_revision):
-    revision, model_id = test_revision
-
-    new_revision = ThreeDModelRevision(file_id=revision.file_id)
-    res = COGNITE_CLIENT.three_d.revisions.create(model_id=model_id, revision=new_revision)
-    yield res, model_id
-    COGNITE_CLIENT.three_d.revisions.delete(model_id=model_id, id=res.id)
-    assert COGNITE_CLIENT.three_d.revisions.retrieve(model_id=model_id, id=res.id) is None
-
-
-@pytest.fixture(scope="class")
 def new_asset_mapping(test_revision):
     revision, model_id = test_revision
 
@@ -97,26 +86,6 @@ class TestThreeDRevisionsAPI:
             model_id=model_id, revision_id=revision.id, node_id=node_id
         )
         assert len(res) > 0
-
-    # def test_update_with_resource(self, new_revision):
-    #     revision, model_id = new_revision
-    #     revision.metadata = {"key": "value"}
-    #     res = COGNITE_CLIENT.three_d.revisions.update(model_id, revision)
-    #     assert revision.metadata == res.metadata
-
-    def test_partial_update(self, new_revision):
-        revision, model_id = new_revision
-        added_metadata = {"key": "value"}
-        revision_update = ThreeDModelRevisionUpdate(id=revision.id).metadata.add(added_metadata)
-        res = COGNITE_CLIENT.three_d.revisions.update(model_id=model_id, item=revision_update)
-        assert added_metadata == res.metadata
-
-
-# class TestThreeDFilesAPI:
-#     def test_retrieve(self, test_revision):
-#         revision, _ = test_revision
-#         res = COGNITE_CLIENT.three_d.files.retrieve(revision.file_id)
-#         assert len(res)  > 0
 
 
 class TestThreeDAssetMappingAPI:
