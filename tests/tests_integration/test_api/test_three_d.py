@@ -71,6 +71,17 @@ class TestThreeDRevisionsAPI:
         )
         assert len(res) > 0
 
+    def test_update_with_resource(self, test_revision):
+        revision, model_id = test_revision
+        revision.metadata = {"key": "value"}
+        COGNITE_CLIENT.three_d.revisions.update(model_id, revision)
+
+    def test_partial_update(self, test_revision):
+        revision, model_id = test_revision
+        added_metadata = {"key": "value"}
+        revision_update = ThreeDModelRevisionUpdate(id=revision.id).metadata.add(added_metadata)
+        COGNITE_CLIENT.three_d.revisions.update(model_id=model_id, item=revision_update)
+
 
 class TestThreeDFilesAPI:
     def test_retrieve(self, test_revision):
