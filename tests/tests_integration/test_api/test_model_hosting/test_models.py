@@ -174,9 +174,9 @@ class TestVersions:
         for call in calls[1:5]:
             try:
                 res = jsgz_load(call.request.body)
-                assert res in [{"name": "artifact1.txt"}, {"name": "sub_dir/artifact2.txt"}]
+                assert res in [{"name": "artifact1.txt"}, {"name": os.path.join("sub_dir", "artifact2.txt")}]
             except OSError:
-                assert b"content\n" == call.request.body
+                assert call.request.body in [b"content\n", b"content\r\n"]
         assert b"{}" == calls[5].request.body
 
     @pytest.fixture
@@ -300,9 +300,9 @@ class TestVersions:
         for call in mock_upload_artifact.calls:
             try:
                 res = jsgz_load(call.request.body)
-                assert res in [{"name": "artifact1.txt"}, {"name": "sub_dir/artifact2.txt"}]
+                assert res in [{"name": "artifact1.txt"}, {"name": os.path.join("sub_dir", "artifact2.txt")}]
             except OSError:
-                assert b"content\n" == call.request.body
+                assert call.request.body in [b"content\n", b"content\r\n"]
 
     def test_upload_artifacts_from_directory_no_artifacts(self):
         with TemporaryDirectory() as tmp:

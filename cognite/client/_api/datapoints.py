@@ -202,7 +202,7 @@ class DatapointsAPI(APIClient):
         Timestamps can be represented as milliseconds since epoch or datetime objects.
 
         Args:
-            datapoints(Union[List[Dict, Tuple]]): The datapoints you wish to insert. Can either be a list of tuples or
+            datapoints(Union[List[Dict], List[Tuple]]): The datapoints you wish to insert. Can either be a list of tuples or
                 a list of dictionaries. See examples below.
             id (int): Id of time series to insert datapoints into.
             external_id (str): External id of time series to insert datapoint into.
@@ -440,7 +440,6 @@ class DatapointsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> ts_id = 123
                 >>> start = datetime(2018, 1, 1)
-                >>> # The scaling by 1000 is important: timestamp() returns seconds
                 >>> x = pd.DatetimeIndex([start + timedelta(days=d) for d in range(100)])
                 >>> y = np.random.normal(0, 1, 100)
                 >>> df = pd.DataFrame({ts_id: y}, index=x)
