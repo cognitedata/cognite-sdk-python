@@ -287,7 +287,9 @@ class FilesAPI(APIClient):
         """Upload a file
 
         Args:
-            path (str): Path to the file you wish to upload. If path is a directory, this method will upload all files in that directory.
+            path (str): Path to the file you wish to upload. If path is a directory,
+                this method will upload all files in that directory.
+                If path is None, this method will only upload the metadata for the file.
             external_id (str): External Id provided by client. Should be unique within the project.
             name (str): No description.
             source (str): The source of the file.
@@ -326,6 +328,12 @@ class FilesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.files.upload("/path/to/my/directory")
 
+            If path is None, this method will only upload the metadata for the file
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.files.upload(None, name="my_file", external_id="an_external_id")
+
         """
         file_metadata = FileMetadata(
             name=name,
@@ -335,6 +343,13 @@ class FilesAPI(APIClient):
             metadata=metadata,
             asset_ids=asset_ids,
         )
+        if not path:
+            res = self._post(
+                url_path=self._RESOURCE_PATH, json=file_metadata.dump(camel_case=True), params={"overwrite": overwrite}
+            )
+            returned_file_metadata = res.json()
+            return FileMetadata._load(returned_file_metadata)
+
         if os.path.isfile(path):
             if not name:
                 file_metadata.name = os.path.basename(path)

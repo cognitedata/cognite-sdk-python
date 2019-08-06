@@ -212,6 +212,9 @@ class TestFilesAPI:
         assert {"name": "bla"} == jsgz_load(mock_file_upload_response.calls[0].request.body)
         assert isinstance(mock_file_upload_response.calls[1].request.body, BufferedReader)
 
+    def test_upload_no_path(self, mock_file_upload_response):
+        FILES_API.upload(None)
+
     def test_upload_with_external_id(self, mock_file_upload_response):
         path = os.path.join(os.path.dirname(__file__), "files_for_test_upload", "file_for_test_upload_1.txt")
         FILES_API.upload(path, external_id="blabla", name="bla")
