@@ -26,22 +26,6 @@ def new_model():
     assert COGNITE_CLIENT.three_d.models.retrieve(id=res.id) is None
 
 
-@pytest.fixture(scope="class")
-def new_asset_mapping(test_revision):
-    revision, model_id = test_revision
-
-    node_id = COGNITE_CLIENT.three_d.revisions.list_nodes(model_id=model_id, revision_id=revision.id)[0].id
-    asset_id = COGNITE_CLIENT.assets.list(limit=1)[0].id
-    asset_mapping = ThreeDAssetMapping(node_id=node_id, asset_id=asset_id)
-    res = COGNITE_CLIENT.three_d.asset_mappings.create(
-        model_id=model_id, revision_id=revision.id, asset_mapping=asset_mapping
-    )
-    yield res, model_id, revision.id
-
-    COGNITE_CLIENT.three_d.asset_mappings.delete(model_id=model_id, revision_id=revision.id, asset_mapping=res)
-    assert COGNITE_CLIENT.three_d.asset_mappings.list(model_id=model_id, revision_id=revision.id) == []
-
-
 class TestThreeDModelsAPI:
     def test_list(self):
         res = COGNITE_CLIENT.three_d.models.list(limit=1)
@@ -99,11 +83,3 @@ class TestThreeDFilesAPI:
 
         res = COGNITE_CLIENT.three_d.files.retrieve(threedFileId)
         assert len(res) > 0
-
-
-class TestThreeDAssetMappingAPI:
-    def test_list(self, new_asset_mapping):
-        asset_mapping, model_id, revision_id = new_asset_mapping
-        res = COGNITE_CLIENT.three_d.asset_mappings.list(model_id=model_id, revision_id=revision_id, limit=1)[0]
-        assert asset_mapping.node_id == res.node_id
-        assert asset_mapping.asset_id == res.asset_id
