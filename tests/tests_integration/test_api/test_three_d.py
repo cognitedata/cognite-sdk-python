@@ -88,6 +88,19 @@ class TestThreeDRevisionsAPI:
         assert len(res) > 0
 
 
+class TestThreeDFilesAPI:
+    def test_retrieve(self, test_revision):
+        revision, model_id = test_revision
+        base_url = COGNITE_CLIENT._config.base_url
+        project = COGNITE_CLIENT._config.project
+        url = "/api/v1/projects/{}/3d/reveal/models/{}/revisions/{}".format(project, model_id, revision.id)
+        response = COGNITE_CLIENT.get(url=url)
+        threedFileId = response.json()["sceneThreedFiles"][0]["fileId"]
+
+        res = COGNITE_CLIENT.three_d.files.retrieve(threedFileId)
+        assert len(res) > 0
+
+
 class TestThreeDAssetMappingAPI:
     def test_list(self, new_asset_mapping):
         asset_mapping, model_id, revision_id = new_asset_mapping
