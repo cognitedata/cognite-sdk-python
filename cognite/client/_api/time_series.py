@@ -173,7 +173,7 @@ class TimeSeriesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.time_series.delete(id=[1,2,3], external_id="3")
+                >>> c.time_series.delete(id=[1,2,3], external_id="3")
         """
         self._delete_multiple(wrap_ids=True, ids=id, external_ids=external_id)
 

@@ -268,7 +268,7 @@ class DatapointsAPI(APIClient):
                 >>> # with ms since epoch and externalId
                 >>> datapoints.append({"externalId": 1, "datapoints": [(150000000000, 1000), (160000000000, 2000)]})
 
-                >>> res = c.datapoints.insert_multiple(datapoints)
+                >>> c.datapoints.insert_multiple(datapoints)
 
             Or they can be a list of dictionaries::
 
@@ -283,7 +283,7 @@ class DatapointsAPI(APIClient):
                 >>> datapoints.append({"id": 1, "datapoints": [{"timestamp": 150000000000, "value": 1000},
                 ...                     {"timestamp": 160000000000, "value": 2000}]})
 
-                >>> res = c.datapoints.insert_multiple(datapoints)
+                >>> c.datapoints.insert_multiple(datapoints)
         """
         dps_poster = DatapointsPoster(self)
         dps_poster.insert(datapoints)
@@ -308,7 +308,7 @@ class DatapointsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.datapoints.delete_range(start="1w-ago", end="now", id=1)
+                >>> c.datapoints.delete_range(start="1w-ago", end="now", id=1)
         """
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
         start = utils._time.timestamp_to_ms(start)
@@ -336,7 +336,7 @@ class DatapointsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> ranges = [{"id": 1, "start": "2d-ago", "end": "now"},
                 ...             {"externalId": "abc", "start": "2d-ago", "end": "now"}]
-                >>> res = c.datapoints.delete_ranges(ranges)
+                >>> c.datapoints.delete_ranges(ranges)
         """
         valid_ranges = []
         for range in ranges:
@@ -443,7 +443,7 @@ class DatapointsAPI(APIClient):
                 >>> x = pd.DatetimeIndex([start + timedelta(days=d) for d in range(100)])
                 >>> y = np.random.normal(0, 1, 100)
                 >>> df = pd.DataFrame({ts_id: y}, index=x)
-                >>> res = c.datapoints.insert_dataframe(df)
+                >>> c.datapoints.insert_dataframe(df)
         """
         assert not dataframe.isnull().values.any(), "Dataframe contains NaNs. Remove them in order to insert the data."
         dps = []
