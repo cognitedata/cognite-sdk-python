@@ -20,6 +20,7 @@ Changes are grouped as follows
 - Separate read/write fields on data classes
 
 ## [Unreleased]
+- The files API can now create a file without uploading content.
 
 ## [1.0.4] - 2019-08-05
 ### Changed
