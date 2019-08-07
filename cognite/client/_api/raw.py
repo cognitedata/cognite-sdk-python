@@ -73,7 +73,7 @@ class RawDatabasesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.raw.databases.delete(["db1", "db2"])
+                >>> c.raw.databases.delete(["db1", "db2"])
         """
         utils._auxiliary.assert_type(name, "name", [str, list])
         if isinstance(name, str):
@@ -357,7 +357,7 @@ class RawRowsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> keys_to_delete = ["k1", "k2", "k3"]
-                >>> res = c.raw.rows.delete("db1", "table1", keys_to_delete)
+                >>> c.raw.rows.delete("db1", "table1", keys_to_delete)
         """
         utils._auxiliary.assert_type(key, "key", [str, list])
         if isinstance(key, str):

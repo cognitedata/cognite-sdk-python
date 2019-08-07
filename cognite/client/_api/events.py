@@ -236,7 +236,7 @@ class EventsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.events.delete(id=[1,2,3], external_id="3")
+                >>> c.events.delete(id=[1,2,3], external_id="3")
         """
         self._delete_multiple(ids=id, external_ids=external_id, wrap_ids=True)
 
