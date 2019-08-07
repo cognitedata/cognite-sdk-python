@@ -86,7 +86,6 @@ class TestThreeDRevisionsAPI:
 class TestThreeDFilesAPI:
     def test_retrieve(self, test_revision):
         revision, model_id = test_revision
-        base_url = COGNITE_CLIENT._config.base_url
         project = COGNITE_CLIENT._config.project
         url = "/api/v1/projects/{}/3d/reveal/models/{}/revisions/{}".format(project, model_id, revision.id)
         response = COGNITE_CLIENT.get(url=url)
