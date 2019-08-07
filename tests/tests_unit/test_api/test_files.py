@@ -65,6 +65,26 @@ def mock_file_upload_response(rsps):
 
 
 @pytest.fixture
+def mock_file_create_response(rsps):
+    response_body = {
+        "externalId": "string",
+        "name": "string",
+        "source": "string",
+        "mimeType": "string",
+        "metadata": {},
+        "assetIds": [1],
+        "id": 1,
+        "uploaded": False,
+        "uploadedTime": 0,
+        "createdTime": 0,
+        "lastUpdatedTime": 0,
+        "uploadUrl": "https://upload.here",
+    }
+    rsps.add(rsps.POST, FILES_API._get_base_url_with_base_path() + "/files", status=200, json=response_body)
+    yield rsps
+
+
+@pytest.fixture
 def mock_file_download_response(rsps):
     rsps.add(
         rsps.POST,
@@ -126,6 +146,12 @@ def mock_file_download_response_one_fails(rsps):
 
 
 class TestFilesAPI:
+    def test_create(self, mock_file_create_response):
+        file_metadata, upload_url = FILES_API.create(name="bla")
+        response_body = mock_file_create_response.calls[0].response.json()
+        assert FileMetadata._load(response_body) == file_metadata
+        assert response_body["uploadUrl"] == upload_url
+
     def test_retrieve_single(self, mock_files_response):
         res = FILES_API.retrieve(id=1)
         assert isinstance(res, FileMetadata)

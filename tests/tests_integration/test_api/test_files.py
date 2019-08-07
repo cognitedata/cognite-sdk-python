@@ -30,6 +30,10 @@ def test_files():
 
 
 class TestFilesAPI:
+    def test_create(self):
+        file_metadata, upload_url = COGNITE_CLIENT.files.create(name="mytestfile")
+        COGNITE_CLIENT.files.delete(id=file_metadata.id)
+
     def test_retrieve(self):
         res = COGNITE_CLIENT.files.list(limit=1)
         assert res[0] == COGNITE_CLIENT.files.retrieve(res[0].id)
