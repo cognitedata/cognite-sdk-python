@@ -72,23 +72,11 @@ class FilesAPI(APIClient):
         """
         return self.__call__()
 
-    def create(
-        self,
-        name: str,
-        external_id: str = None,
-        source: str = None,
-        metadata: Dict[str, Any] = None,
-        asset_ids: List[int] = None,
-        overwrite: bool = False,
-    ):
+    def create(self, file_metadata: FileMetadata, overwrite: bool = False) -> Tuple[FileMetadata, str]:
         """Create file without uploading content.
 
         Args:
-            external_id (str): External Id provided by client. Should be unique within the project.
-            name (str): No description.
-            source (str): The source of the file.
-            metadata (Dict[str, Any]): Customizable extra data about the file. String key -> String value.
-            asset_ids (List[int]): No description.
+            file_metadata (FileMetaData): File metadata for the file to create.
             overwrite (bool): If 'overwrite' is set to true, and the POST body content specifies a 'externalId' field,
                 fields for the file found for externalId can be overwritten. The default setting is false.
                 If metadata is included in the request body, all of the original metadata will be overwritten.
@@ -96,20 +84,19 @@ class FilesAPI(APIClient):
                 Do not set assetIds in request body if you want to keep the current file-asset mappings.
 
         Returns:
-            (FileMetaData, str): Tuple containing the file metadata and upload url of the created file.
+            Tuple[FileMetaData, str]: Tuple containing the file metadata and upload url of the created file.
 
         Examples:
 
             Create a file::
 
                 >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import FileMetadata
                 >>> c = CogniteClient()
-                >>> res = c.files.create(name="my_file", metadata={"key": "value"})
+                >>> file_metadata = FileMetadata(name="MyFile")
+                >>> res = c.files.create(file_metadata)
 
         """
-        file_metadata = FileMetadata(
-            name=name, external_id=external_id, source=source, metadata=metadata, asset_ids=asset_ids
-        )
 
         res = self._post(
             url_path=self._RESOURCE_PATH, json=file_metadata.dump(camel_case=True), params={"overwrite": overwrite}

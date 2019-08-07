@@ -147,9 +147,10 @@ def mock_file_download_response_one_fails(rsps):
 
 class TestFilesAPI:
     def test_create(self, mock_file_create_response):
-        file_metadata, upload_url = FILES_API.create(name="bla")
+        file_metadata = FileMetadata(name="bla")
+        returned_file_metadata, upload_url = FILES_API.create(file_metadata)
         response_body = mock_file_create_response.calls[0].response.json()
-        assert FileMetadata._load(response_body) == file_metadata
+        assert FileMetadata._load(response_body) == returned_file_metadata
         assert response_body["uploadUrl"] == upload_url
 
     def test_retrieve_single(self, mock_files_response):
