@@ -82,7 +82,7 @@ class ServiceAccountsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.iam.service_accounts.delete(1)
+                >>> c.iam.service_accounts.delete(1)
         """
         self._delete_multiple(ids=id, wrap_ids=False)
 
@@ -155,7 +155,7 @@ class APIKeysAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.iam.api_keys.delete(1)
+                >>> c.iam.api_keys.delete(1)
         """
         self._delete_multiple(ids=id, wrap_ids=False)
 
@@ -220,7 +220,7 @@ class GroupsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.iam.groups.delete(1)
+                >>> c.iam.groups.delete(1)
         """
         self._delete_multiple(ids=id, wrap_ids=False)
 
@@ -349,6 +349,6 @@ class SecurityCategoriesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.iam.security_categories.delete(1)
+                >>> c.iam.security_categories.delete(1)
         """
         self._delete_multiple(ids=id, wrap_ids=False)
