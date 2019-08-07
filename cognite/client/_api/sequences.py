@@ -190,7 +190,7 @@ class SequencesAPI(APIClient):
 
                 >>> from cognite.client.experimental import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.sequences.delete(id=[1,2,3], external_id="3")
+                >>> c.sequences.delete(id=[1,2,3], external_id="3")
         """
         self._delete_multiple(wrap_ids=True, ids=id, external_ids=external_id)
 
@@ -300,21 +300,21 @@ class SequencesDataAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> seq = c.sequences.create(Sequence(columns=[{"valueType": "STRING","valueType": "DOUBLE"}]))
                 >>> data = [(1, ['pi',3.14]), (2, ['e',2.72]) ]
-                >>> res1 = c.sequences.data.insert(column_ids=seq.column_ids, rows=data, id=1)
+                >>> c.sequences.data.insert(column_ids=seq.column_ids, rows=data, id=1)
 
             They can also be provided as a list of API-style objects with a rowNumber and values field::
 
                 >>> from cognite.client.experimental import CogniteClient
                 >>> c = CogniteClient()
                 >>> data = [{"rowNumber": 123, "values": ['str',3]}, {"rowNUmber": 456, "values": ["bar",42]} ]
-                >>> res1 = c.sequences.data.insert(data, id=1) # implicit columns are retrieved from metadata
+                >>> c.sequences.data.insert(data, id=1) # implicit columns are retrieved from metadata
 
             Or they can be a given as a dictionary with row number as the key, and the value is the data to be inserted at that row::
 
                 >>> from cognite.client.experimental import CogniteClient
                 >>> c = CogniteClient()
                 >>> data = {123 : ['str',3], 456 : ['bar',42] }
-                >>> res1 = c.sequences.data.insert(column_external_ids=['stringColumn','intColumn'], rows=data, id=1)
+                >>> c.sequences.data.insert(column_external_ids=['stringColumn','intColumn'], rows=data, id=1)
         """
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
         if column_ids is None and column_external_ids is None:
@@ -362,7 +362,7 @@ class SequencesDataAPI(APIClient):
                 >>> from cognite.client.experimental import CogniteClient
                 >>> c = CogniteClient()
                 >>> df = c.sequences.data.retrieve_dataframe(id=123, start=0, end=None)
-                >>> c.sequences.data.insert_dataframe(df*2, id=123, external_id_headers=True) and None
+                >>> c.sequences.data.insert_dataframe(df*2, id=123, external_id_headers=True)
         """
         dataframe = dataframe.replace({math.nan: None})
         data = [(v[0], list(v[1:])) for v in dataframe.itertuples()]
@@ -394,7 +394,7 @@ class SequencesDataAPI(APIClient):
 
                 >>> from cognite.client.experimental import CogniteClient
                 >>> c = CogniteClient()
-                >>> res1 = c.sequences.data.delete(id=0, rows=[1,2,42])
+                >>> c.sequences.data.delete(id=0, rows=[1,2,42])
         """
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
         post_obj = self._process_ids(id, external_id, wrap_ids=True)[0]
@@ -418,7 +418,7 @@ class SequencesDataAPI(APIClient):
 
                 >>> from cognite.client.experimental import CogniteClient
                 >>> c = CogniteClient()
-                >>> res1 = c.sequences.data.delete_range(id=0, start=0, end=None)
+                >>> c.sequences.data.delete_range(id=0, start=0, end=None)
         """
         deleter = lambda data: self.delete(rows=[r["rowNumber"] for r in data], external_id=external_id, id=id)
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
@@ -452,6 +452,16 @@ class SequencesDataAPI(APIClient):
 
         Returns:
             List of sequence data
+
+        Examples:
+
+                >>> from cognite.client.experimental import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.sequences.data.retrieve(id=0, start=0, end=None)
+                >>> tuples = [(r,v) for r,v in res.iteritems()] # You can use this iterator in for loops and list comprehensions,
+                >>> single_value = res[23] # ... get the values at a single row number,
+                >>> col = res.get_column(external_id='columnExtId') # ... get the array of values for a specific column,
+                >>> df = res.to_pandas() # ... or convert the result to a dataframe
         """
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
         post_obj = self._process_ids(id, external_id, wrap_ids=True)[0]
@@ -483,6 +493,12 @@ class SequencesDataAPI(APIClient):
 
         Returns:
              pandas.DataFrame
+
+        Examples:
+
+                >>> from cognite.client.experimental import CogniteClient
+                >>> c = CogniteClient()
+                >>> df = c.sequences.data.retrieve_dataframe(id=0, start=0, end=None)
         """
         return self.retrieve(start, end, column_ids, column_external_ids, external_id, id).to_pandas()
 
