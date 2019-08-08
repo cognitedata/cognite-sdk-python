@@ -3,7 +3,7 @@ import time
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import FileMetadataFilter, FileMetadataUpdate
+from cognite.client.data_classes import FileMetadata, FileMetadataFilter, FileMetadataUpdate
 
 COGNITE_CLIENT = CogniteClient()
 
@@ -30,6 +30,12 @@ def test_files():
 
 
 class TestFilesAPI:
+    def test_create(self):
+        file_metadata = FileMetadata(name="mytestfile")
+        returned_file_metadata, upload_url = COGNITE_CLIENT.files.create(file_metadata)
+        assert False == returned_file_metadata.uploaded
+        COGNITE_CLIENT.files.delete(id=returned_file_metadata.id)
+
     def test_retrieve(self):
         res = COGNITE_CLIENT.files.list(limit=1)
         assert res[0] == COGNITE_CLIENT.files.retrieve(res[0].id)

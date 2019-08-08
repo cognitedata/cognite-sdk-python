@@ -26,6 +26,9 @@ Changes are grouped as follows
 ### Fixed
 - Sequence POST queries are retried if safe (e.g. search)
 
+### Added
+- The files API can now create a file without uploading content.
+
 ## [1.0.4] - 2019-08-05
 ### Changed
 - Sequences data retrieval now returns a SequenceData object.
