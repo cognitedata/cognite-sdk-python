@@ -181,6 +181,11 @@ class APIClient:
             "/timeseries/data/list",
             "/timeseries/data/latest",
             "/timeseries/data/delete",
+            "/sequences/byids",
+            "/sequences/search",
+            "/sequences/data",
+            "/sequences/data/list",
+            "/sequences/data/delete",
         }
         if method in ["GET", "PUT"]:
             return True

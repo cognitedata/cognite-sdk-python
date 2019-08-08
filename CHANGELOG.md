@@ -20,6 +20,11 @@ Changes are grouped as follows
 - Separate read/write fields on data classes
 
 ## [Unreleased]
+### Changed
+- Fixed naming for sequencesdata iteritems() -> items()
+
+### Fixed
+- Sequence POST queries are retried if safe (e.g. search)
 
 ## [1.0.4] - 2019-08-05
 ### Changed

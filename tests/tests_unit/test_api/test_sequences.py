@@ -409,7 +409,7 @@ class TestSequences:
         seq = SEQ_API.retrieve(id=1)
         data = seq.rows(start=0, end=None)
         assert [1] == data[0]
-        for r, v in data.iteritems():
+        for r, v in data.items():
             assert 0 == r
             assert [1] == v
         col = data.get_column("ceid")
