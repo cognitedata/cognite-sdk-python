@@ -347,6 +347,10 @@ Search for files
 ^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.files.FilesAPI.search
 
+Create file metadata
+^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.files.FilesAPI.create
+
 Upload a file or directory
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.files.FilesAPI.upload

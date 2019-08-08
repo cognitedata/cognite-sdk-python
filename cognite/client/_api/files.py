@@ -72,6 +72,41 @@ class FilesAPI(APIClient):
         """
         return self.__call__()
 
+    def create(self, file_metadata: FileMetadata, overwrite: bool = False) -> Tuple[FileMetadata, str]:
+        """Create file without uploading content.
+
+        Args:
+            file_metadata (FileMetaData): File metadata for the file to create.
+            overwrite (bool): If 'overwrite' is set to true, and the POST body content specifies a 'externalId' field,
+                fields for the file found for externalId can be overwritten. The default setting is false.
+                If metadata is included in the request body, all of the original metadata will be overwritten.
+                File-Asset mappings only change if explicitly stated in the assetIds field of the POST json body.
+                Do not set assetIds in request body if you want to keep the current file-asset mappings.
+
+        Returns:
+            Tuple[FileMetaData, str]: Tuple containing the file metadata and upload url of the created file.
+
+        Examples:
+
+            Create a file::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import FileMetadata
+                >>> c = CogniteClient()
+                >>> file_metadata = FileMetadata(name="MyFile")
+                >>> res = c.files.create(file_metadata)
+
+        """
+
+        res = self._post(
+            url_path=self._RESOURCE_PATH, json=file_metadata.dump(camel_case=True), params={"overwrite": overwrite}
+        )
+        returned_file_metadata = res.json()
+        upload_url = returned_file_metadata.pop("uploadUrl")
+        file_metadata = FileMetadata._load(returned_file_metadata)
+
+        return (file_metadata, upload_url)
+
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[FileMetadata]:
         """Retrieve a single file metadata by id.
 
