@@ -20,6 +20,9 @@ Changes are grouped as follows
 - Separate read/write fields on data classes
 
 ## [Unreleased]
+### Added
+- complete parameter on datapoints.retrieve_dataframe, which completes the index to be regularly spaced at the granularity and fills in missing values
+- datapoints.retrieve_dataframe_dict function, which returns {aggregate:dataframe} without adding aggregate names to columns
 
 ## [1.0.4] - 2019-08-05
 ### Changed
