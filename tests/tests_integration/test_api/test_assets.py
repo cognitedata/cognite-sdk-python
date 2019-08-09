@@ -108,5 +108,6 @@ class TestAssetsAPI:
             root_external_id="my_unique_test_root", depth=5, children_per_node=10, current_depth=2
         )
         children = COGNITE_CLIENT.assets.create(children)
+        assert COGNITE_CLIENT.assets._CREATE_LIMIT < len(children)
 
         COGNITE_CLIENT.assets.delete(external_id="my_unique_test_root", recursive=True)
