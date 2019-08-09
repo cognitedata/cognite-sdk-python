@@ -101,13 +101,14 @@ class TestAssetsAPI:
         assert 6 == len(COGNITE_CLIENT.assets.retrieve_subtree(root_test_asset.id, depth=1))
 
     def test_create_asset_hierarchy_parent_external_id_not_in_request(self):
-        root = Asset(external_id="my_unique_test_root", name="my_unique_test_root")
+        root_external_id = "my_root_{}".format(utils._auxiliary.random_string(5))
+        root = Asset(external_id=root_external_id, name="my_root")
         root = COGNITE_CLIENT.assets.create(root)
 
         children = generate_asset_tree(
-            root_external_id="my_unique_test_root", depth=5, children_per_node=10, current_depth=2
+            root_external_id=root_external_id, depth=5, children_per_node=10, current_depth=2
         )
         children = COGNITE_CLIENT.assets.create(children)
         assert COGNITE_CLIENT.assets._CREATE_LIMIT < len(children)
 
-        COGNITE_CLIENT.assets.delete(external_id="my_unique_test_root", recursive=True)
+        COGNITE_CLIENT.assets.delete(external_id=root_external_id, recursive=True)
