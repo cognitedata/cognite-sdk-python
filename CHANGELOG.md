@@ -27,6 +27,7 @@ Changes are grouped as follows
 ### Fixed
 - Sequence POST queries are retried if safe (e.g. search)
 - .update in the different APIs now correctly acceps a CogniteResourceList
+- Json serializiation in `__str__()` of base data classes. Now handles Decimal and Number objects. 
 
 ### Added
 - The files API can now create a file without uploading content.

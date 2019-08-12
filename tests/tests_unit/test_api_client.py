@@ -845,3 +845,11 @@ class TestHelpers:
         os.environ["COGNITE_STATUS_FORCELIST"] = "1,2, 3,4"
         assert [1, 2, 3, 4] == utils._client_config._DefaultConfig().status_forcelist
         del os.environ["COGNITE_STATUS_FORCELIST"]
+
+
+class TestConnectionPooling:
+    def test_connection_pool_is_shared_between_clients(self):
+        c1 = CogniteClient()
+        c2 = CogniteClient()
+        assert c1._api_client._request_session == c2._api_client._request_session
+        assert c1._api_client._request_session_with_retry == c2._api_client._request_session_with_retry
