@@ -263,7 +263,7 @@ class SequenceData:
             )
         return [r[ix] for r in self.values]
 
-    def iteritems(self) -> Generator[Tuple[int, List[Union[int, str, float]]], None, None]:
+    def items(self) -> Generator[Tuple[int, List[Union[int, str, float]]], None, None]:
         """Returns an iterator over tuples of (row number, values)."""
         for row, values in zip(self.row_numbers, self.values):
             yield row, values
