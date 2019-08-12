@@ -470,6 +470,22 @@ class DatapointsAPI(APIClient):
 
             see retrieve_dataframe
 
+        Examples:
+
+            Get a pandas dataframe without "|average" in the columns::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> df = c.datapoints.retrieve_dataframe_dict(id=[1,2,3], start="2w-ago", end="now",
+                ...         aggregates=["average"], granularity="1h")
+
+            Get a dictionary of pandas dataframes, with the index evenly spaced at 1h intervals, missing values completed in the middle and dropped at the ends::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> dfs = c.datapoints.retrieve_dataframe_dict(id=[1,2,3], start="2w-ago", end="now",
+                ...          aggregates=["interpolation","count"], granularity="1h", complete="fill,dropna")
+
         Returns:
             Union[pandas.DataFrame,Dict[pandas.DataFrame]]: The requested dataframe if one aggregate was requested, or a dictionary of aggregate: dataframe if multiple aggregates were requested.
         """
