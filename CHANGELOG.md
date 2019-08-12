@@ -30,6 +30,7 @@ Changes are grouped as follows
 
 ### Added
 - The files API can now create a file without uploading content.
+- The insert method of the raw.rows API now has a create limit of 10 000 (increased from 1000).
 
 ## [1.0.4] - 2019-08-05
 ### Changed
