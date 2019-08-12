@@ -12,7 +12,7 @@ EXCLUDE_VALUE = [None]
 class CogniteResponse:
     def __str__(self):
         item = utils._time.convert_time_attributes_to_datetime(self.dump())
-        return json.dumps(item, indent=4)
+        return json.dumps(item, default=utils._auxiliary.json_dump_default, indent=4)
 
     def __repr__(self):
         return self.__str__()
@@ -64,7 +64,7 @@ class CogniteResource:
 
     def __str__(self):
         item = utils._time.convert_time_attributes_to_datetime(self.dump())
-        return json.dumps(item, default=lambda x: x.__dict__, indent=4)
+        return json.dumps(item, default=utils._auxiliary.json_dump_default, indent=4)
 
     def __repr__(self):
         return self.__str__()
@@ -176,7 +176,7 @@ class CogniteResourceList(UserList):
 
     def __str__(self):
         item = utils._time.convert_time_attributes_to_datetime(self.dump())
-        return json.dumps(item, default=lambda x: x.__dict__, indent=4)
+        return json.dumps(item, default=utils._auxiliary.json_dump_default, indent=4)
 
     def __repr__(self):
         return self.__str__()
@@ -243,7 +243,7 @@ class CogniteUpdate:
         return type(self) == type(other) and self.dump() == other.dump()
 
     def __str__(self):
-        return json.dumps(self.dump(), indent=4)
+        return json.dumps(self.dump(), default=utils._auxiliary.json_dump_default, indent=4)
 
     def __repr__(self):
         return self.__str__()
@@ -333,7 +333,7 @@ class CogniteFilter:
 
     def __str__(self):
         item = utils._time.convert_time_attributes_to_datetime(self.dump())
-        return json.dumps(item, default=lambda x: x.__dict__, indent=4)
+        return json.dumps(item, default=utils._auxiliary.json_dump_default, indent=4)
 
     def __repr__(self):
         return self.__str__()
