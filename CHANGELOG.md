@@ -25,6 +25,7 @@ Changes are grouped as follows
 
 ### Fixed
 - Sequence POST queries are retried if safe (e.g. search)
+- .update in the different APIs now correctly acceps a CogniteResourceList
 
 ### Added
 - The files API can now create a file without uploading content.
