@@ -22,7 +22,7 @@ Changes are grouped as follows
 ## [Unreleased]
 ### Changed
 - Fixed naming for sequencesdata iteritems() -> items()
-- The insert method of the raw.rows API now has a create limit of 10 000 (increased from 1000).
+- Will chunk raw rows into batches of 10,000 instead of 1,000.
 
 ### Fixed
 - Sequence POST queries are retried if safe (e.g. search)
