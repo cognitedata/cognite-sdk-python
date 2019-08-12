@@ -20,7 +20,16 @@ Changes are grouped as follows
 - Separate read/write fields on data classes
 
 ## [Unreleased]
+
+### Changed
+- Fixed naming for sequencesdata iteritems() -> items()
+
+### Fixed
+- Sequence POST queries are retried if safe (e.g. search)
+- .update in the different APIs now correctly acceps a CogniteResourceList
+
 ### Added
+- The files API can now create a file without uploading content.
 - complete parameter on datapoints.retrieve_dataframe, which completes the index to be regularly spaced at the granularity and fills in missing values
 - datapoints.retrieve_dataframe_dict function, which returns {aggregate:dataframe} without adding aggregate names to columns
 
