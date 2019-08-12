@@ -407,7 +407,6 @@ class _AssetPoster:
 
     @staticmethod
     def _validate_asset_hierarchy(assets) -> None:
-        external_ids = set([asset.external_id for asset in assets])
         external_ids_seen = set()
         for asset in assets:
             if asset.external_id:
@@ -457,7 +456,7 @@ class _AssetPoster:
         next_asset = asset
         seen = {asset.external_id}
         while next_asset.parent_external_id is not None:
-            next_asset = self.external_id_to_asset.get(next_asset.parent_external_id, None)
+            next_asset = self.external_id_to_asset.get(next_asset.parent_external_id)
             if next_asset is None:
                 break
             if next_asset.external_id in self.external_ids_without_circular_deps:

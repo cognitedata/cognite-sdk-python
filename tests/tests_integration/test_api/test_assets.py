@@ -101,14 +101,26 @@ class TestAssetsAPI:
         assert 6 == len(COGNITE_CLIENT.assets.retrieve_subtree(root_test_asset.id, depth=1))
 
     def test_create_asset_hierarchy_parent_external_id_not_in_request(self):
-        root_external_id = "my_root_{}".format(utils._auxiliary.random_string(5))
+        root_external_id = "my_root_{}".format(utils._auxiliary.random_string(10))
         root = Asset(external_id=root_external_id, name="my_root")
-        root = COGNITE_CLIENT.assets.create(root)
-
         children = generate_asset_tree(
             root_external_id=root_external_id, depth=5, children_per_node=10, current_depth=2
         )
-        children = COGNITE_CLIENT.assets.create(children)
-        assert COGNITE_CLIENT.assets._CREATE_LIMIT < len(children)
 
-        COGNITE_CLIENT.assets.delete(external_id=root_external_id, recursive=True)
+        try:
+            COGNITE_CLIENT.assets.create(root)
+            COGNITE_CLIENT.assets.create(children)
+
+            external_ids = [asset.external_id for asset in children] + [root_external_id]
+            posted_assets = COGNITE_CLIENT.assets.retrieve_multiple(external_ids=external_ids)
+            external_id_to_id = {a.external_id: a.id for a in posted_assets}
+            for asset in posted_assets:
+                if asset.external_id == root_external_id:
+                    assert asset.parent_id is None
+                else:
+                    assert asset.parent_id == external_id_to_id[asset.external_id[:-1]]
+
+        except:
+            raise
+        finally:
+            COGNITE_CLIENT.assets.delete(external_id=root_external_id, recursive=True)
