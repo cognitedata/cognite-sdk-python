@@ -878,6 +878,20 @@ class TestPandasIntegration:
         assert isinstance(dfd, pd.DataFrame)
         assert dfd.empty
 
+    def test_retrieve_dataframe_complete_all(self, mock_get_datapoints):
+        import pandas as pd
+
+        df = DPS_CLIENT.retrieve_dataframe(
+            id=[1, 2],
+            aggregates=["count", "sum", "average", "totalVariation"],
+            start=0,
+            end=1,
+            granularity="1s",
+            complete="fill",
+        )
+        assert isinstance(df, pd.DataFrame)
+        assert 8 == df.shape[1]
+
     def test_retrieve_dataframe_dict(self, mock_get_datapoints_several_missing):
         import pandas as pd
 
