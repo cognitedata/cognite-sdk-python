@@ -1,3 +1,4 @@
+from decimal import Decimal
 from unittest import mock
 
 import pytest
@@ -123,6 +124,7 @@ class TestCogniteResource:
 
     def test_str_repr(self):
         assert json.dumps({"var_a": 1}, indent=4) == MyResource(1).__str__()
+        assert json.dumps({"var_a": 1.0}, indent=4) == MyResource(Decimal(1)).__str__()
 
     @pytest.mark.dsl
     def test_to_pandas(self):
@@ -231,6 +233,10 @@ class TestCogniteResourceList:
         assert MyResource(id=1, external_id="1") == resource_list.get(id=1)
         assert MyResource(id=2, external_id="2") == resource_list.get(id=2)
 
+    def test_str_repr(self):
+        assert json.dumps([{"var_a": 1}], indent=4) == MyResourceList([MyResource(1)]).__str__()
+        assert json.dumps([{"var_a": 1.0}], indent=4) == MyResourceList([MyResource(Decimal(1))]).__str__()
+
     def test_get_item_by_external_id(self):
         resource_list = MyResourceList([MyResource(id=1, external_id="1"), MyResource(id=2, external_id="2")])
         assert MyResource(id=1, external_id="1") == resource_list.get(external_id="1")
@@ -265,6 +271,7 @@ class TestCogniteFilter:
 
     def test_str(self):
         assert json.dumps({"var_a": 1}, indent=4) == MyFilter(1).__str__()
+        assert json.dumps({"var_a": 1.0}, indent=4) == MyFilter(Decimal(1)).__str__()
 
     def test_repr(self):
         assert json.dumps({"var_a": 1}, indent=4) == MyFilter(1).__repr__()
@@ -294,6 +301,7 @@ class TestCogniteUpdate:
 
     def test_str(self):
         assert json.dumps(MyUpdate(1).dump(), indent=4) == MyUpdate(1).__str__()
+        assert json.dumps(MyUpdate(1.0).dump(), indent=4) == MyUpdate(Decimal(1)).__str__()
         assert json.dumps(MyUpdate(1).string.set("1").dump(), indent=4) == MyUpdate(1).string.set("1").__str__()
 
     def test_set_string(self):
@@ -347,6 +355,7 @@ class TestCogniteResponse:
 
     def test_str(self):
         assert json.dumps(MyResponse(1).dump(), indent=4, sort_keys=True) == MyResponse(1).__str__()
+        assert json.dumps(MyResponse(1.0).dump(), indent=4, sort_keys=True) == MyResponse(Decimal(1)).__str__()
 
     def test_repr(self):
         assert json.dumps(MyResponse(1).dump(), indent=4, sort_keys=True) == MyResponse(1).__repr__()
