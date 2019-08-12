@@ -468,7 +468,7 @@ class DatapointsAPI(APIClient):
 
         Args:
 
-            For other arguments, see retrieve_dataframe
+            see retrieve_dataframe
 
         Returns:
             Union[pandas.DataFrame,Dict[pandas.DataFrame]]: The requested dataframe if one aggregate was requested, or a dictionary of aggregate: dataframe if multiple aggregates were requested.

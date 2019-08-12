@@ -871,6 +871,13 @@ class TestPandasIntegration:
         assert isinstance(dfd, dict)
         assert 4 == len(dfd)
 
+    def test_retrieve_dataframe_dict_empty_single_aggregate(self, mock_get_datapoints_empty):
+        import pandas as pd
+
+        dfd = DPS_CLIENT.retrieve_dataframe_dict(id=1, aggregates=["count"], start=0, end=1, granularity="1s")
+        assert isinstance(dfd, pd.DataFrame)
+        assert dfd.empty
+
     def test_retrieve_dataframe_dict(self, mock_get_datapoints_several_missing):
         import pandas as pd
 
