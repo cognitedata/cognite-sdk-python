@@ -3,6 +3,7 @@ import json as _json
 import logging
 import os
 import re
+from collections import UserList
 from typing import Any, Dict, List, Union
 
 import requests.utils
@@ -415,7 +416,7 @@ class APIClient:
         cls = cls or self._LIST_CLASS
         resource_path = resource_path or self._RESOURCE_PATH
         patch_objects = []
-        single_item = not isinstance(items, list)
+        single_item = not isinstance(items, (list, UserList))
         if single_item:
             items = [items]
 

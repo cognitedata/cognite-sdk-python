@@ -108,6 +108,12 @@ class TestTimeSeries:
         assert isinstance(res, TimeSeriesList)
         assert mock_ts_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
+    def test_update_multiple_list(self, mock_ts_response):
+        tsl = TS_API.retrieve_multiple(ids=[0])
+        res = TS_API.update(tsl)
+        assert isinstance(res, TimeSeriesList)
+        assert 1 == len(res)
+
     def test_search(self, mock_ts_response):
         res = TS_API.search(filter=TimeSeriesFilter(is_string=True))
         assert mock_ts_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
