@@ -20,6 +20,12 @@ Changes are grouped as follows
 - Separate read/write fields on data classes
 
 ## [Unreleased]
+### Changed
+- Fixed naming for sequencesdata iteritems() -> items()
+
+### Fixed
+- Sequence POST queries are retried if safe (e.g. search)
+
 ### Added
 - The files API can now create a file without uploading content.
 
