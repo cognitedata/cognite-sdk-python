@@ -368,8 +368,7 @@ class DatapointsAPI(APIClient):
             str, List[str], Dict[str, Union[int, List[str]]], List[Dict[str, Union[int, List[str]]]]
         ] = None,
         limit: int = None,
-        complete=False,
-        dropna=False,
+        complete=None,
     ):
         """Get a pandas dataframe describing the requested data.
 
@@ -385,10 +384,11 @@ class DatapointsAPI(APIClient):
             external_id (Union[str, List[str], Dict[str, Any], List[Dict[str, Any]]]): External id or list of external
                 ids. Can also be object specifying aggregates. See example below.
             limit (int): Maximum number of datapoints to return for each time series.
-            complete (bool): insert missing entries into the index, and complete data where possible (supports interpolation, stepInterpolation, count, sum, totalVariation)
-            dropna (bool): Sets complete=True and drop rows in which any aggregate for any time series has missing values (typically rows at the start and end for interpolation aggregates).
-                    This guarantees that all returned dataframes have the exact same shape and no missing values anywhere.
-                    only supported for aggregates using any of sum, count, totalVariance, interpolation and stepInterpolation
+            complete (str): post-processing of the dataframe.
+                -  "fill": insert missing entries into the index, and complete data where possible (supports interpolation, stepInterpolation, count, sum, totalVariation)
+                -  "fill, dropna": additionally drop rows in which any aggregate for any time series has missing values (typically rows at the start and end for interpolation aggregates).
+                    This guarantees that all returned dataframes have the exact same shape and no missing values anywhere, and is only supported for aggregates using any of sum, count, totalVariance, interpolation and stepInterpolation
+
         Returns:
             pandas.DataFrame: The requested dataframe
 
@@ -418,31 +418,36 @@ class DatapointsAPI(APIClient):
                 limit=limit,
             ).to_pandas()
         df = pd.concat([id_df, external_id_df], axis="columns")
-
-        if complete == "fill" or complete == "dropna":
-            if "interpolation" in aggregates:
-                id_list = id if id is None or isinstance(id, list) else [id]
-                eid_list = external_id if external_id is None or isinstance(external_id, list) else [external_id]
+        complete = complete or ""
+        if "fill" in complete:
+            # retrieves isStep from metadata for lookup later. This is a bit complicated due to the dictionary syntax for id etc.
+            ts_items, _ = DatapointsFetcher(client=self)._process_ts_identifiers(id, external_id)
+            for it in ts_items:
+                it["aggregates"] = aggregates + (it.get("aggregates") or [])
+            int_ts_items = [it for it in ts_items if "interpolation" in it["aggregates"]]
+            if int_ts_items:
+                id_list = [it["id"] for it in ts_items if it.get("id")]
+                eid_list = [it["externalId"] for it in ts_items if it.get("externalId")]
                 ts_meta = self._cognite_client.time_series.retrieve_multiple(ids=id_list, external_ids=eid_list)
                 is_step_dict = {
-                    **{ts.id: bool(ts.is_step) for ts in ts_meta},
-                    **{ts.external_id: bool(ts.is_step) for ts in ts_meta},
+                    **{str(ts.id): bool(ts.is_step) for ts in ts_meta},
+                    **{ts.external_id: bool(ts.is_step) for ts in ts_meta if ts.external_id},
                 }
             else:
                 is_step_dict = None
             df = self._complete_dataframe(df, granularity, is_step_dict)
-        elif complete:
-            raise ValueError("complete should be 'fill', 'dropna' or Falsy")
 
-        if complete == "dropna":
-            completed_aggregates = ["sum", "count", "totalVariance", "interpolation", "stepInterpolation"]
-            if set(aggregates) - set(completed_aggregates):
-                raise ValueError(
-                    "One of the aggregates {} not in the supported aggregates {} for dropna".format(
-                        complete, completed_aggregates
+            if "dropna" in complete:
+                completed_aggregates = ["sum", "count", "totalVariance", "interpolation", "stepInterpolation"]
+                if set(aggregates) - set(completed_aggregates):
+                    raise ValueError(
+                        "One of the aggregates {} not in the supported aggregates {} for dropna".format(
+                            complete, completed_aggregates
+                        )
                     )
-                )
-            df.dropna(inplace=True)
+                df.dropna(inplace=True)
+        elif complete:
+            raise ValueError("complete should be 'fill', 'fill,dropna' or Falsy")
 
         return df
 
@@ -468,8 +473,16 @@ class DatapointsAPI(APIClient):
         Returns:
             Union[pandas.DataFrame,Dict[pandas.DataFrame]]: The requested dataframe if one aggregate was requested, or a dictionary of aggregate: dataframe if multiple aggregates were requested.
         """
+        all_aggregates = aggregates
+        for queries in [id, external_id]:
+            if isinstance(queries, list) and queries and isinstance(queries[0], dict):
+                for it in queries:
+                    for ag in it.get("aggregates") or []:
+                        if ag not in all_aggregates:
+                            all_aggregates.append(ag)
+
         df = self.retrieve_dataframe(start, end, aggregates, granularity, id, external_id, limit, complete)
-        df_dict = {ag: df.filter(like="|" + ag) for ag in aggregates}
+        df_dict = {ag: df.filter(like="|" + ag).rename(columns=lambda s: s[: -len(ag) - 1]) for ag in all_aggregates}
         return df_dict[aggregates[0]] if len(aggregates) == 1 else df_dict
 
     def _complete_dataframe(self, df, granularity, is_step_dict):
@@ -491,7 +504,7 @@ class DatapointsAPI(APIClient):
             lin_int_cols = [c for c in int_cols if not is_step_dict[c[:-14]]]  # 14 is length of '|interpolation'
             stepint_cols = list(np.setdiff1d(int_cols, lin_int_cols))
             if lin_int_cols:
-                df[lin_int_cols] = df[lin_int_cols].interpolate()
+                df[lin_int_cols] = df[lin_int_cols].interpolate(limit_area="inside")  # don't extrapolate
         else:
             stepint_cols = []
         stepint_cols += [c for c in df.columns if re.search(c, r"\|(stepInterpolation)$")]

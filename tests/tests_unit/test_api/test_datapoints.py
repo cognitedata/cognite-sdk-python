@@ -1,5 +1,6 @@
 import json
 import math
+import re
 from contextlib import contextmanager
 from datetime import datetime
 from random import choice, random
@@ -156,6 +157,52 @@ def mock_get_datapoints_one_ts_has_missing_aggregates(rsps):
         callback=callback,
         content_type="application/json",
     )
+    yield rsps
+
+
+@pytest.fixture
+def mock_get_datapoints_several_missing(rsps):
+    def callback(request):
+        item = jsgz_load(request.body)["items"][0]
+        if item["aggregates"] == ["interpolation"]:
+            dps = {
+                "id": 2,
+                "externalId": "abc",
+                "datapoints": [{"timestamp": 1000, "interpolation": 1}, {"timestamp": 3000, "interpolation": 3}],
+            }
+        elif item["aggregates"] == ["count"]:
+            dps = {
+                "id": 3,
+                "externalId": "def",
+                "datapoints": [
+                    {"timestamp": 1000, "count": 2},
+                    {"timestamp": 3000, "count": 4},
+                    {"timestamp": 4000, "count": 5},
+                ],
+            }
+        elif item["aggregates"] == ["average"]:
+            dps = {
+                "id": 1,
+                "externalId": "def",
+                "datapoints": [
+                    {"timestamp": 0, "average": 11},
+                    {"timestamp": 1000, "average": 22},
+                    {"timestamp": 3000, "average": 44},
+                ],
+            }
+
+        return 200, {}, json.dumps({"items": [dps]})
+
+    rsps.add_callback(
+        rsps.POST,
+        DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/list",
+        callback=callback,
+        content_type="application/json",
+    )
+
+    response_body = {"items": [{"id": 1, "isStep": False}, {"id": 2, "isStep": None}, {"id": 3, "isStep": True}]}
+    rsps.add(rsps.POST, DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/byids", status=200, json=response_body)
+    rsps.assert_all_requests_are_fired = False
     yield rsps
 
 
@@ -763,6 +810,132 @@ class TestPandasIntegration:
             index=[utils._time.ms_to_datetime(i) for i in range(5)],
         )
         pd.testing.assert_frame_equal(df, expected_df)
+
+    def test_retrieve_dataframe_several_missing(self, mock_get_datapoints_several_missing):
+        import pandas as pd
+
+        df = DPS_CLIENT.retrieve_dataframe(
+            id=[
+                {"id": 1, "aggregates": ["average"]},
+                {"id": 2, "aggregates": ["interpolation"]},
+                {"id": 3, "aggregates": ["count"]},
+            ],
+            aggregates=[],
+            start=0,
+            end=1,
+            granularity="1s",
+        )
+
+        expected_df = pd.DataFrame(
+            {"1|average": [11, 22, 44, None], "2|interpolation": [None, 1, 3, None], "3|count": [None, 2, 4, 5]},
+            index=[utils._time.ms_to_datetime(i * 1000) for i in [0, 1, 3, 4]],
+        )
+        pd.testing.assert_frame_equal(df, expected_df)
+
+    def test_retrieve_dataframe_several_missing_complete(self, mock_get_datapoints_several_missing):
+        import pandas as pd
+
+        df = DPS_CLIENT.retrieve_dataframe(
+            id=[
+                {"id": 1, "aggregates": ["average"]},
+                {"id": 2, "aggregates": ["interpolation"]},
+                {"id": 3, "aggregates": ["count"]},
+            ],
+            aggregates=[],
+            start=0,
+            end=1,
+            granularity="1s",
+            complete="fill",
+        )
+
+        expected_df = pd.DataFrame(
+            {
+                "1|average": [11.0, 22.0, None, 44.0, None],
+                "2|interpolation": [None, 1.0, 2.0, 3.0, None],
+                "3|count": [0.0, 2.0, 0.0, 4.0, 5.0],
+            },
+            index=[utils._time.ms_to_datetime(i * 1000) for i in range(5)],
+        )
+        pd.testing.assert_frame_equal(df, expected_df)
+
+    def test_retrieve_dataframe_dict_empty(self, mock_get_datapoints_empty):
+        import pandas as pd
+
+        dfd = DPS_CLIENT.retrieve_dataframe_dict(
+            id=1,
+            aggregates=["count", "interpolation", "stepInterpolation", "totalVariation"],
+            start=0,
+            end=1,
+            granularity="1s",
+        )
+        assert isinstance(dfd, dict)
+        assert 4 == len(dfd)
+
+    def test_retrieve_dataframe_dict(self, mock_get_datapoints_several_missing):
+        import pandas as pd
+
+        dfd = DPS_CLIENT.retrieve_dataframe_dict(
+            id=[
+                {"id": 1, "aggregates": ["average"]},
+                {"id": 2, "aggregates": ["interpolation"]},
+                {"id": 3, "aggregates": ["count"]},
+            ],
+            aggregates=[],
+            start=0,
+            end=1,
+            granularity="1s",
+        )
+        assert isinstance(dfd, dict)
+        assert 3 == len(dfd)
+
+        expected_dict = {
+            "average": pd.DataFrame(
+                {"1": [11.0, 22.0, 44.0, None]}, index=[utils._time.ms_to_datetime(i * 1000) for i in [0, 1, 3, 4]]
+            ),
+            "count": pd.DataFrame(
+                {"3": [None, 2, 4, 5]}, index=[utils._time.ms_to_datetime(i * 1000) for i in [0, 1, 3, 4]]
+            ),
+            "interpolation": pd.DataFrame(
+                {"2": [None, 1, 3, None]}, index=[utils._time.ms_to_datetime(i * 1000) for i in [0, 1, 3, 4]]
+            ),
+        }
+        for k in expected_dict:
+            pd.testing.assert_frame_equal(expected_dict[k], dfd[k])
+
+    def test_retrieve_dataframe_dict_complete(self, mock_get_datapoints_several_missing):
+        import pandas as pd
+
+        dfd = DPS_CLIENT.retrieve_dataframe_dict(
+            id=[{"id": 2, "aggregates": ["interpolation"]}, {"id": 3, "aggregates": ["count"]}],
+            aggregates=[],
+            start=0,
+            end=1,
+            granularity="1s",
+            complete="fill,dropna",
+        )
+        assert isinstance(dfd, dict)
+        assert 2 == len(dfd)
+
+        expected_dict = {
+            "count": pd.DataFrame(
+                {"3": [2.0, 0.0, 4.0]}, index=[utils._time.ms_to_datetime(i * 1000) for i in [1, 2, 3]]
+            ),
+            "interpolation": pd.DataFrame(
+                {"2": [1.0, 2.0, 3.0]}, index=[utils._time.ms_to_datetime(i * 1000) for i in [1, 2, 3]]
+            ),
+        }
+        for k in expected_dict:
+            pd.testing.assert_frame_equal(expected_dict[k], dfd[k])
+
+        with pytest.raises(ValueError, match="not in the supported aggregates"):
+            dfd = DPS_CLIENT.retrieve_dataframe_dict(
+                id=[{"id": 1, "aggregates": ["average"]}],
+                aggregates=[],
+                start=0,
+                end=1,
+                granularity="1s",
+                complete="fill,dropna",
+            )
 
     def test_retrieve_dataframe_id_and_external_id_requested(self, rsps):
         rsps.add(
