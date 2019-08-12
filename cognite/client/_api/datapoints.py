@@ -3,7 +3,7 @@ import re
 import threading
 from collections import defaultdict, namedtuple
 from datetime import datetime
-from typing import *
+from typing import Any, Dict, List, Tuple, Union  # typing.re was clashing with re
 
 import cognite.client.utils._time
 from cognite.client import utils
