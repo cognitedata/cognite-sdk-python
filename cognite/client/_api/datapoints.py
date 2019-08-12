@@ -385,9 +385,9 @@ class DatapointsAPI(APIClient):
                 ids. Can also be object specifying aggregates. See example below.
             limit (int): Maximum number of datapoints to return for each time series.
             complete (str): post-processing of the dataframe.
-                -  "fill": insert missing entries into the index, and complete data where possible (supports interpolation, stepInterpolation, count, sum, totalVariation)
-                -  "fill, dropna": additionally drop rows in which any aggregate for any time series has missing values (typically rows at the start and end for interpolation aggregates).
-                    This guarantees that all returned dataframes have the exact same shape and no missing values anywhere, and is only supported for aggregates using any of sum, count, totalVariance, interpolation and stepInterpolation
+                Pass "fill" to insert missing entries into the index, and complete data where possible (supports interpolation, stepInterpolation, count, sum, totalVariation).
+                Pass "fill,dropna" to additionally drop rows in which any aggregate for any time series has missing values (typically rows at the start and end for interpolation aggregates).
+                This guarantees that all returned dataframes have the exact same shape and no missing values anywhere, and is only supported for aggregates using any of sum, count, totalVariance, interpolation and stepInterpolation
 
         Returns:
             pandas.DataFrame: The requested dataframe
