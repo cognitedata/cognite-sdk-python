@@ -94,3 +94,9 @@ class TestTimeSeries:
         assert 0 == jsgz_load(mock_get_first_dp_in_ts.calls[1].request.body)["start"]
         assert now <= jsgz_load(mock_get_first_dp_in_ts.calls[1].request.body)["end"]
         assert 1 == jsgz_load(mock_get_first_dp_in_ts.calls[1].request.body)["limit"]
+
+    def test_dump(self, mock_ts_by_ids_response):
+        assert isinstance(TS_CLIENT.retrieve(id=1).dump(), dict)
+        assert isinstance(TS_CLIENT.retrieve(id=0).dump(), None)
+
+
