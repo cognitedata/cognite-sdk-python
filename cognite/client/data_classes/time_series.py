@@ -115,6 +115,25 @@ class TimeSeries(CogniteResource):
             return list(dps)[0]
         return None
 
+    def dump(self) -> dict:
+        """Returns a dictionary that be directly inserted again.
+
+        Returns:
+             Dictionary: A dictionary containing all the relevant fields of the time series.
+        """
+        if len(self) > 0:
+            ts = {
+                    "externalId": self.external_id,
+                    "name": self.name,
+                    "isString": self.is_string,
+                    "metadata": self.metadata,
+                    "unit": self.unit,
+                    "isStep": self.is_step,
+                    "description": self.description,
+                    "legacyName": self.external_id
+                  }
+            return ts
+        return None
 
 # GenClass: TimeSeriesSearchDTO.filter
 class TimeSeriesFilter(CogniteFilter):
