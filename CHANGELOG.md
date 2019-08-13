@@ -32,6 +32,7 @@ Changes are grouped as follows
 
 ### Added
 - The files API can now create a file without uploading content.
+- New method create_hierarchy() added to assets API.
 
 ## [1.0.4] - 2019-08-05
 ### Changed
