@@ -467,8 +467,19 @@ class DatapointsAPI(APIClient):
         """Get a dictionary of aggregate: pandas dataframe describing the requested data.
 
         Args:
-
-            see retrieve_dataframe
+            start (Union[int, str, datetime]): Inclusive start.
+            end (Union[int, str, datetime]): Exclusive end.
+            aggregates (List[str]): List of aggregate functions to apply.
+            granularity (str): The granularity to fetch aggregates at. e.g. '1s', '2h', '10d'.
+            id (Union[int, List[int], Dict[str, Any], List[Dict[str, Any]]]: Id or list of ids. Can also be object
+                specifying aggregates. See example below.
+            external_id (Union[str, List[str], Dict[str, Any], List[Dict[str, Any]]]): External id or list of external
+                ids. Can also be object specifying aggregates. See example below.
+            limit (int): Maximum number of datapoints to return for each time series.
+            complete (str): post-processing of the dataframe.
+                Pass "fill" to insert missing entries into the index, and complete data where possible (supports interpolation, stepInterpolation, count, sum, totalVariation).
+                Pass "fill,dropna" to additionally drop rows in which any aggregate for any time series has missing values (typically rows at the start and end for interpolation aggregates).
+                This guarantees that all returned dataframes have the exact same shape and no missing values anywhere, and is only supported for aggregates using any of sum, count, totalVariance, interpolation and stepInterpolation
 
         Examples:
 

@@ -431,7 +431,7 @@ Retrieve pandas dataframe
 
 Retrieve pandas dataframes indexed by aggregate
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.datapoints.DatapointsAPI.retrieve_dataframe
+.. automethod:: cognite.client._api.datapoints.DatapointsAPI.retrieve_dataframe_dict
 
 Perform data points queries
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
