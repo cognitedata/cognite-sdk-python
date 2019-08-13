@@ -47,7 +47,7 @@ def new_asset_hierarchy(post_spy):
     assets = generate_asset_tree(random_prefix + "0", depth=5, children_per_node=5)
 
     with set_request_limit(COGNITE_CLIENT.assets, 50):
-        COGNITE_CLIENT.assets.create(assets)
+        COGNITE_CLIENT.assets.create_hierarchy(assets)
 
     assert 20 < COGNITE_CLIENT.assets._post.call_count < 30
 

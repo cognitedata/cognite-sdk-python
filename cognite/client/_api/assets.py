@@ -213,9 +213,29 @@ class AssetsAPI(APIClient):
                 >>> res = c.assets.create(assets)
         """
         utils._auxiliary.assert_type(asset, "asset", [Asset, list])
-        if isinstance(asset, Asset) or len(asset) <= self._CREATE_LIMIT:
-            return self._create_multiple(asset)
-        return _AssetPoster(asset, client=self).post()
+        return self._create_multiple(asset)
+
+    def create_hierarchy(self, assets: List[Asset]) -> AssetList:
+        """Create asset hierarchy.
+
+        Args:
+            assets (List[Asset]]): List of assets to create. Requires each asset to have a unique external id.
+
+        Returns:
+            AssetList: Created asset hierarchy
+
+        Examples:
+
+            Create asset hierarchy::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import Asset
+                >>> c = CogniteClient()
+                >>> assets = [Asset(external_id="root"), Asset(external_id="child1", parent_external_id="root"), Asset(external_id="child2", parent_external_id="root")]
+                >>> res = c.assets.create_hierarchy(assets)
+        """
+        utils._auxiliary.assert_type(assets, "assets", [list])
+        return _AssetPoster(assets, client=self).post()
 
     def delete(
         self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None, recursive: bool = False

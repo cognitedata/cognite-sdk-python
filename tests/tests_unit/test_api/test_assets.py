@@ -357,7 +357,7 @@ class TestAssetPoster:
     def test_post_hierarchy(self, limit, depth, children_per_node, expected_num_calls, mock_post_asset_hierarchy):
         assets = generate_asset_tree(root_external_id="0", depth=depth, children_per_node=children_per_node)
         with set_request_limit(ASSETS_API, limit):
-            created_assets = ASSETS_API.create(assets)
+            created_assets = ASSETS_API.create_hierarchy(assets)
 
         assert len(assets) == len(created_assets)
         assert expected_num_calls - 1 <= len(mock_post_asset_hierarchy.calls) <= expected_num_calls + 1
@@ -421,7 +421,7 @@ class TestAssetPoster:
             Asset(name="200", parent_external_id="03", external_id="031"),
         ]
         with pytest.raises(CogniteAPIError) as e:
-            ASSETS_API.create(assets)
+            ASSETS_API.create_hierarchy(assets)
 
         assert {a.external_id for a in e.value.unknown} == {"03"}
         assert {a.external_id for a in e.value.failed} == {"02", "021", "0211", "031"}
