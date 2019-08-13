@@ -104,34 +104,6 @@ def mock_get_sequence_empty_data(rsps):
 
 @pytest.fixture
 def mock_get_sequence_data_many_columns(rsps):
-    response_body = {
-        "items": [
-            {
-                "id": 0,
-                "externalId": "string",
-                "name": "stringname",
-                "metadata": {"metadata-key": "metadata-value"},
-                "assetId": 0,
-                "description": "string",
-                #                "securityCategories": [0],
-                "createdTime": 0,
-                "lastUpdatedTime": 0,
-                "columns": [
-                    {
-                        "id": i,
-                        "externalId": "ceid" + str(i),
-                        "valueType": "STRING",
-                        "metadata": {},
-                        "createdTime": 0,
-                        "lastUpdatedTime": 0,
-                    }
-                    for i in range(0, 200)
-                ],
-            }
-        ]
-    }
-    rsps.add(rsps.POST, SEQ_API._get_base_url_with_base_path() + "/sequences/byids", status=200, json=response_body)
-
     json = {
         "items": [
             {
@@ -389,15 +361,6 @@ class TestSequences:
         assert {"items": [{"externalId": "foo", "rows": [1]}]} == jsgz_load(
             mock_delete_sequence_data.calls[0].request.body
         )
-
-    def test_retrieve_automatic_limit(self, mock_get_sequence_data_many_columns):
-        data = SEQ_API.data.retrieve(id=1, start=0, end=None)
-        assert isinstance(data, SequenceData)
-        assert 1 == len(data)
-        # 6MB limit / (200 columns x 256 bytes) = 117
-        for call in mock_get_sequence_data_many_columns.calls:
-            if "/data/list" in call.request.url:
-                assert 117 == jsgz_load(call.request.body)["items"][0]["limit"]
 
     def test_retrieve_rows(self, mock_seq_response, mock_get_sequence_data):
         seq = SEQ_API.retrieve(id=1)
