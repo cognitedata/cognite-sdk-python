@@ -394,14 +394,9 @@ class _AssetPoster:
         self.external_id_to_asset = {}
 
         for asset in assets:
-            asset_copy = Asset(**asset.dump())
-            external_id = asset.external_id
-            if external_id is None:
-                external_id = utils._auxiliary.random_string()
-                asset_copy.external_id = external_id
-            self.remaining_external_ids[external_id] = None
-            self.remaining_external_ids_set.add(external_id)
-            self.external_id_to_asset[external_id] = asset_copy
+            self.remaining_external_ids[asset.external_id] = None
+            self.remaining_external_ids_set.add(asset.external_id)
+            self.external_id_to_asset[asset.external_id] = asset
 
         self.client = client
 
@@ -430,10 +425,11 @@ class _AssetPoster:
         external_ids = set([asset.external_id for asset in assets])
         external_ids_seen = set()
         for asset in assets:
-            if asset.external_id:
-                if asset.external_id in external_ids_seen:
-                    raise AssertionError("Duplicate external_id '{}' found".format(asset.external_id))
-                external_ids_seen.add(asset.external_id)
+            if asset.external_id is None:
+                raise AssertionError("An asset does not have external_id.")
+            if asset.external_id in external_ids_seen:
+                raise AssertionError("Duplicate external_id '{}' found".format(asset.external_id))
+            external_ids_seen.add(asset.external_id)
 
             parent_ref = asset.parent_external_id
             if parent_ref:

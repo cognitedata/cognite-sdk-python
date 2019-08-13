@@ -258,7 +258,7 @@ class TestAssetPoster:
 
     def test_validate_asset_hierarchy__more_than_limit_only_resolved_assets(self):
         with set_request_limit(ASSETS_API, 1):
-            _AssetPoster([Asset(parent_id=1), Asset(parent_id=2)], ASSETS_API)
+            _AssetPoster([Asset(external_id="a1", parent_id=1), Asset(external_id="a2", parent_id=2)], ASSETS_API)
 
     def test_validate_asset_hierarchy_circular_dependencies(self):
         assets = [
@@ -369,7 +369,9 @@ class TestAssetPoster:
 
     def test_post_assets_over_limit_only_resolved(self, mock_post_asset_hierarchy):
         with set_request_limit(ASSETS_API, 1):
-            _AssetPoster([Asset(parent_id=1), Asset(parent_id=2)], ASSETS_API).post()
+            _AssetPoster(
+                [Asset(external_id="a1", parent_id=1), Asset(external_id="a2", parent_id=2)], ASSETS_API
+            ).post()
         assert 2 == len(mock_post_asset_hierarchy.calls)
 
     @pytest.fixture
