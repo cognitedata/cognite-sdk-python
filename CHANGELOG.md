@@ -22,6 +22,7 @@ Changes are grouped as follows
 ## [Unreleased]
 ### Changed
 - Fixed naming for sequencesdata iteritems() -> items()
+- Will chunk raw rows into batches of 10,000 instead of 1,000.
 
 ### Fixed
 - Sequence POST queries are retried if safe (e.g. search)
