@@ -114,10 +114,16 @@ class TestSequencesDataAPI:
         COGNITE_CLIENT.sequences.data.delete(rows=[1, 2, 42, 3524], id=new_seq.id)
 
     def test_retrieve_paginate(self, string200, post_spy):
-        data = COGNITE_CLIENT.sequences.data.retrieve(start=0, end=1000, id=string200.id)
+        data = COGNITE_CLIENT.sequences.data.retrieve(start=1, end=996, id=string200.id)
         assert 200 == len(data.values[0])
-        assert 999 == len(data)
-        assert 9 == COGNITE_CLIENT.sequences.data._post.call_count
+        assert 995 == len(data)
+        assert 4 == COGNITE_CLIENT.sequences.data._post.call_count  # around 300 rows per request for this case
+
+    def test_retrieve_paginate_max(self, pretend_timeseries, post_spy):
+        data = COGNITE_CLIENT.sequences.data.retrieve(start=0, end=None, id=pretend_timeseries.id)
+        assert 1 == len(data.values[0])
+        assert 54321 == len(data)
+        assert 6 == COGNITE_CLIENT.sequences.data._post.call_count  # 10k rows each of 54321 rows
 
     def test_retrieve_one_column(self, named_long_str):
         dps = COGNITE_CLIENT.sequences.data.retrieve(

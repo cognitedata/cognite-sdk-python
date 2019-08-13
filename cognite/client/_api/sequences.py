@@ -266,8 +266,7 @@ class SequencesDataAPI(APIClient):
         super().__init__(*args, **kwargs)
         self._sequences_api = sequences_api
         self._SEQ_POST_LIMIT = 10000
-        self._REQUEST_SIZE_LIMIT = 6000000
-        self._COLUMN_SIZE = {"STRING": 256, "DOUBLE": 8, "LONG": 8}
+        self._SEQ_RETRIEVE_LIMIT = 10000
 
     def insert(
         self,
@@ -423,10 +422,8 @@ class SequencesDataAPI(APIClient):
         deleter = lambda data: self.delete(rows=[r["rowNumber"] for r in data], external_id=external_id, id=id)
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
         sequence = self._sequences_api.retrieve(id=id, external_id=external_id)
-        col_sizes = [self._COLUMN_SIZE[t] for t in sequence.column_value_types]
-        smallest_column_id = [id for id, _ in sorted(zip(sequence.column_ids, col_sizes))][0]
         post_obj = self._process_ids(id, external_id, wrap_ids=True)[0]
-        post_obj.update(self._process_columns(column_ids=[smallest_column_id], column_external_ids=None))
+        post_obj.update(self._process_columns(column_ids=[sequence.column_ids[0]], column_external_ids=None))
         post_obj.update({"inclusiveFrom": start, "exclusiveTo": end})
         self._fetch_data(post_obj, deleter)
 
@@ -503,24 +500,19 @@ class SequencesDataAPI(APIClient):
         return self.retrieve(start, end, column_ids, column_external_ids, external_id, id).to_pandas()
 
     def _fetch_data(self, task, callback):
-        task["limit"] = task.get("limit") or self._calculate_limit(task)
+        task["limit"] = self._SEQ_RETRIEVE_LIMIT
         columns = []
+        cursor = None
         while True:
+            task["cursor"] = cursor
             items = self._post(url_path=self._DATA_PATH + "/list", json={"items": [task]}).json()["items"]
             data = items[0]["rows"]
             columns = columns or items[0]["columns"]
             callback(data)
-            if len(data) < task["limit"]:
-                break
-            task["inclusiveFrom"] = data[-1]["rowNumber"] + 1
-            if task["exclusiveTo"] and task["inclusiveFrom"] >= task["exclusiveTo"]:
+            cursor = items[0].get("cursor")
+            if not cursor:
                 break
         return columns
-
-    def _calculate_limit(self, task):
-        sequence = self._sequences_api.retrieve(id=task.get("id"), external_id=task.get("externalId"))
-        row_size = sum([self._COLUMN_SIZE[c["valueType"]] for c in sequence.columns])
-        return min(self._SEQ_POST_LIMIT, math.floor(self._REQUEST_SIZE_LIMIT / row_size))
 
     def _process_columns(self, column_ids, column_external_ids):
         if column_ids is not None and column_external_ids is not None:
