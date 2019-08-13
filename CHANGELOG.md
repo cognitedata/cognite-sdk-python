@@ -26,7 +26,8 @@ Changes are grouped as follows
 
 ### Fixed
 - Sequence POST queries are retried if safe (e.g. search)
-- .update in the different APIs now correctly acceps a CogniteResourceList
+- .update in the different APIs now correctly accepts a CogniteResourceList
+- Sequences datapoint retrieval updated to use the new cursor feature in the API
 - Json serializiation in `__str__()` of base data classes. Now handles Decimal and Number objects. 
 
 ### Added
