@@ -486,7 +486,7 @@ class DatapointsAPI(APIClient):
 
         Examples:
 
-            Get a pandas dataframe without '|average' in the columns::
+            Get a pandas dataframe without 'average' in the columns::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
