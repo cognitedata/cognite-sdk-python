@@ -23,7 +23,6 @@ Changes are grouped as follows
 ### Changed
 - Fixed naming for sequencesdata iteritems() -> items()
 - Will chunk raw rows into batches of 10,000 instead of 1,000.
-- Added parameter recursive to raw.databases.delete() for recursively deleting tables.
 
 ### Fixed
 - Sequence POST queries are retried if safe (e.g. search)
@@ -33,6 +32,7 @@ Changes are grouped as follows
 
 ### Added
 - The files API can now create a file without uploading content.
+- Added parameter recursive to raw.databases.delete() for recursively deleting tables.
 
 ### Fixed
 - Now possible to create asset hierarchy using parent external id when the parent is not part of the request.
