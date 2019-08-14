@@ -875,8 +875,9 @@ class TestPandasIntegration:
         import pandas as pd
 
         dfd = DPS_CLIENT.retrieve_dataframe_dict(id=1, aggregates=["count"], start=0, end=1, granularity="1s")
-        assert isinstance(dfd, pd.DataFrame)
-        assert dfd.empty
+        assert isinstance(dfd, dict)
+        assert ["count"] == list(dfd.keys())
+        assert dfd["count"].empty
 
     def test_retrieve_dataframe_complete_all(self, mock_get_datapoints):
         import pandas as pd
@@ -948,7 +949,7 @@ class TestPandasIntegration:
         for k in expected_dict:
             pd.testing.assert_frame_equal(expected_dict[k], dfd[k])
 
-        with pytest.raises(ValueError, match="not in the supported aggregates"):
+        with pytest.raises(ValueError, match="is not supported for dataframe completion"):
             dfd = DPS_CLIENT.retrieve_dataframe_dict(
                 id=[{"id": 1, "aggregates": ["average"]}],
                 aggregates=[],

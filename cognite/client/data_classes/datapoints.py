@@ -1,5 +1,6 @@
+import re
 from datetime import datetime
-from typing import *
+from typing import Any, Dict, List, Tuple, Union
 
 import cognite.client.utils._time
 from cognite.client.data_classes._base import *
@@ -171,12 +172,26 @@ class Datapoints:
             dumped = {utils._auxiliary.to_camel_case(key): value for key, value in dumped.items()}
         return {key: value for key, value in dumped.items() if value is not None}
 
-    def to_pandas(self, column_names="externalId") -> "pandas.DataFrame":
+    def to_pandas(
+        self,
+        column_names: str = "externalId",
+        include_aggregate_name: bool = True,
+        complete: bool = None,
+        complete_granularity: str = None,
+        complete_is_step: bool = False,
+        complete_start: int = None,
+        complete_end: int = None,
+    ) -> "pandas.DataFrame":
         """Convert the datapoints into a pandas DataFrame.
 
         Args:
-            column_names (str): Which field to use as column header. Defaults to "externalId", can also be "id".
-
+            column_names (str): Format for the column names. Defaults to "externalId", can also be "id".
+            include_aggregate_name (bool): Include |aggregate in the column name
+            complete (bool): Completes the index to be regularly spaced and fills in missing values for aggregates count, sum, totalVariance as 0, and interpolates for interpolation/stepInterpolation.
+            complete_granularity (str): When complete=True, what granularity should the index be given. Defaults to the minimum difference between timestamps.
+            complete_is_step (bool): When complete=True, should interpolate be done as piecewise constant. Defaults to False, which results in linear interpolation.
+            complete_start (int): When complete=True, where to start the index. Defaults to the first timestamp.
+            complete_end (int): When complete=True, where to end the index (inclusive). Defaults to the last timestamp.
         Returns:
             pandas.DataFrame: The dataframe.
         """
@@ -189,15 +204,54 @@ class Datapoints:
             identifier = self.id
         else:
             raise ValueError("column_names must be 'externalId' or 'id'")
-        for attr, value in self._get_non_empty_data_fields(get_empty_lists=True):
+        fields = self._get_non_empty_data_fields(get_empty_lists=True)
+        for attr, value in fields:
             if attr == "timestamp":
                 timestamps = value
             else:
                 id_with_agg = str(identifier)
                 if attr != "value":
-                    id_with_agg += "|{}".format(utils._auxiliary.to_camel_case(attr))
+                    id_with_agg = "{}|{}".format(id_with_agg, utils._auxiliary.to_camel_case(attr))
                 data_fields[id_with_agg] = value
-        return pd.DataFrame(data_fields, index=pd.DatetimeIndex(data=np.array(timestamps, dtype="datetime64[ms]")))
+
+        df = pd.DataFrame(data_fields, index=pd.DatetimeIndex(data=np.array(timestamps, dtype="datetime64[ms]")))
+        if complete and df.shape[0] > 1:
+            if complete_granularity:
+                ms_granularity = cognite.client.utils._time.granularity_to_ms(complete_granularity)
+            else:
+                ms_granularity = np.diff(timestamps).min()
+            bounds = np.array(
+                [complete_start if complete_start is not None else df.index[0], complete_end or df.index[-1]]
+            ).astype("datetime64[ms]")
+            df = df.reindex(
+                np.arange(
+                    bounds[0],
+                    bounds[1] + pd.Timedelta(microseconds=1),
+                    pd.Timedelta(microseconds=ms_granularity * 1000),
+                ),
+                copy=False,
+            )
+
+            df.fillna({c: 0 for c in df.columns if re.search(c, r"\|(sum|totalVariance|count)$")}, inplace=True)
+            lin_int_cols = [c for c in df.columns if re.search(c, r"\|interpolation$")] if not complete_is_step else []
+            step_int_cols = [
+                c
+                for c in df.columns
+                if re.search(c, r"\|stepInterpolation$") or (complete_is_step and re.search(c, r"\|interpolation$"))
+            ]
+            df[lin_int_cols] = df[lin_int_cols].interpolate(limit_area="inside")
+            df[step_int_cols] = df[step_int_cols].ffill()
+
+        if not include_aggregate_name:
+            if len(fields) > 1:
+                raise ValueError(
+                    "include_aggregate_name=False can not be used here as it would lead to duplicate column names for multiple aggregates {}".format(
+                        fields
+                    )
+                )
+            df.rename(columns=lambda s: re.sub(s, r"\|\w+$", ""), inplace=True)
+
+        return df
 
     def plot(self, *args, **kwargs) -> None:
         """Plot the datapoints."""
@@ -235,6 +289,14 @@ class Datapoints:
             else:
                 value.extend(other_value)
 
+    def _get_non_empty_data_keys(self):
+        return [
+            attr
+            for attr, value in self.__dict__.copy().items()
+            if attr not in ["id", "external_id", "_Datapoints__datapoint_objects", "_cognite_client"]
+            and value is not None
+        ]
+
     def _get_non_empty_data_fields(self, get_empty_lists=False) -> List[Tuple[str, Any]]:
         non_empty_data_fields = []
         for attr, value in self.__dict__.copy().items():
@@ -271,19 +333,69 @@ class DatapointsList(CogniteResourceList):
             i["datapoints"] = utils._time.convert_time_attributes_to_datetime(i["datapoints"])
         return json.dumps(item, default=lambda x: x.__dict__, indent=4)
 
-    def to_pandas(self, column_names="externalId") -> "pandas.DataFrame":
+    def to_pandas(
+        self, column_names="externalId", include_aggregate_name=True, complete=None, complete_granularity=None
+    ) -> "pandas.DataFrame":
         """Convert the datapoints list into a pandas DataFrame.
 
         Args:
             column_names (str): Which field to use as column header. Defaults to "externalId", can also be "id".
+            include_aggregate_name (bool): Include |aggregate in the column name
+            complete (bool): Post-processing of the dataframe.
+                Pass 'fill' to insert missing entries into the index, and complete data where possible (supports interpolation, stepInterpolation, count, sum, totalVariation).
+                Pass 'fill,dropna' to additionally drop rows in which any aggregate for any time series has missing values (typically rows at the start and end for interpolation aggregates). Only supported if all aggregates can be completed.
+            complete_granularity (str): When complete=True, what granularity should the index be given. Defaults to the minimum difference between timestamps.
+
         Returns:
             pandas.DataFrame: The datapoints list as a pandas DataFrame.
         """
         pd = utils._auxiliary.local_import("pandas")
-        dfs = [df.to_pandas(column_names=column_names) for df in self.data]
-        if dfs:
-            return pd.concat(dfs, axis="columns")
-        return pd.DataFrame()
+
+        complete = [s.strip() for s in (complete or "").split(",")]
+        if set(complete) - set(["fill", "dropna", ""]):
+            raise ValueError("complete should be 'fill', 'fill,dropna' or Falsy")
+        fill_flag = "fill" in complete
+        is_step_dict = {dp.id: False for dp in self.data}
+        complete_start = None
+        complete_end = None
+        if "fill" in complete:
+            interp_ids = [dp.id for dp in self.data if dp.interpolation is not None]
+            starts = [dp.timestamp[0] for dp in self.data if dp.timestamp]
+            ends = [dp.timestamp[-1] for dp in self.data if dp.timestamp]
+            complete_start = min(starts) if starts else None
+            complete_end = max(ends) if starts else None
+            if interp_ids:  # get isStep flag and pass it to completion to handle interpolation correctly
+                ts_meta = self._cognite_client.time_series.retrieve_multiple(ids=interp_ids)
+                is_step_dict.update({ts.id: bool(ts.is_step) for ts in ts_meta})
+        dfs = [
+            df.to_pandas(
+                column_names=column_names,
+                include_aggregate_name=include_aggregate_name,
+                complete=fill_flag,
+                complete_is_step=is_step_dict[df.id],
+                complete_granularity=complete_granularity,
+                complete_start=complete_start,
+                complete_end=complete_end,
+            )
+            for df in self.data
+        ]
+        if not dfs:
+            return pd.DataFrame()
+
+        df = pd.concat(dfs, axis="columns")
+        if "dropna" in complete:
+            supported_aggregates = ["sum", "count", "total_variance", "interpolation", "step_interpolation"]
+            aggregates_used = [ag for df in self.data for ag in df._get_non_empty_data_keys()]
+            not_supported = set(aggregates_used) - set(supported_aggregates + ["timestamp"])
+            if not_supported:
+                raise ValueError(
+                    "The aggregate(s) {} is not supported for dataframe completion with dropna, only {} are".format(
+                        [utils._auxiliary.to_camel_case(a) for a in not_supported],
+                        [utils._auxiliary.to_camel_case(a) for a in supported_aggregates],
+                    )
+                )
+            df.dropna(inplace=True)
+        return df
 
     def plot(self, *args, **kwargs) -> None:
         """Plot the list of datapoints."""
