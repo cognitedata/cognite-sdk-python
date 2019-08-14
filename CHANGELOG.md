@@ -32,6 +32,7 @@ Changes are grouped as follows
 
 ### Added
 - The files API can now create a file without uploading content.
+- Added parameter recursive to raw.databases.delete() for recursively deleting tables.
 
 ### Fixed
 - Now possible to create asset hierarchy using parent external id when the parent is not part of the request.
