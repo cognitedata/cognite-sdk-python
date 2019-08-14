@@ -23,6 +23,7 @@ Changes are grouped as follows
 ### Changed
 - Fixed naming for sequencesdata iteritems() -> items()
 - Will chunk raw rows into batches of 10,000 instead of 1,000.
+- Added parameter recursive to raw.databases.delete() for recursively deleting tables.
 
 ### Fixed
 - Sequence POST queries are retried if safe (e.g. search)
