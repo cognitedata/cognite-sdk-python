@@ -23,6 +23,7 @@ Changes are grouped as follows
 ### Changed
 - Fixed naming for sequencesdata iteritems() -> items()
 - Will chunk raw rows into batches of 10,000 instead of 1,000.
+- assets.create() no longer validates asset hierarchy and sorts assets before posting. This functionality has been moved to assets.create_hierarchy().
 
 ### Fixed
 - Sequence POST queries are retried if safe (e.g. search)
