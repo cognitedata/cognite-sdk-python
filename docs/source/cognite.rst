@@ -102,8 +102,10 @@ To make an asset a child of an existing asset, you must specify a parent ID.
 
 To post an entire asset hierarchy, you can describe the relations within your asset hierarchy
 using the :code:`external_id` and :code:`parent_external_id` attributes on the :code:`Asset` object. You can post
-an arbitrary number of assets, and the SDK will split the request into multiple requests and create the assets
-in the correct order
+an arbitrary number of assets, and the SDK will split the request into multiple requests. To make sure that the
+assets are posted in the correct order, you can use the .create_hierarchy() function, which takes care of the
+sorting before splitting the request into smaller chunks. However, note that the .create_hierarchy() function requires the
+external_id property to be set for all assets.
 
 This example shows how to post a three levels deep asset hierarchy consisting of three assets.
 
