@@ -241,11 +241,6 @@ def generate_asset_tree(root_external_id: str, depth: int, children_per_node: in
 
 
 class TestAssetPoster:
-    def test_validate_asset_hierarchy_parent_ref_null_pointer(self):
-        assets = [Asset(parent_external_id="1", external_id="2")]
-        with pytest.raises(AssertionError, match="does not point"):
-            _AssetPoster(assets, ASSETS_API)
-
     def test_validate_asset_hierarchy_asset_has_parent_id_and_parent_ref_id(self):
         assets = [Asset(external_id="1"), Asset(parent_external_id="1", parent_id=1, external_id="2")]
         with pytest.raises(AssertionError, match="has both"):
@@ -316,6 +311,12 @@ class TestAssetPoster:
         assert 4 == len(unblocked_assets_lists)
         for li in unblocked_assets_lists:
             assert 3 == len(li)
+
+    def test_get_unblocked_assets_parent_ref_null_pointer(self):
+        assets = [Asset(parent_external_id="1", external_id="2")]
+        ap = _AssetPoster(assets, ASSETS_API)
+        asset_list = ap._get_unblocked_assets()
+        assert len(asset_list) == 1
 
     @pytest.fixture
     def mock_post_asset_hierarchy(self, rsps):
