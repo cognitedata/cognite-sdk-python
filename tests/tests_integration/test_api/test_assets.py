@@ -64,6 +64,16 @@ def root_test_asset():
             return asset
 
 
+@pytest.fixture
+def new_root_asset():
+    external_id = "my_root_{}".format(utils._auxiliary.random_string(10))
+    root = Asset(external_id=external_id, name="my_root")
+    root = COGNITE_CLIENT.assets.create(root)
+    yield root
+    COGNITE_CLIENT.assets.delete(external_id=external_id, recursive=True)
+    assert COGNITE_CLIENT.assets.retrieve(external_id=external_id) is None
+
+
 class TestAssetsAPI:
     def test_get(self):
         res = COGNITE_CLIENT.assets.list(limit=1)
@@ -99,3 +109,20 @@ class TestAssetsAPI:
     def test_get_subtree(self, root_test_asset):
         assert 781 == len(COGNITE_CLIENT.assets.retrieve_subtree(root_test_asset.id))
         assert 6 == len(COGNITE_CLIENT.assets.retrieve_subtree(root_test_asset.id, depth=1))
+
+    def test_create_asset_hierarchy_parent_external_id_not_in_request(self, new_root_asset):
+        root = new_root_asset
+        children = generate_asset_tree(
+            root_external_id=root.external_id, depth=5, children_per_node=10, current_depth=2
+        )
+
+        COGNITE_CLIENT.assets.create(children)
+
+        external_ids = [asset.external_id for asset in children] + [root.external_id]
+        posted_assets = COGNITE_CLIENT.assets.retrieve_multiple(external_ids=external_ids)
+        external_id_to_id = {a.external_id: a.id for a in posted_assets}
+        for asset in posted_assets:
+            if asset.external_id == root.external_id:
+                assert asset.parent_id is None
+            else:
+                assert asset.parent_id == external_id_to_id[asset.external_id[:-1]]
