@@ -36,6 +36,9 @@ Changes are grouped as follows
 - complete parameter on datapoints.retrieve_dataframe, which completes the index to be regularly spaced at the granularity and fills in missing values
 - datapoints.retrieve_dataframe_dict function, which returns {aggregate:dataframe} without adding aggregate names to columns
 
+### Fixed
+- Now possible to create asset hierarchy using parent external id when the parent is not part of the request.
+
 ## [1.0.4] - 2019-08-05
 ### Changed
 - Sequences data retrieval now returns a SequenceData object.
