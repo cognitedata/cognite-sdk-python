@@ -194,7 +194,7 @@ class AssetsAPI(APIClient):
         return self._list(method="POST", limit=limit, filter=filter)
 
     def create(self, asset: Union[Asset, List[Asset]]) -> Union[Asset, AssetList]:
-        """Create one or more assets.
+        """Create one or more assets. You can create an arbitrary number of assets, and the SDK will split the request into multiple request.
 
         Args:
             asset (Union[Asset, List[Asset]]): Asset or list of assets to create.
@@ -216,7 +216,10 @@ class AssetsAPI(APIClient):
         return self._create_multiple(asset)
 
     def create_hierarchy(self, assets: List[Asset]) -> AssetList:
-        """Create asset hierarchy.
+        """Create asset hierarchy. Like the create() method, when posting a large number of assets, the IDE will split the request into smaller requests.
+        However, create_hierarchy() will additionally make sure that the assets are posted in correct order. The ordering is determined from the
+        external_id and parent_external_id properties of the assets, and the external_id is therefore required for all assets. Before posting, it is
+        checked that all assets have a unique external_id and that there are no circular dependencies.
 
         Args:
             assets (List[Asset]]): List of assets to create. Requires each asset to have a unique external id.
