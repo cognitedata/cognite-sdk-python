@@ -422,7 +422,6 @@ class _AssetPoster:
 
     @staticmethod
     def _validate_asset_hierarchy(assets) -> None:
-        external_ids = set([asset.external_id for asset in assets])
         external_ids_seen = set()
         for asset in assets:
             if asset.external_id is None:
@@ -433,8 +432,6 @@ class _AssetPoster:
 
             parent_ref = asset.parent_external_id
             if parent_ref:
-                if parent_ref not in external_ids:
-                    raise AssertionError("parent_external_id '{}' does not point to any asset".format(parent_ref))
                 if asset.parent_id is not None:
                     raise AssertionError(
                         "An asset has both parent_id '{}' and parent_external_id '{}' set.".format(
@@ -446,7 +443,7 @@ class _AssetPoster:
         root_assets = set()
         for external_id in self.remaining_external_ids:
             asset = self.external_id_to_asset[external_id]
-            if asset.parent_external_id is None or asset.parent_id is not None:
+            if asset.parent_external_id not in self.external_id_to_asset or asset.parent_id is not None:
                 root_assets.add(asset)
             elif asset.parent_external_id in self.external_id_to_children:
                 self.external_id_to_children[asset.parent_external_id].add(asset)
@@ -475,7 +472,9 @@ class _AssetPoster:
         next_asset = asset
         seen = {asset.external_id}
         while next_asset.parent_external_id is not None:
-            next_asset = self.external_id_to_asset[next_asset.parent_external_id]
+            next_asset = self.external_id_to_asset.get(next_asset.parent_external_id)
+            if next_asset is None:
+                break
             if next_asset.external_id in self.external_ids_without_circular_deps:
                 break
             if next_asset.external_id not in seen:
@@ -512,7 +511,7 @@ class _AssetPoster:
 
             if external_id in self.remaining_external_ids_set:
                 has_parent_id = asset.parent_id is not None
-                is_root = (not has_parent_id) and parent_external_id is None
+                is_root = (not has_parent_id) and parent_external_id not in self.external_id_to_asset
                 is_unblocked = parent_external_id in self.successfully_posted_external_ids
                 if is_root or has_parent_id or is_unblocked:
                     unblocked_assets_chunk.update(

@@ -34,6 +34,9 @@ Changes are grouped as follows
 - The files API can now create a file without uploading content.
 - New method create_hierarchy() added to assets API.
 
+### Fixed
+- Now possible to create asset hierarchy using parent external id when the parent is not part of the request.
+
 ## [1.0.4] - 2019-08-05
 ### Changed
 - Sequences data retrieval now returns a SequenceData object.
