@@ -323,8 +323,8 @@ class FilesAPI(APIClient):
 
         Args:
             path (str): Path to the file you wish to upload. If path is a directory, this method will upload all files in that directory.
-            external_id (str): External Id provided by client. Should be unique within the project.
-            name (str): No description.
+            external_id (str): The external ID provided by the client. Must be unique within the project.
+            name (str): Name of the file.
             source (str): The source of the file.
             mime_type (str): File type. E.g. text/plain, application/pdf, ...
             metadata (Dict[str, Any]): Customizable extra data about the file. String key -> String value.
@@ -402,8 +402,8 @@ class FilesAPI(APIClient):
     def upload_bytes(
         self,
         content: Union[str, bytes, TextIO, BinaryIO],
+        name: str,
         external_id: str = None,
-        name: str = None,
         source: str = None,
         mime_type: str = None,
         metadata: Dict[str, Any] = None,
@@ -416,8 +416,8 @@ class FilesAPI(APIClient):
 
         Args:
             content (Union[str, bytes, TextIO, BinaryIO]): The content to upload.
-            external_id (str): External Id provided by client. Should be unique within the project.
-            name (str): No description.
+            name (str): Name of the file.
+            external_id (str): The external ID provided by the client. Must be unique within the project.
             source (str): The source of the file.
             mime_type (str): File type. E.g. text/plain, application/pdf,...
             metadata (Dict[str, Any]): Customizable extra data about the file. String key -> String value.
