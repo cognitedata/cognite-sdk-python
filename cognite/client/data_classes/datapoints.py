@@ -1,6 +1,6 @@
-import re
+import re as regexp
 from datetime import datetime
-from typing import Any, Dict, List, Tuple, Union
+from typing import *
 
 import cognite.client.utils._time
 from cognite.client.data_classes._base import *
@@ -177,9 +177,9 @@ class Datapoints:
         column_names: str = "externalId",
         include_aggregate_name: bool = True,
         complete: str = None,
-        complete_is_step: bool = None,
         complete_start: int = None,
         complete_end: int = None,
+        complete_is_step: bool = None,
     ) -> "pandas.DataFrame":
         """Convert the datapoints into a pandas DataFrame.
 
@@ -192,9 +192,9 @@ class Datapoints:
 
             The following parameters are mainly for internal use:
 
-            complete_is_step (bool): When complete=True, should interpolate be done as piecewise constant. If None, looks up the value in the time series metadata.
             complete_start (int): When complete=True, where to start the index. Defaults to the first timestamp.
             complete_end (int): When complete=True, where to end the index (inclusive). Defaults to the last timestamp.
+            complete_is_step (bool): When complete=True, should interpolate be done as piecewise constant. If None, attempts to look up the value in the time series metadata.
         Returns:
             pandas.DataFrame: The dataframe.
         """
@@ -243,12 +243,15 @@ class Datapoints:
                 copy=False,
             )
 
-            df.fillna({c: 0 for c in df.columns if re.search(c, r"\|(sum|totalVariance|count)$")}, inplace=True)
-            lin_int_cols = [c for c in df.columns if re.search(c, r"\|interpolation$")] if not complete_is_step else []
+            df.fillna({c: 0 for c in df.columns if regexp.search(c, r"\|(sum|totalVariance|count)$")}, inplace=True)
+            lin_int_cols = (
+                [c for c in df.columns if regexp.search(c, r"\|interpolation$")] if not complete_is_step else []
+            )
             step_int_cols = [
                 c
                 for c in df.columns
-                if re.search(c, r"\|stepInterpolation$") or (complete_is_step and re.search(c, r"\|interpolation$"))
+                if regexp.search(c, r"\|stepInterpolation$")
+                or (complete_is_step and regexp.search(c, r"\|interpolation$"))
             ]
             df[lin_int_cols] = df[lin_int_cols].interpolate(limit_area="inside")
             df[step_int_cols] = df[step_int_cols].ffill()
@@ -260,7 +263,7 @@ class Datapoints:
                         fields
                     )
                 )
-            df.rename(columns=lambda s: re.sub(r"\|\w+$", "", s), inplace=True)
+            df.rename(columns=lambda s: regexp.sub(r"\|\w+$", "", s), inplace=True)
 
         if "dropna" in complete:
             df = Datapoints._dropna_dataframe(df, aggregates)

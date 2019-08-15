@@ -2,7 +2,7 @@ import math
 import threading
 from collections import defaultdict, namedtuple
 from datetime import datetime
-from typing import Any, Dict, List, Tuple, Union
+from typing import *
 
 import cognite.client.utils._time
 from cognite.client import utils
