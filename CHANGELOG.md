@@ -20,6 +20,10 @@ Changes are grouped as follows
 - Separate read/write fields on data classes
 
 ## [Unreleased]
+### Added
+- SequencesAPI.list now accepts an asset_ids parameter for searching by asset
+- SequencesDataAPI.insert now accepts a SequenceData object for easier copying
+- DatapointsAPI.insert now accepts a Datapoints object for easier copying
 
 ## [1.0.5] - 2019-08-15
 ### Added

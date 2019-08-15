@@ -26,6 +26,12 @@ def get_spy():
         yield
 
 
+@pytest.fixture
+def post_spy():
+    with mock.patch.object(COGNITE_CLIENT.sequences, "_post", wraps=COGNITE_CLIENT.sequences._post) as _:
+        yield
+
+
 class TestSequencesAPI:
     def test_retrieve(self):
         listed_asset = COGNITE_CLIENT.sequences.list(limit=1)[0]
@@ -39,12 +45,20 @@ class TestSequencesAPI:
             retrieved_asset.external_id = listed_asset.external_id
         assert res == retrieved_assets
 
-    def test_list(self, get_spy):
+    def test_list(self, post_spy):
         with set_request_limit(COGNITE_CLIENT.sequences, 10):
             res = COGNITE_CLIENT.sequences.list(limit=20)
 
         assert 20 == len(res)
-        assert 2 == COGNITE_CLIENT.sequences._get.call_count
+        assert 2 == COGNITE_CLIENT.sequences._post.call_count
+
+    def test_list_assetid_nothing(self):
+        res = COGNITE_CLIENT.sequences.list(asset_ids=[12345678910], limit=20)
+        assert 0 == len(res)
+
+    def test_list_assetid(self):
+        res = COGNITE_CLIENT.sequences.list(asset_ids=[42], limit=20)
+        assert 1 == len(res)
 
     def test_search(self):
         res = COGNITE_CLIENT.sequences.search(name="42", filter=SequenceFilter(created_time={"min": 0}))
