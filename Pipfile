@@ -20,6 +20,7 @@ isort = "*"
 tox = "*"
 tox-pyenv = "*"
 responses = "*"
+pytest-rerunfailures = "*"
 
 [pipenv]
 allow_prereleases = true

@@ -87,9 +87,7 @@ podTemplate(
             }
             stage('Test Client') {
                 sh("pyenv local 3.5.0 3.6.6 3.7.2")
-                retry(3) {
-                    sh("pipenv run tox -p auto")
-                }
+                sh("pipenv run tox -p auto")
                 junit(allowEmptyResults: true, testResults: '**/test-report.xml')
                 summarizeTestResults()
             }
