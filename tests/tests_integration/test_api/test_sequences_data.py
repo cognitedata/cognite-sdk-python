@@ -110,6 +110,10 @@ class TestSequencesDataAPI:
         data = {i: [i, "str"] for i in range(1, 10)}
         COGNITE_CLIENT.sequences.data.insert(data, id=new_seq_mixed.id)
 
+    def test_insert_copy(self, small_sequence, new_small_seq):
+        data = COGNITE_CLIENT.sequences.data.retrieve(id=small_sequence.id, start=0, end=5)
+        COGNITE_CLIENT.sequences.data.insert(rows=data, id=new_small_seq.id)
+
     def test_delete_multiple(self, new_seq):
         COGNITE_CLIENT.sequences.data.delete(rows=[1, 2, 42, 3524], id=new_seq.id)
 

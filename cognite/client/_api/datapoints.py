@@ -204,8 +204,8 @@ class DatapointsAPI(APIClient):
         Timestamps can be represented as milliseconds since epoch or datetime objects.
 
         Args:
-            datapoints(Union[List[Dict], List[Tuple]]): The datapoints you wish to insert. Can either be a list of tuples or
-                a list of dictionaries. See examples below.
+            datapoints(Union[List[Dict], List[Tuple],Datapoints]): The datapoints you wish to insert. Can either be a list of tuples,
+                a list of dictionaries, or a Datapoints object. See examples below.
             id (int): Id of time series to insert datapoints into.
             external_id (str): External id of time series to insert datapoint into.
 
@@ -222,10 +222,10 @@ class DatapointsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> # with datetime objects
                 >>> datapoints = [(datetime(2018,1,1), 1000), (datetime(2018,1,2), 2000)]
-                >>> res1 = c.datapoints.insert(datapoints, id=1)
+                >>> c.datapoints.insert(datapoints, id=1)
                 >>> # with ms since epoch
                 >>> datapoints = [(150000000000, 1000), (160000000000, 2000)]
-                >>> res2 = c.datapoints.insert(datapoints, id=2)
+                >>> c.datapoints.insert(datapoints, id=2)
 
             Or they can be a list of dictionaries::
 
@@ -234,14 +234,23 @@ class DatapointsAPI(APIClient):
                 >>> # with datetime objects
                 >>> datapoints = [{"timestamp": datetime(2018,1,1), "value": 1000},
                 ...    {"timestamp": datetime(2018,1,2), "value": 2000}]
-                >>> res1 = c.datapoints.insert(datapoints, external_id="abc")
+                >>> c.datapoints.insert(datapoints, external_id="abc")
                 >>> # with ms since epoch
                 >>> datapoints = [{"timestamp": 150000000000, "value": 1000},
                 ...    {"timestamp": 160000000000, "value": 2000}]
-                >>> res2 = c.datapoints.insert(datapoints, external_id="def")
+                >>> c.datapoints.insert(datapoints, external_id="def")
+
+            Or they can be a Datapoints object::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> data = c.datapoints.retrieve(external_id="abc",start=datetime(2018,1,1),end=datetime(2018,2,2))
+                >>> c.datapoints.insert(data, external_id="def")
         """
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
         post_dps_object = self._process_ids(id, external_id, wrap_ids=True)[0]
+        if isinstance(datapoints, Datapoints):
+            datapoints = datapoints.dump()["datapoints"]
         post_dps_object.update({"datapoints": datapoints})
         dps_poster = DatapointsPoster(self)
         dps_poster.insert([post_dps_object])
