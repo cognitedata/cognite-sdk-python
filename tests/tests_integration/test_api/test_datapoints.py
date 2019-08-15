@@ -121,6 +121,12 @@ class TestDatapointsAPI:
             COGNITE_CLIENT.datapoints.insert(datapoints, id=new_ts.id)
         assert 2 == COGNITE_CLIENT.datapoints._post.call_count
 
+    def test_insert_copy(self, test_time_series, new_ts, post_spy):
+        data = COGNITE_CLIENT.datapoints.retrieve(id=test_time_series[0].id, start="600d-ago", end="now", limit=100)
+        assert 100 == len(data)
+        COGNITE_CLIENT.datapoints.insert(data, id=new_ts.id)
+        assert 2 == COGNITE_CLIENT.datapoints._post.call_count
+
     def test_insert_pandas_dataframe(self, new_ts, post_spy):
         start = datetime(2018, 1, 1)
         x = pandas.DatetimeIndex([start + timedelta(days=d) for d in range(100)])

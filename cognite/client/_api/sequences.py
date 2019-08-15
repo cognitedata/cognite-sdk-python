@@ -136,7 +136,7 @@ class SequencesAPI(APIClient):
                 >>> for seq_list in c.sequences(chunk_size=2500):
                 ...     seq_list # do something with the sequences
         """
-        filter = {"assetIds": asset_ids if asset_ids else None}
+        filter = {"assetIds": asset_ids}
         return self._list(method="POST", filter=filter, limit=limit)
 
     def create(self, sequence: Union[Sequence, List[Sequence]]) -> Union[Sequence, SequenceList]:
