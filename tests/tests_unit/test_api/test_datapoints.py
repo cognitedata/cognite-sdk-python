@@ -207,6 +207,30 @@ def mock_get_datapoints_several_missing(rsps):
 
 
 @pytest.fixture
+def mock_get_datapoints_single_isstep(rsps):
+    def callback(request):
+        item = jsgz_load(request.body)["items"][0]
+        if item["aggregates"] == ["interpolation"]:
+            dps = {
+                "id": 3,
+                "externalId": "abc",
+                "datapoints": [{"timestamp": 1000, "interpolation": 1}, {"timestamp": 3000, "interpolation": 3}],
+            }
+        return 200, {}, json.dumps({"items": [dps]})
+
+    rsps.add_callback(
+        rsps.POST,
+        DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/list",
+        callback=callback,
+        content_type="application/json",
+    )
+    response_body = {"items": [{"id": 3, "isStep": True}]}
+    rsps.add(rsps.POST, DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/byids", status=200, json=response_body)
+    rsps.assert_all_requests_are_fired = False
+    yield rsps
+
+
+@pytest.fixture
 def set_dps_workers():
     def set_workers(limit):
         DPS_CLIENT._config.max_workers = limit
@@ -832,6 +856,24 @@ class TestPandasIntegration:
         )
         pd.testing.assert_frame_equal(df, expected_df)
 
+    def test_retrieve_dataframe_complete_single_isstep(self, mock_get_datapoints_single_isstep):
+        import pandas as pd
+
+        df = DPS_CLIENT.retrieve_dataframe(
+            id=[{"id": 3, "aggregates": ["interpolation"]}],
+            aggregates=[],
+            start=0,
+            end=1,
+            granularity="1s",
+            complete="fill",
+            include_aggregate_name=False,
+        )
+
+        expected_df = pd.DataFrame(
+            {"3": [1.0, 1.0, 3.0]}, index=[utils._time.ms_to_datetime(i * 1000) for i in [1, 2, 3]]
+        )
+        pd.testing.assert_frame_equal(df, expected_df)
+
     def test_retrieve_dataframe_several_missing_complete(self, mock_get_datapoints_several_missing):
         import pandas as pd
 
@@ -946,6 +988,7 @@ class TestPandasIntegration:
                 {"2": [1.0, 2.0, 3.0]}, index=[utils._time.ms_to_datetime(i * 1000) for i in [1, 2, 3]]
             ),
         }
+
         for k in expected_dict:
             pd.testing.assert_frame_equal(expected_dict[k], dfd[k])
 

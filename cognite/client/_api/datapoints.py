@@ -96,7 +96,9 @@ class DatapointsAPI(APIClient):
             limit=limit,
         )
         dps_list = fetcher.fetch(query)
-
+        for dp in dps_list:
+            dp._granularity = granularity
+            dp._cognite_client = self._cognite_client
         if is_single_id:
             return dps_list[0]
         return dps_list
@@ -412,15 +414,13 @@ class DatapointsAPI(APIClient):
         pd = utils._auxiliary.local_import("pandas")
         id_df = pd.DataFrame()
         external_id_df = pd.DataFrame()
+        if id is not None and external_id is not None and complete:
+            raise ValueError("Can not complete dataframes with mixed id and externalId")
+
         if id is not None:
             id_df = self.retrieve(
                 id=id, start=start, end=end, aggregates=aggregates, granularity=granularity, limit=limit
-            ).to_pandas(
-                column_names="id",
-                include_aggregate_name=include_aggregate_name,
-                complete=complete,
-                complete_granularity=granularity,
-            )
+            ).to_pandas(column_names="id", include_aggregate_name=include_aggregate_name, complete=complete)
         if external_id is not None:
             external_id_df = self.retrieve(
                 external_id=external_id,
@@ -429,9 +429,7 @@ class DatapointsAPI(APIClient):
                 aggregates=aggregates,
                 granularity=granularity,
                 limit=limit,
-            ).to_pandas(
-                include_aggregate_name=include_aggregate_name, complete=complete, complete_granularity=granularity
-            )
+            ).to_pandas(include_aggregate_name=include_aggregate_name, complete=complete)
         return pd.concat([id_df, external_id_df], axis="columns")
 
     def retrieve_dataframe_dict(
@@ -445,7 +443,7 @@ class DatapointsAPI(APIClient):
             str, List[str], Dict[str, Union[int, List[str]]], List[Dict[str, Union[int, List[str]]]]
         ] = None,
         limit: int = None,
-        complete=None,
+        complete: bool = None,
     ) -> Dict[str, "pandas.DataFrame"]:
         """Get a dictionary of aggregate: pandas dataframe describing the requested data.
 
@@ -478,7 +476,7 @@ class DatapointsAPI(APIClient):
         for queries in [id, external_id]:
             if isinstance(queries, list) and queries and isinstance(queries[0], dict):
                 for it in queries:
-                    for ag in it.get("aggregates") or []:
+                    for ag in it.get("aggregates", []):
                         if ag not in all_aggregates:
                             all_aggregates.append(ag)
 
