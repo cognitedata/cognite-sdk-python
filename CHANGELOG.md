@@ -35,6 +35,7 @@ Changes are grouped as follows
 - The files API can now create a file without uploading content.
 - complete parameter on datapoints.retrieve_dataframe, which completes the index to be regularly spaced at the granularity and fills in missing values
 - datapoints.retrieve_dataframe_dict function, which returns {aggregate:dataframe} without adding aggregate names to columns
+- Added parameter recursive to raw.databases.delete() for recursively deleting tables.
 
 ### Fixed
 - Now possible to create asset hierarchy using parent external id when the parent is not part of the request.
