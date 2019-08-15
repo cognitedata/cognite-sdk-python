@@ -186,15 +186,16 @@ class Datapoints:
         Args:
             column_names (str): Format for the column names. Defaults to "externalId", can also be "id".
             include_aggregate_name (bool): Include aggregate in the column name
-            complete (bool): Post-processing of the dataframe.
+            complete (str): Post-processing of the dataframe.
+
                 Pass 'fill' to insert missing entries into the index, and complete data where possible (supports interpolation, stepInterpolation, count, sum, totalVariation).
-                Pass 'fill,dropna' to additionally drop rows in which any aggregate for any time series has missing values (typically rows at the start and end for interpolation aggregates). Only supported if all aggregates can be completed.
 
-            The following parameters are mainly for internal use:
+                Pass 'fill,dropna' to additionally drop rows in which any aggregate for any time series has missing values (typically rows at the start and end for interpolation aggregates).
+                This option guarantees that all returned dataframes have the exact same shape and no missing values anywhere, and is only supported for aggregates sum, count, totalVariance, interpolation and stepInterpolation.
 
-            complete_start (int): When complete=True, where to start the index. Defaults to the first timestamp.
-            complete_end (int): When complete=True, where to end the index (inclusive). Defaults to the last timestamp.
-            complete_is_step (bool): When complete=True, should interpolate be done as piecewise constant. If None, attempts to look up the value in the time series metadata.
+            complete_start (int): When complete=True, where to start the index. Defaults to the first timestamp. (mainly for internal use)
+            complete_end (int): When complete=True, where to end the index (inclusive). Defaults to the last timestamp. (mainly for internal use)
+            complete_is_step (bool): When complete=True, should interpolate be done as piecewise constant. If None, attempts to look up the value in the time series metadata. (mainly for internal use)
         Returns:
             pandas.DataFrame: The dataframe.
         """
@@ -217,11 +218,26 @@ class Datapoints:
                     id_with_agg = "{}|{}".format(id_with_agg, utils._auxiliary.to_camel_case(attr))
                 data_fields[id_with_agg] = value
 
-        complete = Datapoints._get_complete_options(complete)
-        aggregates = [attr for attr, value in fields]
         df = pd.DataFrame(data_fields, index=pd.DatetimeIndex(data=np.array(timestamps, dtype="datetime64[ms]")))
+        df = self._complete_dataframe_column(
+            df, complete, complete_start, complete_end, complete_is_step, [attr for attr, value in fields]
+        )
 
+        if not include_aggregate_name:
+            if len(fields) > 2:  # timestamp + 1
+                raise ValueError(
+                    "include_aggregate_name=False can not be used here as it would lead to duplicate column names for multiple aggregates {}".format(
+                        fields
+                    )
+                )
+            df.rename(columns=lambda s: regexp.sub(r"\|\w+$", "", s), inplace=True)
+        return df
+
+    def _complete_dataframe_column(self, df, complete, complete_start, complete_end, complete_is_step, aggregates):
+        np, pd = utils._auxiliary.local_import("numpy", "pandas")
+        complete = Datapoints._get_complete_options(complete)
         if "fill" in complete and df.shape[0] > 1:
+
             if complete_is_step is None and "interpolation" in aggregates:
                 client = getattr(self, "_cognite_client", None)
                 if client:
@@ -256,17 +272,8 @@ class Datapoints:
             df[lin_int_cols] = df[lin_int_cols].interpolate(limit_area="inside")
             df[step_int_cols] = df[step_int_cols].ffill()
 
-        if not include_aggregate_name:
-            if len(fields) > 2:  # timestamp + 1
-                raise ValueError(
-                    "include_aggregate_name=False can not be used here as it would lead to duplicate column names for multiple aggregates {}".format(
-                        fields
-                    )
-                )
-            df.rename(columns=lambda s: regexp.sub(r"\|\w+$", "", s), inplace=True)
-
-        if "dropna" in complete:
-            df = Datapoints._dropna_dataframe(df, aggregates)
+            if "dropna" in complete:
+                df = Datapoints._dropna_dataframe(df, aggregates)
 
         return df
 
@@ -373,9 +380,13 @@ class DatapointsList(CogniteResourceList):
         Args:
             column_names (str): Which field to use as column header. Defaults to "externalId", can also be "id".
             include_aggregate_name (bool): Include aggregate in the column name
-            complete (bool): Post-processing of the dataframe.
+            complete (str): Post-processing of the dataframe.
+
                 Pass 'fill' to insert missing entries into the index, and complete data where possible (supports interpolation, stepInterpolation, count, sum, totalVariation).
-                Pass 'fill,dropna' to additionally drop rows in which any aggregate for any time series has missing values (typically rows at the start and end for interpolation aggregates). Only supported if all aggregates can be completed.
+
+                Pass 'fill,dropna' to additionally drop rows in which any aggregate for any time series has missing values (typically rows at the start and end for interpolation aggregates).
+                This option guarantees that all returned dataframes have the exact same shape and no missing values anywhere, and is only supported for aggregates sum, count, totalVariance, interpolation and stepInterpolation.
+
         Returns:
             pandas.DataFrame: The datapoints list as a pandas DataFrame.
         """

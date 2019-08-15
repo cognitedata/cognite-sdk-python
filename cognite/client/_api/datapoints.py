@@ -387,10 +387,12 @@ class DatapointsAPI(APIClient):
                 ids. Can also be object specifying aggregates. See example below.
             limit (int): Maximum number of datapoints to return for each time series.
             include_aggregate_name (bool): Include 'aggregate' in the column name. Defaults to True and should only be set to False when only a single aggregate is requested per id/externalId.
-            complete (str): post-processing of the dataframe.
+            complete (str): Post-processing of the dataframe.
+
                 Pass 'fill' to insert missing entries into the index, and complete data where possible (supports interpolation, stepInterpolation, count, sum, totalVariation).
+
                 Pass 'fill,dropna' to additionally drop rows in which any aggregate for any time series has missing values (typically rows at the start and end for interpolation aggregates).
-                This guarantees that all returned dataframes have the exact same shape and no missing values anywhere, and is only supported for aggregates using any of sum, count, totalVariance, interpolation and stepInterpolation
+                This option guarantees that all returned dataframes have the exact same shape and no missing values anywhere, and is only supported for aggregates sum, count, totalVariance, interpolation and stepInterpolation.
 
         Returns:
             pandas.DataFrame: The requested dataframe
@@ -456,9 +458,11 @@ class DatapointsAPI(APIClient):
             external_id (Union[str, List[str], Dict[str, Any], List[Dict[str, Any]]]): External id or list of external ids. Can also be object specifying aggregates.
             limit (int): Maximum number of datapoints to return for each time series.
             complete (str): Post-processing of the dataframe.
+
                 Pass 'fill' to insert missing entries into the index, and complete data where possible (supports interpolation, stepInterpolation, count, sum, totalVariation).
+
                 Pass 'fill,dropna' to additionally drop rows in which any aggregate for any time series has missing values (typically rows at the start and end for interpolation aggregates).
-                This latter option guarantees that all returned dataframes have the exact same shape and no missing values anywhere, and is only supported for aggregates using any of sum, count, totalVariance, interpolation and stepInterpolation.
+                This option guarantees that all returned dataframes have the exact same shape and no missing values anywhere, and is only supported for aggregates sum, count, totalVariance, interpolation and stepInterpolation.
 
         Returns:
            Dict[str,pandas.DataFrame]: A dictionary of aggregate: dataframe.
