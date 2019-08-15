@@ -102,8 +102,10 @@ To make an asset a child of an existing asset, you must specify a parent ID.
 
 To post an entire asset hierarchy, you can describe the relations within your asset hierarchy
 using the :code:`external_id` and :code:`parent_external_id` attributes on the :code:`Asset` object. You can post
-an arbitrary number of assets, and the SDK will split the request into multiple requests and create the assets
-in the correct order
+an arbitrary number of assets, and the SDK will split the request into multiple requests. To make sure that the
+assets are posted in the correct order, you can use the .create_hierarchy() function, which takes care of the
+sorting before splitting the request into smaller chunks. However, note that the .create_hierarchy() function requires the
+external_id property to be set for all assets.
 
 This example shows how to post a three levels deep asset hierarchy consisting of three assets.
 
@@ -115,9 +117,9 @@ This example shows how to post a three levels deep asset hierarchy consisting of
     >>> root = Asset(name="root", external_id="1")
     >>> child = Asset(name="child", external_id="2", parent_external_id="1")
     >>> descendant = Asset(name="descendant", external_id="3", parent_external_id="2")
-    >>> c.assets.create([root, child, descendant])
+    >>> c.assets.create_hierarchy([root, child, descendant])
 
-Wrap the .create() call in a try-except to get information if posting the assets fails:
+Wrap the .create_hierarchy() call in a try-except to get information if posting the assets fails:
 
 - Which assets were posted. (The request yielded a 201.)
 - Which assets may have been posted. (The request yielded 5xx.)
@@ -127,7 +129,7 @@ Wrap the .create() call in a try-except to get information if posting the assets
 
     >>> from cognite.client.exceptions import CogniteAPIError
     >>> try:
-    ...     c.create([root, child, descendant])
+    ...     c.create_hierarchy([root, child, descendant])
     >>> except CogniteAPIError as e:
     ...     assets_posted = e.successful
     ...     assets_may_have_been_posted = e.unknown
@@ -276,6 +278,10 @@ Search for assets
 Create assets
 ^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.assets.AssetsAPI.create
+
+Create asset hierarchy
+^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.assets.AssetsAPI.create_hierarchy
 
 Delete assets
 ^^^^^^^^^^^^^

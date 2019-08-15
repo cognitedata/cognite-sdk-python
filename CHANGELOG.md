@@ -21,11 +21,15 @@ Changes are grouped as follows
 
 ## [Unreleased]
 ### Added
+- New method create_hierarchy() added to assets API.
 - SequencesAPI.list now accepts an asset_ids parameter for searching by asset
 - SequencesDataAPI.insert now accepts a SequenceData object for easier copying
 - DatapointsAPI.insert now accepts a Datapoints object for easier copying
 - complete and include_aggregate_names on datapoints.retrieve_dataframe and Datapoints(List).to_pandas
 - datapoints.retrieve_dataframe_dict function, which returns {aggregate:dataframe} without adding aggregate names to columns
+
+### Changed
+- assets.create() no longer validates asset hierarchy and sorts assets before posting. This functionality has been moved to assets.create_hierarchy().
 
 ## [1.0.5] - 2019-08-15
 ### Added
