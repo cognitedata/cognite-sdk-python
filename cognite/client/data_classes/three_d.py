@@ -203,6 +203,7 @@ class ThreeDNode(CogniteResource):
         depth (int): The depth of the node in the tree, starting from 0 at the root node.
         name (str): The name of the node.
         subtree_size (int): The number of descendants of the node, plus one (counting itself).
+        properties (Dict[str, Any]): Properties extracted from 3D model, with property categories containing key/value string pairs.
         bounding_box (Dict[str, Any]): The bounding box of the subtree with this sector as the root sector. Is null if there are no geometries in the subtree.
         cognite_client (CogniteClient): The client to associate with this object.
     """
@@ -215,6 +216,7 @@ class ThreeDNode(CogniteResource):
         depth: int = None,
         name: str = None,
         subtree_size: int = None,
+        properties: Dict[str, Any] = None,
         bounding_box: Dict[str, Any] = None,
         cognite_client=None,
     ):
@@ -224,6 +226,7 @@ class ThreeDNode(CogniteResource):
         self.depth = depth
         self.name = name
         self.subtree_size = subtree_size
+        self.properties = properties
         self.bounding_box = bounding_box
         self._cognite_client = cognite_client
 
