@@ -49,7 +49,7 @@ def mock_seq_response(rsps):
         ]
     }
     url_pattern = re.compile(
-        re.escape(SEQ_API._get_base_url_with_base_path()) + "/sequences(?:/byids|/update|/delete|/search|$|\?.+)"
+        re.escape(SEQ_API._get_base_url_with_base_path()) + "/sequences(?:/byids|/list|/update|/delete|/search|$|\?.+)"
     )
     rsps.assert_all_requests_are_fired = False
 
@@ -62,7 +62,7 @@ def mock_seq_response(rsps):
 def mock_sequences_empty(rsps):
     response_body = {"items": []}
     url_pattern = re.compile(
-        re.escape(SEQ_API._get_base_url_with_base_path()) + "/sequences(?:/byids|/update|/delete|/search|$|\?.+)"
+        re.escape(SEQ_API._get_base_url_with_base_path()) + "/sequences(?:/byids|/update|/list|/delete|/search|$|\?.+)"
     )
     rsps.assert_all_requests_are_fired = False
 

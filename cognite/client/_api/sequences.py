@@ -101,12 +101,13 @@ class SequencesAPI(APIClient):
         utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=True)
         return self._retrieve_multiple(ids=ids, external_ids=external_ids, wrap_ids=True)
 
-    def list(self, limit: int = 25) -> SequenceList:
+    def list(self, asset_ids: Optional[List[int]] = None, limit: int = 25) -> SequenceList:
         """Iterate over sequences
 
         Fetches sequences as they are iterated over, so you keep a limited number of objects in memory.
 
         Args:
+            asset_ids (List[int], optional): List sequences related to these assets.
             limit (int, optional): Max number of sequences to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all items.
 
@@ -135,7 +136,8 @@ class SequencesAPI(APIClient):
                 >>> for seq_list in c.sequences(chunk_size=2500):
                 ...     seq_list # do something with the sequences
         """
-        return self._list(method="GET", filter=None, limit=limit)
+        filter = {"assetIds": str(asset_ids) if asset_ids else None}
+        return self._list(method="POST", filter=filter, limit=limit)
 
     def create(self, sequence: Union[Sequence, List[Sequence]]) -> Union[Sequence, SequenceList]:
         """Create one or more sequences.
@@ -271,7 +273,10 @@ class SequencesDataAPI(APIClient):
     def insert(
         self,
         rows: Union[
-            Dict[int, List[Union[int, float, str]]], List[Tuple[int, Union[int, float, str]]], List[Dict[str, Any]]
+            Dict[int, List[Union[int, float, str]]],
+            List[Tuple[int, Union[int, float, str]]],
+            List[Dict[str, Any]],
+            SequenceData,
         ],
         column_ids: Optional[List[int]] = None,
         column_external_ids: Optional[List[str]] = None,
@@ -284,8 +289,8 @@ class SequencesDataAPI(APIClient):
             column_ids (Optional[List[int]]): List of ids for the columns of the sequence.
                 If 'None' is passed to both column_ids and columns_external_ids, all columns ids will be retrieved from metadata and used in that order.
             column_external_ids (Optional[List[str]]): List of external id for the columns of the sequence.
-            rows (Union[ Dict[int, List[Union[int, float, str]]], List[Tuple[int,Union[int, float, str]]], List[Dict[str,Any]]]):  The rows you wish to insert.
-                Can either be a list of tuples, a list of {"rowNumber":... ,"values": ...} objects or a dictionary of rowNumber: data. See examples below.
+            rows (Union[ Dict[int, List[Union[int, float, str]]], List[Tuple[int,Union[int, float, str]]], List[Dict[str,Any]], SequenceData]):  The rows you wish to insert.
+                Can either be a list of tuples, a list of {"rowNumber":... ,"values": ...} objects a dictionary of rowNumber: data, or a SequenceData object. See examples below.
             id (int): Id of sequence to insert rows into.
             external_id (str): External id of sequence to insert rows into.
 
@@ -314,8 +319,20 @@ class SequencesDataAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> data = {123 : ['str',3], 456 : ['bar',42] }
                 >>> c.sequences.data.insert(column_external_ids=['stringColumn','intColumn'], rows=data, id=1)
+
+            Finally, they can be a SequenceData object retrieved from another request. In this case column_external_ids from this object are used as well.
+
+                >>> from cognite.client.experimental import CogniteClient
+                >>> c = CogniteClient()
+                >>> data = c.sequences.data.retrieve(id=2,start=0,end=10)
+                >>> c.sequences.data.insert(rows=data, id=1)
         """
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
+        if isinstance(rows, SequenceData):
+            if column_ids is None and column_external_ids is None and (None not in rows.column_external_ids):
+                column_external_ids = rows.column_external_ids
+            rows = [{"rowNumber": k, "values": v} for k, v in rows.items()]
+
         if column_ids is None and column_external_ids is None:
             column_ids = self._sequences_api.retrieve(id=id, external_id=external_id).column_ids
         if isinstance(rows, dict):
