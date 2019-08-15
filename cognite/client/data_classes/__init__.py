@@ -1,5 +1,3 @@
-from typing import *
-
 from cognite.client.data_classes.assets import Asset, AssetFilter, AssetList, AssetUpdate
 from cognite.client.data_classes.datapoints import Datapoint, Datapoints, DatapointsList, DatapointsQuery
 from cognite.client.data_classes.events import Event, EventFilter, EventList, EventUpdate
