@@ -58,11 +58,12 @@ class RawDatabasesAPI(APIClient):
             items = [{"name": n} for n in name]
         return self._create_multiple(items=items)
 
-    def delete(self, name: Union[str, List[str]]) -> None:
+    def delete(self, name: Union[str, List[str]], recursive: bool = False) -> None:
         """Delete one or more databases.
 
         Args:
             name (Union[str, List[str]]): A db name or list of db names to delete.
+            recursive (bool): Recursively delete all tables in the database(s).
 
         Returns:
             None
@@ -80,7 +81,10 @@ class RawDatabasesAPI(APIClient):
             name = [name]
         items = [{"name": n} for n in name]
         chunks = utils._auxiliary.split_into_chunks(items, self._DELETE_LIMIT)
-        tasks = [{"url_path": self._RESOURCE_PATH + "/delete", "json": {"items": chunk}} for chunk in chunks]
+        tasks = [
+            {"url_path": self._RESOURCE_PATH + "/delete", "json": {"items": chunk, "recursive": recursive}}
+            for chunk in chunks
+        ]
         summary = utils._concurrency.execute_tasks_concurrently(self._post, tasks, max_workers=self._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: task["json"]["items"], task_list_element_unwrap_fn=lambda el: el["name"]
