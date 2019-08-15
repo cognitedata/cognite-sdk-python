@@ -194,7 +194,7 @@ class AssetsAPI(APIClient):
         return self._list(method="POST", limit=limit, filter=filter)
 
     def create(self, asset: Union[Asset, List[Asset]]) -> Union[Asset, AssetList]:
-        """Create one or more assets. You can create an arbitrary number of assets, and the SDK will split the request into multiple request.
+        """Create one or more assets. You can create an arbitrary number of assets, and the SDK will split the request into multiple requests.
 
         Args:
             asset (Union[Asset, List[Asset]]): Asset or list of assets to create.
