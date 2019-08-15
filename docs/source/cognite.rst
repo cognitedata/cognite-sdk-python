@@ -117,9 +117,9 @@ This example shows how to post a three levels deep asset hierarchy consisting of
     >>> root = Asset(name="root", external_id="1")
     >>> child = Asset(name="child", external_id="2", parent_external_id="1")
     >>> descendant = Asset(name="descendant", external_id="3", parent_external_id="2")
-    >>> c.assets.create([root, child, descendant])
+    >>> c.assets.create_hierarchy([root, child, descendant])
 
-Wrap the .create() call in a try-except to get information if posting the assets fails:
+Wrap the .create_hierarchy() call in a try-except to get information if posting the assets fails:
 
 - Which assets were posted. (The request yielded a 201.)
 - Which assets may have been posted. (The request yielded 5xx.)
@@ -129,7 +129,7 @@ Wrap the .create() call in a try-except to get information if posting the assets
 
     >>> from cognite.client.exceptions import CogniteAPIError
     >>> try:
-    ...     c.create([root, child, descendant])
+    ...     c.create_hierarchy([root, child, descendant])
     >>> except CogniteAPIError as e:
     ...     assets_posted = e.successful
     ...     assets_may_have_been_posted = e.unknown
