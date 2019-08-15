@@ -36,6 +36,7 @@ Changes are grouped as follows
 - Sequences datapoint retrieval updated to use the new cursor feature in the API
 - Json serializiation in `__str__()` of base data classes. Now handles Decimal and Number objects. 
 - Now possible to create asset hierarchy using parent external id when the parent is not part of the batch being inserted.
+- `name` parameter of files.upload_bytes is now required, so as not to raise an exception in the underlying API.
 
 ## [1.0.4] - 2019-08-05
 ### Added
