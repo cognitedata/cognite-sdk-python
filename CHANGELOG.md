@@ -20,22 +20,24 @@ Changes are grouped as follows
 - Separate read/write fields on data classes
 
 ## [Unreleased]
+
+## [1.0.5] - 2019-08-15
 ### Changed
-- Fixed naming for sequencesdata iteritems() -> items()
-- Will chunk raw rows into batches of 10,000 instead of 1,000.
+- Renamed iteritems() on SequenceData to .items()
+- raw.insert() now chunks raw rows into batches of 10,000 instead of 1,000
 
 ### Fixed
-- Sequence POST queries are retried if safe (e.g. search)
-- .update in the different APIs now correctly accepts a CogniteResourceList
+- Sequences queries are now retried if safe
+- .update() in all APIs now accept a subclass of CogniteResourceList as input
 - Sequences datapoint retrieval updated to use the new cursor feature in the API
 - Json serializiation in `__str__()` of base data classes. Now handles Decimal and Number objects. 
 
 ### Added
-- The files API can now create a file without uploading content.
-- Added parameter recursive to raw.databases.delete() for recursively deleting tables.
+- files.create() method to enable creating a file without uploading content.
+- `recursive` parameter to raw.databases.delete() for recursively deleting tables.
 
 ### Fixed
-- Now possible to create asset hierarchy using parent external id when the parent is not part of the request.
+- Now possible to create asset hierarchy using parent external id when the parent is not part of the batch being inserted.
 
 ## [1.0.4] - 2019-08-05
 ### Changed
