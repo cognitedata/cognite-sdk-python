@@ -208,8 +208,7 @@ class Datapoints:
             identifier = self.id
         else:
             raise ValueError("column_names must be 'externalId' or 'id'")
-        fields = self._get_non_empty_data_fields(get_empty_lists=True)
-        for attr, value in fields:
+        for attr, value in self._get_non_empty_data_fields(get_empty_lists=True):
             if attr == "timestamp":
                 timestamps = value
             else:
@@ -218,70 +217,18 @@ class Datapoints:
                     id_with_agg = "{}|{}".format(id_with_agg, utils._auxiliary.to_camel_case(attr))
                 data_fields[id_with_agg] = value
 
-        df = pd.DataFrame(data_fields, index=pd.DatetimeIndex(data=np.array(timestamps, dtype="datetime64[ms]")))
-        df = self._complete_dataframe_column(
-            df, complete, complete_start, complete_end, complete_is_step, [attr for attr, value in fields]
-        )
-
-        if not include_aggregate_name:
-            if len(fields) > 2:  # timestamp + 1
-                raise ValueError(
-                    "include_aggregate_name=False can not be used here as it would lead to duplicate column names for multiple aggregates {}".format(
-                        fields
-                    )
-                )
-            df.rename(columns=lambda s: regexp.sub(r"\|\w+$", "", s), inplace=True)
-        return df
-
-    def _complete_dataframe_column(self, df, complete, complete_start, complete_end, complete_is_step, aggregates):
-        np, pd = utils._auxiliary.local_import("numpy", "pandas")
-        complete = Datapoints._get_complete_options(complete)
-        if "fill" in complete and df.shape[0] > 1:
-
-            if complete_is_step is None and "interpolation" in aggregates:
-                client = getattr(self, "_cognite_client", None)
-                if client:
-                    complete_is_step = Datapoints._is_step(client, [self.id])
-            complete_granularity = getattr(self, "_granularity", None)
-            if not complete_granularity:
-                raise AttributeError("Can only complete Datapoints objects returned from DatapointsAPI.retrieve")
-
-            ms_granularity = cognite.client.utils._time.granularity_to_ms(complete_granularity)
-            bounds = np.array(
-                [complete_start if complete_start is not None else df.index[0], complete_end or df.index[-1]]
-            ).astype("datetime64[ms]")
-            df = df.reindex(
-                np.arange(
-                    bounds[0],
-                    bounds[1] + pd.Timedelta(microseconds=1),
-                    pd.Timedelta(microseconds=ms_granularity * 1000),
-                ),
-                copy=False,
-            )
-
-            df.fillna({c: 0 for c in df.columns if regexp.search(c, r"\|(sum|totalVariance|count)$")}, inplace=True)
-            lin_int_cols = (
-                [c for c in df.columns if regexp.search(c, r"\|interpolation$")] if not complete_is_step else []
-            )
-            step_int_cols = [
-                c
-                for c in df.columns
-                if regexp.search(c, r"\|stepInterpolation$")
-                or (complete_is_step and regexp.search(c, r"\|interpolation$"))
-            ]
-            df[lin_int_cols] = df[lin_int_cols].interpolate(limit_area="inside")
-            df[step_int_cols] = df[step_int_cols].ffill()
-
-            if "dropna" in complete:
-                df = Datapoints._dropna_dataframe(df, aggregates)
-
-        return df
+        return pd.DataFrame(data_fields, index=pd.DatetimeIndex(data=np.array(timestamps, dtype="datetime64[ms]")))
 
     def plot(self, *args, **kwargs) -> None:
         """Plot the datapoints."""
         plt = utils._auxiliary.local_import("matplotlib.pyplot")
         self.to_pandas().plot(*args, **kwargs)
         plt.show()
+
+    @staticmethod
+    def _strip_aggregate_names(df):
+        df.rename(columns=lambda s: regexp.sub(r"\|\w+$", "", s), inplace=True)
+        return df
 
     @classmethod
     def _load(cls, dps_object, expected_fields: List[str] = None, cognite_client=None):
@@ -338,29 +285,6 @@ class Datapoints:
             setattr(truncated_datapoints, attr, value[slice])
         return truncated_datapoints
 
-    @staticmethod
-    def _get_complete_options(complete):
-        return [s.strip() for s in (complete or "").split(",")]
-
-    @staticmethod
-    def _is_step(cognite_client, ids):
-        ts_meta = cognite_client.time_series.retrieve_multiple(ids=ids)
-        return {ts.id: bool(ts.is_step) for ts in ts_meta}
-
-    @staticmethod
-    def _dropna_dataframe(df, aggregates_used):
-        supported_aggregates = ["sum", "count", "total_variance", "interpolation", "step_interpolation"]
-        not_supported = set(aggregates_used) - set(supported_aggregates + ["timestamp"])
-        if not_supported:
-            raise ValueError(
-                "The aggregate(s) {} is not supported for dataframe completion with dropna, only {} are".format(
-                    [utils._auxiliary.to_camel_case(a) for a in not_supported],
-                    [utils._auxiliary.to_camel_case(a) for a in supported_aggregates],
-                )
-            )
-        df.dropna(inplace=True)
-        return df
-
 
 class DatapointsList(CogniteResourceList):
     _RESOURCE = Datapoints
@@ -372,66 +296,24 @@ class DatapointsList(CogniteResourceList):
             i["datapoints"] = utils._time.convert_time_attributes_to_datetime(i["datapoints"])
         return json.dumps(item, default=lambda x: x.__dict__, indent=4)
 
-    def to_pandas(
-        self, column_names: str = "externalId", include_aggregate_name: bool = True, complete: str = None
-    ) -> "pandas.DataFrame":
+    def to_pandas(self, column_names: str = "externalId", include_aggregate_name: bool = True) -> "pandas.DataFrame":
         """Convert the datapoints list into a pandas DataFrame.
 
         Args:
             column_names (str): Which field to use as column header. Defaults to "externalId", can also be "id".
             include_aggregate_name (bool): Include aggregate in the column name
-            complete (str): Post-processing of the dataframe.
-
-                Pass 'fill' to insert missing entries into the index, and complete data where possible (supports interpolation, stepInterpolation, count, sum, totalVariation).
-
-                Pass 'fill,dropna' to additionally drop rows in which any aggregate for any time series has missing values (typically rows at the start and end for interpolation aggregates).
-                This option guarantees that all returned dataframes have the exact same shape and no missing values anywhere, and is only supported for aggregates sum, count, totalVariance, interpolation and stepInterpolation.
 
         Returns:
             pandas.DataFrame: The datapoints list as a pandas DataFrame.
         """
         pd = utils._auxiliary.local_import("pandas")
 
-        complete = Datapoints._get_complete_options(complete)
-        if set(complete) - set(["fill", "dropna", ""]):
-            raise ValueError("complete should be 'fill', 'fill,dropna' or Falsy")
-        fill_flag = "fill" in complete
-
-        dfs = self._filled_dataframe(column_names, include_aggregate_name, fill_flag)
+        dfs = [
+            df.to_pandas(column_names=column_names, include_aggregate_name=include_aggregate_name) for df in self.data
+        ]
         if not dfs:
             return pd.DataFrame()
-
-        df = pd.concat(dfs, axis="columns")
-        if "dropna" in complete:
-            df = Datapoints._dropna_dataframe(
-                df, [ag for df in self.data for ag, _ in df._get_non_empty_data_fields(get_empty_lists=True)]
-            )
-
-        return df
-
-    def _filled_dataframe(self, column_names, include_aggregate_name, fill):
-        is_step_dict = {dp.id: False for dp in self.data}
-        complete_start = None
-        complete_end = None
-        if fill:
-            interp_ids = [dp.id for dp in self.data if dp.interpolation is not None]
-            starts = [dp.timestamp[0] for dp in self.data if dp.timestamp]
-            ends = [dp.timestamp[-1] for dp in self.data if dp.timestamp]
-            complete_start = min(starts) if starts else None
-            complete_end = max(ends) if starts else None
-            if interp_ids:  # get isStep flag and pass it to completion to handle interpolation correctly
-                is_step_dict.update(Datapoints._is_step(self._cognite_client, interp_ids))
-        return [
-            df.to_pandas(
-                column_names=column_names,
-                include_aggregate_name=include_aggregate_name,
-                complete="fill" if fill else None,  # don't pass dropna
-                complete_is_step=is_step_dict[df.id],
-                complete_start=complete_start,
-                complete_end=complete_end,
-            )
-            for df in self.data
-        ]
+        return pd.concat(dfs, axis="columns")
 
     def plot(self, *args, **kwargs) -> None:
         """Plot the list of datapoints."""

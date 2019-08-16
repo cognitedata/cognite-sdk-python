@@ -1,4 +1,5 @@
 import math
+import re as regexp
 import threading
 from collections import defaultdict, namedtuple
 from datetime import datetime
@@ -96,9 +97,6 @@ class DatapointsAPI(APIClient):
             limit=limit,
         )
         dps_list = fetcher.fetch(query)
-        for dp in dps_list:
-            dp._granularity = granularity
-            dp._cognite_client = self._cognite_client
         if is_single_id:
             return dps_list[0]
         return dps_list
@@ -423,25 +421,87 @@ class DatapointsAPI(APIClient):
                 ...         aggregates=["interpolation"], granularity="1m", include_aggregate_name=False, complete="fill,dropna")
         """
         pd = utils._auxiliary.local_import("pandas")
-        id_df = pd.DataFrame()
-        external_id_df = pd.DataFrame()
-        if id is not None and external_id is not None and complete:
-            raise ValueError("Can not complete dataframes with mixed id and externalId")
 
         if id is not None:
-            id_df = self.retrieve(
+            id_dpl = self.retrieve(
                 id=id, start=start, end=end, aggregates=aggregates, granularity=granularity, limit=limit
-            ).to_pandas(column_names="id", include_aggregate_name=include_aggregate_name, complete=complete)
+            )
+            id_df = id_dpl.to_pandas(column_names="id")
+        else:
+            id_df = pd.DataFrame()
+            id_dpl = DatapointsList([])
+
         if external_id is not None:
-            external_id_df = self.retrieve(
+            external_id_dpl = self.retrieve(
                 external_id=external_id,
                 start=start,
                 end=end,
                 aggregates=aggregates,
                 granularity=granularity,
                 limit=limit,
-            ).to_pandas(include_aggregate_name=include_aggregate_name, complete=complete)
-        return pd.concat([id_df, external_id_df], axis="columns")
+            )
+            external_id_df = external_id_dpl.to_pandas()
+        else:
+            external_id_df = pd.DataFrame()
+            external_id_dpl = DatapointsList([])
+
+        df = pd.concat([id_df, external_id_df], axis="columns")
+
+        complete = [s.strip() for s in (complete or "").split(",")]
+        if set(complete) - set(["fill", "dropna", ""]):
+            raise ValueError("complete should be 'fill', 'fill,dropna' or Falsy")
+
+        if "fill" in complete and df.shape[0] > 1:
+            ag_used_by_id = {
+                dp.id: [attr for attr, _ in dp._get_non_empty_data_fields(get_empty_lists=True)]
+                for dpl in [id_dpl, external_id_dpl]
+                for dp in (dpl.data if isinstance(dpl, DatapointsList) else [dpl])
+            }
+            ts_meta = self._cognite_client.time_series.retrieve(
+                ids=[id for id, aggs_used in ag_used_by_id.items() if "interpolation" in aggs_used]
+            )
+            is_step_dict = {str(ts.get(field)): bool(ts.is_step) for ts in ts_meta for field in ["id", "external_id"]}
+            df = self._dataframe_fill(self, df, granularity, is_step_dict)
+
+            if "dropna" in complete:
+                self._dataframe_safe_dropna(df, set([ag for id, ags in ag_used_by_id for ag in ags]))
+
+        if not include_aggregate_name:
+            Datapoints._strip_aggregate_names(df)
+
+        return df
+
+    def _dataframe_fill(self, df, granularity, is_step_dict):
+        np, pd = utils._auxiliary.local_import("numpy", "pandas")
+        df = df.reindex(
+            np.arange(
+                df.index[0],
+                df.index[-1] + pd.Timedelta(microseconds=1),
+                pd.Timedelta(microseconds=cognite.client.utils._time.granularity_to_ms(granularity) * 1000),
+            ),
+            copy=False,
+        )
+        df.fillna({c: 0 for c in df.columns if regexp.search(c, r"\|(sum|totalVariance|count)$")}, inplace=True)
+        int_cols = [c for c in df.columns if regexp.search(c, r"\|interpolation$")]
+        lin_int_cols = [c for c in int_cols if not is_step_dict[regexp.match(r"(.*)\|\w+$", c)[1]]]
+        step_int_cols = [c for c in df.columns if regexp.search(c, r"\|stepInterpolation$")] + list(
+            set(int_cols) - set(lin_int_cols)
+        )
+        df[lin_int_cols] = df[lin_int_cols].interpolate(limit_area="inside")
+        df[step_int_cols] = df[step_int_cols].ffill()
+        return df
+
+    def _dataframe_safe_dropna(self, df, aggregates_used):
+        supported_aggregates = ["sum", "count", "total_variance", "interpolation", "step_interpolation"]
+        not_supported = set(aggregates_used) - set(supported_aggregates + ["timestamp"])
+        if not_supported:
+            raise ValueError(
+                "The aggregate(s) {} is not supported for dataframe completion with dropna, only {} are".format(
+                    [utils._auxiliary.to_camel_case(a) for a in not_supported],
+                    [utils._auxiliary.to_camel_case(a) for a in supported_aggregates],
+                )
+            )
+        df.dropna(inplace=True)
 
     def retrieve_dataframe_dict(
         self,
