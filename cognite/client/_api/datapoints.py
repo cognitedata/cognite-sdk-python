@@ -458,7 +458,7 @@ class DatapointsAPI(APIClient):
                 for dp in (dpl.data if isinstance(dpl, DatapointsList) else [dpl])
             }
             ts_meta = self._cognite_client.time_series.retrieve(
-                ids=[id for id, aggs_used in ag_used_by_id.items() if "interpolation" in aggs_used]
+                id=[id for id, aggs_used in ag_used_by_id.items() if "interpolation" in aggs_used]
             )
             is_step_dict = {str(ts.get(field)): bool(ts.is_step) for ts in ts_meta for field in ["id", "external_id"]}
             df = self._dataframe_fill(self, df, granularity, is_step_dict)
@@ -538,7 +538,7 @@ class DatapointsAPI(APIClient):
 
         Examples:
 
-            Get a dictionary of pandas dataframes, with the index evenly spaced at 1h intervals, missing values completed in the middle and dropped at the ends::
+            Get a dictionary of pandas dataframes, with the index evenly spaced at 1h intervals, missing values completed in the middle and incomplete entries dropped at the start and end::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()

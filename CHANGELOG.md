@@ -25,7 +25,8 @@ Changes are grouped as follows
 - SequencesAPI.list now accepts an asset_ids parameter for searching by asset
 - SequencesDataAPI.insert now accepts a SequenceData object for easier copying
 - DatapointsAPI.insert now accepts a Datapoints object for easier copying
-- complete and include_aggregate_names on datapoints.retrieve_dataframe and Datapoints(List).to_pandas
+- complete option on datapoints.retrieve_dataframe
+- include_aggregate_names option on datapoints.retrieve_dataframe and Datapoints(List).to_pandas
 - datapoints.retrieve_dataframe_dict function, which returns {aggregate:dataframe} without adding aggregate names to columns
 
 ### Changed

@@ -172,30 +172,13 @@ class Datapoints:
             dumped = {utils._auxiliary.to_camel_case(key): value for key, value in dumped.items()}
         return {key: value for key, value in dumped.items() if value is not None}
 
-    def to_pandas(
-        self,
-        column_names: str = "externalId",
-        include_aggregate_name: bool = True,
-        complete: str = None,
-        complete_start: int = None,
-        complete_end: int = None,
-        complete_is_step: bool = None,
-    ) -> "pandas.DataFrame":
+    def to_pandas(self, column_names: str = "externalId", include_aggregate_name: bool = True) -> "pandas.DataFrame":
         """Convert the datapoints into a pandas DataFrame.
 
         Args:
-            column_names (str): Format for the column names. Defaults to "externalId", can also be "id".
+            column_names (str):  Which field to use as column header. Defaults to "externalId", can also be "id".
             include_aggregate_name (bool): Include aggregate in the column name
-            complete (str): Post-processing of the dataframe.
 
-                Pass 'fill' to insert missing entries into the index, and complete data where possible (supports interpolation, stepInterpolation, count, sum, totalVariation).
-
-                Pass 'fill,dropna' to additionally drop rows in which any aggregate for any time series has missing values (typically rows at the start and end for interpolation aggregates).
-                This option guarantees that all returned dataframes have the exact same shape and no missing values anywhere, and is only supported for aggregates sum, count, totalVariance, interpolation and stepInterpolation.
-
-            complete_start (int): When complete=True, where to start the index. Defaults to the first timestamp. (mainly for internal use)
-            complete_end (int): When complete=True, where to end the index (inclusive). Defaults to the last timestamp. (mainly for internal use)
-            complete_is_step (bool): When complete=True, should interpolate be done as piecewise constant. If None, attempts to look up the value in the time series metadata. (mainly for internal use)
         Returns:
             pandas.DataFrame: The dataframe.
         """
@@ -214,9 +197,8 @@ class Datapoints:
             else:
                 id_with_agg = str(identifier)
                 if attr != "value":
-                    id_with_agg = "{}|{}".format(id_with_agg, utils._auxiliary.to_camel_case(attr))
+                    id_with_agg += "|{}".format(utils._auxiliary.to_camel_case(attr))
                 data_fields[id_with_agg] = value
-
         return pd.DataFrame(data_fields, index=pd.DatetimeIndex(data=np.array(timestamps, dtype="datetime64[ms]")))
 
     def plot(self, *args, **kwargs) -> None:
@@ -311,9 +293,9 @@ class DatapointsList(CogniteResourceList):
         dfs = [
             df.to_pandas(column_names=column_names, include_aggregate_name=include_aggregate_name) for df in self.data
         ]
-        if not dfs:
-            return pd.DataFrame()
-        return pd.concat(dfs, axis="columns")
+        if dfs:
+            return pd.concat(dfs, axis="columns")
+        return pd.DataFrame()
 
     def plot(self, *args, **kwargs) -> None:
         """Plot the list of datapoints."""
