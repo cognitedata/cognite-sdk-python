@@ -25,6 +25,7 @@ Changes are grouped as follows
 - SequencesAPI.list now accepts an asset_ids parameter for searching by asset
 - SequencesDataAPI.insert now accepts a SequenceData object for easier copying
 - DatapointsAPI.insert now accepts a Datapoints object for easier copying
+- helper method `cognite.client.testing.mock_cognite_client()` for mocking CogniteClient
 
 ### Changed
 - assets.create() no longer validates asset hierarchy and sorts assets before posting. This functionality has been moved to assets.create_hierarchy().
