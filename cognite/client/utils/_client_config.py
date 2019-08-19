@@ -68,7 +68,7 @@ class ClientConfig(_DefaultConfig):
         self.api_key = api_key or self.api_key
         self.project = project or self.project
         self.client_name = client_name or self.client_name
-        self.base_url = base_url.rstrip("/") if base_url else self.base_url
+        self.base_url = base_url or self.base_url
         self.max_workers = max_workers or self.max_workers
         self.headers = headers or self.headers
         self.timeout = timeout or self.timeout
