@@ -93,7 +93,7 @@ class TestAssetList:
         mock_method._config = mock.Mock(max_workers=3)
 
         assets = AssetList([Asset(id=1), Asset(id=2), Asset(id=3)], cognite_client=mock_cognite_client)
-        assets._chunk_size = 1
+        assets._retrieve_chunk_size = 1
 
         resources = getattr(assets, method)()
         expected = [r1, r2, r3]

@@ -1,3 +1,4 @@
+import threading
 from typing import *
 
 from cognite.client.data_classes._base import *
@@ -175,7 +176,8 @@ class AssetList(CogniteResourceList):
 
     def __init__(self, resources: List[Any], cognite_client=None):
         super().__init__(resources, cognite_client)
-        self._chunk_size = 100
+        self._lock = threading.Lock()
+        self._retrieve_chunk_size = 100
 
     def time_series(self) -> "TimeSeriesList":
         """Retrieve all time series related to these assets.
@@ -210,21 +212,22 @@ class AssetList(CogniteResourceList):
     def _retrieve_related_resources(self, resource_list_class, resource_api):
         seen = set()
 
-        def resource_list(asset_ids, seen):
+        def retrieve_and_deduplicate(asset_ids):
             res = resource_api.list(asset_ids=asset_ids, limit=-1)
             resources = resource_list_class([])
             for resource in res:
-                if resource.id not in seen:
-                    resources.append(resource)
-                    seen.add(resource.id)
+                with self._lock:
+                    if resource.id not in seen:
+                        resources.append(resource)
+                        seen.add(resource.id)
             return resources
 
         ids = [a.id for a in self.data]
         tasks = []
-        for i in range(0, len(ids), self._chunk_size):
-            tasks.append({"asset_ids": ids[i : i + self._chunk_size], "seen": seen})
+        for i in range(0, len(ids), self._retrieve_chunk_size):
+            tasks.append({"asset_ids": ids[i : i + self._retrieve_chunk_size]})
         res_list = utils._concurrency.execute_tasks_concurrently(
-            resource_list, tasks, resource_api._config.max_workers
+            retrieve_and_deduplicate, tasks, resource_api._config.max_workers
         ).results
         resources = resource_list_class([])
         for res in res_list:
