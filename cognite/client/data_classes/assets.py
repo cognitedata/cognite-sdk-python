@@ -173,6 +173,10 @@ class AssetList(CogniteResourceList):
     _RESOURCE = Asset
     _UPDATE = AssetUpdate
 
+    def __init__(self, resources: List[Any], cognite_client=None):
+        super().__init__(resources, cognite_client)
+        self._chunk_size = 100
+
     def time_series(self) -> "TimeSeriesList":
         """Retrieve all time series related to these assets.
 
@@ -204,21 +208,27 @@ class AssetList(CogniteResourceList):
         return self._retrieve_related_resources(FileMetadataList, self._cognite_client.files)
 
     def _retrieve_related_resources(self, resource_list_class, resource_api):
-        ids = [a.id for a in self.data]
-        tasks = []
-        chunk_size = 100
-        for i in range(0, len(ids), chunk_size):
-            tasks.append({"asset_ids": ids[i : i + chunk_size], "limit": -1})
-        res_list = utils._concurrency.execute_tasks_concurrently(
-            resource_api.list, tasks, resource_api._config.max_workers
-        ).results
-        resources = resource_list_class([])
         seen = set()
-        for res in res_list:
+
+        def resource_list(asset_ids, seen):
+            res = resource_api.list(asset_ids=asset_ids, limit=-1)
+            resources = resource_list_class([])
             for resource in res:
                 if resource.id not in seen:
                     resources.append(resource)
                     seen.add(resource.id)
+            return resources
+
+        ids = [a.id for a in self.data]
+        tasks = []
+        for i in range(0, len(ids), self._chunk_size):
+            tasks.append({"asset_ids": ids[i : i + self._chunk_size], "seen": seen})
+        res_list = utils._concurrency.execute_tasks_concurrently(
+            resource_list, tasks, resource_api._config.max_workers
+        ).results
+        resources = resource_list_class([])
+        for res in res_list:
+            resources.extend(res)
         return resources
 
 
