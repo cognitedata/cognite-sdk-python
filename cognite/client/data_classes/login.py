@@ -7,13 +7,14 @@ class LoginStatus(CogniteResponse):
     """Current login status
 
     Args:
-        user (str): Current user
-        logged_in (bool): Is user logged in
-        project (str): Current project
-        project_id (str): Current project id
+        user (str): Current user.
+        logged_in (bool): Is user logged in.
+        project (str): Current project.
+        project_id (int): Current project id.
+        api_key_id (int): Current api key id.
     """
 
-    def __init__(self, user: str, project: str, logged_in: bool, project_id: str, api_key_id: int):
+    def __init__(self, user: str, project: str, logged_in: bool, project_id: int, api_key_id: int):
         self.user = user
         self.project = project
         self.project_id = project_id
