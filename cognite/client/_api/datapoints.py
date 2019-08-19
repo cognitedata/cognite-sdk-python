@@ -485,7 +485,7 @@ class DatapointsAPI(APIClient):
         )
         df.fillna({c: 0 for c in df.columns if regexp.search(c, r"\|(sum|totalVariance|count)$")}, inplace=True)
         int_cols = [c for c in df.columns if regexp.search(c, r"\|interpolation$")]
-        lin_int_cols = [c for c in int_cols if not is_step_dict[regexp.match(r"(.*)\|\w+$", c)[1]]]
+        lin_int_cols = [c for c in int_cols if not is_step_dict[regexp.match(r"(.*)\|\w+$", c).group(1)]]
         step_int_cols = [c for c in df.columns if regexp.search(c, r"\|stepInterpolation$")] + list(
             set(int_cols) - set(lin_int_cols)
         )
