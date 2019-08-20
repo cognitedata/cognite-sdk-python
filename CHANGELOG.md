@@ -29,6 +29,7 @@ Changes are grouped as follows
 
 ### Changed
 - assets.create() no longer validates asset hierarchy and sorts assets before posting. This functionality has been moved to assets.create_hierarchy().
+- AssetList.files() and AssetList.events() now deduplicate results during fetching instead of as a postprocessing step.
 
 ## [1.0.5] - 2019-08-15
 ### Added
