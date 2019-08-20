@@ -5,6 +5,7 @@ import os
 import re
 from collections import UserList
 from typing import Any, Dict, List, Union
+from urllib.parse import urljoin
 
 import requests.utils
 from requests import Response, Session
@@ -152,7 +153,7 @@ class APIClient:
 
     def _get_base_url_with_base_path(self):
         base_path = "/api/{}/projects/{}".format(self._api_version, self._config.project) if self._api_version else ""
-        return self._config.base_url + base_path
+        return urljoin(self._config.base_url, base_path)
 
     def _is_retryable(self, method, path):
         valid_methods = ["GET", "POST", "PUT", "DELETE"]
