@@ -4,7 +4,7 @@ from typing import *
 from cognite.client.data_classes._base import *
 
 
-# GenClass: GetSequenceDTO
+# GenClass: relationship
 class Relationship(CogniteResource):
     def __init__(
         self,

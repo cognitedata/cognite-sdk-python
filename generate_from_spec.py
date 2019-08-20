@@ -4,9 +4,7 @@ import os
 from openapi.generator import CodeGenerator
 
 DEFAULT_SPEC_URL = "https://storage.googleapis.com/cognitedata-api-docs/dist/v1.json"
-PLAYGROUND_SPEC_URL = (
-    "https://pr-20.specs.preview.cogniteapp.com/playground.json"
-)  # https://storage.googleapis.com/cognitedata-api-docs/dist/playground.json
+PLAYGROUND_SPEC_URL = "https://storage.googleapis.com/cognitedata-api-docs/dist/playground.json"
 
 
 def main(spec_url, spec_path):
