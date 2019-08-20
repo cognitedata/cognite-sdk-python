@@ -176,7 +176,6 @@ class AssetList(CogniteResourceList):
 
     def __init__(self, resources: List[Any], cognite_client=None):
         super().__init__(resources, cognite_client)
-        self._lock = threading.Lock()
         self._retrieve_chunk_size = 100
 
     def time_series(self) -> "TimeSeriesList":
@@ -211,12 +210,13 @@ class AssetList(CogniteResourceList):
 
     def _retrieve_related_resources(self, resource_list_class, resource_api):
         seen = set()
+        lock = threading.Lock()
 
         def retrieve_and_deduplicate(asset_ids):
             res = resource_api.list(asset_ids=asset_ids, limit=-1)
             resources = resource_list_class([])
-            for resource in res:
-                with self._lock:
+            with lock:
+                for resource in res:
                     if resource.id not in seen:
                         resources.append(resource)
                         seen.add(resource.id)
