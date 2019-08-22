@@ -94,6 +94,7 @@ class SequenceFilter(CogniteFilter):
         external_id_prefix (str): Filter out sequences that do not have this string as the start of the externalId
         metadata (Dict[str, Any]): Filter out sequences that do not match these metadata fields and values (case-sensitive). Format is {"key1":"value1","key2":"value2"}.
         asset_ids (List[int]): Filter out sequences that are not linked to any of these assets.
+        root_asset_ids (List[int]): Filter out sequences not linked to assets with one of these assets as the root asset.
         created_time (Dict[str, Any]): Filter out sequences with createdTime outside this range.
         last_updated_time (Dict[str, Any]): Filter out sequences with lastUpdatedTime outside this range.
         cognite_client (CogniteClient): The client to associate with this object.
@@ -105,6 +106,7 @@ class SequenceFilter(CogniteFilter):
         external_id_prefix: str = None,
         metadata: Dict[str, Any] = None,
         asset_ids: List[int] = None,
+        root_asset_ids: List[int] = None,
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
         cognite_client=None,
@@ -113,6 +115,7 @@ class SequenceFilter(CogniteFilter):
         self.external_id_prefix = external_id_prefix
         self.metadata = metadata
         self.asset_ids = asset_ids
+        self.root_asset_ids = root_asset_ids
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self._cognite_client = cognite_client
