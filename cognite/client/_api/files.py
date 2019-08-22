@@ -328,8 +328,8 @@ class FilesAPI(APIClient):
         mime_type: str = None,
         metadata: Dict[str, Any] = None,
         asset_ids: List[int] = None,
-        source_created_time=None,
-        source_modified_time=None,
+        source_created_time: int = None,
+        source_modified_time: int = None,
         recursive: bool = False,
         overwrite: bool = False,
     ) -> Union[FileMetadata, FileMetadataList]:
@@ -426,8 +426,8 @@ class FilesAPI(APIClient):
         mime_type: str = None,
         metadata: Dict[str, Any] = None,
         asset_ids: List[int] = None,
-        source_created_time=None,
-        source_modified_time=None,
+        source_created_time: int = None,
+        source_modified_time: int = None,
         overwrite: bool = False,
     ):
         """Upload bytes or string.
