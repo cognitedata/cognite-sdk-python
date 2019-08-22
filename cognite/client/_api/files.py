@@ -21,6 +21,8 @@ class FilesAPI(APIClient):
         source: str = None,
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
+        source_created_time: Dict[str, Any] = None,
+        source_modified_time: Dict[str, Any] = None,
         uploaded_time: Dict[str, Any] = None,
         external_id_prefix: str = None,
         uploaded: bool = None,
@@ -37,6 +39,8 @@ class FilesAPI(APIClient):
             metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
             asset_ids (List[int]): Only include files that reference these specific asset IDs.
             source (str): The source of this event.
+            source_created_time (Dict[str, Any]): Filter for files where the sourceCreatedTime field has been set and is within the specified range.
+            source_modified_time (Dict[str, Any]): Filter for files where the sourceModifiedTime field has been set and is within the specified range.
             created_time (Dict[str, Any]): Range between two timestamps
             last_updated_time (Dict[str, Any]): Range between two timestamps
             uploaded_time (Dict[str, Any]): Range between two timestamps
@@ -57,6 +61,8 @@ class FilesAPI(APIClient):
             created_time,
             last_updated_time,
             uploaded_time,
+            source_created_time,
+            source_modified_time,
             external_id_prefix,
             uploaded,
         ).dump(camel_case=True)
@@ -173,6 +179,8 @@ class FilesAPI(APIClient):
         source: str = None,
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
+        source_created_time: Dict[str, Any] = None,
+        source_modified_time: Dict[str, Any] = None,
         uploaded_time: Dict[str, Any] = None,
         external_id_prefix: str = None,
         uploaded: bool = None,
@@ -189,6 +197,8 @@ class FilesAPI(APIClient):
             created_time (Dict[str, Any]): Range between two timestamps
             last_updated_time (Dict[str, Any]): Range between two timestamps
             uploaded_time (Dict[str, Any]): Range between two timestamps
+            source_created_time (Dict[str, Any]): Filter for files where the sourceCreatedTime field has been set and is within the specified range.
+            source_modified_time (Dict[str, Any]): Filter for files where the sourceModifiedTime field has been set and is within the specified range.
             external_id_prefix (str): External Id provided by client. Should be unique within the project.
             uploaded (bool): Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
             limit (int, optional): Max number of files to return. Defaults to 25. Set to -1, float("inf") or None
@@ -228,6 +238,8 @@ class FilesAPI(APIClient):
             created_time,
             last_updated_time,
             uploaded_time,
+            source_created_time,
+            source_modified_time,
             external_id_prefix,
             uploaded,
         ).dump(camel_case=True)
@@ -316,6 +328,8 @@ class FilesAPI(APIClient):
         mime_type: str = None,
         metadata: Dict[str, Any] = None,
         asset_ids: List[int] = None,
+        source_created_time=None,
+        source_modified_time=None,
         recursive: bool = False,
         overwrite: bool = False,
     ) -> Union[FileMetadata, FileMetadataList]:
@@ -329,6 +343,8 @@ class FilesAPI(APIClient):
             mime_type (str): File type. E.g. text/plain, application/pdf, ...
             metadata (Dict[str, Any]): Customizable extra data about the file. String key -> String value.
             asset_ids (List[int]): No description.
+            source_created_time (int): The timestamp for when the file was originally created in the source system.
+            source_modified_time (int): The timestamp for when the file was last modified in the source system.
             recursive (bool): If path is a directory, upload all contained files recursively.
             overwrite (bool): If 'overwrite' is set to true, and the POST body content specifies a 'externalId' field,
                 fields for the file found for externalId can be overwritten. The default setting is false.
@@ -369,6 +385,8 @@ class FilesAPI(APIClient):
             mime_type=mime_type,
             metadata=metadata,
             asset_ids=asset_ids,
+            source_created_time=source_created_time,
+            source_modified_time=source_modified_time,
         )
         if os.path.isfile(path):
             if not name:
@@ -408,6 +426,8 @@ class FilesAPI(APIClient):
         mime_type: str = None,
         metadata: Dict[str, Any] = None,
         asset_ids: List[int] = None,
+        source_created_time=None,
+        source_modified_time=None,
         overwrite: bool = False,
     ):
         """Upload bytes or string.
@@ -422,6 +442,8 @@ class FilesAPI(APIClient):
             mime_type (str): File type. E.g. text/plain, application/pdf,...
             metadata (Dict[str, Any]): Customizable extra data about the file. String key -> String value.
             asset_ids (List[int]): No description.
+            source_created_time (int): The timestamp for when the file was originally created in the source system.
+            source_modified_time (int): The timestamp for when the file was last modified in the source system.
             overwrite (bool): If 'overwrite' is set to true, and the POST body content specifies a 'externalId' field,
                 fields for the file found for externalId can be overwritten. The default setting is false.
                 If metadata is included in the request body, all of the original metadata will be overwritten.
@@ -446,6 +468,8 @@ class FilesAPI(APIClient):
             mime_type=mime_type,
             metadata=metadata,
             asset_ids=asset_ids,
+            source_created_time=source_created_time,
+            source_modified_time=source_modified_time,
         )
 
         res = self._post(
