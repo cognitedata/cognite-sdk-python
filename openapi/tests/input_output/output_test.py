@@ -103,6 +103,14 @@ class AssetUpdate(CogniteUpdate):
     def source(self):
         return _PrimitiveAssetUpdate(self, "source")
 
+    @property
+    def parent_id(self):
+        return _PrimitiveAssetUpdate(self, "parentId")
+
+    @property
+    def parent_external_id(self):
+        return _PrimitiveAssetUpdate(self, "parentExternalId")
+
 
 class _PrimitiveAssetUpdate(CognitePrimitiveUpdate):
     def set(self, value: Any) -> AssetUpdate:
