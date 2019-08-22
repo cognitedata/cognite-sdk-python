@@ -29,6 +29,7 @@ Changes are grouped as follows
 - complete option on datapoints.retrieve_dataframe
 - include_aggregate_names option on datapoints.retrieve_dataframe and Datapoints(List).to_pandas
 - datapoints.retrieve_dataframe_dict function, which returns {aggregate:dataframe} without adding aggregate names to columns
+- parent_id and parent_external_id to AssetUpdate class.
 
 ### Changed
 - assets.create() no longer validates asset hierarchy and sorts assets before posting. This functionality has been moved to assets.create_hierarchy().
