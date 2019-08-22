@@ -2,7 +2,7 @@ import inspect
 
 import pytest
 
-from cognite.client._api import assets, events, files
+from cognite.client._api import assets, events, files, sequences
 
 
 class TestListAndIterSignatures:
@@ -12,6 +12,7 @@ class TestListAndIterSignatures:
             (assets.AssetsAPI, assets.AssetFilter),
             (events.EventsAPI, events.EventFilter),
             (files.FilesAPI, files.FileMetadataFilter),
+            (sequences.SequencesAPI, sequences.SequenceFilter),
         ],
     )
     def test_list_and_iter_signatures_same_as_filter_signature(self, api, filter):
