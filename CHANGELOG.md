@@ -23,7 +23,7 @@ Changes are grouped as follows
 
 ## [1.1.1] - 2019-08-23
 ### Added
-- complete option on datapoints.retrieve_dataframe
+- `complete` parameter on `datapoints.retrieve_dataframe`, used for forward-filling/interpolating intervals with missing data.
 - include_aggregate_names option on datapoints.retrieve_dataframe and Datapoints(List).to_pandas
 - datapoints.retrieve_dataframe_dict function, which returns {aggregate:dataframe} without adding aggregate names to columns
 - source_created_time and source_modified_time support for files
