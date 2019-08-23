@@ -772,6 +772,10 @@ CogniteMissingClientError
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 .. autoexception:: cognite.client.exceptions.CogniteMissingClientError
 
+CogniteDuplicateColumnsError
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. autoexception:: cognite.client.exceptions.CogniteDuplicateColumnsError
+
 
 Utils
 -----
