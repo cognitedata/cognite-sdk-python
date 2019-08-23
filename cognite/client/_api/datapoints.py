@@ -1,4 +1,5 @@
 import math
+import re as regexp
 import threading
 from collections import defaultdict, namedtuple
 from datetime import datetime
@@ -96,7 +97,6 @@ class DatapointsAPI(APIClient):
             limit=limit,
         )
         dps_list = fetcher.fetch(query)
-
         if is_single_id:
             return dps_list[0]
         return dps_list
@@ -376,7 +376,9 @@ class DatapointsAPI(APIClient):
             str, List[str], Dict[str, Union[int, List[str]]], List[Dict[str, Union[int, List[str]]]]
         ] = None,
         limit: int = None,
-    ):
+        include_aggregate_name=True,
+        complete: str = None,
+    ) -> "pandas.DataFrame":
         """Get a pandas dataframe describing the requested data.
 
         Note that you cannot specify the same ids/external_ids multiple times.
@@ -391,6 +393,13 @@ class DatapointsAPI(APIClient):
             external_id (Union[str, List[str], Dict[str, Any], List[Dict[str, Any]]]): External id or list of external
                 ids. Can also be object specifying aggregates. See example below.
             limit (int): Maximum number of datapoints to return for each time series.
+            include_aggregate_name (bool): Include 'aggregate' in the column name. Defaults to True and should only be set to False when only a single aggregate is requested per id/externalId.
+            complete (str): Post-processing of the dataframe.
+
+                Pass 'fill' to insert missing entries into the index, and complete data where possible (supports interpolation, stepInterpolation, count, sum, totalVariation).
+
+                Pass 'fill,dropna' to additionally drop rows in which any aggregate for any time series has missing values (typically rows at the start and end for interpolation aggregates).
+                This option guarantees that all returned dataframes have the exact same shape and no missing values anywhere, and is only supported for aggregates sum, count, totalVariance, interpolation and stepInterpolation.
 
         Returns:
             pandas.DataFrame: The requested dataframe
@@ -402,25 +411,154 @@ class DatapointsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> df = c.datapoints.retrieve_dataframe(id=[1,2,3], start="2w-ago", end="now",
-                ...         aggregates=["average"], granularity="1h")
+                ...         aggregates=["average","sum"], granularity="1h")
+
+            Get a pandas dataframe with the index regularly spaced at 1 minute intervals, missing values completed and without the aggregate name in the columns::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> df = c.datapoints.retrieve_dataframe(id=[1,2,3], start="2w-ago", end="now",
+                ...         aggregates=["interpolation"], granularity="1m", include_aggregate_name=False, complete="fill,dropna")
         """
         pd = utils._auxiliary.local_import("pandas")
-        id_df = pd.DataFrame()
-        external_id_df = pd.DataFrame()
+
         if id is not None:
-            id_df = self.retrieve(
+            id_dpl = self.retrieve(
                 id=id, start=start, end=end, aggregates=aggregates, granularity=granularity, limit=limit
-            ).to_pandas(column_names="id")
+            )
+            id_df = id_dpl.to_pandas(column_names="id")
+        else:
+            id_df = pd.DataFrame()
+            id_dpl = DatapointsList([])
+
         if external_id is not None:
-            external_id_df = self.retrieve(
+            external_id_dpl = self.retrieve(
                 external_id=external_id,
                 start=start,
                 end=end,
                 aggregates=aggregates,
                 granularity=granularity,
                 limit=limit,
-            ).to_pandas()
-        return pd.concat([id_df, external_id_df], axis="columns")
+            )
+            external_id_df = external_id_dpl.to_pandas()
+        else:
+            external_id_df = pd.DataFrame()
+            external_id_dpl = DatapointsList([])
+
+        df = pd.concat([id_df, external_id_df], axis="columns")
+
+        complete = [s.strip() for s in (complete or "").split(",")]
+        if set(complete) - {"fill", "dropna", ""}:
+            raise ValueError("complete should be 'fill', 'fill,dropna' or Falsy")
+
+        if "fill" in complete and df.shape[0] > 1:
+            ag_used_by_id = {
+                dp.id: [attr for attr, _ in dp._get_non_empty_data_fields(get_empty_lists=True)]
+                for dpl in [id_dpl, external_id_dpl]
+                for dp in (dpl.data if isinstance(dpl, DatapointsList) else [dpl])
+            }
+            ts_meta = self._cognite_client.time_series.retrieve_multiple(
+                ids=[id for id, aggs_used in ag_used_by_id.items() if "interpolation" in aggs_used]
+            )
+            is_step_dict = {
+                str(field): bool(ts.is_step) for ts in ts_meta for field in [ts.id, ts.external_id] if field
+            }
+            df = self._dataframe_fill(df, granularity, is_step_dict)
+
+            if "dropna" in complete:
+                self._dataframe_safe_dropna(df, set([ag for id, ags in ag_used_by_id.items() for ag in ags]))
+
+        if not include_aggregate_name:
+            Datapoints._strip_aggregate_names(df)
+
+        return df
+
+    def _dataframe_fill(self, df, granularity, is_step_dict):
+        np, pd = utils._auxiliary.local_import("numpy", "pandas")
+        df = df.reindex(
+            np.arange(
+                df.index[0],
+                df.index[-1] + pd.Timedelta(microseconds=1),
+                pd.Timedelta(microseconds=cognite.client.utils._time.granularity_to_ms(granularity) * 1000),
+            ),
+            copy=False,
+        )
+        df.fillna({c: 0 for c in df.columns if regexp.search(c, r"\|(sum|totalVariance|count)$")}, inplace=True)
+        int_cols = [c for c in df.columns if regexp.search(c, r"\|interpolation$")]
+        lin_int_cols = [c for c in int_cols if not is_step_dict[regexp.match(r"(.*)\|\w+$", c).group(1)]]
+        step_int_cols = [c for c in df.columns if regexp.search(c, r"\|stepInterpolation$")] + list(
+            set(int_cols) - set(lin_int_cols)
+        )
+        df[lin_int_cols] = df[lin_int_cols].interpolate(limit_area="inside")
+        df[step_int_cols] = df[step_int_cols].ffill()
+        return df
+
+    def _dataframe_safe_dropna(self, df, aggregates_used):
+        supported_aggregates = ["sum", "count", "total_variance", "interpolation", "step_interpolation"]
+        not_supported = set(aggregates_used) - set(supported_aggregates + ["timestamp"])
+        if not_supported:
+            raise ValueError(
+                "The aggregate(s) {} is not supported for dataframe completion with dropna, only {} are".format(
+                    [utils._auxiliary.to_camel_case(a) for a in not_supported],
+                    [utils._auxiliary.to_camel_case(a) for a in supported_aggregates],
+                )
+            )
+        df.dropna(inplace=True)
+
+    def retrieve_dataframe_dict(
+        self,
+        start: Union[int, str, datetime],
+        end: Union[int, str, datetime],
+        aggregates: List[str],
+        granularity: str,
+        id: Union[int, List[int], Dict[str, Union[int, List[str]]], List[Dict[str, Union[int, List[str]]]]] = None,
+        external_id: Union[
+            str, List[str], Dict[str, Union[int, List[str]]], List[Dict[str, Union[int, List[str]]]]
+        ] = None,
+        limit: int = None,
+        complete: bool = None,
+    ) -> Dict[str, "pandas.DataFrame"]:
+        """Get a dictionary of aggregate: pandas dataframe describing the requested data.
+
+        Args:
+            start (Union[int, str, datetime]): Inclusive start.
+            end (Union[int, str, datetime]): Exclusive end.
+            aggregates (List[str]): List of aggregate functions to apply.
+            granularity (str): The granularity to fetch aggregates at. e.g. '1s', '2h', '10d'.
+            id (Union[int, List[int], Dict[str, Any], List[Dict[str, Any]]]: Id or list of ids. Can also be object specifying aggregates.
+            external_id (Union[str, List[str], Dict[str, Any], List[Dict[str, Any]]]): External id or list of external ids. Can also be object specifying aggregates.
+            limit (int): Maximum number of datapoints to return for each time series.
+            complete (str): Post-processing of the dataframe.
+
+                Pass 'fill' to insert missing entries into the index, and complete data where possible (supports interpolation, stepInterpolation, count, sum, totalVariation).
+
+                Pass 'fill,dropna' to additionally drop rows in which any aggregate for any time series has missing values (typically rows at the start and end for interpolation aggregates).
+                This option guarantees that all returned dataframes have the exact same shape and no missing values anywhere, and is only supported for aggregates sum, count, totalVariance, interpolation and stepInterpolation.
+
+        Returns:
+           Dict[str,pandas.DataFrame]: A dictionary of aggregate: dataframe.
+
+        Examples:
+
+            Get a dictionary of pandas dataframes, with the index evenly spaced at 1h intervals, missing values completed in the middle and incomplete entries dropped at the start and end::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> dfs = c.datapoints.retrieve_dataframe_dict(id=[1,2,3], start="2w-ago", end="now",
+                ...          aggregates=["interpolation","count"], granularity="1h", complete="fill,dropna")
+        """
+        all_aggregates = aggregates
+        for queries in [id, external_id]:
+            if isinstance(queries, list) and queries and isinstance(queries[0], dict):
+                for it in queries:
+                    for ag in it.get("aggregates", []):
+                        if ag not in all_aggregates:
+                            all_aggregates.append(ag)
+
+        df = self.retrieve_dataframe(
+            start, end, aggregates, granularity, id, external_id, limit, include_aggregate_name=True, complete=complete
+        )
+        return {ag: df.filter(like="|" + ag).rename(columns=lambda s: s[: -len(ag) - 1]) for ag in all_aggregates}
 
     def insert_dataframe(self, dataframe, external_id_headers: bool = False):
         """Insert a dataframe.
@@ -676,7 +814,7 @@ class DatapointsFetcher:
                 return x.timestamp[0]
             return 0
 
-        dps_lists = [DatapointsList([])] * len(self.query_ids)
+        dps_lists = [DatapointsList([], cognite_client=self.client._cognite_client)] * len(self.query_ids)
         for q_id, dps_objects in self.query_id_to_datapoints_objects.items():
             ts_id_to_dps_objects = defaultdict(lambda: [])
             for dps_object in dps_objects:
@@ -708,7 +846,7 @@ class DatapointsFetcher:
                 return order[item.id]
             return order[item.external_id]
 
-        return DatapointsList(sorted(dps_list, key=custom_sort_order))
+        return DatapointsList(sorted(dps_list, key=custom_sort_order), cognite_client=self.client._cognite_client)
 
     def _fetch_datapoints(self, dps_queries: List[_DPTask]):
         tasks_summary = utils._concurrency.execute_tasks_concurrently(

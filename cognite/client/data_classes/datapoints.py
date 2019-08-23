@@ -1,8 +1,11 @@
+import collections
+import re as regexp
 from datetime import datetime
 from typing import *
 
 import cognite.client.utils._time
 from cognite.client.data_classes._base import *
+from cognite.client.exceptions import CogniteDuplicateColumnsError
 
 
 class Datapoint(CogniteResource):
@@ -171,11 +174,12 @@ class Datapoints:
             dumped = {utils._auxiliary.to_camel_case(key): value for key, value in dumped.items()}
         return {key: value for key, value in dumped.items() if value is not None}
 
-    def to_pandas(self, column_names="externalId") -> "pandas.DataFrame":
+    def to_pandas(self, column_names: str = "externalId", include_aggregate_name: bool = True) -> "pandas.DataFrame":
         """Convert the datapoints into a pandas DataFrame.
 
         Args:
-            column_names (str): Which field to use as column header. Defaults to "externalId", can also be "id".
+            column_names (str):  Which field to use as column header. Defaults to "externalId", can also be "id".
+            include_aggregate_name (bool): Include aggregate in the column name
 
         Returns:
             pandas.DataFrame: The dataframe.
@@ -197,13 +201,26 @@ class Datapoints:
                 if attr != "value":
                     id_with_agg += "|{}".format(utils._auxiliary.to_camel_case(attr))
                 data_fields[id_with_agg] = value
-        return pd.DataFrame(data_fields, index=pd.DatetimeIndex(data=np.array(timestamps, dtype="datetime64[ms]")))
+        df = pd.DataFrame(data_fields, index=pd.DatetimeIndex(data=np.array(timestamps, dtype="datetime64[ms]")))
+        if not include_aggregate_name:
+            Datapoints._strip_aggregate_names(df)
+        return df
 
     def plot(self, *args, **kwargs) -> None:
         """Plot the datapoints."""
         plt = utils._auxiliary.local_import("matplotlib.pyplot")
         self.to_pandas().plot(*args, **kwargs)
         plt.show()
+
+    @staticmethod
+    def _strip_aggregate_names(df):
+        df.rename(columns=lambda s: regexp.sub(r"\|\w+$", "", s), inplace=True)
+        print(len(set(df.columns)), df.shape[1])
+        if len(set(df.columns)) < df.shape[1]:
+            raise CogniteDuplicateColumnsError(
+                [item for item, count in collections.Counter(df.columns).items() if count > 1]
+            )
+        return df
 
     @classmethod
     def _load(cls, dps_object, expected_fields: List[str] = None, cognite_client=None):
@@ -238,7 +255,7 @@ class Datapoints:
     def _get_non_empty_data_fields(self, get_empty_lists=False) -> List[Tuple[str, Any]]:
         non_empty_data_fields = []
         for attr, value in self.__dict__.copy().items():
-            if attr not in ["id", "external_id", "_Datapoints__datapoint_objects", "_cognite_client"]:
+            if attr not in ["id", "external_id"] and attr[0] != "_":
                 if value is not None or attr == "timestamp":
                     if len(value) > 0 or get_empty_lists or attr == "timestamp":
                         non_empty_data_fields.append((attr, value))
@@ -271,18 +288,25 @@ class DatapointsList(CogniteResourceList):
             i["datapoints"] = utils._time.convert_time_attributes_to_datetime(i["datapoints"])
         return json.dumps(item, default=lambda x: x.__dict__, indent=4)
 
-    def to_pandas(self, column_names="externalId") -> "pandas.DataFrame":
+    def to_pandas(self, column_names: str = "externalId", include_aggregate_name: bool = True) -> "pandas.DataFrame":
         """Convert the datapoints list into a pandas DataFrame.
 
         Args:
             column_names (str): Which field to use as column header. Defaults to "externalId", can also be "id".
+            include_aggregate_name (bool): Include aggregate in the column name
+
         Returns:
             pandas.DataFrame: The datapoints list as a pandas DataFrame.
         """
         pd = utils._auxiliary.local_import("pandas")
+
         dfs = [df.to_pandas(column_names=column_names) for df in self.data]
         if dfs:
-            return pd.concat(dfs, axis="columns")
+            df = pd.concat(dfs, axis="columns")
+            if not include_aggregate_name:  # do not pass in to_pandas above, so we check for duplicate columns
+                Datapoints._strip_aggregate_names(df)
+            return df
+
         return pd.DataFrame()
 
     def plot(self, *args, **kwargs) -> None:
