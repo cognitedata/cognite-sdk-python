@@ -435,6 +435,10 @@ Retrieve pandas dataframe
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.datapoints.DatapointsAPI.retrieve_dataframe
 
+Retrieve pandas dataframes indexed by aggregate
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.datapoints.DatapointsAPI.retrieve_dataframe_dict
+
 Perform data points queries
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.datapoints.DatapointsAPI.query
@@ -767,6 +771,10 @@ CogniteImportError
 CogniteMissingClientError
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 .. autoexception:: cognite.client.exceptions.CogniteMissingClientError
+
+CogniteDuplicateColumnsError
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. autoexception:: cognite.client.exceptions.CogniteDuplicateColumnsError
 
 
 Utils
