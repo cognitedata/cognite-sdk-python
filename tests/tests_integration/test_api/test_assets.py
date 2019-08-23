@@ -47,7 +47,7 @@ def new_asset_hierarchy(post_spy):
     assets = generate_asset_tree(random_prefix + "0", depth=5, children_per_node=5)
 
     with set_request_limit(COGNITE_CLIENT.assets, 50):
-        COGNITE_CLIENT.assets.create(assets)
+        COGNITE_CLIENT.assets.create_hierarchy(assets)
 
     assert 20 < COGNITE_CLIENT.assets._post.call_count < 30
 
@@ -116,7 +116,7 @@ class TestAssetsAPI:
             root_external_id=root.external_id, depth=5, children_per_node=10, current_depth=2
         )
 
-        COGNITE_CLIENT.assets.create(children)
+        COGNITE_CLIENT.assets.create_hierarchy(children)
 
         external_ids = [asset.external_id for asset in children] + [root.external_id]
         posted_assets = COGNITE_CLIENT.assets.retrieve_multiple(external_ids=external_ids)

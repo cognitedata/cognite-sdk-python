@@ -18,7 +18,16 @@ class SequencesAPI(APIClient):
         self.data = SequencesDataAPI(self, *args, **kwargs)
 
     def __call__(
-        self, chunk_size: int = None, limit: int = None
+        self,
+        chunk_size: int = None,
+        name: str = None,
+        external_id_prefix: str = None,
+        metadata: Dict[str, Any] = None,
+        asset_ids: List[int] = None,
+        root_asset_ids: List[int] = None,
+        created_time: Dict[str, Any] = None,
+        last_updated_time: Dict[str, Any] = None,
+        limit: int = None,
     ) -> Generator[Union[Sequence, SequenceList], None, None]:
         """Iterate over sequences
 
@@ -26,13 +35,28 @@ class SequencesAPI(APIClient):
 
         Args:
             chunk_size (int, optional): Number of sequences to return in each chunk. Defaults to yielding one event a time.
-            limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None
-                to return all items.
+            name (str): Filter out sequences that do not have this *exact* name.
+            external_id_prefix (str): Filter out sequences that do not have this string as the start of the externalId
+            metadata (Dict[str, Any]): Filter out sequences that do not match these metadata fields and values (case-sensitive). Format is {"key1":"value1","key2":"value2"}.
+            asset_ids (List[int]): Filter out sequences that are not linked to any of these assets.
+            root_asset_ids (List[int]): Filter out sequences not linked to assets with one of these assets as the root asset.
+            created_time (Dict[str, Any]): Filter out sequences with createdTime outside this range.
+            last_updated_time (Dict[str, Any]): Filter out sequences with lastUpdatedTime outside this range.
+            limit (int, optional): Max number of sequences to return. Defaults to return all items.
 
         Yields:
             Union[Sequence, SequenceList]: yields Sequence one by one if chunk is not specified, else SequenceList objects.
         """
-        return self._list_generator(method="GET", chunk_size=chunk_size, filter=None, limit=limit)
+        filter = SequenceFilter(
+            name=name,
+            metadata=metadata,
+            external_id_prefix=external_id_prefix,
+            asset_ids=asset_ids,
+            root_asset_ids=root_asset_ids,
+            created_time=created_time,
+            last_updated_time=last_updated_time,
+        ).dump(camel_case=True)
+        return self._list_generator(method="GET", chunk_size=chunk_size, filter=filter, limit=limit)
 
     def __iter__(self) -> Generator[Sequence, None, None]:
         """Iterate over sequences
@@ -101,12 +125,29 @@ class SequencesAPI(APIClient):
         utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=True)
         return self._retrieve_multiple(ids=ids, external_ids=external_ids, wrap_ids=True)
 
-    def list(self, limit: int = 25) -> SequenceList:
+    def list(
+        self,
+        name: str = None,
+        external_id_prefix: str = None,
+        metadata: Dict[str, Any] = None,
+        asset_ids: List[int] = None,
+        root_asset_ids: List[int] = None,
+        created_time: Dict[str, Any] = None,
+        last_updated_time: Dict[str, Any] = None,
+        limit: Optional[int] = 25,
+    ) -> SequenceList:
         """Iterate over sequences
 
         Fetches sequences as they are iterated over, so you keep a limited number of objects in memory.
 
         Args:
+            name (str): Filter out sequences that do not have this *exact* name.
+            external_id_prefix (str): Filter out sequences that do not have this string as the start of the externalId
+            metadata (Dict[str, Any]): Filter out sequences that do not match these metadata fields and values (case-sensitive). Format is {"key1":"value1","key2":"value2"}.
+            asset_ids (List[int]): Filter out sequences that are not linked to any of these assets.
+            root_asset_ids (List[int]): Filter out sequences not linked to assets with one of these assets as the root asset.
+            created_time (Dict[str, Any]): Filter out sequences with createdTime outside this range.
+            last_updated_time (Dict[str, Any]): Filter out sequences with lastUpdatedTime outside this range.
             limit (int, optional): Max number of sequences to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all items.
 
@@ -135,7 +176,16 @@ class SequencesAPI(APIClient):
                 >>> for seq_list in c.sequences(chunk_size=2500):
                 ...     seq_list # do something with the sequences
         """
-        return self._list(method="GET", filter=None, limit=limit)
+        filter = SequenceFilter(
+            name=name,
+            metadata=metadata,
+            external_id_prefix=external_id_prefix,
+            asset_ids=asset_ids,
+            root_asset_ids=root_asset_ids,
+            created_time=created_time,
+            last_updated_time=last_updated_time,
+        ).dump(camel_case=True)
+        return self._list(method="POST", filter=filter, limit=limit)
 
     def create(self, sequence: Union[Sequence, List[Sequence]]) -> Union[Sequence, SequenceList]:
         """Create one or more sequences.
@@ -271,7 +321,10 @@ class SequencesDataAPI(APIClient):
     def insert(
         self,
         rows: Union[
-            Dict[int, List[Union[int, float, str]]], List[Tuple[int, Union[int, float, str]]], List[Dict[str, Any]]
+            Dict[int, List[Union[int, float, str]]],
+            List[Tuple[int, Union[int, float, str]]],
+            List[Dict[str, Any]],
+            SequenceData,
         ],
         column_ids: Optional[List[int]] = None,
         column_external_ids: Optional[List[str]] = None,
@@ -284,8 +337,8 @@ class SequencesDataAPI(APIClient):
             column_ids (Optional[List[int]]): List of ids for the columns of the sequence.
                 If 'None' is passed to both column_ids and columns_external_ids, all columns ids will be retrieved from metadata and used in that order.
             column_external_ids (Optional[List[str]]): List of external id for the columns of the sequence.
-            rows (Union[ Dict[int, List[Union[int, float, str]]], List[Tuple[int,Union[int, float, str]]], List[Dict[str,Any]]]):  The rows you wish to insert.
-                Can either be a list of tuples, a list of {"rowNumber":... ,"values": ...} objects or a dictionary of rowNumber: data. See examples below.
+            rows (Union[ Dict[int, List[Union[int, float, str]]], List[Tuple[int,Union[int, float, str]]], List[Dict[str,Any]], SequenceData]):  The rows you wish to insert.
+                Can either be a list of tuples, a list of {"rowNumber":... ,"values": ...} objects, a dictionary of rowNumber: data, or a SequenceData object. See examples below.
             id (int): Id of sequence to insert rows into.
             external_id (str): External id of sequence to insert rows into.
 
@@ -314,8 +367,20 @@ class SequencesDataAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> data = {123 : ['str',3], 456 : ['bar',42] }
                 >>> c.sequences.data.insert(column_external_ids=['stringColumn','intColumn'], rows=data, id=1)
+
+            Finally, they can be a SequenceData object retrieved from another request. In this case column_external_ids from this object are used as well.
+
+                >>> from cognite.client.experimental import CogniteClient
+                >>> c = CogniteClient()
+                >>> data = c.sequences.data.retrieve(id=2,start=0,end=10)
+                >>> c.sequences.data.insert(rows=data, id=1)
         """
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
+        if isinstance(rows, SequenceData):
+            if column_ids is None and column_external_ids is None and (None not in rows.column_external_ids):
+                column_external_ids = rows.column_external_ids
+            rows = [{"rowNumber": k, "values": v} for k, v in rows.items()]
+
         if column_ids is None and column_external_ids is None:
             column_ids = self._sequences_api.retrieve(id=id, external_id=external_id).column_ids
         if isinstance(rows, dict):

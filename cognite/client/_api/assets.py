@@ -42,8 +42,7 @@ class AssetsAPI(APIClient):
             last_updated_time (Dict[str, Any]): Range between two timestamps
             root (bool): filtered assets are root assets or not
             external_id_prefix (str): External Id provided by client. Should be unique within the project
-            limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None
-                to return all items.
+            limit (int, optional): Maximum number of assets to return. Defaults to return all items.
 
         Yields:
             Union[Asset, AssetList]: yields Asset one by one if chunk is not specified, else AssetList objects.
@@ -194,7 +193,7 @@ class AssetsAPI(APIClient):
         return self._list(method="POST", limit=limit, filter=filter)
 
     def create(self, asset: Union[Asset, List[Asset]]) -> Union[Asset, AssetList]:
-        """Create one or more assets.
+        """Create one or more assets. You can create an arbitrary number of assets, and the SDK will split the request into multiple requests.
 
         Args:
             asset (Union[Asset, List[Asset]]): Asset or list of assets to create.
@@ -213,9 +212,32 @@ class AssetsAPI(APIClient):
                 >>> res = c.assets.create(assets)
         """
         utils._auxiliary.assert_type(asset, "asset", [Asset, list])
-        if isinstance(asset, Asset) or len(asset) <= self._CREATE_LIMIT:
-            return self._create_multiple(asset)
-        return _AssetPoster(asset, client=self).post()
+        return self._create_multiple(asset)
+
+    def create_hierarchy(self, assets: List[Asset]) -> AssetList:
+        """Create asset hierarchy. Like the create() method, when posting a large number of assets, the IDE will split the request into smaller requests.
+        However, create_hierarchy() will additionally make sure that the assets are posted in correct order. The ordering is determined from the
+        external_id and parent_external_id properties of the assets, and the external_id is therefore required for all assets. Before posting, it is
+        checked that all assets have a unique external_id and that there are no circular dependencies.
+
+        Args:
+            assets (List[Asset]]): List of assets to create. Requires each asset to have a unique external id.
+
+        Returns:
+            AssetList: Created asset hierarchy
+
+        Examples:
+
+            Create asset hierarchy::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import Asset
+                >>> c = CogniteClient()
+                >>> assets = [Asset(external_id="root"), Asset(external_id="child1", parent_external_id="root"), Asset(external_id="child2", parent_external_id="root")]
+                >>> res = c.assets.create_hierarchy(assets)
+        """
+        utils._auxiliary.assert_type(assets, "assets", [list])
+        return _AssetPoster(assets, client=self).post()
 
     def delete(
         self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None, recursive: bool = False
@@ -374,14 +396,9 @@ class _AssetPoster:
         self.external_id_to_asset = {}
 
         for asset in assets:
-            asset_copy = Asset(**asset.dump())
-            external_id = asset.external_id
-            if external_id is None:
-                external_id = utils._auxiliary.random_string()
-                asset_copy.external_id = external_id
-            self.remaining_external_ids[external_id] = None
-            self.remaining_external_ids_set.add(external_id)
-            self.external_id_to_asset[external_id] = asset_copy
+            self.remaining_external_ids[asset.external_id] = None
+            self.remaining_external_ids_set.add(asset.external_id)
+            self.external_id_to_asset[asset.external_id] = asset
 
         self.client = client
 
@@ -409,10 +426,11 @@ class _AssetPoster:
     def _validate_asset_hierarchy(assets) -> None:
         external_ids_seen = set()
         for asset in assets:
-            if asset.external_id:
-                if asset.external_id in external_ids_seen:
-                    raise AssertionError("Duplicate external_id '{}' found".format(asset.external_id))
-                external_ids_seen.add(asset.external_id)
+            if asset.external_id is None:
+                raise AssertionError("An asset does not have external_id.")
+            if asset.external_id in external_ids_seen:
+                raise AssertionError("Duplicate external_id '{}' found".format(asset.external_id))
+            external_ids_seen.add(asset.external_id)
 
             parent_ref = asset.parent_external_id
             if parent_ref:
