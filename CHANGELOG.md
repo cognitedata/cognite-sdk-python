@@ -21,10 +21,12 @@ Changes are grouped as follows
 
 ## [Unreleased]
 
+## [1.1.1] - 2019-08-23
 ### Added
-- complete option on datapoints.retrieve_dataframe
-- include_aggregate_names option on datapoints.retrieve_dataframe and Datapoints(List).to_pandas
+- `complete` parameter on `datapoints.retrieve_dataframe`, used for forward-filling/interpolating intervals with missing data.
+- `include_aggregate_names` option on `datapoints.retrieve_dataframe` and `DatapointsList.to_pandas`, used for removing the `|<aggregate-name>` postfix on dataframe column headers.
 - datapoints.retrieve_dataframe_dict function, which returns {aggregate:dataframe} without adding aggregate names to columns
+- source_created_time and source_modified_time support for files
 
 ## [1.1.0] - 2019-08-21
 ### Added
@@ -34,7 +36,6 @@ Changes are grouped as follows
 - DatapointsAPI.insert now accepts a Datapoints object for easier copying
 - helper method `cognite.client.testing.mock_cognite_client()` for mocking CogniteClient
 - parent_id and parent_external_id to AssetUpdate class.
-- source_created_time and source_modified_time support for files
 
 ### Changed
 - assets.create() no longer validates asset hierarchy and sorts assets before posting. This functionality has been moved to assets.create_hierarchy().
