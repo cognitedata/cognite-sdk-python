@@ -21,6 +21,11 @@ Changes are grouped as follows
 
 ## [Unreleased]
 
+### Added
+- complete option on datapoints.retrieve_dataframe
+- include_aggregate_names option on datapoints.retrieve_dataframe and Datapoints(List).to_pandas
+- datapoints.retrieve_dataframe_dict function, which returns {aggregate:dataframe} without adding aggregate names to columns
+
 ## [1.1.0] - 2019-08-21
 ### Added
 - New method create_hierarchy() added to assets API.
@@ -28,9 +33,6 @@ Changes are grouped as follows
 - SequencesDataAPI.insert now accepts a SequenceData object for easier copying
 - DatapointsAPI.insert now accepts a Datapoints object for easier copying
 - helper method `cognite.client.testing.mock_cognite_client()` for mocking CogniteClient
-- complete option on datapoints.retrieve_dataframe
-- include_aggregate_names option on datapoints.retrieve_dataframe and Datapoints(List).to_pandas
-- datapoints.retrieve_dataframe_dict function, which returns {aggregate:dataframe} without adding aggregate names to columns
 - parent_id and parent_external_id to AssetUpdate class.
 - source_created_time and source_modified_time support for files
 
