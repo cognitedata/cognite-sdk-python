@@ -448,7 +448,7 @@ class DatapointsAPI(APIClient):
         df = pd.concat([id_df, external_id_df], axis="columns")
 
         complete = [s.strip() for s in (complete or "").split(",")]
-        if set(complete) - set(["fill", "dropna", ""]):
+        if set(complete) - {"fill", "dropna", ""}:
             raise ValueError("complete should be 'fill', 'fill,dropna' or Falsy")
 
         if "fill" in complete and df.shape[0] > 1:

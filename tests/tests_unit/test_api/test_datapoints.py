@@ -12,7 +12,7 @@ import pytest
 from cognite.client import CogniteClient, utils
 from cognite.client._api.datapoints import DatapointsBin, DatapointsFetcher, _DPTask, _DPWindow
 from cognite.client.data_classes import Datapoint, Datapoints, DatapointsList, DatapointsQuery
-from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
+from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError, CogniteDuplicateColumnsError
 from tests.utils import jsgz_load, set_request_limit
 
 COGNITE_CLIENT = CogniteClient()
@@ -752,6 +752,15 @@ class TestPandasIntegration:
         )
         pd.testing.assert_frame_equal(expected_df, d.to_pandas())
 
+    def test_datapoints_no_names(self):
+        import pandas as pd
+
+        d = Datapoints(id=1, timestamp=[1, 2, 3], average=[2, 3, 4])
+        expected_df = pd.DataFrame({"1": [2, 3, 4]}, index=[utils._time.ms_to_datetime(ms) for ms in [1, 2, 3]])
+        pd.testing.assert_frame_equal(expected_df, d.to_pandas(include_aggregate_name=False))
+        expected_df = pd.DataFrame({"1|average": [2, 3, 4]}, index=[utils._time.ms_to_datetime(ms) for ms in [1, 2, 3]])
+        pd.testing.assert_frame_equal(expected_df, d.to_pandas(include_aggregate_name=True))
+
     def test_id_and_external_id_set_gives_external_id_columns(self):
         import pandas as pd
 
@@ -784,6 +793,32 @@ class TestPandasIntegration:
             index=[utils._time.ms_to_datetime(ms) for ms in [1, 2, 3]],
         )
         pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas())
+
+    def test_datapoints_list_names(self):
+        import pandas as pd
+
+        d1 = Datapoints(id=2, timestamp=[1, 2, 3], max=[2, 3, 4])
+        d2 = Datapoints(id=3, timestamp=[1, 3], average=[1, 3])
+        dps_list = DatapointsList([d1, d2])
+        expected_df = pd.DataFrame(
+            {"2|max": [2, 3, 4], "3|average": [1, None, 3]}, index=[utils._time.ms_to_datetime(ms) for ms in [1, 2, 3]]
+        )
+        pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas())
+        expected_df.columns = [c[:1] for c in expected_df.columns]
+        pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas(include_aggregate_name=False))
+
+    def test_datapoints_list_names_dup(self):
+        import pandas as pd
+
+        d1 = Datapoints(id=2, timestamp=[1, 2, 3], max=[2, 3, 4])
+        d2 = Datapoints(id=2, timestamp=[1, 3], average=[1, 3])
+        dps_list = DatapointsList([d1, d2])
+        expected_df = pd.DataFrame(
+            {"2|max": [2, 3, 4], "2|average": [1, None, 3]}, index=[utils._time.ms_to_datetime(ms) for ms in [1, 2, 3]]
+        )
+        pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas())
+        with pytest.raises(CogniteDuplicateColumnsError):
+            df = dps_list.to_pandas(include_aggregate_name=False)
 
     def test_datapoints_list_non_aligned(self):
         import pandas as pd

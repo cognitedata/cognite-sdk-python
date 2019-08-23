@@ -184,3 +184,14 @@ class CogniteAPIKeyError(Exception):
     """
 
     pass
+
+class CogniteDuplicateColumnsError(Exception):
+    """Cognite Duplicate Columns Error
+
+    Raised if the user attempts to create a dataframe through include_aggregate_names=False which results in duplicate column names.
+    """
+    def __init__(self, dups):
+        self.message = "Can not remove aggregate names from this dataframe as it would result in duplicate column name(s) '{}'".format("', '".join(dups))
+
+    def __str__(self):
+        return self.message

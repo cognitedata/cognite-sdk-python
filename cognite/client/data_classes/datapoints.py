@@ -1,9 +1,11 @@
+import collections
 import re as regexp
 from datetime import datetime
 from typing import *
 
 import cognite.client.utils._time
 from cognite.client.data_classes._base import *
+from cognite.client.exceptions import CogniteDuplicateColumnsError
 
 
 class Datapoint(CogniteResource):
@@ -199,7 +201,10 @@ class Datapoints:
                 if attr != "value":
                     id_with_agg += "|{}".format(utils._auxiliary.to_camel_case(attr))
                 data_fields[id_with_agg] = value
-        return pd.DataFrame(data_fields, index=pd.DatetimeIndex(data=np.array(timestamps, dtype="datetime64[ms]")))
+        df = pd.DataFrame(data_fields, index=pd.DatetimeIndex(data=np.array(timestamps, dtype="datetime64[ms]")))
+        if not include_aggregate_name:
+            Datapoints._strip_aggregate_names(df)
+        return df
 
     def plot(self, *args, **kwargs) -> None:
         """Plot the datapoints."""
@@ -210,6 +215,11 @@ class Datapoints:
     @staticmethod
     def _strip_aggregate_names(df):
         df.rename(columns=lambda s: regexp.sub(r"\|\w+$", "", s), inplace=True)
+        print(len(set(df.columns)), df.shape[1])
+        if len(set(df.columns)) < df.shape[1]:
+            raise CogniteDuplicateColumnsError(
+                [item for item, count in collections.Counter(df.columns).items() if count > 1]
+            )
         return df
 
     @classmethod
@@ -290,11 +300,13 @@ class DatapointsList(CogniteResourceList):
         """
         pd = utils._auxiliary.local_import("pandas")
 
-        dfs = [
-            df.to_pandas(column_names=column_names, include_aggregate_name=include_aggregate_name) for df in self.data
-        ]
+        dfs = [df.to_pandas(column_names=column_names) for df in self.data]
         if dfs:
-            return pd.concat(dfs, axis="columns")
+            df = pd.concat(dfs, axis="columns")
+            if not include_aggregate_name:  # do not pass in to_pandas above, so we check for duplicate columns
+                Datapoints._strip_aggregate_names(df)
+            return df
+
         return pd.DataFrame()
 
     def plot(self, *args, **kwargs) -> None:
