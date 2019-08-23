@@ -21,6 +21,11 @@ Changes are grouped as follows
 
 ## [Unreleased]
 
+### Added
+- complete option on datapoints.retrieve_dataframe
+- include_aggregate_names option on datapoints.retrieve_dataframe and Datapoints(List).to_pandas
+- datapoints.retrieve_dataframe_dict function, which returns {aggregate:dataframe} without adding aggregate names to columns
+
 ## [1.1.0] - 2019-08-21
 ### Added
 - New method create_hierarchy() added to assets API.
