@@ -12,7 +12,7 @@ class RelationshipsAPI(APIClient):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._CREATE_LIMIT = 1000
+        self._CREATE_LIMIT = 250
 
     def __call__(
         self, chunk_size: int = None, limit: int = None

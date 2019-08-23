@@ -4,7 +4,7 @@ from typing import *
 from cognite.client.data_classes._base import *
 
 
-# GenClass: relationshipResponse
+# GenClass: relationshipResponse, relationship
 class Relationship(CogniteResource):
     """No description.
 
