@@ -21,6 +21,7 @@ Changes are grouped as follows
 
 ## [Unreleased]
 
+## [1.1.1] - 2019-08-23
 ### Added
 - complete option on datapoints.retrieve_dataframe
 - include_aggregate_names option on datapoints.retrieve_dataframe and Datapoints(List).to_pandas
