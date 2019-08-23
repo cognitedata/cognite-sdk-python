@@ -12,7 +12,7 @@ import pytest
 from cognite.client import CogniteClient, utils
 from cognite.client._api.datapoints import DatapointsBin, DatapointsFetcher, _DPTask, _DPWindow
 from cognite.client.data_classes import Datapoint, Datapoints, DatapointsList, DatapointsQuery
-from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError, CogniteDuplicateColumnsError
+from cognite.client.exceptions import CogniteAPIError, CogniteDuplicateColumnsError, CogniteNotFoundError
 from tests.utils import jsgz_load, set_request_limit
 
 COGNITE_CLIENT = CogniteClient()
@@ -814,7 +814,9 @@ class TestPandasIntegration:
         d2 = Datapoints(id=2, timestamp=[1, 3], average=[1, 3])
         dps_list = DatapointsList([d1, d2])
         expected_df = pd.DataFrame(
-            {"2|max": [2, 3, 4], "2|average": [1, None, 3]}, index=[utils._time.ms_to_datetime(ms) for ms in [1, 2, 3]]
+            {"2|max": [2, 3, 4], "2|average": [1, None, 3]},
+            index=[utils._time.ms_to_datetime(ms) for ms in [1, 2, 3]],
+            columns=["2|max", "2|average"],
         )
         pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas())
         with pytest.raises(CogniteDuplicateColumnsError):
