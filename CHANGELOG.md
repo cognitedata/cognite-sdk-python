@@ -20,6 +20,7 @@ Changes are grouped as follows
 - Separate read/write fields on data classes
 
 ## [Unreleased]
+- source_created_time and source_modified_time support for files
 
 ## [1.1.0] - 2019-08-21
 ### Added
@@ -29,7 +30,6 @@ Changes are grouped as follows
 - DatapointsAPI.insert now accepts a Datapoints object for easier copying
 - helper method `cognite.client.testing.mock_cognite_client()` for mocking CogniteClient
 - parent_id and parent_external_id to AssetUpdate class.
-- source_created_time and source_modified_time support for files
 
 ### Changed
 - assets.create() no longer validates asset hierarchy and sorts assets before posting. This functionality has been moved to assets.create_hierarchy().
