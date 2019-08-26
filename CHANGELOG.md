@@ -21,6 +21,9 @@ Changes are grouped as follows
 
 ## [Unreleased]
 
+### Fixed
+- id parameters and timestamps now accept any integer type including numpy.int64, so values from dataframes can be passed directly.
+
 ## [1.1.1] - 2019-08-23
 ### Added
 - `complete` parameter on `datapoints.retrieve_dataframe`, used for forward-filling/interpolating intervals with missing data.

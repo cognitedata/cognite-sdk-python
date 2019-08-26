@@ -463,3 +463,7 @@ class TestPandasIntegration:
         assert "metadata" not in df.columns
         assert 1 == df.loc["id"][0]
         assert "metadata-value" == df.loc["metadata-key"][0]
+
+    def test_asset_id_from_to_pandas(self, mock_assets_response):
+        df = ASSETS_API.retrieve(id=1).to_pandas()
+        ASSETS_API.retrieve(id=df.iloc[0]["id"])
