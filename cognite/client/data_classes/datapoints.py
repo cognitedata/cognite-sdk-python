@@ -321,6 +321,7 @@ class DatapointsList(CogniteResourceList):
         self.to_pandas().plot(*args, **kwargs)
         plt.show()
 
+
 class DatapointsQuery(CogniteResource):
     """Parameters describing a query for datapoints.
 
