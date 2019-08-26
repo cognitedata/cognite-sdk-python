@@ -21,6 +21,9 @@ Changes are grouped as follows
 
 ## [Unreleased]
 
+### Added
+- `limit' parameter on sequence data retrieval
+
 ## [1.1.1] - 2019-08-23
 ### Added
 - `complete` parameter on `datapoints.retrieve_dataframe`, used for forward-filling/interpolating intervals with missing data.

@@ -129,6 +129,18 @@ class TestSequencesDataAPI:
         assert 54321 == len(data)
         assert 6 == COGNITE_CLIENT.sequences.data._post.call_count  # 10k rows each of 54321 rows
 
+    def test_retrieve_paginate_limit_small(self, pretend_timeseries, post_spy):
+        data = COGNITE_CLIENT.sequences.data.retrieve(start=0, end=None, id=pretend_timeseries.id, limit=23)
+        assert 1 == len(data.values[0])
+        assert 23 == len(data)
+        assert 1 == COGNITE_CLIENT.sequences.data._post.call_count  # 10k rows each of 54321 rows
+
+    def test_retrieve_paginate_limit_paged(self, pretend_timeseries, post_spy):
+        data = COGNITE_CLIENT.sequences.data.retrieve_dataframe(start=0, end=None, id=pretend_timeseries.id, limit=40023)
+        assert 1 == data.shape[1]
+        assert 40023 == data.shape[0]
+        assert 5 == COGNITE_CLIENT.sequences.data._post.call_count
+
     def test_retrieve_one_column(self, named_long_str):
         dps = COGNITE_CLIENT.sequences.data.retrieve(
             id=named_long_str.id, start=42, end=43, column_external_ids=["strcol"]
