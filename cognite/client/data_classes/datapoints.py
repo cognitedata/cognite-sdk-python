@@ -131,9 +131,6 @@ class Datapoints:
         item["datapoints"] = utils._time.convert_time_attributes_to_datetime(item["datapoints"])
         return json.dumps(item, indent=4)
 
-    def __repr__(self):
-        return self.__str__()
-
     def __len__(self) -> int:
         return len(self.timestamp)
 
