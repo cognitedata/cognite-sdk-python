@@ -136,7 +136,9 @@ class TestSequencesDataAPI:
         assert 1 == COGNITE_CLIENT.sequences.data._post.call_count  # 10k rows each of 54321 rows
 
     def test_retrieve_paginate_limit_paged(self, pretend_timeseries, post_spy):
-        data = COGNITE_CLIENT.sequences.data.retrieve_dataframe(start=0, end=None, id=pretend_timeseries.id, limit=40023)
+        data = COGNITE_CLIENT.sequences.data.retrieve_dataframe(
+            start=0, end=None, id=pretend_timeseries.id, limit=40023
+        )
         assert 1 == data.shape[1]
         assert 40023 == data.shape[0]
         assert 5 == COGNITE_CLIENT.sequences.data._post.call_count
