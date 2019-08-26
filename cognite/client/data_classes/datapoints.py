@@ -277,6 +277,9 @@ class Datapoints:
             setattr(truncated_datapoints, attr, value[slice])
         return truncated_datapoints
 
+    def _repr_html_(self):
+        return self.to_pandas()._repr_html_()
+
 
 class DatapointsList(CogniteResourceList):
     _RESOURCE = Datapoints
@@ -309,12 +312,14 @@ class DatapointsList(CogniteResourceList):
 
         return pd.DataFrame()
 
+    def _repr_html_(self):
+        return self.to_pandas()._repr_html_()
+
     def plot(self, *args, **kwargs) -> None:
         """Plot the list of datapoints."""
         plt = utils._auxiliary.local_import("matplotlib.pyplot")
         self.to_pandas().plot(*args, **kwargs)
         plt.show()
-
 
 class DatapointsQuery(CogniteResource):
     """Parameters describing a query for datapoints.

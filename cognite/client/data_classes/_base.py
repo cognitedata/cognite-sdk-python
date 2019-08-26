@@ -132,6 +132,9 @@ class CogniteResource:
             df.loc[name] = [value]
         return df
 
+    def _repr_html_(self):
+        return self.to_pandas()._repr_html_()
+
 
 class CogniteResourceList(UserList):
     _RESOURCE = None
@@ -223,6 +226,9 @@ class CogniteResourceList(UserList):
         except ValueError:
             pass
         return df
+
+    def _repr_html_(self):
+        return self.to_pandas()._repr_html_()
 
     @classmethod
     def _load(cls, resource_list: Union[List, str], cognite_client=None):
