@@ -463,3 +463,8 @@ class TestPandasIntegration:
         assert "metadata" not in df.columns
         assert 1 == df.loc["id"][0]
         assert "metadata-value" == df.loc["metadata-key"][0]
+
+    # need subtree here to get list, since to_pandas on a single Asset gives int for id, but on AssetList it gives int64
+    def test_asset_id_from_to_pandas(self, mock_get_subtree):
+        df = COGNITE_CLIENT.assets.retrieve_subtree(id=1).to_pandas()
+        ASSETS_API.retrieve(id=df.iloc[0]["id"])

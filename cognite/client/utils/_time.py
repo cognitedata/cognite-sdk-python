@@ -1,3 +1,4 @@
+import numbers
 import re
 import time
 from datetime import datetime
@@ -76,9 +77,7 @@ def timestamp_to_ms(timestamp: Union[int, float, str, datetime]) -> int:
     Returns:
         int: Milliseconds since epoch representation of timestamp
     """
-    if isinstance(timestamp, int):
-        ms = timestamp
-    elif isinstance(timestamp, float):
+    if isinstance(timestamp, numbers.Number):  # float, int, int64 etc
         ms = int(timestamp)
     elif isinstance(timestamp, str):
         ms = int(round(time.time() * 1000)) - time_ago_to_ms(timestamp)
