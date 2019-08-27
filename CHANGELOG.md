@@ -21,14 +21,16 @@ Changes are grouped as follows
 
 ## [Unreleased]
 
-### Changed
-- Output in jupyter notebooks is now pandas-like by default, instead of outputting long json strings.
-
+## [1.1.2] - 2019-08-27
 ### Added
 - `limit` parameter on sequence data retrieval.
 
+### Changed
+- Output in jupyter notebooks is now pandas-like by default, instead of outputting long json strings.
+
 ### Fixed
 - id parameters and timestamps now accept any integer type including numpy.int64, so values from dataframes can be passed directly.
+- Compatibility fix for renaming of sequences cursor and start/end parameters in the API.
 
 ## [1.1.1] - 2019-08-23
 ### Added
