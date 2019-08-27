@@ -21,8 +21,11 @@ Changes are grouped as follows
 
 ## [Unreleased]
 
+### Changed
+- Output in jupyter notebooks is now pandas-like by default, instead of outputting long json strings.
+
 ### Added
-- `limit` parameter on sequence data retrieval
+- `limit` parameter on sequence data retrieval.
 - Support for relationships exposed through experimental client.
 
 ### Fixed

@@ -119,9 +119,6 @@ class TestCogniteResource:
         assert MyResource(1, "s") != MyResource(1)
         assert MyResource(1, "s") != MyResource(2, "t")
 
-    def test_repr(self):
-        assert json.dumps({"var_a": 1}, indent=4) == MyResource(1).__repr__()
-
     def test_str_repr(self):
         assert json.dumps({"var_a": 1}, indent=4) == MyResource(1).__str__()
         assert json.dumps({"var_a": 1.0}, indent=4) == MyResource(Decimal(1)).__str__()

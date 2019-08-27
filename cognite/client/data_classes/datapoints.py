@@ -131,9 +131,6 @@ class Datapoints:
         item["datapoints"] = utils._time.convert_time_attributes_to_datetime(item["datapoints"])
         return json.dumps(item, indent=4)
 
-    def __repr__(self):
-        return self.__str__()
-
     def __len__(self) -> int:
         return len(self.timestamp)
 
@@ -215,7 +212,6 @@ class Datapoints:
     @staticmethod
     def _strip_aggregate_names(df):
         df.rename(columns=lambda s: regexp.sub(r"\|\w+$", "", s), inplace=True)
-        print(len(set(df.columns)), df.shape[1])
         if len(set(df.columns)) < df.shape[1]:
             raise CogniteDuplicateColumnsError(
                 [item for item, count in collections.Counter(df.columns).items() if count > 1]
@@ -276,6 +272,9 @@ class Datapoints:
         for attr, value in self._get_non_empty_data_fields():
             setattr(truncated_datapoints, attr, value[slice])
         return truncated_datapoints
+
+    def _repr_html_(self):
+        return self.to_pandas()._repr_html_()
 
 
 class DatapointsList(CogniteResourceList):
