@@ -66,9 +66,6 @@ class CogniteResource:
         item = utils._time.convert_time_attributes_to_datetime(self.dump())
         return json.dumps(item, default=utils._auxiliary.json_dump_default, indent=4)
 
-    def __repr__(self):
-        return self.__str__()
-
     def __getattribute__(self, item):
         attr = super().__getattribute__(item)
         if item == "_cognite_client":
@@ -132,6 +129,9 @@ class CogniteResource:
             df.loc[name] = [value]
         return df
 
+    def _repr_html_(self):
+        return self.to_pandas()._repr_html_()
+
 
 class CogniteResourceList(UserList):
     _RESOURCE = None
@@ -178,9 +178,6 @@ class CogniteResourceList(UserList):
         item = utils._time.convert_time_attributes_to_datetime(self.dump())
         return json.dumps(item, default=utils._auxiliary.json_dump_default, indent=4)
 
-    def __repr__(self):
-        return self.__str__()
-
     def dump(self, camel_case: bool = False) -> List[Dict[str, Any]]:
         """Dump the instance into a json serializable Python data type.
 
@@ -223,6 +220,9 @@ class CogniteResourceList(UserList):
         except ValueError:
             pass
         return df
+
+    def _repr_html_(self):
+        return self.to_pandas()._repr_html_()
 
     @classmethod
     def _load(cls, resource_list: Union[List, str], cognite_client=None):
