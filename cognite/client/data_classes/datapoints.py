@@ -212,7 +212,6 @@ class Datapoints:
     @staticmethod
     def _strip_aggregate_names(df):
         df.rename(columns=lambda s: regexp.sub(r"\|\w+$", "", s), inplace=True)
-        print(len(set(df.columns)), df.shape[1])
         if len(set(df.columns)) < df.shape[1]:
             raise CogniteDuplicateColumnsError(
                 [item for item, count in collections.Counter(df.columns).items() if count > 1]
