@@ -500,17 +500,20 @@ class SequencesDataAPI(APIClient):
         column_external_ids: Optional[List[str]] = None,
         external_id: str = None,
         id: int = None,
+        limit: int = None,
     ) -> SequenceData:
         """Retrieve data from a sequence
 
         Args:
-            start (int): Row number to start from (inclusive)
-            end (int): Upper limit on the row number (exclusive)
+            start (int): Row number to start from (inclusive).
+            end (int): Upper limit on the row number (exclusive).
             column_ids (Optional[List[int]]): List of ids for the columns of the sequence.
                 If 'None' is passed to both column_ids and columns_external_ids, all columns will be retrieved.
             column_external_ids (Optional[List[str]]): List of external id for the columns of the sequence.
-            id (int): Id of sequence
-            external_id (str): External id of sequence
+            id (int): Id of sequence.
+            external_id (str): External id of sequence.
+            limit (int): Maximum number of rows to return.
+
 
         Returns:
             List of sequence data
@@ -528,7 +531,7 @@ class SequencesDataAPI(APIClient):
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
         post_obj = self._process_ids(id, external_id, wrap_ids=True)[0]
         post_obj.update(self._process_columns(column_ids=column_ids, column_external_ids=column_external_ids))
-        post_obj.update({"inclusiveFrom": start, "exclusiveTo": end})
+        post_obj.update({"inclusiveFrom": start, "exclusiveTo": end, "limit": limit})
         seqdata = []
         column_response = self._fetch_data(post_obj, lambda data: seqdata.extend(data))
         return SequenceData(id=id, external_id=external_id, rows=seqdata, columns=column_response)
@@ -541,6 +544,7 @@ class SequencesDataAPI(APIClient):
         column_external_ids: Optional[List[str]] = None,
         external_id: str = None,
         id: int = None,
+        limit: int = None,
     ):
         """Retrieve data from a sequence as a pandas dataframe
 
@@ -552,6 +556,7 @@ class SequencesDataAPI(APIClient):
             column_external_ids (Optional[List[str]]): List of external id for the columns of the sequence.
             id (int): Id of sequence
             external_id (str): External id of sequence.
+            limit (int): Maximum number of rows to return.
 
         Returns:
              pandas.DataFrame
@@ -562,20 +567,23 @@ class SequencesDataAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> df = c.sequences.data.retrieve_dataframe(id=0, start=0, end=None)
         """
-        return self.retrieve(start, end, column_ids, column_external_ids, external_id, id).to_pandas()
+        return self.retrieve(start, end, column_ids, column_external_ids, external_id, id, limit).to_pandas()
 
     def _fetch_data(self, task, callback):
-        task["limit"] = self._SEQ_RETRIEVE_LIMIT
+        remaining_limit = task.get("limit")
         columns = []
         cursor = None
         while True:
+            task["limit"] = min(self._SEQ_RETRIEVE_LIMIT, remaining_limit or self._SEQ_RETRIEVE_LIMIT)
             task["cursor"] = cursor
             items = self._post(url_path=self._DATA_PATH + "/list", json={"items": [task]}).json()["items"]
             data = items[0]["rows"]
             columns = columns or items[0]["columns"]
             callback(data)
             cursor = items[0].get("cursor")
-            if not cursor:
+            if remaining_limit:
+                remaining_limit -= len(data)
+            if not cursor or (remaining_limit is not None and remaining_limit <= 0):
                 break
         return columns
 

@@ -1,6 +1,7 @@
 import gzip
 import json as _json
 import logging
+import numbers
 import os
 import re
 from collections import UserList
@@ -499,7 +500,7 @@ class APIClient:
         if external_ids and not wrap_ids:
             raise ValueError("externalIds must be wrapped")
 
-        if isinstance(ids, int):
+        if isinstance(ids, numbers.Integral):
             ids = [ids]
         elif isinstance(ids, list) or ids is None:
             ids = ids or []
@@ -523,7 +524,7 @@ class APIClient:
 
     @staticmethod
     def _is_single_identifier(ids, external_ids):
-        single_id = isinstance(ids, int) and external_ids is None
+        single_id = isinstance(ids, numbers.Integral) and external_ids is None
         single_external_id = isinstance(external_ids, str) and ids is None
         return single_id or single_external_id
 
