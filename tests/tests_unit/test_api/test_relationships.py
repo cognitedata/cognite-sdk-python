@@ -126,7 +126,7 @@ class TestRelationships:
             assert isinstance(res, Relationship)
 
         for call in mock_rel_response.calls:
-            it = json.loads(gzip.decompress(call.request.body))["items"][0]
+            it = json.loads(gzip.decompress(call.request.body).decode("utf-8"))["items"][0]
             assert isinstance(it["source"], dict)
             assert isinstance(it["target"], dict)
 
