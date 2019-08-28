@@ -24,6 +24,8 @@ Changes are grouped as follows
 ## [1.1.2] - 2019-08-27
 ### Added
 - `limit` parameter on sequence data retrieval.
+- Support for relationships exposed through experimental client.
+- `end` parameter of sequence.data retrieval and range delete accepts -1 to indicate last index of sequence.
 
 ### Changed
 - Output in jupyter notebooks is now pandas-like by default, instead of outputting long json strings.
