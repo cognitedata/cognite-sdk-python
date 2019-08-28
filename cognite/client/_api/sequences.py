@@ -578,11 +578,11 @@ class SequencesDataAPI(APIClient):
         remaining_limit = task.get("limit")
         columns = []
         cursor = None
+        if task["exclusiveTo"] == -1:
+            task["exclusiveTo"] = None
         while True:
             task["limit"] = min(self._SEQ_RETRIEVE_LIMIT, remaining_limit or self._SEQ_RETRIEVE_LIMIT)
             task["cursor"] = cursor
-            if task["exclusiveTo"] == -1:
-                task["exclusiveTo"] = None
             items = self._post(url_path=self._DATA_PATH + "/list", json={"items": [task]}).json()["items"]
             data = items[0]["rows"]
             columns = columns or items[0]["columns"]
