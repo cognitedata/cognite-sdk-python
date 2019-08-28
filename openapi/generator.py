@@ -84,9 +84,11 @@ class ClassGenerator:
 
     @staticmethod
     def _get_schema_description(schema):
+        desc = schema.get("description")
         if "allOf" in schema:
             schema = schema["allOf"][0]
-        return schema.get("description", "No description.")
+            desc = desc or schema.get("description")
+        return (desc or "No description.").replace("\n", " ")
 
     @staticmethod
     def _get_schema_properties(schema):

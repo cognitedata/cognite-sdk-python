@@ -9,21 +9,16 @@ class Relationship(CogniteResource):
     """No description.
 
     Args:
-        source (Dict[str, Any]): If resource is `threeD` or `threeDRevision` the `resourceId` is a set of internal ids concatenated by a colons. Otherwise, the resourceId follows the formatting rules as described in `resourceId`.
-
-If resource id of type `threeD`, the externalId must follow the pattern `<nodeId>:<modelId>:<revisionId>`. If resource id of type `threeDRevision`, the externalId must follow the pattern `<revisionId>:<modelId>`. The values `<nodeId>`, `<modelId>` and `<revisionId>` are the corresponding internal ids to identify the referenced resource uniquely.
-        target (Dict[str, Any]): If resource is `threeD` or `threeDRevision` the `resourceId` is a set of internal ids concatenated by a colons. Otherwise, the resourceId follows the formatting rules as described in `resourceId`.
-
-If resource id of type `threeD`, the externalId must follow the pattern `<nodeId>:<modelId>:<revisionId>`. If resource id of type `threeDRevision`, the externalId must follow the pattern `<revisionId>:<modelId>`. The values `<nodeId>`, `<modelId>` and `<revisionId>` are the corresponding internal ids to identify the referenced resource uniquely.
-        start_time (float): Unix timestamp representing when a relationship among the resources was established (physically).
-        end_time (float): Unix timestamp representing when a relationship among the resources stopped to exist (physically).
-        confidence (float): Confidence value of the existence of this relationship. Humans should enter 1.0 usually, generated relationships should provide a realistic score on the likelihood of the existence of the relationship.
-Generated relationships should never have the a confidence score of 1.0.
+        source (Dict[str, Any]): Reference by external id to the source of the relationship. Since it is a reference by external id, the targeted resource may or may not exist in CDF.  If resource is `threeD` or `threeDRevision` the `resourceId` is a set of internal ids concatenated by a colons. Otherwise, the resourceId follows the formatting rules as described in `resourceId`.  If resource id of type `threeD`, the externalId must follow the pattern `<nodeId>:<modelId>:<revisionId>`. If resource id of type `threeDRevision`, the externalId must follow the pattern `<revisionId>:<modelId>`. The values `<nodeId>`, `<modelId>` and `<revisionId>` are the corresponding internal ids to identify the referenced resource uniquely.
+        target (Dict[str, Any]): Reference by external id to the target of the relationship. Since it is a reference by external id, the targeted resource may or may not exist in CDF.  If resource is `threeD` or `threeDRevision` the `resourceId` is a set of internal ids concatenated by a colons. Otherwise, the resourceId follows the formatting rules as described in `resourceId`.  If resource id of type `threeD`, the externalId must follow the pattern `<nodeId>:<modelId>:<revisionId>`. If resource id of type `threeDRevision`, the externalId must follow the pattern `<revisionId>:<modelId>`. The values `<nodeId>`, `<modelId>` and `<revisionId>` are the corresponding internal ids to identify the referenced resource uniquely.
+        start_time (float): Time when this relationship was established in milliseconds since Jan 1, 1970.
+        end_time (float): Time when this relationship was ceased to exist in milliseconds since Jan 1, 1970.
+        confidence (float): Confidence value of the existence of this relationship. Humans should enter 1.0 usually, generated relationships should provide a realistic score on the likelihood of the existence of the relationship. Generated relationships should never have the a confidence score of 1.0.
         data_set (str): String describing the source system storing or generating the relationship.
         external_id (str): Disallowing leading and trailing whitespaces. Case sensitive. The external Id must be unique within the project.
-        relationship_type (str): No description.
-        created_time (float): No description.
-        last_updated_time (float): No description.
+        relationship_type (str): Type of the relationship in order to distinguish between different relationships. E.g. a flow through a pipe can be naturally represented by a `flowsTo`-relationship. On the other hand an alternative asset hierarchy can be represented with the `isParentOf`-relationship.
+        created_time (float): Time when this relationship was created in CDF in milliseconds since Jan 1, 1970.
+        last_updated_time (float): Time when this relationship was last updated in CDF in milliseconds since Jan 1, 1970.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 

@@ -13,7 +13,6 @@ from cognite.client.data_classes import (
     FileMetadata,
     Relationship,
     RelationshipList,
-    RelationshipUpdate,
     Sequence,
     ThreeDModel,
     ThreeDModelRevision,
