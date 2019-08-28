@@ -1026,3 +1026,35 @@ Data classes
 .. automodule:: cognite.client.data_classes.sequences
     :members:
     :show-inheritance:
+
+
+Relationships
+-------------
+.. WARNING::
+    The relationships API is experimental and subject to breaking changes. It should not be used in production code.
+
+Retrieve a relationship by id
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.relationships.RelationshipsAPI.retrieve
+
+Retrieve multiple relationships by id
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.relationships.RelationshipsAPI.retrieve_multiple
+
+List relationships
+^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.relationships.RelationshipsAPI.list
+
+Create a relationship
+^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.relationships.RelationshipsAPI.create
+
+Delete relationships
+^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.relationships.RelationshipsAPI.delete
+
+Data classes
+^^^^^^^^^^^^
+.. automodule:: cognite.client.data_classes.relationships
+    :members:
+    :show-inheritance:

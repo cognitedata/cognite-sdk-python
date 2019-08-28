@@ -3,7 +3,6 @@ from typing import *
 from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Relationship, RelationshipList
-from cognite.client.exceptions import CogniteAPIError
 
 
 class RelationshipsAPI(APIClient):
@@ -60,7 +59,7 @@ class RelationshipsAPI(APIClient):
         """
         return self._retrieve_multiple(external_ids=external_id, wrap_ids=True)
 
-    def retrieve_multiple(self, external_ids: Optional[List[str]] = None) -> RelationshipList:
+    def retrieve_multiple(self, external_ids: List[str]) -> RelationshipList:
         """Retrieve multiple relationships by external id.
 
         Args:
