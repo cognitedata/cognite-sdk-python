@@ -489,7 +489,7 @@ class SequencesDataAPI(APIClient):
         sequence = self._sequences_api.retrieve(id=id, external_id=external_id)
         post_obj = self._process_ids(id, external_id, wrap_ids=True)[0]
         post_obj.update(self._process_columns(column_ids=[sequence.column_ids[0]], column_external_ids=None))
-        post_obj.update({"inclusiveFrom": start, "exclusiveTo": end})
+        post_obj.update({"start": start, "end": end})
         for data, _ in self._fetch_data(post_obj):
             self.delete(rows=[r["rowNumber"] for r in data], external_id=external_id, id=id)
 
@@ -533,7 +533,7 @@ class SequencesDataAPI(APIClient):
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
         post_obj = self._process_ids(id, external_id, wrap_ids=True)[0]
         post_obj.update(self._process_columns(column_ids=column_ids, column_external_ids=column_external_ids))
-        post_obj.update({"inclusiveFrom": start, "exclusiveTo": end, "limit": limit})
+        post_obj.update({"start": start, "end": end, "limit": limit})
         seqdata = []
         columns = []
         for data, columns in self._fetch_data(post_obj):
@@ -578,8 +578,8 @@ class SequencesDataAPI(APIClient):
         remaining_limit = task.get("limit")
         columns = []
         cursor = None
-        if task["exclusiveTo"] == -1:
-            task["exclusiveTo"] = None
+        if task["end"] == -1:
+            task["end"] = None
         while True:
             task["limit"] = min(self._SEQ_RETRIEVE_LIMIT, remaining_limit or self._SEQ_RETRIEVE_LIMIT)
             task["cursor"] = cursor
@@ -587,7 +587,7 @@ class SequencesDataAPI(APIClient):
             data = items[0]["rows"]
             columns = columns or items[0]["columns"]
             yield data, columns
-            cursor = items[0].get("cursor")
+            cursor = items[0].get("nextCursor")
             if remaining_limit:
                 remaining_limit -= len(data)
             if not cursor or (remaining_limit is not None and remaining_limit <= 0):
