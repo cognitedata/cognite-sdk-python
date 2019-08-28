@@ -466,12 +466,13 @@ class SequencesDataAPI(APIClient):
 
         self._post(url_path=self._DATA_PATH + "/delete", json={"items": [post_obj]})
 
-    def delete_range(self, start: int, end: int, id: int = None, external_id: str = None) -> None:
+    def delete_range(self, start: int, end: Union[int, None], id: int = None, external_id: str = None) -> None:
         """Delete a range of rows from a sequence. Note this operation is potentially slow, as retrieves each row before deleting.
 
         Args:
             start (int): Row number to start from (inclusive).
-            end (int): Upper limit on the row number (exclusive).
+            end (Union[int, None]): Upper limit on the row number (exclusive).
+                Set to None or -1 to delete all rows until end of sequence.
             id (int): Id of sequence to delete rows from.
             external_id (str): External id of sequence to delete rows from.
 
@@ -484,18 +485,18 @@ class SequencesDataAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.sequences.data.delete_range(id=0, start=0, end=None)
         """
-        deleter = lambda data: self.delete(rows=[r["rowNumber"] for r in data], external_id=external_id, id=id)
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
         sequence = self._sequences_api.retrieve(id=id, external_id=external_id)
         post_obj = self._process_ids(id, external_id, wrap_ids=True)[0]
         post_obj.update(self._process_columns(column_ids=[sequence.column_ids[0]], column_external_ids=None))
         post_obj.update({"inclusiveFrom": start, "exclusiveTo": end})
-        self._fetch_data(post_obj, deleter)
+        for data, _ in self._fetch_data(post_obj):
+            self.delete(rows=[r["rowNumber"] for r in data], external_id=external_id, id=id)
 
     def retrieve(
         self,
         start: int,
-        end: int,
+        end: Union[int, None],
         column_ids: Optional[List[int]] = None,
         column_external_ids: Optional[List[str]] = None,
         external_id: str = None,
@@ -506,7 +507,8 @@ class SequencesDataAPI(APIClient):
 
         Args:
             start (int): Row number to start from (inclusive).
-            end (int): Upper limit on the row number (exclusive).
+            end (Union[int, None]): Upper limit on the row number (exclusive). Set to None or -1 to get all rows
+                until end of sequence.
             column_ids (Optional[List[int]]): List of ids for the columns of the sequence.
                 If 'None' is passed to both column_ids and columns_external_ids, all columns will be retrieved.
             column_external_ids (Optional[List[str]]): List of external id for the columns of the sequence.
@@ -533,13 +535,15 @@ class SequencesDataAPI(APIClient):
         post_obj.update(self._process_columns(column_ids=column_ids, column_external_ids=column_external_ids))
         post_obj.update({"inclusiveFrom": start, "exclusiveTo": end, "limit": limit})
         seqdata = []
-        column_response = self._fetch_data(post_obj, lambda data: seqdata.extend(data))
-        return SequenceData(id=id, external_id=external_id, rows=seqdata, columns=column_response)
+        columns = []
+        for data, columns in self._fetch_data(post_obj):
+            seqdata.extend(data)
+        return SequenceData(id=id, external_id=external_id, rows=seqdata, columns=columns)
 
     def retrieve_dataframe(
         self,
         start: int,
-        end: int,
+        end: Union[int, None],
         column_ids: Optional[List[int]] = None,
         column_external_ids: Optional[List[str]] = None,
         external_id: str = None,
@@ -550,7 +554,8 @@ class SequencesDataAPI(APIClient):
 
         Args:
             start: (inclusive) row number to start from.
-            end: (exclusive) upper limit on the row number.
+            end: (exclusive) upper limit on the row number. Set to None or -1 to get all rows
+                until end of sequence.
             column_ids (Optional[List[int]]): List of ids for the columns of the sequence.
                 If 'None' is passed to both column_ids and columns_external_ids, all columns will be retrieved.
             column_external_ids (Optional[List[str]]): List of external id for the columns of the sequence.
@@ -569,23 +574,24 @@ class SequencesDataAPI(APIClient):
         """
         return self.retrieve(start, end, column_ids, column_external_ids, external_id, id, limit).to_pandas()
 
-    def _fetch_data(self, task, callback):
+    def _fetch_data(self, task) -> Generator[Tuple[List, List], None, None]:
         remaining_limit = task.get("limit")
         columns = []
         cursor = None
         while True:
             task["limit"] = min(self._SEQ_RETRIEVE_LIMIT, remaining_limit or self._SEQ_RETRIEVE_LIMIT)
             task["cursor"] = cursor
+            if task["exclusiveTo"] == -1:
+                task["exclusiveTo"] = None
             items = self._post(url_path=self._DATA_PATH + "/list", json={"items": [task]}).json()["items"]
             data = items[0]["rows"]
             columns = columns or items[0]["columns"]
-            callback(data)
+            yield data, columns
             cursor = items[0].get("cursor")
             if remaining_limit:
                 remaining_limit -= len(data)
             if not cursor or (remaining_limit is not None and remaining_limit <= 0):
                 break
-        return columns
 
     def _process_columns(self, column_ids, column_external_ids):
         if column_ids is not None and column_external_ids is not None:
