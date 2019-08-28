@@ -553,8 +553,8 @@ class SequencesDataAPI(APIClient):
         """Retrieve data from a sequence as a pandas dataframe
 
         Args:
-            start: (inclusive) row number to start from.
-            end: (exclusive) upper limit on the row number. Set to None or -1 to get all rows
+            start (int): (inclusive) row number to start from.
+            end (Union[int, None]): (exclusive) upper limit on the row number. Set to None or -1 to get all rows
                 until end of sequence.
             column_ids (Optional[List[int]]): List of ids for the columns of the sequence.
                 If 'None' is passed to both column_ids and columns_external_ids, all columns will be retrieved.
