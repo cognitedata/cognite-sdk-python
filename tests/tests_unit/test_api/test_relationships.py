@@ -71,11 +71,13 @@ class TestRelationships:
         res = REL_API.retrieve(external_id="a")
         assert isinstance(res, Relationship)
         assert mock_rel_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
+        assert {"items": [{"externalId": "a"}]} == jsgz_load(mock_rel_response.calls[0].request.body)
 
     def test_retrieve_multiple(self, mock_rel_response):
         res = REL_API.retrieve_multiple(external_ids=["a"])
         assert isinstance(res, RelationshipList)
         assert mock_rel_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
+        assert {"items": [{"externalId": "a"}]} == jsgz_load(mock_rel_response.calls[0].request.body)
 
     def test_list(self, mock_rel_response):
         res = REL_API.list()
