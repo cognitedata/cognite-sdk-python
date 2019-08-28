@@ -350,6 +350,10 @@ class TestSequences:
         assert isinstance(data, SequenceData)
         assert 1 == len(data)
 
+    def test_retrieve_neg_1_end_index(self, mock_seq_response, mock_get_sequence_data):
+        SEQ_API.data.retrieve(id=123, start=123, end=-1)
+        assert jsgz_load(mock_get_sequence_data.calls[0].request.body)["items"][0]["exclusiveTo"] is None
+
     def test_delete_by_id(self, mock_delete_sequence_data):
         res = SEQ_API.data.delete(id=1, rows=[1, 2, 3])
         assert res is None

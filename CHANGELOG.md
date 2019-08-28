@@ -27,6 +27,7 @@ Changes are grouped as follows
 ### Added
 - `limit` parameter on sequence data retrieval.
 - Support for relationships exposed through experimental client.
+- `end` parameter of sequence.data retrieval and range delete accepts -1 to indicate last index of sequence.
 
 ### Fixed
 - id parameters and timestamps now accept any integer type including numpy.int64, so values from dataframes can be passed directly.
