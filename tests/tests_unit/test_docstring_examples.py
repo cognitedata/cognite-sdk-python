@@ -3,7 +3,19 @@ from unittest import TextTestRunner, mock
 
 import pytest
 
-from cognite.client._api import assets, datapoints, events, files, iam, login, raw, sequences, three_d, time_series
+from cognite.client._api import (
+    assets,
+    datapoints,
+    events,
+    files,
+    iam,
+    login,
+    raw,
+    relationships,
+    sequences,
+    three_d,
+    time_series,
+)
 
 # this fixes the issue with 'got MagicMock but expected Nothing in docstrings'
 doctest.OutputChecker.__check_output = doctest.OutputChecker.check_output
@@ -53,3 +65,6 @@ class TestDocstringExamples:
 class TestDocstringExamplesExperimental:
     def test_sequences(self):
         run_docstring_tests(sequences)
+
+    def test_relationships(self):
+        run_docstring_tests(relationships)
