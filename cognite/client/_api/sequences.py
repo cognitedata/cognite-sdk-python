@@ -578,8 +578,8 @@ class SequencesDataAPI(APIClient):
         remaining_limit = task.get("limit")
         columns = []
         cursor = None
-        if task["exclusiveTo"] == -1:
-            task["exclusiveTo"] = None
+        if task["end"] == -1:
+            task["end"] = None
         while True:
             task["limit"] = min(self._SEQ_RETRIEVE_LIMIT, remaining_limit or self._SEQ_RETRIEVE_LIMIT)
             task["cursor"] = cursor
