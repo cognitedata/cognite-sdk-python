@@ -21,7 +21,10 @@ Changes are grouped as follows
 
 ## [Unreleased]
 
-## [1.1.2] - 2019-08-27
+### Fixed
+- `to_pandas` method on CogniteResource in the case of objects without metadata
+
+## [1.1.2] - 2019-08-28
 ### Added
 - `limit` parameter on sequence data retrieval.
 - Support for relationships exposed through experimental client.
