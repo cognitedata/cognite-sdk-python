@@ -119,10 +119,11 @@ class CogniteResource:
         for element in ignore:
             del dumped[element]
         for key in expand:
-            if key in dumped and isinstance(dumped[key], dict):
-                dumped.update(dumped.pop(key))
-            else:
-                raise AssertionError("Could not expand attribute '{}'".format(key))
+            if key in dumped:
+                if isinstance(dumped[key], dict):
+                    dumped.update(dumped.pop(key))
+                else:
+                    raise AssertionError("Could not expand attribute '{}'".format(key))
 
         df = pd.DataFrame(columns=["value"])
         for name, value in dumped.items():
