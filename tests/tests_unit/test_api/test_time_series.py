@@ -258,6 +258,3 @@ class TestPandasIntegration:
         assert "metadata" not in df.columns
         assert [0] == df.loc["securityCategories"][0]
         assert "metadata-value" == df.loc["metadata-key"][0]
-
-    def test_pandas_no_metadata(self):
-        TimeSeries(id=123)._repr_html_()
