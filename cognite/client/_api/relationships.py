@@ -28,7 +28,7 @@ class RelationshipsAPI(APIClient):
         Yields:
             Union[Relationship, RelationshipList]: yields Relationship one by one if chunk is not specified, else RelationshipList objects.
         """
-        return self._list_generator(method="POST", chunk_size=chunk_size, limit=limit)
+        return self._list_generator(method="GET", chunk_size=chunk_size, limit=limit)
 
     def __iter__(self) -> Generator[Relationship, None, None]:
         """Iterate over relationships
