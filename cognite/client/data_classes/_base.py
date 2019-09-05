@@ -105,13 +105,17 @@ class CogniteResource:
             return instance
         raise TypeError("Resource must be json str or Dict, not {}".format(type(resource)))
 
-    def to_pandas(self, expand: List[str] = None, ignore: List[str] = None):
+    def to_pandas(self, expand: List[str] = ("metadata",), ignore: List[str] = None):
         """Convert the instance into a pandas DataFrame.
+
+        Args:
+            expand (List[str]): List of row keys to expand, only works if the value is a Dict.
+                Will expand metadata by default.
+            ignore (List[str]): List of row keys to not include when converting to a data frame.
 
         Returns:
             pandas.DataFrame: The dataframe.
         """
-        expand = ["metadata"] if expand is None else expand
         ignore = [] if ignore is None else ignore
         pd = utils._auxiliary.local_import("pandas")
         dumped = self.dump(camel_case=True)
