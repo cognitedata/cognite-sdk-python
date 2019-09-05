@@ -18,7 +18,7 @@ Fusion (CDF).
 ## Documentation
 * [SDK Documentation](https://cognite-docs.readthedocs-hosted.com/en/latest/)
 * [API Documentation](https://doc.cognitedata.com/)
-* [API Guide](https://doc.cognitedata.com/guides/api-guide.html)
+* [Cognite Developer Documentation](https://docs.cognite.com/dev/)
 
 ## Prerequisites
 In order to start using the Python SDK, you need
