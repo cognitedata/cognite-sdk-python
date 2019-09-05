@@ -5,6 +5,7 @@ import numbers
 import os
 import re
 from collections import UserList
+from http import cookiejar
 from typing import Any, Dict, List, Union
 from urllib.parse import urljoin
 
@@ -21,6 +22,12 @@ from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 log = logging.getLogger("cognite-sdk")
 
 
+class BlockAll(cookiejar.CookiePolicy):
+    return_ok = set_ok = domain_return_ok = path_return_ok = lambda self, *args, **kwargs: False
+    netscape = True
+    rfc2965 = hide_cookie2 = False
+
+
 class RetryWithMaxBackoff(Retry):
     def get_backoff_time(self):
         return min(utils._client_config._DefaultConfig().max_retry_backoff, super().get_backoff_time())
@@ -29,6 +36,11 @@ class RetryWithMaxBackoff(Retry):
 def _init_requests_session():
     session = Session()
     session_with_retry = Session()
+
+    cookies_policy = BlockAll()
+    session.cookies.set_policy(cookies_policy)
+    session_with_retry.cookies.set_policy(cookies_policy)
+
     config = utils._client_config._DefaultConfig()
     adapter = HTTPAdapter(
         max_retries=RetryWithMaxBackoff(
