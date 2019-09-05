@@ -21,6 +21,10 @@ Changes are grouped as follows
 
 ## [Unreleased]
 
+## [1.1.3] - 2019-09-05
+### Changed
+- Disabled automatic handling of cookies on the requests session objects
+
 ### Fixed
 - `to_pandas` method on CogniteResource in the case of objects without metadata
 
