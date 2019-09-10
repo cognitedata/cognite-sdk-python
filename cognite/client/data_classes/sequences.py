@@ -220,8 +220,8 @@ class SequenceData:
     def __str__(self):
         return json.dumps(self.dump(), indent=4)
 
-    def __repr__(self):
-        return self.__str__()
+    def _repr_html_(self):
+        return self.to_pandas()._repr_html_()
 
     def __len__(self) -> int:
         return len(self.row_numbers)
