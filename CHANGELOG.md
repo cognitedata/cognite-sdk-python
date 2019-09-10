@@ -21,6 +21,12 @@ Changes are grouped as follows
 
 ## [Unreleased]
 
+### Added
+- `root_asset_ids` parameter for time series list.
+
+### Changed
+- Formatted output in jupyter notebooks for `SequenceData`.
+
 ## [1.1.3] - 2019-09-05
 ### Changed
 - Disabled automatic handling of cookies on the requests session objects

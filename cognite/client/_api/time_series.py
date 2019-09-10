@@ -24,8 +24,8 @@ class TimeSeriesAPI(APIClient):
         Args:
             chunk_size (int, optional): Number of time series to return in each chunk. Defaults to yielding one event a time.
             include_metadata (bool, optional): Whether or not to include metadata
-            asset_id (List[int], optional): List time series related to these assets.
-            root_asset_id (List[int], optional): List time series related to assets under these root assets.
+            asset_ids (List[int], optional): List time series related to these assets.
+            root_asset_ids (List[int], optional): List time series related to assets under these root assets.
             limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all items.
 
@@ -120,7 +120,7 @@ class TimeSeriesAPI(APIClient):
         Args:
             include_metadata (bool, optional): Whether or not to include metadata
             asset_ids (List[int], optional): List time series related to these assets.
-            root_asset_id (List[int], optional): List time series related to assets under these root assets.
+            root_asset_ids (List[int], optional): List time series related to assets under these root assets.
             limit (int, optional): Max number of time series to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all items.
 
