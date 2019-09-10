@@ -65,6 +65,15 @@ class TestTimeSeries:
         for i in range(len(mock_ts_response.calls)):
             assert "assetIds=%5B1%5D" in mock_ts_response.calls[i].request.url
 
+    @pytest.mark.dsl
+    def test_list_with_root_asset_ids(self, mock_ts_response):
+        import numpy
+
+        TS_API.list(root_asset_ids=[1])
+        TS_API.list(root_asset_ids=[numpy.int64(1)])
+        for i in range(len(mock_ts_response.calls)):
+            assert "rootAssetIds=%5B1%5D" in mock_ts_response.calls[i].request.url
+
     def test_create_single(self, mock_ts_response):
         res = TS_API.create(TimeSeries(external_id="1", name="blabla"))
         assert isinstance(res, TimeSeries)

@@ -10,7 +10,12 @@ class TimeSeriesAPI(APIClient):
     _LIST_CLASS = TimeSeriesList
 
     def __call__(
-        self, chunk_size: int = None, include_metadata: bool = False, asset_ids: List[int] = None, limit: int = None
+        self,
+        chunk_size: int = None,
+        include_metadata: bool = False,
+        asset_ids: Optional[List[int]] = None,
+        root_asset_ids: Optional[List[int]] = None,
+        limit: int = None,
     ) -> Generator[Union[TimeSeries, TimeSeriesList], None, None]:
         """Iterate over time series
 
@@ -19,14 +24,19 @@ class TimeSeriesAPI(APIClient):
         Args:
             chunk_size (int, optional): Number of time series to return in each chunk. Defaults to yielding one event a time.
             include_metadata (bool, optional): Whether or not to include metadata
-            asset_id (int, optional): List time series related to this asset.
+            asset_ids (List[int], optional): List time series related to these assets.
+            root_asset_ids (List[int], optional): List time series related to assets under these root assets.
             limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all items.
 
         Yields:
             Union[TimeSeries, TimeSeriesList]: yields TimeSeries one by one if chunk is not specified, else TimeSeriesList objects.
         """
-        filter = {"includeMetadata": include_metadata, "assetIds": str(asset_ids) if asset_ids else None}
+        filter = {
+            "includeMetadata": include_metadata,
+            "assetIds": str(asset_ids) if asset_ids else None,
+            "rootAssetIds": str(root_asset_ids) if root_asset_ids else None,
+        }
         return self._list_generator(method="GET", chunk_size=chunk_size, filter=filter, limit=limit)
 
     def __iter__(self) -> Generator[TimeSeries, None, None]:
@@ -97,7 +107,11 @@ class TimeSeriesAPI(APIClient):
         return self._retrieve_multiple(ids=ids, external_ids=external_ids, wrap_ids=True)
 
     def list(
-        self, include_metadata: bool = True, asset_ids: Optional[List[int]] = None, limit: int = 25
+        self,
+        include_metadata: bool = True,
+        asset_ids: Optional[List[int]] = None,
+        root_asset_ids: Optional[List[int]] = None,
+        limit: int = 25,
     ) -> TimeSeriesList:
         """Iterate over time series
 
@@ -106,6 +120,7 @@ class TimeSeriesAPI(APIClient):
         Args:
             include_metadata (bool, optional): Whether or not to include metadata
             asset_ids (List[int], optional): List time series related to these assets.
+            root_asset_ids (List[int], optional): List time series related to assets under these root assets.
             limit (int, optional): Max number of time series to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all items.
 
@@ -134,7 +149,11 @@ class TimeSeriesAPI(APIClient):
                 >>> for ts_list in c.time_series(chunk_size=2500):
                 ...     ts_list # do something with the time_series
         """
-        filter = {"includeMetadata": include_metadata, "assetIds": str(asset_ids) if asset_ids else None}
+        filter = {
+            "includeMetadata": include_metadata,
+            "assetIds": str(asset_ids) if asset_ids else None,
+            "rootAssetIds": str(root_asset_ids) if root_asset_ids else None,
+        }
         return self._list(method="GET", filter=filter, limit=limit)
 
     def create(self, time_series: Union[TimeSeries, List[TimeSeries]]) -> Union[TimeSeries, TimeSeriesList]:
