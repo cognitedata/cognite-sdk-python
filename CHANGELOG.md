@@ -26,6 +26,7 @@ Changes are grouped as follows
 
 ### Changed
 - Formatted output in jupyter notebooks for `SequenceData`.
+- Log requests at DEBUG level instead of INFO.
 
 ## [1.1.3] - 2019-09-05
 ### Changed
