@@ -27,6 +27,7 @@ Changes are grouped as follows
 ### Changed
 - Formatted output in jupyter notebooks for `SequenceData`.
 - `retrieve_latest` function in theDatapoints API extended to support more than 100 items.
+- Log requests at DEBUG level instead of INFO.
 
 ## [1.1.3] - 2019-09-05
 ### Changed

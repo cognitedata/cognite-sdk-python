@@ -593,7 +593,7 @@ class APIClient:
 
         http_protocol_version = ".".join(list(str(res.raw.version)))
 
-        log.info("HTTP/{} {} {} {}".format(http_protocol_version, method, url, status_code), extra=extra)
+        log.debug("HTTP/{} {} {} {}".format(http_protocol_version, method, url, status_code), extra=extra)
 
     def _apply_model_hosting_emulator_url_filter(self, full_url):
         mlh_emul_url = os.getenv("MODEL_HOSTING_EMULATOR_URL")
