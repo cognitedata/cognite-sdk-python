@@ -421,6 +421,25 @@ def mock_retrieve_latest_empty(rsps):
     yield rsps
 
 
+@pytest.fixture
+def mock_retrieve_latest_with_failure(rsps):
+    rsps.add(
+        rsps.POST,
+        DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/latest",
+        status=200,
+        json={
+            "items": [{"id": 1, "externalId": "1", "datapoints": []}, {"id": 2, "externalId": "2", "datapoints": []}]
+        },
+    )
+    rsps.add(
+        rsps.POST,
+        DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/latest",
+        status=500,
+        json={"error": {"code": 500, "message": "Internal Server Error"}},
+    )
+    yield rsps
+
+
 class TestGetLatest:
     def test_retrieve_latest(self, mock_retrieve_latest):
         res = DPS_CLIENT.retrieve_latest(id=1)
@@ -459,6 +478,12 @@ class TestGetLatest:
         assert 2 == len(res_list)
         for res in res_list:
             assert 0 == len(res)
+
+    def test_retrieve_latest_concurrent_fails(self, mock_retrieve_latest_with_failure):
+        with set_request_limit(DPS_CLIENT, 2):
+            with pytest.raises(CogniteAPIError) as e:
+                DPS_CLIENT.retrieve_latest(id=[1, 2, 3])
+            assert e.value.code == 500
 
 
 @pytest.fixture

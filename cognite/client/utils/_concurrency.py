@@ -5,7 +5,9 @@ from cognite.client.exceptions import CogniteAPIError, CogniteDuplicatedError, C
 
 
 class TasksSummary:
-    def __init__(self, successful_tasks, unknown_tasks, failed_tasks, results, exceptions):
+    def __init__(
+        self, successful_tasks: List, unknown_tasks: List, failed_tasks: List, results: List, exceptions: List
+    ):
         self.successful_tasks = successful_tasks
         self.unknown_tasks = unknown_tasks
         self.failed_tasks = failed_tasks
@@ -104,7 +106,7 @@ def collect_exc_info_and_raise(
         ) from dup_exc
 
 
-def execute_tasks_concurrently(func: Callable, tasks: Union[List[Tuple], List[Dict]], max_workers: int):
+def execute_tasks_concurrently(func: Callable, tasks: Union[List[Tuple], List[Dict]], max_workers: int) -> TasksSummary:
     assert max_workers > 0, "Number of workers should be >= 1, was {}".format(max_workers)
     with ThreadPoolExecutor(max_workers) as p:
         futures = []
