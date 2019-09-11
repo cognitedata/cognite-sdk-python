@@ -144,7 +144,7 @@ class AssetsAPI(APIClient):
         Args:
             name (str): Name of asset. Often referred to as tag.
             parent_ids (List[int]): List of parent ids to filter on.
-            root_ids (List[Dict[str, Any]]): List of root ids/external ids to filter on.
+            root_ids (List[Dict[str, Any]]): List of root ids/root external ids to filter on.
             metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
             source (str): The source of this asset
             created_time (Dict[str, Any]): Range between two timestamps
