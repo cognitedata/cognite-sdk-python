@@ -156,12 +156,9 @@ class DatapointsAPI(APIClient):
         tasks_summary = utils._concurrency.execute_tasks_concurrently(
             self._post, tasks, max_workers=self._config.max_workers
         )
-        tasks_summary.raise_compound_exception_if_failed_tasks(
-            task_unwrap_fn=lambda task: task["json"]["items"],
-            task_list_element_unwrap_fn=utils._auxiliary.unwrap_identifer,
-        )
+        if tasks_summary.exceptions:
+            raise tasks_summary.exceptions[0]
         res = tasks_summary.joined_results(lambda res: res.json()["items"])
-
         if is_single_id:
             return Datapoints._load(res[0], cognite_client=self._cognite_client)
         return DatapointsList._load(res, cognite_client=self._cognite_client)
