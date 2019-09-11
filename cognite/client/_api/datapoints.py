@@ -20,6 +20,7 @@ class DatapointsAPI(APIClient):
         self._DPS_LIMIT_AGG = 10000
         self._DPS_LIMIT = 100000
         self._POST_DPS_OBJECTS_LIMIT = 10000
+        self._RETRIEVE_LATEST_LIMIT = 100
 
     def retrieve(
         self,
@@ -148,7 +149,16 @@ class DatapointsAPI(APIClient):
             for id in all_ids:
                 id.update({"before": before})
 
-        res = self._post(url_path=self._RESOURCE_PATH + "/latest", json={"items": all_ids}).json()["items"]
+        tasks = [
+            {"url_path": self._RESOURCE_PATH + "/latest", "json": {"items": chunk}}
+            for chunk in utils._auxiliary.split_into_chunks(all_ids, self._RETRIEVE_LATEST_LIMIT)
+        ]
+        tasks_summary = utils._concurrency.execute_tasks_concurrently(
+            self._post, tasks, max_workers=self._config.max_workers
+        )
+        if tasks_summary.exceptions:
+            raise tasks_summary.exceptions[0]
+        res = tasks_summary.joined_results(lambda res: res.json()["items"])
         if is_single_id:
             return Datapoints._load(res[0], cognite_client=self._cognite_client)
         return DatapointsList._load(res, cognite_client=self._cognite_client)
