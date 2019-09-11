@@ -18,7 +18,7 @@ def test_time_series():
     time_series = {}
     for ts in COGNITE_CLIENT.time_series.list(limit=150):
         if ts.name in ["test__constant_{}_with_noise".format(i) for i in range(0, 10)]:
-            value = int(re.match("test__constant_(\d+)_with_noise", ts.name).group(1))
+            value = int(re.match(r"test__constant_(\d+)_with_noise", ts.name).group(1))
             time_series[value] = ts
     yield time_series
 
@@ -108,6 +108,17 @@ class TestDatapointsAPI:
         res = COGNITE_CLIENT.datapoints.retrieve_latest(id=ids)
         for dps in res:
             assert 1 == len(dps)
+
+    def test_retrieve_latest_many(self, test_time_series):
+        ids = [
+            t.id for t in COGNITE_CLIENT.time_series.list(limit=150) if not t.security_categories
+        ]  # more than one page
+        assert len(ids) > 100
+        res = COGNITE_CLIENT.datapoints.retrieve_latest(id=ids)
+        assert len(ids) == len(res)
+        for i, dps in enumerate(res):
+            assert len(dps) <= 1  # could be empty
+            assert ids[i] == res[i].id
 
     def test_retrieve_latest_before(self, test_time_series):
         ts = test_time_series[0]
