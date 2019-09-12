@@ -323,8 +323,14 @@ class TestFilesAPI:
                 mock_file_download_response.calls[0].request.body
             )
             assert res is None
-            assert os.path.isfile(os.path.join(dir, "file1"))
-            assert os.path.isfile(os.path.join(dir, "file2"))
+            fp1 = os.path.join(dir, "file1")
+            fp2 = os.path.join(dir, "file2")
+            assert os.path.isfile(fp1)
+            assert os.path.isfile(fp2)
+            with open(fp1, "rb") as fh:
+                assert b"content1" == fh.read()
+            with open(fp2, "rb") as fh:
+                assert b"content2" == fh.read()
 
     def test_download_one_file_fails(self, mock_file_download_response_one_fails):
         with TemporaryDirectory() as dir:
@@ -333,6 +339,16 @@ class TestFilesAPI:
             assert [FileMetadata(id=1, name="file1", external_id="success")] == e.value.successful
             assert [FileMetadata(id=2, name="file2", external_id="fail")] == e.value.failed
             assert os.path.isfile(os.path.join(dir, "file1"))
+
+    def test_download_file_to_path(self, mock_file_download_response):
+        mock_file_download_response.assert_all_requests_are_fired = False
+        with TemporaryDirectory() as dir:
+            file_path = os.path.join(dir, "my_downloaded_file.txt")
+            res = FILES_API.download_to_path(path=file_path, id=1)
+            assert res is None
+            assert os.path.isfile(file_path)
+            with open(file_path, "rb") as f:
+                assert b"content1" == f.read()
 
     def test_download_to_memory(self, mock_file_download_response):
         mock_file_download_response.assert_all_requests_are_fired = False

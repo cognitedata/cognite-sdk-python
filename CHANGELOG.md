@@ -21,6 +21,10 @@ Changes are grouped as follows
 
 ## [Unreleased]
 
+## [1.1.5] - 2019-09-12
+### Added
+- Method `files.download_to_path` for streaming a file to a specific path
+
 ## [1.1.4] - 2019-09-12
 ### Added
 - `root_asset_ids` parameter for time series list.

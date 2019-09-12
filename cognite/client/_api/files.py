@@ -488,6 +488,7 @@ class FilesAPI(APIClient):
 
         This method will stream all files to disk, never keeping more than 2MB of a given file in memory.
 
+
         Args:
             directory (str): Directory to download the file(s) to.
             id (Union[int, List[int]], optional): Id or list of ids
@@ -502,10 +503,11 @@ class FilesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.files.download(directory="my_directory", id=[1,2,3], external_id=["abc", "def"])
+                >>> c.files.download(directory="my_directory", id=[1,2,3], external_id=["abc", "def"])
         """
         all_ids = self._process_ids(ids=id, external_ids=external_id, wrap_ids=True)
         id_to_metadata = self._get_id_to_metadata_map(all_ids)
+        assert os.path.isdir(directory), "{} is not a directory".format(directory)
         self._download_files_to_directory(directory, all_ids, id_to_metadata)
 
     def _get_id_to_metadata_map(self, all_ids):
@@ -531,10 +533,13 @@ class FilesAPI(APIClient):
             str_format_element_fn=lambda metadata: metadata.id,
         )
 
-    def _process_file_download(self, directory, identifier, id_to_metadata):
-        download_link = self._post(url_path="/files/downloadlink", json={"items": [identifier]}).json()["items"][0][
+    def _get_download_link(self, identifier: Dict[str, Union[int, str]]) -> str:
+        return self._post(url_path="/files/downloadlink", json={"items": [identifier]}).json()["items"][0][
             "downloadUrl"
         ]
+
+    def _process_file_download(self, directory, identifier, id_to_metadata):
+        download_link = self._get_download_link(identifier)
         id = utils._auxiliary.unwrap_identifer(identifier)
         file_metadata = id_to_metadata[id]
         file_path = os.path.join(directory, file_metadata.name)
@@ -546,6 +551,31 @@ class FilesAPI(APIClient):
                 for chunk in r.iter_content(chunk_size=chunk_size):
                     if chunk:  # filter out keep-alive new chunks
                         f.write(chunk)
+
+    def download_to_path(self, path: str, id: int = None, external_id: str = None):
+        """Download a file to a specific target.
+
+        Args:
+            path (str): The path in which to place the file.
+            id (int): Id of of the file to download.
+            external_id (str): External id of the file to download.
+
+        Returns:
+            None
+
+        Examples:
+
+            Download a file by id:
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> c.files.download_to_path("~/mydir/my_downloaded_file.txt", id=123)
+        """
+        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
+        dirname = os.path.dirname(path)
+        assert os.path.isdir(dirname), "{} is not a directory".format(dirname)
+        identifier = self._process_ids(ids=id, external_ids=external_id, wrap_ids=True)[0]
+        download_link = self._get_download_link(identifier)
+        self._download_file_to_path(download_link, path)
 
     def download_bytes(self, id: int = None, external_id: str = None) -> bytes:
         """Download a file as bytes.
