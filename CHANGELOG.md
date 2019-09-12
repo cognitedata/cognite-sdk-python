@@ -21,7 +21,7 @@ Changes are grouped as follows
 
 ## [Unreleased]
 
-## [1.1.4] - 2019-09-05
+## [1.1.4] - 2019-09-12
 ### Added
 - `root_asset_ids` parameter for time series list.
 
