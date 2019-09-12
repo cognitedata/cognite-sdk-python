@@ -29,3 +29,8 @@ def test_mock_cognite_client():
 
             with pytest.raises(AttributeError):
                 api.does_not_exist
+
+
+def test_mock_cognite_client_accepts_arguments():
+    with mock_cognite_client():
+        CogniteClient(api_key=None)

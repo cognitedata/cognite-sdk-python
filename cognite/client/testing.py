@@ -91,6 +91,6 @@ def mock_cognite_client():
     cog_client_mock.raw.tables = mock.MagicMock(spec_set=RawTablesAPI)
     cog_client_mock.raw.rows = mock.MagicMock(spec_set=RawRowsAPI)
 
-    CogniteClient.__new__ = lambda x: cog_client_mock
+    CogniteClient.__new__ = lambda *args, **kwargs: cog_client_mock
     yield cog_client_mock
     CogniteClient.__new__ = client_new_fn
