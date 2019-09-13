@@ -31,6 +31,7 @@ def test_mock_cognite_client():
                 api.does_not_exist
 
 
-def test_mock_cognite_client_accepts_arguments():
+def test_cognite_client_accepts_arguments_during_and_after_mock():
     with mock_cognite_client():
         CogniteClient(api_key=None)
+    CogniteClient(api_key=None)

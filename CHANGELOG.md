@@ -21,6 +21,10 @@ Changes are grouped as follows
 
 ## [Unreleased]
 
+## [1.1.7] - 2019-09-12
+### Fixed
+- `testing.mock_cognite_client()` so that it still accepts arguments after exiting from mock context.
+
 ## [1.1.6] - 2019-09-12
 ### Fixed
 - `testing.mock_cognite_client()` so that the mocked CogniteClient may accept arguments.

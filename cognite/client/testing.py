@@ -67,8 +67,6 @@ def mock_cognite_client():
             >>>         assert 400 == e.code
             >>>         assert "Something went wrong" == e.message
     """
-    client_new_fn = CogniteClient.__new__
-
     cog_client_mock = mock.MagicMock(spec=CogniteClient)
     cog_client_mock.time_series = mock.MagicMock(spec_set=TimeSeriesAPI)
     cog_client_mock.datapoints = mock.MagicMock(spec_set=DatapointsAPI)
@@ -93,4 +91,4 @@ def mock_cognite_client():
 
     CogniteClient.__new__ = lambda *args, **kwargs: cog_client_mock
     yield cog_client_mock
-    CogniteClient.__new__ = client_new_fn
+    CogniteClient.__new__ = lambda cls, *args, **kwargs: super(CogniteClient, cls).__new__(cls)
