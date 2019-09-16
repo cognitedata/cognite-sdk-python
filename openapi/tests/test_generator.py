@@ -57,6 +57,7 @@ class TestClassGenerator:
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         root_id (int): A JavaScript-friendly internal ID for the object.
+        aggregates (Dict[str, Any]): Aggregated metrics of the asset
         cognite_client (CogniteClient): The client to associate with this object.
     \"\"\""""
             == docstring
@@ -66,7 +67,7 @@ class TestClassGenerator:
         schemas = [CLASS_GENERATOR._spec.components.schemas.get("Asset")]
         constructor = CLASS_GENERATOR.generate_constructor(schemas, indentation=4)
         assert (
-            """    def __init__(self, external_id: str = None, name: str = None, parent_id: int = None, description: str = None, metadata: Dict[str, Any] = None, source: str = None, id: int = None, created_time: int = None, last_updated_time: int = None, root_id: int = None, cognite_client = None):
+            """    def __init__(self, external_id: str = None, name: str = None, parent_id: int = None, description: str = None, metadata: Dict[str, Any] = None, source: str = None, id: int = None, created_time: int = None, last_updated_time: int = None, root_id: int = None, aggregates: Dict[str, Any] = None, cognite_client = None):
         self.external_id = external_id
         self.name = name
         self.parent_id = parent_id
@@ -77,6 +78,7 @@ class TestClassGenerator:
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.root_id = root_id
+        self.aggregates = aggregates
         self._cognite_client = cognite_client"""
             == constructor
         )

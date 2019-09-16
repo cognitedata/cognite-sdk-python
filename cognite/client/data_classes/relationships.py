@@ -16,7 +16,7 @@ class Relationship(CogniteResource):
         confidence (float): Confidence value of the existence of this relationship. Humans should enter 1.0 usually, generated relationships should provide a realistic score on the likelihood of the existence of the relationship. Generated relationships should never have the a confidence score of 1.0.
         data_set (str): String describing the source system storing or generating the relationship.
         external_id (str): Disallowing leading and trailing whitespaces. Case sensitive. The external Id must be unique within the project.
-        relationship_type (str): Type of the relationship in order to distinguish between different relationships. E.g. a flow through a pipe can be naturally represented by a `flowsTo`-relationship. On the other hand an alternative asset hierarchy can be represented with the `isParentOf`-relationship.
+        relationship_type (str): Type of the relationship in order to distinguish between different relationships. In general relationship types should reflect references as they are expressed in natural sentences.  E.g. a flow through a pipe can be naturally represented by a `flowsTo`-relationship. On the other hand an alternative asset hierarchy can be represented with the `isParentOf`-relationship. The `implements`-relationship is intended to reflect references between a functional asset hierarchy and its implementation.
         created_time (float): Time when this relationship was created in CDF in milliseconds since Jan 1, 1970.
         last_updated_time (float): Time when this relationship was last updated in CDF in milliseconds since Jan 1, 1970.
         cognite_client (CogniteClient): The client to associate with this object.
