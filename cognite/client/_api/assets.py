@@ -18,7 +18,7 @@ class AssetsAPI(APIClient):
         chunk_size: int = None,
         name: str = None,
         parent_ids: List[int] = None,
-        root_ids: Union[List[int], List[Dict[str, Any]]] = None,
+        root_ids: List[int] = None,
         root_external_ids: List[str] = None,
         metadata: Dict[str, Any] = None,
         source: str = None,
@@ -36,7 +36,7 @@ class AssetsAPI(APIClient):
             chunk_size (int, optional): Number of assets to return in each chunk. Defaults to yielding one asset a time.
             name (str): Name of asset. Often referred to as tag.
             parent_ids (List[int]): No description.
-            root_ids (Union[List[int], List[Dict[str, Any]], optional): List of root ids ids to filter on. Also accepts a list of mixed id/external id objects of the form [{"id":1},{"externalId":"str"}] for backwards compatibility.
+            root_ids (Union[List[int], List[Dict[str, Any]], optional): List of root ids ids to filter on.
             root_external_ids (List[str], optional): List of root external ids to filter on.
             metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
             source (str): The source of this asset
@@ -49,15 +49,10 @@ class AssetsAPI(APIClient):
         Yields:
             Union[Asset, AssetList]: yields Asset one by one if chunk is not specified, else AssetList objects.
         """
-
-        if root_ids and isinstance(root_ids[0], dict):
-            if root_external_ids:
-                raise ValueError(
-                    "When using object syntax for root_ids, passing root_external_ids is not supported. Using separate lists for root_ids, root_external_ids is recommended."
-                )
-        elif root_ids or root_external_ids:
-            root_ids = [{"id": id} for id in root_ids or []] + [{"externalId": id} for id in root_external_ids or []]
-            print(root_ids)
+        if (
+            root_ids and not isinstance(root_ids[0], dict)
+        ) or root_external_ids:  # dict option for backward compatibility
+            root_ids = self._process_ids(root_ids, root_external_ids, wrap_ids=True)
 
         filter = AssetFilter(
             name=name,
@@ -141,7 +136,7 @@ class AssetsAPI(APIClient):
         self,
         name: str = None,
         parent_ids: List[int] = None,
-        root_ids: Union[List[int], List[Dict[str, Any]]] = None,
+        root_ids: List[int] = None,
         root_external_ids: List[str] = None,
         metadata: Dict[str, Any] = None,
         source: str = None,
@@ -156,7 +151,7 @@ class AssetsAPI(APIClient):
         Args:
             name (str): Name of asset. Often referred to as tag.
             parent_ids (List[int]): List of parent ids to filter on.
-            root_ids (Union[List[int], List[Dict[str, Any]], optional): List of root ids ids to filter on. Also accepts a list of mixed id/external id objects of the form [{"id":1},{"externalId":"str"}] for backwards compatibility.
+            root_ids (Union[List[int], List[Dict[str, Any]], optional): List of root ids ids to filter on.
             root_external_ids (List[str], optional): List of root external ids to filter on.
             metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
             source (str): The source of this asset
@@ -192,13 +187,10 @@ class AssetsAPI(APIClient):
                 >>> for asset_list in c.assets(chunk_size=2500):
                 ...     asset_list # do something with the assets
         """
-        if root_ids and isinstance(root_ids[0], dict):
-            if root_external_ids:
-                raise ValueError(
-                    "When using object syntax for root_ids, passing root_external_ids is not supported. Using separate lists for root_ids, root_external_ids is recommended."
-                )
-        elif root_ids or root_external_ids:
-            root_ids = [{"id": id} for id in root_ids or []] + [{"externalId": id} for id in root_external_ids or []]
+        if (
+            root_ids and not isinstance(root_ids[0], dict)
+        ) or root_external_ids:  # dict option for backward compatibility
+            root_ids = self._process_ids(root_ids, root_external_ids, wrap_ids=True)
 
         filter = AssetFilter(
             name=name,
