@@ -49,9 +49,8 @@ class AssetsAPI(APIClient):
         Yields:
             Union[Asset, AssetList]: yields Asset one by one if chunk is not specified, else AssetList objects.
         """
-        if (
-            root_ids and not isinstance(root_ids[0], dict)
-        ) or root_external_ids:  # dict option for backward compatibility
+        # dict option for backward compatibility
+        if (root_ids and not isinstance(root_ids[0], dict)) or root_external_ids:
             root_ids = self._process_ids(root_ids, root_external_ids, wrap_ids=True)
 
         filter = AssetFilter(
@@ -187,9 +186,8 @@ class AssetsAPI(APIClient):
                 >>> for asset_list in c.assets(chunk_size=2500):
                 ...     asset_list # do something with the assets
         """
-        if (
-            root_ids and not isinstance(root_ids[0], dict)
-        ) or root_external_ids:  # dict option for backward compatibility
+        # dict option for backward compatibility
+        if (root_ids and not isinstance(root_ids[0], dict)) or root_external_ids:
             root_ids = self._process_ids(root_ids, root_external_ids, wrap_ids=True)
 
         filter = AssetFilter(
