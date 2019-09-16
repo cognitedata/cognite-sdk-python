@@ -118,8 +118,7 @@ class TestAssets:
         )
 
     def test_call_root(self, mock_assets_response):
-        for a in ASSETS_API.__call__(root_ids=[{"id": 1}, {"externalId": "abc"}], limit=10):
-            pass
+        list(ASSETS_API.__call__(root_ids=[{"id": 1}, {"externalId": "abc"}], limit=10))
         calls = mock_assets_response.calls
         assert 1 == len(calls)
         assert {"cursor": None, "limit": 10, "filter": {"rootIds": [{"id": 1}, {"externalId": "abc"}]}} == jsgz_load(
