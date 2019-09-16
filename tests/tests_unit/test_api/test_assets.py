@@ -109,6 +109,43 @@ class TestAssets:
         assert "bla" == jsgz_load(mock_assets_response.calls[0].request.body)["filter"]["name"]
         assert mock_assets_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
+    def test_list_root(self, mock_assets_response):
+        res = ASSETS_API.list(root_ids=[{"id": 1}, {"externalId": "abc"}], limit=10)
+        calls = mock_assets_response.calls
+        assert 1 == len(calls)
+        assert {"cursor": None, "limit": 10, "filter": {"rootIds": [{"id": 1}, {"externalId": "abc"}]}} == jsgz_load(
+            calls[0].request.body
+        )
+
+    def test_call_root(self, mock_assets_response):
+        for a in ASSETS_API(root_ids=[{"id": 1}, {"externalId": "abc"}], limit=10):
+            pass
+        calls = mock_assets_response.calls
+        assert 1 == len(calls)
+        assert {"cursor": None, "limit": 10, "filter": {"rootIds": [{"id": 1}, {"externalId": "abc"}]}} == jsgz_load(
+            calls[0].request.body
+        )
+
+    def test_list_root_ids_list(self, mock_assets_response):
+        res = ASSETS_API.list(root_ids=[1, 2], limit=10)
+        calls = mock_assets_response.calls
+        assert 1 == len(calls)
+        assert {"cursor": None, "limit": 10, "filter": {"rootIds": [{"id": 1}, {"id": 2}]}} == jsgz_load(
+            calls[0].request.body
+        )
+
+    def test_list_root_extids_list(self, mock_assets_response):
+        res = ASSETS_API.list(root_external_ids=["1", "2"], limit=10)
+        calls = mock_assets_response.calls
+        assert 1 == len(calls)
+        assert {
+            "cursor": None,
+            "limit": 10,
+            "filter": {"rootIds": [{"externalId": "1"}, {"externalId": "2"}]},
+        } == jsgz_load(calls[0].request.body)
+        with pytest.raises(ValueError):
+            ASSETS_API.list(root_ids=[{"external_id": 1}], root_external_ids="blah")
+
     def test_create_single(self, mock_assets_response):
         res = ASSETS_API.create(Asset(external_id="1", name="blabla"))
         assert isinstance(res, Asset)

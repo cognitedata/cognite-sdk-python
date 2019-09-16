@@ -21,6 +21,10 @@ Changes are grouped as follows
 
 ## [Unreleased]
 
+### Changed
+- `list` and `__call__` methods for assets now support list parameters for `root_ids`, `root_external_ids`.
+
+
 ## [1.1.7] - 2019-09-13
 ### Fixed
 - `testing.mock_cognite_client()` so that it still accepts arguments after exiting from mock context.
