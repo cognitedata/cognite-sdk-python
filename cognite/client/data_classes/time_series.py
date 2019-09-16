@@ -11,7 +11,7 @@ class TimeSeries(CogniteResource):
     Args:
         id (int): The generated ID for the time series.
         external_id (str): The externally supplied ID for the time series.
-        name (str): The name of the time series.
+        name (str): The display short name of the time series. Note: Value of this field can differ from name presented by older versions of API 0.3-0.6.
         is_string (bool): Whether the time series is string valued or not.
         metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         unit (str): The physical unit of the time series.

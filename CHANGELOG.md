@@ -23,7 +23,7 @@ Changes are grouped as follows
 
 ### Changed
 - `list` and `__call__` methods for assets now support list parameters for `root_ids`, `root_external_ids`.
-
+- `Asset` class now has an `aggregates` property.
 
 ## [1.1.7] - 2019-09-13
 ### Fixed

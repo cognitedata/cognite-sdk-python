@@ -40,6 +40,7 @@ class Asset(CogniteResource):
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         root_id (int): A JavaScript-friendly internal ID for the object.
+        aggregates (Dict[str, Any]): Aggregated metrics of the asset
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
@@ -55,6 +56,7 @@ class Asset(CogniteResource):
         created_time: int = None,
         last_updated_time: int = None,
         root_id: int = None,
+        aggregates: Dict[str, Any] = None,
         cognite_client=None,
     ):
         self.external_id = external_id
@@ -67,6 +69,7 @@ class Asset(CogniteResource):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.root_id = root_id
+        self.aggregates = aggregates
         self._cognite_client = cognite_client
 
     # GenStop
