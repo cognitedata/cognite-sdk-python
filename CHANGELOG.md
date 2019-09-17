@@ -27,8 +27,6 @@ Changes are grouped as follows
 
 ### Changed
 - `list` and `__call__` methods for assets now support list parameters for `root_ids`, `root_external_ids`.
-
-### Changed
 - Sequences API no longer supports column ids, all relevant functions have been changed to only use external ids.
 
 ### Fixed
