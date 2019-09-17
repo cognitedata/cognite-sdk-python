@@ -9,7 +9,7 @@ class FileMetadata(CogniteResource):
     """No description.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique within the project.
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
         name (str): Name of the file.
         source (str): The source of the file.
         mime_type (str): File type. E.g. text/plain, application/pdf, ..
@@ -17,7 +17,7 @@ class FileMetadata(CogniteResource):
         asset_ids (List[int]): No description.
         source_created_time (int): The timestamp for when the file was originally created in the source system.
         source_modified_time (int): The timestamp for when the file was last modified in the source system.
-        id (int): A JavaScript-friendly internal ID for the object.
+        id (int): A server-generated ID for the object.
         uploaded (bool): Whether or not the actual file is uploaded.  This field is returned only by the API, it has no effect in a post body.
         uploaded_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -75,7 +75,7 @@ class FileMetadataFilter(CogniteFilter):
         uploaded_time (Dict[str, Any]): Range between two timestamps.
         source_created_time (Dict[str, Any]): Filter for files where the sourceCreatedTime field has been set and is within the specified range.
         source_modified_time (Dict[str, Any]): Filter for files where the sourceModifiedTime field has been set and is within the specified range.
-        external_id_prefix (str): The external ID provided by the client. Must be unique within the project.
+        external_id_prefix (str): The external ID provided by the client. Must be unique for the resource type.
         uploaded (bool): Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
         cognite_client (CogniteClient): The client to associate with this object.
     """

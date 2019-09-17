@@ -47,16 +47,16 @@ class TestClassGenerator:
             """    \"\"\"A representation of a physical asset, for example a factory or a piece of equipment.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique within the project.
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
         name (str): The name of the asset.
-        parent_id (int): A JavaScript-friendly internal ID for the object.
+        parent_id (int): A server-generated ID for the object.
         description (str): The description of the asset.
         metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         source (str): The source of the asset.
-        id (int): A JavaScript-friendly internal ID for the object.
+        id (int): A server-generated ID for the object.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        root_id (int): A JavaScript-friendly internal ID for the object.
+        root_id (int): A server-generated ID for the object.
         aggregates (Dict[str, Any]): Aggregated metrics of the asset
         cognite_client (CogniteClient): The client to associate with this object.
     \"\"\""""
@@ -109,8 +109,8 @@ class TestUpdateClassGenerator:
             """    \"\"\"Changes applied to asset
 
     Args:
-        id (int): A JavaScript-friendly internal ID for the object.
-        external_id (str): The external ID provided by the client. Must be unique within the project.
+        id (int): A server-generated ID for the object.
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
     \"\"\""""
             == docstring
         )
