@@ -268,6 +268,7 @@ class APIClient:
         limit: int = None,
         chunk_size: int = None,
         filter: Dict = None,
+        other_params: Dict = None,
         headers: Dict = None,
     ):
         if limit == -1 or limit == float("inf"):
@@ -293,7 +294,7 @@ class APIClient:
                 params["cursor"] = next_cursor
                 res = self._get(url_path=resource_path, params=params, headers=headers)
             elif method == "POST":
-                body = {"filter": filter, "limit": current_limit, "cursor": next_cursor}
+                body = {"filter": filter, "limit": current_limit, "cursor": next_cursor, **(other_params or {})}
                 res = self._post(url_path=resource_path + "/list", json=body, headers=headers)
             else:
                 raise ValueError("_list_generator parameter `method` must be GET or POST, not %s", method)
@@ -322,6 +323,7 @@ class APIClient:
         resource_path: str = None,
         limit: int = None,
         filter: Dict = None,
+        other_params=None,
         headers: Dict = None,
     ):
         cls = cls or self._LIST_CLASS
@@ -335,6 +337,7 @@ class APIClient:
             chunk_size=self._LIST_LIMIT,
             filter=filter,
             headers=headers,
+            other_params=other_params,
         ):
             items.extend(resource_list.data)
         return cls(items, cognite_client=self._cognite_client)
