@@ -18,7 +18,8 @@ class AssetsAPI(APIClient):
         chunk_size: int = None,
         name: str = None,
         parent_ids: List[int] = None,
-        root_ids: List[Dict[str, Any]] = None,
+        root_ids: List[int] = None,
+        root_external_ids: List[str] = None,
         metadata: Dict[str, Any] = None,
         source: str = None,
         created_time: Dict[str, Any] = None,
@@ -36,7 +37,8 @@ class AssetsAPI(APIClient):
             chunk_size (int, optional): Number of assets to return in each chunk. Defaults to yielding one asset a time.
             name (str): Name of asset. Often referred to as tag.
             parent_ids (List[int]): No description.
-            root_ids (List[Dict[str, Any]]): List of root ids/external ids to filter on.
+            root_ids (List[int], optional): List of root ids ids to filter on.
+            root_external_ids (List[str], optional): List of root external ids to filter on.
             metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
             source (str): The source of this asset
             created_time (Dict[str, Any]): Range between two timestamps
@@ -51,6 +53,9 @@ class AssetsAPI(APIClient):
         """
         if aggregated_properties:
             aggregated_properties = [utils._auxiliary.to_camel_case(s) for s in aggregated_properties]
+        # dict option for backward compatibility
+        if (root_ids and not isinstance(root_ids[0], dict)) or root_external_ids:
+            root_ids = self._process_ids(root_ids, root_external_ids, wrap_ids=True)
 
         filter = AssetFilter(
             name=name,
@@ -140,7 +145,8 @@ class AssetsAPI(APIClient):
         self,
         name: str = None,
         parent_ids: List[int] = None,
-        root_ids: List[Dict[str, Any]] = None,
+        root_ids: List[int] = None,
+        root_external_ids: List[str] = None,
         metadata: Dict[str, Any] = None,
         source: str = None,
         created_time: Dict[str, Any] = None,
@@ -155,7 +161,8 @@ class AssetsAPI(APIClient):
         Args:
             name (str): Name of asset. Often referred to as tag.
             parent_ids (List[int]): List of parent ids to filter on.
-            root_ids (List[Dict[str, Any]]): List of root ids/root external ids to filter on.
+            root_ids (List[int], optional): List of root ids ids to filter on.
+            root_external_ids (List[str], optional): List of root external ids to filter on.
             metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
             source (str): The source of this asset
             created_time (Dict[str, Any]): Range between two timestamps
@@ -193,6 +200,10 @@ class AssetsAPI(APIClient):
         """
         if aggregated_properties:
             aggregated_properties = [utils._auxiliary.to_camel_case(s) for s in aggregated_properties]
+
+        # dict option for backward compatibility
+        if (root_ids and not isinstance(root_ids[0], dict)) or root_external_ids:
+            root_ids = self._process_ids(root_ids, root_external_ids, wrap_ids=True)
 
         filter = AssetFilter(
             name=name,
