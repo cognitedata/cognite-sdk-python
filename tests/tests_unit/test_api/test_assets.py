@@ -109,12 +109,12 @@ class TestAssets:
         assert "bla" == jsgz_load(mock_assets_response.calls[0].request.body)["filter"]["name"]
         assert mock_assets_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
-    def test_list_ag(self, mock_assets_response):
-        res = ASSETS_API.list(name="bla",aggregated_properties=["childCount"])
+    def test_list_with_aggregated_properties_param(self, mock_assets_response):
+        res = ASSETS_API.list(name="bla", aggregated_properties=["childCount"])
         assert ["childCount"] == jsgz_load(mock_assets_response.calls[0].request.body)["aggregatedProperties"]
 
-    def test_list_ag_camel(self, mock_assets_response):
-        res = ASSETS_API.list(name="bla",aggregated_properties=["child_count"])
+    def test_list_with_aggregated_properties_param_when_snake_cased(self, mock_assets_response):
+        res = ASSETS_API.list(name="bla", aggregated_properties=["child_count"])
         assert ["childCount"] == jsgz_load(mock_assets_response.calls[0].request.body)["aggregatedProperties"]
 
     def test_list_root(self, mock_assets_response):
