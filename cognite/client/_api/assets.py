@@ -216,7 +216,12 @@ class AssetsAPI(APIClient):
             root=root,
             external_id_prefix=external_id_prefix,
         ).dump(camel_case=True)
-        return self._list(method="POST", limit=limit, filter=filter,  other_params={"aggregatedProperties": aggregated_properties} if aggregated_properties else {})
+        return self._list(
+            method="POST",
+            limit=limit,
+            filter=filter,
+            other_params={"aggregatedProperties": aggregated_properties} if aggregated_properties else {},
+        )
 
     def create(self, asset: Union[Asset, List[Asset]]) -> Union[Asset, AssetList]:
         """Create one or more assets. You can create an arbitrary number of assets, and the SDK will split the request into multiple requests.

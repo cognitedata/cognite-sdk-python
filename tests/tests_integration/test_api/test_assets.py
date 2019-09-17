@@ -90,7 +90,7 @@ class TestAssetsAPI:
         res = COGNITE_CLIENT.assets.list(limit=10, aggregated_properties=["child_count"])
         for asset in res:
             assert {"childCount"} == asset.aggregates.keys()
-            assert isinstance(asset.aggregates["childCount"],int)
+            assert isinstance(asset.aggregates["childCount"], int)
 
     def test_search(self):
         res = COGNITE_CLIENT.assets.search(name="test__asset_0", filter=AssetFilter(name="test__asset_0"))
