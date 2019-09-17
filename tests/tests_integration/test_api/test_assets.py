@@ -86,7 +86,7 @@ class TestAssetsAPI:
         assert 20 == len(res)
         assert 2 == COGNITE_CLIENT.assets._post.call_count
 
-    def test_list_ag(self, post_spy):
+    def test_list_with_aggregated_properties_param(self, post_spy):
         res = COGNITE_CLIENT.assets.list(limit=10, aggregated_properties=["child_count"])
         for asset in res:
             assert {"childCount"} == asset.aggregates.keys()
