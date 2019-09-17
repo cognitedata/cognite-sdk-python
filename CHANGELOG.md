@@ -24,9 +24,12 @@ Changes are grouped as follows
 ### Changed
 - `list` and `__call__` methods for assets now support list parameters for `root_ids`, `root_external_ids`.
 - `Asset` class now has an `aggregates` property.
+- `Asset` and `AssetList` classes now have a `sequences` function which retrieves related sequences.
+- Sequences API no longer supports column ids, all relevant functions have been changed to only use external ids.
 
 ### Fixed
 - Fixed a bug in time series pagination where getting 100k dense datapoints would cause a missing id error.
+- Sequences retrieve functions fixed to match API change, to single item per retrieve.
 
 ## [1.1.7] - 2019-09-13
 ### Fixed
