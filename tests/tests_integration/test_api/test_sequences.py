@@ -71,5 +71,5 @@ class TestSequencesAPI:
 
     def test_get_new(self, new_seq):
         res = COGNITE_CLIENT.sequences.retrieve(id=new_seq.id)
-        #assert ["DOUBLE"] == res.column_value_types # soon to change
+        # assert ["DOUBLE"] == res.column_value_types # soon to change
         assert ["column0"] == res.column_external_ids

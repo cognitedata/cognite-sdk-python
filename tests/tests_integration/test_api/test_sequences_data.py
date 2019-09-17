@@ -168,7 +168,9 @@ class TestSequencesDataAPI:
 
     def test_delete_range(self, new_seq_long):
         data = [(i, [10 * i]) for i in [1, 2, 3, 5, 8, 13, 21, 34]]
-        COGNITE_CLIENT.sequences.data.insert(column_external_ids=new_seq_long.column_external_ids, rows=data, id=new_seq_long.id)
+        COGNITE_CLIENT.sequences.data.insert(
+            column_external_ids=new_seq_long.column_external_ids, rows=data, id=new_seq_long.id
+        )
         COGNITE_CLIENT.sequences.data.delete_range(start=4, end=15, id=new_seq_long.id)
         dps = COGNITE_CLIENT.sequences.data.retrieve(start=0, end=None, id=new_seq_long.id)
         # potential delay, so can't assert, but tested in notebook

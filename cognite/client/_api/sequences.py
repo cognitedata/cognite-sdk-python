@@ -439,9 +439,7 @@ class SequencesDataAPI(APIClient):
         dataframe = dataframe.replace({math.nan: None})
         data = [(v[0], list(v[1:])) for v in dataframe.itertuples()]
         column_external_ids = [str(s) for s in dataframe.columns]
-        self.insert(
-            rows=data, column_external_ids=column_external_ids, id=id, external_id=external_id
-        )
+        self.insert(rows=data, column_external_ids=column_external_ids, id=id, external_id=external_id)
 
     def _insert_data(self, task):
         self._post(url_path=self._DATA_PATH, json={"items": [task]})
@@ -592,5 +590,5 @@ class SequencesDataAPI(APIClient):
 
     def _process_columns(self, column_external_ids):
         if column_external_ids is None:
-            return {} # for defaults
+            return {}  # for defaults
         return {"columns": [{"externalId": col} for col in column_external_ids]}

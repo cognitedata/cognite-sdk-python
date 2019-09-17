@@ -104,7 +104,6 @@ class Asset(CogniteResource):
         """
         return self._cognite_client.sequences.list(asset_ids=[self.id], **kwargs)
 
-
     def events(self, **kwargs) -> "EventList":
         """Retrieve all events related to this asset.
 
