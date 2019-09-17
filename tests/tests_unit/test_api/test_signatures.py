@@ -1,4 +1,6 @@
 import inspect
+import json
+from typing import Dict
 
 import pytest
 
@@ -7,24 +9,40 @@ from cognite.client._api import assets, events, files, sequences
 
 class TestListAndIterSignatures:
     @pytest.mark.parametrize(
-        "api, filter",
+        "api, filter, ignore",
         [
-            (assets.AssetsAPI, assets.AssetFilter),
-            (events.EventsAPI, events.EventFilter),
-            (files.FilesAPI, files.FileMetadataFilter),
-            (sequences.SequencesAPI, sequences.SequenceFilter),
+            (assets.AssetsAPI, assets.AssetFilter, ["root_external_ids"]),
+            (events.EventsAPI, events.EventFilter, []),
+            (files.FilesAPI, files.FileMetadataFilter, []),
+            (sequences.SequencesAPI, sequences.SequenceFilter, []),
         ],
     )
-    def test_list_and_iter_signatures_same_as_filter_signature(self, api, filter):
+    def test_list_and_iter_signatures_same_as_filter_signature(self, api, filter, ignore):
         iter_parameters = dict(inspect.signature(api.__call__).parameters)
-        del iter_parameters["chunk_size"]
-        del iter_parameters["limit"]
+        for name in ignore + ["chunk_size", "limit"]:
+            del iter_parameters[name]
+
         list_parameters = dict(inspect.signature(api.list).parameters)
-        del list_parameters["limit"]
+        for name in ignore + ["limit"]:
+            del list_parameters[name]
+
         filter_parameters = dict(inspect.signature(filter.__init__).parameters)
         del filter_parameters["cognite_client"]
-        assert iter_parameters == filter_parameters
-        assert list_parameters == filter_parameters
+
+        iter_parameters = {v.name for _, v in iter_parameters.items()}
+        filter_parameters = {v.name for _, v in filter_parameters.items()}
+        list_parameters = {v.name for _, v in list_parameters.items()}
+
+        assert iter_parameters == filter_parameters, signature_error_msg(filter_parameters, iter_parameters)
+        assert list_parameters == filter_parameters, signature_error_msg(filter_parameters, list_parameters)
+
+
+def signature_error_msg(expected, actual):
+    pretty_expected_params = json.dumps(list(expected), indent=4, sort_keys=True)
+    pretty_actual_params = json.dumps(list(actual), indent=4, sort_keys=True)
+    return "Signatures don't match. \nexpected: {}\ngot: {}\n diff: {}".format(
+        pretty_expected_params, pretty_actual_params, list(expected - actual) + list(actual - expected)
+    )
 
 
 class TestFileMetadataUploadSignatures:

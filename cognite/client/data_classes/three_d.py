@@ -37,7 +37,7 @@ class ThreeDModelUpdate(CogniteUpdate):
     """No description.
 
     Args:
-        id (int): A JavaScript-friendly internal ID for the object.
+        id (int): A server-generated ID for the object.
     """
 
     @property
@@ -138,7 +138,7 @@ class ThreeDModelRevisionUpdate(CogniteUpdate):
     """No description.
 
     Args:
-        id (int): A JavaScript-friendly internal ID for the object.
+        id (int): A server-generated ID for the object.
     """
 
     @property
