@@ -21,9 +21,11 @@ Changes are grouped as follows
 
 ## [Unreleased]
 
-### Changed
-- `Asset` class now has an `aggregates` property.
+### Added
+- Support for aggregated properties of assets.
 - `Asset` and `AssetList` classes now have a `sequences` function which retrieves related sequences.
+
+### Changed
 - Sequences API no longer supports column ids, all relevant functions have been changed to only use external ids.
 
 ### Fixed

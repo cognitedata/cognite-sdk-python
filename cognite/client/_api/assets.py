@@ -25,6 +25,7 @@ class AssetsAPI(APIClient):
         last_updated_time: Dict[str, Any] = None,
         root: bool = None,
         external_id_prefix: str = None,
+        aggregated_properties: List[str] = None,
         limit: int = None,
     ) -> Generator[Union[Asset, AssetList], None, None]:
         """Iterate over assets
@@ -42,11 +43,14 @@ class AssetsAPI(APIClient):
             last_updated_time (Dict[str, Any]): Range between two timestamps
             root (bool): filtered assets are root assets or not
             external_id_prefix (str): External Id provided by client. Should be unique within the project
+            aggregated_properties (List[str]): Set of aggregated properties to include.
             limit (int, optional): Maximum number of assets to return. Defaults to return all items.
 
         Yields:
             Union[Asset, AssetList]: yields Asset one by one if chunk is not specified, else AssetList objects.
         """
+        if aggregated_properties:
+            aggregated_properties = [utils._auxiliary.to_camel_case(s) for s in aggregated_properties]
 
         filter = AssetFilter(
             name=name,
@@ -59,7 +63,13 @@ class AssetsAPI(APIClient):
             root=root,
             external_id_prefix=external_id_prefix,
         ).dump(camel_case=True)
-        return self._list_generator(method="POST", chunk_size=chunk_size, filter=filter, limit=limit)
+        return self._list_generator(
+            method="POST",
+            chunk_size=chunk_size,
+            filter=filter,
+            limit=limit,
+            other_params={"aggregatedProperties": aggregated_properties} if aggregated_properties else {},
+        )
 
     def __iter__(self) -> Generator[Asset, None, None]:
         """Iterate over assets
@@ -137,6 +147,7 @@ class AssetsAPI(APIClient):
         last_updated_time: Dict[str, Any] = None,
         root: bool = None,
         external_id_prefix: str = None,
+        aggregated_properties: List[str] = None,
         limit: int = 25,
     ) -> AssetList:
         """List assets
@@ -151,6 +162,7 @@ class AssetsAPI(APIClient):
             last_updated_time (Dict[str, Any]): Range between two timestamps
             root (bool): filtered assets are root assets or not
             external_id_prefix (str): External Id provided by client. Should be unique within the project
+            aggregated_properties (List[str]): Set of aggregated properties to include.
             limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all items.
 
@@ -179,6 +191,9 @@ class AssetsAPI(APIClient):
                 >>> for asset_list in c.assets(chunk_size=2500):
                 ...     asset_list # do something with the assets
         """
+        if aggregated_properties:
+            aggregated_properties = [utils._auxiliary.to_camel_case(s) for s in aggregated_properties]
+
         filter = AssetFilter(
             name=name,
             parent_ids=parent_ids,
@@ -190,7 +205,7 @@ class AssetsAPI(APIClient):
             root=root,
             external_id_prefix=external_id_prefix,
         ).dump(camel_case=True)
-        return self._list(method="POST", limit=limit, filter=filter)
+        return self._list(method="POST", limit=limit, filter=filter,  other_params={"aggregatedProperties": aggregated_properties} if aggregated_properties else {})
 
     def create(self, asset: Union[Asset, List[Asset]]) -> Union[Asset, AssetList]:
         """Create one or more assets. You can create an arbitrary number of assets, and the SDK will split the request into multiple requests.

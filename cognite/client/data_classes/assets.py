@@ -121,6 +121,18 @@ class Asset(CogniteResource):
         """
         return self._cognite_client.files.list(asset_ids=[self.id], **kwargs)
 
+    def to_pandas(self, expand: List[str] = ("metadata","aggregates"), ignore: List[str] = None):
+        """Convert the instance into a pandas DataFrame.
+
+        Args:
+            expand (List[str]): List of row keys to expand, only works if the value is a Dict.
+                Will expand metadata by default.
+            ignore (List[str]): List of row keys to not include when converting to a data frame.
+
+        Returns:
+            pandas.DataFrame: The dataframe.
+        """
+        return super().to_pandas(expand,ignore)
 
 # GenUpdateClass: AssetChange
 class AssetUpdate(CogniteUpdate):
