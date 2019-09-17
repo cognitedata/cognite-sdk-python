@@ -1042,6 +1042,7 @@ class DatapointsFetcher:
             datapoints = self._get_datapoints(
                 next_start, end, ts_item, aggregates, granularity, include_outside_points, limit_next_request
             )
+            all_datapoints._extend(datapoints)
             if len(datapoints) == 0:
                 break
 
@@ -1053,7 +1054,6 @@ class DatapointsFetcher:
             next_start = latest_timestamp + (
                 cognite.client.utils._time.granularity_to_ms(granularity) if granularity else 1
             )
-            all_datapoints._extend(datapoints)
         return all_datapoints
 
     def _get_datapoints(

@@ -96,6 +96,14 @@ class Asset(CogniteResource):
         """
         return self._cognite_client.time_series.list(asset_ids=[self.id], **kwargs)
 
+    def sequences(self, **kwargs) -> "SequenceList":
+        """Retrieve all sequences related to this asset.
+
+        Returns:
+            SequenceList: All sequences related to this asset.
+        """
+        return self._cognite_client.sequences.list(asset_ids=[self.id], **kwargs)
+
     def events(self, **kwargs) -> "EventList":
         """Retrieve all events related to this asset.
 
@@ -198,6 +206,16 @@ class AssetList(CogniteResourceList):
         from cognite.client.data_classes import TimeSeriesList
 
         return self._retrieve_related_resources(TimeSeriesList, self._cognite_client.time_series)
+
+    def sequences(self) -> "SequenceList":
+        """Retrieve all sequences related to these assets.
+
+        Returns:
+            SequenceList: All sequences related to the assets in this AssetList.
+        """
+        from cognite.client.data_classes import SequenceList
+
+        return self._retrieve_related_resources(SequenceList, self._cognite_client.sequences)
 
     def events(self) -> "EventList":
         """Retrieve all events related to these assets.
