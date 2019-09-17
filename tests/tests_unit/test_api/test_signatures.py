@@ -11,7 +11,7 @@ class TestListAndIterSignatures:
     @pytest.mark.parametrize(
         "api, filter, ignore",
         [
-            (assets.AssetsAPI, assets.AssetFilter, ["root_external_ids"]),
+            (assets.AssetsAPI, assets.AssetFilter, ["root_external_ids","aggregated_properties"]),
             (events.EventsAPI, events.EventFilter, []),
             (files.FilesAPI, files.FileMetadataFilter, []),
             (sequences.SequencesAPI, sequences.SequenceFilter, []),
