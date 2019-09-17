@@ -36,7 +36,7 @@ class AssetsAPI(APIClient):
             chunk_size (int, optional): Number of assets to return in each chunk. Defaults to yielding one asset a time.
             name (str): Name of asset. Often referred to as tag.
             parent_ids (List[int]): No description.
-            root_ids (Union[List[int], List[Dict[str, Any]], optional): List of root ids ids to filter on.
+            root_ids (List[int], optional): List of root ids ids to filter on.
             root_external_ids (List[str], optional): List of root external ids to filter on.
             metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
             source (str): The source of this asset
@@ -150,7 +150,7 @@ class AssetsAPI(APIClient):
         Args:
             name (str): Name of asset. Often referred to as tag.
             parent_ids (List[int]): List of parent ids to filter on.
-            root_ids (Union[List[int], List[Dict[str, Any]], optional): List of root ids ids to filter on.
+            root_ids (List[int], optional): List of root ids ids to filter on.
             root_external_ids (List[str], optional): List of root external ids to filter on.
             metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
             source (str): The source of this asset
