@@ -68,3 +68,8 @@ class TestSequencesAPI:
         update_seq = SequenceUpdate(new_seq.id).name.set("newname")
         res = COGNITE_CLIENT.sequences.update(update_seq)
         assert "newname" == res.name
+
+    def test_get_new(self, new_seq):
+        res = COGNITE_CLIENT.sequences.retrieve(id=new_seq.id)
+        #assert ["DOUBLE"] == res.column_value_types # soon to change
+        assert ["column0"] == res.column_external_ids

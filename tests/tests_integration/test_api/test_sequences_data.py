@@ -98,7 +98,7 @@ class TestSequencesDataAPI:
 
     def test_insert(self, new_seq):
         data = {i: ["str"] for i in range(1, 61)}
-        COGNITE_CLIENT.sequences.data.insert(rows=data, column_ids=new_seq.column_ids, id=new_seq.id)
+        COGNITE_CLIENT.sequences.data.insert(rows=data, column_external_ids=new_seq.column_external_ids, id=new_seq.id)
 
     def test_insert_raw(self, new_seq_long):
         data = [{"rowNumber": i, "values": [2 * i]} for i in range(1, 61)]
@@ -149,7 +149,6 @@ class TestSequencesDataAPI:
         )
         assert 1 == len(dps)
         assert 1 == len(dps.column_external_ids)
-        assert 1 == len(dps.column_ids)
         assert isinstance(dps.values[0][0], str)
 
     def test_retrieve_mixed(self, named_long_str):
@@ -162,8 +161,6 @@ class TestSequencesDataAPI:
         assert isinstance(dps.get_column(external_id="strcol")[0], str)
         with pytest.raises(ValueError):
             dps.get_column("missingcol")
-        with pytest.raises(ValueError):
-            dps.get_column(id=234324)
 
     def test_retrieve_paginate_end_coinciding_with_page(self, string200, post_spy):
         data = COGNITE_CLIENT.sequences.data.retrieve(start=1, end=118, id=string200.id)
@@ -171,7 +168,7 @@ class TestSequencesDataAPI:
 
     def test_delete_range(self, new_seq_long):
         data = [(i, [10 * i]) for i in [1, 2, 3, 5, 8, 13, 21, 34]]
-        COGNITE_CLIENT.sequences.data.insert(column_ids=new_seq_long.column_ids, rows=data, id=new_seq_long.id)
+        COGNITE_CLIENT.sequences.data.insert(column_external_ids=new_seq_long.column_external_ids, rows=data, id=new_seq_long.id)
         COGNITE_CLIENT.sequences.data.delete_range(start=4, end=15, id=new_seq_long.id)
         dps = COGNITE_CLIENT.sequences.data.retrieve(start=0, end=None, id=new_seq_long.id)
         # potential delay, so can't assert, but tested in notebook

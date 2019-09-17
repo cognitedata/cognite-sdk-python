@@ -3,8 +3,8 @@ from unittest.mock import call
 
 import pytest
 
-from cognite.client import CogniteClient
-from cognite.client.data_classes import Asset, AssetList, Event, EventList, FileMetadata, FileMetadataList
+from cognite.client.experimental import CogniteClient
+from cognite.client.data_classes import Asset, AssetList, Event, EventList, FileMetadata, FileMetadataList, Sequence, SequenceList
 
 c = CogniteClient()
 
@@ -23,6 +23,13 @@ class TestAsset:
         a.time_series()
         assert c.time_series.list.call_args == call(asset_ids=[1])
         assert c.time_series.list.call_count == 1
+
+    def test_get_sequences(self):
+        c.sequences.list = mock.MagicMock()
+        a = Asset(id=1, cognite_client=c)
+        a.sequences()
+        assert c.sequences.list.call_args == call(asset_ids=[1])
+        assert c.sequences.list.call_count == 1
 
     def test_get_files(self):
         c.files.list = mock.MagicMock()
@@ -67,6 +74,13 @@ class TestAssetList:
         a.time_series()
         assert c.time_series.list.call_args == call(asset_ids=[1], limit=-1)
         assert c.time_series.list.call_count == 1
+
+    def test_get_sequences(self):
+        c.sequences.list = mock.MagicMock()
+        a = AssetList(resources=[Asset(id=1)], cognite_client=c)
+        a.sequences()
+        assert c.sequences.list.call_args == call(asset_ids=[1], limit=-1)
+        assert c.sequences.list.call_count == 1
 
     def test_get_files(self):
         c.files.list = mock.MagicMock()
