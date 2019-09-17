@@ -58,15 +58,6 @@ class Sequence(CogniteResource):
         return self._cognite_client.sequences.data.retrieve(**identifier, start=start, end=end)
 
     @property
-    def column_ids(self):
-        """Retrieves list of column ids for the sequence, for use in e.g. data retrieve or insert methods
-
-        Returns:
-            List of sequence column ids.
-        """
-        return [c.get("id") for c in self.columns]
-
-    @property
     def column_external_ids(self):
         """Retrieves list of column external ids for the sequence, for use in e.g. data retrieve or insert methods
 
@@ -241,28 +232,20 @@ class SequenceData:
             raise TypeError("Slicing SequenceData not supported")
         return self.values[self.row_numbers.index(item)]
 
-    def get_column(self, external_id: str = None, id: int = None) -> List[Union[int, str, float]]:
-        """Get a column by id or external_id.
+    def get_column(self, external_id: str) -> List[Union[int, str, float]]:
+        """Get a column by external_id.
 
         Args:
             external_id (str): External id of the column.
-            id (int): Id of the column.
 
         Returns:
             List[Union[int, str, float]]: A list of values for that column in the sequence
         """
         try:
-            if id:
-                ix = self.column_ids.index(id)
-            elif external_id:
-                ix = self.column_external_ids.index(external_id)
-            else:
-                raise ValueError("Expecting either id or external_id for the column to get")
+            ix = self.column_external_ids.index(external_id)
         except ValueError as e:
             raise ValueError(
-                "Column {} not found, Sequence column external ids are {} and ids are {}".format(
-                    id if id else external_id, self.column_external_ids, self.column_ids
-                )
+                "Column {} not found, Sequence column external ids are {}".format(external_id, self.column_external_ids)
             )
         return [r[ix] for r in self.values]
 
@@ -290,7 +273,7 @@ class SequenceData:
             dumped = {utils._auxiliary.to_camel_case(key): value for key, value in dumped.items()}
         return {key: value for key, value in dumped.items() if value is not None}
 
-    def to_pandas(self, column_names="externalIdIfExists") -> "pandas.DataFrame":
+    def to_pandas(self) -> "pandas.DataFrame":
         """Convert the sequence data into a pandas DataFrame.
 
         Args:
@@ -300,27 +283,10 @@ class SequenceData:
             pandas.DataFrame: The dataframe.
         """
         pd = utils._auxiliary.local_import("pandas")
-        if column_names == "externalIdIfExists":
-            column_names = "externalId" if None not in self.column_external_ids else "id"
 
-        if column_names == "externalId":
-            identifiers = self.column_external_ids
-        elif column_names == "id":
-            identifiers = self.column_ids
-        else:
-            raise ValueError("column_names must be 'externalIdIfExists', 'externalId' or 'id'")
         return pd.DataFrame(
-            [[x or math.nan for x in r] for r in self.values], index=self.row_numbers, columns=identifiers
+            [[x or math.nan for x in r] for r in self.values], index=self.row_numbers, columns=self.column_external_ids
         )
-
-    @property
-    def column_ids(self) -> List[int]:
-        """Retrieves list of column ids for the sequence, for use in e.g. data retrieve or insert methods.
-
-        Returns:
-            List of sequence column ids.
-        """
-        return [c.get("id") for c in self.columns]
 
     @property
     def column_external_ids(self) -> List[Optional[str]]:
