@@ -353,7 +353,6 @@ class APIClient:
     ):
         cls = cls or self._LIST_CLASS
         resource_path = resource_path or self._RESOURCE_PATH
-        current_limit = self._LIST_LIMIT
 
         def get_partition(partition):
             next_cursor = None
@@ -361,14 +360,13 @@ class APIClient:
             while True:
                 body = {
                     "filter": filter or {},
-                    "limit": current_limit,
+                    "limit": self._LIST_LIMIT,
                     "cursor": next_cursor,
                     "partition": partition,
                     **other_params,
                 }
                 res = self._post(url_path=resource_path + "/list", json=body, headers=headers)
-                last_received_items = res.json()["items"]
-                retrieved_items.extend(last_received_items)
+                retrieved_items.extend(res.json()["items"])
                 next_cursor = res.json().get("nextCursor")
                 if next_cursor is None:
                     break
