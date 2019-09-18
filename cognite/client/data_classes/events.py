@@ -8,7 +8,7 @@ class Event(CogniteResource):
     """An event represents something that happened at a given interval in time, e.g a failure, a work order etc.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique within the project.
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
         start_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         end_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         type (str): Type of the event, e.g 'failure'.
@@ -17,7 +17,7 @@ class Event(CogniteResource):
         metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         asset_ids (List[int]): Asset IDs of related equipment that this event relates to.
         source (str): The source of this event.
-        id (int): A JavaScript-friendly internal ID for the object.
+        id (int): A server-generated ID for the object.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         cognite_client (CogniteClient): The client to associate with this object.
@@ -71,7 +71,7 @@ class EventFilter(CogniteFilter):
         subtype (str): The event subtype
         created_time (Dict[str, Any]): Range between two timestamps.
         last_updated_time (Dict[str, Any]): Range between two timestamps.
-        external_id_prefix (str): The external ID provided by the client. Must be unique within the project.
+        external_id_prefix (str): The external ID provided by the client. Must be unique for the resource type.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
@@ -111,8 +111,8 @@ class EventUpdate(CogniteUpdate):
     """Changes will be applied to event.
 
     Args:
-        id (int): A JavaScript-friendly internal ID for the object.
-        external_id (str): The external ID provided by the client. Must be unique within the project.
+        id (int): A server-generated ID for the object.
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
     """
 
     @property

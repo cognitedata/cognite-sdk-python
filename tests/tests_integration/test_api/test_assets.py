@@ -92,6 +92,12 @@ class TestAssetsAPI:
         res_part = COGNITE_CLIENT.assets.list(partitions=8, limit=None, created_time={"max": 1568619705000})
         assert len(res_flat) == len(res_part)
 
+    def test_list_with_aggregated_properties_param(self, post_spy):
+        res = COGNITE_CLIENT.assets.list(limit=10, aggregated_properties=["child_count"])
+        for asset in res:
+            assert {"childCount"} == asset.aggregates.keys()
+            assert isinstance(asset.aggregates["childCount"], int)
+
     def test_search(self):
         res = COGNITE_CLIENT.assets.search(name="test__asset_0", filter=AssetFilter(name="test__asset_0"))
         assert len(res) > 0

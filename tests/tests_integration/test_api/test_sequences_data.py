@@ -44,7 +44,7 @@ def pretend_timeseries():
 
 @pytest.fixture(scope="session")
 def new_seq():
-    seq = COGNITE_CLIENT.sequences.create(Sequence(columns=[{}]))
+    seq = COGNITE_CLIENT.sequences.create(Sequence(columns=[{"valueType": "STRING"}]))
     yield seq
     COGNITE_CLIENT.sequences.delete(id=seq.id)
     assert COGNITE_CLIENT.sequences.retrieve(seq.id) is None

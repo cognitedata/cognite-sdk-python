@@ -18,13 +18,15 @@ class AssetsAPI(APIClient):
         chunk_size: int = None,
         name: str = None,
         parent_ids: List[int] = None,
-        root_ids: List[Dict[str, Any]] = None,
+        root_ids: List[int] = None,
+        root_external_ids: List[str] = None,
         metadata: Dict[str, Any] = None,
         source: str = None,
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
         root: bool = None,
         external_id_prefix: str = None,
+        aggregated_properties: List[str] = None,
         limit: int = None,
     ) -> Generator[Union[Asset, AssetList], None, None]:
         """Iterate over assets
@@ -35,18 +37,25 @@ class AssetsAPI(APIClient):
             chunk_size (int, optional): Number of assets to return in each chunk. Defaults to yielding one asset a time.
             name (str): Name of asset. Often referred to as tag.
             parent_ids (List[int]): No description.
-            root_ids (List[Dict[str, Any]]): List of root ids/external ids to filter on.
+            root_ids (List[int], optional): List of root ids ids to filter on.
+            root_external_ids (List[str], optional): List of root external ids to filter on.
             metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
             source (str): The source of this asset
             created_time (Dict[str, Any]): Range between two timestamps
             last_updated_time (Dict[str, Any]): Range between two timestamps
             root (bool): filtered assets are root assets or not
             external_id_prefix (str): External Id provided by client. Should be unique within the project
+            aggregated_properties (List[str]): Set of aggregated properties to include.
             limit (int, optional): Maximum number of assets to return. Defaults to return all items.
 
         Yields:
             Union[Asset, AssetList]: yields Asset one by one if chunk is not specified, else AssetList objects.
         """
+        if aggregated_properties:
+            aggregated_properties = [utils._auxiliary.to_camel_case(s) for s in aggregated_properties]
+        # dict option for backward compatibility
+        if (root_ids and not isinstance(root_ids[0], dict)) or root_external_ids:
+            root_ids = self._process_ids(root_ids, root_external_ids, wrap_ids=True)
 
         filter = AssetFilter(
             name=name,
@@ -59,7 +68,13 @@ class AssetsAPI(APIClient):
             root=root,
             external_id_prefix=external_id_prefix,
         ).dump(camel_case=True)
-        return self._list_generator(method="POST", chunk_size=chunk_size, filter=filter, limit=limit)
+        return self._list_generator(
+            method="POST",
+            chunk_size=chunk_size,
+            filter=filter,
+            limit=limit,
+            other_params={"aggregatedProperties": aggregated_properties} if aggregated_properties else {},
+        )
 
     def __iter__(self) -> Generator[Asset, None, None]:
         """Iterate over assets
@@ -130,7 +145,8 @@ class AssetsAPI(APIClient):
         self,
         name: str = None,
         parent_ids: List[int] = None,
-        root_ids: List[Dict[str, Any]] = None,
+        root_ids: List[int] = None,
+        root_external_ids: List[str] = None,
         metadata: Dict[str, Any] = None,
         source: str = None,
         created_time: Dict[str, Any] = None,
@@ -138,6 +154,7 @@ class AssetsAPI(APIClient):
         root: bool = None,
         external_id_prefix: str = None,
         partitions: int = None,
+        aggregated_properties: List[str] = None,
         limit: int = 25,
     ) -> AssetList:
         """List assets
@@ -145,14 +162,19 @@ class AssetsAPI(APIClient):
         Args:
             name (str): Name of asset. Often referred to as tag.
             parent_ids (List[int]): List of parent ids to filter on.
-            root_ids (List[Dict[str, Any]]): List of root ids/root external ids to filter on.
+            root_ids (List[int], optional): List of root ids ids to filter on.
+            root_external_ids (List[str], optional): List of root external ids to filter on.
             metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
             source (str): The source of this asset
             created_time (Dict[str, Any]): Range between two timestamps
             last_updated_time (Dict[str, Any]): Range between two timestamps
             root (bool): filtered assets are root assets or not
             external_id_prefix (str): External Id provided by client. Should be unique within the project
+<<<<<<< HEAD
             partitions (int): retrieve many assets in parallel using this number of threads. Can not be used in combination with `limit'.
+=======
+            aggregated_properties (List[str]): Set of aggregated properties to include.
+>>>>>>> 9f5226218ce3ee2b13ac3ce714a088e090832210
             limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all items.
 
@@ -181,6 +203,13 @@ class AssetsAPI(APIClient):
                 >>> for asset_list in c.assets(chunk_size=2500):
                 ...     asset_list # do something with the assets
         """
+        if aggregated_properties:
+            aggregated_properties = [utils._auxiliary.to_camel_case(s) for s in aggregated_properties]
+
+        # dict option for backward compatibility
+        if (root_ids and not isinstance(root_ids[0], dict)) or root_external_ids:
+            root_ids = self._process_ids(root_ids, root_external_ids, wrap_ids=True)
+
         filter = AssetFilter(
             name=name,
             parent_ids=parent_ids,
@@ -195,9 +224,18 @@ class AssetsAPI(APIClient):
         if partitions and (limit is not None and limit != -1 and limit != float("inf")):
             raise ValueError("When using partitions, limit values other than `None`, `-1` or `inf' are not supported.")
         if partitions:
-            return self._list_partitioned(partitions=partitions, filter=filter)
+            return self._list_partitioned(
+                partitions=partitions,
+                filter=filter,
+                other_params={"aggregatedProperties": aggregated_properties} if aggregated_properties else {},
+            )
         else:
-            return self._list(method="POST", limit=limit, filter=filter)
+            return self._list(
+                method="POST",
+                limit=limit,
+                filter=filter,
+                other_params={"aggregatedProperties": aggregated_properties} if aggregated_properties else {},
+            )
 
     def create(self, asset: Union[Asset, List[Asset]]) -> Union[Asset, AssetList]:
         """Create one or more assets. You can create an arbitrary number of assets, and the SDK will split the request into multiple requests.
