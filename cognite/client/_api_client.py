@@ -339,6 +339,35 @@ class APIClient:
             items.extend(resource_list.data)
         return cls(items, cognite_client=self._cognite_client)
 
+    def _list_partitioned(
+        self, partitions, cls=None, resource_path: str = None, filter: Dict = None, headers: Dict = None
+    ):
+        cls = cls or self._LIST_CLASS
+        resource_path = resource_path or self._RESOURCE_PATH
+        current_limit = self._LIST_LIMIT
+
+        def get_partition(partition):
+            next_cursor = None
+            retrieved_items = []
+            while True:
+                body = {"filter": filter or {}, "limit": current_limit, "cursor": next_cursor, "partition": partition}
+                res = self._post(url_path=resource_path + "/list", json=body, headers=headers)
+                last_received_items = res.json()["items"]
+                retrieved_items.extend(last_received_items)
+                next_cursor = res.json().get("nextCursor")
+                if next_cursor is None:
+                    break
+            return cls._load(retrieved_items, cognite_client=self._cognite_client)
+
+        tasks = [("{}/{}".format(i + 1, partitions),) for i in range(partitions)]
+        tasks_summary = utils._concurrency.execute_tasks_concurrently(get_partition, tasks, max_workers=partitions)
+        if tasks_summary.exceptions:
+            raise tasks_summary.exceptions[0]
+        result = tasks_summary.results[0]
+        for part_res in tasks_summary.results[1:]:
+            result.extend(part_res)
+        return result
+
     def _create_multiple(
         self,
         items: Union[List[Any], Any],

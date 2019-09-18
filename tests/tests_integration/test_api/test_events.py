@@ -52,6 +52,12 @@ class TestEventsAPI:
         assert 20 == len(res)
         assert 2 == COGNITE_CLIENT.events._post.call_count
 
+    def test_partitioned_list(self, post_spy):
+        # stop race conditions by cutting off max created time
+        res_flat = COGNITE_CLIENT.events.list(limit=None, created_time={"max": 1568619705000})
+        res_part = COGNITE_CLIENT.events.list(partitions=8, limit=None, created_time={"max": 1568619705000})
+        assert len(res_flat) == len(res_part)
+
     def test_search(self):
         res = COGNITE_CLIENT.events.search(
             filter=EventFilter(start_time={"min": cognite.client.utils._time.timestamp_to_ms("2d-ago")})

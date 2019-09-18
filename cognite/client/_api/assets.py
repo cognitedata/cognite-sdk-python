@@ -137,6 +137,7 @@ class AssetsAPI(APIClient):
         last_updated_time: Dict[str, Any] = None,
         root: bool = None,
         external_id_prefix: str = None,
+        partitions: int = None,
         limit: int = 25,
     ) -> AssetList:
         """List assets
@@ -151,6 +152,7 @@ class AssetsAPI(APIClient):
             last_updated_time (Dict[str, Any]): Range between two timestamps
             root (bool): filtered assets are root assets or not
             external_id_prefix (str): External Id provided by client. Should be unique within the project
+            partitions (int): retrieve many assets in parallel using this number of threads. Can not be used in combination with `limit'.
             limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all items.
 
@@ -190,7 +192,12 @@ class AssetsAPI(APIClient):
             root=root,
             external_id_prefix=external_id_prefix,
         ).dump(camel_case=True)
-        return self._list(method="POST", limit=limit, filter=filter)
+        if partitions and (limit is not None and limit != -1 and limit != float("inf")):
+            raise ValueError("When using partitions, limit values other than `None`, `-1` or `inf' are not supported.")
+        if partitions:
+            return self._list_partitioned(partitions=partitions, filter=filter)
+        else:
+            return self._list(method="POST", limit=limit, filter=filter)
 
     def create(self, asset: Union[Asset, List[Asset]]) -> Union[Asset, AssetList]:
         """Create one or more assets. You can create an arbitrary number of assets, and the SDK will split the request into multiple requests.
