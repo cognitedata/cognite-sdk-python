@@ -164,15 +164,14 @@ class AssetsAPI(APIClient):
             parent_ids (List[int]): List of parent ids to filter on.
             root_ids (List[int], optional): List of root ids ids to filter on.
             root_external_ids (List[str], optional): List of root external ids to filter on.
-            metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
-            source (str): The source of this asset
-            created_time (Dict[str, Any]): Range between two timestamps
-            last_updated_time (Dict[str, Any]): Range between two timestamps
-            root (bool): filtered assets are root assets or not
-            external_id_prefix (str): External Id provided by client. Should be unique within the project
+            metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value.
+            source (str): The source of this asset.
+            created_time (Dict[str, Any]): Range between two timestamps.
+            last_updated_time (Dict[str, Any]): Range between two timestamps.
+            root (bool): filtered assets are root assets or not.
+            external_id_prefix (str): External Id provided by client. Should be unique within the project.
             aggregated_properties (List[str]): Set of aggregated properties to include.
             partitions (int): retrieve many assets in parallel using this number of threads. Can not be used in combination with `limit'.
-
             limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all items.
 

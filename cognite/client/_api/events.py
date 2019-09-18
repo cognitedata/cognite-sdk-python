@@ -147,17 +147,18 @@ class EventsAPI(APIClient):
         """List events
 
         Args:
-            start_time (Dict[str, Any]): Range between two timestamps
-            end_time (Dict[str, Any]): Range between two timestamps
+            start_time (Dict[str, Any]): Range between two timestamps.
+            end_time (Dict[str, Any]): Range between two timestamps.
             type (str): Type of the event, e.g 'failure'.
             subtype (str): Subtype of the event, e.g 'electrical'.
             metadata (Dict[str, Any]): Customizable extra data about the event. String key -> String value.
             asset_ids (List[int]): Asset IDs of related equipments that this event relates to.
             root_asset_ids (List[Dict[str, Any]]): The IDs of the root assets that the related assets should be children of.
             source (str): The source of this event.
-            created_time (Dict[str, Any]): Range between two timestamps
-            last_updated_time (Dict[str, Any]): Range between two timestamps
-            external_id_prefix (str): External Id provided by client. Should be unique within the project
+            created_time (Dict[str, Any]): Range between two timestamps.
+            last_updated_time (Dict[str, Any]): Range between two timestamps.
+            external_id_prefix (str): External Id provided by client. Should be unique within the project.
+            partitions (int): retrieve many assets in parallel using this number of threads. Can not be used in combination with `limit'.
             limit (int, optional): Maximum number of events to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all items.
 
