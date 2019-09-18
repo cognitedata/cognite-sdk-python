@@ -268,7 +268,7 @@ class APIClient:
         limit: int = None,
         chunk_size: int = None,
         filter: Dict = None,
-        other_params: Dict = None,
+        other_params: Dict = {},
         headers: Dict = None,
     ):
         if limit == -1 or limit == float("inf"):
@@ -294,7 +294,7 @@ class APIClient:
                 params["cursor"] = next_cursor
                 res = self._get(url_path=resource_path, params=params, headers=headers)
             elif method == "POST":
-                body = {"filter": filter, "limit": current_limit, "cursor": next_cursor, **(other_params or {})}
+                body = {"filter": filter, "limit": current_limit, "cursor": next_cursor, **other_params}
                 res = self._post(url_path=resource_path + "/list", json=body, headers=headers)
             else:
                 raise ValueError("_list_generator parameter `method` must be GET or POST, not %s", method)
@@ -323,7 +323,7 @@ class APIClient:
         resource_path: str = None,
         limit: int = None,
         filter: Dict = None,
-        other_params=None,
+        other_params={},
         headers: Dict = None,
     ):
         cls = cls or self._LIST_CLASS
@@ -336,14 +336,20 @@ class APIClient:
             limit=limit,
             chunk_size=self._LIST_LIMIT,
             filter=filter,
-            headers=headers,
             other_params=other_params,
+            headers=headers,
         ):
             items.extend(resource_list.data)
         return cls(items, cognite_client=self._cognite_client)
 
     def _list_partitioned(
-        self, partitions, cls=None, resource_path: str = None, filter: Dict = None, headers: Dict = None
+        self,
+        partitions,
+        cls=None,
+        resource_path: str = None,
+        filter: Dict = None,
+        other_params={},
+        headers: Dict = None,
     ):
         cls = cls or self._LIST_CLASS
         resource_path = resource_path or self._RESOURCE_PATH
@@ -353,7 +359,13 @@ class APIClient:
             next_cursor = None
             retrieved_items = []
             while True:
-                body = {"filter": filter or {}, "limit": current_limit, "cursor": next_cursor, "partition": partition}
+                body = {
+                    "filter": filter or {},
+                    "limit": current_limit,
+                    "cursor": next_cursor,
+                    "partition": partition,
+                    **other_params,
+                }
                 res = self._post(url_path=resource_path + "/list", json=body, headers=headers)
                 last_received_items = res.json()["items"]
                 retrieved_items.extend(last_received_items)

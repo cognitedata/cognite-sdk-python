@@ -125,6 +125,10 @@ class TestAssets:
             calls[0].request.body
         )
 
+    def test_list_partitions(self, mock_assets_response):
+        ASSETS_API.list(partitions=42)
+        assert 42 == mock_assets_response.calls
+
     def test_call_root(self, mock_assets_response):
         list(ASSETS_API.__call__(root_ids=[{"id": 1}, {"externalId": "abc"}], limit=10))
         calls = mock_assets_response.calls

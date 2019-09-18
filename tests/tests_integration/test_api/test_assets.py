@@ -88,9 +88,12 @@ class TestAssetsAPI:
 
     def test_partitioned_list(self, post_spy):
         # stop race conditions by cutting off max created time
-        res_flat = COGNITE_CLIENT.assets.list(limit=None, created_time={"max": 1568619705000})
-        res_part = COGNITE_CLIENT.assets.list(partitions=8, limit=None, created_time={"max": 1568619705000})
+        maxtime = int(time.time() - 3600) * 1000
+        res_flat = COGNITE_CLIENT.assets.list(limit=None, created_time={"max": maxtime})
+        res_part = COGNITE_CLIENT.assets.list(partitions=8, limit=None, created_time={"max": maxtime})
+        assert len(res_flat) > 0
         assert len(res_flat) == len(res_part)
+        assert [a.id for a in res_flat].sort() == [a.id for a in res_part].sort()
 
     def test_list_with_aggregated_properties_param(self, post_spy):
         res = COGNITE_CLIENT.assets.list(limit=10, aggregated_properties=["child_count"])

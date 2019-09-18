@@ -141,6 +141,7 @@ class EventsAPI(APIClient):
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
         external_id_prefix: str = None,
+        partitions: int = None,
         limit: int = 25,
     ) -> EventList:
         """List events
@@ -198,7 +199,12 @@ class EventsAPI(APIClient):
             type=type,
             subtype=subtype,
         ).dump(camel_case=True)
-        return self._list(method="POST", limit=limit, filter=filter)
+        if partitions and (limit is not None and limit != -1 and limit != float("inf")):
+            raise ValueError("When using partitions, limit values other than `None`, `-1` or `inf' are not supported.")
+        if partitions:
+            return self._list_partitioned(partitions=partitions, filter=filter)
+        else:
+            return self._list(method="POST", limit=limit, filter=filter)
 
     def create(self, event: Union[Event, List[Event]]) -> Union[Event, EventList]:
         """Create one or more events.

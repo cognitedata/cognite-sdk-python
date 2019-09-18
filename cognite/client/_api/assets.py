@@ -153,8 +153,8 @@ class AssetsAPI(APIClient):
         last_updated_time: Dict[str, Any] = None,
         root: bool = None,
         external_id_prefix: str = None,
-        partitions: int = None,
         aggregated_properties: List[str] = None,
+        partitions: int = None,
         limit: int = 25,
     ) -> AssetList:
         """List assets
@@ -170,11 +170,9 @@ class AssetsAPI(APIClient):
             last_updated_time (Dict[str, Any]): Range between two timestamps
             root (bool): filtered assets are root assets or not
             external_id_prefix (str): External Id provided by client. Should be unique within the project
-<<<<<<< HEAD
-            partitions (int): retrieve many assets in parallel using this number of threads. Can not be used in combination with `limit'.
-=======
             aggregated_properties (List[str]): Set of aggregated properties to include.
->>>>>>> 9f5226218ce3ee2b13ac3ce714a088e090832210
+            partitions (int): retrieve many assets in parallel using this number of threads. Can not be used in combination with `limit'.
+
             limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all items.
 
