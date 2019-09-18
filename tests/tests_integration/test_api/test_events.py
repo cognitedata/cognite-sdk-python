@@ -55,9 +55,11 @@ class TestEventsAPI:
 
     def test_partitioned_list(self, post_spy):
         # stop race conditions by cutting off max created time
-        maxtime = int(time.time() - 3600) * 1000
-        res_flat = COGNITE_CLIENT.events.list(limit=None, created_time={"max": maxtime})
-        res_part = COGNITE_CLIENT.events.list(partitions=8, limit=None, created_time={"max": maxtime})
+        maxtime = 1556559000000
+        res_flat = COGNITE_CLIENT.events.list(limit=None, type="test-data-populator", start_time={"max": maxtime})
+        res_part = COGNITE_CLIENT.events.list(
+            partitions=8, type="test-data-populator", start_time={"max": maxtime}, limit=None
+        )
         assert len(res_flat) > 0
         assert len(res_flat) == len(res_part)
         assert [a.id for a in res_flat].sort() == [a.id for a in res_part].sort()
