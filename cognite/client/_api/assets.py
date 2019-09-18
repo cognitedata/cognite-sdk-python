@@ -218,21 +218,13 @@ class AssetsAPI(APIClient):
             root=root,
             external_id_prefix=external_id_prefix,
         ).dump(camel_case=True)
-        if partitions and (limit is not None and limit != -1 and limit != float("inf")):
-            raise ValueError("When using partitions, limit values other than `None`, `-1` or `inf' are not supported.")
-        if partitions:
-            return self._list_partitioned(
-                partitions=partitions,
-                filter=filter,
-                other_params={"aggregatedProperties": aggregated_properties} if aggregated_properties else {},
-            )
-        else:
-            return self._list(
-                method="POST",
-                limit=limit,
-                filter=filter,
-                other_params={"aggregatedProperties": aggregated_properties} if aggregated_properties else {},
-            )
+        return self._list(
+            method="POST",
+            limit=limit,
+            filter=filter,
+            other_params={"aggregatedProperties": aggregated_properties} if aggregated_properties else {},
+            partitions=partitions,
+        )
 
     def create(self, asset: Union[Asset, List[Asset]]) -> Union[Asset, AssetList]:
         """Create one or more assets. You can create an arbitrary number of assets, and the SDK will split the request into multiple requests.

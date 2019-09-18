@@ -324,8 +324,14 @@ class APIClient:
         limit: int = None,
         filter: Dict = None,
         other_params={},
+        partitions=None,
         headers: Dict = None,
     ):
+        if partitions:
+            if limit is not None and limit != -1 and limit != float("inf"):
+                raise ValueError("When using partitions, limit should be `None`, `-1` or `inf`.")
+            return self._list_partitioned(partitions=partitions, filter=filter, other_params=other_params)
+
         cls = cls or self._LIST_CLASS
         resource_path = resource_path or self._RESOURCE_PATH
         items = []
