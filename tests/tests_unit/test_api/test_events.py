@@ -53,8 +53,8 @@ class TestEvents:
         assert mock_events_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
     def test_list_partitions(self, mock_events_response):
-        EVENTS_API.list(partitions=13)
-        assert 13 == mock_assets_response.calls
+        EVENTS_API.list(partitions=13, limit=float("inf"))
+        assert 13 == len(mock_events_response.calls)
 
     def test_create_single(self, mock_events_response):
         res = EVENTS_API.create(Event(external_id="1"))
