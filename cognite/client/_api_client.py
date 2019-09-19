@@ -328,7 +328,7 @@ class APIClient:
         headers: Dict = None,
     ):
         if partitions:
-            if limit is not None and limit != -1 and limit != float("inf"):
+            if limit not in [None, -1, float("inf")]:
                 raise ValueError("When using partitions, limit should be `None`, `-1` or `inf`.")
             return self._list_partitioned(partitions=partitions, filter=filter, other_params=other_params)
 
