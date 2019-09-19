@@ -158,7 +158,7 @@ class EventsAPI(APIClient):
             created_time (Dict[str, Any]): Range between two timestamps.
             last_updated_time (Dict[str, Any]): Range between two timestamps.
             external_id_prefix (str): External Id provided by client. Should be unique within the project.
-            partitions (int): retrieve many assets in parallel using this number of threads. Can not be used in combination with `limit`.
+            partitions (int): Retrieve events in parallel using this number of workers. When set, `limit` must be None.
             limit (int, optional): Maximum number of events to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all items.
 
