@@ -37,25 +37,6 @@ def mock_assets_response(rsps):
 
 
 @pytest.fixture
-def mock_assets_response_with_failure(rsps):
-    def request_callback(request):
-        payload = jsgz_load(request.body)
-        np, total = payload["partition"].split("/")
-        if int(np) == 2:
-            return 503, {}, json.dumps({"message": "Service Unavailable"})
-        else:
-            return 200, {}, json.dumps({"items": [EXAMPLE_ASSET]})
-
-    rsps.add_callback(
-        rsps.POST,
-        ASSETS_API._get_base_url_with_base_path() + "/assets/list",
-        callback=request_callback,
-        content_type="application/json",
-    )
-    yield rsps
-
-
-@pytest.fixture
 def mock_get_subtree_base(rsps):
     rsps.add(
         rsps.POST, ASSETS_API._get_base_url_with_base_path() + "/assets/byids", status=200, json={"items": [{"id": 1}]}
@@ -140,24 +121,6 @@ class TestAssets:
         assert {"cursor": None, "limit": 10, "filter": {"rootIds": [{"id": 1}, {"externalId": "abc"}]}} == jsgz_load(
             calls[0].request.body
         )
-
-    def test_list_partitions(self, mock_assets_response):
-        res = ASSETS_API.list(partitions=3, limit=None)
-        assert isinstance(res, AssetList)
-        assert isinstance(res[0], Asset)
-        assert 3 == len(mock_assets_response.calls)
-        assert {"1/3", "2/3", "3/3"} == {jsgz_load(c.request.body)["partition"] for c in mock_assets_response.calls}
-        for call in mock_assets_response.calls:
-            request = jsgz_load(call.request.body)
-            del request["partition"]
-            assert {"cursor": None, "filter": {}, "limit": 1000} == request
-            assert call.response.json()["items"][0] == res[0].dump(camel_case=True)
-
-    def test_list_partitions_with_failure(self, mock_assets_response_with_failure):
-        with pytest.raises(CogniteAPIError) as exc:
-            res = ASSETS_API.list(partitions=4, limit=None)
-        assert 503 == exc.value.code
-        assert 4 == len(mock_assets_response_with_failure.calls)
 
     def test_call_root(self, mock_assets_response):
         list(ASSETS_API.__call__(root_ids=[{"id": 1}, {"externalId": "abc"}], limit=10))

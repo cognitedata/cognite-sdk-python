@@ -330,7 +330,14 @@ class APIClient:
         if partitions:
             if limit not in [None, -1, float("inf")]:
                 raise ValueError("When using partitions, limit should be `None`, `-1` or `inf`.")
-            return self._list_partitioned(partitions=partitions, filter=filter, other_params=other_params)
+            return self._list_partitioned(
+                partitions=partitions,
+                cls=cls,
+                resource_path=resource_path,
+                filter=filter,
+                other_params=other_params,
+                headers=headers,
+            )
 
         cls = cls or self._LIST_CLASS
         resource_path = resource_path or self._RESOURCE_PATH
