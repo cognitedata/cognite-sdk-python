@@ -143,6 +143,8 @@ class TestAssets:
 
     def test_list_partitions(self, mock_assets_response):
         res = ASSETS_API.list(partitions=3, limit=None)
+        assert isinstance(res, AssetList)
+        assert isinstance(res[0], Asset)
         assert 3 == len(mock_assets_response.calls)
         assert {"1/3", "2/3", "3/3"} == {jsgz_load(c.request.body)["partition"] for c in mock_assets_response.calls}
         for call in mock_assets_response.calls:
