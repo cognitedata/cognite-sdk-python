@@ -62,7 +62,7 @@ class TestEventsAPI:
         )
         assert len(res_flat) > 0
         assert len(res_flat) == len(res_part)
-        assert [a.id for a in res_flat].sort() == [a.id for a in res_part].sort()
+        assert {a.id for a in res_flat} == {a.id for a in res_part}
 
     def test_search(self):
         res = COGNITE_CLIENT.events.search(
