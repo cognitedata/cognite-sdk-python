@@ -154,6 +154,7 @@ class AssetsAPI(APIClient):
         root: bool = None,
         external_id_prefix: str = None,
         aggregated_properties: List[str] = None,
+        partitions: int = None,
         limit: int = 25,
     ) -> AssetList:
         """List assets
@@ -163,13 +164,14 @@ class AssetsAPI(APIClient):
             parent_ids (List[int]): List of parent ids to filter on.
             root_ids (List[int], optional): List of root ids ids to filter on.
             root_external_ids (List[str], optional): List of root external ids to filter on.
-            metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
-            source (str): The source of this asset
-            created_time (Dict[str, Any]): Range between two timestamps
-            last_updated_time (Dict[str, Any]): Range between two timestamps
-            root (bool): filtered assets are root assets or not
-            external_id_prefix (str): External Id provided by client. Should be unique within the project
+            metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value.
+            source (str): The source of this asset.
+            created_time (Dict[str, Any]): Range between two timestamps.
+            last_updated_time (Dict[str, Any]): Range between two timestamps.
+            root (bool): filtered assets are root assets or not.
+            external_id_prefix (str): External Id provided by client. Should be unique within the project.
             aggregated_properties (List[str]): Set of aggregated properties to include.
+            partitions (int): Retrieve assets in parallel using this number of workers. Also requires `limit=None` to be passed.
             limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all items.
 
@@ -221,6 +223,7 @@ class AssetsAPI(APIClient):
             limit=limit,
             filter=filter,
             other_params={"aggregatedProperties": aggregated_properties} if aggregated_properties else {},
+            partitions=partitions,
         )
 
     def create(self, asset: Union[Asset, List[Asset]]) -> Union[Asset, AssetList]:

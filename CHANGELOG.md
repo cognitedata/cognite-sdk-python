@@ -24,6 +24,7 @@ Changes are grouped as follows
 ### Added
 - Support for aggregated properties of assets.
 - `Asset` and `AssetList` classes now have a `sequences` function which retrieves related sequences.
+- Support for partitioned listing of assets and events.
 
 ### Changed
 - `list` and `__call__` methods for assets now support list parameters for `root_ids`, `root_external_ids`.

@@ -99,7 +99,6 @@ class TestRelationships:
     def test_create_single_types(self, mock_rel_response):
         types = [Asset, TimeSeries, FileMetadata, Event]
         for cls in types:
-            print(cls)
             test = cls(external_id="test")
             res = REL_API.create(
                 Relationship(

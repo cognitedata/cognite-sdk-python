@@ -404,7 +404,6 @@ class TestSequences:
         list_request = [call for call in mock_get_sequence_data.calls if "/data/list" in call.request.url][0]
         response = list_request.response.json()
         data_dump = r1.dump(camel_case=True)
-        print(response)
         for f in ["columns", "rows", "id"]:
             assert response[f] == data_dump[f]
 
@@ -425,7 +424,6 @@ class TestSequencesPandasIntegration:
     def test_retrieve_dataframe_columns_many_extid(self, mock_get_sequence_data_many_columns):
         data = SEQ_API.data.retrieve(external_id="foo", start=1000000, end=1100000)
         assert isinstance(data, SequenceData)
-        print(data.to_pandas())
         assert ["ceid" + str(i) for i in range(200)] == list(data.to_pandas().columns)
 
     def test_retrieve_dataframe_convert_null(self, mock_seq_response, mock_get_sequence_data_with_null):

@@ -15,25 +15,22 @@ from tests.utils import jsgz_load, profilectx, set_request_limit
 COGNITE_CLIENT = CogniteClient()
 ASSETS_API = COGNITE_CLIENT.assets
 
+EXAMPLE_ASSET = {
+    "externalId": "string",
+    "name": "string",
+    "parentId": 1,
+    "description": "string",
+    "metadata": {"metadata-key": "metadata-value"},
+    "source": "string",
+    "id": 1,
+    "lastUpdatedTime": 0,
+    "rootId": 1,
+}
+
 
 @pytest.fixture
 def mock_assets_response(rsps):
-    response_body = {
-        "items": [
-            {
-                "externalId": "string",
-                "name": "string",
-                "parentId": 1,
-                "description": "string",
-                "metadata": {"metadata-key": "metadata-value"},
-                "source": "string",
-                "id": 1,
-                "lastUpdatedTime": 0,
-                "rootId": 1,
-            }
-        ]
-    }
-
+    response_body = {"items": [EXAMPLE_ASSET]}
     url_pattern = re.compile(re.escape(ASSETS_API._get_base_url_with_base_path()) + "/.+")
     rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
     yield rsps

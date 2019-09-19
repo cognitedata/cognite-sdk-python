@@ -324,8 +324,21 @@ class APIClient:
         limit: int = None,
         filter: Dict = None,
         other_params=None,
+        partitions=None,
         headers: Dict = None,
     ):
+        if partitions:
+            if limit not in [None, -1, float("inf")]:
+                raise ValueError("When using partitions, limit should be `None`, `-1` or `inf`.")
+            return self._list_partitioned(
+                partitions=partitions,
+                cls=cls,
+                resource_path=resource_path,
+                filter=filter,
+                other_params=other_params,
+                headers=headers,
+            )
+
         cls = cls or self._LIST_CLASS
         resource_path = resource_path or self._RESOURCE_PATH
         items = []
@@ -336,11 +349,47 @@ class APIClient:
             limit=limit,
             chunk_size=self._LIST_LIMIT,
             filter=filter,
-            headers=headers,
             other_params=other_params,
+            headers=headers,
         ):
             items.extend(resource_list.data)
         return cls(items, cognite_client=self._cognite_client)
+
+    def _list_partitioned(
+        self,
+        partitions,
+        cls=None,
+        resource_path: str = None,
+        filter: Dict = None,
+        other_params=None,
+        headers: Dict = None,
+    ):
+        cls = cls or self._LIST_CLASS
+        resource_path = resource_path or self._RESOURCE_PATH
+
+        def get_partition(partition):
+            next_cursor = None
+            retrieved_items = []
+            while True:
+                body = {
+                    "filter": filter or {},
+                    "limit": self._LIST_LIMIT,
+                    "cursor": next_cursor,
+                    "partition": partition,
+                    **(other_params or {}),
+                }
+                res = self._post(url_path=resource_path + "/list", json=body, headers=headers)
+                retrieved_items.extend(res.json()["items"])
+                next_cursor = res.json().get("nextCursor")
+                if next_cursor is None:
+                    break
+            return retrieved_items
+
+        tasks = [("{}/{}".format(i + 1, partitions),) for i in range(partitions)]
+        tasks_summary = utils._concurrency.execute_tasks_concurrently(get_partition, tasks, max_workers=partitions)
+        if tasks_summary.exceptions:
+            raise tasks_summary.exceptions[0]
+        return cls._load(tasks_summary.joined_results(), cognite_client=self._cognite_client)
 
     def _create_multiple(
         self,

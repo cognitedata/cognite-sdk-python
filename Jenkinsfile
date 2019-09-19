@@ -15,7 +15,7 @@ podTemplate(
             resourceRequestCpu: '1000m',
             resourceRequestMemory: '800Mi',
             resourceLimitCpu: '1000m',
-            resourceLimitMemory: '800Mi',
+            resourceLimitMemory: '1200Mi',
             ttyEnabled: true),
         containerTemplate(name: 'node',
             image: 'node:slim',
