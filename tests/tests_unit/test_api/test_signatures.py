@@ -11,15 +11,15 @@ class TestListAndIterSignatures:
     @pytest.mark.parametrize(
         "api, filter, ignore",
         [
-            (assets.AssetsAPI, assets.AssetFilter, ["root_external_ids", "aggregated_properties"]),
-            (events.EventsAPI, events.EventFilter, []),
+            (assets.AssetsAPI, assets.AssetFilter, ["root_external_ids", "aggregated_properties", "partitions"]),
+            (events.EventsAPI, events.EventFilter, ["partitions"]),
             (files.FilesAPI, files.FileMetadataFilter, []),
             (sequences.SequencesAPI, sequences.SequenceFilter, []),
         ],
     )
     def test_list_and_iter_signatures_same_as_filter_signature(self, api, filter, ignore):
         iter_parameters = dict(inspect.signature(api.__call__).parameters)
-        for name in ignore + ["chunk_size", "limit"]:
+        for name in set(ignore + ["chunk_size", "limit"]) - {"partitions"}:
             del iter_parameters[name]
 
         list_parameters = dict(inspect.signature(api.list).parameters)

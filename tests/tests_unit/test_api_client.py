@@ -322,6 +322,47 @@ class TestStandardList:
     NUMBER_OF_ITEMS_FOR_AUTOPAGING = 11500
     ITEMS_TO_GET_WHILE_AUTOPAGING = [{"x": 1, "y": 1} for _ in range(NUMBER_OF_ITEMS_FOR_AUTOPAGING)]
 
+    def test_list_partitions(self, rsps):
+        rsps.add(rsps.POST, BASE_URL + URL_PATH + "/list", status=200, json={"items": [{"x": 1, "y": 2}, {"x": 1}]})
+        res = API_CLIENT._list(
+            cls=SomeResourceList,
+            resource_path=URL_PATH,
+            method="POST",
+            partitions=3,
+            limit=None,
+            headers={"X-Test": "foo"},
+        )
+        assert 6 == len(res)
+        assert isinstance(res, SomeResourceList)
+        assert isinstance(res[0], SomeResource)
+        assert 3 == len(rsps.calls)
+        assert {"1/3", "2/3", "3/3"} == {jsgz_load(c.request.body)["partition"] for c in rsps.calls}
+        for call in rsps.calls:
+            request = jsgz_load(call.request.body)
+            assert "X-Test" in call.request.headers.keys()
+            del request["partition"]
+            assert {"cursor": None, "filter": {}, "limit": 1000} == request
+            assert call.response.json()["items"] == [{"x": 1, "y": 2}, {"x": 1}]
+
+    def test_list_partitions_with_failure(self, rsps):
+        def request_callback(request):
+            payload = jsgz_load(request.body)
+            np, total = payload["partition"].split("/")
+            if int(np) == 2:
+                return 503, {}, json.dumps({"message": "Service Unavailable"})
+            else:
+                return 200, {}, json.dumps({"items": [{"x": 42, "y": 13}]})
+
+        rsps.add_callback(
+            rsps.POST, BASE_URL + URL_PATH + "/list", callback=request_callback, content_type="application/json"
+        )
+        with pytest.raises(CogniteAPIError) as exc:
+            res = API_CLIENT._list(
+                cls=SomeResourceList, resource_path=URL_PATH, method="POST", partitions=4, limit=None
+            )
+        assert 503 == exc.value.code
+        assert 4 == len(rsps.calls)
+
     @pytest.fixture
     def mock_get_for_autopaging(self, rsps):
         def callback(request):
