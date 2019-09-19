@@ -81,7 +81,7 @@ def mock_get_sequence_data(rsps):
     json = {
         "id": 0,
         "externalId": "eid",
-        "columns": [{"id": 0, "externalId": "ceid"}],
+        "columns": [{"externalId": "ceid"}],
         "rows": [{"rowNumber": 0, "values": [1]}],
     }
     rsps.add(rsps.POST, SEQ_API._get_base_url_with_base_path() + "/sequences/data/list", status=200, json=json)
@@ -90,7 +90,7 @@ def mock_get_sequence_data(rsps):
 
 @pytest.fixture
 def mock_get_sequence_empty_data(rsps):
-    json = {"id": 0, "externalId": "eid", "columns": [{"id": 0, "externalId": "ceid"}, {"id": 1}], "rows": []}
+    json = {"id": 0, "externalId": "eid", "columns": [{"externalId": "ceid"}, {"id": 1}], "rows": []}
     rsps.add(rsps.POST, SEQ_API._get_base_url_with_base_path() + "/sequences/data/list", status=200, json=json)
     yield rsps
 
@@ -283,7 +283,7 @@ class TestSequences:
             "items": [
                 {
                     "externalId": "eid",
-                    "columns": [{"externalId": "0"}],
+                    "columns": ["0"],
                     "rows": [{"rowNumber": i, "values": [2 * i]} for i in range(1, 11)],
                 }
             ]
@@ -296,7 +296,7 @@ class TestSequences:
             "items": [
                 {
                     "externalId": "eid",
-                    "columns": [{"externalId": "blah"}],
+                    "columns": ["blah"],
                     "rows": [{"rowNumber": i, "values": [2 * i]} for i in range(1, 11)],
                 }
             ]
@@ -309,7 +309,7 @@ class TestSequences:
             "items": [
                 {
                     "externalId": "eid",
-                    "columns": [{"externalId": "col0"}],
+                    "columns": ["col0"],
                     "rows": [{"rowNumber": i, "values": [2 * i]} for i in range(1, 11)],
                 }
             ]
@@ -322,7 +322,7 @@ class TestSequences:
             "items": [
                 {
                     "externalId": "eid",
-                    "columns": [{"externalId": "c0"}],
+                    "columns": ["c0"],
                     "rows": [{"rowNumber": i, "values": [2 * i, "str"]} for i in range(1, 11)],
                 }
             ]
@@ -479,7 +479,7 @@ class TestSequencesPandasIntegration:
             "items": [
                 {
                     "id": 42,
-                    "columns": [{"externalId": "aa"}, {"externalId": "bb"}],
+                    "columns": ["aa", "bb"],
                     "rows": [{"rowNumber": 123, "values": [1, 5.0]}, {"rowNumber": 456, "values": [2, 6.0]}],
                 }
             ]
