@@ -591,4 +591,4 @@ class SequencesDataAPI(APIClient):
     def _process_columns(self, column_external_ids):
         if column_external_ids is None:
             return {}  # for defaults
-        return {"columns": [{"externalId": col} for col in column_external_ids]}
+        return {"columns": column_external_ids}

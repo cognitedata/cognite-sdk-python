@@ -21,6 +21,7 @@ Changes are grouped as follows
 
 ## [Unreleased]
 
+## [1.1.8] - 2019-09-19
 ### Added
 - Support for aggregated properties of assets.
 - `Asset` and `AssetList` classes now have a `sequences` function which retrieves related sequences.
@@ -33,6 +34,7 @@ Changes are grouped as follows
 ### Fixed
 - Fixed a bug in time series pagination where getting 100k dense datapoints would cause a missing id error.
 - Sequences retrieve functions fixed to match API change, to single item per retrieve.
+- Sequences retrieve/insert functions fixed to match API change to take lists of external ids.
 
 ## [1.1.7] - 2019-09-13
 ### Fixed
