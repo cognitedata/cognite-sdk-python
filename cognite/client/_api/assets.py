@@ -171,7 +171,7 @@ class AssetsAPI(APIClient):
             root (bool): filtered assets are root assets or not.
             external_id_prefix (str): External Id provided by client. Should be unique within the project.
             aggregated_properties (List[str]): Set of aggregated properties to include.
-            partitions (int): retrieve many assets in parallel using this number of threads. Can not be used in combination with `limit`.
+            partitions (int): Retrieve assets in parallel using this number of workers. When set, `limit` must be None.
             limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all items.
 
