@@ -376,16 +376,13 @@ class APIClient:
                 next_cursor = res.json().get("nextCursor")
                 if next_cursor is None:
                     break
-            return cls._load(retrieved_items, cognite_client=self._cognite_client)
+            return retrieved_items
 
         tasks = [("{}/{}".format(i + 1, partitions),) for i in range(partitions)]
         tasks_summary = utils._concurrency.execute_tasks_concurrently(get_partition, tasks, max_workers=partitions)
         if tasks_summary.exceptions:
             raise tasks_summary.exceptions[0]
-        result = tasks_summary.results[0]
-        for part_res in tasks_summary.results[1:]:
-            result.extend(part_res)
-        return result
+        return cls._load(tasks_summary.joined_results(), cognite_client=self._cognite_client)
 
     def _create_multiple(
         self,
