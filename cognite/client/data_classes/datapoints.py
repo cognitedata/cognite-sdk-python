@@ -223,8 +223,7 @@ class Datapoints:
         instance = cls()
         instance.id = dps_object["id"]
         instance.external_id = dps_object.get("externalId")
-        expected_fields = expected_fields or ["value"]
-        expected_fields.append("timestamp")
+        expected_fields = (expected_fields or ["value"]) + ["timestamp"]
         if len(dps_object["datapoints"]) == 0:
             for key in expected_fields:
                 snake_key = utils._auxiliary.to_snake_case(key)
