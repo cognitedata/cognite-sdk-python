@@ -15,27 +15,43 @@ from tests.utils import jsgz_load, profilectx, set_request_limit
 COGNITE_CLIENT = CogniteClient()
 ASSETS_API = COGNITE_CLIENT.assets
 
+EXAMPLE_ASSET = {
+    "externalId": "string",
+    "name": "string",
+    "parentId": 1,
+    "description": "string",
+    "metadata": {"metadata-key": "metadata-value"},
+    "source": "string",
+    "id": 1,
+    "lastUpdatedTime": 0,
+    "rootId": 1,
+}
+
 
 @pytest.fixture
 def mock_assets_response(rsps):
-    response_body = {
-        "items": [
-            {
-                "externalId": "string",
-                "name": "string",
-                "parentId": 1,
-                "description": "string",
-                "metadata": {"metadata-key": "metadata-value"},
-                "source": "string",
-                "id": 1,
-                "lastUpdatedTime": 0,
-                "rootId": 1,
-            }
-        ]
-    }
-
+    response_body = {"items": [EXAMPLE_ASSET]}
     url_pattern = re.compile(re.escape(ASSETS_API._get_base_url_with_base_path()) + "/.+")
     rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
+    yield rsps
+
+
+@pytest.fixture
+def mock_assets_response_with_failure(rsps):
+    def request_callback(request):
+        payload = jsgz_load(request.body)
+        np, total = payload["partition"].split("/")
+        if int(np) == 2:
+            return 503, {}, json.dumps({"message": "Service Unavailable"})
+        else:
+            return 200, {}, json.dumps({"items": [EXAMPLE_ASSET]})
+
+    rsps.add_callback(
+        rsps.POST,
+        ASSETS_API._get_base_url_with_base_path() + "/assets/list",
+        callback=request_callback,
+        content_type="application/json",
+    )
     yield rsps
 
 
@@ -113,16 +129,6 @@ class TestAssets:
         res = ASSETS_API.list(name="bla", aggregated_properties=["childCount"])
         assert ["childCount"] == jsgz_load(mock_assets_response.calls[0].request.body)["aggregatedProperties"]
 
-    def test_partitioned(self, mock_assets_response):
-        res = ASSETS_API.list(partitions=3, limit=None)
-        assert 3 == len(mock_assets_response.calls)
-        assert {"1/3", "2/3", "3/3"} == {jsgz_load(c.request.body)["partition"] for c in mock_assets_response.calls}
-        for call in mock_assets_response.calls:
-            request = jsgz_load(call.request.body)
-            del request["partition"]
-            assert {"cursor": None, "filter": {}, "limit": 1000} == request
-            assert call.response.json()["items"] == res.dump(camel_case=True)
-
     def test_list_with_aggregated_properties_param_when_snake_cased(self, mock_assets_response):
         res = ASSETS_API.list(name="bla", aggregated_properties=["child_count"])
         assert ["childCount"] == jsgz_load(mock_assets_response.calls[0].request.body)["aggregatedProperties"]
@@ -136,8 +142,20 @@ class TestAssets:
         )
 
     def test_list_partitions(self, mock_assets_response):
-        ASSETS_API.list(partitions=42, limit=-1)
-        assert 42 == len(mock_assets_response.calls)
+        res = ASSETS_API.list(partitions=3, limit=None)
+        assert 3 == len(mock_assets_response.calls)
+        assert {"1/3", "2/3", "3/3"} == {jsgz_load(c.request.body)["partition"] for c in mock_assets_response.calls}
+        for call in mock_assets_response.calls:
+            request = jsgz_load(call.request.body)
+            del request["partition"]
+            assert {"cursor": None, "filter": {}, "limit": 1000} == request
+            assert call.response.json()["items"][0] == res[0].dump(camel_case=True)
+
+    def test_list_partitions_with_failure(self, mock_assets_response_with_failure):
+        with pytest.raises(CogniteAPIError) as exc:
+            res = ASSETS_API.list(partitions=4, limit=None)
+        assert 503 == exc.value.code
+        assert 4 == len(mock_assets_response_with_failure.calls)
 
     def test_call_root(self, mock_assets_response):
         list(ASSETS_API.__call__(root_ids=[{"id": 1}, {"externalId": "abc"}], limit=10))
