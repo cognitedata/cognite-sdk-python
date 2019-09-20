@@ -3,11 +3,11 @@ from unittest.mock import MagicMock
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.testing import mock_cognite_client
+from cognite.client.testing import monkeypatch_cognite_client
 
 
 def test_mock_cognite_client():
-    with mock_cognite_client() as c_mock:
+    with monkeypatch_cognite_client() as c_mock:
         c = CogniteClient()
         assert isinstance(c_mock, MagicMock)
         assert c_mock == c
@@ -32,6 +32,6 @@ def test_mock_cognite_client():
 
 
 def test_cognite_client_accepts_arguments_during_and_after_mock():
-    with mock_cognite_client():
+    with monkeypatch_cognite_client():
         CogniteClient(api_key=None)
     CogniteClient(api_key=None)

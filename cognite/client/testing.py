@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from unittest import mock
+from unittest.mock import MagicMock
 
 from cognite.client import CogniteClient
 from cognite.client._api.assets import AssetsAPI
@@ -19,11 +19,44 @@ from cognite.client._api.three_d import (
 from cognite.client._api.time_series import TimeSeriesAPI
 
 
-@contextmanager
-def mock_cognite_client():
-    """Context manager for mocking the CogniteClient.
+class CogniteClientMock(MagicMock):
+    """Mock for CogniteClient object
 
-    Will patch all APIs and replace the client with specced MagicMock objects.
+    All APIs are replaced with specced MagicMock objects.
+    """
+
+    def __init__(self):
+        super().__init__(spec=CogniteClient)
+        self.time_series = MagicMock(spec_set=TimeSeriesAPI)
+        self.datapoints = MagicMock(spec_set=DatapointsAPI)
+        self.assets = MagicMock(spec_set=AssetsAPI)
+        self.events = MagicMock(spec_set=EventsAPI)
+        self.files = MagicMock(spec_set=FilesAPI)
+        self.login = MagicMock(spec_set=LoginAPI)
+        self.three_d = MagicMock(spec=ThreeDAPI)
+        self.three_d.models = MagicMock(spec_set=ThreeDModelsAPI)
+        self.three_d.revisions = MagicMock(spec_set=ThreeDRevisionsAPI)
+        self.three_d.files = MagicMock(spec_set=ThreeDFilesAPI)
+        self.three_d.asset_mappings = MagicMock(spec_set=ThreeDAssetMappingAPI)
+        self.iam = MagicMock(spec=IAMAPI)
+        self.iam.service_accounts = MagicMock(spec=ServiceAccountsAPI)
+        self.iam.api_keys = MagicMock(spec_set=APIKeysAPI)
+        self.iam.groups = MagicMock(spec_set=GroupsAPI)
+        self.iam.security_categories = MagicMock(spec_set=SecurityCategoriesAPI)
+        self.raw = MagicMock(spec=RawAPI)
+        self.raw.databases = MagicMock(spec_set=RawDatabasesAPI)
+        self.raw.tables = MagicMock(spec_set=RawTablesAPI)
+        self.raw.rows = MagicMock(spec_set=RawRowsAPI)
+
+
+@contextmanager
+def monkeypatch_cognite_client():
+    """Context manager for monkeypatching the CogniteClient.
+
+    Will patch all clients and replace them with specced MagicMock objects.
+
+    Yields:
+        CogniteClientMock: The mock with which the CogniteClient has been replaced
 
     Examples:
 
@@ -31,9 +64,9 @@ def mock_cognite_client():
 
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes import TimeSeries
-            >>> from cognite.client.testing import mock_cognite_client
+            >>> from cognite.client.testing import monkeypatch_cognite_client
             >>>
-            >>> with mock_cognite_client():
+            >>> with monkeypatch_cognite_client():
             >>>     c = CogniteClient()
             >>>     c.time_series.create(TimeSeries(external_id="blabla"))
 
@@ -42,9 +75,9 @@ def mock_cognite_client():
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes import TimeSeries
             >>> from cognite.client.data_classes import LoginStatus
-            >>> from cognite.client.testing import mock_cognite_client
+            >>> from cognite.client.testing import monkeypatch_cognite_client
             >>>
-            >>> with mock_cognite_client() as c_mock:
+            >>> with monkeypatch_cognite_client() as c_mock:
             >>>     c_mock.login.status.return_value = LoginStatus(
             >>>         user="user", project="dummy", project_id=1, logged_in=True, api_key_id=1
             >>>     )
@@ -56,9 +89,9 @@ def mock_cognite_client():
 
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.exceptions import CogniteAPIError
-            >>> from cognite.client.testing import mock_cognite_client
+            >>> from cognite.client.testing import monkeypatch_cognite_client
             >>>
-            >>> with mock_cognite_client() as c_mock:
+            >>> with monkeypatch_cognite_client() as c_mock:
             >>>     c_mock.login.status.side_effect = CogniteAPIError(message="Something went wrong", code=400)
             >>>     c = CogniteClient()
             >>>     try:
@@ -67,28 +100,7 @@ def mock_cognite_client():
             >>>         assert 400 == e.code
             >>>         assert "Something went wrong" == e.message
     """
-    cog_client_mock = mock.MagicMock(spec=CogniteClient)
-    cog_client_mock.time_series = mock.MagicMock(spec_set=TimeSeriesAPI)
-    cog_client_mock.datapoints = mock.MagicMock(spec_set=DatapointsAPI)
-    cog_client_mock.assets = mock.MagicMock(spec_set=AssetsAPI)
-    cog_client_mock.events = mock.MagicMock(spec_set=EventsAPI)
-    cog_client_mock.files = mock.MagicMock(spec_set=FilesAPI)
-    cog_client_mock.login = mock.MagicMock(spec_set=LoginAPI)
-    cog_client_mock.three_d = mock.MagicMock(spec=ThreeDAPI)
-    cog_client_mock.three_d.models = mock.MagicMock(spec_set=ThreeDModelsAPI)
-    cog_client_mock.three_d.revisions = mock.MagicMock(spec_set=ThreeDRevisionsAPI)
-    cog_client_mock.three_d.files = mock.MagicMock(spec_set=ThreeDFilesAPI)
-    cog_client_mock.three_d.asset_mappings = mock.MagicMock(spec_set=ThreeDAssetMappingAPI)
-    cog_client_mock.iam = mock.MagicMock(spec=IAMAPI)
-    cog_client_mock.iam.service_accounts = mock.MagicMock(spec=ServiceAccountsAPI)
-    cog_client_mock.iam.api_keys = mock.MagicMock(spec_set=APIKeysAPI)
-    cog_client_mock.iam.groups = mock.MagicMock(spec_set=GroupsAPI)
-    cog_client_mock.iam.security_categories = mock.MagicMock(spec_set=SecurityCategoriesAPI)
-    cog_client_mock.raw = mock.MagicMock(spec=RawAPI)
-    cog_client_mock.raw.databases = mock.MagicMock(spec_set=RawDatabasesAPI)
-    cog_client_mock.raw.tables = mock.MagicMock(spec_set=RawTablesAPI)
-    cog_client_mock.raw.rows = mock.MagicMock(spec_set=RawRowsAPI)
-
-    CogniteClient.__new__ = lambda *args, **kwargs: cog_client_mock
-    yield cog_client_mock
+    cognite_client_mock = CogniteClientMock()
+    CogniteClient.__new__ = lambda *args, **kwargs: cognite_client_mock
+    yield cognite_client_mock
     CogniteClient.__new__ = lambda cls, *args, **kwargs: super(CogniteClient, cls).__new__(cls)

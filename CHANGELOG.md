@@ -21,6 +21,13 @@ Changes are grouped as follows
 
 ## [Unreleased]
 
+## [1.1.9] - 2019-09-19
+### Changed
+- Renamed testing.mock_cognite_client to testing.monkeypatch_cognite_client
+
+### Added
+- testing.CogniteClientMock object
+
 ## [1.1.8] - 2019-09-19
 ### Added
 - Support for aggregated properties of assets.
