@@ -793,9 +793,13 @@ Convert milliseconds since epoch to datetime
 
 Testing
 -------
-Use a context manager to mock CogniteClient
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. autofunction:: cognite.client.testing.mock_cognite_client
+Object to use as a mock for CogniteClient
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. autoclass:: cognite.client.testing.CogniteClientMock
+
+Use a context manager to monkeypatch CogniteClient
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. autofunction:: cognite.client.testing.monkeypatch_cognite_client
 
 Experimental features
 =====================
