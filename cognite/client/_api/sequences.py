@@ -269,7 +269,7 @@ class SequencesAPI(APIClient):
 
         Examples:
 
-            Update a sequences that you have fetched. This will perform a full update of the sequences::
+            Update a sequence that you have fetched. This will perform a full update of the sequences::
 
                 >>> from cognite.client.experimental import CogniteClient
                 >>> c = CogniteClient()
@@ -277,7 +277,7 @@ class SequencesAPI(APIClient):
                 >>> res.description = "New description"
                 >>> res = c.sequences.update(res)
 
-            Perform a partial update on a sequences, updating the description and adding a new field to metadata::
+            Perform a partial update on a sequence, updating the description and adding a new field to metadata::
 
                 >>> from cognite.client.experimental import CogniteClient
                 >>> from cognite.client.data_classes import SequenceUpdate
@@ -310,7 +310,7 @@ class SequencesAPI(APIClient):
 
         Examples:
 
-            Search for a sequences::
+            Search for a sequence::
 
                 >>> from cognite.client.experimental import CogniteClient
                 >>> c = CogniteClient()
