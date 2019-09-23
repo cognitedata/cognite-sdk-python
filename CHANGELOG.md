@@ -20,12 +20,13 @@ Changes are grouped as follows
 - Separate read/write fields on data classes
 
 ## [Unreleased]
-### Added
-- `list` and `__call__` methods for events now support list parameters for `root_asset_ids`, `root_asset_external_ids`.
 
 ## [1.1.10] - 2019-09-23
 ### Fixed
 - Fix testing.CogniteClientMock so it is possible to get child mock not explicitly defined
+
+### Added
+- `list` and `__call__` methods for events now support list parameters for `root_asset_ids`, `root_asset_external_ids`.
 
 ## [1.1.9] - 2019-09-20
 ### Changed
