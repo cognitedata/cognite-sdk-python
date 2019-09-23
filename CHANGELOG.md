@@ -21,7 +21,11 @@ Changes are grouped as follows
 
 ## [Unreleased]
 
-## [1.1.9] - 2019-09-19
+## [1.1.10] - 2019-09-23
+### Fixed
+- Fix testing.CogniteClientMock so it is possible to get child mock not explicitly defined
+
+## [1.1.9] - 2019-09-20
 ### Changed
 - Renamed testing.mock_cognite_client to testing.monkeypatch_cognite_client
 

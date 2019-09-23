@@ -35,3 +35,9 @@ def test_cognite_client_accepts_arguments_during_and_after_mock():
     with monkeypatch_cognite_client():
         CogniteClient(api_key=None)
     CogniteClient(api_key=None)
+
+
+def test_get_child_mock_not_explicitly_defined():
+    with monkeypatch_cognite_client():
+        c = CogniteClient(api_key=None)
+        assert c.config
