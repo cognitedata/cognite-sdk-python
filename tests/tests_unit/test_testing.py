@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.testing import monkeypatch_cognite_client
+from cognite.client.testing import CogniteClientMock, monkeypatch_cognite_client
 
 
 def test_mock_cognite_client():
@@ -37,7 +37,6 @@ def test_cognite_client_accepts_arguments_during_and_after_mock():
     CogniteClient(api_key=None)
 
 
-def test_get_child_mock_not_explicitly_defined():
-    with monkeypatch_cognite_client():
-        c = CogniteClient(api_key=None)
-        assert c.config
+def test_client_mock_can_access_attributes_not_explicitly_defined_on_children():
+    c_mock = CogniteClientMock()
+    assert c_mock.config.max_workers
