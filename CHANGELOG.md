@@ -21,6 +21,10 @@ Changes are grouped as follows
 
 ## [Unreleased]
 
+## [1.1.11] - 2019-09-23
+### Fixed
+- Fix testing.CogniteClientMock so it is possible to get attributes on child which have not been explicitly in the CogniteClientMock constructor
+
 ## [1.1.10] - 2019-09-23
 ### Fixed
 - Fix testing.CogniteClientMock so it is possible to get child mock not explicitly defined
