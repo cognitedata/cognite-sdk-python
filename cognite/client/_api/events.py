@@ -18,7 +18,8 @@ class EventsAPI(APIClient):
         subtype: str = None,
         metadata: Dict[str, Any] = None,
         asset_ids: List[int] = None,
-        root_asset_ids: List[Dict[str, Any]] = None,
+        root_asset_ids: List[int] = None,
+        root_asset_external_ids: List[str] = None,
         source: str = None,
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
@@ -37,7 +38,8 @@ class EventsAPI(APIClient):
             subtype (str): Subtype of the event, e.g 'electrical'.
             metadata (Dict[str, Any]): Customizable extra data about the event. String key -> String value.
             asset_ids (List[int]): Asset IDs of related equipments that this event relates to.
-            root_asset_ids (List[Dict[str, Any]]): The IDs of the root assets that the related assets should be children of.
+            root_asset_ids (List[int]): The IDs of the root assets that the related assets should be children of.
+            root_asset_external_ids (List[str]): The external IDs of the root assets that the related assets should be children of.
             source (str): The source of this event.
             created_time (Dict[str, Any]): Range between two timestamps
             last_updated_time (Dict[str, Any]): Range between two timestamps
@@ -48,6 +50,9 @@ class EventsAPI(APIClient):
         Yields:
             Union[Event, EventList]: yields Event one by one if chunk is not specified, else EventList objects.
         """
+        if (root_asset_ids and not isinstance(root_asset_ids[0], dict)) or root_asset_external_ids:
+            root_asset_ids = self._process_ids(root_asset_ids, root_asset_external_ids, wrap_ids=True)
+
         filter = EventFilter(
             start_time=start_time,
             end_time=end_time,
@@ -136,7 +141,8 @@ class EventsAPI(APIClient):
         subtype: str = None,
         metadata: Dict[str, Any] = None,
         asset_ids: List[int] = None,
-        root_asset_ids: List[Dict[str, Any]] = None,
+        root_asset_ids: List[int] = None,
+        root_asset_external_ids: List[str] = None,
         source: str = None,
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
@@ -153,7 +159,8 @@ class EventsAPI(APIClient):
             subtype (str): Subtype of the event, e.g 'electrical'.
             metadata (Dict[str, Any]): Customizable extra data about the event. String key -> String value.
             asset_ids (List[int]): Asset IDs of related equipments that this event relates to.
-            root_asset_ids (List[Dict[str, Any]]): The IDs of the root assets that the related assets should be children of.
+            root_asset_ids (List[int]): The IDs of the root assets that the related assets should be children of.
+            root_asset_external_ids (List[str]): The external IDs of the root assets that the related assets should be children of.
             source (str): The source of this event.
             created_time (Dict[str, Any]): Range between two timestamps.
             last_updated_time (Dict[str, Any]): Range between two timestamps.
@@ -187,6 +194,9 @@ class EventsAPI(APIClient):
                 >>> for event_list in c.events(chunk_size=2500):
                 ...     event_list # do something with the files
         """
+        if (root_asset_ids and not isinstance(root_asset_ids[0], dict)) or root_asset_external_ids:
+            root_asset_ids = self._process_ids(root_asset_ids, root_asset_external_ids, wrap_ids=True)
+
         filter = EventFilter(
             start_time=start_time,
             end_time=end_time,

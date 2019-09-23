@@ -20,6 +20,8 @@ Changes are grouped as follows
 - Separate read/write fields on data classes
 
 ## [Unreleased]
+### Added
+- `list` and `__call__` methods for events now support list parameters for `root_asset_ids`, `root_asset_external_ids`.
 
 ## [1.1.10] - 2019-09-23
 ### Fixed
