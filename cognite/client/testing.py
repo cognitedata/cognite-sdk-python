@@ -25,8 +25,8 @@ class CogniteClientMock(MagicMock):
     All APIs are replaced with specced MagicMock objects.
     """
 
-    def __init__(self):
-        super().__init__(spec=CogniteClient)
+    def __init__(self, *args, **kwargs):
+        super().__init__(spec=CogniteClient, *args, **kwargs)
         self.time_series = MagicMock(spec_set=TimeSeriesAPI)
         self.datapoints = MagicMock(spec_set=DatapointsAPI)
         self.assets = MagicMock(spec_set=AssetsAPI)
