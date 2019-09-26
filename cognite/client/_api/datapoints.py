@@ -42,7 +42,7 @@ class DatapointsAPI(APIClient):
         Args:
             start (Union[int, str, datetime]): Inclusive start.
             end (Union[int, str, datetime]): Exclusive end.
-            id (Union[int, List[int], Dict[str, Any], List[Dict[str, Any]]]: Id or list of ids. Can also be object
+            id (Union[int, List[int], Dict[str, Any], List[Dict[str, Any]]]): Id or list of ids. Can also be object
                 specifying aggregates. See example below.
             external_id (Union[str, List[str], Dict[str, Any], List[Dict[str, Any]]]): External id or list of external
                 ids. Can also be object specifying aggregates. See example below.
@@ -398,12 +398,12 @@ class DatapointsAPI(APIClient):
             end (Union[int, str, datetime]): Exclusive end.
             aggregates (List[str]): List of aggregate functions to apply.
             granularity (str): The granularity to fetch aggregates at. e.g. '1s', '2h', '10d'.
-            id (Union[int, List[int], Dict[str, Any], List[Dict[str, Any]]]: Id or list of ids. Can also be object
+            id (Union[int, List[int], Dict[str, Any], List[Dict[str, Any]]]): Id or list of ids. Can also be object
                 specifying aggregates. See example below.
             external_id (Union[str, List[str], Dict[str, Any], List[Dict[str, Any]]]): External id or list of external
                 ids. Can also be object specifying aggregates. See example below.
             limit (int): Maximum number of datapoints to return for each time series.
-            include_aggregate_name (bool): Include 'aggregate' in the column name. Defaults to True and should only be set to False when only a single aggregate is requested per id/externalId.
+            include_aggregate_name (bool): Include 'aggregate' in the column name. Defaults to True and should only be set to False when only a single aggregate is requested per id/external id.
             complete (str): Post-processing of the dataframe.
 
                 Pass 'fill' to insert missing entries into the index, and complete data where possible (supports interpolation, stepInterpolation, count, sum, totalVariation).
