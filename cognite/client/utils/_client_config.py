@@ -4,6 +4,8 @@ import sys
 import warnings
 from typing import *
 
+from requests.exceptions import ConnectionError
+
 from cognite.client import utils
 from cognite.client.exceptions import CogniteAPIKeyError
 
@@ -86,7 +88,11 @@ class ClientConfig(_DefaultConfig):
             utils._logging._configure_logger_for_debug_mode()
 
         if not self.disable_pypi_version_check:
-            utils._auxiliary._check_client_has_newest_major_version()
+            try:
+                utils._auxiliary._check_client_has_newest_major_version()
+            except ConnectionError:
+                # PyPI is for some reason not reachable, skip version check
+                pass
 
     def __str__(self):
         return json.dumps(self.__dict__, indent=4)
