@@ -120,6 +120,18 @@ def mock_get_sequence_data_two_col(rsps):
 
 
 @pytest.fixture
+def mock_get_sequence_data_two_col_with_zero(rsps):
+    json = {
+        "id": 0,
+        "externalId": "eid",
+        "columns": [{"externalId": "str"}, {"externalId": "lon"}],
+        "rows": [{"rowNumber": 12, "values": ["string-12", 0]}],
+    }
+    rsps.add(rsps.POST, SEQ_API._get_base_url_with_base_path() + "/sequences/data/list", status=200, json=json)
+    yield rsps
+
+
+@pytest.fixture
 def mock_get_sequence_data_with_null(rsps):
     json = {
         "id": 0,
@@ -420,6 +432,19 @@ class TestSequencesPandasIntegration:
         data = SEQ_API.data.retrieve(external_id="foo", start=1000000, end=1100000)
         assert isinstance(data, SequenceData)
         assert ["col1", "col2"] == list(data.to_pandas().columns)
+
+    def test_retrieve_dataframe_columns_mixed_with_zero(
+        self, mock_seq_response, mock_get_sequence_data_two_col_with_zero
+    ):
+        import pandas as pd
+
+        data = SEQ_API.data.retrieve(external_id="foo", start=0, end=100)
+        assert isinstance(data, SequenceData)
+        df = data.to_pandas()
+        expected_df = pd.DataFrame(index=[12], data=[["string-12", 0]], columns=["str", "lon"])
+        print(df)
+        print(expected_df)
+        pd.testing.assert_frame_equal(expected_df, df)
 
     def test_retrieve_dataframe_columns_many_extid(self, mock_get_sequence_data_many_columns):
         data = SEQ_API.data.retrieve(external_id="foo", start=1000000, end=1100000)
