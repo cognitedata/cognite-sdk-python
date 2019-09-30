@@ -65,9 +65,9 @@ class TestJsonDumpDefault:
 
     def test_json_not_serializable_sets(self):
         with pytest.raises(TypeError):
-            json.dumps({1,2})
+            json.dumps({1, 2})
         with pytest.raises(TypeError):
-            json.dumps({1,2})
+            json.dumps({1, 2})
 
     @pytest.mark.dsl
     def test_json_serializable_numpy(self):
@@ -77,7 +77,7 @@ class TestJsonDumpDefault:
             json.dumps(arr)
         with pytest.raises(TypeError):
             json.dumps(arr[0])
-        with pytest.raises(TypeError): # core sdk makes it hard to serialize np.ndarray
+        with pytest.raises(TypeError):  # core sdk makes it hard to serialize np.ndarray
             assert json.dumps(arr, default=utils._auxiliary.json_dump_default)
         assert json.dumps(arr[0], default=utils._auxiliary.json_dump_default)
 
