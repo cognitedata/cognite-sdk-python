@@ -942,6 +942,8 @@ class DatapointsFetcher:
         ]
 
     def _get_windows(self, id, start, end, granularity, request_limit, user_limit):
+        if start >= end:
+            return []
         count_granularity = "1d"
         if granularity and cognite.client.utils._time.granularity_to_ms(
             "1d"
