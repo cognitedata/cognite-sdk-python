@@ -21,6 +21,9 @@ Changes are grouped as follows
 
 ## [Unreleased]
 
+### Fixed
+- Fixed a bug in time series pagination where getting 100k datapoints could cause a missing id error when using include_outside_points.
+
 ## [1.1.11] - 2019-09-23
 ### Fixed
 - Fix testing.CogniteClientMock so it is possible to get attributes on child which have not been explicitly in the CogniteClientMock constructor
