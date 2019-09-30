@@ -104,6 +104,26 @@ def mock_get_datapoints_empty(rsps):
 
 
 @pytest.fixture
+def mock_get_datapoints_include_outside(rsps):
+    # return 100001 datapoints with one beyond 'end'
+    rsps.add(
+        rsps.POST,
+        DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/list",
+        status=200,
+        json={
+            "items": [
+                {
+                    "id": 1,
+                    "externalId": "1",
+                    "datapoints": [{"timestamp": i, "value": i} for i in range(1000000000, 1000000000 + 100001)],
+                }
+            ]
+        },
+    )
+    yield rsps
+
+
+@pytest.fixture
 def mock_get_datapoints_one_ts_empty(rsps):
     rsps.add(
         rsps.POST,
@@ -895,6 +915,12 @@ class TestPandasIntegration:
             index=[utils._time.ms_to_datetime(i) for i in range(5)],
         )
         pd.testing.assert_frame_equal(df, expected_df)
+
+    def test_retrieve_datapoints_last_beyond_end(self, mock_get_datapoints_include_outside):
+        import pandas as pd
+
+        dpt = DPS_CLIENT.retrieve(id=1, include_outside_points=True, start=1000000000, end=1000000000 + 100000)
+        assert 100001 == len(dpt)
 
     def test_retrieve_dataframe_several_missing(self, mock_get_datapoints_several_missing):
         import pandas as pd
