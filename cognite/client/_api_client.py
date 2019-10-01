@@ -145,9 +145,9 @@ class APIClient:
         if self._config.token is None:
             headers["api-key"] = self._config.api_key
         elif isinstance(self._config.token, str):
-            headers["Authentication"] = "Bearer {}".format(self._config.token)
+            headers["Authorization"] = "Bearer {}".format(self._config.token)
         elif isinstance(self._config.token, Callable):
-            headers["Authentication"] = "Bearer {}".format(self._config.token())
+            headers["Authorization"] = "Bearer {}".format(self._config.token())
         else:
             raise TypeError("'token' must be str, Callable, or None.")
         headers["content-type"] = "application/json"
@@ -660,8 +660,8 @@ class APIClient:
             return
         if "api-key" in headers:
             headers["api-key"] = "***"
-        if "Authentication" in headers:
-            headers["Authentication"] = "***"
+        if "Authorization" in headers:
+            headers["Authorization"] = "***"
 
     def _apply_model_hosting_emulator_url_filter(self, full_url):
         mlh_emul_url = os.getenv("MODEL_HOSTING_EMULATOR_URL")
