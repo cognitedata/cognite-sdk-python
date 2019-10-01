@@ -74,16 +74,22 @@ class TestCogniteClient:
 
     def test_no_api_key_set(self):
         with unset_env_var("COGNITE_API_KEY"):
-            with pytest.raises(CogniteAPIKeyError, match="No API key or token factory has been specified"):
+            with pytest.raises(CogniteAPIKeyError, match="No API key or token has been specified"):
                 CogniteClient()
 
     def test_token_factory_set_no_api_key(self):
         with unset_env_var("COGNITE_API_KEY"):
-            CogniteClient(token_factory=lambda: "abc")
+            c = CogniteClient(token=lambda: "abc")
+        assert c.config.token() == "abc"
+
+    def test_token_set_no_api_key(self):
+        with unset_env_var("COGNITE_API_KEY"):
+            c = CogniteClient(token="abc")
+        assert c.config.token == "abc"
 
     def test_token_factory_set_no_api_key_and_no_project(self, rsps_with_login_mock):
         with unset_env_var(["COGNITE_API_KEY", "COGNITE_PROJECT"]):
-            c = CogniteClient(token_factory=lambda: "abc")
+            c = CogniteClient(token=lambda: "abc")
         assert c.config.project == "test"
 
     def test_invalid_api_key(self, rsps):

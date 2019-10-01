@@ -6,7 +6,7 @@ import os
 import re
 from collections import UserList
 from http import cookiejar
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 from urllib.parse import urljoin
 
 import requests.utils
@@ -142,10 +142,14 @@ class APIClient:
     def _configure_headers(self, additional_headers):
         headers = CaseInsensitiveDict()
         headers.update(requests.utils.default_headers())
-        if self._config.token_factory is None:
+        if self._config.token is None:
             headers["api-key"] = self._config.api_key
+        elif isinstance(self._config.token, str):
+            headers["Authentication"] = "Bearer {}".format(self._config.token)
+        elif isinstance(self._config.token, Callable):
+            headers["Authentication"] = "Bearer {}".format(self._config.token())
         else:
-            headers["Authentication"] = "Bearer {}".format(self._config.token_factory())
+            raise TypeError("'token' must be str, Callable, or None.")
         headers["content-type"] = "application/json"
         headers["accept"] = "application/json"
         headers["x-cdp-sdk"] = "CognitePythonSDK:{}".format(utils._auxiliary.get_current_sdk_version())

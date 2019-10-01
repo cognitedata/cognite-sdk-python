@@ -64,7 +64,7 @@ class ClientConfig(_DefaultConfig):
         max_workers: int = None,
         headers: Dict[str, str] = None,
         timeout: int = None,
-        token_factory: Callable[[], str] = None,
+        token: Union[Callable[[], str], str] = None,
         debug: bool = False,
     ):
         super().__init__()
@@ -76,10 +76,10 @@ class ClientConfig(_DefaultConfig):
         self.max_workers = max_workers or self.max_workers
         self.headers = headers or self.headers
         self.timeout = timeout or self.timeout
-        self.token_factory = token_factory
+        self.token = token
 
-        if self.api_key is None and self.token_factory is None:
-            raise CogniteAPIKeyError("No API key or token factory has been specified")
+        if self.api_key is None and self.token is None:
+            raise CogniteAPIKeyError("No API key or token has been specified")
 
         if self.client_name is None:
             raise ValueError(
