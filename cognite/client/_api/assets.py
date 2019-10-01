@@ -343,11 +343,23 @@ class AssetsAPI(APIClient):
 
         Examples:
 
-            Search for assets::
+            Search for assets by fuzzy search on name::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.assets.search(name="some name")
+
+            Search for assets by exact search on name::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.assets.search(filter={"name": "some name"})
+
+            Search for assets using multiple filters, finding all assets with name similar to `xyz` with parent asset `123` or `456` with source `some source`::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.assets.search(name="xyz",filter={"parent_ids": [123,456],"source": "some source"})
         """
         return self._search(search={"name": name, "description": description}, filter=filter, limit=limit)
 

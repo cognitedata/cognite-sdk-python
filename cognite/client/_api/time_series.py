@@ -255,6 +255,12 @@ class TimeSeriesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.time_series.search(name="some name")
+
+            Search for all time series connected to asset with id 123::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.time_series.search(filter={"asset_ids":[123]})
         """
         return self._search(
             search={"name": name, "description": description, "query": query}, filter=filter, limit=limit
