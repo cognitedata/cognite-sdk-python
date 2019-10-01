@@ -24,6 +24,7 @@ Changes are grouped as follows
 ### Fixed
 - Fixed a bug in time series pagination where getting 100k datapoints could cause a missing id error when using include_outside_points.
 - SequencesData `to_pandas` no longer returns NaN on integer zero columns.
+- Fixed a bug where the JSON encoder would throw circular reference errors on unknown data types, including numpy floats.
 
 ## [1.1.11] - 2019-09-23
 ### Fixed
