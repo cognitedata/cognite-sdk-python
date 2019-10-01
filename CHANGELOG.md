@@ -18,9 +18,12 @@ Changes are grouped as follows
 - Concurrent reads for all resource types using `/cursors` endpoints
 - Upserts for all resource types
 - Separate read/write fields on data classes
-
 ## [Unreleased]
 - Sequences data insert no longer takes a default value for columns.
+
+## [1.2.0] - 2019-10-01
+### Added
+- Support for authenticating with bearer tokens. Can now supply a jwt or jwt-factory to CogniteClient. This token will override any api-key which has been set.
 
 ## [1.1.12] - 2019-10-01
 ### Fixed

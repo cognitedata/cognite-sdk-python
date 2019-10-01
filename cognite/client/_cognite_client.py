@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Dict
+from typing import Any, Callable, Dict, Union
 
 from cognite.client import utils
 from cognite.client._api.assets import AssetsAPI
@@ -30,6 +30,8 @@ class CogniteClient:
         max_workers (int): Max number of workers to spawn when parallelizing data fetching. Defaults to 10.
         headers (Dict): Additional headers to add to all requests.
         timeout (int): Timeout on requests sent to the api. Defaults to 30 seconds.
+        token (Union[str, Callable[[], str]]): A jwt or method which takes no arguments and returns a jwt to use for authentication.
+            This will override any api-key set.
         debug (bool): Configures logger to log extra request details to stderr.
     """
 
@@ -44,6 +46,7 @@ class CogniteClient:
         max_workers: int = None,
         headers: Dict[str, str] = None,
         timeout: int = None,
+        token: Union[str, Callable[[], str], None] = None,
         debug: bool = False,
     ):
         self._config = ClientConfig(
@@ -54,6 +57,7 @@ class CogniteClient:
             max_workers=max_workers,
             headers=headers,
             timeout=timeout,
+            token=token,
             debug=debug,
         )
         self.login = LoginAPI(self._config, cognite_client=self)
