@@ -20,6 +20,8 @@ Changes are grouped as follows
 - Separate read/write fields on data classes
 
 ## [Unreleased]
+### Added
+- Support for authenticating with bearer tokens. Can now supply a token factory to CogniteClient. Tokens returned from this factory will override any api-key which has been set.
 
 ## [1.1.12] - 2019-10-01
 ### Fixed
