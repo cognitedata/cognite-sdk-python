@@ -6,7 +6,7 @@ import threading
 import types
 from multiprocessing.pool import ThreadPool
 from time import sleep
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -74,8 +74,23 @@ class TestCogniteClient:
 
     def test_no_api_key_set(self):
         with unset_env_var("COGNITE_API_KEY"):
-            with pytest.raises(CogniteAPIKeyError, match="No API key has been specified"):
+            with pytest.raises(CogniteAPIKeyError, match="No API key or token has been specified"):
                 CogniteClient()
+
+    def test_token_factory_set_no_api_key(self):
+        with unset_env_var("COGNITE_API_KEY"):
+            c = CogniteClient(token=lambda: "abc")
+        assert c.config.token() == "abc"
+
+    def test_token_set_no_api_key(self):
+        with unset_env_var("COGNITE_API_KEY"):
+            c = CogniteClient(token="abc")
+        assert c.config.token == "abc"
+
+    def test_token_factory_set_no_api_key_and_no_project(self, rsps_with_login_mock):
+        with unset_env_var(["COGNITE_API_KEY", "COGNITE_PROJECT"]):
+            c = CogniteClient(token=lambda: "abc")
+        assert c.config.project == "test"
 
     def test_invalid_api_key(self, rsps):
         rsps.add(rsps.GET, _PYPI_ADDRESS, status=200, body="")
