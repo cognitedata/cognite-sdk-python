@@ -92,6 +92,7 @@ def collect_exc_info_and_raise(
                 failed=failed,
                 unknown=unknown,
                 unwrap_fn=unwrap_fn,
+                extra=unknown_exc.extra,
             )
         raise unknown_exc
 
