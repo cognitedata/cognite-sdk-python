@@ -106,13 +106,13 @@ class TestSequencesDataAPI:
             rows=data, column_external_ids=new_seq_long.column_external_ids, id=new_seq_long.id
         )
 
-    def test_insert_implicit_rows_cols(self, new_seq_mixed):
+    def test_insert_implicit_rows(self, new_seq_mixed):
         data = {i: [i, "str"] for i in range(1, 10)}
-        COGNITE_CLIENT.sequences.data.insert(data, id=new_seq_mixed.id)
+        COGNITE_CLIENT.sequences.data.insert(data, id=new_seq_mixed.id, column_external_ids=["column0", "column1"])
 
     def test_insert_copy(self, small_sequence, new_small_seq):
         data = COGNITE_CLIENT.sequences.data.retrieve(id=small_sequence.id, start=0, end=5)
-        COGNITE_CLIENT.sequences.data.insert(rows=data, id=new_small_seq.id)
+        COGNITE_CLIENT.sequences.data.insert(rows=data, id=new_small_seq.id, column_external_ids=None)
 
     def test_delete_multiple(self, new_seq):
         COGNITE_CLIENT.sequences.data.delete(rows=[1, 2, 42, 3524], id=new_seq.id)
