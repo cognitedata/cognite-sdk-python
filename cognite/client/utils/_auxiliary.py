@@ -48,8 +48,7 @@ def json_dump_default(x):
         return float(x)
     if hasattr(x, "__dict__"):
         return x.__dict__
-    return x
-
+    raise TypeError("Object {} of type {} can't be serialized by the JSON encoder".format(x,x.__class__))
 
 def assert_exactly_one_of_id_or_external_id(id, external_id):
     assert_type(id, "id", [numbers.Integral], allow_none=True)

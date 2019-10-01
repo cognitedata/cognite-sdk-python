@@ -10,6 +10,7 @@ from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Datapoints, DatapointsList, DatapointsQuery
 from cognite.client.exceptions import CogniteAPIError
+from cognite.client.utils._experimental_warning import experimental_api
 
 
 class DatapointsAPI(APIClient):
@@ -21,6 +22,9 @@ class DatapointsAPI(APIClient):
         self._DPS_LIMIT = 100000
         self._POST_DPS_OBJECTS_LIMIT = 10000
         self._RETRIEVE_LATEST_LIMIT = 100
+        self.synthetic = SyntheticDatapointsAPI(
+            self._cognite_client._config, api_version="playground", cognite_client=self._cognite_client
+        )
 
     def retrieve(
         self,
@@ -616,6 +620,37 @@ class DatapointsAPI(APIClient):
                 dps_object["id"] = int(col)
             dps.append(dps_object)
         self.insert_multiple(dps)
+
+
+@experimental_api(api_name="Synthetic Timeseries")
+class SyntheticDatapointsAPI(APIClient):
+    _SYNTHETIC_RESOURCE_PATH = "/timeseries/synthetic"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._DPS_LIMIT = 100000
+
+    def retrieve(
+        self, function: str, start: Union[int, str, datetime], end: Union[int, str, datetime], limit: int = None
+    ) -> Datapoints:
+        if limit is None or limit == -1 or limit == float("inf"):
+            limit = 100_000_000_000
+        query = {
+            "function": function,
+            "start": cognite.client.utils._time.timestamp_to_ms(start),
+            "end": cognite.client.utils._time.timestamp_to_ms(end),
+        }
+        datapoints = Datapoints()
+        while True:
+            query["limit"] = min(limit, self._DPS_LIMIT)
+            resp = self._post(url_path=self._SYNTHETIC_RESOURCE_PATH, json={"items": [query]})
+            data = resp.json()["items"][0]
+            datapoints._extend(Datapoints._load(data, expected_fields=["value"]))
+            limit -= len(data)
+            if len(data) < self._DPS_LIMIT or limit <= 0:  # todo: support user lim > 100k
+                break
+            query["start"] = data[-1]["timestamp"] + 1
+        return datapoints
 
 
 class DatapointsBin:
