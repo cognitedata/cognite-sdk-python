@@ -44,11 +44,11 @@ def convert_all_keys_to_camel_case(d: Dict):
 def json_dump_default(x):
     if isinstance(x, numbers.Integral):
         return int(x)
-    if isinstance(x, Decimal):
+    if isinstance(x, (Decimal, numbers.Real)):
         return float(x)
     if hasattr(x, "__dict__"):
         return x.__dict__
-    return x
+    raise TypeError("Object {} of type {} can't be serialized by the JSON encoder".format(x, x.__class__))
 
 
 def assert_exactly_one_of_id_or_external_id(id, external_id):
