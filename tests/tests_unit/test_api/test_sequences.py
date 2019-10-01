@@ -442,8 +442,6 @@ class TestSequencesPandasIntegration:
         assert isinstance(data, SequenceData)
         df = data.to_pandas()
         expected_df = pd.DataFrame(index=[12], data=[["string-12", 0]], columns=["str", "lon"])
-        print(df)
-        print(expected_df)
         pd.testing.assert_frame_equal(expected_df, df)
 
     def test_retrieve_dataframe_columns_many_extid(self, mock_get_sequence_data_many_columns):
