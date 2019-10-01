@@ -285,7 +285,9 @@ class SequenceData:
         pd = utils._auxiliary.local_import("pandas")
 
         return pd.DataFrame(
-            [[x or math.nan for x in r] for r in self.values], index=self.row_numbers, columns=self.column_external_ids
+            [[x if x is not None else math.nan for x in r] for r in self.values],
+            index=self.row_numbers,
+            columns=self.column_external_ids,
         )
 
     @property
