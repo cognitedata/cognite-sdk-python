@@ -6,7 +6,7 @@ import os
 import re
 from collections import UserList
 from http import cookiejar
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 from urllib.parse import urljoin
 
 import requests.utils
@@ -142,7 +142,10 @@ class APIClient:
     def _configure_headers(self, additional_headers):
         headers = CaseInsensitiveDict()
         headers.update(requests.utils.default_headers())
-        headers["api-key"] = self._config.api_key
+        if self._config.token_factory is None:
+            headers["api-key"] = self._config.api_key
+        else:
+            headers["Authentication"] = "Bearer {}".format(self._config.token_factory())
         headers["content-type"] = "application/json"
         headers["accept"] = "application/json"
         headers["x-cdp-sdk"] = "CognitePythonSDK:{}".format(utils._auxiliary.get_current_sdk_version())
@@ -626,7 +629,8 @@ class APIClient:
             error_details["missing"] = missing
         if duplicated:
             error_details["duplicated"] = duplicated
-
+        error_details["headers"] = res.request.headers.copy()
+        APIClient._sanitize_headers(error_details["headers"])
         log.debug("HTTP Error %s %s %s: %s", code, res.request.method, res.request.url, msg, extra=error_details)
         raise CogniteAPIError(msg, code, x_request_id, missing=missing, duplicated=duplicated, extra=extra)
 
@@ -638,14 +642,22 @@ class APIClient:
 
         extra = kwargs.copy()
         extra["headers"] = res.request.headers.copy()
-        if "api-key" in extra.get("headers", {}):
-            extra["headers"]["api-key"] = None
+        APIClient._sanitize_headers(extra["headers"])
         if extra["payload"] is None:
             del extra["payload"]
 
         http_protocol_version = ".".join(list(str(res.raw.version)))
 
         log.debug("HTTP/{} {} {} {}".format(http_protocol_version, method, url, status_code), extra=extra)
+
+    @staticmethod
+    def _sanitize_headers(headers: Optional[Dict]):
+        if headers is None:
+            return
+        if "api-key" in headers:
+            headers["api-key"] = "***"
+        if "Authentication" in headers:
+            headers["Authentication"] = "***"
 
     def _apply_model_hosting_emulator_url_filter(self, full_url):
         mlh_emul_url = os.getenv("MODEL_HOSTING_EMULATOR_URL")

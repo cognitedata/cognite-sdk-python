@@ -24,6 +24,15 @@ CLIENT_CONFIG = ClientConfig(
 )
 API_CLIENT = APIClient(CLIENT_CONFIG, cognite_client=COGNITE_CLIENT)
 
+CLIENT_CONFIG_WITH_TOKEN_FACTORY = ClientConfig(
+    project="test-project",
+    base_url=BASE_URL,
+    max_workers=1,
+    headers={"x-cdp-app": "python-sdk-integration-tests"},
+    token_factory=lambda: "abc",
+)
+API_CLIENT_WITH_TOKEN_FACTORY = APIClient(CLIENT_CONFIG_WITH_TOKEN_FACTORY, cognite_client=COGNITE_CLIENT)
+
 
 class TestBasicRequests:
     @pytest.fixture
@@ -118,6 +127,13 @@ class TestBasicRequests:
         assert "CognitePythonSDK:{}".format(utils._auxiliary.get_current_sdk_version()) == headers["x-cdp-sdk"]
         assert "abc" == headers["api-key"]
         assert "stuff" == headers["additional"]
+
+    def test_headers_correct_with_token_factory(self, mock_all_requests_ok):
+        API_CLIENT_WITH_TOKEN_FACTORY._post(URL_PATH, {"any": "OK"})
+        headers = mock_all_requests_ok.calls[0].request.headers
+
+        assert "api-key" not in headers
+        assert "Bearer {}".format(API_CLIENT_WITH_TOKEN_FACTORY._config.token_factory()) == headers["Authentication"]
 
 
 class SomeUpdate(CogniteUpdate):
@@ -886,6 +902,18 @@ class TestHelpers:
         os.environ["COGNITE_STATUS_FORCELIST"] = "1,2, 3,4"
         assert [1, 2, 3, 4] == utils._client_config._DefaultConfig().status_forcelist
         del os.environ["COGNITE_STATUS_FORCELIST"]
+
+    @pytest.mark.parametrize(
+        "before, after",
+        [
+            ({"api-key": "bla", "key": "bla"}, {"api-key": "***", "key": "bla"}),
+            ({"Authentication": "bla", "key": "bla"}, {"Authentication": "***", "key": "bla"}),
+        ],
+    )
+    def test_sanitize_headers(self, before, after):
+        assert before != after
+        APIClient._sanitize_headers(before)
+        assert before == after
 
 
 class TestConnectionPooling:

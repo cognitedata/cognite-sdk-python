@@ -1,5 +1,6 @@
 import json
 import os
+import pprint
 import sys
 import warnings
 from typing import *
@@ -63,6 +64,7 @@ class ClientConfig(_DefaultConfig):
         max_workers: int = None,
         headers: Dict[str, str] = None,
         timeout: int = None,
+        token_factory: Callable[[], str] = None,
         debug: bool = False,
     ):
         super().__init__()
@@ -74,9 +76,10 @@ class ClientConfig(_DefaultConfig):
         self.max_workers = max_workers or self.max_workers
         self.headers = headers or self.headers
         self.timeout = timeout or self.timeout
+        self.token_factory = token_factory
 
-        if self.api_key is None:
-            raise CogniteAPIKeyError("No API key has been specified")
+        if self.api_key is None and self.token_factory is None:
+            raise CogniteAPIKeyError("No API key or token factory has been specified")
 
         if self.client_name is None:
             raise ValueError(
@@ -95,7 +98,7 @@ class ClientConfig(_DefaultConfig):
                 pass
 
     def __str__(self):
-        return json.dumps(self.__dict__, indent=4)
+        return pprint.pformat(self.__dict__, indent=4)
 
-    def __repr__(self):
+    def _repr_html_(self):
         return self.__str__()
