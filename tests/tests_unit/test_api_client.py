@@ -152,14 +152,14 @@ class TestBasicRequests:
         headers = mock_all_requests_ok.calls[0].request.headers
 
         assert "api-key" not in headers
-        assert "Bearer {}".format(API_CLIENT_WITH_TOKEN_FACTORY._config.token()) == headers["Authentication"]
+        assert "Bearer {}".format(API_CLIENT_WITH_TOKEN_FACTORY._config.token()) == headers["Authorization"]
 
     def test_headers_correct_with_token(self, mock_all_requests_ok):
         API_CLIENT_WITH_TOKEN._post(URL_PATH, {"any": "OK"})
         headers = mock_all_requests_ok.calls[0].request.headers
 
         assert "api-key" not in headers
-        assert "Bearer {}".format(API_CLIENT_WITH_TOKEN._config.token) == headers["Authentication"]
+        assert "Bearer {}".format(API_CLIENT_WITH_TOKEN._config.token) == headers["Authorization"]
 
 
 class SomeUpdate(CogniteUpdate):
@@ -954,7 +954,7 @@ class TestHelpers:
         "before, after",
         [
             ({"api-key": "bla", "key": "bla"}, {"api-key": "***", "key": "bla"}),
-            ({"Authentication": "bla", "key": "bla"}, {"Authentication": "***", "key": "bla"}),
+            ({"Authorization": "bla", "key": "bla"}, {"Authorization": "***", "key": "bla"}),
         ],
     )
     def test_sanitize_headers(self, before, after):
