@@ -18,6 +18,11 @@ Changes are grouped as follows
 - Concurrent reads for all resource types using `/cursors` endpoints
 - Upserts for all resource types
 - Separate read/write fields on data classes
+
+## [Unreleased]
+### Changed
+- Sequences data insert no longer takes a default value for columns.
+
 ## [1.2.1] - 2019-10-01
 ### Fixed
 - Tokens are sent with the correct "Authorization" header instead of "Authentication".
