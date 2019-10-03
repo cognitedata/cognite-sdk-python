@@ -9,6 +9,7 @@ from cognite.client._api.files import FilesAPI
 from cognite.client._api.iam import IAMAPI, APIKeysAPI, GroupsAPI, SecurityCategoriesAPI, ServiceAccountsAPI
 from cognite.client._api.login import LoginAPI
 from cognite.client._api.raw import RawAPI, RawDatabasesAPI, RawRowsAPI, RawTablesAPI
+from cognite.client._api.sequences import SequencesAPI, SequencesDataAPI
 from cognite.client._api.three_d import (
     ThreeDAPI,
     ThreeDAssetMappingAPI,
@@ -50,6 +51,8 @@ class CogniteClientMock(MagicMock):
         self.raw.databases = MagicMock(spec_set=RawDatabasesAPI)
         self.raw.tables = MagicMock(spec_set=RawTablesAPI)
         self.raw.rows = MagicMock(spec_set=RawRowsAPI)
+        self.sequences = MagicMock(spec=SequencesAPI)
+        self.sequences.data = MagicMock(spec_set=SequencesDataAPI)
 
 
 @contextmanager

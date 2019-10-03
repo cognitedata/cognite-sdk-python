@@ -8,7 +8,6 @@ import pytest
 
 from cognite.client import CogniteClient, utils
 from cognite.client.data_classes import Sequence, SequenceData
-from cognite.client.experimental import CogniteClient
 from tests.utils import set_request_limit
 
 COGNITE_CLIENT = CogniteClient()
