@@ -5,10 +5,8 @@ from typing import *
 from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Sequence, SequenceData, SequenceFilter, SequenceList, SequenceUpdate
-from cognite.client.utils._experimental_warning import experimental_api
 
 
-@experimental_api(api_name="Sequences")
 class SequencesAPI(APIClient):
     _RESOURCE_PATH = "/sequences"
     _LIST_CLASS = SequenceList
@@ -82,13 +80,13 @@ class SequencesAPI(APIClient):
 
             Get sequences by id::
 
-                >>> from cognite.client.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.sequences.retrieve(id=1)
 
             Get sequences by external id::
 
-                >>> from cognite.client.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.sequences.retrieve(external_id="1")
         """
@@ -111,13 +109,13 @@ class SequencesAPI(APIClient):
 
             Get sequences by id::
 
-                >>> from cognite.client.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.sequences.retrieve_multiple(ids=[1, 2, 3])
 
             Get sequences by external id::
 
-                >>> from cognite.client.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.sequences.retrieve_multiple(external_ids=["abc", "def"])
         """
@@ -158,20 +156,20 @@ class SequencesAPI(APIClient):
 
             List sequences::
 
-                >>> from cognite.client.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.sequences.list(limit=5)
 
             Iterate over sequences::
 
-                >>> from cognite.client.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> for seq in c.sequences:
                 ...     seq # do something with the sequences
 
             Iterate over chunks of sequences to reduce memory load::
 
-                >>> from cognite.client.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> for seq_list in c.sequences(chunk_size=2500):
                 ...     seq_list # do something with the sequences
@@ -205,7 +203,7 @@ class SequencesAPI(APIClient):
 
             Create a new sequence::
 
-                >>> from cognite.client.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import Sequence
                 >>> c = CogniteClient()
                 >>> column_def = [{"valueType":"STRING","externalId":"user","description":"some description"}, {"valueType":"DOUBLE","externalId":"amount"}]
@@ -250,7 +248,7 @@ class SequencesAPI(APIClient):
 
             Delete sequences by id or external id::
 
-                >>> from cognite.client.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> c.sequences.delete(id=[1,2,3], external_id="3")
         """
@@ -271,7 +269,7 @@ class SequencesAPI(APIClient):
 
             Update a sequence that you have fetched. This will perform a full update of the sequences::
 
-                >>> from cognite.client.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.sequences.retrieve(id=1)
                 >>> res.description = "New description"
@@ -279,7 +277,7 @@ class SequencesAPI(APIClient):
 
             Perform a partial update on a sequence, updating the description and adding a new field to metadata::
 
-                >>> from cognite.client.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import SequenceUpdate
                 >>> c = CogniteClient()
                 >>> my_update = SequenceUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
@@ -312,7 +310,7 @@ class SequencesAPI(APIClient):
 
             Search for a sequence::
 
-                >>> from cognite.client.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.sequences.search(name="some name")
         """
@@ -357,7 +355,7 @@ class SequencesDataAPI(APIClient):
         Examples:
             Your rows of data can be a list of tuples where the first element is the rownumber and the second element is the data to be inserted::
 
-                >>> from cognite.client.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> seq = c.sequences.create(Sequence(columns=[{"valueType": "STRING", "externalId":"col_a"},{"valueType": "DOUBLE", "externalId":"col_b"}]))
                 >>> data = [(1, ['pi',3.14]), (2, ['e',2.72]) ]
@@ -365,21 +363,21 @@ class SequencesDataAPI(APIClient):
 
             They can also be provided as a list of API-style objects with a rowNumber and values field::
 
-                >>> from cognite.client.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> data = [{"rowNumber": 123, "values": ['str',3]}, {"rowNUmber": 456, "values": ["bar",42]} ]
                 >>> c.sequences.data.insert(data, id=1, column_external_ids=["col_a","col_b"]) # implicit columns are retrieved from metadata
 
             Or they can be a given as a dictionary with row number as the key, and the value is the data to be inserted at that row::
 
-                >>> from cognite.client.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> data = {123 : ['str',3], 456 : ['bar',42] }
                 >>> c.sequences.data.insert(column_external_ids=['stringColumn','intColumn'], rows=data, id=1)
 
             Finally, they can be a SequenceData object retrieved from another request. In this case column_external_ids from this object are used as well.
 
-                >>> from cognite.client.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> data = c.sequences.data.retrieve(id=2,start=0,end=10)
                 >>> c.sequences.data.insert(rows=data, id=1,column_external_ids=None)
@@ -429,7 +427,7 @@ class SequencesDataAPI(APIClient):
         Examples:
             Multiply data in the sequence by 2::
 
-                >>> from cognite.client.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> df = c.sequences.data.retrieve_dataframe(id=123, start=0, end=None)
                 >>> c.sequences.data.insert_dataframe(df*2, id=123, external_id_headers=True)
@@ -455,7 +453,7 @@ class SequencesDataAPI(APIClient):
 
         Examples:
 
-                >>> from cognite.client.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> c.sequences.data.delete(id=0, rows=[1,2,42])
         """
@@ -480,7 +478,7 @@ class SequencesDataAPI(APIClient):
 
         Examples:
 
-                >>> from cognite.client.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> c.sequences.data.delete_range(id=0, start=0, end=None)
         """
@@ -518,7 +516,7 @@ class SequencesDataAPI(APIClient):
 
         Examples:
 
-                >>> from cognite.client.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.sequences.data.retrieve(id=0, start=0, end=None)
                 >>> tuples = [(r,v) for r,v in res.items()] # You can use this iterator in for loops and list comprehensions,
@@ -561,7 +559,7 @@ class SequencesDataAPI(APIClient):
 
         Examples:
 
-                >>> from cognite.client.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> df = c.sequences.data.retrieve_dataframe(id=0, start=0, end=None)
         """
