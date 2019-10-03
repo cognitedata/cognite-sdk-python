@@ -51,7 +51,7 @@ class CogniteClientMock(MagicMock):
         self.raw.databases = MagicMock(spec_set=RawDatabasesAPI)
         self.raw.tables = MagicMock(spec_set=RawTablesAPI)
         self.raw.rows = MagicMock(spec_set=RawRowsAPI)
-        self.sequences = MagicMock(spec_set=SequencesAPI)
+        self.sequences = MagicMock(spec=SequencesAPI)
         self.sequences.data = MagicMock(spec_set=SequencesDataAPI)
 
 
