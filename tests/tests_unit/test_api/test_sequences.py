@@ -6,8 +6,8 @@ from unittest import mock
 
 import pytest
 
+from cognite.client import CogniteClient
 from cognite.client.data_classes import Sequence, SequenceData, SequenceFilter, SequenceList, SequenceUpdate
-from cognite.client.experimental import CogniteClient
 from tests.utils import jsgz_load
 
 COGNITE_CLIENT = CogniteClient()

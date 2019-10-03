@@ -9,6 +9,7 @@ from cognite.client._api.files import FilesAPI
 from cognite.client._api.iam import IAMAPI
 from cognite.client._api.login import LoginAPI
 from cognite.client._api.raw import RawAPI
+from cognite.client._api.sequences import SequencesAPI
 from cognite.client._api.three_d import ThreeDAPI
 from cognite.client._api.time_series import TimeSeriesAPI
 from cognite.client._api_client import APIClient
@@ -68,6 +69,7 @@ class CogniteClient:
         self.events = EventsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.files = FilesAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.iam = IAMAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
+        self.sequences = SequencesAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.time_series = TimeSeriesAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.raw = RawAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.three_d = ThreeDAPI(self._config, api_version=self._API_VERSION, cognite_client=self)

@@ -478,6 +478,66 @@ Data classes
     :members:
     :show-inheritance:
 
+Sequences
+---------
+
+Retrieve a sequence by id
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.sequences.SequencesAPI.retrieve
+
+Retrieve multiple sequences by id
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.sequences.SequencesAPI.retrieve_multiple
+
+List sequences
+^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.sequences.SequencesAPI.list
+
+Search for sequences
+^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.sequences.SequencesAPI.search
+
+Create a sequence
+^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.sequences.SequencesAPI.create
+
+Delete sequences
+^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.sequences.SequencesAPI.delete
+
+Update sequences
+^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.sequences.SequencesAPI.update
+
+Retrieve data
+^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.sequences.SequencesDataAPI.retrieve
+
+Retrieve pandas dataframe
+^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.sequences.SequencesDataAPI.retrieve_dataframe
+
+Insert rows into a sequence
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.sequences.SequencesDataAPI.insert
+
+Insert a pandas dataframe into a sequence
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.sequences.SequencesDataAPI.insert_dataframe
+
+Delete rows from a sequence
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.sequences.SequencesDataAPI.delete
+
+Delete a range of rows from a sequence
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.sequences.SequencesDataAPI.delete_range
+
+Data classes
+^^^^^^^^^^^^
+.. automodule:: cognite.client.data_classes.sequences
+    :members:
+    :show-inheritance:
 
 Raw
 ---
@@ -970,71 +1030,6 @@ Data classes
 .. automodule:: cognite.client.data_classes.model_hosting.source_packages
     :members:
     :show-inheritance:
-
-
-Sequences
----------
-.. WARNING::
-    The sequences API is experimental and subject to breaking changes. It should not be used in production code.
-
-Retrieve a sequence by id
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.sequences.SequencesAPI.retrieve
-
-Retrieve multiple sequences by id
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.sequences.SequencesAPI.retrieve_multiple
-
-List sequences
-^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.sequences.SequencesAPI.list
-
-Search for sequences
-^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.sequences.SequencesAPI.search
-
-Create a sequence
-^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.sequences.SequencesAPI.create
-
-Delete sequences
-^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.sequences.SequencesAPI.delete
-
-Update sequences
-^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.sequences.SequencesAPI.update
-
-Retrieve data
-^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.sequences.SequencesDataAPI.retrieve
-
-Retrieve pandas dataframe
-^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.sequences.SequencesDataAPI.retrieve_dataframe
-
-Insert rows into a sequence
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.sequences.SequencesDataAPI.insert
-
-Insert a pandas dataframe into a sequence
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.sequences.SequencesDataAPI.insert_dataframe
-
-Delete rows from a sequence
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.sequences.SequencesDataAPI.delete
-
-Delete a range of rows from a sequence
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.sequences.SequencesDataAPI.delete_range
-
-Data classes
-^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.sequences
-    :members:
-    :show-inheritance:
-
 
 Relationships
 -------------

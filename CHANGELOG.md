@@ -20,7 +20,10 @@ Changes are grouped as follows
 - Separate read/write fields on data classes
 
 ## [Unreleased]
+
+## [1.3.0] - 2019-10-03
 ### Changed
+- Sequences officially released and no longer considered experimental.
 - Sequences data insert no longer takes a default value for columns.
 
 ## [1.2.1] - 2019-10-01
