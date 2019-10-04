@@ -722,7 +722,18 @@ _DPWindow = namedtuple("_DPWindow", ["start", "end"])
 
 
 class _DPTask:
-    def __init__(self, start, end, ts_item, aggregates, granularity, include_outside_points, limit, task_id=None):
+    def __init__(
+        self,
+        start,
+        end,
+        ts_item,
+        aggregates,
+        granularity,
+        include_outside_points,
+        limit,
+        remaining_user_limit,
+        task_id=None,
+    ):
         self.start = cognite.client.utils._time.timestamp_to_ms(start)
         self.end = cognite.client.utils._time.timestamp_to_ms(end)
         self.ts_item = ts_item
@@ -730,6 +741,7 @@ class _DPTask:
         self.granularity = granularity
         self.include_outside_points = include_outside_points
         self.limit = limit
+        self.remaining_user_limit = remaining_user_limit
         self.dps_result = None
         self.task_id = task_id or utils._auxiliary.random_string(100)
 
@@ -742,6 +754,7 @@ class _DPTask:
             self.granularity,
             self.include_outside_points,
             self.limit,
+            self.remaining_user_limit,
         )
 
 
@@ -784,6 +797,7 @@ class DatapointsFetcher:
                         q.aggregates,
                         q.granularity,
                         q.include_outside_points,
+                        q.limit,
                         q.limit,
                         self.query_ids[i],
                     )
@@ -895,7 +909,6 @@ class DatapointsFetcher:
         next_start_offset = cognite.client.utils._time.granularity_to_ms(task.granularity) if task.granularity else 1
         task.start = task.dps_result[-1].timestamp + next_start_offset
         queries = self._split_task_into_windows(task.dps_result.id, task, request_limit, user_limit)
-
         return queries
 
     def _fetch_datapoints_for_remaining_queries(self, queries: List[_DPTask]):
@@ -936,6 +949,7 @@ class DatapointsFetcher:
                 task.granularity,
                 task.include_outside_points,
                 task.limit,
+                user_limit,
                 task.task_id,
             )
             for w in windows
@@ -957,7 +971,8 @@ class DatapointsFetcher:
                 aggregates=["count"],
                 granularity=count_granularity,
                 include_outside_points=False,
-                limit=None,
+                overall_limit=None,
+                remaining_user_limit=None,
             )
         except CogniteAPIError:
             res = []
@@ -1028,7 +1043,8 @@ class DatapointsFetcher:
         aggregates: List[str],
         granularity: str,
         include_outside_points: bool,
-        limit: int,
+        overall_limit: int,
+        remaining_user_limit: int,
     ) -> Datapoints:
         is_aggregated = aggregates or "aggregates" in ts_item
         per_request_limit = self.client._DPS_LIMIT_AGG if is_aggregated else self.client._DPS_LIMIT
@@ -1039,17 +1055,25 @@ class DatapointsFetcher:
         while (
             (len(all_datapoints) == 0 or len(datapoints) == per_request_limit)
             and end > next_start
-            and len(all_datapoints) < (limit or float("inf"))
+            and len(all_datapoints) < (remaining_user_limit or float("inf"))
         ):
             datapoints = self._get_datapoints(
-                next_start, end, ts_item, aggregates, granularity, include_outside_points, limit_next_request
+                next_start,
+                end,
+                ts_item,
+                aggregates,
+                granularity,
+                include_outside_points,
+                limit_next_request,
+                limit_next_request,
+                False,
             )
             all_datapoints._extend(datapoints)
             if len(datapoints) == 0:
                 break
 
-            if limit:
-                remaining_datapoints = limit - len(datapoints)
+            if remaining_user_limit:
+                remaining_datapoints = remaining_user_limit - len(datapoints)
                 if remaining_datapoints < per_request_limit:
                     limit_next_request = remaining_datapoints
             latest_timestamp = int(datapoints.timestamp[-1])
@@ -1067,6 +1091,8 @@ class DatapointsFetcher:
         granularity: str,
         include_outside_points: bool,
         limit: int,
+        remaining_user_limit: int,
+        first_page: bool = True,
     ) -> Datapoints:
         is_aggregated = aggregates or "aggregates" in ts_item
         payload = {
@@ -1081,6 +1107,21 @@ class DatapointsFetcher:
         res = self.client._post(self.client._RESOURCE_PATH + "/list", json=payload).json()["items"][0]
         aggs = ts_item.get("aggregates", aggregates)
         expected_fields = [a for a in aggs] if aggs is not None else ["value"]
+
+        if include_outside_points and res["datapoints"]:
+            dont_count = 0
+            if res["datapoints"][0]["timestamp"] < start:
+                if not first_page:
+                    res["datapoints"] = res["datapoints"][1:]  # before since we already have it
+                else:  # first page, keep before but don't count it against limit check
+                    dont_count = 1
+            if res["datapoints"] and res["datapoints"][-1]["timestamp"] >= end:
+                # if there were exactly < limit datapoints returned without counting outside points, keep end, else discard since next page will get it
+                if len(res["datapoints"]) - dont_count > payload["limit"] and (
+                    res["datapoints"][-2]["timestamp"] + 1 < res["datapoints"][-1]["timestamp"]
+                ):
+                    res["datapoints"] = res["datapoints"][:-1]  # discard after
+
         dps = Datapoints._load(res, expected_fields, cognite_client=self.client._cognite_client)
         return dps
 

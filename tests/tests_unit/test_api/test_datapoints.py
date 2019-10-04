@@ -1266,14 +1266,14 @@ class TestDataFetcher:
     @pytest.mark.parametrize(
         "q, expected_q",
         [
-            ([_DPTask(1, 2, None, None, None, None, None)], [_DPTask(1, 2, None, None, None, None, None)]),
+            ([_DPTask(1, 2, None, None, None, None, None, None)], [_DPTask(1, 2, None, None, None, None, None, None)]),
             (
-                [_DPTask(datetime(2018, 1, 1), datetime(2019, 1, 1), None, None, None, None, None)],
-                [_DPTask(1514764800000, 1546300800000, None, None, None, None, None)],
+                [_DPTask(datetime(2018, 1, 1), datetime(2019, 1, 1), None, None, None, None, None, None)],
+                [_DPTask(1514764800000, 1546300800000, None, None, None, None, None, None)],
             ),
             (
-                [_DPTask(gms("1h"), gms(("25h")), None, ["average"], "1d", None, None)],
-                [_DPTask(gms("1d"), gms("2d"), None, ["average"], "1d", None, None)],
+                [_DPTask(gms("1h"), gms(("25h")), None, ["average"], "1d", None, None, None)],
+                [_DPTask(gms("1d"), gms("2d"), None, ["average"], "1d", None, None, None)],
             ),
         ],
     )
