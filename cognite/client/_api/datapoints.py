@@ -784,6 +784,8 @@ class _DPTask:
         for res in sorted(self.results, key=custom_sort_key):
             dps._extend(res)
         dps._extend(self.point_after)
+        if len(dps) > self.limit:
+            dps = dps[:self.limit]
         return dps
 
     def as_tuple(self):
