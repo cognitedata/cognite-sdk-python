@@ -1240,11 +1240,7 @@ class TestDataFetcher:
                 ValueError,
                 "granularity must also be provided",
             ),
-            (
-                DatapointsQuery(start=1, end=2, id=1, granularity="1d"),
-                ValueError,
-                "aggregates must also be provided",
-            ),
+            (DatapointsQuery(start=1, end=2, id=1, granularity="1d"), ValueError, "aggregates must also be provided"),
             (
                 DatapointsQuery(start=1, end=2, id=[1, 1], granularity="1d", aggregates=["average"]),
                 ValueError,
@@ -1266,14 +1262,17 @@ class TestDataFetcher:
     @pytest.mark.parametrize(
         "q, expected_q",
         [
-            ([_DPTask(DPS_CLIENT,1, 2, {}, None, None, None, None)], [_DPTask(DPS_CLIENT,1, 2, {}, None, None, None, None)]),
             (
-                [_DPTask(DPS_CLIENT,datetime(2018, 1, 1), datetime(2019, 1, 1), {}, None, None, None, None)],
-                [_DPTask(DPS_CLIENT,1514764800000, 1546300800000, {}, None, None, None, None)],
+                [_DPTask(DPS_CLIENT, 1, 2, {}, None, None, None, None)],
+                [_DPTask(DPS_CLIENT, 1, 2, {}, None, None, None, None)],
             ),
             (
-                [_DPTask(DPS_CLIENT,gms("1h"), gms(("25h")), {}, ["average"], "1d", None, None)],
-                [_DPTask(DPS_CLIENT,gms("1d"), gms("2d"), {}, ["average"], "1d", None, None)],
+                [_DPTask(DPS_CLIENT, datetime(2018, 1, 1), datetime(2019, 1, 1), {}, None, None, None, None)],
+                [_DPTask(DPS_CLIENT, 1514764800000, 1546300800000, {}, None, None, None, None)],
+            ),
+            (
+                [_DPTask(DPS_CLIENT, gms("1h"), gms(("25h")), {}, ["average"], "1d", None, None)],
+                [_DPTask(DPS_CLIENT, gms("1d"), gms("2d"), {}, ["average"], "1d", None, None)],
             ),
         ],
     )
@@ -1302,14 +1301,7 @@ class TestDataFetcher:
         "start, end, granularity, request_limit, user_limit, expected_output",
         [
             (0, gms("20d"), "10d", 2, None, [_DPWindow(0, 1728000000)]),
-            (
-                0,
-                gms("20d"),
-                "10d",
-                1,
-                None,
-                [_DPWindow(0, 864000000), _DPWindow(864000000, 1728000000)],
-            ),
+            (0, gms("20d"), "10d", 1, None, [_DPWindow(0, 864000000), _DPWindow(864000000, 1728000000)]),
             (
                 0,
                 gms("6d"),
@@ -1336,9 +1328,18 @@ class TestDataFetcher:
         self, start, end, granularity, request_limit, user_limit, expected_output, mock_get_dps_count
     ):
         user_limit = user_limit or float("inf")
-        task = _DPTask(client=DPS_CLIENT, start=start, end=end, ts_item={}, granularity=granularity, aggregates=[], limit=None, include_outside_points=False)
+        task = _DPTask(
+            client=DPS_CLIENT,
+            start=start,
+            end=end,
+            ts_item={},
+            granularity=granularity,
+            aggregates=[],
+            limit=None,
+            include_outside_points=False,
+        )
         task.request_limit = request_limit
-        res = DatapointsFetcher(DPS_CLIENT)._get_windows( id=0, task=task, remaining_user_limit=user_limit )
+        res = DatapointsFetcher(DPS_CLIENT)._get_windows(id=0, task=task, remaining_user_limit=user_limit)
         for w in expected_output:
             w.limit = user_limit
         assert expected_output == res

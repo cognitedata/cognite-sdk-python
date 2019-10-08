@@ -785,7 +785,7 @@ class _DPTask:
             dps._extend(res)
         dps._extend(self.point_after)
         if len(dps) > self.limit:
-            dps = dps[:self.limit]
+            dps = dps[: self.limit]
         return dps
 
     def as_tuple(self):
@@ -803,12 +803,6 @@ class _DPTask:
 class DatapointsFetcher:
     def __init__(self, client: DatapointsAPI):
         self.client = client
-
-    #        self.query_ids = []
-    #        self.query_id_to_datapoints_objects = defaultdict(lambda: [])
-    #        self.query_id_to_limit = {}
-    #        self.query_id_to_include_outside_points = {}
-    #        self.query_id_to_tasks = {}
 
     def fetch(self, query: DatapointsQuery) -> DatapointsList:
         return self.fetch_multiple([query])[0]
@@ -913,7 +907,9 @@ class DatapointsFetcher:
         ) < cognite.client.utils._time.granularity_to_ms(task.granularity):
             count_granularity = task.granularity
         try:
-            count_task = _DPTask(self.client, task.start, task.end, {"id": id}, ["count"], count_granularity, False, None)
+            count_task = _DPTask(
+                self.client, task.start, task.end, {"id": id}, ["count"], count_granularity, False, None
+            )
             self._get_datapoints_with_paging(count_task, _DPWindow(task.start, task.end))
             res = count_task.result()
         except CogniteAPIError:
