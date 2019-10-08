@@ -45,12 +45,8 @@ class RowList(CogniteResourceList):
             pandas.DataFrame: The pandas DataFrame representing this instance.
         """
         pd = utils._auxiliary.local_import("pandas")
-        index = [row.key for row in self.data]
-        data = defaultdict(lambda: [])
-        for row in self.data:
-            for col_name, value in row.columns.items():
-                data[col_name].append(value)
-        return pd.DataFrame(data, index)
+        df = pd.DataFrame.from_dict({d.key: d.columns for d in self.data}, orient="index")
+        return df.set_index(df.index.astype("int64"))
 
 
 # GenClass: RawDBTable
