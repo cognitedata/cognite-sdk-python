@@ -23,6 +23,7 @@ Changes are grouped as follows
 
 ### Fixed
 - Fixed support for totalVariation aggregate completion.
+- Fixed pagination for include_outside_points and other edge cases in datapoints.
 
 ## [1.3.0] - 2019-10-03
 ### Changed

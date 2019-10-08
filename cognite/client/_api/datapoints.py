@@ -903,7 +903,6 @@ class DatapointsFetcher:
         return [(task, w) for w in windows]
 
     def _get_windows(self, id, task, remaining_user_limit):
-        print('getting windows',id,task.granularity,remaining_user_limit)
         if task.start >= task.end:
             return []
         count_granularity = "1d"
@@ -911,17 +910,14 @@ class DatapointsFetcher:
             "1d"
         ) < cognite.client.utils._time.granularity_to_ms(task.granularity):
             count_granularity = task.granularity
-        print('getting windows cg',count_granularity)
         try:
             count_task = _DPTask(self.client, task.start, task.end, {"id": id}, ["count"], count_granularity, False, None)
             self._get_datapoints_with_paging(count_task, _DPWindow(task.start, task.end))
             res = count_task.result()
         except CogniteAPIError:
             res = []
-        print('res',len(res))
         if len(res) == 0:  # string based series or aggregates not yet calculated
             return [_DPWindow(task.start, task.end, remaining_user_limit)]
-        print('res after',res.timestamp,res.count)
         counts = list(zip(res.timestamp, res.count))
         windows = []
         total_count = 0
@@ -942,13 +938,10 @@ class DatapointsFetcher:
             current_count = count if task.granularity is None else agg_count(count)
             total_count += current_count
             current_window_count += current_count
-            print('step', ts, count, 'cwc', current_window_count, 'taskgran',task.granularity, 'reqlim', task.request_limit)
             if current_window_count + next_count > task.request_limit or i == len(counts) - 1:
                 window_end = next_timestamp
-                print('win',window_start,window_end)
                 if task.granularity:
                     window_end = self._align_window_end(task.start, next_timestamp, task.granularity)
-                print('win aligned', window_start, window_end)
                 windows.append(_DPWindow(window_start, window_end, remaining_user_limit))
                 window_start = window_end
                 current_window_count = 0
