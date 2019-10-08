@@ -21,6 +21,9 @@ Changes are grouped as follows
 
 ## [Unreleased]
 
+### Fixed
+- Fixed support for totalVariation aggregate completion.
+
 ## [1.3.0] - 2019-10-03
 ### Changed
 - Sequences officially released and no longer considered experimental.
