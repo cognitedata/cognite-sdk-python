@@ -279,7 +279,8 @@ class TestPandasIntegration:
 
         row_list = RowList([Row("k1", {"c1": "v1", "c2": "v1"}), Row("k2", {"c1": "v2", "c2": "v2"})])
         pd.testing.assert_frame_equal(
-            pd.DataFrame({"c1": ["v1", "v2"], "c2": ["v1", "v2"]}, index=["k1", "k2"]), row_list.to_pandas()
+            pd.DataFrame({"c1": ["v1", "v2"], "c2": ["v1", "v2"]}, index=["k1", "k2"]),
+            row_list.to_pandas().sort_index(axis=1),
         )
         pd.testing.assert_frame_equal(pd.DataFrame({"c1": ["v1"], "c2": ["v1"]}, index=["k1"]), row_list[0].to_pandas())
 
@@ -289,6 +290,6 @@ class TestPandasIntegration:
         row_list = RowList([Row("k1", {"c1": "v1", "c2": "v1"}), Row("k2", {"c1": "v2", "c2": "v2", "c3": "v2"})])
         pd.testing.assert_frame_equal(
             pd.DataFrame({"c1": ["v1", "v2"], "c2": ["v1", "v2"], "c3": [None, "v2"]}, index=["k1", "k2"]),
-            row_list.to_pandas(),
+            row_list.to_pandas().sort_index(axis=1),
         )
         pd.testing.assert_frame_equal(pd.DataFrame({"c1": ["v1"], "c2": ["v1"]}, index=["k1"]), row_list[0].to_pandas())
