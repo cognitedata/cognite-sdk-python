@@ -71,11 +71,11 @@ class TestDatapointsAPI:
         assert 3 == df.shape[1]
         assert has_correct_timestamp_spacing(df, "1s")
 
-    def test_retrieve_multiple(self, test_time_series):
+    def test_retrieve_multiple_with_exception(self, test_time_series):
         with pytest.raises(CogniteAPIError):
-            dps = COGNITE_CLIENT.datapoints.retrieve(
+            COGNITE_CLIENT.datapoints.retrieve(
                 id=[test_time_series[0].id, test_time_series[1].id, 0],
-                start="6h-ago",
+                start="1m-ago",
                 end="now",
                 aggregates=["min"],
                 granularity="1s",
