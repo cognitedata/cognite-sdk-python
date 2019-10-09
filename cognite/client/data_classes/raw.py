@@ -1,4 +1,4 @@
-from collections import defaultdict
+from collections import OrderedDict
 from typing import *
 
 from cognite.client.data_classes._base import *
@@ -45,12 +45,7 @@ class RowList(CogniteResourceList):
             pandas.DataFrame: The pandas DataFrame representing this instance.
         """
         pd = utils._auxiliary.local_import("pandas")
-        index = [row.key for row in self.data]
-        data = defaultdict(lambda: [])
-        for row in self.data:
-            for col_name, value in row.columns.items():
-                data[col_name].append(value)
-        return pd.DataFrame(data, index)
+        return pd.DataFrame.from_dict(OrderedDict(((d.key, d.columns) for d in self.data)), orient="index")
 
 
 # GenClass: RawDBTable
