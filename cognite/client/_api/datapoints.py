@@ -872,7 +872,7 @@ class DatapointsFetcher:
             self._fetch_datapoints_for_remaining_queries(remaining_tasks_with_windows)
 
     def _fetch_dps_initial_and_return_remaining_tasks(self, task: _DPTask) -> List[_DPTask]:
-        ndp_in_first_task, last_timestamp = self._get_datapoints(task)
+        ndp_in_first_task, last_timestamp = self._get_datapoints(task, None, True)
         if ndp_in_first_task < task.request_limit:
             return []
         remaining_user_limit = task.limit - ndp_in_first_task
@@ -963,7 +963,7 @@ class DatapointsFetcher:
             window.limit -= ndp_retrieved
             window.start = last_time + task.next_start_offset()
 
-    def _get_datapoints(self, task: _DPTask, window: _DPWindow = None) -> Datapoints:
+    def _get_datapoints(self, task: _DPTask, window: _DPWindow = None, first_page: bool = False) -> Datapoints:
         is_aggregated = task.aggregates is not None
         request_limit = self.client._DPS_LIMIT_AGG if is_aggregated else self.client._DPS_LIMIT
 
@@ -974,7 +974,7 @@ class DatapointsFetcher:
             "end": window.end,
             "aggregates": task.aggregates,
             "granularity": task.granularity,
-            "includeOutsidePoints": task.include_outside_points,
+            "includeOutsidePoints": task.include_outside_points and first_page,
             "limit": min(window.limit, request_limit),
         }
         res = self.client._post(self.client._RESOURCE_PATH + "/list", json=payload).json()["items"][0]
