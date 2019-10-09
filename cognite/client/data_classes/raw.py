@@ -45,7 +45,7 @@ class RowList(CogniteResourceList):
             pandas.DataFrame: The pandas DataFrame representing this instance.
         """
         pd = utils._auxiliary.local_import("pandas")
-        return pd.DataFrame.from_dict(OrderedDict({d.key: d.columns for d in self.data}), orient="index")
+        return pd.DataFrame.from_dict(OrderedDict(((d.key, d.columns) for d in self.data)), orient="index")
 
 
 # GenClass: RawDBTable
