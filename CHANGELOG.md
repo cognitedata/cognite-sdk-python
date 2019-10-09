@@ -21,6 +21,7 @@ Changes are grouped as follows
 
 ## [Unreleased]
 
+## [1.3.1] - 2019-10-09
 ### Fixed
 - Fixed support for totalVariation aggregate completion.
 - Changed conversion of raw RowList to pandas DataFrame to handle missing values (in columns) across the rows. This also fixes the bug where one-off values would be distributed to all rows in the DataFrame (unknown bug).
