@@ -43,6 +43,8 @@ def mock_count_dps_in_ts(mock_ts_by_ids_response):
                 {
                     "id": 1,
                     "externalId": "1",
+                    "isString": False,
+                    "isStep": False,
                     "datapoints": [{"timestamp": 1, "count": 10}, {"timestamp": 2, "count": 5}],
                 }
             ]
@@ -57,7 +59,17 @@ def mock_get_latest_dp_in_ts(mock_ts_by_ids_response):
         mock_ts_by_ids_response.POST,
         TS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/latest",
         status=200,
-        json={"items": [{"id": 1, "externalId": "1", "datapoints": [{"timestamp": 1, "value": 10}]}]},
+        json={
+            "items": [
+                {
+                    "id": 1,
+                    "externalId": "1",
+                    "isString": False,
+                    "isStep": False,
+                    "datapoints": [{"timestamp": 1, "value": 10}],
+                }
+            ]
+        },
     )
     yield mock_ts_by_ids_response
 
@@ -68,7 +80,17 @@ def mock_get_first_dp_in_ts(mock_ts_by_ids_response):
         mock_ts_by_ids_response.POST,
         TS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/list",
         status=200,
-        json={"items": [{"id": 1, "externalId": "1", "datapoints": [{"timestamp": 1, "value": 10}]}]},
+        json={
+            "items": [
+                {
+                    "id": 1,
+                    "externalId": "1",
+                    "isString": False,
+                    "isStep": False,
+                    "datapoints": [{"timestamp": 1, "value": 10}],
+                }
+            ]
+        },
     )
     yield mock_ts_by_ids_response
 
