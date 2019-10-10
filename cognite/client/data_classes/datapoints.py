@@ -78,6 +78,9 @@ class Datapoints:
     Args:
         id (int): Id of the timeseries the datapoints belong to
         external_id (str): External id of the timeseries the datapoints belong to (Only if id is not set)
+        is_string (bool): Whether the time series is string valued or not.
+        is_step (bool): Whether the time series is a step series or not.
+        unit (str): The physical unit of the time series.
         timestamp (List[Union[int, float]]): The data timestamps in milliseconds since the epoch (Jan 1, 1970).
         value (List[Union[int, str, float]]): The data values. Can be String or numeric depending on the metric
         average (List[float]): The integral average values in the aggregate period
@@ -96,6 +99,9 @@ class Datapoints:
         self,
         id: int = None,
         external_id: str = None,
+        is_string: bool = None,
+        is_step: bool = None,
+        unit: str = None,
         timestamp: List[Union[int, float]] = None,
         value: List[Union[int, str, float]] = None,
         average: List[float] = None,
@@ -111,6 +117,9 @@ class Datapoints:
     ):
         self.id = id
         self.external_id = external_id
+        self.is_string = is_string
+        self.is_step = is_step
+        self.unit = unit
         self.timestamp = timestamp or []
         self.value = value
         self.average = average
@@ -165,6 +174,9 @@ class Datapoints:
         dumped = {
             "id": self.id,
             "external_id": self.external_id,
+            "is_string": self.is_string,
+            "is_step": self.is_step,
+            "unit": self.unit,
             "datapoints": [dp.dump(camel_case=camel_case) for dp in self.__get_datapoint_objects()],
         }
         if camel_case:
@@ -223,6 +235,9 @@ class Datapoints:
         instance = cls()
         instance.id = dps_object["id"]
         instance.external_id = dps_object.get("externalId")
+        instance.is_string = dps_object["isString"]  # should never be missing
+        instance.is_step = dps_object.get("isStep")  # NB can be null if isString is true
+        instance.unit = dps_object.get("unit")
         expected_fields = (expected_fields or ["value"]) + ["timestamp"]
         if len(dps_object["datapoints"]) == 0:
             for key in expected_fields:
@@ -239,6 +254,9 @@ class Datapoints:
         if self.id is None and self.external_id is None:
             self.id = other_dps.id
             self.external_id = other_dps.external_id
+            self.is_string = other_dps.is_string
+            self.is_step = other_dps.is_step
+            self.unit = other_dps.unit
 
         for attr, other_value in other_dps._get_non_empty_data_fields(get_empty_lists=True):
             value = getattr(self, attr)
@@ -250,7 +268,7 @@ class Datapoints:
     def _get_non_empty_data_fields(self, get_empty_lists=False) -> List[Tuple[str, Any]]:
         non_empty_data_fields = []
         for attr, value in self.__dict__.copy().items():
-            if attr not in ["id", "external_id"] and attr[0] != "_":
+            if attr not in ["id", "external_id", "is_string", "is_step", "unit"] and attr[0] != "_":
                 if value is not None or attr == "timestamp":
                     if len(value) > 0 or get_empty_lists or attr == "timestamp":
                         non_empty_data_fields.append((attr, value))
