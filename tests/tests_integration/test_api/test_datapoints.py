@@ -70,6 +70,15 @@ class TestDatapointsAPI:
         assert 0 < df.shape[0]
         assert 3 == df.shape[1]
         assert has_correct_timestamp_spacing(df, "1s")
+        for dpl in dps:
+            assert dpl.is_step is not None
+            assert dpl.is_string is not None
+
+    def test_retrieve_nothing(self, test_time_series):
+        dpl = COGNITE_CLIENT.datapoints.retrieve(id=test_time_series[0].id, start=0, end=1)
+        assert 0 == len(dpl)
+        assert dpl.is_step is not None
+        assert dpl.is_string is not None
 
     def test_retrieve_multiple_with_exception(self, test_time_series):
         with pytest.raises(CogniteAPIError):
