@@ -7,7 +7,6 @@ class Model(CogniteResource):
     """A representation of a Model in the model hosting environment.
 
     Args:
-        id (int): Id of the model.
         name (str): Name of the model.
         description (str): Description of the model.
         created_time (int): Created time in UNIX.
@@ -22,7 +21,6 @@ class Model(CogniteResource):
 
     def __init__(
         self,
-        id: int = None,
         name: str = None,
         description: str = None,
         created_time: int = None,
@@ -34,7 +32,6 @@ class Model(CogniteResource):
         webhook_url: str = None,
         cognite_client=None,
     ):
-        self.id = id
         self.name = name
         self.project = description
         self.description = description
@@ -57,13 +54,12 @@ class ModelVersion(CogniteResource):
     """A representation of a Model version in the model hosting environment.
 
     Args:
-        id (int): Id of the model version.
+        name (str): Name of the model version.
         is_deprecated (bool): Whether or not the model version is deprecated.
         training_details (Dict): The training details for this model version. None if the associated source package
             does not define a .train() method.
-        name (str): Name of the model version.
         error_msg (str): The error message produced when trying to deploy the model version.
-        model_id (int): The id of the model associated with this version.
+        model_name (str): The name of the model associated with this version.
         created_time (int): Created time in UNIX.
         metadata (Dict): User-defined metadata about the model.
         source_package_id (int): The id of the source package associated with this version.
@@ -74,12 +70,11 @@ class ModelVersion(CogniteResource):
 
     def __init__(
         self,
-        id: int = None,
+        name: str = None,
         is_deprecated: bool = None,
         training_details: Dict = None,
-        name: str = None,
         error_msg: str = None,
-        model_id: int = None,
+        model_name: str = None,
         created_time: int = None,
         metadata: Dict = None,
         source_package_id: int = None,
@@ -87,12 +82,11 @@ class ModelVersion(CogniteResource):
         description: str = None,
         cognite_client=None,
     ):
-        self.id = id
+        self.name = name
         self.is_deprecated = is_deprecated
         self.training_details = training_details
-        self.name = name
         self.error_msg = error_msg
-        self.model_id = model_id
+        self.model_name = model_name
         self.created_time = created_time
         self.metadata = metadata
         self.source_package_id = source_package_id

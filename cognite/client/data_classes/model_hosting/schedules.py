@@ -7,9 +7,8 @@ class Schedule(CogniteResource):
     """A representation of a Schedule in the model hosting environment.
 
     Args:
-        id (int): Id of the schedule.
-        model_id (int): The id of the model associated with this schedule.
         name (str): Name of the schedule.
+        model_name (str): The name of the model associated with this schedule.
         description (str): Description of the schedule.
         data_spec (Union[Dict, ScheduleDataSpec]): The data spec for the schedule.
         is_deprecated (bool): Whether or not the model version is deprecated.
@@ -21,9 +20,8 @@ class Schedule(CogniteResource):
 
     def __init__(
         self,
-        id: int = None,
-        model_id: int = None,
         name: str = None,
+        model_name: str = None,
         description: str = None,
         data_spec: Union["ScheduleDataSpec", Dict] = None,
         is_deprecated: bool = None,
@@ -32,9 +30,8 @@ class Schedule(CogniteResource):
         args: Dict = None,
         cognite_client=None,
     ):
-        self.id = id
-        self.model_id = model_id
         self.name = name
+        self.model_name = model_name
         self.description = description
         self.data_spec = data_spec
         self.is_deprecated = is_deprecated

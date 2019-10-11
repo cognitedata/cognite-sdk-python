@@ -7,8 +7,8 @@ from cognite.client.data_classes.model_hosting.schedules import Schedule, Schedu
 class SchedulesAPI(APIClient):
     def create_schedule(
         self,
-        model_id: int,
-        name: str,
+        model_name: str,
+        schedule_name: str,
         schedule_data_spec: Any,
         description: str = None,
         args: Dict = None,
@@ -17,8 +17,8 @@ class SchedulesAPI(APIClient):
         """Create a new schedule on a given model.
 
         Args:
-            model_id (int): Id of model to create schedule on
-            name (str): Name of schedule
+            model_name (str): Name of model to create schedule on
+            schedule_name (str): Name of schedule
             schedule_data_spec (Any): Specification of schedule input/output. Can be either a dictionary or a
                                     ScheduleDataSpec object from the cognite-model-hosting library.
             description (str): Description for schedule
@@ -28,26 +28,28 @@ class SchedulesAPI(APIClient):
         Returns:
             Schedule: The created schedule.
         """
-        url_path = "/analytics/models/schedules"
+        url_path = "/analytics/models/{}/schedules".format(model_name)
 
         if hasattr(schedule_data_spec, "dump"):
             schedule_data_spec = schedule_data_spec.dump()
 
         body = {
-            "name": name,
+            "name": schedule_name,
             "description": description or "",
-            "modelId": model_id,
             "args": args or {},
             "dataSpec": schedule_data_spec,
             "metadata": metadata or {},
         }
         res = self._post(url_path, json=body)
-        return Schedule._load(res.json()["data"]["items"][0])
+        return Schedule._load(res.json())
 
-    def list_schedules(self, limit: int = None, cursor: int = None, autopaging: bool = False) -> ScheduleList:
+    def list_schedules(
+        self, model_name: str, limit: int = None, cursor: int = None, autopaging: bool = False
+    ) -> ScheduleList:
         """Get all schedules.
 
         Args:
+            model_name (str): Model for which to list the schedules.
             limit (int): Maximum number of schedules to return. Defaults to 250.
             cursor (str): Cursor to use to fetch next set of results.
             autopaging (bool): Whether or not to automatically page through all results. Will disregard limit.
@@ -56,52 +58,56 @@ class SchedulesAPI(APIClient):
             ScheduleList: The requested schedules.
         """
         params = {"cursor": cursor, "limit": limit if autopaging is False else self._LIST_LIMIT}
-        res = self._get("/analytics/models/schedules", params=params)
-        return ScheduleList._load(res.json()["data"]["items"])
+        res = self._get("/analytics/models/{}/schedules".format(model_name), params=params)
+        return ScheduleList._load(res.json()["items"])
 
-    def get_schedule(self, id: int) -> Schedule:
-        """Get a schedule by id.
+    def get_schedule(self, model_name: str, schedule_name: str) -> Schedule:
+        """Get a schedule by name.
 
         Args:
-            id (int): Id of schedule to get.
+            model_name (str): Name of model associated with this schedule.
+            schedule_name (str): Name of schedule to get.
         Returns:
             Schedule: The requested schedule.
         """
-        res = self._get("/analytics/models/schedules/{}".format(id))
-        return Schedule._load(res.json()["data"]["items"][0])
+        res = self._get("/analytics/models/{}/schedules/{}".format(model_name, schedule_name))
+        return Schedule._load(res.json())
 
-    def deprecate_schedule(self, id: int) -> Schedule:
+    def deprecate_schedule(self, model_name: str, schedule_name: int) -> Schedule:
         """Deprecate a schedule.
 
         Args:
-            id (int): Id of schedule to deprecate
+            model_name (str): Name of model associated with this schedule.
+            schedule_name (str):  Name of schedule to deprecate.
 
         Returns:
             Schedule: The deprecated schedule.
         """
-        res = self._put("/analytics/models/schedules/{}/deprecate".format(id))
-        return Schedule._load(res.json()["data"]["items"][0])
+        res = self._put("/analytics/models/{}/schedules/{}/deprecate".format(model_name, schedule_name))
+        return Schedule._load(res.json())
 
-    def delete_schedule(self, id: int) -> None:
+    def delete_schedule(self, model_name: str, schedule_name: str) -> None:
         """Delete a schedule by id.
 
         Args:
-            id (int):  The id of the schedule to delete.
+            model_name (str): Name of model associated with this schedule.
+            schedule_name (str):  The name of the schedule to delete.
 
         Returns:
             None
         """
-        self._delete("/analytics/models/schedules/{}".format(id))
+        self._delete("/analytics/models/{}/schedules/{}".format(model_name, schedule_name))
 
-    def get_log(self, id: int) -> ScheduleLog:
+    def get_log(self, model_name: str, schedule_name: str) -> ScheduleLog:
         """Return schedule log by id. The ScheduleLog object contains two logs, one for failed scheduled
         predictions and one for successful.
 
         Args:
-            id (int):  The id of the schedule to get logs from.
+            model_name (str): Name of model associated with this schedule.
+            schedule_name (str):  The name of the schedule to get logs from.
 
         Returns:
             ScheduleLog: An object containing the schedule logs.
         """
-        res = self._get("/analytics/models/schedules/{}/log".format(id))
+        res = self._get("/analytics/models/{}/schedules/{}/log".format(model_name, schedule_name))
         return ScheduleLog._load(res.json())
