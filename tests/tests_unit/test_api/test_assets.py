@@ -237,8 +237,6 @@ class TestAssets:
             .description.set(None)
             .external_id.set("1")
             .external_id.set(None)
-            .metadata.add({})
-            .metadata.remove([])
             .metadata.set({})
             .metadata.set(None)
             .name.set("")

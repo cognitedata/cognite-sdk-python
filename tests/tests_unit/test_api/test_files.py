@@ -372,14 +372,10 @@ class TestFilesAPI:
             FileMetadataUpdate(1)
             .asset_ids.add([])
             .asset_ids.remove([])
-            .asset_ids.set([])
-            .asset_ids.set(None)
             .external_id.set("1")
             .external_id.set(None)
             .metadata.add({})
             .metadata.remove([])
-            .metadata.set({})
-            .metadata.set(None)
             .source.set(1)
             .source.set(None),
             FileMetadataUpdate,
