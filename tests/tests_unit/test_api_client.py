@@ -432,6 +432,25 @@ class TestStandardList:
 
         rsps.add_callback(rsps.GET, BASE_URL + URL_PATH, callback)
 
+    @pytest.fixture
+    def mock_get_for_autopaging_2589(self, rsps):
+        NUM_ITEMS = 2589
+        ITEMS_EDGECASE = [{"x": 1, "y": 1} for _ in range(NUM_ITEMS)]
+
+        def callback(request):
+            params = {elem.split("=")[0]: elem.split("=")[1] for elem in request.path_url.split("?")[-1].split("&")}
+            limit = int(params["limit"])
+            cursor = int(params.get("cursor") or 0)
+            items = ITEMS_EDGECASE[cursor : cursor + limit]
+            if cursor + limit >= NUM_ITEMS:
+                next_cursor = None
+            else:
+                next_cursor = cursor + limit
+            response = json.dumps({"nextCursor": next_cursor, "items": items})
+            return 200, {}, response
+
+        rsps.add_callback(rsps.GET, BASE_URL + URL_PATH, callback)
+
     @pytest.mark.usefixtures("mock_get_for_autopaging")
     def test_standard_list_generator(self):
         total_resources = 0
@@ -466,6 +485,28 @@ class TestStandardList:
             else:
                 raise AssertionError("resource chunk length was not 1000 or 500")
         assert 11500 == total_resources
+
+    @pytest.mark.usefixtures("mock_get_for_autopaging_2589")
+    def test_standard_list_generator_with_chunk_size_chunk_edge_case(self):
+        total_resources = 0
+        for resource_chunk in API_CLIENT_WITH_API_KEY._list_generator(
+            cls=SomeResourceList, resource_path=URL_PATH, method="GET", chunk_size=2500
+        ):
+            assert isinstance(resource_chunk, SomeResourceList)
+            total_resources += len(resource_chunk)
+            assert len(resource_chunk) in [89, 2500]
+        assert 2589 == total_resources
+
+    @pytest.mark.usefixtures("mock_get_for_autopaging_2589")
+    def test_standard_list_generator_with_chunk_size_chunk_limit(self):
+        total_resources = 0
+        for resource_chunk in API_CLIENT_WITH_API_KEY._list_generator(
+            cls=SomeResourceList, resource_path=URL_PATH, method="GET", chunk_size=2500, limit=2563
+        ):
+            assert isinstance(resource_chunk, SomeResourceList)
+            total_resources += len(resource_chunk)
+            assert len(resource_chunk) in [63, 2500]
+        assert 2563 == total_resources
 
     @pytest.mark.usefixtures("mock_get_for_autopaging")
     def test_standard_list_generator_with_chunk_size_with_limit(self):
