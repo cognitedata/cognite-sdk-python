@@ -271,7 +271,7 @@ def mock_get_datapoints_single_isstep(rsps):
             dps = {
                 "id": 3,
                 "externalId": "abc",
-                "isStep": False,
+                "isStep": True,
                 "isString": False,
                 "datapoints": [{"timestamp": 1000, "interpolation": 1}, {"timestamp": 3000, "interpolation": 3}],
             }
@@ -283,9 +283,6 @@ def mock_get_datapoints_single_isstep(rsps):
         callback=callback,
         content_type="application/json",
     )
-    response_body = {"items": [{"id": 3, "isStep": True, "isString": False}]}
-    rsps.add(rsps.POST, DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/byids", status=200, json=response_body)
-    rsps.assert_all_requests_are_fired = False
     yield rsps
 
 

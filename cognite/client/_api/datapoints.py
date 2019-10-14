@@ -468,11 +468,12 @@ class DatapointsAPI(APIClient):
                 for dpl in [id_dpl, external_id_dpl]
                 for dp in (dpl.data if isinstance(dpl, DatapointsList) else [dpl])
             }
-            ts_meta = self._cognite_client.time_series.retrieve_multiple(
-                ids=[id for id, aggs_used in ag_used_by_id.items() if "interpolation" in aggs_used]
-            )
             is_step_dict = {
-                str(field): bool(ts.is_step) for ts in ts_meta for field in [ts.id, ts.external_id] if field
+                str(field): bool(dp.is_step)
+                for dpl in [id_dpl, external_id_dpl]
+                for dp in (dpl.data if isinstance(dpl, DatapointsList) else [dpl])
+                for field in [dp.id, dp.external_id]
+                if field
             }
             df = self._dataframe_fill(df, granularity, is_step_dict)
 
