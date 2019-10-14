@@ -76,7 +76,7 @@ class FileMetadataFilter(CogniteFilter):
         uploaded_time (Dict[str, Any]): Range between two timestamps.
         source_created_time (Dict[str, Any]): Filter for files where the sourceCreatedTime field has been set and is within the specified range.
         source_modified_time (Dict[str, Any]): Filter for files where the sourceModifiedTime field has been set and is within the specified range.
-        external_id_prefix (str): The external ID provided by the client. Must be unique for the resource type.
+        external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
         uploaded (bool): Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
         cognite_client (CogniteClient): The client to associate with this object.
     """
