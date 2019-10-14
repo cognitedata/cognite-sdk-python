@@ -24,6 +24,9 @@ Changes are grouped as follows
 ### Added
 - Datapoints objects now store is_string, is_step and unit to allow for better interpretation of the data.
 
+### Changed
+- retrieve_dataframe with `complete` using Datapoints fields instead of retrieving time series metadata. 
+
 ## [1.3.1] - 2019-10-09
 ### Fixed
 - Fixed support for totalVariation aggregate completion.
