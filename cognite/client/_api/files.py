@@ -56,7 +56,7 @@ class FilesAPI(APIClient):
         Yields:
             Union[FileMetadata, FileMetadataList]: yields FileMetadata one by one if chunk is not specified, else FileMetadataList objects.
         """
-        if (root_asset_ids and not isinstance(root_asset_ids[0], dict)) or root_asset_external_ids:
+        if root_asset_ids or root_asset_external_ids:
             root_asset_ids = self._process_ids(root_asset_ids, root_asset_external_ids, wrap_ids=True)
         filter = FileMetadataFilter(
             name=name,
@@ -240,7 +240,7 @@ class FilesAPI(APIClient):
                 >>> for file_list in c.files(chunk_size=2500):
                 ...     file_list # do something with the files
         """
-        if (root_asset_ids and not isinstance(root_asset_ids[0], dict)) or root_asset_external_ids:
+        if root_asset_ids or root_asset_external_ids:
             root_asset_ids = self._process_ids(root_asset_ids, root_asset_external_ids, wrap_ids=True)
         filter = FileMetadataFilter(
             name=name,
