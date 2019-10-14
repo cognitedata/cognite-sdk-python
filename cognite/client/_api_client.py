@@ -306,21 +306,22 @@ class APIClient:
             else:
                 raise ValueError("_list_generator parameter `method` must be GET or POST, not %s", method)
             last_received_items = res.json()["items"]
-            current_items.extend(last_received_items)
+            total_items_retrieved += len(last_received_items)
 
             if not chunk_size:
-                for item in current_items:
+                for item in last_received_items:
                     yield cls._RESOURCE._load(item, cognite_client=self._cognite_client)
-                total_items_retrieved += len(current_items)
-                current_items = []
-            elif len(current_items) >= chunk_size or len(last_received_items) < self._LIST_LIMIT:
-                items_to_yield = current_items[:chunk_size]
-                yield cls._load(items_to_yield, cognite_client=self._cognite_client)
-                total_items_retrieved += len(items_to_yield)
-                current_items = current_items[chunk_size:]
+            else:
+                current_items.extend(last_received_items)
+                if len(current_items) >= chunk_size:
+                    items_to_yield = current_items[:chunk_size]
+                    current_items = current_items[chunk_size:]
+                    yield cls._load(items_to_yield, cognite_client=self._cognite_client)
 
             next_cursor = res.json().get("nextCursor")
             if total_items_retrieved == limit or next_cursor is None:
+                if chunk_size and current_items:
+                    yield cls._load(current_items, cognite_client=self._cognite_client)
                 break
 
     def _list(
