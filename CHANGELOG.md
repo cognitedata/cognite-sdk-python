@@ -26,6 +26,7 @@ Changes are grouped as follows
 
 ### Changed
 - Allow for multiple calls to .add / .remove in object updates such as metadata, without later calls overwriting former. 
+- retrieve_dataframe with `complete` using Datapoints fields instead of retrieving time series metadata. 
 
 ## [1.3.1] - 2019-10-09
 ### Fixed
