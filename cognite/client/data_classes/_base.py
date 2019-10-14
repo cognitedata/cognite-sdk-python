@@ -266,16 +266,15 @@ class CogniteUpdate:
     def _add(self, name, value):
         update_obj = self._update_object.get(name, {})
         assert "set" not in update_obj, "Can not call remove or add fields after calling set on an update object."
-        if isinstance(value, list):
-            update_obj["add"] = update_obj.get("add", []) + value
-        else:
-            update_obj["add"] = {**update_obj.get("add", {}), **value}
+        assert "add" not in update_obj, "Can not call add twice on the same object, please combine your objects and pass them to add in one call."
+        update_obj["add"] = value
         self._update_object[name] = update_obj
 
     def _remove(self, name, value):
         update_obj = self._update_object.get(name, {})
         assert "set" not in update_obj, "Can not call remove or add fields after calling set on an update object."
-        update_obj["remove"] = sorted(list(set(update_obj.get("remove", [])) | set(value)))
+        assert "remove" not in update_obj, "Can not call remove twice on the same object, please combine your items and pass them to remove in one call."
+        update_obj["remove"] = value
         self._update_object[name] = update_obj
 
     def dump(self):
