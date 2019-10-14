@@ -260,10 +260,21 @@ class CogniteUpdate:
         self._update_object[name] = {"setNull": True}
 
     def _add(self, name, value):
-        self._update_object[name] = {"add": value}
+        update_obj = self._update_object.get(name, {})
+        if "set" in update_obj:
+            del update_obj["set"]
+        if isinstance(value, list):
+            update_obj["add"] = update_obj.get("add", []) + value
+        else:
+            update_obj["add"] = {**update_obj.get("add", {}), **value}
+        self._update_object[name] = update_obj
 
     def _remove(self, name, value):
-        self._update_object[name] = {"remove": value}
+        update_obj = self._update_object.get(name, {})
+        if "set" in update_obj:
+            del update_obj["set"]
+        update_obj["remove"] = list(set(update_obj.get("remove", [])) | set(value))
+        self._update_object[name] = update_obj
 
     def dump(self):
         """Dump the instance into a json serializable Python data type.

@@ -24,6 +24,9 @@ Changes are grouped as follows
 ### Added
 - Datapoints objects now store is_string, is_step and unit to allow for better interpretation of the data.
 
+### Changed
+- Allow for multiple calls to .add / .remove in object updates such as metadata, without later calls overwriting former. 
+
 ## [1.3.1] - 2019-10-09
 ### Fixed
 - Fixed support for totalVariation aggregate completion.

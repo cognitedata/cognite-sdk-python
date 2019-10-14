@@ -323,6 +323,25 @@ class TestCogniteUpdate:
             {"key": "value"}
         ).dump()
 
+    def test_add_object_multiple(self):
+        update = MyUpdate(1).object.add({"key": "value"})
+        update.object.add({"key2": "value2"})
+        assert {"id": 1, "update": {"object": {"add": {"key": "value", "key2": "value2"}}}} == update.dump()
+        update.object.add({"key": "overwrite"})
+        assert {"id": 1, "update": {"object": {"add": {"key": "overwrite", "key2": "value2"}}}} == update.dump()
+
+    def test_add_object_and_remove(self):
+        update = MyUpdate(1).object.add({"key": "value"})
+        update.object.remove(["key2"])
+        assert {"id": 1, "update": {"object": {"add": {"key": "value"}, "remove": ["key2"]}}} == update.dump()
+        update.object.add({"key": "overwrite"})
+        assert {"id": 1, "update": {"object": {"add": {"key": "overwrite"}, "remove": ["key2"]}}} == update.dump()
+        update.object.remove(["key2", "key4"])
+        assert {
+            "id": 1,
+            "update": {"object": {"add": {"key": "overwrite"}, "remove": ["key2", "key4"]}},
+        } == update.dump()
+
     def test_remove_object(self):
         assert {"id": 1, "update": {"object": {"remove": ["value"]}}} == MyUpdate(1).object.remove(["value"]).dump()
 
