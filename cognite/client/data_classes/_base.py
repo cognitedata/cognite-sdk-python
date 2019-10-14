@@ -273,7 +273,7 @@ class CogniteUpdate:
         update_obj = self._update_object.get(name, {})
         if "set" in update_obj:
             del update_obj["set"]
-        update_obj["remove"] = list(set(update_obj.get("remove", [])) | set(value))
+        update_obj["remove"] = sorted(list(set(update_obj.get("remove", [])) | set(value)))
         self._update_object[name] = update_obj
 
     def dump(self):
