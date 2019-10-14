@@ -28,6 +28,9 @@ Changes are grouped as follows
 - Allow for multiple calls to .add / .remove in object updates such as metadata, without later calls overwriting former. 
 - retrieve_dataframe with `complete` using Datapoints fields instead of retrieving time series metadata. 
 
+### Fixed
+- Fixed chunking logic in list_generator to always return last partial chunk.
+
 ## [1.3.1] - 2019-10-09
 ### Fixed
 - Fixed support for totalVariation aggregate completion.
