@@ -14,7 +14,7 @@ class Sequence(CogniteResource):
         name (str): Name of the sequence
         description (str): Description of the sequence
         asset_id (int): Optional asset this sequence is associated with
-        external_id (str): Projectwide unique identifier for the sequence
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
         metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
         columns (List[Dict[str, Any]]): List of column definitions
         created_time (int): Time when this asset was created in CDP in milliseconds since Jan 1, 1970.
@@ -82,7 +82,7 @@ class SequenceFilter(CogniteFilter):
 
     Args:
         name (str): Filter out sequences that do not have this *exact* name.
-        external_id_prefix (str): Filter out sequences that do not have this string as the start of the externalId
+        external_id_prefix (str): The external ID provided by the client. Must be unique for the resource type.
         metadata (Dict[str, Any]): Filter out sequences that do not match these metadata fields and values (case-sensitive). Format is {"key1":"value1","key2":"value2"}.
         asset_ids (List[int]): Filter out sequences that are not linked to any of these assets.
         root_asset_ids (List[int]): Filter out sequences not linked to assets with one of these assets as the root asset.
@@ -119,8 +119,8 @@ class SequenceUpdate(CogniteUpdate):
     """No description.
 
     Args:
-        id (int): Javascript friendly internal ID given to the object.
-        external_id (str): External Id provided by client. Should be unique within the project.
+        id (int): A server-generated ID for the object.
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
     """
 
     @property
