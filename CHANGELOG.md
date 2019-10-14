@@ -21,6 +21,9 @@ Changes are grouped as follows
 
 ## [Unreleased]
 
+### Added
+- Datapoints objects now store is_string, is_step and unit to allow for better interpretation of the data.
+
 ## [1.3.1] - 2019-10-09
 ### Fixed
 - Fixed support for totalVariation aggregate completion.

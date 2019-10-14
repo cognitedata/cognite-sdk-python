@@ -185,6 +185,8 @@ class TestPlotTimeSeries:
                     {
                         "id": 0,
                         "externalId": "string1",
+                        "isString": False,
+                        "isStep": False,
                         "datapoints": [{"timestamp": i * 10000, "average": i} for i in range(5000)],
                     }
                 ]
