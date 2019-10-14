@@ -60,11 +60,11 @@ class TestDocstringExamples:
     def test_iam(self):
         run_docstring_tests(iam)
 
-
-@pytest.mark.usefixtures("mock_cognite_experimental_client")
-class TestDocstringExamplesExperimental:
     def test_sequences(self):
         run_docstring_tests(sequences)
 
+
+@pytest.mark.usefixtures("mock_cognite_experimental_client")
+class TestDocstringExamplesExperimental:
     def test_relationships(self):
         run_docstring_tests(relationships)

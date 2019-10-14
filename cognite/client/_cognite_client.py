@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Dict
+from typing import Any, Callable, Dict, Union
 
 from cognite.client import utils
 from cognite.client._api.assets import AssetsAPI
@@ -9,6 +9,7 @@ from cognite.client._api.files import FilesAPI
 from cognite.client._api.iam import IAMAPI
 from cognite.client._api.login import LoginAPI
 from cognite.client._api.raw import RawAPI
+from cognite.client._api.sequences import SequencesAPI
 from cognite.client._api.three_d import ThreeDAPI
 from cognite.client._api.time_series import TimeSeriesAPI
 from cognite.client._api_client import APIClient
@@ -30,6 +31,8 @@ class CogniteClient:
         max_workers (int): Max number of workers to spawn when parallelizing data fetching. Defaults to 10.
         headers (Dict): Additional headers to add to all requests.
         timeout (int): Timeout on requests sent to the api. Defaults to 30 seconds.
+        token (Union[str, Callable[[], str]]): A jwt or method which takes no arguments and returns a jwt to use for authentication.
+            This will override any api-key set.
         debug (bool): Configures logger to log extra request details to stderr.
     """
 
@@ -44,6 +47,7 @@ class CogniteClient:
         max_workers: int = None,
         headers: Dict[str, str] = None,
         timeout: int = None,
+        token: Union[str, Callable[[], str], None] = None,
         debug: bool = False,
     ):
         self._config = ClientConfig(
@@ -54,6 +58,7 @@ class CogniteClient:
             max_workers=max_workers,
             headers=headers,
             timeout=timeout,
+            token=token,
             debug=debug,
         )
         self.login = LoginAPI(self._config, cognite_client=self)
@@ -64,6 +69,7 @@ class CogniteClient:
         self.events = EventsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.files = FilesAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.iam = IAMAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
+        self.sequences = SequencesAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.time_series = TimeSeriesAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.raw = RawAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.three_d = ThreeDAPI(self._config, api_version=self._API_VERSION, cognite_client=self)

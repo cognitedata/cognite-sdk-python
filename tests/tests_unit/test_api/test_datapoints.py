@@ -79,7 +79,15 @@ def mock_get_datapoints(rsps):
             dps = dps[:limit]
             id_to_return = dps_query.get("id", int(dps_query.get("externalId", "-1")))
             external_id_to_return = dps_query.get("externalId", str(dps_query.get("id", -1)))
-            items.append({"id": id_to_return, "externalId": external_id_to_return, "datapoints": dps})
+            items.append(
+                {
+                    "id": id_to_return,
+                    "externalId": external_id_to_return,
+                    "isString": False,
+                    "isStep": False,
+                    "datapoints": dps,
+                }
+            )
         response = {"items": items}
         return 200, {}, json.dumps(response)
 
@@ -98,7 +106,9 @@ def mock_get_datapoints_empty(rsps):
         rsps.POST,
         DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/list",
         status=200,
-        json={"items": [{"id": 1, "externalId": "1", "datapoints": []}]},
+        json={
+            "items": [{"id": 1, "externalId": "1", "isString": False, "isStep": False, "unit": "kPa", "datapoints": []}]
+        },
     )
     yield rsps
 
@@ -115,6 +125,8 @@ def mock_get_datapoints_include_outside(rsps):
                 {
                     "id": 1,
                     "externalId": "1",
+                    "isString": False,
+                    "isStep": False,
                     "datapoints": [{"timestamp": i, "value": i} for i in range(1000000000, 1000000000 + 100001)],
                 }
             ]
@@ -129,13 +141,23 @@ def mock_get_datapoints_one_ts_empty(rsps):
         rsps.POST,
         DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/list",
         status=200,
-        json={"items": [{"id": 1, "externalId": "1", "datapoints": [{"timestamp": 1, "value": 1}]}]},
+        json={
+            "items": [
+                {
+                    "id": 1,
+                    "externalId": "1",
+                    "isString": False,
+                    "isStep": False,
+                    "datapoints": [{"timestamp": 1, "value": 1}],
+                }
+            ]
+        },
     )
     rsps.add(
         rsps.POST,
         DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/list",
         status=200,
-        json={"items": [{"id": 2, "externalId": "2", "datapoints": []}]},
+        json={"items": [{"id": 2, "externalId": "2", "isString": False, "isStep": False, "datapoints": []}]},
     )
     yield rsps
 
@@ -148,6 +170,8 @@ def mock_get_datapoints_one_ts_has_missing_aggregates(rsps):
             dps = {
                 "id": 1,
                 "externalId": "abc",
+                "isString": False,
+                "isStep": False,
                 "datapoints": [
                     {"timestamp": 0, "average": 0},
                     {"timestamp": 1, "average": 1},
@@ -160,6 +184,8 @@ def mock_get_datapoints_one_ts_has_missing_aggregates(rsps):
             dps = {
                 "id": 2,
                 "externalId": "def",
+                "isString": False,
+                "isStep": False,
                 "datapoints": [
                     {"timestamp": 0},
                     {"timestamp": 1, "interpolation": 1},
@@ -187,12 +213,16 @@ def mock_get_datapoints_several_missing(rsps):
             dps = {
                 "id": 2,
                 "externalId": "abc",
+                "isString": False,
+                "isStep": False,
                 "datapoints": [{"timestamp": 1000, "interpolation": 1}, {"timestamp": 3000, "interpolation": 3}],
             }
         elif item["aggregates"] == ["count"]:
             dps = {
                 "id": 3,
                 "externalId": "def",
+                "isString": False,
+                "isStep": False,
                 "datapoints": [
                     {"timestamp": 1000, "count": 2},
                     {"timestamp": 3000, "count": 4},
@@ -203,6 +233,8 @@ def mock_get_datapoints_several_missing(rsps):
             dps = {
                 "id": 1,
                 "externalId": "def",
+                "isString": False,
+                "isStep": False,
                 "datapoints": [
                     {"timestamp": 0, "average": 11},
                     {"timestamp": 1000, "average": 22},
@@ -219,7 +251,13 @@ def mock_get_datapoints_several_missing(rsps):
         content_type="application/json",
     )
 
-    response_body = {"items": [{"id": 1, "isStep": False}, {"id": 2, "isStep": None}, {"id": 3, "isStep": True}]}
+    response_body = {
+        "items": [
+            {"id": 1, "isStep": False, "isString": False},
+            {"id": 2, "isStep": None, "isString": False},
+            {"id": 3, "isStep": True, "isString": False},
+        ]
+    }
     rsps.add(rsps.POST, DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/byids", status=200, json=response_body)
     rsps.assert_all_requests_are_fired = False
     yield rsps
@@ -233,6 +271,8 @@ def mock_get_datapoints_single_isstep(rsps):
             dps = {
                 "id": 3,
                 "externalId": "abc",
+                "isStep": True,
+                "isString": False,
                 "datapoints": [{"timestamp": 1000, "interpolation": 1}, {"timestamp": 3000, "interpolation": 3}],
             }
         return 200, {}, json.dumps({"items": [dps]})
@@ -243,9 +283,6 @@ def mock_get_datapoints_single_isstep(rsps):
         callback=callback,
         content_type="application/json",
     )
-    response_body = {"items": [{"id": 3, "isStep": True}]}
-    rsps.add(rsps.POST, DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/byids", status=200, json=response_body)
-    rsps.assert_all_requests_are_fired = False
     yield rsps
 
 
@@ -371,6 +408,12 @@ class TestGetDatapoints:
         res = DPS_CLIENT.retrieve(id=1, start=0, end=10000)
         assert 0 == len(res)
 
+    def test_retrieve_datapoints_empty_extrafields_set(self, mock_get_datapoints_empty):
+        res = DPS_CLIENT.retrieve(id=1, start=0, end=10000)
+        assert "kPa" == res.unit
+        assert False == res.is_step
+        assert False == res.is_string
+
     def test_aggregate_limits_correct(self, mock_get_datapoints):
         DPS_CLIENT.retrieve(id={"id": 1, "aggregates": ["average"]}, start=0, end=10, granularity="1d")
         DPS_CLIENT.retrieve(id=1, start=0, end=10, granularity="1d", aggregates=["max"])
@@ -415,7 +458,13 @@ def mock_retrieve_latest(rsps):
             external_id = latest_query.get("externalId", "-1")
             before = latest_query.get("before", 10001)
             items.append(
-                {"id": id, "externalId": external_id, "datapoints": [{"timestamp": before - 1, "value": random()}]}
+                {
+                    "id": id,
+                    "externalId": external_id,
+                    "isString": False,
+                    "isStep": False,
+                    "datapoints": [{"timestamp": before - 1, "value": random()}],
+                }
             )
         return 200, {}, json.dumps({"items": items})
 
@@ -435,7 +484,10 @@ def mock_retrieve_latest_empty(rsps):
         DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/latest",
         status=200,
         json={
-            "items": [{"id": 1, "externalId": "1", "datapoints": []}, {"id": 2, "externalId": "2", "datapoints": []}]
+            "items": [
+                {"id": 1, "externalId": "1", "isString": False, "isStep": True, "datapoints": []},
+                {"id": 2, "isString": False, "isStep": False, "externalId": "2", "datapoints": []},
+            ]
         },
     )
     yield rsps
@@ -448,7 +500,10 @@ def mock_retrieve_latest_with_failure(rsps):
         DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/latest",
         status=200,
         json={
-            "items": [{"id": 1, "externalId": "1", "datapoints": []}, {"id": 2, "externalId": "2", "datapoints": []}]
+            "items": [
+                {"id": 1, "externalId": "1", "isString": False, "isStep": False, "datapoints": []},
+                {"id": 2, "externalId": "2", "isString": False, "isStep": False, "datapoints": []},
+            ]
         },
     )
     rsps.add(
@@ -718,12 +773,39 @@ class TestDatapointsObject:
 
     def test_load(self):
         res = Datapoints._load(
-            {"id": 1, "externalId": "1", "datapoints": [{"timestamp": 1, "value": 1}, {"timestamp": 2, "value": 2}]}
+            {
+                "id": 1,
+                "externalId": "1",
+                "isString": False,
+                "isStep": False,
+                "unit": "kPa",
+                "datapoints": [{"timestamp": 1, "value": 1}, {"timestamp": 2, "value": 2}],
+            }
         )
         assert 1 == res.id
         assert "1" == res.external_id
         assert [1, 2] == res.timestamp
         assert [1, 2] == res.value
+        assert "kPa" == res.unit
+        assert False == res.is_step
+        assert False == res.is_string
+
+    def test_load_string(self):
+        res = Datapoints._load(
+            {
+                "id": 1,
+                "externalId": "1",
+                "isString": True,
+                "datapoints": [{"timestamp": 1, "value": 1}, {"timestamp": 2, "value": 2}],
+            }
+        )
+        assert 1 == res.id
+        assert "1" == res.external_id
+        assert [1, 2] == res.timestamp
+        assert [1, 2] == res.value
+        assert True == res.is_string
+        assert res.is_step is None
+        assert res.unit is None
 
     def test_slice(self):
         res = Datapoints(id=1, timestamp=[1, 2, 3])._slice(slice(None, 1))
@@ -1094,13 +1176,33 @@ class TestPandasIntegration:
             rsps.POST,
             DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/list",
             status=200,
-            json={"items": [{"id": 1, "externalId": "abc", "datapoints": [{"timestamp": 0, "average": 1}]}]},
+            json={
+                "items": [
+                    {
+                        "id": 1,
+                        "externalId": "abc",
+                        "isString": False,
+                        "isStep": False,
+                        "datapoints": [{"timestamp": 0, "average": 1}],
+                    }
+                ]
+            },
         )
         rsps.add(
             rsps.POST,
             DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/list",
             status=200,
-            json={"items": [{"id": 2, "externalId": "def", "datapoints": [{"timestamp": 0, "average": 1}]}]},
+            json={
+                "items": [
+                    {
+                        "id": 2,
+                        "externalId": "def",
+                        "isString": False,
+                        "isStep": False,
+                        "datapoints": [{"timestamp": 0, "average": 1}],
+                    }
+                ]
+            },
         )
         res = DPS_CLIENT.retrieve_dataframe(
             start=0, end="now", id=1, external_id=["def"], aggregates=["average"], granularity="1m"
@@ -1190,7 +1292,7 @@ def mock_get_dps_count(rsps):
         assert utils._time.granularity_to_ms(payload["granularity"]) >= utils._time.granularity_to_ms("1d")
 
         dps = [{"timestamp": i, "count": 1000} for i in range(start, end, utils._time.granularity_to_ms(granularity))]
-        response = {"items": [{"id": 0, "externalId": "bla", "datapoints": dps}]}
+        response = {"items": [{"id": 0, "externalId": "bla", "isStep": False, "isString": False, "datapoints": dps}]}
         return 200, {}, json.dumps(response)
 
     rsps.add_callback(

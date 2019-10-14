@@ -3,10 +3,9 @@ from unittest import mock
 
 import pytest
 
-from cognite.client import utils
+from cognite.client import CogniteClient, utils
 from cognite.client.data_classes import Sequence, SequenceFilter, SequenceUpdate
 from cognite.client.exceptions import CogniteAPIError
-from cognite.client.experimental import CogniteClient
 from tests.utils import set_request_limit
 
 COGNITE_CLIENT = CogniteClient()

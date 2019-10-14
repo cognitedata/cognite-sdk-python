@@ -58,6 +58,8 @@ def mock_cognite_client():
         cog_client_mock.iam.api_keys = mock.MagicMock(spec=APIKeysAPI)
         cog_client_mock.iam.groups = mock.MagicMock(spec=GroupsAPI)
         cog_client_mock.iam.security_categories = mock.MagicMock(spec=SecurityCategoriesAPI)
+        cog_client_mock.sequences = mock.MagicMock(spec=SequencesAPI)
+        cog_client_mock.sequences.data = mock.MagicMock(spec=SequencesDataAPI)
         raw_mock = mock.MagicMock(spec=RawAPI)
         raw_mock.databases = mock.MagicMock(spec=RawDatabasesAPI)
         raw_mock.tables = mock.MagicMock(spec=RawTablesAPI)
@@ -72,8 +74,6 @@ def mock_cognite_experimental_client(mock_cognite_client):
     with mock.patch("cognite.client.experimental.CogniteClient") as client_mock:
         cog_client_mock = mock.MagicMock(spec=CogniteClient)
         cog_client_mock.assets = mock.MagicMock(spec=AssetsAPI)
-        cog_client_mock.sequences = mock.MagicMock(spec=SequencesAPI)
-        cog_client_mock.sequences.data = mock.MagicMock(spec=SequencesDataAPI)
         cog_client_mock.relationships = mock.MagicMock(spec=RelationshipsAPI)
         client_mock.return_value = cog_client_mock
         yield

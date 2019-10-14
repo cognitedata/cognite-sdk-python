@@ -413,7 +413,7 @@ class DatapointsAPI(APIClient):
                 Pass 'fill' to insert missing entries into the index, and complete data where possible (supports interpolation, stepInterpolation, count, sum, totalVariation).
 
                 Pass 'fill,dropna' to additionally drop rows in which any aggregate for any time series has missing values (typically rows at the start and end for interpolation aggregates).
-                This option guarantees that all returned dataframes have the exact same shape and no missing values anywhere, and is only supported for aggregates sum, count, totalVariance, interpolation and stepInterpolation.
+                This option guarantees that all returned dataframes have the exact same shape and no missing values anywhere, and is only supported for aggregates sum, count, totalVariation, interpolation and stepInterpolation.
 
         Returns:
             pandas.DataFrame: The requested dataframe
@@ -471,11 +471,12 @@ class DatapointsAPI(APIClient):
                 for dpl in [id_dpl, external_id_dpl]
                 for dp in (dpl.data if isinstance(dpl, DatapointsList) else [dpl])
             }
-            ts_meta = self._cognite_client.time_series.retrieve_multiple(
-                ids=[id for id, aggs_used in ag_used_by_id.items() if "interpolation" in aggs_used]
-            )
             is_step_dict = {
-                str(field): bool(ts.is_step) for ts in ts_meta for field in [ts.id, ts.external_id] if field
+                str(field): bool(dp.is_step)
+                for dpl in [id_dpl, external_id_dpl]
+                for dp in (dpl.data if isinstance(dpl, DatapointsList) else [dpl])
+                for field in [dp.id, dp.external_id]
+                if field
             }
             df = self._dataframe_fill(df, granularity, is_step_dict)
 
@@ -497,7 +498,7 @@ class DatapointsAPI(APIClient):
             ),
             copy=False,
         )
-        df.fillna({c: 0 for c in df.columns if regexp.search(c, r"\|(sum|totalVariance|count)$")}, inplace=True)
+        df.fillna({c: 0 for c in df.columns if regexp.search(c, r"\|(sum|totalVariation|count)$")}, inplace=True)
         int_cols = [c for c in df.columns if regexp.search(c, r"\|interpolation$")]
         lin_int_cols = [c for c in int_cols if not is_step_dict[regexp.match(r"(.*)\|\w+$", c).group(1)]]
         step_int_cols = [c for c in df.columns if regexp.search(c, r"\|stepInterpolation$")] + list(
@@ -508,7 +509,7 @@ class DatapointsAPI(APIClient):
         return df
 
     def _dataframe_safe_dropna(self, df, aggregates_used):
-        supported_aggregates = ["sum", "count", "total_variance", "interpolation", "step_interpolation"]
+        supported_aggregates = ["sum", "count", "total_variation", "interpolation", "step_interpolation"]
         not_supported = set(aggregates_used) - set(supported_aggregates + ["timestamp"])
         if not_supported:
             raise ValueError(
@@ -547,7 +548,7 @@ class DatapointsAPI(APIClient):
                 Pass 'fill' to insert missing entries into the index, and complete data where possible (supports interpolation, stepInterpolation, count, sum, totalVariation).
 
                 Pass 'fill,dropna' to additionally drop rows in which any aggregate for any time series has missing values (typically rows at the start and end for interpolation aggregates).
-                This option guarantees that all returned dataframes have the exact same shape and no missing values anywhere, and is only supported for aggregates sum, count, totalVariance, interpolation and stepInterpolation.
+                This option guarantees that all returned dataframes have the exact same shape and no missing values anywhere, and is only supported for aggregates sum, count, totalVariation, interpolation and stepInterpolation.
 
         Returns:
            Dict[str,pandas.DataFrame]: A dictionary of aggregate: dataframe.

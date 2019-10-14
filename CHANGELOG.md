@@ -21,6 +21,33 @@ Changes are grouped as follows
 
 ## [Unreleased]
 
+### Added
+- Datapoints objects now store is_string, is_step and unit to allow for better interpretation of the data.
+
+### Changed
+- retrieve_dataframe with `complete` using Datapoints fields instead of retrieving time series metadata. 
+
+### Fixed
+- Fixed chunking logic in list_generator to always return last partial chunk.
+
+## [1.3.1] - 2019-10-09
+### Fixed
+- Fixed support for totalVariation aggregate completion.
+- Changed conversion of raw RowList to pandas DataFrame to handle missing values (in columns) across the rows. This also fixes the bug where one-off values would be distributed to all rows in the DataFrame (unknown bug).
+
+## [1.3.0] - 2019-10-03
+### Changed
+- Sequences officially released and no longer considered experimental.
+- Sequences data insert no longer takes a default value for columns.
+
+## [1.2.1] - 2019-10-01
+### Fixed
+- Tokens are sent with the correct "Authorization" header instead of "Authentication".
+
+## [1.2.0] - 2019-10-01
+### Added
+- Support for authenticating with bearer tokens. Can now supply a jwt or jwt-factory to CogniteClient. This token will override any api-key which has been set.
+
 ## [1.1.12] - 2019-10-01
 ### Fixed
 - Fixed a bug in time series pagination where getting 100k datapoints could cause a missing id error when using include_outside_points.
@@ -134,7 +161,7 @@ Changes are grouped as follows
 - Sequences queries are now retried if safe
 - .update() in all APIs now accept a subclass of CogniteResourceList as input
 - Sequences datapoint retrieval updated to use the new cursor feature in the API
-- Json serializiation in `__str__()` of base data classes. Now handles Decimal and Number objects. 
+- Json serializiation in `__str__()` of base data classes. Now handles Decimal and Number objects.
 - Now possible to create asset hierarchy using parent external id when the parent is not part of the batch being inserted.
 - `name` parameter of files.upload_bytes is now required, so as not to raise an exception in the underlying API.
 
@@ -179,7 +206,7 @@ Changes are grouped as follows
 - Distribution of "core" sdk which does not depend on pandas and numpy
 - Typehints for all methods
 - Support for posting an entire asset hierarchy, resolving ref_id/parent_ref_id automatically
-- config attribute on CogniteClient to view current configuration. 
+- config attribute on CogniteClient to view current configuration.
 
 ### Changed
 - Renamed methods so they reflect what the method does instead of what http method is used
