@@ -23,6 +23,10 @@ Changes are grouped as follows
 
 ### Added
 - Datapoints objects now store is_string, is_step and unit to allow for better interpretation of the data.
+- Added a search function in the relationships API.
+
+### Changed
+- `list` and `__call__` methods for files now support list parameters for `root_ids`, `root_external_ids`.
 
 ## [1.3.1] - 2019-10-09
 ### Fixed
