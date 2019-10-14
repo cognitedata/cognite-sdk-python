@@ -261,8 +261,7 @@ class CogniteUpdate:
 
     def _add(self, name, value):
         update_obj = self._update_object.get(name, {})
-        if "set" in update_obj:
-            del update_obj["set"]
+        assert not ("set" in update_obj), "Can not call remove or add fields after calling set on an update object."
         if isinstance(value, list):
             update_obj["add"] = update_obj.get("add", []) + value
         else:
@@ -271,8 +270,7 @@ class CogniteUpdate:
 
     def _remove(self, name, value):
         update_obj = self._update_object.get(name, {})
-        if "set" in update_obj:
-            del update_obj["set"]
+        assert not ("set" in update_obj), "Can not call remove or add fields after calling set on an update object."
         update_obj["remove"] = sorted(list(set(update_obj.get("remove", [])) | set(value)))
         self._update_object[name] = update_obj
 
