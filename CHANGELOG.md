@@ -31,6 +31,9 @@ Changes are grouped as follows
 ### Changed
 - retrieve_dataframe with `complete` using Datapoints fields instead of retrieving time series metadata. 
 
+### Fixed
+- Fixed chunking logic in list_generator to always return last partial chunk.
+
 ## [1.3.1] - 2019-10-09
 ### Fixed
 - Fixed support for totalVariation aggregate completion.
