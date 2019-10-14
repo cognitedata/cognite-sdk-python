@@ -646,10 +646,11 @@ class SyntheticDatapointsAPI(APIClient):
             resp = self._post(url_path=self._SYNTHETIC_RESOURCE_PATH, json={"items": [query]})
             data = resp.json()["items"][0]
             datapoints._extend(Datapoints._load(data, expected_fields=["value"]))
-            limit -= len(data)
-            if len(data) < self._DPS_LIMIT or limit <= 0:  # todo: support user lim > 100k
+            limit -= len(data["datapoints"])
+            if len(data["datapoints"]) < self._DPS_LIMIT or limit <= 0:  # todo: support user lim > 100k
+                print('breaking',len(data["datapoints"]),limit)
                 break
-            query["start"] = data[-1]["timestamp"] + 1
+            query["start"] = data["datapoints"][-1]["timestamp"] + 1
         return datapoints
 
 
