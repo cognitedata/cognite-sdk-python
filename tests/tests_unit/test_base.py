@@ -337,6 +337,10 @@ class TestCogniteUpdate:
         with pytest.raises(AssertionError):
             update.object.remove(["key2"])
 
+    def test_set_after_add_or_removeraises_error(self):
+        update = MyUpdate(1).object.add({"key": "value"})
+        with pytest.raises(AssertionError):
+            update.object.set({"key2": "value2"})
 
     def test_add_object_and_remove(self):
         update = MyUpdate(1).object.add({"key": "value"})
