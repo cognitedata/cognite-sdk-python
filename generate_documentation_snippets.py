@@ -33,7 +33,9 @@ for api_name, api in apis:
             openapi_ident = match_link_openapi[1]
             parsed_lines = parser.parse(fun.__doc__)
             snippet_lines = [
-                ex.source for ex in parsed_lines if isinstance(ex, Example) and ex.source.strip() not in filter_out
+                re.sub("(= |in |^)c.", "\\1client.", ex.source)
+                for ex in parsed_lines
+                if isinstance(ex, Example) and ex.source.strip() not in filter_out
             ]
             snippet = "".join(snippet_lines)
             snippets["operations"][openapi_ident] += snippet
