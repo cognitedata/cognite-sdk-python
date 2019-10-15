@@ -276,7 +276,7 @@ class AssetsAPI(APIClient):
     def delete(
         self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None, recursive: bool = False
     ) -> None:
-        """Delete one or more assets
+        """`Delete one or more assets <https://doc.cognitedata.com/api/v1/#operation/deleteAssets>`_
 
         Args:
             id (Union[int, List[int]): Id or list of ids
