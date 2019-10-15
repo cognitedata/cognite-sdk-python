@@ -79,7 +79,7 @@ class EventsAPI(APIClient):
         return self.__call__()
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[Event]:
-        """Retrieve a single event by id.
+        """`Retrieve a single event by id. <https://docs.cognite.com/api/v1/#operation/getEventByInternalId>`_
 
         Args:
             id (int, optional): ID
@@ -106,7 +106,7 @@ class EventsAPI(APIClient):
         return self._retrieve_multiple(ids=id, external_ids=external_id, wrap_ids=True)
 
     def retrieve_multiple(self, ids: Optional[List[int]] = None, external_ids: Optional[List[str]] = None) -> EventList:
-        """Retrieve multiple events by id.
+        """`Retrieve multiple events by id. <https://docs.cognite.com/api/v1/#operation/byIdsEvents>`_
 
         Args:
             ids (List[int], optional): IDs
@@ -150,7 +150,7 @@ class EventsAPI(APIClient):
         partitions: int = None,
         limit: int = 25,
     ) -> EventList:
-        """List events
+        """`List events <https://docs.cognite.com/api/v1/#operation/advancedListEvents>`_
 
         Args:
             start_time (Dict[str, Any]): Range between two timestamps.
@@ -213,7 +213,7 @@ class EventsAPI(APIClient):
         return self._list(method="POST", limit=limit, filter=filter, partitions=partitions)
 
     def create(self, event: Union[Event, List[Event]]) -> Union[Event, EventList]:
-        """Create one or more events.
+        """`Create one or more events. <https://docs.cognite.com/api/v1/#operation/createEvents>`_
 
         Args:
             event (Union[Event, List[Event]]): Event or list of events to create.
@@ -234,7 +234,7 @@ class EventsAPI(APIClient):
         return self._create_multiple(items=event)
 
     def delete(self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None) -> None:
-        """Delete one or more events
+        """`Delete one or more events <https://docs.cognite.com/api/v1/#operation/deleteEvents>`_
 
         Args:
             id (Union[int, List[int]): Id or list of ids
@@ -253,7 +253,7 @@ class EventsAPI(APIClient):
         self._delete_multiple(ids=id, external_ids=external_id, wrap_ids=True)
 
     def update(self, item: Union[Event, EventUpdate, List[Union[Event, EventUpdate]]]) -> Union[Event, EventList]:
-        """Update one or more events
+        """`Update one or more events <https://docs.cognite.com/api/v1/#operation/updateEvents>`_
 
         Args:
             item (Union[Event, EventUpdate, List[Union[Event, EventUpdate]]]): Event(s) to update
@@ -282,7 +282,7 @@ class EventsAPI(APIClient):
         return self._update_multiple(items=item)
 
     def search(self, description: str = None, filter: Union[EventFilter, Dict] = None, limit: int = None) -> EventList:
-        """Search for events
+        """`Search for events <https://docs.cognite.com/api/v1/#operation/searchEvents>`_
 
         Args:
             description (str): Fuzzy match on description.

@@ -114,7 +114,7 @@ class AssetsAPI(APIClient):
         return self._retrieve_multiple(ids=id, external_ids=external_id, wrap_ids=True)
 
     def retrieve_multiple(self, ids: Optional[List[int]] = None, external_ids: Optional[List[str]] = None) -> AssetList:
-        """Retrieve multiple assets by id.
+        """`Retrieve multiple assets by id. <https://docs.cognite.com/api/v1/#operation/getAsset>`_
 
         Args:
             ids (List[int], optional): IDs
@@ -157,7 +157,7 @@ class AssetsAPI(APIClient):
         partitions: int = None,
         limit: int = 25,
     ) -> AssetList:
-        """List assets
+        """`List assets <https://docs.cognite.com/api/v1/#operation/listAssets>`_
 
         Args:
             name (str): Name of asset. Often referred to as tag.
@@ -227,7 +227,9 @@ class AssetsAPI(APIClient):
         )
 
     def create(self, asset: Union[Asset, List[Asset]]) -> Union[Asset, AssetList]:
-        """Create one or more assets. You can create an arbitrary number of assets, and the SDK will split the request into multiple requests.
+        """`Create one or more assets. <https://docs.cognite.com/api/v1/#operation/createAssets>`_
+        
+        You can create an arbitrary number of assets, and the SDK will split the request into multiple requests.
 
         Args:
             asset (Union[Asset, List[Asset]]): Asset or list of assets to create.
@@ -299,7 +301,7 @@ class AssetsAPI(APIClient):
         )
 
     def update(self, item: Union[Asset, AssetUpdate, List[Union[Asset, AssetUpdate]]]) -> Union[Asset, AssetList]:
-        """Update one or more assets
+        """`Update one or more assets <https://docs.cognite.com/api/v1/#operation/updateAssets>`_
 
         Args:
             item (Union[Asset, AssetUpdate, List[Union[Asset, AssetUpdate]]]): Asset(s) to update
@@ -330,7 +332,7 @@ class AssetsAPI(APIClient):
     def search(
         self, name: str = None, description: str = None, filter: Union[AssetFilter, Dict] = None, limit: int = None
     ) -> AssetList:
-        """Search for assets
+        """`Search for assets <https://docs.cognite.com/api/v1/#operation/searchAssets>`_
 
         Args:
             name (str): Fuzzy match on name.
