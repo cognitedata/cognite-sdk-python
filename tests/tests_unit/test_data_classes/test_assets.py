@@ -10,8 +10,6 @@ from cognite.client.data_classes import (
     EventList,
     FileMetadata,
     FileMetadataList,
-    Sequence,
-    SequenceList,
 )
 from cognite.client.experimental import CogniteClient
 

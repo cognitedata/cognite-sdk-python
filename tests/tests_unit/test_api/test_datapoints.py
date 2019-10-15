@@ -1,11 +1,9 @@
 import json
 import math
-from contextlib import contextmanager
 from datetime import datetime
-from random import choice, random
+from random import random
 from typing import List
 from unittest import mock
-from unittest.mock import PropertyMock
 
 import pytest
 
@@ -411,8 +409,8 @@ class TestGetDatapoints:
     def test_retrieve_datapoints_empty_extrafields_set(self, mock_get_datapoints_empty):
         res = DPS_CLIENT.retrieve(id=1, start=0, end=10000)
         assert "kPa" == res.unit
-        assert False == res.is_step
-        assert False == res.is_string
+        assert res.is_step is False
+        assert res.is_string is False
 
     def test_aggregate_limits_correct(self, mock_get_datapoints):
         DPS_CLIENT.retrieve(id={"id": 1, "aggregates": ["average"]}, start=0, end=10, granularity="1d")
@@ -787,8 +785,8 @@ class TestDatapointsObject:
         assert [1, 2] == res.timestamp
         assert [1, 2] == res.value
         assert "kPa" == res.unit
-        assert False == res.is_step
-        assert False == res.is_string
+        assert res.is_step is False
+        assert res.is_string is False
 
     def test_load_string(self):
         res = Datapoints._load(
@@ -803,7 +801,7 @@ class TestDatapointsObject:
         assert "1" == res.external_id
         assert [1, 2] == res.timestamp
         assert [1, 2] == res.value
-        assert True == res.is_string
+        assert res.is_string is True
         assert res.is_step is None
         assert res.unit is None
 
@@ -822,21 +820,21 @@ class TestDatapointsObject:
         assert [1, 2, 3] == d0.value
         assert 1 == d0.id
         assert "1" == d0.external_id
-        assert d0.sum == None
+        assert d0.sum is None
 
         d0._extend(d2)
         assert [1, 2, 3, 4, 5, 6] == d0.value
         assert [1, 2, 3, 4, 5, 6] == d0.timestamp
         assert 1 == d0.id
         assert "1" == d0.external_id
-        assert d0.sum == None
+        assert d0.sum is None
 
         d0._extend(d3)
         assert [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] == d0.timestamp
         assert [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] == d0.value
         assert 1 == d0.id
         assert "1" == d0.external_id
-        assert d0.sum == None
+        assert d0.sum is None
 
 
 @pytest.mark.dsl
@@ -947,7 +945,7 @@ class TestPandasIntegration:
         )
         pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas())
         with pytest.raises(CogniteDuplicateColumnsError):
-            df = dps_list.to_pandas(include_aggregate_name=False)
+            _ = dps_list.to_pandas(include_aggregate_name=False)
 
     def test_datapoints_list_non_aligned(self):
         import pandas as pd
@@ -999,8 +997,6 @@ class TestPandasIntegration:
         pd.testing.assert_frame_equal(df, expected_df)
 
     def test_retrieve_datapoints_last_beyond_end(self, mock_get_datapoints_include_outside):
-        import pandas as pd
-
         dpt = DPS_CLIENT.retrieve(id=1, include_outside_points=True, start=1000000000, end=1000000000 + 100000)
         assert 100001 == len(dpt)
 
@@ -1070,8 +1066,6 @@ class TestPandasIntegration:
         pd.testing.assert_frame_equal(df, expected_df)
 
     def test_retrieve_dataframe_dict_empty(self, mock_get_datapoints_empty):
-        import pandas as pd
-
         dfd = DPS_CLIENT.retrieve_dataframe_dict(
             id=1,
             aggregates=["count", "interpolation", "stepInterpolation", "totalVariation"],
@@ -1083,8 +1077,6 @@ class TestPandasIntegration:
         assert 4 == len(dfd)
 
     def test_retrieve_dataframe_dict_empty_single_aggregate(self, mock_get_datapoints_empty):
-        import pandas as pd
-
         dfd = DPS_CLIENT.retrieve_dataframe_dict(id=1, aggregates=["count"], start=0, end=1, granularity="1s")
         assert isinstance(dfd, dict)
         assert ["count"] == list(dfd.keys())
@@ -1284,7 +1276,7 @@ def mock_get_dps_count(rsps):
     def request_callback(request):
         payload = jsgz_load(request.body)
         granularity = payload["granularity"]
-        aggregates = payload["aggregates"]
+        # aggregates = payload["aggregates"]  # TODO: Unused
         start = payload["start"]
         end = payload["end"]
 
@@ -1330,7 +1322,7 @@ class TestDataPoster:
         assert not bin.will_fit(1)
 
 
-gms = lambda s: utils._time.granularity_to_ms(s)
+gms = utils._time.granularity_to_ms
 
 
 class TestDataFetcher:
