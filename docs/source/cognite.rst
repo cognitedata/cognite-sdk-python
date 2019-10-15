@@ -1061,3 +1061,12 @@ Data classes
 .. automodule:: cognite.client.data_classes.relationships
     :members:
     :show-inheritance:
+
+Synthetic time series
+---------------------
+.. WARNING::
+    The synthetic time series API is experimental and subject to breaking changes. It should not be used in production code.
+
+Calculate the result of a function on time series
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.synthetic_time_series.SyntheticDatapointsAPI.retrieve
