@@ -1,9 +1,9 @@
 import inspect
-from doctest import DocTestParser, Example
+import json
 import re
 from collections import defaultdict
+from doctest import DocTestParser, Example
 
-import json
 from cognite.client._api_client import APIClient
 from cognite.client.experimental import CogniteClient
 
@@ -24,19 +24,20 @@ parser = DocTestParser()
 
 apis = collect_apis(client)
 
-snippets = {"language":"Python","operations":defaultdict(str)}
-filter_out = ["from cognite.client import CogniteClient","c = CogniteClient()"]
+snippets = {"language": "Python", "operations": defaultdict(str)}
+filter_out = ["from cognite.client import CogniteClient", "c = CogniteClient()"]
 
 for api_name, api in apis:
     for fun_name, fun in inspect.getmembers(api, predicate=inspect.ismethod):
-        docstring = fun.__doc__ or ''
-        match_link_openapi = re.match("`.* <.*?#operation/(.*)>`_", docstring.strip().split('\n')[0])
+        docstring = fun.__doc__ or ""
+        match_link_openapi = re.match("`.* <.*?#operation/(.*)>`_", docstring.strip().split("\n")[0])
         if api_name[0] != "_" and fun_name[0] != "_" and match_link_openapi:
             openapi_ident = match_link_openapi[1]
-            parsed_lines =  parser.parse(fun.__doc__)
-            snippet_lines = [ex.source for ex in parsed_lines if isinstance(ex, Example) and ex.source.strip() not in filter_out]
+            parsed_lines = parser.parse(fun.__doc__)
+            snippet_lines = [
+                ex.source for ex in parsed_lines if isinstance(ex, Example) and ex.source.strip() not in filter_out
+            ]
             snippet = "".join(snippet_lines)
             snippets["operations"][openapi_ident] += snippet
 
-print(json.dumps(snippets,indent=4))
-
+print(json.dumps(snippets, indent=4))
