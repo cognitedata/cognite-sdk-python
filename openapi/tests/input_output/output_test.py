@@ -157,7 +157,7 @@ class AssetFilter(CogniteFilter):
         created_time (Dict[str, Any]): Range between two timestamps.
         last_updated_time (Dict[str, Any]): Range between two timestamps.
         root (bool): Whether the filtered assets are root assets, or not. Set to True to only list root assets.
-        external_id_prefix (str): The external ID provided by the client. Must be unique for the resource type.
+        external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
