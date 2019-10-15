@@ -9,11 +9,11 @@ from cognite.client.experimental import CogniteClient
 
 
 def collect_apis(obj, done):
-    if done.get(obj):
+    if done.get(obj.__class__):
         return []
-    done[obj] = True
+    done[obj.__class__] = True
     apis = inspect.getmembers(obj, lambda m: isinstance(m, APIClient))
-    sub = [(n + "." + sn, sa) for n, c in apis for sn, sa in collect_apis(c, done)]
+    sub = [(n + "." + sn, sa) for n, c in apis for sn, sa in collect_apis(c, done) if not done.get(c.__class__)]
     return apis + sub
 
 
