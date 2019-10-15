@@ -96,7 +96,7 @@ class SequencesAPI(APIClient):
     def retrieve_multiple(
         self, ids: Optional[List[int]] = None, external_ids: Optional[List[str]] = None
     ) -> SequenceList:
-        """Retrieve multiple sequences by id.
+        """`Retrieve multiple sequences by id. <https://docs.cognite.com/api/v1/#operation/getSequenceById>`_
 
         Args:
             ids (List[int], optional): IDs
@@ -134,7 +134,7 @@ class SequencesAPI(APIClient):
         last_updated_time: Dict[str, Any] = None,
         limit: Optional[int] = 25,
     ) -> SequenceList:
-        """Iterate over sequences
+        """`Iterate over sequences <https://docs.cognite.com/api/v1/#operation/listSequences>`_
 
         Fetches sequences as they are iterated over, so you keep a limited number of objects in memory.
 
@@ -186,7 +186,7 @@ class SequencesAPI(APIClient):
         return self._list(method="POST", filter=filter, limit=limit)
 
     def create(self, sequence: Union[Sequence, List[Sequence]]) -> Union[Sequence, SequenceList]:
-        """Create one or more sequences.
+        """`Create one or more sequences. <https://docs.cognite.com/api/v1/#operation/createSequence>`_
 
         Args:
             sequence (Union[Sequence, List[Sequence]]): Sequence or list of Sequence to create.
@@ -235,7 +235,7 @@ class SequencesAPI(APIClient):
         return sequence
 
     def delete(self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None) -> None:
-        """Delete one or more sequences.
+        """`Delete one or more sequences. <https://docs.cognite.com/api/v1/#operation/deleteSequences>`_
 
         Args:
             id (Union[int, List[int]): Id or list of ids
@@ -257,7 +257,7 @@ class SequencesAPI(APIClient):
     def update(
         self, item: Union[Sequence, SequenceUpdate, List[Union[Sequence, SequenceUpdate]]]
     ) -> Union[Sequence, SequenceList]:
-        """Update one or more sequences.
+        """`Update one or more sequences. <https://docs.cognite.com/api/v1/#operation/updateSequences>`_
 
         Args:
             item (Union[Sequence, SequenceUpdate, List[Union[Sequence, SequenceUpdate]]]): Sequences to update
@@ -293,7 +293,7 @@ class SequencesAPI(APIClient):
         filter: Union[SequenceFilter, Dict] = None,
         limit: int = None,
     ) -> SequenceList:
-        """Search for sequences.
+        """`Search for sequences. <https://docs.cognite.com/api/v1/#operation/searchSequences>`_
 
         Args:
             name (str, optional): Prefix and fuzzy search on name.
@@ -340,7 +340,7 @@ class SequencesDataAPI(APIClient):
         id: int = None,
         external_id: str = None,
     ) -> None:
-        """Insert rows into a sequence
+        """`Insert rows into a sequence <https://docs.cognite.com/api/v1/#operation/postSequenceData>`_
 
         Args:
             column_external_ids (Optional[List[str]]): List of external id for the columns of the sequence.
@@ -441,7 +441,7 @@ class SequencesDataAPI(APIClient):
         self._post(url_path=self._DATA_PATH, json={"items": [task]})
 
     def delete(self, rows: List[int], id: int = None, external_id: str = None) -> None:
-        """Delete rows from a sequence
+        """`Delete rows from a sequence <https://docs.cognite.com/api/v1/#operation/deleteSequenceData>`_
 
         Args:
             rows (List[int]): List of row numbers.
@@ -499,7 +499,7 @@ class SequencesDataAPI(APIClient):
         id: int = None,
         limit: int = None,
     ) -> SequenceData:
-        """Retrieve data from a sequence
+        """`Retrieve data from a sequence <https://docs.cognite.com/api/v1/#operation/getSequenceData>`_
 
         Args:
             start (int): Row number to start from (inclusive).

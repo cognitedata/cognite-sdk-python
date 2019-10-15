@@ -79,7 +79,7 @@ class TimeSeriesAPI(APIClient):
     def retrieve_multiple(
         self, ids: Optional[List[int]] = None, external_ids: Optional[List[str]] = None
     ) -> TimeSeriesList:
-        """Retrieve multiple time series by id.
+        """`Retrieve multiple time series by id. <https://docs.cognite.com/api/v1/#operation/getTimeSeriesByIds>`_
 
         Args:
             ids (List[int], optional): IDs
@@ -113,7 +113,7 @@ class TimeSeriesAPI(APIClient):
         root_asset_ids: Optional[List[int]] = None,
         limit: int = 25,
     ) -> TimeSeriesList:
-        """Iterate over time series
+        """`Iterate over time series <https://docs.cognite.com/api/v1/#operation/getTimeSeries>`_
 
         Fetches time series as they are iterated over, so you keep a limited number of objects in memory.
 
@@ -157,7 +157,7 @@ class TimeSeriesAPI(APIClient):
         return self._list(method="GET", filter=filter, limit=limit)
 
     def create(self, time_series: Union[TimeSeries, List[TimeSeries]]) -> Union[TimeSeries, TimeSeriesList]:
-        """Create one or more time series.
+        """`Create one or more time series. <https://docs.cognite.com/api/v1/#operation/postTimeSeries>`_
 
         Args:
             time_series (Union[TimeSeries, List[TimeSeries]]): TimeSeries or list of TimeSeries to create.
@@ -177,7 +177,7 @@ class TimeSeriesAPI(APIClient):
         return self._create_multiple(items=time_series)
 
     def delete(self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None) -> None:
-        """Delete one or more time series.
+        """`Delete one or more time series. <https://docs.cognite.com/api/v1/#operation/deleteTimeSeries>`_
 
         Args:
             id (Union[int, List[int]): Id or list of ids
@@ -199,7 +199,7 @@ class TimeSeriesAPI(APIClient):
     def update(
         self, item: Union[TimeSeries, TimeSeriesUpdate, List[Union[TimeSeries, TimeSeriesUpdate]]]
     ) -> Union[TimeSeries, TimeSeriesList]:
-        """Update one or more time series.
+        """`Update one or more time series. <https://docs.cognite.com/api/v1/#operation/alterTimeSeries>`_
 
         Args:
             item (Union[TimeSeries, TimeSeriesUpdate, List[Union[TimeSeries, TimeSeriesUpdate]]]): Time series to update
@@ -235,7 +235,7 @@ class TimeSeriesAPI(APIClient):
         filter: Union[TimeSeriesFilter, Dict] = None,
         limit: int = None,
     ) -> TimeSeriesList:
-        """Search for time series.
+        """`Search for time series. <https://docs.cognite.com/api/v1/#operation/searchTimeSeries>`_
 
         Args:
             name (str, optional): Prefix and fuzzy search on name.
