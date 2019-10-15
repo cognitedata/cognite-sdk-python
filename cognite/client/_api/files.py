@@ -18,6 +18,8 @@ class FilesAPI(APIClient):
         mime_type: str = None,
         metadata: Dict[str, Any] = None,
         asset_ids: List[int] = None,
+        root_asset_ids: List[int] = None,
+        root_asset_external_ids: List[str] = None,
         source: str = None,
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
@@ -38,6 +40,8 @@ class FilesAPI(APIClient):
             mime_type (str): File type. E.g. text/plain, application/pdf, ..
             metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
             asset_ids (List[int]): Only include files that reference these specific asset IDs.
+            root_asset_ids (List[int]): The IDs of the root assets that the related assets should be children of.
+            root_asset_external_ids (List[str]): The external IDs of the root assets that the related assets should be children of.
             source (str): The source of this event.
             source_created_time (Dict[str, Any]): Filter for files where the sourceCreatedTime field has been set and is within the specified range.
             source_modified_time (Dict[str, Any]): Filter for files where the sourceModifiedTime field has been set and is within the specified range.
@@ -52,19 +56,22 @@ class FilesAPI(APIClient):
         Yields:
             Union[FileMetadata, FileMetadataList]: yields FileMetadata one by one if chunk is not specified, else FileMetadataList objects.
         """
+        if root_asset_ids or root_asset_external_ids:
+            root_asset_ids = self._process_ids(root_asset_ids, root_asset_external_ids, wrap_ids=True)
         filter = FileMetadataFilter(
-            name,
-            mime_type,
-            metadata,
-            asset_ids,
-            source,
-            created_time,
-            last_updated_time,
-            uploaded_time,
-            source_created_time,
-            source_modified_time,
-            external_id_prefix,
-            uploaded,
+            name=name,
+            mime_type=mime_type,
+            metadata=metadata,
+            asset_ids=asset_ids,
+            root_asset_ids=root_asset_ids,
+            source=source,
+            created_time=created_time,
+            last_updated_time=last_updated_time,
+            uploaded_time=uploaded_time,
+            source_created_time=source_created_time,
+            source_modified_time=source_modified_time,
+            external_id_prefix=external_id_prefix,
+            uploaded=uploaded,
         ).dump(camel_case=True)
         return self._list_generator(method="POST", chunk_size=chunk_size, filter=filter, limit=limit)
 
@@ -176,6 +183,8 @@ class FilesAPI(APIClient):
         mime_type: str = None,
         metadata: Dict[str, Any] = None,
         asset_ids: List[int] = None,
+        root_asset_ids: List[int] = None,
+        root_asset_external_ids: List[str] = None,
         source: str = None,
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
@@ -193,6 +202,8 @@ class FilesAPI(APIClient):
             mime_type (str): File type. E.g. text/plain, application/pdf, ..
             metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
             asset_ids (List[int]): Only include files that reference these specific asset IDs.
+            root_asset_ids (List[int]): The IDs of the root assets that the related assets should be children of.
+            root_asset_external_ids (List[str]): The external IDs of the root assets that the related assets should be children of.
             source (str): The source of this event.
             created_time (Dict[str, Any]): Range between two timestamps
             last_updated_time (Dict[str, Any]): Range between two timestamps
@@ -229,20 +240,24 @@ class FilesAPI(APIClient):
                 >>> for file_list in c.files(chunk_size=2500):
                 ...     file_list # do something with the files
         """
+        if root_asset_ids or root_asset_external_ids:
+            root_asset_ids = self._process_ids(root_asset_ids, root_asset_external_ids, wrap_ids=True)
         filter = FileMetadataFilter(
-            name,
-            mime_type,
-            metadata,
-            asset_ids,
-            source,
-            created_time,
-            last_updated_time,
-            uploaded_time,
-            source_created_time,
-            source_modified_time,
-            external_id_prefix,
-            uploaded,
+            name=name,
+            mime_type=mime_type,
+            metadata=metadata,
+            asset_ids=asset_ids,
+            root_asset_ids=root_asset_ids,
+            source=source,
+            created_time=created_time,
+            last_updated_time=last_updated_time,
+            uploaded_time=uploaded_time,
+            source_created_time=source_created_time,
+            source_modified_time=source_modified_time,
+            external_id_prefix=external_id_prefix,
+            uploaded=uploaded,
         ).dump(camel_case=True)
+
         return self._list(method="POST", limit=limit, filter=filter)
 
     def delete(self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None) -> None:
