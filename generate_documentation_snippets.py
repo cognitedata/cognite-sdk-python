@@ -37,7 +37,6 @@ for api_name, api in apis:
                 for ex in parsed_lines
                 if isinstance(ex, Example) and ex.source.strip() not in filter_out
             ]
-            snippet = "".join(snippet_lines)
-            snippets["operations"][openapi_ident] += snippet
+            snippets["operations"][openapi_ident] += "".join(snippet_lines)
 
 print(json.dumps(snippets, indent=4))
