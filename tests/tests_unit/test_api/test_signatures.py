@@ -13,7 +13,7 @@ class TestListAndIterSignatures:
         [
             (assets.AssetsAPI, assets.AssetFilter, ["root_external_ids", "aggregated_properties", "partitions"]),
             (events.EventsAPI, events.EventFilter, ["root_asset_external_ids", "partitions"]),
-            (files.FilesAPI, files.FileMetadataFilter, []),
+            (files.FilesAPI, files.FileMetadataFilter, ["root_asset_external_ids"]),
             (sequences.SequencesAPI, sequences.SequenceFilter, []),
         ],
     )

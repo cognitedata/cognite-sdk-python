@@ -2,7 +2,7 @@ from typing import *
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes import Relationship, RelationshipList
+from cognite.client.data_classes import Relationship, RelationshipFilter, RelationshipList
 
 
 class RelationshipsAPI(APIClient):
@@ -111,7 +111,23 @@ class RelationshipsAPI(APIClient):
                 >>> for relationship_list in c.relationships(chunk_size=2500):
                 ...     relationship_list # do something with the relationships
         """
+
         return self._list(method="GET", limit=limit, filter=None)
+
+    # TODO: this is actually advanced list (but in relationships it's 'eventually consistent' and currently has no cursor). merge into .list when it's done?
+    def search(self, filter: Union[RelationshipFilter, Dict] = None, limit=25) -> RelationshipList:
+        """Search/List relationships with filter.
+
+        Args:
+            limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            filter (Union[RelationshipFilter, Dict]): Filter to apply. Performs exact match on these fields.
+
+        Returns:
+            RelationshipList: List of requested assets.
+        """
+        if isinstance(filter, dict):
+            filter = RelationshipFilter(**filter)
+        return self._list(method="POST", limit=limit, filter=filter.dump(camel_case=True))
 
     def create(self, relationship: Union[Relationship, List[Relationship]]) -> Union[Relationship, RelationshipList]:
         """Create one or more relationships.
