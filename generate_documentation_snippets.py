@@ -7,22 +7,20 @@ from doctest import DocTestParser, Example
 from cognite.client._api_client import APIClient
 from cognite.client.experimental import CogniteClient
 
-done = {}
 
-
-def collect_apis(obj):
+def collect_apis(obj, done):
     if done.get(obj):
         return []
     done[obj] = True
     apis = inspect.getmembers(obj, lambda m: isinstance(m, APIClient))
-    sub = [(n + "." + sn, sa) for n, c in apis for sn, sa in collect_apis(c)]
+    sub = [(n + "." + sn, sa) for n, c in apis for sn, sa in collect_apis(c, done)]
     return apis + sub
 
 
 client = CogniteClient(project="_", api_key="_", client_name="_")
 parser = DocTestParser()
 
-apis = collect_apis(client)
+apis = collect_apis(client, {})
 
 snippets = {"language": "Python", "operations": defaultdict(str)}
 filter_out = ["from cognite.client import CogniteClient", "c = CogniteClient()"]
