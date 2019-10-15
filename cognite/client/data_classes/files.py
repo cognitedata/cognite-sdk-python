@@ -69,13 +69,14 @@ class FileMetadataFilter(CogniteFilter):
         mime_type (str): File type. E.g. text/plain, application/pdf, ..
         metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         asset_ids (List[int]): Only include files that reference these specific asset IDs.
+        root_asset_ids (List[Union[Dict[str, Any], Dict[str, Any]]]): Internal or external IDs of the root assets that the related assets should be a descendant of (or match).
         source (str): The source of this event.
         created_time (Dict[str, Any]): Range between two timestamps.
         last_updated_time (Dict[str, Any]): Range between two timestamps.
         uploaded_time (Dict[str, Any]): Range between two timestamps.
         source_created_time (Dict[str, Any]): Filter for files where the sourceCreatedTime field has been set and is within the specified range.
         source_modified_time (Dict[str, Any]): Filter for files where the sourceModifiedTime field has been set and is within the specified range.
-        external_id_prefix (str): The external ID provided by the client. Must be unique for the resource type.
+        external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
         uploaded (bool): Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
         cognite_client (CogniteClient): The client to associate with this object.
     """
@@ -86,6 +87,7 @@ class FileMetadataFilter(CogniteFilter):
         mime_type: str = None,
         metadata: Dict[str, Any] = None,
         asset_ids: List[int] = None,
+        root_asset_ids: List[Union[Dict[str, Any], Dict[str, Any]]] = None,
         source: str = None,
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
@@ -100,6 +102,7 @@ class FileMetadataFilter(CogniteFilter):
         self.mime_type = mime_type
         self.metadata = metadata
         self.asset_ids = asset_ids
+        self.root_asset_ids = root_asset_ids
         self.source = source
         self.created_time = created_time
         self.last_updated_time = last_updated_time
