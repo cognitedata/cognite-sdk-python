@@ -12,8 +12,8 @@ def collect_apis(obj, done):
     if done.get(obj.__class__):
         return []
     done[obj.__class__] = True
-    apis = inspect.getmembers(obj, lambda m: isinstance(m, APIClient))
-    sub = [(n + "." + sn, sa) for n, c in apis for sn, sa in collect_apis(c, done) if not done.get(c.__class__)]
+    apis = inspect.getmembers(obj, lambda m: isinstance(m, APIClient) and not done.get(m.__class__))
+    sub = [(n + "." + sn, sa) for n, c in apis for sn, sa in collect_apis(c, done)]
     return apis + sub
 
 
