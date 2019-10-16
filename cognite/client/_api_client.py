@@ -304,7 +304,7 @@ class APIClient:
                 body = {"filter": filter, "limit": current_limit, "cursor": next_cursor, **(other_params or {})}
                 res = self._post(url_path=resource_path + "/list", json=body, headers=headers)
             else:
-                raise ValueError("_list_generator parameter `method` must be GET or POST, not %s", method)
+                raise ValueError("_list_generator parameter `method` must be GET or POST, not {}".format(method))
             last_received_items = res.json()["items"]
             total_items_retrieved += len(last_received_items)
 
@@ -624,7 +624,7 @@ class APIClient:
                         extra[k] = v
             else:
                 msg = res.content
-        except:
+        except Exception:
             msg = res.content
 
         error_details = {"X-Request-ID": x_request_id}
@@ -636,7 +636,7 @@ class APIClient:
             error_details["duplicated"] = duplicated
         error_details["headers"] = res.request.headers.copy()
         APIClient._sanitize_headers(error_details["headers"])
-        log.debug("HTTP Error %s %s %s: %s", code, res.request.method, res.request.url, msg, extra=error_details)
+        log.debug("HTTP Error {} {} {}: {}".format(code, res.request.method, res.request.url, msg), extra=error_details)
         raise CogniteAPIError(msg, code, x_request_id, missing=missing, duplicated=duplicated, extra=extra)
 
     @staticmethod

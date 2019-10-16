@@ -1,11 +1,9 @@
-import time
 from unittest import mock
 
 import pytest
 
-from cognite.client import CogniteClient, utils
+from cognite.client import CogniteClient
 from cognite.client.data_classes import TimeSeries, TimeSeriesFilter, TimeSeriesUpdate
-from cognite.client.exceptions import CogniteAPIError
 from tests.utils import set_request_limit
 
 COGNITE_CLIENT = CogniteClient()

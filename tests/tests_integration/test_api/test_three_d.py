@@ -1,12 +1,7 @@
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import (
-    ThreeDAssetMapping,
-    ThreeDModelRevision,
-    ThreeDModelRevisionUpdate,
-    ThreeDModelUpdate,
-)
+from cognite.client.data_classes import ThreeDModelRevisionUpdate, ThreeDModelUpdate
 
 COGNITE_CLIENT = CogniteClient()
 
