@@ -58,7 +58,7 @@ class Relationship(CogniteResource):
 
     @staticmethod
     def _resolve_target(target):
-        if isinstance(target, dict):
+        if isinstance(target, dict) or target is None:
             return target
 
         from cognite.client.data_classes import Asset, Event, FileMetadata, TimeSeries
