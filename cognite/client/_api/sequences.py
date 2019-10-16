@@ -67,7 +67,7 @@ class SequencesAPI(APIClient):
         return self.__call__()
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[Sequence]:
-        """Retrieve a single sequence by id.
+        """`Retrieve a single sequence by id. <https://docs.cognite.com/api/v1/#operation/getSequenceById>`_
 
         Args:
             id (int, optional): ID
