@@ -410,7 +410,7 @@ class TestStandardList:
             rsps.POST, BASE_URL + URL_PATH + "/list", callback=request_callback, content_type="application/json"
         )
         with pytest.raises(CogniteAPIError) as exc:
-            res = API_CLIENT_WITH_API_KEY._list(
+            API_CLIENT_WITH_API_KEY._list(
                 cls=SomeResourceList, resource_path=URL_PATH, method="POST", partitions=4, limit=None
             )
         assert 503 == exc.value.code
@@ -708,7 +708,7 @@ class TestStandardUpdate:
         assert {"items": [{"id": 1, "update": {"y": {"set": 100}}}]} == jsgz_load(mock_update.calls[0].request.body)
 
     def test_standard_update_with_cognite_resource__subject_to_camel_case_issue(self, mock_update):
-        res = API_CLIENT_WITH_API_KEY._update_multiple(
+        API_CLIENT_WITH_API_KEY._update_multiple(
             cls=SomeResourceList, resource_path=URL_PATH, items=[SomeResource(id=1, external_id="abc", y=100)]
         )
         assert {"items": [{"id": 1, "update": {"y": {"set": 100}, "externalId": {"set": "abc"}}}]} == jsgz_load(

@@ -1,8 +1,6 @@
-import json
 import os
 import pprint
 import sys
-import warnings
 from typing import *
 
 from requests.exceptions import ConnectionError

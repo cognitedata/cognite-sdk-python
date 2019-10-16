@@ -243,7 +243,7 @@ class SequenceData:
         """
         try:
             ix = self.column_external_ids.index(external_id)
-        except ValueError as e:
+        except ValueError:
             raise ValueError(
                 "Column {} not found, Sequence column external ids are {}".format(external_id, self.column_external_ids)
             )

@@ -1010,9 +1010,9 @@ class DatapointsFetcher:
             return {item_type: item}
         elif isinstance(item, Dict):
             for key in item:
-                if not key in [item_type, "aggregates"]:
+                if key not in [item_type, "aggregates"]:
                     raise ValueError("Unknown key '{}' in {} dict argument".format(key, item_type))
-            if not item_type in item:
+            if item_type not in item:
                 raise ValueError(
                     "When passing a dict to the {} argument, '{}' must be specified.".format(item_type, item_type)
                 )

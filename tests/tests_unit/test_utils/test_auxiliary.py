@@ -1,10 +1,8 @@
 import json
-from datetime import datetime
 from decimal import Decimal
 
 import pytest
 
-import cognite.client.utils._time
 from cognite.client import utils
 from cognite.client.exceptions import CogniteImportError
 
@@ -30,7 +28,8 @@ class TestLocalImport:
 
     @pytest.mark.dsl
     def test_local_import_multiple_ok(self):
-        import pandas, numpy
+        import pandas
+        import numpy
 
         assert (pandas, numpy) == utils._auxiliary.local_import("pandas", "numpy")
 

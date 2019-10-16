@@ -5,8 +5,6 @@ import json
 import os
 from contextlib import contextmanager
 from typing import List, Union
-from unittest import mock
-from unittest.mock import PropertyMock
 
 BASE_URL = "https://greenfield.cognitedata.com"
 
