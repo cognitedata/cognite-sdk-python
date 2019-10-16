@@ -34,6 +34,7 @@ Changes are grouped as follows
 
 ### Fixed
 - Fixed chunking logic in list_generator to always return last partial chunk.
+- Fixed an error on missing target/source in relationships.
 
 ## [1.3.1] - 2019-10-09
 ### Fixed
