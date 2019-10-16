@@ -58,7 +58,7 @@ class TestEvents:
 
     def test_list_sorting(self, mock_events_response):
         res = EVENTS_API.list(sort=["startTime:desc"])
-        assert "startTime:desc" == jsgz_load(mock_events_response.calls[0].request.body)["sort"]
+        assert ["startTime:desc"] == jsgz_load(mock_events_response.calls[0].request.body)["sort"]
         assert mock_events_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
     def test_call_root(self, mock_events_response):

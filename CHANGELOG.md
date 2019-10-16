@@ -21,8 +21,11 @@ Changes are grouped as follows
 
 ## [Unreleased]
 
+## [1.3.2] - 2019-10-16
+
 ### Added
 - Datapoints objects now store is_string, is_step and unit to allow for better interpretation of the data.
+- Sorting when listing events
 - Added a search function in the relationships API.
 
 ### Changed
