@@ -1,6 +1,5 @@
 import inspect
 import json
-from typing import Dict
 
 import pytest
 
