@@ -87,7 +87,7 @@ class AssetsAPI(APIClient):
         return self.__call__()
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[Asset]:
-        """Retrieve a single asset by id.
+        """`Retrieve a single asset by id. <https://docs.cognite.com/api/v1/#operation/getAsset>`_
 
         Args:
             id (int, optional): ID
