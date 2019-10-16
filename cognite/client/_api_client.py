@@ -636,7 +636,7 @@ class APIClient:
             error_details["duplicated"] = duplicated
         error_details["headers"] = res.request.headers.copy()
         APIClient._sanitize_headers(error_details["headers"])
-        log.debug("HTTP Error {} {} {}: {}".format(code, res.request.method, res.request.url, msg, extra=error_details))
+        log.debug("HTTP Error {} {} {}: {}".format(code, res.request.method, res.request.url, msg), extra=error_details)
         raise CogniteAPIError(msg, code, x_request_id, missing=missing, duplicated=duplicated, extra=extra)
 
     @staticmethod

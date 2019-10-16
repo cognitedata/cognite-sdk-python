@@ -158,7 +158,7 @@ class TestSequencesDataAPI:
             dps.get_column("missingcol")
 
     def test_retrieve_paginate_end_coinciding_with_page(self, string200, post_spy):
-        _ = COGNITE_CLIENT.sequences.data.retrieve(start=1, end=118, id=string200.id)
+        COGNITE_CLIENT.sequences.data.retrieve(start=1, end=118, id=string200.id)
         assert 1 == COGNITE_CLIENT.sequences.data._post.call_count
 
     def test_delete_range(self, new_seq_long):
@@ -167,7 +167,7 @@ class TestSequencesDataAPI:
             column_external_ids=new_seq_long.column_external_ids, rows=data, id=new_seq_long.id
         )
         COGNITE_CLIENT.sequences.data.delete_range(start=4, end=15, id=new_seq_long.id)
-        dps = COGNITE_CLIENT.sequences.data.retrieve(start=0, end=None, id=new_seq_long.id)  # noqa F841
+        dps = COGNITE_CLIENT.sequences.data.retrieve(start=0, end=None, id=new_seq_long.id)
         # potential delay, so can't assert, but tested in notebook
         # assert [10, 20, 30, 210, 340] == [d[0] for d in dps.values]
         # assert [1, 2, 3, 21, 34] == dps.row_numbers

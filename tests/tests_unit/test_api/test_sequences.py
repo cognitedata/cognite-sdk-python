@@ -390,9 +390,9 @@ class TestSequences:
         assert isinstance(col, list)
         assert 1 == len(col)
         with pytest.raises(TypeError):
-            _ = data[1:23]
+            data[1:23]
         with pytest.raises(ValueError):
-            _ = data.get_column("doesnotexist")
+            data.get_column("doesnotexist")
 
     def test_sequence_builtins(self, mock_seq_response):
         r1 = SEQ_API.retrieve(id=0)

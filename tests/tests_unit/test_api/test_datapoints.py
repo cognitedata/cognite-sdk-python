@@ -945,7 +945,7 @@ class TestPandasIntegration:
         )
         pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas())
         with pytest.raises(CogniteDuplicateColumnsError):
-            _ = dps_list.to_pandas(include_aggregate_name=False)
+            dps_list.to_pandas(include_aggregate_name=False)
 
     def test_datapoints_list_non_aligned(self):
         import pandas as pd
@@ -1276,7 +1276,6 @@ def mock_get_dps_count(rsps):
     def request_callback(request):
         payload = jsgz_load(request.body)
         granularity = payload["granularity"]
-        # aggregates = payload["aggregates"]  # TODO: Unused
         start = payload["start"]
         end = payload["end"]
 

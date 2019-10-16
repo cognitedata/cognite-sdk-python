@@ -128,7 +128,7 @@ class TestRelationships:
 
     def test_create_wrong_type(self, mock_rel_response):
         with pytest.raises(ValueError):
-            _ = REL_API.create(
+            REL_API.create(
                 Relationship(
                     external_id="1",
                     confidence=0.5,
