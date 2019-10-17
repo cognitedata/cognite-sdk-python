@@ -11,7 +11,7 @@ class TestListAndIterSignatures:
         "api, filter, ignore",
         [
             (assets.AssetsAPI, assets.AssetFilter, ["root_external_ids", "aggregated_properties", "partitions"]),
-            (events.EventsAPI, events.EventFilter, ["root_asset_external_ids", "partitions"]),
+            (events.EventsAPI, events.EventFilter, ["root_asset_external_ids", "partitions", "sort"]),
             (files.FilesAPI, files.FileMetadataFilter, ["root_asset_external_ids"]),
             (sequences.SequencesAPI, sequences.SequenceFilter, []),
         ],
