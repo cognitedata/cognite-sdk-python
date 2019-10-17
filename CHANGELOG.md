@@ -30,8 +30,6 @@ Changes are grouped as follows
 
 ### Changed
 - `list` and `__call__` methods for files now support list parameters for `root_ids`, `root_external_ids`.
-
-### Changed
 - retrieve_dataframe with `complete` using Datapoints fields instead of retrieving time series metadata. 
 
 ### Fixed

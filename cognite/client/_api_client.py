@@ -300,13 +300,10 @@ class APIClient:
                 params = filter.copy()
                 params["limit"] = current_limit
                 params["cursor"] = next_cursor
-                if sort is not None:
-                    params["sort"] = sort
+                params["sort"] = sort
                 res = self._get(url_path=resource_path, params=params, headers=headers)
             elif method == "POST":
-                body = {"filter": filter, "limit": current_limit, "cursor": next_cursor, **(other_params or {})}
-                if sort is not None:
-                    body["sort"] = sort
+                body = {"filter": filter, "sort": sort, "limit": current_limit, "cursor": next_cursor, **(other_params or {})}
                 res = self._post(url_path=resource_path + "/list", json=body, headers=headers)
             else:
                 raise ValueError("_list_generator parameter `method` must be GET or POST, not %s", method)
@@ -393,10 +390,9 @@ class APIClient:
                     "limit": self._LIST_LIMIT,
                     "cursor": next_cursor,
                     "partition": partition,
+                    "sort": sort,
                     **(other_params or {}),
                 }
-                if sort is not None:
-                    body["sort"] = sort
                 res = self._post(url_path=resource_path + "/list", json=body, headers=headers)
                 retrieved_items.extend(res.json()["items"])
                 next_cursor = res.json().get("nextCursor")
