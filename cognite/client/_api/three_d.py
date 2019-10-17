@@ -1,4 +1,3 @@
-import json
 from typing import *
 
 from cognite.client import utils
@@ -304,7 +303,7 @@ class ThreeDRevisionsAPI(APIClient):
 
         Returns:
             Union[ThreeDModelRevision, ThreeDModelRevisionList]: Updated ThreeDModelRevision(s)
-            
+
         Examples:
 
             Update a revision that you have fetched. This will perform a full update of the revision::
@@ -425,7 +424,7 @@ class ThreeDRevisionsAPI(APIClient):
 
         Returns:
             ThreeDNodeList: The list of 3d nodes.
-            
+
         Example:
 
             Get a list of ancestor nodes of a given node::

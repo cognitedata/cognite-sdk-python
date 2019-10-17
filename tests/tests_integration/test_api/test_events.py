@@ -1,4 +1,3 @@
-import time
 from datetime import datetime
 from unittest import mock
 
@@ -7,7 +6,6 @@ import pytest
 import cognite.client.utils._time
 from cognite.client import CogniteClient, utils
 from cognite.client.data_classes import Event, EventFilter, EventUpdate
-from cognite.client.exceptions import CogniteAPIError
 from tests.utils import set_request_limit
 
 COGNITE_CLIENT = CogniteClient()

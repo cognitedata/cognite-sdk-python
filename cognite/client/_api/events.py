@@ -24,6 +24,7 @@ class EventsAPI(APIClient):
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
         external_id_prefix: str = None,
+        sort: List[str] = None,
         limit: int = None,
     ) -> Generator[Union[Event, EventList], None, None]:
         """Iterate over events
@@ -44,6 +45,7 @@ class EventsAPI(APIClient):
             created_time (Dict[str, Any]): Range between two timestamps
             last_updated_time (Dict[str, Any]): Range between two timestamps
             external_id_prefix (str): External Id provided by client. Should be unique within the project
+            sort (List[str]): Sort by array of selected fields. Ex: ["startTime:desc']. Default sort order is asc when ommitted. Filter accepts following field names: startTime, endTime, createdTime, lastUpdatedTime. We only support 1 field for now.
             limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all items.
 
@@ -66,7 +68,7 @@ class EventsAPI(APIClient):
             type=type,
             subtype=subtype,
         ).dump(camel_case=True)
-        return self._list_generator(method="POST", chunk_size=chunk_size, filter=filter, limit=limit)
+        return self._list_generator(method="POST", chunk_size=chunk_size, filter=filter, limit=limit, sort=sort)
 
     def __iter__(self) -> Generator[Event, None, None]:
         """Iterate over events
@@ -147,6 +149,7 @@ class EventsAPI(APIClient):
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
         external_id_prefix: str = None,
+        sort: List[str] = None,
         partitions: int = None,
         limit: int = 25,
     ) -> EventList:
@@ -165,6 +168,7 @@ class EventsAPI(APIClient):
             created_time (Dict[str, Any]): Range between two timestamps.
             last_updated_time (Dict[str, Any]): Range between two timestamps.
             external_id_prefix (str): External Id provided by client. Should be unique within the project.
+            sort (List[str]): Sort by array of selected fields. Ex: ["startTime:desc']. Default sort order is asc when ommitted. Filter accepts following field names: startTime, endTime, createdTime, lastUpdatedTime. We only support 1 field for now.
             partitions (int): Retrieve events in parallel using this number of workers. Also requires `limit=None` to be passed.
             limit (int, optional): Maximum number of events to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all items.
@@ -210,7 +214,7 @@ class EventsAPI(APIClient):
             type=type,
             subtype=subtype,
         ).dump(camel_case=True)
-        return self._list(method="POST", limit=limit, filter=filter, partitions=partitions)
+        return self._list(method="POST", limit=limit, filter=filter, partitions=partitions, sort=sort)
 
     def create(self, event: Union[Event, List[Event]]) -> Union[Event, EventList]:
         """`Create one or more events. <https://docs.cognite.com/api/v1/#operation/createEvents>`_

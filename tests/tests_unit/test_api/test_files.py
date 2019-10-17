@@ -129,7 +129,6 @@ def mock_file_download_response_one_fails(rsps):
 
     def download_link_callback(request):
         identifier = jsgz_load(request.body)["items"][0]
-        response = {}
         if "id" in identifier:
             return 200, {}, json.dumps({"items": [{"id": 1, "downloadUrl": "https://download.file1.here"}]})
         elif "externalId" in identifier:
