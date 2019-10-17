@@ -1,14 +1,10 @@
-import re
-from datetime import datetime, timedelta
 from unittest import mock
 
 import numpy as np
-import pandas as pd
 import pytest
 
-from cognite.client import CogniteClient, utils
+from cognite.client import CogniteClient
 from cognite.client.data_classes import Sequence, SequenceData
-from tests.utils import set_request_limit
 
 COGNITE_CLIENT = CogniteClient()
 
@@ -162,7 +158,7 @@ class TestSequencesDataAPI:
             dps.get_column("missingcol")
 
     def test_retrieve_paginate_end_coinciding_with_page(self, string200, post_spy):
-        data = COGNITE_CLIENT.sequences.data.retrieve(start=1, end=118, id=string200.id)
+        COGNITE_CLIENT.sequences.data.retrieve(start=1, end=118, id=string200.id)
         assert 1 == COGNITE_CLIENT.sequences.data._post.call_count
 
     def test_delete_range(self, new_seq_long):

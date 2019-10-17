@@ -1,5 +1,5 @@
 import doctest
-from unittest import TextTestRunner, mock
+from unittest import TextTestRunner
 
 import pytest
 

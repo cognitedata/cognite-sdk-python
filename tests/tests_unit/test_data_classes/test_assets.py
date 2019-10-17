@@ -3,16 +3,7 @@ from unittest.mock import call
 
 import pytest
 
-from cognite.client.data_classes import (
-    Asset,
-    AssetList,
-    Event,
-    EventList,
-    FileMetadata,
-    FileMetadataList,
-    Sequence,
-    SequenceList,
-)
+from cognite.client.data_classes import Asset, AssetList, Event, EventList, FileMetadata, FileMetadataList
 from cognite.client.experimental import CogniteClient
 
 c = CogniteClient()
