@@ -24,11 +24,12 @@ apis = collect_apis(client, {})
 
 snippets = {"language": "Python", "operations": defaultdict(str)}
 filter_out = ["from cognite.client import CogniteClient", "c = CogniteClient()"]
+
 duplicate_operations = {
-  "listAssets": "getAssets",
-  "advancedListEvents": "listEvents",
-  "advancedListFiles": "listFiles",
-  "advancedListSequences": "listSequences",
+    "listAssets": "getAssets",
+    "advancedListEvents": "listEvents",
+    "advancedListFiles": "listFiles",
+    "advancedListSequences": "listSequences",
 }
 
 for api_name, api in apis:
@@ -40,11 +41,13 @@ for api_name, api in apis:
             parsed_lines = parser.parse(fun.__doc__)
             snippet_lines = [
                 re.sub("(= |in |^)c.", "\\1client.", ex.source)
-                for ex in parsed_lines
                 if isinstance(ex, Example) and ex.source.strip() not in filter_out
+                else "\n"
+                for ex in parsed_lines
             ]
-            snippets["operations"][openapi_ident] += "".join(snippet_lines)
+            code = re.sub("\n{2,}", "\n\n", "".join(snippet_lines)).strip()
+            snippets["operations"][openapi_ident] += code
             if openapi_ident in duplicate_operations:
-                snippets["operations"][duplicate_operations[openapi_ident]] += "".join(snippet_lines)
+                snippets["operations"][duplicate_operations[openapi_ident]] += code
 
 print(json.dumps(snippets, indent=4))
