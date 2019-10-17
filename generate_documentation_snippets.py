@@ -24,6 +24,12 @@ apis = collect_apis(client, {})
 
 snippets = {"language": "Python", "operations": defaultdict(str)}
 filter_out = ["from cognite.client import CogniteClient", "c = CogniteClient()"]
+duplicate_operations = {
+  "listAssets": "getAssets",
+  "advancedListEvents": "listEvents",
+  "advancedListFiles": "listFiles",
+  "advancedListSequences": "listSequences",
+}
 
 for api_name, api in apis:
     for fun_name, fun in inspect.getmembers(api, predicate=inspect.ismethod):
@@ -38,5 +44,7 @@ for api_name, api in apis:
                 if isinstance(ex, Example) and ex.source.strip() not in filter_out
             ]
             snippets["operations"][openapi_ident] += "".join(snippet_lines)
+            if openapi_ident in duplicate_operations:
+                snippets["operations"][duplicate_operations[openapi_ident]] += "".join(snippet_lines)
 
 print(json.dumps(snippets, indent=4))

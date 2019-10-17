@@ -114,7 +114,7 @@ class AssetsAPI(APIClient):
         return self._retrieve_multiple(ids=id, external_ids=external_id, wrap_ids=True)
 
     def retrieve_multiple(self, ids: Optional[List[int]] = None, external_ids: Optional[List[str]] = None) -> AssetList:
-        """`Retrieve multiple assets by id. <https://docs.cognite.com/api/v1/#operation/getAsset>`_
+        """`Retrieve multiple assets by id. <https://docs.cognite.com/api/v1/#operation/byIdsAssets>`_
 
         Args:
             ids (List[int], optional): IDs

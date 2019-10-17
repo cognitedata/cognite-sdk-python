@@ -134,7 +134,7 @@ class SequencesAPI(APIClient):
         last_updated_time: Dict[str, Any] = None,
         limit: Optional[int] = 25,
     ) -> SequenceList:
-        """`Iterate over sequences <https://docs.cognite.com/api/v1/#operation/listSequences>`_
+        """`Iterate over sequences <https://docs.cognite.com/api/v1/#operation/advancedListSequences>`_
 
         Fetches sequences as they are iterated over, so you keep a limited number of objects in memory.
 
