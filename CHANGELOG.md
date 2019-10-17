@@ -21,6 +21,9 @@ Changes are grouped as follows
 
 ## [Unreleased]
 
+### Changed
+- Datapoints insert dataframe function will check for infinity values.
+
 ## [1.3.2] - 2019-10-16
 
 ### Added
