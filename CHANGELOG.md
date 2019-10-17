@@ -24,14 +24,15 @@ Changes are grouped as follows
 ### Fixed
 - Fixed pagination for include_outside_points and other edge cases in datapoints.
 
+## [1.3.2] - 2019-10-16
+
 ### Added
 - Datapoints objects now store is_string, is_step and unit to allow for better interpretation of the data.
+- Sorting when listing events
 - Added a search function in the relationships API.
 
 ### Changed
 - `list` and `__call__` methods for files now support list parameters for `root_ids`, `root_external_ids`.
-
-### Changed
 - retrieve_dataframe with `complete` using Datapoints fields instead of retrieving time series metadata. 
 
 ### Fixed
