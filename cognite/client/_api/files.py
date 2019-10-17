@@ -121,7 +121,7 @@ class FilesAPI(APIClient):
         return (file_metadata, upload_url)
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[FileMetadata]:
-        """Retrieve a single file metadata by id.
+        """`Retrieve a single file metadata by id. <https://docs.cognite.com/api/v1/#operation/getFileByInternalId>`_
 
         Args:
             id (int, optional): ID
@@ -150,7 +150,7 @@ class FilesAPI(APIClient):
     def retrieve_multiple(
         self, ids: Optional[List[int]] = None, external_ids: Optional[List[str]] = None
     ) -> FileMetadataList:
-        """Retrieve multiple file metadatas by id.
+        """`Retrieve multiple file metadatas by id. <https://docs.cognite.com/api/v1/#operation/byIdsFiles>`_
 
         Args:
             ids (List[int], optional): IDs
@@ -195,7 +195,7 @@ class FilesAPI(APIClient):
         uploaded: bool = None,
         limit: int = 25,
     ) -> FileMetadataList:
-        """List files
+        """`List files <https://docs.cognite.com/api/v1/#operation/advancedListFiles>`_
 
         Args:
             name (str): Name of the file.
@@ -261,7 +261,7 @@ class FilesAPI(APIClient):
         return self._list(method="POST", limit=limit, filter=filter)
 
     def delete(self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None) -> None:
-        """Delete files
+        """`Delete files <https://docs.cognite.com/api/v1/#operation/deleteFiles>`_
 
         Args:
             id (Union[int, List[int]]): Id or list of ids
@@ -283,7 +283,7 @@ class FilesAPI(APIClient):
     def update(
         self, item: Union[FileMetadata, FileMetadataUpdate, List[Union[FileMetadata, FileMetadataUpdate]]]
     ) -> Union[FileMetadata, FileMetadataList]:
-        """Update files
+        """`Update files <https://docs.cognite.com/api/v1/#operation/updateFiles>`_
 
         Args:
             item (Union[FileMetadata, FileMetadataUpdate, List[Union[FileMetadata, FileMetadataUpdate]]]): file(s) to update.
@@ -314,7 +314,7 @@ class FilesAPI(APIClient):
     def search(
         self, name: str = None, filter: Union[FileMetadataFilter, dict] = None, limit: int = None
     ) -> FileMetadataList:
-        """Search for files.
+        """`Search for files. <https://docs.cognite.com/api/v1/#operation/searchFiles>`_
 
         Args:
             name (str, optional): Prefix and fuzzy search on name.
@@ -348,7 +348,7 @@ class FilesAPI(APIClient):
         recursive: bool = False,
         overwrite: bool = False,
     ) -> Union[FileMetadata, FileMetadataList]:
-        """Upload a file
+        """`Upload a file <https://docs.cognite.com/api/v1/#operation/initFileUpload>`_
 
         Args:
             path (str): Path to the file you wish to upload. If path is a directory, this method will upload all files in that directory.
@@ -499,7 +499,7 @@ class FilesAPI(APIClient):
     def download(
         self, directory: str, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None
     ) -> None:
-        """Download files by id or external id.
+        """`Download files by id or external id. <https://docs.cognite.com/api/v1/#operation/downloadLinks>`_
 
         This method will stream all files to disk, never keeping more than 2MB of a given file in memory.
 
