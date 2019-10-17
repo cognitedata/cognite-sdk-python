@@ -1,4 +1,3 @@
-import functools
 import json
 from collections import UserList
 from typing import *
