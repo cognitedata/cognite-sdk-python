@@ -159,15 +159,19 @@ class TestTimeSeries:
             .external_id.set("1")
             .external_id.set(None)
             .metadata.set({})
-            .metadata.add({})
-            .metadata.remove([])
             .name.set("")
             .name.set(None)
             .security_categories.set([])
-            .security_categories.add([])
-            .security_categories.remove([])
             .unit.set("")
             .unit.set(None),
+            TimeSeriesUpdate,
+        )
+        assert isinstance(
+            TimeSeriesUpdate(1)
+            .metadata.add({})
+            .metadata.remove([])
+            .security_categories.add([])
+            .security_categories.remove([]),
             TimeSeriesUpdate,
         )
 
