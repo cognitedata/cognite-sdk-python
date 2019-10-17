@@ -300,10 +300,13 @@ class APIClient:
                 params = filter.copy()
                 params["limit"] = current_limit
                 params["cursor"] = next_cursor
-                params["sort"] = sort
+                if sort is not None:
+                    params["sort"] = sort
                 res = self._get(url_path=resource_path, params=params, headers=headers)
             elif method == "POST":
-                body = {"filter": filter, "sort": sort, "limit": current_limit, "cursor": next_cursor, **(other_params or {})}
+                body = {"filter": filter, "limit": current_limit, "cursor": next_cursor, **(other_params or {})}
+                if sort is not None:
+                    body["sort"] = sort
                 res = self._post(url_path=resource_path + "/list", json=body, headers=headers)
             else:
                 raise ValueError("_list_generator parameter `method` must be GET or POST, not {}".format(method))
@@ -341,9 +344,10 @@ class APIClient:
         if partitions:
             if limit not in [None, -1, float("inf")]:
                 raise ValueError("When using partitions, limit should be `None`, `-1` or `inf`.")
+            if sort is not None:
+                raise ValueError("When using sort, partitions is not supported.")
             return self._list_partitioned(
                 partitions=partitions,
-                sort=sort,
                 cls=cls,
                 resource_path=resource_path,
                 filter=filter,
@@ -374,7 +378,6 @@ class APIClient:
         cls=None,
         resource_path: str = None,
         filter: Dict = None,
-        sort: List[str] = None,
         other_params=None,
         headers: Dict = None,
     ):
@@ -390,7 +393,6 @@ class APIClient:
                     "limit": self._LIST_LIMIT,
                     "cursor": next_cursor,
                     "partition": partition,
-                    "sort": sort,
                     **(other_params or {}),
                 }
                 res = self._post(url_path=resource_path + "/list", json=body, headers=headers)

@@ -61,6 +61,10 @@ class TestEvents:
         assert ["startTime:desc"] == jsgz_load(mock_events_response.calls[0].request.body)["sort"]
         assert mock_events_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
+    def test_list_sorting_combined_with_partitions(self, mock_events_response):
+        with pytest.raises(ValueError):
+            EVENTS_API.list(sort=["startTime:desc"], partitions=10)
+
     def test_call_root(self, mock_events_response):
         list(EVENTS_API.__call__(root_asset_ids=[23], root_asset_external_ids=["a", "b"], limit=10))
         calls = mock_events_response.calls
