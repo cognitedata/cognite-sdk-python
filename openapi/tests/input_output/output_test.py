@@ -151,7 +151,7 @@ class AssetFilter(CogniteFilter):
     Args:
         name (str): The name of the asset.
         parent_ids (List[int]): Return only the direct descendants of the specified assets.
-        root_ids (List[Union[Dict[str, Any], Dict[str, Any]]]): Return all descendants of the specified root assets.
+        root_ids (List[Dict[str, Any]]): Return all descendants of the specified root assets.
         metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         source (str): The source of the asset.
         created_time (Dict[str, Any]): Range between two timestamps.
@@ -165,7 +165,7 @@ class AssetFilter(CogniteFilter):
         self,
         name: str = None,
         parent_ids: List[int] = None,
-        root_ids: List[Union[Dict[str, Any], Dict[str, Any]]] = None,
+        root_ids: List[Dict[str, Any]] = None,
         metadata: Dict[str, Any] = None,
         source: str = None,
         created_time: Dict[str, Any] = None,

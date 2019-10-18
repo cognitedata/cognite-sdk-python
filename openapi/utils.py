@@ -35,7 +35,11 @@ def get_type_hint(item):
         types = []
         for current in item["oneOf"]:
             types.append(get_type_hint(current))
-        return "Union[{}]".format(", ".join(types))
+        types = list(set(types))
+        if len(types) == 1:
+            return types[0]
+        else:
+            return "Union[{}]".format(", ".join(types))
 
     if type == "array":
         return "List[{}]".format(get_type_hint(item["items"]))
