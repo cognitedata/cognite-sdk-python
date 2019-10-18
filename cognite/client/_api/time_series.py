@@ -140,6 +140,7 @@ class TimeSeriesAPI(APIClient):
         external_id_prefix: str = None,
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
+        partitions: int = None,
         limit: int = 25,
         include_metadata=True,
     ) -> TimeSeriesList:
@@ -159,6 +160,7 @@ class TimeSeriesAPI(APIClient):
             last_updated_time (Dict[str, Any]): Range between two timestamps
             external_id_prefix (str): Filter on external id prefix.
             limit (int, optional): Maximum number of time series to return.  Defaults to 25. Set to -1, float("inf") or None to return all items.
+            partitions (int): Retrieve time series in parallel using this number of workers. Also requires `limit=None` to be passed.
             include_metadata (bool, optional): Ignored. Only present in parameter list for backward compatibility.
 
 
@@ -199,7 +201,7 @@ class TimeSeriesAPI(APIClient):
             last_updated_time=last_updated_time,
             external_id_prefix=external_id_prefix,
         ).dump(camel_case=True)
-        return self._list(method="POST", filter=filter, limit=limit)
+        return self._list(method="POST", filter=filter, limit=limit, partitions=partitions)
 
     def create(self, time_series: Union[TimeSeries, List[TimeSeries]]) -> Union[TimeSeries, TimeSeriesList]:
         """`Create one or more time series. <https://docs.cognite.com/api/v1/#operation/postTimeSeries>`_

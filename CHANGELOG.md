@@ -26,7 +26,7 @@ Changes are grouped as follows
 - List time series now ignores the include_metadata parameter.
 
 ### Added
-- Advanced list endpoint is used for listing time series, adding several new filters.
+- Advanced list endpoint is used for listing time series, adding several new filters and partitions.
 
 ## [1.3.2] - 2019-10-16
 
