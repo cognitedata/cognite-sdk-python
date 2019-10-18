@@ -23,6 +23,7 @@ Changes are grouped as follows
 
 ### Changed
 - Datapoints insert dataframe function will check for infinity values.
+- Allow for multiple calls to .add / .remove in object updates such as metadata, without later calls overwriting former. 
 
 ## [1.3.2] - 2019-10-16
 
