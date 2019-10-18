@@ -12,32 +12,54 @@ class TimeSeriesAPI(APIClient):
     def __call__(
         self,
         chunk_size: int = None,
-        include_metadata: bool = False,
-        asset_ids: Optional[List[int]] = None,
-        root_asset_ids: Optional[List[int]] = None,
+        name: str = None,
+        unit: str = None,
+        is_string: bool = None,
+        is_step: bool = None,
+        asset_ids: List[int] = None,
+        root_asset_ids: List[int] = None,
+        metadata: Dict[str, Any] = None,
+        external_id_prefix: str = None,
+        created_time: Dict[str, Any] = None,
+        last_updated_time: Dict[str, Any] = None,
         limit: int = None,
+        include_metadata=True,
     ) -> Generator[Union[TimeSeries, TimeSeriesList], None, None]:
         """Iterate over time series
 
         Fetches time series as they are iterated over, so you keep a limited number of objects in memory.
 
         Args:
-            chunk_size (int, optional): Number of time series to return in each chunk. Defaults to yielding one event a time.
-            include_metadata (bool, optional): Whether or not to include metadata
+            chunk_size (int, optional): Number of time series to return in each chunk. Defaults to yielding one time series a time.
+            name (str): Name of the time series. Often referred to as tag.
+            unit (str): Unit of the time series.
+            is_string (bool): Whether the time series is an string time series.
+            is_step (bool): Whether the time series is a step (piecewise constant) time series.
             asset_ids (List[int], optional): List time series related to these assets.
             root_asset_ids (List[int], optional): List time series related to assets under these root assets.
-            limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None
-                to return all items.
+            metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
+            created_time (Dict[str, Any]): Range between two timestamps
+            last_updated_time (Dict[str, Any]): Range between two timestamps
+            external_id_prefix (str): Filter on external id prefix.
+            limit (int, optional): Maximum number of time series to return. Defaults to return all items.
+            include_metadata (bool, optional): Ignored. Only present in parameter list for backward compatibility.
 
         Yields:
             Union[TimeSeries, TimeSeriesList]: yields TimeSeries one by one if chunk is not specified, else TimeSeriesList objects.
         """
-        filter = {
-            "includeMetadata": include_metadata,
-            "assetIds": str(asset_ids) if asset_ids else None,
-            "rootAssetIds": str(root_asset_ids) if root_asset_ids else None,
-        }
-        return self._list_generator(method="GET", chunk_size=chunk_size, filter=filter, limit=limit)
+        filter = TimeSeriesFilter(
+            name=name,
+            unit=unit,
+            is_step=is_step,
+            is_string=is_string,
+            asset_ids=asset_ids,
+            root_asset_ids=root_asset_ids,
+            metadata=metadata,
+            created_time=created_time,
+            last_updated_time=last_updated_time,
+            external_id_prefix=external_id_prefix,
+        ).dump(camel_case=True)
+        return self._list_generator(method="POST", chunk_size=chunk_size, filter=filter, limit=limit)
 
     def __iter__(self) -> Generator[TimeSeries, None, None]:
         """Iterate over time series
@@ -108,21 +130,37 @@ class TimeSeriesAPI(APIClient):
 
     def list(
         self,
-        include_metadata: bool = True,
-        asset_ids: Optional[List[int]] = None,
-        root_asset_ids: Optional[List[int]] = None,
+        name: str = None,
+        unit: str = None,
+        is_string: bool = None,
+        is_step: bool = None,
+        asset_ids: List[int] = None,
+        root_asset_ids: List[int] = None,
+        metadata: Dict[str, Any] = None,
+        external_id_prefix: str = None,
+        created_time: Dict[str, Any] = None,
+        last_updated_time: Dict[str, Any] = None,
         limit: int = 25,
+        include_metadata=True,
     ) -> TimeSeriesList:
-        """`Iterate over time series <https://docs.cognite.com/api/v1/#operation/getTimeSeries>`_
+        """`List over time series <https://docs.cognite.com/api/v1/#operation/listTimeSeries>`_
 
         Fetches time series as they are iterated over, so you keep a limited number of objects in memory.
 
         Args:
-            include_metadata (bool, optional): Whether or not to include metadata
+            name (str): Name of the time series. Often referred to as tag.
+            unit (str): Unit of the time series.
+            is_string (bool): Whether the time series is an string time series.
+            is_step (bool): Whether the time series is a step (piecewise constant) time series.
             asset_ids (List[int], optional): List time series related to these assets.
             root_asset_ids (List[int], optional): List time series related to assets under these root assets.
-            limit (int, optional): Max number of time series to return. Defaults to 25. Set to -1, float("inf") or None
-                to return all items.
+            metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
+            created_time (Dict[str, Any]): Range between two timestamps
+            last_updated_time (Dict[str, Any]): Range between two timestamps
+            external_id_prefix (str): Filter on external id prefix.
+            limit (int, optional): Maximum number of time series to return. Defaults to return all items.
+            include_metadata (bool, optional): Ignored. Only present in parameter list for backward compatibility.
+
 
         Returns:
             TimeSeriesList: The requested time series.
@@ -149,12 +187,19 @@ class TimeSeriesAPI(APIClient):
                 >>> for ts_list in c.time_series(chunk_size=2500):
                 ...     ts_list # do something with the time_series
         """
-        filter = {
-            "includeMetadata": include_metadata,
-            "assetIds": str(asset_ids) if asset_ids else None,
-            "rootAssetIds": str(root_asset_ids) if root_asset_ids else None,
-        }
-        return self._list(method="GET", filter=filter, limit=limit)
+        filter = TimeSeriesFilter(
+            name=name,
+            unit=unit,
+            is_step=is_step,
+            is_string=is_string,
+            asset_ids=asset_ids,
+            root_asset_ids=root_asset_ids,
+            metadata=metadata,
+            created_time=created_time,
+            last_updated_time=last_updated_time,
+            external_id_prefix=external_id_prefix,
+        ).dump(camel_case=True)
+        return self._list(method="POST", filter=filter, limit=limit)
 
     def create(self, time_series: Union[TimeSeries, List[TimeSeries]]) -> Union[TimeSeries, TimeSeriesList]:
         """`Create one or more time series. <https://docs.cognite.com/api/v1/#operation/postTimeSeries>`_
