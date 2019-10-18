@@ -158,7 +158,7 @@ class TimeSeriesAPI(APIClient):
             created_time (Dict[str, Any]): Range between two timestamps
             last_updated_time (Dict[str, Any]): Range between two timestamps
             external_id_prefix (str): Filter on external id prefix.
-            limit (int, optional): Maximum number of time series to return. Defaults to return all items.
+            limit (int, optional): Maximum number of time series to return.  Defaults to 25. Set to -1, float("inf") or None to return all items.
             include_metadata (bool, optional): Ignored. Only present in parameter list for backward compatibility.
 
 
