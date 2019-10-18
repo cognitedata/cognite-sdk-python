@@ -40,7 +40,7 @@ class TimeSeriesAPI(APIClient):
             metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
             created_time (Dict[str, Any]): Range between two timestamps
             last_updated_time (Dict[str, Any]): Range between two timestamps
-            external_id_prefix (str): Filter on external id prefix.
+            external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
             limit (int, optional): Maximum number of time series to return. Defaults to return all items.
             include_metadata (bool, optional): Ignored. Only present in parameter list for backward compatibility.
 
@@ -158,7 +158,7 @@ class TimeSeriesAPI(APIClient):
             metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
             created_time (Dict[str, Any]): Range between two timestamps
             last_updated_time (Dict[str, Any]): Range between two timestamps
-            external_id_prefix (str): Filter on external id prefix.
+            external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
             limit (int, optional): Maximum number of time series to return.  Defaults to 25. Set to -1, float("inf") or None to return all items.
             partitions (int): Retrieve time series in parallel using this number of workers. Also requires `limit=None` to be passed.
             include_metadata (bool, optional): Ignored. Only present in parameter list for backward compatibility.
