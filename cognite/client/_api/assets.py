@@ -44,7 +44,7 @@ class AssetsAPI(APIClient):
             created_time (Dict[str, Any]): Range between two timestamps
             last_updated_time (Dict[str, Any]): Range between two timestamps
             root (bool): filtered assets are root assets or not
-            external_id_prefix (str): External Id provided by client. Should be unique within the project
+            external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
             aggregated_properties (List[str]): Set of aggregated properties to include.
             limit (int, optional): Maximum number of assets to return. Defaults to return all items.
 
@@ -169,7 +169,7 @@ class AssetsAPI(APIClient):
             created_time (Dict[str, Any]): Range between two timestamps.
             last_updated_time (Dict[str, Any]): Range between two timestamps.
             root (bool): filtered assets are root assets or not.
-            external_id_prefix (str): External Id provided by client. Should be unique within the project.
+            external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
             aggregated_properties (List[str]): Set of aggregated properties to include.
             partitions (int): Retrieve assets in parallel using this number of workers. Also requires `limit=None` to be passed.
             limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None
