@@ -51,7 +51,7 @@ class ClassGenerator:
             for prop_name, prop in self._get_schema_properties(schema).items():
                 if prop_name not in ignore:
                     docstring += " " * (indentation + 4) + "{} ({}): {}\n".format(
-                        utils.to_snake_case(prop_name), utils.get_type_hint(prop), self._get_schema_description(prop)
+                        utils.to_snake_case(prop_name), self.get_type_hint(prop), self._get_schema_description(prop)
                     )
                     ignore.append(prop_name)
         docstring += (
@@ -68,7 +68,7 @@ class ClassGenerator:
                 prop_name = utils.to_snake_case(prop_name)
                 req = " = None"  # TODO: check if prop is required or not
                 if prop_name not in ignore:
-                    constructor_params.append("{}: {}{}".format(prop_name, utils.get_type_hint(prop), req))
+                    constructor_params.append("{}: {}{}".format(prop_name, self.get_type_hint(prop), req))
                     ignore.append(prop_name)
         constructor_params = ", ".join(constructor_params) + ", cognite_client = None):"
         constructor_body = ""
@@ -81,6 +81,16 @@ class ClassGenerator:
                     ignore.append(prop_name)
         constructor_body += " " * (indentation + 4) + "self._cognite_client = cognite_client\n"
         return constructor_params + "\n" + constructor_body[:-1]
+
+    def get_type_hint(self, prop):
+        res = utils.get_type_hint(prop)
+        if res == "Dict[str, Any]" and "properties" in prop:
+            name = self._spec.components.schemas.rev_get(prop)
+            if name != None and name[-8:] == "Metadata":
+                res = "Dict[str, str]"
+            elif name != None and name[:1].isupper():
+                res = name
+        return res
 
     @staticmethod
     def _get_schema_description(schema):

@@ -92,7 +92,7 @@ class ThreeDModelRevision(CogniteResource):
         file_id (int): The file id.
         published (bool): True if the revision is marked as published.
         rotation (List[float]): No description.
-        camera (Dict[str, Any]): Initial camera position and target.
+        camera (RevisionCameraProperties): Initial camera position and target.
         status (str): The status of the revision.
         metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         thumbnail_threed_file_id (int): The threed file ID of a thumbnail for the revision. Use /3d/files/{id} to retrieve the file.
@@ -108,7 +108,7 @@ class ThreeDModelRevision(CogniteResource):
         file_id: int = None,
         published: bool = None,
         rotation: List[float] = None,
-        camera: Dict[str, Any] = None,
+        camera: RevisionCameraProperties = None,
         status: str = None,
         metadata: Dict[str, Any] = None,
         thumbnail_threed_file_id: int = None,
@@ -204,7 +204,7 @@ class ThreeDNode(CogniteResource):
         name (str): The name of the node.
         subtree_size (int): The number of descendants of the node, plus one (counting itself).
         properties (Dict[str, Any]): Properties extracted from 3D model, with property categories containing key/value string pairs.
-        bounding_box (Dict[str, Any]): The bounding box of the subtree with this sector as the root sector. Is null if there are no geometries in the subtree.
+        bounding_box (BoundingBox3D): The bounding box of the subtree with this sector as the root sector. Is null if there are no geometries in the subtree.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
@@ -217,7 +217,7 @@ class ThreeDNode(CogniteResource):
         name: str = None,
         subtree_size: int = None,
         properties: Dict[str, Any] = None,
-        bounding_box: Dict[str, Any] = None,
+        bounding_box: BoundingBox3D = None,
         cognite_client=None,
     ):
         self.id = id
@@ -262,6 +262,42 @@ class ThreeDAssetMapping(CogniteResource):
         self.asset_id = asset_id
         self.tree_index = tree_index
         self.subtree_size = subtree_size
+        self._cognite_client = cognite_client
+
+    # GenStop
+
+
+# GenClass: RevisionCameraProperties
+class RevisionCameraProperties(dict):
+    """Initial camera position and target.
+
+    Args:
+        target (List[float]): Initial camera target.
+        position (List[float]): Initial camera position.
+        cognite_client (CogniteClient): The client to associate with this object.
+    """
+
+    def __init__(self, target: List[float] = None, position: List[float] = None, cognite_client=None):
+        self.target = target
+        self.position = position
+        self._cognite_client = cognite_client
+
+    # GenStop
+
+
+# GenClass: BoundingBox3D
+class BoundingBox3D(dict):
+    """The bounding box of the subtree with this sector as the root sector. Is null if there are no geometries in the subtree.
+
+    Args:
+        max (List[float]): No description.
+        min (List[float]): No description.
+        cognite_client (CogniteClient): The client to associate with this object.
+    """
+
+    def __init__(self, max: List[float] = None, min: List[float] = None, cognite_client=None):
+        self.max = max
+        self.min = min
         self._cognite_client = cognite_client
 
     # GenStop
