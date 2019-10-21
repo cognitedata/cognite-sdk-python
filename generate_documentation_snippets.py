@@ -30,6 +30,7 @@ duplicate_operations = {
     "advancedListEvents": "listEvents",
     "advancedListFiles": "listFiles",
     "advancedListSequences": "listSequences",
+    "listTimeSeries": "getTimeSeries",
 }
 
 for api_name, api in apis:
