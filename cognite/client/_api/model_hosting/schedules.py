@@ -73,7 +73,7 @@ class SchedulesAPI(APIClient):
         res = self._get("/analytics/models/{}/schedules/{}".format(model_name, schedule_name))
         return Schedule._load(res.json())
 
-    def deprecate_schedule(self, model_name: str, schedule_name: int) -> Schedule:
+    def deprecate_schedule(self, model_name: str, schedule_name: str) -> Schedule:
         """Deprecate a schedule.
 
         Args:
