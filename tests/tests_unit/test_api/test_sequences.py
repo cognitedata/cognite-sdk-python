@@ -1,8 +1,4 @@
-import json
-import math
-import os
 import re
-from unittest import mock
 
 import pytest
 
@@ -281,8 +277,6 @@ class TestSequences:
             .external_id.set("1")
             .external_id.set(None)
             .metadata.set({})
-            .metadata.add({})
-            .metadata.remove([])
             .name.set("")
             .name.set(None),
             SequenceUpdate,
@@ -394,9 +388,9 @@ class TestSequences:
         assert isinstance(col, list)
         assert 1 == len(col)
         with pytest.raises(TypeError):
-            sliced = data[1:23]
+            data[1:23]
         with pytest.raises(ValueError):
-            missingcol = data.get_column("doesnotexist")
+            data.get_column("doesnotexist")
 
     def test_sequence_builtins(self, mock_seq_response):
         r1 = SEQ_API.retrieve(id=0)

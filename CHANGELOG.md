@@ -21,18 +21,30 @@ Changes are grouped as follows
 
 ## [Unreleased]
 
+## [1.3.3] - 2019-10-21
+
+### Changed
+- Datapoints insert dataframe function will check for infinity values.
+- Allow for multiple calls to .add / .remove in object updates such as metadata, without later calls overwriting former. 
+- List time series now ignores the include_metadata parameter.
+
+### Added
+- Advanced list endpoint is used for listing time series, adding several new filters and partitions.
+
+## [1.3.2] - 2019-10-16
+
 ### Added
 - Datapoints objects now store is_string, is_step and unit to allow for better interpretation of the data.
+- Sorting when listing events
 - Added a search function in the relationships API.
 
 ### Changed
 - `list` and `__call__` methods for files now support list parameters for `root_ids`, `root_external_ids`.
-
-### Changed
 - retrieve_dataframe with `complete` using Datapoints fields instead of retrieving time series metadata. 
 
 ### Fixed
 - Fixed chunking logic in list_generator to always return last partial chunk.
+- Fixed an error on missing target/source in relationships.
 
 ## [1.3.1] - 2019-10-09
 ### Fixed

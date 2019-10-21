@@ -129,7 +129,6 @@ def mock_file_download_response_one_fails(rsps):
 
     def download_link_callback(request):
         identifier = jsgz_load(request.body)["items"][0]
-        response = {}
         if "id" in identifier:
             return 200, {}, json.dumps({"items": [{"id": 1, "downloadUrl": "https://download.file1.here"}]})
         elif "externalId" in identifier:
@@ -382,14 +381,10 @@ class TestFilesAPI:
             FileMetadataUpdate(1)
             .asset_ids.add([])
             .asset_ids.remove([])
-            .asset_ids.set([])
-            .asset_ids.set(None)
             .external_id.set("1")
             .external_id.set(None)
             .metadata.add({})
             .metadata.remove([])
-            .metadata.set({})
-            .metadata.set(None)
             .source.set(1)
             .source.set(None),
             FileMetadataUpdate,

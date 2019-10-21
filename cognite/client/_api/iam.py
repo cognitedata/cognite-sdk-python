@@ -29,7 +29,7 @@ class ServiceAccountsAPI(APIClient):
     _LIST_CLASS = ServiceAccountList
 
     def list(self) -> ServiceAccountList:
-        """List service accounts.
+        """`List service accounts. <https://docs.cognite.com/api/v1/#operation/getServiceAccounts>`_
 
         Returns:
             ServiceAccountList: List of service accounts.
@@ -47,7 +47,7 @@ class ServiceAccountsAPI(APIClient):
     def create(
         self, service_account: Union[ServiceAccount, List[ServiceAccount]]
     ) -> Union[ServiceAccount, ServiceAccountList]:
-        """Create one or more new service accounts.
+        """`Create one or more new service accounts. <https://docs.cognite.com/api/v1/#operation/createServiceAccounts>`_
 
         Args:
             service_account (Union[ServiceAccount, List[ServiceAccount]]): The service account(s) to create.
@@ -68,7 +68,7 @@ class ServiceAccountsAPI(APIClient):
         return self._create_multiple(items=service_account)
 
     def delete(self, id: Union[int, List[int]]) -> None:
-        """Delete one or more service accounts.
+        """`Delete one or more service accounts. <https://docs.cognite.com/api/v1/#operation/deleteServiceAccounts>`_
 
         Args:
             id (Union[int, List[int]]): ID or list of IDs to delete.
@@ -92,7 +92,7 @@ class APIKeysAPI(APIClient):
     _LIST_CLASS = APIKeyList
 
     def list(self, include_deleted: bool = False, all: bool = False, service_account_id: bool = None) -> APIKeyList:
-        """List api keys.
+        """`List api keys. <https://docs.cognite.com/api/v1/#operation/getApiKeys>`_
 
         Args:
             include_deleted (bool): Whether or not to include deleted api keys. Defaults to False.
@@ -117,7 +117,7 @@ class APIKeysAPI(APIClient):
         return APIKeyList._load(res.json()["items"])
 
     def create(self, service_account_id: Union[int, List[int]]) -> Union[APIKey, APIKeyList]:
-        """Create a new api key for one or more service accounts.
+        """`Create a new api key for one or more service accounts. <https://docs.cognite.com/api/v1/#operation/createApiKeys>`_
 
         Args:
             service_account_id (Union[int, List[int]]): ID or list of IDs of service accounts to create an api key for.
@@ -141,7 +141,7 @@ class APIKeysAPI(APIClient):
         return self._create_multiple(items=items)
 
     def delete(self, id: Union[int, List[int]]) -> None:
-        """Delete one or more api keys.
+        """`Delete one or more api keys. <https://docs.cognite.com/api/v1/#operation/deleteApiKeys>`_
 
         Args:
             id (Union[int, List[int]]): ID or list of IDs of api keys to delete.
@@ -165,7 +165,7 @@ class GroupsAPI(APIClient):
     _LIST_CLASS = GroupList
 
     def list(self, all: bool = False) -> GroupList:
-        """List groups.
+        """`List groups. <https://docs.cognite.com/api/v1/#operation/getGroups>`_
 
         Args:
             all (bool): Whether to get all groups, only available with the groups:list acl.
@@ -185,7 +185,7 @@ class GroupsAPI(APIClient):
         return GroupList._load(res.json()["items"])
 
     def create(self, group: Union[Group, List[Group]]) -> Union[Group, GroupList]:
-        """Create one or more groups.
+        """`Create one or more groups. <https://docs.cognite.com/api/v1/#operation/createGroups>`_
 
         Args:
             group (Union[Group, List[Group]]): Group or list of groups to create.
@@ -206,7 +206,7 @@ class GroupsAPI(APIClient):
         return self._create_multiple(group)
 
     def delete(self, id: Union[int, List[int]]) -> None:
-        """Delete one or more groups.
+        """`Delete one or more groups. <https://docs.cognite.com/api/v1/#operation/deleteGroups>`_
 
         Args:
             id (Union[int, List[int]]): ID or list of IDs of groups to delete.
@@ -225,7 +225,7 @@ class GroupsAPI(APIClient):
         self._delete_multiple(ids=id, wrap_ids=False)
 
     def list_service_accounts(self, id: int) -> ServiceAccountList:
-        """List service accounts in a group.
+        """`List service accounts in a group. <https://docs.cognite.com/api/v1/#operation/getMembersOfGroups>`_
 
         Args:
             id (int): List service accounts which are a member of this group.
@@ -245,7 +245,7 @@ class GroupsAPI(APIClient):
         return ServiceAccountList._load(self._get(resource_path).json()["items"])
 
     def add_service_account(self, id: int, service_account_id: Union[int, List[int]]) -> None:
-        """Add one or more service accounts to a group.
+        """`Add one or more service accounts to a group. <https://docs.cognite.com/api/v1/#operation/addServiceAccountsToGroup>`_
 
         Args:
             id (int): Add service accounts to the group with this id.
@@ -266,7 +266,7 @@ class GroupsAPI(APIClient):
         self._create_multiple(cls=ServiceAccountList, resource_path=resource_path, items=service_account_id)
 
     def remove_service_account(self, id: int, service_account_id: Union[int, List[int]]) -> None:
-        """Remove one or more service accounts from a group.
+        """`Remove one or more service accounts from a group. <https://docs.cognite.com/api/v1/#operation/removeServiceAccountsFromGroup>`_
 
         Args:
             id (int): Remove service accounts from the group with this id.
@@ -293,7 +293,7 @@ class SecurityCategoriesAPI(APIClient):
     _LIST_CLASS = SecurityCategoryList
 
     def list(self, limit: int = 25) -> SecurityCategoryList:
-        """List security categories.
+        """`List security categories. <https://docs.cognite.com/api/v1/#operation/getSecurityCategories>`_
 
         Args:
             limit (int): Max number of security categories to return. Defaults to 25.
@@ -314,7 +314,7 @@ class SecurityCategoriesAPI(APIClient):
     def create(
         self, security_category: Union[SecurityCategory, List[SecurityCategory]]
     ) -> Union[SecurityCategory, SecurityCategoryList]:
-        """Create one or more security categories.
+        """`Create one or more security categories. <https://docs.cognite.com/api/v1/#operation/createSecurityCategories>`_
 
         Args:
             security_category (Union[SecurityCategory, List[SecurityCategory]]): Security category or list of categories to create.
@@ -335,7 +335,7 @@ class SecurityCategoriesAPI(APIClient):
         return self._create_multiple(security_category)
 
     def delete(self, id: Union[int, List[int]]) -> None:
-        """Delete one or more security categories.
+        """`Delete one or more security categories. <https://docs.cognite.com/api/v1/#operation/deleteSecurityCategories>`_
 
         Args:
             id (Union[int, List[int]]): ID or list of IDs of security categories to delete.

@@ -1,5 +1,3 @@
-import time
-
 import pytest
 
 from cognite.client import CogniteClient, utils
@@ -37,7 +35,7 @@ class TestRawTablesAPI:
         table = COGNITE_CLIENT.raw.tables.create(db.name, table_name)
         assert table in COGNITE_CLIENT.raw.tables.list(db.name)
         COGNITE_CLIENT.raw.tables.delete(db.name, table.name)
-        assert not table in COGNITE_CLIENT.raw.tables.list(db.name)
+        assert table not in COGNITE_CLIENT.raw.tables.list(db.name)
 
 
 class TestRawRowsAPI:

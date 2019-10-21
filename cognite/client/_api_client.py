@@ -275,6 +275,7 @@ class APIClient:
         limit: int = None,
         chunk_size: int = None,
         filter: Dict = None,
+        sort: List[str] = None,
         other_params: Dict = None,
         headers: Dict = None,
     ):
@@ -299,12 +300,16 @@ class APIClient:
                 params = filter.copy()
                 params["limit"] = current_limit
                 params["cursor"] = next_cursor
+                if sort is not None:
+                    params["sort"] = sort
                 res = self._get(url_path=resource_path, params=params, headers=headers)
             elif method == "POST":
                 body = {"filter": filter, "limit": current_limit, "cursor": next_cursor, **(other_params or {})}
+                if sort is not None:
+                    body["sort"] = sort
                 res = self._post(url_path=resource_path + "/list", json=body, headers=headers)
             else:
-                raise ValueError("_list_generator parameter `method` must be GET or POST, not %s", method)
+                raise ValueError("_list_generator parameter `method` must be GET or POST, not {}".format(method))
             last_received_items = res.json()["items"]
             total_items_retrieved += len(last_received_items)
 
@@ -333,11 +338,14 @@ class APIClient:
         filter: Dict = None,
         other_params=None,
         partitions=None,
+        sort=None,
         headers: Dict = None,
     ):
         if partitions:
             if limit not in [None, -1, float("inf")]:
                 raise ValueError("When using partitions, limit should be `None`, `-1` or `inf`.")
+            if sort is not None:
+                raise ValueError("When using sort, partitions is not supported.")
             return self._list_partitioned(
                 partitions=partitions,
                 cls=cls,
@@ -357,6 +365,7 @@ class APIClient:
             limit=limit,
             chunk_size=self._LIST_LIMIT,
             filter=filter,
+            sort=sort,
             other_params=other_params,
             headers=headers,
         ):
@@ -624,7 +633,7 @@ class APIClient:
                         extra[k] = v
             else:
                 msg = res.content
-        except:
+        except Exception:
             msg = res.content
 
         error_details = {"X-Request-ID": x_request_id}
@@ -636,7 +645,7 @@ class APIClient:
             error_details["duplicated"] = duplicated
         error_details["headers"] = res.request.headers.copy()
         APIClient._sanitize_headers(error_details["headers"])
-        log.debug("HTTP Error %s %s %s: %s", code, res.request.method, res.request.url, msg, extra=error_details)
+        log.debug("HTTP Error {} {} {}: {}".format(code, res.request.method, res.request.url, msg), extra=error_details)
         raise CogniteAPIError(msg, code, x_request_id, missing=missing, duplicated=duplicated, extra=extra)
 
     @staticmethod

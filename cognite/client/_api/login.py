@@ -6,7 +6,7 @@ class LoginAPI(APIClient):
     _RESOURCE_PATH = "/login"
 
     def status(self) -> LoginStatus:
-        """Check login status
+        """`Check login status <https://docs.cognite.com/api/v1/#operation/status>`_
 
         Returns:
             LoginStatus: The login status of the current api key.

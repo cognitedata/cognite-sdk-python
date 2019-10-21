@@ -40,7 +40,7 @@ class DatapointsAPI(APIClient):
         include_outside_points: bool = None,
         limit: int = None,
     ) -> Union[Datapoints, DatapointsList]:
-        """Get datapoints for one or more time series.
+        """`Get datapoints for one or more time series. <https://docs.cognite.com/api/v1/#operation/getMultiTimeSeriesDatapoints>`_
 
         Note that you cannot specify the same ids/external_ids multiple times.
 
@@ -113,7 +113,7 @@ class DatapointsAPI(APIClient):
         external_id: Union[str, List[str]] = None,
         before: Union[int, str, datetime] = None,
     ) -> Union[Datapoints, DatapointsList]:
-        """Get the latest datapoint for one or more time series
+        """`Get the latest datapoint for one or more time series <https://docs.cognite.com/api/v1/#operation/getLatest>`_
 
         Args:
             id (Union[int, List[int]]: Id or list of ids.
@@ -269,7 +269,7 @@ class DatapointsAPI(APIClient):
         dps_poster.insert([post_dps_object])
 
     def insert_multiple(self, datapoints: List[Dict[str, Union[str, int, List]]]) -> None:
-        """Insert datapoints into multiple time series
+        """`Insert datapoints into multiple time series <https://docs.cognite.com/api/v1/#operation/postMultiTimeSeriesDatapoints>`_
 
         Args:
             datapoints (List[Dict]): The datapoints you wish to insert along with the ids of the time series.
@@ -344,7 +344,7 @@ class DatapointsAPI(APIClient):
         self._delete_datapoints_ranges([delete_dps_object])
 
     def delete_ranges(self, ranges: List[Dict[str, Any]]) -> None:
-        """Delete a range of datapoints from multiple time series.
+        """`Delete a range of datapoints from multiple time series. <https://docs.cognite.com/api/v1/#operation/deleteDatapoints>`_
 
         Args:
             ranges (List[Dict[str, Any]]): The ids an ranges to delete. See examples below.
@@ -608,7 +608,11 @@ class DatapointsAPI(APIClient):
                 >>> df = pd.DataFrame({ts_id: y}, index=x)
                 >>> c.datapoints.insert_dataframe(df)
         """
+        np = utils._auxiliary.local_import("numpy")
         assert not dataframe.isnull().values.any(), "Dataframe contains NaNs. Remove them in order to insert the data."
+        assert np.isfinite(dataframe).all(
+            axis=None
+        ), "Dataframe contains Infinity. Remove them in order to insert the data."
         dps = []
         for col in dataframe.columns:
             dps_object = {
@@ -1123,9 +1127,9 @@ class DatapointsFetcher:
             return {item_type: item}
         elif isinstance(item, Dict):
             for key in item:
-                if not key in [item_type, "aggregates"]:
+                if key not in [item_type, "aggregates"]:
                     raise ValueError("Unknown key '{}' in {} dict argument".format(key, item_type))
-            if not item_type in item:
+            if item_type not in item:
                 raise ValueError(
                     "When passing a dict to the {} argument, '{}' must be specified.".format(item_type, item_type)
                 )
