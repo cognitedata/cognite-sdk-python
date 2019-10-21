@@ -22,6 +22,7 @@ Changes are grouped as follows
 ## [Unreleased]
 
 ### Changed
+- Datapoints insert dataframe function will check for infinity values.
 - Allow for multiple calls to .add / .remove in object updates such as metadata, without later calls overwriting former. 
 - List time series now ignores the include_metadata parameter.
 
