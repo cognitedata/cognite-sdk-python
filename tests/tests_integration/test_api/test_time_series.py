@@ -1,3 +1,5 @@
+import time
+from datetime import datetime
 from unittest import mock
 
 import pytest
@@ -18,8 +20,8 @@ def new_ts():
 
 
 @pytest.fixture
-def get_spy():
-    with mock.patch.object(COGNITE_CLIENT.time_series, "_get", wraps=COGNITE_CLIENT.time_series._get) as _:
+def post_spy():
+    with mock.patch.object(COGNITE_CLIENT.time_series, "_post", wraps=COGNITE_CLIENT.time_series._post) as _:
         yield
 
 
@@ -37,12 +39,37 @@ class TestTimeSeriesAPI:
             retrieved_asset.external_id = listed_asset.external_id
         assert res == retrieved_assets
 
-    def test_list(self, get_spy):
+    def test_list(self, post_spy):
         with set_request_limit(COGNITE_CLIENT.time_series, 10):
             res = COGNITE_CLIENT.time_series.list(limit=20)
 
         assert 20 == len(res)
-        assert 2 == COGNITE_CLIENT.time_series._get.call_count
+        assert 2 == COGNITE_CLIENT.time_series._post.call_count
+
+    def test_list_with_filters(self, post_spy):
+        res = COGNITE_CLIENT.time_series.list(
+            is_step=True,
+            is_string=False,
+            metadata={"a": "b"},
+            last_updated_time={"min": 45},
+            created_time={"max": 123},
+            asset_ids=[1, 2],
+            root_asset_ids=[1231],
+            include_metadata=False,
+        )
+        assert 0 == len(res)
+        assert 1 == COGNITE_CLIENT.time_series._post.call_count
+
+    def test_partitioned_list(self, post_spy):
+        mintime = datetime(2019, 1, 1).timestamp() * 1000
+        maxtime = datetime(2019, 5, 15).timestamp() * 1000
+        res_flat = COGNITE_CLIENT.time_series.list(limit=None, created_time={"min": mintime, "max": maxtime})
+        res_part = COGNITE_CLIENT.time_series.list(
+            partitions=8, limit=None, created_time={"min": mintime, "max": maxtime}
+        )
+        assert len(res_flat) > 0
+        assert len(res_flat) == len(res_part)
+        assert {a.id for a in res_flat} == {a.id for a in res_part}
 
     def test_search(self):
         res = COGNITE_CLIENT.time_series.search(

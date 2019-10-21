@@ -277,8 +277,6 @@ class TestSequences:
             .external_id.set("1")
             .external_id.set(None)
             .metadata.set({})
-            .metadata.add({})
-            .metadata.remove([])
             .name.set("")
             .name.set(None),
             SequenceUpdate,
