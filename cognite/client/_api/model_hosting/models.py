@@ -324,7 +324,7 @@ class ModelsAPI(APIClient):
             for i, instance in enumerate(instances):
                 if hasattr(instance, "dump"):
                     instances[i] = instance.dump()
-        if version_id:
+        if version_name:
             url = "/analytics/models/{}/versions/{}/predict".format(model_name, version_name)
         body = {"instances": instances, "args": args or {}}
         res = self._post(url, json=body).json()

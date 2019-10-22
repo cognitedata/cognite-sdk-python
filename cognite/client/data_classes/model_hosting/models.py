@@ -126,4 +126,4 @@ class ModelVersionLog(CogniteResponse):
 
     @classmethod
     def _load(cls, api_response):
-        return cls(prediction_logs=api_response["data"]["predict"], training_logs=api_response["data"]["train"])
+        return cls(prediction_logs=api_response["predict"], training_logs=api_response["train"])
