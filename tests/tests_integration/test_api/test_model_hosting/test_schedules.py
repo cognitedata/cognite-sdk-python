@@ -45,7 +45,7 @@ class TestSchedules:
     def test_create_schedule_with_data_spec_objects(self, mock_post_schedule, mock_data_spec):
         res = SCHEDULES_API.create_schedule(
             model_name="model1",
-            name="test-schedule",
+            schedule_name="test-schedule",
             schedule_data_spec=mock_data_spec,
             args={"k": "v"},
             metadata={"k": "v"},
@@ -60,7 +60,7 @@ class TestSchedules:
 
     @pytest.fixture
     def mock_get_schedules(self, rsps):
-        response = {"items": self.schedule_response}
+        response = {"items": [self.schedule_response]}
         rsps.add(
             rsps.GET, SCHEDULES_API._get_base_url_with_base_path() + "/analytics/models/model1/schedules", json=response
         )
@@ -72,7 +72,7 @@ class TestSchedules:
         assert isinstance(res, ScheduleList)
         assert isinstance(res[:1], ScheduleList)
         assert isinstance(res[0], Schedule)
-        assert self.schedule_response["items"]["name"] == res[0].name
+        assert self.schedule_response["name"] == res[0].name
 
     @pytest.fixture
     def mock_get_schedule(self, rsps):

@@ -32,7 +32,7 @@ class TestModels:
     @pytest.fixture
     def mock_online_predict_ok(self, rsps):
         rsps.add(
-            rsps.PUT,
+            rsps.POST,
             MODELS_API._get_base_url_with_base_path() + "/analytics/models/model1/predict",
             status=200,
             json={"predictions": [1, 2, 3]},
@@ -42,18 +42,20 @@ class TestModels:
     @pytest.fixture
     def mock_online_predict_fail(self, rsps):
         rsps.add(
-            rsps.PUT,
+            rsps.POST,
             MODELS_API._get_base_url_with_base_path() + "/analytics/models/model1/predict",
             status=200,
             json={"error": {"message": "User error", "code": 200}},
         )
         yield rsps
 
+    @pytest.mark.skip(reason="wait for model hosting v1")
     def test_get_model(self, created_model):
         model = MODELS_API.get_model(created_model.name)
         assert model.name == created_model.name
         assert model.active_version_id is None
 
+    @pytest.mark.skip(reason="wait for model hosting v1")
     def test_list_models(self, created_model):
         res = MODELS_API.list_models()
         assert len(res) > 0
@@ -63,6 +65,7 @@ class TestModels:
         for model in res:
             assert isinstance(model, Model)
 
+    @pytest.mark.skip(reason="wait for model hosting v1")
     def test_update_model(self, created_model):
         res = MODELS_API.update_model(name=created_model.name, description="bla")
         assert isinstance(res, Model)
@@ -78,6 +81,7 @@ class TestModels:
         with pytest.raises(PredictionError, match="User error"):
             MODELS_API.online_predict(model_name="model1")
 
+    @pytest.mark.skip(reason="wait for model hosting v1")
     def test_deprecate_model(self, created_model):
         res = MODELS_API.deprecate_model(name=created_model.name)
         assert isinstance(res, Model)
@@ -147,7 +151,7 @@ class TestVersions:
             mock_post_model_version.POST,
             MODELS_API._get_base_url_with_base_path() + "/analytics/models/model1/versions/version1/artifacts/upload",
             status=201,
-            json={"data": {"uploadUrl": "https://upload.here"}},
+            json={"uploadUrl": "https://upload.here"},
         )
         mock_post_model_version.add(mock_post_model_version.PUT, "https://upload.here", status=200, json={})
         yield mock_post_model_version
@@ -159,7 +163,7 @@ class TestVersions:
         )
         calls = mock_create_and_deploy_model_version.calls
         assert model_version.name == "version1"
-        assert {"description": "", "metadata": {}, "name": "mymodel", "sourcePackageId": 1} == jsgz_load(
+        assert {"description": "", "metadata": {}, "name": "version1", "sourcePackageId": 1} == jsgz_load(
             calls[0].request.body
         )
         for call in calls[1:5]:
@@ -172,11 +176,12 @@ class TestVersions:
 
     @pytest.fixture
     def mock_get_model_versions(self, rsps):
+        model_version_response = {"items": [deepcopy(self.model_version_response)]}
         rsps.add(
             rsps.GET,
             MODELS_API._get_base_url_with_base_path() + "/analytics/models/model1/versions",
             status=200,
-            json=self.model_version_response,
+            json=model_version_response,
         )
         yield rsps
 
@@ -247,13 +252,15 @@ class TestVersions:
             rsps.GET,
             MODELS_API._get_base_url_with_base_path() + "/analytics/models/model1/versions/version1/artifacts/a1",
             status=200,
-            json={"data": {"downloadUrl": "https://download.me"}},
+            json={"downloadUrl": "https://download.me"},
         )
         rsps.add(rsps.GET, "https://download.me", status=200, body=b"content")
         yield rsps
 
     def test_download_artifact(self, mock_download_artifact):
-        MODELS_API.download_artifact(model_name="model1", version_name="version1", name="a1", directory=os.getcwd())
+        MODELS_API.download_artifact(
+            model_name="model1", version_name="version1", artifact_name="a1", directory=os.getcwd()
+        )
         file_path = os.path.join(os.getcwd(), "a1")
         assert os.path.isfile(file_path)
         with open(file_path, "rb") as f:
@@ -273,14 +280,14 @@ class TestVersions:
         rsps.add(
             rsps.POST,
             MODELS_API._get_base_url_with_base_path() + "/analytics/models/model1/versions/version1/artifacts/upload",
-            json={"data": {"uploadUrl": "https://upload.here"}},
+            json={"uploadUrl": "https://upload.here"},
         )
         rsps.add(rsps.PUT, "https://upload.here")
         yield rsps
 
     def test_upload_artifact_from_file(self, mock_upload_artifact, artifact_file_path):
         MODELS_API.upload_artifact_from_file(
-            model_name="model1", version_name="version1", name="my_artifact.txt", file_path=artifact_file_path
+            model_name="model1", version_name="version1", artifact_name="my_artifact.txt", file_path=artifact_file_path
         )
         assert b"content" == mock_upload_artifact.calls[1].request.body
 
@@ -302,31 +309,31 @@ class TestVersions:
                 MODELS_API.upload_artifacts_from_directory(model_name="model1", version_name="version1", directory=tmp)
 
     @pytest.fixture
-    def mock_put_deprecate(self, rsps):
+    def mock_post_deprecate(self, rsps):
         rsps.add(
-            rsps.PUT,
+            rsps.POST,
             MODELS_API._get_base_url_with_base_path() + "/analytics/models/model1/versions/version1/deprecate",
             json=self.model_version_response,
         )
         yield rsps
 
-    def test_deprecate_model_version(self, mock_put_deprecate):
+    def test_deprecate_model_version(self, mock_post_deprecate):
         res = MODELS_API.deprecate_model_version(model_name="model1", version_name="version1")
         assert isinstance(res, ModelVersion)
         assert res.is_deprecated is True
 
     @pytest.fixture
-    def mock_put_update(self, rsps):
+    def mock_post_update(self, rsps):
         updated_model_version = deepcopy(self.model_version_response)
         updated_model_version["description"] = "blabla"
         rsps.add(
-            rsps.PUT,
+            rsps.POST,
             MODELS_API._get_base_url_with_base_path() + "/analytics/models/model1/versions/version1/update",
             json=updated_model_version,
         )
         yield rsps
 
-    def test_update_model_version(self, mock_put_update):
+    def test_update_model_version(self, mock_post_update):
         res = MODELS_API.update_model_version(model_name="model1", version_name="version1", description="blabla")
         assert isinstance(res, ModelVersion)
         assert res.description == "blabla"
@@ -348,30 +355,30 @@ class TestVersions:
         assert {"prediction_logs": ["l1", "l2", "l3"], "training_logs": ["l1", "l2", "l3"]} == res.dump()
 
     @pytest.fixture
-    def mock_put_predict(self, rsps):
+    def mock_post_predict(self, rsps):
         rsps.add(
-            rsps.PUT,
+            rsps.POST,
             MODELS_API._get_base_url_with_base_path() + "/analytics/models/model1/versions/version1/predict",
             json={"predictions": [1, 2, 3]},
         )
         yield rsps
 
-    def test_predict_on_model_version(self, mock_put_predict):
+    def test_predict_on_model_version(self, mock_post_predict):
         predictions = MODELS_API.online_predict(model_name="model1", version_name="version1")
         assert predictions == [1, 2, 3]
 
-    def test_predict_instance_is_data_spec(self, mock_put_predict, mock_data_spec):
+    def test_predict_instance_is_data_spec(self, mock_post_predict, mock_data_spec):
         MODELS_API.online_predict(
             model_name="model1", version_name="version1", instances=[mock_data_spec, mock_data_spec]
         )
-        data_sent_to_api = jsgz_load(mock_put_predict.calls[0].request.body)
+        data_sent_to_api = jsgz_load(mock_post_predict.calls[0].request.body)
         for instance in data_sent_to_api["instances"]:
             assert {"spec": "spec"} == instance
 
     @pytest.fixture
     def mock_put_predict_fail(self, rsps):
         rsps.add(
-            rsps.PUT,
+            rsps.POST,
             MODELS_API._get_base_url_with_base_path() + "/analytics/models/model1/versions/version1/predict",
             json={"error": {"message": "User error", "code": 200}},
         )
