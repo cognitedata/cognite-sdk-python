@@ -26,6 +26,8 @@ Changes are grouped as follows
 
 ### Fixed
 - Fixed pagination for include_outside_points and other edge cases in datapoints.
+- source_created_time and source_modified_time on files now displayed as time fields.
+
 
 ## [1.3.3] - 2019-10-21
 
