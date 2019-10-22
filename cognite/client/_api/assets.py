@@ -44,7 +44,7 @@ class AssetsAPI(APIClient):
             created_time (Dict[str, Any]): Range between two timestamps
             last_updated_time (Dict[str, Any]): Range between two timestamps
             root (bool): filtered assets are root assets or not
-            external_id_prefix (str): External Id provided by client. Should be unique within the project
+            external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
             aggregated_properties (List[str]): Set of aggregated properties to include.
             limit (int, optional): Maximum number of assets to return. Defaults to return all items.
 
@@ -87,7 +87,7 @@ class AssetsAPI(APIClient):
         return self.__call__()
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[Asset]:
-        """Retrieve a single asset by id.
+        """`Retrieve a single asset by id. <https://docs.cognite.com/api/v1/#operation/getAsset>`_
 
         Args:
             id (int, optional): ID
@@ -114,7 +114,7 @@ class AssetsAPI(APIClient):
         return self._retrieve_multiple(ids=id, external_ids=external_id, wrap_ids=True)
 
     def retrieve_multiple(self, ids: Optional[List[int]] = None, external_ids: Optional[List[str]] = None) -> AssetList:
-        """Retrieve multiple assets by id.
+        """`Retrieve multiple assets by id. <https://docs.cognite.com/api/v1/#operation/byIdsAssets>`_
 
         Args:
             ids (List[int], optional): IDs
@@ -157,7 +157,7 @@ class AssetsAPI(APIClient):
         partitions: int = None,
         limit: int = 25,
     ) -> AssetList:
-        """List assets
+        """`List assets <https://docs.cognite.com/api/v1/#operation/listAssets>`_
 
         Args:
             name (str): Name of asset. Often referred to as tag.
@@ -169,7 +169,7 @@ class AssetsAPI(APIClient):
             created_time (Dict[str, Any]): Range between two timestamps.
             last_updated_time (Dict[str, Any]): Range between two timestamps.
             root (bool): filtered assets are root assets or not.
-            external_id_prefix (str): External Id provided by client. Should be unique within the project.
+            external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
             aggregated_properties (List[str]): Set of aggregated properties to include.
             partitions (int): Retrieve assets in parallel using this number of workers. Also requires `limit=None` to be passed.
             limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None
@@ -227,7 +227,9 @@ class AssetsAPI(APIClient):
         )
 
     def create(self, asset: Union[Asset, List[Asset]]) -> Union[Asset, AssetList]:
-        """Create one or more assets. You can create an arbitrary number of assets, and the SDK will split the request into multiple requests.
+        """`Create one or more assets. <https://docs.cognite.com/api/v1/#operation/createAssets>`_
+        
+        You can create an arbitrary number of assets, and the SDK will split the request into multiple requests.
 
         Args:
             asset (Union[Asset, List[Asset]]): Asset or list of assets to create.
@@ -276,7 +278,7 @@ class AssetsAPI(APIClient):
     def delete(
         self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None, recursive: bool = False
     ) -> None:
-        """Delete one or more assets
+        """`Delete one or more assets <https://doc.cognitedata.com/api/v1/#operation/deleteAssets>`_
 
         Args:
             id (Union[int, List[int]): Id or list of ids
@@ -299,7 +301,7 @@ class AssetsAPI(APIClient):
         )
 
     def update(self, item: Union[Asset, AssetUpdate, List[Union[Asset, AssetUpdate]]]) -> Union[Asset, AssetList]:
-        """Update one or more assets
+        """`Update one or more assets <https://docs.cognite.com/api/v1/#operation/updateAssets>`_
 
         Args:
             item (Union[Asset, AssetUpdate, List[Union[Asset, AssetUpdate]]]): Asset(s) to update
@@ -330,7 +332,7 @@ class AssetsAPI(APIClient):
     def search(
         self, name: str = None, description: str = None, filter: Union[AssetFilter, Dict] = None, limit: int = None
     ) -> AssetList:
-        """Search for assets
+        """`Search for assets <https://docs.cognite.com/api/v1/#operation/searchAssets>`_
 
         Args:
             name (str): Fuzzy match on name.

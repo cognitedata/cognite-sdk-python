@@ -104,6 +104,8 @@ def _convert_time_attributes_in_dict(item: Dict) -> Dict:
         "created_time",
         "timestamp",
         "scheduled_execution_time",
+        "source_created_time",
+        "source_modified_time",
     ]
     new_item = {}
     for k, v in item.items():

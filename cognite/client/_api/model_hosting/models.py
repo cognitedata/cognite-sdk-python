@@ -212,7 +212,7 @@ class ModelsAPI(APIClient):
             artifacts_directory (str, optional): Absolute path of directory containing artifacts.
             description (str, optional):  Description of model version
             metadata (Dict[str, Any], optional):  Metadata about model version
-            
+
         Returns:
             ModelVersion: The created model version.
         """

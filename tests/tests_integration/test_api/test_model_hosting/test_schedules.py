@@ -1,5 +1,3 @@
-from unittest import mock
-
 import pytest
 
 from cognite.client.data_classes.model_hosting.schedules import Schedule, ScheduleList, ScheduleLog

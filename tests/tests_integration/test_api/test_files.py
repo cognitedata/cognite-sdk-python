@@ -33,7 +33,7 @@ class TestFilesAPI:
     def test_create(self):
         file_metadata = FileMetadata(name="mytestfile")
         returned_file_metadata, upload_url = COGNITE_CLIENT.files.create(file_metadata)
-        assert False == returned_file_metadata.uploaded
+        assert returned_file_metadata.uploaded is False
         COGNITE_CLIENT.files.delete(id=returned_file_metadata.id)
 
     def test_retrieve(self):

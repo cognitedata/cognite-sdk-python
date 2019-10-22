@@ -128,7 +128,7 @@ class TimeSeriesFilter(CogniteFilter):
         metadata (Dict[str, Any]): Filter out timeseries that do not match these metadata fields and values (case-sensitive). The format is {"key1":"value1","key2":"value2"}.
         asset_ids (List[int]): Filter out time series that are not linked to any of these assets.
         root_asset_ids (List[int]): The IDs of the root assets that the related assets should be children of.
-        external_id_prefix (str): Prefix filter on externalId. (case-sensitive)
+        external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
         created_time (Dict[str, Any]): Filter out time series with createdTime outside this range.
         last_updated_time (Dict[str, Any]): Filter out time series with lastUpdatedTime outside this range.
         cognite_client (CogniteClient): The client to associate with this object.

@@ -129,7 +129,6 @@ def mock_file_download_response_one_fails(rsps):
 
     def download_link_callback(request):
         identifier = jsgz_load(request.body)["items"][0]
-        response = {}
         if "id" in identifier:
             return 200, {}, json.dumps({"items": [{"id": 1, "downloadUrl": "https://download.file1.here"}]})
         elif "externalId" in identifier:
@@ -169,6 +168,16 @@ class TestFilesAPI:
         assert mock_files_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
         assert "bla" == jsgz_load(mock_files_response.calls[0].request.body)["filter"]["source"]
         assert 10 == jsgz_load(mock_files_response.calls[0].request.body)["limit"]
+
+    def test_list_root_ids_list(self, mock_files_response):
+        FILES_API.list(root_asset_ids=[1, 2], root_asset_external_ids=["a"], limit=10)
+        calls = mock_files_response.calls
+        assert 1 == len(calls)
+        assert {
+            "cursor": None,
+            "limit": 10,
+            "filter": {"rootAssetIds": [{"id": 1}, {"id": 2}, {"externalId": "a"}]},
+        } == jsgz_load(calls[0].request.body)
 
     def test_delete_single(self, mock_files_response):
         res = FILES_API.delete(id=1)
@@ -372,14 +381,10 @@ class TestFilesAPI:
             FileMetadataUpdate(1)
             .asset_ids.add([])
             .asset_ids.remove([])
-            .asset_ids.set([])
-            .asset_ids.set(None)
             .external_id.set("1")
             .external_id.set(None)
             .metadata.add({})
             .metadata.remove([])
-            .metadata.set({})
-            .metadata.set(None)
             .source.set(1)
             .source.set(None),
             FileMetadataUpdate,

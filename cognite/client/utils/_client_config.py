@@ -1,8 +1,6 @@
-import json
 import os
 import pprint
 import sys
-import warnings
 from typing import *
 
 from requests.exceptions import ConnectionError
@@ -50,7 +48,7 @@ class _DefaultConfig:
     def _get_status_forcelist():
         env_forcelist = os.getenv("COGNITE_STATUS_FORCELIST")
         if env_forcelist is None:
-            return [429, 500, 502, 503]
+            return [429, 502, 503, 504]
         return [int(c) for c in env_forcelist.split(",")]
 
 

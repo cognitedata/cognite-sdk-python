@@ -32,7 +32,7 @@ def mock_ts_response(rsps):
         ]
     }
     url_pattern = re.compile(
-        re.escape(TS_API._get_base_url_with_base_path()) + "/timeseries(?:/byids|/update|/delete|/search|$|\?.+)"
+        re.escape(TS_API._get_base_url_with_base_path()) + "/timeseries(?:/byids|/update|/delete|/list|/search|$|\?.+)"
     )
     rsps.assert_all_requests_are_fired = False
 
@@ -56,6 +56,28 @@ class TestTimeSeries:
         res = TS_API.list()
         assert mock_ts_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
+    def test_list_with_filters(self, mock_ts_response):
+        res = TS_API.list(
+            is_step=True,
+            is_string=False,
+            metadata={"a": "b"},
+            last_updated_time={"min": 45},
+            created_time={"max": 123},
+            asset_ids=[1, 2],
+            root_asset_ids=[1231],
+            include_metadata=False,
+        )
+        assert mock_ts_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
+        assert {
+            "isString": False,
+            "isStep": True,
+            "metadata": {"a": "b"},
+            "assetIds": [1, 2],
+            "rootAssetIds": [1231],
+            "createdTime": {"max": 123},
+            "lastUpdatedTime": {"min": 45},
+        } == jsgz_load(mock_ts_response.calls[0].request.body)["filter"]
+
     @pytest.mark.dsl
     def test_list_with_asset_ids(self, mock_ts_response):
         import numpy
@@ -63,7 +85,7 @@ class TestTimeSeries:
         TS_API.list(asset_ids=[1])
         TS_API.list(asset_ids=[numpy.int64(1)])
         for i in range(len(mock_ts_response.calls)):
-            assert "assetIds=%5B1%5D" in mock_ts_response.calls[i].request.url
+            assert [1] == jsgz_load(mock_ts_response.calls[i].request.body)["filter"]["assetIds"]
 
     @pytest.mark.dsl
     def test_list_with_root_asset_ids(self, mock_ts_response):
@@ -72,7 +94,7 @@ class TestTimeSeries:
         TS_API.list(root_asset_ids=[1])
         TS_API.list(root_asset_ids=[numpy.int64(1)])
         for i in range(len(mock_ts_response.calls)):
-            assert "rootAssetIds=%5B1%5D" in mock_ts_response.calls[i].request.url
+            assert [1] == jsgz_load(mock_ts_response.calls[i].request.body)["filter"]["rootAssetIds"]
 
     def test_create_single(self, mock_ts_response):
         res = TS_API.create(TimeSeries(external_id="1", name="blabla"))
@@ -159,15 +181,19 @@ class TestTimeSeries:
             .external_id.set("1")
             .external_id.set(None)
             .metadata.set({})
-            .metadata.add({})
-            .metadata.remove([])
             .name.set("")
             .name.set(None)
             .security_categories.set([])
-            .security_categories.add([])
-            .security_categories.remove([])
             .unit.set("")
             .unit.set(None),
+            TimeSeriesUpdate,
+        )
+        assert isinstance(
+            TimeSeriesUpdate(1)
+            .metadata.add({})
+            .metadata.remove([])
+            .security_categories.add([])
+            .security_categories.remove([]),
             TimeSeriesUpdate,
         )
 
@@ -185,6 +211,8 @@ class TestPlotTimeSeries:
                     {
                         "id": 0,
                         "externalId": "string1",
+                        "isString": False,
+                        "isStep": False,
                         "datapoints": [{"timestamp": i * 10000, "average": i} for i in range(5000)],
                     }
                 ]

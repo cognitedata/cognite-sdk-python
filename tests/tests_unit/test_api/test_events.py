@@ -56,6 +56,15 @@ class TestEvents:
         EVENTS_API.list(partitions=13, limit=float("inf"))
         assert 13 == len(mock_events_response.calls)
 
+    def test_list_sorting(self, mock_events_response):
+        res = EVENTS_API.list(sort=["startTime:desc"])
+        assert ["startTime:desc"] == jsgz_load(mock_events_response.calls[0].request.body)["sort"]
+        assert mock_events_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
+
+    def test_list_sorting_combined_with_partitions(self, mock_events_response):
+        with pytest.raises(ValueError):
+            EVENTS_API.list(sort=["startTime:desc"], partitions=10)
+
     def test_call_root(self, mock_events_response):
         list(EVENTS_API.__call__(root_asset_ids=[23], root_asset_external_ids=["a", "b"], limit=10))
         calls = mock_events_response.calls
@@ -148,16 +157,13 @@ class TestEvents:
             EventUpdate(1)
             .asset_ids.add([])
             .asset_ids.remove([])
-            .asset_ids.set([])
             .description.set("")
             .description.set(None)
             .end_time.set(1)
             .end_time.set(None)
             .external_id.set("1")
             .external_id.set(None)
-            .metadata.add({})
             .metadata.set({})
-            .metadata.remove([])
             .source.set(1)
             .source.set(None)
             .start_time.set(1)

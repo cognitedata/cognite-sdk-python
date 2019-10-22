@@ -1,9 +1,6 @@
 import gzip
 import json
-import math
-import os
 import re
-from unittest import mock
 
 import pytest
 
@@ -12,10 +9,9 @@ from cognite.client.data_classes import (
     Event,
     FileMetadata,
     Relationship,
+    RelationshipFilter,
     RelationshipList,
     Sequence,
-    ThreeDModel,
-    ThreeDModelRevision,
     TimeSeries,
 )
 from cognite.client.experimental import CogniteClient
@@ -132,7 +128,7 @@ class TestRelationships:
 
     def test_create_wrong_type(self, mock_rel_response):
         with pytest.raises(ValueError):
-            res = REL_API.create(
+            REL_API.create(
                 Relationship(
                     external_id="1",
                     confidence=0.5,
@@ -178,3 +174,19 @@ class TestRelationships:
         res = REL_API.delete(external_id=["a"])
         assert {"items": [{"externalId": "a"}]} == jsgz_load(mock_rel_response.calls[0].request.body)
         assert res is None
+
+    def test_advanced_list(self, mock_rel_response):
+        res = REL_API.search(filter=RelationshipFilter(source_resource="asset"))
+        assert {"filter": {"sourceResource": "asset"}, "limit": 25, "cursor": None} == jsgz_load(
+            mock_rel_response.calls[0].request.body
+        )
+        assert mock_rel_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
+
+    def test_advanced_list_dict(self, mock_rel_response):
+        res = REL_API.search(filter={"source_resource_id": "asset123", "relationship_type": "belongs_to"}, limit=1000)
+        assert {
+            "filter": {"sourceResourceId": "asset123", "relationshipType": "belongs_to"},
+            "limit": 1000,
+            "cursor": None,
+        } == jsgz_load(mock_rel_response.calls[0].request.body)
+        assert mock_rel_response.calls[0].response.json()["items"] == res.dump(camel_case=True)

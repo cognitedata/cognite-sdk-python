@@ -18,6 +18,8 @@ class FilesAPI(APIClient):
         mime_type: str = None,
         metadata: Dict[str, Any] = None,
         asset_ids: List[int] = None,
+        root_asset_ids: List[int] = None,
+        root_asset_external_ids: List[str] = None,
         source: str = None,
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
@@ -38,6 +40,8 @@ class FilesAPI(APIClient):
             mime_type (str): File type. E.g. text/plain, application/pdf, ..
             metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
             asset_ids (List[int]): Only include files that reference these specific asset IDs.
+            root_asset_ids (List[int]): The IDs of the root assets that the related assets should be children of.
+            root_asset_external_ids (List[str]): The external IDs of the root assets that the related assets should be children of.
             source (str): The source of this event.
             source_created_time (Dict[str, Any]): Filter for files where the sourceCreatedTime field has been set and is within the specified range.
             source_modified_time (Dict[str, Any]): Filter for files where the sourceModifiedTime field has been set and is within the specified range.
@@ -52,19 +56,22 @@ class FilesAPI(APIClient):
         Yields:
             Union[FileMetadata, FileMetadataList]: yields FileMetadata one by one if chunk is not specified, else FileMetadataList objects.
         """
+        if root_asset_ids or root_asset_external_ids:
+            root_asset_ids = self._process_ids(root_asset_ids, root_asset_external_ids, wrap_ids=True)
         filter = FileMetadataFilter(
-            name,
-            mime_type,
-            metadata,
-            asset_ids,
-            source,
-            created_time,
-            last_updated_time,
-            uploaded_time,
-            source_created_time,
-            source_modified_time,
-            external_id_prefix,
-            uploaded,
+            name=name,
+            mime_type=mime_type,
+            metadata=metadata,
+            asset_ids=asset_ids,
+            root_asset_ids=root_asset_ids,
+            source=source,
+            created_time=created_time,
+            last_updated_time=last_updated_time,
+            uploaded_time=uploaded_time,
+            source_created_time=source_created_time,
+            source_modified_time=source_modified_time,
+            external_id_prefix=external_id_prefix,
+            uploaded=uploaded,
         ).dump(camel_case=True)
         return self._list_generator(method="POST", chunk_size=chunk_size, filter=filter, limit=limit)
 
@@ -114,7 +121,7 @@ class FilesAPI(APIClient):
         return (file_metadata, upload_url)
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[FileMetadata]:
-        """Retrieve a single file metadata by id.
+        """`Retrieve a single file metadata by id. <https://docs.cognite.com/api/v1/#operation/getFileByInternalId>`_
 
         Args:
             id (int, optional): ID
@@ -143,7 +150,7 @@ class FilesAPI(APIClient):
     def retrieve_multiple(
         self, ids: Optional[List[int]] = None, external_ids: Optional[List[str]] = None
     ) -> FileMetadataList:
-        """Retrieve multiple file metadatas by id.
+        """`Retrieve multiple file metadatas by id. <https://docs.cognite.com/api/v1/#operation/byIdsFiles>`_
 
         Args:
             ids (List[int], optional): IDs
@@ -176,6 +183,8 @@ class FilesAPI(APIClient):
         mime_type: str = None,
         metadata: Dict[str, Any] = None,
         asset_ids: List[int] = None,
+        root_asset_ids: List[int] = None,
+        root_asset_external_ids: List[str] = None,
         source: str = None,
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
@@ -186,13 +195,15 @@ class FilesAPI(APIClient):
         uploaded: bool = None,
         limit: int = 25,
     ) -> FileMetadataList:
-        """List files
+        """`List files <https://docs.cognite.com/api/v1/#operation/advancedListFiles>`_
 
         Args:
             name (str): Name of the file.
             mime_type (str): File type. E.g. text/plain, application/pdf, ..
             metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
             asset_ids (List[int]): Only include files that reference these specific asset IDs.
+            root_asset_ids (List[int]): The IDs of the root assets that the related assets should be children of.
+            root_asset_external_ids (List[str]): The external IDs of the root assets that the related assets should be children of.
             source (str): The source of this event.
             created_time (Dict[str, Any]): Range between two timestamps
             last_updated_time (Dict[str, Any]): Range between two timestamps
@@ -229,24 +240,28 @@ class FilesAPI(APIClient):
                 >>> for file_list in c.files(chunk_size=2500):
                 ...     file_list # do something with the files
         """
+        if root_asset_ids or root_asset_external_ids:
+            root_asset_ids = self._process_ids(root_asset_ids, root_asset_external_ids, wrap_ids=True)
         filter = FileMetadataFilter(
-            name,
-            mime_type,
-            metadata,
-            asset_ids,
-            source,
-            created_time,
-            last_updated_time,
-            uploaded_time,
-            source_created_time,
-            source_modified_time,
-            external_id_prefix,
-            uploaded,
+            name=name,
+            mime_type=mime_type,
+            metadata=metadata,
+            asset_ids=asset_ids,
+            root_asset_ids=root_asset_ids,
+            source=source,
+            created_time=created_time,
+            last_updated_time=last_updated_time,
+            uploaded_time=uploaded_time,
+            source_created_time=source_created_time,
+            source_modified_time=source_modified_time,
+            external_id_prefix=external_id_prefix,
+            uploaded=uploaded,
         ).dump(camel_case=True)
+
         return self._list(method="POST", limit=limit, filter=filter)
 
     def delete(self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None) -> None:
-        """Delete files
+        """`Delete files <https://docs.cognite.com/api/v1/#operation/deleteFiles>`_
 
         Args:
             id (Union[int, List[int]]): Id or list of ids
@@ -268,7 +283,7 @@ class FilesAPI(APIClient):
     def update(
         self, item: Union[FileMetadata, FileMetadataUpdate, List[Union[FileMetadata, FileMetadataUpdate]]]
     ) -> Union[FileMetadata, FileMetadataList]:
-        """Update files
+        """`Update files <https://docs.cognite.com/api/v1/#operation/updateFiles>`_
 
         Args:
             item (Union[FileMetadata, FileMetadataUpdate, List[Union[FileMetadata, FileMetadataUpdate]]]): file(s) to update.
@@ -299,7 +314,7 @@ class FilesAPI(APIClient):
     def search(
         self, name: str = None, filter: Union[FileMetadataFilter, dict] = None, limit: int = None
     ) -> FileMetadataList:
-        """Search for files.
+        """`Search for files. <https://docs.cognite.com/api/v1/#operation/searchFiles>`_
 
         Args:
             name (str, optional): Prefix and fuzzy search on name.
@@ -333,7 +348,7 @@ class FilesAPI(APIClient):
         recursive: bool = False,
         overwrite: bool = False,
     ) -> Union[FileMetadata, FileMetadataList]:
-        """Upload a file
+        """`Upload a file <https://docs.cognite.com/api/v1/#operation/initFileUpload>`_
 
         Args:
             path (str): Path to the file you wish to upload. If path is a directory, this method will upload all files in that directory.
@@ -484,7 +499,7 @@ class FilesAPI(APIClient):
     def download(
         self, directory: str, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None
     ) -> None:
-        """Download files by id or external id.
+        """`Download files by id or external id. <https://docs.cognite.com/api/v1/#operation/downloadLinks>`_
 
         This method will stream all files to disk, never keeping more than 2MB of a given file in memory.
 

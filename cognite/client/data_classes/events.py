@@ -65,13 +65,13 @@ class EventFilter(CogniteFilter):
         end_time (Dict[str, Any]): Range between two timestamps.
         metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         asset_ids (List[int]): Asset IDs of related equipment that this event relates to.
-        root_asset_ids (List[Union[Dict[str, Any], Dict[str, Any]]]): The IDs of the root assets that the related assets should be children of.
+        root_asset_ids (List[Dict[str, Any]]): The IDs of the root assets that the related assets should be children of.
         source (str): The source of this event.
         type (str): The event type
         subtype (str): The event subtype
         created_time (Dict[str, Any]): Range between two timestamps.
         last_updated_time (Dict[str, Any]): Range between two timestamps.
-        external_id_prefix (str): The external ID provided by the client. Must be unique for the resource type.
+        external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
@@ -81,7 +81,7 @@ class EventFilter(CogniteFilter):
         end_time: Dict[str, Any] = None,
         metadata: Dict[str, Any] = None,
         asset_ids: List[int] = None,
-        root_asset_ids: List[Union[Dict[str, Any], Dict[str, Any]]] = None,
+        root_asset_ids: List[Dict[str, Any]] = None,
         source: str = None,
         type: str = None,
         subtype: str = None,
