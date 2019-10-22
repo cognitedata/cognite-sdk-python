@@ -138,15 +138,13 @@ class CogniteResource:
 
 
 class CognitePropertyClass(dict):
-    def __setitem__(self, key, value):
-        super().__setitem__(self, key, value)
-        if getattr(self, key, value) != value:
-            setattr(self, key, value)
-
     def __setattr__(self, key, value):
-        self.__dict__[key] = value
-        if key not in self or self[key] != value:
-            self[key] = value
+        self[key] = value
+
+    def __getattr__(self, item):
+        if item in self:
+            return self[item]
+        return super().__getattr__(item)
 
 
 class CogniteResourceList(UserList):

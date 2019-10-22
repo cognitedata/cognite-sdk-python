@@ -15,7 +15,7 @@ class Event(CogniteResource):
         type (str): Type of the event, e.g 'failure'.
         subtype (str): Subtype of the event, e.g 'electrical'.
         description (str): Textual description of the event.
-        metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         asset_ids (List[int]): Asset IDs of related equipment that this event relates to.
         source (str): The source of this event.
         id (int): A server-generated ID for the object.
@@ -32,7 +32,7 @@ class Event(CogniteResource):
         type: str = None,
         subtype: str = None,
         description: str = None,
-        metadata: Dict[str, Any] = None,
+        metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
         source: str = None,
         id: int = None,
@@ -64,7 +64,7 @@ class EventFilter(CogniteFilter):
     Args:
         start_time (EpochTimestampRange): Range between two timestamps.
         end_time (EpochTimestampRange): Range between two timestamps.
-        metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         asset_ids (List[int]): Asset IDs of related equipment that this event relates to.
         root_asset_ids (List[Union[Dict[str, Any], Dict[str, Any]]]): The IDs of the root assets that the related assets should be children of.
         source (str): The source of this event.
@@ -80,7 +80,7 @@ class EventFilter(CogniteFilter):
         self,
         start_time: EpochTimestampRange = None,
         end_time: EpochTimestampRange = None,
-        metadata: Dict[str, Any] = None,
+        metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
         root_asset_ids: List[Union[Dict[str, Any], Dict[str, Any]]] = None,
         source: str = None,

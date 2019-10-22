@@ -114,10 +114,12 @@ class ClassGenerator:
 
     def _get_type_hint_with_marker(self, prop):
         res = utils.get_type_hint(prop)
-        if res == "Dict[str, Any]" and "properties" in prop:
+        if res == "Dict[str, Any]":
             name = self._spec.components.schemas.rev_get(prop)
             if name != None and name[-8:] == "Metadata":
                 return "Dict[str, str]", False
+            if name != None and name == "NodeProperties3D":
+                return "Dict[str, Dict[str, str]]", False
             elif name != None and name[:1].isupper():
                 return name, True
         return res, False

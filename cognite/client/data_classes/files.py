@@ -14,7 +14,7 @@ class FileMetadata(CogniteResource):
         name (str): Name of the file.
         source (str): The source of the file.
         mime_type (str): File type. E.g. text/plain, application/pdf, ..
-        metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         asset_ids (List[int]): No description.
         source_created_time (int): The timestamp for when the file was originally created in the source system.
         source_modified_time (int): The timestamp for when the file was last modified in the source system.
@@ -32,7 +32,7 @@ class FileMetadata(CogniteResource):
         name: str = None,
         source: str = None,
         mime_type: str = None,
-        metadata: Dict[str, Any] = None,
+        metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
         source_created_time: int = None,
         source_modified_time: int = None,
@@ -68,7 +68,7 @@ class FileMetadataFilter(CogniteFilter):
     Args:
         name (str): Name of the file.
         mime_type (str): File type. E.g. text/plain, application/pdf, ..
-        metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         asset_ids (List[int]): Only include files that reference these specific asset IDs.
         root_asset_ids (List[Union[Dict[str, Any], Dict[str, Any]]]): Internal or external IDs of the root assets that the related assets should be a descendant of (or match).
         source (str): The source of this event.
@@ -86,7 +86,7 @@ class FileMetadataFilter(CogniteFilter):
         self,
         name: str = None,
         mime_type: str = None,
-        metadata: Dict[str, Any] = None,
+        metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
         root_asset_ids: List[Union[Dict[str, Any], Dict[str, Any]]] = None,
         source: str = None,

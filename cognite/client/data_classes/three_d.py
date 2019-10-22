@@ -47,7 +47,7 @@ class ThreeDModel(CogniteResource):
         name (str): The name of the model.
         id (int): The ID of the model.
         created_time (int): The creation time of the resource, in milliseconds since January 1, 1970 at 00:00 UTC.
-        metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
@@ -56,7 +56,7 @@ class ThreeDModel(CogniteResource):
         name: str = None,
         id: int = None,
         created_time: int = None,
-        metadata: Dict[str, Any] = None,
+        metadata: Dict[str, str] = None,
         cognite_client=None,
     ):
         self.name = name
@@ -130,7 +130,7 @@ class ThreeDModelRevision(CogniteResource):
         rotation (List[float]): No description.
         camera (RevisionCameraProperties): Initial camera position and target.
         status (str): The status of the revision.
-        metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         thumbnail_threed_file_id (int): The threed file ID of a thumbnail for the revision. Use /3d/files/{id} to retrieve the file.
         thumbnail_url (str): The URL of a thumbnail for the revision.
         asset_mapping_count (int): The number of asset mappings for this revision.
@@ -146,7 +146,7 @@ class ThreeDModelRevision(CogniteResource):
         rotation: List[float] = None,
         camera: RevisionCameraProperties = None,
         status: str = None,
-        metadata: Dict[str, Any] = None,
+        metadata: Dict[str, str] = None,
         thumbnail_threed_file_id: int = None,
         thumbnail_url: str = None,
         asset_mapping_count: int = None,
@@ -247,7 +247,7 @@ class ThreeDNode(CogniteResource):
         depth (int): The depth of the node in the tree, starting from 0 at the root node.
         name (str): The name of the node.
         subtree_size (int): The number of descendants of the node, plus one (counting itself).
-        properties (Dict[str, Any]): Properties extracted from 3D model, with property categories containing key/value string pairs.
+        properties (Dict[str, Dict[str, str]]): Properties extracted from 3D model, with property categories containing key/value string pairs.
         bounding_box (BoundingBox3D): The bounding box of the subtree with this sector as the root sector. Is null if there are no geometries in the subtree.
         cognite_client (CogniteClient): The client to associate with this object.
     """
@@ -260,7 +260,7 @@ class ThreeDNode(CogniteResource):
         depth: int = None,
         name: str = None,
         subtree_size: int = None,
-        properties: Dict[str, Any] = None,
+        properties: Dict[str, Dict[str, str]] = None,
         bounding_box: BoundingBox3D = None,
         cognite_client=None,
     ):

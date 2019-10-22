@@ -42,7 +42,7 @@ class Asset(CogniteResource):
         name (str): The name of the asset.
         parent_id (int): A server-generated ID for the object.
         description (str): The description of the asset.
-        metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         source (str): The source of the asset.
         id (int): A server-generated ID for the object.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -58,7 +58,7 @@ class Asset(CogniteResource):
         name: str = None,
         parent_id: int = None,
         description: str = None,
-        metadata: Dict[str, Any] = None,
+        metadata: Dict[str, str] = None,
         source: str = None,
         id: int = None,
         created_time: int = None,
@@ -168,7 +168,7 @@ class AssetFilter(CogniteFilter):
         name (str): The name of the asset.
         parent_ids (List[int]): Return only the direct descendants of the specified assets.
         root_ids (List[Union[Dict[str, Any], Dict[str, Any]]]): Return all descendants of the specified root assets.
-        metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         source (str): The source of the asset.
         created_time (EpochTimestampRange): Range between two timestamps.
         last_updated_time (EpochTimestampRange): Range between two timestamps.
@@ -182,7 +182,7 @@ class AssetFilter(CogniteFilter):
         name: str = None,
         parent_ids: List[int] = None,
         root_ids: List[Union[Dict[str, Any], Dict[str, Any]]] = None,
-        metadata: Dict[str, Any] = None,
+        metadata: Dict[str, str] = None,
         source: str = None,
         created_time: EpochTimestampRange = None,
         last_updated_time: EpochTimestampRange = None,

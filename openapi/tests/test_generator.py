@@ -51,13 +51,13 @@ class TestClassGenerator:
         name (str): The name of the asset.
         parent_id (int): A server-generated ID for the object.
         description (str): The description of the asset.
-        metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         source (str): The source of the asset.
         id (int): A server-generated ID for the object.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         root_id (int): A server-generated ID for the object.
-        aggregates (Dict[str, Any]): Aggregated metrics of the asset
+        aggregates (AggregateResultItem): Aggregated metrics of the asset
         cognite_client (CogniteClient): The client to associate with this object.
     \"\"\""""
             == docstring
@@ -67,7 +67,7 @@ class TestClassGenerator:
         schemas = [CLASS_GENERATOR._spec.components.schemas.get("Asset")]
         constructor = CLASS_GENERATOR.generate_constructor(schemas, indentation=4)
         assert (
-            """    def __init__(self, external_id: str = None, name: str = None, parent_id: int = None, description: str = None, metadata: Dict[str, Any] = None, source: str = None, id: int = None, created_time: int = None, last_updated_time: int = None, root_id: int = None, aggregates: Dict[str, Any] = None, cognite_client = None):
+            """    def __init__(self, external_id: str = None, name: str = None, parent_id: int = None, description: str = None, metadata: Dict[str, str] = None, source: str = None, id: int = None, created_time: int = None, last_updated_time: int = None, root_id: int = None, aggregates: AggregateResultItem = None, cognite_client = None):
         self.external_id = external_id
         self.name = name
         self.parent_id = parent_id
@@ -83,12 +83,29 @@ class TestClassGenerator:
             == constructor
         )
 
+    def test_generate_loader_from_schema(self):
+        schemas = [CLASS_GENERATOR._spec.components.schemas.get("Asset")]
+        loader = CLASS_GENERATOR.generate_loader(schemas, "Asset", indentation=4)
+        assert (
+            """
+    @classmethod
+    def _load(cls, resource: Union[Dict, str], cognite_client=None):
+        instance = super(Asset, cls)._load(resource, cognite_client)
+        if isinstance(resource, Dict):
+            if "aggregates" in resource:
+                setattr(instance, "aggregates", AggregateResultItem(**resource["aggregates"]))
+        return instance
+"""
+            == loader
+        )
+
     def test_generate_code_for_class_segments(self):
         class_segments = CLASS_GENERATOR.generate_code_for_class_segments()
         schemas = [CLASS_GENERATOR._spec.components.schemas.get("Asset")]
         docstring = CLASS_GENERATOR.generate_docstring(schemas, indentation=4)
         constructor = CLASS_GENERATOR.generate_constructor(schemas, indentation=4)
-        assert class_segments["Asset"] == docstring + "\n" + constructor
+        loader = CLASS_GENERATOR.generate_loader(schemas, "Asset", indentation=4)
+        assert class_segments["Asset"] == docstring + "\n" + constructor + loader
 
 
 UPDATE_CLASS_GENERATOR = UpdateClassGenerator(CODE_GENERATOR.open_api_spec, INPUT)
