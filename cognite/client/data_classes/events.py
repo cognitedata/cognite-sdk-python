@@ -104,6 +104,20 @@ class EventFilter(CogniteFilter):
         self.external_id_prefix = external_id_prefix
         self._cognite_client = cognite_client
 
+    @classmethod
+    def _load(cls, resource: Union[Dict, str], cognite_client=None):
+        instance = super(EventFilter, cls)._load(resource, cognite_client)
+        if isinstance(resource, Dict):
+            if "start_time" in resource:
+                setattr(instance, "start_time", EpochTimestampRange(**resource["start_time"]))
+            if "end_time" in resource:
+                setattr(instance, "end_time", EpochTimestampRange(**resource["end_time"]))
+            if "created_time" in resource:
+                setattr(instance, "created_time", EpochTimestampRange(**resource["created_time"]))
+            if "last_updated_time" in resource:
+                setattr(instance, "last_updated_time", EpochTimestampRange(**resource["last_updated_time"]))
+        return instance
+
     # GenStop
 
 

@@ -39,7 +39,8 @@ class ClassGenerator:
                     schemas.append(self._spec.components.schemas.get(schema_name))
             docstring = self.generate_docstring(schemas, indentation=4)
             constructor_args = self.generate_constructor(schemas, indentation=4)
-            generated_segment = docstring + "\n" + constructor_args
+            loader = self.generate_loader(schemas, class_segment.class_name, indentation=4)
+            generated_segment = docstring + "\n" + constructor_args + loader
             generated_segments[class_segment.class_name] = generated_segment
         return generated_segments
 
@@ -51,7 +52,7 @@ class ClassGenerator:
             for prop_name, prop in self._get_schema_properties(schema).items():
                 if prop_name not in ignore:
                     docstring += " " * (indentation + 4) + "{} ({}): {}\n".format(
-                        utils.to_snake_case(prop_name), self.get_type_hint(prop), self._get_schema_description(prop)
+                        utils.to_snake_case(prop_name), self._get_type_hint(prop), self._get_schema_description(prop)
                     )
                     ignore.append(prop_name)
         docstring += (
@@ -68,7 +69,7 @@ class ClassGenerator:
                 prop_name = utils.to_snake_case(prop_name)
                 req = " = None"  # TODO: check if prop is required or not
                 if prop_name not in ignore:
-                    constructor_params.append("{}: {}{}".format(prop_name, self.get_type_hint(prop), req))
+                    constructor_params.append("{}: {}{}".format(prop_name, self._get_type_hint(prop), req))
                     ignore.append(prop_name)
         constructor_params = ", ".join(constructor_params) + ", cognite_client = None):"
         constructor_body = ""
@@ -82,15 +83,44 @@ class ClassGenerator:
         constructor_body += " " * (indentation + 4) + "self._cognite_client = cognite_client\n"
         return constructor_params + "\n" + constructor_body[:-1]
 
-    def get_type_hint(self, prop):
+    def generate_loader(self, schemas, class_name, indentation):
+        prop_to_type = dict()
+        ignore = [p for p in TO_EXCLUDE]
+        for schema in schemas:
+            for prop_name, prop in self._get_schema_properties(schema).items():
+                prop_name = utils.to_snake_case(prop_name)
+                if prop_name not in ignore:
+                    type_name, special_type = self._get_type_hint_with_marker(prop)
+                    if special_type:
+                        prop_to_type[prop_name] = type_name
+                    ignore.append(prop_name)
+        loader = ""
+        if len(prop_to_type) > 0:
+            loader = "\n" + " " * indentation + "@classmethod\n"
+            loader += " " * indentation + "def _load(cls, resource: Union[Dict, str], cognite_client=None):\n"
+            loader += " " * (indentation + 4) + "instance = super({}, cls)._load(resource, cognite_client)\n".format(
+                class_name
+            )
+            loader += " " * (indentation + 4) + "if isinstance(resource, Dict):\n"
+            for k, v in prop_to_type.items():
+                loader += " " * (indentation + 8) + 'if "{}" in resource:\n'.format(k)
+                loader += " " * (indentation + 12) + 'setattr(instance, "{}", {}(**resource["{}"]))\n'.format(k, v, k)
+            loader += " " * (indentation + 4) + "return instance\n"
+        return loader
+
+    def _get_type_hint(self, prop):
+        res, _ = self._get_type_hint_with_marker(prop)
+        return res
+
+    def _get_type_hint_with_marker(self, prop):
         res = utils.get_type_hint(prop)
         if res == "Dict[str, Any]" and "properties" in prop:
             name = self._spec.components.schemas.rev_get(prop)
             if name != None and name[-8:] == "Metadata":
-                res = "Dict[str, str]"
+                return "Dict[str, str]", False
             elif name != None and name[:1].isupper():
-                res = name
-        return res
+                return name, True
+        return res, False
 
     @staticmethod
     def _get_schema_description(schema):

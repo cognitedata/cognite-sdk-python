@@ -40,7 +40,7 @@ class Asset(CogniteResource):
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         root_id (int): A server-generated ID for the object.
-        aggregates (Dict[str, Any]): Aggregated metrics of the asset
+        aggregates (AggregateResultItem): Aggregated metrics of the asset
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
@@ -56,7 +56,7 @@ class Asset(CogniteResource):
         created_time: int = None,
         last_updated_time: int = None,
         root_id: int = None,
-        aggregates: Dict[str, Any] = None,
+        aggregates: AggregateResultItem = None,
         cognite_client=None,
     ):
         self.external_id = external_id
@@ -71,6 +71,14 @@ class Asset(CogniteResource):
         self.root_id = root_id
         self.aggregates = aggregates
         self._cognite_client = cognite_client
+
+    @classmethod
+    def _load(cls, resource: Union[Dict, str], cognite_client=None):
+        instance = super(Asset, cls)._load(resource, cognite_client)
+        if isinstance(resource, Dict):
+            if "aggregates" in resource:
+                setattr(instance, "aggregates", AggregateResultItem(**resource["aggregates"]))
+        return instance
 
     # GenStop
     def to_pandas(self):
@@ -154,8 +162,8 @@ class AssetFilter(CogniteFilter):
         root_ids (List[Union[Dict[str, Any], Dict[str, Any]]]): Return all descendants of the specified root assets.
         metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         source (str): The source of the asset.
-        created_time (Dict[str, Any]): Range between two timestamps.
-        last_updated_time (Dict[str, Any]): Range between two timestamps.
+        created_time (EpochTimestampRange): Range between two timestamps.
+        last_updated_time (EpochTimestampRange): Range between two timestamps.
         root (bool): Whether the filtered assets are root assets, or not. Set to True to only list root assets.
         external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
         cognite_client (CogniteClient): The client to associate with this object.
@@ -168,8 +176,8 @@ class AssetFilter(CogniteFilter):
         root_ids: List[Union[Dict[str, Any], Dict[str, Any]]] = None,
         metadata: Dict[str, Any] = None,
         source: str = None,
-        created_time: Dict[str, Any] = None,
-        last_updated_time: Dict[str, Any] = None,
+        created_time: EpochTimestampRange = None,
+        last_updated_time: EpochTimestampRange = None,
         root: bool = None,
         external_id_prefix: str = None,
         cognite_client=None,
@@ -184,5 +192,15 @@ class AssetFilter(CogniteFilter):
         self.root = root
         self.external_id_prefix = external_id_prefix
         self._cognite_client = cognite_client
+
+    @classmethod
+    def _load(cls, resource: Union[Dict, str], cognite_client=None):
+        instance = super(AssetFilter, cls)._load(resource, cognite_client)
+        if isinstance(resource, Dict):
+            if "created_time" in resource:
+                setattr(instance, "created_time", EpochTimestampRange(**resource["created_time"]))
+            if "last_updated_time" in resource:
+                setattr(instance, "last_updated_time", EpochTimestampRange(**resource["last_updated_time"]))
+        return instance
 
     # GenStop

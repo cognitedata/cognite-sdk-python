@@ -3,6 +3,42 @@ from typing import *
 from cognite.client.data_classes._base import *
 
 
+# GenClass: RevisionCameraProperties
+class RevisionCameraProperties(CognitePropertyClass):
+    """Initial camera position and target.
+
+    Args:
+        target (List[float]): Initial camera target.
+        position (List[float]): Initial camera position.
+        cognite_client (CogniteClient): The client to associate with this object.
+    """
+
+    def __init__(self, target: List[float] = None, position: List[float] = None, cognite_client=None):
+        self.target = target
+        self.position = position
+        self._cognite_client = cognite_client
+
+    # GenStop
+
+
+# GenClass: BoundingBox3D
+class BoundingBox3D(CognitePropertyClass):
+    """The bounding box of the subtree with this sector as the root sector. Is null if there are no geometries in the subtree.
+
+    Args:
+        max (List[float]): No description.
+        min (List[float]): No description.
+        cognite_client (CogniteClient): The client to associate with this object.
+    """
+
+    def __init__(self, max: List[float] = None, min: List[float] = None, cognite_client=None):
+        self.max = max
+        self.min = min
+        self._cognite_client = cognite_client
+
+    # GenStop
+
+
 # GenClass: Model3D
 class ThreeDModel(CogniteResource):
     """No description.
@@ -130,6 +166,14 @@ class ThreeDModelRevision(CogniteResource):
         self.created_time = created_time
         self._cognite_client = cognite_client
 
+    @classmethod
+    def _load(cls, resource: Union[Dict, str], cognite_client=None):
+        instance = super(ThreeDModelRevision, cls)._load(resource, cognite_client)
+        if isinstance(resource, Dict):
+            if "camera" in resource:
+                setattr(instance, "camera", RevisionCameraProperties(**resource["camera"]))
+        return instance
+
     # GenStop
 
 
@@ -230,6 +274,14 @@ class ThreeDNode(CogniteResource):
         self.bounding_box = bounding_box
         self._cognite_client = cognite_client
 
+    @classmethod
+    def _load(cls, resource: Union[Dict, str], cognite_client=None):
+        instance = super(ThreeDNode, cls)._load(resource, cognite_client)
+        if isinstance(resource, Dict):
+            if "bounding_box" in resource:
+                setattr(instance, "bounding_box", BoundingBox3D(**resource["bounding_box"]))
+        return instance
+
     # GenStop
 
 
@@ -262,42 +314,6 @@ class ThreeDAssetMapping(CogniteResource):
         self.asset_id = asset_id
         self.tree_index = tree_index
         self.subtree_size = subtree_size
-        self._cognite_client = cognite_client
-
-    # GenStop
-
-
-# GenClass: RevisionCameraProperties
-class RevisionCameraProperties(dict):
-    """Initial camera position and target.
-
-    Args:
-        target (List[float]): Initial camera target.
-        position (List[float]): Initial camera position.
-        cognite_client (CogniteClient): The client to associate with this object.
-    """
-
-    def __init__(self, target: List[float] = None, position: List[float] = None, cognite_client=None):
-        self.target = target
-        self.position = position
-        self._cognite_client = cognite_client
-
-    # GenStop
-
-
-# GenClass: BoundingBox3D
-class BoundingBox3D(dict):
-    """The bounding box of the subtree with this sector as the root sector. Is null if there are no geometries in the subtree.
-
-    Args:
-        max (List[float]): No description.
-        min (List[float]): No description.
-        cognite_client (CogniteClient): The client to associate with this object.
-    """
-
-    def __init__(self, max: List[float] = None, min: List[float] = None, cognite_client=None):
-        self.max = max
-        self.min = min
         self._cognite_client = cognite_client
 
     # GenStop

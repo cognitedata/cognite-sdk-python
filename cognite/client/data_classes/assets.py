@@ -1,8 +1,24 @@
 import threading
 from typing import *
 
-from cognite.client.data_classes import EpochTimestampRange
 from cognite.client.data_classes._base import *
+from cognite.client.data_classes.shared import EpochTimestampRange
+
+
+# GenClass: AggregateResultItem
+class AggregateResultItem(dict):
+    """Aggregated metrics of the asset
+
+    Args:
+        child_count (int): Number of direct descendants for the asset
+        cognite_client (CogniteClient): The client to associate with this object.
+    """
+
+    def __init__(self, child_count: int = None, cognite_client=None):
+        self.child_count = child_count
+        self._cognite_client = cognite_client
+
+    # GenStop
 
 
 # GenClass: Asset, DataExternalAssetItem
@@ -54,6 +70,14 @@ class Asset(CogniteResource):
         self.aggregates = aggregates
         self.parent_external_id = parent_external_id
         self._cognite_client = cognite_client
+
+    @classmethod
+    def _load(cls, resource: Union[Dict, str], cognite_client=None):
+        instance = super(Asset, cls)._load(resource, cognite_client)
+        if isinstance(resource, Dict):
+            if "aggregates" in resource:
+                setattr(instance, "aggregates", AggregateResultItem(**resource["aggregates"]))
+        return instance
 
     # GenStop
 
@@ -319,20 +343,14 @@ class AssetFilter(CogniteFilter):
         self.external_id_prefix = external_id_prefix
         self._cognite_client = cognite_client
 
-    # GenStop
-
-
-# GenClass: AggregateResultItem
-class AggregateResultItem(dict):
-    """Aggregated metrics of the asset
-
-    Args:
-        child_count (int): Number of direct descendants for the asset
-        cognite_client (CogniteClient): The client to associate with this object.
-    """
-
-    def __init__(self, child_count: int = None, cognite_client=None):
-        self.child_count = child_count
-        self._cognite_client = cognite_client
+    @classmethod
+    def _load(cls, resource: Union[Dict, str], cognite_client=None):
+        instance = super(AssetFilter, cls)._load(resource, cognite_client)
+        if isinstance(resource, Dict):
+            if "created_time" in resource:
+                setattr(instance, "created_time", EpochTimestampRange(**resource["created_time"]))
+            if "last_updated_time" in resource:
+                setattr(instance, "last_updated_time", EpochTimestampRange(**resource["last_updated_time"]))
+        return instance
 
     # GenStop

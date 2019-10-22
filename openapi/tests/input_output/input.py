@@ -22,6 +22,14 @@ class CogniteListUpdate:
     pass
 
 
+class AggregateResultItem:
+    pass
+
+
+class EpochTimestampRange:
+    pass
+
+
 # GenClass: Asset
 class Asset(CogniteResource):
     # GenStop

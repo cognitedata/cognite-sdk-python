@@ -137,6 +137,18 @@ class CogniteResource:
         return self.to_pandas()._repr_html_()
 
 
+class CognitePropertyClass(dict):
+    def __setitem__(self, key, value):
+        super().__setitem__(self, key, value)
+        if getattr(self, key, value) != value:
+            setattr(self, key, value)
+
+    def __setattr__(self, key, value):
+        self.__dict__[key] = value
+        if key not in self or self[key] != value:
+            self[key] = value
+
+
 class CogniteResourceList(UserList):
     _RESOURCE = None
     _UPDATE = None

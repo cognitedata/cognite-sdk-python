@@ -1,8 +1,8 @@
 from typing import *
 from typing import Dict, List
 
-from cognite.client.data_classes import EpochTimestampRange
 from cognite.client.data_classes._base import *
+from cognite.client.data_classes.shared import EpochTimestampRange
 
 
 # GenClass: FilesMetadata
@@ -113,6 +113,18 @@ class FileMetadataFilter(CogniteFilter):
         self.external_id_prefix = external_id_prefix
         self.uploaded = uploaded
         self._cognite_client = cognite_client
+
+    @classmethod
+    def _load(cls, resource: Union[Dict, str], cognite_client=None):
+        instance = super(FileMetadataFilter, cls)._load(resource, cognite_client)
+        if isinstance(resource, Dict):
+            if "created_time" in resource:
+                setattr(instance, "created_time", EpochTimestampRange(**resource["created_time"]))
+            if "last_updated_time" in resource:
+                setattr(instance, "last_updated_time", EpochTimestampRange(**resource["last_updated_time"]))
+            if "uploaded_time" in resource:
+                setattr(instance, "uploaded_time", EpochTimestampRange(**resource["uploaded_time"]))
+        return instance
 
     # GenStop
 
