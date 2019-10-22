@@ -148,6 +148,8 @@ class TestObjectTimeConversion:
             ([{"last_updated_time": 0}], [{"last_updated_time": "1970-01-01 00:00:00"}]),
             ([{"start_time": 0}], [{"start_time": "1970-01-01 00:00:00"}]),
             ([{"end_time": 0}], [{"end_time": "1970-01-01 00:00:00"}]),
+            ([{"source_created_time": 0}], [{"source_created_time": "1970-01-01 00:00:00"}]),
+            ([{"source_modified_time": 0}], [{"source_modified_time": "1970-01-01 00:00:00"}]),
             ([{"not_a_time": 0}], [{"not_a_time": 0}]),
             ([{"created_time": int(1e15)}], [{"created_time": int(1e15)}]),
         ],
