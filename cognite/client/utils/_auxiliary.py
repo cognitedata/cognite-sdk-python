@@ -123,6 +123,7 @@ def get_current_sdk_version():
     return cognite.client.__version__
 
 
+@functools.lru_cache(maxsize=1)
 def get_user_agent():
     sdk_version = "CognitePythonSDK/{}".format(get_current_sdk_version())
 
