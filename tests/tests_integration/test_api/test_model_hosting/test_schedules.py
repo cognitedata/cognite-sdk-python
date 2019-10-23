@@ -7,6 +7,7 @@ from tests.utils import jsgz_load
 SCHEDULES_API = CogniteClient().model_hosting.schedules
 
 
+@pytest.mark.skip(reason="temporarily disable while model hosting v1 is being tested in greenfield")
 class TestSchedules:
     schedule_response = {
         "data": {
