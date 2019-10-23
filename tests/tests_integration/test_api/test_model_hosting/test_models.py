@@ -21,6 +21,7 @@ from tests.utils import jsgz_load
 MODELS_API = CogniteClient().model_hosting.models
 
 
+@pytest.mark.skip(reason="temporarily disable while model hosting v1 is being tested in greenfield")
 class TestModels:
     @pytest.fixture
     def created_model(self):
@@ -86,6 +87,7 @@ class TestModels:
         assert model.is_deprecated is True
 
 
+@pytest.mark.skip(reason="temporarily disable while model hosting v1 is being tested in greenfield")
 class TestVersions:
     model_version_response = {
         "data": {
