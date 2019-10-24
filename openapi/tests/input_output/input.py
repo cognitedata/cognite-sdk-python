@@ -22,10 +22,6 @@ class CogniteListUpdate:
     pass
 
 
-class AggregateResultItem:
-    pass
-
-
 class EpochTimestampRange:
     pass
 

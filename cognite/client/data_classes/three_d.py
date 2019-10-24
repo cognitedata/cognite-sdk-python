@@ -178,8 +178,8 @@ class ThreeDModelRevision(CogniteResource):
     def _load(cls, resource: Union[Dict, str], cognite_client=None):
         instance = super(ThreeDModelRevision, cls)._load(resource, cognite_client)
         if isinstance(resource, Dict):
-            if "camera" in resource:
-                setattr(instance, "camera", RevisionCameraProperties(**resource["camera"]))
+            if instance.camera is not None:
+                setattr(instance, "camera", RevisionCameraProperties(**instance.camera))
         return instance
 
     # GenStop
@@ -286,8 +286,8 @@ class ThreeDNode(CogniteResource):
     def _load(cls, resource: Union[Dict, str], cognite_client=None):
         instance = super(ThreeDNode, cls)._load(resource, cognite_client)
         if isinstance(resource, Dict):
-            if "bounding_box" in resource:
-                setattr(instance, "bounding_box", BoundingBox3D(**resource["bounding_box"]))
+            if instance.bounding_box is not None:
+                setattr(instance, "bounding_box", BoundingBox3D(**instance.bounding_box))
         return instance
 
     # GenStop

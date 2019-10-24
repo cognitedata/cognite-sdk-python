@@ -4,6 +4,7 @@ from collections import namedtuple
 
 from black import FileMode, format_str
 
+from cognite.client import utils as clientUtils
 from openapi import utils
 from openapi.openapi import OpenAPISpec
 from openapi.utils import TYPE_MAPPING
@@ -103,8 +104,8 @@ class ClassGenerator:
             )
             loader += " " * (indentation + 4) + "if isinstance(resource, Dict):\n"
             for k, v in prop_to_type.items():
-                loader += " " * (indentation + 8) + 'if "{}" in resource:\n'.format(k)
-                loader += " " * (indentation + 12) + 'setattr(instance, "{}", {}(**resource["{}"]))\n'.format(k, v, k)
+                loader += " " * (indentation + 8) + "if instance.{} is not None:\n".format(k)
+                loader += " " * (indentation + 12) + 'setattr(instance, "{}", {}(**instance.{}))\n'.format(k, v, k)
             loader += " " * (indentation + 4) + "return instance\n"
         return loader
 
@@ -120,6 +121,8 @@ class ClassGenerator:
                 return "Dict[str, str]", False
             if name != None and name == "NodeProperties3D":
                 return "Dict[str, Dict[str, str]]", False
+            if name != None and name == "AggregateResultItem":
+                return "Dict[str, Any]", False  # Snake case established in dictionary. Must break to fix properly.
             elif name != None and name[:1].isupper():
                 return name, True
         return res, False

@@ -25,10 +25,6 @@ class CogniteListUpdate:
     pass
 
 
-class AggregateResultItem:
-    pass
-
-
 class EpochTimestampRange:
     pass
 
@@ -48,7 +44,7 @@ class Asset(CogniteResource):
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         root_id (int): A server-generated ID for the object.
-        aggregates (AggregateResultItem): Aggregated metrics of the asset
+        aggregates (Dict[str, Any]): Aggregated metrics of the asset
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
@@ -64,7 +60,7 @@ class Asset(CogniteResource):
         created_time: int = None,
         last_updated_time: int = None,
         root_id: int = None,
-        aggregates: AggregateResultItem = None,
+        aggregates: Dict[str, Any] = None,
         cognite_client=None,
     ):
         self.external_id = external_id

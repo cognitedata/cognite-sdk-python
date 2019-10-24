@@ -118,12 +118,12 @@ class FileMetadataFilter(CogniteFilter):
     def _load(cls, resource: Union[Dict, str], cognite_client=None):
         instance = super(FileMetadataFilter, cls)._load(resource, cognite_client)
         if isinstance(resource, Dict):
-            if "created_time" in resource:
-                setattr(instance, "created_time", EpochTimestampRange(**resource["created_time"]))
-            if "last_updated_time" in resource:
-                setattr(instance, "last_updated_time", EpochTimestampRange(**resource["last_updated_time"]))
-            if "uploaded_time" in resource:
-                setattr(instance, "uploaded_time", EpochTimestampRange(**resource["uploaded_time"]))
+            if instance.created_time is not None:
+                setattr(instance, "created_time", EpochTimestampRange(**instance.created_time))
+            if instance.last_updated_time is not None:
+                setattr(instance, "last_updated_time", EpochTimestampRange(**instance.last_updated_time))
+            if instance.uploaded_time is not None:
+                setattr(instance, "uploaded_time", EpochTimestampRange(**instance.uploaded_time))
         return instance
 
     # GenStop
@@ -143,6 +143,10 @@ class FileMetadataUpdate(CogniteUpdate):
     @property
     def source(self):
         return _PrimitiveFileMetadataUpdate(self, "source")
+
+    @property
+    def mime_type(self):
+        return _PrimitiveFileMetadataUpdate(self, "mimeType")
 
     @property
     def metadata(self):
