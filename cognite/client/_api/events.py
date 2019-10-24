@@ -33,8 +33,8 @@ class EventsAPI(APIClient):
 
         Args:
             chunk_size (int, optional): Number of events to return in each chunk. Defaults to yielding one event a time.
-            start_time EpochTimestampRange: Range between two timestamps
-            end_time EpochTimestampRange: Range between two timestamps
+            start_time (EpochTimestampRange): Range between two timestamps
+            end_time (EpochTimestampRange): Range between two timestamps
             type (str): Type of the event, e.g 'failure'.
             subtype (str): Subtype of the event, e.g 'electrical'.
             metadata (Dict[str, str]): Customizable extra data about the event. String key -> String value.
@@ -42,8 +42,8 @@ class EventsAPI(APIClient):
             root_asset_ids (List[int]): The IDs of the root assets that the related assets should be children of.
             root_asset_external_ids (List[str]): The external IDs of the root assets that the related assets should be children of.
             source (str): The source of this event.
-            created_time EpochTimestampRange: Range between two timestamps
-            last_updated_time EpochTimestampRange: Range between two timestamps
+            created_time (EpochTimestampRange): Range between two timestamps
+            last_updated_time (EpochTimestampRange): Range between two timestamps
             external_id_prefix (str): External Id provided by client. Should be unique within the project
             sort (List[str]): Sort by array of selected fields. Ex: ["startTime:desc']. Default sort order is asc when ommitted. Filter accepts following field names: startTime, endTime, createdTime, lastUpdatedTime. We only support 1 field for now.
             limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None
@@ -156,8 +156,8 @@ class EventsAPI(APIClient):
         """`List events <https://docs.cognite.com/api/v1/#operation/advancedListEvents>`_
 
         Args:
-            start_time EpochTimestampRange: Range between two timestamps.
-            end_time EpochTimestampRange: Range between two timestamps.
+            start_time (EpochTimestampRange): Range between two timestamps.
+            end_time (EpochTimestampRange): Range between two timestamps.
             type (str): Type of the event, e.g 'failure'.
             subtype (str): Subtype of the event, e.g 'electrical'.
             metadata (Dict[str, str]): Customizable extra data about the event. String key -> String value.
@@ -165,8 +165,8 @@ class EventsAPI(APIClient):
             root_asset_ids (List[int]): The IDs of the root assets that the related assets should be children of.
             root_asset_external_ids (List[str]): The external IDs of the root assets that the related assets should be children of.
             source (str): The source of this event.
-            created_time EpochTimestampRange: Range between two timestamps.
-            last_updated_time EpochTimestampRange: Range between two timestamps.
+            created_time (EpochTimestampRange): Range between two timestamps.
+            last_updated_time (EpochTimestampRange): Range between two timestamps.
             external_id_prefix (str): External Id provided by client. Should be unique within the project.
             sort (List[str]): Sort by array of selected fields. Ex: ["startTime:desc']. Default sort order is asc when ommitted. Filter accepts following field names: startTime, endTime, createdTime, lastUpdatedTime. We only support 1 field for now.
             partitions (int): Retrieve events in parallel using this number of workers. Also requires `limit=None` to be passed.

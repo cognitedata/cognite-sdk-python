@@ -49,11 +49,11 @@ class FilesAPI(APIClient):
             root_asset_ids (List[int]): The IDs of the root assets that the related assets should be children of.
             root_asset_external_ids (List[str]): The external IDs of the root assets that the related assets should be children of.
             source (str): The source of this event.
-            source_created_time EpochTimestampRange: Filter for files where the sourceCreatedTime field has been set and is within the specified range.
-            source_modified_time EpochTimestampRange: Filter for files where the sourceModifiedTime field has been set and is within the specified range.
-            created_time EpochTimestampRange: Range between two timestamps
-            last_updated_time EpochTimestampRange: Range between two timestamps
-            uploaded_time EpochTimestampRange: Range between two timestamps
+            source_created_time (EpochTimestampRange): Filter for files where the sourceCreatedTime field has been set and is within the specified range.
+            source_modified_time (EpochTimestampRange): Filter for files where the sourceModifiedTime field has been set and is within the specified range.
+            created_time (EpochTimestampRange): Range between two timestamps
+            last_updated_time (EpochTimestampRange): Range between two timestamps
+            uploaded_time (EpochTimestampRange): Range between two timestamps
             external_id_prefix (str): External Id provided by client. Should be unique within the project.
             uploaded (bool): Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
             limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None

@@ -4,14 +4,7 @@ from typing import *
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes import (
-    EpochTimestampRange,
-    Sequence,
-    SequenceData,
-    SequenceFilter,
-    SequenceList,
-    SequenceUpdate,
-)
+from cognite.client.data_classes import Sequence, SequenceData, SequenceFilter, SequenceList, SequenceUpdate
 
 
 class SequencesAPI(APIClient):
@@ -30,8 +23,8 @@ class SequencesAPI(APIClient):
         metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
         root_asset_ids: List[int] = None,
-        created_time: EpochTimestampRange = None,
-        last_updated_time: EpochTimestampRange = None,
+        created_time: Dict[str, Any] = None,
+        last_updated_time: Dict[str, Any] = None,
         limit: int = None,
     ) -> Generator[Union[Sequence, SequenceList], None, None]:
         """Iterate over sequences
@@ -137,8 +130,8 @@ class SequencesAPI(APIClient):
         metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
         root_asset_ids: List[int] = None,
-        created_time: EpochTimestampRange = None,
-        last_updated_time: EpochTimestampRange = None,
+        created_time: Dict[str, Any] = None,
+        last_updated_time: Dict[str, Any] = None,
         limit: Optional[int] = 25,
     ) -> SequenceList:
         """`Iterate over sequences <https://docs.cognite.com/api/v1/#operation/advancedListSequences>`_

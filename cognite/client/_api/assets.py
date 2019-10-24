@@ -41,8 +41,8 @@ class AssetsAPI(APIClient):
             root_external_ids (List[str], optional): List of root external ids to filter on.
             metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value
             source (str): The source of this asset
-            created_time EpochTimestampRange: Range between two timestamps
-            last_updated_time EpochTimestampRange: Range between two timestamps
+            created_time (EpochTimestampRange): Range between two timestamps
+            last_updated_time (EpochTimestampRange): Range between two timestamps
             root (bool): filtered assets are root assets or not
             external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
             aggregated_properties (List[str]): Set of aggregated properties to include.
@@ -166,8 +166,8 @@ class AssetsAPI(APIClient):
             root_external_ids (List[str], optional): List of root external ids to filter on.
             metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value.
             source (str): The source of this asset.
-            created_time EpochTimestampRange: Range between two timestamps.
-            last_updated_time EpochTimestampRange: Range between two timestamps.
+            created_time (EpochTimestampRange): Range between two timestamps.
+            last_updated_time (EpochTimestampRange): Range between two timestamps.
             root (bool): filtered assets are root assets or not.
             external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
             aggregated_properties (List[str]): Set of aggregated properties to include.
