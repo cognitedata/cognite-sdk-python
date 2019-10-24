@@ -57,7 +57,7 @@ class TestClassGenerator:
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         root_id (int): A server-generated ID for the object.
-        aggregates (AggregateResultItem): Aggregated metrics of the asset
+        aggregates (Dict[str, Any]): Aggregated metrics of the asset
         cognite_client (CogniteClient): The client to associate with this object.
     \"\"\""""
             == docstring
@@ -67,7 +67,7 @@ class TestClassGenerator:
         schemas = [CLASS_GENERATOR._spec.components.schemas.get("Asset")]
         constructor = CLASS_GENERATOR.generate_constructor(schemas, indentation=4)
         assert (
-            """    def __init__(self, external_id: str = None, name: str = None, parent_id: int = None, description: str = None, metadata: Dict[str, str] = None, source: str = None, id: int = None, created_time: int = None, last_updated_time: int = None, root_id: int = None, aggregates: AggregateResultItem = None, cognite_client = None):
+            """    def __init__(self, external_id: str = None, name: str = None, parent_id: int = None, description: str = None, metadata: Dict[str, str] = None, source: str = None, id: int = None, created_time: int = None, last_updated_time: int = None, root_id: int = None, aggregates: Dict[str, Any] = None, cognite_client = None):
         self.external_id = external_id
         self.name = name
         self.parent_id = parent_id
@@ -84,16 +84,18 @@ class TestClassGenerator:
         )
 
     def test_generate_loader_from_schema(self):
-        schemas = [CLASS_GENERATOR._spec.components.schemas.get("Asset")]
-        loader = CLASS_GENERATOR.generate_loader(schemas, "Asset", indentation=4)
+        schemas = [CLASS_GENERATOR._spec.components.schemas.get("AssetFilter")["properties"]["filter"]]
+        loader = CLASS_GENERATOR.generate_loader(schemas, "AssetFilter", indentation=4)
         assert (
             """
     @classmethod
     def _load(cls, resource: Union[Dict, str], cognite_client=None):
-        instance = super(Asset, cls)._load(resource, cognite_client)
+        instance = super(AssetFilter, cls)._load(resource, cognite_client)
         if isinstance(resource, Dict):
-            if "aggregates" in resource:
-                setattr(instance, "aggregates", AggregateResultItem(**resource["aggregates"]))
+            if instance.created_time is not None:
+                setattr(instance, "created_time", EpochTimestampRange(**instance.created_time))
+            if instance.last_updated_time is not None:
+                setattr(instance, "last_updated_time", EpochTimestampRange(**instance.last_updated_time))
         return instance
 """
             == loader
