@@ -2,7 +2,7 @@ from typing import *
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes import Event, EventFilter, EventList, EventUpdate
+from cognite.client.data_classes import EpochTimestampRange, Event, EventFilter, EventList, EventUpdate
 
 
 class EventsAPI(APIClient):
@@ -12,17 +12,17 @@ class EventsAPI(APIClient):
     def __call__(
         self,
         chunk_size: int = None,
-        start_time: Dict[str, Any] = None,
-        end_time: Dict[str, Any] = None,
+        start_time: EpochTimestampRange = None,
+        end_time: EpochTimestampRange = None,
         type: str = None,
         subtype: str = None,
-        metadata: Dict[str, Any] = None,
+        metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
         root_asset_ids: List[int] = None,
         root_asset_external_ids: List[str] = None,
         source: str = None,
-        created_time: Dict[str, Any] = None,
-        last_updated_time: Dict[str, Any] = None,
+        created_time: EpochTimestampRange = None,
+        last_updated_time: EpochTimestampRange = None,
         external_id_prefix: str = None,
         sort: List[str] = None,
         limit: int = None,
@@ -33,17 +33,17 @@ class EventsAPI(APIClient):
 
         Args:
             chunk_size (int, optional): Number of events to return in each chunk. Defaults to yielding one event a time.
-            start_time (Dict[str, Any]): Range between two timestamps
-            end_time (Dict[str, Any]): Range between two timestamps
+            start_time EpochTimestampRange: Range between two timestamps
+            end_time EpochTimestampRange: Range between two timestamps
             type (str): Type of the event, e.g 'failure'.
             subtype (str): Subtype of the event, e.g 'electrical'.
-            metadata (Dict[str, Any]): Customizable extra data about the event. String key -> String value.
+            metadata (Dict[str, str]): Customizable extra data about the event. String key -> String value.
             asset_ids (List[int]): Asset IDs of related equipments that this event relates to.
             root_asset_ids (List[int]): The IDs of the root assets that the related assets should be children of.
             root_asset_external_ids (List[str]): The external IDs of the root assets that the related assets should be children of.
             source (str): The source of this event.
-            created_time (Dict[str, Any]): Range between two timestamps
-            last_updated_time (Dict[str, Any]): Range between two timestamps
+            created_time EpochTimestampRange: Range between two timestamps
+            last_updated_time EpochTimestampRange: Range between two timestamps
             external_id_prefix (str): External Id provided by client. Should be unique within the project
             sort (List[str]): Sort by array of selected fields. Ex: ["startTime:desc']. Default sort order is asc when ommitted. Filter accepts following field names: startTime, endTime, createdTime, lastUpdatedTime. We only support 1 field for now.
             limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None
@@ -137,17 +137,17 @@ class EventsAPI(APIClient):
 
     def list(
         self,
-        start_time: Dict[str, Any] = None,
-        end_time: Dict[str, Any] = None,
+        start_time: EpochTimestampRange = None,
+        end_time: EpochTimestampRange = None,
         type: str = None,
         subtype: str = None,
-        metadata: Dict[str, Any] = None,
+        metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
         root_asset_ids: List[int] = None,
         root_asset_external_ids: List[str] = None,
         source: str = None,
-        created_time: Dict[str, Any] = None,
-        last_updated_time: Dict[str, Any] = None,
+        created_time: EpochTimestampRange = None,
+        last_updated_time: EpochTimestampRange = None,
         external_id_prefix: str = None,
         sort: List[str] = None,
         partitions: int = None,
@@ -156,17 +156,17 @@ class EventsAPI(APIClient):
         """`List events <https://docs.cognite.com/api/v1/#operation/advancedListEvents>`_
 
         Args:
-            start_time (Dict[str, Any]): Range between two timestamps.
-            end_time (Dict[str, Any]): Range between two timestamps.
+            start_time EpochTimestampRange: Range between two timestamps.
+            end_time EpochTimestampRange: Range between two timestamps.
             type (str): Type of the event, e.g 'failure'.
             subtype (str): Subtype of the event, e.g 'electrical'.
-            metadata (Dict[str, Any]): Customizable extra data about the event. String key -> String value.
+            metadata (Dict[str, str]): Customizable extra data about the event. String key -> String value.
             asset_ids (List[int]): Asset IDs of related equipments that this event relates to.
             root_asset_ids (List[int]): The IDs of the root assets that the related assets should be children of.
             root_asset_external_ids (List[str]): The external IDs of the root assets that the related assets should be children of.
             source (str): The source of this event.
-            created_time (Dict[str, Any]): Range between two timestamps.
-            last_updated_time (Dict[str, Any]): Range between two timestamps.
+            created_time EpochTimestampRange: Range between two timestamps.
+            last_updated_time EpochTimestampRange: Range between two timestamps.
             external_id_prefix (str): External Id provided by client. Should be unique within the project.
             sort (List[str]): Sort by array of selected fields. Ex: ["startTime:desc']. Default sort order is asc when ommitted. Filter accepts following field names: startTime, endTime, createdTime, lastUpdatedTime. We only support 1 field for now.
             partitions (int): Retrieve events in parallel using this number of workers. Also requires `limit=None` to be passed.

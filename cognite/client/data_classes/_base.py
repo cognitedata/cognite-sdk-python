@@ -139,7 +139,10 @@ class CogniteResource:
 
 class CognitePropertyClass(dict):
     def __setattr__(self, key, value):
-        self[key] = value
+        if value is None:
+            self.pop(key, None)
+        else:
+            self[key] = value
 
     def __getattr__(self, item):
         if item in self:

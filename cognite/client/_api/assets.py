@@ -5,7 +5,7 @@ from typing import *
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes import Asset, AssetFilter, AssetList, AssetUpdate
+from cognite.client.data_classes import Asset, AssetFilter, AssetList, AssetUpdate, EpochTimestampRange
 from cognite.client.exceptions import CogniteAPIError
 
 
@@ -20,10 +20,10 @@ class AssetsAPI(APIClient):
         parent_ids: List[int] = None,
         root_ids: List[int] = None,
         root_external_ids: List[str] = None,
-        metadata: Dict[str, Any] = None,
+        metadata: Dict[str, str] = None,
         source: str = None,
-        created_time: Dict[str, Any] = None,
-        last_updated_time: Dict[str, Any] = None,
+        created_time: EpochTimestampRange = None,
+        last_updated_time: EpochTimestampRange = None,
         root: bool = None,
         external_id_prefix: str = None,
         aggregated_properties: List[str] = None,
@@ -39,10 +39,10 @@ class AssetsAPI(APIClient):
             parent_ids (List[int]): No description.
             root_ids (List[int], optional): List of root ids ids to filter on.
             root_external_ids (List[str], optional): List of root external ids to filter on.
-            metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
+            metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value
             source (str): The source of this asset
-            created_time (Dict[str, Any]): Range between two timestamps
-            last_updated_time (Dict[str, Any]): Range between two timestamps
+            created_time EpochTimestampRange: Range between two timestamps
+            last_updated_time EpochTimestampRange: Range between two timestamps
             root (bool): filtered assets are root assets or not
             external_id_prefix (str): External Id provided by client. Should be unique within the project
             aggregated_properties (List[str]): Set of aggregated properties to include.
@@ -147,10 +147,10 @@ class AssetsAPI(APIClient):
         parent_ids: List[int] = None,
         root_ids: List[int] = None,
         root_external_ids: List[str] = None,
-        metadata: Dict[str, Any] = None,
+        metadata: Dict[str, str] = None,
         source: str = None,
-        created_time: Dict[str, Any] = None,
-        last_updated_time: Dict[str, Any] = None,
+        created_time: EpochTimestampRange = None,
+        last_updated_time: EpochTimestampRange = None,
         root: bool = None,
         external_id_prefix: str = None,
         aggregated_properties: List[str] = None,
@@ -164,10 +164,10 @@ class AssetsAPI(APIClient):
             parent_ids (List[int]): List of parent ids to filter on.
             root_ids (List[int], optional): List of root ids ids to filter on.
             root_external_ids (List[str], optional): List of root external ids to filter on.
-            metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value.
+            metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value.
             source (str): The source of this asset.
-            created_time (Dict[str, Any]): Range between two timestamps.
-            last_updated_time (Dict[str, Any]): Range between two timestamps.
+            created_time EpochTimestampRange: Range between two timestamps.
+            last_updated_time EpochTimestampRange: Range between two timestamps.
             root (bool): filtered assets are root assets or not.
             external_id_prefix (str): External Id provided by client. Should be unique within the project.
             aggregated_properties (List[str]): Set of aggregated properties to include.

@@ -4,7 +4,13 @@ from typing.io import BinaryIO, TextIO
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes import FileMetadata, FileMetadataFilter, FileMetadataList, FileMetadataUpdate
+from cognite.client.data_classes import (
+    EpochTimestampRange,
+    FileMetadata,
+    FileMetadataFilter,
+    FileMetadataList,
+    FileMetadataUpdate,
+)
 
 
 class FilesAPI(APIClient):
@@ -16,16 +22,16 @@ class FilesAPI(APIClient):
         chunk_size: int = None,
         name: str = None,
         mime_type: str = None,
-        metadata: Dict[str, Any] = None,
+        metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
         root_asset_ids: List[int] = None,
         root_asset_external_ids: List[str] = None,
         source: str = None,
-        created_time: Dict[str, Any] = None,
-        last_updated_time: Dict[str, Any] = None,
-        source_created_time: Dict[str, Any] = None,
-        source_modified_time: Dict[str, Any] = None,
-        uploaded_time: Dict[str, Any] = None,
+        created_time: EpochTimestampRange = None,
+        last_updated_time: EpochTimestampRange = None,
+        source_created_time: EpochTimestampRange = None,
+        source_modified_time: EpochTimestampRange = None,
+        uploaded_time: EpochTimestampRange = None,
         external_id_prefix: str = None,
         uploaded: bool = None,
         limit: int = None,
@@ -38,16 +44,16 @@ class FilesAPI(APIClient):
             chunk_size (int, optional): Number of files to return in each chunk. Defaults to yielding one event a time.
             name (str): Name of the file.
             mime_type (str): File type. E.g. text/plain, application/pdf, ..
-            metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
+            metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value
             asset_ids (List[int]): Only include files that reference these specific asset IDs.
             root_asset_ids (List[int]): The IDs of the root assets that the related assets should be children of.
             root_asset_external_ids (List[str]): The external IDs of the root assets that the related assets should be children of.
             source (str): The source of this event.
-            source_created_time (Dict[str, Any]): Filter for files where the sourceCreatedTime field has been set and is within the specified range.
-            source_modified_time (Dict[str, Any]): Filter for files where the sourceModifiedTime field has been set and is within the specified range.
-            created_time (Dict[str, Any]): Range between two timestamps
-            last_updated_time (Dict[str, Any]): Range between two timestamps
-            uploaded_time (Dict[str, Any]): Range between two timestamps
+            source_created_time EpochTimestampRange: Filter for files where the sourceCreatedTime field has been set and is within the specified range.
+            source_modified_time EpochTimestampRange: Filter for files where the sourceModifiedTime field has been set and is within the specified range.
+            created_time EpochTimestampRange: Range between two timestamps
+            last_updated_time EpochTimestampRange: Range between two timestamps
+            uploaded_time EpochTimestampRange: Range between two timestamps
             external_id_prefix (str): External Id provided by client. Should be unique within the project.
             uploaded (bool): Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
             limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None
@@ -181,16 +187,16 @@ class FilesAPI(APIClient):
         self,
         name: str = None,
         mime_type: str = None,
-        metadata: Dict[str, Any] = None,
+        metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
         root_asset_ids: List[int] = None,
         root_asset_external_ids: List[str] = None,
         source: str = None,
-        created_time: Dict[str, Any] = None,
-        last_updated_time: Dict[str, Any] = None,
-        source_created_time: Dict[str, Any] = None,
-        source_modified_time: Dict[str, Any] = None,
-        uploaded_time: Dict[str, Any] = None,
+        created_time: EpochTimestampRange = None,
+        last_updated_time: EpochTimestampRange = None,
+        source_created_time: EpochTimestampRange = None,
+        source_modified_time: EpochTimestampRange = None,
+        uploaded_time: EpochTimestampRange = None,
         external_id_prefix: str = None,
         uploaded: bool = None,
         limit: int = 25,
@@ -200,16 +206,16 @@ class FilesAPI(APIClient):
         Args:
             name (str): Name of the file.
             mime_type (str): File type. E.g. text/plain, application/pdf, ..
-            metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
+            metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value
             asset_ids (List[int]): Only include files that reference these specific asset IDs.
             root_asset_ids (List[int]): The IDs of the root assets that the related assets should be children of.
             root_asset_external_ids (List[str]): The external IDs of the root assets that the related assets should be children of.
             source (str): The source of this event.
-            created_time (Dict[str, Any]): Range between two timestamps
-            last_updated_time (Dict[str, Any]): Range between two timestamps
-            uploaded_time (Dict[str, Any]): Range between two timestamps
-            source_created_time (Dict[str, Any]): Filter for files where the sourceCreatedTime field has been set and is within the specified range.
-            source_modified_time (Dict[str, Any]): Filter for files where the sourceModifiedTime field has been set and is within the specified range.
+            created_time (EpochTimestampRange): Range between two timestamps
+            last_updated_time (EpochTimestampRange): Range between two timestamps
+            uploaded_time (EpochTimestampRange): Range between two timestamps
+            source_created_time (EpochTimestampRange): Filter for files where the sourceCreatedTime field has been set and is within the specified range.
+            source_modified_time (EpochTimestampRange): Filter for files where the sourceModifiedTime field has been set and is within the specified range.
             external_id_prefix (str): External Id provided by client. Should be unique within the project.
             uploaded (bool): Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
             limit (int, optional): Max number of files to return. Defaults to 25. Set to -1, float("inf") or None
@@ -341,7 +347,7 @@ class FilesAPI(APIClient):
         name: str = None,
         source: str = None,
         mime_type: str = None,
-        metadata: Dict[str, Any] = None,
+        metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
         source_created_time: int = None,
         source_modified_time: int = None,
@@ -356,7 +362,7 @@ class FilesAPI(APIClient):
             name (str): Name of the file.
             source (str): The source of the file.
             mime_type (str): File type. E.g. text/plain, application/pdf, ...
-            metadata (Dict[str, Any]): Customizable extra data about the file. String key -> String value.
+            metadata (Dict[str, str]): Customizable extra data about the file. String key -> String value.
             asset_ids (List[int]): No description.
             source_created_time (int): The timestamp for when the file was originally created in the source system.
             source_modified_time (int): The timestamp for when the file was last modified in the source system.
@@ -439,7 +445,7 @@ class FilesAPI(APIClient):
         external_id: str = None,
         source: str = None,
         mime_type: str = None,
-        metadata: Dict[str, Any] = None,
+        metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
         source_created_time: int = None,
         source_modified_time: int = None,
@@ -455,7 +461,7 @@ class FilesAPI(APIClient):
             external_id (str): The external ID provided by the client. Must be unique within the project.
             source (str): The source of the file.
             mime_type (str): File type. E.g. text/plain, application/pdf,...
-            metadata (Dict[str, Any]): Customizable extra data about the file. String key -> String value.
+            metadata (Dict[str, str]): Customizable extra data about the file. String key -> String value.
             asset_ids (List[int]): No description.
             source_created_time (int): The timestamp for when the file was originally created in the source system.
             source_modified_time (int): The timestamp for when the file was last modified in the source system.
