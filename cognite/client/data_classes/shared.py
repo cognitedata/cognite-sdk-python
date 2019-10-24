@@ -19,3 +19,7 @@ class EpochTimestampRange(CognitePropertyClass):
         self._cognite_client = cognite_client
 
     # GenStop
+    def __getattr__(self, item):
+        if item in ["max", "min"] and item not in self:
+            return None
+        return super().__getattr__(item)

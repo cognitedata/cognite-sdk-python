@@ -19,6 +19,10 @@ class RevisionCameraProperties(CognitePropertyClass):
         self._cognite_client = cognite_client
 
     # GenStop
+    def __getattr__(self, item):
+        if item in ["target", "position"] and item not in self:
+            return None
+        return super().__getattr__(item)
 
 
 # GenClass: BoundingBox3D
@@ -37,6 +41,10 @@ class BoundingBox3D(CognitePropertyClass):
         self._cognite_client = cognite_client
 
     # GenStop
+    def __getattr__(self, item):
+        if item in ["max", "min"] and item not in self:
+            return None
+        return super().__getattr__(item)
 
 
 # GenClass: Model3D
