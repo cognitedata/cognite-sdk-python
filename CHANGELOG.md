@@ -20,10 +20,22 @@ Changes are grouped as follows
 - Separate read/write fields on data classes
 
 ## [Unreleased]
+### Changed
+- Error 500's are no longer retried by default, only HTTP 429, 502, 503, 504 are.
+- Optimized HTTP calls by caching user agent.
+
+### Fixed
+- source_created_time and source_modified_time on files now displayed as time fields.
+
+## [1.3.3] - 2019-10-21
 
 ### Changed
 - Datapoints insert dataframe function will check for infinity values.
 - Allow for multiple calls to .add / .remove in object updates such as metadata, without later calls overwriting former. 
+- List time series now ignores the include_metadata parameter.
+
+### Added
+- Advanced list endpoint is used for listing time series, adding several new filters and partitions.
 
 ## [1.3.2] - 2019-10-16
 
