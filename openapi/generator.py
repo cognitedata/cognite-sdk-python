@@ -82,8 +82,12 @@ class ClassGenerator:
                 if prop_name not in ignore:
                     constructor_params.append("{}: {}{}".format(prop_name, self._get_type_hint(prop), req))
                     ignore.append(prop_name)
-        if not is_property:
+
+        if is_property:
+            constructor_params.append("**kwargs")
+        else:
             constructor_params.append("cognite_client = None")
+
         constructor_params = ", ".join(constructor_params) + "):"
         constructor_body = ""
         ignore = [p for p in TO_EXCLUDE]
@@ -93,7 +97,9 @@ class ClassGenerator:
                 if prop_name not in ignore:
                     constructor_body += " " * (indentation + 4) + "self.{} = {}\n".format(prop_name, prop_name)
                     ignore.append(prop_name)
-        if not is_property:
+        if is_property:
+            constructor_body += " " * (indentation + 4) + "self.update(kwargs)\n"
+        else:
             constructor_body += " " * (indentation + 4) + "self._cognite_client = cognite_client\n"
         return constructor_params + "\n" + constructor_body[:-1]
 

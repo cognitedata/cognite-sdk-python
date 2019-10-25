@@ -13,8 +13,9 @@ class AggregateResultItem(dict):
         child_count (int): Number of direct descendants for the asset
     """
 
-    def __init__(self, child_count: int = None):
+    def __init__(self, child_count: int = None, **kwargs):
         self.child_count = child_count
+        self.update(kwargs)
 
     child_count = CognitePropertyClassUtil.declare_property("childCount")
 

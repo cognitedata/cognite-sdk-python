@@ -12,9 +12,10 @@ class RevisionCameraProperties(dict):
         position (List[float]): Initial camera position.
     """
 
-    def __init__(self, target: List[float] = None, position: List[float] = None):
+    def __init__(self, target: List[float] = None, position: List[float] = None, **kwargs):
         self.target = target
         self.position = position
+        self.update(kwargs)
 
     target = CognitePropertyClassUtil.declare_property("target")
     position = CognitePropertyClassUtil.declare_property("position")
@@ -31,9 +32,10 @@ class BoundingBox3D(dict):
         min (List[float]): No description.
     """
 
-    def __init__(self, max: List[float] = None, min: List[float] = None):
+    def __init__(self, max: List[float] = None, min: List[float] = None, **kwargs):
         self.max = max
         self.min = min
+        self.update(kwargs)
 
     max = CognitePropertyClassUtil.declare_property("max")
     min = CognitePropertyClassUtil.declare_property("min")
