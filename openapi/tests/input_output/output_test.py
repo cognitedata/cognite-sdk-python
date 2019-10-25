@@ -29,6 +29,22 @@ class EpochTimestampRange:
     pass
 
 
+# GenPropertyClass: AggregateResultItem
+class AggregateResultItem(dict):
+    """Aggregated metrics of the asset
+
+    Args:
+        child_count (int): Number of direct descendants for the asset
+    """
+
+    def __init__(self, child_count: int = None):
+        self.child_count = child_count
+
+    child_count = CognitePropertyClassUtil.declare_property("childCount")
+
+    # GenStop
+
+
 # GenClass: Asset
 class Asset(CogniteResource):
     """A representation of a physical asset, for example a factory or a piece of equipment.
@@ -44,7 +60,7 @@ class Asset(CogniteResource):
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         root_id (int): A server-generated ID for the object.
-        aggregates (Dict[str, Any]): Aggregated metrics of the asset
+        aggregates (AggregateResultItem): Aggregated metrics of the asset
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
@@ -60,7 +76,7 @@ class Asset(CogniteResource):
         created_time: int = None,
         last_updated_time: int = None,
         root_id: int = None,
-        aggregates: Dict[str, Any] = None,
+        aggregates: AggregateResultItem = None,
         cognite_client=None,
     ):
         self.external_id = external_id
@@ -75,6 +91,14 @@ class Asset(CogniteResource):
         self.root_id = root_id
         self.aggregates = aggregates
         self._cognite_client = cognite_client
+
+    @classmethod
+    def _load(cls, resource: Union[Dict, str], cognite_client=None):
+        instance = super(Asset, cls)._load(resource, cognite_client)
+        if isinstance(resource, Dict):
+            if instance.aggregates is not None:
+                setattr(instance, "aggregates", AggregateResultItem(**instance.aggregates))
+        return instance
 
     # GenStop
     def to_pandas(self):

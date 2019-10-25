@@ -60,6 +60,7 @@ class Table(CogniteResource):
     def __init__(self, name: str = None, cognite_client=None):
         self.name = name
         self._cognite_client = cognite_client
+
         # GenStop
         self._db_name = None
 

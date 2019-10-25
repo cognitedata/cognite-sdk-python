@@ -3,48 +3,42 @@ from typing import *
 from cognite.client.data_classes._base import *
 
 
-# GenClass: RevisionCameraProperties
-class RevisionCameraProperties(CognitePropertyClass):
+# GenPropertyClass: RevisionCameraProperties
+class RevisionCameraProperties(dict):
     """Initial camera position and target.
 
     Args:
         target (List[float]): Initial camera target.
         position (List[float]): Initial camera position.
-        cognite_client (CogniteClient): The client to associate with this object.
     """
 
-    def __init__(self, target: List[float] = None, position: List[float] = None, cognite_client=None):
+    def __init__(self, target: List[float] = None, position: List[float] = None):
         self.target = target
         self.position = position
-        self._cognite_client = cognite_client
+
+    target = CognitePropertyClassUtil.declare_property("target")
+    position = CognitePropertyClassUtil.declare_property("position")
 
     # GenStop
-    def __getattr__(self, item):
-        if item in ["target", "position"] and item not in self:
-            return None
-        return super().__getattr__(item)
 
 
-# GenClass: BoundingBox3D
-class BoundingBox3D(CognitePropertyClass):
+# GenPropertyClass: BoundingBox3D
+class BoundingBox3D(dict):
     """The bounding box of the subtree with this sector as the root sector. Is null if there are no geometries in the subtree.
 
     Args:
         max (List[float]): No description.
         min (List[float]): No description.
-        cognite_client (CogniteClient): The client to associate with this object.
     """
 
-    def __init__(self, max: List[float] = None, min: List[float] = None, cognite_client=None):
+    def __init__(self, max: List[float] = None, min: List[float] = None):
         self.max = max
         self.min = min
-        self._cognite_client = cognite_client
+
+    max = CognitePropertyClassUtil.declare_property("max")
+    min = CognitePropertyClassUtil.declare_property("min")
 
     # GenStop
-    def __getattr__(self, item):
-        if item in ["max", "min"] and item not in self:
-            return None
-        return super().__getattr__(item)
 
 
 # GenClass: Model3D

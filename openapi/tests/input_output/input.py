@@ -26,6 +26,12 @@ class EpochTimestampRange:
     pass
 
 
+# GenPropertyClass: AggregateResultItem
+class AggregateResultItem(dict):
+    pass
+    # GenStop
+
+
 # GenClass: Asset
 class Asset(CogniteResource):
     # GenStop

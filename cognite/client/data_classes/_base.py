@@ -137,17 +137,21 @@ class CogniteResource:
         return self.to_pandas()._repr_html_()
 
 
-class CognitePropertyClass(dict):
-    def __setattr__(self, key, value):
-        if value is None:
-            self.pop(key, None)
-        else:
-            self[key] = value
+class CognitePropertyClassUtil:
+    @staticmethod
+    def declare_property(schema_name):
+        return (
+            property(lambda s: s[schema_name] if schema_name in s else None)
+            .setter(lambda s, v: CognitePropertyClassUtil._property_setter(s, schema_name, v))
+            .deleter(lambda s: s.pop(schema_name, None))
+        )
 
-    def __getattr__(self, item):
-        if item in self:
-            return self[item]
-        return super().__getattr__(item)
+    @staticmethod
+    def _property_setter(self, schema_name, value):
+        if value is None:
+            self.pop(schema_name, None)
+        else:
+            self[schema_name] = value
 
 
 class CogniteResourceList(UserList):
