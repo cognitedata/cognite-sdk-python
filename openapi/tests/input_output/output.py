@@ -26,7 +26,9 @@ class CogniteListUpdate:
 
 
 class CognitePropertyClassUtil:
-    pass
+    @staticmethod
+    def declare_property():
+        return None
 
 
 class EpochTimestampRange:
