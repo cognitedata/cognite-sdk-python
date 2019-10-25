@@ -48,8 +48,8 @@ class SourcePackagesAPI(APIClient):
         }
         res = self._post("/analytics/models/sourcepackages", json=body).json()
         if file_path:
-            self._upload_file(res["data"]["uploadUrl"], file_path)
-            del res["data"]["uploadUrl"]
+            self._upload_file(res["uploadUrl"], file_path)
+            del res["uploadUrl"]
             return CreateSourcePackageResponse._load(res)
         return CreateSourcePackageResponse._load(res)
 
@@ -146,7 +146,7 @@ class SourcePackagesAPI(APIClient):
         """
         params = {"cursor": cursor, "limit": limit if autopaging is False else self._LIST_LIMIT}
         res = self._get("/analytics/models/sourcepackages", params=params)
-        return SourcePackageList._load(res.json()["data"]["items"])
+        return SourcePackageList._load(res.json()["items"])
 
     def get_source_package(self, id: int) -> SourcePackage:
         """Get source package by id.
@@ -158,7 +158,7 @@ class SourcePackagesAPI(APIClient):
             SourcePackage: The requested source package.
         """
         res = self._get("/analytics/models/sourcepackages/{}".format(id))
-        return SourcePackage._load(res.json()["data"]["items"][0])
+        return SourcePackage._load(res.json())
 
     def delete_source_package(self, id: int) -> None:
         """Delete source package by id.
@@ -181,7 +181,7 @@ class SourcePackagesAPI(APIClient):
             SourcePackage: The requested source package.
         """
         res = self._put("/analytics/models/sourcepackages/{}/deprecate".format(id), json={})
-        return SourcePackage._load(res.json()["data"]["items"][0])
+        return SourcePackage._load(res.json())
 
     def download_source_package_code(self, id: int, directory: str = None) -> None:
         """Download the tarball for a source package to a specified directory.
@@ -196,7 +196,7 @@ class SourcePackagesAPI(APIClient):
         directory = directory or os.getcwd()
         file_path = os.path.join(directory, self.get_source_package(id).name + ".tar.gz")
         url = "/analytics/models/sourcepackages/{}/code".format(id)
-        download_url = self._get(url).json()["data"]["downloadUrl"]
+        download_url = self._get(url).json()["downloadUrl"]
         with open(file_path, "wb") as fh:
             response = self._request_session.get(download_url).content
             fh.write(response)

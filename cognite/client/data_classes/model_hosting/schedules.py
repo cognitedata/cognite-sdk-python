@@ -84,6 +84,6 @@ class ScheduleLog(CogniteResponse):
     @classmethod
     def _load(cls, api_response):
         return cls(
-            failed=[LogEntry._load(elem) for elem in api_response["data"]["failed"]],
-            completed=[LogEntry._load(elem) for elem in api_response["data"]["completed"]],
+            failed=[LogEntry._load(elem) for elem in api_response["failed"]],
+            completed=[LogEntry._load(elem) for elem in api_response["completed"]],
         )

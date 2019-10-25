@@ -114,10 +114,8 @@ class TestSchedules:
     @pytest.fixture
     def mock_get_log(self, rsps):
         schedule_log_response = {
-            "data": {
-                "failed": [{"timestamp": 123, "scheduledExecutionTime": 345, "message": "you made mistake"}],
-                "completed": [],
-            }
+            "failed": [{"timestamp": 123, "scheduledExecutionTime": 345, "message": "you made mistake"}],
+            "completed": [],
         }
         rsps.add(
             rsps.GET,
