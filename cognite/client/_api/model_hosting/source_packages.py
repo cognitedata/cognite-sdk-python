@@ -180,7 +180,7 @@ class SourcePackagesAPI(APIClient):
         Returns:
             SourcePackage: The requested source package.
         """
-        res = self._put("/analytics/models/sourcepackages/{}/deprecate".format(id), json={})
+        res = self._post("/analytics/models/sourcepackages/{}/deprecate".format(id), json={})
         return SourcePackage._load(res.json())
 
     def download_source_package_code(self, id: int, directory: str = None) -> None:
