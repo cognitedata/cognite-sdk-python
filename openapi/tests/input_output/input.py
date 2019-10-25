@@ -24,7 +24,7 @@ class CogniteListUpdate:
 
 class CognitePropertyClassUtil:
     @staticmethod
-    def declare_property():
+    def declare_property(tmp):
         return None
 
 
