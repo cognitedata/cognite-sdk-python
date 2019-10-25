@@ -119,11 +119,11 @@ class FileMetadataFilter(CogniteFilter):
         instance = super(FileMetadataFilter, cls)._load(resource, cognite_client)
         if isinstance(resource, Dict):
             if instance.created_time is not None:
-                setattr(instance, "created_time", EpochTimestampRange(**instance.created_time))
+                instance.created_time = EpochTimestampRange(**instance.created_time)
             if instance.last_updated_time is not None:
-                setattr(instance, "last_updated_time", EpochTimestampRange(**instance.last_updated_time))
+                instance.last_updated_time = EpochTimestampRange(**instance.last_updated_time)
             if instance.uploaded_time is not None:
-                setattr(instance, "uploaded_time", EpochTimestampRange(**instance.uploaded_time))
+                instance.uploaded_time = EpochTimestampRange(**instance.uploaded_time)
         return instance
 
     # GenStop

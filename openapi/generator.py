@@ -131,7 +131,7 @@ class ClassGenerator:
             loader += " " * (indentation + 4) + "if isinstance(resource, Dict):\n"
             for k, v in prop_to_type.items():
                 loader += " " * (indentation + 8) + "if instance.{} is not None:\n".format(k)
-                loader += " " * (indentation + 12) + 'setattr(instance, "{}", {}(**instance.{}))\n'.format(k, v, k)
+                loader += " " * (indentation + 12) + "instance.{} = {}(**instance.{})\n".format(k, v, k)
             loader += " " * (indentation + 4) + "return instance\n"
         return loader
 

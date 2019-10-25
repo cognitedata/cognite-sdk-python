@@ -173,7 +173,7 @@ class ThreeDModelRevision(CogniteResource):
         instance = super(ThreeDModelRevision, cls)._load(resource, cognite_client)
         if isinstance(resource, Dict):
             if instance.camera is not None:
-                setattr(instance, "camera", RevisionCameraProperties(**instance.camera))
+                instance.camera = RevisionCameraProperties(**instance.camera)
         return instance
 
     # GenStop
@@ -281,7 +281,7 @@ class ThreeDNode(CogniteResource):
         instance = super(ThreeDNode, cls)._load(resource, cognite_client)
         if isinstance(resource, Dict):
             if instance.bounding_box is not None:
-                setattr(instance, "bounding_box", BoundingBox3D(**instance.bounding_box))
+                instance.bounding_box = BoundingBox3D(**instance.bounding_box)
         return instance
 
     # GenStop

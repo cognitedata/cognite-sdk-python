@@ -109,13 +109,13 @@ class EventFilter(CogniteFilter):
         instance = super(EventFilter, cls)._load(resource, cognite_client)
         if isinstance(resource, Dict):
             if instance.start_time is not None:
-                setattr(instance, "start_time", EpochTimestampRange(**instance.start_time))
+                instance.start_time = EpochTimestampRange(**instance.start_time)
             if instance.end_time is not None:
-                setattr(instance, "end_time", EpochTimestampRange(**instance.end_time))
+                instance.end_time = EpochTimestampRange(**instance.end_time)
             if instance.created_time is not None:
-                setattr(instance, "created_time", EpochTimestampRange(**instance.created_time))
+                instance.created_time = EpochTimestampRange(**instance.created_time)
             if instance.last_updated_time is not None:
-                setattr(instance, "last_updated_time", EpochTimestampRange(**instance.last_updated_time))
+                instance.last_updated_time = EpochTimestampRange(**instance.last_updated_time)
         return instance
 
     # GenStop

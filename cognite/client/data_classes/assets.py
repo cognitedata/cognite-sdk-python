@@ -76,7 +76,7 @@ class Asset(CogniteResource):
         instance = super(Asset, cls)._load(resource, cognite_client)
         if isinstance(resource, Dict):
             if instance.aggregates is not None:
-                setattr(instance, "aggregates", AggregateResultItem(**instance.aggregates))
+                instance.aggregates = AggregateResultItem(**instance.aggregates)
         return instance
 
     # GenStop
@@ -348,9 +348,9 @@ class AssetFilter(CogniteFilter):
         instance = super(AssetFilter, cls)._load(resource, cognite_client)
         if isinstance(resource, Dict):
             if instance.created_time is not None:
-                setattr(instance, "created_time", EpochTimestampRange(**instance.created_time))
+                instance.created_time = EpochTimestampRange(**instance.created_time)
             if instance.last_updated_time is not None:
-                setattr(instance, "last_updated_time", EpochTimestampRange(**instance.last_updated_time))
+                instance.last_updated_time = EpochTimestampRange(**instance.last_updated_time)
         return instance
 
     # GenStop
