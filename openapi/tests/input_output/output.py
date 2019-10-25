@@ -25,6 +25,10 @@ class CogniteListUpdate:
     pass
 
 
+class CognitePropertyClassUtil:
+    pass
+
+
 class EpochTimestampRange:
     pass
 
