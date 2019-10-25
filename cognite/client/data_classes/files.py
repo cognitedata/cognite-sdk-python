@@ -72,9 +72,9 @@ class FileMetadataFilter(CogniteFilter):
         asset_ids (List[int]): Only include files that reference these specific asset IDs.
         root_asset_ids (List[Dict[str, Any]]): Internal or external IDs of the root assets that the related assets should be a descendant of (or match).
         source (str): The source of this event.
-        created_time (EpochTimestampRange): Range between two timestamps.
-        last_updated_time (EpochTimestampRange): Range between two timestamps.
-        uploaded_time (EpochTimestampRange): Range between two timestamps.
+        created_time (Union[Dict[str, Any], EpochTimestampRange]): Range between two timestamps.
+        last_updated_time (Union[Dict[str, Any], EpochTimestampRange]): Range between two timestamps.
+        uploaded_time (Union[Dict[str, Any], EpochTimestampRange]): Range between two timestamps.
         source_created_time (Dict[str, Any]): Filter for files where the sourceCreatedTime field has been set and is within the specified range.
         source_modified_time (Dict[str, Any]): Filter for files where the sourceModifiedTime field has been set and is within the specified range.
         external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
@@ -90,9 +90,9 @@ class FileMetadataFilter(CogniteFilter):
         asset_ids: List[int] = None,
         root_asset_ids: List[Dict[str, Any]] = None,
         source: str = None,
-        created_time: EpochTimestampRange = None,
-        last_updated_time: EpochTimestampRange = None,
-        uploaded_time: EpochTimestampRange = None,
+        created_time: Union[Dict[str, Any], EpochTimestampRange] = None,
+        last_updated_time: Union[Dict[str, Any], EpochTimestampRange] = None,
+        uploaded_time: Union[Dict[str, Any], EpochTimestampRange] = None,
         source_created_time: Dict[str, Any] = None,
         source_modified_time: Dict[str, Any] = None,
         external_id_prefix: str = None,
@@ -119,11 +119,11 @@ class FileMetadataFilter(CogniteFilter):
         instance = super(FileMetadataFilter, cls)._load(resource, cognite_client)
         if isinstance(resource, Dict):
             if instance.created_time is not None:
-                instance.created_time = EpochTimestampRange(**instance.created_time)
+                instance.created_time = Union[Dict[str, Any], EpochTimestampRange](**instance.created_time)
             if instance.last_updated_time is not None:
-                instance.last_updated_time = EpochTimestampRange(**instance.last_updated_time)
+                instance.last_updated_time = Union[Dict[str, Any], EpochTimestampRange](**instance.last_updated_time)
             if instance.uploaded_time is not None:
-                instance.uploaded_time = EpochTimestampRange(**instance.uploaded_time)
+                instance.uploaded_time = Union[Dict[str, Any], EpochTimestampRange](**instance.uploaded_time)
         return instance
 
     # GenStop

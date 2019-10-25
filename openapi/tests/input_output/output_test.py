@@ -60,7 +60,7 @@ class Asset(CogniteResource):
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         root_id (int): A server-generated ID for the object.
-        aggregates (AggregateResultItem): Aggregated metrics of the asset
+        aggregates (Union[Dict[str, Any], AggregateResultItem]): Aggregated metrics of the asset
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
@@ -76,7 +76,7 @@ class Asset(CogniteResource):
         created_time: int = None,
         last_updated_time: int = None,
         root_id: int = None,
-        aggregates: AggregateResultItem = None,
+        aggregates: Union[Dict[str, Any], AggregateResultItem] = None,
         cognite_client=None,
     ):
         self.external_id = external_id
@@ -182,8 +182,8 @@ class AssetFilter(CogniteFilter):
         root_ids (List[Dict[str, Any]]): Return all descendants of the specified root assets.
         metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         source (str): The source of the asset.
-        created_time (EpochTimestampRange): Range between two timestamps.
-        last_updated_time (EpochTimestampRange): Range between two timestamps.
+        created_time (Union[Dict[str, Any], EpochTimestampRange]): Range between two timestamps.
+        last_updated_time (Union[Dict[str, Any], EpochTimestampRange]): Range between two timestamps.
         root (bool): Whether the filtered assets are root assets, or not. Set to True to only list root assets.
         external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
         cognite_client (CogniteClient): The client to associate with this object.
@@ -196,8 +196,8 @@ class AssetFilter(CogniteFilter):
         root_ids: List[Dict[str, Any]] = None,
         metadata: Dict[str, str] = None,
         source: str = None,
-        created_time: EpochTimestampRange = None,
-        last_updated_time: EpochTimestampRange = None,
+        created_time: Union[Dict[str, Any], EpochTimestampRange] = None,
+        last_updated_time: Union[Dict[str, Any], EpochTimestampRange] = None,
         root: bool = None,
         external_id_prefix: str = None,
         cognite_client=None,

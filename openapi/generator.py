@@ -136,8 +136,8 @@ class ClassGenerator:
         return loader
 
     def _get_type_hint(self, prop):
-        res, _ = self._get_type_hint_with_marker(prop)
-        return res
+        res, dict_expanded = self._get_type_hint_with_marker(prop)
+        return res if not dict_expanded else "Union[Dict[str, Any], {}]".format(res)
 
     def _get_type_hint_with_marker(self, prop):
         res = utils.get_type_hint(prop)
