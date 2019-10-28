@@ -4,7 +4,7 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client._api.events import Event, EventList, EventUpdate
-from cognite.client.data_classes import EpochTimestampRange, EventFilter
+from cognite.client.data_classes import EventFilter, TimestampRange
 from tests.utils import jsgz_load
 
 EVENTS_API = CogniteClient().events
@@ -71,7 +71,7 @@ class TestEvents:
         assert "max" not in jsgz_load(mock_events_response.calls[0].request.body)["filter"]["startTime"]
 
     def test_list_with_timestamp_range(self, mock_events_response):
-        EVENTS_API.list(start_time=EpochTimestampRange(min=20))
+        EVENTS_API.list(start_time=TimestampRange(min=20))
         assert 20 == jsgz_load(mock_events_response.calls[0].request.body)["filter"]["startTime"]["min"]
         assert "max" not in jsgz_load(mock_events_response.calls[0].request.body)["filter"]["startTime"]
 

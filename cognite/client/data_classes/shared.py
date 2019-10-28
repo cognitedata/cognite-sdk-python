@@ -4,7 +4,7 @@ from cognite.client.data_classes._base import CognitePropertyClassUtil
 
 
 # GenPropertyClass: EpochTimestampRange
-class EpochTimestampRange(dict):
+class TimestampRange(dict):
     """Range between two timestamps.
 
     Args:

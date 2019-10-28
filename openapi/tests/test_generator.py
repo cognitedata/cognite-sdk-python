@@ -93,9 +93,9 @@ class TestClassGenerator:
         instance = super(AssetFilter, cls)._load(resource, cognite_client)
         if isinstance(resource, Dict):
             if instance.created_time is not None:
-                instance.created_time = EpochTimestampRange(**instance.created_time)
+                instance.created_time = TimestampRange(**instance.created_time)
             if instance.last_updated_time is not None:
-                instance.last_updated_time = EpochTimestampRange(**instance.last_updated_time)
+                instance.last_updated_time = TimestampRange(**instance.last_updated_time)
         return instance
 """
             == loader

@@ -28,7 +28,7 @@ class CognitePropertyClassUtil:
         return None
 
 
-class EpochTimestampRange:
+class TimestampRange:
     pass
 
 
