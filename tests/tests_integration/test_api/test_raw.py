@@ -43,6 +43,14 @@ class TestRawRowsAPI:
         rows = COGNITE_CLIENT.raw.rows.list(db_name="test__database1", table_name="test__table_1", limit=-1)
         assert 2000 == len(rows)
 
+    def test_list_rows_cols(self):
+        rows = COGNITE_CLIENT.raw.rows.list(
+            db_name="test__database1", table_name="test__table_1", limit=10, columns=["c1", "c2"]
+        )
+        assert 10 == len(rows)
+        for row in rows:
+            assert {"c1", "c2"} == set(row.columns.keys())
+
     def test_retrieve_row(self):
         row = COGNITE_CLIENT.raw.rows.retrieve(db_name="test__database1", table_name="test__table_1", key="1")
         assert {"c{}".format(i): "1_{}".format(i) for i in range(10)} == row.columns
