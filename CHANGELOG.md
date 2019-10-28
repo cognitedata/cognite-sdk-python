@@ -23,6 +23,7 @@ Changes are grouped as follows
 ### Changed
 - Error 500's are no longer retried by default, only HTTP 429, 502, 503, 504 are.
 - Optimized HTTP calls by caching user agent.
+- Rellationship filtering is now integrated into `list` instead of `search`.
 
 ### Fixed
 - source_created_time and source_modified_time on files now displayed as time fields.
