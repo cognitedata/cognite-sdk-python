@@ -42,6 +42,7 @@ class TestRawRowsAPI:
     def test_list_rows(self):
         rows = COGNITE_CLIENT.raw.rows.list(db_name="test__database1", table_name="test__table_1", limit=-1)
         assert 2000 == len(rows)
+        assert 10 == len(rows[0].columns.keys())
 
     def test_list_rows_cols(self):
         rows = COGNITE_CLIENT.raw.rows.list(
