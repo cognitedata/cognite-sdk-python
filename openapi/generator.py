@@ -16,6 +16,8 @@ GEN_PROPERTY_CLASS_PATTERN = "# GenPropertyClass: (\S+)\s+class (\S+)\(.+\):(?:(
 GenClassSegment = namedtuple("GenClassSegment", ["schema_names", "class_name"])
 GenUpdateClassSegment = namedtuple("GenUpdateClassSegment", ["schema_name", "class_name"])
 
+CLASS_NAME_OVERRIDE = {"EpochTimestampRange": "TimestampRange"}
+
 
 class ClassGenerator:
     def __init__(self, spec, input):
@@ -153,6 +155,8 @@ class ClassGenerator:
                 return "Dict[str, str]", False
             if name != None and name == "NodeProperties3D":
                 return "Dict[str, Dict[str, str]]", False
+            if name != None and name in CLASS_NAME_OVERRIDE:
+                return CLASS_NAME_OVERRIDE[name], True
             elif name != None and name[:1].isupper():
                 return name, True
         return res, False

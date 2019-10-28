@@ -5,11 +5,11 @@ from typing.io import BinaryIO, TextIO
 from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import (
-    EpochTimestampRange,
     FileMetadata,
     FileMetadataFilter,
     FileMetadataList,
     FileMetadataUpdate,
+    TimestampRange,
 )
 
 
@@ -27,11 +27,11 @@ class FilesAPI(APIClient):
         root_asset_ids: List[int] = None,
         root_asset_external_ids: List[str] = None,
         source: str = None,
-        created_time: Union[Dict[str, Any], EpochTimestampRange] = None,
-        last_updated_time: Union[Dict[str, Any], EpochTimestampRange] = None,
-        source_created_time: Union[Dict[str, Any], EpochTimestampRange] = None,
-        source_modified_time: Union[Dict[str, Any], EpochTimestampRange] = None,
-        uploaded_time: Union[Dict[str, Any], EpochTimestampRange] = None,
+        created_time: Union[Dict[str, Any], TimestampRange] = None,
+        last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
+        source_created_time: Union[Dict[str, Any], TimestampRange] = None,
+        source_modified_time: Union[Dict[str, Any], TimestampRange] = None,
+        uploaded_time: Union[Dict[str, Any], TimestampRange] = None,
         external_id_prefix: str = None,
         uploaded: bool = None,
         limit: int = None,
@@ -49,11 +49,11 @@ class FilesAPI(APIClient):
             root_asset_ids (List[int]): The IDs of the root assets that the related assets should be children of.
             root_asset_external_ids (List[str]): The external IDs of the root assets that the related assets should be children of.
             source (str): The source of this event.
-            source_created_time (Union[Dict[str, Any], EpochTimestampRange]): Filter for files where the sourceCreatedTime field has been set and is within the specified range.
-            source_modified_time (Union[Dict[str, Any], EpochTimestampRange]): Filter for files where the sourceModifiedTime field has been set and is within the specified range.
-            created_time (Union[Dict[str, Any], EpochTimestampRange]): Range between two timestamps
-            last_updated_time (Union[Dict[str, Any], EpochTimestampRange]): Range between two timestamps
-            uploaded_time (Union[Dict[str, Any], EpochTimestampRange]): Range between two timestamps
+            source_created_time (Union[Dict[str, Any], TimestampRange]): Filter for files where the sourceCreatedTime field has been set and is within the specified range.
+            source_modified_time (Union[Dict[str, Any], TimestampRange]): Filter for files where the sourceModifiedTime field has been set and is within the specified range.
+            created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps
+            last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps
+            uploaded_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps
             external_id_prefix (str): External Id provided by client. Should be unique within the project.
             uploaded (bool): Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
             limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None
@@ -192,11 +192,11 @@ class FilesAPI(APIClient):
         root_asset_ids: List[int] = None,
         root_asset_external_ids: List[str] = None,
         source: str = None,
-        created_time: Union[Dict[str, Any], EpochTimestampRange] = None,
-        last_updated_time: Union[Dict[str, Any], EpochTimestampRange] = None,
-        source_created_time: Union[Dict[str, Any], EpochTimestampRange] = None,
-        source_modified_time: Union[Dict[str, Any], EpochTimestampRange] = None,
-        uploaded_time: Union[Dict[str, Any], EpochTimestampRange] = None,
+        created_time: Union[Dict[str, Any], TimestampRange] = None,
+        last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
+        source_created_time: Union[Dict[str, Any], TimestampRange] = None,
+        source_modified_time: Union[Dict[str, Any], TimestampRange] = None,
+        uploaded_time: Union[Dict[str, Any], TimestampRange] = None,
         external_id_prefix: str = None,
         uploaded: bool = None,
         limit: int = 25,
@@ -211,11 +211,11 @@ class FilesAPI(APIClient):
             root_asset_ids (List[int]): The IDs of the root assets that the related assets should be children of.
             root_asset_external_ids (List[str]): The external IDs of the root assets that the related assets should be children of.
             source (str): The source of this event.
-            created_time (Union[Dict[str, Any], EpochTimestampRange]): Range between two timestamps
-            last_updated_time (Union[Dict[str, Any], EpochTimestampRange]): Range between two timestamps
-            uploaded_time (Union[Dict[str, Any], EpochTimestampRange]): Range between two timestamps
-            source_created_time (Union[Dict[str, Any], EpochTimestampRange]): Filter for files where the sourceCreatedTime field has been set and is within the specified range.
-            source_modified_time (Union[Dict[str, Any], EpochTimestampRange]): Filter for files where the sourceModifiedTime field has been set and is within the specified range.
+            created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps
+            last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps
+            uploaded_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps
+            source_created_time (Union[Dict[str, Any], TimestampRange]): Filter for files where the sourceCreatedTime field has been set and is within the specified range.
+            source_modified_time (Union[Dict[str, Any], TimestampRange]): Filter for files where the sourceModifiedTime field has been set and is within the specified range.
             external_id_prefix (str): External Id provided by client. Should be unique within the project.
             uploaded (bool): Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
             limit (int, optional): Max number of files to return. Defaults to 25. Set to -1, float("inf") or None

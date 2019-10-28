@@ -2,7 +2,7 @@ import threading
 from typing import *
 
 from cognite.client.data_classes._base import *
-from cognite.client.data_classes.shared import EpochTimestampRange
+from cognite.client.data_classes.shared import TimestampRange
 
 
 # GenPropertyClass: AggregateResultItem
@@ -313,8 +313,8 @@ class AssetFilter(CogniteFilter):
         root_ids (List[Dict[str, Any]]): Return all descendants of the specified root assets.
         metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         source (str): The source of the asset.
-        created_time (Union[Dict[str, Any], EpochTimestampRange]): Range between two timestamps.
-        last_updated_time (Union[Dict[str, Any], EpochTimestampRange]): Range between two timestamps.
+        created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
+        last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
         root (bool): Whether the filtered assets are root assets, or not. Set to True to only list root assets.
         external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
         cognite_client (CogniteClient): The client to associate with this object.
@@ -327,8 +327,8 @@ class AssetFilter(CogniteFilter):
         root_ids: List[Dict[str, Any]] = None,
         metadata: Dict[str, str] = None,
         source: str = None,
-        created_time: Union[Dict[str, Any], EpochTimestampRange] = None,
-        last_updated_time: Union[Dict[str, Any], EpochTimestampRange] = None,
+        created_time: Union[Dict[str, Any], TimestampRange] = None,
+        last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
         root: bool = None,
         external_id_prefix: str = None,
         cognite_client=None,
@@ -349,9 +349,9 @@ class AssetFilter(CogniteFilter):
         instance = super(AssetFilter, cls)._load(resource, cognite_client)
         if isinstance(resource, Dict):
             if instance.created_time is not None:
-                instance.created_time = EpochTimestampRange(**instance.created_time)
+                instance.created_time = TimestampRange(**instance.created_time)
             if instance.last_updated_time is not None:
-                instance.last_updated_time = EpochTimestampRange(**instance.last_updated_time)
+                instance.last_updated_time = TimestampRange(**instance.last_updated_time)
         return instance
 
     # GenStop

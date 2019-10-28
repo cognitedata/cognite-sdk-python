@@ -8,7 +8,7 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client._api.files import FileMetadata, FileMetadataList, FileMetadataUpdate
-from cognite.client.data_classes import EpochTimestampRange, FileMetadataFilter
+from cognite.client.data_classes import FileMetadataFilter, TimestampRange
 from cognite.client.exceptions import CogniteAPIError
 from tests.utils import jsgz_load, set_request_limit
 
@@ -185,7 +185,7 @@ class TestFilesAPI:
         assert "max" not in jsgz_load(mock_files_response.calls[0].request.body)["filter"]["createdTime"]
 
     def test_list_with_timestamp_range(self, mock_files_response):
-        FILES_API.list(created_time=EpochTimestampRange(min=20))
+        FILES_API.list(created_time=TimestampRange(min=20))
         assert 20 == jsgz_load(mock_files_response.calls[0].request.body)["filter"]["createdTime"]["min"]
         assert "max" not in jsgz_load(mock_files_response.calls[0].request.body)["filter"]["createdTime"]
 
