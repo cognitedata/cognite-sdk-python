@@ -4,7 +4,7 @@ from unittest.mock import call
 
 import pytest
 
-from cognite.client.data_classes import AggregateResultItem, EpochTimestampRange
+from cognite.client.data_classes import AggregateResultItem, TimestampRange
 from cognite.client.experimental import CogniteClient
 
 c = CogniteClient()
@@ -12,7 +12,7 @@ c = CogniteClient()
 
 class TestGenerated:
     def test_timestamprange(self):
-        tsr = EpochTimestampRange(min=1, max=2)
+        tsr = TimestampRange(min=1, max=2)
         assert 1 == tsr.min
         assert 2 == tsr.max
         assert 1 == tsr["min"]
@@ -24,11 +24,11 @@ class TestGenerated:
         assert {"max": 4, "min": 1} == json.loads(json.dumps(tsr))
 
     def test_one_missing(self):
-        tsr = EpochTimestampRange(min=1)
+        tsr = TimestampRange(min=1)
         assert {"min": 1} == json.loads(json.dumps(tsr))
 
     def test_typo(self):
-        tsr = EpochTimestampRange()
+        tsr = TimestampRange()
         assert tsr.min is None
         assert tsr.get("min") is None
         assert {} == json.loads(json.dumps(tsr))
