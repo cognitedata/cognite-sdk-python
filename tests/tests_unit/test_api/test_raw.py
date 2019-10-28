@@ -233,7 +233,7 @@ class TestRawRows:
 
     def test_list_cols_empty(self, mock_raw_row_response):
         RAW_API.rows.list(db_name="db1", table_name="table1", columns=[])
-        assert "columns=%2C&" in mock_raw_row_response.calls[0].request.path_url
+        assert "columns=%2C&" in mock_raw_row_response.calls[0].request.path_url + "&"
 
     def test_list_cols_str_not_supported(self, mock_raw_row_response):
         with pytest.raises(ValueError):
