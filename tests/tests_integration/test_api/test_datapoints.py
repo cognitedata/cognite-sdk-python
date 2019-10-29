@@ -115,7 +115,7 @@ class TestDatapointsAPI:
             id=ts.id, start=start, end=end, include_outside_points=True, limit=1234
         )
         COGNITE_CLIENT.datapoints._DPS_LIMIT = tmp
-        assert len(dps) >= len(dps_non_outside)
+        assert len(dps) == len(dps_non_outside)
         assert math.ceil(len(dps) / test_lim) + 1 == COGNITE_CLIENT.datapoints._post.call_count - count_first
         assert not has_duplicates(dps.to_pandas())
         ts_outside = set(dps.timestamp) - set(dps_non_outside.timestamp)

@@ -817,7 +817,7 @@ class DatapointsFetcher:
         self._fetch_datapoints(sum(task_lists, []))
         return self._get_dps_results(task_lists)
 
-    def _create_tasks(self, query: DatapointsQuery) -> DatapointsQuery:
+    def _create_tasks(self, query: DatapointsQuery) -> List[_DPTask]:
         ts_items, _ = self._process_ts_identifiers(query.id, query.external_id)
         tasks = [
             _DPTask(
