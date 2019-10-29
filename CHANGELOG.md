@@ -29,6 +29,9 @@ Changes are grouped as follows
 ### Fixed
 - source_created_time and source_modified_time on files now displayed as time fields.
 
+### Added
+- Added columns option to raw rows list
+
 ## [1.3.3] - 2019-10-21
 
 ### Changed
