@@ -416,6 +416,7 @@ class RawRowsAPI(APIClient):
         table_name: str,
         min_last_updated_time: int = None,
         max_last_updated_time: int = None,
+        columns: List[str] = None,
         limit: int = 25,
     ) -> RowList:
         """`List rows in a table. <https://docs.cognite.com/api/v1/#operation/getRows>`_
@@ -425,6 +426,7 @@ class RawRowsAPI(APIClient):
             table_name (str): Name of the table.
             min_last_updated_time (int): Rows must have been last updated after this time. ms since epoch.
             max_last_updated_time (int): Rows must have been last updated before this time. ms since epoch.
+            columns (List[str]): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
             limit (int): The number of rows to retrieve. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
@@ -442,7 +444,7 @@ class RawRowsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> for row in c.raw.rows(db_name="db1", table_name="t1"):
+                >>> for row in c.raw.rows(db_name="db1", table_name="t1", columns=["col1","col2"]):
                 ...     row # do something with the row
 
             Iterate over chunks of rows to reduce memory load::
@@ -452,9 +454,21 @@ class RawRowsAPI(APIClient):
                 >>> for row_list in c.raw.rows(db_name="db1", table_name="t1", chunk_size=2500):
                 ...     row_list # do something with the rows
         """
+        if columns is not None:
+            if not isinstance(columns, List):
+                raise ValueError("Expected a list for argument columns")
+            if len(columns) == 0:
+                columns = ","
+            else:
+                columns = ",".join([str(x) for x in columns])
+
         return self._list(
             resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
             limit=limit,
             method="GET",
-            filter={"minLastUpdatedTime": min_last_updated_time, "maxLastUpdatedTime": max_last_updated_time},
+            filter={
+                "minLastUpdatedTime": min_last_updated_time,
+                "maxLastUpdatedTime": max_last_updated_time,
+                "columns": columns,
+            },
         )
