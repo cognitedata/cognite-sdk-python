@@ -225,6 +225,19 @@ class TestRawRows:
     def test_list(self, mock_raw_row_response):
         res_list = RAW_API.rows.list(db_name="db1", table_name="table1")
         assert RowList([Row(key="row1", columns={"c1": 1, "c2": "2"})]) == res_list
+        assert "columns=" not in mock_raw_row_response.calls[0].request.path_url
+
+    def test_list_cols(self, mock_raw_row_response):
+        RAW_API.rows.list(db_name="db1", table_name="table1", columns=["a", 1])
+        assert "columns=a%2C1" in mock_raw_row_response.calls[0].request.path_url
+
+    def test_list_cols_empty(self, mock_raw_row_response):
+        RAW_API.rows.list(db_name="db1", table_name="table1", columns=[])
+        assert "columns=%2C&" in mock_raw_row_response.calls[0].request.path_url + "&"
+
+    def test_list_cols_str_not_supported(self, mock_raw_row_response):
+        with pytest.raises(ValueError):
+            RAW_API.rows.list(db_name="db1", table_name="table1", columns="a,b")
 
     def test_iter_single(self, mock_raw_row_response):
         for db in RAW_API.rows(db_name="db1", table_name="table1"):
