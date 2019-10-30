@@ -1,3 +1,4 @@
+import math
 import re
 from datetime import datetime, timedelta
 from unittest import mock
@@ -8,6 +9,8 @@ import pytest
 
 from cognite.client import CogniteClient, utils
 from cognite.client.data_classes import DatapointsQuery, TimeSeries
+from cognite.client.exceptions import CogniteAPIError
+from cognite.client.utils._time import timestamp_to_ms
 from tests.utils import set_request_limit
 
 COGNITE_CLIENT = CogniteClient()
@@ -77,6 +80,16 @@ class TestDatapointsAPI:
         assert dpl.is_step is not None
         assert dpl.is_string is not None
 
+    def test_retrieve_multiple_with_exception(self, test_time_series):
+        with pytest.raises(CogniteAPIError):
+            COGNITE_CLIENT.datapoints.retrieve(
+                id=[test_time_series[0].id, test_time_series[1].id, 0],
+                start="1m-ago",
+                end="now",
+                aggregates=["min"],
+                granularity="1s",
+            )
+
     def test_retrieve_include_outside_points(self, test_time_series):
         ts = test_time_series[0]
         start = utils._time.timestamp_to_ms("6h-ago")
@@ -87,6 +100,43 @@ class TestDatapointsAPI:
         dps_w_outside = COGNITE_CLIENT.datapoints.retrieve(id=ts.id, start=start, end=end, include_outside_points=True)
         assert not has_duplicates(dps_w_outside.to_pandas())
         assert len(dps_wo_outside) + 1 <= len(dps_w_outside) <= len(dps_wo_outside) + 2
+
+    def test_retrieve_include_outside_points_paginate_no_outside(self, test_time_series, post_spy):
+        ts = test_time_series[0]
+        start = datetime(2019, 1, 1)
+        end = datetime(2019, 6, 29)
+        test_lim = 250
+        dps_non_outside = COGNITE_CLIENT.datapoints.retrieve(id=ts.id, start=start, end=end, limit=1234)
+        count_first = COGNITE_CLIENT.datapoints._post.call_count
+
+        tmp = COGNITE_CLIENT.datapoints._DPS_LIMIT
+        COGNITE_CLIENT.datapoints._DPS_LIMIT = test_lim
+        dps = COGNITE_CLIENT.datapoints.retrieve(
+            id=ts.id, start=start, end=end, include_outside_points=True, limit=1234
+        )
+        COGNITE_CLIENT.datapoints._DPS_LIMIT = tmp
+        assert len(dps) == len(dps_non_outside)
+        assert math.ceil(len(dps) / test_lim) + 1 == COGNITE_CLIENT.datapoints._post.call_count - count_first
+        assert not has_duplicates(dps.to_pandas())
+        ts_outside = set(dps.timestamp) - set(dps_non_outside.timestamp)
+        assert 0 == len(ts_outside)
+        assert set(dps.timestamp) == set(dps_non_outside.timestamp)
+
+    def test_retrieve_include_outside_points_paginate_outside_exists(self, test_time_series, post_spy):
+        ts = test_time_series[0]
+        start = datetime(2019, 6, 29)
+        end = datetime(2019, 6, 29, 5)
+        test_lim = 2500
+        dps_non_outside = COGNITE_CLIENT.datapoints.retrieve(id=ts.id, start=start, end=end)
+        tmp = COGNITE_CLIENT.datapoints._DPS_LIMIT
+        COGNITE_CLIENT.datapoints._DPS_LIMIT = test_lim
+        dps = COGNITE_CLIENT.datapoints.retrieve(id=ts.id, start=start, end=end, include_outside_points=True)
+        COGNITE_CLIENT.datapoints._DPS_LIMIT = tmp
+        ts_outside = set(dps.timestamp) - set(dps_non_outside.timestamp)
+        assert 2 == len(ts_outside)
+        for ts in ts_outside:
+            assert ts < timestamp_to_ms(start) or ts >= timestamp_to_ms(end)
+        assert set(dps.timestamp) - ts_outside == set(dps_non_outside.timestamp)
 
     def test_retrieve_dataframe(self, test_time_series):
         ts = test_time_series[0]
@@ -118,13 +168,17 @@ class TestDatapointsAPI:
         for dps in res:
             assert 1 == len(dps)
 
-    def test_retrieve_latest_many(self, test_time_series):
+    def test_retrieve_latest_many(self, test_time_series, post_spy):
         ids = [
-            t.id for t in COGNITE_CLIENT.time_series.list(limit=150) if not t.security_categories
+            t.id for t in COGNITE_CLIENT.time_series.list(limit=12) if not t.security_categories
         ]  # more than one page
-        assert len(ids) > 100
+        assert len(ids) > 10
+        tmp = COGNITE_CLIENT.datapoints._RETRIEVE_LATEST_LIMIT
+        COGNITE_CLIENT.datapoints._RETRIEVE_LATEST_LIMIT = 10
         res = COGNITE_CLIENT.datapoints.retrieve_latest(id=ids)
+        COGNITE_CLIENT.datapoints._RETRIEVE_LATEST_LIMIT = tmp
         assert len(ids) == len(res)
+        assert 2 == COGNITE_CLIENT.datapoints._post.call_count
         for i, dps in enumerate(res):
             assert len(dps) <= 1  # could be empty
             assert ids[i] == res[i].id
