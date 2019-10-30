@@ -20,14 +20,15 @@ Changes are grouped as follows
 - Separate read/write fields on data classes
 
 ## [Unreleased]
+
 ### Changed
 - Error 500's are no longer retried by default, only HTTP 429, 502, 503, 504 are.
 - Optimized HTTP calls by caching user agent.
 - Relationship filtering is now integrated into `list` instead of `search`.
-- Sequences insert_dataframe parameter `external_id_headers` documentation updated.
+- Sequences `insert_dataframe` parameter `external_id_headers` documentation updated.
 
 ### Fixed
-- source_created_time and source_modified_time on files now displayed as time fields.
+- `source_created_time` and `source_modified_time` on files now displayed as time fields.
 
 ### Added
 - Added columns option to raw rows list
