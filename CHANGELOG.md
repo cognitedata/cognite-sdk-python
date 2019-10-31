@@ -24,11 +24,13 @@ Changes are grouped as follows
 ### Changed
 - Error 500's are no longer retried by default, only HTTP 429, 502, 503, 504 are.
 - Optimized HTTP calls by caching user agent.
-- Type hints for several objects formerly Dict[str, Any] improved along with introducing matching dict derived classes.
+- Relationship filtering is now integrated into `list` instead of `search`.
+- Sequences `insert_dataframe` parameter `external_id_headers` documentation updated.
+- Type hints for several objects formerly `Dict[str, Any]` improved along with introducing matching dict derived classes.
 
 ### Fixed
-- Fixed pagination for include_outside_points and other edge cases in datapoints.
-- source_created_time and source_modified_time on files now displayed as time fields.
+- `source_created_time` and `source_modified_time` on files now displayed as time fields.
+- Fixed pagination for `include_outside_points` and other edge cases in datapoints.
 
 ### Added
 

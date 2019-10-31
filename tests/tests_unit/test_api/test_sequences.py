@@ -489,7 +489,7 @@ class TestSequencesPandasIntegration:
         df = pd.DataFrame(index=[123, 456])
         df["aa"] = [1, 2]
         df["bb"] = [5.0, 6.0]
-        res = SEQ_API.data.insert_dataframe(df, id=42, external_id_headers=True)
+        res = SEQ_API.data.insert_dataframe(df, id=42)
         assert res is None
         request_body = jsgz_load(mock_post_sequence_data.calls[0].request.body)
         assert {
