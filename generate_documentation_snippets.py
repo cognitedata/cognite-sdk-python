@@ -22,7 +22,7 @@ parser = DocTestParser()
 
 apis = collect_apis(client, {})
 
-snippets = {"language": "Python", "operations": defaultdict(str)}
+snippets = {"language": "Python", "label": "Python SDK", "operations": defaultdict(str)}
 filter_out = ["from cognite.client import CogniteClient", "c = CogniteClient()"]
 
 duplicate_operations = {
