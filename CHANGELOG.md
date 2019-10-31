@@ -20,13 +20,17 @@ Changes are grouped as follows
 - Separate read/write fields on data classes
 
 ## [Unreleased]
+
 ### Changed
 - Error 500's are no longer retried by default, only HTTP 429, 502, 503, 504 are.
 - Optimized HTTP calls by caching user agent.
 - Type hints for several objects formerly Dict[str, Any] improved along with introducing matching dict derived classes.
 
 ### Fixed
+- Fixed pagination for include_outside_points and other edge cases in datapoints.
 - source_created_time and source_modified_time on files now displayed as time fields.
+
+### Added
 
 ## [1.3.3] - 2019-10-21
 
