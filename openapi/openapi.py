@@ -31,6 +31,9 @@ class Paths:
 class Schemas:
     def __init__(self, schemas):
         self._schemas = schemas
+        self._rev_schemas = dict()
+        for k, v in schemas.items():
+            self._rev_schemas[json.dumps(v)] = k
 
     def get(self, name=None):
         if name:
@@ -39,6 +42,12 @@ class Schemas:
                     return schema
             raise ValueError("Schema `{}` does not exist".format(name))
         return [schema for _, schema in self._schemas.items()]
+
+    def rev_get(self, struct):
+        key = json.dumps(struct)
+        if key in self._rev_schemas:
+            return self._rev_schemas[key]
+        return None
 
 
 class Components:

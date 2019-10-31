@@ -26,6 +26,7 @@ Changes are grouped as follows
 - Optimized HTTP calls by caching user agent.
 - Relationship filtering is now integrated into `list` instead of `search`.
 - Sequences `insert_dataframe` parameter `external_id_headers` documentation updated.
+- Type hints for several objects formerly `Dict[str, Any]` improved along with introducing matching dict derived classes.
 
 ### Fixed
 - `source_created_time` and `source_modified_time` on files now displayed as time fields.

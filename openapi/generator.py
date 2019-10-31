@@ -11,9 +11,12 @@ from openapi.utils import TYPE_MAPPING
 TO_EXCLUDE = ["project", "cursor"]
 GEN_CLASS_PATTERN = "# GenClass: ([\S ]+)\s+class (\S+)\(.+\):(?:(?!# GenStop)[\s\S])+# GenStop"
 GEN_UPDATE_CLASS_PATTERN = "# GenUpdateClass: (\S+)\s+class (\S+)\(.+\):(?:(?!# GenStop)[\s\S])+# GenStop"
+GEN_PROPERTY_CLASS_PATTERN = "# GenPropertyClass: (\S+)\s+class (\S+)\(.+\):(?:(?!# GenStop)[\s\S])+# GenStop"
 
 GenClassSegment = namedtuple("GenClassSegment", ["schema_names", "class_name"])
 GenUpdateClassSegment = namedtuple("GenUpdateClassSegment", ["schema_name", "class_name"])
+
+CLASS_NAME_OVERRIDE = {"EpochTimestampRange": "TimestampRange"}
 
 
 class ClassGenerator:
@@ -21,29 +24,39 @@ class ClassGenerator:
         self._spec = spec
         self._input = input
         self.gen_class_segments = [GenClassSegment(*args) for args in re.findall(GEN_CLASS_PATTERN, self._input)]
+        self.gen_property_class_segments = [
+            GenClassSegment(*args) for args in re.findall(GEN_PROPERTY_CLASS_PATTERN, self._input)
+        ]
 
-    def generate_code_for_class_segments(self):
+    def generate_code_for_class_segments(self, is_property=False):
         generated_segments = {}
-        for class_segment in self.gen_class_segments:
-            schema_names = class_segment.schema_names.split(", ")
-            schemas = []
-            for schema_name in schema_names:
-                res = re.match("(.*)\.(.*)", schema_name)
-                if res is not None:
-                    schema_name = res.group(1)
-                    property_name = res.group(2)
-                    schema = self._spec.components.schemas.get(schema_name)
-                    property = self._get_schema_properties(schema)[property_name]
-                    schemas.append(property)
-                else:
-                    schemas.append(self._spec.components.schemas.get(schema_name))
-            docstring = self.generate_docstring(schemas, indentation=4)
-            constructor_args = self.generate_constructor(schemas, indentation=4)
-            generated_segment = docstring + "\n" + constructor_args
-            generated_segments[class_segment.class_name] = generated_segment
+        segments = self.gen_property_class_segments if is_property else self.gen_class_segments
+        for class_segment in segments:
+            name, segment = self.generate_code_for_given_class_segment(class_segment, is_property=is_property)
+            generated_segments[name] = segment
         return generated_segments
 
-    def generate_docstring(self, schemas, indentation):
+    def generate_code_for_given_class_segment(self, class_segment, is_property=False):
+        schema_names = class_segment.schema_names.split(", ")
+        schemas = []
+        for schema_name in schema_names:
+            res = re.match("(.*)\.(.*)", schema_name)
+            if res is not None:
+                schema_name = res.group(1)
+                property_name = res.group(2)
+                schema = self._spec.components.schemas.get(schema_name)
+                property = self._get_schema_properties(schema)[property_name]
+                schemas.append(property)
+            else:
+                schemas.append(self._spec.components.schemas.get(schema_name))
+        docstring = self.generate_docstring(schemas, indentation=4, is_property=is_property)
+        constructor_args = self.generate_constructor(schemas, indentation=4, is_property=is_property)
+        property_definitions = self.generate_properties(schemas, indentation=4) if is_property else ""
+        loader = self.generate_loader(schemas, class_segment.class_name, indentation=4)
+        generated_segment = docstring + "\n" + constructor_args + "\n" + property_definitions + loader
+        return class_segment.class_name, generated_segment
+
+    def generate_docstring(self, schemas, indentation, is_property=False):
         docstring = " " * indentation + '"""{}\n\n'.format(self._get_schema_description(schemas[0]))
         docstring += " " * indentation + "Args:\n"
         ignore = [p for p in TO_EXCLUDE]
@@ -51,16 +64,17 @@ class ClassGenerator:
             for prop_name, prop in self._get_schema_properties(schema).items():
                 if prop_name not in ignore:
                     docstring += " " * (indentation + 4) + "{} ({}): {}\n".format(
-                        utils.to_snake_case(prop_name), utils.get_type_hint(prop), self._get_schema_description(prop)
+                        utils.to_snake_case(prop_name), self._get_type_hint(prop), self._get_schema_description(prop)
                     )
                     ignore.append(prop_name)
-        docstring += (
-            " " * (indentation + 4) + "cognite_client (CogniteClient): The client to associate with this object.\n"
-        )
+        if not is_property:
+            docstring += (
+                " " * (indentation + 4) + "cognite_client (CogniteClient): The client to associate with this object.\n"
+            )
         docstring += " " * indentation + '"""'
         return docstring
 
-    def generate_constructor(self, schemas, indentation):
+    def generate_constructor(self, schemas, indentation, is_property=False):
         constructor_params = [" " * indentation + "def __init__(self"]
         ignore = [p for p in TO_EXCLUDE]
         for schema in schemas:
@@ -68,9 +82,15 @@ class ClassGenerator:
                 prop_name = utils.to_snake_case(prop_name)
                 req = " = None"  # TODO: check if prop is required or not
                 if prop_name not in ignore:
-                    constructor_params.append("{}: {}{}".format(prop_name, utils.get_type_hint(prop), req))
+                    constructor_params.append("{}: {}{}".format(prop_name, self._get_type_hint(prop), req))
                     ignore.append(prop_name)
-        constructor_params = ", ".join(constructor_params) + ", cognite_client = None):"
+
+        if is_property:
+            constructor_params.append("**kwargs")
+        else:
+            constructor_params.append("cognite_client = None")
+
+        constructor_params = ", ".join(constructor_params) + "):"
         constructor_body = ""
         ignore = [p for p in TO_EXCLUDE]
         for schema in schemas:
@@ -79,8 +99,67 @@ class ClassGenerator:
                 if prop_name not in ignore:
                     constructor_body += " " * (indentation + 4) + "self.{} = {}\n".format(prop_name, prop_name)
                     ignore.append(prop_name)
-        constructor_body += " " * (indentation + 4) + "self._cognite_client = cognite_client\n"
+        if is_property:
+            constructor_body += " " * (indentation + 4) + "self.update(kwargs)\n"
+        else:
+            constructor_body += " " * (indentation + 4) + "self._cognite_client = cognite_client\n"
         return constructor_params + "\n" + constructor_body[:-1]
+
+    def generate_properties(self, schemas, indentation):
+        properties = ""
+        ignore = [p for p in TO_EXCLUDE]
+        for schema in schemas:
+            for schema_name, prop in self._get_schema_properties(schema).items():
+                prop_name = utils.to_snake_case(schema_name)
+                if prop_name not in ignore:
+                    properties += " " * indentation + '{} = CognitePropertyClassUtil.declare_property("{}")\n'.format(
+                        prop_name, schema_name
+                    )
+                    ignore.append(prop_name)
+        return properties
+
+    def generate_loader(self, schemas, class_name, indentation):
+        prop_to_type = dict()
+        ignore = [p for p in TO_EXCLUDE]
+        for schema in schemas:
+            for prop_name, prop in self._get_schema_properties(schema).items():
+                prop_name = utils.to_snake_case(prop_name)
+                if prop_name not in ignore:
+                    type_name, special_type = self._get_type_hint_with_marker(prop)
+                    if special_type:
+                        prop_to_type[prop_name] = type_name
+                    ignore.append(prop_name)
+        loader = ""
+        if len(prop_to_type) > 0:
+            loader = "\n" + " " * indentation + "@classmethod\n"
+            loader += " " * indentation + "def _load(cls, resource: Union[Dict, str], cognite_client=None):\n"
+            loader += " " * (indentation + 4) + "instance = super({}, cls)._load(resource, cognite_client)\n".format(
+                class_name
+            )
+            loader += " " * (indentation + 4) + "if isinstance(resource, Dict):\n"
+            for k, v in prop_to_type.items():
+                loader += " " * (indentation + 8) + "if instance.{} is not None:\n".format(k)
+                loader += " " * (indentation + 12) + "instance.{} = {}(**instance.{})\n".format(k, v, k)
+            loader += " " * (indentation + 4) + "return instance\n"
+        return loader
+
+    def _get_type_hint(self, prop):
+        res, dict_expanded = self._get_type_hint_with_marker(prop)
+        return res if not dict_expanded else "Union[Dict[str, Any], {}]".format(res)
+
+    def _get_type_hint_with_marker(self, prop):
+        res = utils.get_type_hint(prop)
+        if res == "Dict[str, Any]":
+            name = self._spec.components.schemas.rev_get(prop)
+            if name != None and name[-8:] == "Metadata":
+                return "Dict[str, str]", False
+            if name != None and name == "NodeProperties3D":
+                return "Dict[str, Dict[str, str]]", False
+            if name != None and name in CLASS_NAME_OVERRIDE:
+                return CLASS_NAME_OVERRIDE[name], True
+            elif name != None and name[:1].isupper():
+                return name, True
+        return res, False
 
     @staticmethod
     def _get_schema_description(schema):
@@ -245,11 +324,13 @@ class CodeGenerator:
         return content_formatted
 
     def _generate_classes(self, content, class_generator):
-        generated_class_segments = class_generator.generate_code_for_class_segments()
-        for cls_name, code_segment in generated_class_segments.items():
-            pattern = self._get_gen_class_replace_pattern(cls_name)
-            replace_with = self._get_gen_class_replace_string(cls_name, code_segment)
-            content = re.sub(pattern, replace_with, content)
+        for is_property in [False, True]:
+            gen_header = "# GenPropertyClass" if is_property else "# GenClass"
+            generated_class_segments = class_generator.generate_code_for_class_segments(is_property)
+            for cls_name, code_segment in generated_class_segments.items():
+                pattern = self._get_gen_class_replace_pattern(cls_name, gen_header)
+                replace_with = self._get_gen_class_replace_string(cls_name, code_segment, gen_header)
+                content = re.sub(pattern, replace_with, content)
         return content
 
     def _generate_update_classes(self, content, method_generator):
@@ -268,11 +349,11 @@ class CodeGenerator:
     def _format_with_black(self, content):
         return format_str(src_contents=content, mode=FileMode(line_length=120))
 
-    def _get_gen_class_replace_pattern(self, class_name):
-        return "# GenClass: ([\S ]+)\s+class {}\((.+)\):(?:(?!# GenStop)[\s\S])+# GenStop".format(class_name)
+    def _get_gen_class_replace_pattern(self, class_name, gen_type="# GenClass"):
+        return gen_type + ": ([\S ]+)\s+class {}\((.+)\):(?:(?!# GenStop)[\s\S])+# GenStop".format(class_name)
 
-    def _get_gen_class_replace_string(self, class_name, code_segment):
-        return r"# GenClass: \1\nclass {}(\2):\n{}\n    # GenStop".format(class_name, code_segment)
+    def _get_gen_class_replace_string(self, class_name, code_segment, gen_type="# GenClass"):
+        return gen_type + r": \1\nclass {}(\2):\n{}\n    # GenStop".format(class_name, code_segment)
 
     def _get_gen_update_class_replace_pattern(self, class_name):
         return "# GenUpdateClass: (\S+)\s+class {}\((.+)\):(?:(?!# GenStop)[\s\S])+# GenStop".format(class_name)

@@ -13,7 +13,7 @@ class TimeSeries(CogniteResource):
         external_id (str): The externally supplied ID for the time series.
         name (str): The display short name of the time series. Note: Value of this field can differ from name presented by older versions of API 0.3-0.6.
         is_string (bool): Whether the time series is string valued or not.
-        metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         unit (str): The physical unit of the time series.
         asset_id (int): The asset that this time series belongs to.
         is_step (bool): Whether the time series is a step series or not.
@@ -31,7 +31,7 @@ class TimeSeries(CogniteResource):
         external_id: str = None,
         name: str = None,
         is_string: bool = None,
-        metadata: Dict[str, Any] = None,
+        metadata: Dict[str, str] = None,
         unit: str = None,
         asset_id: int = None,
         is_step: bool = None,
