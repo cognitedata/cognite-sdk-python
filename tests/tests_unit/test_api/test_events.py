@@ -4,7 +4,7 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client._api.events import Event, EventList, EventUpdate
-from cognite.client.data_classes import EventFilter
+from cognite.client.data_classes import EventFilter, TimestampRange
 from tests.utils import jsgz_load
 
 EVENTS_API = CogniteClient().events
@@ -64,6 +64,16 @@ class TestEvents:
     def test_list_sorting_combined_with_partitions(self, mock_events_response):
         with pytest.raises(ValueError):
             EVENTS_API.list(sort=["startTime:desc"], partitions=10)
+
+    def test_list_with_time_dict(self, mock_events_response):
+        EVENTS_API.list(start_time={"min": 20})
+        assert 20 == jsgz_load(mock_events_response.calls[0].request.body)["filter"]["startTime"]["min"]
+        assert "max" not in jsgz_load(mock_events_response.calls[0].request.body)["filter"]["startTime"]
+
+    def test_list_with_timestamp_range(self, mock_events_response):
+        EVENTS_API.list(start_time=TimestampRange(min=20))
+        assert 20 == jsgz_load(mock_events_response.calls[0].request.body)["filter"]["startTime"]["min"]
+        assert "max" not in jsgz_load(mock_events_response.calls[0].request.body)["filter"]["startTime"]
 
     def test_call_root(self, mock_events_response):
         list(EVENTS_API.__call__(root_asset_ids=[23], root_asset_external_ids=["a", "b"], limit=10))

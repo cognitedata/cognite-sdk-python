@@ -2,6 +2,7 @@ from typing import *
 from typing import Dict, List
 
 from cognite.client.data_classes._base import *
+from cognite.client.data_classes.shared import TimestampRange
 
 
 # GenClass: FilesMetadata
@@ -13,7 +14,7 @@ class FileMetadata(CogniteResource):
         name (str): Name of the file.
         source (str): The source of the file.
         mime_type (str): File type. E.g. text/plain, application/pdf, ..
-        metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         asset_ids (List[int]): No description.
         source_created_time (int): The timestamp for when the file was originally created in the source system.
         source_modified_time (int): The timestamp for when the file was last modified in the source system.
@@ -31,7 +32,7 @@ class FileMetadata(CogniteResource):
         name: str = None,
         source: str = None,
         mime_type: str = None,
-        metadata: Dict[str, Any] = None,
+        metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
         source_created_time: int = None,
         source_modified_time: int = None,
@@ -67,13 +68,13 @@ class FileMetadataFilter(CogniteFilter):
     Args:
         name (str): Name of the file.
         mime_type (str): File type. E.g. text/plain, application/pdf, ..
-        metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         asset_ids (List[int]): Only include files that reference these specific asset IDs.
         root_asset_ids (List[Dict[str, Any]]): Internal or external IDs of the root assets that the related assets should be a descendant of (or match).
         source (str): The source of this event.
-        created_time (Dict[str, Any]): Range between two timestamps.
-        last_updated_time (Dict[str, Any]): Range between two timestamps.
-        uploaded_time (Dict[str, Any]): Range between two timestamps.
+        created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
+        last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
+        uploaded_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
         source_created_time (Dict[str, Any]): Filter for files where the sourceCreatedTime field has been set and is within the specified range.
         source_modified_time (Dict[str, Any]): Filter for files where the sourceModifiedTime field has been set and is within the specified range.
         external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
@@ -85,13 +86,13 @@ class FileMetadataFilter(CogniteFilter):
         self,
         name: str = None,
         mime_type: str = None,
-        metadata: Dict[str, Any] = None,
+        metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
         root_asset_ids: List[Dict[str, Any]] = None,
         source: str = None,
-        created_time: Dict[str, Any] = None,
-        last_updated_time: Dict[str, Any] = None,
-        uploaded_time: Dict[str, Any] = None,
+        created_time: Union[Dict[str, Any], TimestampRange] = None,
+        last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
+        uploaded_time: Union[Dict[str, Any], TimestampRange] = None,
         source_created_time: Dict[str, Any] = None,
         source_modified_time: Dict[str, Any] = None,
         external_id_prefix: str = None,
@@ -113,6 +114,18 @@ class FileMetadataFilter(CogniteFilter):
         self.uploaded = uploaded
         self._cognite_client = cognite_client
 
+    @classmethod
+    def _load(cls, resource: Union[Dict, str], cognite_client=None):
+        instance = super(FileMetadataFilter, cls)._load(resource, cognite_client)
+        if isinstance(resource, Dict):
+            if instance.created_time is not None:
+                instance.created_time = TimestampRange(**instance.created_time)
+            if instance.last_updated_time is not None:
+                instance.last_updated_time = TimestampRange(**instance.last_updated_time)
+            if instance.uploaded_time is not None:
+                instance.uploaded_time = TimestampRange(**instance.uploaded_time)
+        return instance
+
     # GenStop
 
 
@@ -130,6 +143,10 @@ class FileMetadataUpdate(CogniteUpdate):
     @property
     def source(self):
         return _PrimitiveFileMetadataUpdate(self, "source")
+
+    @property
+    def mime_type(self):
+        return _PrimitiveFileMetadataUpdate(self, "mimeType")
 
     @property
     def metadata(self):

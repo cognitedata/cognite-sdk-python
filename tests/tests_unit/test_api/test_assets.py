@@ -8,7 +8,7 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client._api.assets import Asset, AssetList, AssetUpdate, _AssetPoster, _AssetPosterWorker
-from cognite.client.data_classes import AssetFilter
+from cognite.client.data_classes import AssetFilter, TimestampRange
 from cognite.client.exceptions import CogniteAPIError
 from tests.utils import jsgz_load, set_request_limit
 
@@ -121,6 +121,16 @@ class TestAssets:
         assert {"cursor": None, "limit": 10, "filter": {"rootIds": [{"id": 1}, {"externalId": "abc"}]}} == jsgz_load(
             calls[0].request.body
         )
+
+    def test_list_with_time_dict(self, mock_assets_response):
+        ASSETS_API.list(created_time={"min": 20})
+        assert 20 == jsgz_load(mock_assets_response.calls[0].request.body)["filter"]["createdTime"]["min"]
+        assert "max" not in jsgz_load(mock_assets_response.calls[0].request.body)["filter"]["createdTime"]
+
+    def test_list_with_timestamp_range(self, mock_assets_response):
+        ASSETS_API.list(created_time=TimestampRange(min=20))
+        assert 20 == jsgz_load(mock_assets_response.calls[0].request.body)["filter"]["createdTime"]["min"]
+        assert "max" not in jsgz_load(mock_assets_response.calls[0].request.body)["filter"]["createdTime"]
 
     def test_call_root(self, mock_assets_response):
         list(ASSETS_API.__call__(root_ids=[{"id": 1}, {"externalId": "abc"}], limit=10))
