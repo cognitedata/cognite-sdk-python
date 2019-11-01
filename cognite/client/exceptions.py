@@ -199,3 +199,16 @@ class CogniteDuplicateColumnsError(Exception):
 
     def __str__(self):
         return self.message
+
+
+class CogniteCompatibilityError(Exception):
+    """Cognite Compatibility Error
+
+    Raised if the existing object is incompatible with the one to be merged with. e.g. attempts to create a sequence from a dataframe with incompatible columns.
+    """
+
+    def __init__(self, message):
+        self.message = message
+
+    def __str__(self):
+        return self.message

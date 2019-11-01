@@ -4,6 +4,7 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes import Sequence, SequenceFilter, SequenceUpdate
+from cognite.client.exceptions import CogniteCompatibilityError
 from tests.utils import set_request_limit
 
 COGNITE_CLIENT = CogniteClient()
@@ -70,3 +71,30 @@ class TestSequencesAPI:
         res = COGNITE_CLIENT.sequences.retrieve(id=new_seq.id)
         # assert ["DOUBLE"] == res.column_value_types # soon to change
         assert ["column0"] == res.column_external_ids
+
+
+@pytest.mark.dsl
+class TestSequencesPandas:
+    def test_create_from_dataframe(self):
+        import pandas as pd
+
+        df = pd.DataFrame([[1, 2.3, "a"], [4, 4.1, "b"]])
+        df.columns = ["intcol", "floatcol", "strcol"]
+        df2 = pd.DataFrame([[1, 2.3], [4, 4.1]])
+
+        seq = COGNITE_CLIENT.sequences.create_from_dataframe(dataframe=df, external_id="__test_df", force_create=True)
+        assert 3 == len(seq.columns)
+        assert "LONG" == seq.columns[0]["valueType"]
+        assert "DOUBLE" == seq.columns[1]["valueType"]
+        assert "STRING" == seq.columns[2]["valueType"]
+
+        COGNITE_CLIENT.sequences.create_from_dataframe(dataframe=df, external_id="__test_df")
+        seq_int = COGNITE_CLIENT.sequences.create_from_dataframe(
+            dataframe=df, external_id="__test_df", force_create=True, allow_integers=False
+        )
+        assert "DOUBLE" == seq_int.columns[0]["valueType"]
+
+        with pytest.raises(CogniteCompatibilityError):
+            COGNITE_CLIENT.sequences.create_from_dataframe(dataframe=df2, external_id="__test_df")
+
+        COGNITE_CLIENT.sequences.create_from_dataframe(dataframe=df2, external_id="__test_df", force_create=True)

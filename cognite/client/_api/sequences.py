@@ -5,6 +5,7 @@ from typing import *
 from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Sequence, SequenceData, SequenceFilter, SequenceList, SequenceUpdate
+from cognite.client.exceptions import CogniteCompatibilityError
 
 
 class SequencesAPI(APIClient):
@@ -185,6 +186,73 @@ class SequencesAPI(APIClient):
         ).dump(camel_case=True)
         return self._list(method="POST", filter=filter, limit=limit)
 
+    def _dataframe_to_columns_definition(self, dataframe, allow_integers=True):
+        np, pd = utils._auxiliary.local_import("numpy", "pandas")
+
+        def map_type(t):
+            if allow_integers and np.issubdtype(t, np.integer):
+                return "LONG"
+            elif np.issubdtype(t, np.number):
+                return "DOUBLE"
+            else:
+                return "STRING"
+
+        return [{"externalId": col, "name": col, "valueType": map_type(t)} for col, t in dataframe.dtypes.iteritems()]
+
+    def create_from_dataframe(
+        self,
+        dataframe: "pandas.DataFrame",
+        external_id: str,
+        allow_integers: bool = True,
+        force_create: bool = False,
+        clear_existing_data: bool = False,
+        *args
+    ):
+        """`Create and populate a sequence from a pandas dataframe . <https://docs.cognite.com/api/v1/#operation/createSequence>`_
+
+                Args:
+                    dataframe (pandas.DataFrame): the data to insert. column names will be used for column name and externalId, column dtypes will be used to determine valueType.
+                    external_id (str): external id of the sequence.
+                    allow_integers (bool):: allow the valueType LONG if the dtype of the column indicates this. if False, reverts to DOUBLE.
+                    force_create (bool):: if sequence exists and column types do not match, re-create the sequence.
+                    clear_existing_data (bool): if sequence exists, clear all existing data before inserting.
+                    *args: additional arguments to be passed to new Sequence object (description, metadata, etc.)
+
+                Returns:
+                    Sequence: The created or existing sequence.
+
+                Examples:
+
+                    Create a new sequence from a csv file::
+
+                        >>> from cognite.client import CogniteClient
+                        >>> c = CogniteClient()
+                        >>> seq = c.sequences.create_from_dataframe(pd.read_csv("my_csv_file.csv"),force_create=True,clear_existing_data=True)
+                """
+        cols = self._dataframe_to_columns_definition(dataframe=dataframe, allow_integers=allow_integers)
+        existing_seq = self.retrieve(external_id=external_id)
+        if existing_seq:
+            existing_cols_map = {col["externalId"]: col["valueType"] for col in existing_seq.columns}
+            df_cols_map = {col["externalId"]: col["valueType"] for col in cols}
+            if existing_cols_map != df_cols_map:
+                if not force_create:
+                    raise CogniteCompatibilityError(
+                        "Sequence exists, column types {} do not match dataframe columns {}, and force_create=False".format(
+                            existing_cols_map, df_cols_map
+                        )
+                    )
+                else:
+                    self.delete(external_id=external_id)
+                    existing_seq = None
+            else:
+                if clear_existing_data:
+                    self.data.delete_range(external_id=external_id, start=0, end=None)
+
+        if not existing_seq:
+            created_seq = self.create(Sequence(external_id=external_id, columns=cols, *args))
+        self.data.insert_dataframe(dataframe=dataframe, external_id=external_id)
+        return existing_seq or created_seq
+
     def create(self, sequence: Union[Sequence, List[Sequence]]) -> Union[Sequence, SequenceList]:
         """`Create one or more sequences. <https://docs.cognite.com/api/v1/#operation/createSequence>`_
 
@@ -228,7 +296,7 @@ class SequencesAPI(APIClient):
             for col in sequence.columns
         ]
         for i in range(len(sequence.columns)):
-            if not sequence.columns[i].get("externalId"):
+            if sequence.columns[i].get("externalId") is None:
                 sequence.columns[i]["externalId"] = "column" + str(i)
             if sequence.columns[i].get("valueType"):
                 sequence.columns[i]["valueType"] = sequence.columns[i]["valueType"].upper()
