@@ -1,3 +1,4 @@
+import sys
 from unittest import mock
 
 import pytest
@@ -78,23 +79,26 @@ class TestSequencesPandas:
     def test_create_from_dataframe(self):
         import pandas as pd
 
+        extid = "__test_df{}.{}".format(sys.version_info.major, sys.version_info.minor)
+
         df = pd.DataFrame([[1, 2.3, "a"], [4, 4.1, "b"]])
         df.columns = ["intcol", "floatcol", "strcol"]
         df2 = pd.DataFrame([[1, 2.3], [4, 4.1]])
 
-        seq = COGNITE_CLIENT.sequences.create_from_dataframe(dataframe=df, external_id="__test_df", force_create=True)
+        seq = COGNITE_CLIENT.sequences.create_from_dataframe(dataframe=df, external_id=extid, force_create=True)
         assert 3 == len(seq.columns)
         assert "LONG" == seq.columns[0]["valueType"]
         assert "DOUBLE" == seq.columns[1]["valueType"]
         assert "STRING" == seq.columns[2]["valueType"]
 
-        COGNITE_CLIENT.sequences.create_from_dataframe(dataframe=df, external_id="__test_df")
+        COGNITE_CLIENT.sequences.create_from_dataframe(dataframe=df, external_id=extid)
         seq_int = COGNITE_CLIENT.sequences.create_from_dataframe(
-            dataframe=df, external_id="__test_df", force_create=True, allow_integers=False
+            dataframe=df, external_id=extid, force_create=True, allow_integers=False
         )
         assert "DOUBLE" == seq_int.columns[0]["valueType"]
 
         with pytest.raises(CogniteCompatibilityError):
-            COGNITE_CLIENT.sequences.create_from_dataframe(dataframe=df2, external_id="__test_df")
+            COGNITE_CLIENT.sequences.create_from_dataframe(dataframe=df2, external_id=extid)
 
-        COGNITE_CLIENT.sequences.create_from_dataframe(dataframe=df2, external_id="__test_df", force_create=True)
+        COGNITE_CLIENT.sequences.create_from_dataframe(dataframe=df2, external_id=extid, force_create=True)
+        COGNITE_CLIENT.sequences.delete(external_id=extid)

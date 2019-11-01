@@ -227,7 +227,7 @@ class SequencesAPI(APIClient):
 
                         >>> from cognite.client import CogniteClient
                         >>> c = CogniteClient()
-                        >>> df = 'your dataframe' # e.g. from pd.read_csv("my_csv_file.csv")
+                        >>> df = "your dataframe" # e.g. from pd.read_csv("my_csv_file.csv")
                         >>> seq = c.sequences.create_from_dataframe(df,force_create=True,clear_existing_data=True)
                 """
         cols = self._dataframe_to_columns_definition(dataframe=dataframe, allow_integers=allow_integers)
