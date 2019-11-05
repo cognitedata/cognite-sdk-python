@@ -204,7 +204,7 @@ class SequencesAPI(APIClient):
         dataframe: "pandas.DataFrame",
         external_id: str,
         force_recreate: bool = False,
-        clear_existing_data: bool = False,
+        clear_existing_data: bool = True,
         *args
     ):
         """`Create and populate a sequence from a pandas dataframe . <https://docs.cognite.com/api/v1/#operation/createSequence>`_
