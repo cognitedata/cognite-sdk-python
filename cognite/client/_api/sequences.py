@@ -213,7 +213,7 @@ class SequencesAPI(APIClient):
                     dataframe (pandas.DataFrame): the data to insert. column names will be used for column name and externalId, column dtypes will be used to determine valueType.
                     external_id (str): external id of the sequence.
                     force_recreate (bool): if sequence exists and column types do not match, re-create the sequence.
-                    clear_existing_data (bool): if sequence exists, clear all existing data before inserting.
+                    clear_existing_data (bool): Delete rows that existed before and are not in the given dataframe (i.e. ensures the sequences equals the dataframe). If False, will merge with existing data.
                     *args: additional arguments to be passed to new Sequence object (description, metadata, etc.)
 
                 Returns:
