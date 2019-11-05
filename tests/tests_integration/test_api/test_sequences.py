@@ -94,5 +94,8 @@ class TestSequencesPandas:
         with pytest.raises(IncompatibleColumnTypesError):
             COGNITE_CLIENT.sequences.create_from_dataframe(dataframe=df2, external_id=extid)
 
-        COGNITE_CLIENT.sequences.create_from_dataframe(dataframe=df2, external_id=extid, force_recreate=True)
+        seq = COGNITE_CLIENT.sequences.create_from_dataframe(
+            dataframe=df2, external_id=extid, force_recreate=True, description="bla"
+        )
+        assert "bla" == seq.description
         COGNITE_CLIENT.sequences.delete(external_id=extid)

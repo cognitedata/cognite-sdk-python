@@ -205,8 +205,8 @@ class SequencesAPI(APIClient):
         external_id: str,
         force_recreate: bool = False,
         clear_existing_data: bool = True,
-        *args
-    ):
+        **kwargs
+    ) -> Sequence:
         """`Create and populate a sequence from a pandas dataframe . <https://docs.cognite.com/api/v1/#operation/createSequence>`_
 
                 Args:
@@ -214,7 +214,7 @@ class SequencesAPI(APIClient):
                     external_id (str): external id of the sequence.
                     force_recreate (bool): if sequence exists and column types do not match, re-create the sequence.
                     clear_existing_data (bool): Delete rows that existed before and are not in the given dataframe (i.e. ensures the sequences equals the dataframe). If False, will merge with existing data.
-                    *args: additional arguments to be passed to new Sequence object (description, metadata, etc.)
+                    **kwargs: additional arguments to be passed to new Sequence object (description, metadata, etc.)
 
                 Returns:
                     Sequence: The created or existing sequence.
@@ -248,7 +248,7 @@ class SequencesAPI(APIClient):
                     self.data.delete_range(external_id=external_id, start=0, end=None)
 
         if not existing_seq:
-            created_seq = self.create(Sequence(external_id=external_id, columns=cols, *args))
+            created_seq = self.create(Sequence(external_id=external_id, columns=cols, **kwargs))
         self.data.insert_dataframe(dataframe=dataframe, external_id=external_id)
         return existing_seq or created_seq
 
