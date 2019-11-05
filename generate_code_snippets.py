@@ -51,4 +51,7 @@ for api_name, api in apis:
             if openapi_ident in duplicate_operations:
                 snippets["operations"][duplicate_operations[openapi_ident]] += code
 
-print(json.dumps(snippets, indent=4))
+filename = "python-sdk-examples.json"
+with open(filename, "w+") as f:
+    json.dump(snippets, f, indent=2)
+print("JS code snippets saved to: " + filename)
