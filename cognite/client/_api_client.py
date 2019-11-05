@@ -164,7 +164,7 @@ class APIClient:
     def _resolve_url(self, method: str, url_path: str):
         if not url_path.startswith("/"):
             raise ValueError("URL path must start with '/'")
-        base_url = self._get_base_url_with_base_path()
+        base_url = self._get_base_url_with_base_path().rstrip("/")
         full_url = base_url + url_path
         is_retryable = self._is_retryable(method, full_url)
         # Hack to allow running model hosting requests against local emulator
