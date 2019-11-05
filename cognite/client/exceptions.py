@@ -201,7 +201,7 @@ class CogniteDuplicateColumnsError(Exception):
         return self.message
 
 
-class CogniteCompatibilityError(Exception):
+class IncompatibleColumnTypesError(Exception):
     """Cognite Compatibility Error
 
     Raised if the existing object is incompatible with the one to be merged with. e.g. attempts to create a sequence from a dataframe with incompatible columns.

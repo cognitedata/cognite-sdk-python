@@ -5,7 +5,7 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes import Sequence, SequenceFilter, SequenceUpdate
-from cognite.client.exceptions import CogniteCompatibilityError
+from cognite.client.exceptions import IncompatibleColumnTypesError
 from tests.utils import set_request_limit
 
 COGNITE_CLIENT = CogniteClient()
@@ -85,20 +85,14 @@ class TestSequencesPandas:
         df.columns = ["intcol", "floatcol", "strcol"]
         df2 = pd.DataFrame([[1, 2.3], [4, 4.1]])
 
-        seq = COGNITE_CLIENT.sequences.create_from_dataframe(dataframe=df, external_id=extid, force_create=True)
+        seq = COGNITE_CLIENT.sequences.create_from_dataframe(dataframe=df, external_id=extid, force_recreate=True)
         assert 3 == len(seq.columns)
         assert "LONG" == seq.columns[0]["valueType"]
         assert "DOUBLE" == seq.columns[1]["valueType"]
         assert "STRING" == seq.columns[2]["valueType"]
 
-        COGNITE_CLIENT.sequences.create_from_dataframe(dataframe=df, external_id=extid)
-        seq_int = COGNITE_CLIENT.sequences.create_from_dataframe(
-            dataframe=df, external_id=extid, force_create=True, allow_integers=False
-        )
-        assert "DOUBLE" == seq_int.columns[0]["valueType"]
-
-        with pytest.raises(CogniteCompatibilityError):
+        with pytest.raises(IncompatibleColumnTypesError):
             COGNITE_CLIENT.sequences.create_from_dataframe(dataframe=df2, external_id=extid)
 
-        COGNITE_CLIENT.sequences.create_from_dataframe(dataframe=df2, external_id=extid, force_create=True)
+        COGNITE_CLIENT.sequences.create_from_dataframe(dataframe=df2, external_id=extid, force_recreate=True)
         COGNITE_CLIENT.sequences.delete(external_id=extid)

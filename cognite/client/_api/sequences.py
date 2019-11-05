@@ -5,7 +5,7 @@ from typing import *
 from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Sequence, SequenceData, SequenceFilter, SequenceList, SequenceUpdate
-from cognite.client.exceptions import CogniteCompatibilityError
+from cognite.client.exceptions import IncompatibleColumnTypesError
 
 
 class SequencesAPI(APIClient):
@@ -186,11 +186,11 @@ class SequencesAPI(APIClient):
         ).dump(camel_case=True)
         return self._list(method="POST", filter=filter, limit=limit)
 
-    def _dataframe_to_columns_definition(self, dataframe, allow_integers=True):
+    def _dataframe_to_columns_definition(self, dataframe):
         np, pd = utils._auxiliary.local_import("numpy", "pandas")
 
         def map_type(t):
-            if allow_integers and np.issubdtype(t, np.integer):
+            if np.issubdtype(t, np.integer):
                 return "LONG"
             elif np.issubdtype(t, np.number):
                 return "DOUBLE"
@@ -203,8 +203,7 @@ class SequencesAPI(APIClient):
         self,
         dataframe: "pandas.DataFrame",
         external_id: str,
-        allow_integers: bool = True,
-        force_create: bool = False,
+        force_recreate: bool = False,
         clear_existing_data: bool = False,
         *args
     ):
@@ -213,8 +212,7 @@ class SequencesAPI(APIClient):
                 Args:
                     dataframe (pandas.DataFrame): the data to insert. column names will be used for column name and externalId, column dtypes will be used to determine valueType.
                     external_id (str): external id of the sequence.
-                    allow_integers (bool):: allow the valueType LONG if the dtype of the column indicates this. if False, reverts to DOUBLE.
-                    force_create (bool):: if sequence exists and column types do not match, re-create the sequence.
+                    force_recreate (bool):: if sequence exists and column types do not match, re-create the sequence.
                     clear_existing_data (bool): if sequence exists, clear all existing data before inserting.
                     *args: additional arguments to be passed to new Sequence object (description, metadata, etc.)
 
@@ -228,16 +226,16 @@ class SequencesAPI(APIClient):
                         >>> from cognite.client import CogniteClient
                         >>> c = CogniteClient()
                         >>> df = "your dataframe" # e.g. from pd.read_csv("my_csv_file.csv")
-                        >>> seq = c.sequences.create_from_dataframe(df,force_create=True,clear_existing_data=True)
+                        >>> seq = c.sequences.create_from_dataframe(df,force_recreate=True,clear_existing_data=True)
                 """
-        cols = self._dataframe_to_columns_definition(dataframe=dataframe, allow_integers=allow_integers)
+        cols = self._dataframe_to_columns_definition(dataframe=dataframe)
         existing_seq = self.retrieve(external_id=external_id)
         if existing_seq:
             existing_cols_map = {col["externalId"]: col["valueType"] for col in existing_seq.columns}
             df_cols_map = {col["externalId"]: col["valueType"] for col in cols}
             if existing_cols_map != df_cols_map:
-                if not force_create:
-                    raise CogniteCompatibilityError(
+                if not force_recreate:
+                    raise IncompatibleColumnTypesError(
                         "Sequence exists, column types {} do not match dataframe columns {}, and force_create=False".format(
                             existing_cols_map, df_cols_map
                         )
