@@ -87,9 +87,7 @@ class TestSequencesPandas:
 
         seq = COGNITE_CLIENT.sequences.create_from_dataframe(dataframe=df, external_id=extid, force_recreate=True)
         assert 3 == len(seq.columns)
-        assert "LONG" == seq.columns[0]["valueType"]
-        assert "DOUBLE" == seq.columns[1]["valueType"]
-        assert "STRING" == seq.columns[2]["valueType"]
+        assert ["LONG", "DOUBLE", "STRING"] == seq.column_value_types
 
         with pytest.raises(IncompatibleColumnTypesError):
             COGNITE_CLIENT.sequences.create_from_dataframe(dataframe=df2, external_id=extid)
