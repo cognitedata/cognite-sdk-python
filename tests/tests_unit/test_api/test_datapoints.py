@@ -163,7 +163,7 @@ def mock_get_datapoints_one_ts_empty(rsps):
 @pytest.fixture
 def mock_get_datapoints_one_ts_has_missing_aggregates(rsps):
     def callback(request):
-        item = jsgz_load(request.body)["items"][0]
+        item = jsgz_load(request.body)
         if item["aggregates"] == ["average"]:
             dps = {
                 "id": 1,
@@ -206,7 +206,7 @@ def mock_get_datapoints_one_ts_has_missing_aggregates(rsps):
 @pytest.fixture
 def mock_get_datapoints_several_missing(rsps):
     def callback(request):
-        item = jsgz_load(request.body)["items"][0]
+        item = jsgz_load(request.body)
         if item["aggregates"] == ["interpolation"]:
             dps = {
                 "id": 2,
@@ -264,7 +264,7 @@ def mock_get_datapoints_several_missing(rsps):
 @pytest.fixture
 def mock_get_datapoints_single_isstep(rsps):
     def callback(request):
-        item = jsgz_load(request.body)["items"][0]
+        item = jsgz_load(request.body)
         if item["aggregates"] == ["interpolation"]:
             dps = {
                 "id": 3,
@@ -641,7 +641,7 @@ class TestInsertDatapoints:
     def test_insert_datapoints_in_multiple_time_series_invalid_key(self):
         dps = [{"timestamp": i * 1e11, "value": i} for i in range(1, 11)]
         dps_objects = [{"extId": "1", "datapoints": dps}]
-        with pytest.raises(AssertionError, match="Invalid key 'extId'"):
+        with pytest.raises(ValueError, match="Invalid key 'extId'"):
             DPS_CLIENT.insert_multiple(dps_objects)
 
     def test_insert_datapoints_ts_does_not_exist(self, mock_post_datapoints_400):
@@ -1342,24 +1342,20 @@ class TestDataFetcher:
         [
             (
                 DatapointsQuery(start=1, end=2, id=1, aggregates=["average"]),
-                AssertionError,
+                ValueError,
                 "granularity must also be provided",
             ),
-            (
-                DatapointsQuery(start=1, end=2, id=1, granularity="1d"),
-                AssertionError,
-                "aggregates must also be provided",
-            ),
+            (DatapointsQuery(start=1, end=2, id=1, granularity="1d"), ValueError, "aggregates must also be provided"),
             (
                 DatapointsQuery(start=1, end=2, id=[1, 1], granularity="1d", aggregates=["average"]),
-                AssertionError,
+                ValueError,
                 "identifier '1' is duplicated in query",
             ),
             (
                 DatapointsQuery(
                     start=1, end=2, id=[1, {"id": 1, "aggregates": ["max"]}], granularity="1d", aggregates=["average"]
                 ),
-                AssertionError,
+                ValueError,
                 "identifier '1' is duplicated in query",
             ),
         ],
@@ -1371,14 +1367,17 @@ class TestDataFetcher:
     @pytest.mark.parametrize(
         "q, expected_q",
         [
-            ([_DPTask(1, 2, None, None, None, None, None)], [_DPTask(1, 2, None, None, None, None, None)]),
             (
-                [_DPTask(datetime(2018, 1, 1), datetime(2019, 1, 1), None, None, None, None, None)],
-                [_DPTask(1514764800000, 1546300800000, None, None, None, None, None)],
+                [_DPTask(DPS_CLIENT, 1, 2, {}, None, None, None, None)],
+                [_DPTask(DPS_CLIENT, 1, 2, {}, None, None, None, None)],
             ),
             (
-                [_DPTask(gms("1h"), gms(("25h")), None, ["average"], "1d", None, None)],
-                [_DPTask(gms("1d"), gms("2d"), None, ["average"], "1d", None, None)],
+                [_DPTask(DPS_CLIENT, datetime(2018, 1, 1), datetime(2019, 1, 1), {}, None, None, None, None)],
+                [_DPTask(DPS_CLIENT, 1514764800000, 1546300800000, {}, None, None, None, None)],
+            ),
+            (
+                [_DPTask(DPS_CLIENT, gms("1h"), gms(("25h")), {}, ["average"], "1d", None, None)],
+                [_DPTask(DPS_CLIENT, gms("1d"), gms("2d"), {}, ["average"], "1d", None, None)],
             ),
         ],
     )
@@ -1406,15 +1405,8 @@ class TestDataFetcher:
     @pytest.mark.parametrize(
         "start, end, granularity, request_limit, user_limit, expected_output",
         [
-            (0, gms("20d"), "10d", 2, None, [_DPWindow(start=0, end=1728000000)]),
-            (
-                0,
-                gms("20d"),
-                "10d",
-                1,
-                None,
-                [_DPWindow(start=0, end=864000000), _DPWindow(start=864000000, end=1728000000)],
-            ),
+            (0, gms("20d"), "10d", 2, None, [_DPWindow(0, 1728000000)]),
+            (0, gms("20d"), "10d", 1, None, [_DPWindow(0, 864000000), _DPWindow(864000000, 1728000000)]),
             (
                 0,
                 gms("6d"),
@@ -1431,18 +1423,30 @@ class TestDataFetcher:
                 None,
                 [_DPWindow(0, gms("1d")), _DPWindow(gms("1d"), gms("2d")), _DPWindow(gms("2d"), gms("3d"))],
             ),
-            (0, gms("1h"), None, 2000, None, [_DPWindow(start=0, end=3600000)]),
-            (0, gms("1s"), None, 1, None, [_DPWindow(start=0, end=1000)]),
-            (0, gms("1s"), None, 1, None, [_DPWindow(start=0, end=1000)]),
+            (0, gms("1h"), None, 2000, None, [_DPWindow(0, 3600000)]),
+            (0, gms("1s"), None, 1, None, [_DPWindow(0, 1000)]),
+            (0, gms("1s"), None, 1, None, [_DPWindow(0, 1000)]),
             (0, gms("3d"), None, 1000, 500, [_DPWindow(0, gms("1d"))]),
         ],
     )
     def test_get_datapoints_windows(
         self, start, end, granularity, request_limit, user_limit, expected_output, mock_get_dps_count
     ):
-        res = DatapointsFetcher(DPS_CLIENT)._get_windows(
-            id=0, start=start, end=end, granularity=granularity, request_limit=request_limit, user_limit=user_limit
+        user_limit = user_limit or float("inf")
+        task = _DPTask(
+            client=DPS_CLIENT,
+            start=start,
+            end=end,
+            ts_item={},
+            granularity=granularity,
+            aggregates=[],
+            limit=None,
+            include_outside_points=False,
         )
+        task.request_limit = request_limit
+        res = DatapointsFetcher(DPS_CLIENT)._get_windows(id=0, task=task, remaining_user_limit=user_limit)
+        for w in expected_output:
+            w.limit = user_limit
         assert expected_output == res
 
     @pytest.mark.parametrize(
@@ -1458,18 +1462,6 @@ class TestDataFetcher:
     )
     def test_align_window_end(self, start, end, granularity, expected_output):
         assert expected_output == DatapointsFetcher._align_window_end(start, end, granularity)
-
-    def test_remove_duplicates_from_datapoints(self):
-        d = Datapoints(
-            id=1,
-            timestamp=[1, 1, 2, 3, 3, 4, 5, 5, 6, 7, 7],
-            value=[0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 1],
-            max=[0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 1],
-        )
-        d_no_dupes = DatapointsFetcher._remove_duplicates(d)
-        assert [1, 2, 3, 4, 5, 6, 7] == d_no_dupes.timestamp
-        assert [0, 1, 0, 1, 1, 0, 1] == d_no_dupes.value
-        assert [0, 1, 0, 1, 1, 0, 1] == d_no_dupes.max
 
     @pytest.mark.parametrize(
         "ids, external_ids, expected_output",

@@ -20,7 +20,7 @@ class SequencesAPI(APIClient):
         chunk_size: int = None,
         name: str = None,
         external_id_prefix: str = None,
-        metadata: Dict[str, Any] = None,
+        metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
         root_asset_ids: List[int] = None,
         created_time: Dict[str, Any] = None,
@@ -127,7 +127,7 @@ class SequencesAPI(APIClient):
         self,
         name: str = None,
         external_id_prefix: str = None,
-        metadata: Dict[str, Any] = None,
+        metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
         root_asset_ids: List[int] = None,
         created_time: Dict[str, Any] = None,
@@ -408,16 +408,16 @@ class SequencesDataAPI(APIClient):
         summary.raise_compound_exception_if_failed_tasks()
 
     def insert_dataframe(
-        self, dataframe, external_id_headers: bool = False, id: int = None, external_id: str = None
+        self, dataframe, external_id_headers: bool = True, id: int = None, external_id: str = None
     ) -> None:
-        """Insert a Pandas dataframe.
+        """`Insert a Pandas dataframe. <https://docs.cognite.com/api/v1/#operation/postSequenceData>`_
 
         The index of the dataframe must contain the row numbers. The names of the remaining columns specify the column external ids.
         The sequence and columns must already exist.
 
         Args:
             dataframe (pandas.DataFrame):  Pandas DataFrame object containing the sequence data.
-            external_id_headers (bool): Headers are external ids
+            external_id_headers (bool): Ignored parameter here for backwards compatibility. Dataframe columns should always match sequence column external ids.
             id (int): Id of sequence to insert rows into.
             external_id (str): External id of sequence to insert rows into.
 
@@ -430,7 +430,7 @@ class SequencesDataAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> df = c.sequences.data.retrieve_dataframe(id=123, start=0, end=None)
-                >>> c.sequences.data.insert_dataframe(df*2, id=123, external_id_headers=True)
+                >>> c.sequences.data.insert_dataframe(df*2, id=123)
         """
         dataframe = dataframe.replace({math.nan: None})
         data = [(v[0], list(v[1:])) for v in dataframe.itertuples()]
@@ -464,7 +464,7 @@ class SequencesDataAPI(APIClient):
         self._post(url_path=self._DATA_PATH + "/delete", json={"items": [post_obj]})
 
     def delete_range(self, start: int, end: Union[int, None], id: int = None, external_id: str = None) -> None:
-        """Delete a range of rows from a sequence. Note this operation is potentially slow, as retrieves each row before deleting.
+        """`Delete a range of rows from a sequence. Note this operation is potentially slow, as retrieves each row before deleting. <https://docs.cognite.com/api/v1/#operation/deleteSequenceData>`_
 
         Args:
             start (int): Row number to start from (inclusive).
@@ -543,7 +543,7 @@ class SequencesDataAPI(APIClient):
         id: int = None,
         limit: int = None,
     ):
-        """Retrieve data from a sequence as a pandas dataframe
+        """`Retrieve data from a sequence as a pandas dataframe <https://docs.cognite.com/api/v1/#operation/getSequenceData>`_
 
         Args:
             start (int): (inclusive) row number to start from.

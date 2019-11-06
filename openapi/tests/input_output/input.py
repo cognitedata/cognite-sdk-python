@@ -22,6 +22,22 @@ class CogniteListUpdate:
     pass
 
 
+class CognitePropertyClassUtil:
+    @staticmethod
+    def declare_property(tmp):
+        return None
+
+
+class TimestampRange:
+    pass
+
+
+# GenPropertyClass: AggregateResultItem
+class AggregateResultItem(dict):
+    pass
+    # GenStop
+
+
 # GenClass: Asset
 class Asset(CogniteResource):
     # GenStop

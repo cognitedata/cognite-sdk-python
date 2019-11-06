@@ -276,10 +276,11 @@ class Datapoints:
 
     def __get_datapoint_objects(self) -> List[Datapoint]:
         if self.__datapoint_objects is None:
+            fields = self._get_non_empty_data_fields()
             self.__datapoint_objects = []
             for i in range(len(self)):
                 dp_args = {}
-                for attr, value in self._get_non_empty_data_fields():
+                for attr, value in fields:
                     dp_args[attr] = value[i]
                 self.__datapoint_objects.append(Datapoint(**dp_args))
         return self.__datapoint_objects
