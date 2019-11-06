@@ -61,9 +61,15 @@ class Relationship(CogniteResource):
         if isinstance(target, dict) or target is None:
             return target
 
-        from cognite.client.data_classes import Asset, Event, FileMetadata, TimeSeries
+        from cognite.client.data_classes import Asset, Event, FileMetadata, TimeSeries, Sequence
 
-        _TARGET_TYPES = {Asset: "Asset", TimeSeries: "TimeSeries", FileMetadata: "File", Event: "Event"}
+        _TARGET_TYPES = {
+            Asset: "Asset",
+            TimeSeries: "TimeSeries",
+            FileMetadata: "File",
+            Event: "Event",
+            Sequence: "Sequence",
+        }
         typestr = _TARGET_TYPES.get(target.__class__)
         if typestr:
             return {"resource": typestr, "resourceId": target.external_id}

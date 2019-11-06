@@ -34,6 +34,8 @@ Changes are grouped as follows
 
 ### Added
 - `create_from_dataframe` function added for sequences.
+- Relationships can now have sequences as source or target.
+
 
 ## [1.3.3] - 2019-10-21
 
