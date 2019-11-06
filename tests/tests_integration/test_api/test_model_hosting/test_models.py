@@ -52,7 +52,7 @@ class TestModels:
     def test_get_model(self, created_model):
         model = MODELS_API.get_model(created_model.name)
         assert model.name == created_model.name
-        assert model.active_version_id is None
+        assert model.active_version_name is None
 
     def test_list_models(self, created_model):
         res = MODELS_API.list_models()

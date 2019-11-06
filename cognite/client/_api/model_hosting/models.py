@@ -92,7 +92,7 @@ class ModelsAPI(APIClient):
         name: str,
         description: str = None,
         metadata: Dict[str, str] = None,
-        active_version_id: int = None,
+        active_version_name: int = None,
         webhook_url: str = None,
     ) -> Model:
         """Update a model.
@@ -101,7 +101,7 @@ class ModelsAPI(APIClient):
             name (str): Name of model to update.
             description (str): Description of model.
             metadata (Dict[str, str]): metadata about model.
-            active_version_id (int): Active version of model.
+            active_version_name (str): Active version of model.
             webhook_url (str): Webhook url to send notifications to upon failing scheduled predictions.
 
         Returns:
@@ -113,8 +113,8 @@ class ModelsAPI(APIClient):
             body.update({"description": {"set": description}})
         if metadata:
             body.update({"metadata": {"set": metadata}})
-        if active_version_id:
-            body.update({"activeVersionId": {"set": active_version_id}})
+        if active_version_name:
+            body.update({"activeVersionName": {"set": active_version_name}})
         if webhook_url:
             body.update({"webhookUrl": {"set": webhook_url}})
         res = self._post(url, json=body)
