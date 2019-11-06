@@ -93,7 +93,7 @@ class TestRelationships:
         assert mock_rel_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
     def test_create_single_types(self, mock_rel_response):
-        types = [Asset, TimeSeries, FileMetadata, Event]
+        types = [Asset, TimeSeries, FileMetadata, Event, Sequence]
         for cls in types:
             test = cls(external_id="test")
             res = REL_API.create(
@@ -133,7 +133,7 @@ class TestRelationships:
                     external_id="1",
                     confidence=0.5,
                     relationship_type="belongsTo",
-                    source=Sequence(external_id="a'"),
+                    source=Relationship(external_id="a"),
                     target={"resourceId": "bbb", "resource": "Asset"},
                 )
             )
