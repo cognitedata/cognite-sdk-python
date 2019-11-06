@@ -33,6 +33,7 @@ Changes are grouped as follows
 - Fixed pagination for `include_outside_points` and other edge cases in datapoints.
 
 ### Added
+- Relationships can now have sequences as source or target.
 
 ## [1.3.3] - 2019-10-21
 
