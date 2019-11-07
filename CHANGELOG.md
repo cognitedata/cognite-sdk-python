@@ -31,6 +31,7 @@ Changes are grouped as follows
 ### Fixed
 - `source_created_time` and `source_modified_time` on files now displayed as time fields.
 - Fixed pagination for `include_outside_points` and other edge cases in datapoints.
+- Fixed a bug where `insert_dataframe` with strings caused a numpy error.
 
 ### Added
 - Relationships can now have sequences as source or target.
