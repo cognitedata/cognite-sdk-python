@@ -1266,13 +1266,13 @@ class TestPandasIntegration:
 
         timestamps = [1500000000000, 1510000000000, 1520000000000, 1530000000000]
         df = pd.DataFrame(
-            {"123": [1, 2, np.inf, 4], "456": [5.0, 6.0, 7.0, 8.0],"xyz": ["a", "b", "c", "d"]},
+            {"123": [1, 2, np.inf, 4], "456": [5.0, 6.0, 7.0, 8.0], "xyz": ["a", "b", "c", "d"]},
             index=[utils._time.ms_to_datetime(ms) for ms in timestamps],
         )
         with pytest.raises(AssertionError, match="contains Infinity"):
             DPS_CLIENT.insert_dataframe(df)
 
-    def test_insert_dataframe_with_strings(self,mock_post_datapoints):
+    def test_insert_dataframe_with_strings(self, mock_post_datapoints):
         import pandas as pd
 
         timestamps = [1500000000000, 1510000000000, 1520000000000, 1530000000000]
@@ -1281,7 +1281,6 @@ class TestPandasIntegration:
             index=[utils._time.ms_to_datetime(ms) for ms in timestamps],
         )
         DPS_CLIENT.insert_dataframe(df)
-
 
     def test_retrieve_datapoints_multiple_time_series_correct_ordering(self, mock_get_datapoints):
         ids = [1, 2, 3]
