@@ -111,7 +111,7 @@ podTemplate(
                 stage('Release') {
                     sh("pipenv run twine upload --config-file /pypi/.pypirc dist/*")
                 }
-                stage('After release') {
+                stage('Update code snippets on service-contracts') {
                     sh("pip3 install requests")
                     sh("python3 ./generate_code_snippets.py")
                     withCredentials([usernamePassword(credentialsId: 'jenkins-cognite', passwordVariable: 'GH_TOKEN', usernameVariable: 'GH_USER')]) {
