@@ -21,6 +21,8 @@ Changes are grouped as follows
 
 ## [Unreleased]
 
+## [1.3.4] - 2019-11-07
+
 ### Changed
 - Error 500's are no longer retried by default, only HTTP 429, 502, 503, 504 are.
 - Optimized HTTP calls by caching user agent.
@@ -31,6 +33,7 @@ Changes are grouped as follows
 ### Fixed
 - `source_created_time` and `source_modified_time` on files now displayed as time fields.
 - Fixed pagination for `include_outside_points` and other edge cases in datapoints.
+- Fixed a bug where `insert_dataframe` with strings caused a numpy error.
 
 ### Added
 - `create_from_dataframe` function added for sequences.
