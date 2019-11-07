@@ -21,6 +21,8 @@ Changes are grouped as follows
 
 ## [Unreleased]
 
+## [1.3.4] - 2019-11-07
+
 ### Changed
 - Error 500's are no longer retried by default, only HTTP 429, 502, 503, 504 are.
 - Optimized HTTP calls by caching user agent.
