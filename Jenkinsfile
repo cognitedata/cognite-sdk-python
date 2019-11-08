@@ -112,7 +112,6 @@ podTemplate(
                     sh("pipenv run twine upload --config-file /pypi/.pypirc dist/*")
                 }
                 stage('Update code snippets on service-contracts') {
-                    sh("pip3 install requests")
                     sh("python3 generate_code_snippets.py > python-sdk-examples.json")
                     withCredentials([usernamePassword(credentialsId: 'jenkins-cognite', passwordVariable: 'GH_TOKEN', usernameVariable: 'GH_USER')]) {
                         sh("GH_TOKEN=${GH_TOKEN} sh ./scripts/deploy_code_snippets.sh " + currentVersion)
