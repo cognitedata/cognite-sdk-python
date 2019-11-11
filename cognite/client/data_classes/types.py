@@ -4,15 +4,30 @@ from cognite.client.data_classes._base import *
 from cognite.client.data_classes.shared import TimestampRange
 
 
-# GenPropertyClass: TypeDefinitionReference
-class TypeDefinitionReference:
+class TypeDefinitionReference(dict):
     pass
-    # GenStop
 
 
 # GenPropertyClass: ParentTypeDefinitionFilter
-class ParentTypeDefinitionFilter:
-    pass
+class ParentTypeDefinitionFilter(dict):
+    """filter for type definitions that belong to the subtree defined by the root parent type specified
+
+    Args:
+        id (int): Javascript friendly internal ID given to the object.
+        external_id (str): External Id provided by client. Should be unique within the project.
+        version (int): A JavaScript-friendly version for the object.
+    """
+
+    def __init__(self, id: int = None, external_id: str = None, version: int = None, **kwargs):
+        self.id = id
+        self.external_id = external_id
+        self.version = version
+        self.update(kwargs)
+
+    id = CognitePropertyClassUtil.declare_property("id")
+    external_id = CognitePropertyClassUtil.declare_property("externalId")
+    version = CognitePropertyClassUtil.declare_property("version")
+
     # GenStop
 
 
@@ -90,9 +105,36 @@ class TypeFilter(CogniteFilter):
     # GenStop
 
 
-# Gen UpdateClass: TypeDefinitionUpdate
+# GenClass: TypeDefinitionUpdate
 class TypeUpdate(CogniteUpdate):
-    pass
+    """No description.
+
+    Args:
+        ref (Union[Dict[str, Any], TypeDefinitionReference]): No description.
+        update (Union[Dict[str, Any], Type]): No description.
+        cognite_client (CogniteClient): The client to associate with this object.
+    """
+
+    def __init__(
+        self,
+        ref: Union[Dict[str, Any], TypeDefinitionReference] = None,
+        update: Union[Dict[str, Any], Type] = None,
+        cognite_client=None,
+    ):
+        self.ref = ref
+        self.update = update
+        self._cognite_client = cognite_client
+
+    @classmethod
+    def _load(cls, resource: Union[Dict, str], cognite_client=None):
+        instance = super(TypeUpdate, cls)._load(resource, cognite_client)
+        if isinstance(resource, Dict):
+            if instance.ref is not None:
+                instance.ref = TypeDefinitionReference(**instance.ref)
+            if instance.update is not None:
+                instance.update = Type(**instance.update)
+        return instance
+
     # GenStop
 
 
