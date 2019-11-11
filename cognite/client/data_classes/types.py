@@ -4,12 +4,16 @@ from cognite.client.data_classes._base import *
 from cognite.client.data_classes.shared import TimestampRange
 
 
+# GenPropertyClass: TypeDefinitionReference
 class TypeDefinitionReference:
     pass
+    # GenStop
 
 
+# GenPropertyClass: ParentTypeDefinitionFilter
 class ParentTypeDefinitionFilter:
     pass
+    # GenStop
 
 
 # GenClass: TypeDefinitionSpec
