@@ -106,9 +106,16 @@ podTemplate(
             println("This version: " + currentVersion)
             def versionExists = sh(returnStdout: true, script: 'pipenv run python3 cognite/client/utils/_version_checker.py -p cognite-sdk -v ' + currentVersion).trim()
             println("Version Exists: " + versionExists)
+
             if (env.BRANCH_NAME == 'master' && versionExists == 'no') {
                 stage('Release') {
                     sh("pipenv run twine upload --config-file /pypi/.pypirc dist/*")
+                }
+                stage('Update code snippets on service-contracts') {
+                    sh("pipenv run python3 generate_code_snippets.py > python-sdk-examples.json")
+                    withCredentials([usernamePassword(credentialsId: 'jenkins-cognite', passwordVariable: 'GH_TOKEN', usernameVariable: 'GH_USER')]) {
+                        sh("GH_TOKEN=${GH_TOKEN} sh ./scripts/deploy_code_snippets.sh " + currentVersion)
+                    }
                 }
             }
         }
