@@ -105,36 +105,9 @@ class TypeFilter(CogniteFilter):
     # GenStop
 
 
-# GenClass: TypeDefinitionUpdate
+# Gen UpdateClass: TypeDefinitionUpdate
 class TypeUpdate(CogniteUpdate):
-    """No description.
-
-    Args:
-        ref (Union[Dict[str, Any], TypeDefinitionReference]): No description.
-        update (Union[Dict[str, Any], Type]): No description.
-        cognite_client (CogniteClient): The client to associate with this object.
-    """
-
-    def __init__(
-        self,
-        ref: Union[Dict[str, Any], TypeDefinitionReference] = None,
-        update: Union[Dict[str, Any], Type] = None,
-        cognite_client=None,
-    ):
-        self.ref = ref
-        self.update = update
-        self._cognite_client = cognite_client
-
-    @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client=None):
-        instance = super(TypeUpdate, cls)._load(resource, cognite_client)
-        if isinstance(resource, Dict):
-            if instance.ref is not None:
-                instance.ref = TypeDefinitionReference(**instance.ref)
-            if instance.update is not None:
-                instance.update = Type(**instance.update)
-        return instance
-
+    pass
     # GenStop
 
 

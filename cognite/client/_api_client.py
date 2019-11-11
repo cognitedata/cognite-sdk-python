@@ -307,7 +307,9 @@ class APIClient:
                 body = {"filter": filter, "limit": current_limit, "cursor": next_cursor, **(other_params or {})}
                 if sort is not None:
                     body["sort"] = sort
-                res = self._post(url_path=resource_path + "/list", json=body, headers=headers)
+                res = self._post(
+                    url_path=resource_path + "/list", json={k: v for k, v in body.items() if v}, headers=headers
+                )
             else:
                 raise ValueError("_list_generator parameter `method` must be GET or POST, not {}".format(method))
             last_received_items = res.json()["items"]
@@ -369,6 +371,7 @@ class APIClient:
             other_params=other_params,
             headers=headers,
         ):
+            print(resource_list, resource_list.__class__)
             items.extend(resource_list.data)
         return cls(items, cognite_client=self._cognite_client)
 
