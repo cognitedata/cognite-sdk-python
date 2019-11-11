@@ -22,7 +22,7 @@ def main(spec_url, spec_path):
         for file in files:
             file_path = os.path.join(root, file)
             if file_path.endswith(".py"):
-                if "relationships" in file_path:
+                if "relationships" in file_path or "types" in file_path:
                     print("* Generating playground code in {}".format(file_path))
                     codegen_playground.generate(file_path, file_path)
                 else:
