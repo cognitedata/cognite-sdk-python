@@ -19,10 +19,11 @@ class TypesAPI(APIClient):
         """
         return self.__call__()
 
-    def retrieve(self, external_id: Optional[str] = None) -> Optional[Type]:
+    def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[Type]:
         """`Retrieve a single type definition by id. <https://docs.cognite.com/api/playground/#operation/getTypes>`_
 
         Args:
+            id (int, optional): ID
             external_id (str, optional): External ID
 
         Returns:
@@ -30,18 +31,26 @@ class TypesAPI(APIClient):
 
         Examples:
 
+            Get Type by id::
+
+                >>> from cognite.client.experimental import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.types.retrieve(id=1)
+
             Get Type by external id::
 
                 >>> from cognite.client.experimental import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.types.retrieve(external_id="1")
         """
-        return self._retrieve_multiple(external_ids=external_id, wrap_ids=True)
+        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
+        return self._retrieve_multiple(ids=id, external_ids=external_id, wrap_ids=True)
 
-    def retrieve_multiple(self, external_ids: Optional[List[str]] = None) -> TypeList:
+    def retrieve_multiple(self, ids: Optional[List[int]] = None, external_ids: Optional[List[str]] = None) -> TypeList:
         """`Retrieve multiple type definitions by id. <https://docs.cognite.com/api/playground/#operation/getTypes>`_
 
         Args:
+            ids (List[int], optional): IDs
             external_ids (List[str], optional): External IDs
 
         Returns:
@@ -49,14 +58,21 @@ class TypesAPI(APIClient):
 
         Examples:
 
+            Get Types by id::
+
+                >>> from cognite.client.experimental import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.types.retrieve_multiple(ids=[1, 2, 3])
+
             Get Types by external id::
 
                 >>> from cognite.client.experimental import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.types.retrieve_multiple(external_ids=["abc", "def"])
         """
+        utils._auxiliary.assert_type(ids, "id", [List], allow_none=True)
         utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=True)
-        return self._retrieve_multiple(external_ids=external_ids, wrap_ids=True)
+        return self._retrieve_multiple(ids=ids, external_ids=external_ids, wrap_ids=True)
 
     def list(
         self,
@@ -159,7 +175,7 @@ class TypesAPI(APIClient):
 #
 #                >>> from cognite.client.experimental import CogniteClient
 #                >>> c = CogniteClient()
-#                >>> Type = c.types.retrieve(external_id="a")
+#                >>> Type = c.types.retrieve(id=1)
 #                >>> Type.description = "New description"
 #                >>> res = c.types.update(Type)
 #

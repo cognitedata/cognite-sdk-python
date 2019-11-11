@@ -27,9 +27,13 @@ def post_spy():
 
 
 class TestTypesAPI:
-    def test_retrieve(self):
+    def test_retrieve_eid(self):
         res = COGNITE_CLIENT.types.list()
         assert res[0] == COGNITE_CLIENT.types.retrieve(external_id=res[0].external_id)
+
+    def test_retrieve_id(self):
+        res = COGNITE_CLIENT.types.list()
+        assert res[0] == COGNITE_CLIENT.types.retrieve(id=res[0].internal_id)
 
     def test_retrieve_multiple(self):
         res_listed_ids = [e.external_id for e in COGNITE_CLIENT.types.list()[:2]]

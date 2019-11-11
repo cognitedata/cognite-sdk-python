@@ -31,7 +31,7 @@ class ParentTypeDefinitionFilter(dict):
     # GenStop
 
 
-# GenClass: TypeDefinitionSpec
+# GenClass: TypeDefinitionSpec, TypeDefinition
 class Type(CogniteResource):
     """No description.
 
@@ -41,6 +41,10 @@ class Type(CogniteResource):
         description (str): No description.
         properties (List[Dict[str, Any]]): No description.
         parent_type (Union[Dict[str, Any], TypeDefinitionReference]): No description.
+        internal_id (int): Javascript friendly internal ID given to the object.
+        version (int): A JavaScript-friendly version for the object.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
@@ -51,6 +55,10 @@ class Type(CogniteResource):
         description: str = None,
         properties: List[Dict[str, Any]] = None,
         parent_type: Union[Dict[str, Any], TypeDefinitionReference] = None,
+        internal_id: int = None,
+        version: int = None,
+        created_time: int = None,
+        last_updated_time: int = None,
         cognite_client=None,
     ):
         self.external_id = external_id
@@ -58,6 +66,10 @@ class Type(CogniteResource):
         self.description = description
         self.properties = properties
         self.parent_type = parent_type
+        self.internal_id = internal_id
+        self.version = version
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
         self._cognite_client = cognite_client
 
     @classmethod
