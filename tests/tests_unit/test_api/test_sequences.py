@@ -247,7 +247,7 @@ class TestSequences:
         assert {
             "search": {"name": None, "description": None, "query": None},
             "filter": {"externalIdPrefix": "e"},
-            "limit": None,
+            "limit": 100,
         } == jsgz_load(mock_seq_response.calls[0].request.body)
 
     @pytest.mark.parametrize("filter_field", ["is_string", "isString"])
@@ -257,7 +257,7 @@ class TestSequences:
         assert {
             "search": {"name": None, "description": None, "query": None},
             "filter": {"isString": True},
-            "limit": None,
+            "limit": 100,
         } == jsgz_load(mock_seq_response.calls[0].request.body)
 
     def test_search_with_filter(self, mock_seq_response):
