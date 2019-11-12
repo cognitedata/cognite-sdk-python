@@ -149,7 +149,7 @@ class TestEvents:
     def test_search(self, mock_events_response):
         res = EVENTS_API.search(filter=EventFilter(external_id_prefix="abc"))
         assert mock_events_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
-        assert {"search": {"description": None}, "filter": {"externalIdPrefix": "abc"}, "limit": None} == jsgz_load(
+        assert {"search": {"description": None}, "filter": {"externalIdPrefix": "abc"}, "limit": 100} == jsgz_load(
             mock_events_response.calls[0].request.body
         )
 
@@ -157,7 +157,7 @@ class TestEvents:
     def test_search_dict_filter(self, mock_events_response, filter_field):
         res = EVENTS_API.search(filter={filter_field: "bla"})
         assert mock_events_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
-        assert {"search": {"description": None}, "filter": {"externalIdPrefix": "bla"}, "limit": None} == jsgz_load(
+        assert {"search": {"description": None}, "filter": {"externalIdPrefix": "bla"}, "limit": 100} == jsgz_load(
             mock_events_response.calls[0].request.body
         )
 

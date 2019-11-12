@@ -285,7 +285,7 @@ class EventsAPI(APIClient):
         """
         return self._update_multiple(items=item)
 
-    def search(self, description: str = None, filter: Union[EventFilter, Dict] = None, limit: int = None) -> EventList:
+    def search(self, description: str = None, filter: Union[EventFilter, Dict] = None, limit: int = 100) -> EventList:
         """`Search for events <https://docs.cognite.com/api/v1/#operation/searchEvents>`_
 
         Args:

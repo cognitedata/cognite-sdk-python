@@ -21,6 +21,9 @@ Changes are grouped as follows
 
 ## [Unreleased]
 
+### Changed
+- Default value for `limit` in search method is now 100 instead of None to clarify api default behaviour when no limit is passed.
+
 ## [1.3.4] - 2019-11-07
 
 ### Changed
