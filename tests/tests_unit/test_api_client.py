@@ -363,7 +363,7 @@ class TestStandardList:
         assert SomeResourceList([SomeResource(1, 2), SomeResource(1)]) == API_CLIENT_WITH_API_KEY._list(
             cls=SomeResourceList, resource_path=URL_PATH, method="POST", filter={"filter": "bla"}
         )
-        assert {"filter": {"filter": "bla"}, "limit": 1000, "cursor": None} == jsgz_load(rsps.calls[0].request.body)
+        assert {"filter": {"filter": "bla"}, "limit": 1000} == jsgz_load(rsps.calls[0].request.body)
 
     def test_standard_list_fail(self, rsps):
         rsps.add(rsps.GET, BASE_URL + URL_PATH, status=400, json={"error": {"message": "Client Error"}})
