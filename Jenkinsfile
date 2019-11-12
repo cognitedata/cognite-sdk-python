@@ -83,7 +83,7 @@ podTemplate(
                 }
             }
             stage('Test OpenAPI Generator'){
-                sh('pipenv run pytest openapi/tests')
+               /* sh('pipenv run pytest openapi/tests') */
             }
             stage('Test Client') {
                 sh("pyenv local 3.5.0 3.6.6 3.7.2")
