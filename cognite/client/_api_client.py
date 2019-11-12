@@ -299,12 +299,15 @@ class APIClient:
             if method == "GET":
                 params = filter.copy()
                 params["limit"] = current_limit
-                params["cursor"] = next_cursor
+                if next_cursor:
+                    params["cursor"] = next_cursor
                 if sort is not None:
                     params["sort"] = sort
                 res = self._get(url_path=resource_path, params=params, headers=headers)
             elif method == "POST":
-                body = {"filter": filter, "limit": current_limit, "cursor": next_cursor, **(other_params or {})}
+                body = {"filter": filter, "limit": current_limit, **(other_params or {})}
+                if next_cursor:
+                    body["cursor"] = next_cursor
                 if sort is not None:
                     body["sort"] = sort
                 res = self._post(url_path=resource_path + "/list", json=body, headers=headers)

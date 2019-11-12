@@ -177,9 +177,7 @@ class TestRelationships:
 
     def test_advanced_list(self, mock_rel_response):
         res = REL_API.list(source_resource="asset", relationship_type="belongs_to")
-        assert {
-            "filter": {"sourceResource": "asset", "relationshipType": "belongs_to"},
-            "limit": 25,
-            "cursor": None,
-        } == jsgz_load(mock_rel_response.calls[0].request.body)
+        assert {"filter": {"sourceResource": "asset", "relationshipType": "belongs_to"}, "limit": 25} == jsgz_load(
+            mock_rel_response.calls[0].request.body
+        )
         assert mock_rel_response.calls[0].response.json()["items"] == res.dump(camel_case=True)

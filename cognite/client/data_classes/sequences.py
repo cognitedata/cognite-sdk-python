@@ -17,8 +17,8 @@ class Sequence(CogniteResource):
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
         metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value. Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         columns (List[Dict[str, Any]]): List of column definitions
-        created_time (int): Time when this asset was created in CDP in milliseconds since Jan 1, 1970.
-        last_updated_time (int): The last time this asset was updated in CDP, in milliseconds since Jan 1, 1970.
+        created_time (int): Time when this asset was created in CDF in milliseconds since Jan 1, 1970.
+        last_updated_time (int): The last time this asset was updated in CDF, in milliseconds since Jan 1, 1970.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 

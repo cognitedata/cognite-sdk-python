@@ -80,7 +80,6 @@ class TestEvents:
         calls = mock_events_response.calls
         assert 1 == len(calls)
         assert {
-            "cursor": None,
             "limit": 10,
             "filter": {"rootAssetIds": [{"id": 23}, {"externalId": "a"}, {"externalId": "b"}]},
         } == jsgz_load(calls[0].request.body)
@@ -89,19 +88,15 @@ class TestEvents:
         EVENTS_API.list(root_asset_ids=[1, 2], limit=10)
         calls = mock_events_response.calls
         assert 1 == len(calls)
-        assert {"cursor": None, "limit": 10, "filter": {"rootAssetIds": [{"id": 1}, {"id": 2}]}} == jsgz_load(
-            calls[0].request.body
-        )
+        assert {"limit": 10, "filter": {"rootAssetIds": [{"id": 1}, {"id": 2}]}} == jsgz_load(calls[0].request.body)
 
     def test_list_root_extids_list(self, mock_events_response):
         EVENTS_API.list(root_asset_external_ids=["1", "2"], limit=10)
         calls = mock_events_response.calls
         assert 1 == len(calls)
-        assert {
-            "cursor": None,
-            "limit": 10,
-            "filter": {"rootAssetIds": [{"externalId": "1"}, {"externalId": "2"}]},
-        } == jsgz_load(calls[0].request.body)
+        assert {"limit": 10, "filter": {"rootAssetIds": [{"externalId": "1"}, {"externalId": "2"}]}} == jsgz_load(
+            calls[0].request.body
+        )
 
     def test_create_single(self, mock_events_response):
         res = EVENTS_API.create(Event(external_id="1"))

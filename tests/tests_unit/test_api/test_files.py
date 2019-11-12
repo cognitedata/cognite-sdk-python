@@ -174,7 +174,6 @@ class TestFilesAPI:
         calls = mock_files_response.calls
         assert 1 == len(calls)
         assert {
-            "cursor": None,
             "limit": 10,
             "filter": {"rootAssetIds": [{"id": 1}, {"id": 2}, {"externalId": "a"}]},
         } == jsgz_load(calls[0].request.body)

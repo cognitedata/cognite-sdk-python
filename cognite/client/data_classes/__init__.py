@@ -34,3 +34,4 @@ from cognite.client.data_classes.three_d import (
     ThreeDNodeList,
 )
 from cognite.client.data_classes.time_series import TimeSeries, TimeSeriesFilter, TimeSeriesList, TimeSeriesUpdate
+from cognite.client.data_classes.datasets import Dataset, DatasetList, DatasetFilter, DatasetUpdate
