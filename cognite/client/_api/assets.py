@@ -330,7 +330,7 @@ class AssetsAPI(APIClient):
         return self._update_multiple(items=item)
 
     def search(
-        self, name: str = None, description: str = None, filter: Union[AssetFilter, Dict] = None, limit: int = None
+        self, name: str = None, description: str = None, filter: Union[AssetFilter, Dict] = None, limit: int = 100
     ) -> AssetList:
         """`Search for assets <https://docs.cognite.com/api/v1/#operation/searchAssets>`_
 

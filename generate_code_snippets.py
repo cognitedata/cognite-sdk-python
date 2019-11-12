@@ -51,4 +51,4 @@ for api_name, api in apis:
             if openapi_ident in duplicate_operations:
                 snippets["operations"][duplicate_operations[openapi_ident]] += code
 
-print(json.dumps(snippets, indent=4))
+print(json.dumps(snippets, indent=2))

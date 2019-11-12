@@ -22,6 +22,11 @@ Changes are grouped as follows
 ## [Unreleased]
 
 ### Changed
+- Default value for `limit` in search method is now 100 instead of None to clarify api default behaviour when no limit is passed.
+
+## [1.3.4] - 2019-11-07
+
+### Changed
 - Error 500's are no longer retried by default, only HTTP 429, 502, 503, 504 are.
 - Optimized HTTP calls by caching user agent.
 - Relationship filtering is now integrated into `list` instead of `search`.
@@ -31,8 +36,10 @@ Changes are grouped as follows
 ### Fixed
 - `source_created_time` and `source_modified_time` on files now displayed as time fields.
 - Fixed pagination for `include_outside_points` and other edge cases in datapoints.
+- Fixed a bug where `insert_dataframe` with strings caused a numpy error.
 
 ### Added
+- Relationships can now have sequences as source or target.
 
 ## [1.3.3] - 2019-10-21
 
