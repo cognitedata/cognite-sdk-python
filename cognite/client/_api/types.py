@@ -140,12 +140,15 @@ class TypesAPI(APIClient):
         """
         return self._create_multiple(items=Type)
 
-    def delete(self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None) -> None:
+    def delete(
+        self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None, soft: bool = True
+    ) -> None:
         """`Delete one or more type definitions <https://docs.cognite.com/api/playground/#operation/deleteTypes>`_
 
         Args:
             id (Union[int, List[int]): Id or list of ids
             external_id (Union[str, List[str]]): External ID or list of external ids
+            soft (bool): If true, only marks the object as deleted.
 
         Returns:
             None
@@ -155,9 +158,9 @@ class TypesAPI(APIClient):
 
                 >>> from cognite.client.experimental import CogniteClient
                 >>> c = CogniteClient()
-                >>> c.types.delete(id=[1,2,3], external_id="3")
+                >>> c.types.delete(id=[1,2,3], external_id="3",soft=False)
         """
-        self._delete_multiple(ids=id, external_ids=external_id, wrap_ids=True)
+        self._delete_multiple(ids=id, external_ids=external_id, wrap_ids=True, extra_body_fields={"soft": soft})
 
 
 #    def update(self, item: Union[Type, TypeUpdate, List[Union[Type, TypeUpdate]]]) -> Union[Type, TypeList]:

@@ -26,6 +26,7 @@ class AssetsAPI(APIClient):
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
         root: bool = None,
         external_id_prefix: str = None,
+        types: List = None,
         aggregated_properties: List[str] = None,
         limit: int = None,
     ) -> Generator[Union[Asset, AssetList], None, None]:
@@ -45,6 +46,7 @@ class AssetsAPI(APIClient):
             last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps
             root (bool): filtered assets are root assets or not
             external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
+            types (List): List of type filters.
             aggregated_properties (List[str]): Set of aggregated properties to include.
             limit (int, optional): Maximum number of assets to return. Defaults to return all items.
 
@@ -153,6 +155,7 @@ class AssetsAPI(APIClient):
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
         root: bool = None,
         external_id_prefix: str = None,
+        types: List = None,
         aggregated_properties: List[str] = None,
         partitions: int = None,
         limit: int = 25,
@@ -170,6 +173,7 @@ class AssetsAPI(APIClient):
             last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
             root (bool): filtered assets are root assets or not.
             external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
+            types (List): List of type filters.
             aggregated_properties (List[str]): Set of aggregated properties to include.
             partitions (int): Retrieve assets in parallel using this number of workers. Also requires `limit=None` to be passed.
             limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None
@@ -217,6 +221,7 @@ class AssetsAPI(APIClient):
             last_updated_time=last_updated_time,
             root=root,
             external_id_prefix=external_id_prefix,
+            types=types,
         ).dump(camel_case=True)
         return self._list(
             method="POST",

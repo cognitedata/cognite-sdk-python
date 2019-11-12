@@ -1,3 +1,4 @@
+from cognite.client._api.assets import AssetsAPI
 from cognite.client._api.model_hosting import ModelHostingAPI
 from cognite.client._api.relationships import RelationshipsAPI
 from cognite.client._api.types import TypesAPI
@@ -10,3 +11,4 @@ class CogniteClient(Client):
         self.model_hosting = ModelHostingAPI(self._config, api_version="0.6", cognite_client=self)
         self.relationships = RelationshipsAPI(self._config, api_version="playground", cognite_client=self)
         self.types = TypesAPI(self._config, api_version="playground", cognite_client=self)
+        self.assets = AssetsAPI(self._config, api_version="playground", cognite_client=self)

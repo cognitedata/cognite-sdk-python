@@ -172,60 +172,57 @@ class TimeSeriesUpdate(CogniteUpdate):
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
     """
 
+    class _PrimitiveTimeSeriesUpdate(CognitePrimitiveUpdate):
+        def set(self, value: Any) -> "TimeSeriesUpdate":
+            return self._set(value)
+
+    class _ObjectTimeSeriesUpdate(CogniteObjectUpdate):
+        def set(self, value: Dict) -> "TimeSeriesUpdate":
+            return self._set(value)
+
+        def add(self, value: Dict) -> "TimeSeriesUpdate":
+            return self._add(value)
+
+        def remove(self, value: List) -> "TimeSeriesUpdate":
+            return self._remove(value)
+
+    class _ListTimeSeriesUpdate(CogniteListUpdate):
+        def set(self, value: List) -> "TimeSeriesUpdate":
+            return self._set(value)
+
+        def add(self, value: List) -> "TimeSeriesUpdate":
+            return self._add(value)
+
+        def remove(self, value: List) -> "TimeSeriesUpdate":
+            return self._remove(value)
+
     @property
     def external_id(self):
-        return _PrimitiveTimeSeriesUpdate(self, "externalId")
+        return TimeSeriesUpdate._PrimitiveTimeSeriesUpdate(self, "externalId")
 
     @property
     def name(self):
-        return _PrimitiveTimeSeriesUpdate(self, "name")
+        return TimeSeriesUpdate._PrimitiveTimeSeriesUpdate(self, "name")
 
     @property
     def metadata(self):
-        return _ObjectTimeSeriesUpdate(self, "metadata")
+        return TimeSeriesUpdate._ObjectTimeSeriesUpdate(self, "metadata")
 
     @property
     def unit(self):
-        return _PrimitiveTimeSeriesUpdate(self, "unit")
+        return TimeSeriesUpdate._PrimitiveTimeSeriesUpdate(self, "unit")
 
     @property
     def asset_id(self):
-        return _PrimitiveTimeSeriesUpdate(self, "assetId")
+        return TimeSeriesUpdate._PrimitiveTimeSeriesUpdate(self, "assetId")
 
     @property
     def description(self):
-        return _PrimitiveTimeSeriesUpdate(self, "description")
+        return TimeSeriesUpdate._PrimitiveTimeSeriesUpdate(self, "description")
 
     @property
     def security_categories(self):
-        return _ListTimeSeriesUpdate(self, "securityCategories")
-
-
-class _PrimitiveTimeSeriesUpdate(CognitePrimitiveUpdate):
-    def set(self, value: Any) -> TimeSeriesUpdate:
-        return self._set(value)
-
-
-class _ObjectTimeSeriesUpdate(CogniteObjectUpdate):
-    def set(self, value: Dict) -> TimeSeriesUpdate:
-        return self._set(value)
-
-    def add(self, value: Dict) -> TimeSeriesUpdate:
-        return self._add(value)
-
-    def remove(self, value: List) -> TimeSeriesUpdate:
-        return self._remove(value)
-
-
-class _ListTimeSeriesUpdate(CogniteListUpdate):
-    def set(self, value: List) -> TimeSeriesUpdate:
-        return self._set(value)
-
-    def add(self, value: List) -> TimeSeriesUpdate:
-        return self._add(value)
-
-    def remove(self, value: List) -> TimeSeriesUpdate:
-        return self._remove(value)
+        return TimeSeriesUpdate._ListTimeSeriesUpdate(self, "securityCategories")
 
     # GenStop
 

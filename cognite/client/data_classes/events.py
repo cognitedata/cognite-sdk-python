@@ -130,68 +130,65 @@ class EventUpdate(CogniteUpdate):
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
     """
 
+    class _PrimitiveEventUpdate(CognitePrimitiveUpdate):
+        def set(self, value: Any) -> "EventUpdate":
+            return self._set(value)
+
+    class _ObjectEventUpdate(CogniteObjectUpdate):
+        def set(self, value: Dict) -> "EventUpdate":
+            return self._set(value)
+
+        def add(self, value: Dict) -> "EventUpdate":
+            return self._add(value)
+
+        def remove(self, value: List) -> "EventUpdate":
+            return self._remove(value)
+
+    class _ListEventUpdate(CogniteListUpdate):
+        def set(self, value: List) -> "EventUpdate":
+            return self._set(value)
+
+        def add(self, value: List) -> "EventUpdate":
+            return self._add(value)
+
+        def remove(self, value: List) -> "EventUpdate":
+            return self._remove(value)
+
     @property
     def external_id(self):
-        return _PrimitiveEventUpdate(self, "externalId")
+        return EventUpdate._PrimitiveEventUpdate(self, "externalId")
 
     @property
     def start_time(self):
-        return _PrimitiveEventUpdate(self, "startTime")
+        return EventUpdate._PrimitiveEventUpdate(self, "startTime")
 
     @property
     def end_time(self):
-        return _PrimitiveEventUpdate(self, "endTime")
+        return EventUpdate._PrimitiveEventUpdate(self, "endTime")
 
     @property
     def description(self):
-        return _PrimitiveEventUpdate(self, "description")
+        return EventUpdate._PrimitiveEventUpdate(self, "description")
 
     @property
     def metadata(self):
-        return _ObjectEventUpdate(self, "metadata")
+        return EventUpdate._ObjectEventUpdate(self, "metadata")
 
     @property
     def asset_ids(self):
-        return _ListEventUpdate(self, "assetIds")
+        return EventUpdate._ListEventUpdate(self, "assetIds")
 
     @property
     def source(self):
-        return _PrimitiveEventUpdate(self, "source")
+        return EventUpdate._PrimitiveEventUpdate(self, "source")
 
     @property
     def type(self):
-        return _PrimitiveEventUpdate(self, "type")
+        return EventUpdate._PrimitiveEventUpdate(self, "type")
 
     @property
     def subtype(self):
-        return _PrimitiveEventUpdate(self, "subtype")
-
-
-class _PrimitiveEventUpdate(CognitePrimitiveUpdate):
-    def set(self, value: Any) -> EventUpdate:
-        return self._set(value)
-
-
-class _ObjectEventUpdate(CogniteObjectUpdate):
-    def set(self, value: Dict) -> EventUpdate:
-        return self._set(value)
-
-    def add(self, value: Dict) -> EventUpdate:
-        return self._add(value)
-
-    def remove(self, value: List) -> EventUpdate:
-        return self._remove(value)
-
-
-class _ListEventUpdate(CogniteListUpdate):
-    def set(self, value: List) -> EventUpdate:
-        return self._set(value)
-
-    def add(self, value: List) -> EventUpdate:
-        return self._add(value)
-
-    def remove(self, value: List) -> EventUpdate:
-        return self._remove(value)
+        return EventUpdate._PrimitiveEventUpdate(self, "subtype")
 
     # GenStop
 

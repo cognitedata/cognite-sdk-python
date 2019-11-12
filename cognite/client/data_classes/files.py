@@ -136,60 +136,57 @@ class FileMetadataUpdate(CogniteUpdate):
     Args:
     """
 
+    class _PrimitiveFileMetadataUpdate(CognitePrimitiveUpdate):
+        def set(self, value: Any) -> "FileMetadataUpdate":
+            return self._set(value)
+
+    class _ObjectFileMetadataUpdate(CogniteObjectUpdate):
+        def set(self, value: Dict) -> "FileMetadataUpdate":
+            return self._set(value)
+
+        def add(self, value: Dict) -> "FileMetadataUpdate":
+            return self._add(value)
+
+        def remove(self, value: List) -> "FileMetadataUpdate":
+            return self._remove(value)
+
+    class _ListFileMetadataUpdate(CogniteListUpdate):
+        def set(self, value: List) -> "FileMetadataUpdate":
+            return self._set(value)
+
+        def add(self, value: List) -> "FileMetadataUpdate":
+            return self._add(value)
+
+        def remove(self, value: List) -> "FileMetadataUpdate":
+            return self._remove(value)
+
     @property
     def external_id(self):
-        return _PrimitiveFileMetadataUpdate(self, "externalId")
+        return FileMetadataUpdate._PrimitiveFileMetadataUpdate(self, "externalId")
 
     @property
     def source(self):
-        return _PrimitiveFileMetadataUpdate(self, "source")
+        return FileMetadataUpdate._PrimitiveFileMetadataUpdate(self, "source")
 
     @property
     def mime_type(self):
-        return _PrimitiveFileMetadataUpdate(self, "mimeType")
+        return FileMetadataUpdate._PrimitiveFileMetadataUpdate(self, "mimeType")
 
     @property
     def metadata(self):
-        return _ObjectFileMetadataUpdate(self, "metadata")
+        return FileMetadataUpdate._ObjectFileMetadataUpdate(self, "metadata")
 
     @property
     def asset_ids(self):
-        return _ListFileMetadataUpdate(self, "assetIds")
+        return FileMetadataUpdate._ListFileMetadataUpdate(self, "assetIds")
 
     @property
     def source_created_time(self):
-        return _PrimitiveFileMetadataUpdate(self, "sourceCreatedTime")
+        return FileMetadataUpdate._PrimitiveFileMetadataUpdate(self, "sourceCreatedTime")
 
     @property
     def source_modified_time(self):
-        return _PrimitiveFileMetadataUpdate(self, "sourceModifiedTime")
-
-
-class _PrimitiveFileMetadataUpdate(CognitePrimitiveUpdate):
-    def set(self, value: Any) -> FileMetadataUpdate:
-        return self._set(value)
-
-
-class _ObjectFileMetadataUpdate(CogniteObjectUpdate):
-    def set(self, value: Dict) -> FileMetadataUpdate:
-        return self._set(value)
-
-    def add(self, value: Dict) -> FileMetadataUpdate:
-        return self._add(value)
-
-    def remove(self, value: List) -> FileMetadataUpdate:
-        return self._remove(value)
-
-
-class _ListFileMetadataUpdate(CogniteListUpdate):
-    def set(self, value: List) -> FileMetadataUpdate:
-        return self._set(value)
-
-    def add(self, value: List) -> FileMetadataUpdate:
-        return self._add(value)
-
-    def remove(self, value: List) -> FileMetadataUpdate:
-        return self._remove(value)
+        return FileMetadataUpdate._PrimitiveFileMetadataUpdate(self, "sourceModifiedTime")
 
     # GenStop
 

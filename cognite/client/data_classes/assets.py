@@ -7,38 +7,42 @@ from cognite.client.data_classes.shared import TimestampRange
 
 # GenPropertyClass: AggregateResultItem
 class AggregateResultItem(dict):
-    """Aggregated metrics of the asset
+    """No description.
 
     Args:
-        child_count (int): Number of direct descendants for the asset
+        child_count (int): Asset child count.
+        max_child_depth (int): Max depth of any child of this asset
     """
 
-    def __init__(self, child_count: int = None, **kwargs):
+    def __init__(self, child_count: int = None, max_child_depth: int = None, **kwargs):
         self.child_count = child_count
+        self.max_child_depth = max_child_depth
         self.update(kwargs)
 
     child_count = CognitePropertyClassUtil.declare_property("childCount")
+    max_child_depth = CognitePropertyClassUtil.declare_property("maxChildDepth")
 
     # GenStop
 
 
 # GenClass: Asset, DataExternalAssetItem
 class Asset(CogniteResource):
-    """A representation of a physical asset, for example a factory or a piece of equipment.
+    """Representation of a physical asset, e.g plant or piece of equipment
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        name (str): The name of the asset.
-        parent_id (int): A server-generated ID for the object.
-        description (str): The description of the asset.
-        metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
-        source (str): The source of the asset.
-        id (int): A server-generated ID for the object.
+        external_id (str): External Id provided by client. Should be unique within the project.
+        name (str): Name of asset. Often referred to as tag.
+        parent_id (int): Javascript friendly internal ID given to the object.
+        description (str): Description of asset.
+        metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value
+        source (str): The source of this asset
+        types (List[Dict[str, Any]]): No description.
+        id (int): Javascript friendly internal ID given to the object.
+        aggregates (List[Dict[str, Any]]): No description.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        root_id (int): A server-generated ID for the object.
-        aggregates (Union[Dict[str, Any], AggregateResultItem]): Aggregated metrics of the asset
-        parent_external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        root_id (int): Javascript friendly internal ID given to the object.
+        parent_external_id (str): External Id provided by client. Should be unique within the project.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
@@ -50,11 +54,12 @@ class Asset(CogniteResource):
         description: str = None,
         metadata: Dict[str, str] = None,
         source: str = None,
+        types: List[Dict[str, Any]] = None,
         id: int = None,
+        aggregates: List[Dict[str, Any]] = None,
         created_time: int = None,
         last_updated_time: int = None,
         root_id: int = None,
-        aggregates: Union[Dict[str, Any], AggregateResultItem] = None,
         parent_external_id: str = None,
         cognite_client=None,
     ):
@@ -64,21 +69,14 @@ class Asset(CogniteResource):
         self.description = description
         self.metadata = metadata
         self.source = source
+        self.types = types
         self.id = id
+        self.aggregates = aggregates
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.root_id = root_id
-        self.aggregates = aggregates
         self.parent_external_id = parent_external_id
         self._cognite_client = cognite_client
-
-    @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client=None):
-        instance = super(Asset, cls)._load(resource, cognite_client)
-        if isinstance(resource, Dict):
-            if instance.aggregates is not None:
-                instance.aggregates = AggregateResultItem(**instance.aggregates)
-        return instance
 
     # GenStop
 
@@ -147,7 +145,9 @@ class Asset(CogniteResource):
         """
         return self._cognite_client.files.list(asset_ids=[self.id], **kwargs)
 
-    def to_pandas(self, expand: List[str] = ("metadata", "aggregates"), ignore: List[str] = None):
+    def to_pandas(
+        self, expand: List[str] = ("metadata",), ignore: List[str] = None
+    ):  # TODO: expand , "aggregates" after starbase reverts change
         """Convert the instance into a pandas DataFrame.
 
         Args:
@@ -166,66 +166,83 @@ class AssetUpdate(CogniteUpdate):
     """Changes applied to asset
 
     Args:
-        id (int): A server-generated ID for the object.
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        id (int): Javascript friendly internal ID given to the object.
+        external_id (str): External Id provided by client. Should be unique within the project.
     """
+
+    class _PrimitiveAssetUpdate(CognitePrimitiveUpdate):
+        def set(self, value: Any) -> "AssetUpdate":
+            return self._set(value)
+
+    class _ObjectAssetUpdate(CogniteObjectUpdate):
+        def set(self, value: Dict) -> "AssetUpdate":
+            return self._set(value)
+
+        def add(self, value: Dict) -> "AssetUpdate":
+            return self._add(value)
+
+        def remove(self, value: List) -> "AssetUpdate":
+            return self._remove(value)
+
+    class _ListAssetUpdate(CogniteListUpdate):
+        def set(self, value: List) -> "AssetUpdate":
+            return self._set(value)
+
+        def add(self, value: List) -> "AssetUpdate":
+            return self._add(value)
+
+        def remove(self, value: List) -> "AssetUpdate":
+            return self._remove(value)
 
     @property
     def external_id(self):
-        return _PrimitiveAssetUpdate(self, "externalId")
+        return AssetUpdate._PrimitiveAssetUpdate(self, "externalId")
 
     @property
     def name(self):
-        return _PrimitiveAssetUpdate(self, "name")
+        return AssetUpdate._PrimitiveAssetUpdate(self, "name")
 
     @property
     def description(self):
-        return _PrimitiveAssetUpdate(self, "description")
+        return AssetUpdate._PrimitiveAssetUpdate(self, "description")
 
     @property
     def metadata(self):
-        return _ObjectAssetUpdate(self, "metadata")
+        return AssetUpdate._ObjectAssetUpdate(self, "metadata")
 
     @property
     def source(self):
-        return _PrimitiveAssetUpdate(self, "source")
+        return AssetUpdate._PrimitiveAssetUpdate(self, "source")
 
     @property
     def parent_id(self):
-        return _PrimitiveAssetUpdate(self, "parentId")
+        return AssetUpdate._PrimitiveAssetUpdate(self, "parentId")
 
     @property
     def parent_external_id(self):
-        return _PrimitiveAssetUpdate(self, "parentExternalId")
+        return AssetUpdate._PrimitiveAssetUpdate(self, "parentExternalId")
 
-
-class _PrimitiveAssetUpdate(CognitePrimitiveUpdate):
-    def set(self, value: Any) -> AssetUpdate:
-        return self._set(value)
-
-
-class _ObjectAssetUpdate(CogniteObjectUpdate):
-    def set(self, value: Dict) -> AssetUpdate:
-        return self._set(value)
-
-    def add(self, value: Dict) -> AssetUpdate:
-        return self._add(value)
-
-    def remove(self, value: List) -> AssetUpdate:
-        return self._remove(value)
-
-
-class _ListAssetUpdate(CogniteListUpdate):
-    def set(self, value: List) -> AssetUpdate:
-        return self._set(value)
-
-    def add(self, value: List) -> AssetUpdate:
-        return self._add(value)
-
-    def remove(self, value: List) -> AssetUpdate:
-        return self._remove(value)
+    @property
+    def types(self):
+        return AssetUpdate._PrimitiveAssetUpdate(self, "types")
 
     # GenStop
+
+    @property
+    def types(self):
+        raise Exception("Use the set_type and remove_type functions to handle types")
+
+    def set_type(self, type: Dict[str, Any], properties: Dict[str, Any]):
+        if self._update_object.get("types") is None:
+            self._update_object["types"] = []
+        self._update_object["types"].append({"type": type, "set": properties})
+        return self
+
+    def remove_type(self, type: Dict[str, Any]):
+        if self._update_object.get("types") is None:
+            self._update_object["types"] = []
+        self._update_object["types"].append({"type": type, "setNull": True})
+        return self
 
 
 class AssetList(CogniteResourceList):
@@ -305,18 +322,19 @@ class AssetList(CogniteResourceList):
 
 # GenClass: AssetFilter.filter
 class AssetFilter(CogniteFilter):
-    """Filter on assets with strict matching.
+    """No description.
 
     Args:
-        name (str): The name of the asset.
-        parent_ids (List[int]): Return only the direct descendants of the specified assets.
-        root_ids (List[Dict[str, Any]]): Return all descendants of the specified root assets.
-        metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
-        source (str): The source of the asset.
+        name (str): Name of asset. Often referred to as tag.
+        parent_ids (List[int]): No description.
+        root_ids (List[Dict[str, Any]]): Id of the asset on top of the hierarchy.
+        metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value
+        source (str): The source of this asset
         created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
         last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
-        root (bool): Whether the filtered assets are root assets, or not. Set to True to only list root assets.
-        external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
+        root (bool): filtered assets are root assets or not
+        external_id_prefix (str): External Id provided by client. Should be unique within the project.
+        types (List[Dict[str, Any]]): No description.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
@@ -331,6 +349,7 @@ class AssetFilter(CogniteFilter):
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
         root: bool = None,
         external_id_prefix: str = None,
+        types: List[Dict[str, Any]] = None,
         cognite_client=None,
     ):
         self.name = name
@@ -342,6 +361,7 @@ class AssetFilter(CogniteFilter):
         self.last_updated_time = last_updated_time
         self.root = root
         self.external_id_prefix = external_id_prefix
+        self.types = types
         self._cognite_client = cognite_client
 
     @classmethod

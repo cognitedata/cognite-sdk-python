@@ -17,8 +17,8 @@ class Sequence(CogniteResource):
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
         metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value. Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         columns (List[Dict[str, Any]]): List of column definitions
-        created_time (int): Time when this asset was created in CDP in milliseconds since Jan 1, 1970.
-        last_updated_time (int): The last time this asset was updated in CDP, in milliseconds since Jan 1, 1970.
+        created_time (int): Time when this asset was created in CDF in milliseconds since Jan 1, 1970.
+        last_updated_time (int): The last time this asset was updated in CDF, in milliseconds since Jan 1, 1970.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
@@ -123,52 +123,49 @@ class SequenceUpdate(CogniteUpdate):
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
     """
 
+    class _PrimitiveSequenceUpdate(CognitePrimitiveUpdate):
+        def set(self, value: Any) -> "SequenceUpdate":
+            return self._set(value)
+
+    class _ObjectSequenceUpdate(CogniteObjectUpdate):
+        def set(self, value: Dict) -> "SequenceUpdate":
+            return self._set(value)
+
+        def add(self, value: Dict) -> "SequenceUpdate":
+            return self._add(value)
+
+        def remove(self, value: List) -> "SequenceUpdate":
+            return self._remove(value)
+
+    class _ListSequenceUpdate(CogniteListUpdate):
+        def set(self, value: List) -> "SequenceUpdate":
+            return self._set(value)
+
+        def add(self, value: List) -> "SequenceUpdate":
+            return self._add(value)
+
+        def remove(self, value: List) -> "SequenceUpdate":
+            return self._remove(value)
+
     @property
     def name(self):
-        return _PrimitiveSequenceUpdate(self, "name")
+        return SequenceUpdate._PrimitiveSequenceUpdate(self, "name")
 
     @property
     def description(self):
-        return _PrimitiveSequenceUpdate(self, "description")
+        return SequenceUpdate._PrimitiveSequenceUpdate(self, "description")
 
     @property
     def asset_id(self):
-        return _PrimitiveSequenceUpdate(self, "assetId")
+        return SequenceUpdate._PrimitiveSequenceUpdate(self, "assetId")
 
     @property
     def external_id(self):
-        return _PrimitiveSequenceUpdate(self, "externalId")
+        return SequenceUpdate._PrimitiveSequenceUpdate(self, "externalId")
 
     @property
     def metadata(self):
-        return _ObjectSequenceUpdate(self, "metadata")
-
-
-class _PrimitiveSequenceUpdate(CognitePrimitiveUpdate):
-    def set(self, value: Any) -> SequenceUpdate:
-        return self._set(value)
-
-
-class _ObjectSequenceUpdate(CogniteObjectUpdate):
-    def set(self, value: Dict) -> SequenceUpdate:
-        return self._set(value)
-
-    def add(self, value: Dict) -> SequenceUpdate:
-        return self._add(value)
-
-    def remove(self, value: List) -> SequenceUpdate:
-        return self._remove(value)
-
-
-class _ListSequenceUpdate(CogniteListUpdate):
-    def set(self, value: List) -> SequenceUpdate:
-        return self._set(value)
-
-    def add(self, value: List) -> SequenceUpdate:
-        return self._add(value)
-
-    def remove(self, value: List) -> SequenceUpdate:
-        return self._remove(value)
+        return SequenceUpdate._ObjectSequenceUpdate(self, "metadata")
 
     # GenStop
 
