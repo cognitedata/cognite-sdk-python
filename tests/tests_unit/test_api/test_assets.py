@@ -209,7 +209,7 @@ class TestAssets:
     def test_search(self, mock_assets_response):
         res = ASSETS_API.search(filter=AssetFilter(name="1"))
         assert mock_assets_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
-        assert {"search": {"name": None, "description": None}, "filter": {"name": "1"}, "limit": None} == jsgz_load(
+        assert {"search": {"name": None, "description": None}, "filter": {"name": "1"}, "limit": 100} == jsgz_load(
             mock_assets_response.calls[0].request.body
         )
 
@@ -220,7 +220,7 @@ class TestAssets:
         assert {
             "search": {"name": None, "description": None},
             "filter": {"parentIds": "bla"},
-            "limit": None,
+            "limit": 100,
         } == jsgz_load(mock_assets_response.calls[0].request.body)
 
     def test_get_subtree(self, mock_get_subtree):

@@ -291,7 +291,7 @@ class SequencesAPI(APIClient):
         description: str = None,
         query: str = None,
         filter: Union[SequenceFilter, Dict] = None,
-        limit: int = None,
+        limit: int = 100,
     ) -> SequenceList:
         """`Search for sequences. <https://docs.cognite.com/api/v1/#operation/searchSequences>`_
 
