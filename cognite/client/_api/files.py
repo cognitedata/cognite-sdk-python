@@ -318,7 +318,7 @@ class FilesAPI(APIClient):
         return self._update_multiple(cls=FileMetadataList, resource_path=self._RESOURCE_PATH, items=item)
 
     def search(
-        self, name: str = None, filter: Union[FileMetadataFilter, dict] = None, limit: int = None
+        self, name: str = None, filter: Union[FileMetadataFilter, dict] = None, limit: int = 100
     ) -> FileMetadataList:
         """`Search for files. <https://docs.cognite.com/api/v1/#operation/searchFiles>`_
 
