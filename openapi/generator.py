@@ -387,10 +387,10 @@ class CodeGenerator:
         return content
 
     def _generate_imports(self, content):
-        if re.search("import copy", content) is None:
-            content = "import copy\n" + content
         if re.search("from typing import \*", content) is None:
             content = "from typing import *\n" + content
+        if re.search("import copy", content) is None:
+            content = "import copy\n" + content
         return content
 
     def _format_with_black(self, content):
