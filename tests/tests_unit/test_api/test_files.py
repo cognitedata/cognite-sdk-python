@@ -8,7 +8,7 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client._api.files import FileMetadata, FileMetadataList, FileMetadataUpdate
-from cognite.client.data_classes import FileMetadataFilter
+from cognite.client.data_classes import FileMetadataFilter, TimestampRange
 from cognite.client.exceptions import CogniteAPIError
 from tests.utils import jsgz_load, set_request_limit
 
@@ -179,6 +179,16 @@ class TestFilesAPI:
             "filter": {"rootAssetIds": [{"id": 1}, {"id": 2}, {"externalId": "a"}]},
         } == jsgz_load(calls[0].request.body)
 
+    def test_list_with_time_dict(self, mock_files_response):
+        FILES_API.list(created_time={"min": 20})
+        assert 20 == jsgz_load(mock_files_response.calls[0].request.body)["filter"]["createdTime"]["min"]
+        assert "max" not in jsgz_load(mock_files_response.calls[0].request.body)["filter"]["createdTime"]
+
+    def test_list_with_timestamp_range(self, mock_files_response):
+        FILES_API.list(created_time=TimestampRange(min=20))
+        assert 20 == jsgz_load(mock_files_response.calls[0].request.body)["filter"]["createdTime"]["min"]
+        assert "max" not in jsgz_load(mock_files_response.calls[0].request.body)["filter"]["createdTime"]
+
     def test_delete_single(self, mock_files_response):
         res = FILES_API.delete(id=1)
         assert {"items": [{"id": 1}]} == jsgz_load(mock_files_response.calls[0].request.body)
@@ -226,7 +236,7 @@ class TestFilesAPI:
     def test_search(self, mock_files_response):
         res = FILES_API.search(filter=FileMetadataFilter(external_id_prefix="abc"))
         assert mock_files_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
-        assert {"search": {"name": None}, "filter": {"externalIdPrefix": "abc"}, "limit": None} == jsgz_load(
+        assert {"search": {"name": None}, "filter": {"externalIdPrefix": "abc"}, "limit": 100} == jsgz_load(
             mock_files_response.calls[0].request.body
         )
 
@@ -234,7 +244,7 @@ class TestFilesAPI:
     def test_search_dict_filter(self, mock_files_response, filter_field):
         res = FILES_API.search(filter={filter_field: "abc"})
         assert mock_files_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
-        assert {"search": {"name": None}, "filter": {"externalIdPrefix": "abc"}, "limit": None} == jsgz_load(
+        assert {"search": {"name": None}, "filter": {"externalIdPrefix": "abc"}, "limit": 100} == jsgz_load(
             mock_files_response.calls[0].request.body
         )
 

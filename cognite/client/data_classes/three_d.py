@@ -3,6 +3,46 @@ from typing import *
 from cognite.client.data_classes._base import *
 
 
+# GenPropertyClass: RevisionCameraProperties
+class RevisionCameraProperties(dict):
+    """Initial camera position and target.
+
+    Args:
+        target (List[float]): Initial camera target.
+        position (List[float]): Initial camera position.
+    """
+
+    def __init__(self, target: List[float] = None, position: List[float] = None, **kwargs):
+        self.target = target
+        self.position = position
+        self.update(kwargs)
+
+    target = CognitePropertyClassUtil.declare_property("target")
+    position = CognitePropertyClassUtil.declare_property("position")
+
+    # GenStop
+
+
+# GenPropertyClass: BoundingBox3D
+class BoundingBox3D(dict):
+    """The bounding box of the subtree with this sector as the root sector. Is null if there are no geometries in the subtree.
+
+    Args:
+        max (List[float]): No description.
+        min (List[float]): No description.
+    """
+
+    def __init__(self, max: List[float] = None, min: List[float] = None, **kwargs):
+        self.max = max
+        self.min = min
+        self.update(kwargs)
+
+    max = CognitePropertyClassUtil.declare_property("max")
+    min = CognitePropertyClassUtil.declare_property("min")
+
+    # GenStop
+
+
 # GenClass: Model3D
 class ThreeDModel(CogniteResource):
     """No description.
@@ -11,7 +51,7 @@ class ThreeDModel(CogniteResource):
         name (str): The name of the model.
         id (int): The ID of the model.
         created_time (int): The creation time of the resource, in milliseconds since January 1, 1970 at 00:00 UTC.
-        metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
@@ -20,7 +60,7 @@ class ThreeDModel(CogniteResource):
         name: str = None,
         id: int = None,
         created_time: int = None,
-        metadata: Dict[str, Any] = None,
+        metadata: Dict[str, str] = None,
         cognite_client=None,
     ):
         self.name = name
@@ -92,9 +132,9 @@ class ThreeDModelRevision(CogniteResource):
         file_id (int): The file id.
         published (bool): True if the revision is marked as published.
         rotation (List[float]): No description.
-        camera (Dict[str, Any]): Initial camera position and target.
+        camera (Union[Dict[str, Any], RevisionCameraProperties]): Initial camera position and target.
         status (str): The status of the revision.
-        metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         thumbnail_threed_file_id (int): The threed file ID of a thumbnail for the revision. Use /3d/files/{id} to retrieve the file.
         thumbnail_url (str): The URL of a thumbnail for the revision.
         asset_mapping_count (int): The number of asset mappings for this revision.
@@ -108,9 +148,9 @@ class ThreeDModelRevision(CogniteResource):
         file_id: int = None,
         published: bool = None,
         rotation: List[float] = None,
-        camera: Dict[str, Any] = None,
+        camera: Union[Dict[str, Any], RevisionCameraProperties] = None,
         status: str = None,
-        metadata: Dict[str, Any] = None,
+        metadata: Dict[str, str] = None,
         thumbnail_threed_file_id: int = None,
         thumbnail_url: str = None,
         asset_mapping_count: int = None,
@@ -129,6 +169,14 @@ class ThreeDModelRevision(CogniteResource):
         self.asset_mapping_count = asset_mapping_count
         self.created_time = created_time
         self._cognite_client = cognite_client
+
+    @classmethod
+    def _load(cls, resource: Union[Dict, str], cognite_client=None):
+        instance = super(ThreeDModelRevision, cls)._load(resource, cognite_client)
+        if isinstance(resource, Dict):
+            if instance.camera is not None:
+                instance.camera = RevisionCameraProperties(**instance.camera)
+        return instance
 
     # GenStop
 
@@ -203,8 +251,8 @@ class ThreeDNode(CogniteResource):
         depth (int): The depth of the node in the tree, starting from 0 at the root node.
         name (str): The name of the node.
         subtree_size (int): The number of descendants of the node, plus one (counting itself).
-        properties (Dict[str, Any]): Properties extracted from 3D model, with property categories containing key/value string pairs.
-        bounding_box (Dict[str, Any]): The bounding box of the subtree with this sector as the root sector. Is null if there are no geometries in the subtree.
+        properties (Dict[str, Dict[str, str]]): Properties extracted from 3D model, with property categories containing key/value string pairs.
+        bounding_box (Union[Dict[str, Any], BoundingBox3D]): The bounding box of the subtree with this sector as the root sector. Is null if there are no geometries in the subtree.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
@@ -216,8 +264,8 @@ class ThreeDNode(CogniteResource):
         depth: int = None,
         name: str = None,
         subtree_size: int = None,
-        properties: Dict[str, Any] = None,
-        bounding_box: Dict[str, Any] = None,
+        properties: Dict[str, Dict[str, str]] = None,
+        bounding_box: Union[Dict[str, Any], BoundingBox3D] = None,
         cognite_client=None,
     ):
         self.id = id
@@ -229,6 +277,14 @@ class ThreeDNode(CogniteResource):
         self.properties = properties
         self.bounding_box = bounding_box
         self._cognite_client = cognite_client
+
+    @classmethod
+    def _load(cls, resource: Union[Dict, str], cognite_client=None):
+        instance = super(ThreeDNode, cls)._load(resource, cognite_client)
+        if isinstance(resource, Dict):
+            if instance.bounding_box is not None:
+                instance.bounding_box = BoundingBox3D(**instance.bounding_box)
+        return instance
 
     # GenStop
 

@@ -2,6 +2,24 @@ import threading
 from typing import *
 
 from cognite.client.data_classes._base import *
+from cognite.client.data_classes.shared import TimestampRange
+
+
+# GenPropertyClass: AggregateResultItem
+class AggregateResultItem(dict):
+    """Aggregated metrics of the asset
+
+    Args:
+        child_count (int): Number of direct descendants for the asset
+    """
+
+    def __init__(self, child_count: int = None, **kwargs):
+        self.child_count = child_count
+        self.update(kwargs)
+
+    child_count = CognitePropertyClassUtil.declare_property("childCount")
+
+    # GenStop
 
 
 # GenClass: Asset, DataExternalAssetItem
@@ -13,13 +31,13 @@ class Asset(CogniteResource):
         name (str): The name of the asset.
         parent_id (int): A server-generated ID for the object.
         description (str): The description of the asset.
-        metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         source (str): The source of the asset.
         id (int): A server-generated ID for the object.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         root_id (int): A server-generated ID for the object.
-        aggregates (Dict[str, Any]): Aggregated metrics of the asset
+        aggregates (Union[Dict[str, Any], AggregateResultItem]): Aggregated metrics of the asset
         parent_external_id (str): The external ID provided by the client. Must be unique for the resource type.
         cognite_client (CogniteClient): The client to associate with this object.
     """
@@ -30,13 +48,13 @@ class Asset(CogniteResource):
         name: str = None,
         parent_id: int = None,
         description: str = None,
-        metadata: Dict[str, Any] = None,
+        metadata: Dict[str, str] = None,
         source: str = None,
         id: int = None,
         created_time: int = None,
         last_updated_time: int = None,
         root_id: int = None,
-        aggregates: Dict[str, Any] = None,
+        aggregates: Union[Dict[str, Any], AggregateResultItem] = None,
         parent_external_id: str = None,
         cognite_client=None,
     ):
@@ -53,6 +71,14 @@ class Asset(CogniteResource):
         self.aggregates = aggregates
         self.parent_external_id = parent_external_id
         self._cognite_client = cognite_client
+
+    @classmethod
+    def _load(cls, resource: Union[Dict, str], cognite_client=None):
+        instance = super(Asset, cls)._load(resource, cognite_client)
+        if isinstance(resource, Dict):
+            if instance.aggregates is not None:
+                instance.aggregates = AggregateResultItem(**instance.aggregates)
+        return instance
 
     # GenStop
 
@@ -285,10 +311,10 @@ class AssetFilter(CogniteFilter):
         name (str): The name of the asset.
         parent_ids (List[int]): Return only the direct descendants of the specified assets.
         root_ids (List[Dict[str, Any]]): Return all descendants of the specified root assets.
-        metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         source (str): The source of the asset.
-        created_time (Dict[str, Any]): Range between two timestamps.
-        last_updated_time (Dict[str, Any]): Range between two timestamps.
+        created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
+        last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
         root (bool): Whether the filtered assets are root assets, or not. Set to True to only list root assets.
         external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
         cognite_client (CogniteClient): The client to associate with this object.
@@ -299,10 +325,10 @@ class AssetFilter(CogniteFilter):
         name: str = None,
         parent_ids: List[int] = None,
         root_ids: List[Dict[str, Any]] = None,
-        metadata: Dict[str, Any] = None,
+        metadata: Dict[str, str] = None,
         source: str = None,
-        created_time: Dict[str, Any] = None,
-        last_updated_time: Dict[str, Any] = None,
+        created_time: Union[Dict[str, Any], TimestampRange] = None,
+        last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
         root: bool = None,
         external_id_prefix: str = None,
         cognite_client=None,
@@ -317,5 +343,15 @@ class AssetFilter(CogniteFilter):
         self.root = root
         self.external_id_prefix = external_id_prefix
         self._cognite_client = cognite_client
+
+    @classmethod
+    def _load(cls, resource: Union[Dict, str], cognite_client=None):
+        instance = super(AssetFilter, cls)._load(resource, cognite_client)
+        if isinstance(resource, Dict):
+            if instance.created_time is not None:
+                instance.created_time = TimestampRange(**instance.created_time)
+            if instance.last_updated_time is not None:
+                instance.last_updated_time = TimestampRange(**instance.last_updated_time)
+        return instance
 
     # GenStop

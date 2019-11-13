@@ -1,6 +1,7 @@
 from typing import *
 
 from cognite.client.data_classes._base import *
+from cognite.client.data_classes.shared import TimestampRange
 
 
 # GenClass: Event
@@ -14,7 +15,7 @@ class Event(CogniteResource):
         type (str): Type of the event, e.g 'failure'.
         subtype (str): Subtype of the event, e.g 'electrical'.
         description (str): Textual description of the event.
-        metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         asset_ids (List[int]): Asset IDs of related equipment that this event relates to.
         source (str): The source of this event.
         id (int): A server-generated ID for the object.
@@ -31,7 +32,7 @@ class Event(CogniteResource):
         type: str = None,
         subtype: str = None,
         description: str = None,
-        metadata: Dict[str, Any] = None,
+        metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
         source: str = None,
         id: int = None,
@@ -61,32 +62,32 @@ class EventFilter(CogniteFilter):
     """Filter on events filter with exact match
 
     Args:
-        start_time (Dict[str, Any]): Range between two timestamps.
-        end_time (Dict[str, Any]): Range between two timestamps.
-        metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        start_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
+        end_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
+        metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         asset_ids (List[int]): Asset IDs of related equipment that this event relates to.
         root_asset_ids (List[Dict[str, Any]]): The IDs of the root assets that the related assets should be children of.
         source (str): The source of this event.
         type (str): The event type
         subtype (str): The event subtype
-        created_time (Dict[str, Any]): Range between two timestamps.
-        last_updated_time (Dict[str, Any]): Range between two timestamps.
+        created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
+        last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
         external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
     def __init__(
         self,
-        start_time: Dict[str, Any] = None,
-        end_time: Dict[str, Any] = None,
-        metadata: Dict[str, Any] = None,
+        start_time: Union[Dict[str, Any], TimestampRange] = None,
+        end_time: Union[Dict[str, Any], TimestampRange] = None,
+        metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
         root_asset_ids: List[Dict[str, Any]] = None,
         source: str = None,
         type: str = None,
         subtype: str = None,
-        created_time: Dict[str, Any] = None,
-        last_updated_time: Dict[str, Any] = None,
+        created_time: Union[Dict[str, Any], TimestampRange] = None,
+        last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
         external_id_prefix: str = None,
         cognite_client=None,
     ):
@@ -102,6 +103,20 @@ class EventFilter(CogniteFilter):
         self.last_updated_time = last_updated_time
         self.external_id_prefix = external_id_prefix
         self._cognite_client = cognite_client
+
+    @classmethod
+    def _load(cls, resource: Union[Dict, str], cognite_client=None):
+        instance = super(EventFilter, cls)._load(resource, cognite_client)
+        if isinstance(resource, Dict):
+            if instance.start_time is not None:
+                instance.start_time = TimestampRange(**instance.start_time)
+            if instance.end_time is not None:
+                instance.end_time = TimestampRange(**instance.end_time)
+            if instance.created_time is not None:
+                instance.created_time = TimestampRange(**instance.created_time)
+            if instance.last_updated_time is not None:
+                instance.last_updated_time = TimestampRange(**instance.last_updated_time)
+        return instance
 
     # GenStop
 

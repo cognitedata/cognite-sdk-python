@@ -14,7 +14,20 @@ class RelationshipsAPI(APIClient):
         self._CREATE_LIMIT = 1000
 
     def __call__(
-        self, chunk_size: int = None, limit: int = None
+        self,
+        chunk_size: int = None,
+        source_resource: str = None,
+        source_resource_id: str = None,
+        target_resource: str = None,
+        target_resource_id: str = None,
+        start_time: Dict[str, Any] = None,
+        end_time: Dict[str, Any] = None,
+        confidence: Dict[str, Any] = None,
+        last_updated_time: Dict[str, Any] = None,
+        created_time: Dict[str, Any] = None,
+        data_set: str = None,
+        relationship_type: str = None,
+        limit: int = None,
     ) -> Generator[Union[Relationship, RelationshipList], None, None]:
         """Iterate over relationships
 
@@ -22,13 +35,37 @@ class RelationshipsAPI(APIClient):
 
         Args:
             chunk_size (int, optional): Number of relationships to return in each chunk. Defaults to yielding one relationship a time.
+            source_resource (str): Resource type of the source node.
+            source_resource_id (str): Resource ID of the source node.
+            target_resource (str): Resource type of the target node.
+            target_resource_id (str): Resource ID of the target node.
+            start_time (Dict[str, Any]): Range to filter the field for. (inclusive)
+            end_time (Dict[str, Any]): Range to filter the field for. (inclusive)
+            confidence (Dict[str, Any]): Range to filter the field for. (inclusive)
+            last_updated_time (Dict[str, Any]): Range to filter the field for. (inclusive)
+            created_time (Dict[str, Any]): Range to filter the field for. (inclusive)
+            data_set (str): String describing the source system storing or generating the relationship.
+            relationship_type (str): Type of the relationship in order to distinguish between different relationships. In general relationship types should reflect references as they are expressed in natural sentences.
             limit (int, optional): Maximum number of relationships to return. Defaults to 100. Set to -1, float("inf") or None
                 to return all items.
 
         Yields:
             Union[Relationship, RelationshipList]: yields Relationship one by one if chunk is not specified, else RelationshipList objects.
         """
-        return self._list_generator(method="GET", chunk_size=chunk_size, limit=limit)
+        filter = RelationshipFilter(
+            source_resource=source_resource,
+            source_resource_id=source_resource_id,
+            target_resource=target_resource,
+            target_resource_id=target_resource_id,
+            start_time=start_time,
+            end_time=end_time,
+            confidence=confidence,
+            last_updated_time=last_updated_time,
+            created_time=created_time,
+            data_set=data_set,
+            relationship_type=relationship_type,
+        ).dump(camel_case=True)
+        return self._list_generator(method="POST", chunk_size=chunk_size, limit=limit, filter=filter)
 
     def __iter__(self) -> Generator[Relationship, None, None]:
         """Iterate over relationships
@@ -79,10 +116,35 @@ class RelationshipsAPI(APIClient):
         utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=False)
         return self._retrieve_multiple(external_ids=external_ids, wrap_ids=True)
 
-    def list(self, limit: int = 25) -> RelationshipList:
+    def list(
+        self,
+        source_resource: str = None,
+        source_resource_id: str = None,
+        target_resource: str = None,
+        target_resource_id: str = None,
+        start_time: Dict[str, Any] = None,
+        end_time: Dict[str, Any] = None,
+        confidence: Dict[str, Any] = None,
+        last_updated_time: Dict[str, Any] = None,
+        created_time: Dict[str, Any] = None,
+        data_set: str = None,
+        relationship_type: str = None,
+        limit: int = 25,
+    ) -> RelationshipList:
         """List relationships
 
         Args:
+            source_resource (str): Resource type of the source node.
+            source_resource_id (str): Resource ID of the source node.
+            target_resource (str): Resource type of the target node.
+            target_resource_id (str): Resource ID of the target node.
+            start_time (Dict[str, Any]): Range to filter the field for. (inclusive)
+            end_time (Dict[str, Any]): Range to filter the field for. (inclusive)
+            confidence (Dict[str, Any]): Range to filter the field for. (inclusive)
+            last_updated_time (Dict[str, Any]): Range to filter the field for. (inclusive)
+            created_time (Dict[str, Any]): Range to filter the field for. (inclusive)
+            data_set (str): String describing the source system storing or generating the relationship.
+            relationship_type (str): Type of the relationship in order to distinguish between different relationships. In general relationship types should reflect references as they are expressed in natural sentences.
             limit (int, optional): Maximum number of relationships to return. Defaults to 100. Set to -1, float("inf") or None
                 to return all items.
 
@@ -111,37 +173,34 @@ class RelationshipsAPI(APIClient):
                 >>> for relationship_list in c.relationships(chunk_size=2500):
                 ...     relationship_list # do something with the relationships
         """
-
-        return self._list(method="GET", limit=limit, filter=None)
-
-    # TODO: this is actually advanced list (but in relationships it's 'eventually consistent' and currently has no cursor). merge into .list when it's done?
-    def search(self, filter: Union[RelationshipFilter, Dict] = None, limit=25) -> RelationshipList:
-        """Search/List relationships with filter.
-
-        Args:
-            limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
-            filter (Union[RelationshipFilter, Dict]): Filter to apply. Performs exact match on these fields.
-
-        Returns:
-            RelationshipList: List of requested assets.
-        """
-        if isinstance(filter, dict):
-            filter = RelationshipFilter(**filter)
-        return self._list(method="POST", limit=limit, filter=filter.dump(camel_case=True))
+        filter = RelationshipFilter(
+            source_resource=source_resource,
+            source_resource_id=source_resource_id,
+            target_resource=target_resource,
+            target_resource_id=target_resource_id,
+            start_time=start_time,
+            end_time=end_time,
+            confidence=confidence,
+            last_updated_time=last_updated_time,
+            created_time=created_time,
+            data_set=data_set,
+            relationship_type=relationship_type,
+        ).dump(camel_case=True)
+        return self._list(method="POST", limit=limit, filter=filter)
 
     def create(self, relationship: Union[Relationship, List[Relationship]]) -> Union[Relationship, RelationshipList]:
         """Create one or more relationships.
 
         Args:
             relationship (Union[Relationship, List[Relationship]]): Relationship or list of relationships to create.
-                Note: the source and target field in the Relationship(s) can be of the form shown below, or objects of type Asset, TimeSeries, FileMetadata, Event
+                Note: the source and target field in the Relationship(s) can be of the form shown below, or objects of type Asset, TimeSeries, FileMetadata, Event, Sequence
 
         Returns:
             Union[Relationship, RelationshipList]: Created relationship(s)
 
         Examples:
 
-            Create a new relationship::
+            Create a new relationship specifying object type and external id for source and target::
 
                 >>> from cognite.client.experimental import CogniteClient
                 >>> from cognite.client.data_classes import Relationship
@@ -149,7 +208,7 @@ class RelationshipsAPI(APIClient):
                 >>> rel = Relationship(external_id="rel",source={"resource":"TimeSeries", "resourceId": "ts"},target={"resource":"Asset", "resourceId": "a"},relationship_type="belongsTo",confidence=0.9,data_set="ds_name")
                 >>> res = c.relationships.create(rel)
 
-            Create a new relationship::
+            Create a new relationship using objects directly as source and target::
 
                 >>> from cognite.client.experimental import CogniteClient
                 >>> from cognite.client.data_classes import Relationship

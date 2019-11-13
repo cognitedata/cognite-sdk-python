@@ -22,7 +22,7 @@ parser = DocTestParser()
 
 apis = collect_apis(client, {})
 
-snippets = {"language": "Python", "operations": defaultdict(str)}
+snippets = {"language": "Python", "label": "Python SDK", "operations": defaultdict(str)}
 filter_out = ["from cognite.client import CogniteClient", "c = CogniteClient()"]
 
 duplicate_operations = {
@@ -51,4 +51,4 @@ for api_name, api in apis:
             if openapi_ident in duplicate_operations:
                 snippets["operations"][duplicate_operations[openapi_ident]] += code
 
-print(json.dumps(snippets, indent=4))
+print(json.dumps(snippets, indent=2))

@@ -93,7 +93,7 @@ class TestRelationships:
         assert mock_rel_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
     def test_create_single_types(self, mock_rel_response):
-        types = [Asset, TimeSeries, FileMetadata, Event]
+        types = [Asset, TimeSeries, FileMetadata, Event, Sequence]
         for cls in types:
             test = cls(external_id="test")
             res = REL_API.create(
@@ -133,7 +133,7 @@ class TestRelationships:
                     external_id="1",
                     confidence=0.5,
                     relationship_type="belongsTo",
-                    source=Sequence(external_id="a'"),
+                    source=Relationship(external_id="a"),
                     target={"resourceId": "bbb", "resource": "Asset"},
                 )
             )
@@ -162,7 +162,7 @@ class TestRelationships:
             assert mock_rel_response.calls[0].response.json()["items"][0] == rel.dump(camel_case=True)
 
     def test_iter_chunk(self, mock_rel_response):
-        for rel in REL_API(chunk_size=1):
+        for rel in REL_API(chunk_size=1, data_set="ds"):
             assert mock_rel_response.calls[0].response.json()["items"] == rel.dump(camel_case=True)
 
     def test_delete_single(self, mock_rel_response):
@@ -176,17 +176,10 @@ class TestRelationships:
         assert res is None
 
     def test_advanced_list(self, mock_rel_response):
-        res = REL_API.search(filter=RelationshipFilter(source_resource="asset"))
-        assert {"filter": {"sourceResource": "asset"}, "limit": 25, "cursor": None} == jsgz_load(
-            mock_rel_response.calls[0].request.body
-        )
-        assert mock_rel_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
-
-    def test_advanced_list_dict(self, mock_rel_response):
-        res = REL_API.search(filter={"source_resource_id": "asset123", "relationship_type": "belongs_to"}, limit=1000)
+        res = REL_API.list(source_resource="asset", relationship_type="belongs_to")
         assert {
-            "filter": {"sourceResourceId": "asset123", "relationshipType": "belongs_to"},
-            "limit": 1000,
+            "filter": {"sourceResource": "asset", "relationshipType": "belongs_to"},
+            "limit": 25,
             "cursor": None,
         } == jsgz_load(mock_rel_response.calls[0].request.body)
         assert mock_rel_response.calls[0].response.json()["items"] == res.dump(camel_case=True)

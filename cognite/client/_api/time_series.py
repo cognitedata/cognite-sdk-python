@@ -280,7 +280,7 @@ class TimeSeriesAPI(APIClient):
         description: str = None,
         query: str = None,
         filter: Union[TimeSeriesFilter, Dict] = None,
-        limit: int = None,
+        limit: int = 100,
     ) -> TimeSeriesList:
         """`Search for time series. <https://docs.cognite.com/api/v1/#operation/searchTimeSeries>`_
 
