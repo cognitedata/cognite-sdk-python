@@ -113,12 +113,13 @@ class AssetsAPI(APIClient):
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
         return self._retrieve_multiple(ids=id, external_ids=external_id, wrap_ids=True)
 
-    def retrieve_multiple(self, ids: Optional[List[int]] = None, external_ids: Optional[List[str]] = None) -> AssetList:
+    def retrieve_multiple(self, ids: Optional[List[int]] = None, external_ids: Optional[List[str]] = None,ignore_unknown_ids=False) -> AssetList:
         """`Retrieve multiple assets by id. <https://docs.cognite.com/api/v1/#operation/byIdsAssets>`_
 
         Args:
             ids (List[int], optional): IDs
             external_ids (List[str], optional): External IDs
+            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
             AssetList: The requested assets.
@@ -135,11 +136,11 @@ class AssetsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.assets.retrieve_multiple(external_ids=["abc", "def"])
+                >>> res = c.assets.retrieve_multiple(external_ids=["abc", "def"], ignore_unknown_ids=True)
         """
         utils._auxiliary.assert_type(ids, "id", [List], allow_none=True)
         utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=True)
-        return self._retrieve_multiple(ids=ids, external_ids=external_ids, wrap_ids=True)
+        return self._retrieve_multiple(ids=ids, external_ids=external_ids, ignore_unknown_ids=ignore_unknown_ids, wrap_ids=True)
 
     def list(
         self,
