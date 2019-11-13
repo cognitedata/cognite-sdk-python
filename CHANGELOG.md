@@ -21,6 +21,9 @@ Changes are grouped as follows
 
 ## [Unreleased]
 
+### Added
+- `ignore_unknown_ids` parameter on asset delete.
+
 ### Changed
 - Default value for `limit` in search method is now 100 instead of None to clarify api default behaviour when no limit is passed.
 

@@ -276,7 +276,11 @@ class AssetsAPI(APIClient):
         return _AssetPoster(assets, client=self).post()
 
     def delete(
-        self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None, recursive: bool = False
+        self,
+        id: Union[int, List[int]] = None,
+        external_id: Union[str, List[str]] = None,
+        recursive: bool = False,
+        ignore_unknown_ids=False,
     ) -> None:
         """`Delete one or more assets <https://doc.cognitedata.com/api/v1/#operation/deleteAssets>`_
 
@@ -284,6 +288,7 @@ class AssetsAPI(APIClient):
             id (Union[int, List[int]): Id or list of ids
             external_id (Union[str, List[str]]): External ID or list of exgernal ids
             recursive (bool): Recursively delete whole asset subtrees under given ids. Defaults to False.
+            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
             None
@@ -297,7 +302,10 @@ class AssetsAPI(APIClient):
                 >>> c.assets.delete(id=[1,2,3], external_id="3")
         """
         self._delete_multiple(
-            ids=id, external_ids=external_id, wrap_ids=True, extra_body_fields={"recursive": recursive}
+            ids=id,
+            external_ids=external_id,
+            wrap_ids=True,
+            extra_body_fields={"recursive": recursive, "ignoreUnknownIds": ignore_unknown_ids},
         )
 
     def update(self, item: Union[Asset, AssetUpdate, List[Union[Asset, AssetUpdate]]]) -> Union[Asset, AssetList]:

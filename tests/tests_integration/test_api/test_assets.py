@@ -110,6 +110,11 @@ class TestAssetsAPI:
         res = COGNITE_CLIENT.assets.update(update_asset)
         assert "newname" == res.name
 
+    def test_delete_with_nonexisting(self):
+        a = COGNITE_CLIENT.assets.create(Asset(name="any"))
+        COGNITE_CLIENT.assets.delete(id=a.id, external_id="this asset does not exist", ignore_unknown_ids=True)
+        assert COGNITE_CLIENT.assets.retrieve(id=a.id) is None
+
     def test_post_asset_hierarchy(self, new_asset_hierarchy):
         prefix, ext_ids = new_asset_hierarchy
         posted_assets = COGNITE_CLIENT.assets.retrieve_multiple(external_ids=ext_ids)
