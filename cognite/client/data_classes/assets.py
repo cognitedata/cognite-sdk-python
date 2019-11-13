@@ -1,3 +1,4 @@
+import copy
 import threading
 from typing import *
 
@@ -22,7 +23,7 @@ class AggregateResultItem(dict):
     # GenStop
 
 
-# GenClass: Asset, DataExternalAssetItem
+# GenRWClass: r=Asset w=DataExternalAssetItem
 class Asset(CogniteResource):
     """A representation of a physical asset, for example a factory or a piece of equipment.
 
@@ -79,6 +80,15 @@ class Asset(CogniteResource):
             if instance.aggregates is not None:
                 instance.aggregates = AggregateResultItem(**instance.aggregates)
         return instance
+
+    def insertable_copy(self):
+        copy_self = copy.deepcopy(self)
+        copy_self.aggregates = None
+        copy_self.created_time = None
+        copy_self.id = None
+        copy_self.last_updated_time = None
+        copy_self.root_id = None
+        return copy_self
 
     # GenStop
 

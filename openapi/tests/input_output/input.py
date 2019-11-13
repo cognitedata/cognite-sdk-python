@@ -55,3 +55,12 @@ class AssetUpdate(CogniteUpdate):
 class AssetFilter(CogniteFilter):
     pass
     # GenStop
+
+
+# GenRWClass: r=GetTimeSeriesMetadataDTO w=PostTimeSeriesMetadataDTO
+class TimeSeries(CogniteResource):
+    pass
+    # GenStop
+
+    def after(self):
+        return None

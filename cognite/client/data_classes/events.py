@@ -1,10 +1,11 @@
+import copy
 from typing import *
 
 from cognite.client.data_classes._base import *
 from cognite.client.data_classes.shared import TimestampRange
 
 
-# GenClass: Event
+# GenRWClass: r=Event w=InternalEvent
 class Event(CogniteResource):
     """An event represents something that happened at a given interval in time, e.g a failure, a work order etc.
 
@@ -53,6 +54,13 @@ class Event(CogniteResource):
         self.last_updated_time = last_updated_time
         self.created_time = created_time
         self._cognite_client = cognite_client
+
+    def insertable_copy(self):
+        copy_self = copy.deepcopy(self)
+        copy_self.created_time = None
+        copy_self.id = None
+        copy_self.last_updated_time = None
+        return copy_self
 
     # GenStop
 

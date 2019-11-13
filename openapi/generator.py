@@ -13,6 +13,9 @@ GEN_CLASS_PATTERN = "# GenClass: ([\S ]+)\s+class (\S+)\(.+\):(?:(?!# GenStop)[\
 GEN_UPDATE_CLASS_PATTERN = "# GenUpdateClass: (\S+)\s+class (\S+)\(.+\):(?:(?!# GenStop)[\s\S])+# GenStop"
 GEN_PROPERTY_CLASS_PATTERN = "# GenPropertyClass: (\S+)\s+class (\S+)\(.+\):(?:(?!# GenStop)[\s\S])+# GenStop"
 
+GEN_RW_CLASS_PATTERN = "# GenRWClass: ([\S ]+)\s+class (\S+)\(.+\):(?:(?!# GenStop)[\s\S])+# GenStop"
+
+
 GenClassSegment = namedtuple("GenClassSegment", ["schema_names", "class_name"])
 GenUpdateClassSegment = namedtuple("GenUpdateClassSegment", ["schema_name", "class_name"])
 
@@ -32,7 +35,7 @@ class ClassGenerator:
         generated_segments = {}
         segments = self.gen_property_class_segments if is_property else self.gen_class_segments
         for class_segment in segments:
-            name, segment = self.generate_code_for_given_class_segment(class_segment, is_property=is_property)
+            name, segment, _ = self.generate_code_for_given_class_segment(class_segment, is_property=is_property)
             generated_segments[name] = segment
         return generated_segments
 
@@ -54,7 +57,7 @@ class ClassGenerator:
         property_definitions = self.generate_properties(schemas, indentation=4) if is_property else ""
         loader = self.generate_loader(schemas, class_segment.class_name, indentation=4)
         generated_segment = docstring + "\n" + constructor_args + "\n" + property_definitions + loader
-        return class_segment.class_name, generated_segment
+        return class_segment.class_name, generated_segment, schemas
 
     def generate_docstring(self, schemas, indentation, is_property=False):
         docstring = " " * indentation + '"""{}\n\n'.format(self._get_schema_description(schemas[0]))
@@ -178,6 +181,38 @@ class ClassGenerator:
                     properties[prop_name] = prop
             return properties
         return schema["properties"]
+
+
+class RWClassGenerator(ClassGenerator):
+    def __init__(self, spec, input):
+        self._spec = spec
+        self._input = input
+        self.gen_class_segments = [GenClassSegment(*args) for args in re.findall(GEN_RW_CLASS_PATTERN, self._input)]
+        self.gen_property_class_segments = [
+            GenClassSegment(*args) for args in re.findall(GEN_PROPERTY_CLASS_PATTERN, self._input)
+        ]
+
+    def generate_insertable_copy_method(self, read_only_props, indentation=4):
+        indent = " " * indentation
+        insertable_copy_method = indent + "\n\n" + indent + "def insertable_copy(self):\n"
+        insertable_copy_method += indent * 2 + "copy_self = copy.deepcopy(self)\n"
+        for prop_name in sorted(read_only_props):
+            insertable_copy_method += indent * 2 + "copy_self.{} = None\n".format(utils.to_snake_case(prop_name))
+        insertable_copy_method += indent * 2 + "return copy_self\n\n"
+        return insertable_copy_method
+
+    def generate_code_for_given_class_segment(self, class_segment, is_property=False):
+        rw_map = {k.lower(): v for k, v in re.findall("([rwRW])=(\S+)", class_segment.schema_names)}
+        if rw_map.keys() != {"r", "w"}:
+            raise ValueError("for RWClass, expect r=schema w=schema")
+        class_name, base_segment, schemas = super().generate_code_for_given_class_segment(
+            GenClassSegment(rw_map["r"] + ", " + rw_map["w"], class_segment.class_name)
+        )
+
+        props_rw = [set(self._get_schema_properties(schema).keys()) for schema in schemas]
+        read_only_props = props_rw[0] - props_rw[1]
+        generated_segment = base_segment + self.generate_insertable_copy_method(read_only_props, indentation=4)
+        return class_name, generated_segment, schemas
 
 
 class UpdateClassGenerator:
@@ -312,25 +347,35 @@ class CodeGenerator:
     def generate_to_str(self, input: str):
         input = self._parse_input(input)
         class_generator = ClassGenerator(self.open_api_spec, input)
+        rw_class_generator = RWClassGenerator(self.open_api_spec, input)
         update_class_generator = UpdateClassGenerator(self.open_api_spec, input)
 
-        content_with_generated_classes = self._generate_classes(input, class_generator)
+        content_with_generated_classes = self._generate_classes(input, class_generator, "# GenClass")
+        content_with_generated_classes = self._generate_classes(
+            content_with_generated_classes, class_generator, "# GenPropertyClass"
+        )
+        content_with_generated_classes = self._generate_classes(
+            content_with_generated_classes, rw_class_generator, "# GenRWClass"
+        )
+
         content_with_generated_update_classes = self._generate_update_classes(
             content_with_generated_classes, update_class_generator
         )
         content_with_imports = self._generate_imports(content_with_generated_update_classes)
-        content_formatted = self._format_with_black(content_with_imports)
+        try:
+            content_formatted = self._format_with_black(content_with_imports)
+        except IndentationError:
+            print("Could not format generated code with black:\n\n", content_with_imports)
+            raise
 
         return content_formatted
 
-    def _generate_classes(self, content, class_generator):
-        for is_property in [False, True]:
-            gen_header = "# GenPropertyClass" if is_property else "# GenClass"
-            generated_class_segments = class_generator.generate_code_for_class_segments(is_property)
-            for cls_name, code_segment in generated_class_segments.items():
-                pattern = self._get_gen_class_replace_pattern(cls_name, gen_header)
-                replace_with = self._get_gen_class_replace_string(cls_name, code_segment, gen_header)
-                content = re.sub(pattern, replace_with, content)
+    def _generate_classes(self, content, class_generator, gen_header):
+        generated_class_segments = class_generator.generate_code_for_class_segments("Property" in gen_header)
+        for cls_name, code_segment in generated_class_segments.items():
+            pattern = self._get_gen_class_replace_pattern(cls_name, gen_header)
+            replace_with = self._get_gen_class_replace_string(cls_name, code_segment, gen_header)
+            content = re.sub(pattern, replace_with, content)
         return content
 
     def _generate_update_classes(self, content, method_generator):
@@ -342,8 +387,10 @@ class CodeGenerator:
         return content
 
     def _generate_imports(self, content):
+        if re.search("import copy", content) is None:
+            content = "import copy\n" + content
         if re.search("from typing import \*", content) is None:
-            content = "from typing import *\n\n" + content
+            content = "from typing import *\n" + content
         return content
 
     def _format_with_black(self, content):

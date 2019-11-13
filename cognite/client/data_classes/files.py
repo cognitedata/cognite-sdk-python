@@ -1,5 +1,5 @@
+import copy
 from typing import *
-from typing import Dict, List
 
 from cognite.client.data_classes._base import *
 from cognite.client.data_classes.shared import TimestampRange

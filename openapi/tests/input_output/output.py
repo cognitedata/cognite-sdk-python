@@ -1,3 +1,4 @@
+import copy
 from typing import *
 
 
@@ -231,3 +232,69 @@ class AssetFilter(CogniteFilter):
         return instance
 
     # GenStop
+
+
+# GenRWClass: r=GetTimeSeriesMetadataDTO w=PostTimeSeriesMetadataDTO
+class TimeSeries(CogniteResource):
+    """No description.
+
+    Args:
+        id (int): The generated ID for the time series.
+        external_id (str): The externally supplied ID for the time series.
+        name (str): The display short name of the time series. Note: Value of this field can differ from name presented by older versions of API 0.3-0.6.
+        is_string (bool): Whether the time series is string valued or not.
+        metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        unit (str): The physical unit of the time series.
+        asset_id (int): The asset that this time series belongs to.
+        is_step (bool): Whether the time series is a step series or not.
+        description (str): Description of the time series.
+        security_categories (List[int]): The required security categories to access this time series.
+        created_time (int): Time when this time series was created in CDF in milliseconds since Jan 1, 1970.
+        last_updated_time (int): The latest time when this time series was updated in CDF in milliseconds since Jan 1, 1970.
+        legacy_name (str): Set a value for legacyName to allow applications using API v0.3, v04, v05, and v0.6 to access this time series. The legacy name is the human-readable name for the time series and is mapped to the name field used in API versions 0.3-0.6. The legacyName field value must be unique, and setting this value to an already existing value will return an error. We recommend that you set this field to the same value as externalId.
+        cognite_client (CogniteClient): The client to associate with this object.
+    """
+
+    def __init__(
+        self,
+        id: int = None,
+        external_id: str = None,
+        name: str = None,
+        is_string: bool = None,
+        metadata: Dict[str, str] = None,
+        unit: str = None,
+        asset_id: int = None,
+        is_step: bool = None,
+        description: str = None,
+        security_categories: List[int] = None,
+        created_time: int = None,
+        last_updated_time: int = None,
+        legacy_name: str = None,
+        cognite_client=None,
+    ):
+        self.id = id
+        self.external_id = external_id
+        self.name = name
+        self.is_string = is_string
+        self.metadata = metadata
+        self.unit = unit
+        self.asset_id = asset_id
+        self.is_step = is_step
+        self.description = description
+        self.security_categories = security_categories
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
+        self.legacy_name = legacy_name
+        self._cognite_client = cognite_client
+
+    def insertable_copy(self):
+        copy_self = copy.deepcopy(self)
+        copy_self.created_time = None
+        copy_self.id = None
+        copy_self.last_updated_time = None
+        return copy_self
+
+    # GenStop
+
+    def after(self):
+        return None

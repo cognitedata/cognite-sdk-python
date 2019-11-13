@@ -1,3 +1,4 @@
+import copy
 from typing import *
 
 from cognite.client.data_classes.assets import AggregateResultItem, Asset, AssetFilter, AssetList, AssetUpdate

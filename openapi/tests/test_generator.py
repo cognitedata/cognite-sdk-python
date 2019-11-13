@@ -10,10 +10,7 @@ with open(input_path) as f:
 with open(output_path) as f:
     OUTPUT = f.read()
 
-if os.getenv("CI") == "1":
-    CODE_GENERATOR = CodeGenerator(spec_path="deref-spec.json")
-else:
-    CODE_GENERATOR = CodeGenerator(spec_url="https://storage.googleapis.com/cognitedata-api-docs/dist/v1.json")
+CODE_GENERATOR = CodeGenerator(spec_path=os.path.join(os.path.dirname(__file__), "input_output/deref-spec.json"))
 
 
 class TestCodeGenerator:

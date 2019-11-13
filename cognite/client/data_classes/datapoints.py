@@ -1,4 +1,5 @@
 import collections
+import copy
 import re as regexp
 from datetime import datetime
 from typing import *

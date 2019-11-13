@@ -1,10 +1,11 @@
+import copy
 from typing import *
 from typing import List
 
 from cognite.client.data_classes._base import *
 
 
-# GenClass: GetTimeSeriesMetadataDTO, PostTimeSeriesMetadataDTO
+# GenRWClass: r=GetTimeSeriesMetadataDTO w=PostTimeSeriesMetadataDTO
 class TimeSeries(CogniteResource):
     """No description.
 
@@ -56,6 +57,13 @@ class TimeSeries(CogniteResource):
         self.last_updated_time = last_updated_time
         self.legacy_name = legacy_name
         self._cognite_client = cognite_client
+
+    def insertable_copy(self):
+        copy_self = copy.deepcopy(self)
+        copy_self.created_time = None
+        copy_self.id = None
+        copy_self.last_updated_time = None
+        return copy_self
 
     # GenStop
 

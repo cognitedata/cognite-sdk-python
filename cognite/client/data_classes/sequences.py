@@ -1,11 +1,11 @@
+import copy
 import math
 from typing import *
-from typing import List
 
 from cognite.client.data_classes._base import *
 
 
-# GenClass: GetSequenceDTO
+# GenRWClass: r=GetSequenceDTO w=PostSequenceDTO
 class Sequence(CogniteResource):
     """Information about the sequence stored in the database
 
@@ -17,8 +17,8 @@ class Sequence(CogniteResource):
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
         metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value. Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         columns (List[Dict[str, Any]]): List of column definitions
-        created_time (int): Time when this asset was created in CDP in milliseconds since Jan 1, 1970.
-        last_updated_time (int): The last time this asset was updated in CDP, in milliseconds since Jan 1, 1970.
+        created_time (int): Time when this asset was created in CDF in milliseconds since Jan 1, 1970.
+        last_updated_time (int): The last time this asset was updated in CDF, in milliseconds since Jan 1, 1970.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
@@ -45,6 +45,13 @@ class Sequence(CogniteResource):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self._cognite_client = cognite_client
+
+    def insertable_copy(self):
+        copy_self = copy.deepcopy(self)
+        copy_self.created_time = None
+        copy_self.id = None
+        copy_self.last_updated_time = None
+        return copy_self
 
     # GenStop
 
