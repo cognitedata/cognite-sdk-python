@@ -330,13 +330,19 @@ class AssetsAPI(APIClient):
         return self._update_multiple(items=item)
 
     def search(
-        self, name: str = None, description: str = None, filter: Union[AssetFilter, Dict] = None, limit: int = 100
+        self,
+        name: str = None,
+        description: str = None,
+        query: str = None,
+        filter: Union[AssetFilter, Dict] = None,
+        limit: int = 100,
     ) -> AssetList:
         """`Search for assets <https://docs.cognite.com/api/v1/#operation/searchAssets>`_
 
         Args:
             name (str): Fuzzy match on name.
             description (str): Fuzzy match on description.
+            query (str): Whitespace-separated terms to search for in assets. Does a best-effort fuzzy search in relevant fields (currently name and description) for variations of any of the search terms, and orders results by relevance.
             filter (Union[AssetFilter, Dict]): Filter to apply. Performs exact match on these fields.
             limit (int): Maximum number of results to return.
 
@@ -357,13 +363,21 @@ class AssetsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.assets.search(filter={"name": "some name"})
 
+            Search for assets by improved multi-field fuzzy search::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.assets.search(query="TAG 30 XV")
+
             Search for assets using multiple filters, finding all assets with name similar to `xyz` with parent asset `123` or `456` with source `some source`::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.assets.search(name="xyz",filter={"parent_ids": [123,456],"source": "some source"})
         """
-        return self._search(search={"name": name, "description": description}, filter=filter, limit=limit)
+        return self._search(
+            search={"name": name, "description": description, "query": query}, filter=filter, limit=limit
+        )
 
     def retrieve_subtree(self, id: int = None, external_id: str = None, depth: int = None) -> AssetList:
         """Retrieve the subtree for this asset up to a specified depth.
