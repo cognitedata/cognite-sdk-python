@@ -17,8 +17,8 @@ class SchedulesAPI(APIClient):
         """Create a new schedule on a given model.
 
         Args:
-            model_name (str): Name of model to create schedule on
-            schedule_name (str): Name of schedule
+            model_name (str): Name of the model to create schedule on
+            schedule_name (str): Name of the schedule
             schedule_data_spec (Any): Specification of schedule input/output. Can be either a dictionary or a
                                     ScheduleDataSpec object from the cognite-model-hosting library.
             description (str): Description for schedule
