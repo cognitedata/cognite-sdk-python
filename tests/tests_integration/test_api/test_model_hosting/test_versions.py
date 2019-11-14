@@ -6,7 +6,7 @@ import pytest
 
 from cognite.client._api.model_hosting.models import PredictionError
 from cognite.client._api.model_hosting.versions import EmptyArtifactsDirectory
-from cognite.client.data_classes.model_hosting.models import (
+from cognite.client.data_classes.model_hosting.versions import (
     ModelArtifact,
     ModelArtifactList,
     ModelVersion,

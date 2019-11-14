@@ -3,7 +3,7 @@ from concurrent.futures.thread import ThreadPoolExecutor
 from typing import Any, Dict, List
 
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes.model_hosting.models import (
+from cognite.client.data_classes.model_hosting.versions import (
     ModelArtifactList,
     ModelVersion,
     ModelVersionList,

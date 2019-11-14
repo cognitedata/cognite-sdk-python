@@ -1023,6 +1023,10 @@ Data classes
     :members:
     :show-inheritance:
 
+.. automodule:: cognite.client.data_classes.model_hosting.versions
+    :members:
+    :show-inheritance:
+
 .. automodule:: cognite.client.data_classes.model_hosting.schedules
     :members:
     :show-inheritance:
