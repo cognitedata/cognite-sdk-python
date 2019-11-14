@@ -920,7 +920,7 @@ Create model version without deploying
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.model_hosting.versions.ModelVersionsAPI.create_model_version
 
-Deploy awaiting model version version
+Deploy awaiting model version
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.model_hosting.versions.ModelVersionsAPI.deploy_awaiting_model_version
 
