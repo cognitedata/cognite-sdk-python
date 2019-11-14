@@ -9,7 +9,6 @@ from cognite.client.experimental import CogniteClient
 MODELS_API = CogniteClient().model_hosting.models
 
 
-@pytest.mark.skip(reason="temporarily disable while model hosting v1 is being tested in greenfield")
 class TestModels:
     @pytest.fixture
     def created_model(self):
