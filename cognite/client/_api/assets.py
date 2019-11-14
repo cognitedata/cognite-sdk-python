@@ -114,7 +114,10 @@ class AssetsAPI(APIClient):
         return self._retrieve_multiple(ids=id, external_ids=external_id, wrap_ids=True)
 
     def retrieve_multiple(
-        self, ids: Optional[List[int]] = None, external_ids: Optional[List[str]] = None, ignore_unknown_ids=False
+        self,
+        ids: Optional[List[int]] = None,
+        external_ids: Optional[List[str]] = None,
+        ignore_unknown_ids: bool = False,
     ) -> AssetList:
         """`Retrieve multiple assets by id. <https://docs.cognite.com/api/v1/#operation/byIdsAssets>`_
 
@@ -285,7 +288,7 @@ class AssetsAPI(APIClient):
         id: Union[int, List[int]] = None,
         external_id: Union[str, List[str]] = None,
         recursive: bool = False,
-        ignore_unknown_ids=False,
+        ignore_unknown_ids: bool = False,
     ) -> None:
         """`Delete one or more assets <https://doc.cognitedata.com/api/v1/#operation/deleteAssets>`_
 

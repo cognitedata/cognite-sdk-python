@@ -108,7 +108,10 @@ class EventsAPI(APIClient):
         return self._retrieve_multiple(ids=id, external_ids=external_id, wrap_ids=True)
 
     def retrieve_multiple(
-        self, ids: Optional[List[int]] = None, external_ids: Optional[List[str]] = None, ignore_unknown_ids=False
+        self,
+        ids: Optional[List[int]] = None,
+        external_ids: Optional[List[str]] = None,
+        ignore_unknown_ids: bool = False,
     ) -> EventList:
         """`Retrieve multiple events by id. <https://docs.cognite.com/api/v1/#operation/byIdsEvents>`_
 
@@ -243,7 +246,10 @@ class EventsAPI(APIClient):
         return self._create_multiple(items=event)
 
     def delete(
-        self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None, ignore_unknown_ids=False
+        self,
+        id: Union[int, List[int]] = None,
+        external_id: Union[str, List[str]] = None,
+        ignore_unknown_ids: bool = False,
     ) -> None:
         """`Delete one or more events <https://docs.cognite.com/api/v1/#operation/deleteEvents>`_
 
