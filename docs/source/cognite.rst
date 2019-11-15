@@ -897,63 +897,63 @@ Delete model
 ~~~~~~~~~~~~
 .. automethod:: cognite.client._api.model_hosting.models.ModelsAPI.delete_model
 
+Perform online prediction
+~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.model_hosting.models.ModelsAPI.online_predict
+
 
 Model Versions
 ^^^^^^^^^^^^^^
 Retrieve model version by id
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.models.ModelsAPI.get_model_version
+.. automethod:: cognite.client._api.model_hosting.versions.ModelVersionsAPI.get_model_version
 
 List model versions
 ~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.models.ModelsAPI.list_model_versions
+.. automethod:: cognite.client._api.model_hosting.versions.ModelVersionsAPI.list_model_versions
 
 Create and deploy model version
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.models.ModelsAPI.deploy_model_version
+.. automethod:: cognite.client._api.model_hosting.versions.ModelVersionsAPI.deploy_model_version
 
 Create model version without deploying
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.models.ModelsAPI.create_model_version
+.. automethod:: cognite.client._api.model_hosting.versions.ModelVersionsAPI.create_model_version
 
-Deploy awaiting model version version
+Deploy awaiting model version
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.models.ModelsAPI.deploy_awaiting_model_version
+.. automethod:: cognite.client._api.model_hosting.versions.ModelVersionsAPI.deploy_awaiting_model_version
 
 Update model version
 ~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.models.ModelsAPI.update_model_version
+.. automethod:: cognite.client._api.model_hosting.versions.ModelVersionsAPI.update_model_version
 
 Deprecate model version
 ~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.models.ModelsAPI.deprecate_model_version
+.. automethod:: cognite.client._api.model_hosting.versions.ModelVersionsAPI.deprecate_model_version
 
 Delete model version
 ~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.models.ModelsAPI.delete_model_version
-
-Perform online prediction
-~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.models.ModelsAPI.online_predict
+.. automethod:: cognite.client._api.model_hosting.versions.ModelVersionsAPI.delete_model_version
 
 
 Model Version Artifacts
 ^^^^^^^^^^^^^^^^^^^^^^^
 List artifacts for a model version
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.models.ModelsAPI.list_artifacts
+.. automethod:: cognite.client._api.model_hosting.versions.ModelVersionsAPI.list_artifacts
 
 Upload an artifact from a file to a model version awating deployment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.models.ModelsAPI.upload_artifact_from_file
+.. automethod:: cognite.client._api.model_hosting.versions.ModelVersionsAPI.upload_artifact_from_file
 
 Upload artifacts from a directory to a model version awating deployment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.models.ModelsAPI.upload_artifacts_from_directory
+.. automethod:: cognite.client._api.model_hosting.versions.ModelVersionsAPI.upload_artifacts_from_directory
 
 Download an artifact for a model version
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.models.ModelsAPI.download_artifact
+.. automethod:: cognite.client._api.model_hosting.versions.ModelVersionsAPI.download_artifact
 
 
 Schedules
@@ -1020,6 +1020,10 @@ Delete source package code
 Data classes
 ^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.model_hosting.models
+    :members:
+    :show-inheritance:
+
+.. automodule:: cognite.client.data_classes.model_hosting.versions
     :members:
     :show-inheritance:
 
