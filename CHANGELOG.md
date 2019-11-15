@@ -19,11 +19,6 @@ Changes are grouped as follows
 - Upserts for all resource types
 - Separate read/write fields on data classes
 
-## [Unreleased]
-
-### Changed
-- Correct headers in documentation for models, model versions and schedules.
-
 ## [1.4.0] - 2019-11-14
 
 ### Changed
