@@ -105,7 +105,9 @@ class APIClient:
     def _get(self, url_path: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
         return self._do_request("GET", url_path, params=params, headers=headers, timeout=self._config.timeout)
 
-    def _post(self, url_path: str, json: Dict[str, Any], params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
+    def _post(
+        self, url_path: str, json: Dict[str, Any] = None, params: Dict[str, Any] = None, headers: Dict[str, Any] = None
+    ):
         return self._do_request(
             "POST", url_path, json=json, headers=headers, params=params, timeout=self._config.timeout
         )
