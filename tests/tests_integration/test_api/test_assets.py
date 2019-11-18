@@ -115,6 +115,10 @@ class TestAssetsAPI:
         res = COGNITE_CLIENT.assets.search(name="test__asset_0", filter=AssetFilter(name="test__asset_0"))
         assert len(res) > 0
 
+    def test_search_query(self):
+        res = COGNITE_CLIENT.assets.search(query="test asset 0", limit=5)
+        assert len(res) > 0
+
     def test_update(self, new_asset):
         update_asset = AssetUpdate(new_asset.id).name.set("newname")
         res = COGNITE_CLIENT.assets.update(update_asset)

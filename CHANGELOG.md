@@ -30,6 +30,9 @@ Changes are grouped as follows
 - In the ModelHostingAPI, the model names must be unique. Also, the version names and schedule names must be unique per model.
 - Default value for `limit` in search method is now 100 instead of None to clarify api default behaviour when no limit is passed.
 
+### Added
+- query parameter on asset search.
+
 ## [1.3.4] - 2019-11-07
 
 ### Changed
