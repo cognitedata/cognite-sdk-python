@@ -63,6 +63,7 @@ class ClientConfig(_DefaultConfig):
         headers: Dict[str, str] = None,
         timeout: int = None,
         token: Union[Callable[[], str], str] = None,
+        disable_pypi_version_check: bool = None,
         debug: bool = False,
     ):
         super().__init__()
@@ -75,6 +76,7 @@ class ClientConfig(_DefaultConfig):
         self.headers = headers or self.headers
         self.timeout = timeout or self.timeout
         self.token = token
+        self.disable_pypi_version_check = disable_pypi_version_check or self.disable_pypi_version_check
 
         if self.api_key is None and self.token is None:
             raise CogniteAPIKeyError("No API key or token has been specified")

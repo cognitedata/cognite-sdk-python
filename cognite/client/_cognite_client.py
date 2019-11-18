@@ -33,6 +33,7 @@ class CogniteClient:
         timeout (int): Timeout on requests sent to the api. Defaults to 30 seconds.
         token (Union[str, Callable[[], str]]): A jwt or method which takes no arguments and returns a jwt to use for authentication.
             This will override any api-key set.
+        disable_pypi_version_check (bool): Don't check for newer versions of the SDK on client creation
         debug (bool): Configures logger to log extra request details to stderr.
     """
 
@@ -48,6 +49,7 @@ class CogniteClient:
         headers: Dict[str, str] = None,
         timeout: int = None,
         token: Union[str, Callable[[], str], None] = None,
+        disable_pypi_version_check: bool = None,
         debug: bool = False,
     ):
         self._config = ClientConfig(
@@ -59,6 +61,7 @@ class CogniteClient:
             headers=headers,
             timeout=timeout,
             token=token,
+            disable_pypi_version_check=disable_pypi_version_check,
             debug=debug,
         )
         self.login = LoginAPI(self._config, cognite_client=self)
