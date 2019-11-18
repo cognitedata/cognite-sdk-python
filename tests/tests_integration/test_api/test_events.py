@@ -73,6 +73,12 @@ class TestEventsAPI:
         assert len(res_flat) == len(res_part)
         assert {a.id for a in res_flat} == {a.id for a in res_part}
 
+    def test_assetid_list(self, post_spy):
+        res = COGNITE_CLIENT.events.list(
+            limit=None, type="test-data-populator", asset_external_ids=["a", "b"], asset_ids=[0, 1]
+        )
+        assert 0 == len(res)
+
     def test_search(self):
         res = COGNITE_CLIENT.events.search(
             filter=EventFilter(start_time={"min": cognite.client.utils._time.timestamp_to_ms("2d-ago")})
