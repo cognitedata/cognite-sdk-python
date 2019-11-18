@@ -178,17 +178,23 @@ class TestAssets:
 
     def test_delete_single(self, mock_assets_response):
         res = ASSETS_API.delete(id=1)
-        assert {"items": [{"id": 1}], "recursive": False} == jsgz_load(mock_assets_response.calls[0].request.body)
+        assert {"items": [{"id": 1}], "recursive": False, "ignoreUnknownIds": False} == jsgz_load(
+            mock_assets_response.calls[0].request.body
+        )
         assert res is None
 
     def test_delete_single_recursive(self, mock_assets_response):
         res = ASSETS_API.delete(id=1, recursive=True)
-        assert {"items": [{"id": 1}], "recursive": True} == jsgz_load(mock_assets_response.calls[0].request.body)
+        assert {"items": [{"id": 1}], "recursive": True, "ignoreUnknownIds": False} == jsgz_load(
+            mock_assets_response.calls[0].request.body
+        )
         assert res is None
 
     def test_delete_multiple(self, mock_assets_response):
-        res = ASSETS_API.delete(id=[1])
-        assert {"items": [{"id": 1}], "recursive": False} == jsgz_load(mock_assets_response.calls[0].request.body)
+        res = ASSETS_API.delete(id=[1], ignore_unknown_ids=True)
+        assert {"items": [{"id": 1}], "recursive": False, "ignoreUnknownIds": True} == jsgz_load(
+            mock_assets_response.calls[0].request.body
+        )
         assert res is None
 
     def test_update_with_resource_class(self, mock_assets_response):

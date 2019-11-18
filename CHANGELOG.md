@@ -21,6 +21,9 @@ Changes are grouped as follows
 
 ## [1.4.0] - 2019-11-14
 
+### Added
+- `ignore_unknown_ids` parameter on asset and events method `delete` and `retrieve_multiple`.
+
 ### Changed
 - In the ModelHostingAPI, models, versions and schedules are now referenced by name instead of id. The ids are no longer available.
 - In the ModelHostingAPI, functions related to model versions are moved from the ModelsAPI to the new ModelVersionsAPI.
