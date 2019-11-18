@@ -63,7 +63,7 @@ class ClientConfig(_DefaultConfig):
         headers: Dict[str, str] = None,
         timeout: int = None,
         token: Union[Callable[[], str], str] = None,
-        disable_pypi_version_check: bool = None,
+        disable_pypi_version_check: Optional[bool] = None,
         debug: bool = False,
     ):
         super().__init__()

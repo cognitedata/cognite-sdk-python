@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Callable, Dict, Union
+from typing import Any, Callable, Dict, Optional, Union
 
 from cognite.client import utils
 from cognite.client._api.assets import AssetsAPI
@@ -49,7 +49,7 @@ class CogniteClient:
         headers: Dict[str, str] = None,
         timeout: int = None,
         token: Union[str, Callable[[], str], None] = None,
-        disable_pypi_version_check: bool = None,
+        disable_pypi_version_check: Optional[bool] = None,
         debug: bool = False,
     ):
         self._config = ClientConfig(
