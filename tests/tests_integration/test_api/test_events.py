@@ -6,6 +6,7 @@ import pytest
 import cognite.client.utils._time
 from cognite.client import CogniteClient, utils
 from cognite.client.data_classes import Event, EventFilter, EventUpdate
+from cognite.client.exceptions import CogniteNotFoundError
 from tests.utils import set_request_limit
 
 COGNITE_CLIENT = CogniteClient()
@@ -45,6 +46,15 @@ class TestEventsAPI:
         for listed_id in res_listed_ids:
             assert listed_id in res_lookup_ids
 
+    def test_retrieve_unknown(self):
+        res = COGNITE_CLIENT.events.list(limit=1)
+        with pytest.raises(CogniteNotFoundError):
+            COGNITE_CLIENT.events.retrieve_multiple(ids=[res[0].id], external_ids=["this does not exist"])
+        retr = COGNITE_CLIENT.events.retrieve_multiple(
+            ids=[res[0].id], external_ids=["this does not exist"], ignore_unknown_ids=True
+        )
+        assert 1 == len(retr)
+
     def test_list(self, post_spy):
         with set_request_limit(COGNITE_CLIENT.events, 10):
             res = COGNITE_CLIENT.events.list(limit=20)
@@ -73,3 +83,8 @@ class TestEventsAPI:
         update_asset = EventUpdate(new_event.id).metadata.set({"bla": "bla"})
         res = COGNITE_CLIENT.events.update(update_asset)
         assert {"bla": "bla"} == res.metadata
+
+    def test_delete_with_nonexisting(self):
+        a = COGNITE_CLIENT.events.create(Event())
+        COGNITE_CLIENT.events.delete(id=a.id, external_id="this event does not exist", ignore_unknown_ids=True)
+        assert COGNITE_CLIENT.events.retrieve(id=a.id) is None

@@ -240,6 +240,7 @@ class APIClient:
         resource_path: str = None,
         ids: Union[List[int], int] = None,
         external_ids: Union[List[str], str] = None,
+        ignore_unknown_ids=None,
         headers: Dict = None,
     ):
         cls = cls or self._LIST_CLASS
@@ -247,8 +248,9 @@ class APIClient:
         all_ids = self._process_ids(ids, external_ids, wrap_ids=wrap_ids)
         id_chunks = utils._auxiliary.split_into_chunks(all_ids, self._RETRIEVE_LIMIT)
 
+        ignore_unknown = {} if ignore_unknown_ids is None else {"ignoreUnknownIds": ignore_unknown_ids}
         tasks = [
-            {"url_path": resource_path + "/byids", "json": {"items": id_chunk}, "headers": headers}
+            {"url_path": resource_path + "/byids", "json": {"items": id_chunk, **ignore_unknown}, "headers": headers}
             for id_chunk in id_chunks
         ]
         tasks_summary = utils._concurrency.execute_tasks_concurrently(

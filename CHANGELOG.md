@@ -21,11 +21,17 @@ Changes are grouped as follows
 
 ## [1.4.0] - 2019-11-14
 
+### Added
+- `ignore_unknown_ids` parameter on asset and events method `delete` and `retrieve_multiple`.
+
 ### Changed
 - In the ModelHostingAPI, models, versions and schedules are now referenced by name instead of id. The ids are no longer available.
 - In the ModelHostingAPI, functions related to model versions are moved from the ModelsAPI to the new ModelVersionsAPI.
 - In the ModelHostingAPI, the model names must be unique. Also, the version names and schedule names must be unique per model.
 - Default value for `limit` in search method is now 100 instead of None to clarify api default behaviour when no limit is passed.
+
+### Added
+- query parameter on asset search.
 
 ## [1.3.4] - 2019-11-07
 
