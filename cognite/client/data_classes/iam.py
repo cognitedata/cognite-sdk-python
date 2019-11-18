@@ -83,7 +83,7 @@ class Group(CogniteResource):
 
     Args:
         name (str): Name of the group
-        source_id (str): ID of the group in the source. If this is the same ID as a group in the IDP, a user in that group will implicitly be a part of this group as well.
+        source_id (str): ID of the group in the source. If this is the same ID as a group in the IDP, a service account in that group will implicitly be a part of this group as well.
         capabilities (List[Dict[str, Any]]): No description.
         id (int): No description.
         is_deleted (bool): No description.

@@ -18,6 +18,7 @@ class EventsAPI(APIClient):
         subtype: str = None,
         metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
+        asset_external_ids: List[str] = None,
         root_asset_ids: List[int] = None,
         root_asset_external_ids: List[str] = None,
         source: str = None,
@@ -39,6 +40,7 @@ class EventsAPI(APIClient):
             subtype (str): Subtype of the event, e.g 'electrical'.
             metadata (Dict[str, str]): Customizable extra data about the event. String key -> String value.
             asset_ids (List[int]): Asset IDs of related equipments that this event relates to.
+            asset_external_ids (List[str]): Asset External IDs of related equipment that this event relates to.
             root_asset_ids (List[int]): The IDs of the root assets that the related assets should be children of.
             root_asset_external_ids (List[str]): The external IDs of the root assets that the related assets should be children of.
             source (str): The source of this event.
@@ -60,6 +62,7 @@ class EventsAPI(APIClient):
             end_time=end_time,
             metadata=metadata,
             asset_ids=asset_ids,
+            asset_external_ids=asset_external_ids,
             root_asset_ids=root_asset_ids,
             source=source,
             created_time=created_time,
@@ -151,6 +154,7 @@ class EventsAPI(APIClient):
         subtype: str = None,
         metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
+        asset_external_ids: List[str] = None,
         root_asset_ids: List[int] = None,
         root_asset_external_ids: List[str] = None,
         source: str = None,
@@ -170,6 +174,7 @@ class EventsAPI(APIClient):
             subtype (str): Subtype of the event, e.g 'electrical'.
             metadata (Dict[str, str]): Customizable extra data about the event. String key -> String value.
             asset_ids (List[int]): Asset IDs of related equipments that this event relates to.
+            asset_external_ids (List[str]): Asset External IDs of related equipment that this event relates to.
             root_asset_ids (List[int]): The IDs of the root assets that the related assets should be children of.
             root_asset_external_ids (List[str]): The external IDs of the root assets that the related assets should be children of.
             source (str): The source of this event.
@@ -214,6 +219,7 @@ class EventsAPI(APIClient):
             end_time=end_time,
             metadata=metadata,
             asset_ids=asset_ids,
+            asset_external_ids=asset_external_ids,
             root_asset_ids=root_asset_ids,
             source=source,
             created_time=created_time,
