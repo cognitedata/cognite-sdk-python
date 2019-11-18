@@ -76,7 +76,9 @@ class ClientConfig(_DefaultConfig):
         self.headers = headers or self.headers
         self.timeout = timeout or self.timeout
         self.token = token
-        self.disable_pypi_version_check = disable_pypi_version_check if disable_pypi_version_check is not None else self.disable_pypi_version_check
+        self.disable_pypi_version_check = (
+            disable_pypi_version_check if disable_pypi_version_check is not None else self.disable_pypi_version_check
+        )
 
         if self.api_key is None and self.token is None:
             raise CogniteAPIKeyError("No API key or token has been specified")
