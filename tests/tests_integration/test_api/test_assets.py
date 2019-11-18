@@ -5,6 +5,7 @@ import pytest
 
 from cognite.client import CogniteClient, utils
 from cognite.client.data_classes import Asset, AssetFilter, AssetUpdate
+from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from tests.utils import set_request_limit
 
 COGNITE_CLIENT = CogniteClient()
@@ -79,6 +80,15 @@ class TestAssetsAPI:
         res = COGNITE_CLIENT.assets.list(limit=1)
         assert res[0] == COGNITE_CLIENT.assets.retrieve(res[0].id)
 
+    def test_retrieve_unknown(self):
+        res = COGNITE_CLIENT.assets.list(limit=1)
+        with pytest.raises(CogniteNotFoundError):
+            COGNITE_CLIENT.assets.retrieve_multiple(ids=[res[0].id], external_ids=["this does not exist"])
+        retr = COGNITE_CLIENT.assets.retrieve_multiple(
+            ids=[res[0].id], external_ids=["this does not exist"], ignore_unknown_ids=True
+        )
+        assert 1 == len(retr)
+
     def test_list(self, post_spy):
         with set_request_limit(COGNITE_CLIENT.assets, 10):
             res = COGNITE_CLIENT.assets.list(limit=20)
@@ -113,6 +123,11 @@ class TestAssetsAPI:
         update_asset = AssetUpdate(new_asset.id).name.set("newname")
         res = COGNITE_CLIENT.assets.update(update_asset)
         assert "newname" == res.name
+
+    def test_delete_with_nonexisting(self):
+        a = COGNITE_CLIENT.assets.create(Asset(name="any"))
+        COGNITE_CLIENT.assets.delete(id=a.id, external_id="this asset does not exist", ignore_unknown_ids=True)
+        assert COGNITE_CLIENT.assets.retrieve(id=a.id) is None
 
     def test_post_asset_hierarchy(self, new_asset_hierarchy):
         prefix, ext_ids = new_asset_hierarchy

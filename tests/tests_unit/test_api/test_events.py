@@ -123,12 +123,14 @@ class TestEvents:
 
     def test_delete_single(self, mock_events_response):
         res = EVENTS_API.delete(id=1)
-        assert {"items": [{"id": 1}]} == jsgz_load(mock_events_response.calls[0].request.body)
+        assert {"ignoreUnknownIds": False, "items": [{"id": 1}]} == jsgz_load(
+            mock_events_response.calls[0].request.body
+        )
         assert res is None
 
     def test_delete_multiple(self, mock_events_response):
-        res = EVENTS_API.delete(id=[1])
-        assert {"items": [{"id": 1}]} == jsgz_load(mock_events_response.calls[0].request.body)
+        res = EVENTS_API.delete(id=[1], ignore_unknown_ids=True)
+        assert {"ignoreUnknownIds": True, "items": [{"id": 1}]} == jsgz_load(mock_events_response.calls[0].request.body)
         assert res is None
 
     def test_update_with_resource_class(self, mock_events_response):
