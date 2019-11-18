@@ -62,7 +62,7 @@ class TestEventsAPI:
         assert 20 == len(res)
         assert 2 == COGNITE_CLIENT.events._post.call_count
 
-    def test_partitioned_list(self, post_spy):
+    def test_partitioned_list(self):
         # stop race conditions by cutting off max created time
         maxtime = utils.timestamp_to_ms(datetime(2019, 4, 29, 17, 30))
         res_flat = COGNITE_CLIENT.events.list(limit=None, type="test-data-populator", start_time={"max": maxtime})
@@ -73,7 +73,7 @@ class TestEventsAPI:
         assert len(res_flat) == len(res_part)
         assert {a.id for a in res_flat} == {a.id for a in res_part}
 
-    def test_assetid_list(self, post_spy):
+    def test_assetid_list(self):
         res = COGNITE_CLIENT.events.list(
             limit=None, type="test-data-populator", asset_external_ids=["a", "b"], asset_ids=[0, 1]
         )
