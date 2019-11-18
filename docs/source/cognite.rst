@@ -873,8 +873,8 @@ Model Hosting
 
 Models
 ^^^^^^
-Retrieve model by id
-~~~~~~~~~~~~~~~~~~~~
+Retrieve model by name
+~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.model_hosting.models.ModelsAPI.get_model
 
 List models
@@ -904,8 +904,8 @@ Perform online prediction
 
 Model Versions
 ^^^^^^^^^^^^^^
-Retrieve model version by id
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Retrieve model version by name
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.model_hosting.versions.ModelVersionsAPI.get_model_version
 
 List model versions
@@ -958,8 +958,8 @@ Download an artifact for a model version
 
 Schedules
 ^^^^^^^^^
-Retrieve schedule by id
-~~~~~~~~~~~~~~~~~~~~~~~
+Retrieve schedule by name
+~~~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.model_hosting.schedules.SchedulesAPI.get_schedule
 
 List schedules
