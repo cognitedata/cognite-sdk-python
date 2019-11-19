@@ -19,9 +19,19 @@ Changes are grouped as follows
 - Upserts for all resource types
 - Separate read/write fields on data classes
 
-## [Unreleased]
+## [1.4.1] - 2019-11-18
+
+### Added
+- Support for filtering events by asset external id.
+- query parameter on asset search.
+- `ignore_unknown_ids` parameter on asset and events method `delete` and `retrieve_multiple`.
+
+## [1.4.0] - 2019-11-14
 
 ### Changed
+- In the ModelHostingAPI, models, versions and schedules are now referenced by name instead of id. The ids are no longer available.
+- In the ModelHostingAPI, functions related to model versions are moved from the ModelsAPI to the new ModelVersionsAPI.
+- In the ModelHostingAPI, the model names must be unique. Also, the version names and schedule names must be unique per model.
 - Default value for `limit` in search method is now 100 instead of None to clarify api default behaviour when no limit is passed.
 
 ## [1.3.4] - 2019-11-07
