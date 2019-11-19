@@ -19,6 +19,11 @@ Changes are grouped as follows
 - Upserts for all resource types
 - Separate read/write fields on data classes
 
+## [1.4.2] - 2019-11-20
+
+### Changed
+- The ModelHostingAPI now calls Model Hosting endpoints in playground instead of 0.6.
+
 ## [1.4.1] - 2019-11-18
 
 ### Added

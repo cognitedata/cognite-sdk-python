@@ -9,6 +9,7 @@ from cognite.client.experimental import CogniteClient
 MODELS_API = CogniteClient().model_hosting.models
 
 
+@pytest.mark.skip("Wait for Model Hosting endpoints in playground")
 class TestModels:
     @pytest.fixture
     def created_model(self):
@@ -21,7 +22,7 @@ class TestModels:
     def mock_online_predict_ok(self, rsps):
         rsps.add(
             rsps.POST,
-            MODELS_API._get_base_url_with_base_path() + "/analytics/models/model1/predict",
+            MODELS_API._get_base_url_with_base_path() + "/modelhosting/models/model1/predict",
             status=200,
             json={"predictions": [1, 2, 3]},
         )
@@ -31,7 +32,7 @@ class TestModels:
     def mock_online_predict_fail(self, rsps):
         rsps.add(
             rsps.POST,
-            MODELS_API._get_base_url_with_base_path() + "/analytics/models/model1/predict",
+            MODELS_API._get_base_url_with_base_path() + "/modelhosting/models/model1/predict",
             status=200,
             json={"error": {"message": "User error", "code": 200}},
         )

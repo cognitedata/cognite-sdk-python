@@ -903,12 +903,12 @@ class TestHelpers:
         "input, emulator_url, expected",
         [
             (
-                "http://localtest.com/api/1.0/projects/test-project/analytics/models",
+                "http://localtest.com/api/1.0/projects/test-project/modelhosting/models",
                 "http://localhost:8000/api/0.1",
                 "http://localhost:8000/api/0.1/projects/test-project/models",
             ),
             (
-                "http://localtest.com/api/1.0/projects/test-project/analytics/models/sourcepackages/1",
+                "http://localtest.com/api/1.0/projects/test-project/modelhosting/models/sourcepackages/1",
                 "http://localhost:1234/api/0.5",
                 "http://localhost:1234/api/0.5/projects/test-project/models/sourcepackages/1",
             ),
@@ -938,7 +938,7 @@ class TestHelpers:
 
     @pytest.mark.usefixtures("mlh_emulator_mock")
     def test_do_request_with_mlh_emulator_activated(self):
-        API_CLIENT_WITH_API_KEY._do_request(method="POST", url_path="/analytics/models/versions")
+        API_CLIENT_WITH_API_KEY._do_request(method="POST", url_path="/modelhosting/models/versions")
 
     @pytest.mark.parametrize(
         "ids, external_ids, wrap_ids, expected",

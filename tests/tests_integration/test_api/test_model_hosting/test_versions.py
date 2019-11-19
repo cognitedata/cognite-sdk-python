@@ -20,6 +20,7 @@ MODELS_API = CogniteClient().model_hosting.models
 VERSIONS_API = CogniteClient().model_hosting.versions
 
 
+@pytest.mark.skip("Wait for Model Hosting endpoints in playground")
 class TestVersions:
     model_version_response = {
         "isDeprecated": True,
@@ -46,7 +47,7 @@ class TestVersions:
         model_version_response["trainingDetails"] = None
         rsps.add(
             rsps.POST,
-            VERSIONS_API._get_base_url_with_base_path() + "/analytics/models/model1/versions",
+            VERSIONS_API._get_base_url_with_base_path() + "/modelhosting/models/model1/versions",
             status=201,
             json=model_version_response,
         )
@@ -64,7 +65,7 @@ class TestVersions:
         model_version_response["status"] = "DEPLOYING"
         rsps.add(
             rsps.POST,
-            VERSIONS_API._get_base_url_with_base_path() + "/analytics/models/model1/versions/version1/deploy",
+            VERSIONS_API._get_base_url_with_base_path() + "/modelhosting/models/model1/versions/version1/deploy",
             status=200,
             json=model_version_response,
         )
@@ -79,7 +80,8 @@ class TestVersions:
     def mock_create_and_deploy_model_version(self, mock_post_model_version, mock_post_deploy_model_version):
         mock_post_model_version.add(
             mock_post_model_version.POST,
-            VERSIONS_API._get_base_url_with_base_path() + "/analytics/models/model1/versions/version1/artifacts/upload",
+            VERSIONS_API._get_base_url_with_base_path()
+            + "/modelhosting/models/model1/versions/version1/artifacts/upload",
             status=201,
             json={"uploadUrl": "https://upload.here"},
         )
@@ -109,7 +111,7 @@ class TestVersions:
         model_version_response = {"items": [deepcopy(self.model_version_response)]}
         rsps.add(
             rsps.GET,
-            VERSIONS_API._get_base_url_with_base_path() + "/analytics/models/model1/versions",
+            VERSIONS_API._get_base_url_with_base_path() + "/modelhosting/models/model1/versions",
             status=200,
             json=model_version_response,
         )
@@ -132,7 +134,7 @@ class TestVersions:
     def mock_get_version(self, rsps):
         rsps.add(
             rsps.GET,
-            VERSIONS_API._get_base_url_with_base_path() + "/analytics/models/model1/versions/version1",
+            VERSIONS_API._get_base_url_with_base_path() + "/modelhosting/models/model1/versions/version1",
             status=200,
             json=self.model_version_response,
         )
@@ -147,7 +149,7 @@ class TestVersions:
     def mock_delete_version(self, rsps):
         rsps.add(
             rsps.DELETE,
-            VERSIONS_API._get_base_url_with_base_path() + "/analytics/models/model1/versions/version1",
+            VERSIONS_API._get_base_url_with_base_path() + "/modelhosting/models/model1/versions/version1",
             status=200,
             json=self.model_version_response,
         )
@@ -161,7 +163,7 @@ class TestVersions:
     def mock_get_artifacts(self, rsps):
         rsps.add(
             rsps.GET,
-            VERSIONS_API._get_base_url_with_base_path() + "/analytics/models/model1/versions/version1/artifacts",
+            VERSIONS_API._get_base_url_with_base_path() + "/modelhosting/models/model1/versions/version1/artifacts",
             status=200,
             json={"items": [{"name": "a1", "size": 1}]},
         )
@@ -180,7 +182,7 @@ class TestVersions:
     def mock_download_artifact(self, rsps):
         rsps.add(
             rsps.GET,
-            VERSIONS_API._get_base_url_with_base_path() + "/analytics/models/model1/versions/version1/artifacts/a1",
+            VERSIONS_API._get_base_url_with_base_path() + "/modelhosting/models/model1/versions/version1/artifacts/a1",
             status=200,
             json={"downloadUrl": "https://download.me"},
         )
@@ -209,7 +211,8 @@ class TestVersions:
     def mock_upload_artifact(self, rsps):
         rsps.add(
             rsps.POST,
-            VERSIONS_API._get_base_url_with_base_path() + "/analytics/models/model1/versions/version1/artifacts/upload",
+            VERSIONS_API._get_base_url_with_base_path()
+            + "/modelhosting/models/model1/versions/version1/artifacts/upload",
             json={"uploadUrl": "https://upload.here"},
         )
         rsps.add(rsps.PUT, "https://upload.here")
@@ -244,7 +247,7 @@ class TestVersions:
     def mock_post_deprecate(self, rsps):
         rsps.add(
             rsps.POST,
-            VERSIONS_API._get_base_url_with_base_path() + "/analytics/models/model1/versions/version1/deprecate",
+            VERSIONS_API._get_base_url_with_base_path() + "/modelhosting/models/model1/versions/version1/deprecate",
             json=self.model_version_response,
         )
         yield rsps
@@ -260,7 +263,7 @@ class TestVersions:
         updated_model_version["description"] = "blabla"
         rsps.add(
             rsps.POST,
-            VERSIONS_API._get_base_url_with_base_path() + "/analytics/models/model1/versions/version1/update",
+            VERSIONS_API._get_base_url_with_base_path() + "/modelhosting/models/model1/versions/version1/update",
             json=updated_model_version,
         )
         yield rsps
@@ -274,7 +277,7 @@ class TestVersions:
     def mock_get_log(self, rsps):
         rsps.add(
             rsps.GET,
-            VERSIONS_API._get_base_url_with_base_path() + "/analytics/models/model1/versions/version1/log",
+            VERSIONS_API._get_base_url_with_base_path() + "/modelhosting/models/model1/versions/version1/log",
             json={"predict": ["l1", "l2", "l3"], "train": ["l1", "l2", "l3"]},
         )
         yield rsps
@@ -290,7 +293,7 @@ class TestVersions:
     def mock_post_predict(self, rsps):
         rsps.add(
             rsps.POST,
-            VERSIONS_API._get_base_url_with_base_path() + "/analytics/models/model1/versions/version1/predict",
+            VERSIONS_API._get_base_url_with_base_path() + "/modelhosting/models/model1/versions/version1/predict",
             json={"predictions": [1, 2, 3]},
         )
         yield rsps
@@ -311,7 +314,7 @@ class TestVersions:
     def mock_put_predict_fail(self, rsps):
         rsps.add(
             rsps.POST,
-            VERSIONS_API._get_base_url_with_base_path() + "/analytics/models/model1/versions/version1/predict",
+            VERSIONS_API._get_base_url_with_base_path() + "/modelhosting/models/model1/versions/version1/predict",
             json={"error": {"message": "User error", "code": 200}},
         )
         yield rsps

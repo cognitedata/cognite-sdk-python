@@ -7,6 +7,7 @@ from tests.utils import jsgz_load
 SCHEDULES_API = CogniteClient().model_hosting.schedules
 
 
+@pytest.mark.skip("Wait for Model Hosting endpoints in playground")
 class TestSchedules:
     schedule_response = {
         "isDeprecated": False,
@@ -23,7 +24,7 @@ class TestSchedules:
     def mock_post_schedule(self, rsps):
         rsps.add(
             rsps.POST,
-            SCHEDULES_API._get_base_url_with_base_path() + "/analytics/models/model1/schedules",
+            SCHEDULES_API._get_base_url_with_base_path() + "/modelhosting/models/model1/schedules",
             status=201,
             json=self.schedule_response,
         )
@@ -60,7 +61,9 @@ class TestSchedules:
     def mock_get_schedules(self, rsps):
         response = {"items": [self.schedule_response]}
         rsps.add(
-            rsps.GET, SCHEDULES_API._get_base_url_with_base_path() + "/analytics/models/model1/schedules", json=response
+            rsps.GET,
+            SCHEDULES_API._get_base_url_with_base_path() + "/modelhosting/models/model1/schedules",
+            json=response,
         )
         yield rsps
 
@@ -76,7 +79,7 @@ class TestSchedules:
     def mock_get_schedule(self, rsps):
         rsps.add(
             rsps.GET,
-            SCHEDULES_API._get_base_url_with_base_path() + "/analytics/models/model1/schedules/schedule1",
+            SCHEDULES_API._get_base_url_with_base_path() + "/modelhosting/models/model1/schedules/schedule1",
             json=self.schedule_response,
         )
         yield rsps
@@ -92,7 +95,7 @@ class TestSchedules:
         depr_schedule_response["isDeprecated"] = True
         rsps.add(
             rsps.PUT,
-            SCHEDULES_API._get_base_url_with_base_path() + "/analytics/models/model1/schedules/schedule1/deprecate",
+            SCHEDULES_API._get_base_url_with_base_path() + "/modelhosting/models/model1/schedules/schedule1/deprecate",
             json=depr_schedule_response,
         )
         yield rsps
@@ -104,7 +107,8 @@ class TestSchedules:
     @pytest.fixture
     def mock_delete_schedule(self, rsps):
         rsps.add(
-            rsps.DELETE, SCHEDULES_API._get_base_url_with_base_path() + "/analytics/models/model1/schedules/schedule1"
+            rsps.DELETE,
+            SCHEDULES_API._get_base_url_with_base_path() + "/modelhosting/models/model1/schedules/schedule1",
         )
 
     def test_delete_schedule(self, mock_delete_schedule):
@@ -119,7 +123,7 @@ class TestSchedules:
         }
         rsps.add(
             rsps.GET,
-            SCHEDULES_API._get_base_url_with_base_path() + "/analytics/models/model1/schedules/schedule1/log",
+            SCHEDULES_API._get_base_url_with_base_path() + "/modelhosting/models/model1/schedules/schedule1/log",
             json=schedule_log_response,
         )
         yield rsps

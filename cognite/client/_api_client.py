@@ -680,7 +680,7 @@ class APIClient:
     def _apply_model_hosting_emulator_url_filter(self, full_url):
         mlh_emul_url = os.getenv("MODEL_HOSTING_EMULATOR_URL")
         if mlh_emul_url is not None:
-            pattern = "{}/analytics/models(.*)".format(self._get_base_url_with_base_path())
+            pattern = "{}/modelhosting/models(.*)".format(self._get_base_url_with_base_path())
             res = re.match(pattern, full_url)
             if res is not None:
                 path = res.group(1)
