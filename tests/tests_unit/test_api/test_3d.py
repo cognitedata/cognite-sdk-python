@@ -47,9 +47,7 @@ class Test3DModels:
         res = THREE_D_API.models.list(limit=100)
         assert isinstance(res, ThreeDModelList)
         assert mock_3d_model_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
-        assert {"limit": 100, "published": None, "cursor": None} == jsgz_load(
-            mock_3d_model_response.calls[0].request.body
-        )
+        assert "published" not in mock_3d_model_response.calls[0].request.path_url
 
     def test_update_with_update_object(self, mock_3d_model_response):
         update = ThreeDModelUpdate(id=1).name.set("bla")
