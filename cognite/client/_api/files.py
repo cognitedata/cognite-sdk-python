@@ -614,10 +614,9 @@ class FilesAPI(APIClient):
                 >>> file_content = c.files.download_bytes(id=1)
         """
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
-        all_ids = self._process_ids(ids=id, external_ids=external_id, wrap_ids=True)
-        res = self._post(url_path="/files/downloadlink", json={"items": all_ids})
-        dl_link = res.json()["items"][0]["downloadUrl"]
-        return self._download_file(dl_link)
+        identifier = self._process_ids(ids=id, external_ids=external_id, wrap_ids=True)[0]
+        download_link = self._get_download_link(identifier)
+        return self._download_file(download_link)
 
     def _download_file(self, download_link: str) -> bytes:
         res = self._request_session.get(download_link)
