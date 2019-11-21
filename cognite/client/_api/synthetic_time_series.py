@@ -38,14 +38,14 @@ class SyntheticDatapointsAPI(APIClient):
         if limit is None or limit == -1:
             limit = float("inf")
         query = {
-            "function": function,
+            "expression": function,
             "start": cognite.client.utils._time.timestamp_to_ms(start),
             "end": cognite.client.utils._time.timestamp_to_ms(end),
         }
         datapoints = Datapoints()
         while True:
             query["limit"] = min(limit, self._DPS_LIMIT)
-            resp = self._post(url_path=self._SYNTHETIC_RESOURCE_PATH, json={"items": [query]})
+            resp = self._post(url_path=self._SYNTHETIC_RESOURCE_PATH + "/query", json={"items": [query]})
             data = resp.json()["items"][0]
             datapoints._extend(Datapoints._load(data, expected_fields=["value"]))
             limit -= len(data["datapoints"])
