@@ -19,6 +19,11 @@ Changes are grouped as follows
 - Upserts for all resource types
 - Separate read/write fields on data classes
 
+## Unreleased
+
+### Changed
+- In the 3D API, the call and list methods now include all models by default instead of only unpublished ones.
+
 ## [1.4.1] - 2019-11-18
 
 ### Added
