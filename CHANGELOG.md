@@ -23,6 +23,7 @@ Changes are grouped as follows
 
 ### Changed
 - The ModelHostingAPI now calls Model Hosting endpoints in playground instead of 0.6.
+- In the 3D API, the call and list methods now include all models by default instead of only unpublished ones.
 
 ## [1.4.1] - 2019-11-18
 
