@@ -17,14 +17,14 @@ class SyntheticDatapointsAPI(APIClient):
         self._DPS_LIMIT = 100000
 
     def retrieve(
-        self, function: str, start: Union[int, str, datetime], end: Union[int, str, datetime], limit: int = None
+        self, expression: str, start: Union[int, str, datetime], end: Union[int, str, datetime], limit: int = None
     ) -> Datapoints:
         """Calculate the result of a function on time series.
 
         Args:
+            expression (str): Function to be calculated.
             start (Union[int, str, datetime]): Inclusive start.
             end (Union[int, str, datetime]): Exclusive end.
-            function (str): Function to be calculated.
 
         Returns:
             Datapoints: A Datapoints object containing the calculated data.
@@ -38,7 +38,7 @@ class SyntheticDatapointsAPI(APIClient):
         if limit is None or limit == -1:
             limit = float("inf")
         query = {
-            "expression": function,
+            "expression": expression,
             "start": cognite.client.utils._time.timestamp_to_ms(start),
             "end": cognite.client.utils._time.timestamp_to_ms(end),
         }
