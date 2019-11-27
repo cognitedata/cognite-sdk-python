@@ -38,7 +38,7 @@ class Asset(CogniteResource):
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         root_id (int): A server-generated ID for the object.
         aggregates (Union[Dict[str, Any], AggregateResultItem]): Aggregated metrics of the asset
-        parent_external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        parent_external_id (str): The external ID of the parent. This will be resolved to an internal ID and stored as `parentId`.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
@@ -310,7 +310,8 @@ class AssetFilter(CogniteFilter):
     Args:
         name (str): The name of the asset.
         parent_ids (List[int]): Return only the direct descendants of the specified assets.
-        root_ids (List[Dict[str, Any]]): Return all descendants of the specified root assets.
+        root_ids (List[Dict[str, Any]]): Only include these root assets and their descendants.
+        asset_subtree_ids (List[Dict[str, Any]]): Only include assets in subtrees rooted at the specified assets.
         metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         source (str): The source of the asset.
         created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
@@ -325,6 +326,7 @@ class AssetFilter(CogniteFilter):
         name: str = None,
         parent_ids: List[int] = None,
         root_ids: List[Dict[str, Any]] = None,
+        asset_subtree_ids: List[Dict[str, Any]] = None,
         metadata: Dict[str, str] = None,
         source: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
@@ -336,6 +338,7 @@ class AssetFilter(CogniteFilter):
         self.name = name
         self.parent_ids = parent_ids
         self.root_ids = root_ids
+        self.asset_subtree_ids = asset_subtree_ids
         self.metadata = metadata
         self.source = source
         self.created_time = created_time

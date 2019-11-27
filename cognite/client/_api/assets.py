@@ -20,6 +20,7 @@ class AssetsAPI(APIClient):
         parent_ids: List[int] = None,
         root_ids: List[int] = None,
         root_external_ids: List[str] = None,
+        asset_subtree_ids: Dict[str, Any] = None,
         metadata: Dict[str, str] = None,
         source: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
@@ -39,6 +40,7 @@ class AssetsAPI(APIClient):
             parent_ids (List[int]): No description.
             root_ids (List[int], optional): List of root ids ids to filter on.
             root_external_ids (List[str], optional): List of root external ids to filter on.
+            asset_subtree_ids (Dict[str,Any]): List of asset subtrees to filter on, given as `{'id':...}` or `{'externalId':...}.
             metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value
             source (str): The source of this asset
             created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps
@@ -61,6 +63,7 @@ class AssetsAPI(APIClient):
             name=name,
             parent_ids=parent_ids,
             root_ids=root_ids,
+            asset_subtree_ids=asset_subtree_ids,
             metadata=metadata,
             source=source,
             created_time=created_time,
@@ -155,6 +158,7 @@ class AssetsAPI(APIClient):
         parent_ids: List[int] = None,
         root_ids: List[int] = None,
         root_external_ids: List[str] = None,
+        asset_subtree_ids: Dict[str, Any] = None,
         metadata: Dict[str, str] = None,
         source: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
@@ -172,6 +176,7 @@ class AssetsAPI(APIClient):
             parent_ids (List[int]): List of parent ids to filter on.
             root_ids (List[int], optional): List of root ids ids to filter on.
             root_external_ids (List[str], optional): List of root external ids to filter on.
+            asset_subtree_ids (Dict[str,Any]): List of asset subtrees to filter on, given as `{'id':...}` or `{'externalId':...}.
             metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value.
             source (str): The source of this asset.
             created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
@@ -219,6 +224,7 @@ class AssetsAPI(APIClient):
             name=name,
             parent_ids=parent_ids,
             root_ids=root_ids,
+            asset_subtree_ids=asset_subtree_ids,
             metadata=metadata,
             source=source,
             created_time=created_time,

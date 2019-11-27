@@ -21,6 +21,7 @@ class EventsAPI(APIClient):
         asset_external_ids: List[str] = None,
         root_asset_ids: List[int] = None,
         root_asset_external_ids: List[str] = None,
+        asset_subtree_ids: Dict[str, Any] = None,
         source: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
@@ -43,6 +44,7 @@ class EventsAPI(APIClient):
             asset_external_ids (List[str]): Asset External IDs of related equipment that this event relates to.
             root_asset_ids (List[int]): The IDs of the root assets that the related assets should be children of.
             root_asset_external_ids (List[str]): The external IDs of the root assets that the related assets should be children of.
+            asset_subtree_ids (List[Dict[str, Any]]): Only include events that have a related asset in a subtree rooted at any of these assetIds, given as `{'id':...}` or `{'externalId':...}.
             source (str): The source of this event.
             created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps
             last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps
@@ -64,6 +66,7 @@ class EventsAPI(APIClient):
             asset_ids=asset_ids,
             asset_external_ids=asset_external_ids,
             root_asset_ids=root_asset_ids,
+            asset_subtree_ids=asset_subtree_ids,
             source=source,
             created_time=created_time,
             last_updated_time=last_updated_time,
@@ -157,6 +160,7 @@ class EventsAPI(APIClient):
         asset_external_ids: List[str] = None,
         root_asset_ids: List[int] = None,
         root_asset_external_ids: List[str] = None,
+        asset_subtree_ids: Dict[str, Any] = None,
         source: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
@@ -177,6 +181,7 @@ class EventsAPI(APIClient):
             asset_external_ids (List[str]): Asset External IDs of related equipment that this event relates to.
             root_asset_ids (List[int]): The IDs of the root assets that the related assets should be children of.
             root_asset_external_ids (List[str]): The external IDs of the root assets that the related assets should be children of.
+            asset_subtree_ids (List[Dict[str, Any]]): Only include events that have a related asset in a subtree rooted at any of these assetIds, given as `{'id':...}` or `{'externalId':...}.
             source (str): The source of this event.
             created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
             last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
@@ -221,6 +226,7 @@ class EventsAPI(APIClient):
             asset_ids=asset_ids,
             asset_external_ids=asset_external_ids,
             root_asset_ids=root_asset_ids,
+            asset_subtree_ids=asset_subtree_ids,
             source=source,
             created_time=created_time,
             last_updated_time=last_updated_time,

@@ -27,6 +27,9 @@ Changes are grouped as follows
 - In the 3D API, the call and list methods now include all models by default instead of only unpublished ones.
 - In Jupyter notebooks, the output from built-in types is no longer camel cased.
 
+### Added
+- Support for filtering events by asset subtree ids.
+
 ## [1.4.1] - 2019-11-18
 
 ### Added
