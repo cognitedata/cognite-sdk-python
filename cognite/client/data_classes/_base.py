@@ -227,14 +227,14 @@ class CogniteResourceList(UserList):
             return self._id_to_item.get(id)
         return self._external_id_to_item.get(external_id)
 
-    def to_pandas(self) -> "pandas.DataFrame":
+    def to_pandas(self, camel_case=True) -> "pandas.DataFrame":
         """Convert the instance into a pandas DataFrame.
 
         Returns:
             pandas.DataFrame: The dataframe.
         """
         pd = utils._auxiliary.local_import("pandas")
-        df = pd.DataFrame(self.dump(camel_case=True))
+        df = pd.DataFrame(self.dump(camel_case=camel_case))
         nullable_int_fields = ["endTime", "assetId", "parentId"]
         try:
             for field in nullable_int_fields:
@@ -245,7 +245,7 @@ class CogniteResourceList(UserList):
         return df
 
     def _repr_html_(self):
-        return self.to_pandas()._repr_html_()
+        return self.to_pandas(camel_case=False)._repr_html_()
 
     @classmethod
     def _load(cls, resource_list: Union[List, str], cognite_client=None):

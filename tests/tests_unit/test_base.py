@@ -187,6 +187,14 @@ class TestCogniteResourceList:
         expected_df = pd.DataFrame({"varA": [1, 2], "varB": [None, 3]})
         pd.testing.assert_frame_equal(resource_list.to_pandas(), expected_df)
 
+    @pytest.mark.dsl
+    def test_to_pandas_no_camels(self):
+        import pandas as pd
+
+        resource_list = MyResourceList([MyResource(1), MyResource(2, 3)])
+        expected_df = pd.DataFrame({"var_a": [1, 2], "var_b": [None, 3]})
+        pd.testing.assert_frame_equal(resource_list.to_pandas(camel_case=False), expected_df)
+
     def test_load(self):
         resource_list = MyResourceList._load([{"varA": 1, "varB": 2}, {"varA": 2, "varB": 3}, {"varA": 3}])
 
