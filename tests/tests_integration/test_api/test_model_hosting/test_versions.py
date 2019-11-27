@@ -20,6 +20,7 @@ MODELS_API = CogniteClient().model_hosting.models
 VERSIONS_API = CogniteClient().model_hosting.versions
 
 
+@pytest.mark.skip("model hosting development")
 class TestVersions:
     model_version_response = {
         "isDeprecated": True,
