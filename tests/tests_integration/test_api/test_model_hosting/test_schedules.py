@@ -7,6 +7,7 @@ from tests.utils import jsgz_load
 SCHEDULES_API = CogniteClient().model_hosting.schedules
 
 
+@pytest.mark.skip("model hosting development")
 class TestSchedules:
     schedule_response = {
         "isDeprecated": False,

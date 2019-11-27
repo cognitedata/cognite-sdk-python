@@ -78,7 +78,7 @@ class Relationship(CogniteResource):
 
 # GenClass: relationshipsAdvancedListRequest.filter
 class RelationshipFilter(CogniteFilter):
-    """Filter on events filter with exact match
+    """Filter on relationshisp with exact match.
 
     Args:
         source_resource (str): Resource type of the source node.

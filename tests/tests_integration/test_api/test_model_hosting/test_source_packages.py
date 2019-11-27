@@ -12,6 +12,7 @@ from cognite.client.experimental import CogniteClient
 SOURCE_PACKAGES_API = CogniteClient().model_hosting.source_packages
 
 
+@pytest.mark.skip("model hosting development")
 class TestSourcePackages:
     @pytest.fixture(scope="class")
     def source_package_file_path(self):
