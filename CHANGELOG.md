@@ -21,6 +21,10 @@ Changes are grouped as follows
 
 ## Unreleased
 
+## [1.4.3] - 2019-11-27
+### Fixed
+- In Jupyter notebooks, the output from built-in list types is no longer camel cased.
+
 ## [1.4.2] - 2019-11-27
 
 ### Changed
