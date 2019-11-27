@@ -21,6 +21,8 @@ Changes are grouped as follows
 
 ## Unreleased
 
+## [1.4.2] - 2019-11-27
+
 ### Changed
 - In the 3D API, the call and list methods now include all models by default instead of only unpublished ones.
 - In Jupyter notebooks, the output from built-in types is no longer camel cased.
