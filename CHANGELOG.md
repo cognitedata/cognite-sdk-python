@@ -19,6 +19,18 @@ Changes are grouped as follows
 - Upserts for all resource types
 - Separate read/write fields on data classes
 
+## Unreleased
+
+### Changed
+- In the 3D API, the call and list methods now include all models by default instead of only unpublished ones.
+
+## [1.4.1] - 2019-11-18
+
+### Added
+- Support for filtering events by asset external id.
+- query parameter on asset search.
+- `ignore_unknown_ids` parameter on asset and events method `delete` and `retrieve_multiple`.
+
 ## [1.4.0] - 2019-11-14
 
 ### Changed
