@@ -147,6 +147,20 @@ class TestCogniteResource:
         pd.testing.assert_frame_equal(expected_df, actual_df, check_like=True)
         res.to_pandas()
 
+    @pytest.mark.dsl
+    def test_to_pandas_no_camels(self):
+        import pandas as pd
+
+        class SomeResource(CogniteResource):
+            def __init__(self):
+                self.snakes_are_better_anyway = 42
+
+        expected_df = pd.DataFrame(columns=["value"])
+        expected_df.loc["snakes_are_better_anyway"] = [42]
+
+        actual_df = SomeResource().to_pandas(camel_case=False)
+        pd.testing.assert_frame_equal(expected_df, actual_df, check_like=True)
+
     def test_resource_client_correct(self):
         c = CogniteClient()
         with pytest.raises(CogniteMissingClientError):
