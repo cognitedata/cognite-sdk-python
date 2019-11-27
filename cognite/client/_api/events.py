@@ -21,7 +21,8 @@ class EventsAPI(APIClient):
         asset_external_ids: List[str] = None,
         root_asset_ids: List[int] = None,
         root_asset_external_ids: List[str] = None,
-        asset_subtree_ids: Dict[str, Any] = None,
+        asset_subtree_ids: List[int] = None,
+        asset_subtree_external_ids: List[str] = None,
         source: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
@@ -44,7 +45,8 @@ class EventsAPI(APIClient):
             asset_external_ids (List[str]): Asset External IDs of related equipment that this event relates to.
             root_asset_ids (List[int]): The IDs of the root assets that the related assets should be children of.
             root_asset_external_ids (List[str]): The external IDs of the root assets that the related assets should be children of.
-            asset_subtree_ids (List[Dict[str, Any]]): Only include events that have a related asset in a subtree rooted at any of these assetIds, given as `{'id':...}` or `{'externalId':...}.
+            asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
+            asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
             source (str): The source of this event.
             created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps
             last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps
@@ -58,6 +60,8 @@ class EventsAPI(APIClient):
         """
         if (root_asset_ids and not isinstance(root_asset_ids[0], dict)) or root_asset_external_ids:
             root_asset_ids = self._process_ids(root_asset_ids, root_asset_external_ids, wrap_ids=True)
+        if asset_subtree_ids or asset_subtree_external_ids:
+            asset_subtree_ids = self._process_ids(asset_subtree_ids, asset_subtree_external_ids, wrap_ids=True)
 
         filter = EventFilter(
             start_time=start_time,
@@ -160,7 +164,8 @@ class EventsAPI(APIClient):
         asset_external_ids: List[str] = None,
         root_asset_ids: List[int] = None,
         root_asset_external_ids: List[str] = None,
-        asset_subtree_ids: Dict[str, Any] = None,
+        asset_subtree_ids: List[int] = None,
+        asset_subtree_external_ids: List[str] = None,
         source: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
@@ -181,7 +186,8 @@ class EventsAPI(APIClient):
             asset_external_ids (List[str]): Asset External IDs of related equipment that this event relates to.
             root_asset_ids (List[int]): The IDs of the root assets that the related assets should be children of.
             root_asset_external_ids (List[str]): The external IDs of the root assets that the related assets should be children of.
-            asset_subtree_ids (List[Dict[str, Any]]): Only include events that have a related asset in a subtree rooted at any of these assetIds, given as `{'id':...}` or `{'externalId':...}.
+            asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
+            asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
             source (str): The source of this event.
             created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
             last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
@@ -218,6 +224,8 @@ class EventsAPI(APIClient):
         """
         if (root_asset_ids and not isinstance(root_asset_ids[0], dict)) or root_asset_external_ids:
             root_asset_ids = self._process_ids(root_asset_ids, root_asset_external_ids, wrap_ids=True)
+        if asset_subtree_ids or asset_subtree_external_ids:
+            asset_subtree_ids = self._process_ids(asset_subtree_ids, asset_subtree_external_ids, wrap_ids=True)
 
         filter = EventFilter(
             start_time=start_time,
