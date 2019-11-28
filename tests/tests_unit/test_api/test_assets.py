@@ -122,6 +122,16 @@ class TestAssets:
             calls[0].request.body
         )
 
+    def test_list_subtree(self, mock_assets_response):
+        ASSETS_API.list(asset_subtree_ids=1, asset_subtree_external_ids=["a"], limit=10)
+        calls = mock_assets_response.calls
+        assert 1 == len(calls)
+        assert {
+            "cursor": None,
+            "limit": 10,
+            "filter": {"assetSubtreeIds": [{"id": 1}, {"externalId": "a"}]},
+        } == jsgz_load(calls[0].request.body)
+
     def test_list_with_time_dict(self, mock_assets_response):
         ASSETS_API.list(created_time={"min": 20})
         assert 20 == jsgz_load(mock_assets_response.calls[0].request.body)["filter"]["createdTime"]["min"]
@@ -178,17 +188,23 @@ class TestAssets:
 
     def test_delete_single(self, mock_assets_response):
         res = ASSETS_API.delete(id=1)
-        assert {"items": [{"id": 1}], "recursive": False} == jsgz_load(mock_assets_response.calls[0].request.body)
+        assert {"items": [{"id": 1}], "recursive": False, "ignoreUnknownIds": False} == jsgz_load(
+            mock_assets_response.calls[0].request.body
+        )
         assert res is None
 
     def test_delete_single_recursive(self, mock_assets_response):
         res = ASSETS_API.delete(id=1, recursive=True)
-        assert {"items": [{"id": 1}], "recursive": True} == jsgz_load(mock_assets_response.calls[0].request.body)
+        assert {"items": [{"id": 1}], "recursive": True, "ignoreUnknownIds": False} == jsgz_load(
+            mock_assets_response.calls[0].request.body
+        )
         assert res is None
 
     def test_delete_multiple(self, mock_assets_response):
-        res = ASSETS_API.delete(id=[1])
-        assert {"items": [{"id": 1}], "recursive": False} == jsgz_load(mock_assets_response.calls[0].request.body)
+        res = ASSETS_API.delete(id=[1], ignore_unknown_ids=True)
+        assert {"items": [{"id": 1}], "recursive": False, "ignoreUnknownIds": True} == jsgz_load(
+            mock_assets_response.calls[0].request.body
+        )
         assert res is None
 
     def test_update_with_resource_class(self, mock_assets_response):
@@ -209,16 +225,18 @@ class TestAssets:
     def test_search(self, mock_assets_response):
         res = ASSETS_API.search(filter=AssetFilter(name="1"))
         assert mock_assets_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
-        assert {"search": {"name": None, "description": None}, "filter": {"name": "1"}, "limit": 100} == jsgz_load(
-            mock_assets_response.calls[0].request.body
-        )
+        assert {
+            "search": {"name": None, "description": None, "query": None},
+            "filter": {"name": "1"},
+            "limit": 100,
+        } == jsgz_load(mock_assets_response.calls[0].request.body)
 
     @pytest.mark.parametrize("filter_field", ["parent_ids", "parentIds"])
     def test_search_dict_filter(self, mock_assets_response, filter_field):
         res = ASSETS_API.search(filter={filter_field: "bla"})
         assert mock_assets_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
         assert {
-            "search": {"name": None, "description": None},
+            "search": {"name": None, "description": None, "query": None},
             "filter": {"parentIds": "bla"},
             "limit": 100,
         } == jsgz_load(mock_assets_response.calls[0].request.body)

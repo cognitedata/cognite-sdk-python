@@ -18,7 +18,7 @@ class CreateSourcePackageResponse(CogniteResponse):
 
     @classmethod
     def _load(cls, api_response):
-        return cls(id=api_response["data"]["id"], upload_url=api_response["data"].get("uploadUrl"))
+        return cls(id=api_response["id"], upload_url=api_response.get("uploadUrl"))
 
 
 class SourcePackage(CogniteResource):

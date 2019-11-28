@@ -268,6 +268,19 @@ class TestStandardRetrieveMultiple:
                 cls=SomeResourceList, resource_path=URL_PATH, wrap_ids=False, external_ids=["1", "2"]
             )
 
+    def test_retrieve_multiple_ignore_unknown(self, mock_by_ids):
+        assert SomeResourceList([SomeResource(1, 2), SomeResource(1)]) == API_CLIENT_WITH_API_KEY._retrieve_multiple(
+            cls=SomeResourceList,
+            resource_path=URL_PATH,
+            wrap_ids=True,
+            ids=1,
+            external_ids=["2"],
+            ignore_unknown_ids=True,
+        )
+        assert {"items": [{"id": 1}, {"externalId": "2"}], "ignoreUnknownIds": True} == jsgz_load(
+            mock_by_ids.calls[0].request.body
+        )
+
     def test_id_and_external_id_mixed(self, mock_by_ids):
         assert SomeResourceList([SomeResource(1, 2), SomeResource(1)]) == API_CLIENT_WITH_API_KEY._retrieve_multiple(
             cls=SomeResourceList, resource_path=URL_PATH, wrap_ids=True, ids=1, external_ids=["2"]

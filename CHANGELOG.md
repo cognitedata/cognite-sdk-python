@@ -19,9 +19,34 @@ Changes are grouped as follows
 - Upserts for all resource types
 - Separate read/write fields on data classes
 
-## [Unreleased]
+## Unreleased
+
+## [1.4.3] - 2019-11-27
+### Fixed
+- In Jupyter notebooks, the output from built-in list types is no longer camel cased.
+
+## [1.4.2] - 2019-11-27
 
 ### Changed
+- In the 3D API, the call and list methods now include all models by default instead of only unpublished ones.
+- In Jupyter notebooks, the output from built-in types is no longer camel cased.
+
+### Added
+- Support for filtering events by asset subtree ids.
+
+## [1.4.1] - 2019-11-18
+
+### Added
+- Support for filtering events by asset external id.
+- query parameter on asset search.
+- `ignore_unknown_ids` parameter on asset and events method `delete` and `retrieve_multiple`.
+
+## [1.4.0] - 2019-11-14
+
+### Changed
+- In the ModelHostingAPI, models, versions and schedules are now referenced by name instead of id. The ids are no longer available.
+- In the ModelHostingAPI, functions related to model versions are moved from the ModelsAPI to the new ModelVersionsAPI.
+- In the ModelHostingAPI, the model names must be unique. Also, the version names and schedule names must be unique per model.
 - Default value for `limit` in search method is now 100 instead of None to clarify api default behaviour when no limit is passed.
 
 ## [1.3.4] - 2019-11-07

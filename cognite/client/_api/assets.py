@@ -20,6 +20,8 @@ class AssetsAPI(APIClient):
         parent_ids: List[int] = None,
         root_ids: List[int] = None,
         root_external_ids: List[str] = None,
+        asset_subtree_ids: List[int] = None,
+        asset_subtree_external_ids: List[str] = None,
         metadata: Dict[str, str] = None,
         source: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
@@ -39,6 +41,8 @@ class AssetsAPI(APIClient):
             parent_ids (List[int]): No description.
             root_ids (List[int], optional): List of root ids ids to filter on.
             root_external_ids (List[str], optional): List of root external ids to filter on.
+            asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
+            asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
             metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value
             source (str): The source of this asset
             created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps
@@ -56,11 +60,14 @@ class AssetsAPI(APIClient):
         # dict option for backward compatibility
         if (root_ids and not isinstance(root_ids[0], dict)) or root_external_ids:
             root_ids = self._process_ids(root_ids, root_external_ids, wrap_ids=True)
+        if asset_subtree_ids or asset_subtree_external_ids:
+            asset_subtree_ids = self._process_ids(asset_subtree_ids, asset_subtree_external_ids, wrap_ids=True)
 
         filter = AssetFilter(
             name=name,
             parent_ids=parent_ids,
             root_ids=root_ids,
+            asset_subtree_ids=asset_subtree_ids,
             metadata=metadata,
             source=source,
             created_time=created_time,
@@ -113,12 +120,18 @@ class AssetsAPI(APIClient):
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
         return self._retrieve_multiple(ids=id, external_ids=external_id, wrap_ids=True)
 
-    def retrieve_multiple(self, ids: Optional[List[int]] = None, external_ids: Optional[List[str]] = None) -> AssetList:
+    def retrieve_multiple(
+        self,
+        ids: Optional[List[int]] = None,
+        external_ids: Optional[List[str]] = None,
+        ignore_unknown_ids: bool = False,
+    ) -> AssetList:
         """`Retrieve multiple assets by id. <https://docs.cognite.com/api/v1/#operation/byIdsAssets>`_
 
         Args:
             ids (List[int], optional): IDs
             external_ids (List[str], optional): External IDs
+            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
             AssetList: The requested assets.
@@ -135,11 +148,13 @@ class AssetsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.assets.retrieve_multiple(external_ids=["abc", "def"])
+                >>> res = c.assets.retrieve_multiple(external_ids=["abc", "def"], ignore_unknown_ids=True)
         """
         utils._auxiliary.assert_type(ids, "id", [List], allow_none=True)
         utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=True)
-        return self._retrieve_multiple(ids=ids, external_ids=external_ids, wrap_ids=True)
+        return self._retrieve_multiple(
+            ids=ids, external_ids=external_ids, ignore_unknown_ids=ignore_unknown_ids, wrap_ids=True
+        )
 
     def list(
         self,
@@ -147,6 +162,8 @@ class AssetsAPI(APIClient):
         parent_ids: List[int] = None,
         root_ids: List[int] = None,
         root_external_ids: List[str] = None,
+        asset_subtree_ids: List[int] = None,
+        asset_subtree_external_ids: List[str] = None,
         metadata: Dict[str, str] = None,
         source: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
@@ -164,6 +181,8 @@ class AssetsAPI(APIClient):
             parent_ids (List[int]): List of parent ids to filter on.
             root_ids (List[int], optional): List of root ids ids to filter on.
             root_external_ids (List[str], optional): List of root external ids to filter on.
+            asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
+            asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
             metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value.
             source (str): The source of this asset.
             created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
@@ -206,11 +225,14 @@ class AssetsAPI(APIClient):
         # dict option for backward compatibility
         if (root_ids and not isinstance(root_ids[0], dict)) or root_external_ids:
             root_ids = self._process_ids(root_ids, root_external_ids, wrap_ids=True)
+        if asset_subtree_ids or asset_subtree_external_ids:
+            asset_subtree_ids = self._process_ids(asset_subtree_ids, asset_subtree_external_ids, wrap_ids=True)
 
         filter = AssetFilter(
             name=name,
             parent_ids=parent_ids,
             root_ids=root_ids,
+            asset_subtree_ids=asset_subtree_ids,
             metadata=metadata,
             source=source,
             created_time=created_time,
@@ -276,7 +298,11 @@ class AssetsAPI(APIClient):
         return _AssetPoster(assets, client=self).post()
 
     def delete(
-        self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None, recursive: bool = False
+        self,
+        id: Union[int, List[int]] = None,
+        external_id: Union[str, List[str]] = None,
+        recursive: bool = False,
+        ignore_unknown_ids: bool = False,
     ) -> None:
         """`Delete one or more assets <https://doc.cognitedata.com/api/v1/#operation/deleteAssets>`_
 
@@ -284,6 +310,7 @@ class AssetsAPI(APIClient):
             id (Union[int, List[int]): Id or list of ids
             external_id (Union[str, List[str]]): External ID or list of exgernal ids
             recursive (bool): Recursively delete whole asset subtrees under given ids. Defaults to False.
+            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
             None
@@ -297,7 +324,10 @@ class AssetsAPI(APIClient):
                 >>> c.assets.delete(id=[1,2,3], external_id="3")
         """
         self._delete_multiple(
-            ids=id, external_ids=external_id, wrap_ids=True, extra_body_fields={"recursive": recursive}
+            ids=id,
+            external_ids=external_id,
+            wrap_ids=True,
+            extra_body_fields={"recursive": recursive, "ignoreUnknownIds": ignore_unknown_ids},
         )
 
     def update(self, item: Union[Asset, AssetUpdate, List[Union[Asset, AssetUpdate]]]) -> Union[Asset, AssetList]:
@@ -330,13 +360,19 @@ class AssetsAPI(APIClient):
         return self._update_multiple(items=item)
 
     def search(
-        self, name: str = None, description: str = None, filter: Union[AssetFilter, Dict] = None, limit: int = 100
+        self,
+        name: str = None,
+        description: str = None,
+        query: str = None,
+        filter: Union[AssetFilter, Dict] = None,
+        limit: int = 100,
     ) -> AssetList:
         """`Search for assets <https://docs.cognite.com/api/v1/#operation/searchAssets>`_
 
         Args:
             name (str): Fuzzy match on name.
             description (str): Fuzzy match on description.
+            query (str): Whitespace-separated terms to search for in assets. Does a best-effort fuzzy search in relevant fields (currently name and description) for variations of any of the search terms, and orders results by relevance.
             filter (Union[AssetFilter, Dict]): Filter to apply. Performs exact match on these fields.
             limit (int): Maximum number of results to return.
 
@@ -357,13 +393,21 @@ class AssetsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.assets.search(filter={"name": "some name"})
 
+            Search for assets by improved multi-field fuzzy search::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.assets.search(query="TAG 30 XV")
+
             Search for assets using multiple filters, finding all assets with name similar to `xyz` with parent asset `123` or `456` with source `some source`::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.assets.search(name="xyz",filter={"parent_ids": [123,456],"source": "some source"})
         """
-        return self._search(search={"name": name, "description": description}, filter=filter, limit=limit)
+        return self._search(
+            search={"name": name, "description": description, "query": query}, filter=filter, limit=limit
+        )
 
     def retrieve_subtree(self, id: int = None, external_id: str = None, depth: int = None) -> AssetList:
         """Retrieve the subtree for this asset up to a specified depth.
