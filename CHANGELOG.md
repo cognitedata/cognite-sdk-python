@@ -21,6 +21,10 @@ Changes are grouped as follows
 
 ## Unreleased
 
+### Changed
+- In sequences create, the column definitions object accepts both camelCased and snake_cased keys.
+
+
 ## [1.4.3] - 2019-11-27
 ### Fixed
 - In Jupyter notebooks, the output from built-in list types is no longer camel cased.

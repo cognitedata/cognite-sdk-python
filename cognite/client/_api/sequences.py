@@ -291,7 +291,11 @@ class SequencesAPI(APIClient):
     def _clean_columns(self, sequence):
         sequence = copy.copy(sequence)
         sequence.columns = [
-            {v: col[v] for v in ["externalId", "valueType", "metadata", "name", "description"] if v in col}
+            {
+                k: v
+                for k, v in utils._auxiliary.convert_all_keys_to_camel_case(col).items()
+                if k in ["externalId", "valueType", "metadata", "name", "description"]
+            }
             for col in sequence.columns
         ]
         for i in range(len(sequence.columns)):
