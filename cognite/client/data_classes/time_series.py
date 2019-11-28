@@ -127,7 +127,7 @@ class TimeSeriesFilter(CogniteFilter):
         is_step (bool): Filter on isStep.
         metadata (Dict[str, Any]): Filter out timeseries that do not match these metadata fields and values (case-sensitive). The format is {"key1":"value1","key2":"value2"}.
         asset_ids (List[int]): Filter out time series that are not linked to any of these assets.
-        root_asset_ids (List[int]): The IDs of the root assets that the related assets should be children of.
+        root_asset_ids (List[int]): Only include time series that have a related asset in a tree rooted at any of these root assetIds.
         external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
         created_time (Dict[str, Any]): Filter out time series with createdTime outside this range.
         last_updated_time (Dict[str, Any]): Filter out time series with lastUpdatedTime outside this range.

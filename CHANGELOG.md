@@ -22,7 +22,21 @@ Changes are grouped as follows
 ## Unreleased
 
 ### Changed
+- In sequences create, the column definitions object accepts both camelCased and snake_cased keys.
+
+
+## [1.4.3] - 2019-11-27
+### Fixed
+- In Jupyter notebooks, the output from built-in list types is no longer camel cased.
+
+## [1.4.2] - 2019-11-27
+
+### Changed
 - In the 3D API, the call and list methods now include all models by default instead of only unpublished ones.
+- In Jupyter notebooks, the output from built-in types is no longer camel cased.
+
+### Added
+- Support for filtering events by asset subtree ids.
 
 ## [1.4.1] - 2019-11-18
 
