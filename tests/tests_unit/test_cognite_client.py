@@ -181,11 +181,19 @@ class TestCogniteClient:
         log.handlers = []
         log.propagate = False
 
-    def test_version_check_disabled(self, rsps_with_login_mock):
+    def test_version_check_disabled_env(self, rsps_with_login_mock):
         rsps_with_login_mock.assert_all_requests_are_fired = False
         with unset_env_var("COGNITE_PROJECT"):
             with set_env_var("COGNITE_DISABLE_PYPI_VERSION_CHECK", "1"):
                 CogniteClient()
+        assert len(rsps_with_login_mock.calls) == 1
+        assert rsps_with_login_mock.calls[0].request.url.startswith("https://greenfield.cognitedata.com")
+
+    def test_version_check_disabled_arg(self, rsps_with_login_mock):
+        rsps_with_login_mock.assert_all_requests_are_fired = False
+        with unset_env_var("COGNITE_PROJECT"):
+            with unset_env_var("COGNITE_DISABLE_PYPI_VERSION_CHECK"):
+                CogniteClient(disable_pypi_version_check=True)
         assert len(rsps_with_login_mock.calls) == 1
         assert rsps_with_login_mock.calls[0].request.url.startswith("https://greenfield.cognitedata.com")
 
