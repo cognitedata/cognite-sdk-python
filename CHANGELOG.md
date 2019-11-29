@@ -24,6 +24,8 @@ Changes are grouped as follows
 ### Changed
 - In sequences create, the column definitions object accepts both camelCased and snake_cased keys.
 
+### Fixed
+- Fixed notebook output for DatapointsList 
 
 ## [1.4.3] - 2019-11-27
 ### Fixed
