@@ -19,11 +19,25 @@ Changes are grouped as follows
 - Upserts for all resource types
 - Separate read/write fields on data classes
 
-## [1.4.2] - 2019-11-20
+## [1.4.4] - 2019-11-29
 
 ### Changed
 - The ModelHostingAPI now calls Model Hosting endpoints in playground instead of 0.6.
+- In sequences create, the column definitions object accepts both camelCased and snake_cased keys.
+
+
+## [1.4.3] - 2019-11-27
+### Fixed
+- In Jupyter notebooks, the output from built-in list types is no longer camel cased.
+
+## [1.4.2] - 2019-11-27
+
+### Changed
 - In the 3D API, the call and list methods now include all models by default instead of only unpublished ones.
+- In Jupyter notebooks, the output from built-in types is no longer camel cased.
+
+### Added
+- Support for filtering events by asset subtree ids.
 
 ## [1.4.1] - 2019-11-18
 

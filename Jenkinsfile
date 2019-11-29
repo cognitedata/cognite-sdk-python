@@ -10,7 +10,7 @@ podTemplate(
     ],
     containers: [
         containerTemplate(name: 'python',
-            image: 'eu.gcr.io/cognitedata/multi-python:7040fac',
+            image: 'eu.gcr.io/cognitedata/multi-python:2019-10-18T1122-3e874f7',
             command: '/bin/cat -',
             resourceRequestCpu: '1000m',
             resourceRequestMemory: '800Mi',
@@ -86,7 +86,7 @@ podTemplate(
                 sh('pipenv run pytest openapi/tests')
             }
             stage('Test Client') {
-                sh("pyenv local 3.5.0 3.6.6 3.7.2")
+                sh("pyenv local 3.5.0 3.6.6 3.7.4 3.8.0")
                 sh("pipenv run tox -p auto")
                 junit(allowEmptyResults: true, testResults: '**/test-report.xml')
                 summarizeTestResults()
