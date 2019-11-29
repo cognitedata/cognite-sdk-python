@@ -900,47 +900,6 @@ class TestStandardSearch:
 
 class TestHelpers:
     @pytest.mark.parametrize(
-        "input, emulator_url, expected",
-        [
-            (
-                "http://localtest.com/api/1.0/projects/test-project/modelhosting/models",
-                "http://localhost:8000/api/0.1",
-                "http://localhost:8000/api/0.1/projects/test-project/models",
-            ),
-            (
-                "http://localtest.com/api/1.0/projects/test-project/modelhosting/models/sourcepackages/1",
-                "http://localhost:1234/api/0.5",
-                "http://localhost:1234/api/0.5/projects/test-project/models/sourcepackages/1",
-            ),
-            (
-                "https://api.cognitedata.com/api/0.6/projects/test-project/assets/update",
-                "http://localhost:8000/api/0.1",
-                "https://api.cognitedata.com/api/0.6/projects/test-project/assets/update",
-            ),
-            (
-                "https://api.cognitedata.com/login/status",
-                "http://localhost:8000/api/0.1",
-                "https://api.cognitedata.com/login/status",
-            ),
-        ],
-    )
-    def test_nostromo_emulator_url_filter(self, input, emulator_url, expected):
-        os.environ["MODEL_HOSTING_EMULATOR_URL"] = emulator_url
-        assert expected == API_CLIENT_WITH_API_KEY._apply_model_hosting_emulator_url_filter(input)
-        del os.environ["MODEL_HOSTING_EMULATOR_URL"]
-
-    @pytest.fixture
-    def mlh_emulator_mock(self, rsps):
-        os.environ["MODEL_HOSTING_EMULATOR_URL"] = "http://localhost:8888/api/0.1"
-        rsps.add(rsps.POST, "http://localhost:8888/api/0.1/projects/test-project/models/versions", status=200, json={})
-        yield rsps
-        del os.environ["MODEL_HOSTING_EMULATOR_URL"]
-
-    @pytest.mark.usefixtures("mlh_emulator_mock")
-    def test_do_request_with_mlh_emulator_activated(self):
-        API_CLIENT_WITH_API_KEY._do_request(method="POST", url_path="/modelhosting/models/versions")
-
-    @pytest.mark.parametrize(
         "ids, external_ids, wrap_ids, expected",
         [
             (1, None, False, [1]),
