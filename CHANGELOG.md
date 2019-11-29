@@ -21,6 +21,9 @@ Changes are grouped as follows
 
 ## Unreleased
 
+### Added
+ - Option to turn off version checking from CogniteClient constructor
+
 ### Changed
 - In sequences create, the column definitions object accepts both camelCased and snake_cased keys.
 
