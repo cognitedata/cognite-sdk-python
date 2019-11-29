@@ -20,7 +20,6 @@ MODELS_API = CogniteClient().model_hosting.models
 VERSIONS_API = CogniteClient().model_hosting.versions
 
 
-@pytest.mark.skip("Wait for Model Hosting endpoints in playground")
 class TestVersions:
     model_version_response = {
         "isDeprecated": True,

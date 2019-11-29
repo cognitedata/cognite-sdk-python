@@ -9,7 +9,6 @@ from cognite.client.experimental import CogniteClient
 MODELS_API = CogniteClient().model_hosting.models
 
 
-@pytest.mark.skip("Wait for Model Hosting endpoints in playground")
 class TestModels:
     @pytest.fixture
     def created_model(self):
