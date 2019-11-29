@@ -9,7 +9,6 @@ from cognite.client.experimental import CogniteClient
 MODELS_API = CogniteClient().model_hosting.models
 
 
-@pytest.mark.skip("model hosting development")
 class TestModels:
     @pytest.fixture
     def created_model(self):
