@@ -21,10 +21,15 @@ Changes are grouped as follows
 
 ## [1.4.4] - 2019-11-29
 
+### Added
+ - Option to turn off version checking from CogniteClient constructor
+
 ### Changed
 - The ModelHostingAPI now calls Model Hosting endpoints in playground instead of 0.6.
 - In sequences create, the column definitions object accepts both camelCased and snake_cased keys.
 
+### Fixed
+- Fixed notebook output for DatapointsList 
 
 ## [1.4.3] - 2019-11-27
 ### Fixed
