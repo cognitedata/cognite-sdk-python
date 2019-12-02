@@ -92,6 +92,12 @@ class CogniteResource:
             key: value for key, value in self.__dict__.items() if value not in EXCLUDE_VALUE and not key.startswith("_")
         }
 
+    def _insertable_copy(self):
+        copy_self = copy.deepcopy(self)
+        for prop in getattr(self.__class__, "_READ_PROPERTIES", []):
+            setattr(copy_self, utils._auxiliary.to_snake_case(prop), None)
+        return copy_self
+
     @classmethod
     def _load(cls, resource: Union[Dict, str], cognite_client=None):
         if isinstance(resource, str):

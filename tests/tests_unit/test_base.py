@@ -9,6 +9,9 @@ from cognite.client.exceptions import CogniteMissingClientError
 
 
 class MyResource(CogniteResource):
+    _WRITE_PROPERTIES = {"varA"}
+    _READ_PROPERTIES = {"varB"}
+
     def __init__(self, var_a=None, var_b=None, id=None, external_id=None, cognite_client=None):
         self.var_a = var_a
         self.var_b = var_b
@@ -18,6 +21,15 @@ class MyResource(CogniteResource):
 
     def use(self):
         return self._cognite_client
+
+
+class MyResourceNoRW(CogniteResource):
+    def __init__(self, var_a=None, var_b=None, id=None, external_id=None, cognite_client=None):
+        self.var_a = var_a
+        self.var_b = var_b
+        self.id = id
+        self.external_id = external_id
+        self._cognite_client = cognite_client
 
 
 class MyUpdate(CogniteUpdate):
@@ -122,6 +134,12 @@ class TestCogniteResource:
     def test_str_repr(self):
         assert json.dumps({"var_a": 1}, indent=4) == MyResource(1).__str__()
         assert json.dumps({"var_a": 1.0}, indent=4) == MyResource(Decimal(1)).__str__()
+
+    def test_insertable_copy(self):
+        assert {"var_a": 1} == MyResource(var_a=1, var_b=2)._insertable_copy().dump()
+
+    def test_insertable_copy_no_rw(self):
+        assert {"var_a": 1, "var_b": 2} == MyResourceNoRW(var_a=1, var_b=2)._insertable_copy().dump()
 
     @pytest.mark.dsl
     def test_to_pandas(self):

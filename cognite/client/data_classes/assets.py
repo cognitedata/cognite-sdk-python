@@ -81,14 +81,8 @@ class Asset(CogniteResource):
                 instance.aggregates = AggregateResultItem(**instance.aggregates)
         return instance
 
-    def insertable_copy(self):
-        copy_self = copy.deepcopy(self)
-        copy_self.aggregates = None
-        copy_self.created_time = None
-        copy_self.id = None
-        copy_self.last_updated_time = None
-        copy_self.root_id = None
-        return copy_self
+    _WRITE_PROPERTIES = {"description", "name", "metadata", "parentId", "parentExternalId", "externalId", "source"}
+    _READ_PROPERTIES = {"aggregates", "rootId", "createdTime", "lastUpdatedTime", "id"}
 
     # GenStop
 

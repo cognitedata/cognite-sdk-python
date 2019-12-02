@@ -192,14 +192,11 @@ class RWClassGenerator(ClassGenerator):
             GenClassSegment(*args) for args in re.findall(GEN_PROPERTY_CLASS_PATTERN, self._input)
         ]
 
-    def generate_insertable_copy_method(self, read_only_props, indentation=4):
+    def generate_insertable_copy_method(self, read_only_props, writeable_props, indentation=4):
         indent = " " * indentation
-        insertable_copy_method = indent + "\n\n" + indent + "def insertable_copy(self):\n"
-        insertable_copy_method += indent * 2 + "copy_self = copy.deepcopy(self)\n"
-        for prop_name in sorted(read_only_props):
-            insertable_copy_method += indent * 2 + "copy_self.{} = None\n".format(utils.to_snake_case(prop_name))
-        insertable_copy_method += indent * 2 + "return copy_self\n\n"
-        return insertable_copy_method
+        prop_vars = indent + "_WRITE_PROPERTIES = " + repr(writeable_props) + "\n"
+        prop_vars += indent + "_READ_PROPERTIES = " + repr(read_only_props) + "\n\n"
+        return prop_vars
 
     def generate_code_for_given_class_segment(self, class_segment, is_property=False):
         rw_map = {k.lower(): v for k, v in re.findall("([rwRW])=(\S+)", class_segment.schema_names)}
@@ -211,7 +208,9 @@ class RWClassGenerator(ClassGenerator):
 
         props_rw = [set(self._get_schema_properties(schema).keys()) for schema in schemas]
         read_only_props = props_rw[0] - props_rw[1]
-        generated_segment = base_segment + self.generate_insertable_copy_method(read_only_props, indentation=4)
+        generated_segment = base_segment + self.generate_insertable_copy_method(
+            read_only_props, props_rw[1], indentation=4
+        )
         return class_name, generated_segment, schemas
 
 
@@ -389,8 +388,6 @@ class CodeGenerator:
     def _generate_imports(self, content):
         if re.search("from typing import \*", content) is None:
             content = "from typing import *\n" + content
-        if re.search("import copy", content) is None:
-            content = "import copy\n" + content
         return content
 
     def _format_with_black(self, content):

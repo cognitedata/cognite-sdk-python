@@ -55,12 +55,18 @@ class Event(CogniteResource):
         self.created_time = created_time
         self._cognite_client = cognite_client
 
-    def insertable_copy(self):
-        copy_self = copy.deepcopy(self)
-        copy_self.created_time = None
-        copy_self.id = None
-        copy_self.last_updated_time = None
-        return copy_self
+    _WRITE_PROPERTIES = {
+        "description",
+        "metadata",
+        "subtype",
+        "endTime",
+        "assetIds",
+        "type",
+        "externalId",
+        "startTime",
+        "source",
+    }
+    _READ_PROPERTIES = {"lastUpdatedTime", "createdTime", "id"}
 
     # GenStop
 
