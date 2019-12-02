@@ -28,7 +28,7 @@ class SchedulesAPI(APIClient):
         Returns:
             Schedule: The created schedule.
         """
-        url_path = "/analytics/models/{}/schedules".format(model_name)
+        url_path = "/modelhosting/models/{}/schedules".format(model_name)
 
         if hasattr(schedule_data_spec, "dump"):
             schedule_data_spec = schedule_data_spec.dump()
@@ -58,7 +58,7 @@ class SchedulesAPI(APIClient):
             ScheduleList: The requested schedules.
         """
         params = {"cursor": cursor, "limit": limit if autopaging is False else self._LIST_LIMIT}
-        res = self._get("/analytics/models/{}/schedules".format(model_name), params=params)
+        res = self._get("/modelhosting/models/{}/schedules".format(model_name), params=params)
         return ScheduleList._load(res.json()["items"])
 
     def get_schedule(self, model_name: str, schedule_name: str) -> Schedule:
@@ -70,7 +70,7 @@ class SchedulesAPI(APIClient):
         Returns:
             Schedule: The requested schedule.
         """
-        res = self._get("/analytics/models/{}/schedules/{}".format(model_name, schedule_name))
+        res = self._get("/modelhosting/models/{}/schedules/{}".format(model_name, schedule_name))
         return Schedule._load(res.json())
 
     def deprecate_schedule(self, model_name: str, schedule_name: str) -> Schedule:
@@ -83,7 +83,7 @@ class SchedulesAPI(APIClient):
         Returns:
             Schedule: The deprecated schedule.
         """
-        res = self._put("/analytics/models/{}/schedules/{}/deprecate".format(model_name, schedule_name))
+        res = self._put("/modelhosting/models/{}/schedules/{}/deprecate".format(model_name, schedule_name))
         return Schedule._load(res.json())
 
     def delete_schedule(self, model_name: str, schedule_name: str) -> None:
@@ -96,7 +96,7 @@ class SchedulesAPI(APIClient):
         Returns:
             None
         """
-        self._delete("/analytics/models/{}/schedules/{}".format(model_name, schedule_name))
+        self._delete("/modelhosting/models/{}/schedules/{}".format(model_name, schedule_name))
 
     def get_log(self, model_name: str, schedule_name: str) -> ScheduleLog:
         """Return schedule log by id. The ScheduleLog object contains two logs, one for failed scheduled
@@ -109,5 +109,5 @@ class SchedulesAPI(APIClient):
         Returns:
             ScheduleLog: An object containing the schedule logs.
         """
-        res = self._get("/analytics/models/{}/schedules/{}/log".format(model_name, schedule_name))
+        res = self._get("/modelhosting/models/{}/schedules/{}/log".format(model_name, schedule_name))
         return ScheduleLog._load(res.json())

@@ -168,8 +168,6 @@ class APIClient:
         base_url = self._get_base_url_with_base_path()
         full_url = base_url + url_path
         is_retryable = self._is_retryable(method, full_url)
-        # Hack to allow running model hosting requests against local emulator
-        full_url = self._apply_model_hosting_emulator_url_filter(full_url)
         return is_retryable, full_url
 
     def _get_base_url_with_base_path(self):
@@ -675,13 +673,3 @@ class APIClient:
             headers["api-key"] = "***"
         if "Authorization" in headers:
             headers["Authorization"] = "***"
-
-    def _apply_model_hosting_emulator_url_filter(self, full_url):
-        mlh_emul_url = os.getenv("MODEL_HOSTING_EMULATOR_URL")
-        if mlh_emul_url is not None:
-            pattern = "{}/analytics/models(.*)".format(self._get_base_url_with_base_path())
-            res = re.match(pattern, full_url)
-            if res is not None:
-                path = res.group(1)
-                return "{}/projects/{}/models{}".format(mlh_emul_url, self._config.project, path)
-        return full_url
