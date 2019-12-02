@@ -246,7 +246,7 @@ class RelationshipsAPI(APIClient):
         self._delete_multiple(external_ids=external_id, wrap_ids=True)
 
     def graph_query(self, query: str, filter: Union[RelationshipFilter, Dict] = None) -> Dict:
-        """Delete one or more relationships
+        """Perform a gremlin query on the relationships.
 
         Args:
             query (str): Gremlin query to execute
