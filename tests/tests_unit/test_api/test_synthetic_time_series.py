@@ -18,6 +18,7 @@ from tests.utils import jsgz_load, set_request_limit
 COGNITE_CLIENT = CogniteClient()
 DPS_CLIENT = COGNITE_CLIENT.datapoints.synthetic
 
+
 def generate_datapoints(start: int, end: int, granularity=1):
     dps = []
     for i in range(start, end, granularity):
@@ -51,12 +52,7 @@ def mock_get_datapoints(rsps):
             dps = dps[:limit]
             id_to_return = dps_query.get("id", int(dps_query.get("externalId", "-1")))
             external_id_to_return = dps_query.get("externalId", str(dps_query.get("id", -1)))
-            items.append(
-                {
-                    "isString": False,
-                    "datapoints": dps,
-                }
-            )
+            items.append({"isString": False, "datapoints": dps})
         response = {"items": items}
         return 200, {}, json.dumps(response)
 
@@ -75,19 +71,17 @@ def mock_get_datapoints_empty(rsps):
         rsps.POST,
         DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/synthetic",
         status=200,
-        json={
-            "items": [{"isString": False, "datapoints": []}]
-        },
+        json={"items": [{"isString": False, "datapoints": []}]},
     )
     yield rsps
 
-class TestSyntheticQuery:
 
+class TestSyntheticQuery:
     def test_retrieve(self, mock_get_datapoints):
         dps_res = DPS_CLIENT.retrieve(expression='TS{externalID:"abc"} + TS{id:1} ', start=1000000, end=1100001)
         assert isinstance(dps_res, Datapoints)
         assert 100001 == len(dps_res)
-        assert 2==len(mock_get_datapoints.calls)
+        assert 2 == len(mock_get_datapoints.calls)
 
     def test_retrieve_empty(self, mock_get_datapoints_empty):
         dps_res = DPS_CLIENT.retrieve(expression='TS{externalID:"abc"} + TS{id:1} ', start=1000000, end=1100001)
