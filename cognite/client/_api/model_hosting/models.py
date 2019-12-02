@@ -32,7 +32,7 @@ class ModelsAPI(APIClient):
         Returns:
             Model: The created model.
         """
-        url = "/analytics/models"
+        url = "/modelhosting/models"
         model_body = {
             "name": name,
             "description": description,
@@ -56,7 +56,7 @@ class ModelsAPI(APIClient):
         Returns:
             ModelList: List of models
         """
-        url = "/analytics/models"
+        url = "/modelhosting/models"
         params = {"cursor": cursor, "limit": limit if autopaging is False else self._LIST_LIMIT}
         res = self._get(url, params=params)
         return ModelList._load(res.json()["items"])
@@ -70,7 +70,7 @@ class ModelsAPI(APIClient):
         Returns:
             Model: The requested model
         """
-        url = "/analytics/models/{}".format(name)
+        url = "/modelhosting/models/{}".format(name)
         res = self._get(url)
         return Model._load(res.json())
 
@@ -94,7 +94,7 @@ class ModelsAPI(APIClient):
         Returns:
             Model: Updated model
         """
-        url = "/analytics/models/{}/update".format(name)
+        url = "/modelhosting/models/{}/update".format(name)
         body = {}
         if description:
             body.update({"description": {"set": description}})
@@ -116,7 +116,7 @@ class ModelsAPI(APIClient):
         Returns:
             Model: Deprecated model
         """
-        url = "/analytics/models/{}/deprecate".format(name)
+        url = "/modelhosting/models/{}/deprecate".format(name)
         res = self._post(url, json={})
         return Model._load(res.json())
 
@@ -131,7 +131,7 @@ class ModelsAPI(APIClient):
         Returns:
             None
         """
-        url = "/analytics/models/{}".format(name)
+        url = "/modelhosting/models/{}".format(name)
         self._delete(url)
 
     def online_predict(
@@ -148,13 +148,13 @@ class ModelsAPI(APIClient):
         Returns:
             List: List of predictions for each instance.
         """
-        url = "/analytics/models/{}/predict".format(model_name)
+        url = "/modelhosting/models/{}/predict".format(model_name)
         if instances:
             for i, instance in enumerate(instances):
                 if hasattr(instance, "dump"):
                     instances[i] = instance.dump()
         if version_name:
-            url = "/analytics/models/{}/versions/{}/predict".format(model_name, version_name)
+            url = "/modelhosting/models/{}/versions/{}/predict".format(model_name, version_name)
         body = {"instances": instances, "args": args or {}}
         res = self._post(url, json=body).json()
         if "error" in res:
