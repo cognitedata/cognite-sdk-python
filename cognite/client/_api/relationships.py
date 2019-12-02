@@ -244,3 +244,20 @@ class RelationshipsAPI(APIClient):
                 >>> c.relationships.delete(external_id=["a","b"])
         """
         self._delete_multiple(external_ids=external_id, wrap_ids=True)
+
+    def graph_query(self, query: str, filter: Union[RelationshipFilter, Dict] = None) -> Dict:
+        """Delete one or more relationships
+
+        Args:
+            query (str): Gremlin query to execute
+            filter (Union[RelationshipFilter,Dict]): restrict query to these relationships.
+
+        Returns:
+            Dict: Raw JSON result of the query.
+        """
+        utils._auxiliary.assert_type(filter, "filter", [dict, RelationshipFilter], allow_none=True)
+        if isinstance(filter, RelationshipFilter):
+            filter = filter.dump(camel_case=True)
+        elif isinstance(filter, dict):
+            filter = utils._auxiliary.convert_all_keys_to_camel_case(filter)
+        return self._post(url_path="/restrictedGraphQuery", json={"items": [{"query": query, "filter": filter}]}).json()
