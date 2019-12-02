@@ -34,7 +34,7 @@ class ModelVersionsAPI(APIClient):
         Returns:
             ModelVersion: The created model version.
         """
-        url = "/analytics/models/{}/versions".format(model_name)
+        url = "/modelhosting/models/{}/versions".format(model_name)
         body = {
             "name": version_name,
             "description": description or "",
@@ -55,7 +55,7 @@ class ModelVersionsAPI(APIClient):
         Returns:
             ModelVersion: The deployed model version.
         """
-        url = "/analytics/models/{}/versions/{}/deploy".format(model_name, version_name)
+        url = "/modelhosting/models/{}/versions/{}/deploy".format(model_name, version_name)
         res = self._post(url, json={})
         return ModelVersion._load(res.json())
 
@@ -104,7 +104,7 @@ class ModelVersionsAPI(APIClient):
         Returns:
             ModelVersionList: List of model versions
         """
-        url = "/analytics/models/{}/versions".format(model_name)
+        url = "/modelhosting/models/{}/versions".format(model_name)
         params = {"cursor": cursor, "limit": limit if autopaging is False else self._LIST_LIMIT}
         res = self._get(url, params=params)
         return ModelVersionList._load(res.json()["items"])
@@ -119,7 +119,7 @@ class ModelVersionsAPI(APIClient):
         Returns:
             ModelVersion: The requested model version
         """
-        url = "/analytics/models/{}/versions/{}".format(model_name, version_name)
+        url = "/modelhosting/models/{}/versions/{}".format(model_name, version_name)
         res = self._get(url)
         return ModelVersion._load(res.json())
 
@@ -137,7 +137,7 @@ class ModelVersionsAPI(APIClient):
         Returns:
             ModelVersion: The updated model version.
         """
-        url = "/analytics/models/{}/versions/{}/update".format(model_name, version_name)
+        url = "/modelhosting/models/{}/versions/{}/update".format(model_name, version_name)
         body = {}
         if description:
             body.update({"description": {"set": description}})
@@ -157,7 +157,7 @@ class ModelVersionsAPI(APIClient):
         Returns:
             ModelVersion: The deprecated model version
         """
-        url = "/analytics/models/{}/versions/{}/deprecate".format(model_name, version_name)
+        url = "/modelhosting/models/{}/versions/{}/deprecate".format(model_name, version_name)
         res = self._post(url)
         return ModelVersion._load(res.json())
 
@@ -171,7 +171,7 @@ class ModelVersionsAPI(APIClient):
         Returns:
             None
         """
-        url = "/analytics/models/{}/versions/{}".format(model_name, version_name)
+        url = "/modelhosting/models/{}/versions/{}".format(model_name, version_name)
         self._delete(url)
 
     def list_artifacts(self, model_name: str, version_name: str) -> ModelArtifactList:
@@ -184,7 +184,7 @@ class ModelVersionsAPI(APIClient):
         Returns:
             ModelArtifactList: List of artifacts
         """
-        url = "/analytics/models/{}/versions/{}/artifacts".format(model_name, version_name)
+        url = "/modelhosting/models/{}/versions/{}/artifacts".format(model_name, version_name)
         res = self._get(url)
         return ModelArtifactList._load(res.json()["items"])
 
@@ -203,7 +203,7 @@ class ModelVersionsAPI(APIClient):
         directory = directory or os.getcwd()
         file_path = os.path.join(directory, artifact_name)
 
-        url = "/analytics/models/{}/versions/{}/artifacts/{}".format(model_name, version_name, artifact_name)
+        url = "/modelhosting/models/{}/versions/{}/artifacts/{}".format(model_name, version_name, artifact_name)
         download_url = self._get(url).json()["downloadUrl"]
         with open(file_path, "wb") as fh:
             response = self._request_session.get(download_url).content
@@ -222,7 +222,7 @@ class ModelVersionsAPI(APIClient):
         Returns:
             None
         """
-        url = "/analytics/models/{}/versions/{}/artifacts/upload".format(model_name, version_name)
+        url = "/modelhosting/models/{}/versions/{}/artifacts/upload".format(model_name, version_name)
         body = {"name": artifact_name}
         res = self._post(url, json=body)
         upload_url = res.json()["uploadUrl"]
@@ -272,7 +272,7 @@ class ModelVersionsAPI(APIClient):
         Returns:
             ModelVersionLog: An object containing the requested logs.
         """
-        url = "/analytics/models/{}/versions/{}/log".format(model_name, version_name)
+        url = "/modelhosting/models/{}/versions/{}/log".format(model_name, version_name)
         params = {"logType": log_type}
         res = self._get(url, params=params)
         return ModelVersionLog._load(res.json())

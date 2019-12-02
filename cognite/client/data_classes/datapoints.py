@@ -326,6 +326,9 @@ class DatapointsList(CogniteResourceList):
 
         return pd.DataFrame()
 
+    def _repr_html_(self):
+        return self.to_pandas()._repr_html_()
+
     def plot(self, *args, **kwargs) -> None:
         """Plot the list of datapoints."""
         plt = utils._auxiliary.local_import("matplotlib.pyplot")
