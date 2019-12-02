@@ -12,9 +12,7 @@ TO_EXCLUDE = ["project", "cursor"]
 GEN_CLASS_PATTERN = "# GenClass: ([\S ]+)\s+class (\S+)\(.+\):(?:(?!# GenStop)[\s\S])+# GenStop"
 GEN_UPDATE_CLASS_PATTERN = "# GenUpdateClass: (\S+)\s+class (\S+)\(.+\):(?:(?!# GenStop)[\s\S])+# GenStop"
 GEN_PROPERTY_CLASS_PATTERN = "# GenPropertyClass: (\S+)\s+class (\S+)\(.+\):(?:(?!# GenStop)[\s\S])+# GenStop"
-
 GEN_RW_CLASS_PATTERN = "# GenRWClass: ([\S ]+)\s+class (\S+)\(.+\):(?:(?!# GenStop)[\s\S])+# GenStop"
-
 
 GenClassSegment = namedtuple("GenClassSegment", ["schema_names", "class_name"])
 GenUpdateClassSegment = namedtuple("GenUpdateClassSegment", ["schema_name", "class_name"])
