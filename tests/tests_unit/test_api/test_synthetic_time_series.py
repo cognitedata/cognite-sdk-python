@@ -1,5 +1,6 @@
 import json
 import math
+import re
 from contextlib import contextmanager
 from datetime import datetime
 from random import choice, random
@@ -50,8 +51,6 @@ def mock_get_datapoints(rsps):
 
             dps = generate_datapoints(start, end)
             dps = dps[:limit]
-            id_to_return = dps_query.get("id", int(dps_query.get("externalId", "-1")))
-            external_id_to_return = dps_query.get("externalId", str(dps_query.get("id", -1)))
             items.append({"isString": False, "datapoints": dps})
         response = {"items": items}
         return 200, {}, json.dumps(response)
@@ -69,7 +68,7 @@ def mock_get_datapoints(rsps):
 def mock_get_datapoints_empty(rsps):
     rsps.add(
         rsps.POST,
-        DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/synthetic",
+        re.compile(re.escape(DPS_CLIENT._get_base_url_with_base_path()) + "/timeseries/synthetic/.*"),
         status=200,
         json={"items": [{"isString": False, "datapoints": []}]},
     )
