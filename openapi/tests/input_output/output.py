@@ -1,4 +1,3 @@
-import copy
 from typing import *
 
 
@@ -287,12 +286,19 @@ class TimeSeries(CogniteResource):
         self.legacy_name = legacy_name
         self._cognite_client = cognite_client
 
-    def insertable_copy(self):
-        copy_self = copy.deepcopy(self)
-        copy_self.created_time = None
-        copy_self.id = None
-        copy_self.last_updated_time = None
-        return copy_self
+    _WRITE_PROPERTIES = [
+        "assetId",
+        "description",
+        "externalId",
+        "isStep",
+        "isString",
+        "legacyName",
+        "metadata",
+        "name",
+        "securityCategories",
+        "unit",
+    ]
+    _READ_PROPERTIES = ["createdTime", "id", "lastUpdatedTime"]
 
     # GenStop
 

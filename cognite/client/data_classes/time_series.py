@@ -56,19 +56,19 @@ class TimeSeries(CogniteResource):
         self.legacy_name = legacy_name
         self._cognite_client = cognite_client
 
-    _WRITE_PROPERTIES = {
-        "metadata",
-        "legacyName",
-        "unit",
-        "securityCategories",
+    _WRITE_PROPERTIES = [
         "assetId",
-        "isString",
         "description",
         "externalId",
-        "name",
         "isStep",
-    }
-    _READ_PROPERTIES = {"createdTime", "id", "lastUpdatedTime"}
+        "isString",
+        "legacyName",
+        "metadata",
+        "name",
+        "securityCategories",
+        "unit",
+    ]
+    _READ_PROPERTIES = ["createdTime", "id", "lastUpdatedTime"]
 
     # GenStop
 

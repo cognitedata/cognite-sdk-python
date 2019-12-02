@@ -54,18 +54,18 @@ class Event(CogniteResource):
         self.created_time = created_time
         self._cognite_client = cognite_client
 
-    _WRITE_PROPERTIES = {
-        "source",
-        "endTime",
-        "metadata",
-        "subtype",
-        "description",
-        "externalId",
-        "startTime",
-        "type",
+    _WRITE_PROPERTIES = [
         "assetIds",
-    }
-    _READ_PROPERTIES = {"createdTime", "id", "lastUpdatedTime"}
+        "description",
+        "endTime",
+        "externalId",
+        "metadata",
+        "source",
+        "startTime",
+        "subtype",
+        "type",
+    ]
+    _READ_PROPERTIES = ["createdTime", "id", "lastUpdatedTime"]
 
     # GenStop
 

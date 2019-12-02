@@ -80,8 +80,8 @@ class Asset(CogniteResource):
                 instance.aggregates = AggregateResultItem(**instance.aggregates)
         return instance
 
-    _WRITE_PROPERTIES = {"source", "metadata", "description", "externalId", "parentId", "name", "parentExternalId"}
-    _READ_PROPERTIES = {"aggregates", "createdTime", "rootId", "id", "lastUpdatedTime"}
+    _WRITE_PROPERTIES = ["description", "externalId", "metadata", "name", "parentExternalId", "parentId", "source"]
+    _READ_PROPERTIES = ["aggregates", "createdTime", "id", "lastUpdatedTime", "rootId"]
 
     # GenStop
 

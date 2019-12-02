@@ -194,8 +194,8 @@ class RWClassGenerator(ClassGenerator):
 
     def generate_insertable_copy_method(self, read_only_props, writeable_props, indentation=4):
         indent = " " * indentation
-        prop_vars = indent + "_WRITE_PROPERTIES = " + repr(writeable_props) + "\n"
-        prop_vars += indent + "_READ_PROPERTIES = " + repr(read_only_props) + "\n\n"
+        prop_vars = indent + "_WRITE_PROPERTIES = " + repr(sorted(list(writeable_props))) + "\n"
+        prop_vars += indent + "_READ_PROPERTIES = " + repr(sorted(list(read_only_props))) + "\n"
         return prop_vars
 
     def generate_code_for_given_class_segment(self, class_segment, is_property=False):

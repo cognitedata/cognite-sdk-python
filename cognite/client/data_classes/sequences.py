@@ -45,8 +45,8 @@ class Sequence(CogniteResource):
         self.last_updated_time = last_updated_time
         self._cognite_client = cognite_client
 
-    _WRITE_PROPERTIES = {"metadata", "assetId", "description", "externalId", "name", "columns"}
-    _READ_PROPERTIES = {"createdTime", "id", "lastUpdatedTime"}
+    _WRITE_PROPERTIES = ["assetId", "columns", "description", "externalId", "metadata", "name"]
+    _READ_PROPERTIES = ["createdTime", "id", "lastUpdatedTime"]
 
     # GenStop
 
