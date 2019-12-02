@@ -46,7 +46,7 @@ class SourcePackagesAPI(APIClient):
             "metadata": metadata or {},
             "runtimeVersion": runtime_version,
         }
-        res = self._post("/analytics/models/sourcepackages", json=body).json()
+        res = self._post("/modelhosting/models/sourcepackages", json=body).json()
         if file_path:
             self._upload_file(res["uploadUrl"], file_path)
             del res["uploadUrl"]
@@ -145,7 +145,7 @@ class SourcePackagesAPI(APIClient):
             SourcePackageList: List of source packages.
         """
         params = {"cursor": cursor, "limit": limit if autopaging is False else self._LIST_LIMIT}
-        res = self._get("/analytics/models/sourcepackages", params=params)
+        res = self._get("/modelhosting/models/sourcepackages", params=params)
         return SourcePackageList._load(res.json()["items"])
 
     def get_source_package(self, id: int) -> SourcePackage:
@@ -157,7 +157,7 @@ class SourcePackagesAPI(APIClient):
         Returns:
             SourcePackage: The requested source package.
         """
-        res = self._get("/analytics/models/sourcepackages/{}".format(id))
+        res = self._get("/modelhosting/models/sourcepackages/{}".format(id))
         return SourcePackage._load(res.json())
 
     def delete_source_package(self, id: int) -> None:
@@ -169,7 +169,7 @@ class SourcePackagesAPI(APIClient):
         Returns:
             None
         """
-        self._delete("/analytics/models/sourcepackages/{}".format(id))
+        self._delete("/modelhosting/models/sourcepackages/{}".format(id))
 
     def deprecate_source_package(self, id: int) -> SourcePackage:
         """Deprecate a source package by id.
@@ -180,7 +180,7 @@ class SourcePackagesAPI(APIClient):
         Returns:
             SourcePackage: The requested source package.
         """
-        res = self._post("/analytics/models/sourcepackages/{}/deprecate".format(id), json={})
+        res = self._post("/modelhosting/models/sourcepackages/{}/deprecate".format(id), json={})
         return SourcePackage._load(res.json())
 
     def download_source_package_code(self, id: int, directory: str = None) -> None:
@@ -195,7 +195,7 @@ class SourcePackagesAPI(APIClient):
         """
         directory = directory or os.getcwd()
         file_path = os.path.join(directory, self.get_source_package(id).name + ".tar.gz")
-        url = "/analytics/models/sourcepackages/{}/code".format(id)
+        url = "/modelhosting/models/sourcepackages/{}/code".format(id)
         download_url = self._get(url).json()["downloadUrl"]
         with open(file_path, "wb") as fh:
             response = self._request_session.get(download_url).content
@@ -213,4 +213,4 @@ class SourcePackagesAPI(APIClient):
         Returns:
             None
         """
-        self._delete("/analytics/models/sourcepackages/{}/code".format(id))
+        self._delete("/modelhosting/models/sourcepackages/{}/code".format(id))
