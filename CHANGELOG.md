@@ -19,6 +19,9 @@ Changes are grouped as follows
 - Upserts for all resource types
 - Separate read/write fields on data classes
 
+### Added
+- Support for synthetic time series queries in the experimental client.
+
 ## [1.4.5] - 2019-12-02
 
 ### Changed

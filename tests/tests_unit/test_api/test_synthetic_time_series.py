@@ -84,13 +84,13 @@ def mock_get_datapoints_empty(rsps):
 class TestSyntheticQuery:
 
     def test_retrieve(self, mock_get_datapoints):
-        dps_res = DPS_CLIENT.retrieve(function='TS{externalID:"abc"} + TS{id:1} ', start=1000000, end=1100001)
+        dps_res = DPS_CLIENT.retrieve(expression='TS{externalID:"abc"} + TS{id:1} ', start=1000000, end=1100001)
         assert isinstance(dps_res, Datapoints)
         assert 100001 == len(dps_res)
         assert 2==len(mock_get_datapoints.calls)
 
     def test_retrieve_empty(self, mock_get_datapoints_empty):
-        dps_res = DPS_CLIENT.retrieve(function='TS{externalID:"abc"} + TS{id:1} ', start=1000000, end=1100001)
+        dps_res = DPS_CLIENT.retrieve(expression='TS{externalID:"abc"} + TS{id:1} ', start=1000000, end=1100001)
         assert isinstance(dps_res, Datapoints)
         assert 0 == len(dps_res)
         assert 1 == len(mock_get_datapoints_empty.calls)
