@@ -1,6 +1,4 @@
-import copy
 from typing import *
-from typing import List
 
 from cognite.client.data_classes._base import *
 
@@ -59,18 +57,18 @@ class TimeSeries(CogniteResource):
         self._cognite_client = cognite_client
 
     _WRITE_PROPERTIES = {
-        "isStep",
-        "name",
         "metadata",
-        "description",
-        "isString",
-        "unit",
-        "externalId",
-        "assetId",
-        "securityCategories",
         "legacyName",
+        "unit",
+        "securityCategories",
+        "assetId",
+        "isString",
+        "description",
+        "externalId",
+        "name",
+        "isStep",
     }
-    _READ_PROPERTIES = {"lastUpdatedTime", "createdTime", "id"}
+    _READ_PROPERTIES = {"createdTime", "id", "lastUpdatedTime"}
 
     # GenStop
 

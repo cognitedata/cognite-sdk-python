@@ -1,4 +1,3 @@
-import copy
 from typing import *
 
 from cognite.client.data_classes._base import *
@@ -56,17 +55,17 @@ class Event(CogniteResource):
         self._cognite_client = cognite_client
 
     _WRITE_PROPERTIES = {
-        "description",
+        "source",
+        "endTime",
         "metadata",
         "subtype",
-        "endTime",
-        "assetIds",
-        "type",
+        "description",
         "externalId",
         "startTime",
-        "source",
+        "type",
+        "assetIds",
     }
-    _READ_PROPERTIES = {"lastUpdatedTime", "createdTime", "id"}
+    _READ_PROPERTIES = {"createdTime", "id", "lastUpdatedTime"}
 
     # GenStop
 

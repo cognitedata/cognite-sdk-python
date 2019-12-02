@@ -1,4 +1,3 @@
-import copy
 import math
 from typing import *
 
@@ -46,8 +45,8 @@ class Sequence(CogniteResource):
         self.last_updated_time = last_updated_time
         self._cognite_client = cognite_client
 
-    _WRITE_PROPERTIES = {"description", "name", "metadata", "columns", "externalId", "assetId"}
-    _READ_PROPERTIES = {"lastUpdatedTime", "createdTime", "id"}
+    _WRITE_PROPERTIES = {"metadata", "assetId", "description", "externalId", "name", "columns"}
+    _READ_PROPERTIES = {"createdTime", "id", "lastUpdatedTime"}
 
     # GenStop
 

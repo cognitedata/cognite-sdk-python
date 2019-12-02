@@ -1,4 +1,3 @@
-import copy
 import threading
 from typing import *
 
@@ -81,8 +80,8 @@ class Asset(CogniteResource):
                 instance.aggregates = AggregateResultItem(**instance.aggregates)
         return instance
 
-    _WRITE_PROPERTIES = {"description", "name", "metadata", "parentId", "parentExternalId", "externalId", "source"}
-    _READ_PROPERTIES = {"aggregates", "rootId", "createdTime", "lastUpdatedTime", "id"}
+    _WRITE_PROPERTIES = {"source", "metadata", "description", "externalId", "parentId", "name", "parentExternalId"}
+    _READ_PROPERTIES = {"aggregates", "createdTime", "rootId", "id", "lastUpdatedTime"}
 
     # GenStop
 
