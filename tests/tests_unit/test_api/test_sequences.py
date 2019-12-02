@@ -203,6 +203,15 @@ class TestSequences:
             "items": [{"name": "blabla", "externalId": "1", "columns": [{"valueType": "STRING", "externalId": "a"}]}]
         } == jsgz_load(mock_seq_response.calls[0].request.body)
 
+    def test_create_column_snake_cased(self, mock_seq_response):
+        res = SEQ_API.create(
+            Sequence(external_id="1", name="blabla", columns=[{"external_id": "a", "value_type": "STRING"}])
+        )
+        assert isinstance(res, Sequence)
+        assert {
+            "items": [{"name": "blabla", "externalId": "1", "columns": [{"valueType": "STRING", "externalId": "a"}]}]
+        } == jsgz_load(mock_seq_response.calls[0].request.body)
+
     def test_create_multiple(self, mock_seq_response):
         res = SEQ_API.create([Sequence(external_id="1", name="blabla", columns=[{"externalId": "cid"}])])
         assert isinstance(res, SequenceList)

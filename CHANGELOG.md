@@ -21,6 +21,18 @@ Changes are grouped as follows
 
 ## Unreleased
 
+## [1.4.4] - 2019-12-2
+
+### Added
+ - Option to turn off version checking from CogniteClient constructor
+
+### Changed
+- In sequences create, the column definitions object accepts both camelCased and snake_cased keys.
+- Retry 429 on all endpoints
+
+### Fixed
+- Fixed notebook output for DatapointsList 
+
 ## [1.4.3] - 2019-11-27
 ### Fixed
 - In Jupyter notebooks, the output from built-in list types is no longer camel cased.
