@@ -58,7 +58,7 @@ def mock_get_datapoints(rsps):
 
     rsps.add_callback(
         rsps.POST,
-        DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/synthetic",
+        DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/synthetic/query",
         callback=request_callback,
         content_type="application/json",
     )
