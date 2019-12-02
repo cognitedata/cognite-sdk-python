@@ -19,15 +19,18 @@ Changes are grouped as follows
 - Upserts for all resource types
 - Separate read/write fields on data classes
 
-## [1.4.4] - 2019-11-29
+## [1.4.5] - 2019-12-02
 
-## [1.4.4] - 2019-12-2
+### Changed
+
+- The ModelHostingAPI now calls Model Hosting endpoints in playground instead of 0.6.
+
+## [1.4.4] - 2019-11-29
 
 ### Added
  - Option to turn off version checking from CogniteClient constructor
 
 ### Changed
-- The ModelHostingAPI now calls Model Hosting endpoints in playground instead of 0.6.
 - In sequences create, the column definitions object accepts both camelCased and snake_cased keys.
 - Retry 429 on all endpoints
 
