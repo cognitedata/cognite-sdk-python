@@ -8,6 +8,7 @@ from cognite.client.experimental import CogniteClient
 
 c = CogniteClient()
 
+
 @pytest.mark.dsl
 class TestRepr:
     def test_repr_html(self):
