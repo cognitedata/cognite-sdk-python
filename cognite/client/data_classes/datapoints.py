@@ -54,15 +54,16 @@ class Datapoint(CogniteResource):
         self.discrete_variance = discrete_variance
         self.total_variation = total_variation
 
-    def to_pandas(self) -> "pandas.DataFrame":
+    def to_pandas(self, camel_case=True) -> "pandas.DataFrame":
         """Convert the datapoint into a pandas DataFrame.
+             camel_case (bool): Convert column names to camel case (e.g. `stepInterpolation` instead of `step_interpolation`)
 
         Returns:
             pandas.DataFrame: The dataframe.
         """
         pd = utils._auxiliary.local_import("pandas")
 
-        dumped = self.dump(camel_case=True)
+        dumped = self.dump(camel_case=camel_case)
         timestamp = dumped.pop("timestamp")
 
         for k, v in dumped.items():
