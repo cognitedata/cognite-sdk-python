@@ -24,7 +24,7 @@ class Row(CogniteResource):
         self._cognite_client = cognite_client
 
     # GenStop
-    def to_pandas(self):
+    def to_pandas(self, **kwargs):
         """Convert the instance into a pandas DataFrame.
 
         Returns:
@@ -38,7 +38,7 @@ class RowList(CogniteResourceList):
     _RESOURCE = Row
     _ASSERT_CLASSES = False
 
-    def to_pandas(self):
+    def to_pandas(self, **kwargs):
         """Convert the instance into a pandas DataFrame.
 
         Returns:
@@ -64,7 +64,7 @@ class Table(CogniteResource):
         # GenStop
         self._db_name = None
 
-    def to_pandas(self):
+    def to_pandas(self, **kwargs):
         """Convert the instance into a pandas DataFrame.
 
         Returns:
@@ -107,7 +107,7 @@ class Database(CogniteResource):
 
     # GenStop
 
-    def to_pandas(self):
+    def to_pandas(self, **kwargs):
         """Convert the instance into a pandas DataFrame.
 
         Returns:

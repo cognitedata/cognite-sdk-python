@@ -147,18 +147,20 @@ class Asset(CogniteResource):
         """
         return self._cognite_client.files.list(asset_ids=[self.id], **kwargs)
 
-    def to_pandas(self, expand: List[str] = ("metadata", "aggregates"), ignore: List[str] = None):
+    def to_pandas(
+        self, expand: List[str] = ("metadata", "aggregates"), ignore: List[str] = None, camel_case: bool = True
+    ):
         """Convert the instance into a pandas DataFrame.
 
         Args:
             expand (List[str]): List of row keys to expand, only works if the value is a Dict.
-                Will expand metadata by default.
-            ignore (List[str]): List of row keys to not include when converting to a data frame.
+-            ignore (List[str]): List of row keys to not include when converting to a data frame.
+             camel_case (bool): Convert column names to camel case (e.g. `externalId` instead of `external_id`)
 
         Returns:
             pandas.DataFrame: The dataframe.
         """
-        return super().to_pandas(expand, ignore)
+        return super().to_pandas(expand=expand, ignore=ignore, camel_case=camel_case)
 
 
 # GenUpdateClass: AssetChange
