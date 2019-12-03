@@ -19,6 +19,9 @@ Changes are grouped as follows
 - Upserts for all resource types
 - Separate read/write fields on data classes
 
+## [1.4.6] - 2019-12-02
+- Fixed notebook output for Asset, Datapoint and Raw.
+
 ## [1.4.5] - 2019-12-02
 
 ### Changed
