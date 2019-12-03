@@ -154,8 +154,8 @@ class Asset(CogniteResource):
 
         Args:
             expand (List[str]): List of row keys to expand, only works if the value is a Dict.
--            ignore (List[str]): List of row keys to not include when converting to a data frame.
-             camel_case (bool): Convert column names to camel case (e.g. `externalId` instead of `external_id`)
+            ignore (List[str]): List of row keys to not include when converting to a data frame.
+            camel_case (bool): Convert column names to camel case (e.g. `externalId` instead of `external_id`)
 
         Returns:
             pandas.DataFrame: The dataframe.
