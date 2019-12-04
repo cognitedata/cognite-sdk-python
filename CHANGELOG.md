@@ -21,6 +21,9 @@ Changes are grouped as follows
 
 ## Unreleased
 
+### Added
+- parent external id filter added for assets.
+
 ### Fixed
 - startTime in event dataframes is now a nullable int dtype, consistent with endTime.
 
