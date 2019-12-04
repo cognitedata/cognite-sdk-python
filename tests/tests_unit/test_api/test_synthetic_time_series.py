@@ -10,10 +10,11 @@ from unittest.mock import PropertyMock
 
 import pytest
 
-from cognite.client import CogniteClient, utils
+from cognite.client import utils
 from cognite.client._api.datapoints import DatapointsBin, DatapointsFetcher, _DPTask, _DPWindow
 from cognite.client.data_classes import Datapoint, Datapoints, DatapointsList, DatapointsQuery
 from cognite.client.exceptions import CogniteAPIError, CogniteDuplicateColumnsError, CogniteNotFoundError
+from cognite.client.experimental import CogniteClient
 from tests.utils import jsgz_load, set_request_limit
 
 COGNITE_CLIENT = CogniteClient()
