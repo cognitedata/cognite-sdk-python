@@ -31,7 +31,7 @@ class SyntheticDatapointsAPI(APIClient):
 
         Examples:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.experimental import CogniteClient
                 >>> c = CogniteClient()
                 >>> dps = c.datapoints.synthetic.retrieve(expression="TS{id:123} + TS{externalId:'abc'}", start="2w-ago", end="now")
             """
