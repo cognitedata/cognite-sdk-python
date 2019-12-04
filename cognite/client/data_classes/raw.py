@@ -33,6 +33,9 @@ class Row(CogniteResource):
         pd = utils._auxiliary.local_import("pandas")
         return pd.DataFrame([self.columns], [self.key])
 
+    def _repr_html_(self):
+        return self.to_pandas()._repr_html_()
+
 
 class RowList(CogniteResourceList):
     _RESOURCE = Row
@@ -46,6 +49,9 @@ class RowList(CogniteResourceList):
         """
         pd = utils._auxiliary.local_import("pandas")
         return pd.DataFrame.from_dict(OrderedDict(((d.key, d.columns) for d in self.data)), orient="index")
+
+    def _repr_html_(self):
+        return self.to_pandas()._repr_html_()
 
 
 # GenClass: RawDBTable
@@ -63,14 +69,6 @@ class Table(CogniteResource):
 
         # GenStop
         self._db_name = None
-
-    def to_pandas(self):
-        """Convert the instance into a pandas DataFrame.
-
-        Returns:
-            pandas.DataFrame: The pandas DataFrame representing this instance.
-        """
-        return super().to_pandas([])
 
     def rows(self, key: str = None, limit: int = None) -> Union[Row, RowList]:
         """Get the rows in this table.
@@ -106,14 +104,6 @@ class Database(CogniteResource):
         self._cognite_client = cognite_client
 
     # GenStop
-
-    def to_pandas(self):
-        """Convert the instance into a pandas DataFrame.
-
-        Returns:
-            pandas.DataFrame: The pandas DataFrame representing this instance.
-        """
-        return super().to_pandas([])
 
     def tables(self, limit: int = None) -> TableList:
         """Get the tables in this database.

@@ -147,18 +147,20 @@ class Asset(CogniteResource):
         """
         return self._cognite_client.files.list(asset_ids=[self.id], **kwargs)
 
-    def to_pandas(self, expand: List[str] = ("metadata", "aggregates"), ignore: List[str] = None):
+    def to_pandas(
+        self, expand: List[str] = ("metadata", "aggregates"), ignore: List[str] = None, camel_case: bool = True
+    ):
         """Convert the instance into a pandas DataFrame.
 
         Args:
             expand (List[str]): List of row keys to expand, only works if the value is a Dict.
-                Will expand metadata by default.
             ignore (List[str]): List of row keys to not include when converting to a data frame.
+            camel_case (bool): Convert column names to camel case (e.g. `externalId` instead of `external_id`)
 
         Returns:
             pandas.DataFrame: The dataframe.
         """
-        return super().to_pandas(expand, ignore)
+        return super().to_pandas(expand=expand, ignore=ignore, camel_case=camel_case)
 
 
 # GenUpdateClass: AssetChange
@@ -310,6 +312,7 @@ class AssetFilter(CogniteFilter):
     Args:
         name (str): The name of the asset.
         parent_ids (List[int]): Return only the direct descendants of the specified assets.
+        parent_external_ids (List[str]): Return only the direct descendants of the specified assets.
         root_ids (List[Dict[str, Any]]): Only include these root assets and their descendants.
         asset_subtree_ids (List[Dict[str, Any]]): Only include assets in subtrees rooted at the specified assets.
         metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
@@ -325,6 +328,7 @@ class AssetFilter(CogniteFilter):
         self,
         name: str = None,
         parent_ids: List[int] = None,
+        parent_external_ids: List[str] = None,
         root_ids: List[Dict[str, Any]] = None,
         asset_subtree_ids: List[Dict[str, Any]] = None,
         metadata: Dict[str, str] = None,
@@ -337,6 +341,7 @@ class AssetFilter(CogniteFilter):
     ):
         self.name = name
         self.parent_ids = parent_ids
+        self.parent_external_ids = parent_external_ids
         self.root_ids = root_ids
         self.asset_subtree_ids = asset_subtree_ids
         self.metadata = metadata

@@ -19,8 +19,15 @@ Changes are grouped as follows
 - Upserts for all resource types
 - Separate read/write fields on data classes
 
+## Unreleased
+
 ### Added
 - Support for synthetic time series queries in the experimental client.
+
+## [1.4.6] - 2019-12-02
+
+### Fixed
+- Fixed notebook output for Asset, Datapoint and Raw.
 
 ## [1.4.5] - 2019-12-02
 
