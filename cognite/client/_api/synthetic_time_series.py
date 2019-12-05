@@ -14,7 +14,7 @@ class SyntheticDatapointsAPI(APIClient):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._DPS_LIMIT = 100000
+        self._DPS_LIMIT = 10000
 
     def retrieve(
         self, expression: str, start: Union[int, str, datetime], end: Union[int, str, datetime], limit: int = None
