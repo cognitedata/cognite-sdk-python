@@ -21,6 +21,8 @@ Changes are grouped as follows
 
 ## Unreleased
 
+## [1.4.7] - 2019-12-05
+
 ### Added
 - Support for synthetic time series queries in the experimental client.
 - parent external id filter added for assets.
