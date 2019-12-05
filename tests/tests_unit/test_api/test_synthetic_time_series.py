@@ -44,7 +44,7 @@ def mock_get_datapoints(rsps):
             else:
                 start, end = payload["start"], payload["end"]
 
-            limit = 100000
+            limit = 10000
             if "limit" in dps_query:
                 limit = dps_query["limit"]
             elif "limit" in payload:
@@ -81,7 +81,7 @@ class TestSyntheticQuery:
         dps_res = DPS_CLIENT.retrieve(expression='TS{externalID:"abc"} + TS{id:1} ', start=1000000, end=1100001)
         assert isinstance(dps_res, Datapoints)
         assert 100001 == len(dps_res)
-        assert 2 == len(mock_get_datapoints.calls)
+        assert 11 == len(mock_get_datapoints.calls)
 
     def test_retrieve_empty(self, mock_get_datapoints_empty):
         dps_res = DPS_CLIENT.retrieve(expression='TS{externalID:"abc"} + TS{id:1} ', start=1000000, end=1100001)
