@@ -1,17 +1,10 @@
-import math
 import re
-from datetime import datetime, timedelta
+from datetime import datetime
 from unittest import mock
 
-import numpy
-import pandas
 import pytest
 
-from cognite.client.data_classes import DatapointsQuery, TimeSeries
-from cognite.client.exceptions import CogniteAPIError
 from cognite.client.experimental import CogniteClient
-from cognite.client.utils._time import timestamp_to_ms
-from tests.utils import set_request_limit
 
 COGNITE_CLIENT = CogniteClient()
 
