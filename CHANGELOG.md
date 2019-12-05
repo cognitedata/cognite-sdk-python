@@ -21,13 +21,18 @@ Changes are grouped as follows
 
 ## Unreleased
 
+## [1.4.7] - 2019-12-05
+
 ### Added
+- Support for synthetic time series queries in the experimental client.
 - parent external id filter added for assets.
 
 ### Fixed
 - startTime in event dataframes is now a nullable int dtype, consistent with endTime.
 
 ## [1.4.6] - 2019-12-02
+
+### Fixed
 - Fixed notebook output for Asset, Datapoint and Raw.
 
 ## [1.4.5] - 2019-12-02
