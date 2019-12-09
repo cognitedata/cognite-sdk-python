@@ -54,15 +54,16 @@ class Datapoint(CogniteResource):
         self.discrete_variance = discrete_variance
         self.total_variation = total_variation
 
-    def to_pandas(self) -> "pandas.DataFrame":
+    def to_pandas(self, camel_case=True) -> "pandas.DataFrame":
         """Convert the datapoint into a pandas DataFrame.
+             camel_case (bool): Convert column names to camel case (e.g. `stepInterpolation` instead of `step_interpolation`)
 
         Returns:
             pandas.DataFrame: The dataframe.
         """
         pd = utils._auxiliary.local_import("pandas")
 
-        dumped = self.dump(camel_case=True)
+        dumped = self.dump(camel_case=camel_case)
         timestamp = dumped.pop("timestamp")
 
         for k, v in dumped.items():
@@ -233,7 +234,7 @@ class Datapoints:
     @classmethod
     def _load(cls, dps_object, expected_fields: List[str] = None, cognite_client=None):
         instance = cls()
-        instance.id = dps_object["id"]
+        instance.id = dps_object.get("id")
         instance.external_id = dps_object.get("externalId")
         instance.is_string = dps_object["isString"]  # should never be missing
         instance.is_step = dps_object.get("isStep")  # NB can be null if isString is true
@@ -325,6 +326,9 @@ class DatapointsList(CogniteResourceList):
             return df
 
         return pd.DataFrame()
+
+    def _repr_html_(self):
+        return self.to_pandas()._repr_html_()
 
     def plot(self, *args, **kwargs) -> None:
         """Plot the list of datapoints."""

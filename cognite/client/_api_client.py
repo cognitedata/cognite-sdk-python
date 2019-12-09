@@ -45,10 +45,9 @@ def _init_requests_session():
     adapter = HTTPAdapter(
         max_retries=RetryWithMaxBackoff(
             total=config.max_retries,
-            connect=config.max_retries,
-            read=0,
-            status=0,
             backoff_factor=0.5,
+            status_forcelist=[429],
+            method_whitelist=False,
             raise_on_status=False,
         ),
         pool_maxsize=config.max_connection_pool_size,
@@ -169,8 +168,6 @@ class APIClient:
         base_url = self._get_base_url_with_base_path()
         full_url = base_url + url_path
         is_retryable = self._is_retryable(method, full_url)
-        # Hack to allow running model hosting requests against local emulator
-        full_url = self._apply_model_hosting_emulator_url_filter(full_url)
         return is_retryable, full_url
 
     def _get_base_url_with_base_path(self):
@@ -240,6 +237,7 @@ class APIClient:
         resource_path: str = None,
         ids: Union[List[int], int] = None,
         external_ids: Union[List[str], str] = None,
+        ignore_unknown_ids=None,
         headers: Dict = None,
     ):
         cls = cls or self._LIST_CLASS
@@ -247,8 +245,9 @@ class APIClient:
         all_ids = self._process_ids(ids, external_ids, wrap_ids=wrap_ids)
         id_chunks = utils._auxiliary.split_into_chunks(all_ids, self._RETRIEVE_LIMIT)
 
+        ignore_unknown = {} if ignore_unknown_ids is None else {"ignoreUnknownIds": ignore_unknown_ids}
         tasks = [
-            {"url_path": resource_path + "/byids", "json": {"items": id_chunk}, "headers": headers}
+            {"url_path": resource_path + "/byids", "json": {"items": id_chunk, **ignore_unknown}, "headers": headers}
             for id_chunk in id_chunks
         ]
         tasks_summary = utils._concurrency.execute_tasks_concurrently(
@@ -675,13 +674,3 @@ class APIClient:
             headers["api-key"] = "***"
         if "Authorization" in headers:
             headers["Authorization"] = "***"
-
-    def _apply_model_hosting_emulator_url_filter(self, full_url):
-        mlh_emul_url = os.getenv("MODEL_HOSTING_EMULATOR_URL")
-        if mlh_emul_url is not None:
-            pattern = "{}/analytics/models(.*)".format(self._get_base_url_with_base_path())
-            res = re.match(pattern, full_url)
-            if res is not None:
-                path = res.group(1)
-                return "{}/projects/{}/models{}".format(mlh_emul_url, self._config.project, path)
-        return full_url

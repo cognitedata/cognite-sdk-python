@@ -40,5 +40,4 @@ from cognite.client.data_classes.types import (
     TypeDefinitionReference,
     TypeFilter,
     TypeList,
-    TypeUpdate,
 )

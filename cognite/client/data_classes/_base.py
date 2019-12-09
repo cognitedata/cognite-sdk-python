@@ -104,20 +104,21 @@ class CogniteResource:
             return instance
         raise TypeError("Resource must be json str or Dict, not {}".format(type(resource)))
 
-    def to_pandas(self, expand: List[str] = ("metadata",), ignore: List[str] = None):
+    def to_pandas(self, expand: List[str] = ("metadata",), ignore: List[str] = None, camel_case: bool = True):
         """Convert the instance into a pandas DataFrame.
 
         Args:
             expand (List[str]): List of row keys to expand, only works if the value is a Dict.
                 Will expand metadata by default.
             ignore (List[str]): List of row keys to not include when converting to a data frame.
+            camel_case (bool): Convert column names to camel case (e.g. `externalId` instead of `external_id`)
 
         Returns:
             pandas.DataFrame: The dataframe.
         """
         ignore = [] if ignore is None else ignore
         pd = utils._auxiliary.local_import("pandas")
-        dumped = self.dump(camel_case=True)
+        dumped = self.dump(camel_case=camel_case)
 
         for element in ignore:
             del dumped[element]
@@ -134,7 +135,7 @@ class CogniteResource:
         return df
 
     def _repr_html_(self):
-        return self.to_pandas()._repr_html_()
+        return self.to_pandas(camel_case=False)._repr_html_()
 
 
 class CognitePropertyClassUtil:
@@ -225,15 +226,15 @@ class CogniteResourceList(UserList):
             return self._id_to_item.get(id)
         return self._external_id_to_item.get(external_id)
 
-    def to_pandas(self) -> "pandas.DataFrame":
+    def to_pandas(self, camel_case=True) -> "pandas.DataFrame":
         """Convert the instance into a pandas DataFrame.
 
         Returns:
             pandas.DataFrame: The dataframe.
         """
         pd = utils._auxiliary.local_import("pandas")
-        df = pd.DataFrame(self.dump(camel_case=True))
-        nullable_int_fields = ["endTime", "assetId", "parentId"]
+        df = pd.DataFrame(self.dump(camel_case=camel_case))
+        nullable_int_fields = ["startTime", "endTime", "assetId", "parentId"]
         try:
             for field in nullable_int_fields:
                 if field in df:
@@ -243,7 +244,7 @@ class CogniteResourceList(UserList):
         return df
 
     def _repr_html_(self):
-        return self.to_pandas()._repr_html_()
+        return self.to_pandas(camel_case=False)._repr_html_()
 
     @classmethod
     def _load(cls, resource_list: Union[List, str], cognite_client=None):

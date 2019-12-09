@@ -19,6 +19,60 @@ Changes are grouped as follows
 - Upserts for all resource types
 - Separate read/write fields on data classes
 
+## Unreleased
+
+## [1.4.7] - 2019-12-05
+
+### Added
+- Support for synthetic time series queries in the experimental client.
+- parent external id filter added for assets.
+
+### Fixed
+- startTime in event dataframes is now a nullable int dtype, consistent with endTime.
+
+## [1.4.6] - 2019-12-02
+
+### Fixed
+- Fixed notebook output for Asset, Datapoint and Raw.
+
+## [1.4.5] - 2019-12-02
+
+### Changed
+
+- The ModelHostingAPI now calls Model Hosting endpoints in playground instead of 0.6.
+
+## [1.4.4] - 2019-11-29
+
+### Added
+ - Option to turn off version checking from CogniteClient constructor
+
+### Changed
+- In sequences create, the column definitions object accepts both camelCased and snake_cased keys.
+- Retry 429 on all endpoints
+
+### Fixed
+- Fixed notebook output for DatapointsList 
+
+## [1.4.3] - 2019-11-27
+### Fixed
+- In Jupyter notebooks, the output from built-in list types is no longer camel cased.
+
+## [1.4.2] - 2019-11-27
+
+### Changed
+- In the 3D API, the call and list methods now include all models by default instead of only unpublished ones.
+- In Jupyter notebooks, the output from built-in types is no longer camel cased.
+
+### Added
+- Support for filtering events by asset subtree ids.
+
+## [1.4.1] - 2019-11-18
+
+### Added
+- Support for filtering events by asset external id.
+- query parameter on asset search.
+- `ignore_unknown_ids` parameter on asset and events method `delete` and `retrieve_multiple`.
+
 ## [1.4.0] - 2019-11-14
 
 ### Changed

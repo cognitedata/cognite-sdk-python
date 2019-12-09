@@ -76,13 +76,20 @@ class TestEvents:
         assert "max" not in jsgz_load(mock_events_response.calls[0].request.body)["filter"]["startTime"]
 
     def test_call_root(self, mock_events_response):
-        list(EVENTS_API.__call__(root_asset_ids=[23], root_asset_external_ids=["a", "b"], limit=10))
+        list(
+            EVENTS_API.__call__(
+                root_asset_ids=[23], root_asset_external_ids=["a", "b"], asset_subtree_external_ids=["a"], limit=10
+            )
+        )
         calls = mock_events_response.calls
         assert 1 == len(calls)
         assert {
             "cursor": None,
             "limit": 10,
-            "filter": {"rootAssetIds": [{"id": 23}, {"externalId": "a"}, {"externalId": "b"}]},
+            "filter": {
+                "rootAssetIds": [{"id": 23}, {"externalId": "a"}, {"externalId": "b"}],
+                "assetSubtreeIds": [{"externalId": "a"}],
+            },
         } == jsgz_load(calls[0].request.body)
 
     def test_list_root_ids_list(self, mock_events_response):
@@ -101,6 +108,16 @@ class TestEvents:
             "cursor": None,
             "limit": 10,
             "filter": {"rootAssetIds": [{"externalId": "1"}, {"externalId": "2"}]},
+        } == jsgz_load(calls[0].request.body)
+
+    def test_list_subtree(self, mock_events_response):
+        res = EVENTS_API.list(limit=10, asset_subtree_external_ids=["a"], asset_subtree_ids=[1, 2])
+        calls = mock_events_response.calls
+        assert 1 == len(calls)
+        assert {
+            "cursor": None,
+            "limit": 10,
+            "filter": {"assetSubtreeIds": [{"id": 1}, {"id": 2}, {"externalId": "a"}]},
         } == jsgz_load(calls[0].request.body)
 
     def test_create_single(self, mock_events_response):
@@ -123,12 +140,14 @@ class TestEvents:
 
     def test_delete_single(self, mock_events_response):
         res = EVENTS_API.delete(id=1)
-        assert {"items": [{"id": 1}]} == jsgz_load(mock_events_response.calls[0].request.body)
+        assert {"ignoreUnknownIds": False, "items": [{"id": 1}]} == jsgz_load(
+            mock_events_response.calls[0].request.body
+        )
         assert res is None
 
     def test_delete_multiple(self, mock_events_response):
-        res = EVENTS_API.delete(id=[1])
-        assert {"items": [{"id": 1}]} == jsgz_load(mock_events_response.calls[0].request.body)
+        res = EVENTS_API.delete(id=[1], ignore_unknown_ids=True)
+        assert {"ignoreUnknownIds": True, "items": [{"id": 1}]} == jsgz_load(mock_events_response.calls[0].request.body)
         assert res is None
 
     def test_update_with_resource_class(self, mock_events_response):

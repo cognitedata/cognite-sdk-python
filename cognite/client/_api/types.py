@@ -2,7 +2,7 @@ from typing import *
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes import ParentTypeDefinitionFilter, Type, TypeFilter, TypeList, TypeUpdate
+from cognite.client.data_classes import ParentTypeDefinitionFilter, Type, TypeFilter, TypeList
 
 
 class TypesAPI(APIClient):
@@ -162,6 +162,15 @@ class TypesAPI(APIClient):
         """
         self._delete_multiple(ids=id, external_ids=external_id, wrap_ids=True, extra_body_fields={"soft": soft})
 
+    def update(self, id: int, version: int, new_version: Type) -> Union[Type, TypeList]:
+        """`Update one or more type definitions <https://docs.cognite.com/api/playground/#operation/updateTypeDefinitions>`_
+
+        Args:
+            item (Union[Type, TypeUpdate, List[Union[Type, TypeUpdate]]]): Type(s) to update
+
+        Returns:
+            Union[Type, TypeList]: Updated Type(s)"""
+
 
 #    def update(self, item: Union[Type, TypeUpdate, List[Union[Type, TypeUpdate]]]) -> Union[Type, TypeList]:
 #        """`Update one or more type definitions <https://docs.cognite.com/api/playground/#operation/updateTypeDefinitions>`_
@@ -170,6 +179,7 @@ class TypesAPI(APIClient):
 #            item (Union[Type, TypeUpdate, List[Union[Type, TypeUpdate]]]): Type(s) to update
 #
 #        Returns:
+
 #            Union[Type, TypeList]: Updated Type(s)
 #
 #        Examples:

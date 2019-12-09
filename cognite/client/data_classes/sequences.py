@@ -85,7 +85,7 @@ class SequenceFilter(CogniteFilter):
         external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
         metadata (Dict[str, Any]): Filter the sequences by metadata fields and values (case-sensitive). Format is {"key1":"value1","key2":"value2"}.
         asset_ids (List[int]): Return only sequences linked to one of the specified assets.
-        root_asset_ids (List[int]): Return only sequences linked to assets with one of these assets as the root asset.
+        root_asset_ids (List[int]): Only include sequences that have a related asset in a tree rooted at any of these root assetIds.
         created_time (Dict[str, Any]): Filter out sequences with createdTime outside this range.
         last_updated_time (Dict[str, Any]): Filter out sequences with lastUpdatedTime outside this range.
         cognite_client (CogniteClient): The client to associate with this object.

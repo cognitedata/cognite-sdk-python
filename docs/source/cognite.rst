@@ -873,8 +873,8 @@ Model Hosting
 
 Models
 ^^^^^^
-Retrieve model by id
-~~~~~~~~~~~~~~~~~~~~
+Retrieve model by name
+~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.model_hosting.models.ModelsAPI.get_model
 
 List models
@@ -904,8 +904,8 @@ Perform online prediction
 
 Model Versions
 ^^^^^^^^^^^^^^
-Retrieve model version by id
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Retrieve model version by name
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.model_hosting.versions.ModelVersionsAPI.get_model_version
 
 List model versions
@@ -958,8 +958,8 @@ Download an artifact for a model version
 
 Schedules
 ^^^^^^^^^
-Retrieve schedule by id
-~~~~~~~~~~~~~~~~~~~~~~~
+Retrieve schedule by name
+~~~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.model_hosting.schedules.SchedulesAPI.get_schedule
 
 List schedules
@@ -1065,3 +1065,12 @@ Data classes
 .. automodule:: cognite.client.data_classes.relationships
     :members:
     :show-inheritance:
+
+Synthetic time series
+---------------------
+.. WARNING::
+    The synthetic time series API is experimental and subject to breaking changes. It should not be used in production code.
+
+Calculate the result of a function on time series
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.synthetic_time_series.SyntheticDatapointsAPI.retrieve

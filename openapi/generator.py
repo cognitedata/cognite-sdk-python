@@ -171,6 +171,7 @@ class ClassGenerator:
 
     @staticmethod
     def _get_schema_properties(schema):
+        print(schema)
         if "allOf" in schema:
             properties = {}
             for s in schema["allOf"]:
@@ -312,8 +313,8 @@ class UpdateClassGenerator:
 
 
 class CodeGenerator:
-    def __init__(self, spec_url: str = None, spec_path: str = None):
-        self.open_api_spec = OpenAPISpec(url=spec_url, path=spec_path)
+    def __init__(self, spec_url: str = None, spec_path: str = None, exclude_schemas=()):
+        self.open_api_spec = OpenAPISpec(url=spec_url, path=spec_path, exclude_schemas=exclude_schemas)
 
     def generate(self, input: str, output):
         generated = self.generate_to_str(input)

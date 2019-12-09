@@ -40,9 +40,6 @@ class Asset(CogniteResource):
         id (int): Javascript friendly internal ID given to the object.
         aggregates (List[Dict[str, Any]]): No description.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        root_id (int): Javascript friendly internal ID given to the object.
-        parent_external_id (str): External Id provided by client. Should be unique within the project.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
@@ -146,19 +143,19 @@ class Asset(CogniteResource):
         return self._cognite_client.files.list(asset_ids=[self.id], **kwargs)
 
     def to_pandas(
-        self, expand: List[str] = ("metadata",), ignore: List[str] = None
-    ):  # TODO: expand , "aggregates" after starbase reverts change
+        self, expand: List[str] = ("metadata", "aggregates"), ignore: List[str] = None, camel_case: bool = True
+    ):
         """Convert the instance into a pandas DataFrame.
 
         Args:
             expand (List[str]): List of row keys to expand, only works if the value is a Dict.
-                Will expand metadata by default.
             ignore (List[str]): List of row keys to not include when converting to a data frame.
+            camel_case (bool): Convert column names to camel case (e.g. `externalId` instead of `external_id`)
 
         Returns:
             pandas.DataFrame: The dataframe.
         """
-        return super().to_pandas(expand, ignore)
+        return super().to_pandas(expand=expand, ignore=ignore, camel_case=camel_case)
 
 
 # GenUpdateClass: AssetChange
@@ -325,13 +322,6 @@ class AssetFilter(CogniteFilter):
     """No description.
 
     Args:
-        name (str): Name of asset. Often referred to as tag.
-        parent_ids (List[int]): No description.
-        root_ids (List[Dict[str, Any]]): Id of the asset on top of the hierarchy.
-        metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value
-        source (str): The source of this asset
-        created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
-        last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
         root (bool): filtered assets are root assets or not
         external_id_prefix (str): External Id provided by client. Should be unique within the project.
         types (List[Dict[str, Any]]): No description.
@@ -342,7 +332,9 @@ class AssetFilter(CogniteFilter):
         self,
         name: str = None,
         parent_ids: List[int] = None,
+        parent_external_ids: List[str] = None,
         root_ids: List[Dict[str, Any]] = None,
+        asset_subtree_ids: List[Dict[str, Any]] = None,
         metadata: Dict[str, str] = None,
         source: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
@@ -354,7 +346,9 @@ class AssetFilter(CogniteFilter):
     ):
         self.name = name
         self.parent_ids = parent_ids
+        self.parent_external_ids = parent_external_ids
         self.root_ids = root_ids
+        self.asset_subtree_ids = asset_subtree_ids
         self.metadata = metadata
         self.source = source
         self.created_time = created_time

@@ -117,12 +117,6 @@ class TypeFilter(CogniteFilter):
     # GenStop
 
 
-# Gen UpdateClass: TypeDefinitionUpdate
-class TypeUpdate(CogniteUpdate):
-    pass
-    # GenStop
-
-
 class TypeList(CogniteResourceList):
     _RESOURCE = Type
-    _UPDATE = TypeUpdate
+    _UPDATE = None

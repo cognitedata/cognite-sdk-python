@@ -29,7 +29,7 @@ class ThreeDModelsAPI(APIClient):
     _LIST_CLASS = ThreeDModelList
 
     def __call__(
-        self, chunk_size: int = None, published: bool = False, limit: int = None
+        self, chunk_size: int = None, published: bool = None, limit: int = None
     ) -> Generator[Union[ThreeDModel, ThreeDModelList], None, None]:
         """Iterate over 3d models
 
@@ -75,7 +75,7 @@ class ThreeDModelsAPI(APIClient):
         """
         return self._retrieve(id)
 
-    def list(self, published: bool = False, limit: int = 25) -> ThreeDModelList:
+    def list(self, published: bool = None, limit: int = 25) -> ThreeDModelList:
         """`List 3d models. <https://docs.cognite.com/api/v1/#operation/get3DModels>`_
 
         Args:
