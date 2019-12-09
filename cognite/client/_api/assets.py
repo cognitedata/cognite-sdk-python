@@ -70,7 +70,6 @@ class AssetsAPI(APIClient):
         filter = AssetFilter(
             name=name,
             parent_ids=parent_ids,
-            parent_external_ids=parent_external_ids,
             root_ids=root_ids,
             asset_subtree_ids=asset_subtree_ids,
             metadata=metadata,
@@ -240,7 +239,6 @@ class AssetsAPI(APIClient):
         filter = AssetFilter(
             name=name,
             parent_ids=parent_ids,
-            parent_external_ids=parent_external_ids,
             root_ids=root_ids,
             asset_subtree_ids=asset_subtree_ids,
             metadata=metadata,

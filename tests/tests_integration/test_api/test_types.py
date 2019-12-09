@@ -4,7 +4,7 @@ from unittest import mock
 import pytest
 
 import cognite.client.utils._time
-from cognite.client.data_classes import Asset, AssetUpdate, Type, TypeFilter, TypeList, TypeUpdate
+from cognite.client.data_classes import Asset, AssetUpdate, Type, TypeFilter, TypeList
 from cognite.client.experimental import CogniteClient
 from cognite.client.utils._auxiliary import random_string
 from tests.utils import set_request_limit
@@ -18,7 +18,7 @@ def new_type():
         Type(external_id=random_string(30), properties=[{"propertyId": "prop", "type": "string"}])
     )
     yield tp
-    COGNITE_CLIENT.types.delete(external_id=tp.external_id, soft=False)
+    COGNITE_CLIENT.types.delete(external_id=tp.external_id)
     # assert COGNITE_CLIENT.types.retrieve(external_id=tp.external_id) is None
 
 
@@ -35,7 +35,7 @@ class TestTypesAPI:
 
     def test_retrieve_id(self):
         res = COGNITE_CLIENT.types.list()
-        assert res[0] == COGNITE_CLIENT.types.retrieve(id=res[0].internal_id)
+        assert res[0] == COGNITE_CLIENT.types.retrieve(id=res[0].id)
 
     def test_retrieve_multiple(self):
         res_listed_ids = [e.external_id for e in COGNITE_CLIENT.types.list()[:2]]
@@ -49,7 +49,9 @@ class TestTypesAPI:
         assert 1 == COGNITE_CLIENT.types._post.call_count
 
     def test_create_asset_with_type(self, new_type):
-        types = [{"type": {"externalId": new_type.external_id, "version": new_type.version}, "object": {"prop": "str"}}]
+        types = [
+            {"type": {"externalId": new_type.external_id, "version": new_type.version}, "properties": {"prop": "str"}}
+        ]
         ac = COGNITE_CLIENT.assets.create(Asset(name="any", types=types))
         assert isinstance(ac, Asset)
         del ac.types[0]["type"]["id"]
@@ -57,20 +59,19 @@ class TestTypesAPI:
         COGNITE_CLIENT.assets.delete(id=ac.id)
 
     def test_update_asset_with_type(self, new_type):
-        ac = COGNITE_CLIENT.assets.create(Asset(name="any"))
+        ac = COGNITE_CLIENT.assets.create(Asset(name="any", description="delete me"))
         assert not ac.types
         update = AssetUpdate(id=ac.id)
-        update = update.set_type(
-            type={"externalId": new_type.external_id, "version": new_type.version}, properties={"prop": "str"}
-        )
+        update = update.put_type(external_id=new_type.external_id, version=new_type.version, properties={"prop": "str"})
         assert isinstance(update, AssetUpdate)
         ua = COGNITE_CLIENT.assets.update(update)
         assert len(ua.types) == 1
         assert new_type.external_id == ua.types[0]["type"]["externalId"]
+
+        update = AssetUpdate(id=ac.id)
+        update = update.remove_type(external_id=new_type.external_id, version=new_type.version)
+        assert isinstance(update, AssetUpdate)
+        ua = COGNITE_CLIENT.assets.update(update)
+
+        assert not ua.types
         COGNITE_CLIENT.assets.delete(id=ac.id)
-
-
-#    def test_update(self, new_type):
-#        update_asset = TypeUpdate(new_type.external_id).description.set("bla")
-#        res = COGNITE_CLIENT.types.update(update_asset)
-#        assert "bla" == res.description
