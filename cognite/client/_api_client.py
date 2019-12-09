@@ -370,7 +370,6 @@ class APIClient:
             other_params=other_params,
             headers=headers,
         ):
-            print(resource_list, resource_list.__class__)
             items.extend(resource_list.data)
         return cls(items, cognite_client=self._cognite_client)
 

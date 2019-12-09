@@ -19,6 +19,62 @@ class TypesAPI(APIClient):
         """
         return self.__call__()
 
+    def __call__(
+        self,
+        name: str = None,
+        external_id_prefix: str = None,
+        type_subtree: Union[Dict[str, Any], ParentTypeDefinitionFilter] = None,
+        limit: int = None,
+    ):
+        filter = TypeFilter(name=name, external_id_prefix=external_id_prefix, type_subtree=type_subtree).dump(
+            camel_case=True
+        )
+        return self._list_generator(method="POST", limit=limit, filter=filter)
+
+    def list(
+        self,
+        name: str = None,
+        external_id_prefix: str = None,
+        type_subtree: Union[Dict[str, Any], ParentTypeDefinitionFilter] = None,
+        limit: int = 25,
+    ) -> TypeList:
+        """`List Types <https://docs.cognite.com/api/playground/#operation/listTypes>`_
+
+        Args:
+            name (str): returns the type definitions matching that name
+            external_id_prefix (str): filter external ids starting with the prefix specified
+            root_parent (Union[Dict[str, Any], ParentTypeDefinitionFilter]): filter for type definitions that belong to the subtree defined by the root parent type specified
+
+        Returns:
+            TypeList: List of requested Types
+
+        Examples:
+
+            List Types and filter on name::
+
+                >>> from cognite.client.experimental import CogniteClient
+                >>> c = CogniteClient()
+                >>> file_list = c.types.list(limit=5, name="name")
+
+            Iterate over type definitions::
+
+                >>> from cognite.client.experimental import CogniteClient
+                >>> c = CogniteClient()
+                >>> for type in c.types:
+                ...     type # do something with the  type definition
+
+            Iterate over chunks of type definitions to reduce memory load::
+
+                >>> from cognite.client.experimental import CogniteClient
+                >>> c = CogniteClient()
+                >>> for type_list in c.types(chunk_size=2500):
+                ...     type_list # do something with the type definitions
+        """
+        filter = TypeFilter(name=name, external_id_prefix=external_id_prefix, type_subtree=type_subtree).dump(
+            camel_case=True
+        )
+        return self._list(method="POST", limit=limit, filter=filter)
+
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[Type]:
         """`Retrieve a single type definition by id. <https://docs.cognite.com/api/playground/#operation/getTypes>`_
 
@@ -74,50 +130,6 @@ class TypesAPI(APIClient):
         utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=True)
         return self._retrieve_multiple(ids=ids, external_ids=external_ids, wrap_ids=True)
 
-    def list(
-        self,
-        name: str = None,
-        external_id_prefix: str = None,
-        root_parent: Union[Dict[str, Any], ParentTypeDefinitionFilter] = None,
-    ) -> TypeList:
-        """`List Types <https://docs.cognite.com/api/playground/#operation/listTypes>`_
-
-        Args:
-            name (str): returns the type definitions matching that name
-            external_id_prefix (str): filter external ids starting with the prefix specified
-            root_parent (Union[Dict[str, Any], ParentTypeDefinitionFilter]): filter for type definitions that belong to the subtree defined by the root parent type specified
-
-        Returns:
-            TypeList: List of requested Types
-
-        Examples:
-
-            List Types and filter on name::
-
-                >>> from cognite.client.experimental import CogniteClient
-                >>> c = CogniteClient()
-                >>> file_list = c.types.list(limit=5, name="name")
-
-            Iterate over type definitions::
-
-                >>> from cognite.client.experimental import CogniteClient
-                >>> c = CogniteClient()
-                >>> for type in c.types:
-                ...     type # do something with the  type definition
-
-            Iterate over chunks of type definitions to reduce memory load::
-
-                >>> from cognite.client.experimental import CogniteClient
-                >>> c = CogniteClient()
-                >>> for type_list in c.types(chunk_size=2500):
-                ...     type_list # do something with the type definitions
-        """
-        filter = TypeFilter(name=name, external_id_prefix=external_id_prefix, root_parent=root_parent).dump(
-            camel_case=True
-        )
-        res = self._post(url_path=self._RESOURCE_PATH + "/list", json={"filter": filter}).json()["items"]
-        return TypeList._load(res)  # SDK does not like lack of limit/cursor
-
     def create(self, Type: Union[Type, List[Type]]) -> Union[Type, TypeList]:
         """`Create one or more Types. <https://docs.cognite.com/api/playground/#operation/createTypeDefinitions>`_
 
@@ -141,14 +153,17 @@ class TypesAPI(APIClient):
         return self._create_multiple(items=Type)
 
     def delete(
-        self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None, soft: bool = True
+        self,
+        id: Union[int, List[int]] = None,
+        external_id: Union[str, List[str]] = None,
+        ignore_unknown_ids: bool = False,
     ) -> None:
         """`Delete one or more type definitions <https://docs.cognite.com/api/playground/#operation/deleteTypes>`_
 
         Args:
             id (Union[int, List[int]): Id or list of ids
             external_id (Union[str, List[str]]): External ID or list of external ids
-            soft (bool): If true, only marks the object as deleted.
+            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found
 
         Returns:
             None
@@ -160,44 +175,23 @@ class TypesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.types.delete(id=[1,2,3], external_id="3",soft=False)
         """
-        self._delete_multiple(ids=id, external_ids=external_id, wrap_ids=True, extra_body_fields={"soft": soft})
+        self._delete_multiple(
+            ids=id, external_ids=external_id, wrap_ids=True
+        )  # , extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids}
 
-    def update(self, id: int, version: int, new_version: Type) -> Union[Type, TypeList]:
-        """`Update one or more type definitions <https://docs.cognite.com/api/playground/#operation/updateTypeDefinitions>`_
+    def update(self, version: int, new_version: Type, id: int = None, external_id: str = None) -> Union[Type, TypeList]:
+        """`Update a type definition <https://docs.cognite.com/api/playground/#operation/updateTypeDefinitions>`_
 
         Args:
-            item (Union[Type, TypeUpdate, List[Union[Type, TypeUpdate]]]): Type(s) to update
+            id: id of the type
+            external_id: external id of the type. If both external_id and id are not passed, the external_id of the `new_version` will be used.
+            version: version of the type
+            new_version: new type specification
 
         Returns:
-            Union[Type, TypeList]: Updated Type(s)"""
-
-
-#    def update(self, item: Union[Type, TypeUpdate, List[Union[Type, TypeUpdate]]]) -> Union[Type, TypeList]:
-#        """`Update one or more type definitions <https://docs.cognite.com/api/playground/#operation/updateTypeDefinitions>`_
-#
-#        Args:
-#            item (Union[Type, TypeUpdate, List[Union[Type, TypeUpdate]]]): Type(s) to update
-#
-#        Returns:
-
-#            Union[Type, TypeList]: Updated Type(s)
-#
-#        Examples:
-#
-#            Update an type definition that you have fetched. This will perform a full update of the Type::
-#
-#                >>> from cognite.client.experimental import CogniteClient
-#                >>> c = CogniteClient()
-#                >>> Type = c.types.retrieve(id=1)
-#                >>> Type.description = "New description"
-#                >>> res = c.types.update(Type)
-#
-#            Perform a partial update on a type definition, updating the description and updating the properties::
-#
-#                >>> from cognite.client.experimental import CogniteClient
-#                >>> from cognite.client.data_classes import TypeUpdate
-#                >>> c = CogniteClient()
-#                >>> my_update = TypeUpdate(id=1).description.set("New description").properties.set([{"name": "value"}])
-#                >>> res = c.types.update(my_update)
-#        """
-#        return self._update_multiple(items=item)
+            Type: Updated Type"""
+        external_id = external_id or new_version.external_id
+        assert external_id == new_version.external_id
+        utils._auxiliary.assert_at_least_one_of_id_or_external_id(id, external_id)
+        json = {"id": id, "external_id": external_id, "version": version, "set": new_version.dump(camel_case=True)}
+        return Type._load(self._post(url_path=self._RESOURCE_PATH + "/update", json=json).json()["items"][0])

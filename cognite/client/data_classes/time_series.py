@@ -127,7 +127,9 @@ class TimeSeriesFilter(CogniteFilter):
         is_step (bool): Filter on isStep.
         metadata (Dict[str, Any]): Filter out timeseries that do not match these metadata fields and values (case-sensitive). The format is {"key1":"value1","key2":"value2"}.
         asset_ids (List[int]): Filter out time series that are not linked to any of these assets.
+        asset_external_ids (List[str]): Asset External IDs of related equipment that this time series relates to.
         root_asset_ids (List[int]): Only include time series that have a related asset in a tree rooted at any of these root assetIds.
+        asset_subtree_ids (List[Dict[str, Any]]): Only include time series that are related to an asset in a subtree rooted at any of these assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
         external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
         created_time (Dict[str, Any]): Filter out time series with createdTime outside this range.
         last_updated_time (Dict[str, Any]): Filter out time series with lastUpdatedTime outside this range.
@@ -142,7 +144,9 @@ class TimeSeriesFilter(CogniteFilter):
         is_step: bool = None,
         metadata: Dict[str, Any] = None,
         asset_ids: List[int] = None,
+        asset_external_ids: List[str] = None,
         root_asset_ids: List[int] = None,
+        asset_subtree_ids: List[Dict[str, Any]] = None,
         external_id_prefix: str = None,
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
@@ -154,7 +158,9 @@ class TimeSeriesFilter(CogniteFilter):
         self.is_step = is_step
         self.metadata = metadata
         self.asset_ids = asset_ids
+        self.asset_external_ids = asset_external_ids
         self.root_asset_ids = root_asset_ids
+        self.asset_subtree_ids = asset_subtree_ids
         self.external_id_prefix = external_id_prefix
         self.created_time = created_time
         self.last_updated_time = last_updated_time

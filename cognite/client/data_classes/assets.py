@@ -40,6 +40,9 @@ class Asset(CogniteResource):
         id (int): Javascript friendly internal ID given to the object.
         aggregates (List[Dict[str, Any]]): No description.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        root_id (int): Javascript friendly internal ID given to the object.
+        parent_external_id (str): The external ID of the parent. This will be resolved to an internal ID and stored as `parentId`.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
@@ -219,26 +222,30 @@ class AssetUpdate(CogniteUpdate):
     def parent_external_id(self):
         return AssetUpdate._PrimitiveAssetUpdate(self, "parentExternalId")
 
-    @property
-    def types(self):
-        return AssetUpdate._PrimitiveAssetUpdate(self, "types")
-
     # GenStop
 
     @property
     def types(self):
-        raise Exception("Use the set_type and remove_type functions to handle types")
+        raise Exception("Use the put_type and remove_type functions to handle type updates")
 
-    def set_type(self, type: Dict[str, Any], properties: Dict[str, Any]):
+    def put_type(self, properties: Dict[str, Any], version: int, id: int = None, external_id: str = None):
+        """Upsert the type information on the asset"""
         if self._update_object.get("types") is None:
-            self._update_object["types"] = []
-        self._update_object["types"].append({"type": type, "set": properties})
+            self._update_object["types"] = {}
+        if self._update_object["types"].get("put") is None:
+            self._update_object["types"]["put"] = []
+        self._update_object["types"]["put"].append(
+            {"type": {"id": id, "externalId": external_id, "version": version}, "properties": properties}
+        )
         return self
 
-    def remove_type(self, type: Dict[str, Any]):
+    def remove_type(self, version: int, id: int = None, external_id: str = None):
+        """Remove type information from an asset"""
         if self._update_object.get("types") is None:
-            self._update_object["types"] = []
-        self._update_object["types"].append({"type": type, "setNull": True})
+            self._update_object["types"] = {}
+        if self._update_object["types"].get("remove") is None:
+            self._update_object["types"]["remove"] = []
+        self._update_object["types"]["remove"].append({"id": id, "externalId": external_id, "version": version})
         return self
 
 
@@ -322,6 +329,14 @@ class AssetFilter(CogniteFilter):
     """No description.
 
     Args:
+        name (str): Name of asset. Often referred to as tag.
+        parent_ids (List[int]): Return only the direct descendants of the specified assets.
+        root_ids (List[Dict[str, Any]]): Only include these root assets and their descendants.
+        asset_subtree_ids (List[Dict[str, Any]]): Only include assets in subtrees rooted at the specified assets. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+        metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value
+        source (str): The source of this asset
+        created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
+        last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
         root (bool): filtered assets are root assets or not
         external_id_prefix (str): External Id provided by client. Should be unique within the project.
         types (List[Dict[str, Any]]): No description.
@@ -332,7 +347,6 @@ class AssetFilter(CogniteFilter):
         self,
         name: str = None,
         parent_ids: List[int] = None,
-        parent_external_ids: List[str] = None,
         root_ids: List[Dict[str, Any]] = None,
         asset_subtree_ids: List[Dict[str, Any]] = None,
         metadata: Dict[str, str] = None,
@@ -346,7 +360,6 @@ class AssetFilter(CogniteFilter):
     ):
         self.name = name
         self.parent_ids = parent_ids
-        self.parent_external_ids = parent_external_ids
         self.root_ids = root_ids
         self.asset_subtree_ids = asset_subtree_ids
         self.metadata = metadata

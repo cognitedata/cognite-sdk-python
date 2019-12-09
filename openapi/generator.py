@@ -171,7 +171,12 @@ class ClassGenerator:
 
     @staticmethod
     def _get_schema_properties(schema):
-        print(schema)
+        if "oneOf" in schema:
+            properties = {}
+            for oneof_schema in schema["oneOf"]:
+                properties.update(UpdateClassGenerator._get_schema_properties(oneof_schema))
+            return properties
+
         if "allOf" in schema:
             properties = {}
             for s in schema["allOf"]:

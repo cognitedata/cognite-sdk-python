@@ -71,6 +71,7 @@ class FileMetadataFilter(CogniteFilter):
         metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         asset_ids (List[int]): Only include files that reference these specific asset IDs.
         root_asset_ids (List[Dict[str, Any]]): Only include files that have a related asset in a tree rooted at any of these root assetIds.
+        asset_subtree_ids (List[Dict[str, Any]]): Only include files that have a related asset in a subtree rooted at any of these assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
         source (str): The source of this event.
         created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
         last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
@@ -89,6 +90,7 @@ class FileMetadataFilter(CogniteFilter):
         metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
         root_asset_ids: List[Dict[str, Any]] = None,
+        asset_subtree_ids: List[Dict[str, Any]] = None,
         source: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
@@ -104,6 +106,7 @@ class FileMetadataFilter(CogniteFilter):
         self.metadata = metadata
         self.asset_ids = asset_ids
         self.root_asset_ids = root_asset_ids
+        self.asset_subtree_ids = asset_subtree_ids
         self.source = source
         self.created_time = created_time
         self.last_updated_time = last_updated_time
