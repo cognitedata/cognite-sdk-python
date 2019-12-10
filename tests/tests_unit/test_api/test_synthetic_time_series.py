@@ -101,3 +101,19 @@ class TestSyntheticQuery:
             symbols("a") + symbols("b") + symbols("c"), {"a": "x", "b": "y", "c": "z"}
         )
         assert "(1/ts{externalId:'a'})" == DPS_CLIENT._build_expression(1 / symbols("a"), {"a": "a"})
+
+    @pytest.mark.dsl
+    def test_expression_builder_variables_missing(self):
+        from sympy import symbols
+
+        with pytest.raises(
+            ValueError, match="sympy expressions are only supported in combination with the `variables` parameter"
+        ):
+            DPS_CLIENT.retrieve(symbols("a"), start=0, end="now")
+
+    @pytest.mark.dsl
+    def test_expression_builder_unsupported_missing(self):
+        from sympy import symbols, cot
+
+        with pytest.raises(ValueError, match="Unsupported sympy class cot"):
+            DPS_CLIENT.retrieve(symbols("a") + cot(symbols("a")), start=0, end="now", variables={"a": "a"})

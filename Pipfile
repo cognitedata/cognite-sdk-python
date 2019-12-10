@@ -8,6 +8,7 @@ pandas = "*"
 requests = "*"
 matplotlib = "*"
 pytest = "<5"
+sympy = "*"
 
 [dev-packages]
 sphinx = "*"
