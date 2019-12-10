@@ -88,3 +88,16 @@ class TestSyntheticQuery:
         assert isinstance(dps_res, Datapoints)
         assert 0 == len(dps_res)
         assert 1 == len(mock_get_datapoints_empty.calls)
+
+    @pytest.mark.dsl
+    def test_expression_builder(self):
+        from sympy import symbols
+
+        assert "ts{externalId:'x'}" == DPS_CLIENT._build_expression(symbols("a"), {"a": "x"})
+        assert "ts{externalId:'x',aggregate:'average',granularity:'1m'}" == DPS_CLIENT._build_expression(
+            symbols("a"), {"a": "x"}, aggregate="average", granularity="1m"
+        )
+        assert "(ts{externalId:'x'}+ts{externalId:'y'}+ts{externalId:'z'})" == DPS_CLIENT._build_expression(
+            symbols("a") + symbols("b") + symbols("c"), {"a": "x", "b": "y", "c": "z"}
+        )
+        assert "(1/ts{externalId:'a'})" == DPS_CLIENT._build_expression(1 / symbols("a"), {"a": "a"})
