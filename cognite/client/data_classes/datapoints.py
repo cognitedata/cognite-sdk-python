@@ -234,7 +234,7 @@ class Datapoints:
     @classmethod
     def _load(cls, dps_object, expected_fields: List[str] = None, cognite_client=None):
         instance = cls()
-        instance.id = dps_object["id"]
+        instance.id = dps_object.get("id")
         instance.external_id = dps_object.get("externalId")
         instance.is_string = dps_object["isString"]  # should never be missing
         instance.is_step = dps_object.get("isStep")  # NB can be null if isString is true

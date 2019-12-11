@@ -39,7 +39,7 @@ class AssetsAPI(APIClient):
         Args:
             chunk_size (int, optional): Number of assets to return in each chunk. Defaults to yielding one asset a time.
             name (str): Name of asset. Often referred to as tag.
-            parent_ids (List[int]): No description.
+            parent_ids (List[int]): Return only the direct descendants of the specified assets.
             parent_external_ids (List[str]): Return only the direct descendants of the specified assets.
             root_ids (List[int], optional): List of root ids ids to filter on.
             root_external_ids (List[str], optional): List of root external ids to filter on.
@@ -182,7 +182,7 @@ class AssetsAPI(APIClient):
 
         Args:
             name (str): Name of asset. Often referred to as tag.
-            parent_ids (List[int]): List of parent ids to filter on.
+            parent_ids (List[int]): Return only the direct descendants of the specified assets.
             parent_external_ids (List[str]): Return only the direct descendants of the specified assets.
             root_ids (List[int], optional): List of root ids ids to filter on.
             root_external_ids (List[str], optional): List of root external ids to filter on.
