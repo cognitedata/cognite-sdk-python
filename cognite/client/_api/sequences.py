@@ -23,6 +23,8 @@ class SequencesAPI(APIClient):
         metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
         root_asset_ids: List[int] = None,
+        asset_subtree_ids: List[int] = None,
+        asset_subtree_external_ids: List[str] = None,
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
         limit: int = None,
@@ -38,6 +40,8 @@ class SequencesAPI(APIClient):
             metadata (Dict[str, Any]): Filter out sequences that do not match these metadata fields and values (case-sensitive). Format is {"key1":"value1","key2":"value2"}.
             asset_ids (List[int]): Filter out sequences that are not linked to any of these assets.
             root_asset_ids (List[int]): Filter out sequences not linked to assets with one of these assets as the root asset.
+            asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
+            asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
             created_time (Dict[str, Any]): Filter out sequences with createdTime outside this range.
             last_updated_time (Dict[str, Any]): Filter out sequences with lastUpdatedTime outside this range.
             limit (int, optional): Max number of sequences to return. Defaults to return all items.
@@ -45,12 +49,17 @@ class SequencesAPI(APIClient):
         Yields:
             Union[Sequence, SequenceList]: yields Sequence one by one if chunk is not specified, else SequenceList objects.
         """
+
+        if asset_subtree_ids or asset_subtree_external_ids:
+            asset_subtree_ids = self._process_ids(asset_subtree_ids, asset_subtree_external_ids, wrap_ids=True)
+        
         filter = SequenceFilter(
             name=name,
             metadata=metadata,
             external_id_prefix=external_id_prefix,
             asset_ids=asset_ids,
             root_asset_ids=root_asset_ids,
+            asset_subtree_ids=asset_subtree_ids,
             created_time=created_time,
             last_updated_time=last_updated_time,
         ).dump(camel_case=True)
@@ -130,6 +139,8 @@ class SequencesAPI(APIClient):
         metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
         root_asset_ids: List[int] = None,
+        asset_subtree_ids: List[int] = None,
+        asset_subtree_external_ids: List[str] = None,
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
         limit: Optional[int] = 25,
@@ -144,6 +155,8 @@ class SequencesAPI(APIClient):
             metadata (Dict[str, Any]): Filter out sequences that do not match these metadata fields and values (case-sensitive). Format is {"key1":"value1","key2":"value2"}.
             asset_ids (List[int]): Filter out sequences that are not linked to any of these assets.
             root_asset_ids (List[int]): Filter out sequences not linked to assets with one of these assets as the root asset.
+            asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
+            asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
             created_time (Dict[str, Any]): Filter out sequences with createdTime outside this range.
             last_updated_time (Dict[str, Any]): Filter out sequences with lastUpdatedTime outside this range.
             limit (int, optional): Max number of sequences to return. Defaults to 25. Set to -1, float("inf") or None
@@ -174,12 +187,16 @@ class SequencesAPI(APIClient):
                 >>> for seq_list in c.sequences(chunk_size=2500):
                 ...     seq_list # do something with the sequences
         """
+        if asset_subtree_ids or asset_subtree_external_ids:
+            asset_subtree_ids = self._process_ids(asset_subtree_ids, asset_subtree_external_ids, wrap_ids=True)
+
         filter = SequenceFilter(
             name=name,
             metadata=metadata,
             external_id_prefix=external_id_prefix,
             asset_ids=asset_ids,
             root_asset_ids=root_asset_ids,
+            asset_subtree_ids=asset_subtree_ids,
             created_time=created_time,
             last_updated_time=last_updated_time,
         ).dump(camel_case=True)

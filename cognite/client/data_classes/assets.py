@@ -312,8 +312,9 @@ class AssetFilter(CogniteFilter):
     Args:
         name (str): The name of the asset.
         parent_ids (List[int]): Return only the direct descendants of the specified assets.
+        parent_external_ids (List[str]): Return only the direct descendants of the specified assets.
         root_ids (List[Dict[str, Any]]): Only include these root assets and their descendants.
-        asset_subtree_ids (List[Dict[str, Any]]): Only include assets in subtrees rooted at the specified assets.
+        asset_subtree_ids (List[Dict[str, Any]]): Only include assets in subtrees rooted at the specified assets. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
         metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         source (str): The source of the asset.
         created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
@@ -327,6 +328,7 @@ class AssetFilter(CogniteFilter):
         self,
         name: str = None,
         parent_ids: List[int] = None,
+        parent_external_ids: List[str] = None,
         root_ids: List[Dict[str, Any]] = None,
         asset_subtree_ids: List[Dict[str, Any]] = None,
         metadata: Dict[str, str] = None,
@@ -339,6 +341,7 @@ class AssetFilter(CogniteFilter):
     ):
         self.name = name
         self.parent_ids = parent_ids
+        self.parent_external_ids = parent_external_ids
         self.root_ids = root_ids
         self.asset_subtree_ids = asset_subtree_ids
         self.metadata = metadata

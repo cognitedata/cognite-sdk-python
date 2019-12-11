@@ -18,6 +18,7 @@ class AssetsAPI(APIClient):
         chunk_size: int = None,
         name: str = None,
         parent_ids: List[int] = None,
+        parent_external_ids: List[str] = None,
         root_ids: List[int] = None,
         root_external_ids: List[str] = None,
         asset_subtree_ids: List[int] = None,
@@ -39,6 +40,7 @@ class AssetsAPI(APIClient):
             chunk_size (int, optional): Number of assets to return in each chunk. Defaults to yielding one asset a time.
             name (str): Name of asset. Often referred to as tag.
             parent_ids (List[int]): No description.
+            parent_external_ids (List[str]): Return only the direct descendants of the specified assets.
             root_ids (List[int], optional): List of root ids ids to filter on.
             root_external_ids (List[str], optional): List of root external ids to filter on.
             asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
@@ -66,6 +68,7 @@ class AssetsAPI(APIClient):
         filter = AssetFilter(
             name=name,
             parent_ids=parent_ids,
+            parent_external_ids=parent_external_ids,
             root_ids=root_ids,
             asset_subtree_ids=asset_subtree_ids,
             metadata=metadata,
@@ -160,6 +163,7 @@ class AssetsAPI(APIClient):
         self,
         name: str = None,
         parent_ids: List[int] = None,
+        parent_external_ids: List[str] = None,
         root_ids: List[int] = None,
         root_external_ids: List[str] = None,
         asset_subtree_ids: List[int] = None,
@@ -179,6 +183,7 @@ class AssetsAPI(APIClient):
         Args:
             name (str): Name of asset. Often referred to as tag.
             parent_ids (List[int]): List of parent ids to filter on.
+            parent_external_ids (List[str]): Return only the direct descendants of the specified assets.
             root_ids (List[int], optional): List of root ids ids to filter on.
             root_external_ids (List[str], optional): List of root external ids to filter on.
             asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
@@ -231,6 +236,7 @@ class AssetsAPI(APIClient):
         filter = AssetFilter(
             name=name,
             parent_ids=parent_ids,
+            parent_external_ids=parent_external_ids,
             root_ids=root_ids,
             asset_subtree_ids=asset_subtree_ids,
             metadata=metadata,
