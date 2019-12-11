@@ -109,7 +109,14 @@ class SyntheticDatapointsAPI(APIClient):
         sympy = utils._auxiliary.local_import("sympy")
 
         infix_ops = {sympy.Add: "+", sympy.Mul: "*"}
-        functions = {sympy.cos: "cos", sympy.sin: "sin", sympy.sqrt: "sqrt", sympy.log: "ln", sympy.exp: "exp"}
+        functions = {
+            sympy.cos: "cos",
+            sympy.sin: "sin",
+            sympy.sqrt: "sqrt",
+            sympy.log: "ln",
+            sympy.exp: "exp",
+            sympy.Abs: "abs",
+        }
 
         def process_symbol(sym):
             if isinstance(sym, sympy.AtomicExpr):

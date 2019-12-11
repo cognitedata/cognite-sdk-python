@@ -72,6 +72,7 @@ class TestSyntheticDatapointsAPI:
             + sqrt(sin(pi * 0.1 ** syms[1]))
             + log(23 + syms[5] ** 1.234)
             + cos(syms[3] ** (1 + 0.1 ** syms[4]))
+            + sqrt(log(abs(syms[8]) + 1))
         )
         dps1 = COGNITE_CLIENT.datapoints.synthetic.retrieve(
             expression=expression,
