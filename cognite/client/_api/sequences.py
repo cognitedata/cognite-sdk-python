@@ -52,7 +52,7 @@ class SequencesAPI(APIClient):
 
         if asset_subtree_ids or asset_subtree_external_ids:
             asset_subtree_ids = self._process_ids(asset_subtree_ids, asset_subtree_external_ids, wrap_ids=True)
-        
+
         filter = SequenceFilter(
             name=name,
             metadata=metadata,
