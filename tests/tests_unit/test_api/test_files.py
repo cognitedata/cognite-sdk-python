@@ -179,6 +179,16 @@ class TestFilesAPI:
             "filter": {"rootAssetIds": [{"id": 1}, {"id": 2}, {"externalId": "a"}]},
         } == jsgz_load(calls[0].request.body)
 
+    def test_list_subtrees(self, mock_files_response):
+        FILES_API.list(asset_subtree_ids=[1], asset_subtree_external_ids=["a"], limit=10)
+        calls = mock_files_response.calls
+        assert 1 == len(calls)
+        assert {
+            "cursor": None,
+            "limit": 10,
+            "filter": {"assetSubtreeIds": [{"id": 1}, {"externalId": "a"}]},
+        } == jsgz_load(calls[0].request.body)
+
     def test_list_with_time_dict(self, mock_files_response):
         FILES_API.list(created_time={"min": 20})
         assert 20 == jsgz_load(mock_files_response.calls[0].request.body)["filter"]["createdTime"]["min"]
