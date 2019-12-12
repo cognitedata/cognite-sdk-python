@@ -23,6 +23,8 @@ Changes are grouped as follows
 
 ### Added
 - Support for `ignore_unknown_ids` on time series `retrieve_multiple`, `delete` and datapoints `retrieve` and `latest` and related endpoints.
+- Support for asset subtree filters on files, sequences, and time series.
+- Support for parent external id filters on assets.
 
 ## [1.4.7] - 2019-12-05
 
