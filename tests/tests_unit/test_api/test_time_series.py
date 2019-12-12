@@ -66,6 +66,8 @@ class TestTimeSeries:
             asset_ids=[1, 2],
             root_asset_ids=[1231],
             include_metadata=False,
+            asset_subtree_ids=[1],
+            asset_subtree_external_ids=["a"],
         )
         assert mock_ts_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
         assert {
@@ -73,6 +75,7 @@ class TestTimeSeries:
             "isStep": True,
             "metadata": {"a": "b"},
             "assetIds": [1, 2],
+            "assetSubtreeIds": [{"id": 1}, {"externalId": "a"}],
             "rootAssetIds": [1231],
             "createdTime": {"max": 123},
             "lastUpdatedTime": {"min": 45},

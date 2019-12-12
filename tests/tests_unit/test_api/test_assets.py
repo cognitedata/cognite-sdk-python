@@ -122,6 +122,16 @@ class TestAssets:
             calls[0].request.body
         )
 
+    def test_list_parent(self, mock_assets_response):
+        ASSETS_API.list(parent_ids=[1, 2], parent_external_ids=["abc"], limit=10)
+        calls = mock_assets_response.calls
+        assert 1 == len(calls)
+        assert {
+            "cursor": None,
+            "limit": 10,
+            "filter": {"parentIds": [1, 2], "parentExternalIds": ["abc"]},
+        } == jsgz_load(calls[0].request.body)
+
     def test_list_subtree(self, mock_assets_response):
         ASSETS_API.list(asset_subtree_ids=1, asset_subtree_external_ids=["a"], limit=10)
         calls = mock_assets_response.calls
