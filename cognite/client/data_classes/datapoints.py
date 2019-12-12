@@ -351,6 +351,7 @@ class DatapointsQuery(CogniteResource):
         aggregates (List[str]): The aggregates to be returned.  Use default if null. An empty string must be sent to get raw data if the default is a set of aggregates.
         granularity (str): The granularity size and granularity of the aggregates.
         include_outside_points (bool): Whether to include the last datapoint before the requested time period,and the first one after the requested period. This can be useful for interpolating data. Not available for aggregates.
+        ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception. Note that in this case the function always returns a DatapointsList even when a single id is requested.
     """
 
     def __init__(
@@ -365,6 +366,7 @@ class DatapointsQuery(CogniteResource):
         aggregates: List[str] = None,
         granularity: str = None,
         include_outside_points: bool = None,
+        ignore_unknown_ids: bool = False,
     ):
         self.id = id
         self.external_id = external_id
@@ -374,3 +376,4 @@ class DatapointsQuery(CogniteResource):
         self.aggregates = aggregates
         self.granularity = granularity
         self.include_outside_points = include_outside_points
+        self.ignore_unknown_ids = ignore_unknown_ids

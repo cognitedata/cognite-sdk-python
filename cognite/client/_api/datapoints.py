@@ -86,7 +86,7 @@ class DatapointsAPI(APIClient):
                 ...                         external_id={"externalId": "1", "aggregates": ["max"]},
                 ...                         start="1d-ago", end="now", granularity="1h")
         """
-        fetcher = DatapointsFetcher(client=self, ignore_unknown_ids=ignore_unknown_ids)
+        fetcher = DatapointsFetcher(client=self)
 
         _, is_single_id = fetcher._process_ts_identifiers(id, external_id)
 
@@ -99,9 +99,12 @@ class DatapointsAPI(APIClient):
             granularity=granularity,
             include_outside_points=include_outside_points,
             limit=limit,
+            ignore_unknown_ids=ignore_unknown_ids,
         )
         dps_list = fetcher.fetch(query)
-        if is_single_id and not ignore_unknown_ids:
+        if is_single_id:
+            if len(dps_list) == 0 and ignore_unknown_ids is True:
+                return None
             return dps_list[0]
         return dps_list
 
@@ -172,7 +175,7 @@ class DatapointsAPI(APIClient):
         return DatapointsList._load(res, cognite_client=self._cognite_client)
 
     def query(
-        self, query: Union[DatapointsQuery, List[DatapointsQuery]], ignore_unknown_ids=False
+        self, query: Union[DatapointsQuery, List[DatapointsQuery]]
     ) -> Union[DatapointsList, List[DatapointsList]]:
         """Get datapoints for one or more time series
 
@@ -181,7 +184,6 @@ class DatapointsAPI(APIClient):
 
         Args:
             query (Union[DatapointsQuery, List[DatapointsQuery]): List of datapoint queries.
-            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception. One DatapointsList per query will still be returned.
 
         Returns:
             Union[DatapointsList, List[DatapointsList]]: The requested DatapointsList(s).
@@ -202,7 +204,7 @@ class DatapointsAPI(APIClient):
                 ...                             granularity="1m")]
                 >>> res = c.datapoints.query(queries)
         """
-        fetcher = DatapointsFetcher(self, ignore_unknown_ids=ignore_unknown_ids)
+        fetcher = DatapointsFetcher(self)
         if isinstance(query, DatapointsQuery):
             return fetcher.fetch(query)
         return fetcher.fetch_multiple(query)
@@ -453,6 +455,8 @@ class DatapointsAPI(APIClient):
                 limit=limit,
                 ignore_unknown_ids=ignore_unknown_ids,
             )
+            if id_dpl is None:
+                id_dpl = DatapointsList([])
             id_df = id_dpl.to_pandas(column_names="id")
         else:
             id_df = pd.DataFrame()
@@ -468,6 +472,8 @@ class DatapointsAPI(APIClient):
                 limit=limit,
                 ignore_unknown_ids=ignore_unknown_ids,
             )
+            if external_id_dpl is None:
+                external_id_dpl = DatapointsList([])
             external_id_df = external_id_dpl.to_pandas()
         else:
             external_id_df = pd.DataFrame()
@@ -764,7 +770,9 @@ class _DPWindow:
 
 
 class _DPTask:
-    def __init__(self, client, start, end, ts_item, aggregates, granularity, include_outside_points, limit):
+    def __init__(
+        self, client, start, end, ts_item, aggregates, granularity, include_outside_points, limit, ignore_unknown_ids
+    ):
         self.start = cognite.client.utils._time.timestamp_to_ms(start)
         self.end = cognite.client.utils._time.timestamp_to_ms(end)
         self.aggregates = ts_item.get("aggregates") or aggregates
@@ -772,6 +780,7 @@ class _DPTask:
         self.granularity = granularity
         self.include_outside_points = include_outside_points
         self.limit = limit or float("inf")
+        self.ignore_unknown_ids = ignore_unknown_ids
 
         self.client = client
         self.request_limit = client._DPS_LIMIT_AGG if self.aggregates else client._DPS_LIMIT
@@ -839,9 +848,8 @@ class _DPTask:
 
 
 class DatapointsFetcher:
-    def __init__(self, client: DatapointsAPI, ignore_unknown_ids=False):
+    def __init__(self, client: DatapointsAPI):
         self.client = client
-        self.ignore_unknown_ids = ignore_unknown_ids
 
     def fetch(self, query: DatapointsQuery) -> DatapointsList:
         return self.fetch_multiple([query])[0]
@@ -863,6 +871,7 @@ class DatapointsFetcher:
                 query.granularity,
                 query.include_outside_points,
                 query.limit,
+                query.ignore_unknown_ids,
             )
             for ts_item in ts_items
         ]
@@ -948,7 +957,7 @@ class DatapointsFetcher:
             count_granularity = task.granularity
         try:
             count_task = _DPTask(
-                self.client, task.start, task.end, {"id": id}, ["count"], count_granularity, False, None
+                self.client, task.start, task.end, {"id": id}, ["count"], count_granularity, False, None, False
             )
             self._get_datapoints_with_paging(count_task, _DPWindow(task.start, task.end))
             res = count_task.result()
@@ -1015,11 +1024,11 @@ class DatapointsFetcher:
             "aggregates": task.aggregates,
             "granularity": task.granularity,
             "includeOutsidePoints": task.include_outside_points and first_page,
-            "ignoreUnknownIds": self.ignore_unknown_ids,
+            "ignoreUnknownIds": task.ignore_unknown_ids,
             "limit": min(window.limit, request_limit),
         }
         res = self.client._post(self.client._RESOURCE_PATH + "/list", json=payload).json()["items"]
-        if not res and self.ignore_unknown_ids:
+        if not res and task.ignore_unknown_ids:
             return task.mark_missing()
         else:
             return task.store_partial_result(res[0], window.start, window.end)

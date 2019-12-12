@@ -70,6 +70,13 @@ class TestDatapointsAPI:
         assert isinstance(dps, DatapointsList)
         assert 0 == len(dps)
 
+    def test_retrieve_all_unknown_single(self, test_time_series):
+        ts = test_time_series[0]
+        dps = COGNITE_CLIENT.datapoints.retrieve(
+            external_id="missing", start="1d-ago", end="now", ignore_unknown_ids=True
+        )
+        assert dps is None
+
     def test_retrieve_multiple(self, test_time_series):
         ids = [test_time_series[0].id, test_time_series[1].id, {"id": test_time_series[2].id, "aggregates": ["max"]}]
 
@@ -190,12 +197,17 @@ class TestDatapointsAPI:
         assert len(res[2][0]) < len(res[1][0]) < len(res[0][0])
 
     def test_query_unknown(self, test_time_series):
-        dps_query1 = DatapointsQuery(id=test_time_series[0].id, start="6h-ago", end="now")
-        dps_query2 = DatapointsQuery(id=123, start="3h-ago", end="now")
+        dps_query1 = DatapointsQuery(id=test_time_series[0].id, start="6h-ago", end="now", ignore_unknown_ids=True)
+        dps_query2 = DatapointsQuery(id=123, start="3h-ago", end="now", ignore_unknown_ids=True)
         dps_query3 = DatapointsQuery(
-            external_id="missing time series", start="1d-ago", end="now", aggregates=["average"], granularity="1h"
+            external_id="missing time series",
+            start="1d-ago",
+            end="now",
+            aggregates=["average"],
+            granularity="1h",
+            ignore_unknown_ids=True,
         )
-        res = COGNITE_CLIENT.datapoints.query([dps_query1, dps_query2, dps_query3], ignore_unknown_ids=True)
+        res = COGNITE_CLIENT.datapoints.query([dps_query1, dps_query2, dps_query3])
         assert len(res) == 3
         assert len(res[0]) == 1
         assert len(res[0][0]) > 0
