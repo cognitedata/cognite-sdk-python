@@ -166,6 +166,26 @@ class TestSequences:
         res = SEQ_API.list()
         assert mock_seq_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
+    def test_list_with_filters(self, mock_seq_response):
+        res = SEQ_API.list(
+            metadata={"a": "b"},
+            last_updated_time={"min": 45},
+            created_time={"max": 123},
+            asset_ids=[1, 2],
+            root_asset_ids=[1231],
+            asset_subtree_ids=[1],
+            asset_subtree_external_ids=["a"],
+        )
+        assert mock_seq_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
+        assert {
+            "metadata": {"a": "b"},
+            "assetIds": [1, 2],
+            "assetSubtreeIds": [{"id": 1}, {"externalId": "a"}],
+            "rootAssetIds": [1231],
+            "createdTime": {"max": 123},
+            "lastUpdatedTime": {"min": 45},
+        } == jsgz_load(mock_seq_response.calls[0].request.body)["filter"]
+
     def test_create_single(self, mock_seq_response):
         res = SEQ_API.create(Sequence(external_id="1", name="blabla", columns=[{}]))
         assert isinstance(res, Sequence)
