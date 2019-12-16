@@ -21,6 +21,9 @@ Changes are grouped as follows
 
 ## Unreleased
 
+### Added
+- Synthetic datapoints retrieve has additional functions including variable replacement and sympy support.
+
 ## [1.4.7] - 2019-12-05
 
 ### Added
