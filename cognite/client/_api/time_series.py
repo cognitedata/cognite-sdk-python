@@ -18,6 +18,8 @@ class TimeSeriesAPI(APIClient):
         is_step: bool = None,
         asset_ids: List[int] = None,
         root_asset_ids: List[int] = None,
+        asset_subtree_ids: List[int] = None,
+        asset_subtree_external_ids: List[str] = None,
         metadata: Dict[str, Any] = None,
         external_id_prefix: str = None,
         created_time: Dict[str, Any] = None,
@@ -37,6 +39,8 @@ class TimeSeriesAPI(APIClient):
             is_step (bool): Whether the time series is a step (piecewise constant) time series.
             asset_ids (List[int], optional): List time series related to these assets.
             root_asset_ids (List[int], optional): List time series related to assets under these root assets.
+            asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
+            asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
             metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
             created_time (Dict[str, Any]): Range between two timestamps
             last_updated_time (Dict[str, Any]): Range between two timestamps
@@ -47,6 +51,9 @@ class TimeSeriesAPI(APIClient):
         Yields:
             Union[TimeSeries, TimeSeriesList]: yields TimeSeries one by one if chunk is not specified, else TimeSeriesList objects.
         """
+        if asset_subtree_ids or asset_subtree_external_ids:
+            asset_subtree_ids = self._process_ids(asset_subtree_ids, asset_subtree_external_ids, wrap_ids=True)
+
         filter = TimeSeriesFilter(
             name=name,
             unit=unit,
@@ -54,6 +61,7 @@ class TimeSeriesAPI(APIClient):
             is_string=is_string,
             asset_ids=asset_ids,
             root_asset_ids=root_asset_ids,
+            asset_subtree_ids=asset_subtree_ids,
             metadata=metadata,
             created_time=created_time,
             last_updated_time=last_updated_time,
@@ -136,6 +144,8 @@ class TimeSeriesAPI(APIClient):
         is_step: bool = None,
         asset_ids: List[int] = None,
         root_asset_ids: List[int] = None,
+        asset_subtree_ids: List[int] = None,
+        asset_subtree_external_ids: List[str] = None,
         metadata: Dict[str, Any] = None,
         external_id_prefix: str = None,
         created_time: Dict[str, Any] = None,
@@ -155,6 +165,8 @@ class TimeSeriesAPI(APIClient):
             is_step (bool): Whether the time series is a step (piecewise constant) time series.
             asset_ids (List[int], optional): List time series related to these assets.
             root_asset_ids (List[int], optional): List time series related to assets under these root assets.
+            asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
+            asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
             metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
             created_time (Dict[str, Any]): Range between two timestamps
             last_updated_time (Dict[str, Any]): Range between two timestamps
@@ -189,6 +201,9 @@ class TimeSeriesAPI(APIClient):
                 >>> for ts_list in c.time_series(chunk_size=2500):
                 ...     ts_list # do something with the time_series
         """
+        if asset_subtree_ids or asset_subtree_external_ids:
+            asset_subtree_ids = self._process_ids(asset_subtree_ids, asset_subtree_external_ids, wrap_ids=True)
+
         filter = TimeSeriesFilter(
             name=name,
             unit=unit,
@@ -196,6 +211,7 @@ class TimeSeriesAPI(APIClient):
             is_string=is_string,
             asset_ids=asset_ids,
             root_asset_ids=root_asset_ids,
+            asset_subtree_ids=asset_subtree_ids,
             metadata=metadata,
             created_time=created_time,
             last_updated_time=last_updated_time,
