@@ -1,6 +1,6 @@
 import re
 from datetime import datetime
-from typing import *
+from typing import Dict, List, Union
 
 import cognite.client.utils._time
 from cognite.client import utils
