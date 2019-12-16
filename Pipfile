@@ -8,6 +8,8 @@ pandas = "*"
 requests = "*"
 matplotlib = "*"
 pytest = "<5"
+sympy = "*"
+docutils = "==0.15.2"
 
 [dev-packages]
 sphinx = "*"
