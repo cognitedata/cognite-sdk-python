@@ -24,6 +24,9 @@ Changes are grouped as follows
 ### Added
 - Synthetic datapoints retrieve has additional functions including variable replacement and sympy support.
 
+### Changed
+- Synthetic datapoints now return errors in the `.error` field, in the jupyter output, and optionally in pandas dataframes if `include_errors` is set. 
+
 ## [1.4.7] - 2019-12-05
 
 ### Added
