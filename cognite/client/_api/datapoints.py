@@ -36,7 +36,7 @@ class DatapointsAPI(APIClient):
         include_outside_points: bool = None,
         limit: int = None,
         ignore_unknown_ids: bool = False,
-    ) -> Union[Datapoints, DatapointsList]:
+    ) -> Union[None, Datapoints, DatapointsList]:
         """`Get datapoints for one or more time series. <https://docs.cognite.com/api/v1/#operation/getMultiTimeSeriesDatapoints>`_
 
         Note that you cannot specify the same ids/external_ids multiple times.
@@ -52,10 +52,10 @@ class DatapointsAPI(APIClient):
             granularity (str): The granularity to fetch aggregates at. e.g. '1s', '2h', '10d'.
             include_outside_points (bool): Whether or not to include outside points.
             limit (int): Maximum number of datapoints to return for each time series.
-            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception. Note that in this case the function always returns a DatapointsList even when a single id is requested.
+            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
-            Union[Datapoints, DatapointsList]: A Datapoints object containing the requested data, or a list of such objects.
+            Union[None, Datapoints, DatapointsList]: A Datapoints object containing the requested data, or a list of such objects. If `ignore_unknown_id` is True, single id is requested and it is not found, the function will return `None`.
 
         Examples:
 
@@ -399,7 +399,7 @@ class DatapointsAPI(APIClient):
         limit: int = None,
         include_aggregate_name=True,
         complete: str = None,
-        ignore_unknown_ids=False,
+        ignore_unknown_ids: bool = False,
     ) -> "pandas.DataFrame":
         """Get a pandas dataframe describing the requested data.
 
@@ -551,7 +551,7 @@ class DatapointsAPI(APIClient):
             str, List[str], Dict[str, Union[int, List[str]]], List[Dict[str, Union[int, List[str]]]]
         ] = None,
         limit: int = None,
-        ignore_unknown_ids=False,
+        ignore_unknown_ids: bool = False,
         complete: bool = None,
     ) -> Dict[str, "pandas.DataFrame"]:
         """Get a dictionary of aggregate: pandas dataframe describing the requested data.
