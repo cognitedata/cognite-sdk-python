@@ -39,6 +39,15 @@ class TestTimeSeriesAPI:
             retrieved_asset.external_id = listed_asset.external_id
         assert res == retrieved_assets
 
+    def test_retrieve_multiple_ignore_unknown(self):
+        res = COGNITE_CLIENT.time_series.list(limit=2)
+        retrieved_assets = COGNITE_CLIENT.time_series.retrieve_multiple(
+            [t.id for t in res] + [0, 1, 2, 3], ignore_unknown_ids=True
+        )
+        for listed_asset, retrieved_asset in zip(res, retrieved_assets):
+            retrieved_asset.external_id = listed_asset.external_id
+        assert res == retrieved_assets
+
     def test_list(self, post_spy):
         with set_request_limit(COGNITE_CLIENT.time_series, 10):
             res = COGNITE_CLIENT.time_series.list(limit=20)
@@ -81,3 +90,8 @@ class TestTimeSeriesAPI:
         update_ts = TimeSeriesUpdate(new_ts.id).name.set("newname")
         res = COGNITE_CLIENT.time_series.update(update_ts)
         assert "newname" == res.name
+
+    def test_delete_with_nonexisting(self):
+        a = COGNITE_CLIENT.time_series.create(TimeSeries(name="any"))
+        COGNITE_CLIENT.assets.delete(id=a.id, external_id="this ts does not exist", ignore_unknown_ids=True)
+        assert COGNITE_CLIENT.assets.retrieve(id=a.id) is None

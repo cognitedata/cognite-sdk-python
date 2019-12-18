@@ -22,6 +22,9 @@ Changes are grouped as follows
 ## Unreleased
 
 ### Added
+- Support for `ignore_unknown_ids` on time series `retrieve_multiple`, `delete` and datapoints `retrieve` and `latest` and related endpoints.
+- Support for asset subtree filters on files, sequences, and time series.
+- Support for parent external id filters on assets.
 - Synthetic datapoints retrieve has additional functions including variable replacement and sympy support.
 
 ## [1.4.7] - 2019-12-05
