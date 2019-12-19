@@ -107,13 +107,17 @@ class TimeSeriesAPI(APIClient):
         return self._retrieve_multiple(ids=id, external_ids=external_id, wrap_ids=True)
 
     def retrieve_multiple(
-        self, ids: Optional[List[int]] = None, external_ids: Optional[List[str]] = None
+        self,
+        ids: Optional[List[int]] = None,
+        external_ids: Optional[List[str]] = None,
+        ignore_unknown_ids: bool = False,
     ) -> TimeSeriesList:
         """`Retrieve multiple time series by id. <https://docs.cognite.com/api/v1/#operation/getTimeSeriesByIds>`_
 
         Args:
             ids (List[int], optional): IDs
             external_ids (List[str], optional): External IDs
+            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
             TimeSeriesList: The requested time series.
@@ -134,7 +138,9 @@ class TimeSeriesAPI(APIClient):
         """
         utils._auxiliary.assert_type(ids, "id", [List], allow_none=True)
         utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=True)
-        return self._retrieve_multiple(ids=ids, external_ids=external_ids, wrap_ids=True)
+        return self._retrieve_multiple(
+            ids=ids, external_ids=external_ids, ignore_unknown_ids=ignore_unknown_ids, wrap_ids=True
+        )
 
     def list(
         self,
@@ -239,12 +245,18 @@ class TimeSeriesAPI(APIClient):
         """
         return self._create_multiple(items=time_series)
 
-    def delete(self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None) -> None:
+    def delete(
+        self,
+        id: Union[int, List[int]] = None,
+        external_id: Union[str, List[str]] = None,
+        ignore_unknown_ids: bool = False,
+    ) -> None:
         """`Delete one or more time series. <https://docs.cognite.com/api/v1/#operation/deleteTimeSeries>`_
 
         Args:
             id (Union[int, List[int]): Id or list of ids
             external_id (Union[str, List[str]]): External ID or list of external ids
+            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
             None
@@ -257,7 +269,9 @@ class TimeSeriesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.time_series.delete(id=[1,2,3], external_id="3")
         """
-        self._delete_multiple(wrap_ids=True, ids=id, external_ids=external_id)
+        self._delete_multiple(
+            wrap_ids=True, ids=id, external_ids=external_id, extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids}
+        )
 
     def update(
         self, item: Union[TimeSeries, TimeSeriesUpdate, List[Union[TimeSeries, TimeSeriesUpdate]]]
