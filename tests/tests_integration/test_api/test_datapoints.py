@@ -18,12 +18,9 @@ COGNITE_CLIENT = CogniteClient()
 
 @pytest.fixture(scope="session")
 def test_time_series():
-    time_series = {}
-    for ts in COGNITE_CLIENT.time_series.list(limit=150):
-        if ts.name in ["test__constant_{}_with_noise".format(i) for i in range(0, 10)]:
-            value = int(re.match(r"test__constant_(\d+)_with_noise", ts.name).group(1))
-            time_series[value] = ts
-    yield time_series
+    eids = ["test__constant_%d_with_noise" % i for i in range(10)]
+    ts = COGNITE_CLIENT.time_series.retrieve_multiple(external_ids=eids, ignore_unknown_ids=True)
+    yield {int(re.match(r"test__constant_(\d+)_with_noise", t.name).group(1)): t for t in ts}
 
 
 @pytest.fixture(scope="session")
