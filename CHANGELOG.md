@@ -21,6 +21,9 @@ Changes are grouped as follows
 
 ## Unreleased
 
+### Fixed
+- Fixed a bug where datapoints `retrieve` could return less than limit even if there were more datapoints. 
+
 ## [1.4.8] - 2019-12-19
 
 ### Added
