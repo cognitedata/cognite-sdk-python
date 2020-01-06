@@ -107,6 +107,13 @@ class TestDatapointsAPI:
                 granularity="1s",
             )
 
+    def test_stop_pagination_in_time(self, test_time_series, post_spy):
+        ts = test_time_series[0]
+        dps = COGNITE_CLIENT.datapoints.retrieve(id=ts.id, start=0, end="now", limit=223456)
+        assert 223456 == len(dps)
+        # first page 100k, counts 1, paginate 2 windows (+1 potential for 1st day uncertainty)
+        assert 4 <= COGNITE_CLIENT.datapoints._post.call_count <= 5
+
     def test_retrieve_include_outside_points(self, test_time_series):
         ts = test_time_series[0]
         start = utils._time.timestamp_to_ms("6h-ago")
