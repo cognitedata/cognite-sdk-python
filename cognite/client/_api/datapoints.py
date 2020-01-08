@@ -641,7 +641,7 @@ class DatapointsAPI(APIClient):
         np = utils._auxiliary.local_import("numpy")
         assert not dataframe.isnull().values.any(), "Dataframe contains NaNs. Remove them in order to insert the data."
 
-        assert np.isfinite(dataframe.select_dtypes(include=[np.number])).all(
+        assert np.isfinite(dataframe.select_dtypes(include=[np.number])).values.all(
             axis=None
         ), "Dataframe contains Infinity. Remove them in order to insert the data."
         dps = []
@@ -920,7 +920,7 @@ class DatapointsFetcher:
         if len(remaining_tasks_with_windows) > 0:
             self._fetch_datapoints_for_remaining_queries(remaining_tasks_with_windows)
 
-    def _fetch_dps_initial_and_return_remaining_tasks(self, task: _DPTask) -> List[_DPTask]:
+    def _fetch_dps_initial_and_return_remaining_tasks(self, task: _DPTask) -> List[Tuple[_DPTask, _DPWindow]]:
         ndp_in_first_task, last_timestamp = self._get_datapoints(task, None, True)
         if ndp_in_first_task < task.request_limit:
             return []
@@ -975,6 +975,9 @@ class DatapointsFetcher:
             min(math.ceil(cognite.client.utils._time.granularity_to_ms(count_granularity) / granularity_ms), count)
         )
         for i, (ts, count) in enumerate(counts):
+            if ts < task.start:  # API rounds time stamps down, so some of the first day may have been retrieved already
+                count = 0
+
             if i < len(counts) - 1:
                 next_timestamp = counts[i + 1][0]
                 next_raw_count = counts[i + 1][1]
@@ -1007,15 +1010,14 @@ class DatapointsFetcher:
         ndp_retrieved_total = 0
         while window.end > window.start and ndp_retrieved_total < window.limit:
             ndp_retrieved, last_time = self._get_datapoints(task, window)
-            if ndp_retrieved == 0:
+            if ndp_retrieved < min(window.limit, task.request_limit):
                 break
             window.limit -= ndp_retrieved
             window.start = last_time + task.next_start_offset()
 
-    def _get_datapoints(self, task: _DPTask, window: _DPWindow = None, first_page: bool = False) -> Datapoints:
-        is_aggregated = task.aggregates is not None
-        request_limit = self.client._DPS_LIMIT_AGG if is_aggregated else self.client._DPS_LIMIT
-
+    def _get_datapoints(
+        self, task: _DPTask, window: _DPWindow = None, first_page: bool = False
+    ) -> Tuple[int, Union[None, int]]:
         window = window or _DPWindow(task.start, task.end, task.limit)
         payload = {
             "items": [task.ts_item],
@@ -1025,7 +1027,7 @@ class DatapointsFetcher:
             "granularity": task.granularity,
             "includeOutsidePoints": task.include_outside_points and first_page,
             "ignoreUnknownIds": task.ignore_unknown_ids,
-            "limit": min(window.limit, request_limit),
+            "limit": min(window.limit, task.request_limit),
         }
         res = self.client._post(self.client._RESOURCE_PATH + "/list", json=payload).json()["items"]
         if not res and task.ignore_unknown_ids:
