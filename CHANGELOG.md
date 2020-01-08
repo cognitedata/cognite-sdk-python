@@ -21,8 +21,11 @@ Changes are grouped as follows
 
 ## Unreleased
 
+## [1.4.9] - 2019-12-19
+
 ### Fixed
 - Fixed a bug where datapoints `retrieve` could return less than limit even if there were more datapoints. 
+- Fixed an issue where `insert_dataframe` would give an error with older pandas versions.
 
 ## [1.4.8] - 2019-12-19
 
