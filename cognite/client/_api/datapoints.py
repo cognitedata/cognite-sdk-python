@@ -641,7 +641,7 @@ class DatapointsAPI(APIClient):
         np = utils._auxiliary.local_import("numpy")
         assert not dataframe.isnull().values.any(), "Dataframe contains NaNs. Remove them in order to insert the data."
 
-        assert np.isfinite(dataframe.select_dtypes(include=[np.number])).all(
+        assert np.isfinite(dataframe.select_dtypes(include=[np.number])).values.all(
             axis=None
         ), "Dataframe contains Infinity. Remove them in order to insert the data."
         dps = []

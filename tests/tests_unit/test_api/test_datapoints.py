@@ -1260,6 +1260,14 @@ class TestPandasIntegration:
         with pytest.raises(AssertionError, match="contains NaNs"):
             DPS_CLIENT.insert_dataframe(df)
 
+    def test_insert_dataframe_single_dp(self, mock_post_datapoints):
+        import pandas as pd
+
+        timestamps = [1500000000000]
+        df = pd.DataFrame({"a": [1.0], "b": [2.0]}, index=[utils._time.ms_to_datetime(ms) for ms in timestamps])
+        res = DPS_CLIENT.insert_dataframe(df, external_id_headers=True)
+        assert res is None
+
     def test_insert_dataframe_with_infs(self):
         import pandas as pd
         import numpy as np
