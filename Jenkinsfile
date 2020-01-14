@@ -55,6 +55,7 @@ podTemplate(
         }
         container('node'){
             stage('Download and dereference OpenAPI Spec'){
+                sh('apt-get update && apt-get install -y curl')
                 sh('npm install -g swagger-cli')
                 sh('curl https://storage.googleapis.com/cognitedata-api-docs/dist/v1.json --output spec.json --compressed')
                 sh('swagger-cli bundle -r spec.json -o deref-spec.json')
