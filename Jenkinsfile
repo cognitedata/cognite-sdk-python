@@ -13,9 +13,9 @@ podTemplate(
             image: 'eu.gcr.io/cognitedata/multi-python:2019-10-18T1122-3e874f7',
             command: '/bin/cat -',
             resourceRequestCpu: '1000m',
-            resourceRequestMemory: '800Mi',
+            resourceRequestMemory: '1600Mi',
             resourceLimitCpu: '1000m',
-            resourceLimitMemory: '1200Mi',
+            resourceLimitMemory: '3200Mi',
             ttyEnabled: true),
         containerTemplate(name: 'node',
             image: 'node:slim',
@@ -55,6 +55,7 @@ podTemplate(
         }
         container('node'){
             stage('Download and dereference OpenAPI Spec'){
+                sh('apt-get update && apt-get install -y curl')
                 sh('npm install -g swagger-cli')
                 sh('curl https://storage.googleapis.com/cognitedata-api-docs/dist/v1.json --output spec.json --compressed')
                 sh('swagger-cli bundle -r spec.json -o deref-spec.json')
