@@ -187,7 +187,7 @@ class Datapoints:
         return {key: value for key, value in dumped.items() if value is not None}
 
     def to_pandas(
-        self, column_names: str = "externalId", include_aggregate_name: bool = True, include_errors=False
+        self, column_names: str = "externalId", include_aggregate_name: bool = True, include_errors: bool = False
     ) -> "pandas.DataFrame":
         """Convert the datapoints into a pandas DataFrame.
 
