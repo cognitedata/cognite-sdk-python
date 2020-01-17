@@ -67,18 +67,21 @@ class SyntheticDatapointsAPI(APIClient):
             """
         if limit is None or limit == -1:
             limit = float("inf")
-        expression = SyntheticDatapointsAPI._build_expression(expression, variables, aggregate, granularity)
+        expression, short_expression = SyntheticDatapointsAPI._build_expression(
+            expression, variables, aggregate, granularity
+        )
         query = {
             "expression": expression,
             "start": cognite.client.utils._time.timestamp_to_ms(start),
             "end": cognite.client.utils._time.timestamp_to_ms(end),
         }
-        datapoints = Datapoints()
+        datapoints = Datapoints(value=[], error=[])
+        datapoints.external_id = short_expression  # for dataframe readability
         while True:
             query["limit"] = min(limit, self._DPS_LIMIT)
             resp = self._post(url_path=self._SYNTHETIC_RESOURCE_PATH + "/query", json={"items": [query]})
             data = resp.json()["items"][0]
-            datapoints._extend(Datapoints._load(data, expected_fields=["value"]))
+            datapoints._extend(Datapoints._load(data, expected_fields=["value", "error"]))
             limit -= len(data["datapoints"])
             if len(data["datapoints"]) < self._DPS_LIMIT or limit <= 0:
                 break
@@ -97,12 +100,15 @@ class SyntheticDatapointsAPI(APIClient):
             aggregate_str = ",aggregate:'{}',granularity:'{}'".format(aggregate, granularity)
         else:
             aggregate_str = ""
+        expression_with_ts = expression
         if variables:
             for k, v in variables.items():
                 if isinstance(v, TimeSeries):
                     v = v.external_id
-                expression = re.sub(re.compile(r"\b%s\b" % k), "ts{externalId:'%s'%s}" % (v, aggregate_str), expression)
-        return expression
+                expression_with_ts = re.sub(
+                    re.compile(r"\b%s\b" % k), "ts{externalId:'%s'%s}" % (v, aggregate_str), expression_with_ts
+                )
+        return expression_with_ts, expression
 
     @staticmethod
     def _sympy_to_sts(expression):
