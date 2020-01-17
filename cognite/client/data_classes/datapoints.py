@@ -115,6 +115,7 @@ class Datapoints:
         continuous_variance: List[float] = None,
         discrete_variance: List[float] = None,
         total_variation: List[float] = None,
+        error: List[Union[None, str]] = None,
     ):
         self.id = id
         self.external_id = external_id
@@ -133,6 +134,7 @@ class Datapoints:
         self.continuous_variance = continuous_variance
         self.discrete_variance = discrete_variance
         self.total_variation = total_variation
+        self.error = error
 
         self.__datapoint_objects = None
 
@@ -184,12 +186,15 @@ class Datapoints:
             dumped = {utils._auxiliary.to_camel_case(key): value for key, value in dumped.items()}
         return {key: value for key, value in dumped.items() if value is not None}
 
-    def to_pandas(self, column_names: str = "externalId", include_aggregate_name: bool = True) -> "pandas.DataFrame":
+    def to_pandas(
+        self, column_names: str = "externalId", include_aggregate_name: bool = True, include_errors: bool = False
+    ) -> "pandas.DataFrame":
         """Convert the datapoints into a pandas DataFrame.
 
         Args:
             column_names (str):  Which field to use as column header. Defaults to "externalId", can also be "id".
             include_aggregate_name (bool): Include aggregate in the column name
+            include_errors (bool): For synthetic datapoint queries, include a column with errors.
 
         Returns:
             pandas.DataFrame: The dataframe.
@@ -203,7 +208,7 @@ class Datapoints:
             identifier = self.id
         else:
             raise ValueError("column_names must be 'externalId' or 'id'")
-        for attr, value in self._get_non_empty_data_fields(get_empty_lists=True):
+        for attr, value in self._get_non_empty_data_fields(get_empty_lists=True, get_error=include_errors):
             if attr == "timestamp":
                 timestamps = value
             else:
@@ -266,10 +271,14 @@ class Datapoints:
             else:
                 value.extend(other_value)
 
-    def _get_non_empty_data_fields(self, get_empty_lists=False) -> List[Tuple[str, Any]]:
+    def _get_non_empty_data_fields(self, get_empty_lists=False, get_error=True) -> List[Tuple[str, Any]]:
         non_empty_data_fields = []
         for attr, value in self.__dict__.copy().items():
-            if attr not in ["id", "external_id", "is_string", "is_step", "unit"] and attr[0] != "_":
+            if (
+                attr not in ["id", "external_id", "is_string", "is_step", "unit"]
+                and attr[0] != "_"
+                and (attr != "error" or get_error)
+            ):
                 if value is not None or attr == "timestamp":
                     if len(value) > 0 or get_empty_lists or attr == "timestamp":
                         non_empty_data_fields.append((attr, value))
@@ -277,7 +286,7 @@ class Datapoints:
 
     def __get_datapoint_objects(self) -> List[Datapoint]:
         if self.__datapoint_objects is None:
-            fields = self._get_non_empty_data_fields()
+            fields = self._get_non_empty_data_fields(get_error=False)
             self.__datapoint_objects = []
             for i in range(len(self)):
                 dp_args = {}
@@ -293,7 +302,7 @@ class Datapoints:
         return truncated_datapoints
 
     def _repr_html_(self):
-        return self.to_pandas()._repr_html_()
+        return self.to_pandas(include_errors=True)._repr_html_()
 
 
 class DatapointsList(CogniteResourceList):
