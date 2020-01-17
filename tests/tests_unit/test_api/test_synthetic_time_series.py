@@ -93,14 +93,15 @@ class TestSyntheticQuery:
     def test_expression_builder(self):
         from sympy import symbols
 
-        assert "ts{externalId:'x'}" == DPS_CLIENT._build_expression(symbols("a"), {"a": "x"})
-        assert "ts{externalId:'x',aggregate:'average',granularity:'1m'}" == DPS_CLIENT._build_expression(
+        assert ("ts{externalId:'x'}", "a") == DPS_CLIENT._build_expression(symbols("a"), {"a": "x"})
+        assert ("ts{externalId:'x',aggregate:'average',granularity:'1m'}", "a") == DPS_CLIENT._build_expression(
             symbols("a"), {"a": "x"}, aggregate="average", granularity="1m"
         )
-        assert "(ts{externalId:'x'}+ts{externalId:'y'}+ts{externalId:'z'})" == DPS_CLIENT._build_expression(
-            symbols("a") + symbols("b") + symbols("c"), {"a": "x", "b": "y", "c": "z"}
-        )
-        assert "(1/ts{externalId:'a'})" == DPS_CLIENT._build_expression(1 / symbols("a"), {"a": "a"})
+        assert (
+            "(ts{externalId:'x'}+ts{externalId:'y'}+ts{externalId:'z'})",
+            "(a+b+c)",
+        ) == DPS_CLIENT._build_expression(symbols("a") + symbols("b") + symbols("c"), {"a": "x", "b": "y", "c": "z"})
+        assert ("(1/ts{externalId:'a'})", "(1/a)") == DPS_CLIENT._build_expression(1 / symbols("a"), {"a": "a"})
 
     @pytest.mark.dsl
     def test_expression_builder_variables_missing(self):

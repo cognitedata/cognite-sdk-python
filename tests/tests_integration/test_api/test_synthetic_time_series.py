@@ -36,6 +36,21 @@ class TestSyntheticDatapointsAPI:
         assert 23456 == len(dps)
         assert 3 == COGNITE_CLIENT.datapoints.synthetic._post.call_count
 
+    def test_retrieve_with_errors(self, test_time_series, post_spy):
+        dps = COGNITE_CLIENT.datapoints.synthetic.retrieve(
+            expression="A / (B - B)",
+            start=datetime(2017, 1, 1),
+            end="now",
+            limit=100,
+            variables={"A": test_time_series[0], "B": test_time_series[1]},
+        )
+        assert 100 == len(dps)
+        assert 100 == len(dps.error)
+        assert all(x is not None for x in dps.error)
+        assert all(x is None for x in dps.value)
+        assert (100, 1) == dps.to_pandas().shape
+        assert (100, 2) == dps.to_pandas(include_errors=True).shape
+
     @pytest.mark.dsl
     def test_expression_builder_time_series_vs_string(self, test_time_series):
         from sympy import symbols
