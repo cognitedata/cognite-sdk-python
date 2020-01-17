@@ -276,21 +276,31 @@ class SequenceData:
             dumped = {utils._auxiliary.to_camel_case(key): value for key, value in dumped.items()}
         return {key: value for key, value in dumped.items() if value is not None}
 
-    def to_pandas(self) -> "pandas.DataFrame":
+    def to_pandas(self, column_names: str = "columnExternalId") -> "pandas.DataFrame":
         """Convert the sequence data into a pandas DataFrame.
 
         Args:
-            column_names (str): Which field to use as column header. Either "externalId", "id" or "externalIdIfExists" for externalId if it exists for all columns and id otherwise.
+            column_names (str):  Which field to use as column header. Can use any combination of "externalId", "columnExternalId", "id" and other characters as a template.
 
         Returns:
             pandas.DataFrame: The dataframe.
         """
         pd = utils._auxiliary.local_import("pandas")
 
+        column_names = (
+            column_names.replace("columnExternalId", "{columnExternalId}")
+            .replace("externalId", "{externalId}")
+            .replace("id", "{id}")
+        )
+        df_columns = [
+            column_names.format(id=str(self.id), externalId=str(self.external_id), columnExternalId=eid)
+            for eid in self.column_external_ids
+        ]
+
         return pd.DataFrame(
             [[x if x is not None else math.nan for x in r] for r in self.values],
             index=self.row_numbers,
-            columns=self.column_external_ids,
+            columns=df_columns,
         )
 
     @property
@@ -310,3 +320,27 @@ class SequenceData:
             List of column value types
         """
         return [c.get("valueType") for c in self.columns]
+
+
+class SequenceDataList(CogniteResourceList):
+    _RESOURCE = SequenceData
+    _ASSERT_CLASSES = False
+
+    def __str__(self):
+        return json.dumps(self.dump(), indent=4)
+
+    def to_pandas(self, column_names: str = "externalId|columnExternalId") -> "pandas.DataFrame":
+        """Convert the sequence data list into a pandas DataFrame. Each column will be a sequence.
+
+        Args:
+            column_names (str):  Which field to use as column header. Can use any combination of "externalId", "columnExternalId", "id" and other characters as a template.
+            include_aggregate_name (bool): Include aggregate in the column name
+
+        Returns:
+            pandas.DataFrame: The sequence data list as a pandas DataFrame.
+        """
+        pd = utils._auxiliary.local_import("pandas")
+        return pd.concat([seq_data.to_pandas(column_names=column_names) for seq_data in self.data], axis=1)
+
+    def _repr_html_(self):
+        return self.to_pandas()._repr_html_()
