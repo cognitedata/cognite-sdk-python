@@ -289,7 +289,7 @@ class SequenceData:
 
         options = ["externalId", "id", "columnExternalId", "id|columnExternalId", "externalId|columnExternalId"]
         if column_names not in options:
-            raise ValueError('Invalid column_names value, should be one of "%s"' % "\", \"".join(options))
+            raise ValueError('Invalid column_names value, should be one of "%s"' % '", "'.join(options))
 
         column_names = (
             column_names.replace("columnExternalId", "{columnExternalId}")

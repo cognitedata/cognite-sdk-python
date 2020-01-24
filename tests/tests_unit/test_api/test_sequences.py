@@ -485,9 +485,13 @@ class TestSequencesPandasIntegration:
 
     def test_to_pandas_invalid(self, mock_seq_response, mock_get_sequence_data_two_col):
         with pytest.raises(ValueError):
-            SEQ_API.data.retrieve_dataframe(external_id="foo", id=[2], start=1000000, end=1000001, column_names="id~columnExternalId")
+            SEQ_API.data.retrieve_dataframe(
+                external_id="foo", id=[2], start=1000000, end=1000001, column_names="id~columnExternalId"
+            )
         with pytest.raises(ValueError):
-            SEQ_API.data.retrieve_dataframe(external_id="foo", id=[2], start=1000000, end=1000001, column_names="columnExternalIds")
+            SEQ_API.data.retrieve_dataframe(
+                external_id="foo", id=[2], start=1000000, end=1000001, column_names="columnExternalIds"
+            )
 
     def test_retrieve_dataframe_column_names(self, mock_seq_response, mock_get_sequence_data_two_col):
         data = SEQ_API.data.retrieve(external_id=["eid", "eid"], start=1000000, end=1100000)
