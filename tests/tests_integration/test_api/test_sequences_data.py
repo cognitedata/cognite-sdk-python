@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import Sequence, SequenceData
+from cognite.client.data_classes import Sequence, SequenceData, SequenceDataList
 
 COGNITE_CLIENT = CogniteClient()
 
@@ -78,8 +78,27 @@ def post_spy():
 class TestSequencesDataAPI:
     def test_retrieve(self, small_sequence):
         dps = COGNITE_CLIENT.sequences.data.retrieve(id=small_sequence.id, start=0, end=None)
+
         assert isinstance(dps, SequenceData)
         assert len(dps) > 0
+
+    def test_retrieve_multi(self, small_sequence, pretend_timeseries):
+        dps = COGNITE_CLIENT.sequences.data.retrieve(
+            id=[small_sequence.id], external_id=pretend_timeseries.external_id, start=0, end=None
+        )
+        assert isinstance(dps, SequenceDataList)
+        assert len(dps[0]) > 0
+        assert len(dps[1]) > 0
+        assert small_sequence.id == dps[0].id
+        assert pretend_timeseries.external_id == dps[1].external_id
+
+    def test_retrieve_multi_dataframe(self, small_sequence, pretend_timeseries):
+        df = COGNITE_CLIENT.sequences.data.retrieve_dataframe(
+            id=[small_sequence.id, pretend_timeseries.id], start=0, end=None, column_names="id"
+        )
+        assert df.shape[0] > 0
+        assert 3 == df.shape[1]
+        assert all([str(small_sequence.id), str(small_sequence.id), str(pretend_timeseries.id)] == df.columns)
 
     def test_retrieve_dataframe(self, small_sequence):
         df = COGNITE_CLIENT.sequences.data.retrieve_dataframe(id=small_sequence.id, start=0, end=5)

@@ -21,6 +21,9 @@ Changes are grouped as follows
 
 ## Unreleased
 
+### Added
+- Support for retrieving data from multiple sequences at once.
+
 ## [1.4.9] - 2019-12-19
 
 ### Fixed
