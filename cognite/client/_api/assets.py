@@ -47,8 +47,8 @@ class AssetsAPI(APIClient):
             asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
             metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value
             source (str): The source of this asset
-            created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps
-            last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps
+            created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             root (bool): filtered assets are root assets or not
             external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
             aggregated_properties (List[str]): Set of aggregated properties to include.
@@ -190,8 +190,8 @@ class AssetsAPI(APIClient):
             asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
             metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value.
             source (str): The source of this asset.
-            created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
-            last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
+            created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             root (bool): filtered assets are root assets or not.
             external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
             aggregated_properties (List[str]): Set of aggregated properties to include.
