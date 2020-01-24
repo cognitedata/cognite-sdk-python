@@ -42,8 +42,8 @@ class SequencesAPI(APIClient):
             root_asset_ids (List[int]): Filter out sequences not linked to assets with one of these assets as the root asset.
             asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
             asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
-            created_time (Dict[str, Any]): Filter out sequences with createdTime outside this range.
-            last_updated_time (Dict[str, Any]): Filter out sequences with lastUpdatedTime outside this range.
+            created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             limit (int, optional): Max number of sequences to return. Defaults to return all items.
 
         Yields:
@@ -157,8 +157,8 @@ class SequencesAPI(APIClient):
             root_asset_ids (List[int]): Filter out sequences not linked to assets with one of these assets as the root asset.
             asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
             asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
-            created_time (Dict[str, Any]): Filter out sequences with createdTime outside this range.
-            last_updated_time (Dict[str, Any]): Filter out sequences with lastUpdatedTime outside this range.
+            created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             limit (int, optional): Max number of sequences to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all items.
 
