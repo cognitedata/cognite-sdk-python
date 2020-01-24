@@ -287,16 +287,9 @@ class SequenceData:
         """
         pd = utils._auxiliary.local_import("pandas")
 
-        if column_names not in [
-            "externalId",
-            "id",
-            "columnExternalId",
-            "id|columnExternalId",
-            "externalId|columnExternalId",
-        ]:
-            raise ValueError(
-                'Invalid column_names value, should be one of "externalId", "id", "columnExternalId", "id|columnExternalId", "externalId|columnExternalId"'
-            )
+        options = ["externalId", "id", "columnExternalId", "id|columnExternalId", "externalId|columnExternalId"]
+        if column_names not in options:
+            raise ValueError('Invalid column_names value, should be one of "%s"' % "\", \"".join(options))
 
         column_names = (
             column_names.replace("columnExternalId", "{columnExternalId}")
