@@ -21,7 +21,10 @@ Changes are grouped as follows
 
 ## Unreleased
 
+
+## [1.4.10] - 2019-01-24
 ### Added
+- Support for the error field for synthetic time series query in the experimental client.
 - Support for retrieving data from multiple sequences at once.
 
 ## [1.4.9] - 2019-12-19
