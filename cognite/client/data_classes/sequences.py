@@ -280,12 +280,23 @@ class SequenceData:
         """Convert the sequence data into a pandas DataFrame.
 
         Args:
-            column_names (str):  Which field to use as column header. Can use any combination of "externalId", "columnExternalId", "id" and other characters as a template.
+            column_names (str):  Which field(s) to use as column header. Can use "externalId", "id", "columnExternalId", "id|columnExternalId" or "externalId|columnExternalId".
 
         Returns:
             pandas.DataFrame: The dataframe.
         """
         pd = utils._auxiliary.local_import("pandas")
+
+        if column_names not in [
+            "externalId",
+            "id",
+            "columnExternalId",
+            "id|columnExternalId",
+            "externalId|columnExternalId",
+        ]:
+            raise ValueError(
+                'Invalid column_names value, should be one of "externalId", "id", "columnExternalId", "id|columnExternalId", "externalId|columnExternalId"'
+            )
 
         column_names = (
             column_names.replace("columnExternalId", "{columnExternalId}")

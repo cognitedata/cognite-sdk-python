@@ -595,7 +595,7 @@ class SequencesDataAPI(APIClient):
             column_external_ids (Optional[List[str]]): List of external id for the columns of the sequence.  If 'None' is passed, all columns will be retrieved.
             id (int): Id of sequence
             external_id (str): External id of sequence.
-            column_names (str):  Which field to use as column header. Can use any combination of "externalId", "columnExternalId", "id" and other characters as a template. Default is "externalId|columnExternalId" for queries on more than one sequence, and "columnExternalId" for queries on a single sequence.
+            column_names (str):  Which field(s) to use as column header. Can use "externalId", "id", "columnExternalId", "id|columnExternalId" or "externalId|columnExternalId". Default is "externalId|columnExternalId" for queries on more than one sequence, and "columnExternalId" for queries on a single sequence.
             limit (int): Maximum number of rows to return per sequence.
 
         Returns:
