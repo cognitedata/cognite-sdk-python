@@ -9,7 +9,9 @@ PLAYGROUND_SPEC_URL = "https://storage.googleapis.com/cognitedata-api-docs/dist/
 
 def main(spec_url, spec_path):
     codegen = CodeGenerator(spec_url, spec_path)
-    codegen_playground = CodeGenerator(PLAYGROUND_SPEC_URL)
+    codegen_playground = CodeGenerator(
+        PLAYGROUND_SPEC_URL, exclude_schemas=["CustomMenuHierarchy", "CustomMenuHierarchyNode"]
+    )
 
     spec = codegen.open_api_spec
 
