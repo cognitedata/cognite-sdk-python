@@ -21,6 +21,26 @@ Changes are grouped as follows
 
 ## Unreleased
 
+### Added
+- Support for retrieving data from multiple sequences at once.
+
+## [1.4.9] - 2019-12-19
+
+### Fixed
+- Fixed a bug where datapoints `retrieve` could return less than limit even if there were more datapoints. 
+- Fixed an issue where `insert_dataframe` would give an error with older pandas versions.
+
+## [1.4.8] - 2019-12-19
+
+### Added
+- Support for `ignore_unknown_ids` on time series `retrieve_multiple`, `delete` and datapoints `retrieve` and `latest` and related endpoints.
+- Support for asset subtree filters on files, sequences, and time series.
+- Support for parent external id filters on assets.
+- Synthetic datapoints retrieve has additional functions including variable replacement and sympy support.
+
+### Changed
+- Synthetic datapoints now return errors in the `.error` field, in the jupyter output, and optionally in pandas dataframes if `include_errors` is set. 
+
 ## [1.4.7] - 2019-12-05
 
 ### Added

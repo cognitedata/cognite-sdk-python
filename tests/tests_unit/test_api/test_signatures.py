@@ -20,8 +20,8 @@ class TestListAndIterSignatures:
                 events.EventFilter,
                 ["root_asset_external_ids", "asset_subtree_external_ids", "partitions", "sort"],
             ),
-            (files.FilesAPI, files.FileMetadataFilter, ["root_asset_external_ids"]),
-            (sequences.SequencesAPI, sequences.SequenceFilter, []),
+            (files.FilesAPI, files.FileMetadataFilter, ["root_asset_external_ids", "asset_subtree_external_ids"]),
+            (sequences.SequencesAPI, sequences.SequenceFilter, ["asset_subtree_external_ids"]),
         ],
     )
     def test_list_and_iter_signatures_same_as_filter_signature(self, api, filter, ignore):

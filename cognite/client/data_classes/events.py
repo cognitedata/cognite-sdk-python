@@ -68,7 +68,7 @@ class EventFilter(CogniteFilter):
         asset_ids (List[int]): Asset IDs of related equipment that this event relates to.
         asset_external_ids (List[str]): Asset External IDs of related equipment that this event relates to.
         root_asset_ids (List[Dict[str, Any]]): Only include events that have a related asset in a tree rooted at any of these root assetIds.
-        asset_subtree_ids (List[Dict[str, Any]]): Only include events that have a related asset in a subtree rooted at any of these assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+        asset_subtree_ids (List[Dict[str, Any]]): Only include events that have a related asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
         source (str): The source of this event.
         type (str): The event type
         subtype (str): The event subtype

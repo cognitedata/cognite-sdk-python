@@ -31,7 +31,7 @@ class ParentTypeDefinitionFilter(dict):
     # GenStop
 
 
-# GenClass: TypeDefinitionSpec, TypeDefinition
+# GenClass: TypeDefinitionCreateSpec, TypeDefinition
 class Type(CogniteResource):
     """No description.
 

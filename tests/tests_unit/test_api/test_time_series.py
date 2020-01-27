@@ -32,7 +32,7 @@ def mock_ts_response(rsps):
         ]
     }
     url_pattern = re.compile(
-        re.escape(TS_API._get_base_url_with_base_path()) + "/timeseries(?:/byids|/update|/delete|/list|/search|$|\?.+)"
+        re.escape(TS_API._get_base_url_with_base_path()) + r"/timeseries(?:/byids|/update|/delete|/list|/search|$|\?.+)"
     )
     rsps.assert_all_requests_are_fired = False
 
@@ -66,6 +66,8 @@ class TestTimeSeries:
             asset_ids=[1, 2],
             root_asset_ids=[1231],
             include_metadata=False,
+            asset_subtree_ids=[1],
+            asset_subtree_external_ids=["a"],
         )
         assert mock_ts_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
         assert {
@@ -73,6 +75,7 @@ class TestTimeSeries:
             "isStep": True,
             "metadata": {"a": "b"},
             "assetIds": [1, 2],
+            "assetSubtreeIds": [{"id": 1}, {"externalId": "a"}],
             "rootAssetIds": [1231],
             "createdTime": {"max": 123},
             "lastUpdatedTime": {"min": 45},
@@ -116,12 +119,17 @@ class TestTimeSeries:
 
     def test_delete_single(self, mock_ts_response):
         res = TS_API.delete(id=1)
-        assert {"items": [{"id": 1}]} == jsgz_load(mock_ts_response.calls[0].request.body)
+        assert {"items": [{"id": 1}], "ignoreUnknownIds": False} == jsgz_load(mock_ts_response.calls[0].request.body)
+        assert res is None
+
+    def test_delete_single_ignore_unknown(self, mock_ts_response):
+        res = TS_API.delete(id=1, ignore_unknown_ids=True)
+        assert {"items": [{"id": 1}], "ignoreUnknownIds": True} == jsgz_load(mock_ts_response.calls[0].request.body)
         assert res is None
 
     def test_delete_multiple(self, mock_ts_response):
         res = TS_API.delete(id=[1])
-        assert {"items": [{"id": 1}]} == jsgz_load(mock_ts_response.calls[0].request.body)
+        assert {"items": [{"id": 1}], "ignoreUnknownIds": False} == jsgz_load(mock_ts_response.calls[0].request.body)
         assert res is None
 
     def test_update_with_resource_class(self, mock_ts_response):

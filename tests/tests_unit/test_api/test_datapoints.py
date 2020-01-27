@@ -1260,6 +1260,14 @@ class TestPandasIntegration:
         with pytest.raises(AssertionError, match="contains NaNs"):
             DPS_CLIENT.insert_dataframe(df)
 
+    def test_insert_dataframe_single_dp(self, mock_post_datapoints):
+        import pandas as pd
+
+        timestamps = [1500000000000]
+        df = pd.DataFrame({"a": [1.0], "b": [2.0]}, index=[utils._time.ms_to_datetime(ms) for ms in timestamps])
+        res = DPS_CLIENT.insert_dataframe(df, external_id_headers=True)
+        assert res is None
+
     def test_insert_dataframe_with_infs(self):
         import pandas as pd
         import numpy as np
@@ -1378,16 +1386,16 @@ class TestDataFetcher:
         "q, expected_q",
         [
             (
-                [_DPTask(DPS_CLIENT, 1, 2, {}, None, None, None, None)],
-                [_DPTask(DPS_CLIENT, 1, 2, {}, None, None, None, None)],
+                [_DPTask(DPS_CLIENT, 1, 2, {}, None, None, None, None, False)],
+                [_DPTask(DPS_CLIENT, 1, 2, {}, None, None, None, None, False)],
             ),
             (
-                [_DPTask(DPS_CLIENT, datetime(2018, 1, 1), datetime(2019, 1, 1), {}, None, None, None, None)],
-                [_DPTask(DPS_CLIENT, 1514764800000, 1546300800000, {}, None, None, None, None)],
+                [_DPTask(DPS_CLIENT, datetime(2018, 1, 1), datetime(2019, 1, 1), {}, None, None, None, None, False)],
+                [_DPTask(DPS_CLIENT, 1514764800000, 1546300800000, {}, None, None, None, None, False)],
             ),
             (
-                [_DPTask(DPS_CLIENT, gms("1h"), gms(("25h")), {}, ["average"], "1d", None, None)],
-                [_DPTask(DPS_CLIENT, gms("1d"), gms("2d"), {}, ["average"], "1d", None, None)],
+                [_DPTask(DPS_CLIENT, gms("1h"), gms(("25h")), {}, ["average"], "1d", None, None, False)],
+                [_DPTask(DPS_CLIENT, gms("1d"), gms("2d"), {}, ["average"], "1d", None, None, False)],
             ),
         ],
     )
@@ -1452,6 +1460,7 @@ class TestDataFetcher:
             aggregates=[],
             limit=None,
             include_outside_points=False,
+            ignore_unknown_ids=False,
         )
         task.request_limit = request_limit
         res = DatapointsFetcher(DPS_CLIENT)._get_windows(id=0, task=task, remaining_user_limit=user_limit)

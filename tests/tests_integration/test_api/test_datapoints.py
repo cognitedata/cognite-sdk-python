@@ -8,7 +8,7 @@ import pandas
 import pytest
 
 from cognite.client import CogniteClient, utils
-from cognite.client.data_classes import DatapointsQuery, TimeSeries
+from cognite.client.data_classes import DatapointsList, DatapointsQuery, TimeSeries
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._time import timestamp_to_ms
 from tests.utils import set_request_limit
@@ -18,12 +18,9 @@ COGNITE_CLIENT = CogniteClient()
 
 @pytest.fixture(scope="session")
 def test_time_series():
-    time_series = {}
-    for ts in COGNITE_CLIENT.time_series.list(limit=150):
-        if ts.name in ["test__constant_{}_with_noise".format(i) for i in range(0, 10)]:
-            value = int(re.match(r"test__constant_(\d+)_with_noise", ts.name).group(1))
-            time_series[value] = ts
-    yield time_series
+    eids = ["test__constant_%d_with_noise" % i for i in range(10)]
+    ts = COGNITE_CLIENT.time_series.retrieve_multiple(external_ids=eids, ignore_unknown_ids=True)
+    yield {int(re.match(r"test__constant_(\d+)_with_noise", t.name).group(1)): t for t in ts}
 
 
 @pytest.fixture(scope="session")
@@ -57,6 +54,26 @@ class TestDatapointsAPI:
         dps = COGNITE_CLIENT.datapoints.retrieve(id=ts.id, start="1d-ago", end="now")
         assert len(dps) > 0
 
+    def test_retrieve_unknown(self, test_time_series):
+        ts = test_time_series[0]
+        dps = COGNITE_CLIENT.datapoints.retrieve(id=[ts.id] + [42], start="1d-ago", end="now", ignore_unknown_ids=True)
+        assert 1 == len(dps)
+
+    def test_retrieve_all_unknown(self, test_time_series):
+        ts = test_time_series[0]
+        dps = COGNITE_CLIENT.datapoints.retrieve(
+            id=[42], external_id="missing", start="1d-ago", end="now", ignore_unknown_ids=True
+        )
+        assert isinstance(dps, DatapointsList)
+        assert 0 == len(dps)
+
+    def test_retrieve_all_unknown_single(self, test_time_series):
+        ts = test_time_series[0]
+        dps = COGNITE_CLIENT.datapoints.retrieve(
+            external_id="missing", start="1d-ago", end="now", ignore_unknown_ids=True
+        )
+        assert dps is None
+
     def test_retrieve_multiple(self, test_time_series):
         ids = [test_time_series[0].id, test_time_series[1].id, {"id": test_time_series[2].id, "aggregates": ["max"]}]
 
@@ -89,6 +106,13 @@ class TestDatapointsAPI:
                 aggregates=["min"],
                 granularity="1s",
             )
+
+    def test_stop_pagination_in_time(self, test_time_series, post_spy):
+        ts = test_time_series[0]
+        dps = COGNITE_CLIENT.datapoints.retrieve(id=ts.id, start=0, end="now", limit=223456)
+        assert 223456 == len(dps)
+        # first page 100k, counts 1, paginate 2 windows (+1 potential for 1st day uncertainty)
+        assert 4 <= COGNITE_CLIENT.datapoints._post.call_count <= 5
 
     def test_retrieve_include_outside_points(self, test_time_series):
         ts = test_time_series[0]
@@ -147,6 +171,20 @@ class TestDatapointsAPI:
         assert df.shape[1] == 1
         assert has_correct_timestamp_spacing(df, "1s")
 
+    def test_retrieve_dataframe_missing(self, test_time_series):
+        ts = test_time_series[0]
+        df = COGNITE_CLIENT.datapoints.retrieve_dataframe(
+            id=ts.id,
+            external_id="missing",
+            start="6h-ago",
+            end="now",
+            aggregates=["average"],
+            granularity="1s",
+            ignore_unknown_ids=True,
+        )
+        assert df.shape[0] > 0
+        assert df.shape[1] == 1
+
     def test_retrieve_string(self):
         dps = COGNITE_CLIENT.datapoints.retrieve(external_id="test__string_b", start=1563000000000, end=1564100000000)
         assert len(dps) > 100000
@@ -162,9 +200,34 @@ class TestDatapointsAPI:
         assert len(res) == 3
         assert len(res[2][0]) < len(res[1][0]) < len(res[0][0])
 
+    def test_query_unknown(self, test_time_series):
+        dps_query1 = DatapointsQuery(id=test_time_series[0].id, start="6h-ago", end="now", ignore_unknown_ids=True)
+        dps_query2 = DatapointsQuery(id=123, start="3h-ago", end="now", ignore_unknown_ids=True)
+        dps_query3 = DatapointsQuery(
+            external_id="missing time series",
+            start="1d-ago",
+            end="now",
+            aggregates=["average"],
+            granularity="1h",
+            ignore_unknown_ids=True,
+        )
+        res = COGNITE_CLIENT.datapoints.query([dps_query1, dps_query2, dps_query3])
+        assert len(res) == 3
+        assert len(res[0]) == 1
+        assert len(res[0][0]) > 0
+        assert len(res[1]) == 0
+        assert len(res[2]) == 0
+
     def test_retrieve_latest(self, test_time_series):
         ids = [test_time_series[0].id, test_time_series[1].id]
         res = COGNITE_CLIENT.datapoints.retrieve_latest(id=ids)
+        for dps in res:
+            assert 1 == len(dps)
+
+    def test_retrieve_latest_unknown(self, test_time_series):
+        ids = [test_time_series[0].id, test_time_series[1].id, 42, 1337]
+        res = COGNITE_CLIENT.datapoints.retrieve_latest(id=ids, ignore_unknown_ids=True)
+        assert 2 == len(res)
         for dps in res:
             assert 1 == len(dps)
 
@@ -212,3 +275,23 @@ class TestDatapointsAPI:
 
     def test_delete_range(self, new_ts):
         COGNITE_CLIENT.datapoints.delete_range(start="2d-ago", end="now", id=new_ts.id)
+
+    def test_retrieve_dataframe_dict(self, test_time_series):
+
+        dfd = COGNITE_CLIENT.datapoints.retrieve_dataframe_dict(
+            id=[test_time_series[0].id, 42],
+            external_id=["missing time series", test_time_series[1].external_id],
+            aggregates=["count", "interpolation"],
+            start=0,
+            end="now",
+            limit=100,
+            granularity="1m",
+            ignore_unknown_ids=True,
+        )
+        assert isinstance(dfd, dict)
+        assert 2 == len(dfd.keys())
+        assert dfd["interpolation"].shape[0] > 0
+        assert dfd["interpolation"].shape[1] == 2
+
+        assert dfd["count"].shape[0] > 0
+        assert dfd["count"].shape[1] == 2
