@@ -45,6 +45,7 @@ def _init_requests_session():
     adapter = HTTPAdapter(
         max_retries=RetryWithMaxBackoff(
             total=config.max_retries,
+            read=0,
             backoff_factor=0.5,
             status_forcelist=[429],
             method_whitelist=False,
