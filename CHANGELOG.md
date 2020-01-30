@@ -21,6 +21,8 @@ Changes are grouped as follows
 
 ## Unreleased
 
+### Changed
+- Datapoint insertion changed to be less memory intensive.
 
 ## [1.4.10] - 2019-01-24
 ### Added

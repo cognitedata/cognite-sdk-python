@@ -269,7 +269,7 @@ class DatapointsAPI(APIClient):
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
         post_dps_object = self._process_ids(id, external_id, wrap_ids=True)[0]
         if isinstance(datapoints, Datapoints):
-            datapoints = datapoints.dump()["datapoints"]
+            datapoints = [(t, v) for t, v in zip(datapoints.timestamp, datapoints.value)]
         post_dps_object.update({"datapoints": datapoints})
         dps_poster = DatapointsPoster(self)
         dps_poster.insert([post_dps_object])
@@ -706,23 +706,19 @@ class DatapointsPoster:
             List[Dict[Union[int, float, datetime], Union[int, float, str]]],
             List[Tuple[Union[int, float, datetime], Union[int, float, str]]],
         ],
-    ) -> List[Dict[str, int]]:
+    ) -> List[Tuple[int, Any]]:
         utils._auxiliary.assert_type(datapoints, "datapoints", [list])
         assert len(datapoints) > 0, "No datapoints provided"
         utils._auxiliary.assert_type(datapoints[0], "datapoints element", [tuple, dict])
 
         valid_datapoints = []
         if isinstance(datapoints[0], tuple):
-            valid_datapoints = [
-                {"timestamp": cognite.client.utils._time.timestamp_to_ms(t), "value": v} for t, v in datapoints
-            ]
+            valid_datapoints = [(cognite.client.utils._time.timestamp_to_ms(t), v) for t, v in datapoints]
         elif isinstance(datapoints[0], dict):
             for dp in datapoints:
                 assert "timestamp" in dp, "A datapoint is missing the 'timestamp' key"
                 assert "value" in dp, "A datapoint is missing the 'value' key"
-                valid_datapoints.append(
-                    {"timestamp": cognite.client.utils._time.timestamp_to_ms(dp["timestamp"]), "value": dp["value"]}
-                )
+                valid_datapoints.append((cognite.client.utils._time.timestamp_to_ms(dp["timestamp"]), dp["value"]))
         return valid_datapoints
 
     def _bin_datapoints(self, dps_object_list: List[Dict[str, Any]]) -> List[List[Dict[str, Any]]]:
@@ -756,7 +752,12 @@ class DatapointsPoster:
         )
 
     def _insert_datapoints(self, post_dps_objects: List[Dict[str, Any]]):
+        # convert to memory intensive format as late as possible and clean up after
+        for it in post_dps_objects:
+            it["datapoints"] = [{"timestamp": t, "value": v} for t, v in it["datapoints"]]
         self.client._post(url_path=self.client._RESOURCE_PATH, json={"items": post_dps_objects})
+        for it in post_dps_objects:
+            del it["datapoints"]
 
 
 class _DPWindow:
