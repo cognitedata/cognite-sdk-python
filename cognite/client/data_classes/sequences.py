@@ -86,7 +86,7 @@ class SequenceFilter(CogniteFilter):
         metadata (Dict[str, Any]): Filter the sequences by metadata fields and values (case-sensitive). Format is {"key1":"value1","key2":"value2"}.
         asset_ids (List[int]): Return only sequences linked to one of the specified assets.
         root_asset_ids (List[int]): Only include sequences that have a related asset in a tree rooted at any of these root assetIds.
-        asset_subtree_ids (List[Dict[str, Any]]): Only include sequences that have a related asset in a subtree rooted at any of these assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+        asset_subtree_ids (List[Dict[str, Any]]): Only include sequences that have a related asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
         created_time (Dict[str, Any]): Filter out sequences with createdTime outside this range.
         last_updated_time (Dict[str, Any]): Filter out sequences with lastUpdatedTime outside this range.
         cognite_client (CogniteClient): The client to associate with this object.
