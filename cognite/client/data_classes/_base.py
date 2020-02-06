@@ -235,6 +235,8 @@ class CogniteResourceList(UserList):
         pd = utils._auxiliary.local_import("pandas")
         df = pd.DataFrame(self.dump(camel_case=camel_case))
         nullable_int_fields = ["startTime", "endTime", "assetId", "parentId"]
+        if not camel_case:
+            nullable_int_fields = [utils._auxiliary.to_snake_case(f) for f in nullable_int_fields]
         try:
             for field in nullable_int_fields:
                 if field in df:

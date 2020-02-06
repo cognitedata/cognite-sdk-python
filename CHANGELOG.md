@@ -21,6 +21,9 @@ Changes are grouped as follows
 
 ## Unreleased
 
+### Fixed
+- Jupyter notebook output and non-camel cased to_pandas uses nullable int fields instead of float for relevant fields.
+
 ### Changed
 - Datapoint insertion changed to be less memory intensive.
 
