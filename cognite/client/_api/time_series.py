@@ -313,6 +313,7 @@ class TimeSeriesAPI(APIClient):
         limit: int = 100,
     ) -> TimeSeriesList:
         """`Search for time series. <https://docs.cognite.com/api/v1/#operation/searchTimeSeries>`_
+        Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 
         Args:
             name (str, optional): Prefix and fuzzy search on name.
