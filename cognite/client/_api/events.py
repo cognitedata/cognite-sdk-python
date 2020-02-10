@@ -323,6 +323,7 @@ class EventsAPI(APIClient):
 
     def search(self, description: str = None, filter: Union[EventFilter, Dict] = None, limit: int = 100) -> EventList:
         """`Search for events <https://docs.cognite.com/api/v1/#operation/searchEvents>`_
+        Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 
         Args:
             description (str): Fuzzy match on description.
