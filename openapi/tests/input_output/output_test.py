@@ -68,6 +68,7 @@ class Asset(CogniteResource):
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         root_id (int): A server-generated ID for the object.
         aggregates (Union[Dict[str, Any], AggregateResultItem]): Aggregated metrics of the asset
+        parent_external_id (str): The external ID of the parent. The property is omitted if the asset doesn't have a parent or if the parent doesn't have externalId.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
@@ -84,6 +85,7 @@ class Asset(CogniteResource):
         last_updated_time: int = None,
         root_id: int = None,
         aggregates: Union[Dict[str, Any], AggregateResultItem] = None,
+        parent_external_id: str = None,
         cognite_client=None,
     ):
         self.external_id = external_id
@@ -97,6 +99,7 @@ class Asset(CogniteResource):
         self.last_updated_time = last_updated_time
         self.root_id = root_id
         self.aggregates = aggregates
+        self.parent_external_id = parent_external_id
         self._cognite_client = cognite_client
 
     @classmethod
