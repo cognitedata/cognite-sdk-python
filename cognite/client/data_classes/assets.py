@@ -11,13 +11,19 @@ class AggregateResultItem(dict):
 
     Args:
         child_count (int): Number of direct descendants for the asset
+        depth (int): Asset path depth (number of levels below root node).
+        path (List[Dict[str, Any]]): IDs of assets on the path to the asset.
     """
 
-    def __init__(self, child_count: int = None, **kwargs):
+    def __init__(self, child_count: int = None, depth: int = None, path: List[Dict[str, Any]] = None, **kwargs):
         self.child_count = child_count
+        self.depth = depth
+        self.path = path
         self.update(kwargs)
 
     child_count = CognitePropertyClassUtil.declare_property("childCount")
+    depth = CognitePropertyClassUtil.declare_property("depth")
+    path = CognitePropertyClassUtil.declare_property("path")
 
     # GenStop
 
