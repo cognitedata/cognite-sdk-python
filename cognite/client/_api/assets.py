@@ -258,6 +258,7 @@ class AssetsAPI(APIClient):
         """`Create one or more assets. <https://docs.cognite.com/api/v1/#operation/createAssets>`_
         
         You can create an arbitrary number of assets, and the SDK will split the request into multiple requests.
+        When specifying parent-child relation between assets using `parentExternalId` the link will be resvoled into an internal ID and stored as `parentId`.
 
         Args:
             asset (Union[Asset, List[Asset]]): Asset or list of assets to create.
