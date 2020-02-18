@@ -1,4 +1,4 @@
-import os
+import os, pytest
 
 from openapi.generator import ClassGenerator, CodeGenerator, UpdateClassGenerator
 
@@ -40,6 +40,7 @@ class TestClassGenerator:
         assert "Asset" == segments[0].class_name
         assert "Asset" == segments[0].schema_names
 
+    @pytest.mark.skip(reason="too unstable")
     def test_generate_docstring_from_schema(self):
         schemas = [CLASS_GENERATOR._spec.components.schemas.get("Asset")]
         docstring = CLASS_GENERATOR.generate_docstring(schemas, 4)
@@ -63,6 +64,7 @@ class TestClassGenerator:
             == docstring
         )
 
+    @pytest.mark.skip(reason="too unstable")
     def test_generate_constructor_from_schema(self):
         schemas = [CLASS_GENERATOR._spec.components.schemas.get("Asset")]
         constructor = CLASS_GENERATOR.generate_constructor(schemas, indentation=4)
