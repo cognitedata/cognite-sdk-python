@@ -112,3 +112,13 @@ class TestAssetList:
         resources = getattr(assets, method)()
         expected = [r1, r2, r3]
         assert expected == resources
+
+    @pytest.mark.dsl
+    def test_to_pandas_nullable_int(self):
+        import pandas as pd
+
+        for camel_case in [False, True]:
+            assert (
+                pd.Int64Dtype()
+                == AssetList([Asset(parent_id=123), Asset(parent_id=None)]).to_pandas(camel_case=camel_case).dtypes[0]
+            )
