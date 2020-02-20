@@ -76,10 +76,10 @@ class SourcePackagesAPI(APIClient):
         assert num_of_eligible_model_py_files == 1, "Multiple model.py files with a Model class in your source package"
 
         available_operations = []
-        if re.search("def train\(", model_file_content):
+        if re.search(r"def train\(", model_file_content):
             available_operations.append("TRAIN")
-        if re.search("def predict\(", model_file_content):
-            if re.search("def load\(", model_file_content):
+        if re.search(r"def predict\(", model_file_content):
+            if re.search(r"def load\(", model_file_content):
                 available_operations.append("PREDICT")
             else:
                 raise AssertionError("Your Model class defines predict() but not load().")
