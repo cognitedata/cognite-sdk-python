@@ -24,6 +24,9 @@ Changes are grouped as follows
 ### Changed
 - Datapoint insertion changed to be less memory intensive.
 
+### Fixed
+- Fixed a bug where add service account to group expected items in response. 
+
 ## [1.4.10] - 2019-01-24
 ### Added
 - Support for the error field for synthetic time series query in the experimental client.
