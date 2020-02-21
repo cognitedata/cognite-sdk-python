@@ -21,16 +21,16 @@ Changes are grouped as follows
 
 ## Unreleased
 
-### Fixed
-- Jupyter notebook output and non-camel cased to_pandas uses nullable int fields instead of float for relevant fields.
+## [1.4.11] - 2020-02-21
 
 ### Changed
 - Datapoint insertion changed to be less memory intensive.
 
 ### Fixed
 - Fixed a bug where add service account to group expected items in response. 
+- Jupyter notebook output and non-camel cased to_pandas uses nullable int fields instead of float for relevant fields.
 
-## [1.4.10] - 2019-01-24
+## [1.4.10] - 2020-01-24
 ### Added
 - Support for the error field for synthetic time series query in the experimental client.
 - Support for retrieving data from multiple sequences at once.
