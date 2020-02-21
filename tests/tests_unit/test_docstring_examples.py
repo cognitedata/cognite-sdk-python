@@ -5,6 +5,7 @@ import pytest
 
 from cognite.client._api import (
     assets,
+    data_sets,
     datapoints,
     events,
     files,
@@ -41,6 +42,9 @@ class TestDocstringExamples:
     @pytest.mark.dsl
     def test_datapoints(self):
         run_docstring_tests(datapoints)
+
+    def test_data_sets(self):
+        run_docstring_tests(data_sets)
 
     def test_events(self):
         run_docstring_tests(events)

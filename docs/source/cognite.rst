@@ -335,6 +335,39 @@ Data classes
     :show-inheritance:
 
 
+Data sets
+---------
+Retrieve an data set by id
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.data_sets.DataSetsAPI.retrieve
+
+Retrieve multiple data sets by id
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.data_sets.DataSetsAPI.retrieve_multiple
+
+List data sets
+^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.data_sets.DataSetsAPI.list
+
+Create data sets
+^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.data_sets.DataSetsAPI.create
+
+Delete data sets
+^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.data_sets.DataSetsAPI.delete
+
+Update data sets
+^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.data_sets.DataSetsAPI.update
+
+Data classes
+^^^^^^^^^^^^
+.. automodule:: cognite.client.data_classes.data_sets
+    :members:
+    :show-inheritance:
+
+
 Files
 -----
 Retrieve file metadata by id
