@@ -263,7 +263,8 @@ class GroupsAPI(APIClient):
                 >>> res = c.iam.groups.add_service_account(id=1, service_account_id=1)
         """
         resource_path = self._RESOURCE_PATH + "/{}/serviceaccounts".format(id)
-        self._create_multiple(cls=ServiceAccountList, resource_path=resource_path, items=service_account_id)
+        all_ids = self._process_ids(service_account_id, None, False)
+        self._post(resource_path, json={"items": all_ids})
 
     def remove_service_account(self, id: int, service_account_id: Union[int, List[int]]) -> None:
         """`Remove one or more service accounts from a group. <https://docs.cognite.com/api/v1/#operation/removeServiceAccountsFromGroup>`_
