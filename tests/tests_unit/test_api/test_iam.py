@@ -135,6 +135,16 @@ def mock_group_service_account_response(rsps):
     yield rsps
 
 
+@pytest.fixture
+def mock_empty_response(rsps):
+    response_body = {}
+    url_pattern = re.compile(re.escape(IAM_API._get_base_url_with_base_path()) + "/groups/1/serviceaccounts.*")
+    rsps.assert_all_requests_are_fired = False
+    rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
+    rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
+    yield rsps
+
+
 class TestGroups:
     def test_list(self, mock_groups):
         res = IAM_API.groups.list()
@@ -172,25 +182,25 @@ class TestGroups:
         assert isinstance(res, ServiceAccountList)
         assert mock_group_service_account_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
-    def test_add_service_account(self, mock_group_service_account_response):
+    def test_add_service_account(self, mock_empty_response):
         res = IAM_API.groups.add_service_account(1, 1)
         assert res is None
-        assert {"items": [1]} == jsgz_load(mock_group_service_account_response.calls[0].request.body)
+        assert {"items": [1]} == jsgz_load(mock_empty_response.calls[0].request.body)
 
-    def test_add_service_account_multiple(self, mock_group_service_account_response):
+    def test_add_service_account_multiple(self, mock_empty_response):
         res = IAM_API.groups.add_service_account(1, [1])
         assert res is None
-        assert {"items": [1]} == jsgz_load(mock_group_service_account_response.calls[0].request.body)
+        assert {"items": [1]} == jsgz_load(mock_empty_response.calls[0].request.body)
 
-    def test_remove_service_account(self, mock_group_service_account_response):
+    def test_remove_service_account(self, mock_empty_response):
         res = IAM_API.groups.remove_service_account(1, 1)
         assert res is None
-        assert {"items": [1]} == jsgz_load(mock_group_service_account_response.calls[0].request.body)
+        assert {"items": [1]} == jsgz_load(mock_empty_response.calls[0].request.body)
 
-    def test_remove_service_account_multiple(self, mock_group_service_account_response):
+    def test_remove_service_account_multiple(self, mock_empty_response):
         res = IAM_API.groups.remove_service_account(1, [1])
         assert res is None
-        assert {"items": [1]} == jsgz_load(mock_group_service_account_response.calls[0].request.body)
+        assert {"items": [1]} == jsgz_load(mock_empty_response.calls[0].request.body)
 
 
 @pytest.fixture
