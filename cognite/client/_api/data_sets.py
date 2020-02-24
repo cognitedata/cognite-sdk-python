@@ -207,7 +207,7 @@ class DataSetsAPI(APIClient):
 
         Examples:
 
-            Update an data set that you have fetched. This will perform a full update of the data set::
+            Update a data set that you have fetched. This will perform a full update of the data set::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
