@@ -116,10 +116,10 @@ class TimeSeries(CogniteResource):
         return None
 
     def asset(self) -> "Asset":
-        """Returns this assets parent.
+        """Returns the asset this time series belongs to.
 
         Returns:
-            Asset: The parent asset.
+            Asset: The asset given by its `asset_id`.
         """
         if self.asset_id is None:
             raise ValueError("asset_id is None")
