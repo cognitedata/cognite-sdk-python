@@ -115,6 +115,16 @@ class TimeSeries(CogniteResource):
             return list(dps)[0]
         return None
 
+    def asset(self) -> "Asset":
+        """Returns this assets parent.
+
+        Returns:
+            Asset: The parent asset.
+        """
+        if self.asset_id is None:
+            raise ValueError("asset_id is None")
+        return self._cognite_client.assets.retrieve(id=self.asset_id)
+
 
 # GenClass: TimeSeriesSearchDTO.filter
 class TimeSeriesFilter(CogniteFilter):
