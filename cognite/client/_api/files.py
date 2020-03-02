@@ -451,21 +451,16 @@ class FilesAPI(APIClient):
                 for file_name in os.listdir(path):
                     file_path = os.path.join(path, file_name)
                     if os.path.isfile(file_path):
-                        tasks.append(
-                            (
-                                FileMetadata(
-                                    name=file_name,
-                                    source=source,
-                                    mime_type=mime_type,
-                                    metadata=metadata,
-                                    asset_ids=asset_ids,
-                                    source_created_time=source_created_time,
-                                    source_modified_time=source_modified_time,
-                                ),
-                                file_path,
-                                overwrite,
-                            )
+                        file_metadata = FileMetadata(
+                            name=file_name,
+                            source=source,
+                            mime_type=mime_type,
+                            metadata=metadata,
+                            asset_ids=asset_ids,
+                            source_created_time=source_created_time,
+                            source_modified_time=source_modified_time,
                         )
+                        tasks.append((file_metadata, file_path, overwrite))
             tasks_summary = utils._concurrency.execute_tasks_concurrently(
                 self._upload_file_from_path, tasks, self._config.max_workers
             )
