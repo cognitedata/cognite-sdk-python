@@ -170,8 +170,8 @@ class RelationshipsAPI(APIClient):
 
     def list(
         self,
-        source_resource: Union[str, List[str]] = None,
-        source_resource_id: Union[str, List[str]] = None,
+        source_resource: str = None,
+        source_resource_id: str = None,
         sources: List[Dict[str, Any]] = None,
         target_resource: str = None,
         target_resource_id: str = None,
