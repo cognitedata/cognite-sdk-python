@@ -18,8 +18,10 @@ class RelationshipsAPI(APIClient):
         chunk_size: int = None,
         source_resource: str = None,
         source_resource_id: str = None,
+        sources: List[Dict[str, Any]] = None,
         target_resource: str = None,
         target_resource_id: str = None,
+        targets: List[Dict[str, Any]] = None,
         start_time: Dict[str, Any] = None,
         end_time: Dict[str, Any] = None,
         confidence: Dict[str, Any] = None,
@@ -37,8 +39,10 @@ class RelationshipsAPI(APIClient):
             chunk_size (int, optional): Number of relationships to return in each chunk. Defaults to yielding one relationship a time.
             source_resource (str): Resource type of the source node.
             source_resource_id (str): Resource ID of the source node.
+            sources (List[Dict[str, Any]]): List of multiple sources in the format `[{"resourceId":externalId,"resource":"Asset"},...]`
             target_resource (str): Resource type of the target node.
             target_resource_id (str): Resource ID of the target node.
+            targets (List[Dict[str, Any]]): List of multiple targets in the format `[{"resourceId":externalId,"resource":"Asset"},...]`
             start_time (Dict[str, Any]): Range to filter the field for. (inclusive)
             end_time (Dict[str, Any]): Range to filter the field for. (inclusive)
             confidence (Dict[str, Any]): Range to filter the field for. (inclusive)
@@ -55,8 +59,10 @@ class RelationshipsAPI(APIClient):
         filter = RelationshipFilter(
             source_resource=source_resource,
             source_resource_id=source_resource_id,
+            sources=sources,
             target_resource=target_resource,
             target_resource_id=target_resource_id,
+            targets=targets,
             start_time=start_time,
             end_time=end_time,
             confidence=confidence,
@@ -120,8 +126,10 @@ class RelationshipsAPI(APIClient):
         self,
         source_resource: str = None,
         source_resource_id: str = None,
+        sources: List[Dict[str, Any]] = None,
         target_resource: str = None,
         target_resource_id: str = None,
+        targets: List[Dict[str, Any]] = None,
         start_time: Dict[str, Any] = None,
         end_time: Dict[str, Any] = None,
         confidence: Dict[str, Any] = None,
@@ -136,8 +144,10 @@ class RelationshipsAPI(APIClient):
         Args:
             source_resource (str): Resource type of the source node.
             source_resource_id (str): Resource ID of the source node.
+            sources (List[Dict[str, Any]]): List of multiple sources in the format `[{"resourceId":externalId,"resource":"Asset"},...]`
             target_resource (str): Resource type of the target node.
             target_resource_id (str): Resource ID of the target node.
+            targets (List[Dict[str, Any]]): List of multiple targets in the format `[{"resourceId":externalId,"resource":"Asset"},...]`
             start_time (Dict[str, Any]): Range to filter the field for. (inclusive)
             end_time (Dict[str, Any]): Range to filter the field for. (inclusive)
             confidence (Dict[str, Any]): Range to filter the field for. (inclusive)
@@ -176,8 +186,10 @@ class RelationshipsAPI(APIClient):
         filter = RelationshipFilter(
             source_resource=source_resource,
             source_resource_id=source_resource_id,
+            sources=sources,
             target_resource=target_resource,
             target_resource_id=target_resource_id,
+            targets=targets,
             start_time=start_time,
             end_time=end_time,
             confidence=confidence,

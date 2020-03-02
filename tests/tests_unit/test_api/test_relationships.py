@@ -183,3 +183,15 @@ class TestRelationships:
             "cursor": None,
         } == jsgz_load(mock_rel_response.calls[0].request.body)
         assert mock_rel_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
+
+    def test_multi_source_target_list(self, mock_rel_response):
+        sources = [{"resource": "Asset", "resourceId": "abc"}, {"resource": "Asset", "resourceId": "def"}]
+        targets = [{"resource": "TimeSeries", "resourceId": "abc"}, {"resource": "TimeSeries", "resourceId": "def"}]
+
+        res = REL_API.list(sources=sources, targets=targets, relationship_type="belongs_to")
+        assert {
+            "filter": {"sources": sources, "targets": targets, "relationshipType": "belongs_to"},
+            "limit": 25,
+            "cursor": None,
+        } == jsgz_load(mock_rel_response.calls[0].request.body)
+        assert mock_rel_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
