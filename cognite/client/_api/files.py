@@ -1,3 +1,4 @@
+import copy
 import os
 from typing import *
 from typing.io import BinaryIO, TextIO
@@ -437,29 +438,15 @@ class FilesAPI(APIClient):
                     for file in files:
                         file_path = os.path.join(root, file)
                         basename = os.path.basename(file_path)
-                        file_metadata = FileMetadata(
-                            name=basename,
-                            source=source,
-                            mime_type=mime_type,
-                            metadata=metadata,
-                            asset_ids=asset_ids,
-                            source_created_time=source_created_time,
-                            source_modified_time=source_modified_time,
-                        )
+                        file_metadata = copy.copy(file_metadata)
+                        file_metadata.name = basename
                         tasks.append((file_metadata, file_path, overwrite))
             else:
                 for file_name in os.listdir(path):
                     file_path = os.path.join(path, file_name)
                     if os.path.isfile(file_path):
-                        file_metadata = FileMetadata(
-                            name=file_name,
-                            source=source,
-                            mime_type=mime_type,
-                            metadata=metadata,
-                            asset_ids=asset_ids,
-                            source_created_time=source_created_time,
-                            source_modified_time=source_modified_time,
-                        )
+                        file_metadata = copy.copy(file_metadata)
+                        file_metadata.name = file_name
                         tasks.append((file_metadata, file_path, overwrite))
             tasks_summary = utils._concurrency.execute_tasks_concurrently(
                 self._upload_file_from_path, tasks, self._config.max_workers
