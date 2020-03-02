@@ -21,6 +21,9 @@ Changes are grouped as follows
 
 ## Unreleased
 
+### Added
+- Relationship list supports multiple sources and targets
+
 ## [1.4.11] - 2020-02-21
 
 ### Changed
