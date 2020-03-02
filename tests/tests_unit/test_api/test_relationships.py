@@ -187,10 +187,11 @@ class TestRelationships:
     def test_multi_source_target_list(self, mock_rel_response):
         sources = [{"resource": "Asset", "resourceId": "abc"}, {"resource": "Asset", "resourceId": "def"}]
         targets = [{"resource": "TimeSeries", "resourceId": "abc"}, {"resource": "TimeSeries", "resourceId": "def"}]
-
-        res = REL_API.list(sources=sources, targets=targets, relationship_type="belongs_to")
+        types = ["t1", "t2"]
+        sets = ["s1", "s1"]
+        res = REL_API.list(sources=sources, targets=targets, data_sets=sets, relationship_types=types)
         assert {
-            "filter": {"sources": sources, "targets": targets, "relationshipType": "belongs_to"},
+            "filter": {"sources": sources, "targets": targets, "relationshipTypes": types, "dataSets": sets},
             "limit": 25,
             "cursor": None,
         } == jsgz_load(mock_rel_response.calls[0].request.body)

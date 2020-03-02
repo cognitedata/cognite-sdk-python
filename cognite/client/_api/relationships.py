@@ -28,7 +28,9 @@ class RelationshipsAPI(APIClient):
         last_updated_time: Dict[str, Any] = None,
         created_time: Dict[str, Any] = None,
         data_set: str = None,
+        data_sets: List[str] = None,
         relationship_type: str = None,
+        relationship_types: List[str] = None,
         limit: int = None,
     ) -> Generator[Union[Relationship, RelationshipList], None, None]:
         """Iterate over relationships
@@ -48,8 +50,10 @@ class RelationshipsAPI(APIClient):
             confidence (Dict[str, Any]): Range to filter the field for. (inclusive)
             last_updated_time (Dict[str, Any]): Range to filter the field for. (inclusive)
             created_time (Dict[str, Any]): Range to filter the field for. (inclusive)
-            data_set (str): String describing the source system storing or generating the relationship.
+            data_set (str): Filter on a single dataset.
+            data_sets (List[str]): Filter on one of these datasets.
             relationship_type (str): Type of the relationship in order to distinguish between different relationships. In general relationship types should reflect references as they are expressed in natural sentences.
+            relationship_types (List[str]): Filter on one of these relationship types.
             limit (int, optional): Maximum number of relationships to return. Defaults to 100. Set to -1, float("inf") or None
                 to return all items.
 
@@ -69,7 +73,9 @@ class RelationshipsAPI(APIClient):
             last_updated_time=last_updated_time,
             created_time=created_time,
             data_set=data_set,
+            data_sets=data_sets,
             relationship_type=relationship_type,
+            relationship_types=relationship_types,
         ).dump(camel_case=True)
         return self._list_generator(method="POST", chunk_size=chunk_size, limit=limit, filter=filter)
 
@@ -136,7 +142,9 @@ class RelationshipsAPI(APIClient):
         last_updated_time: Dict[str, Any] = None,
         created_time: Dict[str, Any] = None,
         data_set: str = None,
+        data_sets: List[str] = None,
         relationship_type: str = None,
+        relationship_types: List[str] = None,
         limit: int = 25,
     ) -> RelationshipList:
         """List relationships
@@ -153,8 +161,10 @@ class RelationshipsAPI(APIClient):
             confidence (Dict[str, Any]): Range to filter the field for. (inclusive)
             last_updated_time (Dict[str, Any]): Range to filter the field for. (inclusive)
             created_time (Dict[str, Any]): Range to filter the field for. (inclusive)
-            data_set (str): String describing the source system storing or generating the relationship.
+            data_set (str): Filter on a single dataset.
+            data_sets (List[str]): Filter on one of these datasets.
             relationship_type (str): Type of the relationship in order to distinguish between different relationships. In general relationship types should reflect references as they are expressed in natural sentences.
+            relationship_types (List[str]): Filter on one of these relationship types.
             limit (int, optional): Maximum number of relationships to return. Defaults to 100. Set to -1, float("inf") or None
                 to return all items.
 
@@ -196,7 +206,9 @@ class RelationshipsAPI(APIClient):
             last_updated_time=last_updated_time,
             created_time=created_time,
             data_set=data_set,
+            data_sets=data_sets,
             relationship_type=relationship_type,
+            relationship_types=relationship_types,
         ).dump(camel_case=True)
         return self._list(method="POST", limit=limit, filter=filter)
 
