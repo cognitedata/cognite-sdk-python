@@ -41,7 +41,7 @@ class RelationshipsAPI(APIClient):
         if source_resource or source_resource_id:
             sources = [{"resource": source_resource, "resourceId": source_resource_id}]
         if target_resource or target_resource_id:
-            sources = [{"resource": target_resource, "resourceId": target_resource_id}]
+            targets = [{"resource": target_resource, "resourceId": target_resource_id}]
         if sources:  # remove keys with null values
             sources = [{k: v for k, v in source.items() if v is not None} for source in sources]
         if targets:
