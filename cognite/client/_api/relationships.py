@@ -33,9 +33,9 @@ class RelationshipsAPI(APIClient):
             raise ValueError("Can not set both sources and source_resource/source_resource_id.")
         if targets and (target_resource_id or target_resource):
             raise ValueError("Can not set both targets and target_resource/target_resource_id.")
-        if relationship_type is not None and not isinstance(relationship_type, list):
+        if isinstance(relationship_type, str):
             relationship_type = [relationship_type]
-        if data_set is not None and not isinstance(data_set, list):
+        if isinstance(data_set, str):
             data_set = [data_set]
 
         if source_resource or source_resource_id:
@@ -94,8 +94,8 @@ class RelationshipsAPI(APIClient):
             confidence (Dict[str, Any]): Range to filter the field for. (inclusive)
             last_updated_time (Dict[str, Any]): Range to filter the field for. (inclusive)
             created_time (Dict[str, Any]): Range to filter the field for. (inclusive)
-            data_set (Union[str,List[str]): Filter on a single dataset or one of a given list of datasets.
-            relationship_type (Union[str,List[str]):  Filter on one of these relationship types.
+            data_set (Union[str,List[str]): Filter on any of a given list of dataSets.
+            relationship_type (Union[str,List[str]):  Filter on any of a given list o relationship types.
             limit (int, optional): Maximum number of relationships to return. Defaults to 100. Set to -1, float("inf") or None
                 to return all items.
 
@@ -199,8 +199,8 @@ class RelationshipsAPI(APIClient):
             confidence (Dict[str, Any]): Range to filter the field for. (inclusive)
             last_updated_time (Dict[str, Any]): Range to filter the field for. (inclusive)
             created_time (Dict[str, Any]): Range to filter the field for. (inclusive)
-            data_set (Union[str,List[str]): Filter on a single dataset or one of a given list of datasets.
-            relationship_type (Union[str,List[str]):  Filter on one of these relationship types.
+            data_set (Union[str,List[str]): Filter on any of a given list of dataSets.
+            relationship_type (Union[str,List[str]):  Filter on any of a given list o relationship types.
             limit (int, optional): Maximum number of relationships to return. Defaults to 100. Set to -1, float("inf") or None
                 to return all items.
 

@@ -22,7 +22,7 @@ Changes are grouped as follows
 ## Unreleased
 
 ### Added
-- Relationship list supports multiple sources and targets
+- Relationship list supports multiple sources, targets, relationship types and datasets.
 
 ## [1.4.11] - 2020-02-21
 
