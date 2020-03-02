@@ -437,7 +437,16 @@ class FilesAPI(APIClient):
                     for file in files:
                         file_path = os.path.join(root, file)
                         basename = os.path.basename(file_path)
-                        tasks.append((FileMetadata(name=basename), file_path, overwrite))
+                        file_metadata = FileMetadata(
+                            name=basename,
+                            source=source,
+                            mime_type=mime_type,
+                            metadata=metadata,
+                            asset_ids=asset_ids,
+                            source_created_time=source_created_time,
+                            source_modified_time=source_modified_time,
+                        )
+                        tasks.append((file_metadata, file_path, overwrite))
             else:
                 for file_name in os.listdir(path):
                     file_path = os.path.join(path, file_name)
