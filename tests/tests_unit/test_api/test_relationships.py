@@ -178,7 +178,7 @@ class TestRelationships:
     def test_advanced_list(self, mock_rel_response):
         res = REL_API.list(source_resource="asset", relationship_type="belongs_to")
         assert {
-            "filter": {"sourceResource": "asset", "relationshipType": "belongs_to"},
+            "filter": {"sources": [{"resource": "asset"}], "relationshipTypes": ["belongs_to"]},
             "limit": 25,
             "cursor": None,
         } == jsgz_load(mock_rel_response.calls[0].request.body)
@@ -189,7 +189,7 @@ class TestRelationships:
         targets = [{"resource": "TimeSeries", "resourceId": "abc"}, {"resource": "TimeSeries", "resourceId": "def"}]
         types = ["t1", "t2"]
         sets = ["s1", "s1"]
-        res = REL_API.list(sources=sources, targets=targets, data_sets=sets, relationship_types=types)
+        res = REL_API.list(sources=sources, targets=targets, data_set=sets, relationship_type=types)
         assert {
             "filter": {"sources": sources, "targets": targets, "relationshipTypes": types, "dataSets": sets},
             "limit": 25,
