@@ -78,18 +78,22 @@ class Relationship(CogniteResource):
 
 # GenClass: relationshipsAdvancedListRequest.filter
 class RelationshipFilter(CogniteFilter):
-    """Filter on relationshisp with exact match.
+    """Filter on relationships with exact match. Multiple filter elments in one property, e.g. `dataSets: [ "a", "b" ]`, will return all relationships that are either in dataSet `a` or in dataSet `b`. Filters in multiple properties will return the relationships that match all criteria. Filters on a `resourceId` without a `resource` (type) in sources and targets will return relationships that match the resourceId and match any resource type.  
 
     Args:
-        source_resource (str): Resource type of the source node.
-        source_resource_id (str): Resource ID of the source node.
-        target_resource (str): Resource type of the target node.
-        target_resource_id (str): Resource ID of the target node.
+        sources (List[Dict[str, Any]]): No description.
+        targets (List[Dict[str, Any]]): No description.
+        relationship_types (List[str]): No description.
+        data_sets (List[str]): No description.
         start_time (Dict[str, Any]): Range to filter the field for. (inclusive)
         end_time (Dict[str, Any]): Range to filter the field for. (inclusive)
         confidence (Dict[str, Any]): Range to filter the field for. (inclusive)
         last_updated_time (Dict[str, Any]): Range to filter the field for. (inclusive)
         created_time (Dict[str, Any]): Range to filter the field for. (inclusive)
+        source_resource (str): Resource type of the source node.
+        source_resource_id (str): Resource ID of the source node.
+        target_resource (str): Resource type of the target node.
+        target_resource_id (str): Resource ID of the target node.
         data_set (str): String describing the source system storing or generating the relationship.
         relationship_type (str): Type of the relationship in order to distinguish between different relationships. In general relationship types should reflect references as they are expressed in natural sentences.
         cognite_client (CogniteClient): The client to associate with this object.
@@ -97,28 +101,36 @@ class RelationshipFilter(CogniteFilter):
 
     def __init__(
         self,
-        source_resource: str = None,
-        source_resource_id: str = None,
-        target_resource: str = None,
-        target_resource_id: str = None,
+        sources: List[Dict[str, Any]] = None,
+        targets: List[Dict[str, Any]] = None,
+        relationship_types: List[str] = None,
+        data_sets: List[str] = None,
         start_time: Dict[str, Any] = None,
         end_time: Dict[str, Any] = None,
         confidence: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
         created_time: Dict[str, Any] = None,
+        source_resource: str = None,
+        source_resource_id: str = None,
+        target_resource: str = None,
+        target_resource_id: str = None,
         data_set: str = None,
         relationship_type: str = None,
         cognite_client=None,
     ):
-        self.source_resource = source_resource
-        self.source_resource_id = source_resource_id
-        self.target_resource = target_resource
-        self.target_resource_id = target_resource_id
+        self.sources = sources
+        self.targets = targets
+        self.relationship_types = relationship_types
+        self.data_sets = data_sets
         self.start_time = start_time
         self.end_time = end_time
         self.confidence = confidence
         self.last_updated_time = last_updated_time
         self.created_time = created_time
+        self.source_resource = source_resource
+        self.source_resource_id = source_resource_id
+        self.target_resource = target_resource
+        self.target_resource_id = target_resource_id
         self.data_set = data_set
         self.relationship_type = relationship_type
         self._cognite_client = cognite_client
