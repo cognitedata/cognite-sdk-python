@@ -21,6 +21,11 @@ Changes are grouped as follows
 
 ## Unreleased
 
+## [1.4.12] - 2020-03-02
+
+### Fixed
+- Fixed a bug in file uploads where fields other than name were not being passed to uploaded directories.
+
 ## [1.4.11] - 2020-02-21
 
 ### Changed
