@@ -1,7 +1,7 @@
 import pytest
 
 from cognite.client import CogniteClient, utils
-from cognite.client.data_classes import Datapoint
+from cognite.client.data_classes import Asset, Datapoint
 from tests.utils import jsgz_load
 
 COGNITE_CLIENT = CogniteClient()
@@ -29,6 +29,13 @@ def mock_ts_by_ids_response(rsps):
         ]
     }
     rsps.add(rsps.POST, TS_CLIENT._get_base_url_with_base_path() + "/timeseries/byids", status=200, json=res)
+    yield rsps
+
+
+@pytest.fixture
+def mock_asset_by_ids_response(rsps):
+    res = {"items": [{"id": 1, "externalId": "1", "name": "assetname"}]}
+    rsps.add(rsps.POST, TS_CLIENT._get_base_url_with_base_path() + "/assets/byids", status=200, json=res)
     yield rsps
 
 
@@ -116,3 +123,9 @@ class TestTimeSeries:
         assert 0 == jsgz_load(mock_get_first_dp_in_ts.calls[1].request.body)["start"]
         assert now <= jsgz_load(mock_get_first_dp_in_ts.calls[1].request.body)["end"]
         assert 1 == jsgz_load(mock_get_first_dp_in_ts.calls[1].request.body)["limit"]
+
+    def test_asset(self, mock_ts_by_ids_response, mock_asset_by_ids_response):
+        now = utils.timestamp_to_ms("now")
+        asset = TS_CLIENT.retrieve(id=1).asset()
+        assert isinstance(asset, Asset)
+        assert "assetname" == asset.name
