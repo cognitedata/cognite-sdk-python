@@ -64,10 +64,10 @@ class Info:
 
 
 class OpenAPISpec:
-    def __init__(self, url: str = None, path: str = None):
+    def __init__(self, url: str = None, path: str = None, exclude_schemas=()):
         if url:
             self._spec_url = url
-            self._spec = self.download_spec()
+            self._spec = self.download_spec(exclude_schemas=exclude_schemas)
         elif path:
             with open(path) as f:
                 self._spec = json.load(f)
@@ -75,11 +75,13 @@ class OpenAPISpec:
         self.components = Components(self._spec["components"])
         self.paths = Paths(self._spec["paths"])
 
-    def download_spec(self):
+    def download_spec(self, exclude_schemas):
         with TemporaryDirectory() as dir:
-            res = requests.get(self._spec_url).content
+            spec = requests.get(self._spec_url).json()
+            for key in exclude_schemas:
+                del spec["components"]["schemas"][key]
             spec_path = os.path.join(dir, "spec.json")
-            with open(spec_path, "wb") as f:
-                f.write(res)
+            with open(spec_path, "w") as f:
+                json.dump(spec, f, indent=4)
             res = check_output("swagger-cli bundle -r {}".format(spec_path), shell=True)
         return json.loads(res)

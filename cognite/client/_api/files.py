@@ -1,3 +1,4 @@
+import copy
 import os
 from typing import *
 from typing.io import BinaryIO, TextIO
@@ -337,6 +338,7 @@ class FilesAPI(APIClient):
         self, name: str = None, filter: Union[FileMetadataFilter, dict] = None, limit: int = 100
     ) -> FileMetadataList:
         """`Search for files. <https://docs.cognite.com/api/v1/#operation/searchFiles>`_
+        Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 
         Args:
             name (str, optional): Prefix and fuzzy search on name.
@@ -436,12 +438,16 @@ class FilesAPI(APIClient):
                     for file in files:
                         file_path = os.path.join(root, file)
                         basename = os.path.basename(file_path)
-                        tasks.append((FileMetadata(name=basename), file_path, overwrite))
+                        file_metadata = copy.copy(file_metadata)
+                        file_metadata.name = basename
+                        tasks.append((file_metadata, file_path, overwrite))
             else:
                 for file_name in os.listdir(path):
                     file_path = os.path.join(path, file_name)
                     if os.path.isfile(file_path):
-                        tasks.append((FileMetadata(name=file_name), file_path, overwrite))
+                        file_metadata = copy.copy(file_metadata)
+                        file_metadata.name = file_name
+                        tasks.append((file_metadata, file_path, overwrite))
             tasks_summary = utils._concurrency.execute_tasks_concurrently(
                 self._upload_file_from_path, tasks, self._config.max_workers
             )

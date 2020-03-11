@@ -258,6 +258,7 @@ class AssetsAPI(APIClient):
         """`Create one or more assets. <https://docs.cognite.com/api/v1/#operation/createAssets>`_
         
         You can create an arbitrary number of assets, and the SDK will split the request into multiple requests.
+        When specifying parent-child relation between assets using `parentExternalId` the link will be resvoled into an internal ID and stored as `parentId`.
 
         Args:
             asset (Union[Asset, List[Asset]]): Asset or list of assets to create.
@@ -374,6 +375,7 @@ class AssetsAPI(APIClient):
         limit: int = 100,
     ) -> AssetList:
         """`Search for assets <https://docs.cognite.com/api/v1/#operation/searchAssets>`_
+        Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 
         Args:
             name (str): Fuzzy match on name.

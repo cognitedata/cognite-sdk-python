@@ -4,8 +4,15 @@ from typing import *
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes import Sequence, SequenceData, SequenceFilter, SequenceList, SequenceUpdate
 from cognite.client.exceptions import IncompatibleColumnTypesError
+from cognite.client.data_classes import (
+    Sequence,
+    SequenceData,
+    SequenceDataList,
+    SequenceFilter,
+    SequenceList,
+    SequenceUpdate,
+)
 
 
 class SequencesAPI(APIClient):
@@ -276,7 +283,7 @@ class SequencesAPI(APIClient):
             sequence (Union[Sequence, List[Sequence]]): Sequence or list of Sequence to create.
                 The Sequence columns parameter is a list of objects with fields
                 `externalId` (external id of the column, when omitted, they will be given ids of 'column0, column1, ...'),
-                `valueType` (data type of the column, either STRING, INTEGER, or DOUBLE, with default DOUBLE),
+                `valueType` (data type of the column, either STRING, LONG, or DOUBLE, with default DOUBLE),
                 `name`, `description`, `metadata` (optional fields to describe and store information about the data in the column).
                 Other fields will be removed automatically, so a columns definition from a different sequence object can be passed here.
 
@@ -382,6 +389,7 @@ class SequencesAPI(APIClient):
         limit: int = 100,
     ) -> SequenceList:
         """`Search for sequences. <https://docs.cognite.com/api/v1/#operation/searchSequences>`_
+        Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 
         Args:
             name (str, optional): Prefix and fuzzy search on name.
@@ -583,10 +591,10 @@ class SequencesDataAPI(APIClient):
         start: int,
         end: Union[int, None],
         column_external_ids: Optional[List[str]] = None,
-        external_id: str = None,
-        id: int = None,
+        external_id: Union[str, List[str]] = None,
+        id: Union[int, List[int]] = None,
         limit: int = None,
-    ) -> SequenceData:
+    ) -> Union[SequenceData, SequenceDataList]:
         """`Retrieve data from a sequence <https://docs.cognite.com/api/v1/#operation/getSequenceData>`_
 
         Args:
@@ -596,7 +604,7 @@ class SequencesDataAPI(APIClient):
             column_external_ids (Optional[List[str]]): List of external id for the columns of the sequence. If 'None' is passed, all columns will be retrieved.
             id (int): Id of sequence.
             external_id (str): External id of sequence.
-            limit (int): Maximum number of rows to return.
+            limit (int): Maximum number of rows to return per sequence.
 
 
         Returns:
@@ -612,15 +620,29 @@ class SequencesDataAPI(APIClient):
                 >>> col = res.get_column(external_id='columnExtId') # ... get the array of values for a specific column,
                 >>> df = res.to_pandas() # ... or convert the result to a dataframe
         """
-        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
-        post_obj = self._process_ids(id, external_id, wrap_ids=True)[0]
-        post_obj.update(self._process_columns(column_external_ids=column_external_ids))
-        post_obj.update({"start": start, "end": end, "limit": limit})
-        seqdata = []
-        columns = []
-        for data, columns in self._fetch_data(post_obj):
-            seqdata.extend(data)
-        return SequenceData(id=id, external_id=external_id, rows=seqdata, columns=columns)
+        post_objs = self._process_ids(id, external_id, wrap_ids=True)
+
+        def _fetch_sequence(post_obj):
+            post_obj.update(self._process_columns(column_external_ids=column_external_ids))
+            post_obj.update({"start": start, "end": end, "limit": limit})
+            seqdata = []
+            columns = []
+            for data, columns in self._fetch_data(post_obj):
+                seqdata.extend(data)
+            return SequenceData(
+                id=post_obj.get("id"), external_id=post_obj.get("externalId"), rows=seqdata, columns=columns
+            )
+
+        tasks_summary = utils._concurrency.execute_tasks_concurrently(
+            _fetch_sequence, [(x,) for x in post_objs], max_workers=self._config.max_workers
+        )
+        if tasks_summary.exceptions:
+            raise tasks_summary.exceptions[0]
+        results = tasks_summary.joined_results()
+        if len(post_objs) == 1:
+            return results[0]
+        else:
+            return SequenceDataList(results)
 
     def retrieve_dataframe(
         self,
@@ -628,6 +650,7 @@ class SequencesDataAPI(APIClient):
         end: Union[int, None],
         column_external_ids: Optional[List[str]] = None,
         external_id: str = None,
+        column_names: str = None,
         id: int = None,
         limit: int = None,
     ):
@@ -640,7 +663,8 @@ class SequencesDataAPI(APIClient):
             column_external_ids (Optional[List[str]]): List of external id for the columns of the sequence.  If 'None' is passed, all columns will be retrieved.
             id (int): Id of sequence
             external_id (str): External id of sequence.
-            limit (int): Maximum number of rows to return.
+            column_names (str):  Which field(s) to use as column header. Can use "externalId", "id", "columnExternalId", "id|columnExternalId" or "externalId|columnExternalId". Default is "externalId|columnExternalId" for queries on more than one sequence, and "columnExternalId" for queries on a single sequence.
+            limit (int): Maximum number of rows to return per sequence.
 
         Returns:
              pandas.DataFrame
@@ -651,7 +675,13 @@ class SequencesDataAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> df = c.sequences.data.retrieve_dataframe(id=0, start=0, end=None)
         """
-        return self.retrieve(start, end, column_external_ids, external_id, id, limit).to_pandas()
+        if isinstance(external_id, List) or isinstance(id, List) or (id is not None and external_id is not None):
+            column_names_default = "externalId|columnExternalId"
+        else:
+            column_names_default = "columnExternalId"
+        return self.retrieve(start, end, column_external_ids, external_id, id, limit).to_pandas(
+            column_names=column_names or column_names_default
+        )
 
     def _fetch_data(self, task) -> Generator[Tuple[List, List], None, None]:
         remaining_limit = task.get("limit")

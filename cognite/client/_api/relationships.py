@@ -13,20 +13,68 @@ class RelationshipsAPI(APIClient):
         super().__init__(*args, **kwargs)
         self._CREATE_LIMIT = 1000
 
-    def __call__(
+    def _create_filter(
         self,
-        chunk_size: int = None,
         source_resource: str = None,
         source_resource_id: str = None,
+        sources: List[Dict[str, Any]] = None,
         target_resource: str = None,
         target_resource_id: str = None,
+        targets: List[Dict[str, Any]] = None,
         start_time: Dict[str, Any] = None,
         end_time: Dict[str, Any] = None,
         confidence: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
         created_time: Dict[str, Any] = None,
-        data_set: str = None,
-        relationship_type: str = None,
+        data_set: Optional[Union[str, List[str]]] = None,
+        relationship_type: Optional[Union[str, List[str]]] = None,
+    ):
+        if sources and (source_resource or source_resource_id):
+            raise ValueError("Can not set both sources and source_resource/source_resource_id.")
+        if targets and (target_resource_id or target_resource):
+            raise ValueError("Can not set both targets and target_resource/target_resource_id.")
+        if isinstance(relationship_type, str):
+            relationship_type = [relationship_type]
+        if isinstance(data_set, str):
+            data_set = [data_set]
+
+        if source_resource or source_resource_id:
+            sources = [{"resource": source_resource, "resourceId": source_resource_id}]
+        if target_resource or target_resource_id:
+            targets = [{"resource": target_resource, "resourceId": target_resource_id}]
+        if sources:  # remove keys with null values
+            sources = [{k: v for k, v in source.items() if v is not None} for source in sources]
+        if targets:
+            targets = [{k: v for k, v in target.items() if v is not None} for target in targets]
+
+        return RelationshipFilter(
+            sources=sources,
+            targets=targets,
+            start_time=start_time,
+            end_time=end_time,
+            confidence=confidence,
+            last_updated_time=last_updated_time,
+            created_time=created_time,
+            data_sets=data_set,
+            relationship_types=relationship_type,
+        ).dump(camel_case=True)
+
+    def __call__(
+        self,
+        chunk_size: int = None,
+        source_resource: str = None,
+        source_resource_id: str = None,
+        sources: List[Dict[str, Any]] = None,
+        target_resource: str = None,
+        target_resource_id: str = None,
+        targets: List[Dict[str, Any]] = None,
+        start_time: Dict[str, Any] = None,
+        end_time: Dict[str, Any] = None,
+        confidence: Dict[str, Any] = None,
+        last_updated_time: Dict[str, Any] = None,
+        created_time: Dict[str, Any] = None,
+        data_set: Optional[Union[str, List[str]]] = None,
+        relationship_type: Optional[Union[str, List[str]]] = None,
         limit: int = None,
     ) -> Generator[Union[Relationship, RelationshipList], None, None]:
         """Iterate over relationships
@@ -37,26 +85,30 @@ class RelationshipsAPI(APIClient):
             chunk_size (int, optional): Number of relationships to return in each chunk. Defaults to yielding one relationship a time.
             source_resource (str): Resource type of the source node.
             source_resource_id (str): Resource ID of the source node.
+            sources (List[Dict[str, Any]]): List of multiple sources in the format `[{"resourceId":externalId,"resource":"Asset"},...]`
             target_resource (str): Resource type of the target node.
             target_resource_id (str): Resource ID of the target node.
+            targets (List[Dict[str, Any]]): List of multiple targets in the format `[{"resourceId":externalId,"resource":"Asset"},...]`
             start_time (Dict[str, Any]): Range to filter the field for. (inclusive)
             end_time (Dict[str, Any]): Range to filter the field for. (inclusive)
             confidence (Dict[str, Any]): Range to filter the field for. (inclusive)
             last_updated_time (Dict[str, Any]): Range to filter the field for. (inclusive)
             created_time (Dict[str, Any]): Range to filter the field for. (inclusive)
-            data_set (str): String describing the source system storing or generating the relationship.
-            relationship_type (str): Type of the relationship in order to distinguish between different relationships. In general relationship types should reflect references as they are expressed in natural sentences.
+            data_set (Union[str,List[str]): Filter on any of a given list of dataSets.
+            relationship_type (Union[str,List[str]):  Filter on any of a given list o relationship types.
             limit (int, optional): Maximum number of relationships to return. Defaults to 100. Set to -1, float("inf") or None
                 to return all items.
 
         Yields:
             Union[Relationship, RelationshipList]: yields Relationship one by one if chunk is not specified, else RelationshipList objects.
         """
-        filter = RelationshipFilter(
+        filter = self._create_filter(
             source_resource=source_resource,
             source_resource_id=source_resource_id,
+            sources=sources,
             target_resource=target_resource,
             target_resource_id=target_resource_id,
+            targets=targets,
             start_time=start_time,
             end_time=end_time,
             confidence=confidence,
@@ -64,7 +116,7 @@ class RelationshipsAPI(APIClient):
             created_time=created_time,
             data_set=data_set,
             relationship_type=relationship_type,
-        ).dump(camel_case=True)
+        )
         return self._list_generator(method="POST", chunk_size=chunk_size, limit=limit, filter=filter)
 
     def __iter__(self) -> Generator[Relationship, None, None]:
@@ -120,15 +172,17 @@ class RelationshipsAPI(APIClient):
         self,
         source_resource: str = None,
         source_resource_id: str = None,
+        sources: List[Dict[str, Any]] = None,
         target_resource: str = None,
         target_resource_id: str = None,
+        targets: List[Dict[str, Any]] = None,
         start_time: Dict[str, Any] = None,
         end_time: Dict[str, Any] = None,
         confidence: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
         created_time: Dict[str, Any] = None,
-        data_set: str = None,
-        relationship_type: str = None,
+        data_set: Optional[Union[str, List[str]]] = None,
+        relationship_type: Optional[Union[str, List[str]]] = None,
         limit: int = 25,
     ) -> RelationshipList:
         """List relationships
@@ -136,15 +190,17 @@ class RelationshipsAPI(APIClient):
         Args:
             source_resource (str): Resource type of the source node.
             source_resource_id (str): Resource ID of the source node.
+            sources (List[Dict[str, Any]]): List of multiple sources in the format `[{"resourceId":externalId,"resource":"Asset"},...]`
             target_resource (str): Resource type of the target node.
             target_resource_id (str): Resource ID of the target node.
+            targets (List[Dict[str, Any]]): List of multiple targets in the format `[{"resourceId":externalId,"resource":"Asset"},...]`
             start_time (Dict[str, Any]): Range to filter the field for. (inclusive)
             end_time (Dict[str, Any]): Range to filter the field for. (inclusive)
             confidence (Dict[str, Any]): Range to filter the field for. (inclusive)
             last_updated_time (Dict[str, Any]): Range to filter the field for. (inclusive)
             created_time (Dict[str, Any]): Range to filter the field for. (inclusive)
-            data_set (str): String describing the source system storing or generating the relationship.
-            relationship_type (str): Type of the relationship in order to distinguish between different relationships. In general relationship types should reflect references as they are expressed in natural sentences.
+            data_set (Union[str,List[str]): Filter on any of a given list of dataSets.
+            relationship_type (Union[str,List[str]):  Filter on any of a given list o relationship types.
             limit (int, optional): Maximum number of relationships to return. Defaults to 100. Set to -1, float("inf") or None
                 to return all items.
 
@@ -173,11 +229,13 @@ class RelationshipsAPI(APIClient):
                 >>> for relationship_list in c.relationships(chunk_size=2500):
                 ...     relationship_list # do something with the relationships
         """
-        filter = RelationshipFilter(
+        filter = self._create_filter(
             source_resource=source_resource,
             source_resource_id=source_resource_id,
+            sources=sources,
             target_resource=target_resource,
             target_resource_id=target_resource_id,
+            targets=targets,
             start_time=start_time,
             end_time=end_time,
             confidence=confidence,
@@ -185,7 +243,7 @@ class RelationshipsAPI(APIClient):
             created_time=created_time,
             data_set=data_set,
             relationship_type=relationship_type,
-        ).dump(camel_case=True)
+        )
         return self._list(method="POST", limit=limit, filter=filter)
 
     def create(self, relationship: Union[Relationship, List[Relationship]]) -> Union[Relationship, RelationshipList]:

@@ -86,7 +86,7 @@ class SequenceFilter(CogniteFilter):
         metadata (Dict[str, Any]): Filter the sequences by metadata fields and values (case-sensitive). Format is {"key1":"value1","key2":"value2"}.
         asset_ids (List[int]): Return only sequences linked to one of the specified assets.
         root_asset_ids (List[int]): Only include sequences that have a related asset in a tree rooted at any of these root assetIds.
-        asset_subtree_ids (List[Dict[str, Any]]): Only include sequences that have a related asset in a subtree rooted at any of these assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+        asset_subtree_ids (List[Dict[str, Any]]): Only include sequences that have a related asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
         created_time (Dict[str, Any]): Filter out sequences with createdTime outside this range.
         last_updated_time (Dict[str, Any]): Filter out sequences with lastUpdatedTime outside this range.
         cognite_client (CogniteClient): The client to associate with this object.
@@ -276,21 +276,35 @@ class SequenceData:
             dumped = {utils._auxiliary.to_camel_case(key): value for key, value in dumped.items()}
         return {key: value for key, value in dumped.items() if value is not None}
 
-    def to_pandas(self) -> "pandas.DataFrame":
+    def to_pandas(self, column_names: str = "columnExternalId") -> "pandas.DataFrame":
         """Convert the sequence data into a pandas DataFrame.
 
         Args:
-            column_names (str): Which field to use as column header. Either "externalId", "id" or "externalIdIfExists" for externalId if it exists for all columns and id otherwise.
+            column_names (str):  Which field(s) to use as column header. Can use "externalId", "id", "columnExternalId", "id|columnExternalId" or "externalId|columnExternalId".
 
         Returns:
             pandas.DataFrame: The dataframe.
         """
         pd = utils._auxiliary.local_import("pandas")
 
+        options = ["externalId", "id", "columnExternalId", "id|columnExternalId", "externalId|columnExternalId"]
+        if column_names not in options:
+            raise ValueError('Invalid column_names value, should be one of "%s"' % '", "'.join(options))
+
+        column_names = (
+            column_names.replace("columnExternalId", "{columnExternalId}")
+            .replace("externalId", "{externalId}")
+            .replace("id", "{id}")
+        )
+        df_columns = [
+            column_names.format(id=str(self.id), externalId=str(self.external_id), columnExternalId=eid)
+            for eid in self.column_external_ids
+        ]
+
         return pd.DataFrame(
             [[x if x is not None else math.nan for x in r] for r in self.values],
             index=self.row_numbers,
-            columns=self.column_external_ids,
+            columns=df_columns,
         )
 
     @property
@@ -310,3 +324,27 @@ class SequenceData:
             List of column value types
         """
         return [c.get("valueType") for c in self.columns]
+
+
+class SequenceDataList(CogniteResourceList):
+    _RESOURCE = SequenceData
+    _ASSERT_CLASSES = False
+
+    def __str__(self):
+        return json.dumps(self.dump(), indent=4)
+
+    def to_pandas(self, column_names: str = "externalId|columnExternalId") -> "pandas.DataFrame":
+        """Convert the sequence data list into a pandas DataFrame. Each column will be a sequence.
+
+        Args:
+            column_names (str):  Which field to use as column header. Can use any combination of "externalId", "columnExternalId", "id" and other characters as a template.
+            include_aggregate_name (bool): Include aggregate in the column name
+
+        Returns:
+            pandas.DataFrame: The sequence data list as a pandas DataFrame.
+        """
+        pd = utils._auxiliary.local_import("pandas")
+        return pd.concat([seq_data.to_pandas(column_names=column_names) for seq_data in self.data], axis=1)
+
+    def _repr_html_(self):
+        return self.to_pandas()._repr_html_()

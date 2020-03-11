@@ -11,13 +11,19 @@ class AggregateResultItem(dict):
 
     Args:
         child_count (int): Number of direct descendants for the asset
+        depth (int): Asset path depth (number of levels below root node).
+        path (List[Dict[str, Any]]): IDs of assets on the path to the asset.
     """
 
-    def __init__(self, child_count: int = None, **kwargs):
+    def __init__(self, child_count: int = None, depth: int = None, path: List[Dict[str, Any]] = None, **kwargs):
         self.child_count = child_count
+        self.depth = depth
+        self.path = path
         self.update(kwargs)
 
     child_count = CognitePropertyClassUtil.declare_property("childCount")
+    depth = CognitePropertyClassUtil.declare_property("depth")
+    path = CognitePropertyClassUtil.declare_property("path")
 
     # GenStop
 
@@ -38,7 +44,7 @@ class Asset(CogniteResource):
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         root_id (int): A server-generated ID for the object.
         aggregates (Union[Dict[str, Any], AggregateResultItem]): Aggregated metrics of the asset
-        parent_external_id (str): The external ID of the parent. This will be resolved to an internal ID and stored as `parentId`.
+        parent_external_id (str): The external ID of the parent. The property is omitted if the asset doesn't have a parent or if the parent doesn't have externalId.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
@@ -314,7 +320,7 @@ class AssetFilter(CogniteFilter):
         parent_ids (List[int]): Return only the direct descendants of the specified assets.
         parent_external_ids (List[str]): Return only the direct descendants of the specified assets.
         root_ids (List[Dict[str, Any]]): Only include these root assets and their descendants.
-        asset_subtree_ids (List[Dict[str, Any]]): Only include assets in subtrees rooted at the specified assets. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+        asset_subtree_ids (List[Dict[str, Any]]): Only include assets in subtrees rooted at the specified assets (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
         metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         source (str): The source of the asset.
         created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.

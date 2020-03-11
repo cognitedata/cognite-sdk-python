@@ -178,7 +178,39 @@ class TestRelationships:
     def test_advanced_list(self, mock_rel_response):
         res = REL_API.list(source_resource="asset", relationship_type="belongs_to")
         assert {
-            "filter": {"sourceResource": "asset", "relationshipType": "belongs_to"},
+            "filter": {"sources": [{"resource": "asset"}], "relationshipTypes": ["belongs_to"]},
+            "limit": 25,
+            "cursor": None,
+        } == jsgz_load(mock_rel_response.calls[0].request.body)
+        assert mock_rel_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
+
+    def test_source_target_packing(self, mock_rel_response):
+        res = REL_API.list(
+            source_resource="asset",
+            source_resource_id="bla",
+            target_resource="timeseries",
+            target_resource_id="foo",
+            relationship_type="belongs_to",
+        )
+        assert {
+            "filter": {
+                "sources": [{"resource": "asset", "resourceId": "bla"}],
+                "targets": [{"resource": "timeseries", "resourceId": "foo"}],
+                "relationshipTypes": ["belongs_to"],
+            },
+            "limit": 25,
+            "cursor": None,
+        } == jsgz_load(mock_rel_response.calls[0].request.body)
+        assert mock_rel_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
+
+    def test_multi_source_target_list(self, mock_rel_response):
+        sources = [{"resource": "Asset", "resourceId": "abc"}, {"resource": "Asset", "resourceId": "def"}]
+        targets = [{"resource": "TimeSeries", "resourceId": "abc"}, {"resource": "TimeSeries", "resourceId": "def"}]
+        types = ["t1", "t2"]
+        sets = ["s1", "s1"]
+        res = REL_API.list(sources=sources, targets=targets, data_set=sets, relationship_type=types)
+        assert {
+            "filter": {"sources": sources, "targets": targets, "relationshipTypes": types, "dataSets": sets},
             "limit": 25,
             "cursor": None,
         } == jsgz_load(mock_rel_response.calls[0].request.body)

@@ -279,7 +279,7 @@ class TestFilesAPI:
 
     def test_upload_from_directory(self, mock_file_upload_response):
         path = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
-        res = FILES_API.upload(path=path)
+        res = FILES_API.upload(path=path, asset_ids=[1, 2])
         response_body = mock_file_upload_response.calls[0].response.json()
         del response_body["uploadUrl"]
         assert FileMetadataList([FileMetadata._load(response_body), FileMetadata._load(response_body)]) == res
@@ -288,10 +288,10 @@ class TestFilesAPI:
             payload = call.request.body
             if isinstance(payload, BufferedReader):
                 continue
-            elif jsgz_load(payload)["name"] in ["file_for_test_upload_1.txt", "file_for_test_upload_2.txt"]:
-                continue
             else:
-                raise AssertionError("incorrect payload: {}".format(payload))
+                json = jsgz_load(payload)
+                assert [1, 2] == json["assetIds"]
+                assert json["name"] in ["file_for_test_upload_1.txt", "file_for_test_upload_2.txt"]
 
     def test_upload_from_directory_fails(self, rsps):
         rsps.add(rsps.POST, FILES_API._get_base_url_with_base_path() + "/files", status=400, json={})
@@ -303,7 +303,7 @@ class TestFilesAPI:
 
     def test_upload_from_directory_recursively(self, mock_file_upload_response):
         path = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
-        res = FILES_API.upload(path=path, recursive=True)
+        res = FILES_API.upload(path=path, recursive=True, asset_ids=[1, 2])
         response_body = mock_file_upload_response.calls[0].response.json()
         del response_body["uploadUrl"]
         assert FileMetadataList([FileMetadata._load(response_body) for _ in range(3)]) == res
@@ -312,14 +312,14 @@ class TestFilesAPI:
             payload = call.request.body
             if isinstance(payload, BufferedReader):
                 continue
-            elif jsgz_load(payload)["name"] in [
-                "file_for_test_upload_1.txt",
-                "file_for_test_upload_2.txt",
-                "file_for_test_upload_3.txt",
-            ]:
-                continue
             else:
-                raise AssertionError("incorrect payload: {}".format(payload))
+                json = jsgz_load(payload)
+                assert json["name"] in [
+                    "file_for_test_upload_1.txt",
+                    "file_for_test_upload_2.txt",
+                    "file_for_test_upload_3.txt",
+                ]
+            assert [1, 2] == json["assetIds"]
 
     def test_upload_from_memory(self, mock_file_upload_response):
         res = FILES_API.upload_bytes(content=b"content", name="bla")
