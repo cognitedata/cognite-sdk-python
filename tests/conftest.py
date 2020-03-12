@@ -6,6 +6,7 @@ import responses
 
 from cognite.client import CogniteClient
 from cognite.client._api.assets import AssetsAPI
+from cognite.client._api.data_sets import DataSetsAPI
 from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api.events import EventsAPI
 from cognite.client._api.files import FilesAPI
@@ -46,6 +47,7 @@ def mock_cognite_client():
         cog_client_mock.datapoints = mock.MagicMock(spec=DatapointsAPI)
         cog_client_mock.assets = mock.MagicMock(spec=AssetsAPI)
         cog_client_mock.events = mock.MagicMock(spec=EventsAPI)
+        cog_client_mock.data_sets = mock.MagicMock(spec=DataSetsAPI)
         cog_client_mock.files = mock.MagicMock(spec=FilesAPI)
         cog_client_mock.login = mock.MagicMock(spec=LoginAPI)
         cog_client_mock.three_d = mock.MagicMock(spec=ThreeDAPI)

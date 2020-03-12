@@ -1,4 +1,6 @@
-import os, pytest
+import os
+
+import pytest
 
 from openapi.generator import ClassGenerator, CodeGenerator, UpdateClassGenerator
 
@@ -144,6 +146,10 @@ class TestUpdateClassGenerator:
             """    @property
     def external_id(self):
         return _PrimitiveEventUpdate(self, 'externalId')
+
+    @property
+    def data_set_id(self):
+        return _PrimitiveEventUpdate(self, 'dataSetId')
 
     @property
     def start_time(self):

@@ -12,6 +12,7 @@ from cognite.client.data_classes import (
     SequenceList,
     SequenceUpdate,
 )
+from cognite.client.data_classes.shared import TimestampRange
 
 
 class SequencesAPI(APIClient):
@@ -32,6 +33,8 @@ class SequencesAPI(APIClient):
         root_asset_ids: List[int] = None,
         asset_subtree_ids: List[int] = None,
         asset_subtree_external_ids: List[str] = None,
+        data_set_ids: List[int] = None,
+        data_set_external_ids: List[str] = None,
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
         limit: int = None,
@@ -49,6 +52,8 @@ class SequencesAPI(APIClient):
             root_asset_ids (List[int]): Filter out sequences not linked to assets with one of these assets as the root asset.
             asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
             asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
+            data_set_ids (List[int]): Return only events in the specified data sets with these ids.
+            data_set_external_ids (List[str]): Return only events in the specified data sets with these external ids.
             created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             limit (int, optional): Max number of sequences to return. Defaults to return all items.
@@ -59,6 +64,8 @@ class SequencesAPI(APIClient):
 
         if asset_subtree_ids or asset_subtree_external_ids:
             asset_subtree_ids = self._process_ids(asset_subtree_ids, asset_subtree_external_ids, wrap_ids=True)
+        if data_set_ids or data_set_external_ids:
+            data_set_ids = self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
 
         filter = SequenceFilter(
             name=name,
@@ -69,6 +76,7 @@ class SequencesAPI(APIClient):
             asset_subtree_ids=asset_subtree_ids,
             created_time=created_time,
             last_updated_time=last_updated_time,
+            data_set_ids=data_set_ids,
         ).dump(camel_case=True)
         return self._list_generator(method="GET", chunk_size=chunk_size, filter=filter, limit=limit)
 
@@ -148,8 +156,10 @@ class SequencesAPI(APIClient):
         root_asset_ids: List[int] = None,
         asset_subtree_ids: List[int] = None,
         asset_subtree_external_ids: List[str] = None,
-        created_time: Dict[str, Any] = None,
-        last_updated_time: Dict[str, Any] = None,
+        data_set_ids: List[int] = None,
+        data_set_external_ids: List[str] = None,
+        created_time: (Union[Dict[str, Any], TimestampRange]) = None,
+        last_updated_time: (Union[Dict[str, Any], TimestampRange]) = None,
         limit: Optional[int] = 25,
     ) -> SequenceList:
         """`Iterate over sequences <https://docs.cognite.com/api/v1/#operation/advancedListSequences>`_
@@ -164,6 +174,8 @@ class SequencesAPI(APIClient):
             root_asset_ids (List[int]): Filter out sequences not linked to assets with one of these assets as the root asset.
             asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
             asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
+            data_set_ids (List[int]): Return only events in the specified data sets with these ids.
+            data_set_external_ids (List[str]): Return only events in the specified data sets with these external ids.
             created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             limit (int, optional): Max number of sequences to return. Defaults to 25. Set to -1, float("inf") or None
@@ -196,6 +208,8 @@ class SequencesAPI(APIClient):
         """
         if asset_subtree_ids or asset_subtree_external_ids:
             asset_subtree_ids = self._process_ids(asset_subtree_ids, asset_subtree_external_ids, wrap_ids=True)
+        if data_set_ids or data_set_external_ids:
+            data_set_ids = self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
 
         filter = SequenceFilter(
             name=name,
@@ -206,6 +220,7 @@ class SequencesAPI(APIClient):
             asset_subtree_ids=asset_subtree_ids,
             created_time=created_time,
             last_updated_time=last_updated_time,
+            data_set_ids=data_set_ids,
         ).dump(camel_case=True)
         return self._list(method="POST", filter=filter, limit=limit)
 

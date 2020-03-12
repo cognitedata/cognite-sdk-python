@@ -37,6 +37,7 @@ class Asset(CogniteResource):
         name (str): The name of the asset.
         parent_id (int): A server-generated ID for the object.
         description (str): The description of the asset.
+        data_set_id (int): A server-generated ID for the object.
         metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         source (str): The source of the asset.
         id (int): A server-generated ID for the object.
@@ -54,6 +55,7 @@ class Asset(CogniteResource):
         name: str = None,
         parent_id: int = None,
         description: str = None,
+        data_set_id: int = None,
         metadata: Dict[str, str] = None,
         source: str = None,
         id: int = None,
@@ -68,6 +70,7 @@ class Asset(CogniteResource):
         self.name = name
         self.parent_id = parent_id
         self.description = description
+        self.data_set_id = data_set_id
         self.metadata = metadata
         self.source = source
         self.id = id
@@ -189,6 +192,10 @@ class AssetUpdate(CogniteUpdate):
     @property
     def description(self):
         return _PrimitiveAssetUpdate(self, "description")
+
+    @property
+    def data_set_id(self):
+        return _PrimitiveAssetUpdate(self, "dataSetId")
 
     @property
     def metadata(self):
@@ -321,6 +328,7 @@ class AssetFilter(CogniteFilter):
         parent_external_ids (List[str]): Return only the direct descendants of the specified assets.
         root_ids (List[Dict[str, Any]]): Only include these root assets and their descendants.
         asset_subtree_ids (List[Dict[str, Any]]): Only include assets in subtrees rooted at the specified assets (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+        data_set_ids (List[Dict[str, Any]]): No description.
         metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         source (str): The source of the asset.
         created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
@@ -337,6 +345,7 @@ class AssetFilter(CogniteFilter):
         parent_external_ids: List[str] = None,
         root_ids: List[Dict[str, Any]] = None,
         asset_subtree_ids: List[Dict[str, Any]] = None,
+        data_set_ids: List[Dict[str, Any]] = None,
         metadata: Dict[str, str] = None,
         source: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
@@ -350,6 +359,7 @@ class AssetFilter(CogniteFilter):
         self.parent_external_ids = parent_external_ids
         self.root_ids = root_ids
         self.asset_subtree_ids = asset_subtree_ids
+        self.data_set_ids = data_set_ids
         self.metadata = metadata
         self.source = source
         self.created_time = created_time

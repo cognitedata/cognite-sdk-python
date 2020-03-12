@@ -3,6 +3,7 @@ from typing import Any, Callable, Dict, Optional, Union
 
 from cognite.client import utils
 from cognite.client._api.assets import AssetsAPI
+from cognite.client._api.data_sets import DataSetsAPI
 from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api.events import EventsAPI
 from cognite.client._api.files import FilesAPI
@@ -72,6 +73,7 @@ class CogniteClient:
         self.events = EventsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.files = FilesAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.iam = IAMAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
+        self.data_sets = DataSetsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.sequences = SequencesAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.time_series = TimeSeriesAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.raw = RawAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
