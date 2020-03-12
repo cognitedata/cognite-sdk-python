@@ -3,6 +3,7 @@ from typing import *
 from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import TimeSeries, TimeSeriesFilter, TimeSeriesList, TimeSeriesUpdate
+from cognite.client.data_classes.shared import TimestampRange
 
 
 class TimeSeriesAPI(APIClient):
@@ -17,9 +18,12 @@ class TimeSeriesAPI(APIClient):
         is_string: bool = None,
         is_step: bool = None,
         asset_ids: List[int] = None,
+        asset_external_ids: List[str] = None,
         root_asset_ids: List[int] = None,
         asset_subtree_ids: List[int] = None,
         asset_subtree_external_ids: List[str] = None,
+        data_set_ids: List[int] = None,
+        data_set_external_ids: List[str] = None,
         metadata: Dict[str, Any] = None,
         external_id_prefix: str = None,
         created_time: Dict[str, Any] = None,
@@ -38,9 +42,12 @@ class TimeSeriesAPI(APIClient):
             is_string (bool): Whether the time series is an string time series.
             is_step (bool): Whether the time series is a step (piecewise constant) time series.
             asset_ids (List[int], optional): List time series related to these assets.
+            asset_external_ids  (List[str], optional): List time series related to these assets.
             root_asset_ids (List[int], optional): List time series related to assets under these root assets.
             asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
             asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
+            data_set_ids (List[int]): Return only time series in the specified data sets with these ids.
+            data_set_external_ids (List[str]): Return only time series in the specified data sets with these external ids.
             metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
             created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
@@ -53,6 +60,8 @@ class TimeSeriesAPI(APIClient):
         """
         if asset_subtree_ids or asset_subtree_external_ids:
             asset_subtree_ids = self._process_ids(asset_subtree_ids, asset_subtree_external_ids, wrap_ids=True)
+        if data_set_ids or data_set_external_ids:
+            data_set_ids = self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
 
         filter = TimeSeriesFilter(
             name=name,
@@ -60,10 +69,12 @@ class TimeSeriesAPI(APIClient):
             is_step=is_step,
             is_string=is_string,
             asset_ids=asset_ids,
+            asset_external_ids=asset_external_ids,
             root_asset_ids=root_asset_ids,
             asset_subtree_ids=asset_subtree_ids,
             metadata=metadata,
             created_time=created_time,
+            data_set_ids=data_set_ids,
             last_updated_time=last_updated_time,
             external_id_prefix=external_id_prefix,
         ).dump(camel_case=True)
@@ -149,9 +160,12 @@ class TimeSeriesAPI(APIClient):
         is_string: bool = None,
         is_step: bool = None,
         asset_ids: List[int] = None,
+        asset_external_ids: List[str] = None,
         root_asset_ids: List[int] = None,
         asset_subtree_ids: List[int] = None,
         asset_subtree_external_ids: List[str] = None,
+        data_set_ids: List[int] = None,
+        data_set_external_ids: List[str] = None,
         metadata: Dict[str, Any] = None,
         external_id_prefix: str = None,
         created_time: Dict[str, Any] = None,
@@ -170,9 +184,12 @@ class TimeSeriesAPI(APIClient):
             is_string (bool): Whether the time series is an string time series.
             is_step (bool): Whether the time series is a step (piecewise constant) time series.
             asset_ids (List[int], optional): List time series related to these assets.
+            asset_external_ids (List[str], optional): List time series related to these assets.
             root_asset_ids (List[int], optional): List time series related to assets under these root assets.
             asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
             asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
+            data_set_ids (List[int]): Return only assets in the specified data sets with these ids.
+            data_set_external_ids (List[str]): Return only assets in the specified data sets with these external ids.
             metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
             created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
@@ -209,6 +226,8 @@ class TimeSeriesAPI(APIClient):
         """
         if asset_subtree_ids or asset_subtree_external_ids:
             asset_subtree_ids = self._process_ids(asset_subtree_ids, asset_subtree_external_ids, wrap_ids=True)
+        if data_set_ids or data_set_external_ids:
+            data_set_ids = self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
 
         filter = TimeSeriesFilter(
             name=name,
@@ -216,9 +235,11 @@ class TimeSeriesAPI(APIClient):
             is_step=is_step,
             is_string=is_string,
             asset_ids=asset_ids,
+            asset_external_ids=asset_external_ids,
             root_asset_ids=root_asset_ids,
             asset_subtree_ids=asset_subtree_ids,
             metadata=metadata,
+            data_set_ids=data_set_ids,
             created_time=created_time,
             last_updated_time=last_updated_time,
             external_id_prefix=external_id_prefix,

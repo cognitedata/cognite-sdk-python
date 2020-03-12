@@ -3,6 +3,7 @@ from unittest.mock import MagicMock
 
 from cognite.client import CogniteClient
 from cognite.client._api.assets import AssetsAPI
+from cognite.client._api.data_sets import DataSetsAPI
 from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api.events import EventsAPI
 from cognite.client._api.files import FilesAPI
@@ -35,6 +36,7 @@ class CogniteClientMock(MagicMock):
         self.datapoints = MagicMock(spec_set=DatapointsAPI)
         self.assets = MagicMock(spec_set=AssetsAPI)
         self.events = MagicMock(spec_set=EventsAPI)
+        self.data_sets = MagicMock(spec_set=DataSetsAPI)
         self.files = MagicMock(spec_set=FilesAPI)
         self.login = MagicMock(spec_set=LoginAPI)
         self.three_d = MagicMock(spec=ThreeDAPI)

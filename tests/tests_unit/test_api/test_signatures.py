@@ -3,7 +3,7 @@ import json
 
 import pytest
 
-from cognite.client._api import assets, events, files, sequences
+from cognite.client._api import assets, data_sets, events, files, sequences, time_series
 
 
 class TestListAndIterSignatures:
@@ -13,15 +13,37 @@ class TestListAndIterSignatures:
             (
                 assets.AssetsAPI,
                 assets.AssetFilter,
-                ["root_external_ids", "asset_subtree_external_ids", "aggregated_properties", "partitions"],
+                [
+                    "root_external_ids",
+                    "asset_subtree_external_ids",
+                    "data_set_external_ids",
+                    "aggregated_properties",
+                    "partitions",
+                ],
             ),
             (
                 events.EventsAPI,
                 events.EventFilter,
-                ["root_asset_external_ids", "asset_subtree_external_ids", "partitions", "sort"],
+                [
+                    "root_asset_external_ids",
+                    "asset_subtree_external_ids",
+                    "data_set_external_ids",
+                    "partitions",
+                    "sort",
+                ],
             ),
-            (files.FilesAPI, files.FileMetadataFilter, ["root_asset_external_ids", "asset_subtree_external_ids"]),
-            (sequences.SequencesAPI, sequences.SequenceFilter, ["asset_subtree_external_ids"]),
+            (
+                files.FilesAPI,
+                files.FileMetadataFilter,
+                ["root_asset_external_ids", "data_set_external_ids", "asset_subtree_external_ids"],
+            ),
+            (sequences.SequencesAPI, sequences.SequenceFilter, ["asset_subtree_external_ids", "data_set_external_ids"]),
+            (
+                time_series.TimeSeriesAPI,
+                time_series.TimeSeriesFilter,
+                ["asset_subtree_external_ids", "data_set_external_ids", "include_metadata", "partitions"],
+            ),
+            (data_sets.DataSetsAPI, data_sets.DataSetFilter, []),
         ],
     )
     def test_list_and_iter_signatures_same_as_filter_signature(self, api, filter, ignore):

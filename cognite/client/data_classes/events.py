@@ -10,6 +10,7 @@ class Event(CogniteResource):
 
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        data_set_id (int): A server-generated ID for the object.
         start_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         end_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         type (str): Type of the event, e.g 'failure'.
@@ -27,6 +28,7 @@ class Event(CogniteResource):
     def __init__(
         self,
         external_id: str = None,
+        data_set_id: int = None,
         start_time: int = None,
         end_time: int = None,
         type: str = None,
@@ -41,6 +43,7 @@ class Event(CogniteResource):
         cognite_client=None,
     ):
         self.external_id = external_id
+        self.data_set_id = data_set_id
         self.start_time = start_time
         self.end_time = end_time
         self.type = type
@@ -69,6 +72,7 @@ class EventFilter(CogniteFilter):
         asset_external_ids (List[str]): Asset External IDs of related equipment that this event relates to.
         root_asset_ids (List[Dict[str, Any]]): Only include events that have a related asset in a tree rooted at any of these root assetIds.
         asset_subtree_ids (List[Dict[str, Any]]): Only include events that have a related asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+        data_set_ids (List[Dict[str, Any]]): Only include events that belong to these datasets.
         source (str): The source of this event.
         type (str): The event type
         subtype (str): The event subtype
@@ -87,6 +91,7 @@ class EventFilter(CogniteFilter):
         asset_external_ids: List[str] = None,
         root_asset_ids: List[Dict[str, Any]] = None,
         asset_subtree_ids: List[Dict[str, Any]] = None,
+        data_set_ids: List[Dict[str, Any]] = None,
         source: str = None,
         type: str = None,
         subtype: str = None,
@@ -102,6 +107,7 @@ class EventFilter(CogniteFilter):
         self.asset_external_ids = asset_external_ids
         self.root_asset_ids = root_asset_ids
         self.asset_subtree_ids = asset_subtree_ids
+        self.data_set_ids = data_set_ids
         self.source = source
         self.type = type
         self.subtype = subtype
@@ -139,6 +145,10 @@ class EventUpdate(CogniteUpdate):
     @property
     def external_id(self):
         return _PrimitiveEventUpdate(self, "externalId")
+
+    @property
+    def data_set_id(self):
+        return _PrimitiveEventUpdate(self, "dataSetId")
 
     @property
     def start_time(self):
