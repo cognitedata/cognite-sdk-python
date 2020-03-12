@@ -28,8 +28,6 @@ def post_spy():
         yield
 
 
-# TODO: remove this skip when delete is implemented
-@pytest.mark.skip(reason="delete not implemented")
 class TestDataSetsAPI:
     def test_retrieve(self, new_dataset):
         assert new_dataset.id == DS_API.retrieve(new_dataset.id).id

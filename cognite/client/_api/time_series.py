@@ -235,7 +235,7 @@ class TimeSeriesAPI(APIClient):
             is_step=is_step,
             is_string=is_string,
             asset_ids=asset_ids,
-            asset_external_ids=assets_external_ids,
+            asset_external_ids=asset_external_ids,
             root_asset_ids=root_asset_ids,
             asset_subtree_ids=asset_subtree_ids,
             metadata=metadata,

@@ -224,24 +224,3 @@ class DataSetsAPI(APIClient):
                 >>> res = c.data_sets.update(my_update)
         """
         return self._update_multiple(items=item)
-
-    # TODO: update when supported
-    def delete(self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None) -> None:
-        """`Delete one or more data sets <https://docs.cognite.com/api/v1/#operation/deleteDataSets>`_
-
-        Args:
-            id (Union[int, List[int]): Id or list of ids
-            external_id (Union[str, List[str]]): External ID or list of external ids
-
-        Returns:
-            None
-
-        Examples:
-
-            Delete data_sets by id or external id::
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> c.data_sets.delete(id=[1,2,3], external_id="3")
-        """
-        self._delete_multiple(ids=id, external_ids=external_id, wrap_ids=True)
