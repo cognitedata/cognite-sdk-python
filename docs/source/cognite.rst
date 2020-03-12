@@ -355,7 +355,7 @@ Create data sets
 
 Delete data sets
 ^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_sets.DataSetsAPI.delete
+This functionality is not yet available in the API.
 
 Update data sets
 ^^^^^^^^^^^^^^^^
