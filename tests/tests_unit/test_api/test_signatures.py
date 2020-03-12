@@ -13,15 +13,31 @@ class TestListAndIterSignatures:
             (
                 assets.AssetsAPI,
                 assets.AssetFilter,
-                ["root_external_ids", "asset_subtree_external_ids", "aggregated_properties", "partitions"],
+                [
+                    "root_external_ids",
+                    "asset_subtree_external_ids",
+                    "data_set_external_ids",
+                    "aggregated_properties",
+                    "partitions",
+                ],
             ),
             (
                 events.EventsAPI,
                 events.EventFilter,
-                ["root_asset_external_ids", "asset_subtree_external_ids", "partitions", "sort"],
+                [
+                    "root_asset_external_ids",
+                    "asset_subtree_external_ids",
+                    "data_set_external_ids",
+                    "partitions",
+                    "sort",
+                ],
             ),
-            (files.FilesAPI, files.FileMetadataFilter, ["root_asset_external_ids", "asset_subtree_external_ids"]),
-            (sequences.SequencesAPI, sequences.SequenceFilter, ["asset_subtree_external_ids"]),
+            (
+                files.FilesAPI,
+                files.FileMetadataFilter,
+                ["root_asset_external_ids", "data_set_external_ids", "asset_subtree_external_ids"],
+            ),
+            (sequences.SequencesAPI, sequences.SequenceFilter, ["asset_subtree_external_ids", "data_set_external_ids"]),
             (data_sets.DataSetsAPI, data_sets.DataSetFilter, []),
         ],
     )

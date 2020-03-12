@@ -29,6 +29,8 @@ class FilesAPI(APIClient):
         root_asset_external_ids: List[str] = None,
         asset_subtree_ids: List[int] = None,
         asset_subtree_external_ids: List[str] = None,
+        data_set_ids: List[int] = None,
+        data_set_external_ids: List[str] = None,
         source: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
@@ -38,7 +40,6 @@ class FilesAPI(APIClient):
         external_id_prefix: str = None,
         uploaded: bool = None,
         limit: int = None,
-        data_set_ids: List[Dict[str, Any]] = None,
     ) -> Generator[Union[FileMetadata, FileMetadataList], None, None]:
         """Iterate over files
 
@@ -54,6 +55,8 @@ class FilesAPI(APIClient):
             root_asset_external_ids (List[str]): The external IDs of the root assets that the related assets should be children of.
             asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
             asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
+            data_set_ids (List[int]): Return only files in the specified data sets with these ids.
+            data_set_external_ids (List[str]): Return only files in the specified data sets with these external ids.
             source (str): The source of this event.
             source_created_time (Union[Dict[str, Any], TimestampRange]): Filter for files where the sourceCreatedTime field has been set and is within the specified range.
             source_modified_time (Union[Dict[str, Any], TimestampRange]): Filter for files where the sourceModifiedTime field has been set and is within the specified range.
@@ -72,6 +75,8 @@ class FilesAPI(APIClient):
             root_asset_ids = self._process_ids(root_asset_ids, root_asset_external_ids, wrap_ids=True)
         if asset_subtree_ids or asset_subtree_external_ids:
             asset_subtree_ids = self._process_ids(asset_subtree_ids, asset_subtree_external_ids, wrap_ids=True)
+        if data_set_ids or data_set_external_ids:
+            data_set_ids = self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
 
         filter = FileMetadataFilter(
             name=name,
@@ -204,6 +209,8 @@ class FilesAPI(APIClient):
         root_asset_external_ids: List[str] = None,
         asset_subtree_ids: List[int] = None,
         asset_subtree_external_ids: List[str] = None,
+        data_set_ids: List[int] = None,
+        data_set_external_ids: List[str] = None,
         source: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
@@ -213,7 +220,6 @@ class FilesAPI(APIClient):
         external_id_prefix: str = None,
         uploaded: bool = None,
         limit: int = 25,
-        data_set_ids: List[Dict[str, Any]] = None,
     ) -> FileMetadataList:
         """`List files <https://docs.cognite.com/api/v1/#operation/advancedListFiles>`_
 
@@ -226,6 +232,8 @@ class FilesAPI(APIClient):
             root_asset_external_ids (List[str]): The external IDs of the root assets that the related assets should be children of.
             asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
             asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
+            data_set_ids (List[int]): Return only files in the specified data sets with these ids.
+            data_set_external_ids (List[str]): Return only files in the specified data sets with these external ids.
             source (str): The source of this event.
             created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
@@ -266,6 +274,8 @@ class FilesAPI(APIClient):
             root_asset_ids = self._process_ids(root_asset_ids, root_asset_external_ids, wrap_ids=True)
         if asset_subtree_ids or asset_subtree_external_ids:
             asset_subtree_ids = self._process_ids(asset_subtree_ids, asset_subtree_external_ids, wrap_ids=True)
+        if data_set_ids or data_set_external_ids:
+            data_set_ids = self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
 
         filter = FileMetadataFilter(
             name=name,
@@ -373,6 +383,7 @@ class FilesAPI(APIClient):
         asset_ids: List[int] = None,
         source_created_time: int = None,
         source_modified_time: int = None,
+        data_set_id: int = None,
         recursive: bool = False,
         overwrite: bool = False,
     ) -> Union[FileMetadata, FileMetadataList]:
@@ -386,6 +397,7 @@ class FilesAPI(APIClient):
             mime_type (str): File type. E.g. text/plain, application/pdf, ...
             metadata (Dict[str, str]): Customizable extra data about the file. String key -> String value.
             asset_ids (List[int]): No description.
+            data_set_id (int): ID of the data set.
             source_created_time (int): The timestamp for when the file was originally created in the source system.
             source_modified_time (int): The timestamp for when the file was last modified in the source system.
             recursive (bool): If path is a directory, upload all contained files recursively.
@@ -428,6 +440,7 @@ class FilesAPI(APIClient):
             mime_type=mime_type,
             metadata=metadata,
             asset_ids=asset_ids,
+            data_set_id=data_set_id,
             source_created_time=source_created_time,
             source_modified_time=source_modified_time,
         )
@@ -473,6 +486,7 @@ class FilesAPI(APIClient):
         mime_type: str = None,
         metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
+        data_set_id: int = None,
         source_created_time: int = None,
         source_modified_time: int = None,
         overwrite: bool = False,
@@ -489,6 +503,7 @@ class FilesAPI(APIClient):
             mime_type (str): File type. E.g. text/plain, application/pdf,...
             metadata (Dict[str, str]): Customizable extra data about the file. String key -> String value.
             asset_ids (List[int]): No description.
+            data_set_id (int): Id of the data set.
             source_created_time (int): The timestamp for when the file was originally created in the source system.
             source_modified_time (int): The timestamp for when the file was last modified in the source system.
             overwrite (bool): If 'overwrite' is set to true, and the POST body content specifies a 'externalId' field,
@@ -515,6 +530,7 @@ class FilesAPI(APIClient):
             mime_type=mime_type,
             metadata=metadata,
             asset_ids=asset_ids,
+            data_set_id=data_set_id,
             source_created_time=source_created_time,
             source_modified_time=source_modified_time,
         )

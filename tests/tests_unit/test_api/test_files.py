@@ -169,14 +169,17 @@ class TestFilesAPI:
         assert "bla" == jsgz_load(mock_files_response.calls[0].request.body)["filter"]["source"]
         assert 10 == jsgz_load(mock_files_response.calls[0].request.body)["limit"]
 
-    def test_list_root_ids_list(self, mock_files_response):
-        FILES_API.list(root_asset_ids=[1, 2], root_asset_external_ids=["a"], limit=10)
+    def test_list_params(self, mock_files_response):
+        FILES_API.list(root_asset_ids=[1, 2], root_asset_external_ids=["a"], data_set_external_ids=["x"], limit=10)
         calls = mock_files_response.calls
         assert 1 == len(calls)
         assert {
             "cursor": None,
             "limit": 10,
-            "filter": {"rootAssetIds": [{"id": 1}, {"id": 2}, {"externalId": "a"}]},
+            "filter": {
+                "rootAssetIds": [{"id": 1}, {"id": 2}, {"externalId": "a"}],
+                "dataSetIds": [{"externalId": "x"}],
+            },
         } == jsgz_load(calls[0].request.body)
 
     def test_list_subtrees(self, mock_files_response):
@@ -246,7 +249,7 @@ class TestFilesAPI:
     def test_search(self, mock_files_response):
         res = FILES_API.search(filter=FileMetadataFilter(external_id_prefix="abc"))
         assert mock_files_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
-        assert {"search": {"name": None}, "filter": {"externalIdPrefix": "abc"}, "limit": 100} == jsgz_load(
+        assert {"search": {"name": None}, "filter": {"externalIdPrefix": "abc"}, "limit": 100,} == jsgz_load(
             mock_files_response.calls[0].request.body
         )
 
@@ -270,7 +273,7 @@ class TestFilesAPI:
 
     def test_upload_with_external_id(self, mock_file_upload_response):
         path = os.path.join(os.path.dirname(__file__), "files_for_test_upload", "file_for_test_upload_1.txt")
-        FILES_API.upload(path, external_id="blabla", name="bla")
+        FILES_API.upload(path, external_id="blabla", name="bla", data_set_id=42)
 
     def test_upload_no_name(self, mock_file_upload_response):
         path = os.path.join(os.path.dirname(__file__), "files_for_test_upload", "file_for_test_upload_1.txt")

@@ -56,6 +56,12 @@ class TestEvents:
         EVENTS_API.list(partitions=13, limit=float("inf"))
         assert 13 == len(mock_events_response.calls)
 
+    def test_list_with_dataset_ids(self, mock_events_response):
+        EVENTS_API.list(source="bla", data_set_ids=[1], data_set_external_ids=["x"])
+        assert [{"id": 1}, {"externalId": "x"}] == jsgz_load(mock_events_response.calls[0].request.body)["filter"][
+            "dataSetIds"
+        ]
+
     def test_list_sorting(self, mock_events_response):
         res = EVENTS_API.list(sort=["startTime:desc"])
         assert ["startTime:desc"] == jsgz_load(mock_events_response.calls[0].request.body)["sort"]

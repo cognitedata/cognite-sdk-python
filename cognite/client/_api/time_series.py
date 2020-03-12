@@ -21,13 +21,14 @@ class TimeSeriesAPI(APIClient):
         root_asset_ids: List[int] = None,
         asset_subtree_ids: List[int] = None,
         asset_subtree_external_ids: List[str] = None,
+        data_set_ids: List[int] = None,
+        data_set_external_ids: List[str] = None,
         metadata: Dict[str, Any] = None,
         external_id_prefix: str = None,
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
         limit: int = None,
         include_metadata=True,
-        data_set_id: int = None,
     ) -> Generator[Union[TimeSeries, TimeSeriesList], None, None]:
         """Iterate over time series
 
@@ -43,6 +44,8 @@ class TimeSeriesAPI(APIClient):
             root_asset_ids (List[int], optional): List time series related to assets under these root assets.
             asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
             asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
+            data_set_ids (List[int]): Return only time series in the specified data sets with these ids.
+            data_set_external_ids (List[str]): Return only time series in the specified data sets with these external ids.
             metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
             created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
@@ -55,6 +58,8 @@ class TimeSeriesAPI(APIClient):
         """
         if asset_subtree_ids or asset_subtree_external_ids:
             asset_subtree_ids = self._process_ids(asset_subtree_ids, asset_subtree_external_ids, wrap_ids=True)
+        if data_set_ids or data_set_external_ids:
+            data_set_ids = self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
 
         filter = TimeSeriesFilter(
             name=name,
@@ -66,6 +71,7 @@ class TimeSeriesAPI(APIClient):
             asset_subtree_ids=asset_subtree_ids,
             metadata=metadata,
             created_time=created_time,
+            data_set_ids=data_set_ids,
             last_updated_time=last_updated_time,
             external_id_prefix=external_id_prefix,
         ).dump(camel_case=True)
@@ -154,6 +160,8 @@ class TimeSeriesAPI(APIClient):
         root_asset_ids: List[int] = None,
         asset_subtree_ids: List[int] = None,
         asset_subtree_external_ids: List[str] = None,
+        data_set_ids: List[int] = None,
+        data_set_external_ids: List[str] = None,
         metadata: Dict[str, Any] = None,
         external_id_prefix: str = None,
         created_time: Dict[str, Any] = None,
@@ -175,6 +183,8 @@ class TimeSeriesAPI(APIClient):
             root_asset_ids (List[int], optional): List time series related to assets under these root assets.
             asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
             asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
+            data_set_ids (List[int]): Return only assets in the specified data sets with these ids.
+            data_set_external_ids (List[str]): Return only assets in the specified data sets with these external ids.
             metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
             created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
@@ -211,6 +221,8 @@ class TimeSeriesAPI(APIClient):
         """
         if asset_subtree_ids or asset_subtree_external_ids:
             asset_subtree_ids = self._process_ids(asset_subtree_ids, asset_subtree_external_ids, wrap_ids=True)
+        if data_set_ids or data_set_external_ids:
+            data_set_ids = self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
 
         filter = TimeSeriesFilter(
             name=name,
@@ -221,6 +233,7 @@ class TimeSeriesAPI(APIClient):
             root_asset_ids=root_asset_ids,
             asset_subtree_ids=asset_subtree_ids,
             metadata=metadata,
+            data_set_ids=data_set_ids,
             created_time=created_time,
             last_updated_time=last_updated_time,
             external_id_prefix=external_id_prefix,

@@ -23,7 +23,8 @@ class EventsAPI(APIClient):
         root_asset_external_ids: List[str] = None,
         asset_subtree_ids: List[int] = None,
         asset_subtree_external_ids: List[str] = None,
-        data_set_ids: List[Dict[str, Any]] = None,
+        data_set_ids: List[int] = None,
+        data_set_external_ids: List[str] = None,
         source: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
@@ -48,7 +49,8 @@ class EventsAPI(APIClient):
             root_asset_external_ids (List[str]): The external IDs of the root assets that the related assets should be children of.
             asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
             asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
-            data_set_ids (List[Dict[str, Any]]): Return only events in the specified data sets.
+            data_set_ids (List[int]): Return only events in the specified data sets with these ids.
+            data_set_external_ids (List[str]): Return only events in the specified data sets with these external ids.
             source (str): The source of this event.
             created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
@@ -64,6 +66,8 @@ class EventsAPI(APIClient):
             root_asset_ids = self._process_ids(root_asset_ids, root_asset_external_ids, wrap_ids=True)
         if asset_subtree_ids or asset_subtree_external_ids:
             asset_subtree_ids = self._process_ids(asset_subtree_ids, asset_subtree_external_ids, wrap_ids=True)
+        if data_set_ids or data_set_external_ids:
+            data_set_ids = self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
 
         filter = EventFilter(
             start_time=start_time,
@@ -169,7 +173,8 @@ class EventsAPI(APIClient):
         root_asset_external_ids: List[str] = None,
         asset_subtree_ids: List[int] = None,
         asset_subtree_external_ids: List[str] = None,
-        data_set_ids: List[Dict[str, Any]] = None,
+        data_set_ids: List[int] = None,
+        data_set_external_ids: List[str] = None,
         source: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
@@ -192,7 +197,8 @@ class EventsAPI(APIClient):
             root_asset_external_ids (List[str]): The external IDs of the root assets that the related assets should be children of.
             asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
             asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
-            data_set_ids (List[Dict[str, Any]]): Return only events in the specified data sets.
+            data_set_ids (List[int]): Return only events in the specified data sets with these ids.
+            data_set_external_ids (List[str]): Return only events in the specified data sets with these external ids.
             source (str): The source of this event.
             created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
@@ -231,6 +237,8 @@ class EventsAPI(APIClient):
             root_asset_ids = self._process_ids(root_asset_ids, root_asset_external_ids, wrap_ids=True)
         if asset_subtree_ids or asset_subtree_external_ids:
             asset_subtree_ids = self._process_ids(asset_subtree_ids, asset_subtree_external_ids, wrap_ids=True)
+        if data_set_ids or data_set_external_ids:
+            data_set_ids = self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
 
         filter = EventFilter(
             start_time=start_time,
