@@ -3,6 +3,7 @@ from typing import *
 from typing import List
 
 from cognite.client.data_classes._base import *
+from cognite.client.data_classes.shared import TimestampRange
 
 
 # GenClass: GetSequenceDTO
@@ -17,8 +18,9 @@ class Sequence(CogniteResource):
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
         metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value. Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         columns (List[Dict[str, Any]]): List of column definitions
-        created_time (int): Time when this asset was created in CDF in milliseconds since Jan 1, 1970.
-        last_updated_time (int): The last time this asset was updated in CDF, in milliseconds since Jan 1, 1970.
+        created_time (int): Time when this sequence was created in CDF in milliseconds since Jan 1, 1970.
+        last_updated_time (int): The last time this sequence was updated in CDF, in milliseconds since Jan 1, 1970.
+        data_set_id (int): Data set that this sequence belongs to
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
@@ -33,6 +35,7 @@ class Sequence(CogniteResource):
         columns: List[Dict[str, Any]] = None,
         created_time: int = None,
         last_updated_time: int = None,
+        data_set_id: int = None,
         cognite_client=None,
     ):
         self.id = id
@@ -44,6 +47,7 @@ class Sequence(CogniteResource):
         self.columns = columns
         self.created_time = created_time
         self.last_updated_time = last_updated_time
+        self.data_set_id = data_set_id
         self._cognite_client = cognite_client
 
     # GenStop
@@ -87,8 +91,9 @@ class SequenceFilter(CogniteFilter):
         asset_ids (List[int]): Return only sequences linked to one of the specified assets.
         root_asset_ids (List[int]): Only include sequences that have a related asset in a tree rooted at any of these root assetIds.
         asset_subtree_ids (List[Dict[str, Any]]): Only include sequences that have a related asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
-        created_time (Dict[str, Any]): Filter out sequences with createdTime outside this range.
-        last_updated_time (Dict[str, Any]): Filter out sequences with lastUpdatedTime outside this range.
+        created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
+        last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
+        data_set_ids (List[Dict[str, Any]]): Only include sequences that belong to these datasets.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
@@ -100,8 +105,9 @@ class SequenceFilter(CogniteFilter):
         asset_ids: List[int] = None,
         root_asset_ids: List[int] = None,
         asset_subtree_ids: List[Dict[str, Any]] = None,
-        created_time: Dict[str, Any] = None,
-        last_updated_time: Dict[str, Any] = None,
+        created_time: Union[Dict[str, Any], TimestampRange] = None,
+        last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
+        data_set_ids: List[Dict[str, Any]] = None,
         cognite_client=None,
     ):
         self.name = name
@@ -112,7 +118,18 @@ class SequenceFilter(CogniteFilter):
         self.asset_subtree_ids = asset_subtree_ids
         self.created_time = created_time
         self.last_updated_time = last_updated_time
+        self.data_set_ids = data_set_ids
         self._cognite_client = cognite_client
+
+    @classmethod
+    def _load(cls, resource: Union[Dict, str], cognite_client=None):
+        instance = super(SequenceFilter, cls)._load(resource, cognite_client)
+        if isinstance(resource, Dict):
+            if instance.created_time is not None:
+                instance.created_time = TimestampRange(**instance.created_time)
+            if instance.last_updated_time is not None:
+                instance.last_updated_time = TimestampRange(**instance.last_updated_time)
+        return instance
 
     # GenStop
 
@@ -145,6 +162,10 @@ class SequenceUpdate(CogniteUpdate):
     @property
     def metadata(self):
         return _ObjectSequenceUpdate(self, "metadata")
+
+    @property
+    def data_set_id(self):
+        return _PrimitiveSequenceUpdate(self, "dataSetId")
 
 
 class _PrimitiveSequenceUpdate(CognitePrimitiveUpdate):

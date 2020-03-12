@@ -4,7 +4,7 @@ import os
 from openapi.generator import CodeGenerator
 
 DEFAULT_SPEC_URL = "https://storage.googleapis.com/cognitedata-api-docs/dist/v1.json"
-DEFAULT_SPEC_URL = "https://pr-461.specs.preview.cogniteapp.com/v1.json"  # TODO: remove this
+DEFAULT_SPEC_URL = "https://pr-793.specs.preview.cogniteapp.com/v1.json"  # TODO: remove this
 PLAYGROUND_SPEC_URL = "https://storage.googleapis.com/cognitedata-api-docs/dist/playground.json"
 
 
@@ -25,7 +25,7 @@ def main(spec_url, spec_path):
         for file in files:
             file_path = os.path.join(root, file)
             if file_path.endswith(".py"):
-                if "relationships" in file_path or "data_sets" in file_path:
+                if "relationships" in file_path:
                     print("* Generating playground code in {}".format(file_path))
                     codegen_playground.generate(file_path, file_path)
                 else:

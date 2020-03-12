@@ -3,6 +3,7 @@ from typing import *
 from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import TimeSeries, TimeSeriesFilter, TimeSeriesList, TimeSeriesUpdate
+from cognite.client.data_classes.shared import TimestampRange
 
 
 class TimeSeriesAPI(APIClient):
@@ -26,6 +27,7 @@ class TimeSeriesAPI(APIClient):
         last_updated_time: Dict[str, Any] = None,
         limit: int = None,
         include_metadata=True,
+        data_set_id: int = None,
     ) -> Generator[Union[TimeSeries, TimeSeriesList], None, None]:
         """Iterate over time series
 

@@ -9,12 +9,12 @@ class DataSet(CogniteResource):
     """No description.
 
     Args:
-        external_id (str): External Id provided by client. Should be unique within the project.
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
         name (str): The name of the data set.
         description (str): The description of the data set.
         metadata (Dict[str, str]): Custom, application-specific metadata. String key -> String value.
-        write_protected (bool): To write data to a write-protected data set, you need to be a member of a group that has the "datasets:owner" action for the data set.
-        id (int): Javascript friendly internal ID given to the object.
+        write_protected (bool): To write data to a write-protected data set, you need to be a member of a group that has the "datasets:owner" action for the data set.  To learn more about write-protected data sets, follow this [guide](/cdf/data_governance/concepts/datasets/#write-protection)
+        id (int): A server-generated ID for the object.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         cognite_client (CogniteClient): The client to associate with this object.
@@ -92,8 +92,8 @@ class DataSetUpdate(CogniteUpdate):
     """Update applied to single data set
 
     Args:
-        id (int): Javascript friendly internal ID given to the object.
-        external_id (str): External Id provided by client. Should be unique within the project.
+        id (int): A server-generated ID for the object.
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
     """
 
     @property

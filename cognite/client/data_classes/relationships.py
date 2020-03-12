@@ -12,7 +12,7 @@ class Relationship(CogniteResource):
         source (Dict[str, Any]): Reference by external id to the source of the relationship. Since it is a reference by external id, the targeted resource may or may not exist in CDF.  If resource is `threeD` or `threeDRevision` the `resourceId` is a set of internal ids concatenated by a colons. Otherwise, the resourceId follows the formatting rules as described in `resourceId`.  If resource id of type `threeD`, the externalId must follow the pattern `<nodeId>:<modelId>:<revisionId>`. If resource id of type `threeDRevision`, the externalId must follow the pattern `<revisionId>:<modelId>`. The values `<nodeId>`, `<modelId>` and `<revisionId>` are the corresponding internal ids to identify the referenced resource uniquely.
         target (Dict[str, Any]): Reference by external id to the target of the relationship. Since it is a reference by external id, the targeted resource may or may not exist in CDF.  If resource is `threeD` or `threeDRevision` the `resourceId` is a set of internal ids concatenated by a colons. Otherwise, the resourceId follows the formatting rules as described in `resourceId`.  If resource id of type `threeD`, the externalId must follow the pattern `<nodeId>:<modelId>:<revisionId>`. If resource id of type `threeDRevision`, the externalId must follow the pattern `<revisionId>:<modelId>`. The values `<nodeId>`, `<modelId>` and `<revisionId>` are the corresponding internal ids to identify the referenced resource uniquely.
         start_time (float): Time when this relationship was established in milliseconds since Jan 1, 1970.
-        end_time (float): Time when this relationship was ceased to exist in milliseconds since Jan 1, 1970.
+        end_time (float): Time when this relationship ceased to exist in milliseconds since Jan 1, 1970. If both startTime and endTime is set, endTime must be strictly greater than startTime.
         confidence (float): Confidence value of the existence of this relationship. Humans should enter 1.0 usually, generated relationships should provide a realistic score on the likelihood of the existence of the relationship. Generated relationships should never have the a confidence score of 1.0.
         data_set (str): String describing the source system storing or generating the relationship.
         external_id (str): Disallowing leading and trailing whitespaces. Case sensitive. The external Id must be unique within the project.
@@ -78,13 +78,13 @@ class Relationship(CogniteResource):
 
 # GenClass: relationshipsAdvancedListRequest.filter
 class RelationshipFilter(CogniteFilter):
-    """Filter on relationships with exact match. Multiple filter elments in one property, e.g. `dataSets: [ "a", "b" ]`, will return all relationships that are either in dataSet `a` or in dataSet `b`. Filters in multiple properties will return the relationships that match all criteria. Filters on a `resourceId` without a `resource` (type) in sources and targets will return relationships that match the resourceId and match any resource type.  
+    """Filter on relationships with exact match. Multiple filter elments in one property, e.g. `dataSets: [ "a", "b" ]`, will return all relationships where the dataSet field is either `a` or `b`. Filters in multiple properties will return the relationships that match all criteria. Filters on a `resourceId` without a `resource` (type) in sources and targets will return relationships that match the resourceId and match any resource type.
 
     Args:
-        sources (List[Dict[str, Any]]): No description.
-        targets (List[Dict[str, Any]]): No description.
-        relationship_types (List[str]): No description.
-        data_sets (List[str]): No description.
+        sources (List[Dict[str, Any]]): Include relationships that have any of these values in their `source` field
+        targets (List[Dict[str, Any]]): Include relationships that have any of these values in their `target` field
+        relationship_types (List[str]): Include relationships that have any of these values in their `relationshipType` field
+        data_sets (List[str]): Include relationships that have any of these values in their `dataSet` field
         start_time (Dict[str, Any]): Range to filter the field for. (inclusive)
         end_time (Dict[str, Any]): Range to filter the field for. (inclusive)
         confidence (Dict[str, Any]): Range to filter the field for. (inclusive)

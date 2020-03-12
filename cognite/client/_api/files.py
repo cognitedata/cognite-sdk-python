@@ -24,7 +24,6 @@ class FilesAPI(APIClient):
         mime_type: str = None,
         metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
-        asset_external_ids: List[str] = None,
         root_asset_ids: List[int] = None,
         root_asset_external_ids: List[str] = None,
         asset_subtree_ids: List[int] = None,
@@ -38,6 +37,7 @@ class FilesAPI(APIClient):
         external_id_prefix: str = None,
         uploaded: bool = None,
         limit: int = None,
+        data_set_ids: List[Dict[str, Any]] = None,
     ) -> Generator[Union[FileMetadata, FileMetadataList], None, None]:
         """Iterate over files
 
@@ -77,7 +77,6 @@ class FilesAPI(APIClient):
             mime_type=mime_type,
             metadata=metadata,
             asset_ids=asset_ids,
-            asset_external_ids=asset_external_ids,
             root_asset_ids=root_asset_ids,
             asset_subtree_ids=asset_subtree_ids,
             source=source,
@@ -88,6 +87,7 @@ class FilesAPI(APIClient):
             source_modified_time=source_modified_time,
             external_id_prefix=external_id_prefix,
             uploaded=uploaded,
+            data_set_ids=data_set_ids,
         ).dump(camel_case=True)
         return self._list_generator(method="POST", chunk_size=chunk_size, filter=filter, limit=limit)
 
@@ -199,7 +199,6 @@ class FilesAPI(APIClient):
         mime_type: str = None,
         metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
-        asset_external_ids: List[str] = None,
         root_asset_ids: List[int] = None,
         root_asset_external_ids: List[str] = None,
         asset_subtree_ids: List[int] = None,
@@ -213,6 +212,7 @@ class FilesAPI(APIClient):
         external_id_prefix: str = None,
         uploaded: bool = None,
         limit: int = 25,
+        data_set_ids: List[Dict[str, Any]] = None,
     ) -> FileMetadataList:
         """`List files <https://docs.cognite.com/api/v1/#operation/advancedListFiles>`_
 
@@ -281,6 +281,7 @@ class FilesAPI(APIClient):
             source_modified_time=source_modified_time,
             external_id_prefix=external_id_prefix,
             uploaded=uploaded,
+            data_set_ids=data_set_ids,
         ).dump(camel_case=True)
 
         return self._list(method="POST", limit=limit, filter=filter)
