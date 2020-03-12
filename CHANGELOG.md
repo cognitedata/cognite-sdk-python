@@ -21,7 +21,7 @@ Changes are grouped as follows
 
 ## Unreleased
 
-## [1.4.13] - 2020-03-12
+## [1.5.0] - 2020-03-12
 ### Added
 - DataSets API and support for this in assets, events, time series, files and sequences.
 - .asset helper function on time series.
