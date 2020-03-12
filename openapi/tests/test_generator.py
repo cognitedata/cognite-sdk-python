@@ -1,4 +1,6 @@
-import os, pytest
+import os
+
+import pytest
 
 from openapi.generator import ClassGenerator, CodeGenerator, UpdateClassGenerator
 
