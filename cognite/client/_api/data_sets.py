@@ -29,7 +29,7 @@ class DataSetsAPI(APIClient):
             created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
             last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
             external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
-            write_protected (bool): No description.
+            write_protected (bool): Specify whether the filtered data sets are write-protected, or not. Set to True to only list write-protected data sets.
             limit (int, optional): Maximum number of data sets to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all items.
 
@@ -155,7 +155,7 @@ class DataSetsAPI(APIClient):
             created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
             last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
             external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
-            write_protected (bool): No description.
+            write_protected (bool): Specify whether the filtered data sets are write-protected, or not. Set to True to only list write-protected data sets.
             limit (int, optional): Maximum number of data sets to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all items.
 
