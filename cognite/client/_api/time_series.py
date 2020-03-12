@@ -18,6 +18,7 @@ class TimeSeriesAPI(APIClient):
         is_string: bool = None,
         is_step: bool = None,
         asset_ids: List[int] = None,
+        asset_external_ids: List[str] = None,
         root_asset_ids: List[int] = None,
         asset_subtree_ids: List[int] = None,
         asset_subtree_external_ids: List[str] = None,
@@ -41,6 +42,7 @@ class TimeSeriesAPI(APIClient):
             is_string (bool): Whether the time series is an string time series.
             is_step (bool): Whether the time series is a step (piecewise constant) time series.
             asset_ids (List[int], optional): List time series related to these assets.
+            asset_external_ids  (List[str], optional): List time series related to these assets.
             root_asset_ids (List[int], optional): List time series related to assets under these root assets.
             asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
             asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
@@ -67,6 +69,7 @@ class TimeSeriesAPI(APIClient):
             is_step=is_step,
             is_string=is_string,
             asset_ids=asset_ids,
+            asset_external_ids=asset_external_ids,
             root_asset_ids=root_asset_ids,
             asset_subtree_ids=asset_subtree_ids,
             metadata=metadata,
@@ -157,6 +160,7 @@ class TimeSeriesAPI(APIClient):
         is_string: bool = None,
         is_step: bool = None,
         asset_ids: List[int] = None,
+        asset_external_ids: List[str] = None,
         root_asset_ids: List[int] = None,
         asset_subtree_ids: List[int] = None,
         asset_subtree_external_ids: List[str] = None,
@@ -180,6 +184,7 @@ class TimeSeriesAPI(APIClient):
             is_string (bool): Whether the time series is an string time series.
             is_step (bool): Whether the time series is a step (piecewise constant) time series.
             asset_ids (List[int], optional): List time series related to these assets.
+            asset_external_ids (List[str], optional): List time series related to these assets.
             root_asset_ids (List[int], optional): List time series related to assets under these root assets.
             asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
             asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
@@ -230,6 +235,7 @@ class TimeSeriesAPI(APIClient):
             is_step=is_step,
             is_string=is_string,
             asset_ids=asset_ids,
+            asset_external_ids=assets_external_ids,
             root_asset_ids=root_asset_ids,
             asset_subtree_ids=asset_subtree_ids,
             metadata=metadata,
