@@ -24,6 +24,8 @@ class AssetsAPI(APIClient):
         asset_subtree_ids: List[int] = None,
         asset_subtree_external_ids: List[str] = None,
         metadata: Dict[str, str] = None,
+        data_set_ids: List[int] = None,
+        data_set_external_ids: List[str] = None,
         source: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
@@ -46,6 +48,8 @@ class AssetsAPI(APIClient):
             asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
             asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
             metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value
+            data_set_ids (List[int]): Return only assets in the specified data sets with these ids.
+            data_set_external_ids (List[str]): Return only assets in the specified data sets with these external ids.
             source (str): The source of this asset
             created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
@@ -64,6 +68,8 @@ class AssetsAPI(APIClient):
             root_ids = self._process_ids(root_ids, root_external_ids, wrap_ids=True)
         if asset_subtree_ids or asset_subtree_external_ids:
             asset_subtree_ids = self._process_ids(asset_subtree_ids, asset_subtree_external_ids, wrap_ids=True)
+        if data_set_ids or data_set_external_ids:
+            data_set_ids = self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
 
         filter = AssetFilter(
             name=name,
@@ -71,6 +77,7 @@ class AssetsAPI(APIClient):
             parent_external_ids=parent_external_ids,
             root_ids=root_ids,
             asset_subtree_ids=asset_subtree_ids,
+            data_set_ids=data_set_ids,
             metadata=metadata,
             source=source,
             created_time=created_time,
@@ -168,6 +175,8 @@ class AssetsAPI(APIClient):
         root_external_ids: List[str] = None,
         asset_subtree_ids: List[int] = None,
         asset_subtree_external_ids: List[str] = None,
+        data_set_ids: List[int] = None,
+        data_set_external_ids: List[str] = None,
         metadata: Dict[str, str] = None,
         source: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
@@ -188,6 +197,8 @@ class AssetsAPI(APIClient):
             root_external_ids (List[str], optional): List of root external ids to filter on.
             asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
             asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
+            data_set_ids (List[int]): Return only assets in the specified data sets with these ids.
+            data_set_external_ids (List[str]): Return only assets in the specified data sets with these external ids.
             metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value.
             source (str): The source of this asset.
             created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
@@ -232,6 +243,8 @@ class AssetsAPI(APIClient):
             root_ids = self._process_ids(root_ids, root_external_ids, wrap_ids=True)
         if asset_subtree_ids or asset_subtree_external_ids:
             asset_subtree_ids = self._process_ids(asset_subtree_ids, asset_subtree_external_ids, wrap_ids=True)
+        if data_set_ids or data_set_external_ids:
+            data_set_ids = self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
 
         filter = AssetFilter(
             name=name,
@@ -239,6 +252,7 @@ class AssetsAPI(APIClient):
             parent_external_ids=parent_external_ids,
             root_ids=root_ids,
             asset_subtree_ids=asset_subtree_ids,
+            data_set_ids=data_set_ids,
             metadata=metadata,
             source=source,
             created_time=created_time,

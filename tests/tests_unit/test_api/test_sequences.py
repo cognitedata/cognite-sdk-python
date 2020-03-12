@@ -180,6 +180,8 @@ class TestSequences:
             created_time={"max": 123},
             asset_ids=[1, 2],
             root_asset_ids=[1231],
+            data_set_ids=[11],
+            data_set_external_ids=["fml"],
             asset_subtree_ids=[1],
             asset_subtree_external_ids=["a"],
         )
@@ -191,6 +193,7 @@ class TestSequences:
             "rootAssetIds": [1231],
             "createdTime": {"max": 123},
             "lastUpdatedTime": {"min": 45},
+            "dataSetIds": [{"id": 11}, {"externalId": "fml"}],
         } == jsgz_load(mock_seq_response.calls[0].request.body)["filter"]
 
     def test_create_single(self, mock_seq_response):
