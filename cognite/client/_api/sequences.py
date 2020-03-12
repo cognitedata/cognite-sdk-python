@@ -218,7 +218,7 @@ class SequencesAPI(APIClient):
             sequence (Union[Sequence, List[Sequence]]): Sequence or list of Sequence to create.
                 The Sequence columns parameter is a list of objects with fields
                 `externalId` (external id of the column, when omitted, they will be given ids of 'column0, column1, ...'),
-                `valueType` (data type of the column, either STRING, INTEGER, or DOUBLE, with default DOUBLE),
+                `valueType` (data type of the column, either STRING, LONG, or DOUBLE, with default DOUBLE),
                 `name`, `description`, `metadata` (optional fields to describe and store information about the data in the column).
                 Other fields will be removed automatically, so a columns definition from a different sequence object can be passed here.
 

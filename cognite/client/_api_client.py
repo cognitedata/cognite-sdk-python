@@ -176,7 +176,7 @@ class APIClient:
         return urljoin(self._config.base_url, base_path)
 
     def _is_retryable(self, method, path):
-        valid_methods = ["GET", "POST", "PUT", "DELETE"]
+        valid_methods = ["GET", "POST", "PUT", "DELETE", "PATCH"]
         match = re.match("(?:http|https)://[a-z\d.:]+(?:/api/v1/projects/[^/]+)?(/.+)", path)
 
         if not match:
@@ -209,7 +209,7 @@ class APIClient:
             "/sequences/data/list",
             "/sequences/data/delete",
         }
-        if method in ["GET", "PUT"]:
+        if method in ["GET", "PUT", "PATCH"]:
             return True
         if method == "POST" and path_end in retryable_post_endpoints:
             return True
