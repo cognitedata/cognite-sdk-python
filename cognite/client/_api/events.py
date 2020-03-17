@@ -217,7 +217,7 @@ class EventsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> file_list = c.events.list(limit=5, start_time={"max": 1500000000})
+                >>> event_list = c.events.list(limit=5, start_time={"max": 1500000000})
 
             Iterate over events::
 
@@ -231,7 +231,7 @@ class EventsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> for event_list in c.events(chunk_size=2500):
-                ...     event_list # do something with the files
+                ...     event_list # do something with the events
         """
         if (root_asset_ids and not isinstance(root_asset_ids[0], dict)) or root_asset_external_ids:
             root_asset_ids = self._process_ids(root_asset_ids, root_asset_external_ids, wrap_ids=True)
