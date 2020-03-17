@@ -312,7 +312,7 @@ class AssetsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import Asset
                 >>> c = CogniteClient()
-                >>> assets = [Asset(external_id="root"), Asset(external_id="child1", parent_external_id="root"), Asset(external_id="child2", parent_external_id="root")]
+                >>> assets = [Asset(external_id="root", name="root"), Asset(external_id="child1", parent_external_id="root", name="child1"), Asset(external_id="child2", parent_external_id="root", name="child2")]
                 >>> res = c.assets.create_hierarchy(assets)
         """
         utils._auxiliary.assert_type(assets, "assets", [list])
