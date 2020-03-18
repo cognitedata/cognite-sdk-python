@@ -43,7 +43,7 @@ class EventsAPI(APIClient):
             type (str): Type of the event, e.g 'failure'.
             subtype (str): Subtype of the event, e.g 'electrical'.
             metadata (Dict[str, str]): Customizable extra data about the event. String key -> String value.
-            asset_ids (List[int]): Asset IDs of related equipments that this event relates to.
+            asset_ids (List[int]): Asset IDs of equipments that this event relates to.
             asset_external_ids (List[str]): Asset External IDs of related equipment that this event relates to.
             root_asset_ids (List[int]): The IDs of the root assets that the related assets should be children of.
             root_asset_external_ids (List[str]): The external IDs of the root assets that the related assets should be children of.
@@ -191,7 +191,7 @@ class EventsAPI(APIClient):
             type (str): Type of the event, e.g 'failure'.
             subtype (str): Subtype of the event, e.g 'electrical'.
             metadata (Dict[str, str]): Customizable extra data about the event. String key -> String value.
-            asset_ids (List[int]): Asset IDs of related equipments that this event relates to.
+            asset_ids (List[int]): Asset IDs of equipments that this event relates to.
             asset_external_ids (List[str]): Asset External IDs of related equipment that this event relates to.
             root_asset_ids (List[int]): The IDs of the root assets that the related assets should be children of.
             root_asset_external_ids (List[str]): The external IDs of the root assets that the related assets should be children of.
