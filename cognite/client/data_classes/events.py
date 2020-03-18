@@ -10,7 +10,7 @@ class Event(CogniteResource):
 
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        data_set_id (int): A server-generated ID for the object.
+        data_set_id (int): Data set that this Event belongs to
         start_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         end_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         type (str): Type of the event, e.g 'failure'.
