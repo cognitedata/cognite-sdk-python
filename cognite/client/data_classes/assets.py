@@ -35,15 +35,15 @@ class Asset(CogniteResource):
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
         name (str): The name of the asset.
-        parent_id (int): A server-generated ID for the object.
+        parent_id (int): The parent of the node, null if it is the root node.
         description (str): The description of the asset.
-        data_set_id (int): A server-generated ID for the object.
+        data_set_id (int): ID of the data set.
         metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         source (str): The source of the asset.
         id (int): A server-generated ID for the object.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        root_id (int): A server-generated ID for the object.
+        root_id (int): ID of the root asset.
         aggregates (Union[Dict[str, Any], AggregateResultItem]): Aggregated metrics of the asset
         parent_external_id (str): The external ID of the parent. The property is omitted if the asset doesn't have a parent or if the parent doesn't have externalId.
         cognite_client (CogniteClient): The client to associate with this object.
