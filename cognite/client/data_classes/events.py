@@ -10,7 +10,7 @@ class Event(CogniteResource):
 
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        data_set_id (int): Data set that this Event belongs to
+        data_set_id (int): Data set that this Event belongs to.
         start_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         end_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         type (str): Type of the event, e.g 'failure'.
@@ -74,8 +74,8 @@ class EventFilter(CogniteFilter):
         asset_subtree_ids (List[Dict[str, Any]]): Only include events that have a related asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
         data_set_ids (List[Dict[str, Any]]): Only include events that belong to these datasets.
         source (str): The source of this event.
-        type (str): The event type
-        subtype (str): The event subtype
+        type (str): The event type.
+        subtype (str): The event subtype.
         created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
         last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
         external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
