@@ -16,7 +16,7 @@ class TimeSeries(CogniteResource):
         is_string (bool): Whether the time series is string valued or not.
         metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         unit (str): The physical unit of the time series.
-        asset_id (int): A server-generated ID for the object.
+        asset_id (int): Asset ID of equipment linked to this time series.
         is_step (bool): Whether the time series is a step series or not.
         description (str): Description of the time series.
         security_categories (List[int]): The required security categories to access this time series.
