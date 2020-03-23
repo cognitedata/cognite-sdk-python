@@ -65,8 +65,7 @@ class FilesAPI(APIClient):
             uploaded_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps
             external_id_prefix (str): External Id provided by client. Should be unique within the project.
             uploaded (bool): Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
-            limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None
-                to return all items.
+            limit (int, optional): Maximum number of assets to return. Defaults to return all items.
 
         Yields:
             Union[FileMetadata, FileMetadataList]: yields FileMetadata one by one if chunk is not specified, else FileMetadataList objects.

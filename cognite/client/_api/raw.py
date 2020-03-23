@@ -26,8 +26,7 @@ class RawDatabasesAPI(APIClient):
 
         Args:
             chunk_size (int, optional): Number of dbs to return in each chunk. Defaults to yielding one db a time.
-            limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None
-                to return all items.
+            limit (int, optional): Maximum number of assets to return. Defaults to return all items.
         """
         return self._list_generator(chunk_size=chunk_size, method="GET", limit=limit)
 
@@ -139,8 +138,7 @@ class RawTablesAPI(APIClient):
         Args:
             db_name (str): Name of the database to iterate over tables for
             chunk_size (int, optional): Number of tables to return in each chunk. Defaults to yielding one table a time.
-            limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None
-                to return all items.
+            limit (int, optional): Maximum number of assets to return. Defaults to return all items.
         """
         for tb in self._list_generator(
             resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, db_name),
@@ -283,8 +281,7 @@ class RawRowsAPI(APIClient):
             db_name (str): Name of the database
             table_name (str): Name of the table to iterate over rows for
             chunk_size (int, optional): Number of rows to return in each chunk. Defaults to yielding one row a time.
-            limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None
-                to return all items.
+            limit (int, optional): Maximum number of assets to return. Defaults to return all items.
         """
         return self._list_generator(
             resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
