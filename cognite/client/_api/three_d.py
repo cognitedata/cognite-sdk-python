@@ -38,7 +38,7 @@ class ThreeDModelsAPI(APIClient):
         Args:
             chunk_size (int, optional): Number of 3d models to return in each chunk. Defaults to yielding one model a time.
             published (bool): Filter based on whether or not the model has published revisions.
-            limit (int, optional): Maximum number of assets to return. DDefaults to return all items.
+            limit (int, optional): Maximum number of 3d models to return. Defaults to return all items.
 
         Yields:
             Union[ThreeDModel, ThreeDModelList]: yields ThreeDModel one by one if chunk is not specified, else ThreeDModelList objects.
@@ -200,7 +200,7 @@ class ThreeDRevisionsAPI(APIClient):
             model_id (int): Iterate over revisions for the model with this id.
             chunk_size (int, optional): Number of 3d model revisions to return in each chunk. Defaults to yielding one model a time.
             published (bool): Filter based on whether or not the revision has been published.
-            limit (int, optional): Maximum number of assets to return. Defaults to return all items.
+            limit (int, optional): Maximum number of 3d model revisions to return. Defaults to return all items.
 
         Yields:
             Union[ThreeDModelRevision, ThreeDModelRevisionList]: yields ThreeDModelRevision one by one if chunk is not
