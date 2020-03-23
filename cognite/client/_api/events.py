@@ -56,8 +56,7 @@ class EventsAPI(APIClient):
             last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             external_id_prefix (str): External Id provided by client. Should be unique within the project
             sort (List[str]): Sort by array of selected fields. Ex: ["startTime:desc']. Default sort order is asc when ommitted. Filter accepts following field names: startTime, endTime, createdTime, lastUpdatedTime. We only support 1 field for now.
-            limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None
-                to return all items.
+            limit (int, optional): Maximum number of events to return. Defaults to return all items.
 
         Yields:
             Union[Event, EventList]: yields Event one by one if chunk is not specified, else EventList objects.
