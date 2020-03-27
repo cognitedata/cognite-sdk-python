@@ -40,6 +40,17 @@ def get_type_hint(item):
             return types[0]
         else:
             return "Union[{}]".format(", ".join(types))
+    elif "allOf" in item and "type" in item["allOf"][0]:
+        types = []
+        for current in item["allOf"]:
+            types.append(get_type_hint(current))
+        types = list(set(types))
+        if len(types) == 1:
+            return types[0]
+        else:
+            return "Union[{}]".format(", ".join(types))
+    else:
+        raise "Unrecognized type in '{}'".format(item)
 
     if type == "array":
         return "List[{}]".format(get_type_hint(item["items"]))
