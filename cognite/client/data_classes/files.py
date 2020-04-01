@@ -19,6 +19,7 @@ class FileMetadata(CogniteResource):
         data_set_id (int): The dataSet Id for the item.
         source_created_time (int): The timestamp for when the file was originally created in the source system.
         source_modified_time (int): The timestamp for when the file was last modified in the source system.
+        security_categories (List[int]): The security category IDs required to access this file.
         id (int): A server-generated ID for the object.
         uploaded (bool): Whether or not the actual file is uploaded.  This field is returned only by the API, it has no effect in a post body.
         uploaded_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -38,6 +39,7 @@ class FileMetadata(CogniteResource):
         data_set_id: int = None,
         source_created_time: int = None,
         source_modified_time: int = None,
+        security_categories: List[int] = None,
         id: int = None,
         uploaded: bool = None,
         uploaded_time: int = None,
@@ -54,6 +56,7 @@ class FileMetadata(CogniteResource):
         self.data_set_id = data_set_id
         self.source_created_time = source_created_time
         self.source_modified_time = source_modified_time
+        self.security_categories = security_categories
         self.id = id
         self.uploaded = uploaded
         self.uploaded_time = uploaded_time
@@ -176,6 +179,10 @@ class FileMetadataUpdate(CogniteUpdate):
     @property
     def data_set_id(self):
         return _PrimitiveFileMetadataUpdate(self, "dataSetId")
+
+    @property
+    def security_categories(self):
+        return _ListFileMetadataUpdate(self, "securityCategories")
 
 
 class _PrimitiveFileMetadataUpdate(CognitePrimitiveUpdate):
