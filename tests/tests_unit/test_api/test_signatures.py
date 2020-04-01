@@ -93,6 +93,7 @@ class TestFileMetadataUploadSignatures:
         del file_metadata_parameters["uploaded"]
         del file_metadata_parameters["cognite_client"]
         del file_metadata_parameters["name"]
+        del file_metadata_parameters["security_categories"]
 
         assert upload_parameters == file_metadata_parameters
         assert upload_from_memory_parameters == file_metadata_parameters
