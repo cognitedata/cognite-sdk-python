@@ -21,6 +21,15 @@ Changes are grouped as follows
 
 ## Unreleased
 
+## [1.5.1] - 2020-04-01
+### Added
+- Support for security categories on files
+- active_at_time on relationships
+
+### Fixed
+- No longer retry calls to /files/initupload
+- Retry retryable POST endpoints in datasets API 
+
 ## [1.5.0] - 2020-03-12
 ### Added
 - DataSets API and support for this in assets, events, time series, files and sequences.
