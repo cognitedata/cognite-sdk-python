@@ -195,7 +195,6 @@ class APIClient:
             "/files/list",
             "/files/byids",
             "/files/search",
-            "/files/initupload",
             "/files/downloadlink",
             "/timeseries/byids",
             "/timeseries/search",
@@ -208,6 +207,9 @@ class APIClient:
             "/sequences/data",
             "/sequences/data/list",
             "/sequences/data/delete",
+            "/datasets/list",
+            "/datasets/aggregate",
+            "/datasets/byids",
         }
         if method in ["GET", "PUT", "PATCH"]:
             return True
