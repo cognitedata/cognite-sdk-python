@@ -81,10 +81,12 @@ class TestFileMetadataUploadSignatures:
         del upload_parameters["recursive"]
         del upload_parameters["overwrite"]
         del upload_parameters["name"]
+        del upload_parameters["security_categories"]
         upload_from_memory_parameters = dict(inspect.signature(files.FilesAPI.upload_bytes).parameters)
         del upload_from_memory_parameters["content"]
         del upload_from_memory_parameters["overwrite"]
         del upload_from_memory_parameters["name"]
+        del upload_from_memory_parameters["security_categories"]
         file_metadata_parameters = dict(inspect.signature(files.FileMetadata.__init__).parameters)
         del file_metadata_parameters["id"]
         del file_metadata_parameters["uploaded_time"]
