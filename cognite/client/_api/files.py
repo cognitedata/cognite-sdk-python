@@ -533,7 +533,7 @@ class FilesAPI(APIClient):
             data_set_id=data_set_id,
             source_created_time=source_created_time,
             source_modified_time=source_modified_time,
-            security_categories=security_categories if security_categories is not None else []
+            security_categories=security_categories,
         )
 
         res = self._post(
