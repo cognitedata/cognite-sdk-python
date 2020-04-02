@@ -383,6 +383,7 @@ class FilesAPI(APIClient):
         source_created_time: int = None,
         source_modified_time: int = None,
         data_set_id: int = None,
+        security_categories: List[int] = None,
         recursive: bool = False,
         overwrite: bool = False,
     ) -> Union[FileMetadata, FileMetadataList]:
@@ -442,6 +443,7 @@ class FilesAPI(APIClient):
             data_set_id=data_set_id,
             source_created_time=source_created_time,
             source_modified_time=source_modified_time,
+            security_categories=security_categories,
         )
         if os.path.isfile(path):
             if not name:
@@ -488,6 +490,7 @@ class FilesAPI(APIClient):
         data_set_id: int = None,
         source_created_time: int = None,
         source_modified_time: int = None,
+        security_categories: List[int] = None,
         overwrite: bool = False,
     ):
         """Upload bytes or string.
@@ -532,6 +535,7 @@ class FilesAPI(APIClient):
             data_set_id=data_set_id,
             source_created_time=source_created_time,
             source_modified_time=source_modified_time,
+            security_categories=security_categories,
         )
 
         res = self._post(
