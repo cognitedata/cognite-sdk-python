@@ -21,6 +21,10 @@ Changes are grouped as follows
 
 ## Unreleased
 
+## [1.5.2] - 2020-04-02
+### Added
+- Support for security categories on file methods
+
 ## [1.5.1] - 2020-04-01
 ### Added
 - Support for security categories on files
