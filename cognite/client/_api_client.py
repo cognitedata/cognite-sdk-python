@@ -3,6 +3,7 @@ import json as _json
 import logging
 import numbers
 import os
+import random
 import re
 from collections import UserList
 from http import cookiejar
@@ -30,7 +31,11 @@ class BlockAll(cookiejar.CookiePolicy):
 
 class RetryWithMaxBackoff(Retry):
     def get_backoff_time(self):
-        return min(utils._client_config._DefaultConfig().max_retry_backoff, super().get_backoff_time())
+        # Make sure there's an exponential backoff with a bit of jitter.
+        # https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
+        return min(
+            utils._client_config._DefaultConfig().max_retry_backoff, random.random() * super().get_backoff_time()
+        )
 
 
 def _init_requests_session():
