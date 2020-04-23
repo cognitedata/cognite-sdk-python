@@ -20,6 +20,8 @@ Changes are grouped as follows
 - Separate read/write fields on data classes
 
 ## Unreleased
+### Added
+- asset_external_ids on filtering in files.
 
 ## [1.5.2] - 2020-04-02
 ### Added

@@ -25,6 +25,7 @@ class FilesAPI(APIClient):
         mime_type: str = None,
         metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
+        asset_external_ids: List[str] = None,
         root_asset_ids: List[int] = None,
         root_asset_external_ids: List[str] = None,
         asset_subtree_ids: List[int] = None,
@@ -51,6 +52,7 @@ class FilesAPI(APIClient):
             mime_type (str): File type. E.g. text/plain, application/pdf, ..
             metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value
             asset_ids (List[int]): Only include files that reference these specific asset IDs.
+            asset_subtree_external_ids (List[str]): Only include files that reference these specific asset external IDs.
             root_asset_ids (List[int]): The IDs of the root assets that the related assets should be children of.
             root_asset_external_ids (List[str]): The external IDs of the root assets that the related assets should be children of.
             asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
@@ -82,6 +84,7 @@ class FilesAPI(APIClient):
             mime_type=mime_type,
             metadata=metadata,
             asset_ids=asset_ids,
+            asset_external_ids=asset_external_ids,
             root_asset_ids=root_asset_ids,
             asset_subtree_ids=asset_subtree_ids,
             source=source,
@@ -204,6 +207,7 @@ class FilesAPI(APIClient):
         mime_type: str = None,
         metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
+        asset_external_ids: List[str] = None,
         root_asset_ids: List[int] = None,
         root_asset_external_ids: List[str] = None,
         asset_subtree_ids: List[int] = None,
@@ -227,6 +231,7 @@ class FilesAPI(APIClient):
             mime_type (str): File type. E.g. text/plain, application/pdf, ..
             metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value
             asset_ids (List[int]): Only include files that reference these specific asset IDs.
+            asset_subtree_external_ids (List[str]): Only include files that reference these specific asset external IDs.
             root_asset_ids (List[int]): The IDs of the root assets that the related assets should be children of.
             root_asset_external_ids (List[str]): The external IDs of the root assets that the related assets should be children of.
             asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
@@ -281,6 +286,7 @@ class FilesAPI(APIClient):
             mime_type=mime_type,
             metadata=metadata,
             asset_ids=asset_ids,
+            asset_external_ids=asset_external_ids,
             root_asset_ids=root_asset_ids,
             asset_subtree_ids=asset_subtree_ids,
             source=source,
