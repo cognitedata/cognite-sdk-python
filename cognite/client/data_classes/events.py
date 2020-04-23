@@ -10,14 +10,14 @@ class Event(CogniteResource):
 
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        data_set_id (int): A server-generated ID for the object.
+        data_set_id (int): The id of the dataset this event belongs to.
         start_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         end_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         type (str): Type of the event, e.g 'failure'.
         subtype (str): Subtype of the event, e.g 'electrical'.
         description (str): Textual description of the event.
         metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
-        asset_ids (List[int]): Asset IDs of related equipment that this event relates to.
+        asset_ids (List[int]): Asset IDs of equipment that this event relates to.
         source (str): The source of this event.
         id (int): A server-generated ID for the object.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -68,9 +68,9 @@ class EventFilter(CogniteFilter):
         start_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
         end_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
         metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
-        asset_ids (List[int]): Asset IDs of related equipment that this event relates to.
-        asset_external_ids (List[str]): Asset External IDs of related equipment that this event relates to.
-        root_asset_ids (List[Dict[str, Any]]): Only include events that have a related asset in a tree rooted at any of these root assetIds.
+        asset_ids (List[int]): Asset IDs of equipment that this event relates to.
+        asset_external_ids (List[str]): Asset External IDs of equipment that this event relates to.
+        root_asset_ids (List[Dict[str, Any]]): This parameter is deprecated. Use assetSubtreeIds instead. Only include events that have a related asset in a tree rooted at any of these root assetIds.
         asset_subtree_ids (List[Dict[str, Any]]): Only include events that have a related asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
         data_set_ids (List[Dict[str, Any]]): Only include events that belong to these datasets.
         source (str): The source of this event.

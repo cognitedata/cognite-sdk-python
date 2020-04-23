@@ -286,7 +286,8 @@ class TestAssets:
             .name.set("")
             .name.set(None)
             .source.set(1)
-            .source.set(None),
+            .source.set(None)
+            .data_set_id.set(123),
             AssetUpdate,
         )
 
