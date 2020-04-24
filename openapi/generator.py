@@ -16,7 +16,10 @@ GEN_PROPERTY_CLASS_PATTERN = "# GenPropertyClass: (\S+)\s+class (\S+)\(.+\):(?:(
 GenClassSegment = namedtuple("GenClassSegment", ["schema_names", "class_name"])
 GenUpdateClassSegment = namedtuple("GenUpdateClassSegment", ["schema_name", "class_name"])
 
-CLASS_NAME_OVERRIDE = {"EpochTimestampRange": "TimestampRange"}
+CLASS_NAME_OVERRIDE = {
+    "EpochTimestampRange": "TimestampRange",
+    "EndTimeMinMax": "TimestampRange"
+}
 
 
 class ClassGenerator:
