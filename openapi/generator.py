@@ -18,7 +18,8 @@ GenUpdateClassSegment = namedtuple("GenUpdateClassSegment", ["schema_name", "cla
 
 CLASS_NAME_OVERRIDE = {
     "EpochTimestampRange": "TimestampRange",
-    "EndTimeMinMax": "TimestampRange"
+    "EndTimeMinMax": "TimestampRange",
+    "ActiveAtTimeFilter": "TimestampRange"
 }
 
 
@@ -179,6 +180,12 @@ class ClassGenerator:
             for s in schema["allOf"]:
                 for prop_name, prop in s["properties"].items():
                     properties[prop_name] = prop
+            return properties
+        if "oneOf" in schema:
+            properties = {}
+            for s in schema["oneOf"]:
+                props = ClassGenerator._get_schema_properties(s)
+                properties.update(props)
             return properties
         return schema["properties"]
 

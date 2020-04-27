@@ -4,6 +4,28 @@ from cognite.client.data_classes._base import *
 from cognite.client.data_classes.shared import TimestampRange
 
 
+# GenPropertyClass: EndTimeFilter
+class EndTimeFilter(dict):
+    """No description.
+
+    Args:
+        max (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        min (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        is_null (bool): Set to true if you want to search for data with field value not set, false to search for cases where some value is present.
+    """
+
+    def __init__(self, max: int = None, min: int = None, is_null: bool = None, **kwargs):
+        self.max = max
+        self.min = min
+        self.is_null = is_null
+        self.update(kwargs)
+
+    max = CognitePropertyClassUtil.declare_property("max")
+    min = CognitePropertyClassUtil.declare_property("min")
+    is_null = CognitePropertyClassUtil.declare_property("isNull")
+
+    # GenStop
+
 # GenClass: Event
 class Event(CogniteResource):
     """An event represents something that happened at a given interval in time, e.g a failure, a work order etc.
@@ -67,7 +89,7 @@ class EventFilter(CogniteFilter):
     Args:
         start_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
         end_time (Union[Dict[str, Any], EndTimeFilter]): No description.
-        active_at_time (Union[Dict[str, Any], ActiveAtTimeFilter]): Event is considered active from its startTime to endTime inclusive. If startTime is null, event is never active. If endTime is null, event is active from startTime onwards. activeAtTime filter will match all events that are active at some point from min to max, from min, or to max, depending on which of min and max parameters are specified.
+        active_at_time (Union[Dict[str, Any], TimestampRange]): Event is considered active from its startTime to endTime inclusive. If startTime is null, event is never active. If endTime is null, event is active from startTime onwards. activeAtTime filter will match all events that are active at some point from min to max, from min, or to max, depending on which of min and max parameters are specified.
         metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 128000 bytes, up to 256 key-value pairs, of total size at most 200000.
         asset_ids (List[int]): Asset IDs of equipment that this event relates to.
         asset_external_ids (List[str]): Asset External IDs of equipment that this event relates to.
@@ -87,7 +109,7 @@ class EventFilter(CogniteFilter):
         self,
         start_time: Union[Dict[str, Any], TimestampRange] = None,
         end_time: Union[Dict[str, Any], EndTimeFilter] = None,
-        active_at_time: Union[Dict[str, Any], ActiveAtTimeFilter] = None,
+        active_at_time: Union[Dict[str, Any], TimestampRange] = None,
         metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
         asset_external_ids: List[str] = None,
@@ -128,7 +150,7 @@ class EventFilter(CogniteFilter):
             if instance.end_time is not None:
                 instance.end_time = EndTimeFilter(**instance.end_time)
             if instance.active_at_time is not None:
-                instance.active_at_time = ActiveAtTimeFilter(**instance.active_at_time)
+                instance.active_at_time = TimestampRange(**instance.active_at_time)
             if instance.created_time is not None:
                 instance.created_time = TimestampRange(**instance.created_time)
             if instance.last_updated_time is not None:
@@ -213,19 +235,6 @@ class _ListEventUpdate(CogniteListUpdate):
 
     def remove(self, value: List) -> EventUpdate:
         return self._remove(value)
-
-    # GenStop
-
-# GenPropertyClass: ActivateAtTimeFilter
-class ActiveAtTimeFilter(dict):
-    def __init__(self, min: int = None, max: int = None):
-        self.min = max
-        self.max = max
-
-# GenPropertyClass: EndTimeFilter
-class EndTimeFilter(dict):
-    def __init__(self, isNull: bool = None):
-        self.isNull = isNull
 
     # GenStop
 
