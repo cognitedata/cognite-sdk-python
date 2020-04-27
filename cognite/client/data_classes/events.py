@@ -26,6 +26,7 @@ class EndTimeFilter(dict):
 
     # GenStop
 
+
 # GenClass: Event
 class Event(CogniteResource):
     """An event represents something that happened at a given interval in time, e.g a failure, a work order etc.

@@ -19,7 +19,7 @@ GenUpdateClassSegment = namedtuple("GenUpdateClassSegment", ["schema_name", "cla
 CLASS_NAME_OVERRIDE = {
     "EpochTimestampRange": "TimestampRange",
     "EndTimeMinMax": "TimestampRange",
-    "ActiveAtTimeFilter": "TimestampRange"
+    "ActiveAtTimeFilter": "TimestampRange",
 }
 
 
