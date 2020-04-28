@@ -2,7 +2,14 @@ from typing import *
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes import DataSet, DataSetFilter, DataSetList, DataSetUpdate, TimestampRange
+from cognite.client.data_classes import (
+    DataSet,
+    DataSetAggregate,
+    DataSetFilter,
+    DataSetList,
+    DataSetUpdate,
+    TimestampRange,
+)
 
 
 class DataSetsAPI(APIClient):
@@ -192,6 +199,26 @@ class DataSetsAPI(APIClient):
             write_protected=write_protected,
         ).dump(camel_case=True)
         return self._list(method="POST", limit=limit, filter=filter)
+
+    def aggregate(self, filter: Union[DataSetFilter, Dict] = None) -> List[DataSetAggregate]:
+        """`Aggregate data sets <https://docs.cognite.com/api/v1/#operation/aggregateDataSets>`_
+
+        Args:
+            filter (Union[DataSetFilter, Dict]): Filter on data set filter with exact match
+
+        Returns:
+            List[DataSetAggregate]: List of data set aggregates
+
+        Examples:
+
+            Aggregate data_sets:
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> aggregate_protected = c.data_sets.aggregate(filter={"write_protected": True})
+        """
+
+        return self._aggregate(filter=filter, cls=DataSetAggregate)
 
     def update(
         self, item: Union[DataSet, DataSetUpdate, List[Union[DataSet, DataSetUpdate]]]

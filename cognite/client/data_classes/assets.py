@@ -5,6 +5,23 @@ from cognite.client.data_classes._base import *
 from cognite.client.data_classes.shared import TimestampRange
 
 
+# GenPropertyClass: AssetAggregate
+class AssetAggregate(dict):
+    """Aggregation group of assets
+
+    Args:
+        count (int): Size of the aggregation group
+    """
+
+    def __init__(self, count: int = None, **kwargs):
+        self.count = count
+        self.update(kwargs)
+
+    count = CognitePropertyClassUtil.declare_property("count")
+
+    # GenStop
+
+
 # GenPropertyClass: AggregateResultItem
 class AggregateResultItem(dict):
     """Aggregated metrics of the asset

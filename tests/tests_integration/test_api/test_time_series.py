@@ -80,6 +80,10 @@ class TestTimeSeriesAPI:
         assert len(res_flat) == len(res_part)
         assert {a.id for a in res_flat} == {a.id for a in res_part}
 
+    def test_aggregate(self, new_ts):
+        res = COGNITE_CLIENT.time_series.aggregate(filter=TimeSeriesFilter(name="any"))
+        assert res[0].count > 0
+
     def test_search(self):
         res = COGNITE_CLIENT.time_series.search(
             name="test__timestamp_multiplied", filter=TimeSeriesFilter(created_time={"min": 0})

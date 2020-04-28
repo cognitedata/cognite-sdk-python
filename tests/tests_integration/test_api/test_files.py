@@ -48,6 +48,10 @@ class TestFilesAPI:
         res = COGNITE_CLIENT.files.list(limit=4)
         assert 4 == len(res)
 
+    def test_aggregate(self):
+        res = COGNITE_CLIENT.files.aggregate(filter=FileMetadataFilter(name="big.txt"))
+        assert res[0].count > 0
+
     def test_search(self):
         res = COGNITE_CLIENT.files.search(name="big.txt", filter=FileMetadataFilter(created_time={"min": 0}))
         assert len(res) > 0
