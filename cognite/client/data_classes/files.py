@@ -76,6 +76,7 @@ class FileMetadataFilter(CogniteFilter):
         mime_type (str): File type. E.g. text/plain, application/pdf, ..
         metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         asset_ids (List[int]): Only include files that reference these specific asset IDs.
+        asset_external_ids (List[str]): Only include files that reference these specific asset external IDs.
         root_asset_ids (List[Dict[str, Any]]): Only include files that have a related asset in a tree rooted at any of these root assetIds.
         data_set_ids (List[Dict[str, Any]]): Only include files that belong to these datasets.
         asset_subtree_ids (List[Dict[str, Any]]): Only include files that have a related asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
@@ -96,6 +97,7 @@ class FileMetadataFilter(CogniteFilter):
         mime_type: str = None,
         metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
+        asset_external_ids: List[str] = None,
         root_asset_ids: List[Dict[str, Any]] = None,
         data_set_ids: List[Dict[str, Any]] = None,
         asset_subtree_ids: List[Dict[str, Any]] = None,
@@ -113,6 +115,7 @@ class FileMetadataFilter(CogniteFilter):
         self.mime_type = mime_type
         self.metadata = metadata
         self.asset_ids = asset_ids
+        self.asset_external_ids = asset_external_ids
         self.root_asset_ids = root_asset_ids
         self.data_set_ids = data_set_ids
         self.asset_subtree_ids = asset_subtree_ids

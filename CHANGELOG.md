@@ -20,6 +20,10 @@ Changes are grouped as follows
 - Separate read/write fields on data classes
 
 ## Unreleased
+### Added
+- Support events filtering by ongoing events (events without `end_time` defined)
+- Support events filtering by active timerange of event
+- Support files metadata filterign by `asset_external_ids`
 
 ## [1.5.2] - 2020-04-02
 ### Added

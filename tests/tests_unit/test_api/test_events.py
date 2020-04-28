@@ -4,7 +4,7 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client._api.events import Event, EventList, EventUpdate
-from cognite.client.data_classes import EventFilter, TimestampRange
+from cognite.client.data_classes import EndTimeFilter, EventFilter, TimestampRange
 from tests.utils import jsgz_load
 
 EVENTS_API = CogniteClient().events
@@ -125,6 +125,10 @@ class TestEvents:
             "limit": 10,
             "filter": {"assetSubtreeIds": [{"id": 1}, {"id": 2}, {"externalId": "a"}]},
         } == jsgz_load(calls[0].request.body)
+
+    def test_list_ongoing_wrong_signature(self):
+        with pytest.raises(ValueError):
+            EVENTS_API.list(end_time=EndTimeFilter(is_null=True, max=100))
 
     def test_create_single(self, mock_events_response):
         res = EVENTS_API.create(Event(external_id="1"))
