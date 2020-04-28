@@ -12,7 +12,7 @@ COGNITE_CLIENT = CogniteClient()
 @pytest.fixture(scope="session")
 def test_time_series():
     time_series = {}
-    for ts in COGNITE_CLIENT.time_series.list(limit=1000):
+    for ts in COGNITE_CLIENT.time_series.list(limit=2000):
         if ts.name in ["test__constant_{}_with_noise".format(i) for i in range(0, 10)]:
             value = int(re.match(r"test__constant_(\d+)_with_noise", ts.name).group(1))
             time_series[value] = ts

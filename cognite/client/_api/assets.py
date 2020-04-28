@@ -5,7 +5,7 @@ from typing import *
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes import Asset, AssetFilter, AssetList, AssetUpdate, TimestampRange
+from cognite.client.data_classes import Asset, AssetAggregate, AssetFilter, AssetList, AssetUpdate, TimestampRange
 from cognite.client.exceptions import CogniteAPIError
 
 
@@ -267,6 +267,25 @@ class AssetsAPI(APIClient):
             other_params={"aggregatedProperties": aggregated_properties} if aggregated_properties else {},
             partitions=partitions,
         )
+
+    def aggregate(self, filter: Union[AssetFilter, Dict] = None) -> List[AssetAggregate]:
+        """`Aggregate assets <https://docs.cognite.com/api/v1/#operation/aggregateAssets>`_
+
+        Args:
+            filter (Union[AssetFilter, Dict]): Filter on assets filter with exact match
+
+        Returns:
+            List[AssetAggregate]: List of asset aggregates
+
+        Examples:
+
+            Aggregate assets:
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> aggregate_by_prefix = c.assets.aggregate(filter={"external_id_prefix": "prefix"})
+        """
+        return self._aggregate(filter=filter, cls=AssetAggregate)
 
     def create(self, asset: Union[Asset, List[Asset]]) -> Union[Asset, AssetList]:
         """`Create one or more assets. <https://docs.cognite.com/api/v1/#operation/createAssets>`_

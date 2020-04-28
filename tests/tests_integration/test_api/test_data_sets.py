@@ -51,6 +51,10 @@ class TestDataSetsAPI:
         assert 2 == len(res)
         assert 2 == COGNITE_CLIENT.data_sets._post.call_count
 
+    def test_aggregate(self):
+        res = COGNITE_CLIENT.data_sets.aggregate(filter=DataSetFilter(metadata={"1": "1"}))
+        assert res[0].count > 0
+
     def test_update(self, new_dataset):
         update_asset = DataSetUpdate(new_dataset.id).metadata.set({"1": "1"}).name.set("newname")
         res = DS_API.update(update_asset)

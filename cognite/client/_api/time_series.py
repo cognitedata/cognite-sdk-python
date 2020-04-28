@@ -2,7 +2,13 @@ from typing import *
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes import TimeSeries, TimeSeriesFilter, TimeSeriesList, TimeSeriesUpdate
+from cognite.client.data_classes import (
+    TimeSeries,
+    TimeSeriesAggregate,
+    TimeSeriesFilter,
+    TimeSeriesList,
+    TimeSeriesUpdate,
+)
 from cognite.client.data_classes.shared import TimestampRange
 
 
@@ -245,6 +251,26 @@ class TimeSeriesAPI(APIClient):
             external_id_prefix=external_id_prefix,
         ).dump(camel_case=True)
         return self._list(method="POST", filter=filter, limit=limit, partitions=partitions)
+
+    def aggregate(self, filter: Union[TimeSeriesFilter, Dict] = None) -> List[TimeSeriesAggregate]:
+        """`Aggregate time series <https://docs.cognite.com/api/v1/#operation/aggregateTimeSeries>`_
+
+        Args:
+            filter (Union[TimeSeriesFilter, Dict]): Filter on time series filter with exact match
+
+        Returns:
+            List[TimeSeriesAggregate]: List of sequence aggregates
+
+        Examples:
+
+            List time series::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.time_series.aggregate(filter={"unit": "kpa"})
+        """
+
+        return self._aggregate(filter=filter, cls=TimeSeriesAggregate)
 
     def create(self, time_series: Union[TimeSeries, List[TimeSeries]]) -> Union[TimeSeries, TimeSeriesList]:
         """`Create one or more time series. <https://docs.cognite.com/api/v1/#operation/postTimeSeries>`_

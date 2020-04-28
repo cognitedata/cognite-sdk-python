@@ -111,6 +111,10 @@ class TestAssetsAPI:
             assert {"childCount"} == asset.aggregates.keys()
             assert isinstance(asset.aggregates["childCount"], int)
 
+    def test_aggregate(self, new_asset):
+        res = COGNITE_CLIENT.assets.aggregate(filter=AssetFilter(name="any"))
+        assert res[0].count > 0
+
     def test_search(self):
         res = COGNITE_CLIENT.assets.search(name="test__asset_0", filter=AssetFilter(name="test__asset_0"))
         assert len(res) > 0

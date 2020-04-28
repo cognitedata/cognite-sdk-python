@@ -217,6 +217,23 @@ class _ListFileMetadataUpdate(CogniteListUpdate):
     # GenStop
 
 
+# GenPropertyClass: FilesAggregate
+class FileAggregate(dict):
+    """Aggregation results for files
+
+    Args:
+        count (int): Number of filtered items included in aggregation
+    """
+
+    def __init__(self, count: int = None, **kwargs):
+        self.count = count
+        self.update(kwargs)
+
+    count = CognitePropertyClassUtil.declare_property("count")
+
+    # GenStop
+
+
 class FileMetadataList(CogniteResourceList):
     _RESOURCE = FileMetadata
     _UPDATE = FileMetadataUpdate

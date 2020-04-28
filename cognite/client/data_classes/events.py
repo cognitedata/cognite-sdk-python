@@ -240,6 +240,23 @@ class _ListEventUpdate(CogniteListUpdate):
     # GenStop
 
 
+# GenPropertyClass: EventAggregate
+class EventAggregate(dict):
+    """Aggregation group of events
+
+    Args:
+        count (int): Size of the aggregation group
+    """
+
+    def __init__(self, count: int = None, **kwargs):
+        self.count = count
+        self.update(kwargs)
+
+    count = CognitePropertyClassUtil.declare_property("count")
+
+    # GenStop
+
+
 class EventList(CogniteResourceList):
     _RESOURCE = Event
     _UPDATE = EventUpdate
