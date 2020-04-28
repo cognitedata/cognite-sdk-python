@@ -2,7 +2,15 @@ from typing import *
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes import EndTimeFilter, Event, EventAggregate, EventFilter, EventList, EventUpdate, TimestampRange
+from cognite.client.data_classes import (
+    EndTimeFilter,
+    Event,
+    EventAggregate,
+    EventFilter,
+    EventList,
+    EventUpdate,
+    TimestampRange,
+)
 
 
 class EventsAPI(APIClient):
