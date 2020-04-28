@@ -241,6 +241,8 @@ class EventsAPI(APIClient):
             asset_subtree_ids = self._process_ids(asset_subtree_ids, asset_subtree_external_ids, wrap_ids=True)
         if data_set_ids or data_set_external_ids:
             data_set_ids = self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
+        if ("max" in end_time or "min" in end_time) and "isNull" in end_time:
+            raise TypeError("isNull cannot be used with min or max values")
 
         filter = EventFilter(
             start_time=start_time,
