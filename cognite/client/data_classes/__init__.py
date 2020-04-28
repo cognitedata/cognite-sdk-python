@@ -3,7 +3,7 @@ from typing import *
 from cognite.client.data_classes.assets import AggregateResultItem, Asset, AssetFilter, AssetList, AssetUpdate
 from cognite.client.data_classes.data_sets import DataSet, DataSetFilter, DataSetList, DataSetUpdate
 from cognite.client.data_classes.datapoints import Datapoint, Datapoints, DatapointsList, DatapointsQuery
-from cognite.client.data_classes.events import Event, EventFilter, EventList, EventUpdate
+from cognite.client.data_classes.events import EndTimeFilter, Event, EventFilter, EventList, EventUpdate
 from cognite.client.data_classes.files import FileMetadata, FileMetadataFilter, FileMetadataList, FileMetadataUpdate
 from cognite.client.data_classes.iam import (
     APIKey,

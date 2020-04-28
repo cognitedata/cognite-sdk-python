@@ -2,7 +2,7 @@ from typing import *
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes import Event, EventFilter, EventList, EventUpdate, TimestampRange
+from cognite.client.data_classes import EndTimeFilter, Event, EventFilter, EventList, EventUpdate, TimestampRange
 
 
 class EventsAPI(APIClient):
@@ -13,7 +13,8 @@ class EventsAPI(APIClient):
         self,
         chunk_size: int = None,
         start_time: Union[Dict[str, Any], TimestampRange] = None,
-        end_time: Union[Dict[str, Any], TimestampRange] = None,
+        end_time: Union[Dict[str, Any], EndTimeFilter] = None,
+        active_at_time: Union[Dict[str, Any], TimestampRange] = None,
         type: str = None,
         subtype: str = None,
         metadata: Dict[str, str] = None,
@@ -71,6 +72,7 @@ class EventsAPI(APIClient):
         filter = EventFilter(
             start_time=start_time,
             end_time=end_time,
+            active_at_time=active_at_time,
             metadata=metadata,
             asset_ids=asset_ids,
             asset_external_ids=asset_external_ids,
@@ -162,7 +164,8 @@ class EventsAPI(APIClient):
     def list(
         self,
         start_time: Union[Dict[str, Any], TimestampRange] = None,
-        end_time: Union[Dict[str, Any], TimestampRange] = None,
+        end_time: Union[Dict[str, Any], EndTimeFilter] = None,
+        active_at_time: Union[Dict[str, Any], TimestampRange] = None,
         type: str = None,
         subtype: str = None,
         metadata: Dict[str, str] = None,
@@ -238,10 +241,13 @@ class EventsAPI(APIClient):
             asset_subtree_ids = self._process_ids(asset_subtree_ids, asset_subtree_external_ids, wrap_ids=True)
         if data_set_ids or data_set_external_ids:
             data_set_ids = self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
+        if end_time and ("max" in end_time or "min" in end_time) and "isNull" in end_time:
+            raise ValueError("isNull cannot be used with min or max values")
 
         filter = EventFilter(
             start_time=start_time,
             end_time=end_time,
+            active_at_time=active_at_time,
             metadata=metadata,
             asset_ids=asset_ids,
             asset_external_ids=asset_external_ids,
