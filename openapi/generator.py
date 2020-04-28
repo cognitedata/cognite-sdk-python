@@ -187,6 +187,8 @@ class ClassGenerator:
                 props = ClassGenerator._get_schema_properties(s)
                 properties.update(props)
             return properties
+        if schema["type"] == "array":
+            return schema["items"]["properties"]
         return schema["properties"]
 
 

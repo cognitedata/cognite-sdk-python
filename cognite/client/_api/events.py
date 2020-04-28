@@ -2,7 +2,15 @@ from typing import *
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes import EndTimeFilter, Event, EventFilter, EventList, EventUpdate, TimestampRange
+from cognite.client.data_classes import (
+    EndTimeFilter,
+    Event,
+    EventAggregate,
+    EventFilter,
+    EventList,
+    EventUpdate,
+    TimestampRange,
+)
 
 
 class EventsAPI(APIClient):
@@ -262,6 +270,26 @@ class EventsAPI(APIClient):
             subtype=subtype,
         ).dump(camel_case=True)
         return self._list(method="POST", limit=limit, filter=filter, partitions=partitions, sort=sort)
+
+    def aggregate(self, filter: Union[EventFilter, Dict] = None) -> List[EventAggregate]:
+        """`Aggregate events <https://docs.cognite.com/api/v1/#operation/aggregateEvents>`_
+
+        Args:
+            filter (Union[EventFilter, Dict]): Filter on events filter with exact match
+
+        Returns:
+            List[EventAggregate]: List of event aggregates
+        
+        Examples:
+
+            Aggregate events:
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> aggregate_type = c.events.aggregate(filter={"type": "failure"})
+        """
+
+        return self._aggregate(filter=filter, cls=EventAggregate)
 
     def create(self, event: Union[Event, List[Event]]) -> Union[Event, EventList]:
         """`Create one or more events. <https://docs.cognite.com/api/v1/#operation/createEvents>`_

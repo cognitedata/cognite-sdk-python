@@ -271,6 +271,10 @@ List assets
 ^^^^^^^^^^^
 .. automethod:: cognite.client._api.assets.AssetsAPI.list
 
+Aggregate assets
+^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.assets.AssetsAPI.aggregate
+
 Search for assets
 ^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.assets.AssetsAPI.search
@@ -312,6 +316,10 @@ List events
 ^^^^^^^^^^^
 .. automethod:: cognite.client._api.events.EventsAPI.list
 
+Aggregate events
+^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.events.EventsAPI.aggregate
+
 Search for events
 ^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.events.EventsAPI.search
@@ -349,6 +357,10 @@ List data sets
 ^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.data_sets.DataSetsAPI.list
 
+Aggregate data sets
+^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.data_sets.DataSetsAPI.aggregate
+
 Create data sets
 ^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.data_sets.DataSetsAPI.create
@@ -381,6 +393,10 @@ Retrieve multiple files' metadata by id
 List files metadata
 ^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.files.FilesAPI.list
+
+Aggregate files metadata
+^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.files.FilesAPI.aggregate
 
 Search for files
 ^^^^^^^^^^^^^^^^
@@ -438,6 +454,10 @@ Retrieve multiple time series by id
 List time series
 ^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.time_series.TimeSeriesAPI.list
+
+Aggregate time series
+^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.time_series.TimeSeriesAPI.aggregate
 
 Search for time series
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -525,6 +545,10 @@ Retrieve multiple sequences by id
 List sequences
 ^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.sequences.SequencesAPI.list
+
+Aggregate sequences
+^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.sequences.SequencesAPI.aggregate
 
 Search for sequences
 ^^^^^^^^^^^^^^^^^^^^

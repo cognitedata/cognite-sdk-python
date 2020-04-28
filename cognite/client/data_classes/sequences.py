@@ -197,6 +197,23 @@ class _ListSequenceUpdate(CogniteListUpdate):
     # GenStop
 
 
+# GenPropertyClass: SequenceAggregateResponse.items
+class SequenceAggregate(dict):
+    """No description.
+
+    Args:
+        count (int): No description.
+    """
+
+    def __init__(self, count: int = None, **kwargs):
+        self.count = count
+        self.update(kwargs)
+
+    count = CognitePropertyClassUtil.declare_property("count")
+
+    # GenStop
+
+
 class SequenceList(CogniteResourceList):
     _RESOURCE = Sequence
     _UPDATE = SequenceUpdate
