@@ -127,7 +127,7 @@ class TestEvents:
         } == jsgz_load(calls[0].request.body)
 
     def test_list_ongoing_wrong_signature(self):
-        with pytest.raises(TypeError):
+        with pytest.raises(ValueError):
             EVENTS_API.list(end_time=EndTimeFilter(is_null=True, max=100))
 
     def test_create_single(self, mock_events_response):
