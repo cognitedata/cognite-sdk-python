@@ -20,6 +20,7 @@ Changes are grouped as follows
 - Separate read/write fields on data classes
 
 ## Unreleased
+### Added
 
 ## [1.6.0] - 2020-04-28
 ### Added
