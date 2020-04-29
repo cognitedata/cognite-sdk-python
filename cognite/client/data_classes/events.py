@@ -6,7 +6,7 @@ from cognite.client.data_classes.shared import TimestampRange
 
 # GenPropertyClass: EndTimeFilter
 class EndTimeFilter(dict):
-    """No description.
+    """Either range between two timestamps or isNull filter condition.
 
     Args:
         max (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -89,7 +89,7 @@ class EventFilter(CogniteFilter):
 
     Args:
         start_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
-        end_time (Union[Dict[str, Any], EndTimeFilter]): No description.
+        end_time (Union[Dict[str, Any], EndTimeFilter]): Either range between two timestamps or isNull filter condition.
         active_at_time (Union[Dict[str, Any], TimestampRange]): Event is considered active from its startTime to endTime inclusive. If startTime is null, event is never active. If endTime is null, event is active from startTime onwards. activeAtTime filter will match all events that are active at some point from min to max, from min, or to max, depending on which of min and max parameters are specified.
         metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 128000 bytes, up to 256 key-value pairs, of total size at most 200000.
         asset_ids (List[int]): Asset IDs of equipment that this event relates to.
