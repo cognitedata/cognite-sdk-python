@@ -21,7 +21,6 @@ Changes are grouped as follows
 
 ## Unreleased
 ### Added
-- asset_external_ids on filtering in files.
 
 ## [1.6.0] - 2020-04-28
 ### Added
