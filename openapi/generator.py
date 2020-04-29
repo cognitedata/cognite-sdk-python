@@ -16,7 +16,11 @@ GEN_PROPERTY_CLASS_PATTERN = "# GenPropertyClass: (\S+)\s+class (\S+)\(.+\):(?:(
 GenClassSegment = namedtuple("GenClassSegment", ["schema_names", "class_name"])
 GenUpdateClassSegment = namedtuple("GenUpdateClassSegment", ["schema_name", "class_name"])
 
-CLASS_NAME_OVERRIDE = {"EpochTimestampRange": "TimestampRange"}
+CLASS_NAME_OVERRIDE = {
+    "EpochTimestampRange": "TimestampRange",
+    "EndTimeMinMax": "TimestampRange",
+    "ActiveAtTimeFilter": "TimestampRange",
+}
 
 
 class ClassGenerator:
@@ -177,6 +181,14 @@ class ClassGenerator:
                 for prop_name, prop in s["properties"].items():
                     properties[prop_name] = prop
             return properties
+        if "oneOf" in schema:
+            properties = {}
+            for s in schema["oneOf"]:
+                props = ClassGenerator._get_schema_properties(s)
+                properties.update(props)
+            return properties
+        if schema["type"] == "array":
+            return schema["items"]["properties"]
         return schema["properties"]
 
 

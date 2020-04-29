@@ -267,6 +267,23 @@ class _ListTimeSeriesUpdate(CogniteListUpdate):
     # GenStop
 
 
+# GenPropertyClass: TimeSeriesAggregateResponse.items
+class TimeSeriesAggregate(dict):
+    """No description.
+
+    Args:
+        count (int): No description.
+    """
+
+    def __init__(self, count: int = None, **kwargs):
+        self.count = count
+        self.update(kwargs)
+
+    count = CognitePropertyClassUtil.declare_property("count")
+
+    # GenStop
+
+
 class TimeSeriesList(CogniteResourceList):
     _RESOURCE = TimeSeries
     _UPDATE = TimeSeriesUpdate

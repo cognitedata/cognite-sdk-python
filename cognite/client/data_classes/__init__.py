@@ -1,10 +1,23 @@
 from typing import *
 
-from cognite.client.data_classes.assets import AggregateResultItem, Asset, AssetFilter, AssetList, AssetUpdate
-from cognite.client.data_classes.data_sets import DataSet, DataSetFilter, DataSetList, DataSetUpdate
+from cognite.client.data_classes.assets import (
+    AggregateResultItem,
+    Asset,
+    AssetAggregate,
+    AssetFilter,
+    AssetList,
+    AssetUpdate,
+)
+from cognite.client.data_classes.data_sets import DataSet, DataSetAggregate, DataSetFilter, DataSetList, DataSetUpdate
 from cognite.client.data_classes.datapoints import Datapoint, Datapoints, DatapointsList, DatapointsQuery
-from cognite.client.data_classes.events import Event, EventFilter, EventList, EventUpdate
-from cognite.client.data_classes.files import FileMetadata, FileMetadataFilter, FileMetadataList, FileMetadataUpdate
+from cognite.client.data_classes.events import EndTimeFilter, Event, EventAggregate, EventFilter, EventList, EventUpdate
+from cognite.client.data_classes.files import (
+    FileAggregate,
+    FileMetadata,
+    FileMetadataFilter,
+    FileMetadataList,
+    FileMetadataUpdate,
+)
 from cognite.client.data_classes.iam import (
     APIKey,
     APIKeyList,
@@ -20,6 +33,7 @@ from cognite.client.data_classes.raw import Database, DatabaseList, Row, RowList
 from cognite.client.data_classes.relationships import Relationship, RelationshipFilter, RelationshipList
 from cognite.client.data_classes.sequences import (
     Sequence,
+    SequenceAggregate,
     SequenceData,
     SequenceDataList,
     SequenceFilter,
@@ -41,4 +55,10 @@ from cognite.client.data_classes.three_d import (
     ThreeDNode,
     ThreeDNodeList,
 )
-from cognite.client.data_classes.time_series import TimeSeries, TimeSeriesFilter, TimeSeriesList, TimeSeriesUpdate
+from cognite.client.data_classes.time_series import (
+    TimeSeries,
+    TimeSeriesAggregate,
+    TimeSeriesFilter,
+    TimeSeriesList,
+    TimeSeriesUpdate,
+)

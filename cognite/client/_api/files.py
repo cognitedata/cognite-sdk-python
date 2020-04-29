@@ -6,6 +6,7 @@ from typing.io import BinaryIO, TextIO
 from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import (
+    FileAggregate,
     FileMetadata,
     FileMetadataFilter,
     FileMetadataList,
@@ -301,6 +302,26 @@ class FilesAPI(APIClient):
         ).dump(camel_case=True)
 
         return self._list(method="POST", limit=limit, filter=filter)
+
+    def aggregate(self, filter: Union[FileMetadataFilter, Dict] = None) -> List[FileAggregate]:
+        """`Aggregate files <https://docs.cognite.com/api/v1/#operation/aggregateFiles>`_
+
+        Args:
+            filter (Union[FileMetadataFilter, Dict]): Filter on file metadata filter with exact match
+
+        Returns:
+            List[FileAggregate]: List of file aggregates
+
+        Examples:
+
+            List files metadata and filter on external id prefix::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> aggregate_uploaded = c.files.aggregate(filter={"uploaded": True})
+        """
+
+        return self._aggregate(filter=filter, cls=FileAggregate)
 
     def delete(self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None) -> None:
         """`Delete files <https://docs.cognite.com/api/v1/#operation/deleteFiles>`_

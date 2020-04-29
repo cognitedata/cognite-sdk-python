@@ -5,7 +5,7 @@ import pytest
 
 import cognite.client.utils._time
 from cognite.client import CogniteClient, utils
-from cognite.client.data_classes import Event, EventFilter, EventUpdate
+from cognite.client.data_classes import EndTimeFilter, Event, EventFilter, EventUpdate
 from cognite.client.exceptions import CogniteNotFoundError
 from tests.utils import set_request_limit
 
@@ -14,7 +14,7 @@ COGNITE_CLIENT = CogniteClient()
 
 @pytest.fixture
 def new_event():
-    event = COGNITE_CLIENT.events.create(Event())
+    event = COGNITE_CLIENT.events.create(Event(type="test__py__sdk"))
     yield event
     COGNITE_CLIENT.events.delete(id=event.id)
     assert COGNITE_CLIENT.events.retrieve(event.id) is None
@@ -61,6 +61,15 @@ class TestEventsAPI:
 
         assert 20 == len(res)
         assert 2 == COGNITE_CLIENT.events._post.call_count
+
+    def test_list_ongoing(self):
+        res = COGNITE_CLIENT.events.list(end_time=EndTimeFilter(is_null=True), limit=10)
+
+        assert len(res) > 0
+
+    def test_aggregation(self, new_event):
+        res_aggregate = COGNITE_CLIENT.events.aggregate(filter=EventFilter(type="test__py__sdk"))
+        assert res_aggregate[0].count > 0
 
     def test_partitioned_list(self):
         # stop race conditions by cutting off max created time
