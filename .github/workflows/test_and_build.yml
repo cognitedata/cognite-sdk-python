@@ -37,21 +37,21 @@ jobs:
       run: pipenv run pytest tests/tests_unit -m 'not dsl' --test-deps-only-core
 
     - name: Install all dependencies
-      if: matrix.python != 3.5
+      if: matrix.python != '3.5'
       run: |
         pipenv sync --dev
         sudo npm install -g swagger-cli
 
     - name: Check codestyle
-      if: matrix.python != 3.5
+      if: matrix.python != '3.5'
       run: pipenv run black -l 120 --check .
 
     - name: Test OpenAPI Generator
-      if: matrix.python != 3.5
+      if: matrix.python != '3.5'
       run: pipenv run pytest openapi/tests
 
     - name: Run tests
-      if: matrix.python != 3.5
+      if: matrix.python != '3.5'
       env:
           COGNITE_API_KEY: ${{ secrets.COGNITE_API_KEY }}
           COGNITE_PROJECT: python-sdk-test
@@ -63,13 +63,13 @@ jobs:
         pipenv run coverage xml
 
     - uses: codecov/codecov-action@v1
-      if: matrix.python == 3.7
+      if: matrix.python == '3.7'
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         file: ./coverage.xml
 
     - name: Build package
-      if: matrix.python == 3.7
+      if: matrix.python == '3.7'
       run: |
         python setup.py sdist
         python setup.py bdist_wheel
@@ -77,5 +77,5 @@ jobs:
         python setup-core.py bdist_wheel
 
     - name: Build docs
-      if: matrix.python == 3.7
+      if: matrix.python == '3.7'
       run: cd docs && pipenv run make html
