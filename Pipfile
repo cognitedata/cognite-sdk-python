@@ -24,6 +24,7 @@ tox = "*"
 tox-pyenv = "*"
 responses = "*"
 pytest-rerunfailures = "*"
+wheel = "*"
 
 [pipenv]
 allow_prereleases = true
