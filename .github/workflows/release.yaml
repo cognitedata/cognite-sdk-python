@@ -21,7 +21,9 @@ jobs:
       run: pip3 install pipenv
 
     - name: Install all dependencies
-      run: pipenv sync --dev
+      run |
+        pipenv sync --dev
+        npm install -g swagger-cli
 
     - name: Check codestyle
       run: pipenv run black -l 120 --check .
