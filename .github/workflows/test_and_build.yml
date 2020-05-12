@@ -32,7 +32,7 @@ jobs:
           COGNITE_API_KEY: ${{ secrets.COGNITE_API_KEY }}
           COGNITE_PROJECT: python-sdk-test
           COGNITE_BASE_URL: https://greenfield.cognitedata.com
-          COGNITE_CLIENT_NAME: cognite-sdk-experimental-integration-tests
+          COGNITE_CLIENT_NAME: python-sdk-integration-tests
           CI: 1
       run: pipenv run pytest tests/tests_unit -m 'not dsl' --test-deps-only-core
 
@@ -50,7 +50,7 @@ jobs:
           COGNITE_API_KEY: ${{ secrets.COGNITE_API_KEY }}
           COGNITE_PROJECT: python-sdk-test
           COGNITE_BASE_URL: https://greenfield.cognitedata.com
-          COGNITE_CLIENT_NAME: cognite-sdk-experimental-integration-tests
+          COGNITE_CLIENT_NAME: python-sdk-integration-tests
           CI: 1
       run: |
         pipenv run coverage run --source cognite.client -m pytest -v tests
