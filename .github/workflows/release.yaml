@@ -49,10 +49,10 @@ jobs:
 
     - name: Build package
       run: |
-        python setup.py sdist
-        python setup.py bdist_wheel
-        python setup-core.py sdist
-        python setup-core.py bdist_wheel
+        pipenv run python setup.py sdist
+        pipenv run python setup.py bdist_wheel
+        pipenv run python setup-core.py sdist
+        pipenv run python setup-core.py bdist_wheel
 
     - name: Build docs
       run: cd docs && make html
