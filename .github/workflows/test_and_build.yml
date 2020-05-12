@@ -38,7 +38,9 @@ jobs:
 
     - name: Install all dependencies
       if: matrix.python-version != 3.7
-      run: pipenv sync
+      run: |
+        pipenv sync
+        pipenv run pip install matplotlib
 
     - name: Install dev dependencies
       if: matrix.python-version == 3.7
