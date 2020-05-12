@@ -1,0 +1,66 @@
+name: test_and_build
+
+on:
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [3.5, 3.6, 3.7, 3.8]
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install pipenv
+      run: pip3 install pipenv
+
+    - name: Install core dependencies
+      run: pipenv run pip install -r core-requirements.txt
+
+    - name: Test core
+      run: pipenv run pytest tests/tests_unit -m 'not dsl' --test-deps-only-core
+
+    - name: Install all dependencies
+      run: pipenv sync --dev
+
+    - name: Check codestyle
+      run: pipenv run black -l 120 --check .
+
+    - name: Test OpenAPI Generator
+      run: pipenv run pytest openapi/tests
+
+    - name: Run tests
+      env:
+          COGNITE_API_KEY: ${{ secrets.COGNITE_API_KEY }}
+          COGNITE_PROJECT: python-sdk-test
+          COGNITE_BASE_URL: https://greenfield.cognitedata.com
+          COGNITE_CLIENT_NAME: cognite-sdk-experimental-integration-tests
+          CI: 1
+      run: |
+        pipenv run coverage run --source cognite.sdk -m pytest -v tests
+        pipenv run coverage xml
+
+    - uses: codecov/codecov-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        file: ./coverage.xml
+
+    - name: Build package
+      run: |
+        python setup.py sdist
+        python setup.py bdist_wheel
+        python setup-core.py sdist
+        python setup-core.py bdist_wheel
+
+    - name: Build docs
+      run: cd docs && pipenv run make html

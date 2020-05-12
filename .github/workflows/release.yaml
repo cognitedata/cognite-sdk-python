@@ -1,0 +1,59 @@
+name: release
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.7
+
+    - name: Install dependencies
+      run: |
+        python3 -m pip install --upgrade pip poetry
+        poetry config virtualenvs.create false
+        poetry install
+
+    - name: Check codestyle
+      run: black -l 120 --check .
+
+
+    - name: Run tests
+      env:
+          COGNITE_API_KEY: ${{ secrets.COGNITE_API_KEY }}
+          COGNITE_PROJECT: python-sdk-test
+          COGNITE_BASE_URL: https://greenfield.cognitedata.com
+          COGNITE_CLIENT_NAME: cognite-sdk-experimental-integration-tests
+          CI: 1
+      run: |
+        coverage run --source cognite.experimental -m pytest -v tests
+        coverage xml
+
+    - uses: codecov/codecov-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        file: ./coverage.xml
+
+    - name: Build package
+      run: |
+        python setup.py sdist
+        python setup.py bdist_wheel
+        python setup-core.py sdist
+        python setup-core.py bdist_wheel
+
+    - name: Build docs
+      run: cd docs && make html
+
+    - name: Release to PyPI
+      env:
+        TWINE_USERNAME: ${{ secrets.PYPI_USER }}
+        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+      run: twine upload --verbose dist/* || echo 'Version exists'
