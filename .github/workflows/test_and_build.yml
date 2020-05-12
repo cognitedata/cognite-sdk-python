@@ -39,7 +39,7 @@ jobs:
     - name: Install all dependencies
       run: |
         pipenv sync --dev
-        npm install -g swagger-cli
+        sudo npm install -g swagger-cli
 
     - name: Check codestyle
       run: pipenv run black -l 120 --check .
