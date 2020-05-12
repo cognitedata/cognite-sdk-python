@@ -37,6 +37,7 @@ jobs:
       run: pipenv run pytest tests/tests_unit -m 'not dsl' --test-deps-only-core
 
     - name: Install all dependencies
+      if: matrix.python-version != 3.7
       run: pipenv sync
 
     - name: Install dev dependencies
