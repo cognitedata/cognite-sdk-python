@@ -21,7 +21,7 @@ jobs:
       run: pip3 install pipenv
 
     - name: Install all dependencies
-      run |
+      run: |
         pipenv sync --dev
         npm install -g swagger-cli
 

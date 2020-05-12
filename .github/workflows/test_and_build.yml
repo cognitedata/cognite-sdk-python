@@ -37,7 +37,7 @@ jobs:
       run: pipenv run pytest tests/tests_unit -m 'not dsl' --test-deps-only-core
 
     - name: Install all dependencies
-      run |
+      run: |
         pipenv sync --dev
         npm install -g swagger-cli
 
