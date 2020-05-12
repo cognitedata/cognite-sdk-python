@@ -37,21 +37,9 @@ jobs:
       run: pipenv run pytest tests/tests_unit -m 'not dsl' --test-deps-only-core
 
     - name: Install all dependencies
-      if: matrix.python-version != 3.5
-      run: |
-        pipenv sync --dev
-        sudo npm install -g swagger-cli
-
-    - name: Check codestyle
-      if: matrix.python-version != 3.5
-      run: pipenv run black -l 120 --check .
-
-    - name: Test OpenAPI Generator
-      if: matrix.python-version != 3.5
-      run: pipenv run pytest openapi/tests
+      run: pipenv sync
 
     - name: Run tests
-      if: matrix.python-version != 3.5
       env:
           COGNITE_API_KEY: ${{ secrets.COGNITE_API_KEY }}
           COGNITE_PROJECT: python-sdk-test
@@ -61,6 +49,16 @@ jobs:
       run: |
         pipenv run coverage run --source cognite.client -m pytest -v tests
         pipenv run coverage xml
+
+    - name: Check codestyle
+      if: matrix.python-version == 3.7
+      run: pipenv run black -l 120 --check .
+
+    - name: Test OpenAPI Generator
+      if: matrix.python-version == 3.7
+      run: |
+        sudo npm install -g swagger-cli
+        pipenv run pytest openapi/tests
 
     - uses: codecov/codecov-action@v1
       if: matrix.python-version == 3.7
