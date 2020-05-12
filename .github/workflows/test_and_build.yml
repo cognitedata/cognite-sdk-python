@@ -39,6 +39,10 @@ jobs:
     - name: Install all dependencies
       run: pipenv sync
 
+    - name: Install dev dependencies
+      if: matrix.python-version == 3.7
+      run: pipenv sync --dev
+
     - name: Run tests
       env:
           COGNITE_API_KEY: ${{ secrets.COGNITE_API_KEY }}
