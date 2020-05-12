@@ -16,15 +16,18 @@ jobs:
       with:
         python-version: 3.7
 
-    - name: Install dependencies
-      run: |
-        python3 -m pip install --upgrade pip poetry
-        poetry config virtualenvs.create false
-        poetry install
+
+    - name: Install pipenv
+      run: pip3 install pipenv
+
+    - name: Install all dependencies
+      run: pipenv sync --dev
 
     - name: Check codestyle
-      run: black -l 120 --check .
+      run: pipenv run black -l 120 --check .
 
+    - name: Test OpenAPI Generator
+      run: pipenv run pytest openapi/tests
 
     - name: Run tests
       env:
@@ -34,8 +37,8 @@ jobs:
           COGNITE_CLIENT_NAME: cognite-sdk-experimental-integration-tests
           CI: 1
       run: |
-        coverage run --source cognite.experimental -m pytest -v tests
-        coverage xml
+        pipenv run coverage run --source cognite.client -m pytest -v tests
+        pipenv run coverage xml
 
     - uses: codecov/codecov-action@v1
       with:

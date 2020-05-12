@@ -28,6 +28,12 @@ jobs:
       run: pipenv run pip install -r core-requirements.txt
 
     - name: Test core
+      env:
+          COGNITE_API_KEY: ${{ secrets.COGNITE_API_KEY }}
+          COGNITE_PROJECT: python-sdk-test
+          COGNITE_BASE_URL: https://greenfield.cognitedata.com
+          COGNITE_CLIENT_NAME: cognite-sdk-experimental-integration-tests
+          CI: 1
       run: pipenv run pytest tests/tests_unit -m 'not dsl' --test-deps-only-core
 
     - name: Install all dependencies
@@ -47,7 +53,7 @@ jobs:
           COGNITE_CLIENT_NAME: cognite-sdk-experimental-integration-tests
           CI: 1
       run: |
-        pipenv run coverage run --source cognite.sdk -m pytest -v tests
+        pipenv run coverage run --source cognite.client -m pytest -v tests
         pipenv run coverage xml
 
     - uses: codecov/codecov-action@v1
