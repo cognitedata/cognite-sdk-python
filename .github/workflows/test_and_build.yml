@@ -16,10 +16,10 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: Set up Python ${{ matrix.python-version-version }}
+    - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v1
       with:
-        python-version: ${{ matrix.python-version-version }}
+        python-version: ${{ matrix.python-version }}
 
     - name: Install pipenv
       run: pip3 install pipenv
