@@ -96,6 +96,7 @@ class EventFilter(CogniteFilter):
         asset_external_ids (List[str]): Asset External IDs of equipment that this event relates to.
         root_asset_ids (List[Dict[str, Any]]): This parameter is deprecated. Use assetSubtreeIds instead. Only include events that have a related asset in a tree rooted at any of these root assetIds.
         asset_subtree_ids (List[Dict[str, Any]]): Only include events that have a related asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+        data_set_id (Union[Dict[str, Any], EndTimeIsNull]): No description.
         data_set_ids (List[Dict[str, Any]]): Only include events that belong to these datasets.
         source (str): The source of this event.
         type (str): The event type
@@ -116,6 +117,7 @@ class EventFilter(CogniteFilter):
         asset_external_ids: List[str] = None,
         root_asset_ids: List[Dict[str, Any]] = None,
         asset_subtree_ids: List[Dict[str, Any]] = None,
+        data_set_id: Union[Dict[str, Any], EndTimeIsNull] = None,
         data_set_ids: List[Dict[str, Any]] = None,
         source: str = None,
         type: str = None,
@@ -133,6 +135,7 @@ class EventFilter(CogniteFilter):
         self.asset_external_ids = asset_external_ids
         self.root_asset_ids = root_asset_ids
         self.asset_subtree_ids = asset_subtree_ids
+        self.data_set_id = data_set_id
         self.data_set_ids = data_set_ids
         self.source = source
         self.type = type
@@ -152,6 +155,8 @@ class EventFilter(CogniteFilter):
                 instance.end_time = EndTimeFilter(**instance.end_time)
             if instance.active_at_time is not None:
                 instance.active_at_time = TimestampRange(**instance.active_at_time)
+            if instance.data_set_id is not None:
+                instance.data_set_id = EndTimeIsNull(**instance.data_set_id)
             if instance.created_time is not None:
                 instance.created_time = TimestampRange(**instance.created_time)
             if instance.last_updated_time is not None:

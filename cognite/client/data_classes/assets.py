@@ -345,6 +345,7 @@ class AssetFilter(CogniteFilter):
         parent_external_ids (List[str]): Return only the direct descendants of the specified assets.
         root_ids (List[Dict[str, Any]]): This parameter is deprecated. Use assetSubtreeIds instead. Only include these root assets and their descendants.
         asset_subtree_ids (List[Dict[str, Any]]): Only include assets in subtrees rooted at the specified assets (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+        data_set_id (Union[Dict[str, Any], EndTimeIsNull]): No description.
         data_set_ids (List[Dict[str, Any]]): No description.
         metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
         source (str): The source of the asset.
@@ -362,6 +363,7 @@ class AssetFilter(CogniteFilter):
         parent_external_ids: List[str] = None,
         root_ids: List[Dict[str, Any]] = None,
         asset_subtree_ids: List[Dict[str, Any]] = None,
+        data_set_id: Union[Dict[str, Any], EndTimeIsNull] = None,
         data_set_ids: List[Dict[str, Any]] = None,
         metadata: Dict[str, str] = None,
         source: str = None,
@@ -376,6 +378,7 @@ class AssetFilter(CogniteFilter):
         self.parent_external_ids = parent_external_ids
         self.root_ids = root_ids
         self.asset_subtree_ids = asset_subtree_ids
+        self.data_set_id = data_set_id
         self.data_set_ids = data_set_ids
         self.metadata = metadata
         self.source = source
@@ -389,6 +392,8 @@ class AssetFilter(CogniteFilter):
     def _load(cls, resource: Union[Dict, str], cognite_client=None):
         instance = super(AssetFilter, cls)._load(resource, cognite_client)
         if isinstance(resource, Dict):
+            if instance.data_set_id is not None:
+                instance.data_set_id = EndTimeIsNull(**instance.data_set_id)
             if instance.created_time is not None:
                 instance.created_time = TimestampRange(**instance.created_time)
             if instance.last_updated_time is not None:
