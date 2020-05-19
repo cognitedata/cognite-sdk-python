@@ -6,7 +6,6 @@ name = "pypi"
 [packages]
 pandas = "*"
 requests = "*"
-matplotlib = "*"
 pytest = "<5"
 sympy = "*"
 docutils = "==0.15.2"
@@ -24,6 +23,7 @@ tox = "*"
 tox-pyenv = "*"
 responses = "*"
 pytest-rerunfailures = "*"
+matplotlib = "*"
 
 [pipenv]
 allow_prereleases = true
