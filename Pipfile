@@ -24,6 +24,7 @@ tox-pyenv = "*"
 responses = "*"
 pytest-rerunfailures = "*"
 matplotlib = "*"
+importlib_metadata = "*"
 
 [pipenv]
 allow_prereleases = true
