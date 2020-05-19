@@ -65,7 +65,7 @@ jobs:
       if: matrix.python-version == 3.7
       run: |
         sudo npm install -g swagger-cli
-        pip install importlib_metadata
+        pipenv run pip install importlib_metadata
         pipenv run pytest openapi/tests
 
     - uses: codecov/codecov-action@v1
