@@ -23,7 +23,7 @@ jobs:
     - name: Install all dependencies
       run: |
         pipenv sync --dev
-        pip install importlib_metadata
+        pipenv run pip install importlib_metadata
         sudo npm install -g swagger-cli
 
     - name: Check codestyle
