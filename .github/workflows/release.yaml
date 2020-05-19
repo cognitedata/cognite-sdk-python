@@ -56,13 +56,13 @@ jobs:
         pipenv run python setup-core.py bdist_wheel
 
     - name: Build docs
-      run: cd docs && make html
+      run: cd docs && pipenv run make html
 
     - name: Release to PyPI
       env:
         TWINE_USERNAME: ${{ secrets.PYPI_USER }}
         TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-      run: twine upload --verbose dist/* || echo 'Version exists'
+      run: pipenv run twine upload --verbose dist/* || echo 'Version exists'
 
     - name: Push code snippets to service-contracts
       env:
