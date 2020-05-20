@@ -94,6 +94,7 @@ class SequenceFilter(CogniteFilter):
         created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
         last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
         data_set_ids (List[Dict[str, Any]]): Only include sequences that belong to these datasets.
+        data_set_id (Union[Dict[str, Any], DataSetIdIsNull]): No description.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
@@ -108,6 +109,7 @@ class SequenceFilter(CogniteFilter):
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
         data_set_ids: List[Dict[str, Any]] = None,
+        data_set_id: Union[Dict[str, Any], DataSetIdIsNull] = None,
         cognite_client=None,
     ):
         self.name = name
@@ -119,6 +121,7 @@ class SequenceFilter(CogniteFilter):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.data_set_ids = data_set_ids
+        self.data_set_id = data_set_id
         self._cognite_client = cognite_client
 
     @classmethod
@@ -129,6 +132,8 @@ class SequenceFilter(CogniteFilter):
                 instance.created_time = TimestampRange(**instance.created_time)
             if instance.last_updated_time is not None:
                 instance.last_updated_time = TimestampRange(**instance.last_updated_time)
+            if instance.data_set_id is not None:
+                instance.data_set_id = DataSetIdIsNull(**instance.data_set_id)
         return instance
 
     # GenStop

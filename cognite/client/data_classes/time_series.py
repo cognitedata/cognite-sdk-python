@@ -145,6 +145,7 @@ class TimeSeriesFilter(CogniteFilter):
         root_asset_ids (List[int]): Only include time series that have a related asset in a tree rooted at any of these root assetIds.
         asset_subtree_ids (List[Dict[str, Any]]): Only include time series that are related to an asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
         data_set_ids (List[Dict[str, Any]]): No description.
+        data_set_id (Union[Dict[str, Any], DataSetIdIsNull]): No description.
         external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
         created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
         last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
@@ -163,6 +164,7 @@ class TimeSeriesFilter(CogniteFilter):
         root_asset_ids: List[int] = None,
         asset_subtree_ids: List[Dict[str, Any]] = None,
         data_set_ids: List[Dict[str, Any]] = None,
+        data_set_id: Union[Dict[str, Any], DataSetIdIsNull] = None,
         external_id_prefix: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
@@ -178,6 +180,7 @@ class TimeSeriesFilter(CogniteFilter):
         self.root_asset_ids = root_asset_ids
         self.asset_subtree_ids = asset_subtree_ids
         self.data_set_ids = data_set_ids
+        self.data_set_id = data_set_id
         self.external_id_prefix = external_id_prefix
         self.created_time = created_time
         self.last_updated_time = last_updated_time
@@ -187,6 +190,8 @@ class TimeSeriesFilter(CogniteFilter):
     def _load(cls, resource: Union[Dict, str], cognite_client=None):
         instance = super(TimeSeriesFilter, cls)._load(resource, cognite_client)
         if isinstance(resource, Dict):
+            if instance.data_set_id is not None:
+                instance.data_set_id = DataSetIdIsNull(**instance.data_set_id)
             if instance.created_time is not None:
                 instance.created_time = TimestampRange(**instance.created_time)
             if instance.last_updated_time is not None:
