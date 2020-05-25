@@ -5,7 +5,7 @@ from typing import *
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes import Asset, AssetAggregate, AssetFilter, AssetList, AssetUpdate, TimestampRange
+from cognite.client.data_classes import Asset, AssetAggregate, AssetFilter, AssetList, AssetUpdate, TimestampRange, DataSetIdIsNull
 from cognite.client.exceptions import CogniteAPIError
 
 
@@ -26,6 +26,7 @@ class AssetsAPI(APIClient):
         metadata: Dict[str, str] = None,
         data_set_ids: List[int] = None,
         data_set_external_ids: List[str] = None,
+        data_set_id: Union[Dict[str, Any], DataSetIdIsNull] = None,
         source: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,

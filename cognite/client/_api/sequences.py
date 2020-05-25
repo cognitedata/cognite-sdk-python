@@ -13,7 +13,7 @@ from cognite.client.data_classes import (
     SequenceList,
     SequenceUpdate,
 )
-from cognite.client.data_classes.shared import TimestampRange
+from cognite.client.data_classes.shared import TimestampRange, DataSetIdIsNull
 
 
 class SequencesAPI(APIClient):
@@ -36,6 +36,7 @@ class SequencesAPI(APIClient):
         asset_subtree_external_ids: List[str] = None,
         data_set_ids: List[int] = None,
         data_set_external_ids: List[str] = None,
+        data_set_id: Union[Dict[str, Any], DataSetIdIsNull] = None,
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
         limit: int = None,
