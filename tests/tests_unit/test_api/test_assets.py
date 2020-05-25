@@ -115,7 +115,7 @@ class TestAssets:
         assert ["childCount"] == jsgz_load(mock_assets_response.calls[0].request.body)["aggregatedProperties"]
 
     def test_list_with_dataset_id_null(self, mock_assets_response):
-        ASSETS_API.list(name="bla", data_set_id=[{"isNull": "true"}])
+        ASSETS_API.list(name="bla", data_set_id={"isNull": "true"})
         assert {"isNull": "true"} == jsgz_load(mock_assets_response.calls[0]
         .request.body)["filter"][
             "dataSetId"
