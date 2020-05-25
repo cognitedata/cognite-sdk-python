@@ -68,12 +68,6 @@ class TestEvents:
             "dataSetId"
         ]
 
-    def test_list_with_dataset_id_notnull(self, mock_events_response):
-        EVENTS_API.list(source="bla", data_set_id={"isNull": "false"})
-        assert {"isNull": "false"} == jsgz_load(mock_events_response.calls[0].request.body)["filter"][
-            "dataSetId"
-        ]
-
     def test_list_sorting(self, mock_events_response):
         res = EVENTS_API.list(sort=["startTime:desc"])
         assert ["startTime:desc"] == jsgz_load(mock_events_response.calls[0].request.body)["sort"]
