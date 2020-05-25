@@ -22,13 +22,11 @@ def new_model():
 
 
 class TestThreeDModelsAPI:
-    def test_list(self):
+    def test_list_and_retrieve(self):
         res = COGNITE_CLIENT.three_d.models.list(limit=1)
         assert 1 == len(res)
-
-    def test_retrieve(self):
-        res = COGNITE_CLIENT.three_d.models.list(limit=1)
-        assert res[0] == COGNITE_CLIENT.three_d.models.retrieve(res[0].id)
+        res = [r for r in COGNITE_CLIENT.three_d.models(limit=None) if r.name == "MyModel775"][0]
+        assert res == COGNITE_CLIENT.three_d.models.retrieve(res.id)
 
     def test_update_with_resource(self, new_model):
         model = new_model
@@ -44,17 +42,11 @@ class TestThreeDModelsAPI:
 
 
 class TestThreeDRevisionsAPI:
-    def test_list(self):
-        model_id = COGNITE_CLIENT.three_d.models.list(limit=1)[0].id
-        res = COGNITE_CLIENT.three_d.revisions.list(model_id=model_id)
-        assert len(res) > 0
-
-    def test_retrieve(self, test_revision):
+    def test_list_and_retrieve(self, test_revision):
         revision, model_id = test_revision
         assert revision == COGNITE_CLIENT.three_d.revisions.retrieve(model_id=model_id, id=revision.id)
-
-    def test_list_nodes(self, test_revision):
-        revision, model_id = test_revision
+        res = COGNITE_CLIENT.three_d.revisions.list(model_id=model_id)
+        assert len(res) > 0
         res = COGNITE_CLIENT.three_d.revisions.list_nodes(model_id=model_id, revision_id=revision.id)
         assert len(res) > 0
 

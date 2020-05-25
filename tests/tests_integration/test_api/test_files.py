@@ -29,6 +29,9 @@ def test_files():
     return files
 
 
+A_WHILE_AGO = {"max": int(time.time() - 1800) * 1000}
+
+
 class TestFilesAPI:
     def test_create(self):
         file_metadata = FileMetadata(name="mytestfile")
@@ -37,11 +40,11 @@ class TestFilesAPI:
         COGNITE_CLIENT.files.delete(id=returned_file_metadata.id)
 
     def test_retrieve(self):
-        res = COGNITE_CLIENT.files.list(limit=1)
+        res = COGNITE_CLIENT.files.list(name="big.txt", limit=1)
         assert res[0] == COGNITE_CLIENT.files.retrieve(res[0].id)
 
     def test_retrieve_multiple(self):
-        res = COGNITE_CLIENT.files.list(limit=2)
+        res = COGNITE_CLIENT.files.list(uploaded_time=A_WHILE_AGO, limit=2)
         assert res == COGNITE_CLIENT.files.retrieve_multiple([f.id for f in res])
 
     def test_list(self):
