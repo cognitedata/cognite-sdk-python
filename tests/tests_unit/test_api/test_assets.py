@@ -116,10 +116,7 @@ class TestAssets:
 
     def test_list_with_dataset_id_null(self, mock_assets_response):
         ASSETS_API.list(name="bla", data_set_id={"isNull": "true"})
-        assert {"isNull": "true"} == jsgz_load(mock_assets_response.calls[0]
-        .request.body)["filter"][
-            "dataSetId"
-        ]
+        assert {"isNull": "true"} == jsgz_load(mock_assets_response.calls[0].request.body)["filter"]["dataSetId"]
 
     def test_list_with_dataset_ids(self, mock_assets_response):
         ASSETS_API.list(name="bla", data_set_ids=[1], data_set_external_ids=["x"])
