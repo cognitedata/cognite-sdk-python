@@ -60,8 +60,8 @@ jobs:
 
     - name: Release to PyPI
       env:
-        TWINE_USERNAME: ${{ secrets.PYPI_USER }}
-        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
       run: pipenv run twine upload --verbose dist/* || echo 'Version exists'
 
     - name: Push code snippets to service-contracts
