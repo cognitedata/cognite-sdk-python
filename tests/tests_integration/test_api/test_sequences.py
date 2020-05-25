@@ -59,6 +59,10 @@ class TestSequencesAPI:
         res = COGNITE_CLIENT.sequences.list(asset_ids=[42], limit=20)
         assert 1 == len(res)
 
+    def test_aggregate(self):
+        res = COGNITE_CLIENT.sequences.aggregate(filter=SequenceFilter(name="42"))
+        assert res[0].count > 0
+
     def test_search(self):
         res = COGNITE_CLIENT.sequences.search(name="42", filter=SequenceFilter(created_time={"min": 0}))
         assert len(res) > 0

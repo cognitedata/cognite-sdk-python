@@ -1,0 +1,87 @@
+name: test_and_build
+
+on:
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [3.5, 3.6, 3.7, 3.8]
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install pipenv
+      run: pip3 install pipenv
+
+    - name: Install core dependencies
+      run: pipenv run pip install -r core-requirements.txt
+
+    - name: Test core
+      env:
+          COGNITE_API_KEY: ${{ secrets.COGNITE_API_KEY }}
+          COGNITE_PROJECT: python-sdk-test
+          COGNITE_BASE_URL: https://greenfield.cognitedata.com
+          COGNITE_CLIENT_NAME: python-sdk-integration-tests
+          CI: 1
+      run: pipenv run pytest tests/tests_unit -m 'not dsl' --test-deps-only-core
+
+    - name: Install all dependencies
+      if: matrix.python-version != 3.7
+      run: |
+        pipenv sync
+        pipenv run pip install matplotlib
+
+    - name: Install dev dependencies
+      if: matrix.python-version == 3.7
+      run: pipenv sync --dev
+
+    - name: Run tests
+      env:
+          COGNITE_API_KEY: ${{ secrets.COGNITE_API_KEY }}
+          COGNITE_PROJECT: python-sdk-test
+          COGNITE_BASE_URL: https://greenfield.cognitedata.com
+          COGNITE_CLIENT_NAME: python-sdk-integration-tests
+          CI: 1
+      run: |
+        pipenv run coverage run --source cognite.client -m pytest -v tests
+        pipenv run coverage xml
+
+    - name: Check codestyle
+      if: matrix.python-version == 3.7
+      run: pipenv run black -l 120 --check .
+
+    - name: Test OpenAPI Generator
+      if: matrix.python-version == 3.7
+      run: |
+        sudo npm install -g swagger-cli
+        pipenv run pip install importlib_metadata
+        pipenv run pytest openapi/tests
+
+    - uses: codecov/codecov-action@v1
+      if: matrix.python-version == 3.7
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        file: ./coverage.xml
+
+    - name: Build package
+      if: matrix.python-version == 3.7
+      run: |
+        pipenv run python setup.py sdist
+        pipenv run python setup.py bdist_wheel
+        pipenv run python setup-core.py sdist
+        pipenv run python setup-core.py bdist_wheel
+
+    - name: Build docs
+      if: matrix.python-version == 3.7
+      run: cd docs && pipenv run make html

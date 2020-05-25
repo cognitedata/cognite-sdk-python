@@ -7,6 +7,7 @@ from cognite.client._api_client import APIClient
 from cognite.client.exceptions import IncompatibleColumnTypesError
 from cognite.client.data_classes import (
     Sequence,
+    SequenceAggregate,
     SequenceData,
     SequenceDataList,
     SequenceFilter,
@@ -290,6 +291,27 @@ class SequencesAPI(APIClient):
             created_seq = self.create(Sequence(external_id=external_id, columns=cols, **kwargs))
         self.data.insert_dataframe(dataframe=dataframe, external_id=external_id)
         return existing_seq or created_seq
+
+    def aggregate(self, filter: Union[SequenceFilter, Dict] = None) -> List[SequenceAggregate]:
+        """`Aggregate sequences <https://docs.cognite.com/api/v1/#operation/aggregateSequences>`_
+
+        Args:
+            filter (Union[SequenceFilter, Dict]): Filter on sequence filter with exact match
+
+        Returns:
+            List[SequenceAggregate]: List of sequence aggregates
+
+        Examples:
+
+            Aggregate sequences::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.sequences.aggregate(filter={"external_id_prefix": "prefix"})
+        """
+
+        return self._aggregate(filter=filter, cls=SequenceAggregate)
+
 
     def create(self, sequence: Union[Sequence, List[Sequence]]) -> Union[Sequence, SequenceList]:
         """`Create one or more sequences. <https://docs.cognite.com/api/v1/#operation/createSequence>`_

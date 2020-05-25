@@ -1,7 +1,7 @@
 # exit when any command fails
 set -e
 
-packageVersion=$1
+packageVersion=$(sed -n -e "/^__version__/p" cognite/client/__init__.py | cut -d\" -f2)
 branchName="bot/pythonCodeSnippets_v$packageVersion"
 message="[Python SDK]: update code snippets to v$packageVersion"
 snippets_filename="python-sdk-examples.json"

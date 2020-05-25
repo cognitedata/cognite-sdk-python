@@ -21,9 +21,13 @@ Changes are grouped as follows
 
 ## Unreleased
 ### Added
+
+## [1.6.0] - 2020-04-28
+### Added
 - Support events filtering by ongoing events (events without `end_time` defined)
 - Support events filtering by active timerange of event
-- Support files metadata filterign by `asset_external_ids`
+- Support files metadata filtering by `asset_external_ids`
+- Aggregation endpoint for Assets, DataSets, Events, Files, Sequences and TimeSeries API
 
 ## [1.5.2] - 2020-04-02
 ### Added

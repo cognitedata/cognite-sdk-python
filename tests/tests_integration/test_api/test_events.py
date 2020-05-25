@@ -14,7 +14,7 @@ COGNITE_CLIENT = CogniteClient()
 
 @pytest.fixture
 def new_event():
-    event = COGNITE_CLIENT.events.create(Event())
+    event = COGNITE_CLIENT.events.create(Event(type="test__py__sdk"))
     yield event
     COGNITE_CLIENT.events.delete(id=event.id)
     assert COGNITE_CLIENT.events.retrieve(event.id) is None
@@ -66,6 +66,10 @@ class TestEventsAPI:
         res = COGNITE_CLIENT.events.list(end_time=EndTimeFilter(is_null=True), limit=10)
 
         assert len(res) > 0
+
+    def test_aggregation(self, new_event):
+        res_aggregate = COGNITE_CLIENT.events.aggregate(filter=EventFilter(type="test__py__sdk"))
+        assert res_aggregate[0].count > 0
 
     def test_partitioned_list(self):
         # stop race conditions by cutting off max created time
