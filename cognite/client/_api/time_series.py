@@ -174,6 +174,7 @@ class TimeSeriesAPI(APIClient):
         asset_subtree_external_ids: List[str] = None,
         data_set_ids: List[int] = None,
         data_set_external_ids: List[str] = None,
+        data_set_id: Union[Dict[str, Any], DataSetIdIsNull] = None,
         metadata: Dict[str, Any] = None,
         external_id_prefix: str = None,
         created_time: Dict[str, Any] = None,
