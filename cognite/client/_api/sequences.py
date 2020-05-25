@@ -79,6 +79,7 @@ class SequencesAPI(APIClient):
             created_time=created_time,
             last_updated_time=last_updated_time,
             data_set_ids=data_set_ids,
+            data_set_id=data_set_id,
         ).dump(camel_case=True)
         return self._list_generator(method="GET", chunk_size=chunk_size, filter=filter, limit=limit)
 

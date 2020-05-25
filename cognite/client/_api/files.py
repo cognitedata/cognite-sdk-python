@@ -99,6 +99,7 @@ class FilesAPI(APIClient):
             external_id_prefix=external_id_prefix,
             uploaded=uploaded,
             data_set_ids=data_set_ids,
+            data_set_id=data_set_id,
         ).dump(camel_case=True)
         return self._list_generator(method="POST", chunk_size=chunk_size, filter=filter, limit=limit)
 

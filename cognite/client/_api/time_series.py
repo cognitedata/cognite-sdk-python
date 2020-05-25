@@ -82,6 +82,7 @@ class TimeSeriesAPI(APIClient):
             metadata=metadata,
             created_time=created_time,
             data_set_ids=data_set_ids,
+            data_set_id=data_set_id,
             last_updated_time=last_updated_time,
             external_id_prefix=external_id_prefix,
         ).dump(camel_case=True)
