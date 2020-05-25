@@ -21,3 +21,20 @@ class TimestampRange(dict):
     min = CognitePropertyClassUtil.declare_property("min")
 
     # GenStop
+
+
+# GenPropertyClass: DataSetIdIsNull
+class DataSetIdIsNull(dict):
+    """No description.
+
+    Args:
+        is_null (bool): Set to true if you want to search for data with dataSetId field value not set, false to search for cases where some value is present.
+    """
+
+    def __init__(self, is_null: bool = None, **kwargs):
+        self.is_null = is_null
+        self.update(kwargs)
+
+    is_null = CognitePropertyClassUtil.declare_property("isNull")
+
+    # GenStop
