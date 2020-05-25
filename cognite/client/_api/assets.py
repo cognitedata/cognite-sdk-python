@@ -256,6 +256,7 @@ class AssetsAPI(APIClient):
             root_ids=root_ids,
             asset_subtree_ids=asset_subtree_ids,
             data_set_ids=data_set_ids,
+            data_set_id=data_set_id,
             metadata=metadata,
             source=source,
             created_time=created_time,

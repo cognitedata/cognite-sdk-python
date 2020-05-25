@@ -249,6 +249,7 @@ class TimeSeriesAPI(APIClient):
             asset_subtree_ids=asset_subtree_ids,
             metadata=metadata,
             data_set_ids=data_set_ids,
+            data_set_id=data_set_id,
             created_time=created_time,
             last_updated_time=last_updated_time,
             external_id_prefix=external_id_prefix,

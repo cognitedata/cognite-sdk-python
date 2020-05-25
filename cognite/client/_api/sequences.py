@@ -225,6 +225,7 @@ class SequencesAPI(APIClient):
             created_time=created_time,
             last_updated_time=last_updated_time,
             data_set_ids=data_set_ids,
+            data_set_id=data_set_id,
         ).dump(camel_case=True)
         return self._list(method="POST", filter=filter, limit=limit)
 
