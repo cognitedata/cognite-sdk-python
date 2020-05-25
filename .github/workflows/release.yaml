@@ -1,0 +1,70 @@
+name: release
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.7
+
+
+    - name: Install pipenv
+      run: pip3 install pipenv
+
+    - name: Install all dependencies
+      run: |
+        pipenv sync --dev
+        pipenv run pip install importlib_metadata
+        sudo npm install -g swagger-cli
+
+    - name: Check codestyle
+      run: pipenv run black -l 120 --check .
+
+    - name: Test OpenAPI Generator
+      run: pipenv run pytest openapi/tests
+
+    - name: Run tests
+      env:
+          COGNITE_API_KEY: ${{ secrets.COGNITE_API_KEY }}
+          COGNITE_PROJECT: python-sdk-test
+          COGNITE_BASE_URL: https://greenfield.cognitedata.com
+          COGNITE_CLIENT_NAME: python-sdk-integration-tests
+          CI: 1
+      run: |
+        pipenv run coverage run --source cognite.client -m pytest -v tests
+        pipenv run coverage xml
+
+    - uses: codecov/codecov-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        file: ./coverage.xml
+
+    - name: Build package
+      run: |
+        pipenv run python setup.py sdist
+        pipenv run python setup.py bdist_wheel
+        pipenv run python setup-core.py sdist
+        pipenv run python setup-core.py bdist_wheel
+
+    - name: Build docs
+      run: cd docs && pipenv run make html
+
+    - name: Release to PyPI
+      env:
+        TWINE_USERNAME: ${{ secrets.PYPI_USER }}
+        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+      run: pipenv run twine upload --verbose dist/* || echo 'Version exists'
+
+    - name: Push code snippets to service-contracts
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: sh ./scripts/deploy_code_snippets.sh || echo 'PR failed. There is probably nothing to commit'
