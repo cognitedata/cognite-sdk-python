@@ -51,6 +51,7 @@ class EventsAPI(APIClient):
             chunk_size (int, optional): Number of events to return in each chunk. Defaults to yielding one event a time.
             start_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps
             end_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps
+            active_at_time (Union[Dict[str, Any], TimestampRange]): Event is considered active from its startTime to endTime inclusive. If startTime is null, event is never active. If endTime is null, event is active from startTime onwards. activeAtTime filter will match all events that are active at some point from min to max, from min, or to max, depending on which of min and max parameters are specified.
             type (str): Type of the event, e.g 'failure'.
             subtype (str): Subtype of the event, e.g 'electrical'.
             metadata (Dict[str, str]): Customizable extra data about the event. String key -> String value.
@@ -202,6 +203,7 @@ class EventsAPI(APIClient):
         Args:
             start_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
             end_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
+            active_at_time (Union[Dict[str, Any], TimestampRange]): Event is considered active from its startTime to endTime inclusive. If startTime is null, event is never active. If endTime is null, event is active from startTime onwards. activeAtTime filter will match all events that are active at some point from min to max, from min, or to max, depending on which of min and max parameters are specified.
             type (str): Type of the event, e.g 'failure'.
             subtype (str): Subtype of the event, e.g 'electrical'.
             metadata (Dict[str, str]): Customizable extra data about the event. String key -> String value.
