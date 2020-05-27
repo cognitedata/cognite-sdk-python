@@ -62,6 +62,7 @@ class FilesAPI(APIClient):
             asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
             data_set_ids (List[int]): Return only files in the specified data sets with these ids.
             data_set_external_ids (List[str]): Return only files in the specified data sets with these external ids.
+            data_set_id (Union[Dict[str, Any], DataSetIdIsNull]): Return only files that are in none/any data set.
             source (str): The source of this event.
             source_created_time (Union[Dict[str, Any], TimestampRange]): Filter for files where the sourceCreatedTime field has been set and is within the specified range.
             source_modified_time (Union[Dict[str, Any], TimestampRange]): Filter for files where the sourceModifiedTime field has been set and is within the specified range.
@@ -243,6 +244,7 @@ class FilesAPI(APIClient):
             asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
             data_set_ids (List[int]): Return only files in the specified data sets with these ids.
             data_set_external_ids (List[str]): Return only files in the specified data sets with these external ids.
+            data_set_id (Union[Dict[str, Any], DataSetIdIsNull]): Return only files that are in none/any data set.
             source (str): The source of this event.
             created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.

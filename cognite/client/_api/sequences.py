@@ -54,8 +54,9 @@ class SequencesAPI(APIClient):
             root_asset_ids (List[int]): Filter out sequences not linked to assets with one of these assets as the root asset.
             asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
             asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
-            data_set_ids (List[int]): Return only events in the specified data sets with these ids.
-            data_set_external_ids (List[str]): Return only events in the specified data sets with these external ids.
+            data_set_ids (List[int]): Return only sequences in the specified data sets with these ids.
+            data_set_external_ids (List[str]): Return only sequences in the specified data sets with these external ids.
+            data_set_id (Union[Dict[str, Any], DataSetIdIsNull]): Return only sequences that are in none/any data set.
             created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             limit (int, optional): Max number of sequences to return. Defaults to return all items.
@@ -178,8 +179,9 @@ class SequencesAPI(APIClient):
             root_asset_ids (List[int]): Filter out sequences not linked to assets with one of these assets as the root asset.
             asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
             asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
-            data_set_ids (List[int]): Return only events in the specified data sets with these ids.
-            data_set_external_ids (List[str]): Return only events in the specified data sets with these external ids.
+            data_set_ids (List[int]): Return only sequences in the specified data sets with these ids.
+            data_set_external_ids (List[str]): Return only sequences in the specified data sets with these external ids.
+            data_set_id (Union[Dict[str, Any], DataSetIdIsNull]): Return only sequences that are in none/any data set.
             created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             limit (int, optional): Max number of sequences to return. Defaults to 25. Set to -1, float("inf") or None

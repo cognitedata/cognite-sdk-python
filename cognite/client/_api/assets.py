@@ -59,6 +59,7 @@ class AssetsAPI(APIClient):
             metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value
             data_set_ids (List[int]): Return only assets in the specified data sets with these ids.
             data_set_external_ids (List[str]): Return only assets in the specified data sets with these external ids.
+            data_set_id (Union[Dict[str, Any], DataSetIdIsNull]): Return only assets that are in none/any data set.
             source (str): The source of this asset
             created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.

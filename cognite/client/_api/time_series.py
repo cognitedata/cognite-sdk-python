@@ -55,6 +55,7 @@ class TimeSeriesAPI(APIClient):
             asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
             data_set_ids (List[int]): Return only time series in the specified data sets with these ids.
             data_set_external_ids (List[str]): Return only time series in the specified data sets with these external ids.
+            data_set_id (Union[Dict[str, Any], DataSetIdIsNull]): Return only time series that are in none/any data set.
             metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
             created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
@@ -197,8 +198,9 @@ class TimeSeriesAPI(APIClient):
             root_asset_ids (List[int], optional): List time series related to assets under these root assets.
             asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
             asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
-            data_set_ids (List[int]): Return only assets in the specified data sets with these ids.
-            data_set_external_ids (List[str]): Return only assets in the specified data sets with these external ids.
+            data_set_ids (List[int]): Return only time series in the specified data sets with these ids.
+            data_set_external_ids (List[str]): Return only time series in the specified data sets with these external ids.
+            data_set_id (Union[Dict[str, Any], DataSetIdIsNull]): Return only time series that are in none/any data set.
             metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
             created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
