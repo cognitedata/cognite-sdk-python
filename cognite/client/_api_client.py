@@ -112,7 +112,7 @@ class APIClient:
         "/datasets/aggregate",
         "/datasets/byids",
         "/relationships/list",
-        "/relationships/search",
+        "/relationships/byids",
     }
 
     def __init__(self, config: utils._client_config.ClientConfig, api_version: str = None, cognite_client=None):
