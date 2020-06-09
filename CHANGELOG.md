@@ -22,6 +22,13 @@ Changes are grouped as follows
 ## Unreleased
 ### Added
 
+## [1.7.0] - 2020-06-03
+### Fixed
+- datasetId is kept as an integer in dataframes.
+
+### Changed
+- Internal list of retryable endpoints was changed to a class variable so it can be modified.
+
 ## [1.6.0] - 2020-04-28
 ### Added
 - Support events filtering by ongoing events (events without `end_time` defined)
