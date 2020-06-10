@@ -85,6 +85,36 @@ class APIClient:
     _RESOURCE_PATH = None
     _LIST_CLASS = None
 
+    # TODO: This following set should be generated from the openapi spec somehow.
+    RETRYABLE_POST_ENDPOINTS = {
+        "/assets/list",
+        "/assets/byids",
+        "/assets/search",
+        "/events/list",
+        "/events/byids",
+        "/events/search",
+        "/files/list",
+        "/files/byids",
+        "/files/search",
+        "/files/downloadlink",
+        "/timeseries/byids",
+        "/timeseries/search",
+        "/timeseries/data",
+        "/timeseries/data/list",
+        "/timeseries/data/latest",
+        "/timeseries/data/delete",
+        "/sequences/byids",
+        "/sequences/search",
+        "/sequences/data",
+        "/sequences/data/list",
+        "/sequences/data/delete",
+        "/datasets/list",
+        "/datasets/aggregate",
+        "/datasets/byids",
+        "/relationships/list",
+        "/relationships/byids",
+    }
+
     def __init__(self, config: utils._client_config.ClientConfig, api_version: str = None, cognite_client=None):
         self._request_session = _REQUESTS_SESSION
         self._request_session_with_retry = _REQUESTS_SESSION_WITH_RETRY
@@ -184,36 +214,10 @@ class APIClient:
         if method not in valid_methods:
             raise ValueError("Method {} is not valid. Must be one of {}".format(method, valid_methods))
         path_end = match.group(1)
-        # TODO: This following set should be generated from the openapi spec somehow.
-        retryable_post_endpoints = {
-            "/assets/list",
-            "/assets/byids",
-            "/assets/search",
-            "/events/list",
-            "/events/byids",
-            "/events/search",
-            "/files/list",
-            "/files/byids",
-            "/files/search",
-            "/files/downloadlink",
-            "/timeseries/byids",
-            "/timeseries/search",
-            "/timeseries/data",
-            "/timeseries/data/list",
-            "/timeseries/data/latest",
-            "/timeseries/data/delete",
-            "/sequences/byids",
-            "/sequences/search",
-            "/sequences/data",
-            "/sequences/data/list",
-            "/sequences/data/delete",
-            "/datasets/list",
-            "/datasets/aggregate",
-            "/datasets/byids",
-        }
+
         if method in ["GET", "PUT", "PATCH"]:
             return True
-        if method == "POST" and path_end in retryable_post_endpoints:
+        if method == "POST" and path_end in self.RETRYABLE_POST_ENDPOINTS:
             return True
         return False
 
