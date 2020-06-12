@@ -3,8 +3,10 @@ from typing import *
 from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Relationship, RelationshipFilter, RelationshipList
+from cognite.client.utils._experimental_warning import experimental_api
 
 
+@experimental_api(api_name="Relationships", deprecated=True)
 class RelationshipsAPI(APIClient):
     _RESOURCE_PATH = "/relationships"
     _LIST_CLASS = RelationshipList

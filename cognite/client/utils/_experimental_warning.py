@@ -4,31 +4,40 @@ import warnings
 WARNED_EXPERIMENTAL_APIS = set()
 
 
-def experimental_fn(func=None, api_name=None):
+def experimental_fn(func=None, api_name=None, deprecated=False):
     if func is None:
         return functools.partial(experimental_fn, api_name=api_name)
 
     @functools.wraps(func)
     def decorator(*args, **kwargs):
         if api_name not in WARNED_EXPERIMENTAL_APIS:
-            warnings.warn(
-                "\nThe {} API is currently experimental, so this functionality does not adhere to semantic versionining."
-                "\nThis means that this API may be subject to breaking changes even between patch versions."
-                "\nYou should NOT use the {} API in any production code.".format(api_name, api_name),
-                stacklevel=2,
-                category=FutureWarning,
-            )
+            if deprecated:
+                warnings.warn(
+                    "\nThe SDK for the {} API is deprecated and has been moved to the experimental SDK."
+                    "\nThe implementation you are using is likely to be out of date and may be removed in a future version."
+                    "\nPlease see https://github.com/cognitedata/cognite-sdk-python-experimental".format(api_name),
+                    stacklevel=2,
+                    category=FutureWarning,
+                )
+            else:
+                warnings.warn(
+                    "\nThe {} API is currently experimental, so this functionality does not adhere to semantic versionining."
+                    "\nThis means that this API may be subject to breaking changes even between patch versions."
+                    "\nYou should NOT use the {} API in any production code.".format(api_name, api_name),
+                    stacklevel=2,
+                    category=FutureWarning,
+                )
             WARNED_EXPERIMENTAL_APIS.add(api_name)
         return func(*args, **kwargs)
 
     return decorator
 
 
-def experimental_api(cls=None, api_name=None):
+def experimental_api(cls=None, api_name=None, deprecated=False):
     """A class decorator that will raise warnings once an experimental API is used."""
     if cls is None:
         return functools.partial(experimental_api, api_name=api_name)
     for attr in cls.__dict__:
         if not attr.startswith("_") and callable(getattr(cls, attr)):
-            setattr(cls, attr, experimental_fn(api_name=api_name)(getattr(cls, attr)))
+            setattr(cls, attr, experimental_fn(api_name=api_name, deprecated=deprecated)(getattr(cls, attr)))
     return cls

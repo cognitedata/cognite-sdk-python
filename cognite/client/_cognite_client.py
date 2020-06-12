@@ -17,6 +17,8 @@ from cognite.client._api_client import APIClient
 from cognite.client.exceptions import CogniteAPIKeyError
 from cognite.client.utils._client_config import ClientConfig
 
+APIClient.RETRYABLE_POST_ENDPOINTS |= {"/timeseries/synthetic/query"}
+
 
 class CogniteClient:
     """Main entrypoint into Cognite Python SDK.
@@ -53,6 +55,7 @@ class CogniteClient:
         disable_pypi_version_check: Optional[bool] = None,
         debug: bool = False,
     ):
+
         self._config = ClientConfig(
             api_key=api_key,
             project=project,
