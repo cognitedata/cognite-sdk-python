@@ -20,7 +20,9 @@ Changes are grouped as follows
 - Separate read/write fields on data classes
 
 ## Unreleased
-### Added
+
+### Changed
+- When `debug=true`, redirects are shown more clearly.
 
 ## [1.7.0] - 2020-06-03
 ### Fixed
