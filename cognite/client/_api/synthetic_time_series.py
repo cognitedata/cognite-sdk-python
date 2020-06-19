@@ -10,9 +10,8 @@ from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._experimental_warning import experimental_api
 
 
-@experimental_api(api_name="Synthetic Timeseries")
-class SyntheticDatapointsAPI(APIClient):
-    _SYNTHETIC_RESOURCE_PATH = "/timeseries/synthetic"
+class SyntheticTimeSeriesAPI(APIClient):
+    _RESOURCE_PATH = "/timeseries/synthetic"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -46,28 +45,28 @@ class SyntheticDatapointsAPI(APIClient):
 
             Request a synthetic time series query with direct syntax
 
-                >>> from cognite.client.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> dps = c.datapoints.synthetic.retrieve(expression="TS{id:123} + TS{externalId:'abc'}", start="2w-ago", end="now")
+                >>> dps = c.synthetic_time_series.retrieve(expression="TS{id:123} + TS{externalId:'abc'}", start="2w-ago", end="now")
 
             Use variables to re-use an expression:
 
-                >>> from cognite.client.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> vars = {"A": "my_ts_external_id", "B": client.time_series.retrieve(id=1)}
-                >>> dps = c.datapoints.synthetic.retrieve(expression="A+B", start="2w-ago", end="now", variables=vars)
+                >>> dps = c.synthetic_time_series.retrieve(expression="A+B", start="2w-ago", end="now", variables=vars)
 
             Use sympy to build complex expressions:
 
-                >>> from cognite.client.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> from sympy import symbols, cos, pi
                 >>> a = sympy.symbols('a')
-                >>> dps = c.datapoints.synthetic.retrieve(pi * cos(a), start="2w-ago", end="now", variables={"a": "my_ts_external_id"},aggregate='interpolation',granularity='1m')
+                >>> dps = c.synthetic_time_series.retrieve(pi * cos(a), start="2w-ago", end="now", variables={"a": "my_ts_external_id"},aggregate='interpolation',granularity='1m')
             """
         if limit is None or limit == -1:
             limit = float("inf")
-        expression, short_expression = SyntheticDatapointsAPI._build_expression(
+        expression, short_expression = SyntheticTimeSeriesAPI._build_expression(
             expression, variables, aggregate, granularity
         )
         query = {
@@ -79,7 +78,7 @@ class SyntheticDatapointsAPI(APIClient):
         datapoints.external_id = short_expression  # for dataframe readability
         while True:
             query["limit"] = min(limit, self._DPS_LIMIT)
-            resp = self._post(url_path=self._SYNTHETIC_RESOURCE_PATH + "/query", json={"items": [query]})
+            resp = self._post(url_path=self._RESOURCE_PATH + "/query", json={"items": [query]})
             data = resp.json()["items"][0]
             datapoints._extend(Datapoints._load(data, expected_fields=["value", "error"]))
             limit -= len(data["datapoints"])
@@ -91,7 +90,7 @@ class SyntheticDatapointsAPI(APIClient):
     @staticmethod
     def _build_expression(expression, variables=None, aggregate=None, granularity=None):
         if expression.__class__.__module__.startswith("sympy."):
-            expression = SyntheticDatapointsAPI._sympy_to_sts(expression)
+            expression = SyntheticTimeSeriesAPI._sympy_to_sts(expression)
             if not variables:
                 raise ValueError(
                     "sympy expressions are only supported in combination with the `variables` parameter to map symbols to time series."

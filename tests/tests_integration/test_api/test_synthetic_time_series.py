@@ -4,7 +4,7 @@ from unittest import mock
 
 import pytest
 
-from cognite.client.experimental import CogniteClient
+from cognite.client import CogniteClient
 
 COGNITE_CLIENT = CogniteClient()
 
@@ -22,7 +22,7 @@ def test_time_series():
 @pytest.fixture
 def post_spy():
     with mock.patch.object(
-        COGNITE_CLIENT.datapoints.synthetic, "_post", wraps=COGNITE_CLIENT.datapoints.synthetic._post
+        COGNITE_CLIENT.synthetic_time_series, "_post", wraps=COGNITE_CLIENT.synthetic_time_series._post
     ) as _:
         yield
 
@@ -30,14 +30,14 @@ def post_spy():
 class TestSyntheticDatapointsAPI:
     def test_retrieve(self, test_time_series, post_spy):
         query = "ts{id:%d} + ts{id:%d}" % (test_time_series[0].id, test_time_series[1].id)
-        dps = COGNITE_CLIENT.datapoints.synthetic.retrieve(
+        dps = COGNITE_CLIENT.synthetic_time_series.retrieve(
             expression=query, start=datetime(2017, 1, 1), end="now", limit=23456
         )
         assert 23456 == len(dps)
-        assert 3 == COGNITE_CLIENT.datapoints.synthetic._post.call_count
+        assert 3 == COGNITE_CLIENT.synthetic_time_series._post.call_count
 
     def test_retrieve_with_errors(self, test_time_series, post_spy):
-        dps = COGNITE_CLIENT.datapoints.synthetic.retrieve(
+        dps = COGNITE_CLIENT.synthetic_time_series.retrieve(
             expression="A / (B - B)",
             start=datetime(2017, 1, 1),
             end="now",
@@ -55,14 +55,14 @@ class TestSyntheticDatapointsAPI:
     def test_expression_builder_time_series_vs_string(self, test_time_series):
         from sympy import symbols
 
-        dps1 = COGNITE_CLIENT.datapoints.synthetic.retrieve(
+        dps1 = COGNITE_CLIENT.synthetic_time_series.retrieve(
             expression=symbols("a"),
             start=datetime(2017, 1, 1),
             end="now",
             limit=100,
             variables={"a": test_time_series[0].external_id},
         )
-        dps2 = COGNITE_CLIENT.datapoints.synthetic.retrieve(
+        dps2 = COGNITE_CLIENT.synthetic_time_series.retrieve(
             expression=symbols("a"),
             start=datetime(2017, 1, 1),
             end="now",
@@ -89,7 +89,7 @@ class TestSyntheticDatapointsAPI:
             + cos(syms[3] ** (1 + 0.1 ** syms[4]))
             + sqrt(log(abs(syms[8]) + 1))
         )
-        dps1 = COGNITE_CLIENT.datapoints.synthetic.retrieve(
+        dps1 = COGNITE_CLIENT.synthetic_time_series.retrieve(
             expression=expression,
             start=datetime(2017, 1, 1),
             end="now",

@@ -10,15 +10,14 @@ from unittest.mock import PropertyMock
 
 import pytest
 
-from cognite.client import utils
+from cognite.client import CogniteClient, utils
 from cognite.client._api.datapoints import DatapointsBin, DatapointsFetcher, _DPTask, _DPWindow
 from cognite.client.data_classes import Datapoint, Datapoints, DatapointsList, DatapointsQuery
 from cognite.client.exceptions import CogniteAPIError, CogniteDuplicateColumnsError, CogniteNotFoundError
-from cognite.client.experimental import CogniteClient
 from tests.utils import jsgz_load, set_request_limit
 
 COGNITE_CLIENT = CogniteClient()
-DPS_CLIENT = COGNITE_CLIENT.datapoints.synthetic
+STS_CLIENT = COGNITE_CLIENT.synthetic_time_series
 
 
 def generate_datapoints(start: int, end: int, granularity=1):
@@ -58,7 +57,7 @@ def mock_get_datapoints(rsps):
 
     rsps.add_callback(
         rsps.POST,
-        DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/synthetic/query",
+        STS_CLIENT._get_base_url_with_base_path() + "/timeseries/synthetic/query",
         callback=request_callback,
         content_type="application/json",
     )
@@ -69,7 +68,7 @@ def mock_get_datapoints(rsps):
 def mock_get_datapoints_empty(rsps):
     rsps.add(
         rsps.POST,
-        re.compile(re.escape(DPS_CLIENT._get_base_url_with_base_path()) + "/timeseries/synthetic/.*"),
+        re.compile(re.escape(STS_CLIENT._get_base_url_with_base_path()) + "/timeseries/synthetic/.*"),
         status=200,
         json={"items": [{"isString": False, "datapoints": []}]},
     )
@@ -78,13 +77,13 @@ def mock_get_datapoints_empty(rsps):
 
 class TestSyntheticQuery:
     def test_retrieve(self, mock_get_datapoints):
-        dps_res = DPS_CLIENT.retrieve(expression='TS{externalID:"abc"} + TS{id:1} ', start=1000000, end=1100001)
+        dps_res = STS_CLIENT.retrieve(expression='TS{externalID:"abc"} + TS{id:1} ', start=1000000, end=1100001)
         assert isinstance(dps_res, Datapoints)
         assert 100001 == len(dps_res)
         assert 11 == len(mock_get_datapoints.calls)
 
     def test_retrieve_empty(self, mock_get_datapoints_empty):
-        dps_res = DPS_CLIENT.retrieve(expression='TS{externalID:"abc"} + TS{id:1} ', start=1000000, end=1100001)
+        dps_res = STS_CLIENT.retrieve(expression='TS{externalID:"abc"} + TS{id:1} ', start=1000000, end=1100001)
         assert isinstance(dps_res, Datapoints)
         assert 0 == len(dps_res)
         assert 1 == len(mock_get_datapoints_empty.calls)
@@ -93,15 +92,15 @@ class TestSyntheticQuery:
     def test_expression_builder(self):
         from sympy import symbols
 
-        assert ("ts{externalId:'x'}", "a") == DPS_CLIENT._build_expression(symbols("a"), {"a": "x"})
-        assert ("ts{externalId:'x',aggregate:'average',granularity:'1m'}", "a") == DPS_CLIENT._build_expression(
+        assert ("ts{externalId:'x'}", "a") == STS_CLIENT._build_expression(symbols("a"), {"a": "x"})
+        assert ("ts{externalId:'x',aggregate:'average',granularity:'1m'}", "a") == STS_CLIENT._build_expression(
             symbols("a"), {"a": "x"}, aggregate="average", granularity="1m"
         )
         assert (
             "(ts{externalId:'x'}+ts{externalId:'y'}+ts{externalId:'z'})",
             "(a+b+c)",
-        ) == DPS_CLIENT._build_expression(symbols("a") + symbols("b") + symbols("c"), {"a": "x", "b": "y", "c": "z"})
-        assert ("(1/ts{externalId:'a'})", "(1/a)") == DPS_CLIENT._build_expression(1 / symbols("a"), {"a": "a"})
+        ) == STS_CLIENT._build_expression(symbols("a") + symbols("b") + symbols("c"), {"a": "x", "b": "y", "c": "z"})
+        assert ("(1/ts{externalId:'a'})", "(1/a)") == STS_CLIENT._build_expression(1 / symbols("a"), {"a": "a"})
 
     @pytest.mark.dsl
     def test_expression_builder_variables_missing(self):
@@ -110,11 +109,11 @@ class TestSyntheticQuery:
         with pytest.raises(
             ValueError, match="sympy expressions are only supported in combination with the `variables` parameter"
         ):
-            DPS_CLIENT.retrieve(symbols("a"), start=0, end="now")
+            STS_CLIENT.retrieve(symbols("a"), start=0, end="now")
 
     @pytest.mark.dsl
     def test_expression_builder_unsupported_missing(self):
         from sympy import symbols, cot
 
         with pytest.raises(ValueError, match="Unsupported sympy class cot"):
-            DPS_CLIENT.retrieve(symbols("a") + cot(symbols("a")), start=0, end="now", variables={"a": "a"})
+            STS_CLIENT.retrieve(symbols("a") + cot(symbols("a")), start=0, end="now", variables={"a": "a"})
