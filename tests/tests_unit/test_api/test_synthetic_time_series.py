@@ -17,7 +17,7 @@ from cognite.client.exceptions import CogniteAPIError, CogniteDuplicateColumnsEr
 from tests.utils import jsgz_load, set_request_limit
 
 COGNITE_CLIENT = CogniteClient()
-STS_CLIENT = COGNITE_CLIENT.synthetic_time_series
+STS_CLIENT = COGNITE_CLIENT.datapoints.synthetic
 
 
 def generate_datapoints(start: int, end: int, granularity=1):
@@ -76,16 +76,24 @@ def mock_get_datapoints_empty(rsps):
 
 
 class TestSyntheticQuery:
-    def test_retrieve(self, mock_get_datapoints):
-        dps_res = STS_CLIENT.retrieve(expression='TS{externalID:"abc"} + TS{id:1} ', start=1000000, end=1100001)
-        assert isinstance(dps_res, Datapoints)
-        assert 100001 == len(dps_res)
+    def test_query(self, mock_get_datapoints):
+        dps_res = STS_CLIENT.query(expressions=['TS{externalID:"abc"} + TS{id:1}'], start=1000000, end=1100001)
+        assert isinstance(dps_res[0], Datapoints)
+        assert 100001 == len(dps_res[0])
         assert 11 == len(mock_get_datapoints.calls)
 
-    def test_retrieve_empty(self, mock_get_datapoints_empty):
-        dps_res = STS_CLIENT.retrieve(expression='TS{externalID:"abc"} + TS{id:1} ', start=1000000, end=1100001)
-        assert isinstance(dps_res, Datapoints)
-        assert 0 == len(dps_res)
+    def test_query_limit(self, mock_get_datapoints):
+        dps_res = STS_CLIENT.query(
+            expressions=['TS{externalID:"abc"}', "TS{id:1}"], start=1000000, end=1100001, limit=20000
+        )
+        assert 20000 == len(dps_res[0])
+        assert 20000 == len(dps_res[1])
+        assert 4 == len(mock_get_datapoints.calls)
+
+    def test_query_empty(self, mock_get_datapoints_empty):
+        dps_res = STS_CLIENT.query(expressions=['TS{externalID:"abc"} + TS{id:1}'], start=1000000, end=1100001)
+        assert isinstance(dps_res[0], Datapoints)
+        assert 0 == len(dps_res[0])
         assert 1 == len(mock_get_datapoints_empty.calls)
 
     @pytest.mark.dsl
@@ -109,11 +117,11 @@ class TestSyntheticQuery:
         with pytest.raises(
             ValueError, match="sympy expressions are only supported in combination with the `variables` parameter"
         ):
-            STS_CLIENT.retrieve(symbols("a"), start=0, end="now")
+            STS_CLIENT.query([symbols("a")], start=0, end="now")
 
     @pytest.mark.dsl
     def test_expression_builder_unsupported_missing(self):
         from sympy import symbols, cot
 
         with pytest.raises(ValueError, match="Unsupported sympy class cot"):
-            STS_CLIENT.retrieve(symbols("a") + cot(symbols("a")), start=0, end="now", variables={"a": "a"})
+            STS_CLIENT.query([symbols("a") + cot(symbols("a"))], start=0, end="now", variables={"a": "a"})
