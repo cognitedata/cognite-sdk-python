@@ -21,6 +21,10 @@ Changes are grouped as follows
 
 ## Unreleased
 
+## [1.8.0] - 2020-06-23
+### Added
+- Support for unique value aggregation for events.
+
 ### Changed
 - When `debug=true`, redirects are shown more clearly.
 

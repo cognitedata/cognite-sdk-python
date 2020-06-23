@@ -10,7 +10,7 @@ from cognite.client.data_classes.assets import (
 )
 from cognite.client.data_classes.data_sets import DataSet, DataSetAggregate, DataSetFilter, DataSetList, DataSetUpdate
 from cognite.client.data_classes.datapoints import Datapoint, Datapoints, DatapointsList, DatapointsQuery
-from cognite.client.data_classes.events import EndTimeFilter, Event, EventAggregate, EventFilter, EventList, EventUpdate
+from cognite.client.data_classes.events import EndTimeFilter, Event, EventFilter, EventList, EventUpdate
 from cognite.client.data_classes.files import (
     FileAggregate,
     FileMetadata,
@@ -40,7 +40,7 @@ from cognite.client.data_classes.sequences import (
     SequenceList,
     SequenceUpdate,
 )
-from cognite.client.data_classes.shared import TimestampRange
+from cognite.client.data_classes.shared import TimestampRange, AggregateResult, UniqueValuesAggregateResult
 from cognite.client.data_classes.three_d import (
     BoundingBox3D,
     RevisionCameraProperties,
