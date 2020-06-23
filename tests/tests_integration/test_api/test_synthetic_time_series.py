@@ -42,7 +42,7 @@ class TestSyntheticDatapointsAPI:
             expressions=expressions, start=datetime(2017, 1, 1), end="now", limit=23456
         )
         assert 23456 == len(dps[0])
-        assert 23456 == len(dps[0])
+        assert 23456 == len(dps[1])
         assert 5 == COGNITE_CLIENT.datapoints.synthetic._post.call_count
 
     def test_query_with_errors(self, test_time_series, post_spy):
