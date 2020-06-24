@@ -84,7 +84,7 @@ class SyntheticDatapointsAPI(APIClient):
             tasks.append((query, query_datapoints, limit))
 
         datapoints_summary = utils._concurrency.execute_tasks_concurrently(
-            self.func, tasks, max_workers=self._config.max_workers
+            self._fetch_datapoints, tasks, max_workers=self._config.max_workers
         )
 
         if datapoints_summary.exceptions:
@@ -92,7 +92,7 @@ class SyntheticDatapointsAPI(APIClient):
 
         return datapoints_summary.results
 
-    def func(self, query, datapoints, limit):
+    def _fetch_datapoints(self, query, datapoints, limit):
         while True:
             query["limit"] = min(limit, self._DPS_LIMIT)
             resp = self._post(url_path=self._RESOURCE_PATH + "/query", json={"items": [query]})
