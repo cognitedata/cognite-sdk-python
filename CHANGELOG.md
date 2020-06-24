@@ -24,6 +24,10 @@ Changes are grouped as follows
 ### Changed
 - When `debug=true`, redirects are shown more clearly.
 
+## [1.8.0] - 2020-06-24
+### Added
+- Synthetic timeseries endpoint for DatapointsApi
+
 ## [1.7.0] - 2020-06-03
 ### Fixed
 - datasetId is kept as an integer in dataframes.
