@@ -17,7 +17,7 @@ class SyntheticDatapointsAPI(APIClient):
         super().__init__(*args, **kwargs)
         self._DPS_LIMIT = 10000
 
-    def query(
+    def retrieve(
         self,
         expressions: List[Union[str, "sympy.Expr"]],
         start: Union[int, str, datetime],
@@ -47,14 +47,14 @@ class SyntheticDatapointsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> dps = c.datapoints.synthetic.query(expressions=["TS{id:123} + TS{externalId:'abc'}"], start="2w-ago", end="now")
+                >>> dps = c.datapoints.synthetic.retrieve(expressions=["TS{id:123} + TS{externalId:'abc'}"], start="2w-ago", end="now")
 
             Use variables to re-use an expression:
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> vars = {"A": "my_ts_external_id", "B": client.time_series.retrieve(id=1)}
-                >>> dps = c.datapoints.synthetic.query(expressions=["A+B"], start="2w-ago", end="now", variables=vars)
+                >>> dps = c.datapoints.synthetic.retrieve(expressions=["A+B"], start="2w-ago", end="now", variables=vars)
 
             Use sympy to build complex expressions:
 
@@ -62,51 +62,46 @@ class SyntheticDatapointsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> from sympy import symbols, cos, pi
                 >>> a = sympy.symbols('a')
-                >>> dps = c.datapoints.synthetic.query([pi * cos(a)], start="2w-ago", end="now", variables={"a": "my_ts_external_id"},aggregate='interpolation',granularity='1m')
+                >>> dps = c.datapoints.synthetic.retrieve([pi * cos(a)], start="2w-ago", end="now", variables={"a": "my_ts_external_id"},aggregate='interpolation',granularity='1m')
             """
         if limit is None or limit == -1:
             limit = float("inf")
 
-        queries = []
-        datapoints = []
-        expr_number = len(expressions)
-        lengths = [limit] * expr_number
-        limit_per_expression = int(self._DPS_LIMIT / expr_number)
+        tasks = []
 
-        for e in expressions:
+        for i in range(len(expressions)):
             expression, short_expression = SyntheticDatapointsAPI._build_expression(
-                e, variables, aggregate, granularity
+                expressions[i], variables, aggregate, granularity
             )
             query = {
                 "expression": expression,
                 "start": cognite.client.utils._time.timestamp_to_ms(start),
                 "end": cognite.client.utils._time.timestamp_to_ms(end),
-                "limit": min(limit, limit_per_expression),
             }
-            queries.append(query)
             query_datapoints = Datapoints(value=[], error=[])
-            query_datapoints.external_id = short_expression  # for dataframe readability
-            datapoints.append(query_datapoints)
+            query_datapoints.external_id = short_expression
 
+            tasks.append((query, query_datapoints, limit))
+
+        datapoints_summary = utils._concurrency.execute_tasks_concurrently(
+            self.func, tasks, max_workers=self._config.max_workers
+        )
+
+        if datapoints_summary.exceptions:
+            raise datapoints_summary.exceptions[0]
+
+        return datapoints_summary.results
+
+    def func(self, query, datapoints, limit):
         while True:
-            resp = self._post(url_path=self._RESOURCE_PATH + "/query", json={"items": queries})
-            data = resp.json()["items"]
-
-            for i in range(len(queries)):
-                if lengths[i] <= 0:
-                    continue
-                datapoints[i]._extend(Datapoints._load(data[i], expected_fields=["value", "error"]))
-                lengths[i] -= len(data[i]["datapoints"])
-                if len(data[i]["datapoints"]) < limit_per_expression:
-                    continue
-                queries[i]["start"] = data[i]["datapoints"][-1]["timestamp"] + 1
-                queries[i]["limit"] = min(lengths[i], limit_per_expression)
-
-            if all(len(dps["datapoints"]) < limit_per_expression for dps in data) or all(
-                length <= 0 for length in lengths
-            ):
+            query["limit"] = min(limit, self._DPS_LIMIT)
+            resp = self._post(url_path=self._RESOURCE_PATH + "/query", json={"items": [query]})
+            data = resp.json()["items"][0]
+            datapoints._extend(Datapoints._load(data, expected_fields=["value", "error"]))
+            limit -= len(data["datapoints"])
+            if len(data["datapoints"]) < self._DPS_LIMIT or limit <= 0:
                 break
-
+            query["start"] = data["datapoints"][-1]["timestamp"] + 1
         return datapoints
 
     @staticmethod
