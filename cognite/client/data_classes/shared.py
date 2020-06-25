@@ -21,3 +21,32 @@ class TimestampRange(dict):
     min = CognitePropertyClassUtil.declare_property("min")
 
     # GenStop
+
+
+class AggregateResult(dict):
+    """Aggregation group
+
+    Args:
+        count (int): Size of the aggregation group
+    """
+
+    def __init__(self, count: int = None, **kwargs):
+        self.count = count
+        self.update(kwargs)
+
+    count = CognitePropertyClassUtil.declare_property("count")
+
+
+class AggregateUniqueValuesResult(AggregateResult):
+    """Aggregation group
+
+    Args:
+        count (int): Size of the aggregation group
+        value (Union(int, str)): A unique value from the requested field
+    """
+
+    def __init__(self, count: int = None, value: Union[int, str] = None, **kwargs):
+        super().__init__(count, **kwargs)
+        self.value = value
+
+    value = CognitePropertyClassUtil.declare_property("value")
