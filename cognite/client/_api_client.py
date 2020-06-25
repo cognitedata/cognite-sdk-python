@@ -417,15 +417,26 @@ class APIClient:
         return cls._load(tasks_summary.joined_results(), cognite_client=self._cognite_client)
 
     def _aggregate(
-        self, resource_path: str = None, filter: Union[CogniteFilter, Dict] = None, headers: Dict = None, cls=None
+        self,
+        resource_path: str = None,
+        filter: Union[CogniteFilter, Dict] = None,
+        aggregate: str = None,
+        fields: List[str] = None,
+        headers: Dict = None,
+        cls=None,
     ):
         utils._auxiliary.assert_type(filter, "filter", [dict, CogniteFilter], allow_none=True)
+        utils._auxiliary.assert_type(fields, "fields", [list], allow_none=True)
         if isinstance(filter, CogniteFilter):
             filter = filter.dump(camel_case=True)
         elif isinstance(filter, Dict):
             filter = utils._auxiliary.convert_all_keys_to_camel_case(filter)
         resource_path = resource_path or self._RESOURCE_PATH
         body = {"filter": filter or {}}
+        if aggregate is not None:
+            body["aggregate"] = aggregate
+        if fields is not None:
+            body["fields"] = fields
         res = self._post(url_path=resource_path + "/aggregate", json=body, headers=headers)
         return [cls(**agg) for agg in res.json()["items"]]
 
