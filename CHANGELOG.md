@@ -21,6 +21,10 @@ Changes are grouped as follows
 
 ## Unreleased
 
+### Added
+- Labels endpoint support
+- Assets labelling support
+
 ### Changed
 - When `debug=true`, redirects are shown more clearly.
 
