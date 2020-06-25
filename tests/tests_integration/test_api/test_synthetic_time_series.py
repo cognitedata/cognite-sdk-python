@@ -32,7 +32,7 @@ class TestSyntheticDatapointsAPI:
         query = "ts{id:%d} + ts{id:%d}" % (test_time_series[0].id, test_time_series[1].id)
         dps = COGNITE_CLIENT.datapoints.synthetic.retrieve(
             expressions=query, start=datetime(2017, 1, 1), end="now", limit=23456
-        )[0]
+        )
         assert 23456 == len(dps)
         assert 3 == COGNITE_CLIENT.datapoints.synthetic._post.call_count
 

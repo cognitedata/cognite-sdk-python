@@ -78,8 +78,8 @@ def mock_get_datapoints_empty(rsps):
 class TestSyntheticQuery:
     def test_retreive(self, mock_get_datapoints):
         dps_res = STS_CLIENT.retrieve(expressions='TS{externalID:"abc"} + TS{id:1}', start=1000000, end=1100001)
-        assert isinstance(dps_res[0], Datapoints)
-        assert 100001 == len(dps_res[0])
+        assert isinstance(dps_res, Datapoints)
+        assert 100001 == len(dps_res)
         assert 11 == len(mock_get_datapoints.calls)
 
     def test_retreive_limit(self, mock_get_datapoints):

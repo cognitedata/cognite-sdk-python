@@ -5,7 +5,7 @@ from typing import Dict, List, Union
 import cognite.client.utils._time
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes import Datapoints, TimeSeries
+from cognite.client.data_classes import Datapoints, DatapointsList, TimeSeries
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._experimental_warning import experimental_api
 
@@ -26,7 +26,7 @@ class SyntheticDatapointsAPI(APIClient):
         variables: Dict[str, Union[str, TimeSeries]] = None,
         aggregate: str = None,
         granularity: str = None,
-    ) -> Datapoints:
+    ) -> Union[Datapoints, DatapointsList]:
         """Calculate the result of a function on time series.
 
         Args:
@@ -39,7 +39,7 @@ class SyntheticDatapointsAPI(APIClient):
             granularity (str): use this granularity with the aggregate.
 
         Returns:
-            Datapoints: A Datapoints object containing the calculated data.
+            Union[Datapoints, DatapointsList]: A DatapointsList object containing the calculated data.
 
         Examples:
 
@@ -91,7 +91,11 @@ class SyntheticDatapointsAPI(APIClient):
         if datapoints_summary.exceptions:
             raise datapoints_summary.exceptions[0]
 
-        return datapoints_summary.results
+        return (
+            DatapointsList(datapoints_summary.results, cognite_client=self._cognite_client)
+            if isinstance(expressions, List)
+            else datapoints_summary.results[0]
+        )
 
     def _fetch_datapoints(self, query, datapoints, limit):
         while True:
