@@ -239,11 +239,17 @@ class UpdateClassGenerator:
                 setter = indent + "@property\n"
                 setter += indent + "def {}(self):\n".format(utils.to_snake_case(prop_name))
                 if update_prop_type_hints["set"] == "List":
-                    setter += indent + indent + "return {}._List{}(self, '{}')".format(class_name, class_name, prop_name)
+                    setter += (
+                        indent + indent + "return {}._List{}(self, '{}')".format(class_name, class_name, prop_name)
+                    )
                 elif update_prop_type_hints["set"] == "Dict[str, Any]":
-                    setter += indent + indent + "return {}._Object{}(self, '{}')".format(class_name, class_name, prop_name)
+                    setter += (
+                        indent + indent + "return {}._Object{}(self, '{}')".format(class_name, class_name, prop_name)
+                    )
                 else:
-                    setter += indent + indent + "return {}._Primitive{}(self, '{}')".format(class_name, class_name, prop_name)
+                    setter += (
+                        indent + indent + "return {}._Primitive{}(self, '{}')".format(class_name, class_name, prop_name)
+                    )
                 setters.append(setter)
         return "\n\n".join(setters)
 

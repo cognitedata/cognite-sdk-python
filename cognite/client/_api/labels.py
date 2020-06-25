@@ -18,13 +18,11 @@ class LabelsAPI(APIClient):
         """
         return self.__call__()
 
-    def __call__(
-        self, name: str = None, external_id_prefix: str = None, limit: int = None, chunk_size: int = None,
-    ):
+    def __call__(self, name: str = None, external_id_prefix: str = None, limit: int = None, chunk_size: int = None):
         filter = LabelFilter(name=name, external_id_prefix=external_id_prefix).dump(camel_case=True)
         return self._list_generator(method="POST", limit=limit, filter=filter, chunk_size=chunk_size)
 
-    def list(self, name: str = None, external_id_prefix: str = None, limit: int = 25,) -> LabelList:
+    def list(self, name: str = None, external_id_prefix: str = None, limit: int = 25) -> LabelList:
         """`List Labels <https://docs.cognite.com/api/playground/#operation/listLabels>`_
 
         Args:
@@ -81,7 +79,7 @@ class LabelsAPI(APIClient):
         """
         return self._create_multiple(items=label)
 
-    def delete(self, external_id: Union[str, List[str]] = None,) -> None:
+    def delete(self, external_id: Union[str, List[str]] = None) -> None:
         """`Delete one or more label definitions <https://docs.cognite.com/api/playground/#operation/deleteLabels>`_
 
         Args:

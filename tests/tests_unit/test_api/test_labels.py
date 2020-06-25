@@ -12,7 +12,7 @@ LABELS_API = CogniteClient().labels
 @pytest.fixture
 def mock_labels_response(rsps):
     response_body = {
-        "items": [{"name": "Pump", "description": "guess", "externalId": "PUMP", "createdTime": 1575892259245,}]
+        "items": [{"name": "Pump", "description": "guess", "externalId": "PUMP", "createdTime": 1575892259245}]
     }
 
     url_pattern = re.compile(re.escape(LABELS_API._get_base_url_with_base_path()) + "/.+")

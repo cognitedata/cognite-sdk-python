@@ -356,6 +356,7 @@ class AssetList(CogniteResourceList):
             resources.extend(res)
         return resources
 
+
 # GenClass: AssetLabelFilter
 class AssetLabelFilter(CogniteFilter):
     """Return only the assets matching the specified label.
@@ -374,6 +375,7 @@ class AssetLabelFilter(CogniteFilter):
         self._cognite_client = cognite_client
 
     # GenStop
+
 
 # GenClass: AssetFilter.filter
 class AssetFilter(CogniteFilter):
