@@ -37,7 +37,7 @@ class Event(CogniteResource):
         start_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         end_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         type (str): Type of the event, e.g 'failure'.
-        subtype (str): Subtype of the event, e.g 'electrical'.
+        subtype (str): SubType of the event, e.g 'electrical'.
         description (str): Textual description of the event.
         metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 128000 bytes, up to 256 key-value pairs, of total size at most 200000.
         asset_ids (List[int]): Asset IDs of equipment that this event relates to.
@@ -96,10 +96,10 @@ class EventFilter(CogniteFilter):
         asset_external_ids (List[str]): Asset External IDs of equipment that this event relates to.
         root_asset_ids (List[Dict[str, Any]]): This parameter is deprecated. Use assetSubtreeIds instead. Only include events that have a related asset in a tree rooted at any of these root assetIds.
         asset_subtree_ids (List[Dict[str, Any]]): Only include events that have a related asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
-        data_set_ids (List[Dict[str, Any]]): Only include events that belong to these datasets.
+        data_set_ids (List[Dict[str, Any]]): This parameter is deprecated. Use dataSetId.in instead. Only include events that belong to these datasets.
         source (str): The source of this event.
-        type (str): The event type
-        subtype (str): The event subtype
+        type (str): Type of the event, e.g 'failure'.
+        subtype (str): SubType of the event, e.g 'electrical'.
         created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
         last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
         external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
@@ -170,72 +170,69 @@ class EventUpdate(CogniteUpdate):
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
     """
 
+    class _PrimitiveEventUpdate(CognitePrimitiveUpdate):
+        def set(self, value: Any) -> "EventUpdate":
+            return self._set(value)
+
+    class _ObjectEventUpdate(CogniteObjectUpdate):
+        def set(self, value: Dict) -> "EventUpdate":
+            return self._set(value)
+
+        def add(self, value: Dict) -> "EventUpdate":
+            return self._add(value)
+
+        def remove(self, value: List) -> "EventUpdate":
+            return self._remove(value)
+
+    class _ListEventUpdate(CogniteListUpdate):
+        def set(self, value: List) -> "EventUpdate":
+            return self._set(value)
+
+        def add(self, value: List) -> "EventUpdate":
+            return self._add(value)
+
+        def remove(self, value: List) -> "EventUpdate":
+            return self._remove(value)
+
     @property
     def external_id(self):
-        return _PrimitiveEventUpdate(self, "externalId")
+        return EventUpdate._PrimitiveEventUpdate(self, "externalId")
 
     @property
     def data_set_id(self):
-        return _PrimitiveEventUpdate(self, "dataSetId")
+        return EventUpdate._PrimitiveEventUpdate(self, "dataSetId")
 
     @property
     def start_time(self):
-        return _PrimitiveEventUpdate(self, "startTime")
+        return EventUpdate._PrimitiveEventUpdate(self, "startTime")
 
     @property
     def end_time(self):
-        return _PrimitiveEventUpdate(self, "endTime")
+        return EventUpdate._PrimitiveEventUpdate(self, "endTime")
 
     @property
     def description(self):
-        return _PrimitiveEventUpdate(self, "description")
+        return EventUpdate._PrimitiveEventUpdate(self, "description")
 
     @property
     def metadata(self):
-        return _ObjectEventUpdate(self, "metadata")
+        return EventUpdate._ObjectEventUpdate(self, "metadata")
 
     @property
     def asset_ids(self):
-        return _ListEventUpdate(self, "assetIds")
+        return EventUpdate._ListEventUpdate(self, "assetIds")
 
     @property
     def source(self):
-        return _PrimitiveEventUpdate(self, "source")
+        return EventUpdate._PrimitiveEventUpdate(self, "source")
 
     @property
     def type(self):
-        return _PrimitiveEventUpdate(self, "type")
+        return EventUpdate._PrimitiveEventUpdate(self, "type")
 
     @property
     def subtype(self):
-        return _PrimitiveEventUpdate(self, "subtype")
-
-
-class _PrimitiveEventUpdate(CognitePrimitiveUpdate):
-    def set(self, value: Any) -> EventUpdate:
-        return self._set(value)
-
-
-class _ObjectEventUpdate(CogniteObjectUpdate):
-    def set(self, value: Dict) -> EventUpdate:
-        return self._set(value)
-
-    def add(self, value: Dict) -> EventUpdate:
-        return self._add(value)
-
-    def remove(self, value: List) -> EventUpdate:
-        return self._remove(value)
-
-
-class _ListEventUpdate(CogniteListUpdate):
-    def set(self, value: List) -> EventUpdate:
-        return self._set(value)
-
-    def add(self, value: List) -> EventUpdate:
-        return self._add(value)
-
-    def remove(self, value: List) -> EventUpdate:
-        return self._remove(value)
+        return EventUpdate._PrimitiveEventUpdate(self, "subtype")
 
     # GenStop
 

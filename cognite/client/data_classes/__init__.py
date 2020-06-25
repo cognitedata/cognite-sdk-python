@@ -7,6 +7,7 @@ from cognite.client.data_classes.assets import (
     AssetFilter,
     AssetList,
     AssetUpdate,
+    AssetLabelFilter,
 )
 from cognite.client.data_classes.data_sets import DataSet, DataSetAggregate, DataSetFilter, DataSetList, DataSetUpdate
 from cognite.client.data_classes.datapoints import Datapoint, Datapoints, DatapointsList, DatapointsQuery
@@ -62,3 +63,4 @@ from cognite.client.data_classes.time_series import (
     TimeSeriesList,
     TimeSeriesUpdate,
 )
+from cognite.client.data_classes.labels import Label, LabelFilter, LabelList

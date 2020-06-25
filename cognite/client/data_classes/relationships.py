@@ -78,7 +78,7 @@ class Relationship(CogniteResource):
 
 # GenClass: relationshipsAdvancedListRequest.filter
 class RelationshipFilter(CogniteFilter):
-    """Filter on relationships with exact match. Multiple filter elments in one property, e.g. `dataSets: [ "a", "b" ]`, will return all relationships where the dataSet field is either `a` or `b`. Filters in multiple properties will return the relationships that match all criteria. Filters on a `resourceId` without a `resource` (type) in sources and targets will return relationships that match the resourceId and match any resource type.
+    """Filter on relationships with exact match. Multiple filter elments in one property, e.g. `dataSets: [ "a", "b" ]`, will return all relationships where the dataSet field is either `a` or `b`. Filters in multiple properties will return the relationships that match all criteria. Filters on a `resourceId` without a `resource` (type) in sources and targets will return relationships that match the resourceId and match any resource type. If the filter is not specified it default to an empty filter.
 
     Args:
         sources (List[Dict[str, Any]]): Include relationships that have any of these values in their `source` field
@@ -90,7 +90,7 @@ class RelationshipFilter(CogniteFilter):
         confidence (Dict[str, Any]): Range to filter the field for. (inclusive)
         last_updated_time (Dict[str, Any]): Range to filter the field for. (inclusive)
         created_time (Dict[str, Any]): Range to filter the field for. (inclusive)
-        active_at_time (int): Limits results to those active at this time, i.e. activeAtTime falls between startTime and endTime startTime is treated as inclusive (if activeAtTime is equal to startTime then the relationship will be included). endTime is treated as exclusive (if activeTime is equal to endTime then the relationsip will NOT be included). If a relationship has neither startTime nor endTime, the relationship is active at all times
+        active_at_time (int): Limits results to those active at this time, i.e. `activeAtTime` falls between `startTime` and `endTime` `startTime` is treated as inclusive (if `activeAtTime` is equal to `startTime` then the relationship will be included). `endTime` is treated as exclusive (if `activeTime` is equal to `endTime` then the relationship will NOT be included). If a relationship has neither `startTime` nor `endTime`, the relationship is active at all times
         source_resource (str): Resource type of the source node.
         source_resource_id (str): Resource ID of the source node.
         target_resource (str): Resource type of the target node.

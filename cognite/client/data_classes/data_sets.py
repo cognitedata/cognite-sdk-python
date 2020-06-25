@@ -12,7 +12,7 @@ class DataSet(CogniteResource):
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
         name (str): The name of the data set.
         description (str): The description of the data set.
-        metadata (Dict[str, str]): Custom, application-specific metadata. String key -> String value.
+        metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
         write_protected (bool): To write data to a write-protected data set, you need to be a member of a group that has the "datasets:owner" action for the data set.  To learn more about write-protected data sets, follow this [guide](/cdf/data_governance/concepts/datasets/#write-protection)
         id (int): A server-generated ID for the object.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -50,7 +50,7 @@ class DataSetFilter(CogniteFilter):
     """Filter on data sets with strict matching.
 
     Args:
-        metadata (Dict[str, str]): Custom, application-specific metadata. String key -> String value.
+        metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
         created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
         last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
         external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
@@ -96,52 +96,49 @@ class DataSetUpdate(CogniteUpdate):
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
     """
 
+    class _PrimitiveDataSetUpdate(CognitePrimitiveUpdate):
+        def set(self, value: Any) -> "DataSetUpdate":
+            return self._set(value)
+
+    class _ObjectDataSetUpdate(CogniteObjectUpdate):
+        def set(self, value: Dict) -> "DataSetUpdate":
+            return self._set(value)
+
+        def add(self, value: Dict) -> "DataSetUpdate":
+            return self._add(value)
+
+        def remove(self, value: List) -> "DataSetUpdate":
+            return self._remove(value)
+
+    class _ListDataSetUpdate(CogniteListUpdate):
+        def set(self, value: List) -> "DataSetUpdate":
+            return self._set(value)
+
+        def add(self, value: List) -> "DataSetUpdate":
+            return self._add(value)
+
+        def remove(self, value: List) -> "DataSetUpdate":
+            return self._remove(value)
+
     @property
     def external_id(self):
-        return _PrimitiveDataSetUpdate(self, "externalId")
+        return DataSetUpdate._PrimitiveDataSetUpdate(self, "externalId")
 
     @property
     def name(self):
-        return _PrimitiveDataSetUpdate(self, "name")
+        return DataSetUpdate._PrimitiveDataSetUpdate(self, "name")
 
     @property
     def description(self):
-        return _PrimitiveDataSetUpdate(self, "description")
+        return DataSetUpdate._PrimitiveDataSetUpdate(self, "description")
 
     @property
     def metadata(self):
-        return _ObjectDataSetUpdate(self, "metadata")
+        return DataSetUpdate._ObjectDataSetUpdate(self, "metadata")
 
     @property
     def write_protected(self):
-        return _PrimitiveDataSetUpdate(self, "writeProtected")
-
-
-class _PrimitiveDataSetUpdate(CognitePrimitiveUpdate):
-    def set(self, value: Any) -> DataSetUpdate:
-        return self._set(value)
-
-
-class _ObjectDataSetUpdate(CogniteObjectUpdate):
-    def set(self, value: Dict) -> DataSetUpdate:
-        return self._set(value)
-
-    def add(self, value: Dict) -> DataSetUpdate:
-        return self._add(value)
-
-    def remove(self, value: List) -> DataSetUpdate:
-        return self._remove(value)
-
-
-class _ListDataSetUpdate(CogniteListUpdate):
-    def set(self, value: List) -> DataSetUpdate:
-        return self._set(value)
-
-    def add(self, value: List) -> DataSetUpdate:
-        return self._add(value)
-
-    def remove(self, value: List) -> DataSetUpdate:
-        return self._remove(value)
+        return DataSetUpdate._PrimitiveDataSetUpdate(self, "writeProtected")
 
     # GenStop
 
