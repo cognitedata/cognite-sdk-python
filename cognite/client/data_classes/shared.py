@@ -37,7 +37,7 @@ class AggregateResult(dict):
     count = CognitePropertyClassUtil.declare_property("count")
 
 
-class UniqueValuesAggregateResult(AggregateResult):
+class AggregateUniqueValuesResult(AggregateResult):
     """Aggregation group
 
     Args:

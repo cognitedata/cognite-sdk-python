@@ -9,7 +9,7 @@ from cognite.client.data_classes import (
     EventFilter,
     TimestampRange,
     AggregateResult,
-    UniqueValuesAggregateResult,
+    AggregateUniqueValuesResult,
 )
 from tests.utils import jsgz_load
 
@@ -50,7 +50,7 @@ def mock_count_aggregate_response(rsps):
 
 
 @pytest.fixture
-def mock_unique_values_aggregate_response(rsps):
+def mock_aggregate_unique_values_response(rsps):
     url_pattern = re.compile(re.escape(EVENTS_API._get_base_url_with_base_path()) + "/events/aggregate")
     rsps.add(rsps.POST, url_pattern, status=200, json={"items": [{"count": 5, "value": "WORKORDER"}]})
     yield rsps
@@ -106,9 +106,9 @@ class TestEvents:
         assert isinstance(res[0], AggregateResult)
         assert res[0].count == 10
 
-    def test_unique_values_aggregate(self, mock_unique_values_aggregate_response):
-        res = EVENTS_API.unique_values_aggregate(filter={"type": "WORKORDER"}, fields=["subtype"])
-        assert isinstance(res[0], UniqueValuesAggregateResult)
+    def test_aggregate_unique_values(self, mock_aggregate_unique_values_response):
+        res = EVENTS_API.aggregate_unique_values(filter={"type": "WORKORDER"}, fields=["subtype"])
+        assert isinstance(res[0], AggregateUniqueValuesResult)
         assert res[0].count == 5
         assert res[0].value == "WORKORDER"
 

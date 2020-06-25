@@ -10,7 +10,7 @@ from cognite.client.data_classes import (
     EventList,
     EventUpdate,
     TimestampRange,
-    UniqueValuesAggregateResult,
+    AggregateUniqueValuesResult,
 )
 
 
@@ -294,9 +294,9 @@ class EventsAPI(APIClient):
 
         return self._aggregate(filter=filter, cls=AggregateResult)
 
-    def unique_values_aggregate(
+    def aggregate_unique_values(
         self, filter: Union[EventFilter, Dict] = None, fields: List[str] = None
-    ) -> List[UniqueValuesAggregateResult]:
+    ) -> List[AggregateUniqueValuesResult]:
         """`Aggregate unique values for events <https://docs.cognite.com/api/v1/#operation/aggregateEvents>`_
 
         Args:
@@ -304,7 +304,7 @@ class EventsAPI(APIClient):
             fields (List[str]): The field name(s) to apply the aggregation on. Currently limited to one field.
 
         Returns:
-            List[UniqueValuesAggregateResult]: List of event aggregates
+            List[AggregateUniqueValuesResult]: List of event aggregates
 
         Examples:
 
@@ -315,7 +315,7 @@ class EventsAPI(APIClient):
                 >>> aggregate_subtype = c.events.aggregate(filter={"type": "failure"}, fields=["subtype"])
         """
 
-        return self._aggregate(filter=filter, fields=fields, aggregate="uniqueValues", cls=UniqueValuesAggregateResult)
+        return self._aggregate(filter=filter, fields=fields, aggregate="uniqueValues", cls=AggregateUniqueValuesResult)
 
     def create(self, event: Union[Event, List[Event]]) -> Union[Event, EventList]:
         """`Create one or more events. <https://docs.cognite.com/api/v1/#operation/createEvents>`_

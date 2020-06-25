@@ -40,7 +40,7 @@ from cognite.client.data_classes.sequences import (
     SequenceList,
     SequenceUpdate,
 )
-from cognite.client.data_classes.shared import TimestampRange, AggregateResult, UniqueValuesAggregateResult
+from cognite.client.data_classes.shared import TimestampRange, AggregateResult, AggregateUniqueValuesResult
 from cognite.client.data_classes.three_d import (
     BoundingBox3D,
     RevisionCameraProperties,
