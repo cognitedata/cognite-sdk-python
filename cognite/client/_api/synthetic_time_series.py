@@ -19,7 +19,7 @@ class SyntheticDatapointsAPI(APIClient):
 
     def retrieve(
         self,
-        expressions: List[Union[str, "sympy.Expr"]],
+        expressions: Union[str, "sympy.Expr", List[Union[str, "sympy.Expr"]]],
         start: Union[int, str, datetime],
         end: Union[int, str, datetime],
         limit: int = None,
@@ -30,7 +30,7 @@ class SyntheticDatapointsAPI(APIClient):
         """Calculate the result of a function on time series.
 
         Args:
-            expressions (List[Union[str, "sympy.Expr"]]): Functions to be calculated. Supports both strings and sympy expressions. Strings can have either the API `ts{}` syntax, or contain variable names to be replaced using the `variables` parameter.
+            expressions (Union[str, "sympy.Expr", List[Union[str, "sympy.Expr"]]]): Functions to be calculated. Supports both strings and sympy expressions. Strings can have either the API `ts{}` syntax, or contain variable names to be replaced using the `variables` parameter.
             start (Union[int, str, datetime]): Inclusive start.
             end (Union[int, str, datetime]): Exclusive end
             limit (int): Number of datapoints per expression to retrieve.
@@ -68,10 +68,11 @@ class SyntheticDatapointsAPI(APIClient):
             limit = float("inf")
 
         tasks = []
+        expressions_to_iterate = expressions if isinstance(expressions, List) else [expressions]
 
-        for i in range(len(expressions)):
+        for i in range(len(expressions_to_iterate)):
             expression, short_expression = SyntheticDatapointsAPI._build_expression(
-                expressions[i], variables, aggregate, granularity
+                expressions_to_iterate[i], variables, aggregate, granularity
             )
             query = {
                 "expression": expression,
