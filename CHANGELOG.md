@@ -14,11 +14,6 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [Planned]
-- Concurrent reads for all resource types using `/cursors` endpoints
-- Upserts for all resource types
-- Separate read/write fields on data classes
-
 ## Unreleased
 ### Added
 - Support for unique value aggregation for events.
