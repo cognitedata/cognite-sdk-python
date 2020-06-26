@@ -20,15 +20,14 @@ Changes are grouped as follows
 - Separate read/write fields on data classes
 
 ## Unreleased
-### Added
-- Support for unique value aggregation for events.
-
-### Changed
-- When `debug=true`, redirects are shown more clearly.
 
 ## [1.8.0] - 2020-06-24
 ### Added
 - Synthetic timeseries endpoint for DatapointsApi
+- Support for unique value aggregation for events.
+
+### Changed
+- When `debug=true`, redirects are shown more clearly.
 
 ## [1.7.0] - 2020-06-03
 ### Fixed
