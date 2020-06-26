@@ -5,6 +5,7 @@ from unittest import mock
 import pytest
 
 from cognite.client import CogniteClient
+from cognite.client.data_classes import Datapoints, DatapointsList
 
 COGNITE_CLIENT = CogniteClient()
 
@@ -65,22 +66,24 @@ class TestSyntheticDatapointsAPI:
         from sympy import symbols
 
         dps1 = COGNITE_CLIENT.datapoints.synthetic.query(
-            expressions=[symbols("a")],
+            expressions=symbols("a"),
             start=datetime(2017, 1, 1),
             end="now",
             limit=100,
             variables={"a": test_time_series[0].external_id},
-        )[0]
+        )
         dps2 = COGNITE_CLIENT.datapoints.synthetic.query(
             expressions=[symbols("a")],
             start=datetime(2017, 1, 1),
             end="now",
             limit=100,
-            variables={"a": test_time_series[0]},
-        )[0]
+            variables={"a": test_time_series[0], "b": test_time_series[0].external_id},
+        )
         assert 100 == len(dps1)
-        assert 100 == len(dps2)
-        assert dps1 == dps2
+        assert 100 == len(dps2[0])
+        assert dps1 == dps2[0]
+        assert isinstance(dps1, Datapoints)
+        assert isinstance(dps2, DatapointsList)
 
     @pytest.mark.dsl
     def test_expression_builder_complex(self, test_time_series):
