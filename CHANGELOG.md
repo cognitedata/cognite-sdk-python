@@ -20,8 +20,6 @@ Changes are grouped as follows
 - Separate read/write fields on data classes
 
 ## Unreleased
-
-## [1.8.0] - 2020-06-24
 ### Added
 - Synthetic timeseries endpoint for DatapointsApi
 - Support for unique value aggregation for events.
