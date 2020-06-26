@@ -73,7 +73,7 @@ class TestSyntheticDatapointsAPI:
             variables={"a": test_time_series[0].external_id},
         )
         dps2 = COGNITE_CLIENT.datapoints.synthetic.query(
-            expressions=[symbols("a")],
+            expressions=[symbols("a"), symbols("b")],
             start=datetime(2017, 1, 1),
             end="now",
             limit=100,
