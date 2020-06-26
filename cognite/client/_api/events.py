@@ -3,13 +3,14 @@ from typing import *
 from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import (
+    AggregateResult,
     EndTimeFilter,
     Event,
-    EventAggregate,
     EventFilter,
     EventList,
     EventUpdate,
     TimestampRange,
+    AggregateUniqueValuesResult,
 )
 
 
@@ -273,14 +274,14 @@ class EventsAPI(APIClient):
         ).dump(camel_case=True)
         return self._list(method="POST", limit=limit, filter=filter, partitions=partitions, sort=sort)
 
-    def aggregate(self, filter: Union[EventFilter, Dict] = None) -> List[EventAggregate]:
+    def aggregate(self, filter: Union[EventFilter, Dict] = None) -> List[AggregateResult]:
         """`Aggregate events <https://docs.cognite.com/api/v1/#operation/aggregateEvents>`_
 
         Args:
             filter (Union[EventFilter, Dict]): Filter on events filter with exact match
 
         Returns:
-            List[EventAggregate]: List of event aggregates
+            List[AggregateResult]: List of event aggregates
         
         Examples:
 
@@ -291,7 +292,30 @@ class EventsAPI(APIClient):
                 >>> aggregate_type = c.events.aggregate(filter={"type": "failure"})
         """
 
-        return self._aggregate(filter=filter, cls=EventAggregate)
+        return self._aggregate(filter=filter, cls=AggregateResult)
+
+    def aggregate_unique_values(
+        self, filter: Union[EventFilter, Dict] = None, fields: List[str] = None
+    ) -> List[AggregateUniqueValuesResult]:
+        """`Aggregate unique values for events <https://docs.cognite.com/api/v1/#operation/aggregateEvents>`_
+
+        Args:
+            filter (Union[EventFilter, Dict]): Filter on events filter with exact match
+            fields (List[str]): The field name(s) to apply the aggregation on. Currently limited to one field.
+
+        Returns:
+            List[AggregateUniqueValuesResult]: List of event aggregates
+
+        Examples:
+
+            Aggregate events:
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> aggregate_subtype = c.events.aggregate(filter={"type": "failure"}, fields=["subtype"])
+        """
+
+        return self._aggregate(filter=filter, fields=fields, aggregate="uniqueValues", cls=AggregateUniqueValuesResult)
 
     def create(self, event: Union[Event, List[Event]]) -> Union[Event, EventList]:
         """`Create one or more events. <https://docs.cognite.com/api/v1/#operation/createEvents>`_

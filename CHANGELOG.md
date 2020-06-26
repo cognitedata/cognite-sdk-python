@@ -20,6 +20,8 @@ Changes are grouped as follows
 - Separate read/write fields on data classes
 
 ## Unreleased
+### Added
+- Support for unique value aggregation for events.
 
 ### Changed
 - When `debug=true`, redirects are shown more clearly.
