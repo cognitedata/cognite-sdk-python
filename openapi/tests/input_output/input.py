@@ -31,6 +31,7 @@ class CognitePropertyClassUtil:
 class TimestampRange:
     pass
 
+
 class AssetLabelFilter:
     pass
 
