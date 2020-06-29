@@ -58,6 +58,7 @@ class Asset(CogniteResource):
         data_set_id (int): The id of the dataset this asset belongs to.
         metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
         source (str): The source of the asset.
+        labels (List[Dict[str, Any]]): A list of the labels associated with this resource item.
         id (int): A server-generated ID for the object.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -76,6 +77,7 @@ class Asset(CogniteResource):
         data_set_id: int = None,
         metadata: Dict[str, str] = None,
         source: str = None,
+        labels: List[Dict[str, Any]] = None,
         id: int = None,
         created_time: int = None,
         last_updated_time: int = None,
@@ -91,6 +93,7 @@ class Asset(CogniteResource):
         self.data_set_id = data_set_id
         self.metadata = metadata
         self.source = source
+        self.labels = labels
         self.id = id
         self.created_time = created_time
         self.last_updated_time = last_updated_time
@@ -198,66 +201,85 @@ class AssetUpdate(CogniteUpdate):
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
     """
 
+    class _PrimitiveAssetUpdate(CognitePrimitiveUpdate):
+        def set(self, value: Any) -> "AssetUpdate":
+            return self._set(value)
+
+    class _ObjectAssetUpdate(CogniteObjectUpdate):
+        def set(self, value: Dict) -> "AssetUpdate":
+            return self._set(value)
+
+        def add(self, value: Dict) -> "AssetUpdate":
+            return self._add(value)
+
+        def remove(self, value: List) -> "AssetUpdate":
+            return self._remove(value)
+
+    class _ListAssetUpdate(CogniteListUpdate):
+        def set(self, value: List) -> "AssetUpdate":
+            return self._set(value)
+
+        def add(self, value: List) -> "AssetUpdate":
+            return self._add(value)
+
+        def remove(self, value: List) -> "AssetUpdate":
+            return self._remove(value)
+
     @property
     def external_id(self):
-        return _PrimitiveAssetUpdate(self, "externalId")
+        return AssetUpdate._PrimitiveAssetUpdate(self, "externalId")
 
     @property
     def name(self):
-        return _PrimitiveAssetUpdate(self, "name")
+        return AssetUpdate._PrimitiveAssetUpdate(self, "name")
 
     @property
     def description(self):
-        return _PrimitiveAssetUpdate(self, "description")
+        return AssetUpdate._PrimitiveAssetUpdate(self, "description")
 
     @property
     def data_set_id(self):
-        return _PrimitiveAssetUpdate(self, "dataSetId")
+        return AssetUpdate._PrimitiveAssetUpdate(self, "dataSetId")
 
     @property
     def metadata(self):
-        return _ObjectAssetUpdate(self, "metadata")
+        return AssetUpdate._ObjectAssetUpdate(self, "metadata")
 
     @property
     def source(self):
-        return _PrimitiveAssetUpdate(self, "source")
+        return AssetUpdate._PrimitiveAssetUpdate(self, "source")
 
     @property
     def parent_id(self):
-        return _PrimitiveAssetUpdate(self, "parentId")
+        return AssetUpdate._PrimitiveAssetUpdate(self, "parentId")
 
     @property
     def parent_external_id(self):
-        return _PrimitiveAssetUpdate(self, "parentExternalId")
-
-
-class _PrimitiveAssetUpdate(CognitePrimitiveUpdate):
-    def set(self, value: Any) -> AssetUpdate:
-        return self._set(value)
-
-
-class _ObjectAssetUpdate(CogniteObjectUpdate):
-    def set(self, value: Dict) -> AssetUpdate:
-        return self._set(value)
-
-    def add(self, value: Dict) -> AssetUpdate:
-        return self._add(value)
-
-    def remove(self, value: List) -> AssetUpdate:
-        return self._remove(value)
-
-
-class _ListAssetUpdate(CogniteListUpdate):
-    def set(self, value: List) -> AssetUpdate:
-        return self._set(value)
-
-    def add(self, value: List) -> AssetUpdate:
-        return self._add(value)
-
-    def remove(self, value: List) -> AssetUpdate:
-        return self._remove(value)
+        return AssetUpdate._PrimitiveAssetUpdate(self, "parentExternalId")
 
     # GenStop
+
+    @property
+    def labels(self):
+        raise Exception("Use the add_label and remove_label functions to handle label updates")
+
+    def add_label(self, external_id: str = None):
+        """Upsert the label on the asset"""
+        if self._update_object.get("labels") is None:
+            self._update_object["labels"] = {}
+        if self._update_object["labels"].get("add") is None:
+            self._update_object["labels"]["add"] = []
+        self._update_object["labels"]["add"].append({"externalId": external_id})
+        return self
+
+    def remove_label(self, external_id: str = None):
+        """Remove the label from an asset"""
+        if self._update_object.get("labels") is None:
+            self._update_object["labels"] = {}
+        if self._update_object["labels"].get("remove") is None:
+            self._update_object["labels"]["remove"] = []
+        self._update_object["labels"]["remove"].append({"externalId": external_id})
+        return self
 
 
 class AssetList(CogniteResourceList):
@@ -335,6 +357,26 @@ class AssetList(CogniteResourceList):
         return resources
 
 
+# GenClass: AssetLabelFilter
+class AssetLabelFilter(CogniteFilter):
+    """Return only the assets matching the specified label.
+
+    Args:
+        contains_any (List[Dict[str, Any]]): The resource item contains at least one of the listed labels.
+        contains_all (List[Dict[str, Any]]): The resource item contains at least all the listed labels.
+        cognite_client (CogniteClient): The client to associate with this object.
+    """
+
+    def __init__(
+        self, contains_any: List[Dict[str, Any]] = None, contains_all: List[Dict[str, Any]] = None, cognite_client=None
+    ):
+        self.contains_any = contains_any
+        self.contains_all = contains_all
+        self._cognite_client = cognite_client
+
+    # GenStop
+
+
 # GenClass: AssetFilter.filter
 class AssetFilter(CogniteFilter):
     """Filter on assets with strict matching.
@@ -345,13 +387,15 @@ class AssetFilter(CogniteFilter):
         parent_external_ids (List[str]): Return only the direct descendants of the specified assets.
         root_ids (List[Dict[str, Any]]): This parameter is deprecated. Use assetSubtreeIds instead. Only include these root assets and their descendants.
         asset_subtree_ids (List[Dict[str, Any]]): Only include assets in subtrees rooted at the specified assets (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
-        data_set_ids (List[Dict[str, Any]]): No description.
+        data_set_id (Union[Dict[str, Any], DataSetIdFilter]): No description.
+        data_set_ids (List[Dict[str, Any]]): This parameter is deprecated. Use dataSetId.in instead.
         metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
         source (str): The source of the asset.
         created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
         last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
         root (bool): Whether the filtered assets are root assets, or not. Set to True to only list root assets.
         external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
+        labels (Union[Dict[str, Any], AssetLabelFilter]): Return only the assets matching the specified label.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
@@ -369,6 +413,7 @@ class AssetFilter(CogniteFilter):
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
         root: bool = None,
         external_id_prefix: str = None,
+        labels: Union[Dict[str, Any], AssetLabelFilter] = None,
         cognite_client=None,
     ):
         self.name = name
@@ -383,6 +428,7 @@ class AssetFilter(CogniteFilter):
         self.last_updated_time = last_updated_time
         self.root = root
         self.external_id_prefix = external_id_prefix
+        self.labels = labels
         self._cognite_client = cognite_client
 
     @classmethod
@@ -393,6 +439,8 @@ class AssetFilter(CogniteFilter):
                 instance.created_time = TimestampRange(**instance.created_time)
             if instance.last_updated_time is not None:
                 instance.last_updated_time = TimestampRange(**instance.last_updated_time)
+            if instance.labels is not None:
+                instance.labels = AssetLabelFilter(**instance.labels)
         return instance
 
     # GenStop

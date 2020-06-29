@@ -23,6 +23,10 @@ Changes are grouped as follows
 ### Added
 - Support for unique value aggregation for events.
 
+### Added
+- Labels endpoint support
+- Assets labelling support
+
 ### Changed
 - When `debug=true`, redirects are shown more clearly.
 

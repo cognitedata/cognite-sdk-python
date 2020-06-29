@@ -133,64 +133,61 @@ class AssetUpdate(CogniteUpdate):
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
     """
 
+    class _PrimitiveAssetUpdate(CognitePrimitiveUpdate):
+        def set(self, value: Any) -> "AssetUpdate":
+            return self._set(value)
+
+    class _ObjectAssetUpdate(CogniteObjectUpdate):
+        def set(self, value: Dict) -> "AssetUpdate":
+            return self._set(value)
+
+        def add(self, value: Dict) -> "AssetUpdate":
+            return self._add(value)
+
+        def remove(self, value: List) -> "AssetUpdate":
+            return self._remove(value)
+
+    class _ListAssetUpdate(CogniteListUpdate):
+        def set(self, value: List) -> "AssetUpdate":
+            return self._set(value)
+
+        def add(self, value: List) -> "AssetUpdate":
+            return self._add(value)
+
+        def remove(self, value: List) -> "AssetUpdate":
+            return self._remove(value)
+
     @property
     def external_id(self):
-        return _PrimitiveAssetUpdate(self, "externalId")
+        return AssetUpdate._PrimitiveAssetUpdate(self, "externalId")
 
     @property
     def name(self):
-        return _PrimitiveAssetUpdate(self, "name")
+        return AssetUpdate._PrimitiveAssetUpdate(self, "name")
 
     @property
     def description(self):
-        return _PrimitiveAssetUpdate(self, "description")
+        return AssetUpdate._PrimitiveAssetUpdate(self, "description")
 
     @property
     def data_set_id(self):
-        return _PrimitiveAssetUpdate(self, "dataSetId")
+        return AssetUpdate._PrimitiveAssetUpdate(self, "dataSetId")
 
     @property
     def metadata(self):
-        return _ObjectAssetUpdate(self, "metadata")
+        return AssetUpdate._ObjectAssetUpdate(self, "metadata")
 
     @property
     def source(self):
-        return _PrimitiveAssetUpdate(self, "source")
+        return AssetUpdate._PrimitiveAssetUpdate(self, "source")
 
     @property
     def parent_id(self):
-        return _PrimitiveAssetUpdate(self, "parentId")
+        return AssetUpdate._PrimitiveAssetUpdate(self, "parentId")
 
     @property
     def parent_external_id(self):
-        return _PrimitiveAssetUpdate(self, "parentExternalId")
-
-
-class _PrimitiveAssetUpdate(CognitePrimitiveUpdate):
-    def set(self, value: Any) -> AssetUpdate:
-        return self._set(value)
-
-
-class _ObjectAssetUpdate(CogniteObjectUpdate):
-    def set(self, value: Dict) -> AssetUpdate:
-        return self._set(value)
-
-    def add(self, value: Dict) -> AssetUpdate:
-        return self._add(value)
-
-    def remove(self, value: List) -> AssetUpdate:
-        return self._remove(value)
-
-
-class _ListAssetUpdate(CogniteListUpdate):
-    def set(self, value: List) -> AssetUpdate:
-        return self._set(value)
-
-    def add(self, value: List) -> AssetUpdate:
-        return self._add(value)
-
-    def remove(self, value: List) -> AssetUpdate:
-        return self._remove(value)
+        return AssetUpdate._PrimitiveAssetUpdate(self, "parentExternalId")
 
     # GenStop
 
