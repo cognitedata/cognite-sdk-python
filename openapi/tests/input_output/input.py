@@ -31,6 +31,9 @@ class CognitePropertyClassUtil:
 class TimestampRange:
     pass
 
+class AssetLabelFilter:
+    pass
+
 
 # GenPropertyClass: AggregateResultItem
 class AggregateResultItem(dict):
