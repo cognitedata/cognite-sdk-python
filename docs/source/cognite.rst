@@ -301,6 +301,26 @@ Data classes
     :members:
     :show-inheritance:
 
+Labels
+------
+
+List labels
+^^^^^^^^^^^
+.. automethod:: cognite.client._api.labels.LabelsAPI.list
+
+Create a label
+^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.labels.LabelsAPI.create
+
+Delete labels
+^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.labels.LabelsAPI.delete
+
+Data classes
+^^^^^^^^^^^^
+.. automodule:: cognite.client.data_classes.labels
+    :members:
+    :show-inheritance:
 
 Events
 ------
@@ -319,6 +339,7 @@ List events
 Aggregate events
 ^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.events.EventsAPI.aggregate
+.. automethod:: cognite.client._api.events.EventsAPI.aggregate_unique_values
 
 Search for events
 ^^^^^^^^^^^^^^^^^
@@ -481,6 +502,13 @@ Data classes
     :members:
     :show-inheritance:
 
+
+Synthetic time series
+---------------------
+
+Calculate the result of a function on time series
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.synthetic_time_series.SyntheticDatapointsAPI.query
 
 Data points
 -----------
@@ -1122,12 +1150,3 @@ Data classes
 .. automodule:: cognite.client.data_classes.relationships
     :members:
     :show-inheritance:
-
-Synthetic time series
----------------------
-.. WARNING::
-    The synthetic time series API is experimental and subject to breaking changes. It should not be used in production code.
-
-Calculate the result of a function on time series
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.synthetic_time_series.SyntheticDatapointsAPI.retrieve
