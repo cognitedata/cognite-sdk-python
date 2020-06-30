@@ -16,6 +16,7 @@ Changes are grouped as follows
 
 ## Unreleased
 ### Added
+- Synthetic timeseries endpoint for DatapointsApi
 - Support for unique value aggregation for events.
 
 ### Added
