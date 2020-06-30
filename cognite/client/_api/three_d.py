@@ -551,7 +551,7 @@ class ThreeDAssetMappingAPI(APIClient):
         chunks = utils._auxiliary.split_into_chunks(
             [a.dump(camel_case=True) for a in asset_mapping], self._DELETE_LIMIT
         )
-        tasks = [{"url_path": path + "/delete", "json": {"items": chunk}} for chunk in chunks]
+        tasks = [{"url_path": path + "/delete", "json": {"items": { "nodeId": chunk.nodeId, "assetId": chunk.assetId }}} for chunk in chunks]
         summary = utils._concurrency.execute_tasks_concurrently(self._post, tasks, self._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: task["json"]["items"],
