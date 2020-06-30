@@ -14,15 +14,9 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [Planned]
-- Concurrent reads for all resource types using `/cursors` endpoints
-- Upserts for all resource types
-- Separate read/write fields on data classes
-
-## Unreleased
-
-## [1.8.0] - 2020-06-29
+## [1.8.0] - 2020-06-30
 ### Added
+- Synthetic timeseries endpoint for DatapointsApi
 - Labels endpoint support
 - Assets labelling support
 - Support for unique value aggregation for events.
