@@ -32,6 +32,10 @@ class TimestampRange:
     pass
 
 
+class AssetLabelFilter:
+    pass
+
+
 # GenPropertyClass: AggregateResultItem
 class AggregateResultItem(dict):
     pass
