@@ -73,7 +73,7 @@ class TestEventsAPI:
 
     def test_partitioned_list(self):
         # stop race conditions by cutting off max created time
-        maxtime = utils.timestamp_to_ms(datetime(2019, 12, 25, 17, 30))
+        maxtime = utils.timestamp_to_ms(datetime(2019, 5, 25, 17, 30))
         res_flat = COGNITE_CLIENT.events.list(limit=None, type="test-data-populator", start_time={"max": maxtime})
         res_part = COGNITE_CLIENT.events.list(
             partitions=8, type="test-data-populator", start_time={"max": maxtime}, limit=None

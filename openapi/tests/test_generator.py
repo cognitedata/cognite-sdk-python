@@ -100,6 +100,8 @@ class TestClassGenerator:
                 instance.created_time = TimestampRange(**instance.created_time)
             if instance.last_updated_time is not None:
                 instance.last_updated_time = TimestampRange(**instance.last_updated_time)
+            if instance.labels is not None:
+                instance.labels = AssetLabelFilter(**instance.labels)
         return instance
 """
             == loader
