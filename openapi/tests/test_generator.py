@@ -100,6 +100,8 @@ class TestClassGenerator:
                 instance.created_time = TimestampRange(**instance.created_time)
             if instance.last_updated_time is not None:
                 instance.last_updated_time = TimestampRange(**instance.last_updated_time)
+            if instance.labels is not None:
+                instance.labels = AssetLabelFilter(**instance.labels)
         return instance
 """
             == loader
@@ -145,71 +147,71 @@ class TestUpdateClassGenerator:
         assert (
             """    @property
     def external_id(self):
-        return _PrimitiveEventUpdate(self, 'externalId')
+        return EventUpdate._PrimitiveEventUpdate(self, 'externalId')
 
     @property
     def data_set_id(self):
-        return _PrimitiveEventUpdate(self, 'dataSetId')
+        return EventUpdate._PrimitiveEventUpdate(self, 'dataSetId')
 
     @property
     def start_time(self):
-        return _PrimitiveEventUpdate(self, 'startTime')
+        return EventUpdate._PrimitiveEventUpdate(self, 'startTime')
 
     @property
     def end_time(self):
-        return _PrimitiveEventUpdate(self, 'endTime')
+        return EventUpdate._PrimitiveEventUpdate(self, 'endTime')
 
     @property
     def description(self):
-        return _PrimitiveEventUpdate(self, 'description')
+        return EventUpdate._PrimitiveEventUpdate(self, 'description')
 
     @property
     def metadata(self):
-        return _ObjectEventUpdate(self, 'metadata')
+        return EventUpdate._ObjectEventUpdate(self, 'metadata')
 
     @property
     def asset_ids(self):
-        return _ListEventUpdate(self, 'assetIds')
+        return EventUpdate._ListEventUpdate(self, 'assetIds')
 
     @property
     def source(self):
-        return _PrimitiveEventUpdate(self, 'source')
+        return EventUpdate._PrimitiveEventUpdate(self, 'source')
 
     @property
     def type(self):
-        return _PrimitiveEventUpdate(self, 'type')
+        return EventUpdate._PrimitiveEventUpdate(self, 'type')
 
     @property
     def subtype(self):
-        return _PrimitiveEventUpdate(self, 'subtype')"""
+        return EventUpdate._PrimitiveEventUpdate(self, 'subtype')"""
             == setters
         )
 
     def test_generate_attr_update_classes(self):
-        attr_update_classes = UPDATE_CLASS_GENERATOR.generate_attr_update_classes("AssetUpdate")
+        attr_update_classes = UPDATE_CLASS_GENERATOR.generate_attr_update_classes("AssetUpdate", 0)
         assert (
             """class _PrimitiveAssetUpdate(CognitePrimitiveUpdate):
-    def set(self, value: Any) -> AssetUpdate:
+    def set(self, value: Any) -> "AssetUpdate":
         return self._set(value)
 
 class _ObjectAssetUpdate(CogniteObjectUpdate):
-    def set(self, value: Dict) -> AssetUpdate:
+    def set(self, value: Dict) -> "AssetUpdate":
         return self._set(value)
 
-    def add(self, value: Dict) -> AssetUpdate:
+    def add(self, value: Dict) -> "AssetUpdate":
         return self._add(value)
 
-    def remove(self, value: List) -> AssetUpdate:
+    def remove(self, value: List) -> "AssetUpdate":
         return self._remove(value)
 
 class _ListAssetUpdate(CogniteListUpdate):
-    def set(self, value: List) -> AssetUpdate:
+    def set(self, value: List) -> "AssetUpdate":
         return self._set(value)
 
-    def add(self, value: List) -> AssetUpdate:
+    def add(self, value: List) -> "AssetUpdate":
         return self._add(value)
 
-    def remove(self, value: List) -> AssetUpdate:
+    def remove(self, value: List) -> "AssetUpdate":
         return self._remove(value)"""
             == attr_update_classes
         )
@@ -218,7 +220,7 @@ class _ListAssetUpdate(CogniteListUpdate):
         schema = UPDATE_CLASS_GENERATOR._spec.components.schemas.get("AssetChange")
         docstring = UPDATE_CLASS_GENERATOR.generate_docstring(schema, indentation=4)
         setters = UPDATE_CLASS_GENERATOR.generate_setters(schema, "AssetUpdate", indentation=4)
-        attr_update_classes = UPDATE_CLASS_GENERATOR.generate_attr_update_classes("AssetUpdate")
+        attr_update_classes = UPDATE_CLASS_GENERATOR.generate_attr_update_classes("AssetUpdate", 4)
 
         generated = UPDATE_CLASS_GENERATOR.generate_code_for_class_segments()["AssetUpdate"]
-        assert generated == docstring + "\n" + setters + "\n" + attr_update_classes
+        assert generated == docstring + "\n" + attr_update_classes + "\n" + setters

@@ -24,6 +24,10 @@ Changes are grouped as follows
 - Synthetic timeseries endpoint for DatapointsApi
 - Support for unique value aggregation for events.
 
+### Added
+- Labels endpoint support
+- Assets labelling support
+
 ### Changed
 - When `debug=true`, redirects are shown more clearly.
 
