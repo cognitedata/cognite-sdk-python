@@ -4,7 +4,8 @@ from unittest import mock
 
 import pytest
 
-from cognite.client.experimental import CogniteClient
+from cognite.client import CogniteClient
+from cognite.client.data_classes import Datapoints, DatapointsList
 
 COGNITE_CLIENT = CogniteClient()
 
@@ -28,22 +29,31 @@ def post_spy():
 
 
 class TestSyntheticDatapointsAPI:
-    def test_retrieve(self, test_time_series, post_spy):
+    def test_query(self, test_time_series, post_spy):
         query = "ts{id:%d} + ts{id:%d}" % (test_time_series[0].id, test_time_series[1].id)
-        dps = COGNITE_CLIENT.datapoints.synthetic.retrieve(
-            expression=query, start=datetime(2017, 1, 1), end="now", limit=23456
+        dps = COGNITE_CLIENT.datapoints.synthetic.query(
+            expressions=query, start=datetime(2017, 1, 1), end="now", limit=23456
         )
         assert 23456 == len(dps)
         assert 3 == COGNITE_CLIENT.datapoints.synthetic._post.call_count
 
-    def test_retrieve_with_errors(self, test_time_series, post_spy):
-        dps = COGNITE_CLIENT.datapoints.synthetic.retrieve(
-            expression="A / (B - B)",
+    def test_query_with_multiple_expressions(self, test_time_series, post_spy):
+        expressions = ["ts{id:%d}" % test_time_series[0].id, "ts{id:%d}" % test_time_series[1].id]
+        dps = COGNITE_CLIENT.datapoints.synthetic.query(
+            expressions=expressions, start=datetime(2017, 1, 1), end="now", limit=23456
+        )
+        assert 23456 == len(dps[0])
+        assert 23456 == len(dps[1])
+        assert 6 == COGNITE_CLIENT.datapoints.synthetic._post.call_count
+
+    def test_query_with_errors(self, test_time_series, post_spy):
+        dps = COGNITE_CLIENT.datapoints.synthetic.query(
+            expressions=["A / (B - B)"],
             start=datetime(2017, 1, 1),
             end="now",
             limit=100,
             variables={"A": test_time_series[0], "B": test_time_series[1]},
-        )
+        )[0]
         assert 100 == len(dps)
         assert 100 == len(dps.error)
         assert all(x is not None for x in dps.error)
@@ -55,23 +65,25 @@ class TestSyntheticDatapointsAPI:
     def test_expression_builder_time_series_vs_string(self, test_time_series):
         from sympy import symbols
 
-        dps1 = COGNITE_CLIENT.datapoints.synthetic.retrieve(
-            expression=symbols("a"),
+        dps1 = COGNITE_CLIENT.datapoints.synthetic.query(
+            expressions=symbols("a"),
             start=datetime(2017, 1, 1),
             end="now",
             limit=100,
             variables={"a": test_time_series[0].external_id},
         )
-        dps2 = COGNITE_CLIENT.datapoints.synthetic.retrieve(
-            expression=symbols("a"),
+        dps2 = COGNITE_CLIENT.datapoints.synthetic.query(
+            expressions=[symbols("a"), symbols("b")],
             start=datetime(2017, 1, 1),
             end="now",
             limit=100,
-            variables={"a": test_time_series[0]},
+            variables={"a": test_time_series[0], "b": test_time_series[0].external_id},
         )
         assert 100 == len(dps1)
-        assert 100 == len(dps2)
-        assert dps1 == dps2
+        assert 100 == len(dps2[0])
+        assert dps1 == dps2[0]
+        assert isinstance(dps1, Datapoints)
+        assert isinstance(dps2, DatapointsList)
 
     @pytest.mark.dsl
     def test_expression_builder_complex(self, test_time_series):
@@ -89,11 +101,11 @@ class TestSyntheticDatapointsAPI:
             + cos(syms[3] ** (1 + 0.1 ** syms[4]))
             + sqrt(log(abs(syms[8]) + 1))
         )
-        dps1 = COGNITE_CLIENT.datapoints.synthetic.retrieve(
-            expression=expression,
+        dps1 = COGNITE_CLIENT.datapoints.synthetic.query(
+            expressions=[expression],
             start=datetime(2017, 1, 1),
             end="now",
             limit=100,
             variables={v: test_time_series[tsi] for v, tsi in zip(abc, range(10))},
-        )
+        )[0]
         assert 100 == len(dps1)

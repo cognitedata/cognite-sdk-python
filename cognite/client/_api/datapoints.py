@@ -8,6 +8,7 @@ from typing import *
 
 import cognite.client.utils._time
 from cognite.client import utils
+from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Datapoints, DatapointsList, DatapointsQuery
 from cognite.client.exceptions import CogniteAPIError
@@ -22,6 +23,9 @@ class DatapointsAPI(APIClient):
         self._DPS_LIMIT = 100000
         self._POST_DPS_OBJECTS_LIMIT = 10000
         self._RETRIEVE_LATEST_LIMIT = 100
+        self.synthetic = SyntheticDatapointsAPI(
+            self._config, api_version=self._api_version, cognite_client=self._cognite_client
+        )
 
     def retrieve(
         self,
