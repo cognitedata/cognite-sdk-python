@@ -129,7 +129,7 @@ Wrap the .create_hierarchy() call in a try-except to get information if posting 
 
     >>> from cognite.client.exceptions import CogniteAPIError
     >>> try:
-    ...     c.create_hierarchy([root, child, descendant])
+    ...     c.assets.create_hierarchy([root, child, descendant])
     >>> except CogniteAPIError as e:
     ...     assets_posted = e.successful
     ...     assets_may_have_been_posted = e.unknown
