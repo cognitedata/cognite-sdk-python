@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## Unreleased	
+### Changed
+- For 3d mappings delete, only use node_id and asset_id pairs in delete request to avoid potential bad request.
+
 ## [1.8.0] - 2020-06-30
 ### Added
 - Synthetic timeseries endpoint for DatapointsApi
