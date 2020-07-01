@@ -19,6 +19,12 @@ To install this package:
 
    pip install cognite-sdk
 
+To upgrade the version of this package:
+
+.. code-block:: bash
+
+   pip install cognite-sdk --upgrade
+
 To install this package without the pandas and NumPy support:
 
 .. code-block:: bash
