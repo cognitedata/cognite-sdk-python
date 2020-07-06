@@ -5,7 +5,7 @@ from typing import *
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes import Asset, AssetFilter, AssetList, AssetUpdate, TimestampRange
+from cognite.client.data_classes import Asset, AssetAggregate, AssetFilter, AssetList, AssetUpdate, TimestampRange
 from cognite.client.exceptions import CogniteAPIError
 
 
@@ -26,6 +26,7 @@ class AssetsAPI(APIClient):
         metadata: Dict[str, str] = None,
         data_set_ids: List[int] = None,
         data_set_external_ids: List[str] = None,
+        labels: List = None,
         source: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
@@ -50,6 +51,7 @@ class AssetsAPI(APIClient):
             metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value
             data_set_ids (List[int]): Return only assets in the specified data sets with these ids.
             data_set_external_ids (List[str]): Return only assets in the specified data sets with these external ids.
+            labels (List): List of label filters
             source (str): The source of this asset
             created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
@@ -78,6 +80,7 @@ class AssetsAPI(APIClient):
             root_ids=root_ids,
             asset_subtree_ids=asset_subtree_ids,
             data_set_ids=data_set_ids,
+            labels=labels,
             metadata=metadata,
             source=source,
             created_time=created_time,
@@ -177,6 +180,7 @@ class AssetsAPI(APIClient):
         asset_subtree_external_ids: List[str] = None,
         data_set_ids: List[int] = None,
         data_set_external_ids: List[str] = None,
+        labels: List = None,
         metadata: Dict[str, str] = None,
         source: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
@@ -199,6 +203,7 @@ class AssetsAPI(APIClient):
             asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
             data_set_ids (List[int]): Return only assets in the specified data sets with these ids.
             data_set_external_ids (List[str]): Return only assets in the specified data sets with these external ids.
+            labels (List): List of label filters.
             metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value.
             source (str): The source of this asset.
             created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
@@ -253,6 +258,7 @@ class AssetsAPI(APIClient):
             root_ids=root_ids,
             asset_subtree_ids=asset_subtree_ids,
             data_set_ids=data_set_ids,
+            labels=labels,
             metadata=metadata,
             source=source,
             created_time=created_time,
@@ -267,6 +273,25 @@ class AssetsAPI(APIClient):
             other_params={"aggregatedProperties": aggregated_properties} if aggregated_properties else {},
             partitions=partitions,
         )
+
+    def aggregate(self, filter: Union[AssetFilter, Dict] = None) -> List[AssetAggregate]:
+        """`Aggregate assets <https://docs.cognite.com/api/v1/#operation/aggregateAssets>`_
+
+        Args:
+            filter (Union[AssetFilter, Dict]): Filter on assets filter with exact match
+
+        Returns:
+            List[AssetAggregate]: List of asset aggregates
+
+        Examples:
+
+            Aggregate assets:
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> aggregate_by_prefix = c.assets.aggregate(filter={"external_id_prefix": "prefix"})
+        """
+        return self._aggregate(filter=filter, cls=AssetAggregate)
 
     def create(self, asset: Union[Asset, List[Asset]]) -> Union[Asset, AssetList]:
         """`Create one or more assets. <https://docs.cognite.com/api/v1/#operation/createAssets>`_

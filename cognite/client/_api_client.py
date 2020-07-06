@@ -85,6 +85,36 @@ class APIClient:
     _RESOURCE_PATH = None
     _LIST_CLASS = None
 
+    # TODO: This following set should be generated from the openapi spec somehow.
+    RETRYABLE_POST_ENDPOINTS = {
+        "/assets/list",
+        "/assets/byids",
+        "/assets/search",
+        "/events/list",
+        "/events/byids",
+        "/events/search",
+        "/files/list",
+        "/files/byids",
+        "/files/search",
+        "/files/downloadlink",
+        "/timeseries/byids",
+        "/timeseries/search",
+        "/timeseries/data",
+        "/timeseries/data/list",
+        "/timeseries/data/latest",
+        "/timeseries/data/delete",
+        "/sequences/byids",
+        "/sequences/search",
+        "/sequences/data",
+        "/sequences/data/list",
+        "/sequences/data/delete",
+        "/datasets/list",
+        "/datasets/aggregate",
+        "/datasets/byids",
+        "/relationships/list",
+        "/relationships/byids",
+    }
+
     def __init__(self, config: utils._client_config.ClientConfig, api_version: str = None, cognite_client=None):
         self._request_session = _REQUESTS_SESSION
         self._request_session_with_retry = _REQUESTS_SESSION_WITH_RETRY
@@ -184,34 +214,10 @@ class APIClient:
         if method not in valid_methods:
             raise ValueError("Method {} is not valid. Must be one of {}".format(method, valid_methods))
         path_end = match.group(1)
-        # TODO: This following set should be generated from the openapi spec somehow.
-        retryable_post_endpoints = {
-            "/assets/list",
-            "/assets/byids",
-            "/assets/search",
-            "/events/list",
-            "/events/byids",
-            "/events/search",
-            "/files/list",
-            "/files/byids",
-            "/files/search",
-            "/files/initupload",
-            "/files/downloadlink",
-            "/timeseries/byids",
-            "/timeseries/search",
-            "/timeseries/data",
-            "/timeseries/data/list",
-            "/timeseries/data/latest",
-            "/timeseries/data/delete",
-            "/sequences/byids",
-            "/sequences/search",
-            "/sequences/data",
-            "/sequences/data/list",
-            "/sequences/data/delete",
-        }
+
         if method in ["GET", "PUT", "PATCH"]:
             return True
-        if method == "POST" and path_end in retryable_post_endpoints:
+        if method == "POST" and path_end in self.RETRYABLE_POST_ENDPOINTS:
             return True
         return False
 
@@ -409,6 +415,30 @@ class APIClient:
         if tasks_summary.exceptions:
             raise tasks_summary.exceptions[0]
         return cls._load(tasks_summary.joined_results(), cognite_client=self._cognite_client)
+
+    def _aggregate(
+        self,
+        resource_path: str = None,
+        filter: Union[CogniteFilter, Dict] = None,
+        aggregate: str = None,
+        fields: List[str] = None,
+        headers: Dict = None,
+        cls=None,
+    ):
+        utils._auxiliary.assert_type(filter, "filter", [dict, CogniteFilter], allow_none=True)
+        utils._auxiliary.assert_type(fields, "fields", [list], allow_none=True)
+        if isinstance(filter, CogniteFilter):
+            filter = filter.dump(camel_case=True)
+        elif isinstance(filter, Dict):
+            filter = utils._auxiliary.convert_all_keys_to_camel_case(filter)
+        resource_path = resource_path or self._RESOURCE_PATH
+        body = {"filter": filter or {}}
+        if aggregate is not None:
+            body["aggregate"] = aggregate
+        if fields is not None:
+            body["fields"] = fields
+        res = self._post(url_path=resource_path + "/aggregate", json=body, headers=headers)
+        return [cls(**agg) for agg in res.json()["items"]]
 
     def _create_multiple(
         self,
@@ -647,6 +677,13 @@ class APIClient:
             error_details["duplicated"] = duplicated
         error_details["headers"] = res.request.headers.copy()
         APIClient._sanitize_headers(error_details["headers"])
+        if res.history:
+            for res_hist in res.history:
+                log.debug(
+                    "REDIRECT AFTER HTTP Error {} {} {}: {}".format(
+                        res_hist.status_code, res_hist.request.method, res_hist.request.url, res_hist.content
+                    )
+                )
         log.debug("HTTP Error {} {} {}: {}".format(code, res.request.method, res.request.url, msg), extra=error_details)
         raise CogniteAPIError(msg, code, x_request_id, missing=missing, duplicated=duplicated, extra=extra)
 

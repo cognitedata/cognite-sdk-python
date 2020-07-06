@@ -6,6 +6,7 @@ from typing.io import BinaryIO, TextIO
 from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import (
+    FileAggregate,
     FileMetadata,
     FileMetadataFilter,
     FileMetadataList,
@@ -25,6 +26,7 @@ class FilesAPI(APIClient):
         mime_type: str = None,
         metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
+        asset_external_ids: List[str] = None,
         root_asset_ids: List[int] = None,
         root_asset_external_ids: List[str] = None,
         asset_subtree_ids: List[int] = None,
@@ -51,6 +53,7 @@ class FilesAPI(APIClient):
             mime_type (str): File type. E.g. text/plain, application/pdf, ..
             metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value
             asset_ids (List[int]): Only include files that reference these specific asset IDs.
+            asset_subtree_external_ids (List[str]): Only include files that reference these specific asset external IDs.
             root_asset_ids (List[int]): The IDs of the root assets that the related assets should be children of.
             root_asset_external_ids (List[str]): The external IDs of the root assets that the related assets should be children of.
             asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
@@ -82,6 +85,7 @@ class FilesAPI(APIClient):
             mime_type=mime_type,
             metadata=metadata,
             asset_ids=asset_ids,
+            asset_external_ids=asset_external_ids,
             root_asset_ids=root_asset_ids,
             asset_subtree_ids=asset_subtree_ids,
             source=source,
@@ -204,6 +208,7 @@ class FilesAPI(APIClient):
         mime_type: str = None,
         metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
+        asset_external_ids: List[str] = None,
         root_asset_ids: List[int] = None,
         root_asset_external_ids: List[str] = None,
         asset_subtree_ids: List[int] = None,
@@ -227,6 +232,7 @@ class FilesAPI(APIClient):
             mime_type (str): File type. E.g. text/plain, application/pdf, ..
             metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value
             asset_ids (List[int]): Only include files that reference these specific asset IDs.
+            asset_subtree_external_ids (List[str]): Only include files that reference these specific asset external IDs.
             root_asset_ids (List[int]): The IDs of the root assets that the related assets should be children of.
             root_asset_external_ids (List[str]): The external IDs of the root assets that the related assets should be children of.
             asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
@@ -281,6 +287,7 @@ class FilesAPI(APIClient):
             mime_type=mime_type,
             metadata=metadata,
             asset_ids=asset_ids,
+            asset_external_ids=asset_external_ids,
             root_asset_ids=root_asset_ids,
             asset_subtree_ids=asset_subtree_ids,
             source=source,
@@ -295,6 +302,26 @@ class FilesAPI(APIClient):
         ).dump(camel_case=True)
 
         return self._list(method="POST", limit=limit, filter=filter)
+
+    def aggregate(self, filter: Union[FileMetadataFilter, Dict] = None) -> List[FileAggregate]:
+        """`Aggregate files <https://docs.cognite.com/api/v1/#operation/aggregateFiles>`_
+
+        Args:
+            filter (Union[FileMetadataFilter, Dict]): Filter on file metadata filter with exact match
+
+        Returns:
+            List[FileAggregate]: List of file aggregates
+
+        Examples:
+
+            List files metadata and filter on external id prefix::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> aggregate_uploaded = c.files.aggregate(filter={"uploaded": True})
+        """
+
+        return self._aggregate(filter=filter, cls=FileAggregate)
 
     def delete(self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None) -> None:
         """`Delete files <https://docs.cognite.com/api/v1/#operation/deleteFiles>`_
@@ -383,6 +410,7 @@ class FilesAPI(APIClient):
         source_created_time: int = None,
         source_modified_time: int = None,
         data_set_id: int = None,
+        security_categories: List[int] = None,
         recursive: bool = False,
         overwrite: bool = False,
     ) -> Union[FileMetadata, FileMetadataList]:
@@ -442,6 +470,7 @@ class FilesAPI(APIClient):
             data_set_id=data_set_id,
             source_created_time=source_created_time,
             source_modified_time=source_modified_time,
+            security_categories=security_categories,
         )
         if os.path.isfile(path):
             if not name:
@@ -488,6 +517,7 @@ class FilesAPI(APIClient):
         data_set_id: int = None,
         source_created_time: int = None,
         source_modified_time: int = None,
+        security_categories: List[int] = None,
         overwrite: bool = False,
     ):
         """Upload bytes or string.
@@ -532,6 +562,7 @@ class FilesAPI(APIClient):
             data_set_id=data_set_id,
             source_created_time=source_created_time,
             source_modified_time=source_modified_time,
+            security_categories=security_categories,
         )
 
         res = self._post(

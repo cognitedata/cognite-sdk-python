@@ -19,6 +19,7 @@ class FileMetadata(CogniteResource):
         data_set_id (int): The dataSet Id for the item.
         source_created_time (int): The timestamp for when the file was originally created in the source system.
         source_modified_time (int): The timestamp for when the file was last modified in the source system.
+        security_categories (List[int]): The security category IDs required to access this file.
         id (int): A server-generated ID for the object.
         uploaded (bool): Whether or not the actual file is uploaded.  This field is returned only by the API, it has no effect in a post body.
         uploaded_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -38,6 +39,7 @@ class FileMetadata(CogniteResource):
         data_set_id: int = None,
         source_created_time: int = None,
         source_modified_time: int = None,
+        security_categories: List[int] = None,
         id: int = None,
         uploaded: bool = None,
         uploaded_time: int = None,
@@ -54,6 +56,7 @@ class FileMetadata(CogniteResource):
         self.data_set_id = data_set_id
         self.source_created_time = source_created_time
         self.source_modified_time = source_modified_time
+        self.security_categories = security_categories
         self.id = id
         self.uploaded = uploaded
         self.uploaded_time = uploaded_time
@@ -73,6 +76,7 @@ class FileMetadataFilter(CogniteFilter):
         mime_type (str): File type. E.g. text/plain, application/pdf, ..
         metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         asset_ids (List[int]): Only include files that reference these specific asset IDs.
+        asset_external_ids (List[str]): Only include files that reference these specific asset external IDs.
         root_asset_ids (List[Dict[str, Any]]): Only include files that have a related asset in a tree rooted at any of these root assetIds.
         data_set_ids (List[Dict[str, Any]]): Only include files that belong to these datasets.
         asset_subtree_ids (List[Dict[str, Any]]): Only include files that have a related asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
@@ -93,6 +97,7 @@ class FileMetadataFilter(CogniteFilter):
         mime_type: str = None,
         metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
+        asset_external_ids: List[str] = None,
         root_asset_ids: List[Dict[str, Any]] = None,
         data_set_ids: List[Dict[str, Any]] = None,
         asset_subtree_ids: List[Dict[str, Any]] = None,
@@ -110,6 +115,7 @@ class FileMetadataFilter(CogniteFilter):
         self.mime_type = mime_type
         self.metadata = metadata
         self.asset_ids = asset_ids
+        self.asset_external_ids = asset_external_ids
         self.root_asset_ids = root_asset_ids
         self.data_set_ids = data_set_ids
         self.asset_subtree_ids = asset_subtree_ids
@@ -145,64 +151,82 @@ class FileMetadataUpdate(CogniteUpdate):
     Args:
     """
 
+    class _PrimitiveFileMetadataUpdate(CognitePrimitiveUpdate):
+        def set(self, value: Any) -> "FileMetadataUpdate":
+            return self._set(value)
+
+    class _ObjectFileMetadataUpdate(CogniteObjectUpdate):
+        def set(self, value: Dict) -> "FileMetadataUpdate":
+            return self._set(value)
+
+        def add(self, value: Dict) -> "FileMetadataUpdate":
+            return self._add(value)
+
+        def remove(self, value: List) -> "FileMetadataUpdate":
+            return self._remove(value)
+
+    class _ListFileMetadataUpdate(CogniteListUpdate):
+        def set(self, value: List) -> "FileMetadataUpdate":
+            return self._set(value)
+
+        def add(self, value: List) -> "FileMetadataUpdate":
+            return self._add(value)
+
+        def remove(self, value: List) -> "FileMetadataUpdate":
+            return self._remove(value)
+
     @property
     def external_id(self):
-        return _PrimitiveFileMetadataUpdate(self, "externalId")
+        return FileMetadataUpdate._PrimitiveFileMetadataUpdate(self, "externalId")
 
     @property
     def source(self):
-        return _PrimitiveFileMetadataUpdate(self, "source")
+        return FileMetadataUpdate._PrimitiveFileMetadataUpdate(self, "source")
 
     @property
     def mime_type(self):
-        return _PrimitiveFileMetadataUpdate(self, "mimeType")
+        return FileMetadataUpdate._PrimitiveFileMetadataUpdate(self, "mimeType")
 
     @property
     def metadata(self):
-        return _ObjectFileMetadataUpdate(self, "metadata")
+        return FileMetadataUpdate._ObjectFileMetadataUpdate(self, "metadata")
 
     @property
     def asset_ids(self):
-        return _ListFileMetadataUpdate(self, "assetIds")
+        return FileMetadataUpdate._ListFileMetadataUpdate(self, "assetIds")
 
     @property
     def source_created_time(self):
-        return _PrimitiveFileMetadataUpdate(self, "sourceCreatedTime")
+        return FileMetadataUpdate._PrimitiveFileMetadataUpdate(self, "sourceCreatedTime")
 
     @property
     def source_modified_time(self):
-        return _PrimitiveFileMetadataUpdate(self, "sourceModifiedTime")
+        return FileMetadataUpdate._PrimitiveFileMetadataUpdate(self, "sourceModifiedTime")
 
     @property
     def data_set_id(self):
-        return _PrimitiveFileMetadataUpdate(self, "dataSetId")
+        return FileMetadataUpdate._PrimitiveFileMetadataUpdate(self, "dataSetId")
+
+    @property
+    def security_categories(self):
+        return FileMetadataUpdate._ListFileMetadataUpdate(self, "securityCategories")
+
+    # GenStop
 
 
-class _PrimitiveFileMetadataUpdate(CognitePrimitiveUpdate):
-    def set(self, value: Any) -> FileMetadataUpdate:
-        return self._set(value)
+# GenPropertyClass: FilesAggregate
+class FileAggregate(dict):
+    """Aggregation results for files
 
+    Args:
+        count (int): Number of filtered items included in aggregation
+    """
 
-class _ObjectFileMetadataUpdate(CogniteObjectUpdate):
-    def set(self, value: Dict) -> FileMetadataUpdate:
-        return self._set(value)
+    def __init__(self, count: int = None, **kwargs):
+        self.count = count
+        self.update(kwargs)
 
-    def add(self, value: Dict) -> FileMetadataUpdate:
-        return self._add(value)
-
-    def remove(self, value: List) -> FileMetadataUpdate:
-        return self._remove(value)
-
-
-class _ListFileMetadataUpdate(CogniteListUpdate):
-    def set(self, value: List) -> FileMetadataUpdate:
-        return self._set(value)
-
-    def add(self, value: List) -> FileMetadataUpdate:
-        return self._add(value)
-
-    def remove(self, value: List) -> FileMetadataUpdate:
-        return self._remove(value)
+    count = CognitePropertyClassUtil.declare_property("count")
 
     # GenStop
 

@@ -2,7 +2,16 @@ from typing import *
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes import Event, EventFilter, EventList, EventUpdate, TimestampRange
+from cognite.client.data_classes import (
+    AggregateResult,
+    EndTimeFilter,
+    Event,
+    EventFilter,
+    EventList,
+    EventUpdate,
+    TimestampRange,
+    AggregateUniqueValuesResult,
+)
 
 
 class EventsAPI(APIClient):
@@ -13,7 +22,8 @@ class EventsAPI(APIClient):
         self,
         chunk_size: int = None,
         start_time: Union[Dict[str, Any], TimestampRange] = None,
-        end_time: Union[Dict[str, Any], TimestampRange] = None,
+        end_time: Union[Dict[str, Any], EndTimeFilter] = None,
+        active_at_time: Union[Dict[str, Any], TimestampRange] = None,
         type: str = None,
         subtype: str = None,
         metadata: Dict[str, str] = None,
@@ -40,6 +50,7 @@ class EventsAPI(APIClient):
             chunk_size (int, optional): Number of events to return in each chunk. Defaults to yielding one event a time.
             start_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps
             end_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps
+            active_at_time (Union[Dict[str, Any], TimestampRange]): Event is considered active from its startTime to endTime inclusive. If startTime is null, event is never active. If endTime is null, event is active from startTime onwards. activeAtTime filter will match all events that are active at some point from min to max, from min, or to max, depending on which of min and max parameters are specified.
             type (str): Type of the event, e.g 'failure'.
             subtype (str): Subtype of the event, e.g 'electrical'.
             metadata (Dict[str, str]): Customizable extra data about the event. String key -> String value.
@@ -71,6 +82,7 @@ class EventsAPI(APIClient):
         filter = EventFilter(
             start_time=start_time,
             end_time=end_time,
+            active_at_time=active_at_time,
             metadata=metadata,
             asset_ids=asset_ids,
             asset_external_ids=asset_external_ids,
@@ -162,7 +174,8 @@ class EventsAPI(APIClient):
     def list(
         self,
         start_time: Union[Dict[str, Any], TimestampRange] = None,
-        end_time: Union[Dict[str, Any], TimestampRange] = None,
+        end_time: Union[Dict[str, Any], EndTimeFilter] = None,
+        active_at_time: Union[Dict[str, Any], TimestampRange] = None,
         type: str = None,
         subtype: str = None,
         metadata: Dict[str, str] = None,
@@ -187,6 +200,7 @@ class EventsAPI(APIClient):
         Args:
             start_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
             end_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
+            active_at_time (Union[Dict[str, Any], TimestampRange]): Event is considered active from its startTime to endTime inclusive. If startTime is null, event is never active. If endTime is null, event is active from startTime onwards. activeAtTime filter will match all events that are active at some point from min to max, from min, or to max, depending on which of min and max parameters are specified.
             type (str): Type of the event, e.g 'failure'.
             subtype (str): Subtype of the event, e.g 'electrical'.
             metadata (Dict[str, str]): Customizable extra data about the event. String key -> String value.
@@ -238,10 +252,13 @@ class EventsAPI(APIClient):
             asset_subtree_ids = self._process_ids(asset_subtree_ids, asset_subtree_external_ids, wrap_ids=True)
         if data_set_ids or data_set_external_ids:
             data_set_ids = self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
+        if end_time and ("max" in end_time or "min" in end_time) and "isNull" in end_time:
+            raise ValueError("isNull cannot be used with min or max values")
 
         filter = EventFilter(
             start_time=start_time,
             end_time=end_time,
+            active_at_time=active_at_time,
             metadata=metadata,
             asset_ids=asset_ids,
             asset_external_ids=asset_external_ids,
@@ -256,6 +273,49 @@ class EventsAPI(APIClient):
             subtype=subtype,
         ).dump(camel_case=True)
         return self._list(method="POST", limit=limit, filter=filter, partitions=partitions, sort=sort)
+
+    def aggregate(self, filter: Union[EventFilter, Dict] = None) -> List[AggregateResult]:
+        """`Aggregate events <https://docs.cognite.com/api/v1/#operation/aggregateEvents>`_
+
+        Args:
+            filter (Union[EventFilter, Dict]): Filter on events filter with exact match
+
+        Returns:
+            List[AggregateResult]: List of event aggregates
+        
+        Examples:
+
+            Aggregate events:
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> aggregate_type = c.events.aggregate(filter={"type": "failure"})
+        """
+
+        return self._aggregate(filter=filter, cls=AggregateResult)
+
+    def aggregate_unique_values(
+        self, filter: Union[EventFilter, Dict] = None, fields: List[str] = None
+    ) -> List[AggregateUniqueValuesResult]:
+        """`Aggregate unique values for events <https://docs.cognite.com/api/v1/#operation/aggregateEvents>`_
+
+        Args:
+            filter (Union[EventFilter, Dict]): Filter on events filter with exact match
+            fields (List[str]): The field name(s) to apply the aggregation on. Currently limited to one field.
+
+        Returns:
+            List[AggregateUniqueValuesResult]: List of event aggregates
+
+        Examples:
+
+            Aggregate events:
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> aggregate_subtype = c.events.aggregate(filter={"type": "failure"}, fields=["subtype"])
+        """
+
+        return self._aggregate(filter=filter, fields=fields, aggregate="uniqueValues", cls=AggregateUniqueValuesResult)
 
     def create(self, event: Union[Event, List[Event]]) -> Union[Event, EventList]:
         """`Create one or more events. <https://docs.cognite.com/api/v1/#operation/createEvents>`_

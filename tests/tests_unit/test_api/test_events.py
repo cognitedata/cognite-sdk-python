@@ -4,7 +4,13 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client._api.events import Event, EventList, EventUpdate
-from cognite.client.data_classes import EventFilter, TimestampRange
+from cognite.client.data_classes import (
+    EndTimeFilter,
+    EventFilter,
+    TimestampRange,
+    AggregateResult,
+    AggregateUniqueValuesResult,
+)
 from tests.utils import jsgz_load
 
 EVENTS_API = CogniteClient().events
@@ -33,6 +39,20 @@ def mock_events_response(rsps):
 
     rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
     rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
+    yield rsps
+
+
+@pytest.fixture
+def mock_count_aggregate_response(rsps):
+    url_pattern = re.compile(re.escape(EVENTS_API._get_base_url_with_base_path()) + "/events/aggregate")
+    rsps.add(rsps.POST, url_pattern, status=200, json={"items": [{"count": 10}]})
+    yield rsps
+
+
+@pytest.fixture
+def mock_aggregate_unique_values_response(rsps):
+    url_pattern = re.compile(re.escape(EVENTS_API._get_base_url_with_base_path()) + "/events/aggregate")
+    rsps.add(rsps.POST, url_pattern, status=200, json={"items": [{"count": 5, "value": "WORKORDER"}]})
     yield rsps
 
 
@@ -81,6 +101,17 @@ class TestEvents:
         assert 20 == jsgz_load(mock_events_response.calls[0].request.body)["filter"]["startTime"]["min"]
         assert "max" not in jsgz_load(mock_events_response.calls[0].request.body)["filter"]["startTime"]
 
+    def test_count_aggregate(self, mock_count_aggregate_response):
+        res = EVENTS_API.aggregate(filter={"type": "WORKORDER"})
+        assert isinstance(res[0], AggregateResult)
+        assert res[0].count == 10
+
+    def test_aggregate_unique_values(self, mock_aggregate_unique_values_response):
+        res = EVENTS_API.aggregate_unique_values(filter={"type": "WORKORDER"}, fields=["subtype"])
+        assert isinstance(res[0], AggregateUniqueValuesResult)
+        assert res[0].count == 5
+        assert res[0].value == "WORKORDER"
+
     def test_call_root(self, mock_events_response):
         list(
             EVENTS_API.__call__(
@@ -125,6 +156,10 @@ class TestEvents:
             "limit": 10,
             "filter": {"assetSubtreeIds": [{"id": 1}, {"id": 2}, {"externalId": "a"}]},
         } == jsgz_load(calls[0].request.body)
+
+    def test_list_ongoing_wrong_signature(self):
+        with pytest.raises(ValueError):
+            EVENTS_API.list(end_time=EndTimeFilter(is_null=True, max=100))
 
     def test_create_single(self, mock_events_response):
         res = EVENTS_API.create(Event(external_id="1"))

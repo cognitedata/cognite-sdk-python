@@ -143,56 +143,70 @@ class SequenceUpdate(CogniteUpdate):
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
     """
 
+    class _PrimitiveSequenceUpdate(CognitePrimitiveUpdate):
+        def set(self, value: Any) -> "SequenceUpdate":
+            return self._set(value)
+
+    class _ObjectSequenceUpdate(CogniteObjectUpdate):
+        def set(self, value: Dict) -> "SequenceUpdate":
+            return self._set(value)
+
+        def add(self, value: Dict) -> "SequenceUpdate":
+            return self._add(value)
+
+        def remove(self, value: List) -> "SequenceUpdate":
+            return self._remove(value)
+
+    class _ListSequenceUpdate(CogniteListUpdate):
+        def set(self, value: List) -> "SequenceUpdate":
+            return self._set(value)
+
+        def add(self, value: List) -> "SequenceUpdate":
+            return self._add(value)
+
+        def remove(self, value: List) -> "SequenceUpdate":
+            return self._remove(value)
+
     @property
     def name(self):
-        return _PrimitiveSequenceUpdate(self, "name")
+        return SequenceUpdate._PrimitiveSequenceUpdate(self, "name")
 
     @property
     def description(self):
-        return _PrimitiveSequenceUpdate(self, "description")
+        return SequenceUpdate._PrimitiveSequenceUpdate(self, "description")
 
     @property
     def asset_id(self):
-        return _PrimitiveSequenceUpdate(self, "assetId")
+        return SequenceUpdate._PrimitiveSequenceUpdate(self, "assetId")
 
     @property
     def external_id(self):
-        return _PrimitiveSequenceUpdate(self, "externalId")
+        return SequenceUpdate._PrimitiveSequenceUpdate(self, "externalId")
 
     @property
     def metadata(self):
-        return _ObjectSequenceUpdate(self, "metadata")
+        return SequenceUpdate._ObjectSequenceUpdate(self, "metadata")
 
     @property
     def data_set_id(self):
-        return _PrimitiveSequenceUpdate(self, "dataSetId")
+        return SequenceUpdate._PrimitiveSequenceUpdate(self, "dataSetId")
+
+    # GenStop
 
 
-class _PrimitiveSequenceUpdate(CognitePrimitiveUpdate):
-    def set(self, value: Any) -> SequenceUpdate:
-        return self._set(value)
+# GenPropertyClass: SequenceAggregateResponse.items
+class SequenceAggregate(dict):
+    """No description.
 
+    Args:
+        count (int): No description.
+    """
 
-class _ObjectSequenceUpdate(CogniteObjectUpdate):
-    def set(self, value: Dict) -> SequenceUpdate:
-        return self._set(value)
+    def __init__(self, count: int = None, **kwargs):
+        self.count = count
+        self.update(kwargs)
 
-    def add(self, value: Dict) -> SequenceUpdate:
-        return self._add(value)
-
-    def remove(self, value: List) -> SequenceUpdate:
-        return self._remove(value)
-
-
-class _ListSequenceUpdate(CogniteListUpdate):
-    def set(self, value: List) -> SequenceUpdate:
-        return self._set(value)
-
-    def add(self, value: List) -> SequenceUpdate:
-        return self._add(value)
-
-    def remove(self, value: List) -> SequenceUpdate:
-        return self._remove(value)
+    count = CognitePropertyClassUtil.declare_property("count")
 
     # GenStop
 

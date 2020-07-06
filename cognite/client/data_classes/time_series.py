@@ -16,7 +16,7 @@ class TimeSeries(CogniteResource):
         is_string (bool): Whether the time series is string valued or not.
         metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         unit (str): The physical unit of the time series.
-        asset_id (int): A server-generated ID for the object.
+        asset_id (int): Asset ID of equipment linked to this time series.
         is_step (bool): Whether the time series is a step series or not.
         description (str): Description of the time series.
         security_categories (List[int]): The required security categories to access this time series.
@@ -140,7 +140,7 @@ class TimeSeriesFilter(CogniteFilter):
         is_string (bool): Filter on isString.
         is_step (bool): Filter on isStep.
         metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
-        asset_ids (List[int]): Filter out time series that are not linked to any of these assets.
+        asset_ids (List[int]): Only include time series that reference these specific asset IDs.
         asset_external_ids (List[str]): Asset External IDs of related equipment that this time series relates to.
         root_asset_ids (List[int]): Only include time series that have a related asset in a tree rooted at any of these root assetIds.
         asset_subtree_ids (List[Dict[str, Any]]): Only include time series that are related to an asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
@@ -205,64 +205,78 @@ class TimeSeriesUpdate(CogniteUpdate):
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
     """
 
+    class _PrimitiveTimeSeriesUpdate(CognitePrimitiveUpdate):
+        def set(self, value: Any) -> "TimeSeriesUpdate":
+            return self._set(value)
+
+    class _ObjectTimeSeriesUpdate(CogniteObjectUpdate):
+        def set(self, value: Dict) -> "TimeSeriesUpdate":
+            return self._set(value)
+
+        def add(self, value: Dict) -> "TimeSeriesUpdate":
+            return self._add(value)
+
+        def remove(self, value: List) -> "TimeSeriesUpdate":
+            return self._remove(value)
+
+    class _ListTimeSeriesUpdate(CogniteListUpdate):
+        def set(self, value: List) -> "TimeSeriesUpdate":
+            return self._set(value)
+
+        def add(self, value: List) -> "TimeSeriesUpdate":
+            return self._add(value)
+
+        def remove(self, value: List) -> "TimeSeriesUpdate":
+            return self._remove(value)
+
     @property
     def external_id(self):
-        return _PrimitiveTimeSeriesUpdate(self, "externalId")
+        return TimeSeriesUpdate._PrimitiveTimeSeriesUpdate(self, "externalId")
 
     @property
     def name(self):
-        return _PrimitiveTimeSeriesUpdate(self, "name")
+        return TimeSeriesUpdate._PrimitiveTimeSeriesUpdate(self, "name")
 
     @property
     def metadata(self):
-        return _ObjectTimeSeriesUpdate(self, "metadata")
+        return TimeSeriesUpdate._ObjectTimeSeriesUpdate(self, "metadata")
 
     @property
     def unit(self):
-        return _PrimitiveTimeSeriesUpdate(self, "unit")
+        return TimeSeriesUpdate._PrimitiveTimeSeriesUpdate(self, "unit")
 
     @property
     def asset_id(self):
-        return _PrimitiveTimeSeriesUpdate(self, "assetId")
+        return TimeSeriesUpdate._PrimitiveTimeSeriesUpdate(self, "assetId")
 
     @property
     def description(self):
-        return _PrimitiveTimeSeriesUpdate(self, "description")
+        return TimeSeriesUpdate._PrimitiveTimeSeriesUpdate(self, "description")
 
     @property
     def security_categories(self):
-        return _ListTimeSeriesUpdate(self, "securityCategories")
+        return TimeSeriesUpdate._ListTimeSeriesUpdate(self, "securityCategories")
 
     @property
     def data_set_id(self):
-        return _PrimitiveTimeSeriesUpdate(self, "dataSetId")
+        return TimeSeriesUpdate._PrimitiveTimeSeriesUpdate(self, "dataSetId")
+
+    # GenStop
 
 
-class _PrimitiveTimeSeriesUpdate(CognitePrimitiveUpdate):
-    def set(self, value: Any) -> TimeSeriesUpdate:
-        return self._set(value)
+# GenPropertyClass: TimeSeriesAggregateResponse.items
+class TimeSeriesAggregate(dict):
+    """No description.
 
+    Args:
+        count (int): No description.
+    """
 
-class _ObjectTimeSeriesUpdate(CogniteObjectUpdate):
-    def set(self, value: Dict) -> TimeSeriesUpdate:
-        return self._set(value)
+    def __init__(self, count: int = None, **kwargs):
+        self.count = count
+        self.update(kwargs)
 
-    def add(self, value: Dict) -> TimeSeriesUpdate:
-        return self._add(value)
-
-    def remove(self, value: List) -> TimeSeriesUpdate:
-        return self._remove(value)
-
-
-class _ListTimeSeriesUpdate(CogniteListUpdate):
-    def set(self, value: List) -> TimeSeriesUpdate:
-        return self._set(value)
-
-    def add(self, value: List) -> TimeSeriesUpdate:
-        return self._add(value)
-
-    def remove(self, value: List) -> TimeSeriesUpdate:
-        return self._remove(value)
+    count = CognitePropertyClassUtil.declare_property("count")
 
     # GenStop
 

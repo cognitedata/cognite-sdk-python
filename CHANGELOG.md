@@ -14,12 +14,46 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [Planned]
-- Concurrent reads for all resource types using `/cursors` endpoints
-- Upserts for all resource types
-- Separate read/write fields on data classes
+## Unreleased	
+### Changed
+- For 3d mappings delete, only use node_id and asset_id pairs in delete request to avoid potential bad request.
 
-## Unreleased
+## [1.8.0] - 2020-06-30
+### Added
+- Synthetic timeseries endpoint for DatapointsApi
+- Labels endpoint support
+- Assets labelling support
+- Support for unique value aggregation for events.
+
+### Changed
+- When `debug=true`, redirects are shown more clearly.
+
+## [1.7.0] - 2020-06-03
+### Fixed
+- datasetId is kept as an integer in dataframes.
+
+### Changed
+- Internal list of retryable endpoints was changed to a class variable so it can be modified.
+
+## [1.6.0] - 2020-04-28
+### Added
+- Support events filtering by ongoing events (events without `end_time` defined)
+- Support events filtering by active timerange of event
+- Support files metadata filtering by `asset_external_ids`
+- Aggregation endpoint for Assets, DataSets, Events, Files, Sequences and TimeSeries API
+
+## [1.5.2] - 2020-04-02
+### Added
+- Support for security categories on file methods
+
+## [1.5.1] - 2020-04-01
+### Added
+- Support for security categories on files
+- active_at_time on relationships
+
+### Fixed
+- No longer retry calls to /files/initupload
+- Retry retryable POST endpoints in datasets API 
 
 ## [1.5.0] - 2020-03-12
 ### Added

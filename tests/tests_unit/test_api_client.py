@@ -196,6 +196,11 @@ class SomeFilter(CogniteFilter):
         self.var_y = var_y
 
 
+class SomeAggregation(dict):
+    def __init__(self, count):
+        self.count = count
+
+
 class TestStandardRetrieve:
     def test_standard_retrieve_OK(self, rsps):
         rsps.add(rsps.GET, BASE_URL + URL_PATH + "/1", status=200, json={"x": 1, "y": 2})
@@ -566,6 +571,21 @@ class TestStandardList:
             COGNITE_CLIENT
             == API_CLIENT_WITH_API_KEY._list(cls=SomeResourceList, resource_path=URL_PATH, method="GET")._cognite_client
         )
+
+
+class TestStandardAggregate:
+    def test_standard_aggregate_OK(self, rsps):
+        rsps.add(rsps.POST, BASE_URL + URL_PATH + "/aggregate", status=200, json={"items": [{"count": 1}]})
+        assert [SomeAggregation(1)] == API_CLIENT_WITH_API_KEY._aggregate(
+            resource_path=URL_PATH, filter={"x": 1}, cls=SomeAggregation
+        )
+
+    def test_standard_aggregate_fail(self, rsps):
+        rsps.add(rsps.POST, BASE_URL + URL_PATH + "/aggregate", status=400, json={"error": {"message": "Client Error"}})
+        with pytest.raises(CogniteAPIError, match="Client Error") as e:
+            API_CLIENT_WITH_API_KEY._aggregate(resource_path=URL_PATH, filter={"x": 1}, cls=SomeAggregation)
+        assert "Client Error" == e.value.message
+        assert 400 == e.value.code
 
 
 class TestStandardCreate:
@@ -958,6 +978,19 @@ class TestHelpers:
     def test_is_retryable_fail(self, method, path):
         with pytest.raises(ValueError, match="is not valid"):
             API_CLIENT_WITH_API_KEY._is_retryable(method, path)
+
+    def test_is_retryable_add(self):
+        assert False == API_CLIENT_WITH_API_KEY._is_retryable(
+            "POST", "https://greenfield.cognitedata.com/api/v1/projects/blabla/assets/bloop"
+        )
+        APIClient.RETRYABLE_POST_ENDPOINTS.add("/assets/bloop")
+        assert True == API_CLIENT_WITH_API_KEY._is_retryable(
+            "POST", "https://greenfield.cognitedata.com/api/v1/projects/blabla/assets/bloop"
+        )
+        APIClient.RETRYABLE_POST_ENDPOINTS.remove("/assets/bloop")
+        assert False == API_CLIENT_WITH_API_KEY._is_retryable(
+            "POST", "https://greenfield.cognitedata.com/api/v1/projects/blabla/assets/bloop"
+        )
 
     def test_get_status_codes_to_retry(self):
         os.environ["COGNITE_STATUS_FORCELIST"] = "1,2, 3,4"

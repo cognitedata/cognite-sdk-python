@@ -129,7 +129,7 @@ Wrap the .create_hierarchy() call in a try-except to get information if posting 
 
     >>> from cognite.client.exceptions import CogniteAPIError
     >>> try:
-    ...     c.create_hierarchy([root, child, descendant])
+    ...     c.assets.create_hierarchy([root, child, descendant])
     >>> except CogniteAPIError as e:
     ...     assets_posted = e.successful
     ...     assets_may_have_been_posted = e.unknown
@@ -271,6 +271,10 @@ List assets
 ^^^^^^^^^^^
 .. automethod:: cognite.client._api.assets.AssetsAPI.list
 
+Aggregate assets
+^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.assets.AssetsAPI.aggregate
+
 Search for assets
 ^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.assets.AssetsAPI.search
@@ -297,6 +301,26 @@ Data classes
     :members:
     :show-inheritance:
 
+Labels
+------
+
+List labels
+^^^^^^^^^^^
+.. automethod:: cognite.client._api.labels.LabelsAPI.list
+
+Create a label
+^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.labels.LabelsAPI.create
+
+Delete labels
+^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.labels.LabelsAPI.delete
+
+Data classes
+^^^^^^^^^^^^
+.. automodule:: cognite.client.data_classes.labels
+    :members:
+    :show-inheritance:
 
 Events
 ------
@@ -311,6 +335,11 @@ Retrieve multiple events by id
 List events
 ^^^^^^^^^^^
 .. automethod:: cognite.client._api.events.EventsAPI.list
+
+Aggregate events
+^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.events.EventsAPI.aggregate
+.. automethod:: cognite.client._api.events.EventsAPI.aggregate_unique_values
 
 Search for events
 ^^^^^^^^^^^^^^^^^
@@ -349,6 +378,10 @@ List data sets
 ^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.data_sets.DataSetsAPI.list
 
+Aggregate data sets
+^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.data_sets.DataSetsAPI.aggregate
+
 Create data sets
 ^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.data_sets.DataSetsAPI.create
@@ -381,6 +414,10 @@ Retrieve multiple files' metadata by id
 List files metadata
 ^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.files.FilesAPI.list
+
+Aggregate files metadata
+^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.files.FilesAPI.aggregate
 
 Search for files
 ^^^^^^^^^^^^^^^^
@@ -439,6 +476,10 @@ List time series
 ^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.time_series.TimeSeriesAPI.list
 
+Aggregate time series
+^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.time_series.TimeSeriesAPI.aggregate
+
 Search for time series
 ^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.time_series.TimeSeriesAPI.search
@@ -461,6 +502,13 @@ Data classes
     :members:
     :show-inheritance:
 
+
+Synthetic time series
+---------------------
+
+Calculate the result of a function on time series
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.synthetic_time_series.SyntheticDatapointsAPI.query
 
 Data points
 -----------
@@ -525,6 +573,10 @@ Retrieve multiple sequences by id
 List sequences
 ^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.sequences.SequencesAPI.list
+
+Aggregate sequences
+^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.sequences.SequencesAPI.aggregate
 
 Search for sequences
 ^^^^^^^^^^^^^^^^^^^^
@@ -1098,12 +1150,3 @@ Data classes
 .. automodule:: cognite.client.data_classes.relationships
     :members:
     :show-inheritance:
-
-Synthetic time series
----------------------
-.. WARNING::
-    The synthetic time series API is experimental and subject to breaking changes. It should not be used in production code.
-
-Calculate the result of a function on time series
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.synthetic_time_series.SyntheticDatapointsAPI.retrieve

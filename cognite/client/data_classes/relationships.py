@@ -11,14 +11,14 @@ class Relationship(CogniteResource):
     Args:
         source (Dict[str, Any]): Reference by external id to the source of the relationship. Since it is a reference by external id, the targeted resource may or may not exist in CDF.  If resource is `threeD` or `threeDRevision` the `resourceId` is a set of internal ids concatenated by a colons. Otherwise, the resourceId follows the formatting rules as described in `resourceId`.  If resource id of type `threeD`, the externalId must follow the pattern `<nodeId>:<modelId>:<revisionId>`. If resource id of type `threeDRevision`, the externalId must follow the pattern `<revisionId>:<modelId>`. The values `<nodeId>`, `<modelId>` and `<revisionId>` are the corresponding internal ids to identify the referenced resource uniquely.
         target (Dict[str, Any]): Reference by external id to the target of the relationship. Since it is a reference by external id, the targeted resource may or may not exist in CDF.  If resource is `threeD` or `threeDRevision` the `resourceId` is a set of internal ids concatenated by a colons. Otherwise, the resourceId follows the formatting rules as described in `resourceId`.  If resource id of type `threeD`, the externalId must follow the pattern `<nodeId>:<modelId>:<revisionId>`. If resource id of type `threeDRevision`, the externalId must follow the pattern `<revisionId>:<modelId>`. The values `<nodeId>`, `<modelId>` and `<revisionId>` are the corresponding internal ids to identify the referenced resource uniquely.
-        start_time (float): Time when this relationship was established in milliseconds since Jan 1, 1970.
-        end_time (float): Time when this relationship ceased to exist in milliseconds since Jan 1, 1970. If both startTime and endTime is set, endTime must be strictly greater than startTime.
+        start_time (int): Time, in milliseconds since Jan. 1, 1970, when relationship became active. If there is no startTime, relationship is active from the beginning of time until endTime.
+        end_time (int): Time, in milliseconds since Jan. 1, 1970,  when relationship became inactive. If there is no endTime, relationship is active from startTime until the present or any point in the future. If endTime and startTime are set, then endTime must be strictly greater than startTime
         confidence (float): Confidence value of the existence of this relationship. Humans should enter 1.0 usually, generated relationships should provide a realistic score on the likelihood of the existence of the relationship. Generated relationships should never have the a confidence score of 1.0.
         data_set (str): String describing the source system storing or generating the relationship.
         external_id (str): Disallowing leading and trailing whitespaces. Case sensitive. The external Id must be unique within the project.
         relationship_type (str): Type of the relationship in order to distinguish between different relationships. In general relationship types should reflect references as they are expressed in natural sentences.  E.g. a flow through a pipe can be naturally represented by a `flowsTo`-relationship. On the other hand an alternative asset hierarchy can be represented with the `isParentOf`-relationship. The `implements`-relationship is intended to reflect references between a functional asset hierarchy and its implementation.
-        created_time (float): Time when this relationship was created in CDF in milliseconds since Jan 1, 1970.
-        last_updated_time (float): Time when this relationship was last updated in CDF in milliseconds since Jan 1, 1970.
+        created_time (int): Time, in milliseconds since Jan. 1, 1970, when this relationship was created in CDF.
+        last_updated_time (int): Time, in milliseconds since Jan. 1, 1970, when this relationship was last updated in CDF.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
@@ -26,14 +26,14 @@ class Relationship(CogniteResource):
         self,
         source: Dict[str, Any] = None,
         target: Dict[str, Any] = None,
-        start_time: float = None,
-        end_time: float = None,
+        start_time: int = None,
+        end_time: int = None,
         confidence: float = None,
         data_set: str = None,
         external_id: str = None,
         relationship_type: str = None,
-        created_time: float = None,
-        last_updated_time: float = None,
+        created_time: int = None,
+        last_updated_time: int = None,
         cognite_client=None,
     ):
         self.source = source
@@ -78,7 +78,7 @@ class Relationship(CogniteResource):
 
 # GenClass: relationshipsAdvancedListRequest.filter
 class RelationshipFilter(CogniteFilter):
-    """Filter on relationships with exact match. Multiple filter elments in one property, e.g. `dataSets: [ "a", "b" ]`, will return all relationships where the dataSet field is either `a` or `b`. Filters in multiple properties will return the relationships that match all criteria. Filters on a `resourceId` without a `resource` (type) in sources and targets will return relationships that match the resourceId and match any resource type.
+    """Filter on relationships with exact match. Multiple filter elments in one property, e.g. `dataSets: [ "a", "b" ]`, will return all relationships where the dataSet field is either `a` or `b`. Filters in multiple properties will return the relationships that match all criteria. Filters on a `resourceId` without a `resource` (type) in sources and targets will return relationships that match the resourceId and match any resource type. If the filter is not specified it default to an empty filter.
 
     Args:
         sources (List[Dict[str, Any]]): Include relationships that have any of these values in their `source` field
@@ -90,6 +90,7 @@ class RelationshipFilter(CogniteFilter):
         confidence (Dict[str, Any]): Range to filter the field for. (inclusive)
         last_updated_time (Dict[str, Any]): Range to filter the field for. (inclusive)
         created_time (Dict[str, Any]): Range to filter the field for. (inclusive)
+        active_at_time (int): Limits results to those active at this time, i.e. `activeAtTime` falls between `startTime` and `endTime` `startTime` is treated as inclusive (if `activeAtTime` is equal to `startTime` then the relationship will be included). `endTime` is treated as exclusive (if `activeTime` is equal to `endTime` then the relationship will NOT be included). If a relationship has neither `startTime` nor `endTime`, the relationship is active at all times
         source_resource (str): Resource type of the source node.
         source_resource_id (str): Resource ID of the source node.
         target_resource (str): Resource type of the target node.
@@ -110,6 +111,7 @@ class RelationshipFilter(CogniteFilter):
         confidence: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
         created_time: Dict[str, Any] = None,
+        active_at_time: int = None,
         source_resource: str = None,
         source_resource_id: str = None,
         target_resource: str = None,
@@ -127,6 +129,7 @@ class RelationshipFilter(CogniteFilter):
         self.confidence = confidence
         self.last_updated_time = last_updated_time
         self.created_time = created_time
+        self.active_at_time = active_at_time
         self.source_resource = source_resource
         self.source_resource_id = source_resource_id
         self.target_resource = target_resource
