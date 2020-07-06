@@ -5,7 +5,6 @@ import time
 from collections import OrderedDict
 
 import pytest
-import responses
 
 from cognite.client import CogniteClient
 from cognite.client._api.assets import Asset, AssetList, AssetUpdate, _AssetPoster, _AssetPosterWorker
