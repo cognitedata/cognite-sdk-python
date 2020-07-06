@@ -283,7 +283,14 @@ class UpdateClassGenerator:
             for update_obj in update_objects:
                 update_properties.extend(UpdateClassGenerator._get_update_properties(update_obj))
             return update_properties
-        for property_name, property in property_update_schema["properties"].items():
+        if "allOf" in property_update_schema:
+            properties = {}
+            for allof_properties in property_update_schema["allOf"]:
+                properties.update(allof_properties)
+            return update_properties
+        else:
+            properties = property_update_schema["properties"]
+        for property_name, property in properties.items():
             if property_name != "setNull":
                 update_properties.append((property_name, TYPE_MAPPING[property["type"]]))
         return update_properties
