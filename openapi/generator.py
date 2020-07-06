@@ -265,6 +265,7 @@ class UpdateClassGenerator:
             "Primitive": [("set", "Any")],
             "Object": [("set", "Dict"), ("add", "Dict"), ("remove", "List")],
             "List": [("set", "List"), ("add", "List"), ("remove", "List")],
+            "Label": [("add", "List"), ("remove", "List")],
         }
         indent = " " * 4 + xindent
         for update_class_name, methods in update_class_methods.items():
