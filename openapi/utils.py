@@ -59,7 +59,7 @@ def get_type_hint(item):
         return "Dict[str, Any]"
     elif type in TYPE_MAPPING:
         return TYPE_MAPPING[type]
-    raise "Unrecognized type '{}'".format(type)
+    raise Exception("Unrecognized type '{}'".format(type))
 
 
 def to_snake_case(str):
