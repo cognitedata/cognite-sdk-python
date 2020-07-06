@@ -259,6 +259,13 @@ class TestAssets:
         expected = {"labels": {"add": [{"externalId": "PUMP"}]}}
         assert request_body == expected
 
+    @pytest.mark.usefixtures("disable_gzip")
+    def test_ignore_labels_resource_class(self, mock_assets_response):
+        ASSETS_API.update(Asset(id=1, labels=[{"external_id": "PUMP"}], name="Abc"))
+        request_body = json.loads(mock_assets_response.calls[0].request.body)["items"][0]["update"]
+        expected = {"name": {"set": "Abc"}}
+        assert request_body == expected
+
     def test_search(self, mock_assets_response):
         res = ASSETS_API.search(filter=AssetFilter(name="1"))
         assert mock_assets_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
