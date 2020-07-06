@@ -402,6 +402,14 @@ class AssetsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> my_update = AssetUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
                 >>> res = c.assets.update(my_update)
+
+            Perform a partial update on a asset, attach a label to an asset::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import AssetUpdate
+                >>> c = CogniteClient()
+                >>> my_update = AssetUpdate(id=1).labels.add([{"externalId", "PUMP"}])
+                >>> res = c.assets.update(my_update)
         """
         return self._update_multiple(items=item)
 

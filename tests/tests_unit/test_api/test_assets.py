@@ -21,6 +21,7 @@ EXAMPLE_ASSET = {
     "parentId": 1,
     "description": "string",
     "metadata": {"metadata-key": "metadata-value"},
+    "labels": [{"externalId": "PUMP"}],
     "source": "string",
     "id": 1,
     "lastUpdatedTime": 0,
@@ -283,6 +284,8 @@ class TestAssets:
             .external_id.set(None)
             .metadata.set({})
             .metadata.set(None)
+            .labels.add([{"externalId":"PUMP"}])
+            .labels.remove([{"externalId": "VALVE"}])
             .name.set("")
             .name.set(None)
             .source.set(1)

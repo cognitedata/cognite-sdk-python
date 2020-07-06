@@ -240,9 +240,9 @@ class UpdateClassGenerator:
             if prop_name == "id":
                 continue
             update_prop_type_hints = {p: type_hint for p, type_hint in self._get_update_properties(prop)}
+            setter = indent + "@property\n"
+            setter += indent + "def {}(self):\n".format(utils.to_snake_case(prop_name))
             if "set" in update_prop_type_hints:
-                setter = indent + "@property\n"
-                setter += indent + "def {}(self):\n".format(utils.to_snake_case(prop_name))
                 if update_prop_type_hints["set"] == "List":
                     setter += (
                         indent + indent + "return {}._List{}(self, '{}')".format(class_name, class_name, prop_name)
@@ -255,6 +255,9 @@ class UpdateClassGenerator:
                     setter += (
                         indent + indent + "return {}._Primitive{}(self, '{}')".format(class_name, class_name, prop_name)
                     )
+                setters.append(setter)
+            elif prop_name == "labels":
+                setter += indent + indent + "return {}._Label{}(self, '{}')".format(class_name, class_name, prop_name)
                 setters.append(setter)
         return "\n\n".join(setters)
 

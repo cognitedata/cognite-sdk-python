@@ -225,6 +225,13 @@ class AssetUpdate(CogniteUpdate):
         def remove(self, value: List) -> "AssetUpdate":
             return self._remove(value)
 
+    class _LabelAssetUpdate(CogniteLabelUpdate):
+        def add(self, value: List) -> "AssetUpdate":
+            return self._add(value)
+
+        def remove(self, value: List) -> "AssetUpdate":
+            return self._remove(value)
+
     @property
     def external_id(self):
         return AssetUpdate._PrimitiveAssetUpdate(self, "externalId")
@@ -257,29 +264,19 @@ class AssetUpdate(CogniteUpdate):
     def parent_external_id(self):
         return AssetUpdate._PrimitiveAssetUpdate(self, "parentExternalId")
 
-    # GenStop
-
     @property
     def labels(self):
-        raise Exception("Use the add_label and remove_label functions to handle label updates")
+        return AssetUpdate._LabelAssetUpdate(self, "labels")
+
+    # GenStop
 
     def add_label(self, external_id: str = None):
         """Upsert the label on the asset"""
-        if self._update_object.get("labels") is None:
-            self._update_object["labels"] = {}
-        if self._update_object["labels"].get("add") is None:
-            self._update_object["labels"]["add"] = []
-        self._update_object["labels"]["add"].append({"externalId": external_id})
-        return self
+        return self.labels.add([{"externalId": external_id}])
 
     def remove_label(self, external_id: str = None):
         """Remove the label from an asset"""
-        if self._update_object.get("labels") is None:
-            self._update_object["labels"] = {}
-        if self._update_object["labels"].get("remove") is None:
-            self._update_object["labels"]["remove"] = []
-        self._update_object["labels"]["remove"].append({"externalId": external_id})
-        return self
+        return self.labels.remove([{"externalId": external_id}])
 
 
 class AssetList(CogniteResourceList):

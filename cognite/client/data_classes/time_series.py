@@ -229,6 +229,13 @@ class TimeSeriesUpdate(CogniteUpdate):
         def remove(self, value: List) -> "TimeSeriesUpdate":
             return self._remove(value)
 
+    class _LabelTimeSeriesUpdate(CogniteLabelUpdate):
+        def add(self, value: List) -> "TimeSeriesUpdate":
+            return self._add(value)
+
+        def remove(self, value: List) -> "TimeSeriesUpdate":
+            return self._remove(value)
+
     @property
     def external_id(self):
         return TimeSeriesUpdate._PrimitiveTimeSeriesUpdate(self, "externalId")
