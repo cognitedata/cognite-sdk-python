@@ -367,6 +367,20 @@ class CogniteListUpdate:
         return self._update_object
 
 
+class CogniteLabelUpdate:
+    def __init__(self, update_object, name: str):
+        self._update_object = update_object
+        self._name = name
+
+    def _add(self, value: List):
+        self._update_object._add(self._name, value)
+        return self._update_object
+
+    def _remove(self, value: List):
+        self._update_object._remove(self._name, value)
+        return self._update_object
+
+
 class CogniteFilter:
     def __eq__(self, other):
         return type(self) == type(other) and self.dump() == other.dump()
