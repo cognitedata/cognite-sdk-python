@@ -408,7 +408,7 @@ class AssetsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import AssetUpdate
                 >>> c = CogniteClient()
-                >>> my_update = AssetUpdate(id=1).labels.add([{"externalId", "PUMP"}])
+                >>> my_update = AssetUpdate(id=1).labels.add(["PUMP"])
                 >>> res = c.assets.update(my_update)
         """
         return self._update_multiple(items=item)

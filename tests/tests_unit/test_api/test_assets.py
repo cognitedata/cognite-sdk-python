@@ -5,6 +5,7 @@ import time
 from collections import OrderedDict
 
 import pytest
+import responses
 
 from cognite.client import CogniteClient
 from cognite.client._api.assets import Asset, AssetList, AssetUpdate, _AssetPoster, _AssetPosterWorker
@@ -239,6 +240,25 @@ class TestAssets:
         assert isinstance(res, AssetList)
         assert mock_assets_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
+    @pytest.mark.usefixtures("disable_gzip")
+    def test_update_labels(self, mock_assets_response):
+        ASSETS_API.update([AssetUpdate(id=1).labels.add(["PUMP", "ROTATING_EQUIPMENT"]).labels.remove(["VALVE"])])
+        request_body = json.loads(mock_assets_response.calls[0].request.body)["items"][0]["update"]
+        expected = {
+            "labels": {
+                "add": [{"externalId": "PUMP"}, {"externalId": "ROTATING_EQUIPMENT"}],
+                "remove": [{"externalId": "VALVE"}],
+            }
+        }
+        assert request_body == expected
+
+    @pytest.mark.usefixtures("disable_gzip")
+    def test_update_labels_using_deprecated_methods(self, mock_assets_response):
+        ASSETS_API.update([AssetUpdate(id=1).add_label("PUMP")])
+        request_body = json.loads(mock_assets_response.calls[0].request.body)["items"][0]["update"]
+        expected = {"labels": {"add": [{"externalId": "PUMP"}]}}
+        assert request_body == expected
+
     def test_search(self, mock_assets_response):
         res = ASSETS_API.search(filter=AssetFilter(name="1"))
         assert mock_assets_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
@@ -284,8 +304,8 @@ class TestAssets:
             .external_id.set(None)
             .metadata.set({})
             .metadata.set(None)
-            .labels.add([{"externalId":"PUMP"}])
-            .labels.remove([{"externalId": "VALVE"}])
+            .labels.add(["PUMP"])
+            .labels.remove(["VALVE"])
             .name.set("")
             .name.set(None)
             .source.set(1)

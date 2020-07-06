@@ -372,12 +372,15 @@ class CogniteLabelUpdate:
         self._update_object = update_object
         self._name = name
 
+    def _wrap_labels(self, value: List):
+        return [{"externalId": label} for label in value]
+
     def _add(self, value: List):
-        self._update_object._add(self._name, value)
+        self._update_object._add(self._name, self._wrap_labels(value))
         return self._update_object
 
     def _remove(self, value: List):
-        self._update_object._remove(self._name, value)
+        self._update_object._remove(self._name, self._wrap_labels(value))
         return self._update_object
 
 

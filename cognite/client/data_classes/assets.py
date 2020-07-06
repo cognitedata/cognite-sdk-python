@@ -272,11 +272,11 @@ class AssetUpdate(CogniteUpdate):
 
     def add_label(self, external_id: str = None):
         """Upsert the label on the asset"""
-        return self.labels.add([{"externalId": external_id}])
+        return self.labels.add([external_id])
 
     def remove_label(self, external_id: str = None):
         """Remove the label from an asset"""
-        return self.labels.remove([{"externalId": external_id}])
+        return self.labels.remove([external_id])
 
 
 class AssetList(CogniteResourceList):
