@@ -232,6 +232,11 @@ class UpdateClassGenerator:
             update_schema = schema
         indent = " " * indentation
         for prop_name, prop in self._get_schema_properties(update_schema).items():
+            if "allOf" in prop:
+                allofprop = {}
+                for p in prop["allOf"][::-1]:
+                    allofprop.update(p)
+                prop = allofprop
             if prop_name == "id":
                 continue
             update_prop_type_hints = {p: type_hint for p, type_hint in self._get_update_properties(prop)}
@@ -283,7 +288,14 @@ class UpdateClassGenerator:
             for update_obj in update_objects:
                 update_properties.extend(UpdateClassGenerator._get_update_properties(update_obj))
             return update_properties
-        for property_name, property in property_update_schema["properties"].items():
+        if "allOf" in property_update_schema:
+            properties = {}
+            for allof_properties in property_update_schema["allOf"][::-1]:
+                properties.update(allof_properties)
+            return update_properties
+        else:
+            properties = property_update_schema["properties"]
+        for property_name, property in properties.items():
             if property_name != "setNull":
                 update_properties.append((property_name, TYPE_MAPPING[property["type"]]))
         return update_properties
@@ -300,7 +312,7 @@ class UpdateClassGenerator:
     def _get_schema_properties(schema):
         if "allOf" in schema:
             properties = {}
-            for s in schema["allOf"]:
+            for s in schema["allOf"][::-1]:
                 for prop_name, prop in UpdateClassGenerator._get_schema_properties(s).items():
                     properties[prop_name] = prop
             return properties
