@@ -108,6 +108,10 @@ class ThreeDModelUpdate(CogniteUpdate):
     def name(self):
         return ThreeDModelUpdate._PrimitiveThreeDModelUpdate(self, "name")
 
+    @property
+    def metadata(self):
+        return ThreeDModelUpdate._ObjectThreeDModelUpdate(self, "metadata")
+
     # GenStop
 
 
@@ -217,6 +221,10 @@ class ThreeDModelRevisionUpdate(CogniteUpdate):
     @property
     def camera(self):
         return ThreeDModelRevisionUpdate._ObjectThreeDModelRevisionUpdate(self, "camera")
+
+    @property
+    def metadata(self):
+        return ThreeDModelRevisionUpdate._ObjectThreeDModelRevisionUpdate(self, "metadata")
 
     # GenStop
 

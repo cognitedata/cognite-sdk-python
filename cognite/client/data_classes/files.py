@@ -188,6 +188,14 @@ class FileMetadataUpdate(CogniteUpdate):
         return FileMetadataUpdate._PrimitiveFileMetadataUpdate(self, "mimeType")
 
     @property
+    def metadata(self):
+        return FileMetadataUpdate._ObjectFileMetadataUpdate(self, "metadata")
+
+    @property
+    def asset_ids(self):
+        return FileMetadataUpdate._ListFileMetadataUpdate(self, "assetIds")
+
+    @property
     def source_created_time(self):
         return FileMetadataUpdate._PrimitiveFileMetadataUpdate(self, "sourceCreatedTime")
 
@@ -198,6 +206,10 @@ class FileMetadataUpdate(CogniteUpdate):
     @property
     def data_set_id(self):
         return FileMetadataUpdate._PrimitiveFileMetadataUpdate(self, "dataSetId")
+
+    @property
+    def security_categories(self):
+        return FileMetadataUpdate._ListFileMetadataUpdate(self, "securityCategories")
 
     # GenStop
 

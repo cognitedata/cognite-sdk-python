@@ -215,6 +215,10 @@ class EventUpdate(CogniteUpdate):
         return EventUpdate._PrimitiveEventUpdate(self, "description")
 
     @property
+    def metadata(self):
+        return EventUpdate._ObjectEventUpdate(self, "metadata")
+
+    @property
     def asset_ids(self):
         return EventUpdate._ListEventUpdate(self, "assetIds")
 
