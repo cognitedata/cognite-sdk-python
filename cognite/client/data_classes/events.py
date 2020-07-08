@@ -194,6 +194,13 @@ class EventUpdate(CogniteUpdate):
         def remove(self, value: List) -> "EventUpdate":
             return self._remove(value)
 
+    class _LabelEventUpdate(CogniteLabelUpdate):
+        def add(self, value: List) -> "EventUpdate":
+            return self._add(value)
+
+        def remove(self, value: List) -> "EventUpdate":
+            return self._remove(value)
+
     @property
     def external_id(self):
         return EventUpdate._PrimitiveEventUpdate(self, "externalId")

@@ -315,7 +315,7 @@ class CogniteUpdate:
 
     @classmethod
     def _get_update_properties(cls):
-        return [key for key in cls.__dict__.keys() if not key.startswith("_")]
+        return [key for key in cls.__dict__.keys() if (not key.startswith("_")) and (not key == "labels")]
 
 
 class CognitePrimitiveUpdate:
@@ -364,6 +364,23 @@ class CogniteListUpdate:
 
     def _remove(self, value: List):
         self._update_object._remove(self._name, value)
+        return self._update_object
+
+
+class CogniteLabelUpdate:
+    def __init__(self, update_object, name: str):
+        self._update_object = update_object
+        self._name = name
+
+    def _wrap_labels(self, value: List):
+        return [{"externalId": label} for label in value]
+
+    def _add(self, value: List):
+        self._update_object._add(self._name, self._wrap_labels(value))
+        return self._update_object
+
+    def _remove(self, value: List):
+        self._update_object._remove(self._name, self._wrap_labels(value))
         return self._update_object
 
 
