@@ -120,6 +120,13 @@ class DataSetUpdate(CogniteUpdate):
         def remove(self, value: List) -> "DataSetUpdate":
             return self._remove(value)
 
+    class _LabelDataSetUpdate(CogniteLabelUpdate):
+        def add(self, value: List) -> "DataSetUpdate":
+            return self._add(value)
+
+        def remove(self, value: List) -> "DataSetUpdate":
+            return self._remove(value)
+
     @property
     def external_id(self):
         return DataSetUpdate._PrimitiveDataSetUpdate(self, "externalId")

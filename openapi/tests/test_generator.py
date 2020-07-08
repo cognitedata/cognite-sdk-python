@@ -212,6 +212,13 @@ class _ListAssetUpdate(CogniteListUpdate):
         return self._add(value)
 
     def remove(self, value: List) -> "AssetUpdate":
+        return self._remove(value)
+
+class _LabelAssetUpdate(CogniteLabelUpdate):
+    def add(self, value: List) -> "AssetUpdate":
+        return self._add(value)
+
+    def remove(self, value: List) -> "AssetUpdate":
         return self._remove(value)"""
             == attr_update_classes
         )

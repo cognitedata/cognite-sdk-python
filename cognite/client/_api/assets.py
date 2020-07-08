@@ -378,6 +378,7 @@ class AssetsAPI(APIClient):
 
     def update(self, item: Union[Asset, AssetUpdate, List[Union[Asset, AssetUpdate]]]) -> Union[Asset, AssetList]:
         """`Update one or more assets <https://docs.cognite.com/api/v1/#operation/updateAssets>`_
+        Currently, a full replacement of labels on an asset is not supported (only partial add/remove updates). See the example below on how to perform partial labels update.
 
         Args:
             item (Union[Asset, AssetUpdate, List[Union[Asset, AssetUpdate]]]): Asset(s) to update
@@ -401,6 +402,14 @@ class AssetsAPI(APIClient):
                 >>> from cognite.client.data_classes import AssetUpdate
                 >>> c = CogniteClient()
                 >>> my_update = AssetUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
+                >>> res = c.assets.update(my_update)
+
+            Perform a partial update on a asset, attach a label to an asset::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import AssetUpdate
+                >>> c = CogniteClient()
+                >>> my_update = AssetUpdate(id=1).labels.add(["PUMP"])
                 >>> res = c.assets.update(my_update)
         """
         return self._update_multiple(items=item)

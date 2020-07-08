@@ -104,6 +104,13 @@ class ThreeDModelUpdate(CogniteUpdate):
         def remove(self, value: List) -> "ThreeDModelUpdate":
             return self._remove(value)
 
+    class _LabelThreeDModelUpdate(CogniteLabelUpdate):
+        def add(self, value: List) -> "ThreeDModelUpdate":
+            return self._add(value)
+
+        def remove(self, value: List) -> "ThreeDModelUpdate":
+            return self._remove(value)
+
     @property
     def name(self):
         return ThreeDModelUpdate._PrimitiveThreeDModelUpdate(self, "name")
@@ -204,6 +211,13 @@ class ThreeDModelRevisionUpdate(CogniteUpdate):
         def set(self, value: List) -> "ThreeDModelRevisionUpdate":
             return self._set(value)
 
+        def add(self, value: List) -> "ThreeDModelRevisionUpdate":
+            return self._add(value)
+
+        def remove(self, value: List) -> "ThreeDModelRevisionUpdate":
+            return self._remove(value)
+
+    class _LabelThreeDModelRevisionUpdate(CogniteLabelUpdate):
         def add(self, value: List) -> "ThreeDModelRevisionUpdate":
             return self._add(value)
 
