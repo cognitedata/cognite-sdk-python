@@ -22,6 +22,10 @@ class CogniteListUpdate:
     pass
 
 
+class CogniteLabelUpdate:
+    pass
+
+
 class CognitePropertyClassUtil:
     @staticmethod
     def declare_property(tmp):

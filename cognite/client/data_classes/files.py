@@ -175,6 +175,13 @@ class FileMetadataUpdate(CogniteUpdate):
         def remove(self, value: List) -> "FileMetadataUpdate":
             return self._remove(value)
 
+    class _LabelFileMetadataUpdate(CogniteLabelUpdate):
+        def add(self, value: List) -> "FileMetadataUpdate":
+            return self._add(value)
+
+        def remove(self, value: List) -> "FileMetadataUpdate":
+            return self._remove(value)
+
     @property
     def external_id(self):
         return FileMetadataUpdate._PrimitiveFileMetadataUpdate(self, "externalId")

@@ -167,6 +167,13 @@ class SequenceUpdate(CogniteUpdate):
         def remove(self, value: List) -> "SequenceUpdate":
             return self._remove(value)
 
+    class _LabelSequenceUpdate(CogniteLabelUpdate):
+        def add(self, value: List) -> "SequenceUpdate":
+            return self._add(value)
+
+        def remove(self, value: List) -> "SequenceUpdate":
+            return self._remove(value)
+
     @property
     def name(self):
         return SequenceUpdate._PrimitiveSequenceUpdate(self, "name")

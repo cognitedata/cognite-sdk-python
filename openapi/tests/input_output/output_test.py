@@ -25,6 +25,10 @@ class CogniteListUpdate:
     pass
 
 
+class CogniteLabelUpdate:
+    pass
+
+
 class CognitePropertyClassUtil:
     @staticmethod
     def declare_property(tmp):
@@ -164,6 +168,13 @@ class AssetUpdate(CogniteUpdate):
         def remove(self, value: List) -> "AssetUpdate":
             return self._remove(value)
 
+    class _LabelAssetUpdate(CogniteLabelUpdate):
+        def add(self, value: List) -> "AssetUpdate":
+            return self._add(value)
+
+        def remove(self, value: List) -> "AssetUpdate":
+            return self._remove(value)
+
     @property
     def external_id(self):
         return AssetUpdate._PrimitiveAssetUpdate(self, "externalId")
@@ -195,6 +206,10 @@ class AssetUpdate(CogniteUpdate):
     @property
     def parent_external_id(self):
         return AssetUpdate._PrimitiveAssetUpdate(self, "parentExternalId")
+
+    @property
+    def labels(self):
+        return AssetUpdate._LabelAssetUpdate(self, "labels")
 
     # GenStop
 

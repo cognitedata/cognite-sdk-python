@@ -33,6 +33,10 @@ class MyUpdate(CogniteUpdate):
     def object(self):
         return ObjectUpdate(self, "object")
 
+    @property
+    def labels(self):
+        return LabelUpdate(self, "labels")
+
 
 class PrimitiveUpdate(CognitePrimitiveUpdate):
     def set(self, value: Any) -> MyUpdate:
@@ -54,6 +58,14 @@ class ListUpdate(CogniteListUpdate):
     def set(self, value: List) -> MyUpdate:
         return self._set(value)
 
+    def add(self, value: List) -> MyUpdate:
+        return self._add(value)
+
+    def remove(self, value: List) -> MyUpdate:
+        return self._remove(value)
+
+
+class LabelUpdate(CogniteLabelUpdate):
     def add(self, value: List) -> MyUpdate:
         return self._add(value)
 
