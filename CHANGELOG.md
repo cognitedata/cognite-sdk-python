@@ -15,8 +15,11 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 ## Unreleased	
+
+## [1.8.1] - 2020-07-07
 ### Changed
 - For 3d mappings delete, only use node_id and asset_id pairs in delete request to avoid potential bad request.
+- Support attaching/detaching multiple labels on assets in a single method
 
 ## [1.8.0] - 2020-06-30
 ### Added
