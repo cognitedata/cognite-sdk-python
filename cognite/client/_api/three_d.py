@@ -410,9 +410,6 @@ class ThreeDRevisionsAPI(APIClient):
     ) -> ThreeDNodeList:
         """`Retrieves a list of ancestor nodes of a given node, including itself, in the hierarchy of the 3D model <https://docs.cognite.com/api/v1/#operation/get3DNodeAncestors>`_
 
-        You can also request a specific subtree with the 'nodeId' query parameter and limit the depth of
-        the resulting subtree with the 'depth' query parameter.
-
         Args:
             model_id (int): Id of the model.
             revision_id (int): Id of the revision.
