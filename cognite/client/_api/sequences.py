@@ -79,7 +79,7 @@ class SequencesAPI(APIClient):
             last_updated_time=last_updated_time,
             data_set_ids=data_set_ids,
         ).dump(camel_case=True)
-        return self._list_generator(method="GET", chunk_size=chunk_size, filter=filter, limit=limit)
+        return self._list_generator(method="POST", chunk_size=chunk_size, filter=filter, limit=limit)
 
     def __iter__(self) -> Generator[Sequence, None, None]:
         """Iterate over sequences
