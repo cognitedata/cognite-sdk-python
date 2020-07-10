@@ -44,6 +44,13 @@ class TestSequencesAPI:
             retrieved_asset.external_id = listed_asset.external_id
         assert res == retrieved_assets
 
+    def test_call(self, post_spy):
+        with set_request_limit(COGNITE_CLIENT.sequences, 10):
+            res = [s for s in COGNITE_CLIENT.sequences(limit=20)]
+
+        assert 20 == len(res)
+        assert 2 == COGNITE_CLIENT.sequences._post.call_count
+
     def test_list(self, post_spy):
         with set_request_limit(COGNITE_CLIENT.sequences, 10):
             res = COGNITE_CLIENT.sequences.list(limit=20)

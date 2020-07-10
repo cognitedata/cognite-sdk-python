@@ -16,6 +16,10 @@ Changes are grouped as follows
 
 ## Unreleased	
 
+## [1.8.2] - 2020-07-08
+### Fixed
+- Fixed bug where `_call_` in SequencesAPI (`client.sequences`) was incorrectly returning a `GET` method instead of `POST`.
+
 ## [1.8.1] - 2020-07-07
 ### Changed
 - For 3d mappings delete, only use node_id and asset_id pairs in delete request to avoid potential bad request.
