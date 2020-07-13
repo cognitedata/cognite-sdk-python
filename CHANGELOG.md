@@ -16,6 +16,10 @@ Changes are grouped as follows
 
 ## Unreleased	
 
+## [1.8.3] - 2020-07-15
+### Fixed
+- Fixed bug where you couldn't filter assets based on labels.
+
 ## [1.8.2] - 2020-07-08
 ### Fixed
 - Fixed bug where `_call_` in SequencesAPI (`client.sequences`) was incorrectly returning a `GET` method instead of `POST`.

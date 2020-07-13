@@ -8,7 +8,7 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client._api.assets import Asset, AssetList, AssetUpdate, _AssetPoster, _AssetPosterWorker
-from cognite.client.data_classes import AssetFilter, TimestampRange
+from cognite.client.data_classes import AssetFilter, TimestampRange, AssetLabelFilter
 from cognite.client.exceptions import CogniteAPIError
 from tests.utils import jsgz_load, set_request_limit
 
@@ -263,6 +263,22 @@ class TestAssets:
         ASSETS_API.update(Asset(id=1, labels=[{"external_id": "PUMP"}], name="Abc"))
         request_body = json.loads(mock_assets_response.calls[0].request.body)["items"][0]["update"]
         expected = {"name": {"set": "Abc"}}
+        assert request_body == expected
+
+    @pytest.mark.usefixtures("disable_gzip")
+    def test_labels_filter_contains_all(self, mock_assets_response):
+        my_label_filter = AssetLabelFilter(contains_all=["PUMP", "VERIFIED"])
+        ASSETS_API.list(labels=my_label_filter)
+        request_body = json.loads(mock_assets_response.calls[0].request.body)["filter"]
+        expected = {"labels": {"containsAll": [{"externalId": "PUMP"}, {"externalId": "VERIFIED"}]}}
+        assert request_body == expected
+
+    @pytest.mark.usefixtures("disable_gzip")
+    def test_labels_filter_contains_any(self, mock_assets_response):
+        my_label_filter = AssetLabelFilter(contains_any=["PUMP", "VALVE"])
+        ASSETS_API.list(labels=my_label_filter)
+        request_body = json.loads(mock_assets_response.calls[0].request.body)["filter"]
+        expected = {"labels": {"containsAny": [{"externalId": "PUMP"}, {"externalId": "VALVE"}]}}
         assert request_body == expected
 
     def test_search(self, mock_assets_response):

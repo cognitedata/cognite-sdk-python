@@ -354,24 +354,40 @@ class AssetList(CogniteResourceList):
         return resources
 
 
-# GenClass: AssetLabelFilter
-class AssetLabelFilter(CogniteFilter):
-    """Return only the assets matching the specified label.
+class AssetLabelFilter(dict):
+    """Return only assets matching the specified label.
 
     Args:
-        contains_any (List[Dict[str, Any]]): The resource item contains at least one of the listed labels.
-        contains_all (List[Dict[str, Any]]): The resource item contains at least all the listed labels.
+        contains_any (List[str]): The asset contains at least one of the listed labels (external id).
+        contains_all (List[str]): The asset contains at least all the listed labels (external id).
         cognite_client (CogniteClient): The client to associate with this object.
+
+    Examples:
+
+            List assets marked as a PUMP and VERIFIED::
+
+                >>> from cognite.client.data_classes import AssetLabelFilter
+                >>> my_label_filter = AssetLabelFilter(contains_all=["PUMP", "VERIFIED"])
+
+            List assets marked as a PUMP or VALVE::
+
+                >>> from cognite.client.data_classes import AssetLabelFilter
+                >>> my_label_filter = AssetLabelFilter(contains_any=["PUMP", "VALVE"])
     """
 
-    def __init__(
-        self, contains_any: List[Dict[str, Any]] = None, contains_all: List[Dict[str, Any]] = None, cognite_client=None
-    ):
-        self.contains_any = contains_any
-        self.contains_all = contains_all
+    def __init__(self, contains_any: List[str] = None, contains_all: List[str] = None, cognite_client=None):
+
+        self.contains_any = self._wrap_external_ids(contains_any)
+        self.contains_all = self._wrap_external_ids(contains_all)
         self._cognite_client = cognite_client
 
-    # GenStop
+    def _wrap_external_ids(self, external_ids: List):
+        if external_ids is None:
+            return None
+        return [{"externalId": external_id} for external_id in external_ids]
+
+    contains_any = CognitePropertyClassUtil.declare_property("containsAny")
+    contains_all = CognitePropertyClassUtil.declare_property("containsAll")
 
 
 # GenClass: AssetFilter.filter

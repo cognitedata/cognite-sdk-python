@@ -203,7 +203,7 @@ class AssetsAPI(APIClient):
             asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
             data_set_ids (List[int]): Return only assets in the specified data sets with these ids.
             data_set_external_ids (List[str]): Return only assets in the specified data sets with these external ids.
-            labels (List): List of label filters.
+            labels (AssetLabelFilter): Return only the assets matching the specified label filter.
             metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value.
             source (str): The source of this asset.
             created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
@@ -239,6 +239,14 @@ class AssetsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> for asset_list in c.assets(chunk_size=2500):
                 ...     asset_list # do something with the assets
+
+            Filter assets based on labels::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import AssetLabelFilter
+                >>> c = CogniteClient()
+                >>> my_label_filter = AssetLabelFilter(contains_all=["PUMP"])
+                >>> asset_list = c.assets.list(labels=my_label_filter)
         """
         if aggregated_properties:
             aggregated_properties = [utils._auxiliary.to_camel_case(s) for s in aggregated_properties]
