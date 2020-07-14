@@ -377,14 +377,14 @@ class AssetLabelFilter(dict):
 
     def __init__(self, contains_any: List[str] = None, contains_all: List[str] = None, cognite_client=None):
 
-        self.contains_any = self._wrap_external_ids(contains_any)
-        self.contains_all = self._wrap_external_ids(contains_all)
+        self.contains_any = contains_any
+        self.contains_all = contains_all
         self._cognite_client = cognite_client
 
-    def _wrap_external_ids(self, external_ids: List):
-        if external_ids is None:
-            return None
-        return [{"externalId": external_id} for external_id in external_ids]
+    def dump(self, camel_case: bool = False):
+        dump_key = lambda key: key if not camel_case else utils._auxiliary.to_camel_case(key)
+        wrap = lambda values: None if values is None else [{"externalId": value} for value in values]
+        return {dump_key(key): wrap(value) for key, value in self.items()}
 
     contains_any = CognitePropertyClassUtil.declare_property("containsAny")
     contains_all = CognitePropertyClassUtil.declare_property("containsAll")
@@ -456,3 +456,9 @@ class AssetFilter(CogniteFilter):
         return instance
 
     # GenStop
+
+    def dump(self, camel_case: bool = False):
+        result = super(AssetFilter, self).dump(camel_case)
+        if isinstance(self.labels, AssetLabelFilter):
+            result["labels"] = self.labels.dump(camel_case)
+        return result

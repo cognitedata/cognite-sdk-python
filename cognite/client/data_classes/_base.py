@@ -408,12 +408,10 @@ class CogniteFilter:
         Returns:
             Dict[str, Any]: A dictionary representation of the instance.
         """
-        if camel_case:
-            return {
-                utils._auxiliary.to_camel_case(key): value
-                for key, value in self.__dict__.items()
-                if value not in EXCLUDE_VALUE and not key.startswith("_")
-            }
+
+        dump_key = lambda key: key if not camel_case else utils._auxiliary.to_camel_case(key)
         return {
-            key: value for key, value in self.__dict__.items() if value not in EXCLUDE_VALUE and not key.startswith("_")
+            dump_key(key): value
+            for key, value in self.__dict__.items()
+            if value not in EXCLUDE_VALUE and not key.startswith("_")
         }
