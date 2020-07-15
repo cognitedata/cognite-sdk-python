@@ -5,7 +5,7 @@ from typing import *
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes import Asset, AssetAggregate, AssetFilter, AssetList, AssetUpdate, TimestampRange
+from cognite.client.data_classes import Asset, AssetAggregate, AssetFilter, AssetList, AssetUpdate, TimestampRange, LabelFilter
 from cognite.client.exceptions import CogniteAPIError
 
 
@@ -26,7 +26,7 @@ class AssetsAPI(APIClient):
         metadata: Dict[str, str] = None,
         data_set_ids: List[int] = None,
         data_set_external_ids: List[str] = None,
-        labels: List = None,
+        labels: LabelFilter = None,
         source: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
@@ -51,7 +51,7 @@ class AssetsAPI(APIClient):
             metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value
             data_set_ids (List[int]): Return only assets in the specified data sets with these ids.
             data_set_external_ids (List[str]): Return only assets in the specified data sets with these external ids.
-            labels (List): List of label filters
+            labels (LabelFilter): Return only the assets matching the specified label.
             source (str): The source of this asset
             created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
@@ -180,7 +180,7 @@ class AssetsAPI(APIClient):
         asset_subtree_external_ids: List[str] = None,
         data_set_ids: List[int] = None,
         data_set_external_ids: List[str] = None,
-        labels: List = None,
+        labels: LabelFilter = None,
         metadata: Dict[str, str] = None,
         source: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
@@ -203,7 +203,7 @@ class AssetsAPI(APIClient):
             asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
             data_set_ids (List[int]): Return only assets in the specified data sets with these ids.
             data_set_external_ids (List[str]): Return only assets in the specified data sets with these external ids.
-            labels (AssetLabelFilter): Return only the assets matching the specified label filter.
+            labels (LabelFilter): Return only the assets matching the specified label filter.
             metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value.
             source (str): The source of this asset.
             created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
@@ -243,9 +243,9 @@ class AssetsAPI(APIClient):
             Filter assets based on labels::
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import AssetLabelFilter
+                >>> from cognite.client.data_classes import LabelFilter
                 >>> c = CogniteClient()
-                >>> my_label_filter = AssetLabelFilter(contains_all=["PUMP"])
+                >>> my_label_filter = LabelFilter(contains_all=["PUMP", "VERIFIED"])
                 >>> asset_list = c.assets.list(labels=my_label_filter)
         """
         if aggregated_properties:
@@ -323,7 +323,7 @@ class AssetsAPI(APIClient):
                 >>> assets = [Asset(name="asset1"), Asset(name="asset2")]
                 >>> res = c.assets.create(assets)
 
-            Create asset with labels::
+            Create asset with label::
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import Asset, Label

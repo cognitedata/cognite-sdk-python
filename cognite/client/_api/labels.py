@@ -65,7 +65,7 @@ class LabelsAPI(APIClient):
             Label (Union[LabelDefinition, List[LabelDefinition]]): label definition or list of label definitions to create.
 
         Returns:
-            Union[LabelDefinition, LabelDefinitionList]: Created label definition(s)
+            Union[LabelDefinition, List[LabelDefinition]]: Created label definition(s)
 
         Examples:
 
