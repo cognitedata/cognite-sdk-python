@@ -46,7 +46,9 @@ class TestLabels:
         res = LABELS_API.create(LabelDefinition(external_id="1", name="my_label", description="mandatory"))
         assert isinstance(res, LabelDefinition)
         assert mock_labels_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
-        assert {"items": [{"externalId": "1", "name": "my_label", "description": "mandatory"}]} == jsgz_load(mock_labels_response.calls[0].request.body)
+        assert {"items": [{"externalId": "1", "name": "my_label", "description": "mandatory"}]} == jsgz_load(
+            mock_labels_response.calls[0].request.body
+        )
 
     def test_create_multiple(self, mock_labels_response):
         res = LABELS_API.create([LabelDefinition(external_id="1"), LabelDefinition(external_id="2")])
