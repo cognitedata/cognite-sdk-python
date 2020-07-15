@@ -22,7 +22,7 @@ Changes are grouped as follows
 - Fixed bug where `_call_` in SequencesAPI (`client.sequences`) was incorrectly returning a `GET` method instead of `POST`.
 
 ### Changed
-- A new interface to interact with labels has changed (the previous solution was hard to use and some places unfinished).
+- The interface to interact with labels has changed (the previous solution was hard to use and some places unfinished).
 
 ## [1.8.1] - 2020-07-07
 ### Changed
