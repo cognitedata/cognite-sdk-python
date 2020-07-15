@@ -29,6 +29,13 @@ class TestLabels:
         assert "P" == jsgz_load(mock_labels_response.calls[0].request.body)["filter"]["externalIdPrefix"]
         assert mock_labels_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
+    def test_access_properties(self, mock_labels_response):
+        res = LABELS_API.list(external_id_prefix="P")
+        assert res[0].name == "Pump"
+        assert res[0].description == "guess"
+        assert res[0].external_id == "PUMP"
+        assert res[0].created_time > 0
+
     def test_call(self, mock_labels_response):
         list(LABELS_API(limit=10))
         calls = mock_labels_response.calls
@@ -36,10 +43,10 @@ class TestLabels:
         assert {"cursor": None, "limit": 10, "filter": {}} == jsgz_load(calls[0].request.body)
 
     def test_create_single(self, mock_labels_response):
-        res = LABELS_API.create(LabelDefinition(external_id="1"))
+        res = LABELS_API.create(LabelDefinition(external_id="1", name="my_label", description="mandatory"))
         assert isinstance(res, LabelDefinition)
         assert mock_labels_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
-        assert {"items": [{"externalId": "1"}]} == jsgz_load(mock_labels_response.calls[0].request.body)
+        assert {"items": [{"externalId": "1", "name": "my_label", "description": "mandatory"}]} == jsgz_load(mock_labels_response.calls[0].request.body)
 
     def test_create_multiple(self, mock_labels_response):
         res = LABELS_API.create([LabelDefinition(external_id="1"), LabelDefinition(external_id="2")])

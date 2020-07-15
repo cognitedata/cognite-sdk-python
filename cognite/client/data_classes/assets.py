@@ -3,7 +3,7 @@ from typing import *
 
 from cognite.client.data_classes._base import *
 from cognite.client.data_classes.shared import TimestampRange
-from cognite.client.data_classes.labels import LabelList, LabelFilter
+from cognite.client.data_classes.labels import Label, LabelFilter
 
 
 # GenPropertyClass: AssetAggregate
@@ -58,7 +58,7 @@ class Asset(CogniteResource):
         data_set_id (int): The id of the dataset this asset belongs to.
         metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
         source (str): The source of the asset.
-        labels (LabelList): A list of the labels associated with this resource item.
+        labels (List[Label]): A list of the labels associated with this resource item.
         id (int): A server-generated ID for the object.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -77,7 +77,7 @@ class Asset(CogniteResource):
         data_set_id: int = None,
         metadata: Dict[str, str] = None,
         source: str = None,
-        labels: LabelList = None,
+        labels: List[Label] = None,
         id: int = None,
         created_time: int = None,
         last_updated_time: int = None,
@@ -108,7 +108,7 @@ class Asset(CogniteResource):
             if instance.aggregates is not None:
                 instance.aggregates = AggregateResultItem(**instance.aggregates)
         if instance.labels is not None:
-            instance.labels = LabelList._load(instance.labels)
+            instance.labels = [Label._load(label) for label in instance.labels]
         return instance
 
     def __hash__(self):
@@ -178,8 +178,8 @@ class Asset(CogniteResource):
 
     def dump(self, camel_case: bool = False):
         result = super(Asset, self).dump(camel_case)
-        if isinstance(self.labels, LabelList):
-            result["labels"] = self.labels.dump(camel_case)
+        if self.labels is not None:
+            result["labels"] = [label.dump(camel_case) for label in self.labels]
         return result
 
     def to_pandas(

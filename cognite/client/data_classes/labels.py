@@ -80,20 +80,8 @@ class Label(dict):
         return Label(external_id=raw_label["externalId"])
 
     def dump(self, camel_case: bool = False):
-        return self.__dict__
-
-
-class LabelList:
-    def __init__(self, labels: List[Label] = None):
-        self.labels = labels
-
-    @classmethod
-    def _load(self, raw_labels: List[Dict[str, Any]]):
-        labels = [Label._load(raw_label) for raw_label in raw_labels]
-        return LabelList(labels)
-
-    def dump(self, camel_case: bool = False):
-        return [label for label in self.labels]
+        dump_key = lambda key: key if not camel_case else utils._auxiliary.to_camel_case(key)
+        return {dump_key(key): value for key, value in self.items()}
 
 
 class LabelFilter(dict):

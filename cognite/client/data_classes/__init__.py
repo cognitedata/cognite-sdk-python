@@ -68,5 +68,4 @@ from cognite.client.data_classes.labels import (
     LabelDefinitionList,
     Label,
     LabelFilter,
-    LabelList,
 )

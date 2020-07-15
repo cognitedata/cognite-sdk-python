@@ -27,8 +27,8 @@ def post_spy():
 
 class TestLabelsAPI:
     def test_list(self, new_label, post_spy):
-        res = COGNITE_CLIENT.labels.list()
-        assert 0 < len(res) < 100
+        res = COGNITE_CLIENT.labels.list(limit=100)
+        assert 0 < len(res) <= 100
         assert 1 == COGNITE_CLIENT.labels._post.call_count
 
     def test_create_asset_with_label(self, new_label):
