@@ -58,7 +58,9 @@ class LabelsAPI(APIClient):
         filter = LabelDefinitionFilter(name=name, external_id_prefix=external_id_prefix).dump(camel_case=True)
         return self._list(method="POST", limit=limit, filter=filter)
 
-    def create(self, label: Union[LabelDefinition, List[LabelDefinition]]) -> Union[LabelDefinition, LabelDefinitionList]:
+    def create(
+        self, label: Union[LabelDefinition, List[LabelDefinition]]
+    ) -> Union[LabelDefinition, LabelDefinitionList]:
         """`Create one or more Labels. <https://docs.cognite.com/api/playground/#operation/createLabelDefinitions>`_
 
         Args:

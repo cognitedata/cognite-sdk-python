@@ -83,7 +83,7 @@ class Label(dict):
         return self.__dict__
 
 
-class LabelList():
+class LabelList:
     def __init__(self, labels: List[Label] = None):
         self.labels = labels
 

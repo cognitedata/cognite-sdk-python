@@ -5,7 +5,15 @@ from typing import *
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes import Asset, AssetAggregate, AssetFilter, AssetList, AssetUpdate, TimestampRange, LabelFilter
+from cognite.client.data_classes import (
+    Asset,
+    AssetAggregate,
+    AssetFilter,
+    AssetList,
+    AssetUpdate,
+    TimestampRange,
+    LabelFilter,
+)
 from cognite.client.exceptions import CogniteAPIError
 
 

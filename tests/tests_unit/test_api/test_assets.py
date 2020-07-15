@@ -242,22 +242,17 @@ class TestAssets:
     def test_update_labels(self, mock_assets_response):
         ASSETS_API.update([AssetUpdate(id=1).labels.add(["PUMP", "ROTATING_EQUIPMENT"]).labels.remove(["VALVE"])])
         expected = {
-                        "labels": {
-                            "add": [{"externalId": "PUMP"}, {"externalId": "ROTATING_EQUIPMENT"}],
-                            "remove": [{"externalId": "VALVE"}],
-                        },
-            
+            "labels": {
+                "add": [{"externalId": "PUMP"}, {"externalId": "ROTATING_EQUIPMENT"}],
+                "remove": [{"externalId": "VALVE"}],
+            }
         }
-        assert expected == jsgz_load(
-            mock_assets_response.calls[0].request.body
-        )["items"][0]["update"]
+        assert expected == jsgz_load(mock_assets_response.calls[0].request.body)["items"][0]["update"]
 
     # resource.update doesn't support full replacement of labels (set operation)
     def test_ignore_labels_resource_class(self, mock_assets_response):
         ASSETS_API.update(Asset(id=1, labels=[Label(external_id="Pump")], name="Abc"))
-        assert {"name": {"set": "Abc"}} == jsgz_load(
-            mock_assets_response.calls[0].request.body
-        )["items"][0]["update"]
+        assert {"name": {"set": "Abc"}} == jsgz_load(mock_assets_response.calls[0].request.body)["items"][0]["update"]
 
     def test_labels_filter_contains_all(self, mock_assets_response):
         my_label_filter = LabelFilter(contains_all=["PUMP", "VERIFIED"])

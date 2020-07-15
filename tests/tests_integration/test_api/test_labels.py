@@ -32,7 +32,9 @@ class TestLabelsAPI:
         assert 1 == COGNITE_CLIENT.labels._post.call_count
 
     def test_create_asset_with_label(self, new_label):
-        ac = COGNITE_CLIENT.assets.create(Asset(name="any", labels=[LabelDefinition(external_id=new_label.external_id)]))
+        ac = COGNITE_CLIENT.assets.create(
+            Asset(name="any", labels=[LabelDefinition(external_id=new_label.external_id)])
+        )
         assert isinstance(ac, Asset)
         assert len(ac.labels) == 1
         COGNITE_CLIENT.assets.delete(id=ac.id)
