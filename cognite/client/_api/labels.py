@@ -1,14 +1,14 @@
 from typing import Generator, List, Union
 
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes import Label, LabelFilter, LabelList
+from cognite.client.data_classes import LabelDefinition, LabelDefinitionFilter, LabelDefinitionList
 
 
 class LabelsAPI(APIClient):
     _RESOURCE_PATH = "/labels"
-    _LIST_CLASS = LabelList
+    _LIST_CLASS = LabelDefinitionList
 
-    def __iter__(self) -> Generator[Label, None, None]:
+    def __iter__(self) -> Generator[LabelDefinition, None, None]:
         """Iterate over Labels
 
         Fetches Labels as they are iterated over, so you keep a limited number of Labels in memory.
@@ -19,10 +19,10 @@ class LabelsAPI(APIClient):
         return self.__call__()
 
     def __call__(self, name: str = None, external_id_prefix: str = None, limit: int = None, chunk_size: int = None):
-        filter = LabelFilter(name=name, external_id_prefix=external_id_prefix).dump(camel_case=True)
+        filter = LabelDefinitionFilter(name=name, external_id_prefix=external_id_prefix).dump(camel_case=True)
         return self._list_generator(method="POST", limit=limit, filter=filter, chunk_size=chunk_size)
 
-    def list(self, name: str = None, external_id_prefix: str = None, limit: int = 25) -> LabelList:
+    def list(self, name: str = None, external_id_prefix: str = None, limit: int = 25) -> LabelDefinitionList:
         """`List Labels <https://docs.cognite.com/api/playground/#operation/listLabels>`_
 
         Args:
@@ -31,7 +31,7 @@ class LabelsAPI(APIClient):
             limit (int, optional): Maximum number of label definitions to return.
 
         Returns:
-            LabelList: List of requested Labels
+            LabelDefinitionList: List of requested Labels
 
         Examples:
 
@@ -39,7 +39,7 @@ class LabelsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> label_list = c.labels.list(limit=5, name="name")
+                >>> label_list = c.labels.list(limit=5, name="Pump")
 
             Iterate over label definitions::
 
@@ -55,26 +55,26 @@ class LabelsAPI(APIClient):
                 >>> for label_list in c.types(chunk_size=2500):
                 ...     label_list # do something with the type definitions
         """
-        filter = LabelFilter(name=name, external_id_prefix=external_id_prefix).dump(camel_case=True)
+        filter = LabelDefinitionFilter(name=name, external_id_prefix=external_id_prefix).dump(camel_case=True)
         return self._list(method="POST", limit=limit, filter=filter)
 
-    def create(self, label: Union[Label, List[Label]]) -> Union[Label, LabelList]:
+    def create(self, label: Union[LabelDefinition, List[LabelDefinition]]) -> Union[LabelDefinition, LabelDefinitionList]:
         """`Create one or more Labels. <https://docs.cognite.com/api/playground/#operation/createLabelDefinitions>`_
 
         Args:
-            Label (Union[Label, List[Label]]): label definition or list of label definitions to create.
+            Label (Union[LabelDefinition, List[LabelDefinition]]): label definition or list of label definitions to create.
 
         Returns:
-            Union[Label, LabelList]: Created label definition(s)
+            Union[LabelDefinition, LabelDefinitionList]: Created label definition(s)
 
         Examples:
 
             Create new label definitions::
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import Label
+                >>> from cognite.client.data_classes import LabelDefinition
                 >>> c = CogniteClient()
-                >>> labels = [Label(external_id="valve"), Label(external_id="pipe")]
+                >>> labels = [LabelDefinition(external_id="valve"), LabelDefinition(external_id="pipe")]
                 >>> res = c.labels.create(labels)
         """
         return self._create_multiple(items=label)

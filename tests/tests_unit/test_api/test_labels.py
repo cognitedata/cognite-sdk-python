@@ -3,7 +3,7 @@ import re
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import Label, LabelFilter, LabelList
+from cognite.client.data_classes import LabelDefinition, LabelDefinitionFilter, LabelDefinitionList
 from tests.utils import jsgz_load
 
 LABELS_API = CogniteClient().labels
@@ -36,14 +36,16 @@ class TestLabels:
         assert {"cursor": None, "limit": 10, "filter": {}} == jsgz_load(calls[0].request.body)
 
     def test_create_single(self, mock_labels_response):
-        res = LABELS_API.create(Label(external_id="1"))
-        assert isinstance(res, Label)
+        res = LABELS_API.create(LabelDefinition(external_id="1"))
+        assert isinstance(res, LabelDefinition)
         assert mock_labels_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
+        assert {"items": [{"externalId": "1"}]} == jsgz_load(mock_labels_response.calls[0].request.body)
 
     def test_create_multiple(self, mock_labels_response):
-        res = LABELS_API.create([Label(external_id="1")])
-        assert isinstance(res, LabelList)
+        res = LABELS_API.create([LabelDefinition(external_id="1"), LabelDefinition(external_id="2")])
+        assert isinstance(res, LabelDefinitionList)
         assert mock_labels_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
+        assert {"items": [{"externalId": "1"}, {"externalId": "2"}]} == jsgz_load(mock_labels_response.calls[0].request.body)
 
     def test_delete_single(self, mock_labels_response):
         res = LABELS_API.delete(external_id="PUMP")
@@ -51,6 +53,6 @@ class TestLabels:
         assert res is None
 
     def test_delete_multiple(self, mock_labels_response):
-        res = LABELS_API.delete(external_id=["PUMP"])
-        assert {"items": [{"externalId": "PUMP"}]} == jsgz_load(mock_labels_response.calls[0].request.body)
+        res = LABELS_API.delete(external_id=["PUMP", "VALVE"])
+        assert {"items": [{"externalId": "PUMP"}, {"externalId": "VALVE"}]} == jsgz_load(mock_labels_response.calls[0].request.body)
         assert res is None

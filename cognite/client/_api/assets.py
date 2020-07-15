@@ -322,6 +322,14 @@ class AssetsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> assets = [Asset(name="asset1"), Asset(name="asset2")]
                 >>> res = c.assets.create(assets)
+
+            Create asset with labels::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import Asset, Label
+                >>> c = CogniteClient()
+                >>> asset = Asset(name="asset1", labels=[Label(external_id="PUMP")])
+                >>> res = c.assets.create(assets)
         """
         utils._auxiliary.assert_type(asset, "asset", [Asset, list])
         return self._create_multiple(asset)

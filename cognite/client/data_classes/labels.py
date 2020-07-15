@@ -6,9 +6,9 @@ from cognite.client.data_classes._base import *
 from cognite.client.data_classes.shared import TimestampRange
 
 
-# GenClass: LabelDefinitionSpec, LabelDefinition
-class Label(CogniteResource):
-    """No description.
+# GenClass: LabelDefinition
+class LabelDefinition(CogniteResource):
+    """A label definition is a globally defined label that can later be attached to resources (e.g., assets). For example, can you define a "Pump" label definition and attach that label to your pump assets. 
 
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
@@ -36,8 +36,8 @@ class Label(CogniteResource):
 
 
 # GenClass: LabelDefinitionFilter.filter
-class LabelFilter(CogniteFilter):
-    """Filter on labels with strict matching.
+class LabelDefinitionFilter(CogniteFilter):
+    """Filter on labels definitions with strict matching.
 
     Args:
         name (str): Returns the label definitions matching that name.
@@ -53,7 +53,79 @@ class LabelFilter(CogniteFilter):
     # GenStop
 
 
-class LabelList(CogniteResourceList):
-    _RESOURCE = Label
+class LabelDefinitionList(CogniteResourceList):
+    _RESOURCE = LabelDefinition
     _UPDATE = None
     _ASSERT_CLASSES = False  # because no Update
+
+
+# GenPropertyClass: Label
+class Label(dict):
+    """A label assigned to a resource.
+
+    Args:
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+    """
+
+    def __init__(self, external_id: str = None, **kwargs):
+        self.external_id = external_id
+        self.update(kwargs)
+
+    external_id = CognitePropertyClassUtil.declare_property("externalId")
+
+    # GenStop
+
+    @classmethod
+    def _load(self, raw_label: Dict[str, Any]):
+        return Label(external_id=raw_label["externalId"])
+
+    def dump(self, camel_case: bool = False):
+        return self.__dict__
+
+
+class LabelList():
+    def __init__(self, labels: List[Label] = None):
+        self.labels = labels
+
+    @classmethod
+    def _load(self, raw_labels: List[Dict[str, Any]]):
+        labels = [Label._load(raw_label) for raw_label in raw_labels]
+        return LabelList(labels)
+
+    def dump(self, camel_case: bool = False):
+        return [label for label in self.labels]
+
+
+class LabelFilter(dict):
+    """Return only the resource matching the specified label constraints.
+
+    Args:
+        contains_any (List[Label]): The resource item contains at least one of the listed labels.
+        contains_all (List[Label]): The resource item contains at least all the listed labels.
+        cognite_client (CogniteClient): The client to associate with this object.
+
+    Examples:
+
+            List only resources marked as a PUMP and VERIFIED::
+
+                >>> from cognite.client.data_classes import LabelFilter
+                >>> my_label_filter = LabelFilter(contains_all=["PUMP", "VERIFIED"])
+
+            List only resources marked as a PUMP or as a VALVE::
+
+                >>> from cognite.client.data_classes import LabelFilter
+                >>> my_label_filter = LabelFilter(contains_any=["PUMP", "VALVE"])
+    """
+
+    def __init__(self, contains_any: List[Label] = None, contains_all: List[Label] = None, cognite_client=None):
+        self.contains_any = contains_any
+        self.contains_all = contains_all
+        self._cognite_client = cognite_client
+
+    def dump(self, camel_case: bool = False):
+        dump_key = lambda key: key if not camel_case else utils._auxiliary.to_camel_case(key)
+        wrap = lambda values: None if values is None else [{"externalId": value} for value in values]
+        return {dump_key(key): wrap(value) for key, value in self.items()}
+
+    contains_any = CognitePropertyClassUtil.declare_property("containsAny")
+    contains_all = CognitePropertyClassUtil.declare_property("containsAll")
