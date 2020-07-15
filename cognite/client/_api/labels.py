@@ -52,7 +52,7 @@ class LabelsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> for label_list in c.types(chunk_size=2500):
+                >>> for label_list in c.labels(chunk_size=2500):
                 ...     label_list # do something with the type definitions
         """
         filter = LabelDefinitionFilter(name=name, external_id_prefix=external_id_prefix).dump(camel_case=True)
