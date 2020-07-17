@@ -3,7 +3,7 @@ import re
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import LabelDefinition, LabelDefinitionFilter, LabelDefinitionList
+from cognite.client.data_classes import LabelDefinition, LabelDefinitionFilter, LabelDefinitionList, Label
 from tests.utils import jsgz_load
 
 LABELS_API = CogniteClient().labels
@@ -43,10 +43,10 @@ class TestLabels:
         assert {"cursor": None, "limit": 10, "filter": {}} == jsgz_load(calls[0].request.body)
 
     def test_create_single(self, mock_labels_response):
-        res = LABELS_API.create(LabelDefinition(external_id="1", name="my_label", description="mandatory"))
+        res = LABELS_API.create(LabelDefinition(external_id="1", name="my_label", description="text"))
         assert isinstance(res, LabelDefinition)
         assert mock_labels_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
-        assert {"items": [{"externalId": "1", "name": "my_label", "description": "mandatory"}]} == jsgz_load(
+        assert {"items": [{"externalId": "1", "name": "my_label", "description": "text"}]} == jsgz_load(
             mock_labels_response.calls[0].request.body
         )
 
@@ -69,3 +69,9 @@ class TestLabels:
             mock_labels_response.calls[0].request.body
         )
         assert res is None
+
+    def test_create_labels_using_wrong_type(self):
+        with pytest.raises(TypeError):
+            LABELS_API.create(Label(external_id="1", name="my_label"))
+        with pytest.raises(TypeError):
+            LABELS_API.create([Label(external_id="1", name="my_label")])
