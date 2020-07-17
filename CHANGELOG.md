@@ -16,13 +16,39 @@ Changes are grouped as follows
 
 ## Unreleased	
 
-## [1.9.0] - 2020-07-16
+## [2.0.0] - 2020-07-17
+
+### Changed
+- The interface to interact with labels has changed. A new, improved interface is now in place to make it easier to work with CDF labels. The new interface behaves this way:
+  ```python
+  # crate label definition(s)
+  client.labels.create(LabelDefinition(external_id="PUMP", name="Pump", description="Pump equipment"))
+  # ... or multiple
+  client.labels.create([LabelDefinition(external_id="PUMP"), LabelDefinition(external_id="VALVE")])
+
+  # list label definitions
+  label_definitions = client.labels.list(name="Pump")
+
+  # delete label definitions
+  client.labels.delete("PUMP")
+  # ... or multiple
+  client.labels.delete(["PUMP", "VALVE"])
+
+  # create an asset with label
+  asset = Asset(name="my_pump", labels=[Label(external_id="PUMP")])
+  client.assets.create(assets)
+
+  # filter assets by labels
+  my_label_filter = LabelFilter(contains_all=["PUMP", "VERIFIED"])
+  asset_list = client.assets.list(labels=my_label_filter)
+
+  # attach/detach labels to/from assets
+  my_update = AssetUpdate(id=1).labels.add(["PUMP"]).labels.remove(["VALVE"])
+  res = c.assets.update(my_update)
+  ```
 
 ### Fixed
 - Fixed bug where `_call_` in SequencesAPI (`client.sequences`) was incorrectly returning a `GET` method instead of `POST`.
-
-### Changed
-- The interface to interact with labels has changed (the previous solution was hard to use and some places unfinished).
 
 ## [1.8.1] - 2020-07-07
 ### Changed
