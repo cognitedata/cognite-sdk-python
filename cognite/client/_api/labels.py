@@ -83,7 +83,7 @@ class LabelsAPI(APIClient):
             if len(label) > 0 and not isinstance(label[0], LabelDefinition):
                 raise TypeError("'label' must be of type List[LabelDefinition]")
         elif not isinstance(label, LabelDefinition):
-                raise TypeError("'label' must be of type LabelDefinition")
+            raise TypeError("'label' must be of type LabelDefinition")
         return self._create_multiple(items=label)
 
     def delete(self, external_id: Union[str, List[str]] = None) -> None:
