@@ -50,4 +50,3 @@ class AggregateResultItem(dict):
 class AssetUpdate(CogniteUpdate):
     pass
     # GenStop
-
