@@ -3,7 +3,6 @@ from typing import *
 from cognite.client.data_classes._base import *
 
 
-# GenPropertyClass: RevisionCameraProperties
 class RevisionCameraProperties(dict):
     """Initial camera position and target.
 
@@ -20,10 +19,8 @@ class RevisionCameraProperties(dict):
     target = CognitePropertyClassUtil.declare_property("target")
     position = CognitePropertyClassUtil.declare_property("position")
 
-    # GenStop
 
 
-# GenPropertyClass: BoundingBox3D
 class BoundingBox3D(dict):
     """The bounding box of the subtree with this sector as the root sector. Is null if there are no geometries in the subtree.
 
@@ -40,10 +37,8 @@ class BoundingBox3D(dict):
     max = CognitePropertyClassUtil.declare_property("max")
     min = CognitePropertyClassUtil.declare_property("min")
 
-    # GenStop
 
 
-# GenClass: Model3D
 class ThreeDModel(CogniteResource):
     """No description.
 
@@ -69,10 +64,8 @@ class ThreeDModel(CogniteResource):
         self.metadata = metadata
         self._cognite_client = cognite_client
 
-    # GenStop
 
 
-# GenUpdateClass: UpdateModel3D
 class ThreeDModelUpdate(CogniteUpdate):
     """No description.
 
@@ -119,7 +112,6 @@ class ThreeDModelUpdate(CogniteUpdate):
     def metadata(self):
         return ThreeDModelUpdate._ObjectThreeDModelUpdate(self, "metadata")
 
-    # GenStop
 
 
 class ThreeDModelList(CogniteResourceList):
@@ -127,7 +119,6 @@ class ThreeDModelList(CogniteResourceList):
     _UPDATE = ThreeDModelUpdate
 
 
-# GenClass: Revision3D
 class ThreeDModelRevision(CogniteResource):
     """No description.
 
@@ -182,10 +173,8 @@ class ThreeDModelRevision(CogniteResource):
                 instance.camera = RevisionCameraProperties(**instance.camera)
         return instance
 
-    # GenStop
 
 
-# GenUpdateClass: UpdateRevision3D
 class ThreeDModelRevisionUpdate(CogniteUpdate):
     """No description.
 
@@ -240,7 +229,6 @@ class ThreeDModelRevisionUpdate(CogniteUpdate):
     def metadata(self):
         return ThreeDModelRevisionUpdate._ObjectThreeDModelRevisionUpdate(self, "metadata")
 
-    # GenStop
 
 
 class ThreeDModelRevisionList(CogniteResourceList):
@@ -248,7 +236,6 @@ class ThreeDModelRevisionList(CogniteResourceList):
     _UPDATE = ThreeDModelRevisionUpdate
 
 
-# GenClass: Node3D
 class ThreeDNode(CogniteResource):
     """No description.
 
@@ -294,7 +281,6 @@ class ThreeDNode(CogniteResource):
                 instance.bounding_box = BoundingBox3D(**instance.bounding_box)
         return instance
 
-    # GenStop
 
 
 class ThreeDNodeList(CogniteResourceList):
@@ -302,7 +288,6 @@ class ThreeDNodeList(CogniteResourceList):
     _ASSERT_CLASSES = False
 
 
-# GenClass: AssetMapping3D
 class ThreeDAssetMapping(CogniteResource):
     """No description.
 
@@ -328,7 +313,6 @@ class ThreeDAssetMapping(CogniteResource):
         self.subtree_size = subtree_size
         self._cognite_client = cognite_client
 
-    # GenStop
 
 
 class ThreeDAssetMappingList(CogniteResourceList):

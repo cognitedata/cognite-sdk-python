@@ -4,7 +4,6 @@ from typing import *
 from cognite.client.data_classes._base import *
 
 
-# GenClass: RawDBRow
 class Row(CogniteResource):
     """No description.
 
@@ -23,7 +22,6 @@ class Row(CogniteResource):
         self.last_updated_time = last_updated_time
         self._cognite_client = cognite_client
 
-    # GenStop
     def to_pandas(self):
         """Convert the instance into a pandas DataFrame.
 
@@ -54,7 +52,6 @@ class RowList(CogniteResourceList):
         return self.to_pandas()._repr_html_()
 
 
-# GenClass: RawDBTable
 class Table(CogniteResource):
     """A NoSQL database table to store customer data
 
@@ -67,7 +64,6 @@ class Table(CogniteResource):
         self.name = name
         self._cognite_client = cognite_client
 
-        # GenStop
         self._db_name = None
 
     def rows(self, key: str = None, limit: int = None) -> Union[Row, RowList]:
@@ -90,7 +86,6 @@ class TableList(CogniteResourceList):
     _ASSERT_CLASSES = False
 
 
-# GenClass: RawDB
 class Database(CogniteResource):
     """A NoSQL database to store customer data.
 
@@ -103,7 +98,6 @@ class Database(CogniteResource):
         self.name = name
         self._cognite_client = cognite_client
 
-    # GenStop
 
     def tables(self, limit: int = None) -> TableList:
         """Get the tables in this database.

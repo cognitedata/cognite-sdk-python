@@ -4,7 +4,6 @@ from cognite.client.data_classes._base import *
 from cognite.client.data_classes.shared import TimestampRange
 
 
-# GenClass: DataSet
 class DataSet(CogniteResource):
     """No description.
 
@@ -42,10 +41,8 @@ class DataSet(CogniteResource):
         self.last_updated_time = last_updated_time
         self._cognite_client = cognite_client
 
-    # GenStop
 
 
-# GenClass: DataSetFilter
 class DataSetFilter(CogniteFilter):
     """Filter on data sets with strict matching.
 
@@ -84,10 +81,8 @@ class DataSetFilter(CogniteFilter):
                 instance.last_updated_time = TimestampRange(**instance.last_updated_time)
         return instance
 
-    # GenStop
 
 
-# GenUpdateClass: DataSetUpdate
 class DataSetUpdate(CogniteUpdate):
     """Update applied to single data set
 
@@ -147,10 +142,8 @@ class DataSetUpdate(CogniteUpdate):
     def write_protected(self):
         return DataSetUpdate._PrimitiveDataSetUpdate(self, "writeProtected")
 
-    # GenStop
 
 
-# GenPropertyClass: DataSetAggregate
 class DataSetAggregate(dict):
     """Aggregation group of data sets
 
@@ -164,7 +157,6 @@ class DataSetAggregate(dict):
 
     count = CognitePropertyClassUtil.declare_property("count")
 
-    # GenStop
 
 
 class DataSetList(CogniteResourceList):

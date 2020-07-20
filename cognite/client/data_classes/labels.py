@@ -6,7 +6,6 @@ from cognite.client.data_classes._base import *
 from cognite.client.data_classes.shared import TimestampRange
 
 
-# GenClass: LabelDefinitionSpec, LabelDefinition
 class Label(CogniteResource):
     """No description.
 
@@ -32,10 +31,8 @@ class Label(CogniteResource):
         self.created_time = created_time
         self._cognite_client = cognite_client
 
-    # GenStop
 
 
-# GenClass: LabelDefinitionFilter.filter
 class LabelFilter(CogniteFilter):
     """Filter on labels with strict matching.
 
@@ -50,7 +47,6 @@ class LabelFilter(CogniteFilter):
         self.external_id_prefix = external_id_prefix
         self._cognite_client = cognite_client
 
-    # GenStop
 
 
 class LabelList(CogniteResourceList):

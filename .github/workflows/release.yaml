@@ -24,13 +24,9 @@ jobs:
       run: |
         pipenv sync --dev
         pipenv run pip install importlib_metadata
-        sudo npm install -g swagger-cli
 
     - name: Check codestyle
       run: pipenv run black -l 120 --check .
-
-    - name: Test OpenAPI Generator
-      run: pipenv run pytest openapi/tests
 
     - name: Run tests
       env:

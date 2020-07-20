@@ -3,7 +3,6 @@ from typing import *
 from cognite.client.data_classes._base import *
 
 
-# GenClass: ServiceAccount
 class ServiceAccount(CogniteResource):
     """No description.
 
@@ -32,7 +31,6 @@ class ServiceAccount(CogniteResource):
         self.deleted_time = deleted_time
         self._cognite_client = cognite_client
 
-    # GenStop
 
 
 class ServiceAccountList(CogniteResourceList):
@@ -40,7 +38,6 @@ class ServiceAccountList(CogniteResourceList):
     _ASSERT_CLASSES = False
 
 
-# GenClass: NewApiKeyResponseDTO
 class APIKey(CogniteResource):
     """No description.
 
@@ -69,7 +66,6 @@ class APIKey(CogniteResource):
         self.value = value
         self._cognite_client = cognite_client
 
-    # GenStop
 
 
 class APIKeyList(CogniteResourceList):
@@ -77,7 +73,6 @@ class APIKeyList(CogniteResourceList):
     _ASSERT_CLASSES = False
 
 
-# GenClass: Group
 class Group(CogniteResource):
     """No description.
 
@@ -109,7 +104,6 @@ class Group(CogniteResource):
         self.deleted_time = deleted_time
         self._cognite_client = cognite_client
 
-    # GenStop
 
 
 class GroupList(CogniteResourceList):
@@ -117,7 +111,6 @@ class GroupList(CogniteResourceList):
     _ASSERT_CLASSES = False
 
 
-# GenClass: SecurityCategoryDTO
 class SecurityCategory(CogniteResource):
     """No description.
 
@@ -132,7 +125,6 @@ class SecurityCategory(CogniteResource):
         self.id = id
         self._cognite_client = cognite_client
 
-    # GenStop
 
 
 class SecurityCategoryList(CogniteResourceList):

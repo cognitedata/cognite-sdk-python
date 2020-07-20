@@ -4,7 +4,6 @@ from typing import *
 from cognite.client.data_classes._base import *
 
 
-# GenClass: relationshipResponse, relationship
 class Relationship(CogniteResource):
     """Representation of a relationship in CDF, consists of a source and a target and some additional parameters.
 
@@ -48,7 +47,6 @@ class Relationship(CogniteResource):
         self.last_updated_time = last_updated_time
         self._cognite_client = cognite_client
 
-    # GenStop
 
     def _copy_resolve_targets(self):
         rel = copy.copy(self)
@@ -76,7 +74,6 @@ class Relationship(CogniteResource):
         raise ValueError("Invalid source or target '{}' of type {} in relationship".format(target, target.__class__))
 
 
-# GenClass: relationshipsAdvancedListRequest.filter
 class RelationshipFilter(CogniteFilter):
     """Filter on relationships with exact match. Multiple filter elments in one property, e.g. `dataSets: [ "a", "b" ]`, will return all relationships where the dataSet field is either `a` or `b`. Filters in multiple properties will return the relationships that match all criteria. Filters on a `resourceId` without a `resource` (type) in sources and targets will return relationships that match the resourceId and match any resource type. If the filter is not specified it default to an empty filter.
 
@@ -138,7 +135,6 @@ class RelationshipFilter(CogniteFilter):
         self.relationship_type = relationship_type
         self._cognite_client = cognite_client
 
-    # GenStop
 
 
 class RelationshipUpdate(CogniteUpdate):

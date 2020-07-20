@@ -6,7 +6,6 @@ from cognite.client.data_classes._base import *
 from cognite.client.data_classes.shared import TimestampRange
 
 
-# GenClass: GetSequenceDTO
 class Sequence(CogniteResource):
     """Information about the sequence stored in the database
 
@@ -50,7 +49,6 @@ class Sequence(CogniteResource):
         self.data_set_id = data_set_id
         self._cognite_client = cognite_client
 
-    # GenStop
 
     def rows(self, start: int, end: int) -> List[dict]:
         """Retrieves rows from this sequence.
@@ -80,7 +78,6 @@ class Sequence(CogniteResource):
         return [c.get("valueType") for c in self.columns]
 
 
-# GenClass: SequenceFilter
 class SequenceFilter(CogniteFilter):
     """No description.
 
@@ -131,10 +128,8 @@ class SequenceFilter(CogniteFilter):
                 instance.last_updated_time = TimestampRange(**instance.last_updated_time)
         return instance
 
-    # GenStop
 
 
-# GenUpdateClass: SequencesUpdate
 class SequenceUpdate(CogniteUpdate):
     """No description.
 
@@ -198,10 +193,8 @@ class SequenceUpdate(CogniteUpdate):
     def data_set_id(self):
         return SequenceUpdate._PrimitiveSequenceUpdate(self, "dataSetId")
 
-    # GenStop
 
 
-# GenPropertyClass: SequenceAggregateResponse.items
 class SequenceAggregate(dict):
     """No description.
 
@@ -215,7 +208,6 @@ class SequenceAggregate(dict):
 
     count = CognitePropertyClassUtil.declare_property("count")
 
-    # GenStop
 
 
 class SequenceList(CogniteResourceList):
