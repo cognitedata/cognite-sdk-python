@@ -32,7 +32,6 @@ class ServiceAccount(CogniteResource):
         self._cognite_client = cognite_client
 
 
-
 class ServiceAccountList(CogniteResourceList):
     _RESOURCE = ServiceAccount
     _ASSERT_CLASSES = False
@@ -65,7 +64,6 @@ class APIKey(CogniteResource):
         self.status = status
         self.value = value
         self._cognite_client = cognite_client
-
 
 
 class APIKeyList(CogniteResourceList):
@@ -105,7 +103,6 @@ class Group(CogniteResource):
         self._cognite_client = cognite_client
 
 
-
 class GroupList(CogniteResourceList):
     _RESOURCE = Group
     _ASSERT_CLASSES = False
@@ -124,7 +121,6 @@ class SecurityCategory(CogniteResource):
         self.name = name
         self.id = id
         self._cognite_client = cognite_client
-
 
 
 class SecurityCategoryList(CogniteResourceList):

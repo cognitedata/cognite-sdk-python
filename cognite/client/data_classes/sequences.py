@@ -49,7 +49,6 @@ class Sequence(CogniteResource):
         self.data_set_id = data_set_id
         self._cognite_client = cognite_client
 
-
     def rows(self, start: int, end: int) -> List[dict]:
         """Retrieves rows from this sequence.
 
@@ -129,7 +128,6 @@ class SequenceFilter(CogniteFilter):
         return instance
 
 
-
 class SequenceUpdate(CogniteUpdate):
     """No description.
 
@@ -194,7 +192,6 @@ class SequenceUpdate(CogniteUpdate):
         return SequenceUpdate._PrimitiveSequenceUpdate(self, "dataSetId")
 
 
-
 class SequenceAggregate(dict):
     """No description.
 
@@ -207,7 +204,6 @@ class SequenceAggregate(dict):
         self.update(kwargs)
 
     count = CognitePropertyClassUtil.declare_property("count")
-
 
 
 class SequenceList(CogniteResourceList):

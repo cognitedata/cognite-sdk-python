@@ -20,7 +20,6 @@ class RevisionCameraProperties(dict):
     position = CognitePropertyClassUtil.declare_property("position")
 
 
-
 class BoundingBox3D(dict):
     """The bounding box of the subtree with this sector as the root sector. Is null if there are no geometries in the subtree.
 
@@ -36,7 +35,6 @@ class BoundingBox3D(dict):
 
     max = CognitePropertyClassUtil.declare_property("max")
     min = CognitePropertyClassUtil.declare_property("min")
-
 
 
 class ThreeDModel(CogniteResource):
@@ -63,7 +61,6 @@ class ThreeDModel(CogniteResource):
         self.created_time = created_time
         self.metadata = metadata
         self._cognite_client = cognite_client
-
 
 
 class ThreeDModelUpdate(CogniteUpdate):
@@ -111,7 +108,6 @@ class ThreeDModelUpdate(CogniteUpdate):
     @property
     def metadata(self):
         return ThreeDModelUpdate._ObjectThreeDModelUpdate(self, "metadata")
-
 
 
 class ThreeDModelList(CogniteResourceList):
@@ -174,7 +170,6 @@ class ThreeDModelRevision(CogniteResource):
         return instance
 
 
-
 class ThreeDModelRevisionUpdate(CogniteUpdate):
     """No description.
 
@@ -230,7 +225,6 @@ class ThreeDModelRevisionUpdate(CogniteUpdate):
         return ThreeDModelRevisionUpdate._ObjectThreeDModelRevisionUpdate(self, "metadata")
 
 
-
 class ThreeDModelRevisionList(CogniteResourceList):
     _RESOURCE = ThreeDModelRevision
     _UPDATE = ThreeDModelRevisionUpdate
@@ -282,7 +276,6 @@ class ThreeDNode(CogniteResource):
         return instance
 
 
-
 class ThreeDNodeList(CogniteResourceList):
     _RESOURCE = ThreeDNode
     _ASSERT_CLASSES = False
@@ -312,7 +305,6 @@ class ThreeDAssetMapping(CogniteResource):
         self.tree_index = tree_index
         self.subtree_size = subtree_size
         self._cognite_client = cognite_client
-
 
 
 class ThreeDAssetMappingList(CogniteResourceList):

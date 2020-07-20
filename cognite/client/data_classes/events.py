@@ -24,7 +24,6 @@ class EndTimeFilter(dict):
     is_null = CognitePropertyClassUtil.declare_property("isNull")
 
 
-
 class Event(CogniteResource):
     """An event represents something that happened at a given interval in time, e.g a failure, a work order etc.
 
@@ -76,7 +75,6 @@ class Event(CogniteResource):
         self.last_updated_time = last_updated_time
         self.created_time = created_time
         self._cognite_client = cognite_client
-
 
 
 class EventFilter(CogniteFilter):
@@ -152,7 +150,6 @@ class EventFilter(CogniteFilter):
             if instance.last_updated_time is not None:
                 instance.last_updated_time = TimestampRange(**instance.last_updated_time)
         return instance
-
 
 
 class EventUpdate(CogniteUpdate):
@@ -233,7 +230,6 @@ class EventUpdate(CogniteUpdate):
     @property
     def subtype(self):
         return EventUpdate._PrimitiveEventUpdate(self, "subtype")
-
 
 
 class EventList(CogniteResourceList):

@@ -47,7 +47,6 @@ class Relationship(CogniteResource):
         self.last_updated_time = last_updated_time
         self._cognite_client = cognite_client
 
-
     def _copy_resolve_targets(self):
         rel = copy.copy(self)
         rel.source = self._resolve_target(rel.source)
@@ -134,7 +133,6 @@ class RelationshipFilter(CogniteFilter):
         self.data_set = data_set
         self.relationship_type = relationship_type
         self._cognite_client = cognite_client
-
 
 
 class RelationshipUpdate(CogniteUpdate):

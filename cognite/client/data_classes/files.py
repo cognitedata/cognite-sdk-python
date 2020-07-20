@@ -64,7 +64,6 @@ class FileMetadata(CogniteResource):
         self._cognite_client = cognite_client
 
 
-
 class FileMetadataFilter(CogniteFilter):
     """No description.
 
@@ -137,7 +136,6 @@ class FileMetadataFilter(CogniteFilter):
             if instance.uploaded_time is not None:
                 instance.uploaded_time = TimestampRange(**instance.uploaded_time)
         return instance
-
 
 
 class FileMetadataUpdate(CogniteUpdate):
@@ -214,7 +212,6 @@ class FileMetadataUpdate(CogniteUpdate):
         return FileMetadataUpdate._ListFileMetadataUpdate(self, "securityCategories")
 
 
-
 class FileAggregate(dict):
     """Aggregation results for files
 
@@ -227,7 +224,6 @@ class FileAggregate(dict):
         self.update(kwargs)
 
     count = CognitePropertyClassUtil.declare_property("count")
-
 
 
 class FileMetadataList(CogniteResourceList):

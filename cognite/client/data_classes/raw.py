@@ -98,7 +98,6 @@ class Database(CogniteResource):
         self.name = name
         self._cognite_client = cognite_client
 
-
     def tables(self, limit: int = None) -> TableList:
         """Get the tables in this database.
 

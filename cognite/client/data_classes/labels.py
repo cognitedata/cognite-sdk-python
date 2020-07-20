@@ -32,7 +32,6 @@ class Label(CogniteResource):
         self._cognite_client = cognite_client
 
 
-
 class LabelFilter(CogniteFilter):
     """Filter on labels with strict matching.
 
@@ -46,7 +45,6 @@ class LabelFilter(CogniteFilter):
         self.name = name
         self.external_id_prefix = external_id_prefix
         self._cognite_client = cognite_client
-
 
 
 class LabelList(CogniteResourceList):

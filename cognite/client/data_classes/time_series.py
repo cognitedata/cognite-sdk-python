@@ -60,7 +60,6 @@ class TimeSeries(CogniteResource):
         self.legacy_name = legacy_name
         self._cognite_client = cognite_client
 
-
     def plot(
         self, start="1d-ago", end="now", aggregates=None, granularity=None, id_labels: bool = False, *args, **kwargs
     ):
@@ -191,7 +190,6 @@ class TimeSeriesFilter(CogniteFilter):
         return instance
 
 
-
 class TimeSeriesUpdate(CogniteUpdate):
     """Changes will be applied to time series.
 
@@ -264,7 +262,6 @@ class TimeSeriesUpdate(CogniteUpdate):
         return TimeSeriesUpdate._PrimitiveTimeSeriesUpdate(self, "dataSetId")
 
 
-
 class TimeSeriesAggregate(dict):
     """No description.
 
@@ -277,7 +274,6 @@ class TimeSeriesAggregate(dict):
         self.update(kwargs)
 
     count = CognitePropertyClassUtil.declare_property("count")
-
 
 
 class TimeSeriesList(CogniteResourceList):

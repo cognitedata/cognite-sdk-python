@@ -19,7 +19,6 @@ class AssetAggregate(dict):
     count = CognitePropertyClassUtil.declare_property("count")
 
 
-
 class AggregateResultItem(dict):
     """Aggregated metrics of the asset
 
@@ -38,7 +37,6 @@ class AggregateResultItem(dict):
     child_count = CognitePropertyClassUtil.declare_property("childCount")
     depth = CognitePropertyClassUtil.declare_property("depth")
     path = CognitePropertyClassUtil.declare_property("path")
-
 
 
 class Asset(CogniteResource):
@@ -103,7 +101,6 @@ class Asset(CogniteResource):
             if instance.aggregates is not None:
                 instance.aggregates = AggregateResultItem(**instance.aggregates)
         return instance
-
 
     def __hash__(self):
         return hash(self.external_id)
@@ -261,7 +258,6 @@ class AssetUpdate(CogniteUpdate):
     def labels(self):
         return AssetUpdate._LabelAssetUpdate(self, "labels")
 
-
     def add_label(self, external_id: str = None):
         """Upsert the label on the asset"""
         return self.labels.add([external_id])
@@ -363,7 +359,6 @@ class AssetLabelFilter(CogniteFilter):
         self._cognite_client = cognite_client
 
 
-
 class AssetFilter(CogniteFilter):
     """Filter on assets with strict matching.
 
@@ -427,4 +422,3 @@ class AssetFilter(CogniteFilter):
             if instance.labels is not None:
                 instance.labels = AssetLabelFilter(**instance.labels)
         return instance
-

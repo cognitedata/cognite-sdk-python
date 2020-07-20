@@ -42,7 +42,6 @@ class DataSet(CogniteResource):
         self._cognite_client = cognite_client
 
 
-
 class DataSetFilter(CogniteFilter):
     """Filter on data sets with strict matching.
 
@@ -80,7 +79,6 @@ class DataSetFilter(CogniteFilter):
             if instance.last_updated_time is not None:
                 instance.last_updated_time = TimestampRange(**instance.last_updated_time)
         return instance
-
 
 
 class DataSetUpdate(CogniteUpdate):
@@ -143,7 +141,6 @@ class DataSetUpdate(CogniteUpdate):
         return DataSetUpdate._PrimitiveDataSetUpdate(self, "writeProtected")
 
 
-
 class DataSetAggregate(dict):
     """Aggregation group of data sets
 
@@ -156,7 +153,6 @@ class DataSetAggregate(dict):
         self.update(kwargs)
 
     count = CognitePropertyClassUtil.declare_property("count")
-
 
 
 class DataSetList(CogniteResourceList):

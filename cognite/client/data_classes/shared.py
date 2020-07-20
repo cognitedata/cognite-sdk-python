@@ -20,7 +20,6 @@ class TimestampRange(dict):
     min = CognitePropertyClassUtil.declare_property("min")
 
 
-
 class AggregateResult(dict):
     """Aggregation group
 
