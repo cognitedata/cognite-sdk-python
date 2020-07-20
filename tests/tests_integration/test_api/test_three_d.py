@@ -8,7 +8,7 @@ COGNITE_CLIENT = CogniteClient()
 
 @pytest.fixture(scope="class")
 def test_revision():
-    model_id = COGNITE_CLIENT.three_d.models.list(limit=1)[0].id
+    model_id = COGNITE_CLIENT.three_d.models.list(published=True, limit=1)[0].id
     revision = COGNITE_CLIENT.three_d.revisions.list(model_id=model_id, limit=1)[0]
     return revision, model_id
 
