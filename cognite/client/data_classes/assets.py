@@ -5,7 +5,6 @@ from cognite.client.data_classes._base import *
 from cognite.client.data_classes.shared import TimestampRange
 
 
-# GenPropertyClass: AssetAggregate
 class AssetAggregate(dict):
     """Aggregation group of assets
 
@@ -19,10 +18,7 @@ class AssetAggregate(dict):
 
     count = CognitePropertyClassUtil.declare_property("count")
 
-    # GenStop
 
-
-# GenPropertyClass: AggregateResultItem
 class AggregateResultItem(dict):
     """Aggregated metrics of the asset
 
@@ -42,10 +38,7 @@ class AggregateResultItem(dict):
     depth = CognitePropertyClassUtil.declare_property("depth")
     path = CognitePropertyClassUtil.declare_property("path")
 
-    # GenStop
 
-
-# GenClass: Asset, DataExternalAssetItem
 class Asset(CogniteResource):
     """A representation of a physical asset, for example a factory or a piece of equipment.
 
@@ -108,8 +101,6 @@ class Asset(CogniteResource):
             if instance.aggregates is not None:
                 instance.aggregates = AggregateResultItem(**instance.aggregates)
         return instance
-
-    # GenStop
 
     def __hash__(self):
         return hash(self.external_id)
@@ -192,7 +183,6 @@ class Asset(CogniteResource):
         return super().to_pandas(expand=expand, ignore=ignore, camel_case=camel_case)
 
 
-# GenUpdateClass: AssetChange
 class AssetUpdate(CogniteUpdate):
     """Changes applied to asset
 
@@ -267,8 +257,6 @@ class AssetUpdate(CogniteUpdate):
     @property
     def labels(self):
         return AssetUpdate._LabelAssetUpdate(self, "labels")
-
-    # GenStop
 
     def add_label(self, external_id: str = None):
         """Upsert the label on the asset"""
@@ -354,7 +342,6 @@ class AssetList(CogniteResourceList):
         return resources
 
 
-# GenClass: AssetLabelFilter
 class AssetLabelFilter(CogniteFilter):
     """Return only the assets matching the specified label.
 
@@ -371,10 +358,7 @@ class AssetLabelFilter(CogniteFilter):
         self.contains_all = contains_all
         self._cognite_client = cognite_client
 
-    # GenStop
 
-
-# GenClass: AssetFilter.filter
 class AssetFilter(CogniteFilter):
     """Filter on assets with strict matching.
 
@@ -438,5 +422,3 @@ class AssetFilter(CogniteFilter):
             if instance.labels is not None:
                 instance.labels = AssetLabelFilter(**instance.labels)
         return instance
-
-    # GenStop
