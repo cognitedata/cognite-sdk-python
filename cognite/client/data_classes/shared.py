@@ -3,7 +3,6 @@ from typing import *
 from cognite.client.data_classes._base import CognitePropertyClassUtil
 
 
-# GenPropertyClass: EpochTimestampRange
 class TimestampRange(dict):
     """Range between two timestamps.
 
@@ -19,8 +18,6 @@ class TimestampRange(dict):
 
     max = CognitePropertyClassUtil.declare_property("max")
     min = CognitePropertyClassUtil.declare_property("min")
-
-    # GenStop
 
 
 class AggregateResult(dict):

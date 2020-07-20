@@ -5,7 +5,6 @@ from cognite.client.data_classes._base import *
 from cognite.client.data_classes.shared import TimestampRange
 
 
-# GenClass: GetTimeSeriesMetadataDTO, PostTimeSeriesMetadataDTO
 class TimeSeries(CogniteResource):
     """No description.
 
@@ -60,8 +59,6 @@ class TimeSeries(CogniteResource):
         self.last_updated_time = last_updated_time
         self.legacy_name = legacy_name
         self._cognite_client = cognite_client
-
-    # GenStop
 
     def plot(
         self, start="1d-ago", end="now", aggregates=None, granularity=None, id_labels: bool = False, *args, **kwargs
@@ -130,7 +127,6 @@ class TimeSeries(CogniteResource):
         return self._cognite_client.assets.retrieve(id=self.asset_id)
 
 
-# GenClass: TimeSeriesSearchDTO.filter
 class TimeSeriesFilter(CogniteFilter):
     """No description.
 
@@ -193,10 +189,7 @@ class TimeSeriesFilter(CogniteFilter):
                 instance.last_updated_time = TimestampRange(**instance.last_updated_time)
         return instance
 
-    # GenStop
 
-
-# GenUpdateClass: TimeSeriesUpdate
 class TimeSeriesUpdate(CogniteUpdate):
     """Changes will be applied to time series.
 
@@ -268,10 +261,7 @@ class TimeSeriesUpdate(CogniteUpdate):
     def data_set_id(self):
         return TimeSeriesUpdate._PrimitiveTimeSeriesUpdate(self, "dataSetId")
 
-    # GenStop
 
-
-# GenPropertyClass: TimeSeriesAggregateResponse.items
 class TimeSeriesAggregate(dict):
     """No description.
 
@@ -284,8 +274,6 @@ class TimeSeriesAggregate(dict):
         self.update(kwargs)
 
     count = CognitePropertyClassUtil.declare_property("count")
-
-    # GenStop
 
 
 class TimeSeriesList(CogniteResourceList):
