@@ -24,7 +24,8 @@ class TestServiceAccountAPI:
 
 @pytest.fixture(scope="module")
 def service_account_id():
-    return COGNITE_CLIENT.iam.service_accounts.list()[0].id
+    service_accounts = COGNITE_CLIENT.iam.service_accounts.list()
+    return next(sa for sa in service_accounts if sa.name == "admin").id
 
 
 class TestAPIKeysAPI:

@@ -4,7 +4,6 @@ from cognite.client.data_classes._base import *
 from cognite.client.data_classes.shared import TimestampRange
 
 
-# GenPropertyClass: EndTimeFilter
 class EndTimeFilter(dict):
     """Either range between two timestamps or isNull filter condition.
 
@@ -24,10 +23,7 @@ class EndTimeFilter(dict):
     min = CognitePropertyClassUtil.declare_property("min")
     is_null = CognitePropertyClassUtil.declare_property("isNull")
 
-    # GenStop
 
-
-# GenClass: Event
 class Event(CogniteResource):
     """An event represents something that happened at a given interval in time, e.g a failure, a work order etc.
 
@@ -80,10 +76,7 @@ class Event(CogniteResource):
         self.created_time = created_time
         self._cognite_client = cognite_client
 
-    # GenStop
 
-
-# GenClass: EventFilter
 class EventFilter(CogniteFilter):
     """Filter on events filter with exact match
 
@@ -158,10 +151,7 @@ class EventFilter(CogniteFilter):
                 instance.last_updated_time = TimestampRange(**instance.last_updated_time)
         return instance
 
-    # GenStop
 
-
-# GenUpdateClass: EventChange
 class EventUpdate(CogniteUpdate):
     """Changes will be applied to event.
 
@@ -240,8 +230,6 @@ class EventUpdate(CogniteUpdate):
     @property
     def subtype(self):
         return EventUpdate._PrimitiveEventUpdate(self, "subtype")
-
-    # GenStop
 
 
 class EventList(CogniteResourceList):
