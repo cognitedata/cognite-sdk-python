@@ -36,9 +36,20 @@ class TimestampRange:
     pass
 
 
+class EndTimeFilter:
+    pass
+
+
 class LabelFilter:
     pass
 
+# GenClass: Event
+class Event(CogniteResource):
+# GenStop
+
+# GenClass: EventFilter
+class EventFilter(CogniteFilter):
+# GenStop
 
 # GenPropertyClass: AggregateResultItem
 class AggregateResultItem(dict):
