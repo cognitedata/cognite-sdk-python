@@ -6,7 +6,14 @@ import pytest
 import cognite.client.utils._time
 from cognite.client.utils._auxiliary import random_string
 from cognite.client import CogniteClient
-from cognite.client.data_classes import Asset, AssetUpdate, LabelDefinition, LabelDefinitionFilter, LabelDefinitionList, Label
+from cognite.client.data_classes import (
+    Asset,
+    AssetUpdate,
+    LabelDefinition,
+    LabelDefinitionFilter,
+    LabelDefinitionList,
+    Label,
+)
 from tests.utils import set_request_limit
 
 COGNITE_CLIENT = CogniteClient()
@@ -32,9 +39,7 @@ class TestLabelsAPI:
         assert 1 == COGNITE_CLIENT.labels._post.call_count
 
     def test_create_asset_with_label(self, new_label):
-        ac = COGNITE_CLIENT.assets.create(
-            Asset(name="any", labels=[Label(external_id=new_label.external_id)])
-        )
+        ac = COGNITE_CLIENT.assets.create(Asset(name="any", labels=[Label(external_id=new_label.external_id)]))
         assert isinstance(ac, Asset)
         assert len(ac.labels) == 1
         COGNITE_CLIENT.assets.delete(id=ac.id)
