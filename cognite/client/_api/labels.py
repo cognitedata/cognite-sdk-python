@@ -23,11 +23,11 @@ class LabelsAPI(APIClient):
         return self._list_generator(method="POST", limit=limit, filter=filter, chunk_size=chunk_size)
 
     def list(self, name: str = None, external_id_prefix: str = None, limit: int = 25) -> LabelDefinitionList:
-        """`List Labels <https://docs.cognite.com/api/playground/#operation/listLabels>`_
+        """`List Labels <https://docs.cognite.com/api/v1/#operation/listLabels>`_
 
         Args:
             name (str): returns the label definitions matching that name
-            external_id_prefix (str): filter external ids starting with the prefix specified
+            external_id_prefix (str): filter label definitions with external ids starting with the prefix specified
             limit (int, optional): Maximum number of label definitions to return.
 
         Returns:
@@ -61,10 +61,10 @@ class LabelsAPI(APIClient):
     def create(
         self, label: Union[LabelDefinition, List[LabelDefinition]]
     ) -> Union[LabelDefinition, LabelDefinitionList]:
-        """`Create one or more Labels. <https://docs.cognite.com/api/playground/#operation/createLabelDefinitions>`_
+        """`Create one or more label definitions. <https://docs.cognite.com/api/v1/#operation/createLabelDefinitions>`_
 
         Args:
-            Label (Union[LabelDefinition, List[LabelDefinition]]): label definition or list of label definitions to create.
+            Label (Union[LabelDefinition, List[LabelDefinition]]): label definition or a list of label definitions to create.
 
         Returns:
             Union[LabelDefinition, List[LabelDefinition]]: Created label definition(s)
@@ -87,10 +87,10 @@ class LabelsAPI(APIClient):
         return self._create_multiple(items=label)
 
     def delete(self, external_id: Union[str, List[str]] = None) -> None:
-        """`Delete one or more label definitions <https://docs.cognite.com/api/playground/#operation/deleteLabels>`_
+        """`Delete one or more label definitions <https://docs.cognite.com/api/v1/#operation/deleteLabels>`_
 
         Args:
-            external_id (Union[str, List[str]]): External ID or list of external ids
+            external_id (Union[str, List[str]]): One or more label external ids
 
         Returns:
             None

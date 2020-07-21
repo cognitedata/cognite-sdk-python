@@ -37,7 +37,7 @@ class LabelDefinitionFilter(CogniteFilter):
 
     Args:
         name (str): Returns the label definitions matching that name.
-        external_id_prefix (str): filter external ids starting with the prefix specified
+        external_id_prefix (str): filter label definitions with external ids starting with the prefix specified
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
@@ -53,12 +53,11 @@ class LabelDefinitionList(CogniteResourceList):
     _ASSERT_CLASSES = False  # because no Update
 
 
-# GenPropertyClass: Label
 class Label(dict):
     """A label assigned to a resource.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        external_id (str): The external id to the attached label.
     """
 
     def __init__(self, external_id: str = None, **kwargs):
@@ -66,8 +65,6 @@ class Label(dict):
         self.update(kwargs)
 
     external_id = CognitePropertyClassUtil.declare_property("externalId")
-
-    # GenStop
 
     @classmethod
     def _load(self, raw_label: Dict[str, Any]):
@@ -82,8 +79,8 @@ class LabelFilter(dict):
     """Return only the resource matching the specified label constraints.
 
     Args:
-        contains_any (List[Label]): The resource item contains at least one of the listed labels.
-        contains_all (List[Label]): The resource item contains at least all the listed labels.
+        contains_any (List[Label]): The resource item contains at least one of the listed labels. The labels are defined by a list of external ids.
+        contains_all (List[Label]): The resource item contains at least all the listed labels. The labels are defined by a list of external ids.
         cognite_client (CogniteClient): The client to associate with this object.
 
     Examples:
@@ -99,7 +96,7 @@ class LabelFilter(dict):
                 >>> my_label_filter = LabelFilter(contains_any=["PUMP", "VALVE"])
     """
 
-    def __init__(self, contains_any: List[Label] = None, contains_all: List[Label] = None, cognite_client=None):
+    def __init__(self, contains_any: List[str] = None, contains_all: List[str] = None, cognite_client=None):
         self.contains_any = contains_any
         self.contains_all = contains_all
         self._cognite_client = cognite_client

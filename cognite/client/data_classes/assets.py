@@ -225,10 +225,10 @@ class AssetUpdate(CogniteUpdate):
             return self._remove(value)
 
     class _LabelAssetUpdate(CogniteLabelUpdate):
-        def add(self, value: List) -> "AssetUpdate":
+        def add(self, value: List[str]) -> "AssetUpdate":
             return self._add(value)
 
-        def remove(self, value: List) -> "AssetUpdate":
+        def remove(self, value: List[str]) -> "AssetUpdate":
             return self._remove(value)
 
     @property
