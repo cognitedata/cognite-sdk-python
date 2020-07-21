@@ -8,7 +8,7 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client._api.assets import Asset, AssetList, AssetUpdate, _AssetPoster, _AssetPosterWorker
-from cognite.client.data_classes import AssetFilter, TimestampRange
+from cognite.client.data_classes import AssetFilter, TimestampRange, LabelFilter, Label
 from cognite.client.exceptions import CogniteAPIError
 from tests.utils import jsgz_load, set_request_limit
 
@@ -239,31 +239,40 @@ class TestAssets:
         assert isinstance(res, AssetList)
         assert mock_assets_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
-    @pytest.mark.usefixtures("disable_gzip")
     def test_update_labels(self, mock_assets_response):
         ASSETS_API.update([AssetUpdate(id=1).labels.add(["PUMP", "ROTATING_EQUIPMENT"]).labels.remove(["VALVE"])])
-        request_body = json.loads(mock_assets_response.calls[0].request.body)["items"][0]["update"]
         expected = {
             "labels": {
                 "add": [{"externalId": "PUMP"}, {"externalId": "ROTATING_EQUIPMENT"}],
                 "remove": [{"externalId": "VALVE"}],
             }
         }
-        assert request_body == expected
+        assert expected == jsgz_load(mock_assets_response.calls[0].request.body)["items"][0]["update"]
 
-    @pytest.mark.usefixtures("disable_gzip")
-    def test_update_labels_using_deprecated_methods(self, mock_assets_response):
-        ASSETS_API.update([AssetUpdate(id=1).add_label("PUMP")])
-        request_body = json.loads(mock_assets_response.calls[0].request.body)["items"][0]["update"]
-        expected = {"labels": {"add": [{"externalId": "PUMP"}]}}
-        assert request_body == expected
-
-    @pytest.mark.usefixtures("disable_gzip")
+    # resource.update doesn't support full replacement of labels (set operation)
     def test_ignore_labels_resource_class(self, mock_assets_response):
-        ASSETS_API.update(Asset(id=1, labels=[{"external_id": "PUMP"}], name="Abc"))
-        request_body = json.loads(mock_assets_response.calls[0].request.body)["items"][0]["update"]
-        expected = {"name": {"set": "Abc"}}
-        assert request_body == expected
+        ASSETS_API.update(Asset(id=1, labels=[Label(external_id="Pump")], name="Abc"))
+        assert {"name": {"set": "Abc"}} == jsgz_load(mock_assets_response.calls[0].request.body)["items"][0]["update"]
+
+    def test_labels_filter_contains_all(self, mock_assets_response):
+        my_label_filter = LabelFilter(contains_all=["PUMP", "VERIFIED"])
+        ASSETS_API.list(labels=my_label_filter)
+        assert {"containsAll": [{"externalId": "PUMP"}, {"externalId": "VERIFIED"}]} == jsgz_load(
+            mock_assets_response.calls[0].request.body
+        )["filter"]["labels"]
+
+    def test_labels_filter_contains_any(self, mock_assets_response):
+        my_label_filter = LabelFilter(contains_any=["PUMP", "VALVE"])
+        ASSETS_API.list(labels=my_label_filter)
+        assert {"containsAny": [{"externalId": "PUMP"}, {"externalId": "VALVE"}]} == jsgz_load(
+            mock_assets_response.calls[0].request.body
+        )["filter"]["labels"]
+
+    def test_create_asset_with_label(self, mock_assets_response):
+        ASSETS_API.create(Asset(name="test", labels=[Label(external_id="PUMP"), Label(external_id="VERIFIED")]))
+        assert {"name": "test", "labels": [{"externalId": "PUMP"}, {"externalId": "VERIFIED"}]} == jsgz_load(
+            mock_assets_response.calls[0].request.body
+        )["items"][0]
 
     def test_search(self, mock_assets_response):
         res = ASSETS_API.search(filter=AssetFilter(name="1"))
