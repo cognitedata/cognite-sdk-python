@@ -79,6 +79,8 @@ class Asset(CogniteResource):
         aggregates: Union[Dict[str, Any], AggregateResultItem] = None,
         cognite_client=None,
     ):
+        if labels is not None and len(labels) > 0 and not isinstance(labels[0], Label):
+            raise TypeError("Asset.labels should be of type List[Label]")
         self.external_id = external_id
         self.name = name
         self.parent_id = parent_id
@@ -394,6 +396,9 @@ class AssetFilter(CogniteFilter):
         self.external_id_prefix = external_id_prefix
         self.labels = labels
         self._cognite_client = cognite_client
+
+        if labels is not None and not isinstance(labels, LabelFilter):
+            raise TypeError("AssetFilter.labels must be of type LabelFilter")
 
     @classmethod
     def _load(cls, resource: Union[Dict, str], cognite_client=None):
