@@ -372,16 +372,16 @@ class CogniteLabelUpdate:
         self._update_object = update_object
         self._name = name
 
-    def _wrap_labels(self, value: List):
-        return [{"externalId": label} for label in value]
-
-    def _add(self, value: List):
-        self._update_object._add(self._name, self._wrap_labels(value))
+    def _add(self, external_ids: List[str]):
+        self._update_object._add(self._name, self._wrap_ids(external_ids))
         return self._update_object
 
-    def _remove(self, value: List):
-        self._update_object._remove(self._name, self._wrap_labels(value))
+    def _remove(self, external_ids: List[str]):
+        self._update_object._remove(self._name, self._wrap_ids(external_ids))
         return self._update_object
+
+    def _wrap_ids(self, external_ids: List[str]):
+        return [{"externalId": external_id} for external_id in external_ids]
 
 
 class CogniteFilter:
@@ -408,12 +408,10 @@ class CogniteFilter:
         Returns:
             Dict[str, Any]: A dictionary representation of the instance.
         """
-        if camel_case:
-            return {
-                utils._auxiliary.to_camel_case(key): value
-                for key, value in self.__dict__.items()
-                if value not in EXCLUDE_VALUE and not key.startswith("_")
-            }
+
+        dump_key = lambda key: key if not camel_case else utils._auxiliary.to_camel_case(key)
         return {
-            key: value for key, value in self.__dict__.items() if value not in EXCLUDE_VALUE and not key.startswith("_")
+            dump_key(key): value
+            for key, value in self.__dict__.items()
+            if value not in EXCLUDE_VALUE and not key.startswith("_")
         }
