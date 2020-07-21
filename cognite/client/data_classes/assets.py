@@ -3,6 +3,7 @@ from typing import *
 
 from cognite.client.data_classes._base import *
 from cognite.client.data_classes.shared import TimestampRange
+from cognite.client.data_classes.labels import Label, LabelFilter
 
 
 class AssetAggregate(dict):
@@ -51,7 +52,7 @@ class Asset(CogniteResource):
         data_set_id (int): The id of the dataset this asset belongs to.
         metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
         source (str): The source of the asset.
-        labels (List[Dict[str, Any]]): A list of the labels associated with this resource item.
+        labels (List[Label]): A list of the labels associated with this resource item.
         id (int): A server-generated ID for the object.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -70,7 +71,7 @@ class Asset(CogniteResource):
         data_set_id: int = None,
         metadata: Dict[str, str] = None,
         source: str = None,
-        labels: List[Dict[str, Any]] = None,
+        labels: List[Label] = None,
         id: int = None,
         created_time: int = None,
         last_updated_time: int = None,
@@ -78,6 +79,8 @@ class Asset(CogniteResource):
         aggregates: Union[Dict[str, Any], AggregateResultItem] = None,
         cognite_client=None,
     ):
+        if labels is not None and len(labels) > 0 and not isinstance(labels[0], Label):
+            raise TypeError("Asset.labels should be of type List[Label]")
         self.external_id = external_id
         self.name = name
         self.parent_id = parent_id
@@ -100,6 +103,8 @@ class Asset(CogniteResource):
         if isinstance(resource, Dict):
             if instance.aggregates is not None:
                 instance.aggregates = AggregateResultItem(**instance.aggregates)
+        if instance.labels is not None:
+            instance.labels = [Label._load(label) for label in instance.labels]
         return instance
 
     def __hash__(self):
@@ -167,6 +172,12 @@ class Asset(CogniteResource):
         """
         return self._cognite_client.files.list(asset_ids=[self.id], **kwargs)
 
+    def dump(self, camel_case: bool = False):
+        result = super(Asset, self).dump(camel_case)
+        if self.labels is not None:
+            result["labels"] = [label.dump(camel_case) for label in self.labels]
+        return result
+
     def to_pandas(
         self, expand: List[str] = ("metadata", "aggregates"), ignore: List[str] = None, camel_case: bool = True
     ):
@@ -216,10 +227,10 @@ class AssetUpdate(CogniteUpdate):
             return self._remove(value)
 
     class _LabelAssetUpdate(CogniteLabelUpdate):
-        def add(self, value: List) -> "AssetUpdate":
+        def add(self, value: List[str]) -> "AssetUpdate":
             return self._add(value)
 
-        def remove(self, value: List) -> "AssetUpdate":
+        def remove(self, value: List[str]) -> "AssetUpdate":
             return self._remove(value)
 
     @property
@@ -257,14 +268,6 @@ class AssetUpdate(CogniteUpdate):
     @property
     def labels(self):
         return AssetUpdate._LabelAssetUpdate(self, "labels")
-
-    def add_label(self, external_id: str = None):
-        """Upsert the label on the asset"""
-        return self.labels.add([external_id])
-
-    def remove_label(self, external_id: str = None):
-        """Remove the label from an asset"""
-        return self.labels.remove([external_id])
 
 
 class AssetList(CogniteResourceList):
@@ -342,23 +345,6 @@ class AssetList(CogniteResourceList):
         return resources
 
 
-class AssetLabelFilter(CogniteFilter):
-    """Return only the assets matching the specified label.
-
-    Args:
-        contains_any (List[Dict[str, Any]]): The resource item contains at least one of the listed labels.
-        contains_all (List[Dict[str, Any]]): The resource item contains at least all the listed labels.
-        cognite_client (CogniteClient): The client to associate with this object.
-    """
-
-    def __init__(
-        self, contains_any: List[Dict[str, Any]] = None, contains_all: List[Dict[str, Any]] = None, cognite_client=None
-    ):
-        self.contains_any = contains_any
-        self.contains_all = contains_all
-        self._cognite_client = cognite_client
-
-
 class AssetFilter(CogniteFilter):
     """Filter on assets with strict matching.
 
@@ -375,7 +361,7 @@ class AssetFilter(CogniteFilter):
         last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
         root (bool): Whether the filtered assets are root assets, or not. Set to True to only list root assets.
         external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
-        labels (Union[Dict[str, Any], AssetLabelFilter]): Return only the assets matching the specified label.
+        labels (LabelFilter): Return only the resource matching the specified label constraints.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
@@ -393,7 +379,7 @@ class AssetFilter(CogniteFilter):
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
         root: bool = None,
         external_id_prefix: str = None,
-        labels: Union[Dict[str, Any], AssetLabelFilter] = None,
+        labels: LabelFilter = None,
         cognite_client=None,
     ):
         self.name = name
@@ -411,6 +397,9 @@ class AssetFilter(CogniteFilter):
         self.labels = labels
         self._cognite_client = cognite_client
 
+        if labels is not None and not isinstance(labels, LabelFilter):
+            raise TypeError("AssetFilter.labels must be of type LabelFilter")
+
     @classmethod
     def _load(cls, resource: Union[Dict, str], cognite_client=None):
         instance = super(AssetFilter, cls)._load(resource, cognite_client)
@@ -419,6 +408,10 @@ class AssetFilter(CogniteFilter):
                 instance.created_time = TimestampRange(**instance.created_time)
             if instance.last_updated_time is not None:
                 instance.last_updated_time = TimestampRange(**instance.last_updated_time)
-            if instance.labels is not None:
-                instance.labels = AssetLabelFilter(**instance.labels)
         return instance
+
+    def dump(self, camel_case: bool = False):
+        result = super(AssetFilter, self).dump(camel_case)
+        if isinstance(self.labels, LabelFilter):
+            result["labels"] = self.labels.dump(camel_case)
+        return result
