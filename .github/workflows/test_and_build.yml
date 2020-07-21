@@ -61,13 +61,6 @@ jobs:
       if: matrix.python-version == 3.7
       run: pipenv run black -l 120 --check .
 
-    - name: Test OpenAPI Generator
-      if: matrix.python-version == 3.7
-      run: |
-        sudo npm install -g swagger-cli
-        pipenv run pip install importlib_metadata
-        pipenv run pytest openapi/tests
-
     - uses: codecov/codecov-action@v1
       if: matrix.python-version == 3.7
       with:

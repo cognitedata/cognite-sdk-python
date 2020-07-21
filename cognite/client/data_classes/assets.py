@@ -6,7 +6,6 @@ from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.data_classes.labels import Label, LabelFilter
 
 
-# GenPropertyClass: AssetAggregate
 class AssetAggregate(dict):
     """Aggregation group of assets
 
@@ -20,10 +19,7 @@ class AssetAggregate(dict):
 
     count = CognitePropertyClassUtil.declare_property("count")
 
-    # GenStop
 
-
-# GenPropertyClass: AggregateResultItem
 class AggregateResultItem(dict):
     """Aggregated metrics of the asset
 
@@ -42,8 +38,6 @@ class AggregateResultItem(dict):
     child_count = CognitePropertyClassUtil.declare_property("childCount")
     depth = CognitePropertyClassUtil.declare_property("depth")
     path = CognitePropertyClassUtil.declare_property("path")
-
-    # GenStop
 
 
 class Asset(CogniteResource):
@@ -198,7 +192,6 @@ class Asset(CogniteResource):
         return super().to_pandas(expand=expand, ignore=ignore, camel_case=camel_case)
 
 
-# GenUpdateClass: AssetChange
 class AssetUpdate(CogniteUpdate):
     """Changes applied to asset
 
@@ -273,8 +266,6 @@ class AssetUpdate(CogniteUpdate):
     @property
     def labels(self):
         return AssetUpdate._LabelAssetUpdate(self, "labels")
-
-    # GenStop
 
 
 class AssetList(CogniteResourceList):

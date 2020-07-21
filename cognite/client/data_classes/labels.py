@@ -6,7 +6,6 @@ from cognite.client.data_classes._base import *
 from cognite.client.data_classes.shared import TimestampRange
 
 
-# GenClass: LabelDefinition
 class LabelDefinition(CogniteResource):
     """A label definition is a globally defined label that can later be attached to resources (e.g., assets). For example, can you define a "Pump" label definition and attach that label to your pump assets. 
 
@@ -32,10 +31,7 @@ class LabelDefinition(CogniteResource):
         self.created_time = created_time
         self._cognite_client = cognite_client
 
-    # GenStop
 
-
-# GenClass: LabelDefinitionFilter.filter
 class LabelDefinitionFilter(CogniteFilter):
     """Filter on labels definitions with strict matching.
 
@@ -49,8 +45,6 @@ class LabelDefinitionFilter(CogniteFilter):
         self.name = name
         self.external_id_prefix = external_id_prefix
         self._cognite_client = cognite_client
-
-    # GenStop
 
 
 class LabelDefinitionList(CogniteResourceList):

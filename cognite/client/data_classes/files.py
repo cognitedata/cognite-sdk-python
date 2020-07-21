@@ -5,7 +5,6 @@ from cognite.client.data_classes._base import *
 from cognite.client.data_classes.shared import TimestampRange
 
 
-# GenClass: FilesMetadata
 class FileMetadata(CogniteResource):
     """No description.
 
@@ -64,10 +63,7 @@ class FileMetadata(CogniteResource):
         self.last_updated_time = last_updated_time
         self._cognite_client = cognite_client
 
-    # GenStop
 
-
-# GenClass: FilesSearchFilter.filter
 class FileMetadataFilter(CogniteFilter):
     """No description.
 
@@ -141,10 +137,7 @@ class FileMetadataFilter(CogniteFilter):
                 instance.uploaded_time = TimestampRange(**instance.uploaded_time)
         return instance
 
-    # GenStop
 
-
-# GenUpdateClass: FileChange
 class FileMetadataUpdate(CogniteUpdate):
     """Changes will be applied to file.
 
@@ -218,10 +211,7 @@ class FileMetadataUpdate(CogniteUpdate):
     def security_categories(self):
         return FileMetadataUpdate._ListFileMetadataUpdate(self, "securityCategories")
 
-    # GenStop
 
-
-# GenPropertyClass: FilesAggregate
 class FileAggregate(dict):
     """Aggregation results for files
 
@@ -234,8 +224,6 @@ class FileAggregate(dict):
         self.update(kwargs)
 
     count = CognitePropertyClassUtil.declare_property("count")
-
-    # GenStop
 
 
 class FileMetadataList(CogniteResourceList):
