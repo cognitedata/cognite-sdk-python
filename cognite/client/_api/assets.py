@@ -428,20 +428,20 @@ class AssetsAPI(APIClient):
                 >>> my_update = AssetUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
                 >>> res = c.assets.update(my_update)
 
-            Attach a label to an asset::
+            Attach labels to an asset::
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import AssetUpdate
                 >>> c = CogniteClient()
-                >>> my_update = AssetUpdate(id=1).labels.add(["PUMP"])
+                >>> my_update = AssetUpdate(id=1).labels.add(["PUMP", "VERIFIED"])
                 >>> res = c.assets.update(my_update)
 
-            Detach a label from an asset::
+            Detach a single label from an asset::
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import AssetUpdate
                 >>> c = CogniteClient()
-                >>> my_update = AssetUpdate(id=1).labels.remove(["PUMP"])
+                >>> my_update = AssetUpdate(id=1).labels.remove("PUMP")
                 >>> res = c.assets.update(my_update)
         """
         return self._update_multiple(items=item)
