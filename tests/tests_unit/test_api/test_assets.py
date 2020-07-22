@@ -239,12 +239,19 @@ class TestAssets:
         assert isinstance(res, AssetList)
         assert mock_assets_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
-    def test_update_labels(self, mock_assets_response):
-        ASSETS_API.update([AssetUpdate(id=1).labels.add(["PUMP", "ROTATING_EQUIPMENT"]).labels.remove(["VALVE"])])
+    def test_update_labels_single(self, mock_assets_response):
+        ASSETS_API.update([AssetUpdate(id=1).labels.add("PUMP").labels.remove("VALVE")])
+        expected = {"labels": {"add": [{"externalId": "PUMP"}], "remove": [{"externalId": "VALVE"}]}}
+        assert expected == jsgz_load(mock_assets_response.calls[0].request.body)["items"][0]["update"]
+
+    def test_update_labels_multiple(self, mock_assets_response):
+        ASSETS_API.update(
+            [AssetUpdate(id=1).labels.add(["PUMP", "ROTATING_EQUIPMENT"]).labels.remove(["VALVE", "VERIFIED"])]
+        )
         expected = {
             "labels": {
                 "add": [{"externalId": "PUMP"}, {"externalId": "ROTATING_EQUIPMENT"}],
-                "remove": [{"externalId": "VALVE"}],
+                "remove": [{"externalId": "VALVE"}, {"externalId": "VERIFIED"}],
             }
         }
         assert expected == jsgz_load(mock_assets_response.calls[0].request.body)["items"][0]["update"]
