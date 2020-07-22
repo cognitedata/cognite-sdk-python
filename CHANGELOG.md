@@ -16,6 +16,20 @@ Changes are grouped as follows
 
 ## Unreleased	
 
+## [2.1.0] - 2020-07-22
+
+### Added
+- Support for passing a single string to `AssetUpdate().labels.add` and `AssetUpdate().labels.remove`. Both a single string and a list of strings is supported. Example:
+  ```python
+  # using a single string
+  my_update = AssetUpdate(id=1).labels.add("PUMP").labels.remove("VALVE")
+  res = c.assets.update(my_update)
+
+  # using a list of strings
+  my_update = AssetUpdate(id=1).labels.add(["PUMP", "ROTATING_EQUIPMENT"]).labels.remove(["VALVE"])
+  res = c.assets.update(my_update)
+  ```
+
 ## [2.0.0] - 2020-07-17
 
 ### Changed
