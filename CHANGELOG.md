@@ -16,7 +16,7 @@ Changes are grouped as follows
 
 ## Unreleased	
 
-## [2.0.1] - 2020-07-22
+## [2.1.0] - 2020-07-22
 
 ### Added
 - Support for passing a single string to `AssetUpdate().labels.add` and `AssetUpdate().labels.remove`. Both a single string and a list of strings is supported. Example:
