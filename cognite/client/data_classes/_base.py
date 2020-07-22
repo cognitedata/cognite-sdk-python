@@ -372,16 +372,19 @@ class CogniteLabelUpdate:
         self._update_object = update_object
         self._name = name
 
-    def _add(self, external_ids: List[str]):
-        self._update_object._add(self._name, self._wrap_ids(external_ids))
+    def _add(self, external_ids: Union[str, List[str]]):
+        self._update_object._add(self._name, self._wrap_ids(self._wrap_in_list(external_ids)))
         return self._update_object
 
-    def _remove(self, external_ids: List[str]):
-        self._update_object._remove(self._name, self._wrap_ids(external_ids))
+    def _remove(self, external_ids: Union[str, List[str]]):
+        self._update_object._remove(self._name, self._wrap_ids(self._wrap_in_list(external_ids)))
         return self._update_object
 
     def _wrap_ids(self, external_ids: List[str]):
         return [{"externalId": external_id} for external_id in external_ids]
+
+    def _wrap_in_list(self, external_ids: Union[str, List[str]]):
+        return external_ids if isinstance(external_ids, list) else [external_ids]
 
 
 class CogniteFilter:
