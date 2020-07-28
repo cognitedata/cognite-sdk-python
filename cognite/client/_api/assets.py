@@ -492,6 +492,13 @@ class AssetsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.assets.search(name="xyz",filter={"parent_ids": [123,456],"source": "some source"})
+
+            Search for an asset with an attached label:
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> my_label_filter = LabelFilter(contains_all=["PUMP"])
+                >>> res = c.assets.search(name="xyz",filter=AssetFilter(labels=my_label_filter))
         """
         return self._search(
             search={"name": name, "description": description, "query": query}, filter=filter, limit=limit
