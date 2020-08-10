@@ -161,6 +161,13 @@ class APIClient:
 
         kwargs["headers"] = headers
 
+        # requests will by default follow redirects. This can be an SSRF-hazard if
+        # the client can be tricked to request something with an open redirect, in
+        # addition to leaking the token, as requests will send the headers to the
+        # redirected-to endpoint.
+        # If redirects are to be followed in a call, this should be opted into instead.
+        kwargs.setdefault("allow_redirects", False)
+
         if is_retryable:
             res = self._request_session_with_retry.request(method=method, url=full_url, **kwargs)
         else:
