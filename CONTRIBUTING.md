@@ -36,16 +36,16 @@ Set up tests for all new functionality. Running the tests will require setting t
 
 Initiate unit tests by running the following command from the root directory:
 
-`python3 -m pytest tests/tests_unit`
+`pytest tests/tests_unit`
 
 If you have an appropriate API key, you can run the integratino tests like this:
 
-`python3 -m pytest tests/tests_integration`
+`pytest tests/tests_integration`
 
 If you want to generate code coverage reports run:
 
 ```
-python3 -m pytest tests/tests_unit --cov-report html \
+pytest tests/tests_unit --cov-report html \
                         --cov-report xml \
                         --cov cognite
 ```
