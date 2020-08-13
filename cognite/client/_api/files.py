@@ -11,6 +11,8 @@ from cognite.client.data_classes import (
     FileMetadataFilter,
     FileMetadataList,
     FileMetadataUpdate,
+    Label,
+    LabelFilter,
     TimestampRange,
 )
 
@@ -33,6 +35,7 @@ class FilesAPI(APIClient):
         asset_subtree_external_ids: List[str] = None,
         data_set_ids: List[int] = None,
         data_set_external_ids: List[str] = None,
+        labels: LabelFilter = None,
         source: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
@@ -60,6 +63,7 @@ class FilesAPI(APIClient):
             asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
             data_set_ids (List[int]): Return only files in the specified data sets with these ids.
             data_set_external_ids (List[str]): Return only files in the specified data sets with these external ids.
+            labels (LabelFilter): Return only the files matching the specified label(s).
             source (str): The source of this event.
             source_created_time (Union[Dict[str, Any], TimestampRange]): Filter for files where the sourceCreatedTime field has been set and is within the specified range.
             source_modified_time (Union[Dict[str, Any], TimestampRange]): Filter for files where the sourceModifiedTime field has been set and is within the specified range.
@@ -88,6 +92,7 @@ class FilesAPI(APIClient):
             asset_external_ids=asset_external_ids,
             root_asset_ids=root_asset_ids,
             asset_subtree_ids=asset_subtree_ids,
+            labels=labels,
             source=source,
             created_time=created_time,
             last_updated_time=last_updated_time,
@@ -215,6 +220,7 @@ class FilesAPI(APIClient):
         asset_subtree_external_ids: List[str] = None,
         data_set_ids: List[int] = None,
         data_set_external_ids: List[str] = None,
+        labels: LabelFilter = None,
         source: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
@@ -239,6 +245,7 @@ class FilesAPI(APIClient):
             asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
             data_set_ids (List[int]): Return only files in the specified data sets with these ids.
             data_set_external_ids (List[str]): Return only files in the specified data sets with these external ids.
+            labels (LabelFilter): Return only the files matching the specified label filter(s).
             source (str): The source of this event.
             created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
@@ -274,6 +281,14 @@ class FilesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> for file_list in c.files(chunk_size=2500):
                 ...     file_list # do something with the files
+
+            Filter files based on labels::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import LabelFilter
+                >>> c = CogniteClient()
+                >>> my_label_filter = LabelFilter(contains_all=["WELL LOG", "VERIFIED"])
+                >>> file_list = c.files.list(labels=my_label_filter)
         """
         if root_asset_ids or root_asset_external_ids:
             root_asset_ids = self._process_ids(root_asset_ids, root_asset_external_ids, wrap_ids=True)
@@ -290,6 +305,7 @@ class FilesAPI(APIClient):
             asset_external_ids=asset_external_ids,
             root_asset_ids=root_asset_ids,
             asset_subtree_ids=asset_subtree_ids,
+            labels=labels,
             source=source,
             created_time=created_time,
             last_updated_time=last_updated_time,
@@ -347,6 +363,7 @@ class FilesAPI(APIClient):
         self, item: Union[FileMetadata, FileMetadataUpdate, List[Union[FileMetadata, FileMetadataUpdate]]]
     ) -> Union[FileMetadata, FileMetadataList]:
         """`Update files <https://docs.cognite.com/api/v1/#operation/updateFiles>`_
+        Currently, a full replacement of labels on a file is not supported (only partial add/remove updates). See the example below on how to perform partial labels update.
 
         Args:
             item (Union[FileMetadata, FileMetadataUpdate, List[Union[FileMetadata, FileMetadataUpdate]]]): file(s) to update.
@@ -370,6 +387,22 @@ class FilesAPI(APIClient):
                 >>> from cognite.client.data_classes import FileMetadataUpdate
                 >>> c = CogniteClient()
                 >>> my_update = FileMetadataUpdate(id=1).source.set("new source").metadata.add({"key": "value"})
+                >>> res = c.files.update(my_update)
+
+            Attach labels to a files::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import FileMetadataUpdate
+                >>> c = CogniteClient()
+                >>> my_update = FileMetadataUpdate(id=1).labels.add(["PUMP", "VERIFIED"])
+                >>> res = c.files.update(my_update)
+
+            Detach a single label from a file::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import FileMetadataUpdate
+                >>> c = CogniteClient()
+                >>> my_update = FileMetadataUpdate(id=1).labels.remove("PUMP")
                 >>> res = c.files.update(my_update)
         """
         return self._update_multiple(cls=FileMetadataList, resource_path=self._RESOURCE_PATH, items=item)
@@ -395,6 +428,13 @@ class FilesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.files.search(name="some name")
+
+            Search for an asset with an attached label:
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> my_label_filter = LabelFilter(contains_all=["WELL LOG"])
+                >>> res = c.assets.search(name="xyz",filter=FileMetadataFilter(labels=my_label_filter))
         """
         return self._search(search={"name": name}, filter=filter, limit=limit)
 
@@ -410,6 +450,7 @@ class FilesAPI(APIClient):
         source_created_time: int = None,
         source_modified_time: int = None,
         data_set_id: int = None,
+        labels: List[Label] = None,
         security_categories: List[int] = None,
         recursive: bool = False,
         overwrite: bool = False,
@@ -425,6 +466,7 @@ class FilesAPI(APIClient):
             metadata (Dict[str, str]): Customizable extra data about the file. String key -> String value.
             asset_ids (List[int]): No description.
             data_set_id (int): ID of the data set.
+            labels (List[Label]): A list of the labels associated with this resource item.
             source_created_time (int): The timestamp for when the file was originally created in the source system.
             source_modified_time (int): The timestamp for when the file was last modified in the source system.
             recursive (bool): If path is a directory, upload all contained files recursively.
@@ -459,6 +501,13 @@ class FilesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.files.upload("/path/to/my/directory")
 
+            Upload a file with a label::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import Label
+                >>> c = CogniteClient()
+                >>> res = c.files.upload("/path/to/file", name="my_file", labels=[Label(external_id="WELL LOG")])
+
         """
         file_metadata = FileMetadata(
             name=name,
@@ -468,6 +517,7 @@ class FilesAPI(APIClient):
             metadata=metadata,
             asset_ids=asset_ids,
             data_set_id=data_set_id,
+            labels=labels,
             source_created_time=source_created_time,
             source_modified_time=source_modified_time,
             security_categories=security_categories,
@@ -515,6 +565,7 @@ class FilesAPI(APIClient):
         metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
         data_set_id: int = None,
+        labels: List[Label] = None,
         source_created_time: int = None,
         source_modified_time: int = None,
         security_categories: List[int] = None,
@@ -533,6 +584,7 @@ class FilesAPI(APIClient):
             metadata (Dict[str, str]): Customizable extra data about the file. String key -> String value.
             asset_ids (List[int]): No description.
             data_set_id (int): Id of the data set.
+            labels (List[Label]): A list of the labels associated with this resource item.
             source_created_time (int): The timestamp for when the file was originally created in the source system.
             source_modified_time (int): The timestamp for when the file was last modified in the source system.
             overwrite (bool): If 'overwrite' is set to true, and the POST body content specifies a 'externalId' field,
@@ -560,6 +612,7 @@ class FilesAPI(APIClient):
             metadata=metadata,
             asset_ids=asset_ids,
             data_set_id=data_set_id,
+            labels=labels,
             source_created_time=source_created_time,
             source_modified_time=source_modified_time,
             security_categories=security_categories,

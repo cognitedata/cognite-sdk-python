@@ -8,7 +8,7 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client._api.files import FileMetadata, FileMetadataList, FileMetadataUpdate
-from cognite.client.data_classes import FileMetadataFilter, TimestampRange
+from cognite.client.data_classes import FileMetadataFilter, Label, LabelFilter, TimestampRange
 from cognite.client.exceptions import CogniteAPIError
 from tests.utils import jsgz_load, set_request_limit
 
@@ -26,6 +26,7 @@ def mock_files_response(rsps):
                 "mimeType": "string",
                 "metadata": {"metadata-key": "metadata-value"},
                 "assetIds": [1],
+                "labels": [{"externalId": "WELL LOG"}],
                 "id": 1,
                 "uploaded": True,
                 "uploadedTime": 0,
@@ -52,6 +53,7 @@ def mock_file_upload_response(rsps):
         "mimeType": "string",
         "metadata": {},
         "assetIds": [1],
+        "labels": [{"externalId": "WELL LOG"}],
         "id": 1,
         "uploaded": True,
         "uploadedTime": 0,
@@ -73,6 +75,7 @@ def mock_file_create_response(rsps):
         "mimeType": "string",
         "metadata": {},
         "assetIds": [1],
+        "labels": [{"externalId": "WELL LOG"}],
         "id": 1,
         "uploaded": False,
         "uploadedTime": 0,
@@ -145,6 +148,20 @@ def mock_file_download_response_one_fails(rsps):
 
 
 class TestFilesAPI:
+    def test_create(self, mock_file_create_response):
+        file_metadata = FileMetadata(name="bla")
+        returned_file_metadata, upload_url = FILES_API.create(file_metadata)
+        response_body = mock_file_create_response.calls[0].response.json()
+        assert FileMetadata._load(response_body) == returned_file_metadata
+        assert response_body["uploadUrl"] == upload_url
+
+    def test_create_with_label(self, mock_file_create_response):
+        file_metadata = FileMetadata(name="bla", labels=[Label(external_id="WELL LOG")])
+        returned_file_metadata, upload_url = FILES_API.create(file_metadata)
+        response_body = mock_file_create_response.calls[0].response.json()
+        assert FileMetadata._load(response_body) == returned_file_metadata
+        assert response_body["labels"][0]["externalId"] == "WELL LOG"
+
     def test_create(self, mock_file_create_response):
         file_metadata = FileMetadata(name="bla")
         returned_file_metadata, upload_url = FILES_API.create(file_metadata)
@@ -225,6 +242,44 @@ class TestFilesAPI:
         assert {"items": [{"id": 1, "update": {"source": {"set": "bla"}}}]} == jsgz_load(
             mock_files_response.calls[0].request.body
         )
+
+    def test_update_labels_single(self, mock_files_response):
+        FILES_API.update([FileMetadataUpdate(id=1).labels.add("PUMP").labels.remove("WELL LOG")])
+        expected = {"labels": {"add": [{"externalId": "PUMP"}], "remove": [{"externalId": "WELL LOG"}]}}
+        assert jsgz_load(mock_files_response.calls[0].request.body)["items"][0]["update"] == expected
+
+    def test_update_labels_multiple(self, mock_files_response):
+        FILES_API.update(
+            [FileMetadataUpdate(id=1).labels.add(["PUMP", "ROTATING_EQUIPMENT"]).labels.remove(["WELL LOG"])]
+        )
+        expected = {
+            "labels": {
+                "add": [{"externalId": "PUMP"}, {"externalId": "ROTATING_EQUIPMENT"}],
+                "remove": [{"externalId": "WELL LOG"}],
+            }
+        }
+        assert jsgz_load(mock_files_response.calls[0].request.body)["items"][0]["update"] == expected
+
+    # resource.update doesn't support full replacement of labels (set operation)
+    def test_ignore_labels_resource_class(self, mock_files_response):
+        FILES_API.update(FileMetadata(id=1, labels=[Label(external_id="Pump")], external_id="newId"))
+        assert jsgz_load(mock_files_response.calls[0].request.body)["items"][0]["update"] == {
+            "externalId": {"set": "newId"}
+        }
+
+    def test_labels_filter_contains_all(self, mock_files_response):
+        my_label_filter = LabelFilter(contains_all=["WELL LOG", "VERIFIED"])
+        FILES_API.list(labels=my_label_filter)
+        assert jsgz_load(mock_files_response.calls[0].request.body)["filter"]["labels"] == {
+            "containsAll": [{"externalId": "WELL LOG"}, {"externalId": "VERIFIED"}]
+        }
+
+    def test_labels_filter_contains_any(self, mock_files_response):
+        my_label_filter = LabelFilter(contains_any=["WELL LOG", "WELL REPORT"])
+        FILES_API.list(labels=my_label_filter)
+        assert jsgz_load(mock_files_response.calls[0].request.body)["filter"]["labels"] == {
+            "containsAny": [{"externalId": "WELL LOG"}, {"externalId": "WELL REPORT"}]
+        }
 
     def test_update_multiple(self, mock_files_response):
         res = FILES_API.update([FileMetadataUpdate(id=1).source.set(None), FileMetadata(external_id="2", source="bla")])
@@ -408,6 +463,8 @@ class TestFilesAPI:
             .external_id.set(None)
             .metadata.add({})
             .metadata.remove([])
+            .labels.add(["WELL LOG"])
+            .labels.remove(["CV"])
             .source.set(1)
             .source.set(None),
             FileMetadataUpdate,

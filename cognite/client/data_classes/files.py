@@ -2,6 +2,7 @@ from typing import *
 from typing import Dict, List
 
 from cognite.client.data_classes._base import *
+from cognite.client.data_classes.labels import Label, LabelFilter
 from cognite.client.data_classes.shared import TimestampRange
 
 
@@ -16,6 +17,7 @@ class FileMetadata(CogniteResource):
         metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         asset_ids (List[int]): No description.
         data_set_id (int): The dataSet Id for the item.
+        labels (List[Label]): A list of the labels associated with this resource item.
         source_created_time (int): The timestamp for when the file was originally created in the source system.
         source_modified_time (int): The timestamp for when the file was last modified in the source system.
         security_categories (List[int]): The security category IDs required to access this file.
@@ -36,6 +38,7 @@ class FileMetadata(CogniteResource):
         metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
         data_set_id: int = None,
+        labels: List[Label] = None,
         source_created_time: int = None,
         source_modified_time: int = None,
         security_categories: List[int] = None,
@@ -46,6 +49,8 @@ class FileMetadata(CogniteResource):
         last_updated_time: int = None,
         cognite_client=None,
     ):
+        if labels is not None and len(labels) > 0 and not isinstance(labels[0], Label):
+            raise TypeError("FileMetadata.labels should be of type List[Label]")
         self.external_id = external_id
         self.name = name
         self.source = source
@@ -53,6 +58,7 @@ class FileMetadata(CogniteResource):
         self.metadata = metadata
         self.asset_ids = asset_ids
         self.data_set_id = data_set_id
+        self.labels = labels
         self.source_created_time = source_created_time
         self.source_modified_time = source_modified_time
         self.security_categories = security_categories
@@ -75,6 +81,7 @@ class FileMetadataFilter(CogniteFilter):
         asset_external_ids (List[str]): Only include files that reference these specific asset external IDs.
         root_asset_ids (List[Dict[str, Any]]): Only include files that have a related asset in a tree rooted at any of these root assetIds.
         data_set_ids (List[Dict[str, Any]]): Only include files that belong to these datasets.
+        labels (LabelFilter): Return only the files matching the specified label(s).
         asset_subtree_ids (List[Dict[str, Any]]): Only include files that have a related asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
         source (str): The source of this event.
         created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
@@ -96,6 +103,7 @@ class FileMetadataFilter(CogniteFilter):
         asset_external_ids: List[str] = None,
         root_asset_ids: List[Dict[str, Any]] = None,
         data_set_ids: List[Dict[str, Any]] = None,
+        labels: LabelFilter = None,
         asset_subtree_ids: List[Dict[str, Any]] = None,
         source: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
@@ -114,6 +122,7 @@ class FileMetadataFilter(CogniteFilter):
         self.asset_external_ids = asset_external_ids
         self.root_asset_ids = root_asset_ids
         self.data_set_ids = data_set_ids
+        self.labels = labels
         self.asset_subtree_ids = asset_subtree_ids
         self.source = source
         self.created_time = created_time
@@ -125,6 +134,9 @@ class FileMetadataFilter(CogniteFilter):
         self.uploaded = uploaded
         self._cognite_client = cognite_client
 
+        if labels is not None and not isinstance(labels, LabelFilter):
+            raise TypeError("FileMetadataFilter.labels must be of type LabelFilter")
+
     @classmethod
     def _load(cls, resource: Union[Dict, str], cognite_client=None):
         instance = super(FileMetadataFilter, cls)._load(resource, cognite_client)
@@ -135,7 +147,15 @@ class FileMetadataFilter(CogniteFilter):
                 instance.last_updated_time = TimestampRange(**instance.last_updated_time)
             if instance.uploaded_time is not None:
                 instance.uploaded_time = TimestampRange(**instance.uploaded_time)
+            if instance.labels is not None:
+                instance.labels = [Label._load(label) for label in instance.labels]
         return instance
+
+    def dump(self, camel_case: bool = False):
+        result = super(FileMetadataFilter, self).dump(camel_case)
+        if isinstance(self.labels, LabelFilter):
+            result["labels"] = self.labels.dump(camel_case)
+        return result
 
 
 class FileMetadataUpdate(CogniteUpdate):
@@ -169,10 +189,10 @@ class FileMetadataUpdate(CogniteUpdate):
             return self._remove(value)
 
     class _LabelFileMetadataUpdate(CogniteLabelUpdate):
-        def add(self, value: List) -> "FileMetadataUpdate":
+        def add(self, value: Union[str, List[str]]) -> "FileMetadataUpdate":
             return self._add(value)
 
-        def remove(self, value: List) -> "FileMetadataUpdate":
+        def remove(self, value: Union[str, List[str]]) -> "FileMetadataUpdate":
             return self._remove(value)
 
     @property
@@ -206,6 +226,10 @@ class FileMetadataUpdate(CogniteUpdate):
     @property
     def data_set_id(self):
         return FileMetadataUpdate._PrimitiveFileMetadataUpdate(self, "dataSetId")
+
+    @property
+    def labels(self):
+        return FileMetadataUpdate._LabelFileMetadataUpdate(self, "labels")
 
     @property
     def security_categories(self):
