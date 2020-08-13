@@ -528,7 +528,8 @@ class DatapointsAPI(APIClient):
         step_int_cols = [c for c in df.columns if regexp.search(c, r"\|stepInterpolation$")] + list(
             set(int_cols) - set(lin_int_cols)
         )
-        df[lin_int_cols] = df[lin_int_cols].interpolate(limit_area="inside")
+        if lin_int_cols:
+            df[lin_int_cols] = df[lin_int_cols].interpolate(limit_area="inside")
         df[step_int_cols] = df[step_int_cols].ffill()
         return df
 
