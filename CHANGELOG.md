@@ -16,7 +16,7 @@ Changes are grouped as follows
 
 ## Unreleased
 
-## [2.1.1] - 2020-08-04
+## [2.1.1] - 2020-08-13
 
 ### Fixed
 - Fixed a bug where only v1 endpoints (not playground) could be added as retryable
