@@ -16,6 +16,11 @@ Changes are grouped as follows
 
 ## Unreleased	
 
+## [2.2.0] - 2020-08-13
+
+### Added
+- Files labelling support
+
 ## [2.1.0] - 2020-07-22
 
 ### Added
