@@ -282,7 +282,7 @@ class EventsAPI(APIClient):
 
         Returns:
             List[AggregateResult]: List of event aggregates
-        
+
         Examples:
 
             Aggregate events:
@@ -312,7 +312,7 @@ class EventsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> aggregate_subtype = c.events.aggregate(filter={"type": "failure"}, fields=["subtype"])
+                >>> aggregate_subtype = c.events.aggregate_unique_values(filter={"type": "failure"}, fields=["subtype"])
         """
 
         return self._aggregate(filter=filter, fields=fields, aggregate="uniqueValues", cls=AggregateUniqueValuesResult)
