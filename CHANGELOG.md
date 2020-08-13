@@ -14,7 +14,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## Unreleased	
+## Unreleased
+
+## [2.1.1] - 2020-08-04
+
+### Fixed
+- Calls to datapoints `retrieve_dataframe` with `complete="fill"` would break using Pandas version 1.1.0 because it raises TypeError when calling `.interpolate(...)` on a dataframe with no columns.
 
 ## [2.2.0] - 2020-08-13
 
@@ -109,7 +114,7 @@ Changes are grouped as follows
 
 ### Fixed
 - No longer retry calls to /files/initupload
-- Retry retryable POST endpoints in datasets API 
+- Retry retryable POST endpoints in datasets API
 
 ## [1.5.0] - 2020-03-12
 ### Added
@@ -132,7 +137,7 @@ Changes are grouped as follows
 - Datapoint insertion changed to be less memory intensive.
 
 ### Fixed
-- Fixed a bug where add service account to group expected items in response. 
+- Fixed a bug where add service account to group expected items in response.
 - Jupyter notebook output and non-camel cased to_pandas uses nullable int fields instead of float for relevant fields.
 
 ## [1.4.10] - 2020-01-24
@@ -143,7 +148,7 @@ Changes are grouped as follows
 ## [1.4.9] - 2019-12-19
 
 ### Fixed
-- Fixed a bug where datapoints `retrieve` could return less than limit even if there were more datapoints. 
+- Fixed a bug where datapoints `retrieve` could return less than limit even if there were more datapoints.
 - Fixed an issue where `insert_dataframe` would give an error with older pandas versions.
 
 ## [1.4.8] - 2019-12-19
@@ -155,7 +160,7 @@ Changes are grouped as follows
 - Synthetic datapoints retrieve has additional functions including variable replacement and sympy support.
 
 ### Changed
-- Synthetic datapoints now return errors in the `.error` field, in the jupyter output, and optionally in pandas dataframes if `include_errors` is set. 
+- Synthetic datapoints now return errors in the `.error` field, in the jupyter output, and optionally in pandas dataframes if `include_errors` is set.
 
 ## [1.4.7] - 2019-12-05
 
@@ -187,7 +192,7 @@ Changes are grouped as follows
 - Retry 429 on all endpoints
 
 ### Fixed
-- Fixed notebook output for DatapointsList 
+- Fixed notebook output for DatapointsList
 
 ## [1.4.3] - 2019-11-27
 ### Fixed
@@ -238,7 +243,7 @@ Changes are grouped as follows
 
 ### Changed
 - Datapoints insert dataframe function will check for infinity values.
-- Allow for multiple calls to .add / .remove in object updates such as metadata, without later calls overwriting former. 
+- Allow for multiple calls to .add / .remove in object updates such as metadata, without later calls overwriting former.
 - List time series now ignores the include_metadata parameter.
 
 ### Added
@@ -253,7 +258,7 @@ Changes are grouped as follows
 
 ### Changed
 - `list` and `__call__` methods for files now support list parameters for `root_ids`, `root_external_ids`.
-- retrieve_dataframe with `complete` using Datapoints fields instead of retrieving time series metadata. 
+- retrieve_dataframe with `complete` using Datapoints fields instead of retrieving time series metadata.
 
 ### Fixed
 - Fixed chunking logic in list_generator to always return last partial chunk.
