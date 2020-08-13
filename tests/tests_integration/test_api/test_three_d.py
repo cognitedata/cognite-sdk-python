@@ -42,6 +42,7 @@ class TestThreeDModelsAPI:
 
 
 class TestThreeDRevisionsAPI:
+    @pytest.mark.skip(reason="missing a 3d model to test revision against")
     def test_list_and_retrieve(self, test_revision):
         revision, model_id = test_revision
         assert revision == COGNITE_CLIENT.three_d.revisions.retrieve(model_id=model_id, id=revision.id)
@@ -50,6 +51,7 @@ class TestThreeDRevisionsAPI:
         res = COGNITE_CLIENT.three_d.revisions.list_nodes(model_id=model_id, revision_id=revision.id)
         assert len(res) > 0
 
+    @pytest.mark.skip(reason="missing a 3d model to test revision against")
     def test_list_ancestor_nodes(self, test_revision):
         revision, model_id = test_revision
         node_id = COGNITE_CLIENT.three_d.revisions.list_nodes(model_id=model_id, revision_id=revision.id)[0].id
@@ -58,11 +60,13 @@ class TestThreeDRevisionsAPI:
         )
         assert len(res) > 0
 
+    @pytest.mark.skip(reason="missing a 3d model to test revision against")
     def test_update_with_resource(self, test_revision):
         revision, model_id = test_revision
         revision.metadata = {"key": "value"}
         COGNITE_CLIENT.three_d.revisions.update(model_id, revision)
 
+    @pytest.mark.skip(reason="missing a 3d model to test revision against")
     def test_partial_update(self, test_revision):
         revision, model_id = test_revision
         added_metadata = {"key": "value"}
@@ -71,6 +75,7 @@ class TestThreeDRevisionsAPI:
 
 
 class TestThreeDFilesAPI:
+    @pytest.mark.skip(reason="missing a 3d model to test revision against")
     def test_retrieve(self, test_revision):
         revision, model_id = test_revision
         project = COGNITE_CLIENT._config.project
