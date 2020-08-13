@@ -85,6 +85,7 @@ class TestSyntheticDatapointsAPI:
         assert isinstance(dps1, Datapoints)
         assert isinstance(dps2, DatapointsList)
 
+    @pytest.mark.skip(reason="missing some of the 'test_time_series'")
     @pytest.mark.dsl
     def test_expression_builder_complex(self, test_time_series):
         from sympy import symbols, cos, sin, pi, log, sqrt
