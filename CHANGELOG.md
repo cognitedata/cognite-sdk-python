@@ -19,6 +19,11 @@ Changes are grouped as follows
 ## [2.1.1] - 2020-08-04
 
 ### Fixed
+- Fixed a bug where only v1 endpoints (not playground) could be added as retryable
+
+## [2.1.1] - 2020-08-04
+
+### Fixed
 - Calls to datapoints `retrieve_dataframe` with `complete="fill"` would break using Pandas version 1.1.0 because it raises TypeError when calling `.interpolate(...)` on a dataframe with no columns.
 
 ## [2.1.0] - 2020-07-22
