@@ -965,6 +965,7 @@ class TestHelpers:
             ("POST", "https://localhost:8000/api/v1/projects/blabla/files/list", True),
             ("PUT", "https://api.cognitedata.com/bla", True),
             ("POST", "https://greenfield.cognitedata.com/api/v1/projects/blabla/assets", False),
+            ("POST", "https://greenfield.cognitedata.com/api/playground/projects/blabla/relationships/list", True),
             ("PUT", "https://localhost:8000.com/api/v1/projects/blabla/assets", True),
             ("PATCH", "https://localhost:8000.com/api/v1/projects/blabla/patchy", True),
         ],
