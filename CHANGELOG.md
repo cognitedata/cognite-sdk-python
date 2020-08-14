@@ -16,6 +16,11 @@ Changes are grouped as follows
 
 ## Unreleased
 
+## [2.2.0] - 2020-08-14
+
+### Added
+- Files labelling support
+
 ## [2.1.1] - 2020-08-13
 
 ### Fixed
@@ -25,11 +30,6 @@ Changes are grouped as follows
 
 ### Fixed
 - Calls to datapoints `retrieve_dataframe` with `complete="fill"` would break using Pandas version 1.1.0 because it raises TypeError when calling `.interpolate(...)` on a dataframe with no columns.
-
-## [2.2.0] - 2020-08-13
-
-### Added
-- Files labelling support
 
 ## [2.1.0] - 2020-07-22
 

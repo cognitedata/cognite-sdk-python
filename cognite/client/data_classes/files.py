@@ -49,7 +49,7 @@ class FileMetadata(CogniteResource):
         last_updated_time: int = None,
         cognite_client=None,
     ):
-        if labels is not None and len(labels) > 0 and not isinstance(labels[0], Label):
+        if labels is not None and len(labels) > 0 and not all(isinstance(l, Label) for l in labels):
             raise TypeError("FileMetadata.labels should be of type List[Label]")
         self.external_id = external_id
         self.name = name

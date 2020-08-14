@@ -162,6 +162,14 @@ class TestFilesAPI:
         assert FileMetadata._load(response_body) == returned_file_metadata
         assert response_body["labels"][0]["externalId"] == "WELL LOG"
 
+    def test_create_with_label_request(self, mock_file_create_response):
+        file_metadata = FileMetadata(name="bla", labels=[Label(external_id="WELL LOG")])
+        returned_file_metadata, upload_url = FILES_API.create(file_metadata)
+        response_body = mock_file_create_response.calls[0].response.json()
+        request_body = jsgz_load(mock_file_create_response.calls[0].request.body)
+        assert FileMetadata._load(response_body) == returned_file_metadata
+        assert all(body["labels"][0]["externalId"] == "WELL LOG" for body in [request_body, response_body])
+
     def test_create(self, mock_file_create_response):
         file_metadata = FileMetadata(name="bla")
         returned_file_metadata, upload_url = FILES_API.create(file_metadata)
