@@ -16,6 +16,11 @@ Changes are grouped as follows
 
 ## Unreleased
 
+## [2.2.1] - 2020-08-17
+
+### Added
+- Fixed a bug where `/timeseries/list` was missing from the retryable endpoints.
+
 ## [2.2.0] - 2020-08-14
 
 ### Added
