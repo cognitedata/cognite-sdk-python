@@ -12,11 +12,11 @@ COGNITE_CLIENT = CogniteClient()
 
 @pytest.fixture(scope="session")
 def test_time_series():
+    time_series_names = ["test__constant_{}_with_noise".format(i) for i in range(0, 10)]
     time_series = {}
-    for ts in COGNITE_CLIENT.time_series.list(limit=2000):
-        if ts.name in ["test__constant_{}_with_noise".format(i) for i in range(0, 10)]:
-            value = int(re.match(r"test__constant_(\d+)_with_noise", ts.name).group(1))
-            time_series[value] = ts
+    for ts in COGNITE_CLIENT.time_series.retrieve_multiple(external_ids=time_series_names):
+        value = int(re.match(r"test__constant_(\d+)_with_noise", ts.name).group(1))
+        time_series[value] = ts
     yield time_series
 
 
@@ -85,7 +85,6 @@ class TestSyntheticDatapointsAPI:
         assert isinstance(dps1, Datapoints)
         assert isinstance(dps2, DatapointsList)
 
-    @pytest.mark.skip(reason="missing some of the 'test_time_series'")
     @pytest.mark.dsl
     def test_expression_builder_complex(self, test_time_series):
         from sympy import symbols, cos, sin, pi, log, sqrt
