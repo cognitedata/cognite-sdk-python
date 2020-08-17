@@ -41,7 +41,7 @@ class _DefaultConfig:
         self.status_forcelist = self._get_status_forcelist()
         self.max_retries = int(os.getenv("COGNITE_MAX_RETRIES", 10))
         self.max_retry_backoff = int(os.getenv("COGNITE_MAX_RETRY_BACKOFF", 30))
-        self.max_connection_pool_size = int(os.getenv("COGNITE_MAX_CONNECTION_POOL_SIZE", self.max_workers))
+        self.max_connection_pool_size = int(os.getenv("COGNITE_MAX_CONNECTION_POOL_SIZE", 50))
         self.disable_ssl = os.getenv("COGNITE_DISABLE_SSL", False)
 
     @staticmethod
