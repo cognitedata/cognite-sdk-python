@@ -5,80 +5,19 @@ import numbers
 import os
 import re
 from collections import UserList
-from http import cookiejar
 from typing import Any, Callable, Dict, List, Optional, Union
 from urllib.parse import urljoin
 
 import requests.utils
-from requests import Response, Session
-from requests.adapters import HTTPAdapter
-from requests.packages.urllib3 import Retry
+from requests import Response
 from requests.structures import CaseInsensitiveDict
 
 from cognite.client import utils
+from cognite.client._http_client import GLOBAL_REQUEST_SESSION, HTTPClient, HTTPClientConfig
 from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteUpdate
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 
 log = logging.getLogger("cognite-sdk")
-
-
-class BlockAll(cookiejar.CookiePolicy):
-    return_ok = set_ok = domain_return_ok = path_return_ok = lambda self, *args, **kwargs: False
-    netscape = True
-    rfc2965 = hide_cookie2 = False
-
-
-class RetryWithMaxBackoff(Retry):
-    def get_backoff_time(self):
-        return min(utils._client_config._DefaultConfig().max_retry_backoff, super().get_backoff_time())
-
-
-def _init_requests_session():
-    session = Session()
-    session_with_retry = Session()
-
-    cookies_policy = BlockAll()
-    session.cookies.set_policy(cookies_policy)
-    session_with_retry.cookies.set_policy(cookies_policy)
-
-    config = utils._client_config._DefaultConfig()
-    adapter = HTTPAdapter(
-        max_retries=RetryWithMaxBackoff(
-            total=config.max_retries,
-            read=0,
-            backoff_factor=0.5,
-            status_forcelist=[429],
-            method_whitelist=False,
-            raise_on_status=False,
-        ),
-        pool_maxsize=config.max_connection_pool_size,
-    )
-    adapter_with_retry = HTTPAdapter(
-        max_retries=RetryWithMaxBackoff(
-            total=config.max_retries,
-            backoff_factor=0.5,
-            status_forcelist=config.status_forcelist,
-            method_whitelist=False,
-            raise_on_status=False,
-        ),
-        pool_maxsize=config.max_connection_pool_size,
-    )
-    session.mount("http://", adapter)
-    session.mount("https://", adapter)
-    session_with_retry.mount("http://", adapter_with_retry)
-    session_with_retry.mount("https://", adapter_with_retry)
-
-    if config.disable_ssl:
-        import urllib3
-
-        urllib3.disable_warnings()
-        session.verify = False
-        session_with_retry.verify = False
-
-    return session, session_with_retry
-
-
-_REQUESTS_SESSION, _REQUESTS_SESSION_WITH_RETRY = _init_requests_session()
 
 
 class APIClient:
@@ -116,12 +55,35 @@ class APIClient:
     }
 
     def __init__(self, config: utils._client_config.ClientConfig, api_version: str = None, cognite_client=None):
-        self._request_session = _REQUESTS_SESSION
-        self._request_session_with_retry = _REQUESTS_SESSION_WITH_RETRY
-
         self._config = config
         self._api_version = api_version
         self._cognite_client = cognite_client
+
+        self._http_client = HTTPClient(
+            session=GLOBAL_REQUEST_SESSION,
+            config=HTTPClientConfig(
+                status_codes_to_retry={429},
+                backoff_factor=0.5,
+                max_backoff_seconds=config.max_retry_backoff,
+                max_retries_total=self._config.max_retries,
+                max_retries_read=0,
+                max_retries_connect=self._config.max_retries,
+                max_retries_status=self._config.max_retries,
+            ),
+        )
+
+        self._http_client_with_retry = HTTPClient(
+            session=GLOBAL_REQUEST_SESSION,
+            config=HTTPClientConfig(
+                status_codes_to_retry=self._config.status_forcelist,
+                backoff_factor=0.5,
+                max_backoff_seconds=config.max_retry_backoff,
+                max_retries_total=self._config.max_retries,
+                max_retries_read=self._config.max_retries,
+                max_retries_connect=self._config.max_retries,
+                max_retries_status=self._config.max_retries,
+            ),
+        )
 
         self._CREATE_LIMIT = 1000
         self._LIST_LIMIT = 1000
@@ -162,9 +124,9 @@ class APIClient:
         kwargs["headers"] = headers
 
         if is_retryable:
-            res = self._request_session_with_retry.request(method=method, url=full_url, **kwargs)
+            res = self._http_client_with_retry.request(method=method, url=full_url, **kwargs)
         else:
-            res = self._request_session.request(method=method, url=full_url, **kwargs)
+            res = self._http_client.request(method=method, url=full_url, **kwargs)
 
         if not self._status_is_valid(res.status_code):
             self._raise_API_error(res, payload=json_payload)

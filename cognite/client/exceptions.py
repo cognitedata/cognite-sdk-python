@@ -2,6 +2,18 @@ import json
 from typing import *
 
 
+class CogniteConnectionError(Exception):
+    pass
+
+
+class CogniteConnectionRefused(CogniteConnectionError):
+    pass
+
+
+class CogniteReadTimeout(Exception):
+    pass
+
+
 class CogniteMultiException(Exception):
     def __init__(self, successful: List = None, failed: List = None, unknown: List = None, unwrap_fn: Callable = None):
         self.successful = successful or []
