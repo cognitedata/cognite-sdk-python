@@ -118,6 +118,12 @@ class HTTPClient:
             time.sleep(self.retry_tracker.get_backoff_time())
 
     def _do_request(self, method: str, url: str, **kwargs) -> Response:
+        """ requests/urllib3 adds 2 or 3 layers of exceptions on top of built-in networking exceptions.
+
+        Sometimes the approriate built-in networking exception is not in the context, sometimes the requests
+        exception is not in the context, so we need to check for the appropriate built-in exceptions,
+        urllib3 exceptions, and requests exceptions.
+        """
         try:
             res = self.session.request(method=method, url=url, **kwargs)
             return res
@@ -136,17 +142,13 @@ class HTTPClient:
 
     @classmethod
     def _any_exception_in_context_isinstance(
-        cls,
-        exception_to_check: BaseException,
-        exception_types: Union[Tuple[Type[BaseException], ...], Type[BaseException]],
+        cls, exc: BaseException, T: Union[Tuple[Type[BaseException], ...], Type[BaseException]]
     ) -> bool:
-        """ requests/urllib3 adds 2 or 3 layers of exceptions on top of built-in networking exceptions:
-
-        requests does not use the "raise ... from ..." syntax, so we need to access the underlying exceptions using the
-        __context__ attribute.
+        """requests does not use the "raise ... from ..." syntax, so we need to access the underlying exceptions using
+        the __context__ attribute.
         """
-        if isinstance(exception_to_check, exception_types):
+        if isinstance(exc, T):
             return True
-        if exception_to_check.__context__ is None:
+        if exc.__context__ is None:
             return False
-        return cls._any_exception_in_context_isinstance(exception_to_check.__context__, exception_types)
+        return cls._any_exception_in_context_isinstance(exc.__context__, T)
