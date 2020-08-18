@@ -150,3 +150,45 @@ class TestHTTPClient:
         assert c.retry_tracker.read == 0
         assert c.retry_tracker.connect == 0
         assert c.retry_tracker.status == DEFAULT_CONFIG.max_retries_status
+
+
+class UnderlyingException(Exception):
+    pass
+
+
+class TestGetUnderlyingException:
+    def test_get_underlying_exception_no_context(self):
+        try:
+            raise UnderlyingException
+        except Exception as e:
+            underlying = HTTPClient._get_underlying_exception(e)
+            assert isinstance(e, UnderlyingException)
+
+    def test_get_underlying_exception_nested_1_layer(self):
+        def testcase():
+            try:
+                raise UnderlyingException
+            except Exception:
+                raise Exception()
+
+        try:
+            testcase()
+        except Exception as e:
+            assert not isinstance(e, UnderlyingException)
+            assert isinstance(HTTPClient._get_underlying_exception(e), UnderlyingException)
+
+    def test_get_underlying_exception_nested_2_layers(self):
+        def testcase():
+            try:
+                raise UnderlyingException
+            except Exception:
+                try:
+                    raise Exception()
+                except Exception:
+                    raise Exception()
+
+        try:
+            testcase()
+        except Exception as e:
+            assert not isinstance(e, UnderlyingException)
+            assert isinstance(HTTPClient._get_underlying_exception(e), UnderlyingException)

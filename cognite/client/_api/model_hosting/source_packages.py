@@ -128,7 +128,7 @@ class SourcePackagesAPI(APIClient):
     def _upload_file(self, upload_url, file_path):
         with open(file_path, "rb") as fh:
             mydata = fh.read()
-            response = self._http_client_with_retry.request("PUT", upload_url, data=mydata, timeout=180)
+            response = self._http_client.request("PUT", upload_url, data=mydata, timeout=180)
         return response
 
     def list_source_packages(
