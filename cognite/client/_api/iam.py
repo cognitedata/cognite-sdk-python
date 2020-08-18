@@ -241,7 +241,7 @@ class GroupsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.iam.groups.list_service_accounts(1)
         """
-        resource_path = self._RESOURCE_PATH + "/{}/serviceaccounts".format(id)
+        resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/serviceaccounts", id)
         return ServiceAccountList._load(self._get(resource_path).json()["items"])
 
     def add_service_account(self, id: int, service_account_id: Union[int, List[int]]) -> None:
@@ -262,7 +262,8 @@ class GroupsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.iam.groups.add_service_account(id=1, service_account_id=1)
         """
-        resource_path = self._RESOURCE_PATH + "/{}/serviceaccounts".format(id)
+        resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/serviceaccounts", id)
+
         all_ids = self._process_ids(service_account_id, None, False)
         self._post(resource_path, json={"items": all_ids})
 
@@ -284,7 +285,8 @@ class GroupsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.iam.groups.remove_service_account(id=1, service_account_id=1)
         """
-        url_path = self._RESOURCE_PATH + "/{}/serviceaccounts/remove".format(id)
+        url_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/serviceaccounts/remove", id)
+
         all_ids = self._process_ids(service_account_id, None, False)
         self._post(url_path, json={"items": all_ids})
 
