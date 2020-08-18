@@ -71,10 +71,7 @@ def raise_exception_wrapped_as_in_requests_lib(exc: Exception):
         try:
             raise urllib3.exceptions.RequestError(pool=None, url=None, message=None)
         except urllib3.exceptions.RequestError:
-            try:
-                raise urllib3.exceptions.MaxRetryError(pool=None, url=None)
-            except urllib3.exceptions.MaxRetryError:
-                raise requests.exceptions.ReadTimeout
+            raise requests.exceptions.RequestException
 
 
 class TestHTTPClient:

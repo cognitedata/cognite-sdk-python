@@ -8,6 +8,7 @@ import requests.exceptions
 import urllib3.exceptions
 from requests import Response, Session
 from requests.adapters import HTTPAdapter
+from requests.packages.urllib3 import Retry
 
 from cognite.client import utils
 from cognite.client.exceptions import CogniteConnectionError, CogniteConnectionRefused, CogniteReadTimeout
@@ -23,7 +24,7 @@ def _init_requests_session():
     session = Session()
     session.cookies.set_policy(BlockAll())
     cognite_config = utils._client_config._DefaultConfig()
-    adapter = HTTPAdapter(pool_maxsize=cognite_config.max_connection_pool_size)
+    adapter = HTTPAdapter(pool_maxsize=cognite_config.max_connection_pool_size, max_retries=Retry(False))
     session.mount("http://", adapter)
     session.mount("https://", adapter)
     if cognite_config.disable_ssl:
@@ -120,25 +121,24 @@ class HTTPClient:
         try:
             res = self.session.request(method=method, url=url, **kwargs)
             return res
-        except requests.exceptions.RequestException as e:
+        except Exception as e:
             underlying_exc = self._get_underlying_exception(e)
             if isinstance(underlying_exc, socket.timeout):
                 raise CogniteReadTimeout from e
-            elif isinstance(underlying_exc, ConnectionError):
+            if isinstance(underlying_exc, ConnectionError):
                 if isinstance(underlying_exc, ConnectionRefusedError):
                     raise CogniteConnectionRefused from e
                 else:
                     raise CogniteConnectionError from e
-            else:
-                raise e
+            raise e
 
-    @staticmethod
-    def _get_underlying_exception(exc: requests.exceptions.RequestException) -> Union[BaseException, None]:
-        """ requests.exceptions.RequestException adds three layers on top of built-in networking exceptions:
-        requests.exceptions.RequestException -> urllib3.exceptions.MaxRetryError -> urllib3.exceptions.HTTPError
-        -> underlying exception
+    @classmethod
+    def _get_underlying_exception(cls, exc: BaseException) -> BaseException:
+        """ requests/urllib3 adds 2 or 3 layers of exceptions on top of built-in networking exceptions:
 
         requests does not use the "raise ... from ..." syntax, so we need to access the underlying exception using the
         __context__ attribute.
         """
-        return exc.__context__.__context__.__context__
+        if exc.__context__ is None:
+            return exc
+        return cls._get_underlying_exception(exc.__context__)
