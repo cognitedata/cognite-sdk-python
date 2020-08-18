@@ -207,7 +207,7 @@ class ThreeDRevisionsAPI(APIClient):
                 specified, else ThreeDModelRevisionList objects.
         """
         return self._list_generator(
-            resource_path=self._RESOURCE_PATH.format(model_id),
+            resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
             method="GET",
             chunk_size=chunk_size,
             filter={"published": published},
@@ -232,7 +232,9 @@ class ThreeDRevisionsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.three_d.revisions.retrieve(model_id=1, id=1)
         """
-        return self._retrieve(resource_path=self._RESOURCE_PATH.format(model_id), id=id)
+        return self._retrieve(
+            resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id), id=id
+        )
 
     def create(
         self, model_id: int, revision: Union[ThreeDModelRevision, List[ThreeDModelRevision]]
@@ -256,7 +258,9 @@ class ThreeDRevisionsAPI(APIClient):
                 >>> my_revision = ThreeDModelRevision(file_id=1)
                 >>> res = c.three_d.revisions.create(model_id=1, revision=my_revision)
         """
-        return self._create_multiple(resource_path=self._RESOURCE_PATH.format(model_id), items=revision)
+        return self._create_multiple(
+            resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id), items=revision
+        )
 
     def list(self, model_id: int, published: bool = False, limit: int = 25) -> ThreeDModelRevisionList:
         """`List 3d model revisions. <https://docs.cognite.com/api/v1/#operation/get3DRevisions>`_
@@ -279,7 +283,7 @@ class ThreeDRevisionsAPI(APIClient):
                 >>> res = c.three_d.revisions.list(model_id=1, published=True, limit=100)
         """
         return self._list(
-            resource_path=self._RESOURCE_PATH.format(model_id),
+            resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
             method="GET",
             filter={"published": published},
             limit=limit,
@@ -320,7 +324,9 @@ class ThreeDRevisionsAPI(APIClient):
                 >>> my_update = ThreeDModelRevisionUpdate(id=1).published.set(False).metadata.add({"key": "value"})
                 >>> res = c.three_d.revisions.update(model_id=1, item=my_update)
         """
-        return self._update_multiple(resource_path=self._RESOURCE_PATH.format(model_id), items=item)
+        return self._update_multiple(
+            resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id), items=item
+        )
 
     def delete(self, model_id: int, id: Union[int, List[int]]) -> None:
         """`Delete 3d model revisions. <https://docs.cognite.com/api/v1/#operation/delete3DRevisions>`_
@@ -340,7 +346,11 @@ class ThreeDRevisionsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.three_d.revisions.delete(model_id=1, id=1)
         """
-        self._delete_multiple(resource_path=self._RESOURCE_PATH.format(model_id), ids=id, wrap_ids=True)
+        self._delete_multiple(
+            resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
+            ids=id,
+            wrap_ids=True,
+        )
 
     def update_thumbnail(self, model_id: int, revision_id: int, file_id: int) -> None:
         """`Update a revision thumbnail. <https://docs.cognite.com/api/v1/#operation/updateThumbnail>`_
