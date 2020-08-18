@@ -124,11 +124,13 @@ class HTTPClient:
             underlying_exc = self._get_underlying_exception(e)
             if isinstance(underlying_exc, socket.timeout):
                 raise CogniteReadTimeout from e
-            if isinstance(underlying_exc, ConnectionError):
+            elif isinstance(underlying_exc, ConnectionError):
                 if isinstance(underlying_exc, ConnectionRefusedError):
                     raise CogniteConnectionRefused from e
                 else:
                     raise CogniteConnectionError from e
+            else:
+                raise e
 
     @staticmethod
     def _get_underlying_exception(exc: requests.exceptions.RequestException) -> Union[BaseException, None]:
