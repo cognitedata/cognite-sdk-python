@@ -2,8 +2,9 @@ import random
 import socket
 import time
 from http import cookiejar
-from typing import Optional, Set
+from typing import Optional, Set, Tuple, Type, Union
 
+import requests
 import urllib3
 from requests import Response, Session
 from requests.adapters import HTTPAdapter
@@ -121,22 +122,31 @@ class HTTPClient:
             res = self.session.request(method=method, url=url, **kwargs)
             return res
         except Exception as e:
-            underlying_exc = self._get_underlying_exception(e)
-            if isinstance(underlying_exc, socket.timeout):
+            if self._any_exception_in_context_isinstance(
+                e, (socket.timeout, urllib3.exceptions.ReadTimeoutError, requests.exceptions.ReadTimeout)
+            ):
                 raise CogniteReadTimeout from e
-            if isinstance(underlying_exc, ConnectionError):
-                if isinstance(underlying_exc, ConnectionRefusedError):
+            if self._any_exception_in_context_isinstance(
+                e, (ConnectionError, urllib3.exceptions.ConnectionError, requests.exceptions.ConnectionError)
+            ):
+                if self._any_exception_in_context_isinstance(e, ConnectionRefusedError):
                     raise CogniteConnectionRefused from e
                 raise CogniteConnectionError from e
             raise e
 
     @classmethod
-    def _get_underlying_exception(cls, exc: BaseException) -> BaseException:
+    def _any_exception_in_context_isinstance(
+        cls,
+        exception_to_check: BaseException,
+        exception_types: Union[Tuple[Type[BaseException], ...], Type[BaseException]],
+    ) -> bool:
         """ requests/urllib3 adds 2 or 3 layers of exceptions on top of built-in networking exceptions:
 
-        requests does not use the "raise ... from ..." syntax, so we need to access the underlying exception using the
+        requests does not use the "raise ... from ..." syntax, so we need to access the underlying exceptions using the
         __context__ attribute.
         """
-        if exc.__context__ is None:
-            return exc
-        return cls._get_underlying_exception(exc.__context__)
+        if isinstance(exception_to_check, exception_types):
+            return True
+        if exception_to_check.__context__ is None:
+            return False
+        return cls._any_exception_in_context_isinstance(exception_to_check.__context__, exception_types)

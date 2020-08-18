@@ -157,12 +157,17 @@ class UnderlyingException(Exception):
 
 
 class TestGetUnderlyingException:
+    def test_get_underlying_exception_does_not_exist_in_context(self):
+        try:
+            raise Exception
+        except Exception as e:
+            assert not HTTPClient._any_exception_in_context_isinstance(e, UnderlyingException)
+
     def test_get_underlying_exception_no_context(self):
         try:
             raise UnderlyingException
         except Exception as e:
-            underlying = HTTPClient._get_underlying_exception(e)
-            assert isinstance(e, UnderlyingException)
+            assert HTTPClient._any_exception_in_context_isinstance(e, (UnderlyingException, Exception))
 
     def test_get_underlying_exception_nested_1_layer(self):
         def testcase():
@@ -174,8 +179,7 @@ class TestGetUnderlyingException:
         try:
             testcase()
         except Exception as e:
-            assert not isinstance(e, UnderlyingException)
-            assert isinstance(HTTPClient._get_underlying_exception(e), UnderlyingException)
+            assert HTTPClient._any_exception_in_context_isinstance(e, UnderlyingException)
 
     def test_get_underlying_exception_nested_2_layers(self):
         def testcase():
@@ -190,5 +194,4 @@ class TestGetUnderlyingException:
         try:
             testcase()
         except Exception as e:
-            assert not isinstance(e, UnderlyingException)
-            assert isinstance(HTTPClient._get_underlying_exception(e), UnderlyingException)
+            assert HTTPClient._any_exception_in_context_isinstance(e, UnderlyingException)
