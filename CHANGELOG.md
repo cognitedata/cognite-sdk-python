@@ -16,6 +16,14 @@ Changes are grouped as follows
 
 ## Unreleased
 
+## [2.2.2] - 2020-08-18
+
+### Fixed
+- HTTP transport logic to better handle retrying of connection errors
+
+### Added
+- Jitter to exponential backoff on retries
+
 ## [2.2.1] - 2020-08-17
 
 ### Added
