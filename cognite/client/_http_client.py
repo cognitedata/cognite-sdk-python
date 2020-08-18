@@ -101,8 +101,6 @@ class HTTPClient:
             try:
                 res = self._do_request(method=method, url=url, **kwargs)
                 last_status = res.status_code
-                if last_status not in self.config.status_codes_to_retry:
-                    return res
                 self.retry_tracker.status += 1
                 if not self.retry_tracker.should_retry(status_code=last_status):
                     return res
