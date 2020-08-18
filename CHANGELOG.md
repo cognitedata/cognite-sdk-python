@@ -24,6 +24,9 @@ Changes are grouped as follows
 ### Added
 - Jitter to exponential backoff on retries
 
+### Changed
+- Make HTTP requests no longer follow redirects by default
+
 ## [2.2.1] - 2020-08-17
 
 ### Added
