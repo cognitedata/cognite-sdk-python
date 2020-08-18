@@ -2,10 +2,9 @@ import random
 import socket
 import time
 from http import cookiejar
-from typing import Optional, Set, Union
+from typing import Optional, Set
 
-import requests.exceptions
-import urllib3.exceptions
+import urllib3
 from requests import Response, Session
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3 import Retry
@@ -90,7 +89,7 @@ class _RetryTracker:
 
 
 class HTTPClient:
-    def __init__(self, session: Session, config: HTTPClientConfig):
+    def __init__(self, config: HTTPClientConfig, session: Session = GLOBAL_REQUEST_SESSION):
         self.session = session
         self.config = config
         self.retry_tracker = None
@@ -128,8 +127,7 @@ class HTTPClient:
             if isinstance(underlying_exc, ConnectionError):
                 if isinstance(underlying_exc, ConnectionRefusedError):
                     raise CogniteConnectionRefused from e
-                else:
-                    raise CogniteConnectionError from e
+                raise CogniteConnectionError from e
             raise e
 
     @classmethod
