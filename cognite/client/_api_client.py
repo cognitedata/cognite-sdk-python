@@ -99,6 +99,7 @@ class APIClient:
         "/files/downloadlink",
         "/timeseries/byids",
         "/timeseries/search",
+        "/timeseries/list",
         "/timeseries/data",
         "/timeseries/data/list",
         "/timeseries/data/latest",
