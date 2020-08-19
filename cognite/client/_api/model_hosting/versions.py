@@ -206,7 +206,7 @@ class ModelVersionsAPI(APIClient):
         url = "/modelhosting/models/{}/versions/{}/artifacts/{}".format(model_name, version_name, artifact_name)
         download_url = self._get(url).json()["downloadUrl"]
         with open(file_path, "wb") as fh:
-            response = self._request_session.get(download_url).content
+            response = self._http_client.request("GET", download_url).content
             fh.write(response)
 
     def upload_artifact_from_file(self, model_name: str, version_name: str, artifact_name: str, file_path: str) -> None:
@@ -258,7 +258,7 @@ class ModelVersionsAPI(APIClient):
     def _upload_file(self, upload_url, file_path):
         with open(file_path, "rb") as fh:
             mydata = fh.read()
-            response = self._request_session.put(upload_url, data=mydata)
+            response = self._http_client.request("PUT", upload_url, data=mydata)
         return response
 
     def get_logs(self, model_name: str, version_name: str, log_type: str = None) -> ModelVersionLog:
