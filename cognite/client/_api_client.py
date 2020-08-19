@@ -5,7 +5,7 @@ import numbers
 import os
 import re
 from collections import UserList
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from urllib.parse import urljoin
 
 import requests.utils
@@ -55,7 +55,7 @@ class APIClient:
         "/relationships/byids",
     }
 
-    def __init__(self, config: utils._client_config.ClientConfig, api_version: str = None, cognite_client=None):
+    def __init__(self, config: utils._client_config.ClientConfig, api_version: str = None, cognite_client=None) -> None:
         self._config = config
         self._api_version = api_version
         self._cognite_client = cognite_client
@@ -90,23 +90,33 @@ class APIClient:
         self._DELETE_LIMIT = 1000
         self._UPDATE_LIMIT = 1000
 
-    def _delete(self, url_path: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
+    def _delete(
+        self, url_path: str, params: Optional[Dict[str, Any]] = None, headers: Optional[Dict[str, Any]] = None
+    ) -> requests.Response:
         return self._do_request("DELETE", url_path, params=params, headers=headers, timeout=self._config.timeout)
 
-    def _get(self, url_path: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
+    def _get(
+        self, url_path: str, params: Optional[Dict[str, Any]] = None, headers: Optional[Dict[str, Any]] = None
+    ) -> requests.Response:
         return self._do_request("GET", url_path, params=params, headers=headers, timeout=self._config.timeout)
 
     def _post(
-        self, url_path: str, json: Dict[str, Any] = None, params: Dict[str, Any] = None, headers: Dict[str, Any] = None
-    ):
+        self,
+        url_path: str,
+        json: Optional[Dict[str, Any]] = None,
+        params: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, Any]] = None,
+    ) -> requests.Response:
         return self._do_request(
             "POST", url_path, json=json, headers=headers, params=params, timeout=self._config.timeout
         )
 
-    def _put(self, url_path: str, json: Dict[str, Any] = None, headers: Dict[str, Any] = None):
+    def _put(
+        self, url_path: str, json: Optional[Dict[str, Any]] = None, headers: Optional[Dict[str, Any]] = None
+    ) -> requests.Response:
         return self._do_request("PUT", url_path, json=json, headers=headers, timeout=self._config.timeout)
 
-    def _do_request(self, method: str, url_path: str, **kwargs):
+    def _do_request(self, method: str, url_path: str, **kwargs) -> requests.Response:
         is_retryable, full_url = self._resolve_url(method, url_path)
 
         json_payload = kwargs.get("json")
@@ -139,7 +149,7 @@ class APIClient:
         self._log_request(res, payload=json_payload)
         return res
 
-    def _configure_headers(self, additional_headers):
+    def _configure_headers(self, additional_headers: Dict[str, str]) -> CaseInsensitiveDict:
         headers = CaseInsensitiveDict()
         headers.update(requests.utils.default_headers())
         if self._config.token is None:
@@ -161,7 +171,7 @@ class APIClient:
         headers.update(additional_headers)
         return headers
 
-    def _resolve_url(self, method: str, url_path: str):
+    def _resolve_url(self, method: str, url_path: str) -> Tuple[bool, str]:
         if not url_path.startswith("/"):
             raise ValueError("URL path must start with '/'")
         base_url = self._get_base_url_with_base_path()
@@ -169,11 +179,11 @@ class APIClient:
         is_retryable = self._is_retryable(method, full_url)
         return is_retryable, full_url
 
-    def _get_base_url_with_base_path(self):
+    def _get_base_url_with_base_path(self) -> str:
         base_path = "/api/{}/projects/{}".format(self._api_version, self._config.project) if self._api_version else ""
         return urljoin(self._config.base_url, base_path)
 
-    def _is_retryable(self, method, path):
+    def _is_retryable(self, method: str, path: str) -> bool:
         valid_methods = ["GET", "POST", "PUT", "DELETE", "PATCH"]
         match = re.match("(?:http|https)://[a-z\d.:]+(?:/api/(?:v1|playground)/projects/[^/]+)?(/.+)", path)
 
