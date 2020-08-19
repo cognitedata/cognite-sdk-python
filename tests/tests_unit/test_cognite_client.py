@@ -209,8 +209,8 @@ class TestCogniteClient:
         c = CogniteClient()
 
         mock_requests.get.assert_called_with(_PYPI_ADDRESS, verify=True)
-        assert c._api_client._request_session.verify is True
-        assert c._api_client._request_session_with_retry.verify is True
+        assert c._api_client._http_client_with_retry.session.verify is True
+        assert c._api_client._http_client.session.verify is True
 
     @patch("cognite.client.utils._version_checker.re.findall")
     @patch("cognite.client.utils._version_checker.requests")

@@ -2,7 +2,23 @@ import json
 from typing import *
 
 
-class CogniteMultiException(Exception):
+class CogniteException(Exception):
+    pass
+
+
+class CogniteConnectionError(CogniteException):
+    pass
+
+
+class CogniteConnectionRefused(CogniteConnectionError):
+    pass
+
+
+class CogniteReadTimeout(CogniteException):
+    pass
+
+
+class CogniteMultiException(CogniteException):
     def __init__(self, successful: List = None, failed: List = None, unknown: List = None, unwrap_fn: Callable = None):
         self.successful = successful or []
         self.failed = failed or []
@@ -147,7 +163,7 @@ class CogniteDuplicatedError(CogniteMultiException):
         return msg
 
 
-class CogniteImportError(Exception):
+class CogniteImportError(CogniteException):
     """Cognite Import Error
 
     Raised if the user attempts to use functionality which requires an uninstalled package.
@@ -167,7 +183,7 @@ class CogniteImportError(Exception):
         return self.message
 
 
-class CogniteMissingClientError(Exception):
+class CogniteMissingClientError(CogniteException):
     """Cognite Missing Client Error
 
     Raised if the user attempts to make use of a method which requires the cognite_client being set, but it is not.
@@ -177,7 +193,7 @@ class CogniteMissingClientError(Exception):
         return "A CogniteClient has not been set on this object. Pass it in the constructor to use it."
 
 
-class CogniteAPIKeyError(Exception):
+class CogniteAPIKeyError(CogniteException):
     """Cognite API Key Error.
 
     Raised if the API key is missing or invalid.
@@ -186,7 +202,7 @@ class CogniteAPIKeyError(Exception):
     pass
 
 
-class CogniteDuplicateColumnsError(Exception):
+class CogniteDuplicateColumnsError(CogniteException):
     """Cognite Duplicate Columns Error
 
     Raised if the user attempts to create a dataframe through include_aggregate_names=False which results in duplicate column names.

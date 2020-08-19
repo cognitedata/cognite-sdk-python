@@ -128,7 +128,7 @@ class SourcePackagesAPI(APIClient):
     def _upload_file(self, upload_url, file_path):
         with open(file_path, "rb") as fh:
             mydata = fh.read()
-            response = self._request_session.put(upload_url, data=mydata)
+            response = self._http_client.request("PUT", upload_url, data=mydata, timeout=180)
         return response
 
     def list_source_packages(
@@ -198,7 +198,7 @@ class SourcePackagesAPI(APIClient):
         url = "/modelhosting/models/sourcepackages/{}/code".format(id)
         download_url = self._get(url).json()["downloadUrl"]
         with open(file_path, "wb") as fh:
-            response = self._request_session.get(download_url).content
+            response = self._http_client.request("GET", download_url).content
             fh.write(response)
 
     def delete_source_package_code(self, id: int) -> None:
