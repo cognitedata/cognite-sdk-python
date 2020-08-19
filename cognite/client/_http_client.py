@@ -5,10 +5,8 @@ from http import cookiejar
 from typing import Optional, Set, Tuple, Type, Union
 
 import requests
+import requests.adapters
 import urllib3
-from requests import Response, Session
-from requests.adapters import HTTPAdapter
-from requests.packages.urllib3 import Retry
 
 from cognite.client import utils
 from cognite.client.exceptions import CogniteConnectionError, CogniteConnectionRefused, CogniteReadTimeout
@@ -21,10 +19,12 @@ class BlockAll(cookiejar.CookiePolicy):
 
 
 def _init_requests_session():
-    session = Session()
+    session = requests.Session()
     session.cookies.set_policy(BlockAll())
     cognite_config = utils._client_config._DefaultConfig()
-    adapter = HTTPAdapter(pool_maxsize=cognite_config.max_connection_pool_size, max_retries=Retry(False))
+    adapter = requests.adapters.HTTPAdapter(
+        pool_maxsize=cognite_config.max_connection_pool_size, max_retries=urllib3.Retry(False)
+    )
     session.mount("http://", adapter)
     session.mount("https://", adapter)
     if cognite_config.disable_ssl:
@@ -90,12 +90,12 @@ class _RetryTracker:
 
 
 class HTTPClient:
-    def __init__(self, config: HTTPClientConfig, session: Session = GLOBAL_REQUEST_SESSION):
+    def __init__(self, config: HTTPClientConfig, session: requests.Session = GLOBAL_REQUEST_SESSION):
         self.session = session
         self.config = config
         self.retry_tracker = None
 
-    def request(self, method: str, url: str, **kwargs) -> Response:
+    def request(self, method: str, url: str, **kwargs) -> requests.Response:
         self.retry_tracker = _RetryTracker(config=self.config)
         last_status = None
         while True:
@@ -117,7 +117,7 @@ class HTTPClient:
                     raise e
             time.sleep(self.retry_tracker.get_backoff_time())
 
-    def _do_request(self, method: str, url: str, **kwargs) -> Response:
+    def _do_request(self, method: str, url: str, **kwargs) -> requests.Response:
         """ requests/urllib3 adds 2 or 3 layers of exceptions on top of built-in networking exceptions.
 
         Sometimes the approriate built-in networking exception is not in the context, sometimes the requests
@@ -133,9 +133,17 @@ class HTTPClient:
             ):
                 raise CogniteReadTimeout from e
             if self._any_exception_in_context_isinstance(
-                e, (ConnectionError, urllib3.exceptions.ConnectionError, requests.exceptions.ConnectionError)
+                e,
+                (
+                    ConnectionError,
+                    urllib3.exceptions.ConnectionError,
+                    urllib3.exceptions.ConnectTimeoutError,
+                    requests.exceptions.ConnectionError,
+                ),
             ):
-                if self._any_exception_in_context_isinstance(e, ConnectionRefusedError):
+                if self._any_exception_in_context_isinstance(
+                    e, (ConnectionRefusedError, urllib3.exceptions.NewConnectionError)
+                ):
                     raise CogniteConnectionRefused from e
                 raise CogniteConnectionError from e
             raise e
