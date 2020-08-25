@@ -16,6 +16,11 @@ Changes are grouped as follows
 
 ## Unreleased
 
+## [2.3.0] - 2020-08-25
+
+### Changed
+- Add support for mypy and other type checking tools by adding packaging type information
+
 ## [2.2.2] - 2020-08-18
 
 ### Fixed
