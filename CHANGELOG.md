@@ -16,6 +16,11 @@ Changes are grouped as follows
 
 ## Unreleased
 
+## [2.3.0] - 2020-08-25
+
+### Changed
+- Provide type information to users of this package
+
 ## [2.2.2] - 2020-08-18
 
 ### Fixed
