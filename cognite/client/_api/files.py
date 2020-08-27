@@ -43,6 +43,7 @@ class FilesAPI(APIClient):
         source_modified_time: Union[Dict[str, Any], TimestampRange] = None,
         uploaded_time: Union[Dict[str, Any], TimestampRange] = None,
         external_id_prefix: str = None,
+        directory_prefix: str = None,
         uploaded: bool = None,
         limit: int = None,
     ) -> Generator[Union[FileMetadata, FileMetadataList], None, None]:
@@ -71,6 +72,7 @@ class FilesAPI(APIClient):
             last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             uploaded_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps
             external_id_prefix (str): External Id provided by client. Should be unique within the project.
+            directory_prefix (str): Filter by this (case-sensitive) prefix for the directory provided by the client.
             uploaded (bool): Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
             limit (int, optional): Maximum number of files to return. Defaults to return all items.
 
@@ -100,6 +102,7 @@ class FilesAPI(APIClient):
             source_created_time=source_created_time,
             source_modified_time=source_modified_time,
             external_id_prefix=external_id_prefix,
+            directory_prefix=directory_prefix,
             uploaded=uploaded,
             data_set_ids=data_set_ids,
         ).dump(camel_case=True)
@@ -228,6 +231,7 @@ class FilesAPI(APIClient):
         source_modified_time: Union[Dict[str, Any], TimestampRange] = None,
         uploaded_time: Union[Dict[str, Any], TimestampRange] = None,
         external_id_prefix: str = None,
+        directory_prefix: str = None,
         uploaded: bool = None,
         limit: int = 25,
     ) -> FileMetadataList:
@@ -253,6 +257,7 @@ class FilesAPI(APIClient):
             source_created_time (Union[Dict[str, Any], TimestampRange]): Filter for files where the sourceCreatedTime field has been set and is within the specified range.
             source_modified_time (Union[Dict[str, Any], TimestampRange]): Filter for files where the sourceModifiedTime field has been set and is within the specified range.
             external_id_prefix (str): External Id provided by client. Should be unique within the project.
+            directory_prefix (str): Filter by this (case-sensitive) prefix for the directory provided by the client.
             uploaded (bool): Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
             limit (int, optional): Max number of files to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all items.
@@ -313,6 +318,7 @@ class FilesAPI(APIClient):
             source_created_time=source_created_time,
             source_modified_time=source_modified_time,
             external_id_prefix=external_id_prefix,
+            directory_prefix=directory_prefix,
             uploaded=uploaded,
             data_set_ids=data_set_ids,
         ).dump(camel_case=True)
@@ -442,6 +448,7 @@ class FilesAPI(APIClient):
         self,
         path: str,
         external_id: str = None,
+        directory: str = None,
         name: str = None,
         source: str = None,
         mime_type: str = None,
@@ -460,6 +467,7 @@ class FilesAPI(APIClient):
         Args:
             path (str): Path to the file you wish to upload. If path is a directory, this method will upload all files in that directory.
             external_id (str): The external ID provided by the client. Must be unique within the project.
+            directory (str): The directory provided by the client. Must be an absolute, unix-style path.
             name (str): Name of the file.
             source (str): The source of the file.
             mime_type (str): File type. E.g. text/plain, application/pdf, ...
@@ -511,6 +519,7 @@ class FilesAPI(APIClient):
         """
         file_metadata = FileMetadata(
             name=name,
+            directory=directory,
             external_id=external_id,
             source=source,
             mime_type=mime_type,
@@ -525,6 +534,8 @@ class FilesAPI(APIClient):
         if os.path.isfile(path):
             if not name:
                 file_metadata.name = os.path.basename(path)
+            if not directory:
+                file_metadata.directory = os.path.dirname(path)
             return self._upload_file_from_path(file_metadata, path, overwrite)
         elif os.path.isdir(path):
             tasks = []
@@ -535,6 +546,7 @@ class FilesAPI(APIClient):
                         basename = os.path.basename(file_path)
                         file_metadata = copy.copy(file_metadata)
                         file_metadata.name = basename
+                        file_metadata.directory = os.path.dirname(file_path)
                         tasks.append((file_metadata, file_path, overwrite))
             else:
                 for file_name in os.listdir(path):
@@ -542,6 +554,7 @@ class FilesAPI(APIClient):
                     if os.path.isfile(file_path):
                         file_metadata = copy.copy(file_metadata)
                         file_metadata.name = file_name
+                        file_metadata.directory = os.path.dirname(file_path)
                         tasks.append((file_metadata, file_path, overwrite))
             tasks_summary = utils._concurrency.execute_tasks_concurrently(
                 self._upload_file_from_path, tasks, self._config.max_workers
@@ -559,6 +572,7 @@ class FilesAPI(APIClient):
         self,
         content: Union[str, bytes, TextIO, BinaryIO],
         name: str,
+        directory: str = None,
         external_id: str = None,
         source: str = None,
         mime_type: str = None,
@@ -578,6 +592,7 @@ class FilesAPI(APIClient):
         Args:
             content (Union[str, bytes, TextIO, BinaryIO]): The content to upload.
             name (str): Name of the file.
+            directory (str): The directory provided by the client. Must be an absolute, unix-style path.
             external_id (str): The external ID provided by the client. Must be unique within the project.
             source (str): The source of the file.
             mime_type (str): File type. E.g. text/plain, application/pdf,...
@@ -606,6 +621,7 @@ class FilesAPI(APIClient):
         """
         file_metadata = FileMetadata(
             name=name,
+            directory=directory,
             external_id=external_id,
             source=source,
             mime_type=mime_type,

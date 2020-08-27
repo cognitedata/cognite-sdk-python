@@ -217,6 +217,12 @@ class TestFilesAPI:
             "filter": {"assetSubtreeIds": [{"id": 1}, {"externalId": "a"}]},
         } == jsgz_load(calls[0].request.body)
 
+    def test_filter_directory(self, mock_files_response):
+        FILES_API.list(directory_prefix="/test", limit=10)
+        calls = mock_files_response.calls
+        assert len(calls) == 1
+        assert jsgz_load(calls[0].request.body) == {"cursor": None, "filter": {"directoryPrefix": "/test"}, "limit": 10}
+
     def test_list_with_time_dict(self, mock_files_response):
         FILES_API.list(created_time={"min": 20})
         assert 20 == jsgz_load(mock_files_response.calls[0].request.body)["filter"]["createdTime"]["min"]
@@ -325,13 +331,14 @@ class TestFilesAPI:
         )
 
     def test_upload(self, mock_file_upload_response):
-        path = os.path.join(os.path.dirname(__file__), "files_for_test_upload", "file_for_test_upload_1.txt")
+        dir = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
+        path = os.path.join(dir, "file_for_test_upload_1.txt")
         res = FILES_API.upload(path, name="bla")
         response_body = mock_file_upload_response.calls[0].response.json()
         del response_body["uploadUrl"]
         assert FileMetadata._load(response_body) == res
         assert "https://upload.here/" == mock_file_upload_response.calls[1].request.url
-        assert {"name": "bla"} == jsgz_load(mock_file_upload_response.calls[0].request.body)
+        assert {"name": "bla", "directory": dir} == jsgz_load(mock_file_upload_response.calls[0].request.body)
         assert isinstance(mock_file_upload_response.calls[1].request.body, BufferedReader)
 
     def test_upload_with_external_id(self, mock_file_upload_response):
@@ -339,9 +346,21 @@ class TestFilesAPI:
         FILES_API.upload(path, external_id="blabla", name="bla", data_set_id=42)
 
     def test_upload_no_name(self, mock_file_upload_response):
-        path = os.path.join(os.path.dirname(__file__), "files_for_test_upload", "file_for_test_upload_1.txt")
+        dir = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
+        path = os.path.join(dir, "file_for_test_upload_1.txt")
         FILES_API.upload(path)
-        assert {"name": "file_for_test_upload_1.txt"} == jsgz_load(mock_file_upload_response.calls[0].request.body)
+        assert {"name": "file_for_test_upload_1.txt", "directory": dir} == jsgz_load(
+            mock_file_upload_response.calls[0].request.body
+        )
+
+    def test_upload_set_directory(self, mock_file_upload_response):
+        set_dir = "/Some/custom/directory"
+        dir = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
+        path = os.path.join(dir, "file_for_test_upload_1.txt")
+        FILES_API.upload(path, directory=set_dir)
+        assert {"name": "file_for_test_upload_1.txt", "directory": set_dir} == jsgz_load(
+            mock_file_upload_response.calls[0].request.body
+        )
 
     def test_upload_from_directory(self, mock_file_upload_response):
         path = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
@@ -469,6 +488,7 @@ class TestFilesAPI:
             .asset_ids.remove([])
             .external_id.set("1")
             .external_id.set(None)
+            .directory.set("/some/new/directory")
             .metadata.add({})
             .metadata.remove([])
             .labels.add(["WELL LOG"])
