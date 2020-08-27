@@ -16,6 +16,26 @@ Changes are grouped as follows
 
 ## Unreleased
 
+## [2.3.0] - 2020-08-25
+
+### Changed
+- Add support for mypy and other type checking tools by adding packaging type information
+
+## [2.2.2] - 2020-08-18
+
+### Fixed
+- HTTP transport logic to better handle retrying of connection errors
+- read timeouts will now raise a CogniteReadTimeout
+- connection errors will now raise a CogniteConnectionError, while connection refused errors will raise the more
+ specific CogniteConnectionRefused exception.
+
+### Added
+- Jitter to exponential backoff on retries
+
+### Changed
+- Make HTTP requests no longer follow redirects by default
+- All exceptions now inherit from CogniteException
+
 ## [2.2.1] - 2020-08-17
 
 ### Added
