@@ -333,7 +333,7 @@ class TestFilesAPI:
     def test_upload(self, mock_file_upload_response):
         dir = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
         path = os.path.join(dir, "file_for_test_upload_1.txt")
-        res = FILES_API.upload(path, name="bla")
+        res = FILES_API.upload(path, name="bla", directory=dir)
         response_body = mock_file_upload_response.calls[0].response.json()
         del response_body["uploadUrl"]
         assert FileMetadata._load(response_body) == res
@@ -348,7 +348,7 @@ class TestFilesAPI:
     def test_upload_no_name(self, mock_file_upload_response):
         dir = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
         path = os.path.join(dir, "file_for_test_upload_1.txt")
-        FILES_API.upload(path)
+        FILES_API.upload(path, directory=dir)
         assert {"name": "file_for_test_upload_1.txt", "directory": dir} == jsgz_load(
             mock_file_upload_response.calls[0].request.body
         )

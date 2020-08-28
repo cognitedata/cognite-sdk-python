@@ -534,8 +534,6 @@ class FilesAPI(APIClient):
         if os.path.isfile(path):
             if not name:
                 file_metadata.name = os.path.basename(path)
-            if not directory:
-                file_metadata.directory = os.path.dirname(path)
             return self._upload_file_from_path(file_metadata, path, overwrite)
         elif os.path.isdir(path):
             tasks = []
@@ -546,7 +544,6 @@ class FilesAPI(APIClient):
                         basename = os.path.basename(file_path)
                         file_metadata = copy.copy(file_metadata)
                         file_metadata.name = basename
-                        file_metadata.directory = os.path.dirname(file_path)
                         tasks.append((file_metadata, file_path, overwrite))
             else:
                 for file_name in os.listdir(path):
@@ -554,7 +551,6 @@ class FilesAPI(APIClient):
                     if os.path.isfile(file_path):
                         file_metadata = copy.copy(file_metadata)
                         file_metadata.name = file_name
-                        file_metadata.directory = os.path.dirname(file_path)
                         tasks.append((file_metadata, file_path, overwrite))
             tasks_summary = utils._concurrency.execute_tasks_concurrently(
                 self._upload_file_from_path, tasks, self._config.max_workers
