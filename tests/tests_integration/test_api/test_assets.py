@@ -105,6 +105,13 @@ class TestAssetsAPI:
         assert len(res_flat) == len(res_part)
         assert {a.id for a in res_flat} == {a.id for a in res_part}
 
+    def test_compare_partitioned_gen_and_list(self, post_spy):
+        # stop race conditions by cutting off max created time
+        maxtime = int(time.time() - 3600) * 1000
+        res_generator = COGNITE_CLIENT.assets(partitions=8, limit=None, created_time={"max": maxtime})
+        res_list = COGNITE_CLIENT.assets.list(partitions=8, limit=None, created_time={"max": maxtime})
+        assert {a.id for a in res_generator} == {a.id for a in res_list}
+
     def test_list_with_aggregated_properties_param(self, post_spy):
         res = COGNITE_CLIENT.assets.list(limit=10, aggregated_properties=["child_count"])
         for asset in res:
