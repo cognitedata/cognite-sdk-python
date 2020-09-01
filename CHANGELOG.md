@@ -16,6 +16,11 @@ Changes are grouped as follows
 
 ## Unreleased
 
+## [2.4.0] - 2020-08-31
+
+### Added
+- New 'directory' in Files
+
 ## [2.3.0] - 2020-08-25
 
 ### Changed

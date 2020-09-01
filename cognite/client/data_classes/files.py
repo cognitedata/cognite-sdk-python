@@ -12,6 +12,7 @@ class FileMetadata(CogniteResource):
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
         name (str): Name of the file.
+        directory (str): Directory containing the file. Must be an absolute, unix-style path.
         source (str): The source of the file.
         mime_type (str): File type. E.g. text/plain, application/pdf, ..
         metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
@@ -33,6 +34,7 @@ class FileMetadata(CogniteResource):
         self,
         external_id: str = None,
         name: str = None,
+        directory: str = None,
         source: str = None,
         mime_type: str = None,
         metadata: Dict[str, str] = None,
@@ -53,6 +55,7 @@ class FileMetadata(CogniteResource):
             raise TypeError("FileMetadata.labels should be of type List[Label]")
         self.external_id = external_id
         self.name = name
+        self.directory = directory
         self.source = source
         self.mime_type = mime_type
         self.metadata = metadata
@@ -90,6 +93,7 @@ class FileMetadataFilter(CogniteFilter):
         source_created_time (Dict[str, Any]): Filter for files where the sourceCreatedTime field has been set and is within the specified range.
         source_modified_time (Dict[str, Any]): Filter for files where the sourceModifiedTime field has been set and is within the specified range.
         external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
+        directory_prefix (str): Filter by this (case-sensitive) prefix for the directory provided by the client.
         uploaded (bool): Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
         cognite_client (CogniteClient): The client to associate with this object.
     """
@@ -112,6 +116,7 @@ class FileMetadataFilter(CogniteFilter):
         source_created_time: Dict[str, Any] = None,
         source_modified_time: Dict[str, Any] = None,
         external_id_prefix: str = None,
+        directory_prefix: str = None,
         uploaded: bool = None,
         cognite_client=None,
     ):
@@ -131,6 +136,7 @@ class FileMetadataFilter(CogniteFilter):
         self.source_created_time = source_created_time
         self.source_modified_time = source_modified_time
         self.external_id_prefix = external_id_prefix
+        self.directory_prefix = directory_prefix
         self.uploaded = uploaded
         self._cognite_client = cognite_client
 
@@ -198,6 +204,10 @@ class FileMetadataUpdate(CogniteUpdate):
     @property
     def external_id(self):
         return FileMetadataUpdate._PrimitiveFileMetadataUpdate(self, "externalId")
+
+    @property
+    def directory(self):
+        return FileMetadataUpdate._PrimitiveFileMetadataUpdate(self, "directory")
 
     @property
     def source(self):
