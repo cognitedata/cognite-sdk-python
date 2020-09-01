@@ -64,6 +64,11 @@ class TestFilesAPI:
         res = COGNITE_CLIENT.files.update(update_file)
         assert {"bla": "bla"} == res.metadata
 
+    def test_update_directory(self, new_file):
+        dir = "/some/directory"
+        res = COGNITE_CLIENT.files.update(FileMetadata(id=new_file.id, directory=dir))
+        assert res.directory == dir
+
     def test_download(self, test_files):
         test_file = test_files["a.txt"]
         res = COGNITE_CLIENT.files.download_bytes(id=test_file.id)
