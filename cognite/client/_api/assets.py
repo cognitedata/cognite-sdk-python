@@ -11,8 +11,8 @@ from cognite.client.data_classes import (
     AssetFilter,
     AssetList,
     AssetUpdate,
-    TimestampRange,
     LabelFilter,
+    TimestampRange,
 )
 from cognite.client.exceptions import CogniteAPIError
 
@@ -42,6 +42,7 @@ class AssetsAPI(APIClient):
         external_id_prefix: str = None,
         aggregated_properties: List[str] = None,
         limit: int = None,
+        partitions: int = None,
     ) -> Generator[Union[Asset, AssetList], None, None]:
         """Iterate over assets
 
@@ -67,6 +68,7 @@ class AssetsAPI(APIClient):
             external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
             aggregated_properties (List[str]): Set of aggregated properties to include.
             limit (int, optional): Maximum number of assets to return. Defaults to return all items.
+            partitions (int): Retrieve assets in parallel using this number of workers. Also requires `limit=None` to be passed.
 
         Yields:
             Union[Asset, AssetList]: yields Asset one by one if chunk is not specified, else AssetList objects.
@@ -96,11 +98,13 @@ class AssetsAPI(APIClient):
             root=root,
             external_id_prefix=external_id_prefix,
         ).dump(camel_case=True)
+
         return self._list_generator(
             method="POST",
             chunk_size=chunk_size,
             filter=filter,
             limit=limit,
+            partitions=partitions,
             other_params={"aggregatedProperties": aggregated_properties} if aggregated_properties else {},
         )
 
@@ -311,7 +315,7 @@ class AssetsAPI(APIClient):
 
     def create(self, asset: Union[Asset, List[Asset]]) -> Union[Asset, AssetList]:
         """`Create one or more assets. <https://docs.cognite.com/api/v1/#operation/createAssets>`_
-        
+
         You can create an arbitrary number of assets, and the SDK will split the request into multiple requests.
         When specifying parent-child relation between assets using `parentExternalId` the link will be resvoled into an internal ID and stored as `parentId`.
 

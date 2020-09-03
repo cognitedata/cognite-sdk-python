@@ -36,6 +36,7 @@ class TimeSeriesAPI(APIClient):
         last_updated_time: Dict[str, Any] = None,
         limit: int = None,
         include_metadata=True,
+        partitions: int = None,
     ) -> Generator[Union[TimeSeries, TimeSeriesList], None, None]:
         """Iterate over time series
 
@@ -60,6 +61,7 @@ class TimeSeriesAPI(APIClient):
             external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
             limit (int, optional): Maximum number of time series to return. Defaults to return all items.
             include_metadata (bool, optional): Ignored. Only present in parameter list for backward compatibility.
+            partitions (int): Retrieve assets in parallel using this number of workers. Also requires `limit=None` to be passed.
 
         Yields:
             Union[TimeSeries, TimeSeriesList]: yields TimeSeries one by one if chunk is not specified, else TimeSeriesList objects.
@@ -84,7 +86,9 @@ class TimeSeriesAPI(APIClient):
             last_updated_time=last_updated_time,
             external_id_prefix=external_id_prefix,
         ).dump(camel_case=True)
-        return self._list_generator(method="POST", chunk_size=chunk_size, filter=filter, limit=limit)
+        return self._list_generator(
+            method="POST", chunk_size=chunk_size, filter=filter, limit=limit, partitions=partitions
+        )
 
     def __iter__(self) -> Generator[TimeSeries, None, None]:
         """Iterate over time series

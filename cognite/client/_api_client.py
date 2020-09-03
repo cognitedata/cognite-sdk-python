@@ -263,57 +263,115 @@ class APIClient:
         filter: Dict = None,
         sort: List[str] = None,
         other_params: Dict = None,
+        partitions: int = None,
         headers: Dict = None,
     ):
         if limit == -1 or limit == float("inf"):
             limit = None
         cls = cls or self._LIST_CLASS
         resource_path = resource_path or self._RESOURCE_PATH
-        total_items_retrieved = 0
-        current_limit = self._LIST_LIMIT
-        if chunk_size and chunk_size <= self._LIST_LIMIT:
-            current_limit = chunk_size
-        next_cursor = None
-        filter = filter or {}
-        current_items = []
-        while True:
-            if limit:
-                num_of_remaining_items = limit - total_items_retrieved
-                if num_of_remaining_items < self._LIST_LIMIT:
-                    current_limit = num_of_remaining_items
 
-            if method == "GET":
-                params = filter.copy()
-                params["limit"] = current_limit
-                params["cursor"] = next_cursor
-                if sort is not None:
-                    params["sort"] = sort
-                res = self._get(url_path=resource_path, params=params, headers=headers)
-            elif method == "POST":
-                body = {"filter": filter, "limit": current_limit, "cursor": next_cursor, **(other_params or {})}
-                if sort is not None:
-                    body["sort"] = sort
-                res = self._post(url_path=resource_path + "/list", json=body, headers=headers)
-            else:
-                raise ValueError("_list_generator parameter `method` must be GET or POST, not {}".format(method))
-            last_received_items = res.json()["items"]
-            total_items_retrieved += len(last_received_items)
+        if partitions:
+            if limit is not None:
+                raise ValueError("When using partitions, limit should be `None`, `-1` or `inf`.")
+            if sort is not None:
+                raise ValueError("When using sort, partitions is not supported.")
 
-            if not chunk_size:
-                for item in last_received_items:
-                    yield cls._RESOURCE._load(item, cognite_client=self._cognite_client)
-            else:
-                current_items.extend(last_received_items)
-                if len(current_items) >= chunk_size:
-                    items_to_yield = current_items[:chunk_size]
-                    current_items = current_items[chunk_size:]
-                    yield cls._load(items_to_yield, cognite_client=self._cognite_client)
+            yield from self._list_generator_partitioned(
+                partitions=partitions,
+                cls=cls,
+                resource_path=resource_path,
+                filter=filter,
+                other_params=other_params,
+                headers=headers,
+            )
 
+        else:
+            total_items_retrieved = 0
+            current_limit = self._LIST_LIMIT
+            if chunk_size and chunk_size <= self._LIST_LIMIT:
+                current_limit = chunk_size
+            next_cursor = None
+            filter = filter or {}
+            current_items = []
+            while True:
+                if limit:
+                    num_of_remaining_items = limit - total_items_retrieved
+                    if num_of_remaining_items < self._LIST_LIMIT:
+                        current_limit = num_of_remaining_items
+
+                if method == "GET":
+                    params = filter.copy()
+                    params["limit"] = current_limit
+                    params["cursor"] = next_cursor
+                    if sort is not None:
+                        params["sort"] = sort
+                    res = self._get(url_path=resource_path, params=params, headers=headers)
+                elif method == "POST":
+                    body = {"filter": filter, "limit": current_limit, "cursor": next_cursor, **(other_params or {})}
+                    if sort is not None:
+                        body["sort"] = sort
+                    res = self._post(url_path=resource_path + "/list", json=body, headers=headers)
+                else:
+                    raise ValueError("_list_generator parameter `method` must be GET or POST, not {}".format(method))
+                last_received_items = res.json()["items"]
+                total_items_retrieved += len(last_received_items)
+
+                if not chunk_size:
+                    for item in last_received_items:
+                        yield cls._RESOURCE._load(item, cognite_client=self._cognite_client)
+                else:
+                    current_items.extend(last_received_items)
+                    if len(current_items) >= chunk_size:
+                        items_to_yield = current_items[:chunk_size]
+                        current_items = current_items[chunk_size:]
+                        yield cls._load(items_to_yield, cognite_client=self._cognite_client)
+
+                next_cursor = res.json().get("nextCursor")
+                if total_items_retrieved == limit or next_cursor is None:
+                    if chunk_size and current_items:
+                        yield cls._load(current_items, cognite_client=self._cognite_client)
+                    break
+
+    def _list_generator_partitioned(
+        self,
+        partitions: int,
+        cls,
+        resource_path: str,
+        filter: Dict = None,
+        other_params: Dict = None,
+        headers: Dict = None,
+    ):
+        next_cursors = {i + 1: None for i in range(partitions)}
+
+        def get_partition(partition_num):
+            next_cursor = next_cursors[partition_num]
+
+            body = {
+                "filter": filter or {},
+                "limit": self._LIST_LIMIT,
+                "cursor": next_cursor,
+                "partition": "{}/{}".format(partition_num, partitions),
+                **(other_params or {}),
+            }
+            res = self._post(url_path=resource_path + "/list", json=body, headers=headers)
             next_cursor = res.json().get("nextCursor")
-            if total_items_retrieved == limit or next_cursor is None:
-                if chunk_size and current_items:
-                    yield cls._load(current_items, cognite_client=self._cognite_client)
-                break
+            next_cursors[partition_num] = next_cursor
+
+            return res.json()["items"]
+
+        while len(next_cursors) > 0:
+            tasks_summary = utils._concurrency.execute_tasks_concurrently(
+                get_partition, [(partition,) for partition in next_cursors], max_workers=partitions
+            )
+            if tasks_summary.exceptions:
+                raise tasks_summary.exceptions[0]
+
+            for item in tasks_summary.joined_results():
+                yield cls._RESOURCE._load(item, cognite_client=self._cognite_client)
+
+            # Remove None from cursor dict
+            next_cursors = {partition: next_cursors[partition] for partition in next_cursors if next_cursors[partition]}
 
     def _list(
         self,
