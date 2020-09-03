@@ -4,13 +4,13 @@ from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import (
     AggregateResult,
+    AggregateUniqueValuesResult,
     EndTimeFilter,
     Event,
     EventFilter,
     EventList,
     EventUpdate,
     TimestampRange,
-    AggregateUniqueValuesResult,
 )
 
 
@@ -41,6 +41,7 @@ class EventsAPI(APIClient):
         external_id_prefix: str = None,
         sort: List[str] = None,
         limit: int = None,
+        partitions: int = None,
     ) -> Generator[Union[Event, EventList], None, None]:
         """Iterate over events
 
@@ -68,6 +69,7 @@ class EventsAPI(APIClient):
             external_id_prefix (str): External Id provided by client. Should be unique within the project
             sort (List[str]): Sort by array of selected fields. Ex: ["startTime:desc']. Default sort order is asc when ommitted. Filter accepts following field names: startTime, endTime, createdTime, lastUpdatedTime. We only support 1 field for now.
             limit (int, optional): Maximum number of events to return. Defaults to return all items.
+            partitions (int): Retrieve assets in parallel using this number of workers. Also requires `limit=None` to be passed.
 
         Yields:
             Union[Event, EventList]: yields Event one by one if chunk is not specified, else EventList objects.
@@ -96,7 +98,9 @@ class EventsAPI(APIClient):
             type=type,
             subtype=subtype,
         ).dump(camel_case=True)
-        return self._list_generator(method="POST", chunk_size=chunk_size, filter=filter, limit=limit, sort=sort)
+        return self._list_generator(
+            method="POST", chunk_size=chunk_size, filter=filter, limit=limit, sort=sort, partitions=partitions
+        )
 
     def __iter__(self) -> Generator[Event, None, None]:
         """Iterate over events

@@ -82,6 +82,13 @@ class TestEventsAPI:
         assert len(res_flat) == len(res_part)
         assert {a.id for a in res_flat} == {a.id for a in res_part}
 
+    def test_compare_partitioned_gen_and_list(self, post_spy):
+        # stop race conditions by cutting off max created time
+        maxtime = utils.timestamp_to_ms(datetime(2019, 5, 25, 17, 30))
+        res_generator = COGNITE_CLIENT.events(partitions=8, limit=None, created_time={"max": maxtime})
+        res_list = COGNITE_CLIENT.events.list(partitions=8, limit=None, created_time={"max": maxtime})
+        assert {a.id for a in res_generator} == {a.id for a in res_list}
+
     def test_assetid_list(self):
         res = COGNITE_CLIENT.events.list(
             limit=None, type="test-data-populator", asset_external_ids=["a", "b"], asset_ids=[0, 1]
