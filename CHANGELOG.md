@@ -16,6 +16,15 @@ Changes are grouped as follows
 
 ## Unreleased
 
+## [2.4.1] - 2020-09-09
+
+### Changed
+- Generator-based listing now supports partitions. Example:
+  ``` python
+  for asset in client.assets(partitions=10):
+    # do something
+  ```
+
 ## [2.4.0] - 2020-08-31
 
 ### Added
