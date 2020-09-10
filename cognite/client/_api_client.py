@@ -185,8 +185,7 @@ class APIClient:
 
     def _is_retryable(self, method: str, path: str) -> bool:
         valid_methods = ["GET", "POST", "PUT", "DELETE", "PATCH"]
-        match = re.match("(?:http|https)://[a-z\d.:]+(?:/api/(?:v1|playground)/projects/[^/]+)?(/.+)", path)
-
+        match = re.match("(?:http|https)://[a-z\d.:]+(?:/api/(?:v1|playground)/projects/[^/]+)?(/[^\?]+)?(\?.+)?", path)
         if not match:
             raise ValueError("Path {} is not valid. Cannot resolve whether or not it is retryable".format(path))
         if method not in valid_methods:

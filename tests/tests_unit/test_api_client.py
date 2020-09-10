@@ -964,6 +964,11 @@ class TestHelpers:
             ("GET", "https://greenfield.cognitedata.com/api/v1/projects/blabla/assets", True),
             ("POST", "https://localhost:8000/api/v1/projects/blabla/files/list", True),
             ("PUT", "https://api.cognitedata.com/bla", True),
+            (
+                "POST",
+                "https://api.cognitedata.com/api/v1/projects/sebnickelgreenfield/files/downloadlink?extendedExpiration=true",
+                True,
+            ),
             ("POST", "https://api.cognitedata.com/api/v1/projects/blabla/timeseries/list", True),
             ("POST", "https://greenfield.cognitedata.com/api/v1/projects/blabla/assets", False),
             ("POST", "https://greenfield.cognitedata.com/api/playground/projects/blabla/relationships/list", True),

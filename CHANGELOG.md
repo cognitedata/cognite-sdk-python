@@ -16,6 +16,9 @@ Changes are grouped as follows
 
 ## Unreleased
 
+## [2.4.2] - 2020-09-10
+- Fixed a bug where urls with query parameters were excluded from the retryable endpoints.
+
 ## [2.4.1] - 2020-09-09
 
 ### Changed
