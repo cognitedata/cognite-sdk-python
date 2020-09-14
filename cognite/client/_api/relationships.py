@@ -95,7 +95,7 @@ class RelationshipsAPI(APIClient):
             active_at_time=active_at_time,
             labels=labels,
         )
-        return self._list_generator(method="POST", limit=limit, filter=filter)
+        return self._list_generator(method="POST", limit=limit, filter=filter, headers={"version": "beta"})
 
     def __iter__(self) -> Generator[Relationship, None, None]:
         """Iterate over relationships
@@ -124,7 +124,7 @@ class RelationshipsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.relationships.retrieve(external_id="1")
         """
-        return self._retrieve_multiple(external_ids=external_id, wrap_ids=True)
+        return self._retrieve_multiple(external_ids=external_id, wrap_ids=True, headers={"version": "beta"})
 
     def retrieve_multiple(self, external_ids: List[str]) -> RelationshipList:
         """Retrieve multiple relationships by external id.
@@ -144,7 +144,7 @@ class RelationshipsAPI(APIClient):
                 >>> res = c.relationships.retrieve_multiple(external_ids=["abc", "def"])
         """
         utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=False)
-        return self._retrieve_multiple(external_ids=external_ids, wrap_ids=True)
+        return self._retrieve_multiple(external_ids=external_ids, wrap_ids=True, headers={"version": "beta"})
 
     def list(
         self,
@@ -219,7 +219,7 @@ class RelationshipsAPI(APIClient):
             active_at_time=active_at_time,
             labels=labels,
         )
-        return self._list(method="POST", limit=limit, filter=filter)
+        return self._list(method="POST", limit=limit, filter=filter, headers={"version": "beta"})
 
     def create(self, relationship: Union[Relationship, List[Relationship]]) -> Union[Relationship, RelationshipList]:
         """Create one or more relationships.
@@ -257,7 +257,7 @@ class RelationshipsAPI(APIClient):
         else:
             relationship = relationship._copy_resolve_targets()
 
-        return self._create_multiple(items=relationship)
+        return self._create_multiple(items=relationship, headers={"version": "beta"})
 
     def delete(self, external_id: Union[str, List[str]]) -> None:
         """Delete one or more relationships
@@ -276,4 +276,4 @@ class RelationshipsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.relationships.delete(external_id=["a","b"])
         """
-        self._delete_multiple(external_ids=external_id, wrap_ids=True)
+        self._delete_multiple(external_ids=external_id, wrap_ids=True, headers={"version": "beta"})
