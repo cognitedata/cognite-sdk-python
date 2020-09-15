@@ -1,5 +1,3 @@
-import copy
-
 from cognite.client.data_classes._base import *
 from cognite.client.data_classes.labels import Label, LabelFilter
 
@@ -16,8 +14,9 @@ class Relationship(CogniteResource):
         start_time (int): Time, in milliseconds since Jan. 1, 1970, when the relationship became active. If there is no startTime, relationship is active from the beginning of time until endTime.
         end_time (int): Time, in milliseconds since Jan. 1, 1970, when the relationship became inactive. If there is no endTime, relationship is active from startTime until the present or any point in the future. If endTime and startTime are set, then endTime must be strictly greater than startTime.
         confidence (float): Confidence value of the existence of this relationship. Generated relationships should provide a realistic score on the likelihood of the existence of the relationship. Relationships without a confidence value can be interpreted at the discretion of each project.
-        data_set_id (int): The id of the dataset this relationship belongs to.
+        data_set_id (Dict[str, Any]): The id or externalId of the dataset this relationship belongs to.
         labels (List[Label]): A list of the labels associated with this resource item.
+        cognite_client (CogniteClient): The client to associate with this object.
     """
 
     def __init__(
@@ -30,8 +29,9 @@ class Relationship(CogniteResource):
         start_time: int = None,
         end_time: int = None,
         confidence: float = None,
-        data_set_id: int = None,
+        data_set_id: Dict[str, Any] = None,
         labels: List[Label] = None,
+        cognite_client=None,
     ):
         self.external_id = external_id
         self.source_external_id = source_external_id
@@ -43,31 +43,7 @@ class Relationship(CogniteResource):
         self.confidence = confidence
         self.data_set_id = data_set_id
         self.labels = labels
-
-    def _copy_resolve_targets(self):
-        rel = copy.copy(self)
-        rel.source = self._resolve_target(rel.source)
-        rel.target = self._resolve_target(rel.target)
-        return rel
-
-    @staticmethod
-    def _resolve_target(target):
-        if isinstance(target, dict) or target is None:
-            return target
-
-        from cognite.client.data_classes import Asset, Event, FileMetadata, Sequence, TimeSeries
-
-        _TARGET_TYPES = {
-            Asset: "Asset",
-            TimeSeries: "TimeSeries",
-            FileMetadata: "File",
-            Event: "Event",
-            Sequence: "Sequence",
-        }
-        typestr = _TARGET_TYPES.get(target.__class__)
-        if typestr:
-            return {"resource": typestr, "resourceId": target.external_id}
-        raise ValueError("Invalid source or target '{}' of type {} in relationship".format(target, target.__class__))
+        self._cognite_client = cognite_client
 
 
 class RelationshipFilter(CogniteFilter):
@@ -86,6 +62,7 @@ class RelationshipFilter(CogniteFilter):
         created_time (Dict[str, int]): Range to filter the field for. (inclusive)
         active_at_time (int): Limits results to those active at any point within the given time range, i.e. if there is any overlap in the intervals [activeAtTime.min, activeAtTime.max] and [startTime, endTime], where both intervals are inclusive. If a relationship does not have a startTime, it is regarded as active from the begining of time by this filter. If it does not have an endTime is will be regarded as active until the end of time. Similarly, if a min is not supplied to the filter, the min will be implicitly set to the beginning of time, and if a max is not supplied, the max will be implicitly set to the end of time.
         labels (LabelFilter): Return only the resource matching the specified label constraints.
+        cognite_client (CogniteClient): The client to associate with this object.
     """
 
     def __init__(
@@ -102,6 +79,7 @@ class RelationshipFilter(CogniteFilter):
         created_time: Dict[str, int] = None,
         active_at_time: int = None,
         labels: LabelFilter = None,
+        cognite_client=None,
     ):
         self.source_external_ids = source_external_ids
         self.source_types = source_types
@@ -115,6 +93,7 @@ class RelationshipFilter(CogniteFilter):
         self.created_time = created_time
         self.active_at_time = active_at_time
         self.labels = labels
+        self._cognite_client = cognite_client
 
 
 class RelationshipUpdate(CogniteUpdate):

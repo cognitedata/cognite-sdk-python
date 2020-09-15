@@ -120,7 +120,7 @@ class RelationshipsAPI(APIClient):
 
             Get relationship by external id::
 
-                >>> from cognite.client.experimental import CogniteClient
+                >>> from cognite.client.beta import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.relationships.retrieve(external_id="1")
         """
@@ -139,7 +139,7 @@ class RelationshipsAPI(APIClient):
 
             Get relationships by external id::
 
-                >>> from cognite.client.experimental import CogniteClient
+                >>> from cognite.client.beta import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.relationships.retrieve_multiple(external_ids=["abc", "def"])
         """
@@ -187,23 +187,16 @@ class RelationshipsAPI(APIClient):
 
             List relationships::
 
-                >>> from cognite.client.experimental import CogniteClient
+                >>> from cognite.client.beta import CogniteClient
                 >>> c = CogniteClient()
                 >>> relationship_list = c.relationships.list(limit=5)
 
             Iterate over relationships::
 
-                >>> from cognite.client.experimental import CogniteClient
+                >>> from cognite.client.beta import CogniteClient
                 >>> c = CogniteClient()
                 >>> for relationship in c.relationships:
                 ...     relationship # do something with the relationship
-
-            Iterate over chunks of relationships to reduce memory load::
-
-                >>> from cognite.client.experimental import CogniteClient
-                >>> c = CogniteClient()
-                >>> for relationship_list in c.relationships(chunk_size=2500):
-                ...     relationship_list # do something with the relationships
         """
         filter = self._create_filter(
             source_external_ids=source_external_ids,
@@ -235,27 +228,23 @@ class RelationshipsAPI(APIClient):
 
             Create a new relationship specifying object type and external id for source and target::
 
-                >>> from cognite.client.experimental import CogniteClient
+                >>> from cognite.client.beta import CogniteClient
                 >>> from cognite.client.data_classes import Relationship
                 >>> c = CogniteClient()
-                >>> rel = Relationship(external_id="rel", source_external_id="source_ext_id", source_type="asset", target_external_id="target_ext_id", target_type="event", confidence=0.9, data_set_ids="ds_name")
+                >>> rel = Relationship(external_id="rel", source_external_id="source_ext_id", source_type="asset", target_external_id="target_ext_id", target_type="event", confidence=0.9, data_set_id={"id": "ds_name"})
                 >>> res = c.relationships.create(rel)
 
             Create a new relationship using objects directly as source and target::
 
-                >>> from cognite.client.experimental import CogniteClient
+                >>> from cognite.client.beta import CogniteClient
                 >>> from cognite.client.data_classes import Relationship
                 >>> c = CogniteClient()
                 >>> assets = c.assets.retrieve_multiple(id=[1,2,3])
-                >>> flowrel1 = Relationship(external_id="flow_1", source=assets[0], target=assets[1], confidence=0.1, data_set_ids="ds_flow")
-                >>> flowrel2 = Relationship(external_id="flow_2", source=assets[1], target=assets[2], confidence=0.1, data_set_ids="ds_flow")
+                >>> flowrel1 = Relationship(external_id="flow_1", source_external_id="source_ext_id", source_type="asset", target_external_id="target_ext_id", target_type="event", confidence=0.1, data_set_id={"id": "ds_name"})
+                >>> flowrel2 = Relationship(external_id="flow_2", source_external_id="source_ext_id", source_type="asset", target_external_id="target_ext_id", target_type="event", confidence=0.1, data_set_id={"id": "ds_name"})
                 >>> res = c.relationships.create([flowrel1,flowrel2])
         """
         utils._auxiliary.assert_type(relationship, "relationship", [Relationship, list])
-        if isinstance(relationship, list):
-            relationship = [r._copy_resolve_targets() for r in relationship]
-        else:
-            relationship = relationship._copy_resolve_targets()
 
         return self._create_multiple(items=relationship, headers={"version": "beta"})
 
@@ -272,7 +261,7 @@ class RelationshipsAPI(APIClient):
 
             Delete relationships by external id::
 
-                >>> from cognite.client.experimental import CogniteClient
+                >>> from cognite.client.beta import CogniteClient
                 >>> c = CogniteClient()
                 >>> c.relationships.delete(external_id=["a","b"])
         """
