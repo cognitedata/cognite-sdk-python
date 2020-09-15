@@ -245,6 +245,10 @@ class RelationshipsAPI(APIClient):
                 >>> res = c.relationships.create([flowrel1,flowrel2])
         """
         utils._auxiliary.assert_type(relationship, "relationship", [Relationship, list])
+        if isinstance(relationship, list):
+            relationship = [r._validate_resource_types() for r in relationship]
+        else:
+            relationship = relationship._validate_resource_types()
 
         return self._create_multiple(items=relationship, headers={"version": "beta"})
 

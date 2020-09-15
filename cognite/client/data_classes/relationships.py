@@ -1,3 +1,5 @@
+import copy
+
 from cognite.client.data_classes._base import *
 from cognite.client.data_classes.labels import Label, LabelFilter
 
@@ -16,6 +18,8 @@ class Relationship(CogniteResource):
         confidence (float): Confidence value of the existence of this relationship. Generated relationships should provide a realistic score on the likelihood of the existence of the relationship. Relationships without a confidence value can be interpreted at the discretion of each project.
         data_set_id (Dict[str, Any]): The id or externalId of the dataset this relationship belongs to.
         labels (List[Label]): A list of the labels associated with this resource item.
+        created_time (int): Time, in milliseconds since Jan. 1, 1970, when this relationship was created in CDF.
+        last_updated_time (int): Time, in milliseconds since Jan. 1, 1970, when this relationship was last updated in CDF.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
@@ -31,6 +35,8 @@ class Relationship(CogniteResource):
         confidence: float = None,
         data_set_id: Dict[str, Any] = None,
         labels: List[Label] = None,
+        created_time: int = None,
+        last_updated_time: int = None,
         cognite_client=None,
     ):
         self.external_id = external_id
@@ -42,8 +48,25 @@ class Relationship(CogniteResource):
         self.end_time = end_time
         self.confidence = confidence
         self.data_set_id = data_set_id
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
         self.labels = labels
         self._cognite_client = cognite_client
+
+    def _validate_resource_types(self):
+        rel = copy.copy(self)
+        self._validate_target(rel.source_type)
+        self._validate_target(rel.target_type)
+        return rel
+
+    @staticmethod
+    def _validate_target(target):
+        if isinstance(target, dict) or target is None:
+            return target
+
+        _TARGET_TYPES = {"asset", "timeSeries", "file", "event", "sequence"}
+        if target not in _TARGET_TYPES:
+            raise ValueError("Invalid source or target '{}' in relationship".format(target))
 
 
 class RelationshipFilter(CogniteFilter):
