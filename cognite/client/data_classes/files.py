@@ -12,10 +12,10 @@ class FileMetadata(CogniteResource):
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
         name (str): Name of the file.
-        directory (str): Directory containing the file. Must be an absolute, unix-style path.
         source (str): The source of the file.
         mime_type (str): File type. E.g. text/plain, application/pdf, ..
         metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        directory (str): Directory associated with the file. Must be an absolute, unix-style path.
         asset_ids (List[int]): No description.
         data_set_id (int): The dataSet Id for the item.
         labels (List[Label]): A list of the labels associated with this resource item.
@@ -34,10 +34,10 @@ class FileMetadata(CogniteResource):
         self,
         external_id: str = None,
         name: str = None,
-        directory: str = None,
         source: str = None,
         mime_type: str = None,
         metadata: Dict[str, str] = None,
+        directory: str = None,
         asset_ids: List[int] = None,
         data_set_id: int = None,
         labels: List[Label] = None,

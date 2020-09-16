@@ -448,11 +448,11 @@ class FilesAPI(APIClient):
         self,
         path: str,
         external_id: str = None,
-        directory: str = None,
         name: str = None,
         source: str = None,
         mime_type: str = None,
         metadata: Dict[str, str] = None,
+        directory: str = None,
         asset_ids: List[int] = None,
         source_created_time: int = None,
         source_modified_time: int = None,
@@ -467,11 +467,11 @@ class FilesAPI(APIClient):
         Args:
             path (str): Path to the file you wish to upload. If path is a directory, this method will upload all files in that directory.
             external_id (str): The external ID provided by the client. Must be unique within the project.
-            directory (str): The directory provided by the client. Must be an absolute, unix-style path.
             name (str): Name of the file.
             source (str): The source of the file.
             mime_type (str): File type. E.g. text/plain, application/pdf, ...
             metadata (Dict[str, str]): Customizable extra data about the file. String key -> String value.
+            directory (str): The directory to be associated with this file. Must be an absolute, unix-style path.
             asset_ids (List[int]): No description.
             data_set_id (int): ID of the data set.
             labels (List[Label]): A list of the labels associated with this resource item.
@@ -568,11 +568,11 @@ class FilesAPI(APIClient):
         self,
         content: Union[str, bytes, TextIO, BinaryIO],
         name: str,
-        directory: str = None,
         external_id: str = None,
         source: str = None,
         mime_type: str = None,
         metadata: Dict[str, str] = None,
+        directory: str = None,
         asset_ids: List[int] = None,
         data_set_id: int = None,
         labels: List[Label] = None,
@@ -588,11 +588,11 @@ class FilesAPI(APIClient):
         Args:
             content (Union[str, bytes, TextIO, BinaryIO]): The content to upload.
             name (str): Name of the file.
-            directory (str): The directory provided by the client. Must be an absolute, unix-style path.
             external_id (str): The external ID provided by the client. Must be unique within the project.
             source (str): The source of the file.
             mime_type (str): File type. E.g. text/plain, application/pdf,...
             metadata (Dict[str, str]): Customizable extra data about the file. String key -> String value.
+            directory (str): The directory to be associated with this file. Must be an absolute, unix-style path.
             asset_ids (List[int]): No description.
             data_set_id (int): Id of the data set.
             labels (List[Label]): A list of the labels associated with this resource item.
@@ -617,11 +617,11 @@ class FilesAPI(APIClient):
         """
         file_metadata = FileMetadata(
             name=name,
-            directory=directory,
             external_id=external_id,
             source=source,
             mime_type=mime_type,
             metadata=metadata,
+            directory=directory,
             asset_ids=asset_ids,
             data_set_id=data_set_id,
             labels=labels,
