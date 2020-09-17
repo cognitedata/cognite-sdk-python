@@ -64,8 +64,8 @@ class Relationship(CogniteResource):
         if isinstance(target, dict) or target is None:
             return target
 
-        _TARGET_TYPES = {"asset", "timeSeries", "file", "event", "sequence"}
-        if target not in _TARGET_TYPES:
+        _TARGET_TYPES = {"asset", "timeseries", "file", "event", "sequence"}
+        if target.lower() not in _TARGET_TYPES:
             raise ValueError("Invalid source or target '{}' in relationship".format(target))
 
 
@@ -117,6 +117,12 @@ class RelationshipFilter(CogniteFilter):
         self.active_at_time = active_at_time
         self.labels = labels
         self._cognite_client = cognite_client
+
+    def dump(self, camel_case: bool = False):
+        result = super(RelationshipFilter, self).dump(camel_case)
+        if isinstance(self.labels, LabelFilter):
+            result["labels"] = self.labels.dump(camel_case)
+        return result
 
 
 class RelationshipUpdate(CogniteUpdate):

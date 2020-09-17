@@ -1,0 +1,116 @@
+import copy
+
+import pytest
+
+from cognite.client.beta import CogniteClient
+from cognite.client.data_classes import (
+    Label,
+    LabelDefinition,
+    LabelFilter,
+    Relationship,
+    RelationshipFilter,
+    RelationshipList,
+)
+from cognite.client.exceptions import CogniteNotFoundError
+
+API_REL = CogniteClient().relationships
+
+
+@pytest.fixture
+def new_relationship():
+    relationship = API_REL.create(
+        Relationship(
+            external_id="bar",
+            source_external_id="source_ext_id",
+            source_type="asset",
+            target_external_id="target_ext_id",
+            target_type="event",
+            confidence=0.9,
+        )
+    )
+    yield relationship
+    API_REL.delete(external_id="bar")
+    assert API_REL.retrieve(external_id="bar") is None
+
+
+@pytest.fixture
+def new_label():
+    # create a label to use in relationships
+    from cognite.client import CogniteClient
+
+    tp = CogniteClient().labels.create(LabelDefinition(external_id="label_ext_id", name="mandatory"))
+    assert isinstance(tp, LabelDefinition)
+    yield tp
+    CogniteClient().labels.delete(external_id=tp.external_id)
+
+
+@pytest.fixture
+def create_multiple_relationships(new_label):
+    relationshipList = [
+        Relationship(
+            external_id="foo1",
+            source_type="asset",
+            source_external_id="source_ext_id1",
+            target_type="event",
+            target_external_id="target_ext_id1",
+            labels=[Label("label_ext_id")],
+        ),
+        Relationship(
+            external_id="foo2",
+            source_type="timeSeries",
+            source_external_id="source_ext_id2",
+            target_type="asset",
+            target_external_id="target_ext_id2",
+        ),
+        Relationship(
+            external_id="foo3",
+            source_type="event",
+            source_external_id="source_ext_id3",
+            target_type="timeseries",
+            target_external_id="target_ext_id3",
+            labels=[Label("label_ext_id")],
+        ),
+        Relationship(
+            external_id="foo4",
+            source_type="sequence",
+            source_external_id="source_ext_id3",
+            target_type="sequence",
+            target_external_id="target_ext_id4",
+            labels=[Label("label_ext_id")],
+        ),
+        Relationship(
+            external_id="foo5",
+            source_type="file",
+            source_external_id="source_ext_id5",
+            target_type="file",
+            target_external_id="target_ext_id5",
+        ),
+    ]
+    relationships = API_REL.create(relationshipList)
+    yield relationships
+    API_REL.delete(external_id=[ext_ids["external_id"] for ext_ids in relationships.dump()])
+
+
+class TestRelationshipsAPI:
+    def test_get_single(self, new_relationship):
+        res = API_REL.retrieve(external_id="bar")
+        assert isinstance(res, Relationship)
+        assert res.dump()["confidence"] == 0.9
+
+    def test_create_multiple(self, create_multiple_relationships):
+        assert isinstance(create_multiple_relationships, RelationshipList)
+
+    def test_retrieve_unknown(self, new_relationship):
+        with pytest.raises(CogniteNotFoundError):
+            API_REL.retrieve_multiple(external_ids=["this does not exist"])
+        assert API_REL.retrieve(external_id="this does not exist") is None
+
+    def test_list_filter(self, create_multiple_relationships):
+        res = API_REL.list(source_external_ids=["source_ext_id3"])
+        assert len(res) == 2
+        assert isinstance(res, RelationshipList)
+
+    def test_list_label_filter(self, create_multiple_relationships):
+        res = API_REL.list(labels=LabelFilter(contains_all=["label_ext_id"]))
+        assert len(res) == 3
+        assert isinstance(res, RelationshipList)

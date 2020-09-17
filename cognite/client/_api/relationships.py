@@ -162,7 +162,7 @@ class RelationshipsAPI(APIClient):
         labels: LabelFilter = None,
         limit: int = 100,
     ) -> RelationshipList:
-        """List relationships
+        """Lists relationships stored in the project based on a query filter given in the payload of this request. Up to 1000 relationships can be retrieved in one operation.
 
         Args:
             source_external_ids (List[str]): Include relationships that have any of these values in their source External Id field

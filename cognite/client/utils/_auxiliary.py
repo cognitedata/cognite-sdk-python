@@ -19,6 +19,7 @@ from urllib.parse import quote
 
 import cognite.client
 from cognite.client import utils
+from cognite.client.data_classes import LabelFilter
 from cognite.client.exceptions import CogniteImportError
 
 

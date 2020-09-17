@@ -5,18 +5,7 @@ import re
 import pytest
 
 from cognite.client.beta import CogniteClient
-from cognite.client.data_classes import (
-    Asset,
-    Event,
-    FileMetadata,
-    Label,
-    LabelFilter,
-    Relationship,
-    RelationshipFilter,
-    RelationshipList,
-    Sequence,
-    TimeSeries,
-)
+from cognite.client.data_classes import Label, LabelFilter, Relationship, RelationshipList
 from tests.utils import jsgz_load
 
 COGNITE_CLIENT = CogniteClient()
@@ -199,9 +188,9 @@ class TestRelationships:
         assert res is None
 
     def test_advanced_list(self, mock_rel_response):
-        res = REL_API.list(source_types="asset", labels=LabelFilter(contains_any=["belongs_to"]))
+        res = REL_API.list(source_types="asset", labels=LabelFilter(contains_any=["label_ext_id"]))
         assert {
-            "filter": {"sourceTypes": "asset", "labels": {"containsAny": ["belongs_to"]}},
+            "filter": {"sourceTypes": "asset", "labels": {"containsAny": [{"externalId": "label_ext_id"}]}},
             "limit": 100,
             "cursor": None,
         } == jsgz_load(mock_rel_response.calls[0].request.body)
@@ -221,7 +210,7 @@ class TestRelationships:
                 "sourceExternalIds": "bla",
                 "targetTypes": "timeseries",
                 "targetExternalIds": "foo",
-                "labels": {"containsAny": ["belongs_to"]},
+                "labels": {"containsAny": [{"externalId": "belongs_to"}]},
             },
             "limit": 100,
             "cursor": None,
