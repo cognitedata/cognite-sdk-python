@@ -38,7 +38,7 @@ def new_label():
     # create a label to use in relationships
     from cognite.client import CogniteClient
 
-    tp = CogniteClient().labels.create(LabelDefinition(external_id="label_ext_id", name="mandatory"))
+    tp = CogniteClient().labels.create(LabelDefinition(external_id="label_rel", name="mandatory"))
     assert isinstance(tp, LabelDefinition)
     yield tp
     CogniteClient().labels.delete(external_id=tp.external_id)
@@ -53,7 +53,7 @@ def create_multiple_relationships(new_label):
             source_external_id="source_ext_id1",
             target_type="event",
             target_external_id="target_ext_id1",
-            labels=[Label("label_ext_id")],
+            labels=[Label("label_rel")],
         ),
         Relationship(
             external_id="foo2",
@@ -68,7 +68,7 @@ def create_multiple_relationships(new_label):
             source_external_id="source_ext_id3",
             target_type="timeseries",
             target_external_id="target_ext_id3",
-            labels=[Label("label_ext_id")],
+            labels=[Label("label_rel")],
         ),
         Relationship(
             external_id="foo4",
@@ -76,7 +76,7 @@ def create_multiple_relationships(new_label):
             source_external_id="source_ext_id3",
             target_type="sequence",
             target_external_id="target_ext_id4",
-            labels=[Label("label_ext_id")],
+            labels=[Label("label_rel")],
         ),
         Relationship(
             external_id="foo5",
@@ -111,6 +111,6 @@ class TestRelationshipsAPI:
         assert isinstance(res, RelationshipList)
 
     def test_list_label_filter(self, create_multiple_relationships):
-        res = API_REL.list(labels=LabelFilter(contains_all=["label_ext_id"]))
+        res = API_REL.list(labels=LabelFilter(contains_all=["label_rel"]))
         assert len(res) == 3
         assert isinstance(res, RelationshipList)
