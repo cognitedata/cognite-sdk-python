@@ -1,4 +1,4 @@
-import copy
+import uuid
 
 import pytest
 
@@ -18,9 +18,10 @@ API_REL = CogniteClient().relationships
 
 @pytest.fixture
 def new_relationship():
+    external_id = uuid.uuid4().hex[0:20]
     relationship = API_REL.create(
         Relationship(
-            external_id="bar",
+            external_id=external_id,
             source_external_id="source_ext_id",
             source_type="asset",
             target_external_id="target_ext_id",
@@ -29,8 +30,8 @@ def new_relationship():
         )
     )
     yield relationship
-    API_REL.delete(external_id="bar")
-    assert API_REL.retrieve(external_id="bar") is None
+    API_REL.delete(external_id=external_id)
+    assert API_REL.retrieve(external_id=relationship.external_id) is None
 
 
 @pytest.fixture
@@ -38,7 +39,8 @@ def new_label():
     # create a label to use in relationships
     from cognite.client import CogniteClient
 
-    tp = CogniteClient().labels.create(LabelDefinition(external_id="label_rel", name="mandatory"))
+    external_id = uuid.uuid4().hex[0:20]
+    tp = CogniteClient().labels.create(LabelDefinition(external_id=external_id, name="mandatory"))
     assert isinstance(tp, LabelDefinition)
     yield tp
     CogniteClient().labels.delete(external_id=tp.external_id)
@@ -46,6 +48,7 @@ def new_label():
 
 @pytest.fixture
 def create_multiple_relationships(new_label):
+    ext_id = new_label.external_id
     relationshipList = [
         Relationship(
             external_id="foo1",
@@ -53,7 +56,7 @@ def create_multiple_relationships(new_label):
             source_external_id="source_ext_id1",
             target_type="event",
             target_external_id="target_ext_id1",
-            labels=[Label("label_rel")],
+            labels=[Label(ext_id)],
         ),
         Relationship(
             external_id="foo2",
@@ -68,7 +71,7 @@ def create_multiple_relationships(new_label):
             source_external_id="source_ext_id3",
             target_type="timeseries",
             target_external_id="target_ext_id3",
-            labels=[Label("label_rel")],
+            labels=[Label(ext_id)],
         ),
         Relationship(
             external_id="foo4",
@@ -76,7 +79,7 @@ def create_multiple_relationships(new_label):
             source_external_id="source_ext_id3",
             target_type="sequence",
             target_external_id="target_ext_id4",
-            labels=[Label("label_rel")],
+            labels=[Label(ext_id)],
         ),
         Relationship(
             external_id="foo5",
@@ -87,18 +90,19 @@ def create_multiple_relationships(new_label):
         ),
     ]
     relationships = API_REL.create(relationshipList)
-    yield relationships
+    yield relationships, ext_id
     API_REL.delete(external_id=[ext_ids["external_id"] for ext_ids in relationships.dump()])
 
 
 class TestRelationshipsAPI:
     def test_get_single(self, new_relationship):
-        res = API_REL.retrieve(external_id="bar")
+        res = API_REL.retrieve(external_id=new_relationship.external_id)
         assert isinstance(res, Relationship)
         assert res.dump()["confidence"] == 0.9
 
     def test_create_multiple(self, create_multiple_relationships):
-        assert isinstance(create_multiple_relationships, RelationshipList)
+        relationships, ext_id = create_multiple_relationships
+        assert isinstance(relationships, RelationshipList)
 
     def test_retrieve_unknown(self, new_relationship):
         with pytest.raises(CogniteNotFoundError):
@@ -111,6 +115,7 @@ class TestRelationshipsAPI:
         assert isinstance(res, RelationshipList)
 
     def test_list_label_filter(self, create_multiple_relationships):
-        res = API_REL.list(labels=LabelFilter(contains_all=["label_rel"]))
+        relationships, ext_id = create_multiple_relationships
+        res = API_REL.list(labels=LabelFilter(contains_all=[ext_id]))
         assert len(res) == 3
         assert isinstance(res, RelationshipList)
