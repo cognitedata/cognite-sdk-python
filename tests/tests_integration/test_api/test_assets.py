@@ -1,4 +1,5 @@
 import time
+import uuid
 from unittest import mock
 
 import pytest
@@ -13,7 +14,7 @@ COGNITE_CLIENT = CogniteClient()
 
 @pytest.fixture
 def new_asset(new_label):
-    ts = COGNITE_CLIENT.assets.create(Asset(name="any", labels=[Label("label_ext_id")]))
+    ts = COGNITE_CLIENT.assets.create(Asset(name="any", labels=[Label(new_label.external_id)]))
     yield ts
     COGNITE_CLIENT.assets.delete(id=ts.id)
     assert COGNITE_CLIENT.assets.retrieve(ts.id) is None
@@ -80,7 +81,8 @@ def new_label():
     # create a label to use in relationships
     from cognite.client import CogniteClient
 
-    tp = CogniteClient().labels.create(LabelDefinition(external_id="label_ext_id", name="mandatory"))
+    external_id = uuid.uuid4().hex[0:20]
+    tp = CogniteClient().labels.create(LabelDefinition(external_id=external_id, name="mandatory"))
     yield tp
     assert isinstance(tp, LabelDefinition)
     CogniteClient().labels.delete(external_id=tp.external_id)
@@ -167,12 +169,12 @@ class TestAssetsAPI:
         assert 6 == len(COGNITE_CLIENT.assets.retrieve_subtree(root_test_asset.id, depth=1))
 
     # NOTE: This test could be a bit flaky because of the delay between persistence in db and elasticsearch
-    def test_filter_label(self, new_asset):
+    def test_filter_label(self, new_label, new_asset):
         time.sleep(10)  # Put a delay here because of eventual consistency in elasticsearch and db
         res = COGNITE_CLIENT.assets.search(
-            name="any", filter=AssetFilter(labels=LabelFilter(contains_all=["label_ext_id"]))
+            name="any", filter=AssetFilter(labels=LabelFilter(contains_all=[new_label.external_id]))
         )
-        res1 = COGNITE_CLIENT.assets.list(labels=LabelFilter(contains_all=["label_ext_id"]))
+        res1 = COGNITE_CLIENT.assets.list(labels=LabelFilter(contains_all=[new_label.external_id]))
         assert len(res) == 1
         assert len(res1) == 1
 
