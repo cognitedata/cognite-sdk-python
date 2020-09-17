@@ -4,7 +4,7 @@ from unittest import mock
 import pytest
 
 from cognite.client import CogniteClient, utils
-from cognite.client.data_classes import Asset, AssetFilter, AssetUpdate
+from cognite.client.data_classes import Asset, AssetFilter, AssetUpdate, Label, LabelDefinition, LabelFilter
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from tests.utils import set_request_limit
 
@@ -13,7 +13,7 @@ COGNITE_CLIENT = CogniteClient()
 
 @pytest.fixture
 def new_asset():
-    ts = COGNITE_CLIENT.assets.create(Asset(name="any"))
+    ts = COGNITE_CLIENT.assets.create(Asset(name="any", labels=[Label("label_ext_id")]))
     yield ts
     COGNITE_CLIENT.assets.delete(id=ts.id)
     assert COGNITE_CLIENT.assets.retrieve(ts.id) is None
@@ -73,6 +73,17 @@ def new_root_asset():
     yield root
     COGNITE_CLIENT.assets.delete(external_id=external_id, recursive=True)
     assert COGNITE_CLIENT.assets.retrieve(external_id=external_id) is None
+
+
+@pytest.fixture
+def new_label():
+    # create a label to use in relationships
+    from cognite.client import CogniteClient
+
+    tp = CogniteClient().labels.create(LabelDefinition(external_id="label_ext_id", name="mandatory"))
+    yield tp
+    assert isinstance(tp, LabelDefinition)
+    CogniteClient().labels.delete(external_id=tp.external_id)
 
 
 class TestAssetsAPI:
@@ -154,6 +165,16 @@ class TestAssetsAPI:
     def test_get_subtree(self, root_test_asset):
         assert 781 == len(COGNITE_CLIENT.assets.retrieve_subtree(root_test_asset.id))
         assert 6 == len(COGNITE_CLIENT.assets.retrieve_subtree(root_test_asset.id, depth=1))
+
+    # NOTE: This test could be a bit flaky because of the delay between persistence in db and elasticsearch
+    def test_filter_label(self, new_label, new_asset):
+        time.sleep(10)  # Put a delay here because of eventual consistency in elasticsearch and db
+        res = COGNITE_CLIENT.assets.search(
+            name="any", filter=AssetFilter(labels=LabelFilter(contains_all=["label_ext_id"]))
+        )
+        res1 = COGNITE_CLIENT.assets.list(labels=LabelFilter(contains_all=["label_ext_id"]))
+        assert len(res) == 1
+        assert len(res1) == 1
 
     def test_create_asset_hierarchy_parent_external_id_not_in_request(self, new_root_asset):
         root = new_root_asset
