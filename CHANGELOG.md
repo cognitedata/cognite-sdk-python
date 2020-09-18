@@ -17,7 +17,7 @@ Changes are grouped as follows
 ## Unreleased
 
 ## [2.4.3] - 2020-09-18
-- Increase raw rows lis limit to 10,000
+- Increase raw rows list limit to 10,000
 
 ## [2.4.2] - 2020-09-10
 - Fixed a bug where urls with query parameters were excluded from the retryable endpoints.
