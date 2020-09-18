@@ -269,6 +269,7 @@ class RawRowsAPI(APIClient):
     def __init__(self, config: utils._client_config.ClientConfig, api_version: str = None, cognite_client=None):
         super().__init__(config, api_version, cognite_client)
         self._CREATE_LIMIT = 10000
+        self._LIST_LIMIT = 10000
 
     def __call__(
         self, db_name: str, table_name: str, chunk_size: int = None, limit: int = None
