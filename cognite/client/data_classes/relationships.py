@@ -60,7 +60,7 @@ class Relationship(CogniteResource):
         return rel
 
     @staticmethod
-    def _validate_target(target):
+    def _validate_resource_type(resource_type):
         if isinstance(target, dict) or target is None:
             return target
 
