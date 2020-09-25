@@ -49,9 +49,10 @@ def new_label():
 @pytest.fixture
 def create_multiple_relationships(new_label):
     ext_id = new_label.external_id
+    relationships_ext_id = [uuid.uuid4().hex[0:20] for i in range(5)]
     relationshipList = [
         Relationship(
-            external_id="foo1",
+            external_id=relationships_ext_id[0],
             source_type="asset",
             source_external_id="source_ext_id1",
             target_type="event",
@@ -59,14 +60,14 @@ def create_multiple_relationships(new_label):
             labels=[Label(ext_id)],
         ),
         Relationship(
-            external_id="foo2",
+            external_id=relationships_ext_id[1],
             source_type="timeSeries",
             source_external_id="source_ext_id2",
             target_type="asset",
             target_external_id="target_ext_id2",
         ),
         Relationship(
-            external_id="foo3",
+            external_id=relationships_ext_id[2],
             source_type="event",
             source_external_id="source_ext_id3",
             target_type="timeseries",
@@ -74,7 +75,7 @@ def create_multiple_relationships(new_label):
             labels=[Label(ext_id)],
         ),
         Relationship(
-            external_id="foo4",
+            external_id=relationships_ext_id[3],
             source_type="sequence",
             source_external_id="source_ext_id3",
             target_type="sequence",
@@ -82,7 +83,7 @@ def create_multiple_relationships(new_label):
             labels=[Label(ext_id)],
         ),
         Relationship(
-            external_id="foo5",
+            external_id=relationships_ext_id[4],
             source_type="file",
             source_external_id="source_ext_id5",
             target_type="file",

@@ -55,18 +55,15 @@ class Relationship(CogniteResource):
 
     def _validate_resource_types(self):
         rel = copy.copy(self)
-        self._validate_target(rel.source_type)
-        self._validate_target(rel.target_type)
+        self._validate_resource_type(rel.source_type)
+        self._validate_resource_type(rel.target_type)
         return rel
 
     @staticmethod
     def _validate_resource_type(resource_type):
-        if isinstance(target, dict) or target is None:
-            return target
-
-        _TARGET_TYPES = {"asset", "timeseries", "file", "event", "sequence"}
-        if target.lower() not in _TARGET_TYPES:
-            raise ValueError("Invalid source or target '{}' in relationship".format(target))
+        _RESOURCE_TYPES = {"asset", "timeseries", "file", "event", "sequence"}
+        if resource_type.lower() not in _RESOURCE_TYPES:
+            raise TypeError("Invalid source or target '{}' in relationship".format(resource_type))
 
 
 class RelationshipFilter(CogniteFilter):

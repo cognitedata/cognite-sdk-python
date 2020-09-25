@@ -137,7 +137,7 @@ class TestRelationships:
             assert isinstance(it["targetType"], str)
 
     def test_create_wrong_type(self, mock_rel_response):
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             REL_API.create(
                 Relationship(
                     external_id="1",
