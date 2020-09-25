@@ -80,7 +80,7 @@ class RelationshipFilter(CogniteFilter):
         confidence (Dict[str, int]): Range to filter the field for. (inclusive)
         last_updated_time (Dict[str, Any]): Range to filter the field for. (inclusive)
         created_time (Dict[str, int]): Range to filter the field for. (inclusive)
-        active_at_time (int): Limits results to those active at any point within the given time range, i.e. if there is any overlap in the intervals [activeAtTime.min, activeAtTime.max] and [startTime, endTime], where both intervals are inclusive. If a relationship does not have a startTime, it is regarded as active from the begining of time by this filter. If it does not have an endTime is will be regarded as active until the end of time. Similarly, if a min is not supplied to the filter, the min will be implicitly set to the beginning of time, and if a max is not supplied, the max will be implicitly set to the end of time.
+        active_at_time (Dict[str, int]): Limits results to those active at any point within the given time range, i.e. if there is any overlap in the intervals [activeAtTime.min, activeAtTime.max] and [startTime, endTime], where both intervals are inclusive. If a relationship does not have a startTime, it is regarded as active from the begining of time by this filter. If it does not have an endTime is will be regarded as active until the end of time. Similarly, if a min is not supplied to the filter, the min will be implicitly set to the beginning of time, and if a max is not supplied, the max will be implicitly set to the end of time.
         labels (LabelFilter): Return only the resource matching the specified label constraints.
         cognite_client (CogniteClient): The client to associate with this object.
     """
@@ -97,7 +97,7 @@ class RelationshipFilter(CogniteFilter):
         confidence: Dict[str, int] = None,
         last_updated_time: Dict[str, int] = None,
         created_time: Dict[str, int] = None,
-        active_at_time: int = None,
+        active_at_time: Dict[str, int] = None,
         labels: LabelFilter = None,
         cognite_client=None,
     ):
