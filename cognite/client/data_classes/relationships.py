@@ -16,7 +16,7 @@ class Relationship(CogniteResource):
         start_time (int): Time, in milliseconds since Jan. 1, 1970, when the relationship became active. If there is no startTime, relationship is active from the beginning of time until endTime.
         end_time (int): Time, in milliseconds since Jan. 1, 1970, when the relationship became inactive. If there is no endTime, relationship is active from startTime until the present or any point in the future. If endTime and startTime are set, then endTime must be strictly greater than startTime.
         confidence (float): Confidence value of the existence of this relationship. Generated relationships should provide a realistic score on the likelihood of the existence of the relationship. Relationships without a confidence value can be interpreted at the discretion of each project.
-        data_set_id (Dict[str, Any]): The id or externalId of the dataset this relationship belongs to.
+        data_set_id (int): The id of the dataset this relationship belongs to.
         labels (List[Label]): A list of the labels associated with this resource item.
         created_time (int): Time, in milliseconds since Jan. 1, 1970, when this relationship was created in CDF.
         last_updated_time (int): Time, in milliseconds since Jan. 1, 1970, when this relationship was last updated in CDF.
@@ -33,7 +33,7 @@ class Relationship(CogniteResource):
         start_time: int = None,
         end_time: int = None,
         confidence: float = None,
-        data_set_id: Dict[str, Any] = None,
+        data_set_id: int = None,
         labels: List[Label] = None,
         created_time: int = None,
         last_updated_time: int = None,
@@ -67,14 +67,14 @@ class Relationship(CogniteResource):
 
 
 class RelationshipFilter(CogniteFilter):
-    """Filter on relationships with exact match. Multiple filter elments in one property, e.g. sourceExternalIds: [ "a", "b" ], will return all relationships where the sourceExternalId field is either a or b. Filters in multiple properties will return the relationships that match all criteria. If the filter is not specified it default to an empty filter.
+    """Filter on relationships with exact match. Multiple filter elments in one property, e.g. `sourceExternalIds: [ "a", "b" ]`, will return all relationships where the `sourceExternalId` field is either `a` or `b`. Filters in multiple properties will return the relationships that match all criteria. If the filter is not specified it default to an empty filter.
 
     Args:
-        source_external_ids (List[str]): Include relationships that have any of these values in their source External Id field
-        source_types (List[str]): Include relationships that have any of these values in their source Type field
-        target_external_ids (List[str]): Include relationships that have any of these values in their target External Id field
-        target_types (List[str]): Include relationships that have any of these values in their target Type field
-        data_set_ids (List[Dict[str, Any]]): Either one of internalId (int) or externalId (str)
+        source_external_ids (List[str]): Include relationships that have any of these values in their `sourceExternalId` field
+        source_types (List[str]): Include relationships that have any of these values in their `sourceType` field
+        target_external_ids (List[str]): Include relationships that have any of these values in their `targetExternalId` field
+        target_types (List[str]): Include relationships that have any of these values in their `targetType` field
+        data_set_ids (List[Dict[str, Any]]): Either one of `internalId` (int) or `externalId` (str)
         start_time (Dict[str, int]): Range between two timestamps, minimum and maximum milli seconds (inclusive)
         end_time (Dict[str, int]): Range between two timestamps, minimum and maximum milli seconds (inclusive)
         confidence (Dict[str, int]): Range to filter the field for. (inclusive)

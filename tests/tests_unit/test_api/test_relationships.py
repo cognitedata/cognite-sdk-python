@@ -84,6 +84,7 @@ class TestRelationships:
                 source_external_id="source_ext_id",
                 target_type="asset",
                 target_external_id="bbb",
+                data_set_id=12345,
             )
         )
         assert isinstance(res, Relationship)
