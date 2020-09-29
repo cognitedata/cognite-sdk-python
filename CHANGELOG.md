@@ -16,7 +16,7 @@ Changes are grouped as follows
 
 ## Unreleased
 
-## [2.4.4] - 2020-09-25
+## [2.5.0] - 2020-09-25
 - Add relationships beta support
 
 ## [2.4.3] - 2020-09-18
