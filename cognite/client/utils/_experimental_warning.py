@@ -14,7 +14,7 @@ def experimental_fn(func=None, api_name=None):
             warnings.warn(
                 "\nThe {} API is currently experimental, so this functionality does not adhere to semantic versionining."
                 "\nThis means that this API may be subject to breaking changes even between patch versions."
-                "\nYou should NOT use the {} API in any production code. Consider using the 'beta' client instead.".format(
+              "\nThe experimental client is deprecated and will be removed soon. Consider using the 'beta' client instead.".format(
                     api_name, api_name
                 ),
                 stacklevel=2,
