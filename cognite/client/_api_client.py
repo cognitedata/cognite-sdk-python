@@ -164,6 +164,8 @@ class APIClient:
         headers["accept"] = "application/json"
         headers["x-cdp-sdk"] = "CognitePythonSDK:{}".format(utils._auxiliary.get_current_sdk_version())
         headers["x-cdp-app"] = self._config.client_name
+        if self._api_version == "beta":
+            headers["version"] = "beta"
         if "User-Agent" in headers:
             headers["User-Agent"] += " " + utils._auxiliary.get_user_agent()
         else:
@@ -180,7 +182,10 @@ class APIClient:
         return is_retryable, full_url
 
     def _get_base_url_with_base_path(self) -> str:
-        base_path = "/api/{}/projects/{}".format(self._api_version, self._config.project) if self._api_version else ""
+        api_version = self._api_version
+        if api_version == "beta":
+            api_version = "v1"  # Change the URL path to /v1/ if version is 'beta'
+        base_path = "/api/{}/projects/{}".format(api_version, self._config.project) if api_version else ""
         return urljoin(self._config.base_url, base_path)
 
     def _is_retryable(self, method: str, path: str) -> bool:
