@@ -188,9 +188,9 @@ class TestRelationships:
         assert res is None
 
     def test_advanced_list(self, mock_rel_response):
-        res = REL_API.list(source_types="asset", labels=LabelFilter(contains_any=["label_ext_id"]))
+        res = REL_API.list(source_types=["asset"], labels=LabelFilter(contains_any=["label_ext_id"]))
         assert {
-            "filter": {"sourceTypes": "asset", "labels": {"containsAny": [{"externalId": "label_ext_id"}]}},
+            "filter": {"sourceTypes": ["asset"], "labels": {"containsAny": [{"externalId": "label_ext_id"}]}},
             "limit": 100,
             "cursor": None,
         } == jsgz_load(mock_rel_response.calls[0].request.body)
@@ -198,18 +198,18 @@ class TestRelationships:
 
     def test_source_target_packing(self, mock_rel_response):
         res = REL_API.list(
-            source_types="asset",
-            source_external_ids="bla",
-            target_types="timeseries",
-            target_external_ids="foo",
+            source_types=["asset"],
+            source_external_ids=["bla"],
+            target_types=["timeseries"],
+            target_external_ids=["foo"],
             labels=LabelFilter(contains_any=["belongs_to"]),
         )
         assert {
             "filter": {
-                "sourceTypes": "asset",
-                "sourceExternalIds": "bla",
-                "targetTypes": "timeseries",
-                "targetExternalIds": "foo",
+                "sourceTypes": ["asset"],
+                "sourceExternalIds": ["bla"],
+                "targetTypes": ["timeseries"],
+                "targetExternalIds": ["foo"],
                 "labels": {"containsAny": [{"externalId": "belongs_to"}]},
             },
             "limit": 100,
