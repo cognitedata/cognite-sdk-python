@@ -4,17 +4,8 @@ import re
 
 import pytest
 
-from cognite.client.data_classes import (
-    Asset,
-    Event,
-    FileMetadata,
-    Relationship,
-    RelationshipFilter,
-    RelationshipList,
-    Sequence,
-    TimeSeries,
-)
-from cognite.client.experimental import CogniteClient
+from cognite.client.beta import CogniteClient
+from cognite.client.data_classes import Label, LabelFilter, Relationship, RelationshipList
 from tests.utils import jsgz_load
 
 COGNITE_CLIENT = CogniteClient()
@@ -26,14 +17,18 @@ def mock_rel_response(rsps):
     response_body = {
         "items": [
             {
-                "externalId": "rel-123",
-                "createdTime": 1565965333132,
-                "lastUpdatedTime": 1565965333132,
-                "confidence": 0.99,
-                "dataSet": "testSource",
-                "relationshipType": "flowsTo",
-                "source": {"resourceId": "asset1", "resource": "Asset"},
-                "target": {"resourceId": "asset2", "resource": "Asset"},
+                "externalId": "string",
+                "sourceExternalId": "string",
+                "sourceType": "asset",
+                "targetExternalId": "string",
+                "targetType": "asset",
+                "startTime": 0,
+                "endTime": 0,
+                "confidence": 0,
+                "dataSetId": 1,
+                "createdTime": 0,
+                "lastUpdatedTime": 0,
+                "labels": {"containsAny": [{"string": "string"}]},
             }
         ]
     }
@@ -84,25 +79,29 @@ class TestRelationships:
             Relationship(
                 external_id="1",
                 confidence=0.5,
-                relationship_type="flowsTo",
-                source={"resourceId": "aaa", "resource": "Asset"},
-                target={"resourceId": "bbb", "resource": "Asset"},
+                labels=[Label("belongsTo")],
+                source_type="asset",
+                source_external_id="source_ext_id",
+                target_type="asset",
+                target_external_id="bbb",
+                data_set_id=12345,
             )
         )
         assert isinstance(res, Relationship)
         assert mock_rel_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
     def test_create_single_types(self, mock_rel_response):
-        types = [Asset, TimeSeries, FileMetadata, Event, Sequence]
+        types = ["asset", "timeSeries", "file", "event", "sequence"]
         for cls in types:
-            test = cls(external_id="test")
             res = REL_API.create(
                 Relationship(
                     external_id="1",
                     confidence=0.5,
-                    relationship_type="belongsTo",
-                    source=test,
-                    target={"resourceId": "bbb", "resource": "Asset"},
+                    labels=[Label("belongsTo")],
+                    source_type=cls,
+                    source_external_id="source_ext_id",
+                    target_type="asset",
+                    target_external_id="bbb",
                 )
             )
             assert isinstance(res, Relationship)
@@ -110,31 +109,44 @@ class TestRelationships:
                 Relationship(
                     external_id="1",
                     confidence=0.5,
-                    relationship_type="belongsTo",
-                    source={"resourceId": "bbb", "resource": "Asset"},
-                    target=test,
+                    labels=[Label("belongsTo")],
+                    source_type="asset",
+                    source_external_id="foo",
+                    target_type=cls,
+                    target_external_id="bar",
                 )
             )
             assert isinstance(res, Relationship)
             res = REL_API.create(
-                Relationship(external_id="1", confidence=0.5, relationship_type="belongsTo", source=test, target=test)
+                Relationship(
+                    external_id="1",
+                    confidence=0.5,
+                    labels=[Label("belongsTo")],
+                    source_type=cls,
+                    source_external_id="foo",
+                    target_type=cls,
+                    target_external_id="bar",
+                )
             )
             assert isinstance(res, Relationship)
 
         for call in mock_rel_response.calls:
-            it = json.loads(gzip.decompress(call.request.body).decode("utf-8"))["items"][0]
-            assert isinstance(it["source"], dict)
-            assert isinstance(it["target"], dict)
+            x = json.loads(gzip.decompress(call.request.body).decode("utf-8"))["items"]
+            it = x[0]
+            assert isinstance(it["sourceType"], str)
+            assert isinstance(it["targetType"], str)
 
     def test_create_wrong_type(self, mock_rel_response):
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             REL_API.create(
                 Relationship(
                     external_id="1",
                     confidence=0.5,
-                    relationship_type="belongsTo",
-                    source=Relationship(external_id="a"),
-                    target={"resourceId": "bbb", "resource": "Asset"},
+                    labels=[Label("belongsTo")],
+                    source_type="relationship",
+                    source_external_id="foo",
+                    target_type="asset",
+                    target_external_id="bar",
                 )
             )
 
@@ -142,16 +154,20 @@ class TestRelationships:
         rel1 = Relationship(
             external_id="new1",
             confidence=0.5,
-            relationship_type="flowsTo",
-            source={"resourceId": "aaa", "resource": "Asset"},
-            target={"resourceId": "bbb", "resource": "Asset"},
+            labels=[Label("flowsTo")],
+            source_type="asset",
+            source_external_id="foo",
+            target_type="asset",
+            target_external_id="bar",
         )
         rel2 = Relationship(
             external_id="new2",
             confidence=0.1,
-            relationship_type="flowsTo",
-            source={"resourceId": "aaa", "resource": "Asset"},
-            target={"resourceId": "bbb", "resource": "Asset"},
+            labels=[Label("flowsTo")],
+            source_type="asset",
+            source_external_id="foo",
+            target_type="asset",
+            target_external_id="bar",
         )
         res = REL_API.create([rel1, rel2])
         assert isinstance(res, RelationshipList)
@@ -160,10 +176,6 @@ class TestRelationships:
     def test_iter_single(self, mock_rel_response):
         for rel in REL_API:
             assert mock_rel_response.calls[0].response.json()["items"][0] == rel.dump(camel_case=True)
-
-    def test_iter_chunk(self, mock_rel_response):
-        for rel in REL_API(chunk_size=1, data_set="ds"):
-            assert mock_rel_response.calls[0].response.json()["items"] == rel.dump(camel_case=True)
 
     def test_delete_single(self, mock_rel_response):
         res = REL_API.delete(external_id="a")
@@ -176,42 +188,63 @@ class TestRelationships:
         assert res is None
 
     def test_advanced_list(self, mock_rel_response):
-        res = REL_API.list(source_resource="asset", relationship_type="belongs_to")
+        res = REL_API.list(source_types=["asset"], labels=LabelFilter(contains_any=["label_ext_id"]))
         assert {
-            "filter": {"sources": [{"resource": "asset"}], "relationshipTypes": ["belongs_to"]},
-            "limit": 25,
+            "filter": {"sourceTypes": ["asset"], "labels": {"containsAny": [{"externalId": "label_ext_id"}]}},
+            "limit": 100,
             "cursor": None,
         } == jsgz_load(mock_rel_response.calls[0].request.body)
         assert mock_rel_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
     def test_source_target_packing(self, mock_rel_response):
         res = REL_API.list(
-            source_resource="asset",
-            source_resource_id="bla",
-            target_resource="timeseries",
-            target_resource_id="foo",
-            relationship_type="belongs_to",
+            source_types=["asset"],
+            source_external_ids=["bla"],
+            target_types=["timeseries"],
+            target_external_ids=["foo"],
+            labels=LabelFilter(contains_any=["belongs_to"]),
         )
         assert {
             "filter": {
-                "sources": [{"resource": "asset", "resourceId": "bla"}],
-                "targets": [{"resource": "timeseries", "resourceId": "foo"}],
-                "relationshipTypes": ["belongs_to"],
+                "sourceTypes": ["asset"],
+                "sourceExternalIds": ["bla"],
+                "targetTypes": ["timeseries"],
+                "targetExternalIds": ["foo"],
+                "labels": {"containsAny": [{"externalId": "belongs_to"}]},
             },
-            "limit": 25,
+            "limit": 100,
             "cursor": None,
         } == jsgz_load(mock_rel_response.calls[0].request.body)
         assert mock_rel_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
     def test_multi_source_target_list(self, mock_rel_response):
-        sources = [{"resource": "Asset", "resourceId": "abc"}, {"resource": "Asset", "resourceId": "def"}]
-        targets = [{"resource": "TimeSeries", "resourceId": "abc"}, {"resource": "TimeSeries", "resourceId": "def"}]
-        types = ["t1", "t2"]
-        sets = ["s1", "s1"]
-        res = REL_API.list(sources=sources, targets=targets, data_set=sets, relationship_type=types)
+        source_external_ids = ["source1", "source2"]
+        source_types = ["asset", "asset"]
+        target_external_ids = ["target1", "target2"]
+        target_types = ["event", "event"]
+        data_set_ids = [{"id": 1234}, {"externalId": "test_dataSet_id"}]
+        created_time = 1565965333132
+        last_updated_time = 1565965333132
+        res = REL_API.list(
+            source_external_ids=source_external_ids,
+            source_types=source_types,
+            target_external_ids=target_external_ids,
+            target_types=target_types,
+            data_set_ids=data_set_ids,
+            created_time=created_time,
+            last_updated_time=last_updated_time,
+        )
         assert {
-            "filter": {"sources": sources, "targets": targets, "relationshipTypes": types, "dataSets": sets},
-            "limit": 25,
+            "filter": {
+                "createdTime": created_time,
+                "lastUpdatedTime": last_updated_time,
+                "sourceTypes": source_types,
+                "sourceExternalIds": source_external_ids,
+                "targetTypes": target_types,
+                "targetExternalIds": target_external_ids,
+                "dataSetIds": data_set_ids,
+            },
+            "limit": 100,
             "cursor": None,
         } == jsgz_load(mock_rel_response.calls[0].request.body)
         assert mock_rel_response.calls[0].response.json()["items"] == res.dump(camel_case=True)

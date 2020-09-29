@@ -72,8 +72,8 @@ def mock_cognite_client():
 
 
 @pytest.fixture
-def mock_cognite_experimental_client(mock_cognite_client):
-    with mock.patch("cognite.client.experimental.CogniteClient") as client_mock:
+def mock_cognite_beta_client(mock_cognite_client):
+    with mock.patch("cognite.client.beta.CogniteClient") as client_mock:
         cog_client_mock = mock.MagicMock(spec=CogniteClient)
         cog_client_mock.assets = mock.MagicMock(spec=AssetsAPI)
         cog_client_mock.relationships = mock.MagicMock(spec=RelationshipsAPI)

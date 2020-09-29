@@ -68,7 +68,7 @@ class TestDocstringExamples:
         run_docstring_tests(sequences)
 
 
-@pytest.mark.usefixtures("mock_cognite_experimental_client")
-class TestDocstringExamplesExperimental:
+@pytest.mark.usefixtures("mock_cognite_beta_client")
+class TestDocstringExamplesBeta:
     def test_relationships(self):
         run_docstring_tests(relationships)
