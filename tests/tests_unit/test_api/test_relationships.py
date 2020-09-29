@@ -132,7 +132,6 @@ class TestRelationships:
 
         for call in mock_rel_response.calls:
             x = json.loads(gzip.decompress(call.request.body).decode("utf-8"))["items"]
-            print(x)
             it = x[0]
             assert isinstance(it["sourceType"], str)
             assert isinstance(it["targetType"], str)
