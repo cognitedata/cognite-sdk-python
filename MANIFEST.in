@@ -1,1 +1,1 @@
-recursive-include cognite *.py
+recursive-include cognite *.py py.typed
