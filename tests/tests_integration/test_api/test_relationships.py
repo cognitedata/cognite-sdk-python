@@ -56,7 +56,7 @@ def create_multiple_relationships(new_label):
     ext_id = new_label.external_id
     relationships_ext_id = [uuid.uuid4().hex[0:20] for i in range(5)]
     random_ext_id = [uuid.uuid4().hex[0:20] for i in range(5)]
-    relationshipList = [
+    relationship_list = [
         Relationship(
             external_id=relationships_ext_id[0],
             source_type="asset",
@@ -71,6 +71,7 @@ def create_multiple_relationships(new_label):
             source_external_id=random_ext_id[3],
             target_type="asset",
             target_external_id=random_ext_id[2],
+            confidence=1,
         ),
         Relationship(
             external_id=relationships_ext_id[2],
@@ -94,10 +95,12 @@ def create_multiple_relationships(new_label):
             source_external_id=random_ext_id[4],
             target_type="file",
             target_external_id=random_ext_id[0],
+            confidence=1,
         ),
     ]
-    relationships = API_REL.create(relationshipList)
-    yield relationships, ext_id, random_ext_id[3]
+    relationships = API_REL.create(relationship_list)
+    assert isinstance(relationships, RelationshipList)
+    yield relationships_ext_id, ext_id, random_ext_id
     API_REL.delete(external_id=[ext_ids["external_id"] for ext_ids in relationships.dump()])
 
 
@@ -107,19 +110,19 @@ class TestRelationshipsAPI:
         assert isinstance(res, Relationship)
         assert res.dump()["confidence"] == 1
 
-    def test_create_multiple(self, create_multiple_relationships):
-        relationships, ext_id, source_ext_id = create_multiple_relationships
-        assert isinstance(relationships, RelationshipList)
-
     def test_retrieve_unknown(self, new_relationship):
         with pytest.raises(CogniteNotFoundError):
             API_REL.retrieve_multiple(external_ids=["this does not exist"])
         assert API_REL.retrieve(external_id="this does not exist") is None
 
     def test_list_filter(self, create_multiple_relationships):
-        relationships, ext_id, source_ext_id = create_multiple_relationships
-        res = API_REL.list(source_external_ids=[source_ext_id])
+        relationships_ext_ids, ext_id, source_ext_id = create_multiple_relationships
+        res = API_REL.list(source_external_ids=[source_ext_id[3]])
+        res2 = API_REL.list(confidence={"min": 1, "max": 1})
         assert len(res) == 2
+        assert len(res2) == 2
+        assert res2[0].external_id == relationships_ext_ids[1]
+        assert res2[1].external_id == relationships_ext_ids[4]
         assert isinstance(res, RelationshipList)
 
     def test_list_label_filter(self, create_multiple_relationships):
