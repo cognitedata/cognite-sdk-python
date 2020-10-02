@@ -17,16 +17,19 @@ API_REL = CogniteClient().relationships
 
 
 @pytest.fixture
-def new_relationship():
+def new_relationship(new_label):
     external_id = uuid.uuid4().hex[0:20]
+    pre_existing_data_set = 3603480159997264
     relationship = API_REL.create(
         Relationship(
             external_id=external_id,
             source_external_id="source_ext_id",
             source_type="asset",
             target_external_id="target_ext_id",
+            data_set_id=pre_existing_data_set,
             target_type="event",
-            confidence=0.9,
+            labels=[Label(new_label.external_id)],
+            confidence=1,
         )
     )
     yield relationship
@@ -100,7 +103,7 @@ class TestRelationshipsAPI:
     def test_get_single(self, new_relationship):
         res = API_REL.retrieve(external_id=new_relationship.external_id)
         assert isinstance(res, Relationship)
-        assert res.dump()["confidence"] == 0.9
+        assert res.dump()["confidence"] == 1
 
     def test_create_multiple(self, create_multiple_relationships):
         relationships, ext_id, source_ext_id = create_multiple_relationships
