@@ -15,7 +15,9 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 ## [2.5.0] - 2020-09-25
-- Add relationships beta support
+
+### Added
+- Relationships beta support
 
 ## [2.4.3] - 2020-09-18
 - Increase raw rows list limit to 10,000
