@@ -14,8 +14,6 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## Unreleased
-
 ## [2.5.0] - 2020-09-25
 - Add relationships beta support
 
