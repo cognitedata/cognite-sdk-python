@@ -14,6 +14,15 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+
+## [2.5.2] - 2020-10-06
+
+### Fixed
+- `labels` in FileMetadata is not cast correctly to a list of `Label` objects.
+
+## [2.5.1] - 2020-10-01
+- Include `py.typed` file in sdk distribution
+
 ## [2.5.0] - 2020-09-25
 
 ### Added

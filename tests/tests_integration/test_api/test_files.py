@@ -1,9 +1,10 @@
 import time
+import uuid
 
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import FileMetadata, FileMetadataFilter, FileMetadataUpdate
+from cognite.client.data_classes import FileMetadata, FileMetadataFilter, FileMetadataUpdate, Label, LabelDefinition
 
 COGNITE_CLIENT = CogniteClient()
 
@@ -18,6 +19,23 @@ def new_file():
     yield res
     COGNITE_CLIENT.files.delete(id=res.id)
     assert COGNITE_CLIENT.files.retrieve(id=res.id) is None
+
+
+@pytest.fixture(scope="class")
+def new_file_with_label():
+    label_external_id = uuid.uuid4().hex[0:20]
+    label = COGNITE_CLIENT.labels.create(LabelDefinition(external_id=label_external_id, name="mandatory"))
+    file = COGNITE_CLIENT.files.upload_bytes(
+        content="blabla", name="myspecialfile", labels=[Label(external_id=label_external_id)]
+    )
+    while True:
+        if COGNITE_CLIENT.files.retrieve(id=file.id).uploaded:
+            break
+        time.sleep(0.5)
+    yield file, label.external_id
+    COGNITE_CLIENT.files.delete(id=file.id)
+    COGNITE_CLIENT.labels.delete(external_id=label_external_id)
+    assert COGNITE_CLIENT.files.retrieve(id=file.id) is None
 
 
 @pytest.fixture(scope="class")
@@ -76,3 +94,9 @@ class TestFilesAPI:
 
     def test_download_new_file(self, new_file):
         assert b"blabla" == COGNITE_CLIENT.files.download_bytes(id=new_file.id)
+
+    def test_retrieve_file_with_labels(self, new_file_with_label):
+        file, label_external_id = new_file_with_label
+        res = COGNITE_CLIENT.files.retrieve(id=file.id)
+        assert len(res.labels) == 1
+        assert res.labels[0].external_id == label_external_id

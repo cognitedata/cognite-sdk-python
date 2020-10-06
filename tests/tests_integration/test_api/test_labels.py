@@ -3,18 +3,9 @@ from unittest import mock
 
 import pytest
 
-import cognite.client.utils._time
-from cognite.client.utils._auxiliary import random_string
 from cognite.client import CogniteClient
-from cognite.client.data_classes import (
-    Asset,
-    AssetUpdate,
-    LabelDefinition,
-    LabelDefinitionFilter,
-    LabelDefinitionList,
-    Label,
-)
-from tests.utils import set_request_limit
+from cognite.client.data_classes import Asset, AssetUpdate, Label, LabelDefinition
+from cognite.client.utils._auxiliary import random_string
 
 COGNITE_CLIENT = CogniteClient()
 
