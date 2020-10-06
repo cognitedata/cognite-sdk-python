@@ -16,7 +16,9 @@ Changes are grouped as follows
 
 
 ## [2.5.2] - 2020-10-06
-- Fixed a bug where `labels` in FileMetadata is not cast correctly to a list of `Label` objects.
+
+### Fixed
+- `labels` in FileMetadata is not cast correctly to a list of `Label` objects.
 
 ## [2.5.1] - 2020-10-01
 - Include `py.typed` file in sdk distribution
