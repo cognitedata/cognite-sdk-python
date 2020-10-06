@@ -1,4 +1,5 @@
 import time
+import uuid
 
 import pytest
 
@@ -22,7 +23,7 @@ def new_file():
 
 @pytest.fixture(scope="class")
 def new_file_with_label():
-    label_external_id = "my_test_label"
+    label_external_id = uuid.uuid4().hex[0:20]
     COGNITE_CLIENT.labels.create(LabelDefinition(external_id=label_external_id, name="mandatory"))
     file = COGNITE_CLIENT.files.upload_bytes(
         content="blabla", name="myspecialfile", labels=[Label(external_id=label_external_id)]
