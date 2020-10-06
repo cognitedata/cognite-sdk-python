@@ -72,6 +72,13 @@ class FileMetadata(CogniteResource):
         self.last_updated_time = last_updated_time
         self._cognite_client = cognite_client
 
+    @classmethod
+    def _load(cls, resource: Union[Dict, str], cognite_client=None):
+        instance = super(FileMetadata, cls)._load(resource, cognite_client)
+        if instance.labels is not None:
+            instance.labels = [Label._load(label) for label in instance.labels]
+        return instance
+
 
 class FileMetadataFilter(CogniteFilter):
     """No description.
