@@ -383,7 +383,9 @@ class DatapointsAPI(APIClient):
             external_id = range.get("externalId")
             utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
             valid_range = self._process_ids(id, external_id, wrap_ids=True)[0]
-            valid_range.update({"inclusiveBegin": range["start"], "exclusiveEnd": range["end"]})
+            start = utils._time.timestamp_to_ms(range["start"])
+            end = utils._time.timestamp_to_ms(range["end"])
+            valid_range.update({"inclusiveBegin": start, "exclusiveEnd": end})
             valid_ranges.append(valid_range)
         self._delete_datapoints_ranges(valid_ranges)
 
