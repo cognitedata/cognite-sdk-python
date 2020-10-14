@@ -15,6 +15,11 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 
+## [2.5.3] - 2020-10-14
+
+### Fixed
+- `delete_ranges` didn't cast string timestamp into number properly.
+
 ## [2.5.2] - 2020-10-06
 
 ### Fixed
@@ -26,7 +31,10 @@ Changes are grouped as follows
 ## [2.5.0] - 2020-09-25
 
 ### Added
-- Relationships beta support
+- Relationships beta support.
+
+### Removed
+- Experimental Model Hosting client.
 
 ## [2.4.3] - 2020-09-18
 - Increase raw rows list limit to 10,000

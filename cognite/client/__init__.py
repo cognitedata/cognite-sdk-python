@@ -1,3 +1,3 @@
 from cognite.client._cognite_client import CogniteClient
 
-__version__ = "2.5.2"
+__version__ = "2.5.3"
