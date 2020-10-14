@@ -357,7 +357,7 @@ class DatapointsAPI(APIClient):
         """`Delete a range of datapoints from multiple time series. <https://docs.cognite.com/api/v1/#operation/deleteDatapoints>`_
 
         Args:
-            ranges (List[Dict[str, Any]]): The ids an ranges to delete. See examples below.
+            ranges (List[Dict[str, Any]]): The list of datapoint ids along with time range to delete. See examples below.
 
         Returns:
             None
