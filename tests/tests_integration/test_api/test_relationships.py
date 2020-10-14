@@ -118,11 +118,7 @@ class TestRelationshipsAPI:
     def test_list_filter(self, create_multiple_relationships):
         relationships_ext_ids, ext_id, source_ext_id = create_multiple_relationships
         res = API_REL.list(source_external_ids=[source_ext_id[3]])
-        res2 = API_REL.list(confidence={"min": 1, "max": 1})
         assert len(res) == 2
-        assert len(res2) == 2
-        assert res2[0].external_id == relationships_ext_ids[1]
-        assert res2[1].external_id == relationships_ext_ids[4]
         assert isinstance(res, RelationshipList)
 
     def test_list_label_filter(self, create_multiple_relationships):

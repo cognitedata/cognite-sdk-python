@@ -357,7 +357,7 @@ class DatapointsAPI(APIClient):
         """`Delete a range of datapoints from multiple time series. <https://docs.cognite.com/api/v1/#operation/deleteDatapoints>`_
 
         Args:
-            ranges (List[Dict[str, Any]]): The ids an ranges to delete. See examples below.
+            ranges (List[Dict[str, Any]]): The list of datapoint ids along with time range to delete. See examples below.
 
         Returns:
             None
@@ -383,7 +383,9 @@ class DatapointsAPI(APIClient):
             external_id = range.get("externalId")
             utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
             valid_range = self._process_ids(id, external_id, wrap_ids=True)[0]
-            valid_range.update({"inclusiveBegin": range["start"], "exclusiveEnd": range["end"]})
+            start = utils._time.timestamp_to_ms(range["start"])
+            end = utils._time.timestamp_to_ms(range["end"])
+            valid_range.update({"inclusiveBegin": start, "exclusiveEnd": end})
             valid_ranges.append(valid_range)
         self._delete_datapoints_ranges(valid_ranges)
 

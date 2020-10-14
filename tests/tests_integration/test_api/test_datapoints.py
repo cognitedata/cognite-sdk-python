@@ -276,6 +276,9 @@ class TestDatapointsAPI:
     def test_delete_range(self, new_ts):
         COGNITE_CLIENT.datapoints.delete_range(start="2d-ago", end="now", id=new_ts.id)
 
+    def test_delete_ranges(self, new_ts):
+        COGNITE_CLIENT.datapoints.delete_ranges([{"start": "2d-ago", "end": "now", "id": new_ts.id}])
+
     def test_retrieve_dataframe_dict(self, test_time_series):
 
         dfd = COGNITE_CLIENT.datapoints.retrieve_dataframe_dict(
