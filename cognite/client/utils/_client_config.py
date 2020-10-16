@@ -81,7 +81,12 @@ class ClientConfig(_DefaultConfig):
         )
 
         if self.api_key is None and self.token is None:
-            raise CogniteAPIKeyError("No API key or token has been specified")
+            # If no api_key or token is present; but azure native token related environment vars are set, attempt to generate an azure native token
+            if utils._azure_token_generation._azure_environment_vars_set():
+                self.token = utils._azure_token_generation._generate_access_token()
+
+            if self.token is None:
+                raise CogniteAPIKeyError("No API key or token has been specified")
 
         if self.client_name is None:
             raise ValueError(

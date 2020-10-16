@@ -9,6 +9,7 @@ requests = "*"
 pytest = "<5"
 sympy = "*"
 docutils = "==0.15.2"
+msal = "==1.5.0"
 
 [dev-packages]
 sphinx = "*"

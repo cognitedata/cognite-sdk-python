@@ -66,6 +66,27 @@ def environment_client_config():
         del os.environ["COGNITE_PROJECT"]
 
 
+@pytest.fixture
+def azure_environment_config():
+    azure_api_client_id = "azure-client-id"
+    azure_api_client_secret = "azure-client-secret"
+    oidc_authority = "oidc-authrity"
+
+    tmp_azure_api_client_id = os.environ["AZURE_API_CLIENT_ID"]
+    tmp_azure_api_client_secret = os.environ["AZURE_API_CLIENT_SECRET"]
+    tmp_oidc_authority = os.environ["OIDC_AUTHORITY"]
+
+    os.environ["AZURE_API_CLIENT_ID"] = azure_api_client_id
+    os.environ["AZURE_API_CLIENT_SECRET"] = azure_api_client_secret
+    os.environ["OIDC_AUTHORITY"] = oidc_authority
+
+    yield azure_api_client_id, azure_api_client_secret, oidc_authority
+
+    os.environ["AZURE_API_CLIENT_ID"] = tmp_azure_api_client_id
+    os.environ["AZURE_API_CLIENT_SECRET"] = tmp_azure_api_client_secret
+    os.environ["OIDC_AUTHORITY"] = tmp_oidc_authority
+
+
 class TestCogniteClient:
     def test_project_is_correct(self, rsps_with_login_mock):
         with unset_env_var("COGNITE_PROJECT"):
@@ -73,7 +94,7 @@ class TestCogniteClient:
         assert c.config.project == "test"
 
     def test_no_api_key_set(self):
-        with unset_env_var("COGNITE_API_KEY"):
+        with unset_env_var(["COGNITE_API_KEY", "OIDC_AUTHORITY"]):
             with pytest.raises(CogniteAPIKeyError, match="No API key or token has been specified"):
                 CogniteClient()
 
@@ -86,6 +107,14 @@ class TestCogniteClient:
         with unset_env_var("COGNITE_API_KEY"):
             c = CogniteClient(token="abc")
         assert c.config.token == "abc"
+
+    @patch("cognite.client.utils._azure_token_generation")
+    def test_azure_token_creation(self, mock_azure_token_generator, azure_environment_config):
+        mock_azure_token_generator._azure_environment_vars_set.return_value = True
+        mock_azure_token_generator._generate_access_token.return_value = "azure-token"
+        with unset_env_var("COGNITE_API_KEY"):
+            c = CogniteClient()
+        assert c.config.token == "azure-token"
 
     def test_token_factory_set_no_api_key_and_no_project(self, rsps_with_login_mock):
         with unset_env_var(["COGNITE_API_KEY", "COGNITE_PROJECT"]):
