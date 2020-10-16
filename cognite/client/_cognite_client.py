@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from cognite.client import utils
 from cognite.client._api.assets import AssetsAPI
@@ -8,12 +8,12 @@ from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api.events import EventsAPI
 from cognite.client._api.files import FilesAPI
 from cognite.client._api.iam import IAMAPI
+from cognite.client._api.labels import LabelsAPI
 from cognite.client._api.login import LoginAPI
 from cognite.client._api.raw import RawAPI
 from cognite.client._api.sequences import SequencesAPI
 from cognite.client._api.three_d import ThreeDAPI
 from cognite.client._api.time_series import TimeSeriesAPI
-from cognite.client._api.labels import LabelsAPI
 from cognite.client._api_client import APIClient
 from cognite.client.exceptions import CogniteAPIKeyError
 from cognite.client.utils._client_config import ClientConfig
@@ -35,6 +35,14 @@ class CogniteClient:
         timeout (int): Timeout on requests sent to the api. Defaults to 30 seconds.
         token (Union[str, Callable[[], str]]): A jwt or method which takes no arguments and returns a jwt to use for authentication.
             This will override any api-key set.
+        token_url (str): Optional url to use for token generation.
+            This will override the COGNITE_TOKEN_URL environment variable and only be used if both api-key and token are not set.
+        token_client_id (str): Optional client id to use for token generation.
+            This will override the COGNITE_CLIENT_ID environment variable and only be used if both api-key and token are not set.
+        token_client_secret (str): Optional client secret to use for token generation.
+            This will override the COGNITE_CLIENT_SECRET environment variable and only be used if both api-key and token are not set.
+        token_scopes (list): Optional list fo scopes to use for token generation.
+            This will override the COGNITE_TOKEN_SCOPES environment variable and only be used if both api-key and token are not set.
         disable_pypi_version_check (bool): Don't check for newer versions of the SDK on client creation
         debug (bool): Configures logger to log extra request details to stderr.
     """
@@ -51,6 +59,10 @@ class CogniteClient:
         headers: Dict[str, str] = None,
         timeout: int = None,
         token: Union[str, Callable[[], str], None] = None,
+        token_url: str = None,
+        token_client_id: str = None,
+        token_client_secret: str = None,
+        token_scopes: List[str] = None,
         disable_pypi_version_check: Optional[bool] = None,
         debug: bool = False,
     ):
@@ -63,6 +75,10 @@ class CogniteClient:
             headers=headers,
             timeout=timeout,
             token=token,
+            token_url=token_url,
+            token_client_id=token_client_id,
+            token_client_secret=token_client_secret,
+            token_scopes=token_scopes,
             disable_pypi_version_check=disable_pypi_version_check,
             debug=debug,
         )
