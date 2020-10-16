@@ -81,7 +81,13 @@ class ClientConfig(_DefaultConfig):
         )
 
         if self.api_key is None and self.token is None:
-            raise CogniteAPIKeyError("No API key or token has been specified")
+            # If no api_key or token is present; but token generation env vars are set, create a token generator
+            if utils._token_generator.TokenGenerator.environment_vars_set():
+                token_generator = utils._token_generator.TokenGenerator()
+                self.token = lambda: token_generator.return_access_token()
+
+            if self.token is None:
+                raise CogniteAPIKeyError("No API key or token has been specified")
 
         if self.client_name is None:
             raise ValueError(
