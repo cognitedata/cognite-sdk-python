@@ -138,7 +138,7 @@ class TestFilesAPI:
 
     def test_filter_file_on_geoLocation(self, new_file_with_geoLocation, mock_geo_location):
         file = new_file_with_geoLocation
-        time.sleep(0.2)  # allow time for the file to be created
+        time.sleep(0.5)  # allow time for the file to be created
         geometry_filter = GeometryFilter(type="Point", coordinates=[30, 10])
         geo_location_filter = GeoLocationFilter(relation="intersects", shape=geometry_filter)
         res = COGNITE_CLIENT.files.list(geo_location=geo_location_filter)
