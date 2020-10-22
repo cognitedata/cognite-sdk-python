@@ -138,7 +138,6 @@ class TestFilesAPI:
 
     def test_filter_file_on_geoLocation(self, new_file_with_geoLocation, mock_geo_location):
         max_retries = 10
-        file = new_file_with_geoLocation
         geometry_filter = GeometryFilter(type="Point", coordinates=[30, 10])
         geo_location_filter = GeoLocationFilter(relation="intersects", shape=geometry_filter)
         res = COGNITE_CLIENT.files.list(geo_location=geo_location_filter)
@@ -147,4 +146,4 @@ class TestFilesAPI:
                 break
             time.sleep(0.2)
             res = COGNITE_CLIENT.files.list(geo_location=geo_location_filter)
-        assert res[0].geo_location == file.geo_location
+        assert res[0].geo_location == new_file_with_geoLocation.geo_location
