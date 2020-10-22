@@ -3,7 +3,7 @@ from typing import Dict, List
 
 from cognite.client.data_classes._base import *
 from cognite.client.data_classes.labels import Label, LabelFilter
-from cognite.client.data_classes.shared import TimestampRange
+from cognite.client.data_classes.shared import GeoLocation, GeoLocationFilter, Geometry, GeometryFilter, TimestampRange
 
 
 class FileMetadata(CogniteResource):
@@ -19,6 +19,7 @@ class FileMetadata(CogniteResource):
         asset_ids (List[int]): No description.
         data_set_id (int): The dataSet Id for the item.
         labels (List[Label]): A list of the labels associated with this resource item.
+        geo_location (GeoLocation): The geographic metadata of the file.
         source_created_time (int): The timestamp for when the file was originally created in the source system.
         source_modified_time (int): The timestamp for when the file was last modified in the source system.
         security_categories (List[int]): The security category IDs required to access this file.
@@ -41,6 +42,7 @@ class FileMetadata(CogniteResource):
         asset_ids: List[int] = None,
         data_set_id: int = None,
         labels: List[Label] = None,
+        geo_location: GeoLocation = None,
         source_created_time: int = None,
         source_modified_time: int = None,
         security_categories: List[int] = None,
@@ -53,6 +55,8 @@ class FileMetadata(CogniteResource):
     ):
         if labels is not None and len(labels) > 0 and not all(isinstance(l, Label) for l in labels):
             raise TypeError("FileMetadata.labels should be of type List[Label]")
+        if geo_location is not None and not isinstance(geo_location, GeoLocation):
+            raise TypeError("FileMetadata.geo_location should be of type GeoLocation")
         self.external_id = external_id
         self.name = name
         self.directory = directory
@@ -62,6 +66,7 @@ class FileMetadata(CogniteResource):
         self.asset_ids = asset_ids
         self.data_set_id = data_set_id
         self.labels = labels
+        self.geo_location = geo_location
         self.source_created_time = source_created_time
         self.source_modified_time = source_modified_time
         self.security_categories = security_categories
@@ -77,6 +82,8 @@ class FileMetadata(CogniteResource):
         instance = super(FileMetadata, cls)._load(resource, cognite_client)
         if instance.labels is not None:
             instance.labels = [Label._load(label) for label in instance.labels]
+        if instance.geo_location is not None:
+            instance.geo_location = GeoLocation._load(instance.geo_location)
         return instance
 
 
@@ -92,6 +99,7 @@ class FileMetadataFilter(CogniteFilter):
         root_asset_ids (List[Dict[str, Any]]): Only include files that have a related asset in a tree rooted at any of these root assetIds.
         data_set_ids (List[Dict[str, Any]]): Only include files that belong to these datasets.
         labels (LabelFilter): Return only the files matching the specified label(s).
+        geo_location (GeoLocationFilter): Only include files matching the specified geographic relation.
         asset_subtree_ids (List[Dict[str, Any]]): Only include files that have a related asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
         source (str): The source of this event.
         created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
@@ -115,6 +123,7 @@ class FileMetadataFilter(CogniteFilter):
         root_asset_ids: List[Dict[str, Any]] = None,
         data_set_ids: List[Dict[str, Any]] = None,
         labels: LabelFilter = None,
+        geo_location: GeoLocationFilter = None,
         asset_subtree_ids: List[Dict[str, Any]] = None,
         source: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
@@ -135,6 +144,7 @@ class FileMetadataFilter(CogniteFilter):
         self.root_asset_ids = root_asset_ids
         self.data_set_ids = data_set_ids
         self.labels = labels
+        self.geo_location = geo_location
         self.asset_subtree_ids = asset_subtree_ids
         self.source = source
         self.created_time = created_time
@@ -149,6 +159,8 @@ class FileMetadataFilter(CogniteFilter):
 
         if labels is not None and not isinstance(labels, LabelFilter):
             raise TypeError("FileMetadataFilter.labels must be of type LabelFilter")
+        if geo_location is not None and not isinstance(geo_location, GeoLocationFilter):
+            raise TypeError("FileMetadata.geo_location should be of type GeoLocationFilter")
 
     @classmethod
     def _load(cls, resource: Union[Dict, str], cognite_client=None):
@@ -162,12 +174,16 @@ class FileMetadataFilter(CogniteFilter):
                 instance.uploaded_time = TimestampRange(**instance.uploaded_time)
             if instance.labels is not None:
                 instance.labels = [Label._load(label) for label in instance.labels]
+            if instance.geo_location is not None:
+                instance.geo_location = GeoLocationFilter._load(**instance.geo_location)
         return instance
 
     def dump(self, camel_case: bool = False):
         result = super(FileMetadataFilter, self).dump(camel_case)
         if isinstance(self.labels, LabelFilter):
             result["labels"] = self.labels.dump(camel_case)
+        if isinstance(self.geo_location, GeoLocationFilter):
+            result["geoLocation"] = self.geo_location.dump(camel_case)
         return result
 
 
@@ -247,6 +263,10 @@ class FileMetadataUpdate(CogniteUpdate):
     @property
     def labels(self):
         return FileMetadataUpdate._LabelFileMetadataUpdate(self, "labels")
+
+    @property
+    def geoLocation(self):
+        return FileMetadataUpdate._PrimitiveFileMetadataUpdate(self, "geoLocation")
 
     @property
     def security_categories(self):

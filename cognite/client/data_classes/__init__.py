@@ -28,6 +28,13 @@ from cognite.client.data_classes.iam import (
     ServiceAccount,
     ServiceAccountList,
 )
+from cognite.client.data_classes.labels import (
+    Label,
+    LabelDefinition,
+    LabelDefinitionFilter,
+    LabelDefinitionList,
+    LabelFilter,
+)
 from cognite.client.data_classes.login import LoginStatus
 from cognite.client.data_classes.raw import Database, DatabaseList, Row, RowList, Table, TableList
 from cognite.client.data_classes.relationships import Relationship, RelationshipFilter, RelationshipList
@@ -40,7 +47,15 @@ from cognite.client.data_classes.sequences import (
     SequenceList,
     SequenceUpdate,
 )
-from cognite.client.data_classes.shared import TimestampRange, AggregateResult, AggregateUniqueValuesResult
+from cognite.client.data_classes.shared import (
+    AggregateResult,
+    AggregateUniqueValuesResult,
+    GeoLocation,
+    GeoLocationFilter,
+    Geometry,
+    GeometryFilter,
+    TimestampRange,
+)
 from cognite.client.data_classes.three_d import (
     BoundingBox3D,
     RevisionCameraProperties,
@@ -61,11 +76,4 @@ from cognite.client.data_classes.time_series import (
     TimeSeriesFilter,
     TimeSeriesList,
     TimeSeriesUpdate,
-)
-from cognite.client.data_classes.labels import (
-    LabelDefinition,
-    LabelDefinitionFilter,
-    LabelDefinitionList,
-    Label,
-    LabelFilter,
 )

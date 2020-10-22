@@ -4,14 +4,42 @@ import uuid
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import FileMetadata, FileMetadataFilter, FileMetadataUpdate, Label, LabelDefinition
+from cognite.client.data_classes import (
+    FileMetadata,
+    FileMetadataFilter,
+    FileMetadataUpdate,
+    GeoLocation,
+    GeoLocationFilter,
+    Geometry,
+    GeometryFilter,
+    Label,
+    LabelDefinition,
+)
 
 COGNITE_CLIENT = CogniteClient()
 
 
 @pytest.fixture(scope="class")
+def mock_geo_location():
+    geometry = Geometry(type="LineString", coordinates=[[30, 10], [10, 30], [40, 40]])
+    yield GeoLocation(type="Feature", geometry=geometry, properties=dict())
+
+
+@pytest.fixture(scope="class")
 def new_file():
     res = COGNITE_CLIENT.files.upload_bytes(content="blabla", name="myspecialfile")
+    while True:
+        if COGNITE_CLIENT.files.retrieve(id=res.id).uploaded:
+            break
+        time.sleep(0.5)
+    yield res
+    COGNITE_CLIENT.files.delete(id=res.id)
+    assert COGNITE_CLIENT.files.retrieve(id=res.id) is None
+
+
+@pytest.fixture(scope="class")
+def new_file_with_geoLocation(mock_geo_location):
+    res = COGNITE_CLIENT.files.upload_bytes(content="blabla", name="geoLocationFile", geo_location=mock_geo_location)
     while True:
         if COGNITE_CLIENT.files.retrieve(id=res.id).uploaded:
             break
@@ -57,6 +85,13 @@ class TestFilesAPI:
         assert returned_file_metadata.uploaded is False
         COGNITE_CLIENT.files.delete(id=returned_file_metadata.id)
 
+    def test_create_with_geoLocation(self, mock_geo_location):
+        file_metadata = FileMetadata(name="mytestfile", geo_location=mock_geo_location)
+        returned_file_metadata, upload_url = COGNITE_CLIENT.files.create(file_metadata)
+        assert returned_file_metadata.uploaded is False
+        assert returned_file_metadata.geo_location == mock_geo_location
+        COGNITE_CLIENT.files.delete(id=returned_file_metadata.id)
+
     def test_retrieve(self):
         res = COGNITE_CLIENT.files.list(name="big.txt", limit=1)
         assert res[0] == COGNITE_CLIENT.files.retrieve(res[0].id)
@@ -100,3 +135,12 @@ class TestFilesAPI:
         res = COGNITE_CLIENT.files.retrieve(id=file.id)
         assert len(res.labels) == 1
         assert res.labels[0].external_id == label_external_id
+
+    def test_filter_file_on_geoLocation(self, new_file_with_geoLocation, mock_geo_location):
+        file = new_file_with_geoLocation
+        time.sleep(0.2)  # allow time for the file to be created
+        geometry_filter = GeometryFilter(type="Point", coordinates=[30, 10])
+        geo_location_filter = GeoLocationFilter(relation="intersects", shape=geometry_filter)
+        res = COGNITE_CLIENT.files.list(geo_location=geo_location_filter)
+        assert len(res) == 1
+        assert res[0].geo_location == file.geo_location
