@@ -137,10 +137,14 @@ class TestFilesAPI:
         assert res.labels[0].external_id == label_external_id
 
     def test_filter_file_on_geoLocation(self, new_file_with_geoLocation, mock_geo_location):
+        max_retries = 10
         file = new_file_with_geoLocation
-        time.sleep(0.5)  # allow time for the file to be created
         geometry_filter = GeometryFilter(type="Point", coordinates=[30, 10])
         geo_location_filter = GeoLocationFilter(relation="intersects", shape=geometry_filter)
         res = COGNITE_CLIENT.files.list(geo_location=geo_location_filter)
-        assert len(res) == 1
+        for _ in range(max_retries):
+            if len(res) > 0:
+                break
+            time.sleep(0.2)
+            res = COGNITE_CLIENT.files.list(geo_location=geo_location_filter)
         assert res[0].geo_location == file.geo_location
