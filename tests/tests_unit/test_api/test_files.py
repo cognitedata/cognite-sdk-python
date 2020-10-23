@@ -196,6 +196,15 @@ class TestFilesAPI:
         assert FileMetadata._load(response_body) == returned_file_metadata
         assert response_body["geoLocation"] == mock_geo_location
 
+    def test_create_geoLocation_with_invalid_geometry_type(self):
+        with pytest.raises(ValueError):
+            _ = Geometry(type="someInvalidType", coordinates=[1, 2])
+
+    def test_create_geoLocation_with_invalid_geojson_type(self):
+        g = Geometry(type="Point", coordinates=[1, 2])
+        with pytest.raises(ValueError):
+            _ = GeoLocation(type="FeatureCollection", geometry=g)
+
     def test_create_with_geoLocation_request(self, mock_file_create_response, mock_geo_location):
         file_metadata = FileMetadata(name="bla", geo_location=mock_geo_location)
         returned_file_metadata, upload_url = FILES_API.create(file_metadata)

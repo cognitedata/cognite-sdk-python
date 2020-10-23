@@ -9,11 +9,14 @@ from cognite.client.data_classes.shared import TimestampRange
 class Geometry(dict):
     """Represents the points, curves and surfaces in the coordinate space.
 
-    Args: type (str): The geometry type. One of 'Point', 'MultiPoint, 'LineString', 'MultiLineString', 'Polygon', or 'MultiPolygon'.
+    Args: type (str): The geometry type. One of 'Point', 'MultiPoint', 'LineString', 'MultiLineString', 'Polygon', or 'MultiPolygon'.
           coordinates (List): An array of the coordinates of the geometry. The structure of the elements in this array is determined by the type of geometry.
     """
 
     def __init__(self, type: str, coordinates: List):
+        valid_types = ["Point", "MultiPoint", "LineString", "MultiLineString", "Polygon", "MultiPolygon"]
+        if type not in valid_types:
+            raise ValueError("type must be one of " + str(valid_types))
         self.type = type
         self.coordinates = coordinates
 
@@ -37,6 +40,9 @@ class GeometryFilter(dict):
     """
 
     def __init__(self, type: str, coordinates: List):
+        valid_types = ["Point", "LineString", "MultiLineString", "Polygon", "MultiPolygon"]
+        if type not in valid_types:
+            raise ValueError("type must be one of " + str(valid_types))
         self.type = type
         self.coordinates = coordinates
 
@@ -53,6 +59,8 @@ class GeoLocation(dict):
     """
 
     def __init__(self, type: str, geometry: Geometry, properties: dict = None):
+        if type != "Feature":
+            raise ValueError("Only the 'Feature' type is supported.")
         self.type = type
         self.geometry = geometry
         self.properties = properties
