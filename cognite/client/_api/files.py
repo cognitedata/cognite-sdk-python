@@ -411,6 +411,7 @@ class FilesAPI(APIClient):
                 >>> from cognite.client.data_classes import FileMetadataUpdate
                 >>> c = CogniteClient()
                 >>> my_update = FileMetadataUpdate(id=1).source.set("new source").metadata.add({"key": "value"})
+                >>> res = c.files.update(my_update)
 
             Attach labels to a files::
 
