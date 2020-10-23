@@ -178,6 +178,7 @@ class TestFilesAPI:
         returned_file_metadata, upload_url = FILES_API.create(file_metadata)
         response_body = mock_file_create_response.calls[0].response.json()
         assert FileMetadata._load(response_body) == returned_file_metadata
+        assert response_body["uploadUrl"] == upload_url
         assert response_body["labels"][0]["externalId"] == "WELL LOG"
 
     def test_create_with_label_request(self, mock_file_create_response):

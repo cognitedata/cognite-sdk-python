@@ -17,6 +17,10 @@ from cognite.client.data_classes.files import (
     FileMetadataFilter,
     FileMetadataList,
     FileMetadataUpdate,
+    GeoLocation,
+    GeoLocationFilter,
+    Geometry,
+    GeometryFilter,
 )
 from cognite.client.data_classes.iam import (
     APIKey,
@@ -47,15 +51,7 @@ from cognite.client.data_classes.sequences import (
     SequenceList,
     SequenceUpdate,
 )
-from cognite.client.data_classes.shared import (
-    AggregateResult,
-    AggregateUniqueValuesResult,
-    GeoLocation,
-    GeoLocationFilter,
-    Geometry,
-    GeometryFilter,
-    TimestampRange,
-)
+from cognite.client.data_classes.shared import AggregateResult, AggregateUniqueValuesResult, TimestampRange
 from cognite.client.data_classes.three_d import (
     BoundingBox3D,
     RevisionCameraProperties,
