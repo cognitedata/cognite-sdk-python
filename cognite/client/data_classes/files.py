@@ -49,7 +49,7 @@ class GeoLocation(dict):
 
     Args: type (str): The GeoJSON type. Currently only 'Feature' is supported.
           geometry (object): The geometry type. One of 'Point', 'MultiPoint, 'LineString', 'MultiLineString', 'Polygon', or 'MultiPolygon'.
-          properties (object): Additional properties in a String key -> Object value format.
+          properties (object): Optional additional properties in a String key -> Object value format.
     """
 
     def __init__(self, type: str, geometry: Geometry, properties: dict = None):
