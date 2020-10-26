@@ -230,7 +230,7 @@ class RelationshipsAPI(APIClient):
 
         Args:
             relationship (Union[Relationship, List[Relationship]]): Relationship or list of relationships to create.
-                Note: the source and target field in the Relationship(s) can be of the form shown below, or objects of type Asset, TimeSeries, FileMetadata, Event, Sequence
+                Note: the source_type and target_type field in the Relationship(s) can be any string among "Asset", "TimeSeries", "FileMetadata", "Event", "Sequence"
 
         Returns:
             Union[Relationship, RelationshipList]: Created relationship(s)
@@ -238,14 +238,6 @@ class RelationshipsAPI(APIClient):
         Examples:
 
             Create a new relationship specifying object type and external id for source and target::
-
-                >>> from cognite.client.beta import CogniteClient
-                >>> from cognite.client.data_classes import Relationship
-                >>> c = CogniteClient()
-                >>> rel = Relationship(external_id="rel", source_external_id="source_ext_id", source_type="asset", target_external_id="target_ext_id", target_type="event", confidence=0.9, data_set_id=1234)
-                >>> res = c.relationships.create(rel)
-
-            Create a new relationship using objects directly as source and target::
 
                 >>> from cognite.client.beta import CogniteClient
                 >>> from cognite.client.data_classes import Relationship
