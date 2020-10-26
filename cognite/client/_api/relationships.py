@@ -175,8 +175,8 @@ class RelationshipsAPI(APIClient):
             source_types (List[str]): Include relationships that have any of these values in their source Type field
             target_external_ids (List[str]): Include relationships that have any of these values in their target External Id field
             target_types (List[str]): Include relationships that have any of these values in their target Type field
-            data_set_ids (List[int]): Return only assets in the specified data sets with these ids.
-            data_set_external_ids (List[str]): Return only assets in the specified data sets with these external ids.
+            data_set_ids (List[int]): Return only relationships in the specified data sets with these ids.
+            data_set_external_ids (List[str]): Return only relationships in the specified data sets with these external ids.
             start_time (Dict[str, int]): Range between two timestamps, minimum and maximum milli seconds (inclusive)
             end_time (Dict[str, int]): Range between two timestamps, minimum and maximum milli seconds (inclusive)
             confidence (Dict[str, int]): Range to filter the field for. (inclusive)
