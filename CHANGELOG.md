@@ -14,6 +14,15 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.6.0] - 2020-10-26
+
+### Changed
+- Relationships list should take dataset internal and external id as different parameters
+
+## [2.5.4] - 2020-10-22
+
+### Fixed
+- `_is_retryable` didn't handle clusters with a dash in the name.
 
 ## [2.5.3] - 2020-10-14
 
