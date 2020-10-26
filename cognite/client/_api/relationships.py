@@ -242,7 +242,7 @@ class RelationshipsAPI(APIClient):
                 >>> from cognite.client.beta import CogniteClient
                 >>> from cognite.client.data_classes import Relationship
                 >>> c = CogniteClient()
-                >>> rel = Relationship(external_id="rel", source_external_id="source_ext_id", source_type="asset", target_external_id="target_ext_id", target_type="event", confidence=0.9, data_set_id={"id": "ds_name"})
+                >>> rel = Relationship(external_id="rel", source_external_id="source_ext_id", source_type="asset", target_external_id="target_ext_id", target_type="event", confidence=0.9, data_set_id=1234)
                 >>> res = c.relationships.create(rel)
 
             Create a new relationship using objects directly as source and target::
@@ -251,8 +251,8 @@ class RelationshipsAPI(APIClient):
                 >>> from cognite.client.data_classes import Relationship
                 >>> c = CogniteClient()
                 >>> assets = c.assets.retrieve_multiple(id=[1,2,3])
-                >>> flowrel1 = Relationship(external_id="flow_1", source_external_id="source_ext_id", source_type="asset", target_external_id="target_ext_id", target_type="event", confidence=0.1, data_set_id=[1234])
-                >>> flowrel2 = Relationship(external_id="flow_2", source_external_id="source_ext_id", source_type="asset", target_external_id="target_ext_id", target_type="event", confidence=0.1, data_set_id=[1234])
+                >>> flowrel1 = Relationship(external_id="flow_1", source_external_id="source_ext_id", source_type="asset", target_external_id="target_ext_id", target_type="event", confidence=0.1, data_set_id=1234)
+                >>> flowrel2 = Relationship(external_id="flow_2", source_external_id="source_ext_id", source_type="asset", target_external_id="target_ext_id", target_type="event", confidence=0.1, data_set_id=1234)
                 >>> res = c.relationships.create([flowrel1,flowrel2])
         """
         utils._auxiliary.assert_type(relationship, "relationship", [Relationship, list])
