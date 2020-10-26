@@ -17,7 +17,7 @@ Changes are grouped as follows
 ## [2.5.5] - 2020-10-26
 
 ### Fixed
-- Relationships list to take datasets internal and external id as different parameters
+- Relationships list should take dataset internal and external id as different parameters
 
 ## [2.5.4] - 2020-10-22
 
