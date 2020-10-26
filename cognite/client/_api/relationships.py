@@ -50,7 +50,8 @@ class RelationshipsAPI(APIClient):
         source_types: List[str] = None,
         target_external_ids: List[str] = None,
         target_types: List[str] = None,
-        data_set_ids: List[Dict[str, Any]] = None,
+        data_set_ids: List[int] = None,
+        data_set_external_ids: List[str] = None,
         start_time: Dict[str, int] = None,
         end_time: Dict[str, int] = None,
         confidence: Dict[str, int] = None,
@@ -69,7 +70,8 @@ class RelationshipsAPI(APIClient):
             source_types (List[str]): Include relationships that have any of these values in their source Type field
             target_external_ids (List[str]): Include relationships that have any of these values in their target External Id field
             target_types (List[str]): Include relationships that have any of these values in their target Type field
-            data_set_ids (List[Dict[str, Any]]): Either one of internalId (int) or externalId (str)
+            data_set_ids (List[int]): Return only relationships in the specified data sets with these ids.
+            data_set_external_ids (List[str]): Return only relationships in the specified data sets with these external ids.
             start_time (Dict[str, int]): Range between two timestamps, minimum and maximum milli seconds (inclusive)
             end_time (Dict[str, int]): Range between two timestamps, minimum and maximum milli seconds (inclusive)
             confidence (Dict[str, int]): Range to filter the field for. (inclusive)
@@ -81,6 +83,9 @@ class RelationshipsAPI(APIClient):
         Yields:
             Union[Relationship, RelationshipList]: yields Relationship one by one if chunk is not specified, else RelationshipList objects.
         """
+        if data_set_ids or data_set_external_ids:
+            data_set_ids = self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
+
         filter = self._create_filter(
             source_external_ids=source_external_ids,
             source_types=source_types,
@@ -152,7 +157,8 @@ class RelationshipsAPI(APIClient):
         source_types: List[str] = None,
         target_external_ids: List[str] = None,
         target_types: List[str] = None,
-        data_set_ids: List[Dict[str, Any]] = None,
+        data_set_ids: List[int] = None,
+        data_set_external_ids: List[str] = None,
         start_time: Dict[str, int] = None,
         end_time: Dict[str, int] = None,
         confidence: Dict[str, int] = None,
@@ -169,7 +175,8 @@ class RelationshipsAPI(APIClient):
             source_types (List[str]): Include relationships that have any of these values in their source Type field
             target_external_ids (List[str]): Include relationships that have any of these values in their target External Id field
             target_types (List[str]): Include relationships that have any of these values in their target Type field
-            data_set_ids (List[Dict[str, Any]]): Either one of internalId (int) or externalId (str)
+            data_set_ids (List[int]): Return only relationships in the specified data sets with these ids.
+            data_set_external_ids (List[str]): Return only relationships in the specified data sets with these external ids.
             start_time (Dict[str, int]): Range between two timestamps, minimum and maximum milli seconds (inclusive)
             end_time (Dict[str, int]): Range between two timestamps, minimum and maximum milli seconds (inclusive)
             confidence (Dict[str, int]): Range to filter the field for. (inclusive)
@@ -198,6 +205,10 @@ class RelationshipsAPI(APIClient):
                 >>> for relationship in c.relationships:
                 ...     relationship # do something with the relationship
         """
+
+        if data_set_ids or data_set_external_ids:
+            data_set_ids = self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
+
         filter = self._create_filter(
             source_external_ids=source_external_ids,
             source_types=source_types,
@@ -232,8 +243,8 @@ class RelationshipsAPI(APIClient):
                 >>> from cognite.client.data_classes import Relationship
                 >>> c = CogniteClient()
                 >>> assets = c.assets.retrieve_multiple(id=[1,2,3])
-                >>> flowrel1 = Relationship(external_id="flow_1", source_external_id="source_ext_id", source_type="asset", target_external_id="target_ext_id", target_type="event", confidence=0.1, data_set_id={"id": "ds_name"})
-                >>> flowrel2 = Relationship(external_id="flow_2", source_external_id="source_ext_id", source_type="asset", target_external_id="target_ext_id", target_type="event", confidence=0.1, data_set_id={"id": "ds_name"})
+                >>> flowrel1 = Relationship(external_id="flow_1", source_external_id="source_ext_id", source_type="asset", target_external_id="target_ext_id", target_type="event", confidence=0.1, data_set_id=1234)
+                >>> flowrel2 = Relationship(external_id="flow_2", source_external_id="source_ext_id", source_type="asset", target_external_id="target_ext_id", target_type="event", confidence=0.1, data_set_id=1234)
                 >>> res = c.relationships.create([flowrel1,flowrel2])
         """
         utils._auxiliary.assert_type(relationship, "relationship", [Relationship, list])

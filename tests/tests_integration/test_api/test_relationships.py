@@ -121,6 +121,13 @@ class TestRelationshipsAPI:
         assert len(res) == 2
         assert isinstance(res, RelationshipList)
 
+    def test_list_data_set(self, new_relationship):
+        pre_existing_data_set = CogniteClient().data_sets.retrieve(external_id="pre_existing_data_set")
+        res = API_REL.list(data_set_external_ids=[pre_existing_data_set.external_id])
+        res2 = API_REL.list(data_set_ids=[pre_existing_data_set.id])
+        assert res == res2
+        assert isinstance(res, RelationshipList)
+
     def test_list_label_filter(self, create_multiple_relationships):
         relationships, ext_id, source_ext_id = create_multiple_relationships
         res = API_REL.list(labels=LabelFilter(contains_all=[ext_id]))
