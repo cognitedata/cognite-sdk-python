@@ -222,7 +222,9 @@ class TestRelationships:
         source_types = ["asset", "asset"]
         target_external_ids = ["target1", "target2"]
         target_types = ["event", "event"]
-        data_set_ids = [{"id": 1234}, {"externalId": "test_dataSet_id"}]
+        data_sets = [{"id": 1234}, {"externalId": "test_dataSet_id"}]
+        data_set_ids = [1234]
+        data_set_external_ids = ["test_dataSet_id"]
         created_time = 1565965333132
         last_updated_time = 1565965333132
         res = REL_API.list(
@@ -231,6 +233,7 @@ class TestRelationships:
             target_external_ids=target_external_ids,
             target_types=target_types,
             data_set_ids=data_set_ids,
+            data_set_external_ids=data_set_external_ids,
             created_time=created_time,
             last_updated_time=last_updated_time,
         )
@@ -242,7 +245,7 @@ class TestRelationships:
                 "sourceExternalIds": source_external_ids,
                 "targetTypes": target_types,
                 "targetExternalIds": target_external_ids,
-                "dataSetIds": data_set_ids,
+                "dataSetIds": data_sets,
             },
             "limit": 100,
             "cursor": None,
