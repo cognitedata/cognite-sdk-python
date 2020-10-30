@@ -16,7 +16,7 @@ Changes are grouped as follows
 
 ## [2.6.1] - 2020-10-30
 
-### Changed
+### Added
 - Added `geospatial` to list of valid relationship resource types.
 
 ## [2.6.0] - 2020-10-26
