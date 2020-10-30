@@ -14,6 +14,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.6.1] - 2020-10-30
+
+### Added
+- `geospatial` to list of valid relationship resource types.
+
 ## [2.6.0] - 2020-10-26
 
 ### Changed
