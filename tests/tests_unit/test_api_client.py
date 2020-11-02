@@ -974,6 +974,7 @@ class TestHelpers:
             ("POST", "https://greenfield.cognitedata.com/api/playground/projects/blabla/relationships/list", True),
             ("PUT", "https://localhost:8000.com/api/v1/projects/blabla/assets", True),
             ("PATCH", "https://localhost:8000.com/api/v1/projects/blabla/patchy", True),
+            ("GET", "https://another-cluster.cognitedata.com/login/status", True),
         ],
     )
     def test_is_retryable(self, method, path, expected):

@@ -25,16 +25,16 @@ def new_relationship(new_label):
     relationship = API_REL.create(
         Relationship(
             external_id=external_id,
-            source_external_id="source_ext_id",
+            source_external_id=external_id,
             source_type="asset",
-            target_external_id="target_ext_id",
+            target_external_id=external_id,
             data_set_id=pre_existing_data_set.id,
             target_type="event",
             labels=[Label(new_label.external_id)],
             confidence=1,
         )
     )
-    yield relationship
+    yield relationship, external_id
     API_REL.delete(external_id=external_id)
     assert API_REL.retrieve(external_id=relationship.external_id) is None
 
@@ -106,8 +106,10 @@ def create_multiple_relationships(new_label):
 
 class TestRelationshipsAPI:
     def test_get_single(self, new_relationship):
-        res = API_REL.retrieve(external_id=new_relationship.external_id)
+        new_rel, ext_id = new_relationship
+        res = API_REL.retrieve(external_id=new_rel.external_id)
         assert isinstance(res, Relationship)
+        assert new_rel.external_id == ext_id
         assert res.dump()["confidence"] == 1
 
     def test_retrieve_unknown(self, new_relationship):
@@ -119,6 +121,14 @@ class TestRelationshipsAPI:
         relationships_ext_ids, ext_id, source_ext_id = create_multiple_relationships
         res = API_REL.list(source_external_ids=[source_ext_id[3]])
         assert len(res) == 2
+        assert isinstance(res, RelationshipList)
+
+    def test_list_data_set(self, new_relationship):
+        new_rel, ext_id = new_relationship
+        pre_existing_data_set = CogniteClient().data_sets.retrieve(external_id="pre_existing_data_set")
+        res = API_REL.list(source_external_ids=[ext_id], data_set_external_ids=[pre_existing_data_set.external_id])
+        res2 = API_REL.list(target_external_ids=[ext_id], data_set_ids=[pre_existing_data_set.id])
+        assert res == res2
         assert isinstance(res, RelationshipList)
 
     def test_list_label_filter(self, create_multiple_relationships):
