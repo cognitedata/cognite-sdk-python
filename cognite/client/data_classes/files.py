@@ -9,8 +9,55 @@ from cognite.client.data_classes.shared import TimestampRange
 class Geometry(dict):
     """Represents the points, curves and surfaces in the coordinate space.
 
-    Args: type (str): The geometry type. One of 'Point', 'MultiPoint', 'LineString', 'MultiLineString', 'Polygon', or 'MultiPolygon'.
-          coordinates (List): An array of the coordinates of the geometry. The structure of the elements in this array is determined by the type of geometry.
+    Args:
+        type (str): The geometry type. One of 'Point', 'MultiPoint', 'LineString', 'MultiLineString', 'Polygon', or 'MultiPolygon'.
+        coordinates (List): An array of the coordinates of the geometry. The structure of the elements in this array is determined by the type of geometry.
+
+            Point:
+                Coordinates of a point in 2D space, described as an array of 2 numbers.
+
+                Example: `[4.306640625, 60.205710352530346]`
+
+
+            LineString:
+                Coordinates of a line described by a list of two or more points.
+                Each point is defined as a pair of two numbers in an array, representing coordinates of a point in 2D space.
+
+                Example: `[[30, 10], [10, 30], [40, 40]]`
+
+
+            Polygon:
+                List of one or more linear rings representing a shape.
+                A linear ring is the boundary of a surface or the boundary of a hole in a surface. It is defined as a list consisting of 4 or more Points, where the first and last Point is equivalent.
+                Each Point is defined as an array of 2 numbers, representing coordinates of a point in 2D space.
+
+                Example: `[[[35, 10], [45, 45], [15, 40], [10, 20], [35, 10]], [[20, 30], [35, 35], [30, 20], [20, 30]]]`
+                type: array
+
+            MultiPoint:
+                List of Points. Each Point is defined as an array of 2 numbers, representing coordinates of a point in 2D space.
+
+                Example: `[[35, 10], [45, 45]]`
+
+            MultiLineString:
+                    List of lines where each line (LineString) is defined as a list of two or more points.
+                    Each point is defined as a pair of two numbers in an array, representing coordinates of a point in 2D space.
+
+                    Example: `[[[30, 10], [10, 30]], [[35, 10], [10, 30], [40, 40]]]`
+
+            MultiPolygon:
+                List of multiple polygons.
+
+                Each polygon is defined as a list of one or more linear rings representing a shape.
+
+                A linear ring is the boundary of a surface or the boundary of a hole in a surface. It is defined as a list consisting of 4 or more Points, where the first and last Point is equivalent.
+
+                Each Point is defined as an array of 2 numbers, representing coordinates of a point in 2D space.
+
+                Example: `[[[[30, 20], [45, 40], [10, 40], [30, 20]]], [[[15, 5], [40, 10], [10, 20], [5, 10], [15, 5]]]]`
+
+
+
     """
 
     def __init__(self, type: str, coordinates: List):
