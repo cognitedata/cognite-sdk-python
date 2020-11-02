@@ -415,15 +415,6 @@ class AssetsAPI(APIClient):
             Union[Asset, AssetList]: Updated asset(s)
 
         Examples:
-
-            Update an asset that you have fetched. This will perform a full update of the asset::
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> asset = c.assets.retrieve(id=1)
-                >>> asset.description = "New description"
-                >>> res = c.assets.update(asset)
-
             Perform a partial update on a asset, updating the description and adding a new field to metadata::
 
                 >>> from cognite.client import CogniteClient
