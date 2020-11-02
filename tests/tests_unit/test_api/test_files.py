@@ -8,7 +8,16 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client._api.files import FileMetadata, FileMetadataList, FileMetadataUpdate
-from cognite.client.data_classes import FileMetadataFilter, Label, LabelFilter, TimestampRange
+from cognite.client.data_classes import (
+    FileMetadataFilter,
+    GeoLocation,
+    GeoLocationFilter,
+    Geometry,
+    GeometryFilter,
+    Label,
+    LabelFilter,
+    TimestampRange,
+)
 from cognite.client.exceptions import CogniteAPIError
 from tests.utils import jsgz_load, set_request_limit
 
@@ -16,7 +25,13 @@ FILES_API = CogniteClient(max_workers=1).files
 
 
 @pytest.fixture
-def mock_files_response(rsps):
+def mock_geo_location():
+    geometry = Geometry(type="Point", coordinates=[35, 10])
+    yield GeoLocation(type="Feature", geometry=geometry)
+
+
+@pytest.fixture
+def mock_files_response(rsps, mock_geo_location):
     response_body = {
         "items": [
             {
@@ -27,6 +42,7 @@ def mock_files_response(rsps):
                 "metadata": {"metadata-key": "metadata-value"},
                 "assetIds": [1],
                 "labels": [{"externalId": "WELL LOG"}],
+                "geoLocation": mock_geo_location,
                 "id": 1,
                 "uploaded": True,
                 "uploadedTime": 0,
@@ -45,7 +61,7 @@ def mock_files_response(rsps):
 
 
 @pytest.fixture
-def mock_file_upload_response(rsps):
+def mock_file_upload_response(rsps, mock_geo_location):
     response_body = {
         "externalId": "string",
         "name": "string",
@@ -54,6 +70,7 @@ def mock_file_upload_response(rsps):
         "metadata": {},
         "assetIds": [1],
         "labels": [{"externalId": "WELL LOG"}],
+        "geoLocation": mock_geo_location,
         "id": 1,
         "uploaded": True,
         "uploadedTime": 0,
@@ -67,7 +84,7 @@ def mock_file_upload_response(rsps):
 
 
 @pytest.fixture
-def mock_file_create_response(rsps):
+def mock_file_create_response(rsps, mock_geo_location):
     response_body = {
         "externalId": "string",
         "name": "string",
@@ -76,6 +93,7 @@ def mock_file_create_response(rsps):
         "metadata": {},
         "assetIds": [1],
         "labels": [{"externalId": "WELL LOG"}],
+        "geoLocation": mock_geo_location,
         "id": 1,
         "uploaded": False,
         "uploadedTime": 0,
@@ -160,6 +178,7 @@ class TestFilesAPI:
         returned_file_metadata, upload_url = FILES_API.create(file_metadata)
         response_body = mock_file_create_response.calls[0].response.json()
         assert FileMetadata._load(response_body) == returned_file_metadata
+        assert response_body["uploadUrl"] == upload_url
         assert response_body["labels"][0]["externalId"] == "WELL LOG"
 
     def test_create_with_label_request(self, mock_file_create_response):
@@ -170,12 +189,29 @@ class TestFilesAPI:
         assert FileMetadata._load(response_body) == returned_file_metadata
         assert all(body["labels"][0]["externalId"] == "WELL LOG" for body in [request_body, response_body])
 
-    def test_create(self, mock_file_create_response):
-        file_metadata = FileMetadata(name="bla")
+    def test_create_with_geoLocation(self, mock_file_create_response, mock_geo_location):
+        file_metadata = FileMetadata(name="bla", geo_location=mock_geo_location)
         returned_file_metadata, upload_url = FILES_API.create(file_metadata)
         response_body = mock_file_create_response.calls[0].response.json()
         assert FileMetadata._load(response_body) == returned_file_metadata
-        assert response_body["uploadUrl"] == upload_url
+        assert response_body["geoLocation"] == mock_geo_location
+
+    def test_create_geoLocation_with_invalid_geometry_type(self):
+        with pytest.raises(ValueError):
+            _ = Geometry(type="someInvalidType", coordinates=[1, 2])
+
+    def test_create_geoLocation_with_invalid_geojson_type(self):
+        g = Geometry(type="Point", coordinates=[1, 2])
+        with pytest.raises(ValueError):
+            _ = GeoLocation(type="FeatureCollection", geometry=g)
+
+    def test_create_with_geoLocation_request(self, mock_file_create_response, mock_geo_location):
+        file_metadata = FileMetadata(name="bla", geo_location=mock_geo_location)
+        returned_file_metadata, upload_url = FILES_API.create(file_metadata)
+        response_body = mock_file_create_response.calls[0].response.json()
+        request_body = jsgz_load(mock_file_create_response.calls[0].request.body)
+        assert FileMetadata._load(response_body) == returned_file_metadata
+        assert all(body["geoLocation"] == mock_geo_location for body in [request_body, response_body])
 
     def test_retrieve_single(self, mock_files_response):
         res = FILES_API.retrieve(id=1)
@@ -222,6 +258,19 @@ class TestFilesAPI:
         calls = mock_files_response.calls
         assert len(calls) == 1
         assert jsgz_load(calls[0].request.body) == {"cursor": None, "filter": {"directoryPrefix": "/test"}, "limit": 10}
+
+    def test_filter_geoLocation(self, mock_files_response):
+        FILES_API.list(
+            geo_location=GeoLocationFilter(relation="within", shape=GeometryFilter(type="Point", coordinates=[35, 10])),
+            limit=10,
+        )
+        calls = mock_files_response.calls
+        assert len(calls) == 1
+        assert jsgz_load(calls[0].request.body) == {
+            "cursor": None,
+            "filter": {"geoLocation": {"relation": "within", "shape": {"type": "Point", "coordinates": [35, 10]}}},
+            "limit": 10,
+        }
 
     def test_list_with_time_dict(self, mock_files_response):
         FILES_API.list(created_time={"min": 20})
@@ -493,6 +542,8 @@ class TestFilesAPI:
             .metadata.remove([])
             .labels.add(["WELL LOG"])
             .labels.remove(["CV"])
+            .geoLocation.set(mock_geo_location)
+            .geoLocation.set(None)
             .source.set(1)
             .source.set(None),
             FileMetadataUpdate,
