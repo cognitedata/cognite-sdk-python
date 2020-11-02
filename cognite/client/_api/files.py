@@ -11,6 +11,10 @@ from cognite.client.data_classes import (
     FileMetadataFilter,
     FileMetadataList,
     FileMetadataUpdate,
+    GeoLocation,
+    GeoLocationFilter,
+    Geometry,
+    GeometryFilter,
     Label,
     LabelFilter,
     TimestampRange,
@@ -36,6 +40,7 @@ class FilesAPI(APIClient):
         data_set_ids: List[int] = None,
         data_set_external_ids: List[str] = None,
         labels: LabelFilter = None,
+        geo_location: GeoLocationFilter = None,
         source: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
@@ -65,6 +70,7 @@ class FilesAPI(APIClient):
             data_set_ids (List[int]): Return only files in the specified data sets with these ids.
             data_set_external_ids (List[str]): Return only files in the specified data sets with these external ids.
             labels (LabelFilter): Return only the files matching the specified label(s).
+            geo_location (GeoLocationFilter): Only include files matching the specified geographic relation.
             source (str): The source of this event.
             source_created_time (Union[Dict[str, Any], TimestampRange]): Filter for files where the sourceCreatedTime field has been set and is within the specified range.
             source_modified_time (Union[Dict[str, Any], TimestampRange]): Filter for files where the sourceModifiedTime field has been set and is within the specified range.
@@ -95,6 +101,7 @@ class FilesAPI(APIClient):
             root_asset_ids=root_asset_ids,
             asset_subtree_ids=asset_subtree_ids,
             labels=labels,
+            geo_location=geo_location,
             source=source,
             created_time=created_time,
             last_updated_time=last_updated_time,
@@ -224,6 +231,7 @@ class FilesAPI(APIClient):
         data_set_ids: List[int] = None,
         data_set_external_ids: List[str] = None,
         labels: LabelFilter = None,
+        geo_location: GeoLocationFilter = None,
         source: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
@@ -250,6 +258,7 @@ class FilesAPI(APIClient):
             data_set_ids (List[int]): Return only files in the specified data sets with these ids.
             data_set_external_ids (List[str]): Return only files in the specified data sets with these external ids.
             labels (LabelFilter): Return only the files matching the specified label filter(s).
+            geo_location (GeoLocationFilter): Only include files matching the specified geographic relation.
             source (str): The source of this event.
             created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
@@ -294,6 +303,14 @@ class FilesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> my_label_filter = LabelFilter(contains_all=["WELL LOG", "VERIFIED"])
                 >>> file_list = c.files.list(labels=my_label_filter)
+
+            Filter files based on geoLocation::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import GeoLocationFilter, GeometryFilter
+                >>> c = CogniteClient()
+                >>> my_geo_location_filter = GeoLocationFilter(relation="intersects", shape=GeometryFilter(type="Point", coordinates=[35,10]))
+                >>> file_list = c.files.list(geo_location=my_geo_location_filter)
         """
         if root_asset_ids or root_asset_external_ids:
             root_asset_ids = self._process_ids(root_asset_ids, root_asset_external_ids, wrap_ids=True)
@@ -311,6 +328,7 @@ class FilesAPI(APIClient):
             root_asset_ids=root_asset_ids,
             asset_subtree_ids=asset_subtree_ids,
             labels=labels,
+            geo_location=geo_location,
             source=source,
             created_time=created_time,
             last_updated_time=last_updated_time,
@@ -458,6 +476,7 @@ class FilesAPI(APIClient):
         source_modified_time: int = None,
         data_set_id: int = None,
         labels: List[Label] = None,
+        geo_location: GeoLocation = None,
         security_categories: List[int] = None,
         recursive: bool = False,
         overwrite: bool = False,
@@ -475,6 +494,7 @@ class FilesAPI(APIClient):
             asset_ids (List[int]): No description.
             data_set_id (int): ID of the data set.
             labels (List[Label]): A list of the labels associated with this resource item.
+            geo_location (GeoLocation): The geographic metadata of the file.
             source_created_time (int): The timestamp for when the file was originally created in the source system.
             source_modified_time (int): The timestamp for when the file was last modified in the source system.
             recursive (bool): If path is a directory, upload all contained files recursively.
@@ -516,6 +536,13 @@ class FilesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.files.upload("/path/to/file", name="my_file", labels=[Label(external_id="WELL LOG")])
 
+            Upload a file with a geo_location::
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import GeoLocation, Geometry
+                >>> c = CogniteClient()
+                >>> geometry = Geometry(type="LineString", coordinates=[[30, 10], [10, 30], [40, 40]])
+                >>> res = c.files.upload("/path/to/file", geo_location=GeoLocation(type="Feature", geometry=geometry))
+
         """
         file_metadata = FileMetadata(
             name=name,
@@ -527,6 +554,7 @@ class FilesAPI(APIClient):
             asset_ids=asset_ids,
             data_set_id=data_set_id,
             labels=labels,
+            geo_location=geo_location,
             source_created_time=source_created_time,
             source_modified_time=source_modified_time,
             security_categories=security_categories,
@@ -576,6 +604,7 @@ class FilesAPI(APIClient):
         asset_ids: List[int] = None,
         data_set_id: int = None,
         labels: List[Label] = None,
+        geo_location: GeoLocation = None,
         source_created_time: int = None,
         source_modified_time: int = None,
         security_categories: List[int] = None,
@@ -596,6 +625,7 @@ class FilesAPI(APIClient):
             asset_ids (List[int]): No description.
             data_set_id (int): Id of the data set.
             labels (List[Label]): A list of the labels associated with this resource item.
+            geo_location (GeoLocation): The geographic metadata of the file.
             source_created_time (int): The timestamp for when the file was originally created in the source system.
             source_modified_time (int): The timestamp for when the file was last modified in the source system.
             overwrite (bool): If 'overwrite' is set to true, and the POST body content specifies a 'externalId' field,
@@ -625,6 +655,7 @@ class FilesAPI(APIClient):
             asset_ids=asset_ids,
             data_set_id=data_set_id,
             labels=labels,
+            geo_location=geo_location,
             source_created_time=source_created_time,
             source_modified_time=source_modified_time,
             security_categories=security_categories,
