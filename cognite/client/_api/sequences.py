@@ -430,7 +430,7 @@ class SequencesDataAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> data = [{"rowNumber": 123, "values": ['str',3]}, {"rowNUmber": 456, "values": ["bar",42]} ]
+                >>> data = [{"rowNumber": 123, "values": ['str',3]}, {"rowNumber": 456, "values": ["bar",42]} ]
                 >>> c.sequences.data.insert(data, id=1, column_external_ids=["col_a","col_b"]) # implicit columns are retrieved from metadata
 
             Or they can be a given as a dictionary with row number as the key, and the value is the data to be inserted at that row::
