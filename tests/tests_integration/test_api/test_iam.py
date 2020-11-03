@@ -64,6 +64,7 @@ class TestGroupsAPI:
             Group(name="bla", capabilities=[{"eventsAcl": {"actions": ["READ"], "scope": {"all": {}}}}])
         )
         assert "bla" == group.name
+        COGNITE_CLIENT.iam.groups.delete(group.id)
 
     def test_list_service_accounts_in_group(self, group_id):
         service_accounts = COGNITE_CLIENT.iam.groups.list_service_accounts(group_id)
