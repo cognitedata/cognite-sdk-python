@@ -421,7 +421,10 @@ class AssetsAPI(APIClient):
                 >>> from cognite.client.data_classes import AssetUpdate
                 >>> c = CogniteClient()
                 >>> my_update = AssetUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
-                >>> res = c.assets.update(my_update)
+                >>> res1 = c.assets.update(my_update)
+                >>> # Remove an already set field like so
+                >>> another_update = AssetUpdate(id=1).description.set(None)
+                >>> res2 = c.assets.update(another_update)
 
             Attach labels to an asset::
 
@@ -499,7 +502,7 @@ class AssetsAPI(APIClient):
             search={"name": name, "description": description, "query": query}, filter=filter, limit=limit
         )
 
-    def retrieve_subtree(self, id: int = None, external_id: str = None, depth: int = None) -> AssetList:
+    def retrieve_subtree(self, id: int = None, external_id: str = None, depth: int = None) -> Optional[AssetList]:
         """Retrieve the subtree for this asset up to a specified depth.
 
         Args:
@@ -509,10 +512,12 @@ class AssetsAPI(APIClient):
                 subtree.
 
         Returns:
-            AssetList: The requested assets.
+            AssetList: The requested assets or None if asset does not exist.
         """
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
         asset = self.retrieve(id=id, external_id=external_id)
+        if asset is None:
+            return asset
         subtree = self._get_asset_subtree(AssetList([asset]), current_depth=0, depth=depth)
         subtree._cognite_client = self._cognite_client
         return subtree

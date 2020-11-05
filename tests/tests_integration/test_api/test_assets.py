@@ -1,3 +1,4 @@
+import random
 import time
 from unittest import mock
 
@@ -152,6 +153,9 @@ class TestAssetsAPI:
                 assert asset.parent_id == external_id_to_id[asset.external_id[:-1]]
 
     def test_get_subtree(self, root_test_asset):
+        assert COGNITE_CLIENT.assets.retrieve_subtree(external_id="non_existing_asset") is None
+        random_int = random.randint(0, 10)
+        assert COGNITE_CLIENT.assets.retrieve_subtree(id=random_int) is None
         assert 781 == len(COGNITE_CLIENT.assets.retrieve_subtree(root_test_asset.id))
         assert 6 == len(COGNITE_CLIENT.assets.retrieve_subtree(root_test_asset.id, depth=1))
 

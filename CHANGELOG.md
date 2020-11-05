@@ -14,6 +14,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.6.2] - 2020-11-05
+
+### Fixed
+- Asset retrieve subtree should return None if asset does not exist.
+
 ## [2.6.1] - 2020-10-30
 
 ### Added
@@ -22,7 +27,7 @@ Changes are grouped as follows
 ## [2.6.0] - 2020-10-26
 
 ### Changed
-- Relationships list should take dataset internal and external id as different parameters
+- Relationships list should take dataset internal and external id as different parameters.
 
 ## [2.5.4] - 2020-10-22
 
