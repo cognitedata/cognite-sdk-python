@@ -517,7 +517,7 @@ class AssetsAPI(APIClient):
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
         asset = self.retrieve(id=id, external_id=external_id)
         if asset is None:
-            return asset
+            return AssetList([])
         subtree = self._get_asset_subtree(AssetList([asset]), current_depth=0, depth=depth)
         subtree._cognite_client = self._cognite_client
         return subtree

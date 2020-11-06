@@ -17,7 +17,7 @@ Changes are grouped as follows
 ## [2.6.2] - 2020-11-05
 
 ### Fixed
-- Asset retrieve subtree should return None if asset does not exist.
+- Asset retrieve subtree should return empty AssetList if asset does not exist.
 
 ## [2.6.1] - 2020-10-30
 
