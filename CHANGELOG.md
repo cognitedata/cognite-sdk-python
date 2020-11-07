@@ -14,6 +14,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.6.3] - 2020-11-06
+
+### Fixed
+- Resource metadata should be able to set empty using `.metadata.set(None)` or `.metadata.set({})`.
+
 ## [2.6.2] - 2020-11-05
 
 ### Fixed

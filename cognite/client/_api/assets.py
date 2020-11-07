@@ -415,7 +415,7 @@ class AssetsAPI(APIClient):
             Union[Asset, AssetList]: Updated asset(s)
 
         Examples:
-            Perform a partial update on a asset, updating the description and adding a new field to metadata::
+            Perform a partial update on an asset, updating the description and adding a new field to metadata::
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import AssetUpdate
@@ -424,6 +424,17 @@ class AssetsAPI(APIClient):
                 >>> res1 = c.assets.update(my_update)
                 >>> # Remove an already set field like so
                 >>> another_update = AssetUpdate(id=1).description.set(None)
+                >>> res2 = c.assets.update(another_update)
+
+            Remove the metadata on an asset::
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import AssetUpdate
+                >>> c = CogniteClient()
+                >>> my_update = AssetUpdate(id=1).metadata.add({"key": "value"})
+                >>> res1 = c.assets.update(my_update)
+                >>> another_update = AssetUpdate(id=1).metadata.set(None)
+                >>> # The same result can be achieved with:
+                >>> another_update2 = AssetUpdate(id=1).metadata.set({})
                 >>> res2 = c.assets.update(another_update)
 
             Attach labels to an asset::

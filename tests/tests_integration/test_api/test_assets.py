@@ -14,7 +14,7 @@ COGNITE_CLIENT = CogniteClient()
 
 @pytest.fixture
 def new_asset():
-    ts = COGNITE_CLIENT.assets.create(Asset(name="any"))
+    ts = COGNITE_CLIENT.assets.create(Asset(name="any", description="haha", metadata={"a": "b"}))
     yield ts
     COGNITE_CLIENT.assets.delete(id=ts.id)
     assert COGNITE_CLIENT.assets.retrieve(ts.id) is None
@@ -132,9 +132,13 @@ class TestAssetsAPI:
         assert len(res) > 0
 
     def test_update(self, new_asset):
-        update_asset = AssetUpdate(new_asset.id).name.set("newname")
+        assert new_asset.metadata == {"a": "b"}
+        assert new_asset.description == "haha"
+        update_asset = AssetUpdate(new_asset.id).name.set("newname").metadata.set(None).description.set(None)
         res = COGNITE_CLIENT.assets.update(update_asset)
         assert "newname" == res.name
+        assert res.metadata == {}
+        assert res.description is None
 
     def test_delete_with_nonexisting(self):
         a = COGNITE_CLIENT.assets.create(Asset(name="any"))
