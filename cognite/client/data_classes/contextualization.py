@@ -187,8 +187,8 @@ class EntityMatchingModel(CogniteResource):
             EntityMatchingModel: new model refitted to true_matches."""
         true_matches = [convert_true_match(true_match) for true_match in true_matches]
         self.wait_for_completion()
-        response = self._cognite_client.entity_matching._camel_post(
-            f"/refit", json={"trueMatches": true_matches, "id": self.id}
+        response = self._cognite_client.entity_matching._post(
+            self._RESOURCE_PATH + "/refit", json={"trueMatches": true_matches, "id": self.id}
         )
         return self._load(response.json(), cognite_client=self._cognite_client)
 

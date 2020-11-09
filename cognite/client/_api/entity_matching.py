@@ -11,7 +11,7 @@ from cognite.client.data_classes.contextualization import (
     EntityMatchingModelList,
     EntityMatchingModelUpdate,
 )
-from cognite.client.utils._auxiliary import convert_true_match, to_camel_case
+from cognite.client.utils._auxiliary import convert_true_match
 
 
 class EntityMatchingAPI(APIClient):
@@ -21,26 +21,12 @@ class EntityMatchingAPI(APIClient):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def _camel_post(
-        self,
-        context_path: str,
-        json: Dict[str, Any] = None,
-        params: Dict[str, Any] = None,
-        headers: Dict[str, Any] = None,
-    ) -> Response:
-        return self._post(
-            self._RESOURCE_PATH + context_path,
-            json={to_camel_case(k): v for k, v in (json or {}).items() if v is not None},
-            params=params,
-            headers=headers,
-        )
-
-    def _run_job(self, job_path, status_path=None, headers=None, job_cls=None, **kwargs) -> ContextualizationJob:
+    def _run_job(self, job_path, json, status_path=None, headers=None, job_cls=None) -> ContextualizationJob:
         job_cls = job_cls or ContextualizationJob
         if status_path is None:
             status_path = job_path + "/"
         return job_cls._load_with_status(
-            self._camel_post(job_path, json=kwargs, headers=headers).json(),
+            self._post(self._RESOURCE_PATH + job_path, json=json, headers=headers).json(),
             status_path=self._RESOURCE_PATH + status_path,
             cognite_client=self._cognite_client,
         )
@@ -95,7 +81,8 @@ class EntityMatchingAPI(APIClient):
         Returns:
             EntityMatchingModelList: List of models."""
         filter = {utils._auxiliary.to_camel_case(k): v for k, v in (filter or {}).items() if v is not None}
-        models = self._camel_post("/list", json={"filter": filter}).json()["items"]
+        # NB no pagination support yet
+        models = self._post(self._RESOURCE_PATH + "/list", json={"filter": filter}).json()["items"]
         return EntityMatchingModelList(
             [self._LIST_CLASS._RESOURCE._load(model, cognite_client=self._cognite_client) for model in models]
         )
@@ -156,20 +143,20 @@ class EntityMatchingAPI(APIClient):
             match_fields = [ft if isinstance(ft, dict) else {"source": ft[0], "target": ft[1]} for ft in match_fields]
         if true_matches:
             true_matches = [convert_true_match(true_match) for true_match in true_matches]
-        response = self._camel_post(
-            context_path="/",
-            json=dict(
-                sources=EntityMatchingModel.dump_entities(sources),
-                targets=EntityMatchingModel.dump_entities(targets),
-                true_matches=true_matches,
-                match_fields=match_fields,
-                feature_type=feature_type,
-                classifier=classifier,
-                ignore_missing_fields=ignore_missing_fields,
-                name=name,
-                description=description,
-                external_id=external_id,
-            ),
+        response = self._post(
+            self._RESOURCE_PATH + "/",
+            json={
+                "name": name,
+                "description": description,
+                "externalId": external_id,
+                "sources": EntityMatchingModel.dump_entities(sources),
+                "targets": EntityMatchingModel.dump_entities(targets),
+                "trueMatches": true_matches,
+                "matchFields": match_fields,
+                "featureType": feature_type,
+                "classifier": classifier,
+                "ignoreMissingFields": ignore_missing_fields,
+            },
         )
         return self._LIST_CLASS._RESOURCE._load(response.json(), cognite_client=self._cognite_client)
 
@@ -231,4 +218,4 @@ class EntityMatchingAPI(APIClient):
 
         Returns:
             ContextualizationJob: Resulting queued job. Note that .results property of this job will block waiting for results."""
-        return self._run_job(job_path="/rules", items=matches)
+        return self._run_job(job_path="/rules", json={"items": matches})
