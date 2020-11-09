@@ -1,15 +1,11 @@
 import copy
 
-from cognite.client.data_classes.events import Event
-
-from cognite.client.data_classes.files import FileMetadata
-
-from cognite.client.data_classes.time_series import TimeSeries
-
-from cognite.client.data_classes.assets import Asset
-
 from cognite.client.data_classes._base import *
+from cognite.client.data_classes.assets import Asset
+from cognite.client.data_classes.events import Event
+from cognite.client.data_classes.files import FileMetadata
 from cognite.client.data_classes.labels import Label, LabelFilter
+from cognite.client.data_classes.time_series import TimeSeries
 
 
 class Relationship(CogniteResource):

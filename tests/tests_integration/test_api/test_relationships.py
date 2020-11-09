@@ -4,11 +4,13 @@ import pytest
 
 from cognite.client.beta import CogniteClient
 from cognite.client.data_classes import (
+    Asset,
     Label,
     LabelDefinition,
     LabelFilter,
     Relationship,
-    RelationshipList, Asset, TimeSeries,
+    RelationshipList,
+    TimeSeries,
 )
 from cognite.client.exceptions import CogniteNotFoundError
 
@@ -49,6 +51,7 @@ def new_label():
     yield tp
     CogniteClient().labels.delete(external_id=tp.external_id)
 
+
 @pytest.fixture
 def new_asset():
     # create a asset to use in relationships
@@ -60,6 +63,7 @@ def new_asset():
     yield tp
     CogniteClient().assets.delete(external_id=tp.external_id)
 
+
 @pytest.fixture
 def new_time_series():
     # create a time series to use in relationships
@@ -70,6 +74,7 @@ def new_time_series():
     assert isinstance(tp, TimeSeries)
     yield tp
     CogniteClient().time_series.delete(external_id=tp.external_id)
+
 
 @pytest.fixture
 def create_multiple_relationships(new_label):
@@ -135,7 +140,7 @@ def relationship_with_resources(new_asset, new_time_series):
             source_external_id=asset_ext_id,
             source_type="asset",
             target_external_id=time_series_ext_id,
-            target_type="timeseries"
+            target_type="timeseries",
         )
     )
     yield relationship, external_id, new_asset, new_time_series

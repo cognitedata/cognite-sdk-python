@@ -57,8 +57,6 @@ def mock_rel_empty(rsps):
     yield rsps
 
 
-
-
 class TestRelationships:
     def test_retrieve_single(self, mock_rel_response):
         res = REL_API.retrieve(external_id="a")

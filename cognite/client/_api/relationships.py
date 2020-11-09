@@ -1,15 +1,14 @@
 from typing import *
 
-from cognite.client.data_classes.events import Event
-from cognite.client.data_classes.files import FileMetadata
-from cognite.client.data_classes.assets import Asset
-from cognite.client.data_classes.time_series import TimeSeries
-from cognite.client.data_classes.sequences import Sequence
-
 from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Relationship, RelationshipFilter, RelationshipList
+from cognite.client.data_classes.assets import Asset
+from cognite.client.data_classes.events import Event
+from cognite.client.data_classes.files import FileMetadata
 from cognite.client.data_classes.labels import LabelFilter
+from cognite.client.data_classes.sequences import Sequence
+from cognite.client.data_classes.time_series import TimeSeries
 
 
 class RelationshipsAPI(APIClient):
@@ -140,7 +139,9 @@ class RelationshipsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.relationships.retrieve(external_id="1")
         """
-        relationship = self._retrieve_multiple(external_ids=external_id, wrap_ids=True, other_params={"fetchResources": fetch_resources})
+        relationship = self._retrieve_multiple(
+            external_ids=external_id, wrap_ids=True, other_params={"fetchResources": fetch_resources}
+        )
         RelationshipsAPI._convert_resources(relationship)
         return relationship
 
@@ -164,8 +165,9 @@ class RelationshipsAPI(APIClient):
                 >>> res = c.relationships.retrieve_multiple(external_ids=["abc", "def"])
         """
         utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=False)
-        relationships = self._retrieve_multiple(external_ids=external_ids, wrap_ids=True,
-                                other_params={"fetchResources": fetch_resources})
+        relationships = self._retrieve_multiple(
+            external_ids=external_ids, wrap_ids=True, other_params={"fetchResources": fetch_resources}
+        )
         [RelationshipsAPI._convert_resources(r) for r in relationships]
         return relationships
 
@@ -266,7 +268,9 @@ class RelationshipsAPI(APIClient):
             active_at_time=active_at_time,
             labels=labels,
         )
-        relationships = self._list(method="POST", limit=limit, filter=filter, other_params={"fetchResources": fetch_resources})
+        relationships = self._list(
+            method="POST", limit=limit, filter=filter, other_params={"fetchResources": fetch_resources}
+        )
         [RelationshipsAPI._convert_resources(r) for r in relationships]
         return relationships
 
