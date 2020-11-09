@@ -1,10 +1,11 @@
+import random
 import time
 from unittest import mock
 
 import pytest
 
 from cognite.client import CogniteClient, utils
-from cognite.client.data_classes import Asset, AssetFilter, AssetUpdate
+from cognite.client.data_classes import Asset, AssetFilter, AssetList, AssetUpdate
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from tests.utils import set_request_limit
 
@@ -152,6 +153,9 @@ class TestAssetsAPI:
                 assert asset.parent_id == external_id_to_id[asset.external_id[:-1]]
 
     def test_get_subtree(self, root_test_asset):
+        assert isinstance(COGNITE_CLIENT.assets.retrieve_subtree(id=random.randint(1, 10)), AssetList)
+        assert 0 == len(COGNITE_CLIENT.assets.retrieve_subtree(external_id="non_existing_asset"))
+        assert 0 == len(COGNITE_CLIENT.assets.retrieve_subtree(id=random.randint(1, 10)))
         assert 781 == len(COGNITE_CLIENT.assets.retrieve_subtree(root_test_asset.id))
         assert 6 == len(COGNITE_CLIENT.assets.retrieve_subtree(root_test_asset.id, depth=1))
 
