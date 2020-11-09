@@ -8,6 +8,12 @@ from cognite.client.data_classes.assets import (
     AssetList,
     AssetUpdate,
 )
+from cognite.client.data_classes.contextualization import (
+    ContextualizationJob,
+    EntityMatchingModel,
+    EntityMatchingModelList,
+    EntityMatchingModelUpdate,
+)
 from cognite.client.data_classes.data_sets import DataSet, DataSetAggregate, DataSetFilter, DataSetList, DataSetUpdate
 from cognite.client.data_classes.datapoints import Datapoint, Datapoints, DatapointsList, DatapointsQuery
 from cognite.client.data_classes.events import EndTimeFilter, Event, EventFilter, EventList, EventUpdate
