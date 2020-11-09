@@ -1,5 +1,13 @@
 import copy
 
+from cognite.client.data_classes.events import Event
+
+from cognite.client.data_classes.files import FileMetadata
+
+from cognite.client.data_classes.time_series import TimeSeries
+
+from cognite.client.data_classes.assets import Asset
+
 from cognite.client.data_classes._base import *
 from cognite.client.data_classes.labels import Label, LabelFilter
 
@@ -11,8 +19,10 @@ class Relationship(CogniteResource):
         external_id (str): External id of the relationship, must be unique within the project.
         source_external_id (str): External id of the CDF resource that constitutes the relationship source.
         source_type (str): The CDF resource type of the relationship source. Must be one of the specified values.
+        source (Union[Asset, TimeSeries, FileMetadata, Event, Dict]): The full resource referenced by the source_external_id and source_type fields.
         target_external_id (str): External id of the CDF resource that constitutes the relationship target.
         target_type (str): The CDF resource type of the relationship target. Must be one of the specified values.
+        target (Union[Asset, TimeSeries, FileMetadata, Event, Dict]): The full resource referenced by the target_external_id and target_type fields.
         start_time (int): Time, in milliseconds since Jan. 1, 1970, when the relationship became active. If there is no startTime, relationship is active from the beginning of time until endTime.
         end_time (int): Time, in milliseconds since Jan. 1, 1970, when the relationship became inactive. If there is no endTime, relationship is active from startTime until the present or any point in the future. If endTime and startTime are set, then endTime must be strictly greater than startTime.
         confidence (float): Confidence value of the existence of this relationship. Generated relationships should provide a realistic score on the likelihood of the existence of the relationship. Relationships without a confidence value can be interpreted at the discretion of each project.
@@ -28,8 +38,10 @@ class Relationship(CogniteResource):
         external_id: str = None,
         source_external_id: str = None,
         source_type: str = None,
+        source: Union[Asset, TimeSeries, FileMetadata, Sequence, Event, Dict] = None,
         target_external_id: str = None,
         target_type: str = None,
+        target: Union[Asset, TimeSeries, FileMetadata, Sequence, Event, Dict] = None,
         start_time: int = None,
         end_time: int = None,
         confidence: float = None,
@@ -42,8 +54,10 @@ class Relationship(CogniteResource):
         self.external_id = external_id
         self.source_external_id = source_external_id
         self.source_type = source_type
+        self.source = source
         self.target_external_id = target_external_id
         self.target_type = target_type
+        self.target = target
         self.start_time = start_time
         self.end_time = end_time
         self.confidence = confidence

@@ -28,7 +28,7 @@ def mock_rel_response(rsps):
                 "dataSetId": 1,
                 "createdTime": 0,
                 "lastUpdatedTime": 0,
-                "labels": {"containsAny": [{"string": "string"}]},
+                "labels": {"externalId": "string"},
             }
         ]
     }
@@ -55,6 +55,8 @@ def mock_rel_empty(rsps):
     rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
     rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
     yield rsps
+
+
 
 
 class TestRelationships:

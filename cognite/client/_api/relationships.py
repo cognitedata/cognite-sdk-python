@@ -1,5 +1,11 @@
 from typing import *
 
+from cognite.client.data_classes.events import Event
+from cognite.client.data_classes.files import FileMetadata
+from cognite.client.data_classes.assets import Asset
+from cognite.client.data_classes.time_series import TimeSeries
+from cognite.client.data_classes.sequences import Sequence
+
 from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Relationship, RelationshipFilter, RelationshipList
@@ -60,6 +66,7 @@ class RelationshipsAPI(APIClient):
         active_at_time: Dict[str, int] = None,
         labels: LabelFilter = None,
         limit: int = None,
+        fetch_resources: bool = False,
     ) -> Generator[Union[Relationship, RelationshipList], None, None]:
         """Iterate over relationships
 
@@ -100,7 +107,9 @@ class RelationshipsAPI(APIClient):
             active_at_time=active_at_time,
             labels=labels,
         )
-        return self._list_generator(method="POST", limit=limit, filter=filter)
+        return self._list_generator(
+            method="POST", limit=limit, filter=filter, other_params={"fetchResources": fetch_resources}
+        )
 
     def __iter__(self) -> Generator[Relationship, None, None]:
         """Iterate over relationships
@@ -112,11 +121,13 @@ class RelationshipsAPI(APIClient):
         """
         return self.__call__()
 
-    def retrieve(self, external_id: str) -> Optional[Relationship]:
+    def retrieve(self, external_id: str, fetch_resources: bool = False) -> Optional[Relationship]:
         """Retrieve a single relationship by external id.
 
         Args:
             external_id (str): External ID
+            fetch_resources (bool): if true, will try to return the full resources referenced by the relationship in the
+                source and target fields.
 
         Returns:
             Optional[Relationship]: Requested relationship or None if it does not exist.
@@ -129,13 +140,17 @@ class RelationshipsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.relationships.retrieve(external_id="1")
         """
-        return self._retrieve_multiple(external_ids=external_id, wrap_ids=True)
+        relationship = self._retrieve_multiple(external_ids=external_id, wrap_ids=True, other_params={"fetchResources": fetch_resources})
+        RelationshipsAPI._convert_resources(relationship)
+        return relationship
 
-    def retrieve_multiple(self, external_ids: List[str]) -> RelationshipList:
+    def retrieve_multiple(self, external_ids: List[str], fetch_resources: bool = False) -> RelationshipList:
         """Retrieve multiple relationships by external id.
 
         Args:
             external_ids (List[str]): External IDs
+            fetch_resources (bool): if true, will try to return the full resources referenced by the relationship in the
+                source and target fields.
 
         Returns:
             RelationshipList: The requested relationships.
@@ -149,7 +164,32 @@ class RelationshipsAPI(APIClient):
                 >>> res = c.relationships.retrieve_multiple(external_ids=["abc", "def"])
         """
         utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=False)
-        return self._retrieve_multiple(external_ids=external_ids, wrap_ids=True)
+        relationships = self._retrieve_multiple(external_ids=external_ids, wrap_ids=True,
+                                other_params={"fetchResources": fetch_resources})
+        [RelationshipsAPI._convert_resources(r) for r in relationships]
+        return relationships
+
+    @staticmethod
+    def _convert_resources(relationship: Relationship):
+        if relationship is not None:
+            if relationship.source is not None:
+                relationship.source = RelationshipsAPI._convert_resource(relationship.source, relationship.source_type)
+            if relationship.target is not None:
+                relationship.target = RelationshipsAPI._convert_resource(relationship.target, relationship.target_type)
+
+    @staticmethod
+    def _convert_resource(resource: Dict, resource_type: str):
+        resource = {utils._auxiliary.to_snake_case(key): value for key, value in resource.items()}
+        if resource_type == "timeSeries":
+            return TimeSeries(**resource)
+        elif resource_type == "asset":
+            return Asset(**resource)
+        elif resource_type == "sequence":
+            return Sequence(**resource)
+        elif resource_type == "file":
+            return FileMetadata(**resource)
+        elif resource_type == "event":
+            return Event(**resource)
 
     def list(
         self,
@@ -167,6 +207,7 @@ class RelationshipsAPI(APIClient):
         active_at_time: Dict[str, int] = None,
         labels: LabelFilter = None,
         limit: int = 100,
+        fetch_resources: bool = False,
     ) -> RelationshipList:
         """Lists relationships stored in the project based on a query filter given in the payload of this request. Up to 1000 relationships can be retrieved in one operation.
 
@@ -186,6 +227,8 @@ class RelationshipsAPI(APIClient):
             labels (LabelFilter): Return only the resource matching the specified label constraints.
             limit (int): Maximum number of relationships to return. Defaults to 100. Set to -1, float("inf") or None
                 to return all items.
+            fetch_resources (bool): if true, will try to return the full resources referenced by the relationship in the
+                source and target fields.
 
         Returns:
             RelationshipList: List of requested relationships
@@ -223,7 +266,9 @@ class RelationshipsAPI(APIClient):
             active_at_time=active_at_time,
             labels=labels,
         )
-        return self._list(method="POST", limit=limit, filter=filter)
+        relationships = self._list(method="POST", limit=limit, filter=filter, other_params={"fetchResources": fetch_resources})
+        [RelationshipsAPI._convert_resources(r) for r in relationships]
+        return relationships
 
     def create(self, relationship: Union[Relationship, List[Relationship]]) -> Union[Relationship, RelationshipList]:
         """Create one or more relationships.
