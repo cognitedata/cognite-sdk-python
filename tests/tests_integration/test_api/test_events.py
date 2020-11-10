@@ -102,9 +102,12 @@ class TestEventsAPI:
         assert len(res) > 0
 
     def test_update(self, new_event):
-        update_asset = EventUpdate(new_event.id).metadata.set({"bla": "bla"})
-        res = COGNITE_CLIENT.events.update(update_asset)
+        update_event = EventUpdate(new_event.id).metadata.set({"bla": "bla"})
+        res = COGNITE_CLIENT.events.update(update_event)
         assert {"bla": "bla"} == res.metadata
+        update_event2 = EventUpdate(new_event.id).metadata.set(None)
+        res2 = COGNITE_CLIENT.events.update(update_event2)
+        assert res2.metadata == {}
 
     def test_delete_with_nonexisting(self):
         a = COGNITE_CLIENT.events.create(Event())
