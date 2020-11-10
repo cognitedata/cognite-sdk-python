@@ -17,7 +17,7 @@ Changes are grouped as follows
 ## [2.6.4] - 2020-11-10
 
 ### Added
-- added `fetch_resources` parameter to the relationships list and retrieve_multiple methods, which attempts to fetch the resource referenced in the relationship.
+- `fetch_resources` parameter to the relationships `list` and `retrieve_multiple` methods, which attempts to fetch the resource referenced in the relationship.
 
 ## [2.6.3] - 2020-11-06
 
