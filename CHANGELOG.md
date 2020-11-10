@@ -14,6 +14,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.6.4] - 2020-11-10
+
+### Fixed
+- Fixed a bug where 429 was not retried on all endpoints
+
 ## [2.6.3] - 2020-11-06
 
 ### Fixed
