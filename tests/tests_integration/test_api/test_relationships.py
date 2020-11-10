@@ -14,8 +14,8 @@ from cognite.client.data_classes import (
 )
 from cognite.client.exceptions import CogniteNotFoundError
 
-API_REL = CogniteClient().relationships
-
+API = CogniteClient()
+API_REL = API.relationships
 
 @pytest.fixture
 def new_relationship(new_label):
@@ -43,37 +43,31 @@ def new_relationship(new_label):
 @pytest.fixture
 def new_label():
     # create a label to use in relationships
-    from cognite.client import CogniteClient
-
     external_id = uuid.uuid4().hex[0:20]
-    tp = CogniteClient().labels.create(LabelDefinition(external_id=external_id, name="mandatory"))
+    tp = API.labels.create(LabelDefinition(external_id=external_id, name="mandatory"))
     assert isinstance(tp, LabelDefinition)
     yield tp
-    CogniteClient().labels.delete(external_id=tp.external_id)
+    API.labels.delete(external_id=tp.external_id)
 
 
 @pytest.fixture
 def new_asset():
-    # create a asset to use in relationships
-    from cognite.client import CogniteClient
-
+    # create an asset to use in relationships
     external_id = uuid.uuid4().hex[0:20]
-    tp = CogniteClient().assets.create(Asset(external_id=external_id, name="mandatory"))
+    tp = API.assets.create(Asset(external_id=external_id, name="mandatory"))
     assert isinstance(tp, Asset)
     yield tp
-    CogniteClient().assets.delete(external_id=tp.external_id)
+    API.assets.delete(external_id=tp.external_id)
 
 
 @pytest.fixture
 def new_time_series():
     # create a time series to use in relationships
-    from cognite.client import CogniteClient
-
     external_id = uuid.uuid4().hex[0:20]
-    tp = CogniteClient().time_series.create(TimeSeries(external_id=external_id, name="mandatory"))
+    tp = API.time_series.create(TimeSeries(external_id=external_id, name="mandatory"))
     assert isinstance(tp, TimeSeries)
     yield tp
-    CogniteClient().time_series.delete(external_id=tp.external_id)
+    API.time_series.delete(external_id=tp.external_id)
 
 
 @pytest.fixture

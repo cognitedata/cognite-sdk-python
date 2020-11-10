@@ -81,19 +81,18 @@ class Relationship(CogniteResource):
     def _load(cls, resource: Union[Dict, str], cognite_client=None):
         instance = super(Relationship, cls)._load(resource, cognite_client)
         if instance.source is not None:
-            instance.source = Relationship._convert_resource(instance.source, instance.source_type)
+            instance.source = instance._convert_resource(instance.source, instance.source_type)
         if instance.target is not None:
-            instance.target = Relationship._convert_resource(instance.target, instance.target_type)
+            instance.target = instance._convert_resource(instance.target, instance.target_type)
         return instance
 
-    @staticmethod
     def _convert_resource(self, resource: Dict, resource_type: str):
         resource_map = defaultdict(lambda x: x)
-        resource_map["timeSeries"] = lambda x: TimeSeries._load(x, self.cognite_client)
-        resource_map["asset"] = lambda x: Asset._load(x, self.cognite_client)
-        resource_map["sequence"] = lambda x: Sequence._load(x, self.cognite_client)
-        resource_map["file"] = lambda x: FileMetadata._load(x, self.cognite_client)
-        resource_map["event"] = lambda x: Event._load(x, self.cognite_client)
+        resource_map["timeSeries"] = lambda x: TimeSeries._load(x, self._cognite_client)
+        resource_map["asset"] = lambda x: Asset._load(x, self._cognite_client)
+        resource_map["sequence"] = lambda x: Sequence._load(x, self._cognite_client)
+        resource_map["file"] = lambda x: FileMetadata._load(x, self._cognite_client)
+        resource_map["event"] = lambda x: Event._load(x, self._cognite_client)
         return resource_map[resource_type](resource)
 
 
