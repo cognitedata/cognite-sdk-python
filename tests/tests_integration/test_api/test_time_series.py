@@ -13,7 +13,7 @@ COGNITE_CLIENT = CogniteClient()
 
 @pytest.fixture(scope="class")
 def new_ts():
-    ts = COGNITE_CLIENT.time_series.create(TimeSeries(name="any"))
+    ts = COGNITE_CLIENT.time_series.create(TimeSeries(name="any", metadata={"a": "b"}))
     yield ts
     COGNITE_CLIENT.time_series.delete(id=ts.id)
     assert COGNITE_CLIENT.time_series.retrieve(ts.id) is None
@@ -91,9 +91,11 @@ class TestTimeSeriesAPI:
         assert len(res) > 0
 
     def test_update(self, new_ts):
-        update_ts = TimeSeriesUpdate(new_ts.id).name.set("newname")
+        assert new_ts.metadata == {"a": "b"}
+        update_ts = TimeSeriesUpdate(new_ts.id).name.set("newname").metadata.set({})
         res = COGNITE_CLIENT.time_series.update(update_ts)
         assert "newname" == res.name
+        assert res.metadata == {}
 
     def test_delete_with_nonexisting(self):
         a = COGNITE_CLIENT.time_series.create(TimeSeries(name="any"))
