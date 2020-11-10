@@ -14,7 +14,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [2.6.1] - 2020-11-10
+## [2.6.4] - 2020-11-10
 
 ### Added
 - added `fetchResources` parameter to the relationships list and retrieve_multiple methods, which attempts to fetch the resource referenced in the relationship.
