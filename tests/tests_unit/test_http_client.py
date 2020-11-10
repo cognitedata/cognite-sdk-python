@@ -90,8 +90,8 @@ class TestHTTPClient:
         with pytest.raises(CogniteReadTimeout):
             c.request("GET", "bla")
 
-        assert c.retry_tracker.total == DEFAULT_CONFIG.max_retries_read + 1
-        assert c.retry_tracker.read == DEFAULT_CONFIG.max_retries_read + 1
+        assert c.retry_tracker.total == DEFAULT_CONFIG.max_retries_read
+        assert c.retry_tracker.read == DEFAULT_CONFIG.max_retries_read
         assert c.retry_tracker.connect == 0
         assert c.retry_tracker.status == 0
 
