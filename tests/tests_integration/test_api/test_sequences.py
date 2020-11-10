@@ -11,7 +11,7 @@ COGNITE_CLIENT = CogniteClient()
 
 @pytest.fixture(scope="class")
 def new_seq():
-    seq = COGNITE_CLIENT.sequences.create(Sequence(name="test_temp", columns=[{}]))
+    seq = COGNITE_CLIENT.sequences.create(Sequence(name="test_temp", columns=[{}], metadata={"a": "b"}))
     yield seq
     COGNITE_CLIENT.sequences.delete(id=seq.id)
     assert COGNITE_CLIENT.sequences.retrieve(seq.id) is None
@@ -73,9 +73,11 @@ class TestSequencesAPI:
         assert len(res) > 0
 
     def test_update(self, new_seq):
-        update_seq = SequenceUpdate(new_seq.id).name.set("newname")
+        assert new_seq.metadata == {"a": "b"}
+        update_seq = SequenceUpdate(new_seq.id).name.set("newname").metadata.set(None)
         res = COGNITE_CLIENT.sequences.update(update_seq)
         assert "newname" == res.name
+        assert res.metadata == {}
 
     def test_get_new(self, new_seq):
         res = COGNITE_CLIENT.sequences.retrieve(id=new_seq.id)
