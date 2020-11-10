@@ -1,7 +1,7 @@
 import pytest
 
 from cognite.client import CogniteClient, utils
-from cognite.client.data_classes import Asset, Datapoint, TimeSeries, TimeSeriesList
+from cognite.client.data_classes import Asset, Datapoint
 from tests.utils import jsgz_load
 
 COGNITE_CLIENT = CogniteClient()
@@ -123,12 +123,6 @@ class TestTimeSeries:
         assert 0 == jsgz_load(mock_get_first_dp_in_ts.calls[1].request.body)["start"]
         assert now <= jsgz_load(mock_get_first_dp_in_ts.calls[1].request.body)["end"]
         assert 1 == jsgz_load(mock_get_first_dp_in_ts.calls[1].request.body)["limit"]
-
-    def test_get(self, mock_ts_response):
-        lst = TimeSeriesList([TimeSeries(id=i, external_id=str(i)) for i in range(10)])
-        assert isinstance(lst.get(id=3), TimeSeries)
-        assert isinstance(lst.get(external_id="7"), TimeSeries)
-        assert lst.get(external_id="abc") is None
 
     def test_asset(self, mock_ts_by_ids_response, mock_asset_by_ids_response):
         now = utils.timestamp_to_ms("now")
