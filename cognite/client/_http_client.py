@@ -76,13 +76,13 @@ class _RetryTracker:
         return backoff_time_adjusted
 
     def should_retry(self, status_code: Optional[int]) -> bool:
-        if self.total > self.config.max_retries_total:
+        if self.total >= self.config.max_retries_total:
             return False
-        if self.status > self.config.max_retries_status:
+        if self.status > 0 and self.status >= self.config.max_retries_status:
             return False
-        if self.read > self.config.max_retries_read:
+        if self.read > 0 and self.read >= self.config.max_retries_read:
             return False
-        if self.connect > self.config.max_retries_connect:
+        if self.connect > 0 and self.connect >= self.config.max_retries_connect:
             return False
         if status_code and status_code not in self.config.status_codes_to_retry:
             return False
