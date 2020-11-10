@@ -170,11 +170,13 @@ class EntityMatchingModel(CogniteResource):
         return self._cognite_client.entity_matching._run_job(
             job_path=f"/predict",
             status_path=f"/jobs/",
-            id=self.id,
-            sources=self.dump_entities(sources),
-            targets=self.dump_entities(targets),
-            num_matches=num_matches,
-            score_threshold=score_threshold,
+            json={
+                "id": self.id,
+                "sources": self.dump_entities(sources),
+                "targets": self.dump_entities(targets),
+                "numMatches": num_matches,
+                "scoreThreshold": score_threshold,
+            },
         )
 
     def refit(self, true_matches: List[Union[Dict, Tuple[Union[int, str], Union[int, str]]]]) -> "EntityMatchingModel":

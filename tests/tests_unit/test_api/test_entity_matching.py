@@ -96,6 +96,11 @@ class TestEntityMatching:
                     "trueMatches": [{"sourceId": 1, "targetId": 2}],
                     "featureType": "bigram",
                     "ignoreMissingFields": False,
+                    "matchFields": None,
+                    "name": None,
+                    "description": None,
+                    "externalId": None,
+                    "classifier": None,
                 } == jsgz_load(call.request.body)
             else:
                 n_status_calls += 1
@@ -125,6 +130,11 @@ class TestEntityMatching:
             "trueMatches": [{"sourceId": 1, "targetExternalId": "abc"}],
             "featureType": "bigram",
             "ignoreMissingFields": False,
+            "matchFields": None,
+            "name": None,
+            "description": None,
+            "externalId": None,
+            "classifier": None,
         } == jsgz_load(mock_fit.calls[0].request.body)
 
     def test_fit_fails(self, mock_fit, mock_status_failed):
