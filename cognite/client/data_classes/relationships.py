@@ -1,10 +1,12 @@
 import copy
+from collections import defaultdict
 
 from cognite.client.data_classes._base import *
 from cognite.client.data_classes.assets import Asset
 from cognite.client.data_classes.events import Event
 from cognite.client.data_classes.files import FileMetadata
 from cognite.client.data_classes.labels import Label, LabelFilter
+from cognite.client.data_classes.sequences import Sequence
 from cognite.client.data_classes.time_series import TimeSeries
 
 
@@ -15,10 +17,10 @@ class Relationship(CogniteResource):
         external_id (str): External id of the relationship, must be unique within the project.
         source_external_id (str): External id of the CDF resource that constitutes the relationship source.
         source_type (str): The CDF resource type of the relationship source. Must be one of the specified values.
-        source (Union[Asset, TimeSeries, FileMetadata, Event, Dict]): The full resource referenced by the source_external_id and source_type fields.
+        source (Union[Asset, TimeSeries, FileMetadata, Event, Sequence, Dict]): The full resource referenced by the source_external_id and source_type fields.
         target_external_id (str): External id of the CDF resource that constitutes the relationship target.
         target_type (str): The CDF resource type of the relationship target. Must be one of the specified values.
-        target (Union[Asset, TimeSeries, FileMetadata, Event, Dict]): The full resource referenced by the target_external_id and target_type fields.
+        target (Union[Asset, TimeSeries, FileMetadata, Event, Sequence, Dict]): The full resource referenced by the target_external_id and target_type fields.
         start_time (int): Time, in milliseconds since Jan. 1, 1970, when the relationship became active. If there is no startTime, relationship is active from the beginning of time until endTime.
         end_time (int): Time, in milliseconds since Jan. 1, 1970, when the relationship became inactive. If there is no endTime, relationship is active from startTime until the present or any point in the future. If endTime and startTime are set, then endTime must be strictly greater than startTime.
         confidence (float): Confidence value of the existence of this relationship. Generated relationships should provide a realistic score on the likelihood of the existence of the relationship. Relationships without a confidence value can be interpreted at the discretion of each project.
@@ -74,6 +76,25 @@ class Relationship(CogniteResource):
         _RESOURCE_TYPES = {"asset", "timeseries", "file", "event", "sequence", "geospatial"}
         if resource_type.lower() not in _RESOURCE_TYPES:
             raise TypeError("Invalid source or target '{}' in relationship".format(resource_type))
+
+    @classmethod
+    def _load(cls, resource: Union[Dict, str], cognite_client=None):
+        instance = super(Relationship, cls)._load(resource, cognite_client)
+        if instance.source is not None:
+            instance.source = Relationship._convert_resource(instance.source, instance.source_type)
+        if instance.target is not None:
+            instance.target = Relationship._convert_resource(instance.target, instance.target_type)
+        return instance
+
+    @staticmethod
+    def _convert_resource(self, resource: Dict, resource_type: str):
+        resource_map = defaultdict(lambda x: x)
+        resource_map["timeSeries"] = lambda x: TimeSeries._load(x, self.cognite_client)
+        resource_map["asset"] = lambda x: Asset._load(x, self.cognite_client)
+        resource_map["sequence"] = lambda x: Sequence._load(x, self.cognite_client)
+        resource_map["file"] = lambda x: FileMetadata._load(x, self.cognite_client)
+        resource_map["event"] = lambda x: Event._load(x, self.cognite_client)
+        return resource_map[resource_type](resource)
 
 
 class RelationshipFilter(CogniteFilter):

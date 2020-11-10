@@ -139,11 +139,9 @@ class RelationshipsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.relationships.retrieve(external_id="1")
         """
-        relationship = self._retrieve_multiple(
+        return self._retrieve_multiple(
             external_ids=external_id, wrap_ids=True, other_params={"fetchResources": fetch_resources}
         )
-        RelationshipsAPI._convert_resources(relationship)
-        return relationship
 
     def retrieve_multiple(self, external_ids: List[str], fetch_resources: bool = False) -> RelationshipList:
         """Retrieve multiple relationships by external id.
@@ -165,33 +163,9 @@ class RelationshipsAPI(APIClient):
                 >>> res = c.relationships.retrieve_multiple(external_ids=["abc", "def"])
         """
         utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=False)
-        relationships = self._retrieve_multiple(
+        return self._retrieve_multiple(
             external_ids=external_ids, wrap_ids=True, other_params={"fetchResources": fetch_resources}
         )
-        [RelationshipsAPI._convert_resources(r) for r in relationships]
-        return relationships
-
-    @staticmethod
-    def _convert_resources(relationship: Relationship):
-        if relationship is not None:
-            if relationship.source is not None:
-                relationship.source = RelationshipsAPI._convert_resource(relationship.source, relationship.source_type)
-            if relationship.target is not None:
-                relationship.target = RelationshipsAPI._convert_resource(relationship.target, relationship.target_type)
-
-    @staticmethod
-    def _convert_resource(resource: Dict, resource_type: str):
-        resource = {utils._auxiliary.to_snake_case(key): value for key, value in resource.items()}
-        if resource_type == "timeSeries":
-            return TimeSeries(**resource)
-        elif resource_type == "asset":
-            return Asset(**resource)
-        elif resource_type == "sequence":
-            return Sequence(**resource)
-        elif resource_type == "file":
-            return FileMetadata(**resource)
-        elif resource_type == "event":
-            return Event(**resource)
 
     def list(
         self,
@@ -268,11 +242,7 @@ class RelationshipsAPI(APIClient):
             active_at_time=active_at_time,
             labels=labels,
         )
-        relationships = self._list(
-            method="POST", limit=limit, filter=filter, other_params={"fetchResources": fetch_resources}
-        )
-        [RelationshipsAPI._convert_resources(r) for r in relationships]
-        return relationships
+        return self._list(method="POST", limit=limit, filter=filter, other_params={"fetchResources": fetch_resources})
 
     def create(self, relationship: Union[Relationship, List[Relationship]]) -> Union[Relationship, RelationshipList]:
         """Create one or more relationships.
