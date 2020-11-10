@@ -23,7 +23,7 @@ def new_relationship(new_label):
     external_id = uuid.uuid4().hex[0:20]
     from cognite.client import CogniteClient
 
-    pre_existing_data_set = CogniteClient().data_sets.retrieve(external_id="pre_existing_data_set")
+    pre_existing_data_set = API.data_sets.retrieve(external_id="pre_existing_data_set")
     relationship = API_REL.create(
         Relationship(
             external_id=external_id,
@@ -164,7 +164,7 @@ class TestRelationshipsAPI:
 
     def test_list_data_set(self, new_relationship):
         new_rel, ext_id = new_relationship
-        pre_existing_data_set = CogniteClient().data_sets.retrieve(external_id="pre_existing_data_set")
+        pre_existing_data_set = API.data_sets.retrieve(external_id="pre_existing_data_set")
         res = API_REL.list(source_external_ids=[ext_id], data_set_external_ids=[pre_existing_data_set.external_id])
         res2 = API_REL.list(target_external_ids=[ext_id], data_set_ids=[pre_existing_data_set.id])
         assert res == res2
