@@ -577,11 +577,14 @@ class APIClient:
         if single_item:
             items = [items]
 
-        for item in items:
+        for index, item in enumerate(items):
             if isinstance(item, CogniteResource):
                 patch_objects.append(self._convert_resource_to_patch_object(item, cls._UPDATE._get_update_properties()))
             elif isinstance(item, CogniteUpdate):
                 patch_objects.append(item.dump())
+                patch_object_update = patch_objects[index]["update"]
+                if "metadata" in patch_object_update and patch_object_update["metadata"] == {"set": None}:
+                    patch_object_update["metadata"] = {"set": {}}
             else:
                 raise ValueError("update item must be of type CogniteResource or CogniteUpdate")
         patch_object_chunks = utils._auxiliary.split_into_chunks(patch_objects, self._UPDATE_LIMIT)
