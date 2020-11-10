@@ -4,16 +4,18 @@ import pytest
 
 from cognite.client.beta import CogniteClient
 from cognite.client.data_classes import (
+    Asset,
     Label,
     LabelDefinition,
     LabelFilter,
     Relationship,
-    RelationshipFilter,
     RelationshipList,
+    TimeSeries,
 )
 from cognite.client.exceptions import CogniteNotFoundError
 
-API_REL = CogniteClient().relationships
+API = CogniteClient()
+API_REL = API.relationships
 
 
 @pytest.fixture
@@ -21,7 +23,7 @@ def new_relationship(new_label):
     external_id = uuid.uuid4().hex[0:20]
     from cognite.client import CogniteClient
 
-    pre_existing_data_set = CogniteClient().data_sets.retrieve(external_id="pre_existing_data_set")
+    pre_existing_data_set = API.data_sets.retrieve(external_id="pre_existing_data_set")
     relationship = API_REL.create(
         Relationship(
             external_id=external_id,
@@ -42,13 +44,31 @@ def new_relationship(new_label):
 @pytest.fixture
 def new_label():
     # create a label to use in relationships
-    from cognite.client import CogniteClient
-
     external_id = uuid.uuid4().hex[0:20]
-    tp = CogniteClient().labels.create(LabelDefinition(external_id=external_id, name="mandatory"))
+    tp = API.labels.create(LabelDefinition(external_id=external_id, name="mandatory"))
     assert isinstance(tp, LabelDefinition)
     yield tp
-    CogniteClient().labels.delete(external_id=tp.external_id)
+    API.labels.delete(external_id=tp.external_id)
+
+
+@pytest.fixture
+def new_asset():
+    # create an asset to use in relationships
+    external_id = uuid.uuid4().hex[0:20]
+    tp = API.assets.create(Asset(external_id=external_id, name="mandatory"))
+    assert isinstance(tp, Asset)
+    yield tp
+    API.assets.delete(external_id=tp.external_id)
+
+
+@pytest.fixture
+def new_time_series():
+    # create a time series to use in relationships
+    external_id = uuid.uuid4().hex[0:20]
+    tp = API.time_series.create(TimeSeries(external_id=external_id, name="mandatory"))
+    assert isinstance(tp, TimeSeries)
+    yield tp
+    API.time_series.delete(external_id=tp.external_id)
 
 
 @pytest.fixture
@@ -104,6 +124,25 @@ def create_multiple_relationships(new_label):
     API_REL.delete(external_id=[ext_ids["external_id"] for ext_ids in relationships.dump()])
 
 
+@pytest.fixture
+def relationship_with_resources(new_asset, new_time_series):
+    external_id = uuid.uuid4().hex[0:20]
+    asset_ext_id = new_asset.external_id
+    time_series_ext_id = new_time_series.external_id
+    relationship = API_REL.create(
+        Relationship(
+            external_id=external_id,
+            source_external_id=asset_ext_id,
+            source_type="asset",
+            target_external_id=time_series_ext_id,
+            target_type="timeseries",
+        )
+    )
+    yield relationship, external_id, new_asset, new_time_series
+    API_REL.delete(external_id=external_id)
+    assert API_REL.retrieve(external_id=relationship.external_id) is None
+
+
 class TestRelationshipsAPI:
     def test_get_single(self, new_relationship):
         new_rel, ext_id = new_relationship
@@ -125,7 +164,7 @@ class TestRelationshipsAPI:
 
     def test_list_data_set(self, new_relationship):
         new_rel, ext_id = new_relationship
-        pre_existing_data_set = CogniteClient().data_sets.retrieve(external_id="pre_existing_data_set")
+        pre_existing_data_set = API.data_sets.retrieve(external_id="pre_existing_data_set")
         res = API_REL.list(source_external_ids=[ext_id], data_set_external_ids=[pre_existing_data_set.external_id])
         res2 = API_REL.list(target_external_ids=[ext_id], data_set_ids=[pre_existing_data_set.id])
         assert res == res2
@@ -136,3 +175,15 @@ class TestRelationshipsAPI:
         res = API_REL.list(labels=LabelFilter(contains_all=[ext_id]))
         assert len(res) == 3
         assert isinstance(res, RelationshipList)
+
+    def test_fetch_resources_list(self, relationship_with_resources):
+        relationship, ext_id, asset, time_series = relationship_with_resources
+        res = API_REL.list(source_external_ids=[relationship.source_external_id], fetch_resources=True)
+        assert res[0].source == asset
+        assert res[0].target == time_series
+
+    def test_fetch_resources_retrieve(self, relationship_with_resources):
+        relationship, ext_id, asset, time_series = relationship_with_resources
+        res = API_REL.retrieve_multiple(external_ids=[ext_id], fetch_resources=True)
+        assert res[0].source == asset
+        assert res[0].target == time_series
