@@ -87,13 +87,16 @@ class Relationship(CogniteResource):
         return instance
 
     def _convert_resource(self, resource: Dict, resource_type: str):
-        resource_map = defaultdict(lambda x: x)
-        resource_map["timeSeries"] = lambda x: TimeSeries._load(x, self._cognite_client)
-        resource_map["asset"] = lambda x: Asset._load(x, self._cognite_client)
-        resource_map["sequence"] = lambda x: Sequence._load(x, self._cognite_client)
-        resource_map["file"] = lambda x: FileMetadata._load(x, self._cognite_client)
-        resource_map["event"] = lambda x: Event._load(x, self._cognite_client)
-        return resource_map[resource_type](resource)
+        resource_map = {
+            "timeSeries": TimeSeries,
+            "asset": Asset,
+            "sequence": Sequence,
+            "file": FileMetadata,
+            "event": Event,
+        }
+        if resource_type in resource_map:
+            return resource_map[resource_type]._load(resource, self._cognite_client)
+        return resource
 
 
 class RelationshipFilter(CogniteFilter):

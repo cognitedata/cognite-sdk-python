@@ -17,6 +17,7 @@ from cognite.client.exceptions import CogniteNotFoundError
 API = CogniteClient()
 API_REL = API.relationships
 
+
 @pytest.fixture
 def new_relationship(new_label):
     external_id = uuid.uuid4().hex[0:20]
