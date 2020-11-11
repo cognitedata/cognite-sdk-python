@@ -232,6 +232,7 @@ class APIClient:
         external_ids: Union[List[str], str] = None,
         ignore_unknown_ids=None,
         headers: Dict = None,
+        other_params: Dict = None,
     ):
         cls = cls or self._LIST_CLASS
         resource_path = resource_path or self._RESOURCE_PATH
@@ -240,7 +241,11 @@ class APIClient:
 
         ignore_unknown = {} if ignore_unknown_ids is None else {"ignoreUnknownIds": ignore_unknown_ids}
         tasks = [
-            {"url_path": resource_path + "/byids", "json": {"items": id_chunk, **ignore_unknown}, "headers": headers}
+            {
+                "url_path": resource_path + "/byids",
+                "json": {"items": id_chunk, **ignore_unknown, **(other_params or {})},
+                "headers": headers,
+            }
             for id_chunk in id_chunks
         ]
         tasks_summary = utils._concurrency.execute_tasks_concurrently(
