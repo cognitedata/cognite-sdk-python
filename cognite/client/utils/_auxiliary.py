@@ -195,5 +195,7 @@ def convert_true_match(true_match):
             else:
                 converted_true_match[fromto + "Id"] = true_match[i]
         return converted_true_match
-    else:
+    elif isinstance(true_match, dict):
         return true_match
+    else:
+        raise ValueError("true_matches should be a dictionary or a two-element list: found {}".format(true_match))

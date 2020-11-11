@@ -126,7 +126,6 @@ class EntityMatchingAPI(APIClient):
         Args:
             sources: entities to match from, should have an 'id' field. Tolerant to passing more than is needed or used (e.g. json dump of time series list)
             targets: entities to match to, should have an 'id' field.  Tolerant to passing more than is needed or used.
-            id_field (str): use 'id' or 'external_id' as the id field to match resources
             true_matches: Known valid matches given as a list of dicts with keys 'sourceId', 'sourceExternalId', 'sourceId', 'sourceExternalId'). If omitted, uses an unsupervised model.
              A tuple can be used instead of the dictionary for convenience, interpreted as id/externalId based on type.
             match_fields: List of (from,to) keys to use in matching. Default in the API is [('name','name')]
