@@ -26,6 +26,7 @@ class ContextualizationJob(CogniteResource):
     def __init__(
         self,
         job_id=None,
+        model_id=None,
         status=None,
         error_message=None,
         created_time=None,
@@ -35,8 +36,9 @@ class ContextualizationJob(CogniteResource):
         cognite_client=None,
         **kwargs,
     ):
-        """Data class for the result of a contextualization job. All keys in the body become snake-cased variables in the class (e.g. `items`, `svg_url`)"""
+        """Data class for the result of a contextualization job."""
         self.job_id = job_id
+        self.model_id = model_id
         self.status = status
         self.created_time = created_time
         self.start_time = start_time
@@ -57,9 +59,14 @@ class ContextualizationJob(CogniteResource):
         self._result = {k: v for k, v in data.items() if k not in self._COMMON_FIELDS}
         return self.status
 
-    def wait_for_completion(self, interval=1):
-        """Waits for job completion, raising ModelFailedException if fit failed - generally not needed to call as it is called by result"""
-        while True:
+    def wait_for_completion(self, timeout=None, interval=1):
+        """Waits for job completion, raising ModelFailedException if fit failed - generally not needed to call as it is called by result.
+        Args:
+            timeout: Time out after this many seconds. (None means wait indefinitely)
+            interval: Poll status every this many seconds.
+        """
+        start = time.time()
+        while timeout is None or time.time() < start + timeout:
             self.update_status()
             if self.status not in ["Queued", "Running"]:
                 break
@@ -89,6 +96,12 @@ class ContextualizationJob(CogniteResource):
         return obj
 
 
+class ContextualizationJobList(CogniteResourceList):
+    _RESOURCE = ContextualizationJob
+    _UPDATE = None
+    _ASSERT_CLASSES = False
+
+
 class EntityMatchingModel(CogniteResource):
     _RESOURCE_PATH = "/context/entitymatching"
     _STATUS_PATH = _RESOURCE_PATH + "/"
@@ -110,6 +123,7 @@ class EntityMatchingModel(CogniteResource):
         description=None,
         external_id=None,
     ):
+        """Entity matching model. See the `fit` method for the meaning of these fields."""
         self.id = id
         self.status = status
         self.created_time = created_time
@@ -138,9 +152,15 @@ class EntityMatchingModel(CogniteResource):
         self.error_message = data.get("errorMessage")
         return self.status
 
-    def wait_for_completion(self, interval=1):
-        """Waits for model completion, raising ModelFailedException if fit failed - generally not needed to call as it is called by predict"""
-        while True:
+    def wait_for_completion(self, timeout: int = None, interval: int = 1) -> None:
+        """Waits for model completion, raising ModelFailedException if fit failed - generally not needed to call as it is called by predict
+
+        Args:
+            timeout: Time out after this many seconds. (None means wait indefinitely)
+            interval: Poll status every this many seconds.
+        """
+        start = time.time()
+        while timeout is None or time.time() < start + timeout:
             self.update_status()
             if self.status not in ["Queued", "Running"]:
                 break
@@ -162,7 +182,7 @@ class EntityMatchingModel(CogniteResource):
             targets: entities to match to, does not need an 'id' field.  Tolerant to passing more than is needed or used. If omitted, will use data from fit.
             num_matches (int): number of matches to return for each item.
             score_threshold (float): only return matches with a score above this threshold
-            ignore_missing_fields (bool): whether missing data in keyFrom or keyTo should be filled in with an empty string.
+            ignore_missing_fields (bool): whether missing data in match_fields should be filled in with an empty string.
 
         Returns:
             ContextualizationJob: object which can be used to wait for and retrieve results."""
@@ -172,8 +192,8 @@ class EntityMatchingModel(CogniteResource):
             status_path=f"/jobs/",
             json={
                 "id": self.id,
-                "sources": self.dump_entities(sources),
-                "targets": self.dump_entities(targets),
+                "sources": self._dump_entities(sources),
+                "targets": self._dump_entities(targets),
                 "numMatches": num_matches,
                 "scoreThreshold": score_threshold,
             },
@@ -195,7 +215,7 @@ class EntityMatchingModel(CogniteResource):
         return self._load(response.json(), cognite_client=self._cognite_client)
 
     @staticmethod
-    def dump_entities(entities: List[Union[Dict, CogniteResource]]) -> Optional[List[Dict]]:
+    def _dump_entities(entities: List[Union[Dict, CogniteResource]]) -> Optional[List[Dict]]:
         if entities:
             return [
                 {k: v for k, v in e.dump(camel_case=True).items() if isinstance(v, str) or k == "id"}

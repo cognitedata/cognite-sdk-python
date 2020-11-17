@@ -9,6 +9,7 @@ from cognite.client.data_classes import (
     EntityMatchingModelList,
     EntityMatchingModelUpdate,
 )
+from cognite.client.data_classes.contextualization import ContextualizationJobList
 from cognite.client.exceptions import CogniteAPIError, ModelFailedException
 
 COGNITE_CLIENT = CogniteClient()
@@ -126,12 +127,14 @@ class TestEntityMatchingIntegration:
         assert type(models_list) == EntityMatchingModelList
         assert all([type(x) == EntityMatchingModel for x in models_list])
         # Add filter
-        models_list = EMAPI.list(filter={"feature_type": "bigram"})
+        models_list = EMAPI.list(feature_type="bigram")
         assert set([model.feature_type for model in models_list]) == {"bigram"}
-        # Filter on two parameters
-        models_list = EMAPI.list(filter={"feature_type": "bigram"})
 
-        assert set([model.feature_type for model in models_list]) == {"bigram"}
+    def test_list_jobs(self):
+        jobs_list = EMAPI.list_jobs()
+        assert len(jobs_list) > 0
+        assert type(jobs_list) == ContextualizationJobList
+        assert all([type(x) == ContextualizationJob for x in jobs_list])
 
     def test_direct_predict(self, fitted_model):
         job = EMAPI.predict(external_id=fitted_model.external_id)

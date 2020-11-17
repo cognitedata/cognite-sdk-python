@@ -1,12 +1,11 @@
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-from requests import Response
-
 from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes._base import CogniteResource
 from cognite.client.data_classes.contextualization import (
     ContextualizationJob,
+    ContextualizationJobList,
     EntityMatchingModel,
     EntityMatchingModelList,
     EntityMatchingModelUpdate,
@@ -18,10 +17,9 @@ class EntityMatchingAPI(APIClient):
     _RESOURCE_PATH = EntityMatchingModel._RESOURCE_PATH
     _LIST_CLASS = EntityMatchingModelList
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def _run_job(self, job_path, json, status_path=None, headers=None, job_cls=None) -> ContextualizationJob:
+    def _run_job(
+        self, job_path: str, json, status_path: Optional[str] = None, headers: Dict = None, job_cls: type = None
+    ) -> ContextualizationJob:
         job_cls = job_cls or ContextualizationJob
         if status_path is None:
             status_path = job_path + "/"
@@ -35,8 +33,8 @@ class EntityMatchingAPI(APIClient):
         """Retrieve model
 
         Args:
-            id: id of the model to retrieve.
-            external_id: external id of the model to retrieve.
+            id (int): id of the model to retrieve.
+            external_id (str): external id of the model to retrieve.
 
         Returns:
             EntityMatchingModel: Model requested."""
@@ -49,8 +47,8 @@ class EntityMatchingAPI(APIClient):
         """Retrieve models
 
         Args:
-            ids: ids of the model to retrieve.
-            external_ids: external ids of the model to retrieve.
+            ids (List[int]): ids of the model to retrieve.
+            external_ids (List[str]): external ids of the model to retrieve.
 
         Returns:
             EntityMatchingModelList: Models requested."""
@@ -71,32 +69,50 @@ class EntityMatchingAPI(APIClient):
         """
         return self._update_multiple(items=item)
 
-    def list(self, filter: Dict = None, limit=100) -> EntityMatchingModelList:
+    def list(
+        self,
+        name: str = None,
+        description: str = None,
+        original_id: int = None,
+        feature_type: str = None,
+        classifier: str = None,
+        limit=100,
+    ) -> EntityMatchingModelList:
         """List models
 
         Args:
-            filter (dict): If not None, return models with parameter values that matches what is specified in the filter.
+            name (str): Optional user-defined name of model.
+            description (str): Optional user-defined description of model.
+            feature_type (str): feature type that defines the combination of features used.
+            classifier (str): classifier used in training.
+            original_id (int): id of the original model for models that were created with refit.
             limit (int, optional): Maximum number of items to return. Defaults to 100. Set to -1, float("inf") or None to return all items.
 
         Returns:
             EntityMatchingModelList: List of models."""
-        filter = {utils._auxiliary.to_camel_case(k): v for k, v in (filter or {}).items() if v is not None}
+        if limit in [None, -1, float("inf")]:
+            limit = 1_000_000_000  # currently no pagination
+        filter = {
+            "originalId": original_id,
+            "name": name,
+            "description": description,
+            "featureType": feature_type,
+            "classifier": classifier,
+        }
+        filter = {k: v for k, v in filter.items() if v is not None}
         # NB no pagination support yet
-        models = self._post(self._RESOURCE_PATH + "/list", json={"filter": filter}).json()["items"]
+        models = self._post(self._RESOURCE_PATH + "/list", json={"filter": filter, "limit": limit}).json()["items"]
         return EntityMatchingModelList(
             [self._LIST_CLASS._RESOURCE._load(model, cognite_client=self._cognite_client) for model in models]
         )
 
-    def list_jobs(self) -> EntityMatchingModelList:
-        """List jobs
+    def list_jobs(self) -> ContextualizationJobList:
+        """List jobs, typically model fit and predict runs.
 
         Returns:
-            EntityMatchingModelList: List of jobs."""
-        return EntityMatchingModelList(
-            [
-                self._LIST_CLASS._RESOURCE._load(model, cognite_client=self._cognite_client)
-                for model in self._get(self._RESOURCE_PATH + "/jobs").json()["items"]
-            ]
+            ContextualizationJobList: List of jobs."""
+        return ContextualizationJobList._load(
+            self._get(self._RESOURCE_PATH + "/jobs").json()["items"], cognite_client=self._cognite_client
         )
 
     def delete(self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None) -> None:
@@ -112,7 +128,7 @@ class EntityMatchingAPI(APIClient):
         sources: List[Union[Dict, CogniteResource]],
         targets: List[Union[Dict, CogniteResource]],
         true_matches: List[Union[Dict, Tuple[Union[int, str], Union[int, str]]]] = None,
-        match_fields: List[Tuple[str, str]] = None,
+        match_fields: Union[Dict, List[Tuple[str, str]]] = None,
         feature_type: str = None,
         classifier: str = None,
         ignore_missing_fields: bool = False,
@@ -121,17 +137,17 @@ class EntityMatchingAPI(APIClient):
         external_id: str = None,
     ) -> EntityMatchingModel:
         """Fit entity matching model.
-        Note: All users on this CDF subscription with assets read-all capability in the project, are able to access the data sent to this endpoint.
+        Note: All users on this CDF subscription with entitymatching read and assets read-all capability in the project, are able to access the data sent to this endpoint.
 
         Args:
             sources: entities to match from, should have an 'id' field. Tolerant to passing more than is needed or used (e.g. json dump of time series list)
             targets: entities to match to, should have an 'id' field.  Tolerant to passing more than is needed or used.
             true_matches: Known valid matches given as a list of dicts with keys 'sourceId', 'sourceExternalId', 'sourceId', 'sourceExternalId'). If omitted, uses an unsupervised model.
              A tuple can be used instead of the dictionary for convenience, interpreted as id/externalId based on type.
-            match_fields: List of (from,to) keys to use in matching. Default in the API is [('name','name')]
+            match_fields: List of (from,to) keys to use in matching. Default in the API is [('name','name')]. Also accepts {"source": .., "target": ..}.
             feature_type (str): feature type that defines the combination of features used, see API docs for details.
-            classifier (str): classifier used in training. Currently undocumented in API.
-            ignore_missing_fields (bool): whether missing data in keyFrom or keyTo should return error or be filled in with an empty string. Currently undocumented in API.
+            classifier (str): classifier used in training.
+            ignore_missing_fields (bool): whether missing data in match_fields should return error or be filled in with an empty string.
             name (str): Optional user-defined name of model.
             description (str): Optional user-defined description of model.
             external_id (str): Optional external id. Must be unique within the project.
@@ -148,8 +164,8 @@ class EntityMatchingAPI(APIClient):
                 "name": name,
                 "description": description,
                 "externalId": external_id,
-                "sources": EntityMatchingModel.dump_entities(sources),
-                "targets": EntityMatchingModel.dump_entities(targets),
+                "sources": EntityMatchingModel._dump_entities(sources),
+                "targets": EntityMatchingModel._dump_entities(targets),
                 "trueMatches": true_matches,
                 "matchFields": match_fields,
                 "featureType": feature_type,
@@ -169,15 +185,14 @@ class EntityMatchingAPI(APIClient):
         external_id: Optional[str] = None,
     ) -> ContextualizationJob:
         """Predict entity matching. NB. blocks and waits for the model to be ready if it has been recently created.
-        Note: All users on this CDF subscription with assets read-all capability in the project, are able to access the
-        data sent to this endpoint.
+        Note: All users on this CDF subscription with entitymatching read and assets read-all capability in the project, are able to access the data sent to this endpoint.
 
         Args:
             sources: entities to match from, does not need an 'id' field. Tolerant to passing more than is needed or used (e.g. json dump of time series list). If omitted, will use data from fit.
             targets: entities to match to, does not need an 'id' field.  Tolerant to passing more than is needed or used. If omitted, will use data from fit.
             num_matches (int): number of matches to return for each item.
             score_threshold (float): only return matches with a score above this threshold
-            ignore_missing_fields (bool): whether missing data in keyFrom or keyTo should be filled in with an empty string.
+            ignore_missing_fields (bool): whether missing data in match_fields should be filled in with an empty string.
             id: ids of the model to use.
             external_id: external ids of the model to use.
         Returns:
@@ -185,8 +200,8 @@ class EntityMatchingAPI(APIClient):
         return self.retrieve(
             id=id, external_id=external_id
         ).predict(  # could call predict directly but this is friendlier
-            sources=EntityMatchingModel.dump_entities(sources),
-            targets=EntityMatchingModel.dump_entities(targets),
+            sources=EntityMatchingModel._dump_entities(sources),
+            targets=EntityMatchingModel._dump_entities(targets),
             num_matches=num_matches,
             score_threshold=score_threshold,
         )
@@ -198,7 +213,7 @@ class EntityMatchingAPI(APIClient):
         external_id: Optional[str] = None,
     ) -> "EntityMatchingModel":
         """Re-fits an entity matching model, using the combination of the old and new true matches.
-        Note: All users on this CDF subscription with assets read-all capability in the project, are able to access the data sent to this endpoint.
+        Note: All users on this CDF subscription with entitymatching read and assets read-all capability in the project, are able to access the data sent to this endpoint.
 
         Args:
             true_matches: Updated known valid matches given as a list of dicts with keys 'fromId', 'fromExternalId', 'toId', 'toExternalId').

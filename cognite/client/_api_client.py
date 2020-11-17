@@ -55,6 +55,7 @@ class APIClient:
         "/relationships/byids",
         "/context/entitymatching/byids",
         "/context/entitymatching/list",
+        "/context/entitymatching/jobs",
     }
 
     def __init__(self, config: utils._client_config.ClientConfig, api_version: str = None, cognite_client=None) -> None:
