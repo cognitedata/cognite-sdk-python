@@ -10,6 +10,7 @@ from cognite.client.data_classes.assets import (
 )
 from cognite.client.data_classes.contextualization import (
     ContextualizationJob,
+    ContextualizationJobList,
     EntityMatchingModel,
     EntityMatchingModelList,
     EntityMatchingModelUpdate,
