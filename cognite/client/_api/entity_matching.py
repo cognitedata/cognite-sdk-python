@@ -137,7 +137,8 @@ class EntityMatchingAPI(APIClient):
         external_id: str = None,
     ) -> EntityMatchingModel:
         """Fit entity matching model.
-        Note: All users on this CDF subscription with entitymatching read and assets read-all capability in the project, are able to access the data sent to this endpoint.
+        Note: All users on this CDF subscription with assets read-all and entitymatching read-all and write-all
+        capabilities in the project, are able to access the data sent to this endpoint.
 
         Args:
             sources: entities to match from, should have an 'id' field. Tolerant to passing more than is needed or used (e.g. json dump of time series list)
@@ -185,7 +186,8 @@ class EntityMatchingAPI(APIClient):
         external_id: Optional[str] = None,
     ) -> ContextualizationJob:
         """Predict entity matching. NB. blocks and waits for the model to be ready if it has been recently created.
-        Note: All users on this CDF subscription with entitymatching read and assets read-all capability in the project, are able to access the data sent to this endpoint.
+        Note: All users on this CDF subscription with assets read-all and entitymatching read-all and write-all
+        capabilities in the project, are able to access the data sent to this endpoint.
 
         Args:
             sources: entities to match from, does not need an 'id' field. Tolerant to passing more than is needed or used (e.g. json dump of time series list). If omitted, will use data from fit.
@@ -213,7 +215,8 @@ class EntityMatchingAPI(APIClient):
         external_id: Optional[str] = None,
     ) -> "EntityMatchingModel":
         """Re-fits an entity matching model, using the combination of the old and new true matches.
-        Note: All users on this CDF subscription with entitymatching read and assets read-all capability in the project, are able to access the data sent to this endpoint.
+        Note: All users on this CDF subscription with assets read-all and entitymatching read-all and write-all
+        capabilities in the project, are able to access the data sent to this endpoint.
 
         Args:
             true_matches: Updated known valid matches given as a list of dicts with keys 'fromId', 'fromExternalId', 'toId', 'toExternalId').
