@@ -223,13 +223,3 @@ class EntityMatchingAPI(APIClient):
         Returns:
             EntityMatchingModel: new model refitted to true_matches."""
         return self.retrieve(id=id, external_id=external_id).refit(true_matches=true_matches)
-
-    def create_rules(self, matches: List[Dict]) -> ContextualizationJob:
-        """Fit rules model.
-
-        Args:
-            matches: list of matches to create rules for, given as a list of dictionaries with 'input', 'predicted' and (optionally) 'score'
-
-        Returns:
-            ContextualizationJob: Resulting queued job. Note that .results property of this job will block waiting for results."""
-        return self._run_job(job_path="/rules", json={"items": matches})
