@@ -14,6 +14,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.8.0] - 2020-11-23
+
+### Changed
+- Move relationships to release python SDK
+
 ## [2.7.0] - 2020-11-10
 
 ### Added
