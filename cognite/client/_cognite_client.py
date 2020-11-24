@@ -8,12 +8,13 @@ from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api.events import EventsAPI
 from cognite.client._api.files import FilesAPI
 from cognite.client._api.iam import IAMAPI
+from cognite.client._api.labels import LabelsAPI
 from cognite.client._api.login import LoginAPI
 from cognite.client._api.raw import RawAPI
+from cognite.client._api.relationships import RelationshipsAPI
 from cognite.client._api.sequences import SequencesAPI
 from cognite.client._api.three_d import ThreeDAPI
 from cognite.client._api.time_series import TimeSeriesAPI
-from cognite.client._api.labels import LabelsAPI
 from cognite.client._api_client import APIClient
 from cognite.client.exceptions import CogniteAPIKeyError
 from cognite.client.utils._client_config import ClientConfig
@@ -80,6 +81,7 @@ class CogniteClient:
         self.raw = RawAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.three_d = ThreeDAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.labels = LabelsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
+        self.relationships = RelationshipsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self._api_client = APIClient(self._config, cognite_client=self)
 
     def get(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
