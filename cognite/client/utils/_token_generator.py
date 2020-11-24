@@ -21,8 +21,10 @@ class TokenGenerator:
             self._access_token_expires_at = None
 
     def return_access_token(self):
-        if self._access_token is None or not self.token_params_set():
-            raise CogniteAPIKeyError("Could not generate access token from provided token related variables")
+        if not self.token_params_set():
+            raise CogniteAPIKeyError("Could not generate access token - missing token generation arguments")
+        elif self._access_token is None:
+            raise CogniteAPIKeyError("Could not generate access token from provided token generation arguments")
 
         if self._access_token_expires_at < datetime.datetime.now().timestamp():
             self._generate_access_token()
@@ -36,8 +38,8 @@ class TokenGenerator:
             token_url=self.token_url, client_id=self.client_id, client_secret=self.client_secret, scope=self.scopes
         )
 
-        self._access_token = token_result["access_token"]
-        self._access_token_expires_at = token_result["expires_at"]
+        self._access_token = token_result.get("access_token")
+        self._access_token_expires_at = token_result.get("expires_at")
 
     def token_params_set(self):
         return (

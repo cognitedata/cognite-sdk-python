@@ -93,7 +93,9 @@ class TestCogniteClient:
 
     def test_no_api_key_no_token_set(self):
         with unset_env_var(["COGNITE_API_KEY", "COGNITE_TOKEN_URL"]):
-            with pytest.raises(CogniteAPIKeyError, match="No API key or token has been specified"):
+            with pytest.raises(
+                CogniteAPIKeyError, match="No API key or token or token generation arguments have been specified"
+            ):
                 CogniteClient()
 
     def test_token_factory_set_no_api_key(self):

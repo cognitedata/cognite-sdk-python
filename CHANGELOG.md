@@ -14,10 +14,15 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.9.0] - 2020-11-24
+
+### Added
+- Authentication token generation and lifecycle management
+
 ## [2.8.0] - 2020-11-23
 
-## Added
-- Authentication token generation and lifecycle management
+### Changed
+- Move relationships to release python SDK
 
 ## [2.7.0] - 2020-11-10
 

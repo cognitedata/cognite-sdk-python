@@ -102,7 +102,7 @@ class ClientConfig(_DefaultConfig):
                 self.token = lambda: token_generator.return_access_token()
 
             if self.token is None:
-                raise CogniteAPIKeyError("No API key or token has been specified")
+                raise CogniteAPIKeyError("No API key or token or token generation arguments have been specified")
 
         if self.client_name is None:
             raise ValueError(
