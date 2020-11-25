@@ -14,6 +14,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.9.0] - 2020-11-??
+
+### Added
+- Entity matching API is now available in the beta client.
+
 ## [2.8.0] - 2020-11-23
 
 ### Changed
