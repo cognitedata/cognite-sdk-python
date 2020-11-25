@@ -184,3 +184,18 @@ def split_into_chunks(collection: Union[List, Dict], chunk_size: int) -> List[Un
             chunks.append({k: v for k, v in collection[i : i + chunk_size]})
         return chunks
     raise ValueError("Can only split list or dict")
+
+
+def convert_true_match(true_match):
+    if not isinstance(true_match, dict) and len(true_match) == 2:
+        converted_true_match = {}
+        for i, fromto in enumerate(["source", "target"]):
+            if isinstance(true_match[i], str):
+                converted_true_match[fromto + "ExternalId"] = true_match[i]
+            else:
+                converted_true_match[fromto + "Id"] = true_match[i]
+        return converted_true_match
+    elif isinstance(true_match, dict):
+        return true_match
+    else:
+        raise ValueError("true_matches should be a dictionary or a two-element list: found {}".format(true_match))

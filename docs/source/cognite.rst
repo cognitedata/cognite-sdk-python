@@ -1123,7 +1123,7 @@ Data classes
 Relationships
 -------------
 .. WARNING::
-    The relationships API is experimental and subject to breaking changes. It should not be used in production code.
+    The relationships API is in beta.
 
 Retrieve a relationship by id
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1150,3 +1150,45 @@ Data classes
 .. automodule:: cognite.client.data_classes.relationships
     :members:
     :show-inheritance:
+
+
+Contextualization
+-----------------
+.. WARNING::
+    The entity matching API is in beta.
+
+These APIs will return as soon as possible, defering a blocking wait until the last moment. Nevertheless, they can block for a long time awaiting results.
+
+Fit Entity Matching Model
+^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.entity_matching.EntityMatchingAPI.fit
+
+Re-fit Entity Matching Model
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.entity_matching.EntityMatchingAPI.refit
+
+Retrieve Entity Matching Models
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.entity_matching.EntityMatchingAPI.retrieve
+.. automethod:: cognite.client._api.entity_matching.EntityMatchingAPI.retrieve_multiple
+.. automethod:: cognite.client._api.entity_matching.EntityMatchingAPI.list
+
+Delete Entity Matching Models
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.entity_matching.EntityMatchingAPI.delete
+
+Update Entity Matching Models
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.entity_matching.EntityMatchingAPI.update
+
+Predict Using an Entity Matching Model
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.entity_matching.EntityMatchingAPI.predict
+
+Contextualization Data Classes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automodule:: cognite.client.data_classes.contextualization
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
