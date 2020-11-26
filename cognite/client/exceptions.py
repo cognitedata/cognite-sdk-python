@@ -215,3 +215,13 @@ class CogniteDuplicateColumnsError(CogniteException):
 
     def __str__(self):
         return self.message
+
+
+class ModelFailedException(Exception):
+    def __init__(self, typename, id, error_message):
+        self.typename = typename
+        self.id = id
+        self.error_message = error_message
+
+    def __str__(self):
+        return f"{self.typename} {self.id} failed with error '{self.error_message}'"

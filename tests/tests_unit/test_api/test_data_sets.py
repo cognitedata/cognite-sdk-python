@@ -2,8 +2,8 @@ import re
 
 import pytest
 
+from cognite.client import CogniteClient
 from cognite.client.data_classes import DataSet, DataSetList, DataSetUpdate, TimestampRange
-from cognite.client.experimental import CogniteClient
 from tests.utils import jsgz_load
 
 # from unittest import mock

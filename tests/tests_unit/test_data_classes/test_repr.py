@@ -3,8 +3,8 @@ from unittest.mock import call
 
 import pytest
 
+from cognite.client import CogniteClient
 from cognite.client.data_classes import *
-from cognite.client.experimental import CogniteClient
 
 c = CogniteClient()
 

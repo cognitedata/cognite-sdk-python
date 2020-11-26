@@ -5,7 +5,7 @@ from collections import defaultdict
 from doctest import DocTestParser, Example
 
 from cognite.client._api_client import APIClient
-from cognite.client.experimental import CogniteClient
+from cognite.client.beta import CogniteClient
 
 
 def collect_apis(obj, done):
