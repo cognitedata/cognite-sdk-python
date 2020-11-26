@@ -1,7 +1,7 @@
 import datetime
 from typing import *
 
-from oauthlib.oauth2 import BackendApplicationClient
+from oauthlib.oauth2 import BackendApplicationClient, OAuth2Error
 from requests_oauthlib import OAuth2Session
 
 from cognite.client.exceptions import CogniteAPIKeyError
@@ -32,14 +32,21 @@ class TokenGenerator:
         return self._access_token
 
     def _generate_access_token(self):
-        client = BackendApplicationClient(client_id=self.client_id)
-        oauth = OAuth2Session(client=client)
-        token_result = oauth.fetch_token(
-            token_url=self.token_url, client_id=self.client_id, client_secret=self.client_secret, scope=self.scopes
-        )
-
-        self._access_token = token_result.get("access_token")
-        self._access_token_expires_at = token_result.get("expires_at")
+        try:
+            client = BackendApplicationClient(client_id=self.client_id)
+            oauth = OAuth2Session(client=client)
+            token_result = oauth.fetch_token(
+                token_url=self.token_url, client_id=self.client_id, client_secret=self.client_secret, scope=self.scopes
+            )
+        except OAuth2Error as oauth_error:
+            raise CogniteAPIKeyError(
+                "Error generating access token: {0}, {1}, {2}".format(
+                    oauth_error.error, oauth_error.status_code, oauth_error.description
+                )
+            )
+        else:
+            self._access_token = token_result.get("access_token")
+            self._access_token_expires_at = token_result.get("expires_at")
 
     def token_params_set(self):
         return (

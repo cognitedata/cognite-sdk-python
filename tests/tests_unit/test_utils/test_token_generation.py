@@ -2,6 +2,7 @@ import datetime
 from unittest.mock import Mock, patch
 
 import pytest
+from oauthlib.oauth2 import InvalidClientIdError
 
 from cognite.client import utils
 from cognite.client.exceptions import CogniteAPIKeyError
@@ -62,6 +63,20 @@ class TestTokenGeneration:
             CogniteAPIKeyError, match="Could not generate access token from provided token generation arguments"
         ):
             generator.return_access_token()
+
+    @patch("cognite.client.utils._token_generator.BackendApplicationClient")
+    @patch("cognite.client.utils._token_generator.OAuth2Session")
+    def test_access_token_not_generated_due_to_error(self, mock_oauth_session, mock_backend_client):
+        mock_backend_client().return_value = Mock()
+        mock_oauth_session().fetch_token.side_effect = InvalidClientIdError()
+        with pytest.raises(
+            CogniteAPIKeyError,
+            match="Error generating access token: invalid_request, 400, Invalid client_id parameter value.",
+        ):
+            args = default_token_generator_args()
+            utils._token_generator.TokenGenerator(
+                args["token_url"], args["client_id"], args["client_secret"], args["token_scopes"]
+            )
 
     def test_access_token_not_generated_missing_args(self):
         generator_args = default_token_generator_args()
