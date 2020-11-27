@@ -680,6 +680,33 @@ Data classes
     :members:
     :show-inheritance:
 
+Relationships
+-------------
+Retrieve a relationship by id
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.relationships.RelationshipsAPI.retrieve
+
+Retrieve multiple relationships by id
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.relationships.RelationshipsAPI.retrieve_multiple
+
+List relationships
+^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.relationships.RelationshipsAPI.list
+
+Create a relationship
+^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.relationships.RelationshipsAPI.create
+
+Delete relationships
+^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.relationships.RelationshipsAPI.delete
+
+Data classes
+^^^^^^^^^^^^
+.. automodule:: cognite.client.data_classes.relationships
+    :members:
+    :show-inheritance:
 
 3D
 --
@@ -950,207 +977,6 @@ Experimental features
 =====================
 .. WARNING::
     These features are subject to breaking changes and should not be used in production code.
-
-Model Hosting
--------------
-.. WARNING::
-    The model hosting API is experimental and subject to breaking changes. It should not be used in production code.
-
-Models
-^^^^^^
-Retrieve model by name
-~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.models.ModelsAPI.get_model
-
-List models
-~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.models.ModelsAPI.list_models
-
-Create model
-~~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.models.ModelsAPI.create_model
-
-Update model
-~~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.models.ModelsAPI.update_model
-
-Deprecate model
-~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.models.ModelsAPI.deprecate_model
-
-Delete model
-~~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.models.ModelsAPI.delete_model
-
-Perform online prediction
-~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.models.ModelsAPI.online_predict
-
-
-Model Versions
-^^^^^^^^^^^^^^
-Retrieve model version by name
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.versions.ModelVersionsAPI.get_model_version
-
-List model versions
-~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.versions.ModelVersionsAPI.list_model_versions
-
-Create and deploy model version
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.versions.ModelVersionsAPI.deploy_model_version
-
-Create model version without deploying
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.versions.ModelVersionsAPI.create_model_version
-
-Deploy awaiting model version
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.versions.ModelVersionsAPI.deploy_awaiting_model_version
-
-Update model version
-~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.versions.ModelVersionsAPI.update_model_version
-
-Deprecate model version
-~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.versions.ModelVersionsAPI.deprecate_model_version
-
-Delete model version
-~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.versions.ModelVersionsAPI.delete_model_version
-
-
-Model Version Artifacts
-^^^^^^^^^^^^^^^^^^^^^^^
-List artifacts for a model version
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.versions.ModelVersionsAPI.list_artifacts
-
-Upload an artifact from a file to a model version awating deployment
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.versions.ModelVersionsAPI.upload_artifact_from_file
-
-Upload artifacts from a directory to a model version awating deployment
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.versions.ModelVersionsAPI.upload_artifacts_from_directory
-
-Download an artifact for a model version
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.versions.ModelVersionsAPI.download_artifact
-
-
-Schedules
-^^^^^^^^^
-Retrieve schedule by name
-~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.schedules.SchedulesAPI.get_schedule
-
-List schedules
-~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.schedules.SchedulesAPI.list_schedules
-
-Create Schedule
-~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.schedules.SchedulesAPI.create_schedule
-
-Deprecate Schedule
-~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.schedules.SchedulesAPI.deprecate_schedule
-
-Delete Schedule
-~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.schedules.SchedulesAPI.delete_schedule
-
-Retrieve schedule logs
-~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.schedules.SchedulesAPI.get_log
-
-
-Source Packages
-^^^^^^^^^^^^^^^
-Retrieve source package by id
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.source_packages.SourcePackagesAPI.get_source_package
-
-List source packages
-~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.source_packages.SourcePackagesAPI.list_source_packages
-
-Upload a source package
-~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.source_packages.SourcePackagesAPI.upload_source_package
-
-Build and upload a source package
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.source_packages.SourcePackagesAPI.build_and_upload_source_package
-
-Deprecate source package
-~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.source_packages.SourcePackagesAPI.deprecate_source_package
-
-Delete source package
-~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.source_packages.SourcePackagesAPI.delete_source_package
-
-Download source package code
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.source_packages.SourcePackagesAPI.download_source_package_code
-
-Delete source package code
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.model_hosting.source_packages.SourcePackagesAPI.delete_source_package_code
-
-Data classes
-^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.model_hosting.models
-    :members:
-    :show-inheritance:
-
-.. automodule:: cognite.client.data_classes.model_hosting.versions
-    :members:
-    :show-inheritance:
-
-.. automodule:: cognite.client.data_classes.model_hosting.schedules
-    :members:
-    :show-inheritance:
-
-.. automodule:: cognite.client.data_classes.model_hosting.source_packages
-    :members:
-    :show-inheritance:
-
-Relationships
--------------
-.. WARNING::
-    The relationships API is in beta.
-
-Retrieve a relationship by id
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.relationships.RelationshipsAPI.retrieve
-
-Retrieve multiple relationships by id
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.relationships.RelationshipsAPI.retrieve_multiple
-
-List relationships
-^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.relationships.RelationshipsAPI.list
-
-Create a relationship
-^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.relationships.RelationshipsAPI.create
-
-Delete relationships
-^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.relationships.RelationshipsAPI.delete
-
-Data classes
-^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.relationships
-    :members:
-    :show-inheritance:
-
 
 Contextualization
 -----------------
