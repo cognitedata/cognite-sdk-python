@@ -14,7 +14,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [2.10.0] - 2020-11-26
+## [2.10.0] - 2020-12-01
 
 ### Added
 - Authentication token generation and lifecycle management
