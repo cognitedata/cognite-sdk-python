@@ -9,6 +9,7 @@ requests = "*"
 pytest = "<5"
 sympy = "*"
 docutils = "==0.15.2"
+requests_oauthlib = "*"
 
 [dev-packages]
 sphinx = "*"

@@ -34,6 +34,11 @@ class _DefaultConfig:
         self.max_workers = int(os.getenv("COGNITE_MAX_WORKERS", 10))
         self.headers = {}
         self.timeout = int(os.getenv("COGNITE_TIMEOUT", 30))
+        self.token_client_id = os.getenv("COGNITE_CLIENT_ID")
+        self.token_client_secret = os.getenv("COGNITE_CLIENT_SECRET")
+        self.token_url = os.getenv("COGNITE_TOKEN_URL")
+        self.token_scopes = os.getenv("COGNITE_TOKEN_SCOPES", "").split(",")
+        self.token_custom_args = {}
 
         # Global
         self.disable_gzip = os.getenv("COGNITE_DISABLE_GZIP", False)
@@ -55,14 +60,19 @@ class _DefaultConfig:
 class ClientConfig(_DefaultConfig):
     def __init__(
         self,
-        api_key: str = None,
-        project: str = None,
-        client_name: str = None,
-        base_url: str = None,
-        max_workers: int = None,
-        headers: Dict[str, str] = None,
-        timeout: int = None,
-        token: Union[Callable[[], str], str] = None,
+        api_key: Optional[str] = None,
+        project: Optional[str] = None,
+        client_name: Optional[str] = None,
+        base_url: Optional[str] = None,
+        max_workers: Optional[int] = None,
+        headers: Optional[Dict[str, str]] = None,
+        timeout: Optional[int] = None,
+        token: Optional[Union[Callable[[], str], str]] = None,
+        token_url: Optional[str] = None,
+        token_client_id: Optional[str] = None,
+        token_client_secret: Optional[str] = None,
+        token_scopes: Optional[List[str]] = None,
+        token_custom_args: Optional[Dict[str, str]] = None,
         disable_pypi_version_check: Optional[bool] = None,
         debug: bool = False,
     ):
@@ -76,12 +86,30 @@ class ClientConfig(_DefaultConfig):
         self.headers = headers or self.headers
         self.timeout = timeout or self.timeout
         self.token = token
+        self.token_url = token_url or self.token_url
+        self.token_client_id = token_client_id or self.token_client_id
+        self.token_client_secret = token_client_secret or self.token_client_secret
+        self.token_scopes = token_scopes or self.token_scopes
+        self.token_custom_args = token_custom_args or self.token_custom_args
         self.disable_pypi_version_check = (
             disable_pypi_version_check if disable_pypi_version_check is not None else self.disable_pypi_version_check
         )
 
         if self.api_key is None and self.token is None:
-            raise CogniteAPIKeyError("No API key or token has been specified")
+            # If no api_key or token is present; try setting up a token generator
+            token_generator = utils._token_generator.TokenGenerator(
+                self.token_url,
+                self.token_client_id,
+                self.token_client_secret,
+                self.token_scopes,
+                self.token_custom_args,
+            )
+
+            if token_generator.token_params_set():
+                self.token = lambda: token_generator.return_access_token()
+
+            if self.token is None:
+                raise CogniteAPIKeyError("No API key or token or token generation arguments have been specified")
 
         if self.client_name is None:
             raise ValueError(
