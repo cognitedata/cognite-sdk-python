@@ -44,8 +44,8 @@ class CogniteClient:
             This will override the COGNITE_CLIENT_SECRET environment variable and only be used if both api-key and token are not set.
         token_scopes (list): Optional list of scopes to use for token generation.
             This will override the COGNITE_TOKEN_SCOPES environment variable and only be used if both api-key and token are not set.
-        token_custom_args (Dict): Additional arguments to use for token generation.
-            This is optional for token generation and will only be used if both api-key and token are not set.
+        token_custom_args (Dict): Optional additional arguments to use for token generation.
+            This will be passed in as optional additional kwargs to OAuth2Session fetch_token and will only be used if both api-key and token are not set.
         disable_pypi_version_check (bool): Don't check for newer versions of the SDK on client creation
         debug (bool): Configures logger to log extra request details to stderr.
     """
