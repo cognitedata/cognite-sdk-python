@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from cognite.client import utils
 from cognite.client._api.assets import AssetsAPI
@@ -36,6 +36,16 @@ class CogniteClient:
         timeout (int): Timeout on requests sent to the api. Defaults to 30 seconds.
         token (Union[str, Callable[[], str]]): A jwt or method which takes no arguments and returns a jwt to use for authentication.
             This will override any api-key set.
+        token_url (str): Optional url to use for token generation.
+            This will override the COGNITE_TOKEN_URL environment variable and only be used if both api-key and token are not set.
+        token_client_id (str): Optional client id to use for token generation.
+            This will override the COGNITE_CLIENT_ID environment variable and only be used if both api-key and token are not set.
+        token_client_secret (str): Optional client secret to use for token generation.
+            This will override the COGNITE_CLIENT_SECRET environment variable and only be used if both api-key and token are not set.
+        token_scopes (list): Optional list of scopes to use for token generation.
+            This will override the COGNITE_TOKEN_SCOPES environment variable and only be used if both api-key and token are not set.
+        token_custom_args (Dict): Optional additional arguments to use for token generation.
+            This will be passed in as optional additional kwargs to OAuth2Session fetch_token and will only be used if both api-key and token are not set.
         disable_pypi_version_check (bool): Don't check for newer versions of the SDK on client creation
         debug (bool): Configures logger to log extra request details to stderr.
     """
@@ -44,14 +54,19 @@ class CogniteClient:
 
     def __init__(
         self,
-        api_key: str = None,
-        project: str = None,
-        client_name: str = None,
-        base_url: str = None,
-        max_workers: int = None,
-        headers: Dict[str, str] = None,
-        timeout: int = None,
-        token: Union[str, Callable[[], str], None] = None,
+        api_key: Optional[str] = None,
+        project: Optional[str] = None,
+        client_name: Optional[str] = None,
+        base_url: Optional[str] = None,
+        max_workers: Optional[int] = None,
+        headers: Optional[Dict[str, str]] = None,
+        timeout: Optional[int] = None,
+        token: Optional[Union[str, Callable[[], str], None]] = None,
+        token_url: Optional[str] = None,
+        token_client_id: Optional[str] = None,
+        token_client_secret: Optional[str] = None,
+        token_scopes: Optional[List[str]] = None,
+        token_custom_args: Optional[Dict[str, str]] = None,
         disable_pypi_version_check: Optional[bool] = None,
         debug: bool = False,
     ):
@@ -64,6 +79,11 @@ class CogniteClient:
             headers=headers,
             timeout=timeout,
             token=token,
+            token_url=token_url,
+            token_client_id=token_client_id,
+            token_client_secret=token_client_secret,
+            token_scopes=token_scopes,
+            token_custom_args=token_custom_args,
             disable_pypi_version_check=disable_pypi_version_check,
             debug=debug,
         )
