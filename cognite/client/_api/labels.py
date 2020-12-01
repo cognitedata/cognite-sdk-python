@@ -76,7 +76,7 @@ class LabelsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import LabelDefinition
                 >>> c = CogniteClient()
-                >>> labels = [LabelDefinition(external_id="valve"), LabelDefinition(external_id="pipe")]
+                >>> labels = [LabelDefinition(external_id="valve", name="labelName1"), LabelDefinition(external_id="pipe", name="labelname2")]
                 >>> res = c.labels.create(labels)
         """
         if isinstance(label, list):
