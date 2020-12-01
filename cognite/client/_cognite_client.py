@@ -42,8 +42,10 @@ class CogniteClient:
             This will override the COGNITE_CLIENT_ID environment variable and only be used if both api-key and token are not set.
         token_client_secret (str): Optional client secret to use for token generation.
             This will override the COGNITE_CLIENT_SECRET environment variable and only be used if both api-key and token are not set.
-        token_scopes (list): Optional list fo scopes to use for token generation.
+        token_scopes (list): Optional list of scopes to use for token generation.
             This will override the COGNITE_TOKEN_SCOPES environment variable and only be used if both api-key and token are not set.
+        token_custom_args (Dict): Additional arguments to use for token generation.
+            This is optional for token generation and will only be used if both api-key and token are not set.
         disable_pypi_version_check (bool): Don't check for newer versions of the SDK on client creation
         debug (bool): Configures logger to log extra request details to stderr.
     """
@@ -64,6 +66,7 @@ class CogniteClient:
         token_client_id: Optional[str] = None,
         token_client_secret: Optional[str] = None,
         token_scopes: Optional[List[str]] = None,
+        token_custom_args: Optional[Dict[str, str]] = None,
         disable_pypi_version_check: Optional[bool] = None,
         debug: bool = False,
     ):
@@ -80,6 +83,7 @@ class CogniteClient:
             token_client_id=token_client_id,
             token_client_secret=token_client_secret,
             token_scopes=token_scopes,
+            token_custom_args=token_custom_args,
             disable_pypi_version_check=disable_pypi_version_check,
             debug=debug,
         )

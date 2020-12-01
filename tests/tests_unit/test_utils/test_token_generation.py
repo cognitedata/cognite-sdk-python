@@ -14,6 +14,7 @@ def default_token_generator_args():
         "client_secret": "azure-client-secret",
         "token_url": "https://login.microsoftonline.com/testingabc123/oauth2/v2.0/token",
         "token_scopes": ["https://greenfield.cognitedata.com/.default"],
+        "token_custom_args": {},
     }
 
 
@@ -23,6 +24,7 @@ def setup_token_generator(generator_args=default_token_generator_args()):
         generator_args["client_id"],
         generator_args["client_secret"],
         generator_args["token_scopes"],
+        generator_args["token_custom_args"],
     )
 
 
@@ -75,7 +77,11 @@ class TestTokenGeneration:
         ):
             args = default_token_generator_args()
             utils._token_generator.TokenGenerator(
-                args["token_url"], args["client_id"], args["client_secret"], args["token_scopes"]
+                args["token_url"],
+                args["client_id"],
+                args["client_secret"],
+                args["token_scopes"],
+                args["token_custom_args"],
             )
 
     def test_access_token_not_generated_missing_args(self):

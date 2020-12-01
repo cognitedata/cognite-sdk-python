@@ -8,11 +8,14 @@ from cognite.client.exceptions import CogniteAPIKeyError
 
 
 class TokenGenerator:
-    def __init__(self, token_url: str, client_id: str, client_secret: str, scopes: List[str]):
+    def __init__(
+        self, token_url: str, client_id: str, client_secret: str, scopes: List[str], custom_args: Dict[str, str]
+    ):
         self.token_url = token_url
         self.client_id = client_id
         self.client_secret = client_secret
         self.scopes = scopes
+        self.custom_args = custom_args
 
         if self.token_params_set():
             self._generate_access_token()
@@ -36,7 +39,11 @@ class TokenGenerator:
             client = BackendApplicationClient(client_id=self.client_id)
             oauth = OAuth2Session(client=client)
             token_result = oauth.fetch_token(
-                token_url=self.token_url, client_id=self.client_id, client_secret=self.client_secret, scope=self.scopes
+                token_url=self.token_url,
+                client_id=self.client_id,
+                client_secret=self.client_secret,
+                scope=self.scopes,
+                **self.custom_args,
             )
         except OAuth2Error as oauth_error:
             raise CogniteAPIKeyError(

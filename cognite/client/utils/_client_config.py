@@ -38,6 +38,7 @@ class _DefaultConfig:
         self.token_client_secret = os.getenv("COGNITE_CLIENT_SECRET")
         self.token_url = os.getenv("COGNITE_TOKEN_URL")
         self.token_scopes = os.getenv("COGNITE_TOKEN_SCOPES", "").split(",")
+        self.token_custom_args = {}
 
         # Global
         self.disable_gzip = os.getenv("COGNITE_DISABLE_GZIP", False)
@@ -71,6 +72,7 @@ class ClientConfig(_DefaultConfig):
         token_client_id: Optional[str] = None,
         token_client_secret: Optional[str] = None,
         token_scopes: Optional[List[str]] = None,
+        token_custom_args: Optional[Dict[str, str]] = None,
         disable_pypi_version_check: Optional[bool] = None,
         debug: bool = False,
     ):
@@ -88,6 +90,7 @@ class ClientConfig(_DefaultConfig):
         self.token_client_id = token_client_id or self.token_client_id
         self.token_client_secret = token_client_secret or self.token_client_secret
         self.token_scopes = token_scopes or self.token_scopes
+        self.token_custom_args = token_custom_args or self.token_custom_args
         self.disable_pypi_version_check = (
             disable_pypi_version_check if disable_pypi_version_check is not None else self.disable_pypi_version_check
         )
@@ -95,7 +98,11 @@ class ClientConfig(_DefaultConfig):
         if self.api_key is None and self.token is None:
             # If no api_key or token is present; try setting up a token generator
             token_generator = utils._token_generator.TokenGenerator(
-                self.token_url, self.token_client_id, self.token_client_secret, self.token_scopes
+                self.token_url,
+                self.token_client_id,
+                self.token_client_secret,
+                self.token_scopes,
+                self.token_custom_args,
             )
 
             if token_generator.token_params_set():
