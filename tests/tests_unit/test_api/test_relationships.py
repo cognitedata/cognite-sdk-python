@@ -258,3 +258,31 @@ class TestRelationships:
             "fetchResources": False,
         } == jsgz_load(mock_rel_response.calls[0].request.body)
         assert mock_rel_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
+
+    def test_many_source_targets(self, mock_rel_response):
+        source_external_ids = [str(i) for i in range(250)]
+        target_external_ids = [str(i) for i in range(350)]
+        with pytest.raises(ValueError):
+            REL_API(source_external_ids=source_external_ids, target_external_ids=target_external_ids)
+        with pytest.raises(ValueError):
+            REL_API.list(source_external_ids=source_external_ids, target_external_ids=target_external_ids)
+        res = REL_API.list(source_external_ids=source_external_ids, target_external_ids=target_external_ids, limit=None)
+        assert 12 == len(mock_rel_response.calls)
+        assert isinstance(res, RelationshipList)
+        assert 12 == len(res)
+
+    def test_many_sources_only(self, mock_rel_response):
+        source_external_ids = [str(i) for i in range(250)]
+        with pytest.raises(ValueError):
+            REL_API(source_external_ids=source_external_ids)
+
+        res = REL_API.list(source_external_ids=source_external_ids, limit=-1)
+        assert 3 == len(mock_rel_response.calls)
+        assert isinstance(res, RelationshipList)
+        assert 3 == len(res)
+        requested_sources = []
+        for call in mock_rel_response.calls:
+            json = jsgz_load(call.request.body)
+            assert "targetExternalIds" not in json["filter"]
+            requested_sources.extend([s for s in json["filter"]["sourceExternalIds"]])
+        assert set([s for s in source_external_ids]) == set(requested_sources)
