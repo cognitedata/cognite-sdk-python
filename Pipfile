@@ -25,6 +25,7 @@ tox-pyenv = "*"
 responses = "*"
 pytest-rerunfailures = "*"
 matplotlib = "*"
+secretstorage = "*"
 
 [pipenv]
 allow_prereleases = true
