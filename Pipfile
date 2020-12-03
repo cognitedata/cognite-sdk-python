@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-pandas = "*"
+pandas = "<1"
 requests = "*"
 pytest = "<5"
 sympy = "*"
@@ -25,6 +25,7 @@ tox-pyenv = "*"
 responses = "*"
 pytest-rerunfailures = "*"
 matplotlib = "*"
+secretstorage = "*"
 
 [pipenv]
 allow_prereleases = true
