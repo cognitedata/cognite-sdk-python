@@ -1,14 +1,10 @@
+import copy
 from typing import *
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Relationship, RelationshipFilter, RelationshipList
-from cognite.client.data_classes.assets import Asset
-from cognite.client.data_classes.events import Event
-from cognite.client.data_classes.files import FileMetadata
 from cognite.client.data_classes.labels import LabelFilter
-from cognite.client.data_classes.sequences import Sequence
-from cognite.client.data_classes.time_series import TimeSeries
 
 
 class RelationshipsAPI(APIClient):
@@ -18,6 +14,7 @@ class RelationshipsAPI(APIClient):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._CREATE_LIMIT = 1000
+        self._LIST_SUBQUERY_LIMIT = 100
 
     def _create_filter(
         self,
@@ -106,6 +103,16 @@ class RelationshipsAPI(APIClient):
             active_at_time=active_at_time,
             labels=labels,
         )
+        if (
+            len(filter.get("targetExternalIds", [])) > self._LIST_SUBQUERY_LIMIT
+            or len(filter.get("sourceExternalIds", [])) > self._LIST_SUBQUERY_LIMIT
+        ):
+            raise ValueError(
+                "For queries with more than {} source_external_ids or target_external_ids, only list is supported".format(
+                    self._LIST_SUBQUERY_LIMIT
+                )
+            )
+
         return self._list_generator(
             method="POST", limit=limit, filter=filter, other_params={"fetchResources": fetch_resources}
         )
@@ -133,7 +140,7 @@ class RelationshipsAPI(APIClient):
 
         Examples:
 
-            Get relationship by external id::
+            Get relationship by external id:
 
                 >>> from cognite.client.beta import CogniteClient
                 >>> c = CogniteClient()
@@ -242,6 +249,36 @@ class RelationshipsAPI(APIClient):
             active_at_time=active_at_time,
             labels=labels,
         )
+        target_external_ids = filter.get("targetExternalIds", [])
+        source_external_ids = filter.get("sourceExternalIds", [])
+        if len(target_external_ids) > self._LIST_SUBQUERY_LIMIT or len(source_external_ids) > self._LIST_SUBQUERY_LIMIT:
+            if limit not in [-1, None, float("inf")]:
+                raise ValueError(
+                    "Querying more than {} source_external_ids/target_external_ids only supported for queries without limit (pass -1 / None / inf instead of {}".format(
+                        self._LIST_SUBQUERY_LIMIT, limit
+                    )
+                )
+            tasks = []
+
+            for ti in range(0, max(1, len(target_external_ids)), self._LIST_SUBQUERY_LIMIT):
+                for si in range(0, max(1, len(source_external_ids)), self._LIST_SUBQUERY_LIMIT):
+                    task_filter = copy.copy(filter)
+                    if target_external_ids:  # keep null if it was
+                        task_filter["targetExternalIds"] = target_external_ids[ti : ti + self._LIST_SUBQUERY_LIMIT]
+                    if source_external_ids:  # keep null if it was
+                        task_filter["sourceExternalIds"] = source_external_ids[si : si + self._LIST_SUBQUERY_LIMIT]
+                    tasks.append((task_filter,))
+
+            tasks_summary = utils._concurrency.execute_tasks_concurrently(
+                lambda filter: self._list(
+                    method="POST", limit=limit, filter=filter, other_params={"fetchResources": fetch_resources}
+                ),
+                tasks,
+                max_workers=self._config.max_workers,
+            )
+            tasks_summary.raise_compound_exception_if_failed_tasks()
+            rels = RelationshipList([rel for result in tasks_summary.joined_results() for rel in result])
+            return rels
         return self._list(method="POST", limit=limit, filter=filter, other_params={"fetchResources": fetch_resources})
 
     def create(self, relationship: Union[Relationship, List[Relationship]]) -> Union[Relationship, RelationshipList]:
