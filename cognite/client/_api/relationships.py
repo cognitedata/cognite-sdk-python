@@ -264,9 +264,9 @@ class RelationshipsAPI(APIClient):
                 for si in range(0, max(1, len(source_external_ids)), self._LIST_SUBQUERY_LIMIT):
                     task_filter = copy.copy(filter)
                     if target_external_ids:  # keep null if it was
-                        task_filter["target_external_ids"] = target_external_ids[ti : ti + self._LIST_SUBQUERY_LIMIT]
+                        task_filter["targetExternalIds"] = target_external_ids[ti : ti + self._LIST_SUBQUERY_LIMIT]
                     if source_external_ids:  # keep null if it was
-                        task_filter["source_external_ids"] = source_external_ids[si : si + self._LIST_SUBQUERY_LIMIT]
+                        task_filter["sourceExternalIds"] = source_external_ids[si : si + self._LIST_SUBQUERY_LIMIT]
                     tasks.append((task_filter,))
 
             tasks_summary = utils._concurrency.execute_tasks_concurrently(
@@ -277,10 +277,7 @@ class RelationshipsAPI(APIClient):
                 max_workers=self._config.max_workers,
             )
             tasks_summary.raise_compound_exception_if_failed_tasks()
-            res_list = tasks_summary.results
-            rels = RelationshipList([], cognite_client=self._cognite_client)
-            for res in res_list:
-                rels.extend(res)
+            rels = RelationshipList([rel for result in tasks_summary.joined_results() for rel in result])
             return rels
         return self._list(method="POST", limit=limit, filter=filter, other_params={"fetchResources": fetch_resources})
 
