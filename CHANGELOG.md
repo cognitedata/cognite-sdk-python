@@ -14,6 +14,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.10.2] - 2020-12-07
+
+### Added
+- Adding entity matching into cognite client
+
 ## [2.10.1] - 2020-12-03
 
 ### Added
