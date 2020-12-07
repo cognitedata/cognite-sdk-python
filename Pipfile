@@ -4,11 +4,12 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-pandas = "*"
+pandas = "<1"
 requests = "*"
 pytest = "<5"
 sympy = "*"
 docutils = "==0.15.2"
+requests_oauthlib = "*"
 
 [dev-packages]
 sphinx = "*"
@@ -24,6 +25,7 @@ tox-pyenv = "*"
 responses = "*"
 pytest-rerunfailures = "*"
 matplotlib = "*"
+secretstorage = "*"
 
 [pipenv]
 allow_prereleases = true

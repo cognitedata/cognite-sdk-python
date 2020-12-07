@@ -14,7 +14,18 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [2.9.0] - 2020-11-??
+## [2.10.1] - 2020-12-03
+
+### Added
+- Chaining of requests to the relationships list method, 
+allowing the method to take arbitrarily long lists for `source_external_ids` and `target_external_ids`
+
+## [2.10.0] - 2020-12-01
+
+### Added
+- Authentication token generation and lifecycle management
+
+## [2.9.0] - 2020-11-25
 
 ### Added
 - Entity matching API is now available in the beta client.

@@ -37,13 +37,13 @@ jobs:
       run: pipenv run pytest tests/tests_unit -m 'not dsl' --test-deps-only-core
 
     - name: Install all dependencies
-      if: matrix.python-version != 3.7
+      if: matrix.python-version != 3.8
       run: |
         pipenv sync
         pipenv run pip install matplotlib
 
     - name: Install dev dependencies
-      if: matrix.python-version == 3.7
+      if: matrix.python-version == 3.8
       run: pipenv sync --dev
 
     - name: Run tests
@@ -58,17 +58,17 @@ jobs:
         pipenv run coverage xml
 
     - name: Check codestyle
-      if: matrix.python-version == 3.7
+      if: matrix.python-version == 3.8
       run: pipenv run black -l 120 --check .
 
     - uses: codecov/codecov-action@v1
-      if: matrix.python-version == 3.7
+      if: matrix.python-version == 3.8
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         file: ./coverage.xml
 
     - name: Build package
-      if: matrix.python-version == 3.7
+      if: matrix.python-version == 3.8
       run: |
         pipenv run python setup.py sdist
         pipenv run python setup.py bdist_wheel
@@ -76,5 +76,5 @@ jobs:
         pipenv run python setup-core.py bdist_wheel
 
     - name: Build docs
-      if: matrix.python-version == 3.7
+      if: matrix.python-version == 3.8
       run: cd docs && pipenv run make html
