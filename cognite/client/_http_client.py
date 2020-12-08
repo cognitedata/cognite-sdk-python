@@ -93,9 +93,10 @@ class HTTPClient:
     def __init__(self, config: HTTPClientConfig, session: requests.Session = GLOBAL_REQUEST_SESSION):
         self.session = session
         self.config = config
+        self.last_retry_tracker = None  # for tests
 
     def request(self, method: str, url: str, **kwargs) -> requests.Response:
-        retry_tracker = _RetryTracker(config=self.config)
+        self.last_retry_tracker = retry_tracker = _RetryTracker(config=self.config)
         last_status = None
         while True:
             try:
