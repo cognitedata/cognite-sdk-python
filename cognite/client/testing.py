@@ -39,7 +39,6 @@ class CogniteClientMock(MagicMock):
         self.time_series = MagicMock(spec_set=TimeSeriesAPI)
         self.datapoints = MagicMock(spec_set=DatapointsAPI)
         self.assets = MagicMock(spec_set=AssetsAPI)
-        self.entity_matching = MagicMock(spec_set=EntityMatchingAPI)
         self.events = MagicMock(spec_set=EventsAPI)
         self.data_sets = MagicMock(spec_set=DataSetsAPI)
         self.files = MagicMock(spec_set=FilesAPI)
@@ -62,7 +61,6 @@ class CogniteClientMock(MagicMock):
         self.relationships = MagicMock(spec_set=RelationshipsAPI)
         self.sequences = MagicMock(spec=SequencesAPI)
         self.sequences.data = MagicMock(spec_set=SequencesDataAPI)
-        self.synthetic_time_series = MagicMock(spec_set=SyntheticDatapointsAPI)
 
 
 @contextmanager
