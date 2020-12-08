@@ -14,6 +14,17 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.10.3] - 2020-12-09
+
+### Fixed
+- Retries now have backup time tracking per request, rather than occasionally shared between threads.
+
+
+## [2.10.2] - 2020-12-08
+
+### Fixed
+- Set geoLocation.type in files to "Feature" if missing
+
 ## [2.10.1] - 2020-12-03
 
 ### Added
