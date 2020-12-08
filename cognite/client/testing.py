@@ -5,13 +5,16 @@ from cognite.client import CogniteClient
 from cognite.client._api.assets import AssetsAPI
 from cognite.client._api.data_sets import DataSetsAPI
 from cognite.client._api.datapoints import DatapointsAPI
+from cognite.client._api.entity_matching import EntityMatchingAPI
 from cognite.client._api.events import EventsAPI
 from cognite.client._api.files import FilesAPI
 from cognite.client._api.iam import IAMAPI, APIKeysAPI, GroupsAPI, SecurityCategoriesAPI, ServiceAccountsAPI
 from cognite.client._api.labels import LabelsAPI
 from cognite.client._api.login import LoginAPI
 from cognite.client._api.raw import RawAPI, RawDatabasesAPI, RawRowsAPI, RawTablesAPI
+from cognite.client._api.relationships import RelationshipsAPI
 from cognite.client._api.sequences import SequencesAPI, SequencesDataAPI
+from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
 from cognite.client._api.three_d import (
     ThreeDAPI,
     ThreeDAssetMappingAPI,
@@ -36,6 +39,7 @@ class CogniteClientMock(MagicMock):
         self.time_series = MagicMock(spec_set=TimeSeriesAPI)
         self.datapoints = MagicMock(spec_set=DatapointsAPI)
         self.assets = MagicMock(spec_set=AssetsAPI)
+        self.entity_matching = MagicMock(spec_set=EntityMatchingAPI)
         self.events = MagicMock(spec_set=EventsAPI)
         self.data_sets = MagicMock(spec_set=DataSetsAPI)
         self.files = MagicMock(spec_set=FilesAPI)
@@ -55,8 +59,10 @@ class CogniteClientMock(MagicMock):
         self.raw.databases = MagicMock(spec_set=RawDatabasesAPI)
         self.raw.tables = MagicMock(spec_set=RawTablesAPI)
         self.raw.rows = MagicMock(spec_set=RawRowsAPI)
+        self.relationships = MagicMock(spec_set=RelationshipsAPI)
         self.sequences = MagicMock(spec=SequencesAPI)
         self.sequences.data = MagicMock(spec_set=SequencesDataAPI)
+        self.synthetic_time_series = MagicMock(spec_set=SyntheticDatapointsAPI)
 
 
 @contextmanager
