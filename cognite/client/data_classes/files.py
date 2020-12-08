@@ -119,7 +119,7 @@ class GeoLocation(dict):
     @classmethod
     def _load(self, raw_geoLocation: Dict[str, Any]):
         return GeoLocation(
-            type=raw_geoLocation["type"],
+            type=raw_geoLocation.get("type", "Feature"),
             geometry=raw_geoLocation["geometry"],
             properties=raw_geoLocation.get("properties"),
         )
