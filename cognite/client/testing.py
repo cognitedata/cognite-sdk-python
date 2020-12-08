@@ -8,6 +8,7 @@ from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api.events import EventsAPI
 from cognite.client._api.files import FilesAPI
 from cognite.client._api.iam import IAMAPI, APIKeysAPI, GroupsAPI, SecurityCategoriesAPI, ServiceAccountsAPI
+from cognite.client._api.labels import LabelsAPI
 from cognite.client._api.login import LoginAPI
 from cognite.client._api.raw import RawAPI, RawDatabasesAPI, RawRowsAPI, RawTablesAPI
 from cognite.client._api.sequences import SequencesAPI, SequencesDataAPI
@@ -38,6 +39,7 @@ class CogniteClientMock(MagicMock):
         self.events = MagicMock(spec_set=EventsAPI)
         self.data_sets = MagicMock(spec_set=DataSetsAPI)
         self.files = MagicMock(spec_set=FilesAPI)
+        self.labels = MagicMock(spec_set=LabelsAPI)
         self.login = MagicMock(spec_set=LoginAPI)
         self.three_d = MagicMock(spec=ThreeDAPI)
         self.three_d.models = MagicMock(spec_set=ThreeDModelsAPI)
