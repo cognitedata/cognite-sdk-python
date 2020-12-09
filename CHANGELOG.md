@@ -18,7 +18,7 @@ Changes are grouped as follows
 
 ### Fixed
 - Retries now have backup time tracking per request, rather than occasionally shared between threads.
-
+- Sequences delete ranges now no longer gives an error if no data is present
 
 ## [2.10.2] - 2020-12-08
 
