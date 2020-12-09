@@ -151,7 +151,7 @@ class RelationshipsAPI(APIClient):
         )
 
     def retrieve_multiple(self, external_ids: List[str], fetch_resources: bool = False) -> RelationshipList:
-        """Retrieve multiple relationships by external id.  <https://docs.cognite.com/api/v1/#operation/retrieveRelationships>`_
+        """`Retrieve multiple relationships by external id.  <https://docs.cognite.com/api/v1/#operation/byidsRelationships>`_
 
         Args:
             external_ids (List[str]): External IDs
