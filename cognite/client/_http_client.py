@@ -2,7 +2,7 @@ import random
 import socket
 import time
 from http import cookiejar
-from typing import Optional, Set, Tuple, Type, Union
+from typing import Callable, Optional, Set, Tuple, Type, Union
 
 import requests
 import requests.adapters
@@ -90,13 +90,18 @@ class _RetryTracker:
 
 
 class HTTPClient:
-    def __init__(self, config: HTTPClientConfig, session: requests.Session = GLOBAL_REQUEST_SESSION):
+    def __init__(
+        self,
+        config: HTTPClientConfig,
+        session: requests.Session = GLOBAL_REQUEST_SESSION,
+        retry_tracker_factory: Callable[[HTTPClientConfig], _RetryTracker] = _RetryTracker,
+    ):
         self.session = session
         self.config = config
-        self.last_retry_tracker = None  # for tests
+        self.retry_tracker_factory = retry_tracker_factory  # needed for tests
 
     def request(self, method: str, url: str, **kwargs) -> requests.Response:
-        self.last_retry_tracker = retry_tracker = _RetryTracker(config=self.config)
+        retry_tracker = self.retry_tracker_factory(self.config)
         last_status = None
         while True:
             try:
