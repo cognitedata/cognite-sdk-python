@@ -61,10 +61,12 @@ def new_asset_hierarchy(post_spy):
 
 @pytest.fixture
 def root_test_asset():
-    for asset in COGNITE_CLIENT.assets(root=True):
-        if asset.name.startswith("test__"):
-            return asset
-    assert False  # should not be reached
+    for _ in range(5):  # remove after race condition CDF-10303 is fixed
+        for asset in COGNITE_CLIENT.assets(root=True):
+            if asset.name.startswith("test__"):
+                return asset
+        time.sleep(1)
+    assert False  # should never be reached
 
 
 @pytest.fixture
