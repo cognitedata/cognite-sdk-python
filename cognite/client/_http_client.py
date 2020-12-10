@@ -2,7 +2,7 @@ import random
 import socket
 import time
 from http import cookiejar
-from typing import Optional, Set, Tuple, Type, Union
+from typing import Callable, Optional, Set, Tuple, Type, Union
 
 import requests
 import requests.adapters
@@ -90,32 +90,35 @@ class _RetryTracker:
 
 
 class HTTPClient:
-    def __init__(self, config: HTTPClientConfig, session: requests.Session = GLOBAL_REQUEST_SESSION):
+    def __init__(
+        self,
+        config: HTTPClientConfig,
+        session: requests.Session = GLOBAL_REQUEST_SESSION,
+        retry_tracker_factory: Callable[[HTTPClientConfig], _RetryTracker] = _RetryTracker,
+    ):
         self.session = session
         self.config = config
-        self.retry_tracker = None
+        self.retry_tracker_factory = retry_tracker_factory  # needed for tests
 
     def request(self, method: str, url: str, **kwargs) -> requests.Response:
-        self.retry_tracker = _RetryTracker(config=self.config)
+        retry_tracker = self.retry_tracker_factory(self.config)
         last_status = None
         while True:
             try:
                 res = self._do_request(method=method, url=url, **kwargs)
                 last_status = res.status_code
-                self.retry_tracker.status += 1
-                if not self.retry_tracker.should_retry(status_code=last_status):
+                retry_tracker.status += 1
+                if not retry_tracker.should_retry(status_code=last_status):
                     return res
             except CogniteReadTimeout as e:
-                self.retry_tracker.read += 1
-                if not self.retry_tracker.should_retry(status_code=last_status):
+                retry_tracker.read += 1
+                if not retry_tracker.should_retry(status_code=last_status):
                     raise e
             except CogniteConnectionError as e:
-                self.retry_tracker.connect += 1
-                if isinstance(e, CogniteConnectionRefused) or not self.retry_tracker.should_retry(
-                    status_code=last_status
-                ):
+                retry_tracker.connect += 1
+                if isinstance(e, CogniteConnectionRefused) or not retry_tracker.should_retry(status_code=last_status):
                     raise e
-            time.sleep(self.retry_tracker.get_backoff_time())
+            time.sleep(retry_tracker.get_backoff_time())
 
     def _do_request(self, method: str, url: str, **kwargs) -> requests.Response:
         """ requests/urllib3 adds 2 or 3 layers of exceptions on top of built-in networking exceptions.

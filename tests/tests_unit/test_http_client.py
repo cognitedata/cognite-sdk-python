@@ -78,8 +78,10 @@ class TestHTTPClient:
     def test_read_timeout_errors(self):
         cnf = DEFAULT_CONFIG
         cnf.max_backoff_seconds = 0
+        retry_tracker = _RetryTracker(cnf)
         c = HTTPClient(
             config=cnf,
+            retry_tracker_factory=lambda _: retry_tracker,
             session=MagicMock(
                 request=MagicMock(
                     side_effect=lambda *args, **kwargs: raise_exception_wrapped_as_in_requests_lib(socket.timeout())
@@ -90,17 +92,19 @@ class TestHTTPClient:
         with pytest.raises(CogniteReadTimeout):
             c.request("GET", "bla")
 
-        assert c.retry_tracker.total == DEFAULT_CONFIG.max_retries_read
-        assert c.retry_tracker.read == DEFAULT_CONFIG.max_retries_read
-        assert c.retry_tracker.connect == 0
-        assert c.retry_tracker.status == 0
+        assert retry_tracker.total == DEFAULT_CONFIG.max_retries_read
+        assert retry_tracker.read == DEFAULT_CONFIG.max_retries_read
+        assert retry_tracker.connect == 0
+        assert retry_tracker.status == 0
 
     @pytest.mark.parametrize("exc_type", [ConnectionAbortedError, ConnectionResetError, BrokenPipeError])
     def test_connect_errors(self, exc_type):
         cnf = DEFAULT_CONFIG
         cnf.max_backoff_seconds = 0
+        retry_tracker = _RetryTracker(cnf)
         c = HTTPClient(
             config=cnf,
+            retry_tracker_factory=lambda _: retry_tracker,
             session=MagicMock(
                 request=MagicMock(
                     side_effect=lambda *args, **kwargs: raise_exception_wrapped_as_in_requests_lib(exc_type())
@@ -111,16 +115,18 @@ class TestHTTPClient:
         with pytest.raises(CogniteConnectionError):
             c.request("GET", "bla")
 
-        assert c.retry_tracker.total == DEFAULT_CONFIG.max_retries_connect
-        assert c.retry_tracker.read == 0
-        assert c.retry_tracker.connect == DEFAULT_CONFIG.max_retries_connect
-        assert c.retry_tracker.status == 0
+        assert retry_tracker.total == DEFAULT_CONFIG.max_retries_connect
+        assert retry_tracker.read == 0
+        assert retry_tracker.connect == DEFAULT_CONFIG.max_retries_connect
+        assert retry_tracker.status == 0
 
     def test_connection_refused_not_retried(self):
         cnf = DEFAULT_CONFIG
         cnf.max_backoff_seconds = 0
+        retry_tracker = _RetryTracker(cnf)
         c = HTTPClient(
             config=cnf,
+            retry_tracker_factory=lambda _: retry_tracker,
             session=MagicMock(
                 request=MagicMock(
                     side_effect=lambda *args, **kwargs: raise_exception_wrapped_as_in_requests_lib(
@@ -133,23 +139,28 @@ class TestHTTPClient:
         with pytest.raises(CogniteConnectionRefused):
             c.request("GET", "bla")
 
-        assert c.retry_tracker.total == 1
-        assert c.retry_tracker.read == 0
-        assert c.retry_tracker.connect == 1
-        assert c.retry_tracker.status == 0
+        assert retry_tracker.total == 1
+        assert retry_tracker.read == 0
+        assert retry_tracker.connect == 1
+        assert retry_tracker.status == 0
 
     def test_status_errors(self):
         cnf = DEFAULT_CONFIG
         cnf.max_backoff_seconds = 0
-        c = HTTPClient(config=cnf, session=MagicMock(request=MagicMock(return_value=MagicMock(status_code=429))))
+        retry_tracker = _RetryTracker(cnf)
+        c = HTTPClient(
+            config=cnf,
+            retry_tracker_factory=lambda _: retry_tracker,
+            session=MagicMock(request=MagicMock(return_value=MagicMock(status_code=429))),
+        )
 
         res = c.request("GET", "bla")
         assert res.status_code == 429
 
-        assert c.retry_tracker.total == DEFAULT_CONFIG.max_retries_status
-        assert c.retry_tracker.read == 0
-        assert c.retry_tracker.connect == 0
-        assert c.retry_tracker.status == DEFAULT_CONFIG.max_retries_status
+        assert retry_tracker.total == DEFAULT_CONFIG.max_retries_status
+        assert retry_tracker.read == 0
+        assert retry_tracker.connect == 0
+        assert retry_tracker.status == DEFAULT_CONFIG.max_retries_status
 
 
 class UnderlyingException(Exception):

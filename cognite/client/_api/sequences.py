@@ -553,7 +553,8 @@ class SequencesDataAPI(APIClient):
         post_obj.update(self._process_columns(column_external_ids=[sequence.column_external_ids[0]]))
         post_obj.update({"start": start, "end": end})
         for data, _ in self._fetch_data(post_obj):
-            self.delete(rows=[r["rowNumber"] for r in data], external_id=external_id, id=id)
+            if data:
+                self.delete(rows=[r["rowNumber"] for r in data], external_id=external_id, id=id)
 
     def retrieve(
         self,
