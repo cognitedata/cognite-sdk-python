@@ -151,7 +151,7 @@ class RelationshipsAPI(APIClient):
         )
 
     def retrieve_multiple(self, external_ids: List[str], fetch_resources: bool = False) -> RelationshipList:
-        """Retrieve multiple relationships by external id.
+        """`Retrieve multiple relationships by external id.  <https://docs.cognite.com/api/v1/#operation/byidsRelationships>`_
 
         Args:
             external_ids (List[str]): External IDs
@@ -192,7 +192,7 @@ class RelationshipsAPI(APIClient):
         limit: int = 100,
         fetch_resources: bool = False,
     ) -> RelationshipList:
-        """Lists relationships stored in the project based on a query filter given in the payload of this request. Up to 1000 relationships can be retrieved in one operation.
+        """`Lists relationships stored in the project based on a query filter given in the payload of this request. Up to 1000 relationships can be retrieved in one operation.  <https://docs.cognite.com/api/v1/#operation/listRelationships>`_
 
         Args:
             source_external_ids (List[str]): Include relationships that have any of these values in their source External Id field
@@ -282,7 +282,7 @@ class RelationshipsAPI(APIClient):
         return self._list(method="POST", limit=limit, filter=filter, other_params={"fetchResources": fetch_resources})
 
     def create(self, relationship: Union[Relationship, List[Relationship]]) -> Union[Relationship, RelationshipList]:
-        """Create one or more relationships.
+        """`Create one or more relationships. <https://docs.cognite.com/api/v1/#operation/createRelationships>`_
 
         Args:
             relationship (Union[Relationship, List[Relationship]]): Relationship or list of relationships to create.
@@ -312,7 +312,7 @@ class RelationshipsAPI(APIClient):
         return self._create_multiple(items=relationship)
 
     def delete(self, external_id: Union[str, List[str]]) -> None:
-        """Delete one or more relationships
+        """`Delete one or more relationships. <https://docs.cognite.com/api/v1/#operation/deleteRelationships>`_
 
         Args:
             external_id (Union[str, List[str]]): External ID or list of external ids
