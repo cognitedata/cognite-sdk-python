@@ -14,7 +14,7 @@ class RelationshipsAPI(APIClient):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._CREATE_LIMIT = 1000
-        self._LIST_SUBQUERY_LIMIT = 100
+        self._LIST_SUBQUERY_LIMIT = 1000
 
     def _create_filter(
         self,

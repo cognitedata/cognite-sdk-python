@@ -260,8 +260,8 @@ class TestRelationships:
         assert mock_rel_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
     def test_many_source_targets(self, mock_rel_response):
-        source_external_ids = [str(i) for i in range(250)]
-        target_external_ids = [str(i) for i in range(350)]
+        source_external_ids = [str(i) for i in range(2500)]
+        target_external_ids = [str(i) for i in range(3500)]
         with pytest.raises(ValueError):
             REL_API(source_external_ids=source_external_ids, target_external_ids=target_external_ids)
         with pytest.raises(ValueError):
@@ -272,7 +272,7 @@ class TestRelationships:
         assert 12 == len(res)
 
     def test_many_sources_only(self, mock_rel_response):
-        source_external_ids = [str(i) for i in range(250)]
+        source_external_ids = [str(i) for i in range(2500)]
         with pytest.raises(ValueError):
             REL_API(source_external_ids=source_external_ids)
 
