@@ -14,15 +14,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [2.11.0] - 2020-12-16
-
-### Changed
-- `ThreeDAssetMapping` should not accept `subtree_size` and `tree_index` as input arguments.
-
 ## [2.10.4] - 2020-12-14
 
 ### Changed
 - Relationships filter will now chain filters on large amounts of sources or targets in batches of 1000 rather than 100.
+
 
 ## [2.10.3] - 2020-12-09
 

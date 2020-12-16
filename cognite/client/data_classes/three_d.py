@@ -287,12 +287,23 @@ class ThreeDAssetMapping(CogniteResource):
     Args:
         node_id (int): The ID of the node.
         asset_id (int): The ID of the associated asset (Cognite's Assets API).
+        tree_index (int): A number describing the position of this node in the 3D hierarchy, starting from 0. The tree is traversed in a depth-first order.
+        subtree_size (int): The number of nodes in the subtree of this node (this number included the node itself).
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
-    def __init__(self, node_id: int = None, asset_id: int = None, cognite_client=None):
+    def __init__(
+        self,
+        node_id: int = None,
+        asset_id: int = None,
+        tree_index: int = None,
+        subtree_size: int = None,
+        cognite_client=None,
+    ):
         self.node_id = node_id
         self.asset_id = asset_id
+        self.tree_index = tree_index
+        self.subtree_size = subtree_size
         self._cognite_client = cognite_client
 
 
