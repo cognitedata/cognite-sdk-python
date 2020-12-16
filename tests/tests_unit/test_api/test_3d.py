@@ -264,14 +264,18 @@ class Test3DAssetMappings:
 
     def test_create(self, mock_3d_asset_mappings_response):
         res = THREE_D_API.asset_mappings.create(
-            model_id=1, revision_id=1, asset_mapping=ThreeDAssetMapping(node_id=1, asset_id=1)
+            model_id=1,
+            revision_id=1,
+            asset_mapping=ThreeDAssetMapping(node_id=1, asset_id=1, tree_index=1234, subtree_size=2345),
         )
         assert isinstance(res, ThreeDAssetMapping)
         assert mock_3d_asset_mappings_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
     def test_create_multiple(self, mock_3d_asset_mappings_response):
         res = THREE_D_API.asset_mappings.create(
-            model_id=1, revision_id=1, asset_mapping=[ThreeDAssetMapping(node_id=1, asset_id=1)]
+            model_id=1,
+            revision_id=1,
+            asset_mapping=[ThreeDAssetMapping(node_id=1, asset_id=1, tree_index=1234, subtree_size=2345)],
         )
         assert isinstance(res, ThreeDAssetMappingList)
         assert mock_3d_asset_mappings_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
