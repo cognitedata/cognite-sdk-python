@@ -247,7 +247,7 @@ class Test3DFiles:
 class Test3DAssetMappings:
     @pytest.fixture
     def mock_3d_asset_mappings_response(self, rsps):
-        response_body = {"items": [{"nodeId": 1003, "assetId": 3001, "treeIndex": 5, "subtreeSize": 7}]}
+        response_body = {"items": [{"nodeId": 1003, "assetId": 3001}]}
         url_pattern = re.compile(
             re.escape(THREE_D_API._get_base_url_with_base_path()) + "/3d/models/1/revisions/1/mappings.*"
         )
