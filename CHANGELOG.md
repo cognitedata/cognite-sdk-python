@@ -14,6 +14,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.10.5] - 2020-12-21
+
+### Changed
+- 3D Asset Mapping should ignore arguments `subtree_size` and `tree_index` on creation step.
+
 ## [2.10.4] - 2020-12-14
 
 ### Changed

@@ -526,6 +526,10 @@ class ThreeDAssetMappingAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.three_d.asset_mappings.create(model_id=1, revision_id=1, asset_mapping=my_mapping)
         """
+        if isinstance(asset_mapping, list):
+            asset_mapping = [ThreeDAssetMapping(node_id=a.node_id, asset_id=a.asset_id) for a in asset_mapping]
+        else:
+            asset_mapping = ThreeDAssetMapping(node_id=asset_mapping.node_id, asset_id=asset_mapping.asset_id)
         path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id, revision_id)
         return self._create_multiple(resource_path=path, items=asset_mapping)
 
