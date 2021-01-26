@@ -164,7 +164,9 @@ class TestAssetsAPI:
         assert 0 == len(COGNITE_CLIENT.assets.retrieve_subtree(external_id="non_existing_asset"))
         assert 0 == len(COGNITE_CLIENT.assets.retrieve_subtree(id=random.randint(1, 10)))
         assert 781 == len(COGNITE_CLIENT.assets.retrieve_subtree(root_test_asset.id))
-        assert 6 == len(COGNITE_CLIENT.assets.retrieve_subtree(root_test_asset.id, depth=1))
+        subtree = COGNITE_CLIENT.assets.retrieve_subtree(root_test_asset.id, depth=1)
+        assert 6 == len(subtree)
+        assert all(subtree.get(id=a.id) is not None for a in subtree)  # test if .get works on result
 
     def test_create_asset_hierarchy_parent_external_id_not_in_request(self, new_root_asset):
         root = new_root_asset

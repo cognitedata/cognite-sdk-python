@@ -529,11 +529,10 @@ class AssetsAPI(APIClient):
         asset = self.retrieve(id=id, external_id=external_id)
         if asset is None:
             return AssetList([], self._cognite_client)
-        subtree = self._get_asset_subtree(AssetList([asset]), current_depth=0, depth=depth)
-        subtree._cognite_client = self._cognite_client
-        return subtree
+        subtree = self._get_asset_subtree([asset], current_depth=0, depth=depth)
+        return AssetList(subtree, self._cognite_client)
 
-    def _get_asset_subtree(self, assets: AssetList, current_depth: int, depth: Optional[int]) -> AssetList:
+    def _get_asset_subtree(self, assets: List, current_depth: int, depth: Optional[int]) -> List:
         subtree = assets
         if depth is None or current_depth < depth:
             children = self._get_children(assets)
@@ -541,7 +540,7 @@ class AssetsAPI(APIClient):
                 subtree.extend(self._get_asset_subtree(children, current_depth + 1, depth))
         return subtree
 
-    def _get_children(self, assets: AssetList) -> AssetList:
+    def _get_children(self, assets: List) -> List:
         ids = [a.id for a in assets]
         tasks = []
         chunk_size = 100
@@ -552,7 +551,7 @@ class AssetsAPI(APIClient):
         )
         tasks_summary.raise_compound_exception_if_failed_tasks()
         res_list = tasks_summary.results
-        children = AssetList([])
+        children = []
         for res in res_list:
             children.extend(res)
         return children

@@ -14,6 +14,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.10.5] - 2021-01-25
+
+### Fixed
+- Fixed asset subtree not returning an object with id->item cache for use in .get
+
 ## [2.10.4] - 2020-12-14
 
 ### Changed
