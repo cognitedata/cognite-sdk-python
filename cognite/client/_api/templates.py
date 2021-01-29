@@ -18,18 +18,18 @@ class TemplateGroupsApi(APIClient):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def create(self, template_groups: Union[TemplateGroup, List[TemplateGroup]]) -> Union[
-        TemplateGroup, TemplateGroupList]:
+    def create(
+        self, template_groups: Union[TemplateGroup, List[TemplateGroup]]
+    ) -> Union[TemplateGroup, TemplateGroupList]:
         return self._create_multiple(items=template_groups)
 
     def upsert(self, items: Union[TemplateGroup, List[TemplateGroup]]) -> Union[TemplateGroup, TemplateGroupList]:
         single_item = not isinstance(items, list)
         if single_item:
             items = [items]
-        updated = self._put(
-            self._RESOURCE_PATH,
-            {"items": [item.dump(camel_case=True) for item in items]},
-        ).json()["items"]
+        updated = self._put(self._RESOURCE_PATH, {"items": [item.dump(camel_case=True) for item in items]},).json()[
+            "items"
+        ]
         res = self._LIST_CLASS._load(updated, cognite_client=self._cognite_client)
         if single_item:
             return res[0]
@@ -57,8 +57,9 @@ class TemplateGroupVersionsApi(APIClient):
         resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id)
         return self._create_multiple(resource_path=resource_path, items=version)
 
-    def list(self, external_id: str, limit: int = 25, min_version: Optional[int] = None,
-             max_version: Optional[int] = None) -> TemplateGroupVersionList:
+    def list(
+        self, external_id: str, limit: int = 25, min_version: Optional[int] = None, max_version: Optional[int] = None
+    ) -> TemplateGroupVersionList:
         resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id)
         filter = {}
         if min_version is not None:
@@ -82,31 +83,39 @@ class TemplateInstancesApi(APIClient):
     _LIST_CLASS = TemplateInstanceList
 
     def create(
-            self, external_id: str, version: int, instances: Union[TemplateInstance, List[TemplateInstance]]
+        self, external_id: str, version: int, instances: Union[TemplateInstance, List[TemplateInstance]]
     ) -> Union[TemplateInstance, TemplateInstanceList]:
         resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
-        return self._create_multiple(
-            resource_path=resource_path,
-            items=instances,
-        )
+        return self._create_multiple(resource_path=resource_path, items=instances,)
 
-    def upsert(self, external_id: str, version: int, instances: Union[TemplateGroup, List[TemplateGroup]]) -> Union[
-        TemplateInstance, TemplateInstanceList]:
+    def upsert(
+        self, external_id: str, version: int, instances: Union[TemplateGroup, List[TemplateGroup]]
+    ) -> Union[TemplateInstance, TemplateInstanceList]:
         resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
         updated = self._post(
-            resource_path,
-            {"items": [instance.dump(camel_case=True) for instance in instances]},
+            resource_path, {"items": [instance.dump(camel_case=True) for instance in instances]},
         ).json()["items"]
         res = TemplateInstanceList._load(updated, cognite_client=self._cognite_client)
         if len(res) == 1:
             return res[0]
         return res
 
-    def retrieve_multiple(self, external_id: str, version: int, external_ids: List[str], ignore_unkown_ids: bool = False) -> TemplateInstanceList:
+    def retrieve_multiple(
+        self, external_id: str, version: int, external_ids: List[str], ignore_unkown_ids: bool = False
+    ) -> TemplateInstanceList:
         resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
-        return self._retrieve_multiple(resource_path=resource_path, external_ids=external_ids, ignore_unknown_ids=ignore_unkown_ids, wrap_ids=True)
+        return self._retrieve_multiple(
+            resource_path=resource_path, external_ids=external_ids, ignore_unknown_ids=ignore_unkown_ids, wrap_ids=True
+        )
 
-    def list(self, external_id: str, version: int, limit: int = 25, data_set_ids: Optional[List[int]]=None, template_names: Optional[List[str]]=None):
+    def list(
+        self,
+        external_id: str,
+        version: int,
+        limit: int = 25,
+        data_set_ids: Optional[List[int]] = None,
+        template_names: Optional[List[str]] = None,
+    ):
         resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
         filter = {}
         if data_set_ids is not None:

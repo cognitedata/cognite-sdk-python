@@ -1,5 +1,6 @@
-from cognite.client.beta import CogniteClient as Client
 from cognite.client._api.templates import TemplatesAPI
+from cognite.client.beta import CogniteClient as Client
+
 
 class CogniteClient(Client):
     def __init__(self, *args, **kwargs):
