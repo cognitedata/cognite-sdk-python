@@ -1,5 +1,4 @@
 from cognite.client._api.entity_matching import EntityMatchingAPI
-from cognite.client._api.relationships import RelationshipsAPI
 from cognite.client._cognite_client import CogniteClient as Client
 
 
