@@ -14,6 +14,13 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.11.0] - 21-02-01
+
+### Added 
+- Alpha CogniteClient.
+- Template functionality (in alpha client)
+
+
 ## [2.10.5] - 2021-01-25
 
 ### Fixed

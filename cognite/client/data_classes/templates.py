@@ -16,9 +16,8 @@ class TemplateGroup(CogniteResource):
         description (str): The description of the template groups.
         owners (List[str]): The list of owners for the template groups.
     """
-
     def __init__(
-        self, external_id: str = None, description: str = None, owners: List[str] = None, cognite_client=None,
+        self, external_id: str = None, description: str = None, owners: Optional(List[str]) = None, cognite_client=None,
     ):
         self.external_id = external_id
         self.description = description

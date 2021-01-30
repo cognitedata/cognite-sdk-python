@@ -21,6 +21,24 @@ class TemplateGroupsApi(APIClient):
     def create(
         self, template_groups: Union[TemplateGroup, List[TemplateGroup]]
     ) -> Union[TemplateGroup, TemplateGroupList]:
+        """`Create one or more template groups.`
+
+        Args:
+            template_groups (Union[TemplateGroup, List[TemplateGroup]])
+
+        Returns:
+            Union[TemplateGroup, TemplateGroupList]: Created template group(s)
+
+        Examples:
+            create a new template group:
+
+                >>> from cognite.client.alpha import CogniteClient
+                >>> from cognite.client.data_classes import
+                >>> c = CogniteClient()
+                >>> template_group_1 = TemplateGroup("sdk-test-group", "This is a test group")
+                >>> template_group_2 = TemplateGroup("sdk-test-group-2", "This is another test group")
+                >>> c.templates.groups.create([template_group_1, template_group_2])
+        """
         return self._create_multiple(items=template_groups)
 
     def upsert(self, items: Union[TemplateGroup, List[TemplateGroup]]) -> Union[TemplateGroup, TemplateGroupList]:

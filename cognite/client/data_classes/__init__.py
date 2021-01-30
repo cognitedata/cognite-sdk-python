@@ -80,3 +80,15 @@ from cognite.client.data_classes.time_series import (
     TimeSeriesList,
     TimeSeriesUpdate,
 )
+from cognite.client.data_classes.templates import (
+    TemplateGroup,
+    TemplateGroupList,
+    TemplateGroupVersion,
+    TemplateGroupVersionList,
+    TemplateInstance,
+    TemplateInstanceList,
+    RawResolver,
+    ConstantResolver,
+    TimeSeriesResolver,
+    SyntheticTimeSeriesResolver,
+)
