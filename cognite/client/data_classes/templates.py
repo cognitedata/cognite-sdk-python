@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from cognite.client.data_classes._base import *
 
@@ -18,7 +18,7 @@ class TemplateGroup(CogniteResource):
     """
 
     def __init__(
-        self, external_id: str = None, description: str = None, owners: Optional(List[str]) = None, cognite_client=None,
+        self, external_id: str = None, description: str = None, owners: Optional[List[str]] = None, cognite_client=None,
     ):
         self.external_id = external_id
         self.description = description
