@@ -1,5 +1,7 @@
 import uuid
+
 import pytest
+
 from cognite.client.alpha import CogniteClient
 from cognite.client.data_classes import TemplateGroup, TemplateGroupList, TemplateGroupVersion, TemplateInstance
 from cognite.client.exceptions import CogniteNotFoundError
