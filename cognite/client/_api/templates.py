@@ -63,17 +63,19 @@ class TemplateGroupsApi(APIClient):
                 >>> template_group_2 = TemplateGroup("sdk-test-group-2", "This is another test group")
                 >>> c.templates.groups.upsert([template_group_1, template_group_2])
         """
-        if not isinstance(template_groups, list):
+        path = self._RESOURCE_PATH + "/upsert"
+        is_single = not isinstance(template_groups, list)
+        if is_single:
             template_groups = [template_groups]
-        updated = self._put(
-            self._RESOURCE_PATH, {"items": [item.dump(camel_case=True) for item in template_groups]},
+        updated = self._post(
+            path, {"items": [item.dump(camel_case=True) for item in template_groups]},
         ).json()["items"]
         res = self._LIST_CLASS._load(updated, cognite_client=self._cognite_client)
-        if not isinstance(template_groups, list):
+        if is_single:
             return res[0]
         return res
 
-    def retrive_multiple(self, external_ids: List[str], ignore_unknown_ids: bool = False) -> TemplateGroupList:
+    def retrieve_multiple(self, external_ids: List[str], ignore_unknown_ids: bool = False) -> TemplateGroupList:
         """`Retrieve multiple template groups by external id.`
 
         Args:
@@ -223,6 +225,30 @@ class TemplateGroupVersionsApi(APIClient):
             filter["maxVersion"] = max_version
         return self._list(resource_path=resource_path, method="POST", limit=limit, filter=filter)
 
+    def delete(
+        self, external_id: str, version: int
+    ) -> None:
+        """`Delete a template group version.`
+
+        Args:
+            external_id (Union[str, List[str]]): External ID of the template group.
+            version (int): The version of the template group to delete.
+
+        Returns:
+            None
+
+        Examples:
+            Delete template groups by external id:
+
+                >>> from cognite.client.alpha import CogniteClient
+                >>> c = CogniteClient()
+                >>> c.templates.versions.delete("sdk-test-group", 1)
+        """
+        resource_path = utils._auxiliary.interpolate_and_url_encode(
+            self._RESOURCE_PATH, external_id
+        )
+        self._post(resource_path + "/delete", {"version": version})
+
 
 class TemplatesQuery(APIClient):
     _PATH = "/templategroups/{}/versions/{}/graphql"
@@ -370,7 +396,7 @@ class TemplateInstancesApi(APIClient):
         """`Retrieve multiple template instances by external id.`
 
         Args:
-            external_id (str): The template group to retrive instances from.
+            external_id (str): The template group to retrieve instances from.
             version (int): The version of the template group.
             external_ids (List[str]): External IDs of the instances.
             ignore_unknown_ids (bool): Ignore external IDs that are not found rather than throw an exception.
@@ -427,6 +453,33 @@ class TemplateInstancesApi(APIClient):
             filter["template_names"] = template_names
         return self._list(resource_path=resource_path, method="POST", limit=limit, filter=filter)
 
-    def delete(self, external_id: str, version: int, items: List[str]) -> Union[TemplateGroup, TemplateGroupList]:
-        resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
-        return self._delete_multiple(resource_path=resource_path, external_ids=items, wrap_ids=True)
+    def delete(
+        self, external_id: str, version: int, external_ids: List[str], ignore_unknown_ids: bool = False
+    ) -> None:
+        """`Delete one or more template instances.`
+
+        Args:
+            external_id (Union[str, List[str]]): External ID of the template group.
+            version (int): The version of the template group.
+            external_ids (List[str]): The external ids of the template instances to delete
+            ignore_unknown_ids (bool): Ignore external IDs that are not found rather than throw an exception.
+
+        Returns:
+            None
+
+        Examples:
+            Delete template groups by external id:
+
+                >>> from cognite.client.alpha import CogniteClient
+                >>> c = CogniteClient()
+                >>> c.templates.instances.delete("sdk-test-group", 1, external_id=["a", "b"])
+        """
+        resource_path = utils._auxiliary.interpolate_and_url_encode(
+            self._RESOURCE_PATH, external_id, version
+        )
+        return self._delete_multiple(
+            resource_path=resource_path,
+            external_ids=external_ids,
+            wrap_ids=True,
+            extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
+        )
