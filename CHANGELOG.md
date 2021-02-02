@@ -14,6 +14,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.10.6] - 2021-02-02
+
+### Fixed
+- Retry urllib3.NewConnectionError when it isn't in the context of a ConnectionRefusedError
+
 ## [2.10.5] - 2021-01-25
 
 ### Fixed
