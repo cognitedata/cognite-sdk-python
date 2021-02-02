@@ -1,27 +1,19 @@
 import uuid
 import pytest
 from cognite.client.alpha import CogniteClient
-from cognite.client.data_classes import (
-    TemplateGroup,
-    TemplateGroupList,
-    TemplateGroupVersion,
-    TemplateInstance
-)
+from cognite.client.data_classes import TemplateGroup, TemplateGroupList, TemplateGroupVersion, TemplateInstance
 from cognite.client.exceptions import CogniteNotFoundError
 
 API = CogniteClient()
 API_GROUPS = API.templates.groups
+
 
 @pytest.fixture
 def new_template_group():
     external_id = uuid.uuid4().hex[0:20]
 
     template_group = API_GROUPS.create(
-        TemplateGroup(
-            external_id=external_id,
-            description="some description",
-            owners=[external_id + "@cognite.com"]
-        )
+        TemplateGroup(external_id=external_id, description="some description", owners=[external_id + "@cognite.com"])
     )
     yield template_group, external_id
     API_GROUPS.delete(external_ids=external_id)

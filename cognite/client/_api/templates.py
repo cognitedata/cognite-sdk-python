@@ -67,9 +67,7 @@ class TemplateGroupsApi(APIClient):
         is_single = not isinstance(template_groups, list)
         if is_single:
             template_groups = [template_groups]
-        updated = self._post(
-            path, {"items": [item.dump(camel_case=True) for item in template_groups]},
-        ).json()["items"]
+        updated = self._post(path, {"items": [item.dump(camel_case=True) for item in template_groups]},).json()["items"]
         res = self._LIST_CLASS._load(updated, cognite_client=self._cognite_client)
         if is_single:
             return res[0]
@@ -190,7 +188,7 @@ class TemplateGroupVersionsApi(APIClient):
                 >>> template_group_version = TemplateGroupVersion(schema)
                 >>> c.templates.versions.upsert(template_group.external_id, template_group_version)
         """
-        resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id)
+        resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id) + "/upsert"
         version = self._post(resource_path, version.dump(camel_case=True),).json()
         return TemplateGroupVersion._load(version)
 
@@ -225,9 +223,7 @@ class TemplateGroupVersionsApi(APIClient):
             filter["maxVersion"] = max_version
         return self._list(resource_path=resource_path, method="POST", limit=limit, filter=filter)
 
-    def delete(
-        self, external_id: str, version: int
-    ) -> None:
+    def delete(self, external_id: str, version: int) -> None:
         """`Delete a template group version.`
 
         Args:
@@ -244,9 +240,7 @@ class TemplateGroupVersionsApi(APIClient):
                 >>> c = CogniteClient()
                 >>> c.templates.versions.delete("sdk-test-group", 1)
         """
-        resource_path = utils._auxiliary.interpolate_and_url_encode(
-            self._RESOURCE_PATH, external_id
-        )
+        resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id)
         self._post(resource_path + "/delete", {"version": version})
 
 
@@ -453,9 +447,7 @@ class TemplateInstancesApi(APIClient):
             filter["template_names"] = template_names
         return self._list(resource_path=resource_path, method="POST", limit=limit, filter=filter)
 
-    def delete(
-        self, external_id: str, version: int, external_ids: List[str], ignore_unknown_ids: bool = False
-    ) -> None:
+    def delete(self, external_id: str, version: int, external_ids: List[str], ignore_unknown_ids: bool = False) -> None:
         """`Delete one or more template instances.`
 
         Args:
@@ -474,9 +466,7 @@ class TemplateInstancesApi(APIClient):
                 >>> c = CogniteClient()
                 >>> c.templates.instances.delete("sdk-test-group", 1, external_id=["a", "b"])
         """
-        resource_path = utils._auxiliary.interpolate_and_url_encode(
-            self._RESOURCE_PATH, external_id, version
-        )
+        resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
         return self._delete_multiple(
             resource_path=resource_path,
             external_ids=external_ids,
