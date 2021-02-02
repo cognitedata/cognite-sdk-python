@@ -144,9 +144,7 @@ class HTTPClient:
                     requests.exceptions.ConnectionError,
                 ),
             ):
-                if self._any_exception_in_context_isinstance(
-                    e, (ConnectionRefusedError, urllib3.exceptions.NewConnectionError)
-                ):
+                if self._any_exception_in_context_isinstance(e, ConnectionRefusedError):
                     raise CogniteConnectionRefused from e
                 raise CogniteConnectionError from e
             raise e
