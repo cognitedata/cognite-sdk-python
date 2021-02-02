@@ -3,7 +3,7 @@ from typing import *
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes import Relationship, RelationshipFilter, RelationshipList
+from cognite.client.data_classes import Relationship, RelationshipFilter, RelationshipList, RelationshipUpdate
 from cognite.client.data_classes.labels import LabelFilter
 
 
@@ -142,7 +142,7 @@ class RelationshipsAPI(APIClient):
 
             Get relationship by external id:
 
-                >>> from cognite.client.beta import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.relationships.retrieve(external_id="1")
         """
@@ -165,7 +165,7 @@ class RelationshipsAPI(APIClient):
 
             Get relationships by external id::
 
-                >>> from cognite.client.beta import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.relationships.retrieve_multiple(external_ids=["abc", "def"])
         """
@@ -220,13 +220,13 @@ class RelationshipsAPI(APIClient):
 
             List relationships::
 
-                >>> from cognite.client.beta import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> relationship_list = c.relationships.list(limit=5)
 
             Iterate over relationships::
 
-                >>> from cognite.client.beta import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> for relationship in c.relationships:
                 ...     relationship # do something with the relationship
@@ -295,10 +295,9 @@ class RelationshipsAPI(APIClient):
 
             Create a new relationship specifying object type and external id for source and target::
 
-                >>> from cognite.client.beta import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import Relationship
                 >>> c = CogniteClient()
-                >>> assets = c.assets.retrieve_multiple(id=[1,2,3])
                 >>> flowrel1 = Relationship(external_id="flow_1", source_external_id="source_ext_id", source_type="asset", target_external_id="target_ext_id", target_type="event", confidence=0.1, data_set_id=1234)
                 >>> flowrel2 = Relationship(external_id="flow_2", source_external_id="source_ext_id", source_type="asset", target_external_id="target_ext_id", target_type="event", confidence=0.1, data_set_id=1234)
                 >>> res = c.relationships.create([flowrel1,flowrel2])
@@ -310,6 +309,48 @@ class RelationshipsAPI(APIClient):
             relationship = relationship._validate_resource_types()
 
         return self._create_multiple(items=relationship)
+
+    def update(
+        self, item: Union[Relationship, RelationshipUpdate, List[Union[Relationship, RelationshipUpdate]]]
+    ) -> Union[Relationship, RelationshipList]:
+        """`Update one or more relationships <https://docs.cognite.com/api/v1/#operation/updateRelationships>`_
+        Currently, a full replacement of labels on a relationship is not supported (only partial add/remove updates). See the example below on how to perform partial labels update.
+
+        Args:
+            item (Union[Relationship, RelationshipUpdate, List[Union[Relationship, RelationshipUpdate]]]): Relationships(s) to update
+
+        Returns:
+            Union[Relationship, RelationshipsList]: Updated relationship(s)
+
+        Examples:
+            Perform a partial update on a relationship, setting a source_external_id and a confidence::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import RelationshipUpdate
+                >>> c = CogniteClient()
+                >>> my_update = RelationshipUpdate(external_id="flow_1").source_external_id.set("alternate_source").confidence.set(0.97)
+                >>> res1 = c.relationships.update(my_update)
+                >>> # Remove an already set optional field like so
+                >>> another_update = RelationshipUpdate(external_id="flow_1").confidence.set(None)
+                >>> res2 = c.relationships.update(another_update)
+
+            Attach labels to a relationship::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import RelationshipUpdate
+                >>> c = CogniteClient()
+                >>> my_update = RelationshipUpdate(external_id="flow_1").labels.add(["PUMP", "VERIFIED"])
+                >>> res = c.relationships.update(my_update)
+
+            Detach a single label from a relationship::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import RelationshipUpdate
+                >>> c = CogniteClient()
+                >>> my_update = RelationshipUpdate(external_id="flow_1").labels.remove("PUMP")
+                >>> res = c.relationships.update(my_update)
+        """
+        return self._update_multiple(items=item)
 
     def delete(self, external_id: Union[str, List[str]]) -> None:
         """`Delete one or more relationships. <https://docs.cognite.com/api/v1/#operation/deleteRelationships>`_
@@ -324,7 +365,7 @@ class RelationshipsAPI(APIClient):
 
             Delete relationships by external id::
 
-                >>> from cognite.client.beta import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> c.relationships.delete(external_id=["a","b"])
         """

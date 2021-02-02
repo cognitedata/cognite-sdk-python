@@ -7,6 +7,7 @@ from cognite.client._api import (
     assets,
     data_sets,
     datapoints,
+    entity_matching,
     events,
     files,
     iam,
@@ -67,8 +68,11 @@ class TestDocstringExamples:
     def test_sequences(self):
         run_docstring_tests(sequences)
 
+    def test_relationships(self):
+        run_docstring_tests(relationships)
+
 
 @pytest.mark.usefixtures("mock_cognite_beta_client")
 class TestDocstringExamplesBeta:
-    def test_relationships(self):
-        run_docstring_tests(relationships)
+    def test_entity_matching(self):
+        run_docstring_tests(entity_matching)

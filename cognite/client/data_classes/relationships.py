@@ -156,7 +156,66 @@ class RelationshipFilter(CogniteFilter):
 
 
 class RelationshipUpdate(CogniteUpdate):
-    pass
+    """Update applied to a single relationship
+
+    Args:
+        id (int): A server-generated ID for the object.
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+
+    """
+
+    # Relationships have only an external_id and do not expose id
+    def __init__(self, external_id: str):
+        self._id = None
+        self._external_id = external_id
+        self._update_object = {}
+
+    class _PrimitiveRelationshipUpdate(CognitePrimitiveUpdate):
+        def set(self, value: Any) -> "RelationshipUpdate":
+            return self._set(value)
+
+    class _LabelRelationshipUpdate(CogniteLabelUpdate):
+        def add(self, value: Union[str, List[str]]) -> "RelationshipUpdate":
+            return self._add(value)
+
+        def remove(self, value: Union[str, List[str]]) -> "RelationshipUpdate":
+            return self._remove(value)
+
+    @property
+    def source_external_id(self):
+        return RelationshipUpdate._PrimitiveRelationshipUpdate(self, "sourceExternalId")
+
+    @property
+    def source_type(self):
+        return RelationshipUpdate._PrimitiveRelationshipUpdate(self, "sourceType")
+
+    @property
+    def target_external_id(self):
+        return RelationshipUpdate._PrimitiveRelationshipUpdate(self, "targetExternalId")
+
+    @property
+    def target_type(self):
+        return RelationshipUpdate._PrimitiveRelationshipUpdate(self, "targetType")
+
+    @property
+    def start_time(self):
+        return RelationshipUpdate._PrimitiveRelationshipUpdate(self, "startTime")
+
+    @property
+    def end_time(self):
+        return RelationshipUpdate._PrimitiveRelationshipUpdate(self, "endTime")
+
+    @property
+    def data_set_id(self):
+        return RelationshipUpdate._PrimitiveRelationshipUpdate(self, "dataSetId")
+
+    @property
+    def confidence(self):
+        return RelationshipUpdate._PrimitiveRelationshipUpdate(self, "confidence")
+
+    @property
+    def labels(self):
+        return RelationshipUpdate._LabelRelationshipUpdate(self, "labels")
 
 
 class RelationshipList(CogniteResourceList):
