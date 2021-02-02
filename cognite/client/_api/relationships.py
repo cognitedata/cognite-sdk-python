@@ -323,6 +323,14 @@ class RelationshipsAPI(APIClient):
             Union[Relationship, RelationshipsList]: Updated relationship(s)
 
         Examples:
+            Update a data set that you have fetched. This will perform a full update of the data set::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> rel = c.relationships.retrieve(external_id="flow1")
+                >>> rel.confidence = 0.75
+                >>> res = c.relationships.update(rel)
+
             Perform a partial update on a relationship, setting a source_external_id and a confidence::
 
                 >>> from cognite.client import CogniteClient

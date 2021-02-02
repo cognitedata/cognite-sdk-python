@@ -159,7 +159,6 @@ class RelationshipUpdate(CogniteUpdate):
     """Update applied to a single relationship
 
     Args:
-        id (int): A server-generated ID for the object.
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
 
     """
