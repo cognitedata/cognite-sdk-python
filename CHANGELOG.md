@@ -14,6 +14,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+
+## [2.11.0] - 2021-02-02
+
+### Added
+- Relationships now support update
+
 ## [2.10.7] - 2021-02-02
 
 ### Fixed

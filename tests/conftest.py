@@ -8,6 +8,7 @@ from cognite.client import CogniteClient
 from cognite.client._api.assets import AssetsAPI
 from cognite.client._api.data_sets import DataSetsAPI
 from cognite.client._api.datapoints import DatapointsAPI
+from cognite.client._api.entity_matching import EntityMatchingAPI
 from cognite.client._api.events import EventsAPI
 from cognite.client._api.files import FilesAPI
 from cognite.client._api.iam import IAMAPI, APIKeysAPI, GroupsAPI, SecurityCategoriesAPI, ServiceAccountsAPI
@@ -62,6 +63,7 @@ def mock_cognite_client():
         cog_client_mock.iam.security_categories = mock.MagicMock(spec=SecurityCategoriesAPI)
         cog_client_mock.sequences = mock.MagicMock(spec=SequencesAPI)
         cog_client_mock.sequences.data = mock.MagicMock(spec=SequencesDataAPI)
+        cog_client_mock.relationships = mock.MagicMock(spec=RelationshipsAPI)
         raw_mock = mock.MagicMock(spec=RawAPI)
         raw_mock.databases = mock.MagicMock(spec=RawDatabasesAPI)
         raw_mock.tables = mock.MagicMock(spec=RawTablesAPI)
@@ -75,8 +77,7 @@ def mock_cognite_client():
 def mock_cognite_beta_client(mock_cognite_client):
     with mock.patch("cognite.client.beta.CogniteClient") as client_mock:
         cog_client_mock = mock.MagicMock(spec=CogniteClient)
-        cog_client_mock.assets = mock.MagicMock(spec=AssetsAPI)
-        cog_client_mock.relationships = mock.MagicMock(spec=RelationshipsAPI)
+        cog_client_mock.entity_matching = mock.MagicMock(spec=EntityMatchingAPI)
         client_mock.return_value = cog_client_mock
         yield
 

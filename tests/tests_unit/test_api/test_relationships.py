@@ -5,7 +5,7 @@ import re
 import pytest
 
 from cognite.client.beta import CogniteClient
-from cognite.client.data_classes import Label, LabelFilter, Relationship, RelationshipList
+from cognite.client.data_classes import Label, LabelFilter, Relationship, RelationshipList, RelationshipUpdate
 from tests.utils import jsgz_load
 
 COGNITE_CLIENT = CogniteClient()
@@ -176,6 +176,55 @@ class TestRelationships:
         res = REL_API.create([rel1, rel2])
         assert isinstance(res, RelationshipList)
         assert mock_rel_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
+
+    def test_update_with_resource_class(self, mock_rel_response):
+        res = REL_API.update(Relationship(external_id="test_1"))
+        assert isinstance(res, Relationship)
+        assert mock_rel_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
+
+    def test_update_with_update_class(self, mock_rel_response):
+        res = REL_API.update(RelationshipUpdate(external_id="test_1").confidence.set(None))
+        assert isinstance(res, Relationship)
+        assert mock_rel_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
+
+    def test_update_multiple(self, mock_rel_response):
+        res = REL_API.update(
+            [
+                RelationshipUpdate(external_id="test1").source_external_id.set("blabla"),
+                RelationshipUpdate(external_id="test2").source_external_id.set("blabla"),
+            ]
+        )
+        assert isinstance(res, RelationshipList)
+        assert mock_rel_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
+
+    def test_update_labels_single(self, mock_rel_response):
+        REL_API.update([RelationshipUpdate(external_id="test1").labels.add("PUMP").labels.remove("VALVE")])
+        expected = {"labels": {"add": [{"externalId": "PUMP"}], "remove": [{"externalId": "VALVE"}]}}
+        assert expected == jsgz_load(mock_rel_response.calls[0].request.body)["items"][0]["update"]
+
+    def test_update_labels_multiple(self, mock_rel_response):
+        REL_API.update(
+            [
+                RelationshipUpdate(external_id="test1")
+                .labels.add(["PUMP", "ROTATING_EQUIPMENT"])
+                .labels.remove(["VALVE", "VERIFIED"])
+            ]
+        )
+        expected = {
+            "labels": {
+                "add": [{"externalId": "PUMP"}, {"externalId": "ROTATING_EQUIPMENT"}],
+                "remove": [{"externalId": "VALVE"}, {"externalId": "VERIFIED"}],
+            }
+        }
+        assert expected == jsgz_load(mock_rel_response.calls[0].request.body)["items"][0]["update"]
+
+    # resource.update doesn't support full replacement of labels (set operation)
+    def test_ignore_labels_resource_class(self, mock_rel_response):
+        REL_API.update(
+            Relationship(external_id="test1", labels=[Label(external_id="Pump")], source_external_id="source1")
+        )
+        expected = {"sourceExternalId": {"set": "source1"}}
+        assert expected == jsgz_load(mock_rel_response.calls[0].request.body)["items"][0]["update"]
 
     def test_iter_single(self, mock_rel_response):
         for rel in REL_API:
