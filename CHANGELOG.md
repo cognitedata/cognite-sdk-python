@@ -17,7 +17,7 @@ Changes are grouped as follows
 ## [2.10.7] - 2021-02-02
 
 ### Fixed
-- Relationships should support `chunk_size` as parameter
+- Relationships API list calls via the generator now support `chunk_size` as parameter.
 
 ## [2.10.6] - 2021-02-02
 
