@@ -10,6 +10,7 @@ from cognite.client.data_classes import (
     LabelFilter,
     Relationship,
     RelationshipList,
+    RelationshipUpdate,
     TimeSeries,
 )
 from cognite.client.exceptions import CogniteNotFoundError
@@ -149,12 +150,19 @@ class TestRelationshipsAPI:
         res = API_REL.retrieve(external_id=new_rel.external_id)
         assert isinstance(res, Relationship)
         assert new_rel.external_id == ext_id
-        assert res.dump()["confidence"] == 1
+        assert res.confidence == 1
 
     def test_retrieve_unknown(self, new_relationship):
         with pytest.raises(CogniteNotFoundError):
             API_REL.retrieve_multiple(external_ids=["this does not exist"])
         assert API_REL.retrieve(external_id="this does not exist") is None
+
+    def test_update_single(self, new_relationship):
+        new_rel, ext_id = new_relationship
+        updated_rel = API_REL.update(RelationshipUpdate(ext_id).target_type.set("timeseries").confidence.set(None))
+        assert isinstance(updated_rel, Relationship)
+        assert updated_rel.target_type == "timeSeries"
+        assert updated_rel.confidence == None
 
     def test_list_filter(self, create_multiple_relationships):
         relationships_ext_ids, ext_id, source_ext_id = create_multiple_relationships

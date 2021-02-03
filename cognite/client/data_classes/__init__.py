@@ -48,7 +48,12 @@ from cognite.client.data_classes.labels import (
 )
 from cognite.client.data_classes.login import LoginStatus
 from cognite.client.data_classes.raw import Database, DatabaseList, Row, RowList, Table, TableList
-from cognite.client.data_classes.relationships import Relationship, RelationshipFilter, RelationshipList
+from cognite.client.data_classes.relationships import (
+    Relationship,
+    RelationshipFilter,
+    RelationshipList,
+    RelationshipUpdate,
+)
 from cognite.client.data_classes.sequences import (
     Sequence,
     SequenceAggregate,
