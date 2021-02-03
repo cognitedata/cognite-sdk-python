@@ -63,6 +63,7 @@ class RelationshipsAPI(APIClient):
         labels: LabelFilter = None,
         limit: int = None,
         fetch_resources: bool = False,
+        chunk_size: int = None,
     ) -> Generator[Union[Relationship, RelationshipList], None, None]:
         """Iterate over relationships
 
@@ -82,6 +83,7 @@ class RelationshipsAPI(APIClient):
             created_time (Dict[str, int]): Range to filter the field for. (inclusive)
             active_at_time (Dict[str, int]): Limits results to those active at any point within the given time range, i.e. if there is any overlap in the intervals [activeAtTime.min, activeAtTime.max] and [startTime, endTime], where both intervals are inclusive. If a relationship does not have a startTime, it is regarded as active from the begining of time by this filter. If it does not have an endTime is will be regarded as active until the end of time. Similarly, if a min is not supplied to the filter, the min will be implicitly set to the beginning of time, and if a max is not supplied, the max will be implicitly set to the end of time.
             labels (LabelFilter): Return only the resource matching the specified label constraints.
+            chunk_size (int, optional): Number of Relationships to return in each chunk. Defaults to yielding one relationship at a time.
 
         Yields:
             Union[Relationship, RelationshipList]: yields Relationship one by one if chunk is not specified, else RelationshipList objects.
@@ -114,7 +116,11 @@ class RelationshipsAPI(APIClient):
             )
 
         return self._list_generator(
-            method="POST", limit=limit, filter=filter, other_params={"fetchResources": fetch_resources}
+            method="POST",
+            limit=limit,
+            filter=filter,
+            chunk_size=chunk_size,
+            other_params={"fetchResources": fetch_resources},
         )
 
     def __iter__(self) -> Generator[Relationship, None, None]:
