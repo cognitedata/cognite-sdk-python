@@ -1,4 +1,3 @@
-from typing import *
 from typing import Dict, List
 
 from cognite.client.data_classes._base import *
@@ -199,8 +198,9 @@ class FileMetadata(CogniteResource):
         last_updated_time: int = None,
         cognite_client=None,
     ):
-        if labels is not None and len(labels) > 0 and not all(isinstance(l, Label) for l in labels):
-            raise TypeError("FileMetadata.labels should be of type List[Label]")
+        if not isinstance(labels, list):
+            labels = [labels]
+        labels = [Label(label) for label in labels] if labels is not None else None
         if geo_location is not None and not isinstance(geo_location, GeoLocation):
             raise TypeError("FileMetadata.geo_location should be of type GeoLocation")
         self.external_id = external_id

@@ -1,9 +1,6 @@
-from typing import *
-
-from typing import Any, Dict, List
+from typing import List
 
 from cognite.client.data_classes._base import *
-from cognite.client.data_classes.shared import TimestampRange
 
 
 class LabelDefinition(CogniteResource):
@@ -68,7 +65,16 @@ class Label(dict):
 
     @classmethod
     def _load(self, raw_label: Dict[str, Any]):
-        return Label(external_id=raw_label["externalId"])
+        if isinstance(raw_label, Label):
+            return raw_label
+        elif isinstance(raw_label, str):
+            return Label(raw_label)
+        elif isinstance(raw_label, LabelDefinition):
+            return Label(raw_label.external_id)
+        elif isinstance(raw_label, dict):
+            if "externalId" in raw_label:
+                return Label(raw_label["externalId"])
+        raise ValueError("Could not parse label: {}".format(raw_label))
 
     def dump(self, camel_case: bool = False):
         dump_key = lambda key: key if not camel_case else utils._auxiliary.to_camel_case(key)

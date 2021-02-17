@@ -1,8 +1,7 @@
 import threading
-from typing import *
 
 from cognite.client.data_classes._base import *
-from cognite.client.data_classes.labels import Label, LabelFilter
+from cognite.client.data_classes.labels import Label, LabelFilter, LabelDefinition
 from cognite.client.data_classes.shared import TimestampRange
 
 
@@ -71,7 +70,7 @@ class Asset(CogniteResource):
         data_set_id: int = None,
         metadata: Dict[str, str] = None,
         source: str = None,
-        labels: List[Label] = None,
+        labels: List[Union[Label, str, LabelDefinition]] = None,
         id: int = None,
         created_time: int = None,
         last_updated_time: int = None,
@@ -79,8 +78,9 @@ class Asset(CogniteResource):
         aggregates: Union[Dict[str, Any], AggregateResultItem] = None,
         cognite_client=None,
     ):
-        if labels is not None and len(labels) > 0 and not all(isinstance(l, Label) for l in labels):
-            raise TypeError("Asset.labels should be of type List[Label]")
+        if not isinstance(labels, list):
+            labels = [labels]
+        labels = [Label(label) for label in labels] if labels is not None else None
         self.external_id = external_id
         self.name = name
         self.parent_id = parent_id
