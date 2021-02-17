@@ -198,7 +198,7 @@ class FileMetadata(CogniteResource):
         last_updated_time: int = None,
         cognite_client=None,
     ):
-        if not isinstance(labels, list):
+        if not isinstance(labels, list) and labels is not None:
             labels = [labels]
         labels = [Label(label) for label in labels] if labels is not None else None
         if geo_location is not None and not isinstance(geo_location, GeoLocation):

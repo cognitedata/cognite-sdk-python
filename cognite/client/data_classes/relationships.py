@@ -49,7 +49,7 @@ class Relationship(CogniteResource):
         last_updated_time: int = None,
         cognite_client=None,
     ):
-        if not isinstance(labels, list):
+        if not isinstance(labels, list) and labels is not None:
             labels = [labels]
         labels = [Label(label) for label in labels] if labels is not None else None
         self.external_id = external_id
