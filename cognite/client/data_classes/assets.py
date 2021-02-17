@@ -80,7 +80,7 @@ class Asset(CogniteResource):
     ):
         if not isinstance(labels, list) and labels is not None:
             labels = [labels]
-        labels = [Label(label) for label in labels] if labels is not None else None
+        labels = [Label._load(label) for label in labels] if labels is not None else None
         self.external_id = external_id
         self.name = name
         self.parent_id = parent_id

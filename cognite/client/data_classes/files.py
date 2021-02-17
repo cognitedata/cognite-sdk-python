@@ -200,7 +200,7 @@ class FileMetadata(CogniteResource):
     ):
         if not isinstance(labels, list) and labels is not None:
             labels = [labels]
-        labels = [Label(label) for label in labels] if labels is not None else None
+        labels = [Label._load(label) for label in labels] if labels is not None else None
         if geo_location is not None and not isinstance(geo_location, GeoLocation):
             raise TypeError("FileMetadata.geo_location should be of type GeoLocation")
         self.external_id = external_id
