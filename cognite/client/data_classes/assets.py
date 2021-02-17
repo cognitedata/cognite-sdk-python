@@ -78,9 +78,6 @@ class Asset(CogniteResource):
         aggregates: Union[Dict[str, Any], AggregateResultItem] = None,
         cognite_client=None,
     ):
-        if not isinstance(labels, list) and labels is not None:
-            labels = [labels]
-        labels = [Label._load(label) for label in labels] if labels is not None else None
         self.external_id = external_id
         self.name = name
         self.parent_id = parent_id
@@ -103,8 +100,7 @@ class Asset(CogniteResource):
         if isinstance(resource, Dict):
             if instance.aggregates is not None:
                 instance.aggregates = AggregateResultItem(**instance.aggregates)
-        if instance.labels is not None:
-            instance.labels = [Label._load(label) for label in instance.labels]
+        instance.labels = Label._load_list(instance.labels)
         return instance
 
     def __hash__(self):

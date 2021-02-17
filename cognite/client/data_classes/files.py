@@ -198,9 +198,6 @@ class FileMetadata(CogniteResource):
         last_updated_time: int = None,
         cognite_client=None,
     ):
-        if not isinstance(labels, list) and labels is not None:
-            labels = [labels]
-        labels = [Label._load(label) for label in labels] if labels is not None else None
         if geo_location is not None and not isinstance(geo_location, GeoLocation):
             raise TypeError("FileMetadata.geo_location should be of type GeoLocation")
         self.external_id = external_id
@@ -226,8 +223,7 @@ class FileMetadata(CogniteResource):
     @classmethod
     def _load(cls, resource: Union[Dict, str], cognite_client=None):
         instance = super(FileMetadata, cls)._load(resource, cognite_client)
-        if instance.labels is not None:
-            instance.labels = [Label._load(label) for label in instance.labels]
+        instance.labels = Label._load_list(instance.labels)
         if instance.geo_location is not None:
             instance.geo_location = GeoLocation._load(instance.geo_location)
         return instance

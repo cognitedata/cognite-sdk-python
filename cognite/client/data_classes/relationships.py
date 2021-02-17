@@ -49,9 +49,6 @@ class Relationship(CogniteResource):
         last_updated_time: int = None,
         cognite_client=None,
     ):
-        if not isinstance(labels, list) and labels is not None:
-            labels = [labels]
-        labels = [Label._load(label) for label in labels] if labels is not None else None
         self.external_id = external_id
         self.source_external_id = source_external_id
         self.source_type = source_type
@@ -87,8 +84,7 @@ class Relationship(CogniteResource):
             instance.source = instance._convert_resource(instance.source, instance.source_type)
         if instance.target is not None:
             instance.target = instance._convert_resource(instance.target, instance.target_type)
-        if instance.labels is not None:
-            instance.labels = [Label._load(label) for label in instance.labels]
+        instance.labels = Label._load_list(instance.labels)
         return instance
 
     def _convert_resource(self, resource: Dict, resource_type: str):

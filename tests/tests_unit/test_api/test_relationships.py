@@ -28,7 +28,7 @@ def mock_rel_response(rsps):
                 "dataSetId": 1,
                 "createdTime": 0,
                 "lastUpdatedTime": 0,
-                "labels": {"externalId": "string"},
+                "labels": [{"externalId": "string"}],
             }
         ]
     }

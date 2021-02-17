@@ -64,17 +64,28 @@ class Label(dict):
     external_id = CognitePropertyClassUtil.declare_property("externalId")
 
     @classmethod
+    def _load_list(cls, labels: List[Union[str, dict, LabelDefinition]]):
+        def convert_label(label):
+            if isinstance(label, Label):
+                return label
+            elif isinstance(label, str):
+                return Label(label)
+            elif isinstance(label, LabelDefinition):
+                return Label(label.external_id)
+            elif isinstance(label, dict):
+                if "externalId" in label:
+                    return Label(label["externalId"])
+            raise ValueError("Could not parse label: {}".format(label))
+
+        if labels is None:
+            return None
+        if not isinstance(labels, list):
+            labels = [labels]
+        return [convert_label(label) for label in labels]
+
+    @classmethod
     def _load(self, raw_label: Dict[str, Any]):
-        if isinstance(raw_label, Label):
-            return raw_label
-        elif isinstance(raw_label, str):
-            return Label(raw_label)
-        elif isinstance(raw_label, LabelDefinition):
-            return Label(raw_label.external_id)
-        elif isinstance(raw_label, dict):
-            if "externalId" in raw_label:
-                return Label(raw_label["externalId"])
-        raise ValueError("Could not parse label: {}".format(raw_label))
+        return Label(external_id=raw_label["externalId"])
 
     def dump(self, camel_case: bool = False):
         dump_key = lambda key: key if not camel_case else utils._auxiliary.to_camel_case(key)
