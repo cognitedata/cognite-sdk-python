@@ -19,7 +19,10 @@ Changes are grouped as follows
 ### Changed
 - Resources are now more lenient on which types they accept in for labels
 
-## [2.11.0] - 2021-02-02
+## [2.11.0] - 2021-02-18
+
+### Changed
+- Entity matching fit will flatten dictionaries and resources to "metadata.subfield" similar to pipelines.
 
 ### Added
 - Relationships now support update
