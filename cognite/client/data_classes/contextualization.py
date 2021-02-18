@@ -226,7 +226,7 @@ class EntityMatchingModel(CogniteResource):
     @staticmethod
     def _dump_entities(entities: List[Union[Dict, CogniteResource]]) -> Optional[List[Dict]]:
         if entities:
-            return [EntityMatchingModel.flatten_entity(e) for e in entities]
+            return [EntityMatchingModel._flatten_entity(e) for e in entities]
 
 
 class EntityMatchingModelUpdate(CogniteUpdate):
