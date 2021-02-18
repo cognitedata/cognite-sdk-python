@@ -13,8 +13,6 @@ from cognite.client.data_classes import (
     FileMetadataUpdate,
     GeoLocation,
     GeoLocationFilter,
-    Geometry,
-    GeometryFilter,
     Label,
     LabelFilter,
     TimestampRange,

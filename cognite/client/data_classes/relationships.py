@@ -5,7 +5,7 @@ from cognite.client.data_classes._base import *
 from cognite.client.data_classes.assets import Asset
 from cognite.client.data_classes.events import Event
 from cognite.client.data_classes.files import FileMetadata
-from cognite.client.data_classes.labels import Label, LabelFilter
+from cognite.client.data_classes.labels import Label, LabelFilter, LabelDefinition
 from cognite.client.data_classes.sequences import Sequence
 from cognite.client.data_classes.time_series import TimeSeries
 
@@ -44,7 +44,7 @@ class Relationship(CogniteResource):
         end_time: int = None,
         confidence: float = None,
         data_set_id: int = None,
-        labels: List[Label] = None,
+        labels: List[Union[Label, str, LabelDefinition]] = None,
         created_time: int = None,
         last_updated_time: int = None,
         cognite_client=None,
@@ -62,7 +62,7 @@ class Relationship(CogniteResource):
         self.data_set_id = data_set_id
         self.created_time = created_time
         self.last_updated_time = last_updated_time
-        self.labels = labels
+        self.labels = Label._load_list(labels)
         self._cognite_client = cognite_client
 
     def _validate_resource_types(self):
@@ -84,6 +84,7 @@ class Relationship(CogniteResource):
             instance.source = instance._convert_resource(instance.source, instance.source_type)
         if instance.target is not None:
             instance.target = instance._convert_resource(instance.target, instance.target_type)
+        instance.labels = Label._load_list(instance.labels)
         return instance
 
     def _convert_resource(self, resource: Dict, resource_type: str):
