@@ -86,7 +86,7 @@ class Asset(CogniteResource):
         self.data_set_id = data_set_id
         self.metadata = metadata
         self.source = source
-        self.labels = labels
+        self.labels = Label._load_list(labels)
         self.id = id
         self.created_time = created_time
         self.last_updated_time = last_updated_time

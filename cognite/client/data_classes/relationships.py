@@ -62,7 +62,7 @@ class Relationship(CogniteResource):
         self.data_set_id = data_set_id
         self.created_time = created_time
         self.last_updated_time = last_updated_time
-        self.labels = labels
+        self.labels = Label._load_list(labels)
         self._cognite_client = cognite_client
 
     def _validate_resource_types(self):

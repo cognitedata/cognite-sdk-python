@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.11.1] - 2021-02-18
+
+### Changed
+- Resources are now more lenient on which types they accept in for labels
 
 ## [2.11.0] - 2021-02-02
 

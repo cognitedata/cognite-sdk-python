@@ -208,7 +208,7 @@ class FileMetadata(CogniteResource):
         self.metadata = metadata
         self.asset_ids = asset_ids
         self.data_set_id = data_set_id
-        self.labels = labels
+        self.labels = Label._load_list(labels)
         self.geo_location = geo_location
         self.source_created_time = source_created_time
         self.source_modified_time = source_modified_time
