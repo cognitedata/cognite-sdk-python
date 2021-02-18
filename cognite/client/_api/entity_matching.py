@@ -141,7 +141,7 @@ class EntityMatchingAPI(APIClient):
         capabilities in the project, are able to access the data sent to this endpoint.
 
         Args:
-            sources: entities to match from, should have an 'id' field. Tolerant to passing more than is needed or used (e.g. json dump of time series list). Metadata fields are flattened to "metadata.key" entries for use in match_fields.
+            sources: entities to match from, should have an 'id' field. Tolerant to passing more than is needed or used (e.g. json dump of time series list). Metadata fields are automatically flattened to "metadata.key" entries, such that they can be used in match_fields.
             targets: entities to match to, should have an 'id' field.  Tolerant to passing more than is needed or used.
             true_matches: Known valid matches given as a list of dicts with keys 'sourceId', 'sourceExternalId', 'sourceId', 'sourceExternalId'). If omitted, uses an unsupervised model.
              A tuple can be used instead of the dictionary for convenience, interpreted as id/externalId based on type.
