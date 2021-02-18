@@ -75,3 +75,8 @@ class TestLabels:
             LABELS_API.create(Label(external_id="1", name="my_label"))
         with pytest.raises(TypeError):
             LABELS_API.create([Label(external_id="1", name="my_label")])
+
+    def test_load_list(self):
+        assert Label._load_list(None) == None
+        labels = [{"externalId": "a"}, "b", Label("c"), LabelDefinition("d")]
+        assert Label._load_list(labels) == [Label("a"), Label("b"), Label("c"), Label("d")]

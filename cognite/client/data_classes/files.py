@@ -1,4 +1,3 @@
-from typing import *
 from typing import Dict, List
 
 from cognite.client.data_classes._base import *
@@ -199,8 +198,6 @@ class FileMetadata(CogniteResource):
         last_updated_time: int = None,
         cognite_client=None,
     ):
-        if labels is not None and len(labels) > 0 and not all(isinstance(l, Label) for l in labels):
-            raise TypeError("FileMetadata.labels should be of type List[Label]")
         if geo_location is not None and not isinstance(geo_location, GeoLocation):
             raise TypeError("FileMetadata.geo_location should be of type GeoLocation")
         self.external_id = external_id
@@ -211,7 +208,7 @@ class FileMetadata(CogniteResource):
         self.metadata = metadata
         self.asset_ids = asset_ids
         self.data_set_id = data_set_id
-        self.labels = labels
+        self.labels = Label._load_list(labels)
         self.geo_location = geo_location
         self.source_created_time = source_created_time
         self.source_modified_time = source_modified_time
@@ -226,8 +223,7 @@ class FileMetadata(CogniteResource):
     @classmethod
     def _load(cls, resource: Union[Dict, str], cognite_client=None):
         instance = super(FileMetadata, cls)._load(resource, cognite_client)
-        if instance.labels is not None:
-            instance.labels = [Label._load(label) for label in instance.labels]
+        instance.labels = Label._load_list(instance.labels)
         if instance.geo_location is not None:
             instance.geo_location = GeoLocation._load(instance.geo_location)
         return instance

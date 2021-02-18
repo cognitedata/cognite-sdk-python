@@ -121,11 +121,11 @@ class TestEntityMatching:
         assert 123 == model.id
 
     def test_fit_cognite_resource(self, mock_fit):
-        entities_from = [TimeSeries(id=1, name="x")]
+        entities_from = [TimeSeries(id=1, name="x", metadata={"ka": "va"})]
         entities_to = [Asset(id=1, external_id="abc", name="x")]
         EMAPI.fit(sources=entities_from, targets=entities_to, true_matches=[(1, "abc")], feature_type="bigram")
         assert {
-            "sources": [entities_from[0].dump(camel_case=True)],
+            "sources": [{"id": 1, "name": "x", "metadata.ka": "va"}],
             "targets": [entities_to[0].dump(camel_case=True)],
             "trueMatches": [{"sourceId": 1, "targetExternalId": "abc"}],
             "featureType": "bigram",

@@ -1,9 +1,6 @@
-from typing import *
-
-from typing import Any, Dict, List
+from typing import List
 
 from cognite.client.data_classes._base import *
-from cognite.client.data_classes.shared import TimestampRange
 
 
 class LabelDefinition(CogniteResource):
@@ -65,6 +62,26 @@ class Label(dict):
         self.update(kwargs)
 
     external_id = CognitePropertyClassUtil.declare_property("externalId")
+
+    @classmethod
+    def _load_list(cls, labels: List[Union[str, dict, LabelDefinition]]):
+        def convert_label(label):
+            if isinstance(label, Label):
+                return label
+            elif isinstance(label, str):
+                return Label(label)
+            elif isinstance(label, LabelDefinition):
+                return Label(label.external_id)
+            elif isinstance(label, dict):
+                if "externalId" in label:
+                    return Label(label["externalId"])
+            raise ValueError("Could not parse label: {}".format(label))
+
+        if labels is None:
+            return None
+        if not isinstance(labels, list):
+            labels = [labels]
+        return [convert_label(label) for label in labels]
 
     @classmethod
     def _load(self, raw_label: Dict[str, Any]):

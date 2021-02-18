@@ -1,8 +1,7 @@
 import threading
-from typing import *
 
 from cognite.client.data_classes._base import *
-from cognite.client.data_classes.labels import Label, LabelFilter
+from cognite.client.data_classes.labels import Label, LabelFilter, LabelDefinition
 from cognite.client.data_classes.shared import TimestampRange
 
 
@@ -71,7 +70,7 @@ class Asset(CogniteResource):
         data_set_id: int = None,
         metadata: Dict[str, str] = None,
         source: str = None,
-        labels: List[Label] = None,
+        labels: List[Union[Label, str, LabelDefinition]] = None,
         id: int = None,
         created_time: int = None,
         last_updated_time: int = None,
@@ -79,8 +78,6 @@ class Asset(CogniteResource):
         aggregates: Union[Dict[str, Any], AggregateResultItem] = None,
         cognite_client=None,
     ):
-        if labels is not None and len(labels) > 0 and not all(isinstance(l, Label) for l in labels):
-            raise TypeError("Asset.labels should be of type List[Label]")
         self.external_id = external_id
         self.name = name
         self.parent_id = parent_id
@@ -89,7 +86,7 @@ class Asset(CogniteResource):
         self.data_set_id = data_set_id
         self.metadata = metadata
         self.source = source
-        self.labels = labels
+        self.labels = Label._load_list(labels)
         self.id = id
         self.created_time = created_time
         self.last_updated_time = last_updated_time
@@ -103,8 +100,7 @@ class Asset(CogniteResource):
         if isinstance(resource, Dict):
             if instance.aggregates is not None:
                 instance.aggregates = AggregateResultItem(**instance.aggregates)
-        if instance.labels is not None:
-            instance.labels = [Label._load(label) for label in instance.labels]
+        instance.labels = Label._load_list(instance.labels)
         return instance
 
     def __hash__(self):
