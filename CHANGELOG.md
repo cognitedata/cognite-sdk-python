@@ -15,6 +15,11 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 
+## [2.11.1] - 2021-02-02
+
+### Added
+- Entity matching fit will flatten dictionaries and resources to "metadata.subfield" similar to pipelines.
+
 ## [2.11.0] - 2021-02-02
 
 ### Added

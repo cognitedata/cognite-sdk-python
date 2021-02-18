@@ -215,14 +215,18 @@ class EntityMatchingModel(CogniteResource):
         return self._load(response.json(), cognite_client=self._cognite_client)
 
     @staticmethod
+    def _flatten_entity(entity: Dict) -> Dict:
+        if isinstance(entity, CogniteResource):
+            entity = entity.dump(camel_case=True)
+        if "metadata" in entity:
+            for k, v in entity["metadata"].items():
+                entity["metadata.{}".format(k)] = v
+        return {k: v for k, v in entity.items() if k == "id" or isinstance(v, str)}
+
+    @staticmethod
     def _dump_entities(entities: List[Union[Dict, CogniteResource]]) -> Optional[List[Dict]]:
         if entities:
-            return [
-                {k: v for k, v in e.dump(camel_case=True).items() if isinstance(v, str) or k == "id"}
-                if isinstance(e, CogniteResource)
-                else e
-                for e in entities
-            ]
+            return [EntityMatchingModel.flatten_entity(e) for e in entities]
 
 
 class EntityMatchingModelUpdate(CogniteUpdate):
