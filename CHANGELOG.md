@@ -14,6 +14,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.12.0] - 2021-02-22
+
+### Changed
+- Setting `limit=0` in list-endpoints should now correctly raise an API error instead of returning `LIST_LIMIT` number of items.
+
 ## [2.11.1] - 2021-02-18
 
 ### Changed
