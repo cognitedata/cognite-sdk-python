@@ -309,7 +309,7 @@ class APIClient:
             filter = filter or {}
             current_items = []
             while True:
-                if limit:
+                if limit or limit == 0:
                     num_of_remaining_items = limit - total_items_retrieved
                     if num_of_remaining_items < self._LIST_LIMIT:
                         current_limit = num_of_remaining_items
