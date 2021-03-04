@@ -14,6 +14,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.12.0] - 2021-03-04
+
+### Changed
+- Move Entity matching API from beta to v1.
+
 ## [2.11.1] - 2021-02-18
 
 ### Changed

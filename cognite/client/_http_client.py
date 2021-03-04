@@ -121,7 +121,7 @@ class HTTPClient:
             time.sleep(retry_tracker.get_backoff_time())
 
     def _do_request(self, method: str, url: str, **kwargs) -> requests.Response:
-        """ requests/urllib3 adds 2 or 3 layers of exceptions on top of built-in networking exceptions.
+        """requests/urllib3 adds 2 or 3 layers of exceptions on top of built-in networking exceptions.
 
         Sometimes the approriate built-in networking exception is not in the context, sometimes the requests
         exception is not in the context, so we need to check for the appropriate built-in exceptions,

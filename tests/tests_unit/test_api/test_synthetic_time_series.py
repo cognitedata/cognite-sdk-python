@@ -121,7 +121,7 @@ class TestSyntheticQuery:
 
     @pytest.mark.dsl
     def test_expression_builder_unsupported_missing(self):
-        from sympy import symbols, cot
+        from sympy import cot, symbols
 
         with pytest.raises(ValueError, match="Unsupported sympy class cot"):
             STS_CLIENT.query([symbols("a") + cot(symbols("a"))], start=0, end="now", variables={"a": "a"})

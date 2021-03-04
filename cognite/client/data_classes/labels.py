@@ -4,7 +4,7 @@ from cognite.client.data_classes._base import *
 
 
 class LabelDefinition(CogniteResource):
-    """A label definition is a globally defined label that can later be attached to resources (e.g., assets). For example, can you define a "Pump" label definition and attach that label to your pump assets. 
+    """A label definition is a globally defined label that can later be attached to resources (e.g., assets). For example, can you define a "Pump" label definition and attach that label to your pump assets.
 
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.

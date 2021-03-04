@@ -5,6 +5,7 @@ from cognite.client import utils
 from cognite.client._api.assets import AssetsAPI
 from cognite.client._api.data_sets import DataSetsAPI
 from cognite.client._api.datapoints import DatapointsAPI
+from cognite.client._api.entity_matching import EntityMatchingAPI
 from cognite.client._api.events import EventsAPI
 from cognite.client._api.files import FilesAPI
 from cognite.client._api.iam import IAMAPI
@@ -18,7 +19,6 @@ from cognite.client._api.time_series import TimeSeriesAPI
 from cognite.client._api_client import APIClient
 from cognite.client.exceptions import CogniteAPIKeyError
 from cognite.client.utils._client_config import ClientConfig
-from cognite.client._api.entity_matching import EntityMatchingAPI
 
 
 class CogniteClient:
