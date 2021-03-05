@@ -14,6 +14,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.11.2] - 2021-03-05
+
+### Fixed
+- CogniteMissingClientError raised when creating relationship with malformed body.
+
 ## [2.11.1] - 2021-02-18
 
 ### Changed
