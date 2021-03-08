@@ -8,7 +8,7 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client._api.assets import Asset, AssetList, AssetUpdate, _AssetPoster, _AssetPosterWorker
-from cognite.client.data_classes import AssetFilter, TimestampRange, LabelFilter, Label
+from cognite.client.data_classes import AssetFilter, Label, LabelFilter, TimestampRange
 from cognite.client.exceptions import CogniteAPIError
 from tests.utils import jsgz_load, set_request_limit
 

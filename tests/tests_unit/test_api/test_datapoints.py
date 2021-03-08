@@ -1269,8 +1269,8 @@ class TestPandasIntegration:
         assert res is None
 
     def test_insert_dataframe_with_infs(self):
-        import pandas as pd
         import numpy as np
+        import pandas as pd
 
         timestamps = [1500000000000, 1510000000000, 1520000000000, 1530000000000]
         df = pd.DataFrame(

@@ -28,8 +28,8 @@ class TestLocalImport:
 
     @pytest.mark.dsl
     def test_local_import_multiple_ok(self):
-        import pandas
         import numpy
+        import pandas
 
         assert (pandas, numpy) == utils._auxiliary.local_import("pandas", "numpy")
 
