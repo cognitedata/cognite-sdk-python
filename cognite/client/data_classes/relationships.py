@@ -5,7 +5,7 @@ from cognite.client.data_classes._base import *
 from cognite.client.data_classes.assets import Asset
 from cognite.client.data_classes.events import Event
 from cognite.client.data_classes.files import FileMetadata
-from cognite.client.data_classes.labels import Label, LabelFilter, LabelDefinition
+from cognite.client.data_classes.labels import Label, LabelDefinition, LabelFilter
 from cognite.client.data_classes.sequences import Sequence
 from cognite.client.data_classes.time_series import TimeSeries
 

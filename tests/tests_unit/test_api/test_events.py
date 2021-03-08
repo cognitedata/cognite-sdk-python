@@ -5,11 +5,11 @@ import pytest
 from cognite.client import CogniteClient
 from cognite.client._api.events import Event, EventList, EventUpdate
 from cognite.client.data_classes import (
+    AggregateResult,
+    AggregateUniqueValuesResult,
     EndTimeFilter,
     EventFilter,
     TimestampRange,
-    AggregateResult,
-    AggregateUniqueValuesResult,
 )
 from tests.utils import jsgz_load
 

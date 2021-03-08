@@ -87,7 +87,7 @@ class TestSyntheticDatapointsAPI:
 
     @pytest.mark.dsl
     def test_expression_builder_complex(self, test_time_series):
-        from sympy import symbols, cos, sin, pi, log, sqrt
+        from sympy import cos, log, pi, sin, sqrt, symbols
 
         abc = list("abcdefghij")
         syms = symbols(abc)

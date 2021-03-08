@@ -1,7 +1,7 @@
 import threading
 
 from cognite.client.data_classes._base import *
-from cognite.client.data_classes.labels import Label, LabelFilter, LabelDefinition
+from cognite.client.data_classes.labels import Label, LabelDefinition, LabelFilter
 from cognite.client.data_classes.shared import TimestampRange
 
 
