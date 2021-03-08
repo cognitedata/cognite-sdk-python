@@ -1,9 +1,9 @@
 ---
-name: Feature request (0.x.x)
+name: Feature request
 about: Suggest an idea for this project
 title: ''
-labels: 0.x
-assignees: ''
+labels: enhancement
+assignees: 'starbase'
 
 ---
 
