@@ -137,7 +137,7 @@ class ThreeDModelsAPI(APIClient):
         self, item: Union[ThreeDModel, ThreeDModelUpdate, List[Union[ThreeDModel, ThreeDModelList]]]
     ) -> Union[ThreeDModel, ThreeDModelList]:
         """`Update 3d models. <https://docs.cognite.com/api/v1/#operation/update3DModels>`_
-        
+
         Args:
             item (Union[ThreeDModel, ThreeDModelUpdate, List[Union[ThreeDModel, ThreeDModelUpdate]]]): ThreeDModel(s) to update
 
