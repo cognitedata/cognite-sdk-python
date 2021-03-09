@@ -2,7 +2,7 @@ import random
 
 import pytest
 
-from cognite.client.beta import CogniteClient
+from cognite.client import CogniteClient
 from cognite.client.data_classes import (
     ContextualizationJob,
     EntityMatchingModel,

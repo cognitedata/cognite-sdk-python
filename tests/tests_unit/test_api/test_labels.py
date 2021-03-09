@@ -3,7 +3,7 @@ import re
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import LabelDefinition, LabelDefinitionFilter, LabelDefinitionList, Label
+from cognite.client.data_classes import Label, LabelDefinition, LabelDefinitionFilter, LabelDefinitionList
 from tests.utils import jsgz_load
 
 LABELS_API = CogniteClient().labels
