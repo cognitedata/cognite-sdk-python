@@ -519,7 +519,7 @@ class APIClient:
 
         def unwrap_element(el):
             if isinstance(el, dict):
-                return cls._RESOURCE._load(el)
+                return cls._RESOURCE._load(el, cognite_client=self._cognite_client)
             else:
                 return el
 

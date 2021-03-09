@@ -33,22 +33,21 @@ class TasksSummary:
     ):
         if not self.exceptions:
             return
-        unwrap_fn = task_unwrap_fn or (lambda x: x)
+        task_unwrap_fn = (lambda x: x) if task_unwrap_fn is None else task_unwrap_fn
         if task_list_element_unwrap_fn is not None:
-            el_unwrap = task_list_element_unwrap_fn
             successful = []
             for t in self.successful_tasks:
-                successful.extend([el_unwrap(el) for el in unwrap_fn(t)])
+                successful.extend([task_list_element_unwrap_fn(el) for el in task_unwrap_fn(t)])
             unknown = []
             for t in self.unknown_tasks:
-                unknown.extend([el_unwrap(el) for el in unwrap_fn(t)])
+                unknown.extend([task_list_element_unwrap_fn(el) for el in task_unwrap_fn(t)])
             failed = []
             for t in self.failed_tasks:
-                failed.extend([el_unwrap(el) for el in unwrap_fn(t)])
+                failed.extend([task_list_element_unwrap_fn(el) for el in task_unwrap_fn(t)])
         else:
-            successful = [unwrap_fn(t) for t in self.successful_tasks]
-            unknown = [unwrap_fn(t) for t in self.unknown_tasks]
-            failed = [unwrap_fn(t) for t in self.failed_tasks]
+            successful = [task_unwrap_fn(t) for t in self.successful_tasks]
+            unknown = [task_unwrap_fn(t) for t in self.unknown_tasks]
+            failed = [task_unwrap_fn(t) for t in self.failed_tasks]
 
         collect_exc_info_and_raise(
             self.exceptions, successful=successful, failed=failed, unknown=unknown, unwrap_fn=str_format_element_fn

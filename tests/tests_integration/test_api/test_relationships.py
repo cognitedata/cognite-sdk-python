@@ -22,7 +22,6 @@ API_REL = API.relationships
 @pytest.fixture
 def new_relationship(new_label):
     external_id = uuid.uuid4().hex[0:20]
-    from cognite.client import CogniteClient
 
     pre_existing_data_set = API.data_sets.retrieve(external_id="pre_existing_data_set")
     relationship = API_REL.create(
