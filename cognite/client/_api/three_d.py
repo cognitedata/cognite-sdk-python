@@ -378,7 +378,8 @@ class ThreeDRevisionsAPI(APIClient):
         self._post(resource_path, json=body)
 
     def list_nodes(
-        self, model_id: int, revision_id: int, node_id: int = None, depth: int = None, limit: int = 25
+        self, model_id: int, revision_id: int, node_id: int = None, depth: int = None, limit: int = 25,
+        sort_by_node_id: bool = False, partitions: int = None,
     ) -> ThreeDNodeList:
         """`Retrieves a list of nodes from the hierarchy in the 3D Model. <https://docs.cognite.com/api/v1/#operation/get3DNodes>`_
 
@@ -392,6 +393,8 @@ class ThreeDRevisionsAPI(APIClient):
             depth (int): Get sub nodes up to this many levels below the specified node. Depth 0 is the root node.
             limit (int): Maximun number of nodes to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all items.
+            sort_by_node_id (bool): Returns the nodes in `nodeId` order.
+            partitions (int): The result is retrieved in this many parts in parallel. Requires `sort_by_node_id` to be set to `true`.
 
         Returns:
             ThreeDNodeList: The list of 3d nodes.
@@ -413,6 +416,8 @@ class ThreeDRevisionsAPI(APIClient):
             method="GET",
             limit=limit,
             filter={"depth": depth, "nodeId": node_id},
+            partitions=partitions,
+            other_params={"sortByNodeId": sort_by_node_id}
         )
 
     def list_ancestor_nodes(
