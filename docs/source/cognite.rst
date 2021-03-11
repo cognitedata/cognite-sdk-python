@@ -698,6 +698,10 @@ Create a relationship
 ^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.relationships.RelationshipsAPI.create
 
+Update relationships
+^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.relationships.RelationshipsAPI.update
+
 Delete relationships
 ^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.relationships.RelationshipsAPI.delete
