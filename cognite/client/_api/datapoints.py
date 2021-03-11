@@ -613,7 +613,7 @@ class DatapointsAPI(APIClient):
         )
         return {ag: df.filter(like="|" + ag).rename(columns=lambda s: s[: -len(ag) - 1]) for ag in all_aggregates}
 
-    def insert_dataframe(self, dataframe, external_id_headers: bool = False):
+    def insert_dataframe(self, dataframe, external_id_headers: bool = False, dropna: bool = False):
         """Insert a dataframe.
 
         The index of the dataframe must contain the timestamps. The names of the remaining columns specify the ids or external ids of
@@ -625,6 +625,7 @@ class DatapointsAPI(APIClient):
             dataframe (pandas.DataFrame):  Pandas DataFrame Object containing the time series.
             external_id_headers (bool): Set to True if the column headers are external ids rather than internal ids.
                 Defaults to False.
+            dropna (bool): Set to True to skip NaN and inf in DataFrame and post valid data
 
         Returns:
             None
@@ -646,23 +647,53 @@ class DatapointsAPI(APIClient):
                 >>> c.datapoints.insert_dataframe(df)
         """
         np = utils._auxiliary.local_import("numpy")
-        assert not dataframe.isnull().values.any(), "Dataframe contains NaNs. Remove them in order to insert the data."
+        if dropna == True:
+            dps = []
+            for col in dataframe.columns:
+                if np.all(np.isfinite(dataframe[col]) == 0):
+                    continue
+                dps_object = {
+                    "datapoints": list(
+                        zip(
+                            dataframe[np.isfinite(dataframe[col])]
+                                .index.values.astype("datetime64[ms]")
+                                .astype("int64")
+                                .tolist(),
+                            dataframe[np.isfinite(dataframe[col])][col],
+                        )
+                    )
+                }
+                if external_id_headers:
+                    dps_object["externalId"] = col
+                else:
+                    dps_object["id"] = int(col)
+                dps.append(dps_object)
+            assert dps, "No valid in DataFrame"
+        else:
+            assert (
+                not dataframe.isnull().values.any()
+            ), "Dataframe contains NaNs. Remove them in order to insert the data."
 
-        assert np.isfinite(dataframe.select_dtypes(include=[np.number])).values.all(
-            axis=None
-        ), "Dataframe contains Infinity. Remove them in order to insert the data."
-        dps = []
-        for col in dataframe.columns:
-            dps_object = {
-                "datapoints": list(
-                    zip(dataframe.index.values.astype("datetime64[ms]").astype("int64").tolist(), dataframe[col])
-                )
-            }
-            if external_id_headers:
-                dps_object["externalId"] = col
-            else:
-                dps_object["id"] = int(col)
-            dps.append(dps_object)
+            assert np.isfinite(dataframe.select_dtypes(include=[np.number])).values.all(
+                axis=None
+            ), "Dataframe contains Infinity. Remove them in order to insert the data."
+            dps = []
+            for col in dataframe.columns:
+                dps_object = {
+                    "datapoints": list(
+                        zip(
+                            dataframe.index.values.astype("datetime64[ms]")
+                                .astype("int64")
+                                .tolist(),
+                            dataframe[col],
+                        )
+                    )
+                }
+                if external_id_headers:
+                    dps_object["externalId"] = col
+                else:
+                    dps_object["id"] = int(col)
+                dps.append(dps_object)
         self.insert_multiple(dps)
 
 
