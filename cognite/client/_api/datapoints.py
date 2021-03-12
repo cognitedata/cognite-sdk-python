@@ -647,51 +647,37 @@ class DatapointsAPI(APIClient):
                 >>> c.datapoints.insert_dataframe(df)
         """
         np = utils._auxiliary.local_import("numpy")
+        assert not np.isinf(dataframe.select_dtypes(include=[np.number])).any(
+            axis=None
+        ), "Dataframe contains Infinity. Remove them in order to insert the data."
         if dropna:
-            assert not np.isinf(dataframe.select_dtypes(include=[np.number])).values.any(
-                axis=None
-            ), "Dataframe contains Infinity. Remove them in order to insert the data."
             dps = []
+            mask = dataframe.notna()
+            times = {
+                col: dataframe[mask[col]]
+                    .index.values.astype("datetime64[ms]")
+                    .astype("int64")
+                for col in dataframe
+            }
             for col in dataframe.columns:
-                if np.all(np.isnan(dataframe[col])):
+                if not np.any(mask[col]):
                     continue
                 dps_object = {
-                    "datapoints": list(
-                        zip(
-                            dataframe[np.isnan(dataframe[col]) == 0]
-                                .index.values.astype("datetime64[ms]")
-                                .astype("int64")
-                                .tolist(),
-                            dataframe[np.isnan(dataframe[col]) == 0][col],
-                        )
-                    )
+                    "datapoints": list(zip(times[col], dataframe[mask[col]][col]))
                 }
                 if external_id_headers:
                     dps_object["externalId"] = col
                 else:
                     dps_object["id"] = int(col)
                 dps.append(dps_object)
-            assert dps, "No valid in DataFrame"
         else:
             assert (
-                not dataframe.isnull().values.any()
+                not dataframe.isnull().any()
             ), "Dataframe contains NaNs. Remove them in order to insert the data."
-
-            assert np.isfinite(dataframe.select_dtypes(include=[np.number])).values.all(
-                axis=None
-            ), "Dataframe contains Infinity. Remove them in order to insert the data."
             dps = []
+            times = dataframe.index.values.astype("datetime64[ms]").astype("int64")
             for col in dataframe.columns:
-                dps_object = {
-                    "datapoints": list(
-                        zip(
-                            dataframe.index.values.astype("datetime64[ms]")
-                                .astype("int64")
-                                .tolist(),
-                            dataframe[col],
-                        )
-                    )
-                }
+                dps_object = {"datapoints": list(zip(times, dataframe[col]))}
                 if external_id_headers:
                     dps_object["externalId"] = col
                 else:
