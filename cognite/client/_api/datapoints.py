@@ -625,7 +625,7 @@ class DatapointsAPI(APIClient):
             dataframe (pandas.DataFrame):  Pandas DataFrame Object containing the time series.
             external_id_headers (bool): Set to True if the column headers are external ids rather than internal ids.
                 Defaults to False.
-            dropna (bool): Set to True to skip NaN and inf in DataFrame and post valid data
+            dropna (bool): Set to True to skip NaN in DataFrame and post valid data
 
         Returns:
             None
@@ -648,18 +648,21 @@ class DatapointsAPI(APIClient):
         """
         np = utils._auxiliary.local_import("numpy")
         if dropna:
+            assert not np.isinf(dataframe.select_dtypes(include=[np.number])).values.any(
+                axis=None
+            ), "Dataframe contains Infinity. Remove them in order to insert the data."
             dps = []
             for col in dataframe.columns:
-                if np.all(np.isfinite(dataframe[col]) == 0):
+                if np.all(np.isnan(dataframe[col])):
                     continue
                 dps_object = {
                     "datapoints": list(
                         zip(
-                            dataframe[np.isfinite(dataframe[col])]
+                            dataframe[np.isnan(dataframe[col]) == 0]
                                 .index.values.astype("datetime64[ms]")
                                 .astype("int64")
                                 .tolist(),
-                            dataframe[np.isfinite(dataframe[col])][col],
+                            dataframe[np.isnan(dataframe[col]) == 0][col],
                         )
                     )
                 }
