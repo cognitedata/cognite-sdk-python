@@ -647,7 +647,7 @@ class DatapointsAPI(APIClient):
                 >>> c.datapoints.insert_dataframe(df)
         """
         np = utils._auxiliary.local_import("numpy")
-        if dropna == True:
+        if dropna:
             dps = []
             for col in dataframe.columns:
                 if np.all(np.isfinite(dataframe[col]) == 0):
