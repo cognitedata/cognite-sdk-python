@@ -458,11 +458,13 @@ class APIClient:
                     }
                     res = self._post(url_path=resource_path + "/list", json=body, headers=headers)
                 elif method == "GET":
-                    params = filter.copy()
-                    params["limit"] = self._LIST_LIMIT
-                    params["cursor"] = next_cursor
-                    params["partition"] = partition
-                    params = {**params, **other_params}
+                    params = {
+                        **filter,
+                        "limit": self._LIST_LIMIT,
+                        "cursor": next_cursor,
+                        "partition": partition,
+                        **other_params,
+                    }
                     res = self._get(url_path=resource_path, params=params, headers=headers)
                 retrieved_items.extend(res.json()["items"])
                 next_cursor = res.json().get("nextCursor")
