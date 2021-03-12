@@ -655,16 +655,16 @@ class DatapointsAPI(APIClient):
                 not dataframe.isnull().any()
             ), "Dataframe contains NaNs. Remove them in order to insert the data."
         dps = []
-        idx = df.index.values.astype("datetime64[ms]").astype(np.int64)
-        for id, col in df.iteritems():
+        idx = dataframe.index.values.astype("datetime64[ms]").astype(np.int64)
+        for _id, col in dataframe.iteritems():
             mask = col.notna()
             datapoints = list(zip(idx[mask], col[mask]))
             if not datapoints:
                 continue
             if external_id_headers:
-                dps.append({"datapoints": datapoints, "externalId": id})
+                dps.append({"datapoints": datapoints, "externalId": _id})
             else:
-                dps.append({"datapoints": datapoints, "id": int(id)})
+                dps.append({"datapoints": datapoints, "id": int(_id)})
         self.insert_multiple(dps)
 
 
