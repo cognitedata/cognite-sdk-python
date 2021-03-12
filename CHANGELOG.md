@@ -15,6 +15,11 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 
+## [2.13.0] - 2021-03-12
+
+### Added
+- `sortByNodeId` and `partitions` query parameters to `list_nodes` method.
+
 ## [2.12.2] - 2021-03-11
 
 ### Fixed
