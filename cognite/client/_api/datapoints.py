@@ -625,7 +625,7 @@ class DatapointsAPI(APIClient):
             dataframe (pandas.DataFrame):  Pandas DataFrame Object containing the time series.
             external_id_headers (bool): Set to True if the column headers are external ids rather than internal ids.
                 Defaults to False.
-            dropna (bool): Set to True to skip NaN in DataFrame and post valid data
+            dropna (bool): Set to True to skip NaNs in the given DataFrame, applied per column.
 
         Returns:
             None
