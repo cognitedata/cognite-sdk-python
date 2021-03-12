@@ -650,39 +650,21 @@ class DatapointsAPI(APIClient):
         assert not np.isinf(dataframe.select_dtypes(include=[np.number])).any(
             axis=None
         ), "Dataframe contains Infinity. Remove them in order to insert the data."
-        if dropna:
-            dps = []
-            mask = dataframe.notna()
-            times = {
-                col: dataframe[mask[col]]
-                    .index.values.astype("datetime64[ms]")
-                    .astype("int64")
-                for col in dataframe
-            }
-            for col in dataframe.columns:
-                if not np.any(mask[col]):
-                    continue
-                dps_object = {
-                    "datapoints": list(zip(times[col], dataframe[mask[col]][col]))
-                }
-                if external_id_headers:
-                    dps_object["externalId"] = col
-                else:
-                    dps_object["id"] = int(col)
-                dps.append(dps_object)
-        else:
+        if not dropna:
             assert (
                 not dataframe.isnull().any()
             ), "Dataframe contains NaNs. Remove them in order to insert the data."
-            dps = []
-            times = dataframe.index.values.astype("datetime64[ms]").astype("int64")
-            for col in dataframe.columns:
-                dps_object = {"datapoints": list(zip(times, dataframe[col]))}
-                if external_id_headers:
-                    dps_object["externalId"] = col
-                else:
-                    dps_object["id"] = int(col)
-                dps.append(dps_object)
+        dps = []
+        idx = df.index.values.astype("datetime64[ms]").astype(np.int64)
+        for id, col in df.iteritems():
+            mask = col.notna()
+            datapoints = list(zip(idx[mask], col[mask]))
+            if not datapoints:
+                continue
+            if external_id_headers:
+                dps.append({"datapoints": datapoints, "externalId": id})
+            else:
+                dps.append({"datapoints": datapoints, "id": int(id)})
         self.insert_multiple(dps)
 
 
