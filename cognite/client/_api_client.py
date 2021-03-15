@@ -459,11 +459,11 @@ class APIClient:
                     res = self._post(url_path=resource_path + "/list", json=body, headers=headers)
                 elif method == "GET":
                     params = {
-                        **filter,
+                        **(filter or {}),
                         "limit": self._LIST_LIMIT,
                         "cursor": next_cursor,
                         "partition": partition,
-                        **other_params,
+                        **(other_params or {}),
                     }
                     res = self._get(url_path=resource_path, params=params, headers=headers)
                 retrieved_items.extend(res.json()["items"])
