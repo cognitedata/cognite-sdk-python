@@ -1272,24 +1272,19 @@ class TestPandasIntegration:
         assert res is None
         request_body = jsgz_load(mock_post_datapoints.calls[0].request.body)
         assert {
-                   "items": [
-                       {
-                           "id": 123,
-                           "datapoints": [
-                               {"timestamp": ts, "value": val}
-                               for ts, val in zip(timestamps, range(1, 5))
-                               if val != 3
-                           ],
-                       },
-                       {
-                           "id": 456,
-                           "datapoints": [
-                               {"timestamp": ts, "value": float(val)}
-                               for ts, val in zip(timestamps, range(5, 9))
-                           ],
-                       },
-                   ]
-               } == request_body
+            "items": [
+                {
+                    "id": 123,
+                    "datapoints": [
+                        {"timestamp": ts, "value": val} for ts, val in zip(timestamps, range(1, 5)) if val != 3
+                    ],
+                },
+                {
+                    "id": 456,
+                    "datapoints": [{"timestamp": ts, "value": float(val)} for ts, val in zip(timestamps, range(5, 9))],
+                },
+            ]
+        } == request_body
 
     def test_insert_dataframe_single_dp(self, mock_post_datapoints):
         import pandas as pd
