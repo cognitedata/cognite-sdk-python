@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.12.3] - 2021-03-15
+
+### Added
+- dropna argument to insert_dataframe method in DatapointsAPI
 
 ## [2.12.2] - 2021-03-11
 
