@@ -651,9 +651,9 @@ class DatapointsAPI(APIClient):
             axis=None
         ), "Dataframe contains Infinity. Remove them in order to insert the data."
         if not dropna:
-            assert (
-                not dataframe.isnull().any()
-            ), "Dataframe contains NaNs. Remove them in order to insert the data."
+            assert not dataframe.isnull().any(
+                axis=None
+            ), "Dataframe contains NaNs. Remove them or pass `dropna=True` in order to insert the data."
         dps = []
         idx = dataframe.index.values.astype("datetime64[ms]").astype(np.int64)
         for _id, col in dataframe.iteritems():
