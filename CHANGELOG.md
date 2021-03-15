@@ -15,6 +15,11 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 
+## [2.12.2] - 2021-03-11
+
+### Fixed
+- CogniteAPIError raised (instead of internal KeyError) when inserting a RAW row without a key.
+
 ## [2.12.1] - 2021-03-09
 
 ### Fixed
@@ -73,7 +78,7 @@ Changes are grouped as follows
 ## [2.10.1] - 2020-12-03
 
 ### Added
-- Chaining of requests to the relationships list method, 
+- Chaining of requests to the relationships list method,
 allowing the method to take arbitrarily long lists for `source_external_ids` and `target_external_ids`
 
 ## [2.10.0] - 2020-12-01
