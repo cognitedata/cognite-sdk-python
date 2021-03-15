@@ -21,6 +21,12 @@ def new_model():
     assert COGNITE_CLIENT.three_d.models.retrieve(id=res.id) is None
 
 
+@pytest.fixture(scope="class")
+def test_nodes_tree_index_order():
+    revision, model_id = test_revision
+    return COGNITE_CLIENT.three_d.list_nodes(model_id=model_id, revision_id=revision.id)
+
+
 class TestThreeDModelsAPI:
     def test_list_and_retrieve(self):
         res = COGNITE_CLIENT.three_d.models.list(limit=1)
@@ -54,11 +60,20 @@ class TestThreeDRevisionsAPI:
     @pytest.mark.skip(reason="missing a 3d model to test revision against")
     def test_list_ancestor_nodes(self, test_revision):
         revision, model_id = test_revision
-        node_id = COGNITE_CLIENT.three_d.revisions.list_nodes(model_id=model_id, revision_id=revision.id)[0].id
+        node_id = test_nodes_tree_index_order[0].id
         res = COGNITE_CLIENT.three_d.revisions.list_ancestor_nodes(
             model_id=model_id, revision_id=revision.id, node_id=node_id
         )
         assert len(res) > 0
+
+    @pytest.mark.skip(reason="missing a 3d model to test revision against")
+    def test_list_nodes_partitions(self, test_revision):
+        revision, model_id = test_revision
+        nodes = COGNITE_CLIENT.three_d.revisions.list_nodes(
+            model_id=model_id, revision_id=revision.id, partitions=4, sort_by_node_id=True
+        )
+        assert len(nodes) == len(test_nodes_tree_index_order)
+        assert test_node_tree_index_order[nodes[0].tree_index].id == nodes[0].id
 
     @pytest.mark.skip(reason="missing a 3d model to test revision against")
     def test_update_with_resource(self, test_revision):
