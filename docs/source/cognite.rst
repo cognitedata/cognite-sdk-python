@@ -817,6 +817,44 @@ Data classes
     :members:
     :show-inheritance:
 
+Contextualization
+-----------------
+These APIs will return as soon as possible, defering a blocking wait until the last moment. Nevertheless, they can block for a long time awaiting results.
+
+Fit Entity Matching Model
+^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.entity_matching.EntityMatchingAPI.fit
+
+Re-fit Entity Matching Model
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.entity_matching.EntityMatchingAPI.refit
+
+Retrieve Entity Matching Models
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.entity_matching.EntityMatchingAPI.retrieve
+.. automethod:: cognite.client._api.entity_matching.EntityMatchingAPI.retrieve_multiple
+.. automethod:: cognite.client._api.entity_matching.EntityMatchingAPI.list
+
+Delete Entity Matching Models
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.entity_matching.EntityMatchingAPI.delete
+
+Update Entity Matching Models
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.entity_matching.EntityMatchingAPI.update
+
+Predict Using an Entity Matching Model
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.entity_matching.EntityMatchingAPI.predict
+
+Contextualization Data Classes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automodule:: cognite.client.data_classes.contextualization
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+
 
 Identity and access management
 ------------------------------
@@ -982,43 +1020,3 @@ Experimental features
 .. WARNING::
     These features are subject to breaking changes and should not be used in production code.
 
-Contextualization
------------------
-.. WARNING::
-    The entity matching API is in beta.
-
-These APIs will return as soon as possible, defering a blocking wait until the last moment. Nevertheless, they can block for a long time awaiting results.
-
-Fit Entity Matching Model
-^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.entity_matching.EntityMatchingAPI.fit
-
-Re-fit Entity Matching Model
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.entity_matching.EntityMatchingAPI.refit
-
-Retrieve Entity Matching Models
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.entity_matching.EntityMatchingAPI.retrieve
-.. automethod:: cognite.client._api.entity_matching.EntityMatchingAPI.retrieve_multiple
-.. automethod:: cognite.client._api.entity_matching.EntityMatchingAPI.list
-
-Delete Entity Matching Models
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.entity_matching.EntityMatchingAPI.delete
-
-Update Entity Matching Models
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.entity_matching.EntityMatchingAPI.update
-
-Predict Using an Entity Matching Model
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.entity_matching.EntityMatchingAPI.predict
-
-Contextualization Data Classes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.contextualization
-    :members:
-    :undoc-members:
-    :show-inheritance:
-    :inherited-members:
