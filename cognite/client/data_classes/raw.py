@@ -57,11 +57,13 @@ class Table(CogniteResource):
 
     Args:
         name (str): Unique name of the table
+        created_time (int): Time the table was created.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
-    def __init__(self, name: str = None, cognite_client=None):
+    def __init__(self, name: str = None, created_time: int = None, cognite_client=None):
         self.name = name
+        self.created_time = created_time
         self._cognite_client = cognite_client
 
         self._db_name = None
@@ -91,11 +93,13 @@ class Database(CogniteResource):
 
     Args:
         name (str): Unique name of a database.
+        created_time (int): Time the database was created.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
-    def __init__(self, name: str = None, cognite_client=None):
+    def __init__(self, name: str = None, created_time: int = None, cognite_client=None):
         self.name = name
+        self.created_time = created_time
         self._cognite_client = cognite_client
 
     def tables(self, limit: int = None) -> TableList:
