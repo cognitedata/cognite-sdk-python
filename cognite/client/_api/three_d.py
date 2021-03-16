@@ -383,9 +383,9 @@ class ThreeDRevisionsAPI(APIClient):
         revision_id: int,
         node_id: int = None,
         depth: int = None,
-        limit: int = 25,
         sort_by_node_id: bool = False,
         partitions: int = None,
+        limit: int = 25,
     ) -> ThreeDNodeList:
         """`Retrieves a list of nodes from the hierarchy in the 3D Model. <https://docs.cognite.com/api/v1/#operation/get3DNodes>`_
 
