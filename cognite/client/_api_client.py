@@ -406,6 +406,7 @@ class APIClient:
                 raise ValueError("When using sort, partitions is not supported.")
             return self._list_partitioned(
                 partitions=partitions,
+                method=method,
                 cls=cls,
                 resource_path=resource_path,
                 filter=filter,
@@ -433,6 +434,7 @@ class APIClient:
     def _list_partitioned(
         self,
         partitions,
+        method,
         cls=None,
         resource_path: str = None,
         filter: Dict = None,
@@ -446,14 +448,24 @@ class APIClient:
             next_cursor = None
             retrieved_items = []
             while True:
-                body = {
-                    "filter": filter or {},
-                    "limit": self._LIST_LIMIT,
-                    "cursor": next_cursor,
-                    "partition": partition,
-                    **(other_params or {}),
-                }
-                res = self._post(url_path=resource_path + "/list", json=body, headers=headers)
+                if method == "POST":
+                    body = {
+                        "filter": filter or {},
+                        "limit": self._LIST_LIMIT,
+                        "cursor": next_cursor,
+                        "partition": partition,
+                        **(other_params or {}),
+                    }
+                    res = self._post(url_path=resource_path + "/list", json=body, headers=headers)
+                elif method == "GET":
+                    params = {
+                        **(filter or {}),
+                        "limit": self._LIST_LIMIT,
+                        "cursor": next_cursor,
+                        "partition": partition,
+                        **(other_params or {}),
+                    }
+                    res = self._get(url_path=resource_path, params=params, headers=headers)
                 retrieved_items.extend(res.json()["items"])
                 next_cursor = res.json().get("nextCursor")
                 if next_cursor is None:
