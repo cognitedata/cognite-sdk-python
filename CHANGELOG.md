@@ -14,6 +14,15 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.14.0] - 2021-03-18
+
+### Added
+- dropna argument to insert_dataframe method in DatapointsAPI
+
+## [2.13.0] - 2021-03-12
+
+### Added
+- `sortByNodeId` and `partitions` query parameters to `list_nodes` method.
 
 ## [2.13.0] - 2021-03-12
 
