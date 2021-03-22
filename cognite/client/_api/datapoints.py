@@ -613,7 +613,7 @@ class DatapointsAPI(APIClient):
         )
         return {ag: df.filter(like="|" + ag).rename(columns=lambda s: s[: -len(ag) - 1]) for ag in all_aggregates}
 
-    def insert_dataframe(self, dataframe, external_id_headers: bool = False):
+    def insert_dataframe(self, dataframe, external_id_headers: bool = False, dropna: bool = False):
         """Insert a dataframe.
 
         The index of the dataframe must contain the timestamps. The names of the remaining columns specify the ids or external ids of
@@ -625,6 +625,7 @@ class DatapointsAPI(APIClient):
             dataframe (pandas.DataFrame):  Pandas DataFrame Object containing the time series.
             external_id_headers (bool): Set to True if the column headers are external ids rather than internal ids.
                 Defaults to False.
+            dropna (bool): Set to True to skip NaNs in the given DataFrame, applied per column.
 
         Returns:
             None
@@ -646,23 +647,24 @@ class DatapointsAPI(APIClient):
                 >>> c.datapoints.insert_dataframe(df)
         """
         np = utils._auxiliary.local_import("numpy")
-        assert not dataframe.isnull().values.any(), "Dataframe contains NaNs. Remove them in order to insert the data."
-
-        assert np.isfinite(dataframe.select_dtypes(include=[np.number])).values.all(
+        assert not np.isinf(dataframe.select_dtypes(include=[np.number])).any(
             axis=None
         ), "Dataframe contains Infinity. Remove them in order to insert the data."
+        if not dropna:
+            assert not dataframe.isnull().any(
+                axis=None
+            ), "Dataframe contains NaNs. Remove them or pass `dropna=True` in order to insert the data."
         dps = []
-        for col in dataframe.columns:
-            dps_object = {
-                "datapoints": list(
-                    zip(dataframe.index.values.astype("datetime64[ms]").astype("int64").tolist(), dataframe[col])
-                )
-            }
+        idx = dataframe.index.values.astype("datetime64[ms]").astype(np.int64)
+        for column_id, col in dataframe.iteritems():
+            mask = col.notna()
+            datapoints = list(zip(idx[mask], col[mask]))
+            if not datapoints:
+                continue
             if external_id_headers:
-                dps_object["externalId"] = col
+                dps.append({"datapoints": datapoints, "externalId": column_id})
             else:
-                dps_object["id"] = int(col)
-            dps.append(dps_object)
+                dps.append({"datapoints": datapoints, "id": int(column_id)})
         self.insert_multiple(dps)
 
 
