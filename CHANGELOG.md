@@ -14,6 +14,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+
+## [2.15.0] - 2021-03-12
+
+### Added
+- `createdTime` field on raw dbs and tables.
+
 ## [2.14.0] - 2021-03-18
 
 ### Added
