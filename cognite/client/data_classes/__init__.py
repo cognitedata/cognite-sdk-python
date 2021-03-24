@@ -71,7 +71,7 @@ from cognite.client.data_classes.templates import (
     TemplateGroupVersionList,
     TemplateInstance,
     TemplateInstanceList,
-    ConstantResolver
+    ConstantResolver,
 )
 from cognite.client.data_classes.three_d import (
     BoundingBox3D,
