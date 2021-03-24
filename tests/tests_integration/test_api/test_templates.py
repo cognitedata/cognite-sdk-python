@@ -2,9 +2,9 @@ import uuid
 
 import pytest
 
+from cognite import CogniteClient
 from cognite.client.exceptions import CogniteNotFoundError
-from cognite.experimental import CogniteClient
-from cognite.experimental.data_classes import (
+from cognite.data_classes import (
     ConstantResolver,
     TemplateGroup,
     TemplateGroupList,

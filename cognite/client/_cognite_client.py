@@ -14,6 +14,7 @@ from cognite.client._api.login import LoginAPI
 from cognite.client._api.raw import RawAPI
 from cognite.client._api.relationships import RelationshipsAPI
 from cognite.client._api.sequences import SequencesAPI
+from cognite.client._api.templates import TemplatesAPI
 from cognite.client._api.three_d import ThreeDAPI
 from cognite.client._api.time_series import TimeSeriesAPI
 from cognite.client._api_client import APIClient
@@ -106,6 +107,7 @@ class CogniteClient:
         self.labels = LabelsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.relationships = RelationshipsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.entity_matching = EntityMatchingAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
+        self.templates = TemplatesAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self._api_client = APIClient(self._config, cognite_client=self)
 
     def get(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
