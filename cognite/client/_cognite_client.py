@@ -56,6 +56,7 @@ class CogniteClient:
     def __init__(
         self,
         api_key: Optional[str] = None,
+        api_subversion: Optional[str] = None,
         project: Optional[str] = None,
         client_name: Optional[str] = None,
         base_url: Optional[str] = None,
@@ -73,6 +74,7 @@ class CogniteClient:
     ):
         self._config = ClientConfig(
             api_key=api_key,
+            api_subversion=api_subversion,
             project=project,
             client_name=client_name,
             base_url=base_url,
