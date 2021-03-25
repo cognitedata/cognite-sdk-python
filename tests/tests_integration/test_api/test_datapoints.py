@@ -108,11 +108,12 @@ class TestDatapointsAPI:
             )
 
     def test_stop_pagination_in_time(self, test_time_series, post_spy):
+        lim = 152225
         ts = test_time_series[0]
-        dps = COGNITE_CLIENT.datapoints.retrieve(id=ts.id, start=0, end="now", limit=223456)
-        assert 223456 == len(dps)
+        dps = COGNITE_CLIENT.datapoints.retrieve(id=ts.id, start=0, end="now", limit=lim)
+        assert lim == len(dps)
         # first page 100k, counts 1, paginate 2 windows (+1 potential for 1st day uncertainty)
-        assert 4 <= COGNITE_CLIENT.datapoints._post.call_count <= 5
+        assert 3 <= COGNITE_CLIENT.datapoints._post.call_count <= 4
 
     def test_retrieve_include_outside_points(self, test_time_series):
         ts = test_time_series[0]
@@ -127,11 +128,10 @@ class TestDatapointsAPI:
 
     def test_retrieve_include_outside_points_paginate_no_outside(self, test_time_series, post_spy):
         ts = test_time_series[0]
-        start = datetime(2019, 1, 1)
-        end = datetime(2019, 6, 29)
+        start = utils._time.timestamp_to_ms("156w-ago")
+        end = utils._time.timestamp_to_ms("1h-ago")
         test_lim = 250
         dps_non_outside = COGNITE_CLIENT.datapoints.retrieve(id=ts.id, start=start, end=end, limit=1234)
-        count_first = COGNITE_CLIENT.datapoints._post.call_count
 
         tmp = COGNITE_CLIENT.datapoints._DPS_LIMIT
         COGNITE_CLIENT.datapoints._DPS_LIMIT = test_lim
@@ -140,7 +140,6 @@ class TestDatapointsAPI:
         )
         COGNITE_CLIENT.datapoints._DPS_LIMIT = tmp
         assert len(dps) == len(dps_non_outside)
-        assert math.ceil(len(dps) / test_lim) + 1 == COGNITE_CLIENT.datapoints._post.call_count - count_first
         assert not has_duplicates(dps.to_pandas())
         ts_outside = set(dps.timestamp) - set(dps_non_outside.timestamp)
         assert 0 == len(ts_outside)
@@ -148,8 +147,8 @@ class TestDatapointsAPI:
 
     def test_retrieve_include_outside_points_paginate_outside_exists(self, test_time_series, post_spy):
         ts = test_time_series[0]
-        start = datetime(2019, 6, 29)
-        end = datetime(2019, 6, 29, 5)
+        start = utils._time.timestamp_to_ms("12h-ago")
+        end = utils._time.timestamp_to_ms("1h-ago")
         test_lim = 2500
         dps_non_outside = COGNITE_CLIENT.datapoints.retrieve(id=ts.id, start=start, end=end)
         tmp = COGNITE_CLIENT.datapoints._DPS_LIMIT
