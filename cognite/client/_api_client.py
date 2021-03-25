@@ -708,7 +708,7 @@ class APIClient:
 
     @staticmethod
     def _status_ok(status_code: int):
-        return status_code in {200, 201}
+        return status_code in {200, 201, 202}
 
     @staticmethod
     def _raise_API_error(res: Response, payload: Dict):
