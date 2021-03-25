@@ -14,6 +14,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.16.0] - 2021-03-24
+
+### Added
+- support for templates.
+- date-based `cdf-version` header.
 
 ## [2.15.0] - 2021-03-12
 

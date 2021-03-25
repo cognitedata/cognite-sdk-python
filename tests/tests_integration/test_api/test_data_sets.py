@@ -1,9 +1,7 @@
-from datetime import datetime
 from unittest import mock
 
 import pytest
 
-import cognite.client.utils._time
 from cognite.client import CogniteClient
 from cognite.client.data_classes import DataSet, DataSetFilter, DataSetUpdate
 from cognite.client.exceptions import CogniteNotFoundError
