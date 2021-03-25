@@ -67,6 +67,7 @@ class ClientConfig(_DefaultConfig):
         max_workers: Optional[int] = None,
         headers: Optional[Dict[str, str]] = None,
         timeout: Optional[int] = None,
+        proxies: Optional[Dict[str, str]] = None,
         token: Optional[Union[Callable[[], str], str]] = None,
         token_url: Optional[str] = None,
         token_client_id: Optional[str] = None,
@@ -86,6 +87,7 @@ class ClientConfig(_DefaultConfig):
         self.headers = headers or self.headers
         self.timeout = timeout or self.timeout
         self.token = token
+        self.proxies = proxies
         self.token_url = token_url or self.token_url
         self.token_client_id = token_client_id or self.token_client_id
         self.token_client_secret = token_client_secret or self.token_client_secret
