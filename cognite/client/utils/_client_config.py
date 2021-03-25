@@ -8,6 +8,8 @@ from requests.exceptions import ConnectionError
 from cognite.client import utils
 from cognite.client.exceptions import CogniteAPIKeyError
 
+_DEFAULT_API_SUBVERSION = "V20210323"
+
 
 class _ThreadLocalConfig:
     def __init__(self):
@@ -28,6 +30,7 @@ class _DefaultConfig:
 
         # Per client
         self.api_key = thread_local.api_key or os.getenv("COGNITE_API_KEY")
+        self.api_subversion = os.getenv("COGNITE_API_VERSION") or _DEFAULT_API_SUBVERSION
         self.project = thread_local.project or os.getenv("COGNITE_PROJECT")
         self.client_name = os.getenv("COGNITE_CLIENT_NAME")
         self.base_url = os.getenv("COGNITE_BASE_URL", "https://api.cognitedata.com")
@@ -61,6 +64,7 @@ class ClientConfig(_DefaultConfig):
     def __init__(
         self,
         api_key: Optional[str] = None,
+        api_subversion: Optional[str] = None,
         project: Optional[str] = None,
         client_name: Optional[str] = None,
         base_url: Optional[str] = None,
@@ -93,6 +97,7 @@ class ClientConfig(_DefaultConfig):
         self.token_client_secret = token_client_secret or self.token_client_secret
         self.token_scopes = token_scopes or self.token_scopes
         self.token_custom_args = token_custom_args or self.token_custom_args
+        self.api_subversion = api_subversion or self.api_subversion
         self.disable_pypi_version_check = (
             disable_pypi_version_check if disable_pypi_version_check is not None else self.disable_pypi_version_check
         )
