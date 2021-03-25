@@ -493,6 +493,7 @@ class FilesAPI(APIClient):
             data_set_id (int): ID of the data set.
             labels (List[Label]): A list of the labels associated with this resource item.
             geo_location (GeoLocation): The geographic metadata of the file.
+            security_categories (List[int]): Security categories to attach to this file.
             source_created_time (int): The timestamp for when the file was originally created in the source system.
             source_modified_time (int): The timestamp for when the file was last modified in the source system.
             recursive (bool): If path is a directory, upload all contained files recursively.
@@ -626,6 +627,7 @@ class FilesAPI(APIClient):
             geo_location (GeoLocation): The geographic metadata of the file.
             source_created_time (int): The timestamp for when the file was originally created in the source system.
             source_modified_time (int): The timestamp for when the file was last modified in the source system.
+            security_categories (List[int]): Security categories to attach to this file.
             overwrite (bool): If 'overwrite' is set to true, and the POST body content specifies a 'externalId' field,
                 fields for the file found for externalId can be overwritten. The default setting is false.
                 If metadata is included in the request body, all of the original metadata will be overwritten.
