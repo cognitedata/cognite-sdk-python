@@ -2,6 +2,7 @@ import datetime
 import logging
 import os
 import random
+import re
 import sys
 import threading
 import types
@@ -270,6 +271,18 @@ class TestCogniteClient:
             CogniteClient(disable_pypi_version_check=True)
         assert len(rsps_with_login_mock.calls) == 1
         assert rsps_with_login_mock.calls[0].request.url.startswith("https://greenfield.cognitedata.com")
+
+    def test_api_version_present_in_header(self, rsps_with_login_mock, default_client_config):
+        c = CogniteClient()
+        c.login.status()
+        assert rsps_with_login_mock.calls[1].request.headers["cdf-version"] == c.config.api_subversion
+
+    def test_beta_header_for_beta_client(self, rsps_with_login_mock, default_client_config):
+        from cognite.client.beta import CogniteClient as BetaClient
+
+        c = BetaClient()
+        c.login.status()
+        assert rsps_with_login_mock.calls[1].request.headers["cdf-version"] == "beta"
 
     def test_version_check_enabled(self, rsps_with_login_mock):
         with unset_env_var("COGNITE_PROJECT"):
