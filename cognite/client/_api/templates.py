@@ -109,7 +109,7 @@ class TemplateGroupsAPI(APIClient):
         is_single = not isinstance(template_groups, list)
         if is_single:
             template_groups = [template_groups]
-        updated = self._post(path, {"items": [item.dump(camel_case=True) for item in template_groups]},).json()["items"]
+        updated = self._post(path, {"items": [item.dump(camel_case=True) for item in template_groups]}).json()["items"]
         res = self._LIST_CLASS._load(updated, cognite_client=self._cognite_client)
         if is_single:
             return res[0]
@@ -230,7 +230,7 @@ class TemplateGroupVersionsAPI(APIClient):
                 >>> c.templates.versions.upsert(template_group.external_id, template_group_version)
         """
         resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id) + "/upsert"
-        version = self._post(resource_path, version.dump(camel_case=True),).json()
+        version = self._post(resource_path, version.dump(camel_case=True)).json()
         return TemplateGroupVersion._load(version)
 
     def list(
@@ -376,7 +376,7 @@ class TemplateInstancesAPI(APIClient):
             utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version) + "/upsert"
         )
         updated = self._post(
-            resource_path, {"items": [instance.dump(camel_case=True) for instance in instances]},
+            resource_path, {"items": [instance.dump(camel_case=True) for instance in instances]}
         ).json()["items"]
         res = TemplateInstanceList._load(updated, cognite_client=self._cognite_client)
         if len(res) == 1:

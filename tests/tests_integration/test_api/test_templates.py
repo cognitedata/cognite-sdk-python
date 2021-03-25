@@ -3,7 +3,6 @@ import uuid
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.exceptions import CogniteNotFoundError
 from cognite.client.data_classes import (
     ConstantResolver,
     TemplateGroup,
@@ -13,6 +12,7 @@ from cognite.client.data_classes import (
     TemplateInstance,
     TemplateInstanceList,
 )
+from cognite.client.exceptions import CogniteNotFoundError
 
 API = CogniteClient()
 API_GROUPS = API.templates.groups

@@ -18,7 +18,7 @@ class TemplateGroup(CogniteResource):
     """
 
     def __init__(
-        self, external_id: str = None, description: str = None, owners: Optional[List[str]] = None, cognite_client=None,
+        self, external_id: str = None, description: str = None, owners: Optional[List[str]] = None, cognite_client=None
     ):
         self.external_id = external_id
         self.description = description
@@ -46,9 +46,7 @@ class TemplateGroupVersion(CogniteResource):
         conflict_mode (str): Can be set to 'Patch', 'Update' or 'Force'.
     """
 
-    def __init__(
-        self, schema: str = None, version: int = None, conflict_mode: str = None, cognite_client=None,
-    ):
+    def __init__(self, schema: str = None, version: int = None, conflict_mode: str = None, cognite_client=None):
         self.schema = schema
         self.version = version
         self.conflict_mode = conflict_mode
@@ -220,7 +218,7 @@ class TemplateInstance(CogniteResource):
 
 class GraphQlError(CogniteResource):
     def __init__(
-        self, message: str = None, path: List[str] = None, locations: List[Dict[str, Any]] = None, cognite_client=None,
+        self, message: str = None, path: List[str] = None, locations: List[Dict[str, Any]] = None, cognite_client=None
     ):
         self.message = message
         self.path = path

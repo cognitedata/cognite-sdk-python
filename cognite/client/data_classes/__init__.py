@@ -65,13 +65,13 @@ from cognite.client.data_classes.sequences import (
 )
 from cognite.client.data_classes.shared import AggregateResult, AggregateUniqueValuesResult, TimestampRange
 from cognite.client.data_classes.templates import (
+    ConstantResolver,
     TemplateGroup,
     TemplateGroupList,
     TemplateGroupVersion,
     TemplateGroupVersionList,
     TemplateInstance,
     TemplateInstanceList,
-    ConstantResolver,
 )
 from cognite.client.data_classes.three_d import (
     BoundingBox3D,
