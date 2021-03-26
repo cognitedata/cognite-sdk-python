@@ -13,7 +13,7 @@ from requests import Response
 from requests.structures import CaseInsensitiveDict
 
 from cognite.client import utils
-from cognite.client._http_client import HTTPClient, HTTPClientConfig
+from cognite.client._http_client import GLOBAL_REQUEST_SESSION, HTTPClient, HTTPClientConfig
 from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteUpdate
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 
@@ -64,6 +64,10 @@ class APIClient:
         self._api_subversion = config.api_subversion
         self._cognite_client = cognite_client
 
+        session = GLOBAL_REQUEST_SESSION
+        if self._config.proxies is not None:
+            session.proxies.update(self._config.proxies)
+
         self._http_client = HTTPClient(
             config=HTTPClientConfig(
                 status_codes_to_retry={429},
@@ -73,7 +77,8 @@ class APIClient:
                 max_retries_read=0,
                 max_retries_connect=self._config.max_retries,
                 max_retries_status=self._config.max_retries,
-            )
+            ),
+            session=session,
         )
 
         self._http_client_with_retry = HTTPClient(
@@ -85,7 +90,8 @@ class APIClient:
                 max_retries_read=self._config.max_retries,
                 max_retries_connect=self._config.max_retries,
                 max_retries_status=self._config.max_retries,
-            )
+            ),
+            session=session,
         )
 
         self._CREATE_LIMIT = 1000
