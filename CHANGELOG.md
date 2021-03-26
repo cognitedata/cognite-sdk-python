@@ -14,6 +14,23 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.17.0] - 2021-03-26
+
+### Changed
+- Ignore exceptions from pypi version check and reduce its timeout to 5 seconds.
+
+### Fixed
+- Only 200/201/202 is treated as succesfull response. 301 led to json decoding errors - 
+now handled gracefully.
+- datasets create limit was set to 1000 in the sdk, leading to cases of 400 from the api where the limit is 10.
+ 
+### Added
+- Support for specifying proxies in the CogniteClient constructor
+
+### Removed
+- py.typed file. Will not declare library as typed until we run a typechecker on the codebase.
+
+
 ## [2.16.0] - 2021-03-24
 
 ### Added
@@ -29,11 +46,6 @@ Changes are grouped as follows
 
 ### Added
 - dropna argument to insert_dataframe method in DatapointsAPI
-
-## [2.13.0] - 2021-03-12
-
-### Added
-- `sortByNodeId` and `partitions` query parameters to `list_nodes` method.
 
 ## [2.13.0] - 2021-03-12
 
