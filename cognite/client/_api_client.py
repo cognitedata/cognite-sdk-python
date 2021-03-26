@@ -148,7 +148,7 @@ class APIClient:
         else:
             res = self._http_client.request(method=method, url=full_url, **kwargs)
 
-        if not self._status_is_valid(res.status_code):
+        if not self._status_ok(res.status_code):
             self._raise_API_error(res, payload=json_payload)
         self._log_request(res, payload=json_payload)
         return res
@@ -704,8 +704,8 @@ class APIClient:
         return single_id or single_external_id
 
     @staticmethod
-    def _status_is_valid(status_code: int):
-        return status_code < 400
+    def _status_ok(status_code: int):
+        return status_code in {200, 201, 202}
 
     @staticmethod
     def _raise_API_error(res: Response, payload: Dict):
