@@ -1,5 +1,6 @@
 import time
 import uuid
+from tempfile import NamedTemporaryFile, TemporaryDirectory
 
 import pytest
 
@@ -15,6 +16,7 @@ from cognite.client.data_classes import (
     Label,
     LabelDefinition,
 )
+from cognite.client.utils._auxiliary import random_string
 
 COGNITE_CLIENT = CogniteClient()
 
@@ -35,6 +37,18 @@ def new_file():
     yield res
     COGNITE_CLIENT.files.delete(id=res.id)
     assert COGNITE_CLIENT.files.retrieve(id=res.id) is None
+
+
+@pytest.fixture(scope="class")
+def empty_file():
+    name = "empty_" + random_string(10)
+    res = COGNITE_CLIENT.files.upload_bytes(content=b"", name=name, external_id=name)
+    while True:
+        if COGNITE_CLIENT.files.retrieve(id=res.id).uploaded:
+            break
+        time.sleep(0.5)
+    yield res
+    COGNITE_CLIENT.files.delete(id=res.id)
 
 
 @pytest.fixture(scope="class")
@@ -129,6 +143,16 @@ class TestFilesAPI:
 
     def test_download_new_file(self, new_file):
         assert b"blabla" == COGNITE_CLIENT.files.download_bytes(id=new_file.id)
+
+    def test_download_empty_file(self, empty_file):
+        content = COGNITE_CLIENT.files.download_bytes(external_id=empty_file.external_id)
+        assert content == b""
+
+        with TemporaryDirectory() as tmpdir:
+            COGNITE_CLIENT.files.download(directory=tmpdir, external_id=empty_file.external_id)
+
+        with NamedTemporaryFile() as tmpfile:
+            COGNITE_CLIENT.files.download_to_path(path=tmpfile.name, external_id=empty_file.external_id)
 
     def test_retrieve_file_with_labels(self, new_file_with_label):
         file, label_external_id = new_file_with_label
