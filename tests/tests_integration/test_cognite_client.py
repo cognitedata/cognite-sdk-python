@@ -7,6 +7,11 @@ c = CogniteClient()
 
 
 class TestCogniteClient:
+    def test_wrong_base_url_resulting_in_301(self):
+        c = CogniteClient(base_url="https://cognitedata.com")
+        with pytest.raises(CogniteAPIError):
+            c.assets.list(limit=1)
+
     def test_get(self):
         res = c.get("/login/status")
         assert res.status_code == 200
