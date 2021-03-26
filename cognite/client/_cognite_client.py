@@ -36,6 +36,7 @@ class CogniteClient:
         max_workers (int): Max number of workers to spawn when parallelizing data fetching. Defaults to 10.
         headers (Dict): Additional headers to add to all requests.
         timeout (int): Timeout on requests sent to the api. Defaults to 30 seconds.
+        proxies (Dict[str, str]): Dictionary mapping from protocol to url. e.g. {"https": "http://10.10.1.10:1080"}
         token (Union[str, Callable[[], str]]): A jwt or method which takes no arguments and returns a jwt to use for authentication.
             This will override any api-key set.
         token_url (str): Optional url to use for token generation.
@@ -64,6 +65,7 @@ class CogniteClient:
         max_workers: Optional[int] = None,
         headers: Optional[Dict[str, str]] = None,
         timeout: Optional[int] = None,
+        proxies: Optional[Dict[str, str]] = None,
         token: Optional[Union[str, Callable[[], str], None]] = None,
         token_url: Optional[str] = None,
         token_client_id: Optional[str] = None,
@@ -82,6 +84,7 @@ class CogniteClient:
             max_workers=max_workers,
             headers=headers,
             timeout=timeout,
+            proxies=proxies,
             token=token,
             token_url=token_url,
             token_client_id=token_client_id,
