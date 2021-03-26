@@ -295,7 +295,7 @@ class TestCogniteClient:
 
         c = CogniteClient()
 
-        mock_requests.get.assert_called_with(_PYPI_ADDRESS, verify=True)
+        mock_requests.get.assert_called_with(_PYPI_ADDRESS, verify=True, timeout=5)
         assert c._api_client._http_client_with_retry.session.verify is True
         assert c._api_client._http_client.session.verify is True
 
@@ -304,7 +304,7 @@ class TestCogniteClient:
     def test_verify_ssl_disabled(self, mock_requests, mock_findall):
         with set_env_var("COGNITE_DISABLE_SSL", "1"):
             CogniteClient()
-            mock_requests.get.assert_called_with(_PYPI_ADDRESS, verify=False)
+            mock_requests.get.assert_called_with(_PYPI_ADDRESS, verify=False, timeout=5)
 
 
 class TestInstantiateWithClient:
