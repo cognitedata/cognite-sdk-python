@@ -130,7 +130,7 @@ class ClientConfig(_DefaultConfig):
         if not self.disable_pypi_version_check:
             try:
                 utils._auxiliary._check_client_has_newest_major_version()
-            except ConnectionError:
+            except Exception:
                 # PyPI is for some reason not reachable, skip version check
                 pass
 
