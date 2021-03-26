@@ -16,6 +16,10 @@ class DataSetsAPI(APIClient):
     _RESOURCE_PATH = "/datasets"
     _LIST_CLASS = DataSetList
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._CREATE_LIMIT = 10
+
     def __call__(
         self,
         chunk_size: int = None,
