@@ -3,12 +3,12 @@ import pprint
 import sys
 from typing import *
 
-from requests.exceptions import ConnectionError
 
 from cognite.client import utils
 from cognite.client.exceptions import CogniteAPIKeyError
+from cognite.client._version import __api_subversion__
 
-_DEFAULT_API_SUBVERSION = "V20210323"
+_DEFAULT_API_SUBVERSION = __api_subversion__
 
 
 class _ThreadLocalConfig:
