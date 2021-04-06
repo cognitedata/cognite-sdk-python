@@ -52,7 +52,7 @@ author = "Erlend Vollset"
 # built documents.
 #
 # The short X.Y version.
-version = version = re.search('^__version__\s*=\s*"(.*)"', open("../../cognite/client/_version.py").read(), re.M).group(
+version = re.search('^__version__\s*=\s*"(.*)"', open("../../cognite/client/_version.py").read(), re.M).group(
     1
 )
 # The full version, including alpha/beta/rc tags.
