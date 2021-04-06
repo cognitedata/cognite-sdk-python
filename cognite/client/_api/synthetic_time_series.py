@@ -61,8 +61,8 @@ class SyntheticDatapointsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> from sympy import symbols, cos, sin
-                >>> a = sympy.symbols('a')
-                >>> dps = c.datapoints.synthetic.query([sin(a), cos(a)], start="2w-ago", end="now", variables={"a": "my_ts_external_id"},aggregate='interpolation',granularity='1m')
+                >>> a = symbols('a')
+                >>> dps = c.datapoints.synthetic.query([sin(a), cos(a)], start="2w-ago", end="now", variables={"a": "my_ts_external_id"}, aggregate='interpolation', granularity='1m')
         """
         if limit is None or limit == -1:
             limit = float("inf")
