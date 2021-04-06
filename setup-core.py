@@ -2,7 +2,7 @@ import re
 
 from setuptools import find_packages, setup
 
-version = re.search('^__version__\s*=\s*"(.*)"', open("cognite/client/__init__.py").read(), re.M).group(1)
+version = re.search('^__version__\s*=\s*"(.*)"', open("cognite/client/_version.py").read(), re.M).group(1)
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
