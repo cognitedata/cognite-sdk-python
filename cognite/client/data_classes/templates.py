@@ -18,11 +18,19 @@ class TemplateGroup(CogniteResource):
     """
 
     def __init__(
-        self, external_id: str = None, description: str = None, owners: Optional[List[str]] = None, cognite_client=None
+        self,
+        external_id: str = None,
+        description: str = None,
+        owners: Optional[List[str]] = None,
+        created_time: int = None,
+        last_updated_time: int = None,
+        cognite_client=None,
     ):
         self.external_id = external_id
         self.description = description
         self.owners = owners
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
         self._cognite_client = cognite_client
 
 
@@ -46,10 +54,20 @@ class TemplateGroupVersion(CogniteResource):
         conflict_mode (str): Can be set to 'Patch', 'Update' or 'Force'.
     """
 
-    def __init__(self, schema: str = None, version: int = None, conflict_mode: str = None, cognite_client=None):
+    def __init__(
+        self,
+        schema: str = None,
+        version: int = None,
+        conflict_mode: str = None,
+        created_time: int = None,
+        last_updated_time: int = None,
+        cognite_client=None,
+    ):
         self.schema = schema
         self.version = version
         self.conflict_mode = conflict_mode
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
         self._cognite_client = cognite_client
 
 
@@ -154,11 +172,17 @@ class TemplateInstance(CogniteResource):
         external_id: str = None,
         template_name: str = None,
         field_resolvers: Dict[str, FieldResolvers] = None,
+        data_set_id: Optional[int] = None,
+        created_time: int = None,
+        last_updated_time: int = None,
         cognite_client=None,
     ):
         self.external_id = external_id
         self.template_name = template_name
         self.field_resolvers = field_resolvers
+        self.data_set_id = data_set_id
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
         self._cognite_client = cognite_client
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:

@@ -14,6 +14,13 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.17.1] - 2021-04-13
+
+### Added 
+- `created_time`, and `last_updated_time` to template data classes.
+- `data_set_id` to template instance data class.
+
+
 ## [2.17.0] - 2021-03-26
 
 ### Changed
