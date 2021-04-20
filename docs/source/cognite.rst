@@ -183,9 +183,9 @@ You can set default configurations with these environment variables:
     $ export COGNITE_TIMEOUT = <num-of-seconds>
 
     # Global Configuration
-    $ export COGNITE_DISABLE_PYPI_VERSION_CHECK = "1"
-    $ export COGNITE_DISABLE_GZIP = "1"
-    $ export COGNITE_DISABLE_SSL = "1"
+    $ export COGNITE_DISABLE_PYPI_VERSION_CHECK = "0"
+    $ export COGNITE_DISABLE_GZIP = "0"
+    $ export COGNITE_DISABLE_SSL = "0"
     $ export COGNITE_MAX_RETRIES = <number-of-retries>
     $ export COGNITE_MAX_RETRY_BACKOFF = <number-of-seconds>
     $ export COGNITE_MAX_CONNECTION_POOL_SIZE = <number-of-connections-in-pool>
