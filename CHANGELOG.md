@@ -14,6 +14,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.18.0] - 2021-04-20
+
+### Changed 
+- `COGNITE_DISABLE_SSL` now also covers ssl verification on IDP endpoints used for generating tokens.
+
+
 ## [2.17.1] - 2021-04-13
 
 ### Added 
