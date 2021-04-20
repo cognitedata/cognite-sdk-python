@@ -9,19 +9,12 @@ from cognite.client.exceptions import CogniteAPIKeyError
 
 class TokenGenerator:
     def __init__(
-        self,
-        token_url: str,
-        client_id: str,
-        client_secret: str,
-        scopes: List[str],
-        verify_ssl: bool,
-        custom_args: Dict[str, str],
+        self, token_url: str, client_id: str, client_secret: str, scopes: List[str], custom_args: Dict[str, str]
     ):
         self.token_url = token_url
         self.client_id = client_id
         self.client_secret = client_secret
         self.scopes = scopes
-        self.verify_ssl = verify_ssl
         self.custom_args = custom_args
 
         if self.token_params_set():
@@ -50,7 +43,6 @@ class TokenGenerator:
                 client_id=self.client_id,
                 client_secret=self.client_secret,
                 scope=self.scopes,
-                verify=self.verify_ssl,
                 **self.custom_args,
             )
         except OAuth2Error as oauth_error:

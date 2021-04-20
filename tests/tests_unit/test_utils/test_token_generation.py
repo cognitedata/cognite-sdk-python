@@ -20,12 +20,11 @@ def default_token_generator_args():
 
 def setup_token_generator(generator_args=default_token_generator_args()):
     return utils._token_generator.TokenGenerator(
-        token_url=generator_args["token_url"],
-        client_id=generator_args["client_id"],
-        client_secret=generator_args["client_secret"],
-        scopes=generator_args["token_scopes"],
-        custom_args=generator_args["token_custom_args"],
-        verify_ssl=True,
+        generator_args["token_url"],
+        generator_args["client_id"],
+        generator_args["client_secret"],
+        generator_args["token_scopes"],
+        generator_args["token_custom_args"],
     )
 
 
@@ -78,12 +77,11 @@ class TestTokenGeneration:
         ):
             args = default_token_generator_args()
             utils._token_generator.TokenGenerator(
-                token_url=args["token_url"],
-                client_id=args["client_id"],
-                client_secret=args["client_secret"],
-                scopes=args["token_scopes"],
-                custom_args=args["token_custom_args"],
-                verify_ssl=True,
+                args["token_url"],
+                args["client_id"],
+                args["client_secret"],
+                args["token_scopes"],
+                args["token_custom_args"],
             )
 
     def test_access_token_not_generated_missing_args(self):

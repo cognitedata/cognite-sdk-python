@@ -102,14 +102,14 @@ class ClientConfig(_DefaultConfig):
         )
 
         if self.api_key is None and self.token is None:
+            self.token_custom_args.setdefault("verify", not self.disable_ssl)
             # If no api_key or token is present; try setting up a token generator
             token_generator = utils._token_generator.TokenGenerator(
-                token_url=self.token_url,
-                client_id=self.token_client_id,
-                client_secret=self.token_client_secret,
-                scopes=self.token_scopes,
-                custom_args=self.token_custom_args,
-                verify_ssl=not self.disable_ssl,
+                self.token_url,
+                self.token_client_id,
+                self.token_client_secret,
+                self.token_scopes,
+                self.token_custom_args,
             )
 
             if token_generator.token_params_set():
