@@ -3,10 +3,9 @@ import pprint
 import sys
 from typing import *
 
-
 from cognite.client import utils
-from cognite.client.exceptions import CogniteAPIKeyError
 from cognite.client._version import __api_subversion__
+from cognite.client.exceptions import CogniteAPIKeyError
 
 _DEFAULT_API_SUBVERSION = __api_subversion__
 
@@ -103,6 +102,7 @@ class ClientConfig(_DefaultConfig):
         )
 
         if self.api_key is None and self.token is None:
+            self.token_custom_args.setdefault("verify", not self.disable_ssl)
             # If no api_key or token is present; try setting up a token generator
             token_generator = utils._token_generator.TokenGenerator(
                 self.token_url,
