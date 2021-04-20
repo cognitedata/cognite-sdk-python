@@ -3,10 +3,9 @@ import pprint
 import sys
 from typing import *
 
-
 from cognite.client import utils
-from cognite.client.exceptions import CogniteAPIKeyError
 from cognite.client._version import __api_subversion__
+from cognite.client.exceptions import CogniteAPIKeyError
 
 _DEFAULT_API_SUBVERSION = __api_subversion__
 
@@ -105,11 +104,12 @@ class ClientConfig(_DefaultConfig):
         if self.api_key is None and self.token is None:
             # If no api_key or token is present; try setting up a token generator
             token_generator = utils._token_generator.TokenGenerator(
-                self.token_url,
-                self.token_client_id,
-                self.token_client_secret,
-                self.token_scopes,
-                self.token_custom_args,
+                token_url=self.token_url,
+                client_id=self.token_client_id,
+                client_secret=self.token_client_secret,
+                scopes=self.token_scopes,
+                custom_args=self.token_custom_args,
+                verify_ssl=not self.disable_ssl,
             )
 
             if token_generator.token_params_set():
