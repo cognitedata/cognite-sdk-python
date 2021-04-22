@@ -1,5 +1,6 @@
 requests>=2.21.0,<3.0.0
 pytest-cov
+pytest-rerunfailures
 pytest
 responses
 requests_oauthlib

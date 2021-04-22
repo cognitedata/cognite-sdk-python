@@ -36,6 +36,7 @@ class _DefaultConfig:
         self.max_workers = int(os.getenv("COGNITE_MAX_WORKERS", 10))
         self.headers = {}
         self.timeout = int(os.getenv("COGNITE_TIMEOUT", 30))
+        self.file_transfer_timeout = int(os.getenv("COGNITE_FILE_TRANSFER_TIMEOUT", 600))
         self.token_client_id = os.getenv("COGNITE_CLIENT_ID")
         self.token_client_secret = os.getenv("COGNITE_CLIENT_SECRET")
         self.token_url = os.getenv("COGNITE_TOKEN_URL")
@@ -70,6 +71,7 @@ class ClientConfig(_DefaultConfig):
         max_workers: Optional[int] = None,
         headers: Optional[Dict[str, str]] = None,
         timeout: Optional[int] = None,
+        file_transfer_timeout: Optional[int] = None,
         proxies: Optional[Dict[str, str]] = None,
         token: Optional[Union[Callable[[], str], str]] = None,
         token_url: Optional[str] = None,
@@ -89,6 +91,7 @@ class ClientConfig(_DefaultConfig):
         self.max_workers = max_workers or self.max_workers
         self.headers = headers or self.headers
         self.timeout = timeout or self.timeout
+        self.file_transfer_timeout = file_transfer_timeout or self.file_transfer_timeout
         self.token = token
         self.proxies = proxies
         self.token_url = token_url or self.token_url
