@@ -667,7 +667,9 @@ class FilesAPI(APIClient):
         returned_file_metadata = res.json()
         upload_url = returned_file_metadata.pop("uploadUrl")
         headers = {"X-Upload-Content-Type": file_metadata.mime_type}
-        self._http_client.request("PUT", upload_url, data=content, timeout=180, headers=headers)
+        self._http_client_with_retry.request(
+            "PUT", upload_url, data=content, timeout=self._config.file_transfer_timeout, headers=headers
+        )
         return FileMetadata._load(returned_file_metadata)
 
     def download(
@@ -735,7 +737,9 @@ class FilesAPI(APIClient):
         self._download_file_to_path(download_link, file_path)
 
     def _download_file_to_path(self, download_link: str, path: str, chunk_size: int = 2 ** 21):
-        with self._http_client.request("GET", download_link, stream=True, timeout=180) as r:
+        with self._http_client_with_retry.request(
+            "GET", download_link, stream=True, timeout=self._config.file_transfer_timeout
+        ) as r:
             with open(path, "wb") as f:
                 for chunk in r.iter_content(chunk_size=chunk_size):
                     if chunk:  # filter out keep-alive new chunks
@@ -787,5 +791,5 @@ class FilesAPI(APIClient):
         return self._download_file(download_link)
 
     def _download_file(self, download_link: str) -> bytes:
-        res = self._http_client.request("GET", download_link, timeout=180)
+        res = self._http_client_with_retry.request("GET", download_link, timeout=self._config.file_transfer_timeout)
         return res.content

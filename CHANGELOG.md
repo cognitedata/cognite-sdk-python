@@ -14,6 +14,16 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.18.1] - 2021-04-22
+
+### Added
+- Configure file download/upload timeouts with `COGNITE_FILE_TRANSFER_TIMEOUT` environment variable or 
+`file_transfer_timeout` parameter on `CogniteClient`.
+
+### Changed 
+- Increased default file transfer timeout from 180 to 600 seconds
+- Retry more failure modes (read timeouts, 502, 503, 504) for files upload/download requests.
+
 ## [2.18.0] - 2021-04-20
 
 ### Changed 
