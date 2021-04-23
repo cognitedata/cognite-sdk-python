@@ -443,7 +443,7 @@ class TemplateInstancesAPI(APIClient):
         if data_set_ids is not None:
             filter["dataSetIds"] = data_set_ids
         if template_names is not None:
-            filter["template_names"] = template_names
+            filter["templateNames"] = template_names
         return self._list(resource_path=resource_path, method="POST", limit=limit, filter=filter)
 
     def delete(self, external_id: str, version: int, external_ids: List[str], ignore_unknown_ids: bool = False) -> None:
