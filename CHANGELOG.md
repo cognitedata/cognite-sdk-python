@@ -14,6 +14,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+
+## [2.18.2] - 2021-04-23
+
+### Fixed
+- Bug in templates instances filter that would cause `template_names` to be ignored.
+
 ## [2.18.1] - 2021-04-22
 
 ### Added
