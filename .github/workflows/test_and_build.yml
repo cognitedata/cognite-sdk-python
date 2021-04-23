@@ -34,7 +34,7 @@ jobs:
           COGNITE_BASE_URL: https://greenfield.cognitedata.com
           COGNITE_CLIENT_NAME: python-sdk-integration-tests
           CI: 1
-      run: pipenv run pytest tests/tests_unit -m 'not dsl' --test-deps-only-core
+      run: pipenv run pytest tests/tests_unit -m 'not dsl' --test-deps-only-core --reruns 2
 
     - name: Install all dependencies
       if: matrix.python-version != 3.8
@@ -54,7 +54,7 @@ jobs:
           COGNITE_CLIENT_NAME: python-sdk-integration-tests
           CI: 1
       run: |
-        pipenv run coverage run --source cognite.client -m pytest -v tests
+        pipenv run coverage run --source cognite.client -m pytest -v tests --reruns 2
         pipenv run coverage xml
 
     - name: Check codestyle

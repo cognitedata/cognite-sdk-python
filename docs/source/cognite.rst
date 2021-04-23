@@ -181,6 +181,7 @@ You can set default configurations with these environment variables:
     $ export COGNITE_CLIENT_NAME = <user-defined-client-or-app-name>
     $ export COGNITE_MAX_WORKERS = <number-of-workers>
     $ export COGNITE_TIMEOUT = <num-of-seconds>
+    $ export COGNITE_FILE_TRANSFER_TIMEOUT = <num-of-seconds>
 
     # Global Configuration
     $ export COGNITE_DISABLE_PYPI_VERSION_CHECK = "0"
