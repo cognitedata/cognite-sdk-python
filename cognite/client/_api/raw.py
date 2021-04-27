@@ -442,14 +442,14 @@ class RawRowsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> for row in c.raw.rows(db_name="db1", table_name="t1", columns=["col1","col2"]):
+                >>> for row in c.raw.rows.list(db_name="db1", table_name="t1", columns=["col1","col2"]):
                 ...     row # do something with the row
 
             Iterate over chunks of rows to reduce memory load::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> for row_list in c.raw.rows(db_name="db1", table_name="t1", chunk_size=2500):
+                >>> for row_list in c.raw.rows.list(db_name="db1", table_name="t1", chunk_size=2500):
                 ...     row_list # do something with the rows
         """
         if columns is not None:
