@@ -154,17 +154,15 @@ FieldResolvers = Union[ConstantResolver, RawResolver, SyntheticTimeSeriesResolve
 
 
 class TemplateInstance(CogniteResource):
-    field_resolver_mapper = {
-        "constant": ConstantResolver,
-        "syntheticTimeSeries": SyntheticTimeSeriesResolver,
-        "raw": RawResolver,
-    }
-    """A template instance that implements a template by specificing a resolver per field.
+    """A template instance that implements a template by specifying a resolver per field.
 
     Args:
         external_id (str): The id of the template instance.
         template_name (str): The template name to implement.
         field_resolvers (Dict[str, FieldResolvers]): A set of field resolvers where the dictionary key correspond to the field name.
+        data_set_id (int): The id of the dataset this instance belongs to.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
     """
 
     def __init__(
@@ -184,6 +182,12 @@ class TemplateInstance(CogniteResource):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self._cognite_client = cognite_client
+
+    field_resolver_mapper = {
+        "constant": ConstantResolver,
+        "syntheticTimeSeries": SyntheticTimeSeriesResolver,
+        "raw": RawResolver,
+    }
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
