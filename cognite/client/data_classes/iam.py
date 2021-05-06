@@ -1,5 +1,3 @@
-from typing import *
-
 from cognite.client.data_classes._base import *
 
 
@@ -126,3 +124,55 @@ class SecurityCategory(CogniteResource):
 class SecurityCategoryList(CogniteResourceList):
     _RESOURCE = SecurityCategory
     _ASSERT_CLASSES = False
+
+
+class ProjectSpec(CogniteResponse):
+    """A cdf project spec
+    Args:
+        url_name (str): The url name for the project
+        groups (List[int]): Group ids in the project
+    """
+
+    def __init__(self, url_name: str, groups: List[int]) -> None:
+        self.url_name = url_name
+        self.groups = groups
+
+    @classmethod
+    def _load(cls, api_response):
+        return cls(
+            url_name=api_response["projectUrlName"],
+            groups=api_response["groups"],
+        )
+
+
+class TokenInspection(CogniteResponse):
+    """Current login status
+
+    Args:
+        subject (str): Subject (sub claim) of JWT.
+        projects (List[ProjectSpec]): Projects this token is valid for.
+        capabilities (List[Dict]): Capabilities associated with this token.
+    """
+
+    def __init__(self, subject: str, projects: List[ProjectSpec], capabilities: List[Dict]):
+        self.subject = subject
+        self.projects = projects
+        self.capabilities = capabilities
+
+    @classmethod
+    def _load(cls, api_response):
+        return cls(
+            subject=api_response["subject"],
+            projects=[ProjectSpec._load(p) for p in api_response["projects"]],
+            capabilities=api_response["capabilities"],
+        )
+
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+        dumped = {
+            "subject": self.subject,
+            "projects": [p.dump(camel_case=camel_case) for p in self.projects],
+            "capabilities": self.capabilities,
+        }
+        if camel_case:
+            dumped = {utils._auxiliary.to_camel_case(key): value for key, value in dumped.items()}
+        return dumped

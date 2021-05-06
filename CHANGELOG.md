@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.19.0] - 2021-05-06
+
+### Added
+- Support for /token/inspect endpoint
 
 ## [2.18.2] - 2021-04-23
 
