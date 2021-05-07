@@ -88,7 +88,6 @@ class TestEntityMatchingIntegration:
         job = new_model.predict(sources=[{"name": "foo-bar"}], targets=[{"bloop": "foo-42"}])
         assert {"matches", "source"} == set(job.result["items"][0].keys()) - {"matchFrom"}
         assert "Completed" == job.status
-        EMAPI.delete(id=new_model.id)
 
     def test_true_match_formats(self):
         entities_from = [{"id": 1, "name": "xx-yy"}]
@@ -98,7 +97,6 @@ class TestEntityMatchingIntegration:
         )
         assert isinstance(model, EntityMatchingModel)
         assert "Queued" == model.status
-        EMAPI.delete(id=model.id)
 
     def test_extra_options(self):
         entities_from = [{"id": 1, "name": "xx-yy"}]
@@ -118,8 +116,6 @@ class TestEntityMatchingIntegration:
         assert "Queued" == model.status
         job = model.predict()
         assert {"matches", "source"} == set(job.result["items"][0].keys()) - {"matchFrom"}
-
-        EMAPI.delete(id=model.id)
 
     def test_list(self):
         models_list = EMAPI.list()
