@@ -98,6 +98,7 @@ class TestEntityMatchingIntegration:
         )
         assert isinstance(model, EntityMatchingModel)
         assert "Queued" == model.status
+        EMAPI.delete(id=model.id)
 
     def test_extra_options(self):
         entities_from = [{"id": 1, "name": "xx-yy"}]
@@ -117,6 +118,7 @@ class TestEntityMatchingIntegration:
         assert "Queued" == model.status
         job = model.predict()
         assert {"matches", "source"} == set(job.result["items"][0].keys()) - {"matchFrom"}
+        EMAPI.delete(id=model.id)
 
     def test_list(self):
         models_list = EMAPI.list()
