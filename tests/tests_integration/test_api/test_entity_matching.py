@@ -88,6 +88,7 @@ class TestEntityMatchingIntegration:
         job = new_model.predict(sources=[{"name": "foo-bar"}], targets=[{"bloop": "foo-42"}])
         assert {"matches", "source"} == set(job.result["items"][0].keys()) - {"matchFrom"}
         assert "Completed" == job.status
+        EMAPI.delete(id=new_model.id)
 
     def test_true_match_formats(self):
         entities_from = [{"id": 1, "name": "xx-yy"}]
