@@ -10,7 +10,7 @@ from cognite.client.data_classes import (
     EntityMatchingModelUpdate,
 )
 from cognite.client.data_classes.contextualization import ContextualizationJobList
-from cognite.client.exceptions import ModelFailedException, CogniteNotFoundError
+from cognite.client.exceptions import CogniteNotFoundError, ModelFailedException
 
 COGNITE_CLIENT = CogniteClient()
 EMAPI = COGNITE_CLIENT.entity_matching
@@ -22,7 +22,7 @@ def fitted_model():
     try:
         EMAPI.delete(external_id=extid)
     except CogniteNotFoundError as e:
-        pass # expected
+        pass  # expected
     entities_from = [{"id": 1, "name": "xx-yy"}]
     entities_to = [{"id": 2, "bloop": "yy"}, {"id": 3, "bloop": "zz"}]
     model = EMAPI.fit(
