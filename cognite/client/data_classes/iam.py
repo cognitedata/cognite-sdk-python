@@ -139,10 +139,7 @@ class ProjectSpec(CogniteResponse):
 
     @classmethod
     def _load(cls, api_response):
-        return cls(
-            url_name=api_response["projectUrlName"],
-            groups=api_response["groups"],
-        )
+        return cls(url_name=api_response["projectUrlName"], groups=api_response["groups"])
 
 
 class TokenInspection(CogniteResponse):
