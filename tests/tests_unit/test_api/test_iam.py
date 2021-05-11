@@ -263,3 +263,19 @@ class TestTokenAPI:
         assert res.subject == "someSubject"
         assert res.projects == [ProjectSpec(url_name="veryGoodUrlName", groups=[1, 2, 3])]
         assert res.capabilities == [{"groupsAcl": {"actions": ["LIST"], "scope": {"all": {}}}}]
+
+    def test_token_inspection_dump(self):
+        capabilities = [{"groupsAcl": {"actions": ["LIST"], "scope": {"all": {}}}}]
+        groups = [1, 2, 3]
+        obj = TokenInspection("subject", [ProjectSpec("urlName", groups)], capabilities)
+
+        assert obj.dump() == {
+            "subject": "subject",
+            "projects": [{"url_name": "urlName", "groups": groups}],
+            "capabilities": capabilities,
+        }
+        assert obj.dump(camel_case=True) == {
+            "subject": "subject",
+            "projects": [{"urlName": "urlName", "groups": groups}],
+            "capabilities": capabilities,
+        }
