@@ -5,6 +5,7 @@ import pytest
 from cognite.client import CogniteClient
 from cognite.client._api.iam import APIKeyList, GroupList, SecurityCategoryList, ServiceAccountList
 from cognite.client.data_classes import APIKey, Group, SecurityCategory, ServiceAccount
+from cognite.client.data_classes.iam import ProjectSpec, TokenInspection
 from tests.utils import jsgz_load
 
 IAM_API = CogniteClient().iam
@@ -240,3 +241,41 @@ class TestSecurityCategories:
         res = IAM_API.security_categories.delete([1])
         assert {"items": [1]} == jsgz_load(mock_security_categories.calls[0].request.body)
         assert res is None
+
+
+@pytest.fixture
+def mock_token_inspect(rsps):
+    response_body = {
+        "subject": "someSubject",
+        "projects": [{"projectUrlName": "veryGoodUrlName", "groups": [1, 2, 3]}],
+        "capabilities": [{"groupsAcl": {"actions": ["LIST"], "scope": {"all": {}}}}],
+    }
+    url_pattern = re.compile(re.escape(IAM_API.token._get_base_url_with_base_path()) + "/api/v1/token/inspect")
+    rsps.assert_all_requests_are_fired = False
+    rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
+    yield rsps
+
+
+class TestTokenAPI:
+    def test_token_inspect(self, mock_token_inspect):
+        res = IAM_API.token.inspect()
+        assert isinstance(res, TokenInspection)
+        assert res.subject == "someSubject"
+        assert res.projects == [ProjectSpec(url_name="veryGoodUrlName", groups=[1, 2, 3])]
+        assert res.capabilities == [{"groupsAcl": {"actions": ["LIST"], "scope": {"all": {}}}}]
+
+    def test_token_inspection_dump(self):
+        capabilities = [{"groupsAcl": {"actions": ["LIST"], "scope": {"all": {}}}}]
+        groups = [1, 2, 3]
+        obj = TokenInspection("subject", [ProjectSpec("urlName", groups)], capabilities)
+
+        assert obj.dump() == {
+            "subject": "subject",
+            "projects": [{"url_name": "urlName", "groups": groups}],
+            "capabilities": capabilities,
+        }
+        assert obj.dump(camel_case=True) == {
+            "subject": "subject",
+            "projects": [{"urlName": "urlName", "groups": groups}],
+            "capabilities": capabilities,
+        }

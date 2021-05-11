@@ -13,15 +13,17 @@ from cognite.client.data_classes import (
     ServiceAccount,
     ServiceAccountList,
 )
+from cognite.client.data_classes.iam import TokenInspection
 
 
 class IAMAPI(APIClient):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.service_accounts = ServiceAccountsAPI(*args, **kwargs)
-        self.api_keys = APIKeysAPI(*args, **kwargs)
-        self.groups = GroupsAPI(*args, **kwargs)
-        self.security_categories = SecurityCategoriesAPI(*args, **kwargs)
+    def __init__(self, config: utils._client_config.ClientConfig, api_version: str = None, cognite_client=None) -> None:
+        super().__init__(config, api_version=api_version, cognite_client=cognite_client)
+        self.service_accounts = ServiceAccountsAPI(config, api_version=api_version, cognite_client=cognite_client)
+        self.api_keys = APIKeysAPI(config, api_version=api_version, cognite_client=cognite_client)
+        self.groups = GroupsAPI(config, api_version=api_version, cognite_client=cognite_client)
+        self.security_categories = SecurityCategoriesAPI(config, api_version=api_version, cognite_client=cognite_client)
+        self.token = TokenAPI(config, cognite_client=cognite_client)
 
 
 class ServiceAccountsAPI(APIClient):
@@ -355,3 +357,15 @@ class SecurityCategoriesAPI(APIClient):
                 >>> c.iam.security_categories.delete(1)
         """
         self._delete_multiple(ids=id, wrap_ids=False)
+
+
+class TokenAPI(APIClient):
+    def inspect(self) -> TokenInspection:
+        """Inspect a token.
+
+        Get details about which projects it belongs to and which capabilities are granted to it.
+
+        Returns:
+            TokenInspection: The object with token inspection details.
+        """
+        return TokenInspection._load(self._get(f"/api/v1/token/inspect").json())
