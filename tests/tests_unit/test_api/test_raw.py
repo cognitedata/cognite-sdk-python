@@ -268,6 +268,25 @@ class TestRawRows:
             RAW_API.rows.delete("db1", "table1", "key1")
         assert e.value.failed == ["key1"]
 
+    def test_row(self, mock_raw_row_response):
+        res_generator = RAW_API.rows(db_name="db1", table_name="table1")
+        row = next(res_generator)
+        assert Row(key="row1", columns={"c1": 1, "c2": "2"}) == row
+        assert "columns=" not in mock_raw_row_response.calls[0].request.path_url
+
+    def test_rows_cols(self, mock_raw_row_response):
+        res_generator = RAW_API.rows(db_name="db1", table_name="table1", columns=["a", 1])
+        next(res_generator)
+        assert "columns=a%2C1" in mock_raw_row_response.calls[0].request.path_url
+
+    def test_rows_cols_empty(self, mock_raw_row_response):
+        res_generator = RAW_API.rows(db_name="db1", table_name="table1", columns=[])
+        next(res_generator)
+        assert "columns=%2C&" in mock_raw_row_response.calls[0].request.path_url + "&"
+
+    def test_rows_cols_str_not_supported(self, mock_raw_row_response):
+        with pytest.raises(ValueError):
+            RAW_API.rows(db_name="db1", table_name="table1", columns="a,b")
 
 @pytest.mark.dsl
 class TestPandasIntegration:
