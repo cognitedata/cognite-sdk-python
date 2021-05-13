@@ -288,6 +288,7 @@ class TestRawRows:
         with pytest.raises(ValueError):
             RAW_API.rows(db_name="db1", table_name="table1", columns="a,b")
 
+
 @pytest.mark.dsl
 class TestPandasIntegration:
     def test_dbs_to_pandas(self):

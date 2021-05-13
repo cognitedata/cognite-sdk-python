@@ -51,7 +51,7 @@ class TestRawRowsAPI:
         rows_list = COGNITE_CLIENT.raw.rows.list(
             db_name="test__database1", table_name="test__table_1", limit=10, columns=["c1", "c2"]
         )
-        assert 10 == len([x for x in rows ])
+        assert 10 == len([x for x in rows])
         assert 10 == len(rows_list)
         for row in rows:
             assert {"c1", "c2"} == set(row.columns.keys())

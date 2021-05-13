@@ -272,8 +272,14 @@ class RawRowsAPI(APIClient):
         self._LIST_LIMIT = 10000
 
     def __call__(
-        self, db_name: str, table_name: str, chunk_size: int = None, limit: int = None,
-        min_last_updated_time: int = None, max_last_updated_time: int = None, columns: List[str] = None
+        self,
+        db_name: str,
+        table_name: str,
+        chunk_size: int = None,
+        limit: int = None,
+        min_last_updated_time: int = None,
+        max_last_updated_time: int = None,
+        columns: List[str] = None,
     ) -> Generator[Union[Row, RowList], None, None]:
         """Iterate over rows.
 
