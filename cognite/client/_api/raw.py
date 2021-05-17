@@ -295,12 +295,7 @@ class RawRowsAPI(APIClient):
             columns (List[str]): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
         """
         if columns is not None:
-            if not isinstance(columns, List):
-                raise ValueError("Expected a list for argument columns")
-            if len(columns) == 0:
-                columns = ","
-            else:
-                columns = ",".join([str(x) for x in columns])
+            columns = self._make_columns_param(columns)
 
         return self._list_generator(
             resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
@@ -476,12 +471,7 @@ class RawRowsAPI(APIClient):
                 ...     row_list # do something with the rows
         """
         if columns is not None:
-            if not isinstance(columns, List):
-                raise ValueError("Expected a list for argument columns")
-            if len(columns) == 0:
-                columns = ","
-            else:
-                columns = ",".join([str(x) for x in columns])
+            columns = self._make_columns_param(columns)
 
         return self._list(
             resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
@@ -493,3 +483,13 @@ class RawRowsAPI(APIClient):
                 "columns": columns,
             },
         )
+
+
+    def _make_columns_param(self, columns: List[str]) -> str:
+        if not isinstance(columns, List):
+            raise ValueError("Expected a list for argument columns")
+        if len(columns) == 0:
+            columns = ","
+        else:
+            columns = ",".join([str(x) for x in columns])
+        return columns
