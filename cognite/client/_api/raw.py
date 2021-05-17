@@ -484,7 +484,6 @@ class RawRowsAPI(APIClient):
             },
         )
 
-
     def _make_columns_param(self, columns: List[str]) -> str:
         if not isinstance(columns, List):
             raise ValueError("Expected a list for argument columns")
