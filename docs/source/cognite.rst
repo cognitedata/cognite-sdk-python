@@ -912,6 +912,10 @@ List Template instances
 ^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.templates.TemplateInstancesAPI.list
 
+Delete Template instances
+^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.templates.TemplateInstancesAPI.delete
+
 Data classes
 ^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.templates
