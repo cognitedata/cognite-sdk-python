@@ -294,8 +294,7 @@ class RawRowsAPI(APIClient):
             max_last_updated_time (int): Rows must have been last updated before this time. ms since epoch.
             columns (List[str]): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
         """
-        if columns is not None:
-            columns = self._make_columns_param(columns)
+        columns = self._make_columns_param(columns)
 
         return self._list_generator(
             resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
@@ -470,8 +469,7 @@ class RawRowsAPI(APIClient):
                 >>> for row_list in c.raw.rows(db_name="db1", table_name="t1", chunk_size=2500):
                 ...     row_list # do something with the rows
         """
-        if columns is not None:
-            columns = self._make_columns_param(columns)
+        columns = self._make_columns_param(columns)
 
         return self._list(
             resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
@@ -485,6 +483,8 @@ class RawRowsAPI(APIClient):
         )
 
     def _make_columns_param(self, columns: List[str]) -> str:
+        if columns is None:
+            return None
         if not isinstance(columns, List):
             raise ValueError("Expected a list for argument columns")
         if len(columns) == 0:
