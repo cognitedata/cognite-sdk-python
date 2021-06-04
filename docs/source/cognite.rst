@@ -3,7 +3,7 @@ Quickstart
 Authenticate
 ------------
 
-The preferred way to authenticating against the Cognite API is using native tokens. To enable this, the CogniteClient
+The preferred way to authenticating against the Cognite API is using OpenID Connect (OIDC). To enable this, the CogniteClient
 accepts a token provider function.
 
 .. code:: python
@@ -1100,4 +1100,3 @@ Experimental features
 =====================
 .. WARNING::
     These features are subject to breaking changes and should not be used in production code.
-
