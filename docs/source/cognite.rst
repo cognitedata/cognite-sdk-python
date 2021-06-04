@@ -16,7 +16,7 @@ accepts a token provider function.
 For details on different ways of implementing the token provider, take a look at
 `this guide <https://github.com/cognitedata/python-oidc-authentication>`_.
 
-In some cases you may also want to authenticate using an API key. You can do this by setting the following environment
+If OIDC has not been enabled for your CDF project, you will want to authenticate using an API key. You can do this by setting the following environment
 variable
 
 .. code:: bash
