@@ -14,7 +14,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [2.19.1] - 2021-05-27
+## [2.19.1] - 2021-06-04
 
 ### Fixed
 - rows() in RawRowsAPI support filtering with `columns` and `min/maxLastUpdatedTime`
