@@ -23,9 +23,11 @@ API_INSTANCES = API.templates.instances
 @pytest.fixture
 def new_template_group():
     external_id = uuid.uuid4().hex[0:20]
-
+    username = API.login.status().user
     template_group = API_GROUPS.create(
-        TemplateGroup(external_id=external_id, description="some description", owners=[external_id + "@cognite.com"])
+        TemplateGroup(
+            external_id=external_id, description="some description", owners=[username, external_id + "@cognite.com"]
+        )
     )
     yield template_group, external_id
     API_GROUPS.delete(external_ids=external_id)
