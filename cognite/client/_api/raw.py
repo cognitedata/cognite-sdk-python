@@ -272,7 +272,14 @@ class RawRowsAPI(APIClient):
         self._LIST_LIMIT = 10000
 
     def __call__(
-        self, db_name: str, table_name: str, chunk_size: int = None, limit: int = None
+        self,
+        db_name: str,
+        table_name: str,
+        chunk_size: int = None,
+        limit: int = None,
+        min_last_updated_time: int = None,
+        max_last_updated_time: int = None,
+        columns: List[str] = None,
     ) -> Generator[Union[Row, RowList], None, None]:
         """Iterate over rows.
 
@@ -283,12 +290,22 @@ class RawRowsAPI(APIClient):
             table_name (str): Name of the table to iterate over rows for
             chunk_size (int, optional): Number of rows to return in each chunk. Defaults to yielding one row a time.
             limit (int, optional): Maximum number of rows to return. Defaults to return all items.
+            min_last_updated_time (int): Rows must have been last updated after this time. ms since epoch.
+            max_last_updated_time (int): Rows must have been last updated before this time. ms since epoch.
+            columns (List[str]): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
         """
+        columns = self._make_columns_param(columns)
+
         return self._list_generator(
             resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
             chunk_size=chunk_size,
             method="GET",
             limit=limit,
+            filter={
+                "minLastUpdatedTime": min_last_updated_time,
+                "maxLastUpdatedTime": max_last_updated_time,
+                "columns": columns,
+            },
         )
 
     def insert(
@@ -452,13 +469,7 @@ class RawRowsAPI(APIClient):
                 >>> for row_list in c.raw.rows(db_name="db1", table_name="t1", chunk_size=2500):
                 ...     row_list # do something with the rows
         """
-        if columns is not None:
-            if not isinstance(columns, List):
-                raise ValueError("Expected a list for argument columns")
-            if len(columns) == 0:
-                columns = ","
-            else:
-                columns = ",".join([str(x) for x in columns])
+        columns = self._make_columns_param(columns)
 
         return self._list(
             resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
@@ -470,3 +481,14 @@ class RawRowsAPI(APIClient):
                 "columns": columns,
             },
         )
+
+    def _make_columns_param(self, columns: List[str]) -> str:
+        if columns is None:
+            return None
+        if not isinstance(columns, List):
+            raise ValueError("Expected a list for argument columns")
+        if len(columns) == 0:
+            columns = ","
+        else:
+            columns = ",".join([str(x) for x in columns])
+        return columns
