@@ -1,5 +1,4 @@
 import re
-from sys import stderr
 
 import pytest
 
