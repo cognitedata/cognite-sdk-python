@@ -11,6 +11,7 @@ class LabelDefinition(CogniteResource):
         name (str): Name of the label.
         description (str): Description of the label.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        data_set_id (int): The id of the dataset this label belongs to.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
@@ -20,12 +21,14 @@ class LabelDefinition(CogniteResource):
         name: str = None,
         description: str = None,
         created_time: int = None,
+        data_set_id: int = None,
         cognite_client=None,
     ):
         self.external_id = external_id
         self.name = name
         self.description = description
         self.created_time = created_time
+        self.data_set_id = data_set_id
         self._cognite_client = cognite_client
 
 
@@ -35,12 +38,20 @@ class LabelDefinitionFilter(CogniteFilter):
     Args:
         name (str): Returns the label definitions matching that name.
         external_id_prefix (str): filter label definitions with external ids starting with the prefix specified
+        data_set_ids (List[Dict[str, Any]]): Only include labels that belong to these datasets.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
-    def __init__(self, name: str = None, external_id_prefix: str = None, cognite_client=None):
+    def __init__(
+        self,
+        name: str = None,
+        external_id_prefix: str = None,
+        data_set_ids: List[Dict[str, Any]] = None,
+        cognite_client=None,
+    ):
         self.name = name
         self.external_id_prefix = external_id_prefix
+        self.data_set_ids = data_set_ids
         self._cognite_client = cognite_client
 
 
