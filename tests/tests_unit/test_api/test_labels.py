@@ -82,7 +82,7 @@ class TestLabels:
         assert Label._load_list(labels) == [Label("a"), Label("b"), Label("c"), Label("d")]
 
     def test_list_with_dataset_ids(self, mock_labels_response):
-        LABELS_API.list(source="bla", data_set_ids=[1], data_set_external_ids=["x"])
+        LABELS_API.list(data_set_ids=[1], data_set_external_ids=["x"])
         assert [{"id": 1}, {"externalId": "x"}] == jsgz_load(mock_labels_response.calls[0].request.body)["filter"][
             "dataSetIds"
         ]
