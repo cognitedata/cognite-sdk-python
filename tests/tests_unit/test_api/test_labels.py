@@ -1,4 +1,5 @@
 import re
+from sys import stderr
 
 import pytest
 
@@ -12,7 +13,9 @@ LABELS_API = CogniteClient().labels
 @pytest.fixture
 def mock_labels_response(rsps):
     response_body = {
-        "items": [{"name": "Pump", "description": "guess", "externalId": "PUMP", "createdTime": 1575892259245}]
+        "items": [
+            {"name": "Pump", "description": "guess", "externalId": "PUMP", "createdTime": 1575892259245, "dataSetId": 1}
+        ]
     }
 
     url_pattern = re.compile(re.escape(LABELS_API._get_base_url_with_base_path()) + "/.+")
@@ -82,7 +85,6 @@ class TestLabels:
         assert Label._load_list(labels) == [Label("a"), Label("b"), Label("c"), Label("d")]
 
     def test_list_with_dataset_ids(self, mock_labels_response):
-        LABELS_API.list(data_set_ids=[1], data_set_external_ids=["x"])
-        assert [{"id": 1}, {"externalId": "x"}] == jsgz_load(mock_labels_response.calls[0].request.body)["filter"][
-            "dataSetIds"
-        ]
+        res = LABELS_API.list(data_set_ids=[123])
+        assert res[0].data_set_id == 1
+        assert [{"id": 123}] == jsgz_load(mock_labels_response.calls[0].request.body)["filter"]["dataSetIds"]
