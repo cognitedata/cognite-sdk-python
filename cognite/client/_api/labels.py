@@ -46,8 +46,8 @@ class LabelsAPI(APIClient):
 
         Args:
             name (str): returns the label definitions matching that name
-            data_set_ids (List[int]): return only labels in the specified data sets with these ids.
-            data_set_external_ids (List[str]): return only labels in the specified data sets with these external ids.
+            data_set_ids (List[int]): return only labels in the data sets with these ids.
+            data_set_external_ids (List[str]): return only labels in the data sets with these external ids.
             external_id_prefix (str): filter label definitions with external ids starting with the prefix specified
             limit (int, optional): Maximum number of label definitions to return.
 
