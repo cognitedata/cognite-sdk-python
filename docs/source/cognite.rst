@@ -2,13 +2,28 @@ Quickstart
 ==========
 Authenticate
 ------------
-The preferred way to authenticate against the Cognite API is by setting the :code:`COGNITE_API_KEY` environment variable. All examples in this documentation require that the variable has been set.
+
+The preferred way to authenticating against the Cognite API is using OpenID Connect (OIDC). To enable this, the CogniteClient
+accepts a token provider function.
+
+.. code:: python
+
+    >>> from cognite.client import CogniteClient
+    >>> def token_provider():
+    >>>     ...
+    >>> c = CogniteClient(token=token_provider)
+
+For details on different ways of implementing the token provider, take a look at
+`this guide <https://github.com/cognitedata/python-oidc-authentication>`_.
+
+If OIDC has not been enabled for your CDF project, you will want to authenticate using an API key. You can do this by setting the following environment
+variable
 
 .. code:: bash
 
     $ export COGNITE_API_KEY = <your-api-key>
 
-You can also pass your API key directly to the CogniteClient.
+or by passing the API key directly to the CogniteClient.
 
 .. code:: python
 
@@ -1085,4 +1100,3 @@ Experimental features
 =====================
 .. WARNING::
     These features are subject to breaking changes and should not be used in production code.
-
