@@ -1,4 +1,5 @@
 import time
+from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from cognite.client.data_classes._base import (
@@ -19,12 +20,18 @@ class JobStatus(Enum):
     DISTRIBUTING = "Distributing"
     DISTRIBUTED = "Distributed"
     COLLECTING = "Collecting"
-    
-    def is_finished() -> bool:
-        return self in [JobStatus.QUEUED, JobStatus.RUNNING, JobStatus.DISTRIBUTED, JobStatus.DISTRIBUTING, JobStatus.COLLECTING]
+
+    def is_finished(self) -> bool:
+        return self in [
+            JobStatus.QUEUED,
+            JobStatus.RUNNING,
+            JobStatus.DISTRIBUTED,
+            JobStatus.DISTRIBUTING,
+            JobStatus.COLLECTING,
+        ]
 
 
-class ContextualizationJobType:
+class ContextualizationJobType(Enum):
     ENTITY_MATCHING = "entity_matching"
 
 
