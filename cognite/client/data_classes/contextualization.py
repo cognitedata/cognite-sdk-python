@@ -86,7 +86,7 @@ class ContextualizationJob(CogniteResource):
         start = time.time()
         while timeout is None or time.time() < start + timeout:
             self.update_status()
-            if self.status not in JobStatus.NOT_FINISHED_STATUSES:
+            if not self.status.is_finished():
                 break
             time.sleep(interval)
         if self.status == JobStatus.FAILED:
