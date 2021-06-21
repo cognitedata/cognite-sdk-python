@@ -14,6 +14,13 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.21.0] - 2021-06-21
+
+### Added
+- More contextualization job statuses
+### Changed
+- Refactor contextualization constant representation
+
 ## [2.20.0] - 2021-06-04
 
 ### Added
