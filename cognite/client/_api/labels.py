@@ -18,15 +18,36 @@ class LabelsAPI(APIClient):
         """
         return self.__call__()
 
-    def __call__(self, name: str = None, external_id_prefix: str = None, limit: int = None, chunk_size: int = None):
-        filter = LabelDefinitionFilter(name=name, external_id_prefix=external_id_prefix).dump(camel_case=True)
+    def __call__(
+        self,
+        name: str = None,
+        external_id_prefix: str = None,
+        limit: int = None,
+        chunk_size: int = None,
+        data_set_ids: List[int] = None,
+        data_set_external_ids: List[str] = None,
+    ):
+        if data_set_ids or data_set_external_ids:
+            data_set_ids = self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
+        filter = LabelDefinitionFilter(
+            name=name, external_id_prefix=external_id_prefix, data_set_ids=data_set_ids
+        ).dump(camel_case=True)
         return self._list_generator(method="POST", limit=limit, filter=filter, chunk_size=chunk_size)
 
-    def list(self, name: str = None, external_id_prefix: str = None, limit: int = 25) -> LabelDefinitionList:
+    def list(
+        self,
+        name: str = None,
+        external_id_prefix: str = None,
+        data_set_ids: List[int] = None,
+        data_set_external_ids: List[str] = None,
+        limit: int = 25,
+    ) -> LabelDefinitionList:
         """`List Labels <https://docs.cognite.com/api/v1/#operation/listLabels>`_
 
         Args:
             name (str): returns the label definitions matching that name
+            data_set_ids (List[int]): return only labels in the data sets with these ids.
+            data_set_external_ids (List[str]): return only labels in the data sets with these external ids.
             external_id_prefix (str): filter label definitions with external ids starting with the prefix specified
             limit (int, optional): Maximum number of label definitions to return.
 
@@ -55,7 +76,11 @@ class LabelsAPI(APIClient):
                 >>> for label_list in c.labels(chunk_size=2500):
                 ...     label_list # do something with the type definitions
         """
-        filter = LabelDefinitionFilter(name=name, external_id_prefix=external_id_prefix).dump(camel_case=True)
+        if data_set_ids or data_set_external_ids:
+            data_set_ids = self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
+        filter = LabelDefinitionFilter(
+            name=name, external_id_prefix=external_id_prefix, data_set_ids=data_set_ids
+        ).dump(camel_case=True)
         return self._list(method="POST", limit=limit, filter=filter)
 
     def create(
