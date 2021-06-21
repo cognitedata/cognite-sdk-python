@@ -11,7 +11,7 @@ from cognite.client.exceptions import ModelFailedException
 from cognite.client.utils._auxiliary import convert_true_match
 
 
-class JobStatus:
+class JobStatus(Enum):
     QUEUED = "Queued"
     RUNNING = "Running"
     COMPLETED = "Completed"
@@ -19,7 +19,9 @@ class JobStatus:
     DISTRIBUTING = "Distributing"
     DISTRIBUTED = "Distributed"
     COLLECTING = "Collecting"
-    NOT_FINISHED_STATUSES = [QUEUED, RUNNING, DISTRIBUTED, DISTRIBUTING, COLLECTING]
+    
+    def is_finished() -> bool:
+        return self in [JobStatus.QUEUED, JobStatus.RUNNING, JobStatus.DISTRIBUTED, JobStatus.DISTRIBUTING, JobStatus.COLLECTING]
 
 
 class ContextualizationJobType:
