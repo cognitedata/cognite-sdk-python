@@ -64,7 +64,7 @@ class ContextualizationJob(CogniteResource):
         """Data class for the result of a contextualization job."""
         self.job_id = job_id
         self.model_id = model_id
-        self.status = JobStatus(status)
+        self.status = status
         self.created_time = created_time
         self.start_time = start_time
         self.status_time = status_time
@@ -75,8 +75,10 @@ class ContextualizationJob(CogniteResource):
 
     def update_status(self) -> str:
         """Updates the model status and returns it"""
-        data = self._cognite_client.__getattribute__(self._JOB_TYPE)._get(f"{self._status_path}{self.job_id}").json()
-        self.status = JobStatus(data["status"])
+        data = (
+            self._cognite_client.__getattribute__(self._JOB_TYPE.value)._get(f"{self._status_path}{self.job_id}").json()
+        )
+        self.status = data["status"]
         self.status_time = data.get("statusTime")
         self.start_time = data.get("startTime")
         self.created_time = self.created_time or data.get("createdTime")
@@ -93,10 +95,10 @@ class ContextualizationJob(CogniteResource):
         start = time.time()
         while timeout is None or time.time() < start + timeout:
             self.update_status()
-            if not self.status.is_finished():
+            if not JobStatus(self.status).is_finished():
                 break
             time.sleep(interval)
-        if self.status == JobStatus.FAILED:
+        if JobStatus(self.status) == JobStatus.FAILED:
             raise ModelFailedException(self.__class__.__name__, self.job_id, self.error_message)
 
     @property
@@ -187,10 +189,10 @@ class EntityMatchingModel(CogniteResource):
         start = time.time()
         while timeout is None or time.time() < start + timeout:
             self.update_status()
-            if self.status not in [JobStatus.QUEUED, JobStatus.RUNNING]:
+            if JobStatus(self.status) not in [JobStatus.QUEUED, JobStatus.RUNNING]:
                 break
             time.sleep(interval)
-        if self.status == JobStatus.FAILED:
+        if JobStatus(self.status) == JobStatus.FAILED:
             raise ModelFailedException(self.__class__.__name__, self.id, self.error_message)
 
     def predict(
