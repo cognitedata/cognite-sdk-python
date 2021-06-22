@@ -71,3 +71,15 @@ class TestRawRowsAPI:
         assert 2 == len(table.rows())
         COGNITE_CLIENT.raw.rows.delete(db.name, table.name, ["r1", "r2"])
         assert 0 == len(table.rows())
+
+    @pytest.mark.dsl
+    def test_insert_and_retrieve_dataframe(self, new_database_with_table):
+        import pandas as pd
+
+        db, table = new_database_with_table
+        df = pd.DataFrame(data={"a": 1, "b": 2}, index=["r1", "r2", "r3"])
+        COGNITE_CLIENT.raw.rows.insert_dataframe(db.name, table.name, df)
+
+        assert len(COGNITE_CLIENT.raw.rows.list(db.name, table.name)) == 3
+        retrieved_df = COGNITE_CLIENT.raw.rows.retrieve_dataframe(db.name, table.name)
+        pd.testing.assert_frame_equal(df.sort_index(), retrieved_df.sort_index())

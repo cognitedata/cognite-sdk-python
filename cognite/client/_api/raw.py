@@ -3,6 +3,7 @@ from typing import *
 from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Database, DatabaseList, Row, RowList, Table, TableList
+from cognite.client.utils._auxiliary import local_import
 
 
 class RawAPI(APIClient):
@@ -346,6 +347,34 @@ class RawRowsAPI(APIClient):
             task_unwrap_fn=lambda task: task["json"]["items"], task_list_element_unwrap_fn=lambda row: row.get("key")
         )
 
+    def insert_dataframe(self, db_name: str, table_name: str, dataframe: Any) -> None:
+        """Insert dataframe into a table <https://docs.cognite.com/api/v1/#operation/postRows>
+
+        Use index as rowkeys.
+
+        Args:
+            db_name (str): Name of the database.
+            table_name (str): Name of the table.
+            dataframe (pandas.DataFrame): The dataframe to insert. Index will be used as rowkeys.
+            ensure_parent (bool): Create database/table if they don't already exist.
+
+        Returns:
+            None
+
+        Examples:
+
+            Insert new rows into a table::
+
+                >>> from cognite.client import CogniteClient
+                >>> import pandas as pd
+                >>> c = CogniteClient()
+                >>> df = pd.read_csv("my_data.csv", index_col="theIndexColumn")
+                >>> res = c.raw.rows.insert_dataframe("db1", "table1", df)
+        """
+        df_dict = dataframe.to_dict(orient="index")
+        rows = [Row(key=key, columns=cols) for key, cols in df_dict.items()]
+        self.insert(db_name, table_name, rows)
+
     def _process_row_input(self, row: List[Union[List, Dict, Row]]):
         utils._auxiliary.assert_type(row, "row", [list, dict, Row])
         rows = []
@@ -492,3 +521,41 @@ class RawRowsAPI(APIClient):
         else:
             columns = ",".join([str(x) for x in columns])
         return columns
+
+    def retrieve_dataframe(
+        self,
+        db_name: str,
+        table_name: str,
+        min_last_updated_time: int = None,
+        max_last_updated_time: int = None,
+        columns: List[str] = None,
+        limit: int = 25,
+    ) -> "pandas.DataFrame":
+        """Retrieve rows in a table as a pandas dataframe. <https://docs.cognite.com/api/v1/#operation/getRows>`_
+
+        Rowkeys are used as the index.
+
+        Args:
+            db_name (str): Name of the database.
+            table_name (str): Name of the table.
+            min_last_updated_time (int): Rows must have been last updated after this time. ms since epoch.
+            max_last_updated_time (int): Rows must have been last updated before this time. ms since epoch.
+            columns (List[str]): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
+            limit (int): The number of rows to retrieve. Defaults to 25. Set to -1, float("inf") or None to return all items.
+
+        Returns:
+            pandas.DataFrame: The requested rows in a pandas dataframe.
+
+        Examples:
+
+            Get dataframe::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> df = c.raw.rows.retrieve_dataframe("db1", "t1", limit=5)
+        """
+        pd = local_import("pandas")
+        rows = self.list(db_name, table_name, min_last_updated_time, max_last_updated_time, columns, limit)
+        idx = [r.key for r in rows]
+        cols = [r.columns for r in rows]
+        return pd.DataFrame(cols, index=idx)
