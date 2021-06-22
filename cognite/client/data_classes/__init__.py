@@ -11,9 +11,11 @@ from cognite.client.data_classes.assets import (
 from cognite.client.data_classes.contextualization import (
     ContextualizationJob,
     ContextualizationJobList,
+    ContextualizationJobType,
     EntityMatchingModel,
     EntityMatchingModelList,
     EntityMatchingModelUpdate,
+    JobStatus,
 )
 from cognite.client.data_classes.data_sets import DataSet, DataSetAggregate, DataSetFilter, DataSetList, DataSetUpdate
 from cognite.client.data_classes.datapoints import Datapoint, Datapoints, DatapointsList, DatapointsQuery

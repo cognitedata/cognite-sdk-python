@@ -1,4 +1,5 @@
 import time
+from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from cognite.client.data_classes._base import (
@@ -9,6 +10,29 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.exceptions import ModelFailedException
 from cognite.client.utils._auxiliary import convert_true_match
+
+
+class JobStatus(Enum):
+    QUEUED = "Queued"
+    RUNNING = "Running"
+    COMPLETED = "Completed"
+    FAILED = "Failed"
+    DISTRIBUTING = "Distributing"
+    DISTRIBUTED = "Distributed"
+    COLLECTING = "Collecting"
+
+    def is_not_finished(self) -> bool:
+        return self in [
+            JobStatus.QUEUED,
+            JobStatus.RUNNING,
+            JobStatus.DISTRIBUTED,
+            JobStatus.DISTRIBUTING,
+            JobStatus.COLLECTING,
+        ]
+
+
+class ContextualizationJobType(Enum):
+    ENTITY_MATCHING = "entity_matching"
 
 
 class ContextualizationJob(CogniteResource):
@@ -22,6 +46,7 @@ class ContextualizationJob(CogniteResource):
         "startTime",
         "statusTime",
     }
+    _JOB_TYPE = ContextualizationJobType.ENTITY_MATCHING
 
     def __init__(
         self,
@@ -50,7 +75,9 @@ class ContextualizationJob(CogniteResource):
 
     def update_status(self) -> str:
         """Updates the model status and returns it"""
-        data = self._cognite_client.entity_matching._get(f"{self._status_path}{self.job_id}").json()
+        data = (
+            self._cognite_client.__getattribute__(self._JOB_TYPE.value)._get(f"{self._status_path}{self.job_id}").json()
+        )
         self.status = data["status"]
         self.status_time = data.get("statusTime")
         self.start_time = data.get("startTime")
@@ -68,10 +95,10 @@ class ContextualizationJob(CogniteResource):
         start = time.time()
         while timeout is None or time.time() < start + timeout:
             self.update_status()
-            if self.status not in ["Queued", "Running"]:
+            if not JobStatus(self.status).is_not_finished():
                 break
             time.sleep(interval)
-        if self.status == "Failed":
+        if JobStatus(self.status) == JobStatus.FAILED:
             raise ModelFailedException(self.__class__.__name__, self.job_id, self.error_message)
 
     @property
@@ -162,10 +189,10 @@ class EntityMatchingModel(CogniteResource):
         start = time.time()
         while timeout is None or time.time() < start + timeout:
             self.update_status()
-            if self.status not in ["Queued", "Running"]:
+            if JobStatus(self.status) not in [JobStatus.QUEUED, JobStatus.RUNNING]:
                 break
             time.sleep(interval)
-        if self.status == "Failed":
+        if JobStatus(self.status) == JobStatus.FAILED:
             raise ModelFailedException(self.__class__.__name__, self.id, self.error_message)
 
     def predict(
