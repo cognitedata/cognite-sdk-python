@@ -21,7 +21,7 @@ class JobStatus(Enum):
     DISTRIBUTED = "Distributed"
     COLLECTING = "Collecting"
 
-    def is_finished(self) -> bool:
+    def is_not_finished(self) -> bool:
         return self in [
             JobStatus.QUEUED,
             JobStatus.RUNNING,
@@ -95,7 +95,7 @@ class ContextualizationJob(CogniteResource):
         start = time.time()
         while timeout is None or time.time() < start + timeout:
             self.update_status()
-            if not JobStatus(self.status).is_finished():
+            if not JobStatus(self.status).is_not_finished():
                 break
             time.sleep(interval)
         if JobStatus(self.status) == JobStatus.FAILED:
