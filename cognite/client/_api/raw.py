@@ -365,10 +365,11 @@ class RawRowsAPI(APIClient):
 
             Insert new rows into a table::
 
-                >>> from cognite.client import CogniteClient
                 >>> import pandas as pd
+                >>> from cognite.client import CogniteClient
+                >>>
                 >>> c = CogniteClient()
-                >>> df = pd.read_csv("my_data.csv", index_col="theIndexColumn")
+                >>> df = pd.DataFrame(data={"a": 1, "b": 2}, index=["r1", "r2", "r3"])
                 >>> res = c.raw.rows.insert_dataframe("db1", "table1", df)
         """
         df_dict = dataframe.to_dict(orient="index")

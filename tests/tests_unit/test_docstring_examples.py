@@ -56,6 +56,7 @@ class TestDocstringExamples:
     def test_login(self):
         run_docstring_tests(login)
 
+    @pytest.mark.dsl
     def test_raw(self):
         run_docstring_tests(raw)
 
