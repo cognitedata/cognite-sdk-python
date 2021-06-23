@@ -77,9 +77,11 @@ class TestRawRowsAPI:
         import pandas as pd
 
         db, table = new_database_with_table
-        df = pd.DataFrame(data={"a": 1, "b": 2}, index=["r1", "r2", "r3"])
-        COGNITE_CLIENT.raw.rows.insert_dataframe(db.name, table.name, df)
+        data = {"a": {"r1": 1, "r2": 1, "r3": 1}, "b": {"r1": None, "r2": None, "r3": None}}
 
-        assert len(COGNITE_CLIENT.raw.rows.list(db.name, table.name)) == 3
+        df = pd.DataFrame.from_dict(data)
+        COGNITE_CLIENT.raw.rows.insert_dataframe(db.name, table.name, df)
         retrieved_df = COGNITE_CLIENT.raw.rows.retrieve_dataframe(db.name, table.name)
+
         pd.testing.assert_frame_equal(df.sort_index(), retrieved_df.sort_index())
+        assert retrieved_df.to_dict() == data
