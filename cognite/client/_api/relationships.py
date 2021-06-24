@@ -366,12 +366,12 @@ class RelationshipsAPI(APIClient):
         """
         return self._update_multiple(items=item)
 
-    def delete(self, external_id: Union[str, List[str]]) -> None:
+    def delete(self, external_id: Union[str, List[str]], ignore_unknown_ids: bool = False) -> None:
         """`Delete one or more relationships. <https://docs.cognite.com/api/v1/#operation/deleteRelationships>`_
 
         Args:
             external_id (Union[str, List[str]]): External ID or list of external ids
-
+            ignore_unknown_ids (bool): Ignore external IDs that are not found rather than throw an exception.
         Returns:
             None
 
@@ -383,4 +383,6 @@ class RelationshipsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.relationships.delete(external_id=["a","b"])
         """
-        self._delete_multiple(external_ids=external_id, wrap_ids=True)
+        self._delete_multiple(
+            external_ids=external_id, wrap_ids=True, extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids}
+        )

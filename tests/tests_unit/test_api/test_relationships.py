@@ -232,12 +232,23 @@ class TestRelationships:
 
     def test_delete_single(self, mock_rel_response):
         res = REL_API.delete(external_id="a")
-        assert {"items": [{"externalId": "a"}]} == jsgz_load(mock_rel_response.calls[0].request.body)
+        assert {"items": [{"externalId": "a"}], "ignoreUnknownIds": False} == jsgz_load(
+            mock_rel_response.calls[0].request.body
+        )
         assert res is None
 
     def test_delete_multiple(self, mock_rel_response):
         res = REL_API.delete(external_id=["a"])
-        assert {"items": [{"externalId": "a"}]} == jsgz_load(mock_rel_response.calls[0].request.body)
+        assert {"items": [{"externalId": "a"}], "ignoreUnknownIds": False} == jsgz_load(
+            mock_rel_response.calls[0].request.body
+        )
+        assert res is None
+
+    def test_delete_multiple_ignore_unknown_ids(self, mock_rel_response):
+        res = REL_API.delete(external_id=[1], ignore_unknown_ids=True)
+        assert {"items": [{"externalId": 1}], "ignoreUnknownIds": True} == jsgz_load(
+            mock_rel_response.calls[0].request.body
+        )
         assert res is None
 
     def test_advanced_list(self, mock_rel_response):
