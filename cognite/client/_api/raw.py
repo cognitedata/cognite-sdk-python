@@ -348,7 +348,7 @@ class RawRowsAPI(APIClient):
         )
 
     def insert_dataframe(self, db_name: str, table_name: str, dataframe: Any) -> None:
-        """Insert dataframe into a table <https://docs.cognite.com/api/v1/#operation/postRows>
+        """`Insert pandas dataframe into a table <https://docs.cognite.com/api/v1/#operation/postRows>`_
 
         Use index as rowkeys.
 
@@ -532,7 +532,7 @@ class RawRowsAPI(APIClient):
         columns: List[str] = None,
         limit: int = 25,
     ) -> "pandas.DataFrame":
-        """Retrieve rows in a table as a pandas dataframe. <https://docs.cognite.com/api/v1/#operation/getRows>`_
+        """`Retrieve rows in a table as a pandas dataframe. <https://docs.cognite.com/api/v1/#operation/getRows>`_
 
         Rowkeys are used as the index.
 
