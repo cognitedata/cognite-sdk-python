@@ -14,6 +14,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.23.0] - 2021-06-22
+
+### Added
+- insert_dataframe and retrieve_dataframe methods to the Raw client
+
 ## [2.22.0] - 2021-06-22
 
 ### Added
