@@ -194,3 +194,6 @@ class TestRelationshipsAPI:
         res = API_REL.retrieve_multiple(external_ids=[ext_id], fetch_resources=True)
         assert res[0].source == asset
         assert res[0].target == time_series
+
+    def test_deletes_ignore_unknown_ids(self):
+        API_REL.delete(external_id=["non_existing_rel"], ignore_unknown_ids=True)

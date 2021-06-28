@@ -14,6 +14,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.24.0] - 2021-06-22
+
+### Added
+- ignore_unknown_ids flag to Relationships delete method
+
 ## [2.23.0] - 2021-06-22
 
 ### Added
