@@ -17,7 +17,7 @@ Changes are grouped as follows
 ## [2.24.0] - 2021-06-22
 
 ### Added
-- ignore_unknown_ids to the Relationships delete method
+- ignore_unknown_ids flag to Relationships delete method
 
 ## [2.23.0] - 2021-06-22
 
