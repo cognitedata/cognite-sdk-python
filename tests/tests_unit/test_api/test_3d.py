@@ -230,7 +230,7 @@ class Test3DModelRevisions:
         assert mock_3d_model_revision_node_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
     def test_filter_3d_nodes(self, mock_3d_model_revision_node_response):
-        res = THREED_D_API.revisions.filter_nodes(model_id=1, revision_id=1, node_id=None, depth=None, limit=10)
+        res = THREE_D_API.revisions.filter_nodes(model_id=1, revision_id=1, node_id=None, depth=None, limit=10)
         assert isinstance(res, ThreeDNodeList)
         assert mock_3d_model_revision_node_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
