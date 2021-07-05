@@ -167,7 +167,7 @@ def mock_3d_model_revision_node_response(rsps):
     )
     rsps.add(
         rsps.POST,
-        THREE_D_API._get_base_url_with_base_path() + "/3d/models/1/revisions/1/nodes/filter",
+        THREE_D_API._get_base_url_with_base_path() + "/3d/models/1/revisions/1/nodes/list",
         status=200,
         json=response_body,
     )
