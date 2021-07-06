@@ -426,6 +426,47 @@ class ThreeDRevisionsAPI(APIClient):
             other_params={"sortByNodeId": sort_by_node_id},
         )
 
+    def filter_nodes(
+        self,
+        model_id: int,
+        revision_id: int,
+        properties: Dict[str, Dict[str, List[str]]] = None,
+        limit: int = 25,
+        partitions: int = None,
+    ) -> ThreeDNodeList:
+        """`List nodes in a revision, filtered by node property values. <https://docs.cognite.com/api/v1/#operation/filter3DNodes>`_
+
+        Args:
+            model_id (int): Id of the model.
+            revision_id (int): Id of the revision.
+            properties (Dict[str, Dict[str, List[str]]]): Properties for filtering. The object contains one or more category. Each category references one or more properties. Each property is associated with a list of values. For a node to satisfy the filter, it must, for each category/property in the filter, contain the catogery+property combination with a value that is contained within the corresponding list in the filter.
+            limit (int): Maximun number of nodes to return. Defaults to 25. Set to -1, float("inf") or None
+                to return all items.
+            partitions (int): The result is retrieved in this many parts in parallel. Requires `sort_by_node_id` to be set to `true`.
+
+        Returns:
+            ThreeDNodeList: The list of 3d nodes.
+
+        Example:
+
+            Filter nodes from the hierarchy in the 3d model that have one of the values "AB76", "AB77" or "AB78" for property PDMS/Area AND that also have one of the values "PIPE", "BEND" or "PIPESUP" for the property PDMS/Type.
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.three_d.revisions.filter_nodes(model_id=1, revision_id=1, properties={ "PDMS": { "Area": ["AB76", "AB77", "AB78"], "Type": ["PIPE", "BEND", "PIPESUP"] } }, limit=10)
+        """
+        resource_path = utils._auxiliary.interpolate_and_url_encode(
+            self._RESOURCE_PATH + "/{}/nodes", model_id, revision_id
+        )
+        return self._list(
+            cls=ThreeDNodeList,
+            resource_path=resource_path,
+            method="POST",
+            limit=limit,
+            filter={"properties": properties},
+            partitions=partitions,
+        )
+
     def list_ancestor_nodes(
         self, model_id: int, revision_id: int, node_id: int = None, limit: int = 25
     ) -> ThreeDNodeList:

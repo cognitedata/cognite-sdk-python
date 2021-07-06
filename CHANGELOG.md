@@ -14,6 +14,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.25.0] - 2021-07-06
+
+### Added
+- filter_nodes function to ThreeDRevisionsAPI
+
 ## [2.24.0] - 2021-06-22
 
 ### Added

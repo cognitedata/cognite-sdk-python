@@ -784,6 +784,10 @@ List nodes
 ~~~~~~~~~~
 .. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.list_nodes
 
+Filter nodes
+~~~~~~~~~~~~
+.. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.filter_nodes
+
 List ancestor nodes
 ~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.list_ancestor_nodes
