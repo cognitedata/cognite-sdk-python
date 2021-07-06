@@ -166,6 +166,12 @@ def mock_3d_model_revision_node_response(rsps):
         json=response_body,
     )
     rsps.add(
+        rsps.POST,
+        THREE_D_API._get_base_url_with_base_path() + "/3d/models/1/revisions/1/nodes/list",
+        status=200,
+        json=response_body,
+    )
+    rsps.add(
         rsps.GET,
         THREE_D_API._get_base_url_with_base_path() + "/3d/models/1/revisions/1/nodes/ancestors",
         status=200,
@@ -226,6 +232,13 @@ class Test3DModelRevisions:
 
     def test_list_3d_nodes(self, mock_3d_model_revision_node_response):
         res = THREE_D_API.revisions.list_nodes(model_id=1, revision_id=1, node_id=None, depth=None, limit=10)
+        assert isinstance(res, ThreeDNodeList)
+        assert mock_3d_model_revision_node_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
+
+    def test_filter_3d_nodes(self, mock_3d_model_revision_node_response):
+        res = THREE_D_API.revisions.filter_nodes(
+            model_id=1, revision_id=1, properties={"Item": {"Type": ["Group"]}}, limit=10
+        )
         assert isinstance(res, ThreeDNodeList)
         assert mock_3d_model_revision_node_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
