@@ -256,6 +256,20 @@ class TestAssets:
         }
         assert expected == jsgz_load(mock_assets_response.calls[0].request.body)["items"][0]["update"]
 
+    def test_update_labels_set_single(self, mock_assets_response):
+        ASSETS_API.update([AssetUpdate(id=1).labels.set("PUMP")])
+        expected = {"labels": {"set": [{"externalId": "PUMP"}]}}
+        assert expected == jsgz_load(mock_assets_response.calls[0].request.body)["items"][0]["update"]
+
+    def test_update_labels_set_multiple(self, mock_assets_response):
+        ASSETS_API.update([AssetUpdate(id=1).labels.set(["PUMP", "VALVE"])])
+        expected = {
+            "labels": {
+                "set": [{"externalId": "PUMP"}, {"externalId": "VALVE"}]
+            }
+        }
+        assert expected == jsgz_load(mock_assets_response.calls[0].request.body)["items"][0]["update"]
+
     # resource.update doesn't support full replacement of labels (set operation)
     def test_ignore_labels_resource_class(self, mock_assets_response):
         ASSETS_API.update(Asset(id=1, labels=[Label(external_id="Pump")], name="Abc"))
