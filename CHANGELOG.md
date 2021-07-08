@@ -14,7 +14,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [UNRELEASED]
+## [2.26.0] - 2021-07-08
 
 ### Added
 - Support for set labels on AssetUpdate
@@ -24,12 +24,12 @@ Changes are grouped as follows
 ### Added
 - filter_nodes function to ThreeDRevisionsAPI
 
-## [2.24.0] - 2021-06-22
+## [2.24.0] - 2021-06-28
 
 ### Added
 - ignore_unknown_ids flag to Relationships delete method
 
-## [2.23.0] - 2021-06-22
+## [2.23.0] - 2021-06-25
 
 ### Added
 - insert_dataframe and retrieve_dataframe methods to the Raw client
