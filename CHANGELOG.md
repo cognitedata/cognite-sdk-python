@@ -14,7 +14,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [2.26.0] - 2021-07-08
+## [UNRELEASED]
 
 ### Added
 - Support for set labels on AssetUpdate
