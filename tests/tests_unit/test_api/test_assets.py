@@ -263,11 +263,7 @@ class TestAssets:
 
     def test_update_labels_set_multiple(self, mock_assets_response):
         ASSETS_API.update([AssetUpdate(id=1).labels.set(["PUMP", "VALVE"])])
-        expected = {
-            "labels": {
-                "set": [{"externalId": "PUMP"}, {"externalId": "VALVE"}]
-            }
-        }
+        expected = {"labels": {"set": [{"externalId": "PUMP"}, {"externalId": "VALVE"}]}}
         assert expected == jsgz_load(mock_assets_response.calls[0].request.body)["items"][0]["update"]
 
     # resource.update doesn't support full replacement of labels (set operation)
