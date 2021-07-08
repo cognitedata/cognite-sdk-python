@@ -372,6 +372,10 @@ class CogniteLabelUpdate:
         self._update_object = update_object
         self._name = name
 
+    def _set(self, external_ids: Union[str, List[str]]):
+        self._update_object._set(self._name, self._wrap_ids(self._wrap_in_list(external_ids)))
+        return self._update_object
+
     def _add(self, external_ids: Union[str, List[str]]):
         self._update_object._add(self._name, self._wrap_ids(self._wrap_in_list(external_ids)))
         return self._update_object
