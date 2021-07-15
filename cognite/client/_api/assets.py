@@ -454,7 +454,7 @@ class AssetsAPI(APIClient):
                 >>> my_update = AssetUpdate(id=1).labels.remove("PUMP")
                 >>> res = c.assets.update(my_update)
 
-            Replace (set) a single label from an asset::
+            Rewrite all labels for an asset::
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import AssetUpdate
