@@ -427,7 +427,7 @@ class AssetsAPI(APIClient):
                 >>> res2 = c.assets.update(another_update)
 
             Remove the metadata on an asset::
-            
+
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import AssetUpdate
                 >>> c = CogniteClient()
