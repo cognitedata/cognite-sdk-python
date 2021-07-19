@@ -406,7 +406,7 @@ class AssetsAPI(APIClient):
 
     def update(self, item: Union[Asset, AssetUpdate, List[Union[Asset, AssetUpdate]]]) -> Union[Asset, AssetList]:
         """`Update one or more assets <https://docs.cognite.com/api/v1/#operation/updateAssets>`_
-        The following operations are supported on labels - add, remove and replace (set).
+        Labels can be added, removed or replaced (set). Note that set operation deletes all the existing labels and adds the new specified labels.
 
         Args:
             item (Union[Asset, AssetUpdate, List[Union[Asset, AssetUpdate]]]): Asset(s) to update
