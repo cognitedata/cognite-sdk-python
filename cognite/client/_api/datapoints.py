@@ -958,6 +958,8 @@ class DatapointsFetcher:
         return [(task, w) for w in windows]
 
     def _get_windows(self, id, task, remaining_user_limit):
+        if remaining_user_limit <= 0:
+            return []
         if task.start >= task.end:
             return []
         count_granularity = "1d"
