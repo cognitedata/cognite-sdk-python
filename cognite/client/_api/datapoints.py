@@ -932,7 +932,7 @@ class DatapointsFetcher:
 
     def _fetch_dps_initial_and_return_remaining_tasks(self, task: _DPTask) -> List[Tuple[_DPTask, _DPWindow]]:
         ndp_in_first_task, last_timestamp = self._get_datapoints(task, None, True)
-        if ndp_in_first_task < task.request_limit:
+        if ndp_in_first_task <= task.request_limit:
             return []
         remaining_user_limit = task.limit - ndp_in_first_task
         task.start = last_timestamp + task.next_start_offset()
