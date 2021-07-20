@@ -116,7 +116,7 @@ class ClientConfig(_DefaultConfig):
             )
 
             if token_generator.token_params_set():
-                self.token = lambda: token_generator.return_access_token()
+                self.token = token_generator.return_access_token
 
             if self.token is None:
                 raise CogniteAPIKeyError("No API key or token or token generation arguments have been specified")
