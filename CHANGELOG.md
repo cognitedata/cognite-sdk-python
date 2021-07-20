@@ -14,7 +14,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [2.27.0] - 2021-07-20
+## [2.26.1] - 2021-07-20
 
 ### Changed
 - Optimization. Do not get windows if remaining data points is 0. Reduces number of requests when asking for 100k data points/10k aggregates from 2 to 1.
