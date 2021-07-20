@@ -14,6 +14,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+
+## [2.27.0] - 2021-07-20
+
+### Fixed
+- When using CogniteClient with the client-secret auth flow, the object would not be pickle-able (e.g. when using multiprocessing) because of an anonymous function.
+
 ## [2.26.1] - 2021-07-20
 
 ### Changed
@@ -69,22 +75,22 @@ Changes are grouped as follows
 ## [2.18.1] - 2021-04-22
 
 ### Added
-- Configure file download/upload timeouts with `COGNITE_FILE_TRANSFER_TIMEOUT` environment variable or 
+- Configure file download/upload timeouts with `COGNITE_FILE_TRANSFER_TIMEOUT` environment variable or
 `file_transfer_timeout` parameter on `CogniteClient`.
 
-### Changed 
+### Changed
 - Increased default file transfer timeout from 180 to 600 seconds
 - Retry more failure modes (read timeouts, 502, 503, 504) for files upload/download requests.
 
 ## [2.18.0] - 2021-04-20
 
-### Changed 
+### Changed
 - `COGNITE_DISABLE_SSL` now also covers ssl verification on IDP endpoints used for generating tokens.
 
 
 ## [2.17.1] - 2021-04-13
 
-### Added 
+### Added
 - `created_time`, and `last_updated_time` to template data classes.
 - `data_set_id` to template instance data class.
 
@@ -95,10 +101,10 @@ Changes are grouped as follows
 - Ignore exceptions from pypi version check and reduce its timeout to 5 seconds.
 
 ### Fixed
-- Only 200/201/202 is treated as succesfull response. 301 led to json decoding errors - 
+- Only 200/201/202 is treated as succesfull response. 301 led to json decoding errors -
 now handled gracefully.
 - datasets create limit was set to 1000 in the sdk, leading to cases of 400 from the api where the limit is 10.
- 
+
 ### Added
 - Support for specifying proxies in the CogniteClient constructor
 
