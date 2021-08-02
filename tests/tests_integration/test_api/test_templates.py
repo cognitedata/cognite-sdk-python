@@ -1,3 +1,4 @@
+from cognite.client.data_classes.templates import TemplateInstanceUpdate
 import uuid
 
 import pytest
@@ -126,6 +127,32 @@ class TestTemplatesAPI:
         )
         res = API_INSTANCES.upsert(ext_id, new_version.version, upserted_instance)
         assert res.external_id == new_instance.external_id
+
+    def test_instances_update_add(self, new_template_instance):
+        new_group, ext_id, new_version, new_instance = new_template_instance
+        upserted_instance = TemplateInstanceUpdate(external_id="norway").field_resolvers.add(
+            {"name": ConstantResolver("Patched")}
+        )
+        res = API_INSTANCES.update(ext_id, new_version.version, upserted_instance)
+        assert res.external_id == new_instance.external_id and res.field_resolvers["name"] == ConstantResolver(
+            "Patched"
+        )
+
+    def test_instances_update_remove(self, new_template_instance):
+        new_group, ext_id, new_version, new_instance = new_template_instance
+        upserted_instance = TemplateInstanceUpdate(external_id="norway").field_resolvers.remove(["name"])
+        res = API_INSTANCES.update(ext_id, new_version.version, upserted_instance)
+        assert res.external_id == new_instance.external_id and "name" not in res.field_resolvers
+
+    def test_instances_update_set(self, new_template_instance):
+        new_group, ext_id, new_version, new_instance = new_template_instance
+        upserted_instance = TemplateInstanceUpdate(external_id="norway").field_resolvers.set(
+            {"name": ConstantResolver("Patched")}
+        )
+        res = API_INSTANCES.update(ext_id, new_version.version, upserted_instance)
+        assert res.external_id == new_instance.external_id and res.field_resolvers == {
+            "name": ConstantResolver("Patched")
+        }
 
     def test_query(self, new_template_instance):
         new_group, ext_id, new_version, new_instance = new_template_instance
