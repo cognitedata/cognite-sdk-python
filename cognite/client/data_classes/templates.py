@@ -244,6 +244,28 @@ class TemplateInstance(CogniteResource):
         return TemplateInstance.field_resolver_mapper[resource["type"]]._load(resource, cognite_client)
 
 
+class TemplateInstanceUpdate(CogniteUpdate):
+    """Changes applied to template instance
+
+    Args:
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+    """
+
+    class _ObjectAssetUpdate(CogniteObjectUpdate):
+        def set(self, value: Dict) -> "TemplateInstanceUpdate":
+            return self._set(value)
+
+        def add(self, value: Dict) -> "TemplateInstanceUpdate":
+            return self._add(value)
+
+        def remove(self, value: List) -> "TemplateInstanceUpdate":
+            return self._remove(value)
+
+    @property
+    def field_resolvers(self):
+        return TemplateInstanceUpdate._ObjectAssetUpdate(self, "fieldResolvers")
+
+
 class GraphQlError(CogniteResource):
     def __init__(
         self, message: str = None, path: List[str] = None, locations: List[Dict[str, Any]] = None, cognite_client=None
