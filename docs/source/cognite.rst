@@ -923,6 +923,9 @@ Upsert Template instances
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.templates.TemplateInstancesAPI.upsert
 
+Update Template instances
+.. automethod:: cognite.client._api.templates.TemplateInstancesAPI.update
+
 Retrieve Template instances
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.templates.TemplateInstancesAPI.retrieve_multiple

@@ -383,6 +383,28 @@ class TemplateInstancesAPI(APIClient):
             return res[0]
         return res
 
+    def update(
+        self, external_id: str, version: int, item: Union[TemplateInstanceUpdate, List[TemplateInstanceUpdate]]
+    ) -> Union[TemplateInstance, List[TemplateInstance]]:
+        """`Update one or more template instances`
+        Args:
+            item (Union[TemplateInstanceUpdate, List[TemplateInstanceUpdate]]): Templates instance(s) to update
+
+        Returns:
+            Union[TemplateInstance, List[TemplateInstance]]: Updated template instance(s)
+
+        Examples:
+            Perform a partial update on a template instance::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import TemplateInstanceUpdate
+                >>> c = CogniteClient()
+                >>> my_update = TemplateInstanceUpdate(external_id="test").field_resolvers.add({ "name": ConstantResolver("Norway") })
+                >>> res = c.templates.instances.update("sdk-test-group", 1, my_update)
+        """
+        resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
+        return self._update_multiple(items=item, resource_path=resource_path)
+
     def retrieve_multiple(
         self, external_id: str, version: int, external_ids: List[str], ignore_unknown_ids: bool = False
     ) -> TemplateInstanceList:
