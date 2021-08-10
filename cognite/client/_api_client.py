@@ -715,8 +715,8 @@ class APIClient:
     def _status_ok(status_code: int):
         return status_code in {200, 201, 202}
 
-    @staticmethod
-    def _raise_API_error(res: Response, payload: Dict):
+    @classmethod
+    def _raise_API_error(cls, res: Response, payload: Dict):
         x_request_id = res.headers.get("X-Request-Id")
         code = res.status_code
         missing = None
@@ -747,6 +747,9 @@ class APIClient:
             error_details["duplicated"] = duplicated
         error_details["headers"] = res.request.headers.copy()
         APIClient._sanitize_headers(error_details["headers"])
+        error_details["response_payload"] = cls._truncate(cls._get_response_content_safe(res))
+        error_details["response_headers"] = res.headers
+
         if res.history:
             for res_hist in res.history:
                 log.debug(
@@ -769,11 +772,7 @@ class APIClient:
         if extra["payload"] is None:
             del extra["payload"]
 
-        try:
-            response_payload = cls._truncate(json.dumps(res.json()))
-        except JSONDecodeError:
-            response_payload = cls._truncate(res.content.decode())
-        extra["response_payload"] = response_payload
+        extra["response_payload"] = cls._truncate(cls._get_response_content_safe(res))
         extra["response_headers"] = res.headers
 
         http_protocol_version = ".".join(list(str(res.raw.version)))
@@ -785,6 +784,13 @@ class APIClient:
         if len(s) > limit:
             return s[:limit] + "..."
         return s
+
+    @classmethod
+    def _get_response_content_safe(cls, res: Response) -> str:
+        try:
+            return json.dumps(res.json())
+        except JSONDecodeError:
+            return res.content.decode()
 
     @staticmethod
     def _sanitize_headers(headers: Optional[Dict]):
