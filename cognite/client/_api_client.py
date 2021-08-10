@@ -1,10 +1,12 @@
 import gzip
+import json
 import json as _json
 import logging
 import numbers
 import os
 import re
 from collections import UserList
+from json.decoder import JSONDecodeError
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from urllib.parse import urljoin
 
@@ -755,8 +757,8 @@ class APIClient:
         log.debug("HTTP Error {} {} {}: {}".format(code, res.request.method, res.request.url, msg), extra=error_details)
         raise CogniteAPIError(msg, code, x_request_id, missing=missing, duplicated=duplicated, extra=extra)
 
-    @staticmethod
-    def _log_request(res: Response, **kwargs):
+    @classmethod
+    def _log_request(cls, res: Response, **kwargs):
         method = res.request.method
         url = res.request.url
         status_code = res.status_code
@@ -767,9 +769,22 @@ class APIClient:
         if extra["payload"] is None:
             del extra["payload"]
 
+        try:
+            response_payload = cls._truncate(json.dumps(res.json()))
+        except JSONDecodeError:
+            response_payload = cls._truncate(res.content.decode())
+        extra["response_payload"] = response_payload
+        extra["response_headers"] = res.headers
+
         http_protocol_version = ".".join(list(str(res.raw.version)))
 
         log.debug("HTTP/{} {} {} {}".format(http_protocol_version, method, url, status_code), extra=extra)
+
+    @staticmethod
+    def _truncate(s: str, limit: int = 500) -> str:
+        if len(s) > limit:
+            return s[:limit] + "..."
+        return s
 
     @staticmethod
     def _sanitize_headers(headers: Optional[Dict]):
