@@ -16,7 +16,7 @@ Changes are grouped as follows
 
 ## [2.28.2] - 2021-08-10
 ### Added
-- Relationships now supports `partition` parameter for [parallel retrieval](https://docs.cognite.com/api/v1/#section/Parallel-retrieval)
+- Relationships now supports `partitions` parameter for [parallel retrieval](https://docs.cognite.com/api/v1/#section/Parallel-retrieval)
 
 ## [2.28.1] - 2021-08-10
 ### Changed
