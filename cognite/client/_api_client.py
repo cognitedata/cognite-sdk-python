@@ -1,10 +1,12 @@
 import gzip
+import json
 import json as _json
 import logging
 import numbers
 import os
 import re
 from collections import UserList
+from json.decoder import JSONDecodeError
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from urllib.parse import urljoin
 
@@ -713,8 +715,8 @@ class APIClient:
     def _status_ok(status_code: int):
         return status_code in {200, 201, 202}
 
-    @staticmethod
-    def _raise_API_error(res: Response, payload: Dict):
+    @classmethod
+    def _raise_API_error(cls, res: Response, payload: Dict):
         x_request_id = res.headers.get("X-Request-Id")
         code = res.status_code
         missing = None
@@ -745,6 +747,9 @@ class APIClient:
             error_details["duplicated"] = duplicated
         error_details["headers"] = res.request.headers.copy()
         APIClient._sanitize_headers(error_details["headers"])
+        error_details["response_payload"] = cls._truncate(cls._get_response_content_safe(res))
+        error_details["response_headers"] = res.headers
+
         if res.history:
             for res_hist in res.history:
                 log.debug(
@@ -755,8 +760,8 @@ class APIClient:
         log.debug("HTTP Error {} {} {}: {}".format(code, res.request.method, res.request.url, msg), extra=error_details)
         raise CogniteAPIError(msg, code, x_request_id, missing=missing, duplicated=duplicated, extra=extra)
 
-    @staticmethod
-    def _log_request(res: Response, **kwargs):
+    @classmethod
+    def _log_request(cls, res: Response, **kwargs):
         method = res.request.method
         url = res.request.url
         status_code = res.status_code
@@ -767,9 +772,25 @@ class APIClient:
         if extra["payload"] is None:
             del extra["payload"]
 
+        extra["response_payload"] = cls._truncate(cls._get_response_content_safe(res))
+        extra["response_headers"] = res.headers
+
         http_protocol_version = ".".join(list(str(res.raw.version)))
 
         log.debug("HTTP/{} {} {} {}".format(http_protocol_version, method, url, status_code), extra=extra)
+
+    @staticmethod
+    def _truncate(s: str, limit: int = 500) -> str:
+        if len(s) > limit:
+            return s[:limit] + "..."
+        return s
+
+    @classmethod
+    def _get_response_content_safe(cls, res: Response) -> str:
+        try:
+            return json.dumps(res.json())
+        except JSONDecodeError:
+            return res.content.decode()
 
     @staticmethod
     def _sanitize_headers(headers: Optional[Dict]):

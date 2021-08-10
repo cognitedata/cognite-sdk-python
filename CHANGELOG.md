@@ -14,6 +14,9 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.28.1] - 2021-08-10
+### Changed
+- debug mode now logs response payload and headers.
 
 ## [2.27.0] - 2021-07-20
 
