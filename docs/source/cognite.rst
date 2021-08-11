@@ -1094,6 +1094,62 @@ Data classes
     :show-inheritance:
 
 
+Transformations
+------------------------
+
+Create transformations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.experimental._api.transformations.TransformationsAPI.create
+
+Retrieve transformations by id
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.experimental._api.transformations.TransformationsAPI.retrieve
+
+List transformations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.experimental._api.transformations.TransformationsAPI.list
+
+Update transformations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.experimental._api.transformations.TransformationsAPI.update
+
+Delete transformations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.experimental._api.transformations.TransformationsAPI.delete
+
+Transformation Schedules
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Create transformation Schedules
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.experimental._api.transformation_schedules.TransformationSchedulesAPI.create
+
+Retrieve transformation schedules
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.experimental._api.transformation_schedules.TransformationSchedulesAPI.retrieve
+
+List transformation schedules
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.experimental._api.transformation_schedules.TransformationSchedulesAPI.list
+
+Update transformation schedules
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.experimental._api.transformation_schedules.TransformationSchedulesAPI.update
+
+Delete transformation schedules
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.experimental._api.transformation_schedules.TransformationSchedulesAPI.delete
+
+Data classes
+^^^^^^^^^^^^
+.. automodule:: cognite.experimental.data_classes.transformations
+    :members:
+    :show-inheritance:
+.. automodule:: cognite.experimental.data_classes.transformation_schedules
+    :members:
+    :show-inheritance:
+
+
 Base data classes
 -----------------
 CogniteResource

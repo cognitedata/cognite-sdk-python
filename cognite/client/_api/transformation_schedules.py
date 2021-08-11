@@ -31,7 +31,7 @@ class TransformationSchedulesAPI(APIClient):
         """`Schedule the specified transformation with the specified configuration(s). <https://docs.cognite.com/api/playground/#operation/scheduleTransformations>`_
 
         Args:
-            schedule (Union[TransformationSchedule, List[TransformationSchedule]]) – Configuration or list of configurations of the schedules to create.
+            schedule (Union[TransformationSchedule, List[TransformationSchedule]]): Configuration or list of configurations of the schedules to create.
 
         Returns:
             Created schedule(s)

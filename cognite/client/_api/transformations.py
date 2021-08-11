@@ -26,7 +26,7 @@ class TransformationsAPI(APIClient):
         """`Create one or more transformations. <https://docs.cognite.com/api/playground/#operation/createTransformations>`_
 
         Args:
-            transformation (Union[Transformation, List[Transformation]]) – Transformation or list of transformations to create.
+            transformation (Union[Transformation, List[Transformation]]): Transformation or list of transformations to create.
 
         Returns:
             Created transformation(s)
@@ -40,7 +40,8 @@ class TransformationsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> transformations = [
                 >>>     Transformation(
-                >>>         name="transformation1", destination=TransformationDestination.assets()
+                >>>         name="transformation1", 
+                >>>         destination=TransformationDestination.assets()
                 >>>     ),
                 >>>     Transformation(
                 >>>         name="transformation2",
