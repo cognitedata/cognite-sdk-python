@@ -200,17 +200,15 @@ class TestRelationshipsAPI:
         API_REL.delete(external_id=["non_existing_rel"], ignore_unknown_ids=True)
 
     def test_partitioned_list(self, create_multiple_relationships):
-        # stop race conditions by cutting off max created time
-        maxtime = int(time.time() - 3600) * 1000
-        res_flat = API_REL.list(limit=None, created_time={"max": maxtime})
-        res_part = API_REL.list(partitions=8, limit=None, created_time={"max": maxtime})
+        _, _, ext_ids = create_multiple_relationships
+        res_flat = API_REL.list(limit=None, source_external_ids=ext_ids)
+        res_part = API_REL.list(partitions=8, limit=None, source_external_ids=ext_ids)
         assert len(res_flat) > 0
         assert len(res_flat) == len(res_part)
         assert {a.external_id for a in res_flat} == {a.external_id for a in res_part}
 
-    def test_compare_partitioned_gen_and_list(self):
-        # stop race conditions by cutting off max created time
-        maxtime = int(time.time() - 3600) * 1000
-        res_generator = API_REL(partitions=8, limit=None, created_time={"max": maxtime})
-        res_list = API_REL.list(partitions=8, limit=None, created_time={"max": maxtime})
+    def test_compare_partitioned_gen_and_list(self, create_multiple_relationships):
+        _, _, ext_ids = create_multiple_relationships
+        res_generator = API_REL(partitions=8, limit=None, source_external_ids=ext_ids)
+        res_list = API_REL.list(partitions=8, limit=None, source_external_ids=ext_ids)
         assert {a.external_id for a in res_generator} == {a.external_id for a in res_list}
