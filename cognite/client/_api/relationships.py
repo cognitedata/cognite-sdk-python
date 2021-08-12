@@ -64,6 +64,7 @@ class RelationshipsAPI(APIClient):
         limit: int = None,
         fetch_resources: bool = False,
         chunk_size: int = None,
+        partitions: int = None,
     ) -> Generator[Union[Relationship, RelationshipList], None, None]:
         """Iterate over relationships
 
@@ -84,6 +85,7 @@ class RelationshipsAPI(APIClient):
             active_at_time (Dict[str, int]): Limits results to those active at any point within the given time range, i.e. if there is any overlap in the intervals [activeAtTime.min, activeAtTime.max] and [startTime, endTime], where both intervals are inclusive. If a relationship does not have a startTime, it is regarded as active from the begining of time by this filter. If it does not have an endTime is will be regarded as active until the end of time. Similarly, if a min is not supplied to the filter, the min will be implicitly set to the beginning of time, and if a max is not supplied, the max will be implicitly set to the end of time.
             labels (LabelFilter): Return only the resource matching the specified label constraints.
             chunk_size (int, optional): Number of Relationships to return in each chunk. Defaults to yielding one relationship at a time.
+            partitions (int): Retrieve relationships in parallel using this number of workers. Also requires `limit=None` to be passed.
 
         Yields:
             Union[Relationship, RelationshipList]: yields Relationship one by one if chunk is not specified, else RelationshipList objects.
@@ -120,6 +122,7 @@ class RelationshipsAPI(APIClient):
             limit=limit,
             filter=filter,
             chunk_size=chunk_size,
+            partitions=partitions,
             other_params={"fetchResources": fetch_resources},
         )
 
@@ -196,6 +199,7 @@ class RelationshipsAPI(APIClient):
         active_at_time: Dict[str, int] = None,
         labels: LabelFilter = None,
         limit: int = 100,
+        partitions: int = None,
         fetch_resources: bool = False,
     ) -> RelationshipList:
         """`Lists relationships stored in the project based on a query filter given in the payload of this request. Up to 1000 relationships can be retrieved in one operation.  <https://docs.cognite.com/api/v1/#operation/listRelationships>`_
@@ -216,6 +220,7 @@ class RelationshipsAPI(APIClient):
             labels (LabelFilter): Return only the resource matching the specified label constraints.
             limit (int): Maximum number of relationships to return. Defaults to 100. Set to -1, float("inf") or None
                 to return all items.
+            partitions (int): Retrieve relationships in parallel using this number of workers. Also requires `limit=None` to be passed.
             fetch_resources (bool): if true, will try to return the full resources referenced by the relationship in the
                 source and target fields.
 
@@ -277,7 +282,11 @@ class RelationshipsAPI(APIClient):
 
             tasks_summary = utils._concurrency.execute_tasks_concurrently(
                 lambda filter: self._list(
-                    method="POST", limit=limit, filter=filter, other_params={"fetchResources": fetch_resources}
+                    method="POST",
+                    limit=limit,
+                    filter=filter,
+                    other_params={"fetchResources": fetch_resources},
+                    partitions=partitions,
                 ),
                 tasks,
                 max_workers=self._config.max_workers,
