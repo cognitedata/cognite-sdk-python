@@ -295,8 +295,6 @@ class RawRowsAPI(APIClient):
             max_last_updated_time (int): Rows must have been last updated before this time. ms since epoch.
             columns (List[str]): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
         """
-        columns = self._make_columns_param(columns)
-
         return self._list_generator(
             resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
             chunk_size=chunk_size,
@@ -305,7 +303,7 @@ class RawRowsAPI(APIClient):
             filter={
                 "minLastUpdatedTime": min_last_updated_time,
                 "maxLastUpdatedTime": max_last_updated_time,
-                "columns": columns,
+                "columns": self._make_columns_param(columns),
             },
         )
 
@@ -499,42 +497,29 @@ class RawRowsAPI(APIClient):
                 >>> for row_list in c.raw.rows(db_name="db1", table_name="t1", chunk_size=2500):
                 ...     row_list # do something with the rows
         """
-        columns = self._make_columns_param(columns)
         if limit in {None, -1, float("inf")}:
-            return self._list_rows_parallel(db_name, table_name, columns, min_last_updated_time, max_last_updated_time)
-        else:
-            return self._list(
-                resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
-                limit=limit,
-                method="GET",
-                filter={
+            cursors = self._get(
+                url_path=utils._auxiliary.interpolate_and_url_encode(
+                    "/raw/dbs/{}/tables/{}/cursors", db_name, table_name
+                ),
+                params={
                     "minLastUpdatedTime": min_last_updated_time,
                     "maxLastUpdatedTime": max_last_updated_time,
-                    "columns": columns,
+                    "numberOfCursors": self._config.max_workers,
                 },
-            )
-
-    def _list_rows_parallel(
-        self,
-        db_name: str,
-        table_name: str,
-        columns: str,
-        min_last_updated_time: Optional[int],
-        max_last_updated_time: Optional[int],
-    ) -> RowList:
-        cursors = self._get(
-            url_path=utils._auxiliary.interpolate_and_url_encode("/raw/dbs/{}/tables/{}/cursors", db_name, table_name),
-            params={
-                "minLastUpdatedTime": min_last_updated_time,
-                "maxLastUpdatedTime": max_last_updated_time,
-                "numberOfCursors": self._config.max_workers,
-            },
-        ).json()["items"]
+            ).json()["items"]
+        else:
+            cursors = [None]
         tasks = [
             dict(
                 resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
                 method="GET",
-                filter={"columns": columns},
+                filter={
+                    "columns": self._make_columns_param(columns),
+                    "minLastUpdatedTime": min_last_updated_time,
+                    "maxLastUpdatedTime": max_last_updated_time,
+                },
+                limit=limit,
                 initial_cursor=cursor,
             )
             for cursor in cursors
