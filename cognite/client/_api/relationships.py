@@ -291,9 +291,9 @@ class RelationshipsAPI(APIClient):
                 tasks,
                 max_workers=self._config.max_workers,
             )
-            tasks_summary.raise_compound_exception_if_failed_tasks()
-            rels = RelationshipList([rel for result in tasks_summary.joined_results() for rel in result])
-            return rels
+            if tasks_summary.exceptions:
+                raise tasks_summary.exceptions[0]
+            return RelationshipList(tasks_summary.joined_results())
         return self._list(method="POST", limit=limit, filter=filter, other_params={"fetchResources": fetch_resources})
 
     def create(self, relationship: Union[Relationship, List[Relationship]]) -> Union[Relationship, RelationshipList]:

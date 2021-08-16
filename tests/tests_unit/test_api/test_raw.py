@@ -41,11 +41,12 @@ def mock_raw_table_response(rsps):
 def mock_raw_row_response(rsps):
     response_body = {"items": [{"key": "row1", "columns": {"c1": 1, "c2": "2"}}]}
 
-    url_pattern = re.compile(
-        re.escape(RAW_API._get_base_url_with_base_path()) + "/raw/dbs/db1/tables/table1/rows(?:/delete|/row1|$|\?.+)"
-    )
+    raw_path_prefix = re.escape(RAW_API._get_base_url_with_base_path()) + "/raw/dbs/db1/tables/table1"
+    url_pattern = re.compile(raw_path_prefix + "/rows(?:/delete|/row1|$|\?.+)")
+    cursors_url_pattern = re.compile(raw_path_prefix + "/cursors")
     rsps.assert_all_requests_are_fired = False
 
+    rsps.add(rsps.GET, cursors_url_pattern, status=200, json=response_body)
     rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
     rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
     yield rsps
