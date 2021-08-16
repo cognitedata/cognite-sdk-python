@@ -527,7 +527,7 @@ class RawRowsAPI(APIClient):
             params={
                 "minLastUpdatedTime": min_last_updated_time,
                 "maxLastUpdatedTime": max_last_updated_time,
-                "numberOfCursors": 10,
+                "numberOfCursors": self._config.max_workers,
             },
         ).json()["items"]
         tasks = [
@@ -539,7 +539,7 @@ class RawRowsAPI(APIClient):
             )
             for cursor in cursors
         ]
-        summary = utils._concurrency.execute_tasks_concurrently(self._list, tasks, max_workers=10)
+        summary = utils._concurrency.execute_tasks_concurrently(self._list, tasks, max_workers=self._config.max_workers)
         if summary.exceptions:
             raise summary.exceptions[0]
         return RowList(summary.joined_results())
