@@ -153,9 +153,8 @@ class FilesAPI(APIClient):
             url_path=self._RESOURCE_PATH, json=file_metadata.dump(camel_case=True), params={"overwrite": overwrite}
         )
         returned_file_metadata = res.json()
-        upload_url = returned_file_metadata.pop("uploadUrl")
+        upload_url = returned_file_metadata["uploadUrl"]
         file_metadata = FileMetadata._load(returned_file_metadata)
-
         return (file_metadata, upload_url)
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[FileMetadata]:
@@ -665,7 +664,7 @@ class FilesAPI(APIClient):
             url_path=self._RESOURCE_PATH, json=file_metadata.dump(camel_case=True), params={"overwrite": overwrite}
         )
         returned_file_metadata = res.json()
-        upload_url = returned_file_metadata.pop("uploadUrl")
+        upload_url = returned_file_metadata["uploadUrl"]
         headers = {"X-Upload-Content-Type": file_metadata.mime_type}
         self._http_client_with_retry.request(
             "PUT", upload_url, data=content, timeout=self._config.file_transfer_timeout, headers=headers
