@@ -50,17 +50,17 @@ class TestRawRowsAPI:
 
     def test_list_rows_w_parallel_cursors(self):
         randstr = random_string(32)
-        num_rows = 110000
-        rows = [Row(key=str(i), columns={"a": 1}) for i in range(num_rows)]
-        COGNITE_CLIENT.raw.rows.insert(randstr, randstr, row=rows, ensure_parent=True)
+        num_rows = 30000
+        rows_to_insert = [Row(key=str(i), columns={"a": 1}) for i in range(num_rows)]
+        COGNITE_CLIENT.raw.rows.insert(randstr, randstr, row=rows_to_insert, ensure_parent=True)
 
         rows = COGNITE_CLIENT.raw.rows.list(db_name=randstr, table_name=randstr, limit=num_rows)
-        assert num_rows == len(rows)
-        assert 1 == len(rows[0].columns.keys())
+        rows_par = COGNITE_CLIENT.raw.rows.list(db_name=randstr, table_name=randstr, limit=-1)
 
-        rows = COGNITE_CLIENT.raw.rows.list(db_name=randstr, table_name=randstr, limit=-1)
-        assert num_rows == len(rows)
-        assert 1 == len(rows[0].columns.keys())
+        assert num_rows == len(rows) == len(rows_par)
+        assert 1 == len(rows[0].columns.keys()) == len(rows_par[0].columns.keys())
+
+        assert {row.key for row in rows} == {row.key for row in rows_par}
 
     def test_list_rows_cols(self):
         rows_list = COGNITE_CLIENT.raw.rows.list(
