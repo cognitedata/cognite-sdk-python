@@ -1,9 +1,8 @@
 import copy
 import math
 import re as regexp
-import threading
-from collections import defaultdict
 from datetime import datetime
+from json import JSONDecodeError
 from typing import *
 
 import cognite.client.utils._time
@@ -12,6 +11,7 @@ from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Datapoints, DatapointsList, DatapointsQuery
 from cognite.client.exceptions import CogniteAPIError
+from cognite.client.utils._retry import retry_exceptions
 
 
 class DatapointsAPI(APIClient):
@@ -1041,7 +1041,13 @@ class DatapointsFetcher:
             "ignoreUnknownIds": task.ignore_unknown_ids,
             "limit": min(window.limit, task.request_limit),
         }
-        res = self.client._post(self.client._RESOURCE_PATH + "/list", json=payload).json()["items"]
+
+        # Retry JSONDecodeError because we sometimes receive a truncated body from this endpoint.
+        # TODO: follow up with timelords and remove this retrying once the root cause has been found and fixed.
+        res = retry_exceptions(
+            lambda: self.client._post(self.client._RESOURCE_PATH + "/list", json=payload).json(), (JSONDecodeError,)
+        )["items"]
+
         if not res and task.ignore_unknown_ids:
             return task.mark_missing()
         else:
