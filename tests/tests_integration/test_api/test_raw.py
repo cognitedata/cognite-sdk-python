@@ -1,6 +1,10 @@
+import time
+
 import pytest
 
 from cognite.client import CogniteClient, utils
+from cognite.client.data_classes import Row
+from cognite.client.utils._auxiliary import random_string
 
 COGNITE_CLIENT = CogniteClient()
 
@@ -40,9 +44,23 @@ class TestRawTablesAPI:
 
 class TestRawRowsAPI:
     def test_list_rows(self):
-        rows = COGNITE_CLIENT.raw.rows.list(db_name="test__database1", table_name="test__table_1", limit=-1)
+        rows = COGNITE_CLIENT.raw.rows.list(db_name="test__database1", table_name="test__table_1", limit=10000)
         assert 2000 == len(rows)
         assert 10 == len(rows[0].columns.keys())
+
+    def test_list_rows_w_parallel_cursors(self):
+        randstr = random_string(32)
+        num_rows = 110000
+        rows = [Row(key=str(i), columns={"a": 1}) for i in range(num_rows)]
+        COGNITE_CLIENT.raw.rows.insert(randstr, randstr, row=rows, ensure_parent=True)
+
+        rows = COGNITE_CLIENT.raw.rows.list(db_name=randstr, table_name=randstr, limit=num_rows)
+        assert num_rows == len(rows)
+        assert 1 == len(rows[0].columns.keys())
+
+        rows = COGNITE_CLIENT.raw.rows.list(db_name=randstr, table_name=randstr, limit=-1)
+        assert num_rows == len(rows)
+        assert 1 == len(rows[0].columns.keys())
 
     def test_list_rows_cols(self):
         rows_list = COGNITE_CLIENT.raw.rows.list(

@@ -1,3 +1,4 @@
+from collections import UserList
 from concurrent.futures.thread import ThreadPoolExecutor
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
@@ -19,7 +20,7 @@ class TasksSummary:
         joined_results = []
         for result in self.results:
             unwrapped = unwrap_fn(result)
-            if isinstance(unwrapped, list):
+            if isinstance(unwrapped, (list, UserList)):
                 joined_results.extend(unwrapped)
             else:
                 joined_results.append(unwrapped)

@@ -284,6 +284,7 @@ class APIClient:
         other_params: Dict = None,
         partitions: int = None,
         headers: Dict = None,
+        initial_cursor: Optional[str] = None,
     ):
         if limit == -1 or limit == float("inf"):
             limit = None
@@ -310,7 +311,7 @@ class APIClient:
             current_limit = self._LIST_LIMIT
             if chunk_size and chunk_size <= self._LIST_LIMIT:
                 current_limit = chunk_size
-            next_cursor = None
+            next_cursor = initial_cursor
             filter = filter or {}
             current_items = []
             while True:
@@ -403,6 +404,7 @@ class APIClient:
         partitions=None,
         sort=None,
         headers: Dict = None,
+        initial_cursor: Optional[str] = None,
     ):
         if partitions:
             if limit not in [None, -1, float("inf")]:
@@ -432,6 +434,7 @@ class APIClient:
             sort=sort,
             other_params=other_params,
             headers=headers,
+            initial_cursor=initial_cursor,
         ):
             items.extend(resource_list.data)
         return cls(items, cognite_client=self._cognite_client)

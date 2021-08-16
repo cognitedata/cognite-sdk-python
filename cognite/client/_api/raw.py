@@ -500,19 +500,51 @@ class RawRowsAPI(APIClient):
                 ...     row_list # do something with the rows
         """
         columns = self._make_columns_param(columns)
+        if limit in {None, -1, float("inf")}:
+            return self._list_rows_parallel(db_name, table_name, columns, min_last_updated_time, max_last_updated_time)
+        else:
+            return self._list(
+                resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
+                limit=limit,
+                method="GET",
+                filter={
+                    "minLastUpdatedTime": min_last_updated_time,
+                    "maxLastUpdatedTime": max_last_updated_time,
+                    "columns": columns,
+                },
+            )
 
-        return self._list(
-            resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
-            limit=limit,
-            method="GET",
-            filter={
+    def _list_rows_parallel(
+        self,
+        db_name: str,
+        table_name: str,
+        columns: str,
+        min_last_updated_time: Optional[int],
+        max_last_updated_time: Optional[int],
+    ) -> RowList:
+        cursors = self._get(
+            url_path=utils._auxiliary.interpolate_and_url_encode("/raw/dbs/{}/tables/{}/cursors", db_name, table_name),
+            params={
                 "minLastUpdatedTime": min_last_updated_time,
                 "maxLastUpdatedTime": max_last_updated_time,
-                "columns": columns,
+                "numberOfCursors": 10,
             },
-        )
+        ).json()["items"]
+        tasks = [
+            dict(
+                resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
+                method="GET",
+                filter={"columns": columns},
+                initial_cursor=cursor,
+            )
+            for cursor in cursors
+        ]
+        summary = utils._concurrency.execute_tasks_concurrently(self._list, tasks, max_workers=10)
+        if summary.exceptions:
+            raise summary.exceptions[0]
+        return RowList(summary.joined_results())
 
-    def _make_columns_param(self, columns: List[str]) -> str:
+    def _make_columns_param(self, columns: List[str]) -> Optional[str]:
         if columns is None:
             return None
         if not isinstance(columns, List):
