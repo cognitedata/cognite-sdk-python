@@ -1,3 +1,4 @@
+import functools
 import random
 import socket
 import time
@@ -109,6 +110,8 @@ class HTTPClient:
                 last_status = res.status_code
                 retry_tracker.status += 1
                 if not retry_tracker.should_retry(status_code=last_status):
+                    # Cache .json() return value in order to avoid redecoding JSON if called multiple times
+                    res.json = functools.lru_cache(maxsize=1)(res.json)
                     return res
             except CogniteReadTimeout as e:
                 retry_tracker.read += 1
