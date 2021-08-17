@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.29.0] - 2021-08-16
+### Added
+- Raw rows are retrieved using parallel cursors when no limit is set.
+
 ## [2.28.2] - 2021-08-10
 ### Added
 - Relationships now supports `partitions` parameter for [parallel retrieval](https://docs.cognite.com/api/v1/#section/Parallel-retrieval)
