@@ -277,6 +277,7 @@ class APIClient:
         method: str,
         cls=None,
         resource_path: str = None,
+        url_path: str = None,
         limit: int = None,
         chunk_size: int = None,
         filter: Dict = None,
@@ -326,12 +327,12 @@ class APIClient:
                     params["cursor"] = next_cursor
                     if sort is not None:
                         params["sort"] = sort
-                    res = self._get(url_path=resource_path, params=params, headers=headers)
+                    res = self._get(url_path=url_path or resource_path, params=params, headers=headers)
                 elif method == "POST":
                     body = {"filter": filter, "limit": current_limit, "cursor": next_cursor, **(other_params or {})}
                     if sort is not None:
                         body["sort"] = sort
-                    res = self._post(url_path=resource_path + "/list", json=body, headers=headers)
+                    res = self._post(url_path=url_path or resource_path + "/list", json=body, headers=headers)
                 else:
                     raise ValueError("_list_generator parameter `method` must be GET or POST, not {}".format(method))
                 last_received_items = res.json()["items"]
@@ -398,6 +399,7 @@ class APIClient:
         method: str,
         cls=None,
         resource_path: str = None,
+        url_path: str = None,
         limit: int = None,
         filter: Dict = None,
         other_params=None,
@@ -427,6 +429,7 @@ class APIClient:
         for resource_list in self._list_generator(
             cls=cls,
             resource_path=resource_path,
+            url_path=url_path,
             method=method,
             limit=limit,
             chunk_size=self._LIST_LIMIT,
