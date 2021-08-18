@@ -228,19 +228,15 @@ class TestTemplatesAPI:
         res = API_VIEWS.resolve(
             ext_id, new_version.version, view.external_id, input={"minStartTime": 10 * 1000}, limit=10
         )
-        assert res == [{ "startTime": (i + 10) * 1000, "test_type": "test_templates" } for i in range(0, 10)]
+        assert res == [{"startTime": (i + 10) * 1000, "test_type": "test_templates"} for i in range(0, 10)]
 
     def test_view_resolve_pagination(self, new_view):
         new_group, ext_id, new_version, view = new_view
-        res = API_VIEWS.resolve(
-            ext_id, new_version.version, view.external_id, input={"minStartTime": 0}, limit=-1
-        )
-        assert res == [{ "startTime": i * 1000, "test_type": "test_templates" } for i in range(0, 1001)]
+        res = API_VIEWS.resolve(ext_id, new_version.version, view.external_id, input={"minStartTime": 0}, limit=-1)
+        assert res == [{"startTime": i * 1000, "test_type": "test_templates"} for i in range(0, 1001)]
 
     def test_view_upsert(self, new_view):
         new_group, ext_id, new_version, view = new_view
         view.source.mappings["another_type"] = "type"
-        res = API_VIEWS.upsert(
-            ext_id, new_version.version, [view]
-        )
+        res = API_VIEWS.upsert(ext_id, new_version.version, [view])
         assert res == view

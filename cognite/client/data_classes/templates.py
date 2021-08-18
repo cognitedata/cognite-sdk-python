@@ -280,7 +280,9 @@ class Source(CogniteResource):
         mappings (Dict[str, str]): The mapping between source result and expected schema.
     """
 
-    def __init__(self, type: str = None, filter: Dict[str, any] = None, mappings: Dict[str, str] = None, cognite_client=None) -> None:
+    def __init__(
+        self, type: str = None, filter: Dict[str, any] = None, mappings: Dict[str, str] = None, cognite_client=None
+    ) -> None:
         self.type = type
         self.filter = filter
         self.mappings = mappings

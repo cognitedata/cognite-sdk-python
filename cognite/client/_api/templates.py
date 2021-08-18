@@ -615,12 +615,7 @@ class TemplateViewsAPI(APIClient):
             other_params={"externalId": view_external_id, "input": input},
         )
 
-    def list(
-        self,
-        external_id: str,
-        version: int,
-        limit: int = 25,
-    ) -> ViewList:
+    def list(self, external_id: str, version: int, limit: int = 25) -> ViewList:
         """`Lists view in a template group.`
         Up to 1000 views can be retrieved in one operation.
 
@@ -643,7 +638,9 @@ class TemplateViewsAPI(APIClient):
         resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
         return self._list(resource_path=resource_path, method="POST", limit=limit)
 
-    def delete(self, external_id: str, version: int, view_external_id: Union[List[str], str], ignore_unknown_ids: bool = False) -> None:
+    def delete(
+        self, external_id: str, version: int, view_external_id: Union[List[str], str], ignore_unknown_ids: bool = False
+    ) -> None:
         """`Delete one or more views.`
 
         Args:
