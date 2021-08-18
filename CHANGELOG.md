@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.29.1] - 2021-08-18
+### Added
+- Added support for Template Views
+
 ## [2.29.0] - 2021-08-16
 ### Added
 - Raw rows are retrieved using parallel cursors when no limit is set.
