@@ -74,7 +74,8 @@ class TemplateGroupsAPI(APIClient):
             Union[TemplateGroup, TemplateGroupList]: Created template group(s)
 
         Examples:
-            create a new template group:
+            Create a new template group:
+
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import TemplateGroup
                 >>> c = CogniteClient()
@@ -97,7 +98,7 @@ class TemplateGroupsAPI(APIClient):
             Union[TemplateGroup, TemplateGroupList]: Created template group(s)
 
         Examples:
-            create a new template group:
+            Upsert a template group:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import TemplateGroup
@@ -309,8 +310,7 @@ class TemplateInstancesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import TemplateInstance
                 >>> c = CogniteClient()
-                >>> template_instance_1 = TemplateInstance(
-                >>>                               external_id="norway",
+                >>> template_instance_1 = TemplateInstance(external_id="norway",
                 >>>                               template_name="Country",
                 >>>                               field_resolvers={
                 >>>                                   "name": ConstantResolver("Norway"),
@@ -319,8 +319,7 @@ class TemplateInstancesAPI(APIClient):
                 >>>                                   "confirmed": ConstantResolver("Norway_confirmed"),
                 >>>                                   }
                 >>>                               )
-                >>> template_instance_2 = TemplateInstance(
-                >>>                               external_id="norway_demographics",
+                >>> template_instance_2 = TemplateInstance(external_id="norway_demographics",
                 >>>                               template_name="Demographics",
                 >>>                               field_resolvers={
                 >>>                                   "populationSize": ConstantResolver(5328000),
@@ -352,8 +351,7 @@ class TemplateInstancesAPI(APIClient):
              >>> from cognite.client import CogniteClient
              >>> from cognite.client.data_classes import TemplateInstance
              >>> c = CogniteClient()
-             >>> template_instance_1 = TemplateInstance(
-             >>>        external_id="norway",
+             >>> template_instance_1 = TemplateInstance(external_id="norway",
              >>>        template_name="Country",
              >>>        field_resolvers={
              >>>            "name": ConstantResolver("Norway"),
@@ -518,8 +516,7 @@ class TemplateViewsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import View
                 >>> c = CogniteClient()
-                >>> view = View(
-                >>>             external_id="view",
+                >>> view = View(external_id="view",
                 >>>             source=Source(
                 >>>                 type: 'events',
                 >>>                 filter: {
@@ -555,8 +552,7 @@ class TemplateViewsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import View
                 >>> c = CogniteClient()
-                >>> view = View(
-                >>>             external_id="view",
+                >>> view = View(external_id="view",
                 >>>             source=Source(
                 >>>                 type: 'events',
                 >>>                 filter: {
