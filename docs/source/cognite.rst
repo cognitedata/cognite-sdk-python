@@ -1140,12 +1140,30 @@ Delete transformation schedules
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.experimental._api.transformation_schedules.TransformationSchedulesAPI.delete
 
+Transformation Notifications
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Create transformation notifications
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.experimental._api.transformation_notifications.TransformationNotificationsAPI.create
+
+List transformation notifications
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.experimental._api.transformation_notifications.TransformationNotificationsAPI.list
+
+Delete transformation notifications
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.experimental._api.transformation_notifications.TransformationNotificationsAPI.delete
+
 Data classes
 ^^^^^^^^^^^^
 .. automodule:: cognite.experimental.data_classes.transformations
     :members:
     :show-inheritance:
 .. automodule:: cognite.experimental.data_classes.transformation_schedules
+    :members:
+    :show-inheritance:
+.. automodule:: cognite.experimental.data_classes.transformation_notifications
     :members:
     :show-inheritance:
 
