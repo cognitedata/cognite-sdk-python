@@ -14,9 +14,9 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [2.29.1] - 2021-08-18
+## [2.30.0] - 2021-08-18
 ### Added
-- Added support for Template Views
+- Support for Template Views
 
 ## [2.29.0] - 2021-08-16
 ### Added
