@@ -10,6 +10,7 @@ class TemplatesAPI(APIClient):
         self.groups = TemplateGroupsAPI(*args, **kwargs)
         self.versions = TemplateGroupVersionsAPI(*args, **kwargs)
         self.instances = TemplateInstancesAPI(*args, **kwargs)
+        self.views = TemplateViewsAPI(*args, **kwargs)
 
     def graphql_query(self, external_id: str, version: int, query: str) -> GraphQlResponse:
         """
@@ -73,7 +74,8 @@ class TemplateGroupsAPI(APIClient):
             Union[TemplateGroup, TemplateGroupList]: Created template group(s)
 
         Examples:
-            create a new template group:
+            Create a new template group:
+
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import TemplateGroup
                 >>> c = CogniteClient()
@@ -96,7 +98,7 @@ class TemplateGroupsAPI(APIClient):
             Union[TemplateGroup, TemplateGroupList]: Created template group(s)
 
         Examples:
-            create a new template group:
+            Upsert a template group:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import TemplateGroup
@@ -308,8 +310,7 @@ class TemplateInstancesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import TemplateInstance
                 >>> c = CogniteClient()
-                >>> template_instance_1 = TemplateInstance(
-                >>>                               external_id="norway",
+                >>> template_instance_1 = TemplateInstance(external_id="norway",
                 >>>                               template_name="Country",
                 >>>                               field_resolvers={
                 >>>                                   "name": ConstantResolver("Norway"),
@@ -318,8 +319,7 @@ class TemplateInstancesAPI(APIClient):
                 >>>                                   "confirmed": ConstantResolver("Norway_confirmed"),
                 >>>                                   }
                 >>>                               )
-                >>> template_instance_2 = TemplateInstance(
-                >>>                               external_id="norway_demographics",
+                >>> template_instance_2 = TemplateInstance(external_id="norway_demographics",
                 >>>                               template_name="Demographics",
                 >>>                               field_resolvers={
                 >>>                                   "populationSize": ConstantResolver(5328000),
@@ -351,8 +351,7 @@ class TemplateInstancesAPI(APIClient):
              >>> from cognite.client import CogniteClient
              >>> from cognite.client.data_classes import TemplateInstance
              >>> c = CogniteClient()
-             >>> template_instance_1 = TemplateInstance(
-             >>>        external_id="norway",
+             >>> template_instance_1 = TemplateInstance(external_id="norway",
              >>>        template_name="Country",
              >>>        field_resolvers={
              >>>            "name": ConstantResolver("Norway"),
@@ -491,6 +490,175 @@ class TemplateInstancesAPI(APIClient):
         return self._delete_multiple(
             resource_path=resource_path,
             external_ids=external_ids,
+            wrap_ids=True,
+            extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
+        )
+
+
+class TemplateViewsAPI(APIClient):
+    _RESOURCE_PATH = "/templategroups/{}/versions/{}/views"
+    _LIST_CLASS = ViewList
+
+    def create(self, external_id: str, version: int, views: Union[View, List[View]]) -> Union[View, ViewList]:
+        """`Create one or more template views.`
+
+        Args:
+            external_id (str): The external id of the template group.
+            version (int): The version of the template group to create views for.
+            views (Union[View, List[View]]): The views to create.
+
+        Returns:
+            Union[View, ViewList]: Created view(s).
+
+        Examples:
+            Create new views:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import View
+                >>> c = CogniteClient()
+                >>> view = View(external_id="view",
+                >>>             source=Source(
+                >>>                 type: 'events',
+                >>>                 filter: {
+                >>>                     startTime: {
+                >>>                         min: "$startTime"
+                >>>                     },
+                >>>                     type: "Test",
+                >>>                 }
+                >>>                 mappings: {
+                >>>                     author: "metadata/author"
+                >>>                 }
+                >>>             )
+                >>>        )
+                >>> c.templates.views.create("sdk-test-group", 1, [view])
+        """
+        resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
+        return self._create_multiple(resource_path=resource_path, items=views)
+
+    def upsert(self, external_id: str, version: int, views: Union[View, List[View]]) -> Union[View, ViewList]:
+        """`Upsert one or more template views.`
+
+        Args:
+            external_id (str): The external id of the template group.
+            version (int): The version of the template group to create views for.
+            views (Union[View, List[View]]): The views to create.
+
+        Returns:
+            Union[View, ViewList]: Created view(s).
+
+        Examples:
+            Upsert new views:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import View
+                >>> c = CogniteClient()
+                >>> view = View(external_id="view",
+                >>>             source=Source(
+                >>>                 type: 'events',
+                >>>                 filter: {
+                >>>                     startTime: {
+                >>>                         min: "$startTime"
+                >>>                     },
+                >>>                     type: "Test",
+                >>>                 }
+                >>>                 mappings: {
+                >>>                     author: "metadata/author"
+                >>>                 }
+                >>>             )
+                >>>        )
+                >>> c.templates.views.upsert("sdk-test-group", 1, [view])
+        """
+        if isinstance(views, View):
+            views = [views]
+        resource_path = (
+            utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version) + "/upsert"
+        )
+        updated = self._post(resource_path, {"items": [view.dump(camel_case=True) for view in views]}).json()["items"]
+        res = ViewList._load(updated, cognite_client=self._cognite_client)
+        if len(res) == 1:
+            return res[0]
+        return res
+
+    def resolve(
+        self, external_id: str, version: int, view_external_id: str, input: Optional[Dict[str, any]], limit: int = 25
+    ) -> ViewResolveList:
+        """`Resolves a View.`
+        It resolves the source specified in a View with the provided input and applies the mapping rules to the response.
+
+        Args:
+            external_id (str): The external id of the template group.
+            version (int): The version of the template group.
+            input (Optional[Dict[str, any]]): The input for the View.
+            limit (int): Maximum number of views to return. Defaults to 25. Set to -1, float("inf") or None
+                to return all items.
+
+        Returns:
+            ViewResolveList: The resolved items.
+
+        Examples:
+            Resolve view:
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> c.templates.views.resolve("template-group-ext-id", 1, "view", { "startTime": 10 }, limit=5)
+        """
+        url_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version) + "/resolve"
+        return self._list(
+            url_path=url_path,
+            method="POST",
+            cls=ViewResolveList,
+            limit=limit,
+            other_params={"externalId": view_external_id, "input": input},
+        )
+
+    def list(self, external_id: str, version: int, limit: int = 25) -> ViewList:
+        """`Lists view in a template group.`
+        Up to 1000 views can be retrieved in one operation.
+
+        Args:
+            external_id (str): The external id of the template group.
+            version (int): The version of the template group.
+            limit (int): Maximum number of views to return. Defaults to 25. Set to -1, float("inf") or None
+                to return all items.
+
+        Returns:
+            ViewList: List of requested views
+
+        Examples:
+            List views:
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> c.templates.views.list("template-group-ext-id", 1, limit=5)
+        """
+        resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
+        return self._list(resource_path=resource_path, method="POST", limit=limit)
+
+    def delete(
+        self, external_id: str, version: int, view_external_id: Union[List[str], str], ignore_unknown_ids: bool = False
+    ) -> None:
+        """`Delete one or more views.`
+
+        Args:
+            external_id (Union[str, List[str]]): External ID of the template group.
+            version (int): The version of the template group.
+            view_external_id (Union[List[str], str]): The external ids of the views to delete
+            ignore_unknown_ids (bool): Ignore external IDs that are not found rather than throw an exception.
+
+        Returns:
+            None
+
+        Examples:
+            Delete views by external id:
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> c.templates.views.delete("sdk-test-group", 1, external_id=["a", "b"])
+        """
+        resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
+        return self._delete_multiple(
+            resource_path=resource_path,
+            external_ids=view_external_id,
             wrap_ids=True,
             extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
         )
