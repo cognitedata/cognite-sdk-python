@@ -938,6 +938,26 @@ Delete Template instances
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.templates.TemplateInstancesAPI.delete
 
+Create Views
+^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.templates.TemplateViewsAPI.create
+
+Upsert Views
+^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.templates.TemplateViewsAPI.upsert
+
+List Views
+^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.templates.TemplateViewsAPI.list
+
+Resolve View
+^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.templates.TemplateViewsAPI.resolve
+
+Delete Views
+^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.templates.TemplateViewsAPI.delete
+
 Data classes
 ^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.templates

@@ -1,4 +1,8 @@
-from typing import List, Optional
+from collections import UserDict
+from cognite.client.data_classes.assets import AssetFilter
+from enum import Enum, auto
+from cognite.client.data_classes.events import EventFilter
+from typing import List, Optional, Generic
 
 from cognite.client.data_classes._base import *
 
@@ -266,6 +270,106 @@ class TemplateInstanceUpdate(CogniteUpdate):
         return TemplateInstanceUpdate._ObjectAssetUpdate(self, "fieldResolvers")
 
 
+class Source(CogniteResource):
+    """
+    A source defines the data source with filters and a mapping table.
+
+    Args:
+        type (str): The type of source. Possible values are: "events", "assets", "sequences", "timeSeries", "files".
+        filter (Dict[str, any]): The filter to apply to the source when resolving the source. A filter also supports binding view input to the filter, by prefixing the input name with '$'.
+        mappings (Dict[str, str]): The mapping between source result and expected schema.
+    """
+
+    def __init__(
+        self, type: str = None, filter: Dict[str, any] = None, mappings: Dict[str, str] = None, cognite_client=None
+    ) -> None:
+        self.type = type
+        self.filter = filter
+        self.mappings = mappings
+        self._cognite_client = cognite_client
+
+
+class View(CogniteResource):
+    """
+    A view is used to map existing data to a type in the template group. A view supports input, that can be bound to the underlying filter.
+
+    Args:
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        source (Source): Defines the data source for the view.
+    """
+
+    def __init__(
+        self,
+        external_id: str = None,
+        source: Source = None,
+        created_time: int = None,
+        last_updated_time: int = None,
+        cognite_client=None,
+    ):
+        self.external_id = external_id
+        self.source = source
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
+        self._cognite_client = cognite_client
+
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+        """Dump the instance into a json serializable Python data type.
+
+        Args:
+            camel_case (bool): Use camelCase for attribute names. Defaults to False.
+
+        Returns:
+            Dict[str, Any]: A dictionary representation of the instance.
+        """
+        if camel_case:
+            return {
+                utils._auxiliary.to_camel_case(key): View.resolve_nested_classes(value, camel_case)
+                for key, value in self.__dict__.items()
+                if value not in EXCLUDE_VALUE and not key.startswith("_")
+            }
+        return {
+            key: View.resolve_nested_classes(value, camel_case)
+            for key, value in self.__dict__.items()
+            if value not in EXCLUDE_VALUE and not key.startswith("_")
+        }
+
+    def resolve_nested_classes(value, camel_case):
+        if isinstance(value, CogniteResource):
+            return value.dump(camel_case)
+        else:
+            return value
+
+    @classmethod
+    def _load(cls, resource: Union[Dict, str], cognite_client=None):
+        if isinstance(resource, str):
+            return cls._load(json.loads(resource), cognite_client=cognite_client)
+        elif isinstance(resource, Dict):
+            instance = cls(cognite_client=cognite_client)
+            for key, value in resource.items():
+                snake_case_key = utils._auxiliary.to_snake_case(key)
+                if hasattr(instance, snake_case_key):
+                    value = value if key != "source" else Source._load(value, cognite_client)
+                    setattr(instance, snake_case_key, value)
+            return instance
+        raise TypeError("Resource must be json str or Dict, not {}".format(type(resource)))
+
+
+class ViewResolveItem(UserDict):
+    def __init__(self, data: Dict[str, any], cognite_client=None) -> None:
+        self._cognite_client = cognite_client
+        super().__init__(data)
+
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+        return self.data
+
+    @classmethod
+    def _load(cls, data: Union[Dict, str], cognite_client=None):
+        if isinstance(data, str):
+            return cls._load(json.loads(data), cognite_client=cognite_client)
+        elif isinstance(data, Dict):
+            return cls(data, cognite_client=cognite_client)
+
+
 class GraphQlError(CogniteResource):
     def __init__(
         self, message: str = None, path: List[str] = None, locations: List[Dict[str, Any]] = None, cognite_client=None
@@ -285,4 +389,14 @@ class GraphQlResponse(CogniteResource):
 
 class TemplateInstanceList(CogniteResourceList):
     _RESOURCE = TemplateInstance
+    _UPDATE = CogniteUpdate
+
+
+class ViewList(CogniteResourceList):
+    _RESOURCE = View
+    _UPDATE = CogniteUpdate
+
+
+class ViewResolveList(CogniteResourceList):
+    _RESOURCE = ViewResolveItem
     _UPDATE = CogniteUpdate
