@@ -83,15 +83,19 @@ def new_template_instance(new_template_group_version):
 def new_view(new_template_group_version):
     events = []
     for i in range(0, 1001):
-        events.append(Event(external_id="test_evt_templates_" + uuid.uuid4().hex[0:20], type="test_templates", start_time=i * 1000))
-    API.events.create(events)
+        events.append(Event(external_id="test_evt_templates_1_" + str(i), type="test_templates_1", start_time=i * 1000))
+    try:
+        API.events.create(events)
+    except:
+        # We only generate this data once for a given project, to prevent issues with eventual consistency etc.
+        None
 
     new_group, ext_id, new_version = new_template_group_version
     view = View(
         external_id="test",
         source=Source(
             type="events",
-            filter={"startTime": {"min": "$minStartTime"}, "type": "test_templates"},
+            filter={"startTime": {"min": "$minStartTime"}, "type": "test_templates_1"},
             mappings={"test_type": "type", "startTime": "startTime"},
         ),
     )
@@ -99,7 +103,6 @@ def new_view(new_template_group_version):
     yield new_group, ext_id, new_version, view
     try:
         API_VIEWS.delete(ext_id, new_version.version, view.external_id)
-        API.events.delete(external_id=[event.external_id for event in events])
     except:
         None
 
@@ -226,12 +229,12 @@ class TestTemplatesAPI:
         res = API_VIEWS.resolve(
             ext_id, new_version.version, view.external_id, input={"minStartTime": 10 * 1000}, limit=10
         )
-        assert res == [{"startTime": (i + 10) * 1000, "test_type": "test_templates"} for i in range(0, 10)]
+        assert res == [{"startTime": (i + 10) * 1000, "test_type": "test_templates_1"} for i in range(0, 10)]
 
     def test_view_resolve_pagination(self, new_view):
         new_group, ext_id, new_version, view = new_view
         res = API_VIEWS.resolve(ext_id, new_version.version, view.external_id, input={"minStartTime": 0}, limit=-1)
-        assert res == [{"startTime": i * 1000, "test_type": "test_templates"} for i in range(0, 1001)]
+        assert res == [{"startTime": i * 1000, "test_type": "test_templates_1"} for i in range(0, 1001)]
 
     def test_view_upsert(self, new_view):
         new_group, ext_id, new_version, view = new_view
