@@ -83,11 +83,8 @@ def new_template_instance(new_template_group_version):
 def new_view(new_template_group_version):
     events = []
     for i in range(0, 1001):
-        events.append(Event(external_id="test_evt_templates_" + str(i), type="test_templates", start_time=i * 1000))
-    try:
-        API.events.create(events)
-    except:
-        None
+        events.append(Event(external_id="test_evt_templates_" + uuid.uuid4().hex[0:20], type="test_templates", start_time=i * 1000))
+    API.events.create(events)
 
     new_group, ext_id, new_version = new_template_group_version
     view = View(
@@ -102,6 +99,7 @@ def new_view(new_template_group_version):
     yield new_group, ext_id, new_version, view
     try:
         API_VIEWS.delete(ext_id, new_version.version, view.external_id)
+        API.events.delete(external_id=[event.external_id for event in events])
     except:
         None
 
