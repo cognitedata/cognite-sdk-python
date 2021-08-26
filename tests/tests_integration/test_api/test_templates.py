@@ -1,5 +1,5 @@
 from cognite.client.data_classes.events import Event
-from cognite.client.data_classes.templates import Source, TemplateInstanceUpdate, View
+from cognite.client.data_classes.templates import Source, TemplateInstanceUpdate, View, ViewResolver
 import uuid
 
 import pytest
@@ -50,6 +50,7 @@ def new_template_group_version(new_template_group):
 
     type Country @template {
         name: String,
+        testView: Long,
         demographics: Demographics,
         deaths: TimeSeries,
         confirmed: TimeSeries,
@@ -69,6 +70,7 @@ def new_template_instance(new_template_group_version):
         template_name="Country",
         field_resolvers={
             "name": ConstantResolver("Norway"),
+            "testView": ViewResolver("test", {"type": "bar"}),
             "demographics": ConstantResolver("norway_demographics"),
             "deaths": ConstantResolver("Norway_deaths"),
             "confirmed": ConstantResolver("Norway_confirmed"),

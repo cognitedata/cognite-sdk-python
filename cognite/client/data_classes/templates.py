@@ -154,7 +154,22 @@ class SyntheticTimeSeriesResolver(CogniteResource):
         self._cognite_client = cognite_client
 
 
-FieldResolvers = Union[ConstantResolver, RawResolver, SyntheticTimeSeriesResolver, str]
+class ViewResolver(CogniteResource):
+    """Resolves the field by loading the data from a view.
+
+    Args:
+        external_id (str): The external id of the view.
+        input (Optional[Dict[str, any]]): The input used to resolve the view.
+    """
+
+    def __init__(self, external_id: str = None, input: Optional[Dict[str, any]] = None, cognite_client=None) -> None:
+        self.type = "view"
+        self.external_id = external_id
+        self.input = input
+        self._cognite_client = cognite_client
+
+
+FieldResolvers = Union[ConstantResolver, RawResolver, SyntheticTimeSeriesResolver, str, ViewResolver]
 
 
 class TemplateInstance(CogniteResource):
@@ -191,6 +206,7 @@ class TemplateInstance(CogniteResource):
         "constant": ConstantResolver,
         "syntheticTimeSeries": SyntheticTimeSeriesResolver,
         "raw": RawResolver,
+        "view": ViewResolver,
     }
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
