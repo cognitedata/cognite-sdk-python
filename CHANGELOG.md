@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.31.0] - 2021-08-26
+### Added
+- View resolver for template fields.
+
 ## [2.30.0] - 2021-08-18
 ### Added
 - Support for Template Views
