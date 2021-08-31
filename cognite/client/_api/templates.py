@@ -484,7 +484,7 @@ class TemplateInstancesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> c.templates.instances.delete("sdk-test-group", 1, external_id=["a", "b"])
+                >>> c.templates.instances.delete("sdk-test-group", 1, external_ids=["a", "b"])
         """
         resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
         return self._delete_multiple(
