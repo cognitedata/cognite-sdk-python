@@ -28,16 +28,28 @@ def new_transformation():
     assert COGNITE_CLIENT.transformations.retrieve(ts.id) is None
 
 
-@pytest.fixture
-def new_schedule(new_transformation):
-    schedule = TransformationSchedule(id=new_transformation.id, interval="0 * * * *")
+other_transformation = new_transformation
+
+
+def schedule_from_transformation(transformation):
+    schedule = TransformationSchedule(id=transformation.id, interval="0 * * * *")
     tsc = COGNITE_CLIENT.transformations.schedules.create(schedule)
 
     yield tsc
 
     COGNITE_CLIENT.transformations.schedules.delete(id=tsc.id)
     assert COGNITE_CLIENT.transformations.schedules.retrieve(tsc.id) is None
-    assert tsc.id == new_transformation.id
+    assert tsc.id == transformation.id
+
+
+@pytest.fixture
+def new_schedule(new_transformation):
+    yield from schedule_from_transformation(new_transformation)
+
+
+@pytest.fixture
+def other_schedule(other_transformation):
+    yield from schedule_from_transformation(other_transformation)
 
 
 class TestTransformationSchedulesAPI:
@@ -53,11 +65,29 @@ class TestTransformationSchedulesAPI:
     def test_retrieve(self, new_schedule: TransformationSchedule):
         retrieved_schedule = COGNITE_CLIENT.transformations.schedules.retrieve(new_schedule.id)
         assert (
-            new_schedule.id == new_schedule.id
+            new_schedule.id == retrieved_schedule.id
             and new_schedule.request_scheduler_id == retrieved_schedule.request_scheduler_id
             and new_schedule.interval == retrieved_schedule.interval
             and new_schedule.is_paused == retrieved_schedule.is_paused
         )
+
+    def test_retrieve_multiple(self, new_schedule: TransformationSchedule, other_schedule: TransformationSchedule):
+        assert new_schedule.id != other_schedule.id
+        ids = [new_schedule.id, other_schedule.id]
+        retrieved_schedules = COGNITE_CLIENT.transformations.schedules.retrieve_multiple(ids=ids)
+        assert len(retrieved_schedules) == 2
+        for retrieved_schedule in retrieved_schedules:
+            assert (
+                new_schedule.id == retrieved_schedule.id
+                and new_schedule.request_scheduler_id == retrieved_schedule.request_scheduler_id
+                and new_schedule.interval == retrieved_schedule.interval
+                and new_schedule.is_paused == retrieved_schedule.is_paused
+            ) or (
+                other_schedule.id == retrieved_schedule.id
+                and other_schedule.request_scheduler_id == retrieved_schedule.request_scheduler_id
+                and other_schedule.interval == retrieved_schedule.interval
+                and other_schedule.is_paused == retrieved_schedule.is_paused
+            )
 
     def test_update_full(self, new_schedule):
         new_schedule.interval = "5 * * * *"

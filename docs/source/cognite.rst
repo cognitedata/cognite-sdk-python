@@ -1128,6 +1128,10 @@ Retrieve transformation schedules
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.experimental._api.transformation_schedules.TransformationSchedulesAPI.retrieve
 
+Retrieve multiple transformation schedules
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.experimental._api.transformation_schedules.TransformationSchedulesAPI.retrieve_multiple
+
 List transformation schedules
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.experimental._api.transformation_schedules.TransformationSchedulesAPI.list

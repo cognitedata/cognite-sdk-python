@@ -76,6 +76,49 @@ class TransformationSchedulesAPI(APIClient):
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
         return self._retrieve_multiple(ids=id, external_ids=external_id, wrap_ids=True)
 
+    def retrieve_multiple(
+        self,
+        ids: Optional[List[int]] = None,
+        external_ids: Optional[List[str]] = None,
+        include_public: bool = True,
+        ignore_unknown_ids: bool = False,
+    ) -> TransformationScheduleList:
+        """`Retrieve multiple transformation schedules by the ids or external ids of the corresponding transformations. <https://docs.cognite.com/api/playground/#operation/getTransformationSchedule>`_
+
+        Args:
+            ids (int, optional): transformation IDs
+            external_ids (str, optional): transformation External IDs
+            include_public (bool): Whether public transformations should be included in the results. (default true).
+            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
+
+        Returns:
+            TransformationScheduleList: Requested transformation schedules.
+
+        Examples:
+
+            Get transformation schedules by transformation ids:
+
+                >>> from cognite.experimental import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.transformations.schedules.retrieve_multiple(ids=[1, 2, 3])
+
+            Get transformation schedules by transformation external ids:
+
+                >>> from cognite.experimental import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.transformations.schedules.retrieve_multiple(external_ids=["t1", "t2"])
+        """
+        utils._auxiliary.assert_type(ids, "id", [List], allow_none=True)
+        utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=True)
+        filter = TransformationFilter(include_public=include_public).dump(camel_case=True)
+        return self._retrieve_multiple(
+            ids=ids,
+            external_ids=external_ids,
+            ignore_unknown_ids=ignore_unknown_ids,
+            wrap_ids=True,
+            other_params=filter,
+        )
+
     def list(
         self, include_public: bool = True, limit: Optional[int] = 25,
     ) -> TransformationScheduleList:
