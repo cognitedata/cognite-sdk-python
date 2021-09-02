@@ -10,9 +10,10 @@ from cognite.client.data_classes import (
     TransformationJobBlockade,
     TransformationList,
     TransformationNotification,
-    TransformationNotificationFilter,
     TransformationNotificationList,
 )
+
+from cognite.client.data_classes.transformation_notifications import TransformationNotificationFilter
 
 
 class TransformationNotificationsAPI(APIClient):

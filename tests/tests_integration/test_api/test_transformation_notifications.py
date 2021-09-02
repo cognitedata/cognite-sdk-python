@@ -3,8 +3,8 @@ import string
 
 import pytest
 
-from cognite.experimental import CogniteClient
-from cognite.experimental.data_classes import Transformation, TransformationDestination, TransformationNotification
+from cognite.client import CogniteClient
+from cognite.client.data_classes import Transformation, TransformationDestination, TransformationNotification
 
 COGNITE_CLIENT = CogniteClient()
 prefix = "".join(random.choice(string.ascii_letters) for i in range(6))

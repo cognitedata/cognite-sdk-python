@@ -7,6 +7,7 @@ from requests import Response
 
 from cognite.client._api.transformation_notifications import TransformationNotificationsAPI
 from cognite.client._api.transformation_schedules import TransformationSchedulesAPI
+from cognite.client._api.transformation_schema import TransformationSchemaAPI
 from cognite.client.data_classes import Transformation, TransformationList
 from cognite.client.data_classes.transformations import TransformationFilter, TransformationUpdate
 
@@ -19,6 +20,7 @@ class TransformationsAPI(APIClient):
         super().__init__(*args, **kwargs)
         # self.jobs = TransformationJobsAPI(*args, **kwargs)
         self.schedules = TransformationSchedulesAPI(*args, **kwargs)
+        self.schema = TransformationSchemaAPI(*args, **kwargs)
         self.notifications = TransformationNotificationsAPI(*args, **kwargs)
 
     def create(

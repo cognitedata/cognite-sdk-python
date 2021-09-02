@@ -9,13 +9,14 @@ from cognite.client.data_classes import (
     OidcCredentials,
     Transformation,
     TransformationDestination,
-    TransformationFilter,
     TransformationJobBlockade,
     TransformationList,
     TransformationSchedule,
     TransformationScheduleList,
     TransformationScheduleUpdate,
 )
+
+from cognite.client.data_classes.transformations import TransformationFilter
 
 
 class TransformationSchedulesAPI(APIClient):

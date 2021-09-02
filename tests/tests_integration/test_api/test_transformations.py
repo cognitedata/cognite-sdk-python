@@ -23,6 +23,16 @@ class TestTransformationsAPI:
         ts = COGNITE_CLIENT.transformations.create(transform)
         COGNITE_CLIENT.transformations.delete(id=ts.id)
 
+    def test_create_asset_hierarchy_transformation(self):
+        transform = Transformation(name="any", destination=TransformationDestination.asset_hierarchy())
+        ts = COGNITE_CLIENT.transformations.create(transform)
+        COGNITE_CLIENT.transformations.delete(id=ts.id)
+
+    def test_create_string_datapoints_transformation(self):
+        transform = Transformation(name="any", destination=TransformationDestination.string_datapoints())
+        ts = COGNITE_CLIENT.transformations.create(transform)
+        COGNITE_CLIENT.transformations.delete(id=ts.id)
+
     def test_create(self, new_transformation):
         assert (
             new_transformation.name == "any"

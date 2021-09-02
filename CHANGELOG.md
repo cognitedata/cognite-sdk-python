@@ -20,6 +20,7 @@ Changes are grouped as follows
 - `transformations` api client, which allows the creation, deletion, update and retrieval of transformations.
 - `transformations.schedules` api client, which allows the schedule, unschedule and retrieval of recurring runs of a transformation.
 - `transformations.notifications` api client, which allows the creation, deletion and retrieval of transformation email notifications.
+- `transformations.schema` api client, which allows the retrieval of the expected schema of sql transformations based on the destination data type.
 
 ## [2.34.0] - 2021-11-5
 ### Added
