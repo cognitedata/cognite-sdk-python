@@ -55,6 +55,7 @@ def new_notification_by_external_id(new_transformation):
     )
 
 
+@pytest.mark.skip("skipping while configId renaming is finished on API")
 class TestTransformationNotificationsAPI:
     def test_create(self, new_notification: TransformationNotification):
         assert (

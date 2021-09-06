@@ -1,14 +1,13 @@
-import json as _json
-from typing import List, Optional, Union
+from typing import Awaitable, List, Optional, Union
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from requests import Response
 
+from cognite.client._api.transformation_jobs import TransformationJobsAPI
 from cognite.client._api.transformation_notifications import TransformationNotificationsAPI
 from cognite.client._api.transformation_schedules import TransformationSchedulesAPI
 from cognite.client._api.transformation_schema import TransformationSchemaAPI
-from cognite.client.data_classes import Transformation, TransformationList
+from cognite.client.data_classes import Transformation, TransformationList, TransformationJob
 from cognite.client.data_classes.transformations import TransformationFilter, TransformationUpdate
 
 
@@ -18,7 +17,7 @@ class TransformationsAPI(APIClient):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # self.jobs = TransformationJobsAPI(*args, **kwargs)
+        self.jobs = TransformationJobsAPI(*args, **kwargs)
         self.schedules = TransformationSchedulesAPI(*args, **kwargs)
         self.schema = TransformationSchemaAPI(*args, **kwargs)
         self.notifications = TransformationNotificationsAPI(*args, **kwargs)
@@ -43,7 +42,7 @@ class TransformationsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> transformations = [
                 >>>     Transformation(
-                >>>         name="transformation1", 
+                >>>         name="transformation1",
                 >>>         destination=TransformationDestination.assets()
                 >>>     ),
                 >>>     Transformation(
@@ -156,3 +155,83 @@ class TransformationsAPI(APIClient):
                 >>> res = c.transformations.update(my_update)
         """
         return self._update_multiple(items=item)
+
+    def run(
+        self, transformation_id: int = None, transformation_external_id: str = None, wait: bool = True
+    ) -> TransformationJob:
+        """`Run a transformation. <https://docs.cognite.com/api/playground/#operation/runTransformation>`_
+
+        Args:
+            transformation_id (int): internal Transformation id
+            transformation_external_id (str): external Transformation id
+            wait (bool): Wait until the transformation run is finished. Defaults to True.
+
+        Returns:
+            Created transformation job
+
+        Examples:
+
+            Run transformation to completion by id:
+
+                >>> from cognite.experimental import CogniteClient
+                >>> c = CogniteClient()
+                >>>
+                >>> res = c.transformations.run(id = 1)
+
+            Start running transformation by id:
+
+                >>> from cognite.experimental import CogniteClient
+                >>> c = CogniteClient()
+                >>>
+                >>> res = c.transformations.run(id = 1, wait = False)
+        """
+        utils._auxiliary.assert_exactly_one_of_id_or_external_id(transformation_id, transformation_external_id)
+
+        if transformation_external_id:
+            transformation_id = self.retrieve(external_id=transformation_external_id).id
+
+        response = self._post(
+            url_path=utils._auxiliary.interpolate_and_url_encode(
+                self._RESOURCE_PATH + "/{}/run", str(transformation_id)
+            )
+        )
+        job = TransformationJob._load(response.json(), cognite_client=self._cognite_client)
+
+        if wait:
+            return job.wait()
+
+        return job
+
+    def run_async(
+        self, transformation_id: int = None, transformation_external_id: str = None
+    ) -> Awaitable[TransformationJob]:
+        """`Run a transformation to completion asynchronously. <https://docs.cognite.com/api/playground/#operation/runTransformation>`_
+
+        Args:
+            transformation_id (int): internal Transformation id
+            transformation_external_id (str): external Transformation id
+
+        Returns:
+            Completed transformation job
+
+        Examples:
+
+            Run transformation asyncronously by id:
+
+                >>> import asyncio
+                >>> from cognite.experimental import CogniteClient
+                >>>
+                >>> c = CogniteClient()
+                >>>
+                >>> async def run_transformation():
+                >>>     res = await c.transformations.run_async(id = 1)
+                >>>
+                >>> loop = asyncio.get_event_loop()
+                >>> loop.run_until_complete(run_transformation())
+                >>> loop.close()
+        """
+
+        job = self.run(
+            transformation_id=transformation_id, transformation_external_id=transformation_external_id, wait=False
+        )
+        return job.wait_async()

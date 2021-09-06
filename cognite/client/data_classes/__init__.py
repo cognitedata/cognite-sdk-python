@@ -107,6 +107,7 @@ from cognite.client.data_classes.data_sets import (  # isort: skip
     DataSetUpdate,
 )
 
+from cognite.client.data_classes.transformation_jobs import TransformationJob, TransformationJobList, TransformationJobStatus
 from cognite.client.data_classes.transformation_notifications import TransformationNotification, TransformationNotificationList
 from cognite.client.data_classes.transformation_schedules import TransformationSchedule, TransformationScheduleList, TransformationScheduleUpdate
 from cognite.client.data_classes.transformation_schema import TransformationSchemaColumn, TransformationSchemaColumnList
