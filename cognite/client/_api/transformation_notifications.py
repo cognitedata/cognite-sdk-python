@@ -41,7 +41,7 @@ class TransformationNotificationsAPI(APIClient):
                 >>> from cognite.experimental import CogniteClient
                 >>> from cognite.experimental.data_classes import TransformationNotification
                 >>> c = CogniteClient()
-                >>> notifications = [TransformationNotification(config_id = 1, destination="my@email.com"), TransformationNotification(config_external_id="transformation2", destination="other@email.com"))]
+                >>> notifications = [TransformationNotification(transformation_id = 1, destination="my@email.com"), TransformationNotification(transformation_external_id="transformation2", destination="other@email.com"))]
                 >>> res = c.transformations.notifications.create(notifications)
         """
         utils._auxiliary.assert_type(notification, "notification", [TransformationNotification, list])
@@ -49,15 +49,15 @@ class TransformationNotificationsAPI(APIClient):
 
     def list(
         self,
-        config_id: Optional[int] = None,
-        config_external_id: str = None,
+        transformation_id: Optional[int] = None,
+        transformation_external_id: str = None,
         limit: Optional[int] = 25,
     ) -> TransformationNotificationList:
         """`List notification subscriptions. <https://docs.cognite.com/api/playground/#operation/listTransformationNotifications>`_
 
         Args:
-            config_id (Optional[int]): List only notifications for the specified transformation. The transformation is identified by internal numeric ID.
-            config_external_id (str): List only notifications for the specified transformation. The transformation is identified by externalId.
+            transformation_id (Optional[int]): List only notifications for the specified transformation. The transformation is identified by internal numeric ID.
+            transformation_external_id (str): List only notifications for the specified transformation. The transformation is identified by externalId.
             limit (int): Limits the number of results to be returned. To retrieve all results use limit=-1, default limit is 25.
 
         Returns:
@@ -75,17 +75,17 @@ class TransformationNotificationsAPI(APIClient):
 
                 >>> from cognite.experimental import CogniteClient
                 >>> c = CogniteClient()
-                >>> notifications_list = c.transformations.notifications.list(config_id = 1)
+                >>> notifications_list = c.transformations.notifications.list(transformation_id = 1)
 
             List all notifications by transformation external id::
 
                 >>> from cognite.experimental import CogniteClient
                 >>> c = CogniteClient()
-                >>> notifications_list = c.transformations.notifications.list(config_external_id = "myExternalId")
+                >>> notifications_list = c.transformations.notifications.list(transformation_external_id = "myExternalId")
         """
-        filter = TransformationNotificationFilter(config_id=config_id, config_external_id=config_external_id).dump(
-            camel_case=True
-        )
+        filter = TransformationNotificationFilter(
+            transformation_id=transformation_id, transformation_external_id=transformation_external_id
+        ).dump(camel_case=True)
 
         return self._list(method="GET", limit=limit, filter=filter,)
 

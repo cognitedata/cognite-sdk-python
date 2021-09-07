@@ -30,20 +30,20 @@ def new_transformation():
 
 @pytest.fixture
 def new_notification(new_transformation):
-    notification = TransformationNotification(config_id=new_transformation.id, destination="my@email.com")
+    notification = TransformationNotification(transformation_id=new_transformation.id, destination="my@email.com")
     tn = COGNITE_CLIENT.transformations.notifications.create(notification)
 
     yield tn
 
     COGNITE_CLIENT.transformations.notifications.delete(id=tn.id)
-    assert len(COGNITE_CLIENT.transformations.notifications.list(config_id=new_transformation.id)) == 0
-    assert tn.config_id == new_transformation.id
+    assert len(COGNITE_CLIENT.transformations.notifications.list(transformation_id=new_transformation.id)) == 0
+    assert tn.transformation_id == new_transformation.id
 
 
 @pytest.fixture
 def new_notification_by_external_id(new_transformation):
     notification = TransformationNotification(
-        config_external_id=new_transformation.external_id, destination="my@email.com"
+        transformation_external_id=new_transformation.external_id, destination="my@email.com"
     )
     tn = COGNITE_CLIENT.transformations.notifications.create(notification)
 
@@ -51,11 +51,13 @@ def new_notification_by_external_id(new_transformation):
 
     COGNITE_CLIENT.transformations.notifications.delete(id=tn.id)
     assert (
-        len(COGNITE_CLIENT.transformations.notifications.list(config_external_id=new_transformation.external_id)) == 0
+        len(
+            COGNITE_CLIENT.transformations.notifications.list(transformation_external_id=new_transformation.external_id)
+        )
+        == 0
     )
 
 
-@pytest.mark.skip("skipping while configId renaming is finished on API")
 class TestTransformationNotificationsAPI:
     def test_create(self, new_notification: TransformationNotification):
         assert (
@@ -80,7 +82,7 @@ class TestTransformationNotificationsAPI:
 
     def test_list_by_id(self, new_notification):
         retrieved_notifications = COGNITE_CLIENT.transformations.notifications.list(
-            config_id=new_notification.config_id
+            transformation_id=new_notification.transformation_id
         )
         assert new_notification.id in [notification.id for notification in retrieved_notifications]
         assert len(retrieved_notifications) == 1
@@ -88,6 +90,8 @@ class TestTransformationNotificationsAPI:
     def test_list_by_external_id(self, new_notification_by_external_id):
         new_notification = new_notification_by_external_id[0]
         external_id = new_notification_by_external_id[1]
-        retrieved_notifications = COGNITE_CLIENT.transformations.notifications.list(config_external_id=external_id)
+        retrieved_notifications = COGNITE_CLIENT.transformations.notifications.list(
+            transformation_external_id=external_id
+        )
         assert new_notification.id in [notification.id for notification in retrieved_notifications]
         assert len(retrieved_notifications) == 1

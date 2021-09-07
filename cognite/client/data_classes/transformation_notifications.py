@@ -6,8 +6,8 @@ class TransformationNotification(CogniteResource):
 
     Args:
         id (int): A server-generated ID for the object.
-        config_id (int): Transformation Id.
-        config_external_id (str): Transformation external Id.
+        transformation_id (int): Transformation Id.
+        transformation_external_id (str): Transformation external Id.
         destination (str): Email address where notifications should be sent.
         created_time (int): Time when the notification was created.
         last_updated_time (int): Time when the notification was last updated.
@@ -17,16 +17,16 @@ class TransformationNotification(CogniteResource):
     def __init__(
         self,
         id: int = None,
-        config_id: int = None,
-        config_external_id: str = None,
+        transformation_id: int = None,
+        transformation_external_id: str = None,
         destination: str = None,
         created_time: int = None,
         last_updated_time: int = None,
         cognite_client=None,
     ):
         self.id = id
-        self.config_id = config_id
-        self.config_external_id = config_external_id
+        self.transformation_id = transformation_id
+        self.transformation_external_id = transformation_external_id
         self.destination = destination
         self.created_time = created_time
         self.last_updated_time = last_updated_time
@@ -47,13 +47,13 @@ class TransformationNotificationList(CogniteResourceList):
 
 
 class TransformationNotificationFilter(CogniteFilter):
-    """No description.
+    """
 
     Args:
         config_id (Optional[int]): List only notifications for the specified transformation. The transformation is identified by internal numeric ID.
         config_external_id (str): List only notifications for the specified transformation. The transformation is identified by externalId.
     """
 
-    def __init__(self, config_id: Optional[int] = None, config_external_id: str = None):
-        self.config_id = config_id
-        self.config_external_id = config_external_id
+    def __init__(self, transformation_id: Optional[int] = None, transformation_external_id: str = None):
+        self.config_id = transformation_id
+        self.config_external_id = transformation_external_id
