@@ -125,6 +125,26 @@ class TransformationsAPI(APIClient):
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
         return self._retrieve_multiple(ids=id, external_ids=external_id, wrap_ids=True)
 
+    def retrieve_multiple(self, ids: List[int] = None, external_ids: List[str] = None) -> TransformationList:
+        """`Retrieve multiple transformations. <https://docs.cognite.com/api/playground/#operation/getTransformation>`_
+
+        Args:
+            ids (List[int]): List of ids to retrieve
+            external_ids (List[str]): List of external ids to retrieve
+
+        Returns:
+            TransformationList: Requested transformation or None if it does not exist.
+
+        Examples:
+
+            Get multiple transformations:
+
+                >>> from cognite.experimental import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.transformations.retrieve_multiple(ids=[1,2,3], external_ids=['transform-1','transform-2'])
+        """
+        return self._retrieve_multiple(ids=ids, external_ids=external_ids, wrap_ids=True)
+
     def update(
         self, item: Union[Transformation, TransformationUpdate, List[Union[Transformation, TransformationUpdate]]]
     ) -> Union[Transformation, TransformationList]:

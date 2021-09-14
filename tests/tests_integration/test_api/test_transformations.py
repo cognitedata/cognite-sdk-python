@@ -7,11 +7,11 @@ from cognite.client import CogniteClient
 from cognite.client.data_classes import Transformation, TransformationDestination, TransformationUpdate, TransformationJob, TransformationJobStatus
 
 COGNITE_CLIENT = CogniteClient()
-prefix = "".join(random.choice(string.ascii_letters) for i in range(6))
 
 
 @pytest.fixture
 def new_transformation():
+    prefix = "".join(random.choice(string.ascii_letters) for i in range(6))
     transform = Transformation(
         name="any",
         external_id=f"{prefix}-transformation",
@@ -27,6 +27,9 @@ def new_transformation():
 
     COGNITE_CLIENT.transformations.delete(id=ts.id)
     assert COGNITE_CLIENT.transformations.retrieve(ts.id) is None
+
+
+other_transformation = new_transformation
 
 
 class TestTransformationsAPI:
@@ -59,6 +62,15 @@ class TestTransformationsAPI:
             and new_transformation.destination.type == retrieved_transformation.destination.type
             and new_transformation.id == retrieved_transformation.id
         )
+
+    def test_retrieve_multiple(self, new_transformation, other_transformation):
+        retrieved_transformations = COGNITE_CLIENT.transformations.retrieve_multiple(
+            ids=[new_transformation.id, other_transformation.id]
+        )
+        assert len(retrieved_transformations) == 2
+        assert new_transformation.id in [
+            transformation.id for transformation in retrieved_transformations
+        ] and other_transformation.id in [transformation.id for transformation in retrieved_transformations]
 
     def test_update_full(self, new_transformation):
         new_transformation.name = "new name"
@@ -142,7 +154,7 @@ class TestTransformationsAPI:
 
     @pytest.mark.asyncio
     async def test_run_by_external_id_async(self, new_transformation: Transformation):
-        job = await COGNITE_CLIENT.transformations.run_async(transformation_external_id=f"{prefix}-transformation")
+        job = await COGNITE_CLIENT.transformations.run_async(transformation_external_id=new_transformation.external_id)
 
         assert (
             job.id is not None

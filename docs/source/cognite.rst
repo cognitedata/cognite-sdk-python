@@ -1105,6 +1105,8 @@ Retrieve transformations by id
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.experimental._api.transformations.TransformationsAPI.retrieve
 
+.. automethod:: cognite.experimental._api.transformations.TransformationsAPI.retrieve_multiple
+
 Run transformations by id
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.experimental._api.transformations.TransformationsAPI.run
