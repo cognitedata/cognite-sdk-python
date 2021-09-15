@@ -5,6 +5,8 @@ from uuid import UUID
 
 from cognite.client.data_classes._base import *
 
+from cognite.client.data_classes.transformations import *
+
 
 class TransformationJobStatus(str, Enum):
     RUNNING = "Running"
@@ -45,9 +47,7 @@ class TransformationJob(CogniteResource):
         transformation_id: int = None,
         source_project: str = None,
         destination_project: str = None,
-        destination_type: str = None,
-        destination_database: str = None,
-        destination_table: str = None,
+        destination: TransformationDestination = None,
         conflict_mode: str = None,
         raw_query: str = None,
         error: str = None,
@@ -64,9 +64,7 @@ class TransformationJob(CogniteResource):
         self.transformation_id = transformation_id
         self.source_project = source_project
         self.destination_project = destination_project
-        self.destination_type = destination_type
-        self.destination_database = destination_database
-        self.destination_table = destination_table
+        self.destination = destination
         self.conflict_mode = conflict_mode
         self.raw_query = raw_query
         self.error = error
@@ -147,6 +145,12 @@ class TransformationJob(CogniteResource):
     @classmethod
     def _load(cls, resource: Union[Dict, str], cognite_client=None):
         instance = super(TransformationJob, cls)._load(resource, cognite_client)
+        if isinstance(instance.destination, Dict):
+            snake_dict = {utils._auxiliary.to_snake_case(key): value for (key, value) in instance.destination.items()}
+            if instance.destination.get("type") == "raw_table":
+                instance.destination = RawTable(**snake_dict)
+            else:
+                instance.destination = TransformationDestination(**snake_dict)
         return instance
 
     def __hash__(self):

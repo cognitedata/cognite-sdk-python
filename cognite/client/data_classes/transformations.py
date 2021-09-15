@@ -1,6 +1,6 @@
 from cognite.client.data_classes._base import *
 
-from cognite.client.data_classes.transformation_jobs import TransformationJob
+from cognite.client.data_classes.transformation_jobs import *
 
 
 class TransformationDestination:
@@ -183,11 +183,14 @@ class Transformation(CogniteResource):
         self.owner_is_current_user = owner_is_current_user
         self._cognite_client = cognite_client
 
-    def run(self, wait: bool = True) -> TransformationJob:
+    def run(self, wait: bool = True) -> "TransformationJob":
         return self._cognite_client.transformations.run(transformation_id=self.id, wait=wait)
 
-    def run_async(self) -> Awaitable[TransformationJob]:
+    def run_async(self) -> Awaitable["TransformationJob"]:
         return self._cognite_client.transformations.run_async(transformation_id=self.id)
+
+    def jobs(self) -> "TransformationJobList":
+        return self._cognite_client.transformations.jobs.list(transformation_id=self.id)
 
     @classmethod
     def _load(cls, resource: Union[Dict, str], cognite_client=None):
