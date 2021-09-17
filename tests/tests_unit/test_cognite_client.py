@@ -219,33 +219,6 @@ class TestCogniteClient:
             client = CogniteClient()
         self.assert_config_is_correct(client._config, *environment_client_config)
 
-    @pytest.fixture
-    def thread_local_credentials_module(self):
-        credentials_module = types.ModuleType("cognite._thread_local")
-        credentials_module.credentials = threading.local()
-        sys.modules["cognite._thread_local"] = credentials_module
-        yield
-        del sys.modules["cognite._thread_local"]
-
-    def create_client_and_check_config(self, i):
-        from cognite._thread_local import credentials
-
-        api_key = "thread-local-api-key{}".format(i)
-        project = "thread-local-project{}".format(i)
-
-        credentials.api_key = api_key
-        credentials.project = project
-
-        sleep(random.random())
-        client = CogniteClient()
-
-        assert api_key == client.config.api_key
-        assert project == client.config.project
-
-    def test_create_client_thread_local_config(self, thread_local_credentials_module):
-        with ThreadPool() as pool:
-            pool.map(self.create_client_and_check_config, list(range(16)))
-
     def test_client_debug_mode(self, rsps_with_login_mock):
         with unset_env_var("COGNITE_PROJECT"), set_env_var("COGNITE_API_KEY", "bla"):
             CogniteClient(debug=True)
