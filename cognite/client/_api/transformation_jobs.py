@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -62,3 +62,24 @@ class TransformationJobsAPI(APIClient):
                 >>> res = c.transformations.retrieve(id=1)
         """
         return self._retrieve(id=id)
+
+    def retrieve_multiple(self, ids: List[int], ignore_unknown_ids: bool = False) -> TransformationJobList:
+        """`Retrieve multiple transformation jobs by id. <https://docs.cognite.com/api/playground/#operation/getTransformationJob>`_
+
+        Args:
+            ids (List[int]): Job internal Ids
+            ignore_unknown_ids (bool): Ignore IDs that are not found rather than throw an exception.
+
+        Returns:
+            TransformationJobList: Requested transformation jobs.
+
+        Examples:
+
+            Get jobs by id::
+
+                >>> from cognite.experimental import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.transformations.jobs.retrieve_multiple(ids=[1, 2, 3])
+        """
+        utils._auxiliary.assert_type(ids, "id", [List], allow_none=True)
+        return self._retrieve_multiple(ids=ids, ignore_unknown_ids=ignore_unknown_ids, wrap_ids=True)

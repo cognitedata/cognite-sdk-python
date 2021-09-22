@@ -1172,6 +1172,8 @@ Retrieve transformation jobs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.experimental._api.transformation_jobs.TransformationJobsAPI.retrieve
 
+.. automethod:: cognite.experimental._api.transformation_jobs.TransformationJobsAPI.retrieve_multiple
+
 List transformation jobs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.experimental._api.transformation_jobs.TransformationJobsAPI.list
