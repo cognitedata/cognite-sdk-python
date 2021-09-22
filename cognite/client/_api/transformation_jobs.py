@@ -3,7 +3,7 @@ from typing import List, Optional
 from cognite.client import utils
 from cognite.client._api_client import APIClient
 
-from cognite.client.data_classes import TransformationJob, TransformationJobList
+from cognite.client.data_classes import TransformationJob, TransformationJobList, TransformationJobMetricList
 
 
 class TransformationJobsAPI(APIClient):
@@ -59,9 +59,32 @@ class TransformationJobsAPI(APIClient):
 
                 >>> from cognite.experimental import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.transformations.retrieve(id=1)
+                >>> res = c.transformations.jobs.retrieve(id=1)
         """
         return self._retrieve(id=id)
+
+    def list_metrics(self, id: int) -> TransformationJobMetricList:
+        """`List the metrics of a single transformation job. <https://docs.cognite.com/api/playground/#operation/getTransformationJob>`_
+
+        Args:
+            id (int): Job internal Id
+
+        Returns:
+            TransformationJobMetricList: List of updated metrics of the given job.
+
+        Examples:
+
+            Get metrics by transformation job id:
+
+                >>> from cognite.experimental import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.transformations.jobs.list_metrics(id=1)
+        """
+        url_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/metrics", str(id))
+
+        return self._list(
+            method="GET", limit=None, resource_path=url_path, cls=TransformationJobMetricList
+        )
 
     def retrieve_multiple(self, ids: List[int], ignore_unknown_ids: bool = False) -> TransformationJobList:
         """`Retrieve multiple transformation jobs by id. <https://docs.cognite.com/api/playground/#operation/getTransformationJob>`_

@@ -1,3 +1,4 @@
+import asyncio
 import random
 import string
 
@@ -55,7 +56,7 @@ async def other_running_transformation(other_transformation):
 
 class TestTransformationJobsAPI:
     @pytest.mark.asyncio
-    async def test_run_without_wait(self, new_running_transformation: Transformation):
+    async def test_run_without_wait(self, new_running_transformation):
         (job, new_transformation) = new_running_transformation
         assert (
             job.id is not None
@@ -140,6 +141,13 @@ class TestTransformationJobsAPI:
         retrieved_jobs = COGNITE_CLIENT.transformations.jobs.list()
         assert new_job.id in [job.id for job in retrieved_jobs]
         assert other_job.id in [job.id for job in retrieved_jobs]
+
+    @pytest.mark.asyncio
+    async def test_metrics(self, new_running_transformation):
+        (job, _) = new_running_transformation
+        await asyncio.sleep(1.0)
+        metrics = job.metrics()
+        assert metrics is not None
 
     @pytest.mark.asyncio
     async def test_retrieve_multiple(self, new_running_transformation, other_running_transformation):

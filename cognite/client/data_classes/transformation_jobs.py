@@ -15,6 +15,37 @@ class TransformationJobStatus(str, Enum):
     FAILED = "Failed"
 
 
+class TransformationJobMetric(CogniteResource):
+    """The transformation job metric resource allows following details of execution of a transformation run.
+
+    Args:
+        id (int): A server-generated ID for the object.
+        timestamp (int): Time of the last metric update.
+        name (str): Name of the metric.
+        count (int): Value of the metric.
+        cognite_client (CogniteClient): The client to associate with this object.
+    """
+
+    def __init__(
+        self, id: int = None, timestamp: int = None, name: str = None, count: int = None, cognite_client=None,
+    ):
+        self.id = id
+        self.timestamp = timestamp
+        self.name = name
+        self.count = count
+        self.cognite_client = cognite_client
+
+    @classmethod
+    def _load(cls, resource: Union[Dict, str], cognite_client=None):
+        instance = super(TransformationJobMetric, cls)._load(resource, cognite_client)
+        return instance
+
+
+class TransformationJobMetricList(CogniteResourceList):
+    _RESOURCE = TransformationJobMetric
+    _ASSERT_CLASSES = False
+
+
 class TransformationJob(CogniteResource):
     """The transformation job resource allows following the status of execution of a transformation run.
 
@@ -76,13 +107,17 @@ class TransformationJob(CogniteResource):
         self.cognite_client = cognite_client
 
     def update(self):
-        """`Updates job status. <https://docs.cognite.com/api/playground/#operation/runTransformation>`_"""
+        """`Get updated job status. <https://docs.cognite.com/api/playground/#operation/runTransformation>`_"""
         updated = self.cognite_client.transformations.jobs.retrieve(id=self.id)
         self.status = updated.status
         self.error = updated.error
         self.started_time = updated.started_time
         self.finished_time = updated.finished_time
         self.last_seen_time = updated.last_seen_time
+
+    def metrics(self):
+        """`Get job metrics. <https://docs.cognite.com/api/playground/#operation/runTransformation>`_"""
+        return self.cognite_client.transformations.jobs.list_metrics(self.id)
 
     def wait(self, polling_interval: float = 1):
         """`Waits for the job to finish.`_
