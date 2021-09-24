@@ -182,7 +182,7 @@ class TransformationJob(CogniteResource):
         instance = super(TransformationJob, cls)._load(resource, cognite_client)
         if isinstance(instance.destination, Dict):
             snake_dict = {utils._auxiliary.to_snake_case(key): value for (key, value) in instance.destination.items()}
-            if instance.destination.get("type") == "raw_table":
+            if instance.destination.get("type") == "raw":
                 instance.destination = RawTable(**snake_dict)
             else:
                 instance.destination = TransformationDestination(**snake_dict)

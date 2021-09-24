@@ -29,6 +29,12 @@ class TestTransformationsAPI:
         ts = COGNITE_CLIENT.transformations.create(transform)
         COGNITE_CLIENT.transformations.delete(id=ts.id)
 
+    def test_create_raw_transformation(self):
+        transform = Transformation(name="any", destination=TransformationDestination.raw("myDatabase", "myTable"))
+        ts = COGNITE_CLIENT.transformations.create(transform)
+        COGNITE_CLIENT.transformations.delete(id=ts.id)
+        assert ts.destination == TransformationDestination.raw("myDatabase", "myTable")
+
     def test_create_asset_hierarchy_transformation(self):
         transform = Transformation(name="any", destination=TransformationDestination.asset_hierarchy())
         ts = COGNITE_CLIENT.transformations.create(transform)
@@ -42,7 +48,7 @@ class TestTransformationsAPI:
     def test_create(self, new_transformation):
         assert (
             new_transformation.name == "any"
-            and new_transformation.destination.type == "assets"
+            and new_transformation.destination == TransformationDestination.assets()
             and new_transformation.id is not None
         )
 
@@ -50,7 +56,7 @@ class TestTransformationsAPI:
         retrieved_transformation = COGNITE_CLIENT.transformations.retrieve(new_transformation.id)
         assert (
             new_transformation.name == retrieved_transformation.name
-            and new_transformation.destination.type == retrieved_transformation.destination.type
+            and new_transformation.destination == retrieved_transformation.destination
             and new_transformation.id == retrieved_transformation.id
         )
 
