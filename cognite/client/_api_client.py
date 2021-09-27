@@ -796,7 +796,14 @@ class APIClient:
         try:
             return json.dumps(res.json())
         except JSONDecodeError:
+            pass
+
+        try:
             return res.content.decode()
+        except UnicodeDecodeError:
+            pass
+
+        return "<binary>"
 
     @staticmethod
     def _sanitize_headers(headers: Optional[Dict]):
