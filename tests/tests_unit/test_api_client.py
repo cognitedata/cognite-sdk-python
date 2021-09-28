@@ -1020,11 +1020,7 @@ class TestHelpers:
 
     @pytest.mark.parametrize(
         "content, expected",
-        [
-            ('{"foo": 42}'.encode(), '{"foo": 42}'),
-            ("foobar".encode(), "foobar"),
-            (b'\xed\xbc\xad', "<binary>"),
-        ],
+        [('{"foo": 42}'.encode(), '{"foo": 42}'), ("foobar".encode(), "foobar"), (b"\xed\xbc\xad", "<binary>")],
     )
     def test_get_response_content_safe(self, content, expected):
         res = Response()
