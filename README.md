@@ -52,3 +52,5 @@ Wondering about upcoming or previous changes to the SDK? Take a look at the [CHA
 
 ## Contributing
 Want to contribute? Check out [CONTRIBUTING](https://github.com/cognitedata/cognite-sdk-python/blob/master/CONTRIBUTING.md).
+
+
