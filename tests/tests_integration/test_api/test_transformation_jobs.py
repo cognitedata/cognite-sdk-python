@@ -1,6 +1,7 @@
 import asyncio
 import random
 import string
+import time
 
 import pytest
 
@@ -31,6 +32,14 @@ def new_transformation():
 
 
 other_transformation = new_transformation
+
+
+@pytest.fixture
+def longer_transformation(new_transformation):
+    new_transformation.query = "select id, name from _cdf.assets limit 5000"
+    ts = COGNITE_CLIENT.transformations.update(new_transformation)
+
+    yield ts
 
 
 async def run_transformation_without_waiting(new_transformation):
@@ -65,7 +74,7 @@ class TestTransformationJobsAPI:
             and job.transformation_id == new_transformation.id
             and job.source_project == COGNITE_CLIENT.config.project
             and job.destination_project == COGNITE_CLIENT.config.project
-            and job.destination.type == "assets"
+            and job.destination == TransformationDestination.assets()
             and job.conflict_mode == "upsert"
             and job.raw_query == new_transformation.query
             and job.error is None
@@ -82,12 +91,20 @@ class TestTransformationJobsAPI:
             and job.transformation_id == new_transformation.id
             and job.source_project == COGNITE_CLIENT.config.project
             and job.destination_project == COGNITE_CLIENT.config.project
-            and job.destination.type == "assets"
+            and job.destination == TransformationDestination.assets()
             and job.conflict_mode == "upsert"
             and job.raw_query == new_transformation.query
             and job.error is None
             and job.ignore_null_fields
         )
+
+    def test_run_with_timeout(self, longer_transformation: Transformation):
+        init = time.time()
+        timeout = 2
+        job = longer_transformation.run(timeout=timeout)
+        final = time.time()
+
+        assert job.status == TransformationJobStatus.RUNNING and timeout <= final - init <= timeout + 1
 
     @pytest.mark.asyncio
     async def test_run_async(self, new_transformation: Transformation):
@@ -100,12 +117,21 @@ class TestTransformationJobsAPI:
             and job.transformation_id == new_transformation.id
             and job.source_project == COGNITE_CLIENT.config.project
             and job.destination_project == COGNITE_CLIENT.config.project
-            and job.destination.type == "assets"
+            and job.destination == TransformationDestination.assets()
             and job.conflict_mode == "upsert"
             and job.raw_query == new_transformation.query
             and job.error is None
             and job.ignore_null_fields
         )
+
+    @pytest.mark.asyncio
+    async def test_run_with_timeout_async(self, longer_transformation: Transformation):
+        init = time.time()
+        timeout = 2
+        job = await longer_transformation.run_async(timeout=timeout)
+        final = time.time()
+
+        assert job.status == TransformationJobStatus.RUNNING and timeout <= final - init <= timeout + 1
 
     @pytest.mark.asyncio
     async def test_run_by_external_id_async(self, new_transformation: Transformation):
@@ -118,7 +144,7 @@ class TestTransformationJobsAPI:
             and job.transformation_id == new_transformation.id
             and job.source_project == COGNITE_CLIENT.config.project
             and job.destination_project == COGNITE_CLIENT.config.project
-            and job.destination.type == "assets"
+            and job.destination == TransformationDestination.assets()
             and job.conflict_mode == "upsert"
             and job.raw_query == new_transformation.query
             and job.error is None

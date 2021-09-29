@@ -177,7 +177,11 @@ class TransformationsAPI(APIClient):
         return self._update_multiple(items=item)
 
     def run(
-        self, transformation_id: int = None, transformation_external_id: str = None, wait: bool = True
+        self,
+        transformation_id: int = None,
+        transformation_external_id: str = None,
+        wait: bool = True,
+        timeout: Optional[float] = None,
     ) -> TransformationJob:
         """`Run a transformation. <https://docs.cognite.com/api/playground/#operation/runTransformation>`_
 
@@ -185,6 +189,7 @@ class TransformationsAPI(APIClient):
             transformation_id (int): internal Transformation id
             transformation_external_id (str): external Transformation id
             wait (bool): Wait until the transformation run is finished. Defaults to True.
+            timeout (Optional[float]): maximum time (s) to wait, default is None (infinite time). Once the timeout is reached, it returns with the current status. Won't have any effect if wait is False.
 
         Returns:
             Created transformation job
@@ -218,21 +223,22 @@ class TransformationsAPI(APIClient):
         job = TransformationJob._load(response.json(), cognite_client=self._cognite_client)
 
         if wait:
-            return job.wait()
+            return job.wait(timeout=timeout)
 
         return job
 
     def run_async(
-        self, transformation_id: int = None, transformation_external_id: str = None
+        self, transformation_id: int = None, transformation_external_id: str = None, timeout: Optional[float] = None
     ) -> Awaitable[TransformationJob]:
         """`Run a transformation to completion asynchronously. <https://docs.cognite.com/api/playground/#operation/runTransformation>`_
 
         Args:
             transformation_id (int): internal Transformation id
             transformation_external_id (str): external Transformation id
+            timeout (Optional[float]): maximum time (s) to wait, default is None (infinite time). Once the timeout is reached, it returns with the current status.
 
         Returns:
-            Completed transformation job
+            Completed (if finished) or running (if timeout reached) transformation job.
 
         Examples:
 
@@ -254,4 +260,4 @@ class TransformationsAPI(APIClient):
         job = self.run(
             transformation_id=transformation_id, transformation_external_id=transformation_external_id, wait=False
         )
-        return job.wait_async()
+        return job.wait_async(timeout=timeout)

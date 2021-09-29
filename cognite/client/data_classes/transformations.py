@@ -196,11 +196,11 @@ class Transformation(CogniteResource):
         self.owner_is_current_user = owner_is_current_user
         self._cognite_client = cognite_client
 
-    def run(self, wait: bool = True) -> "TransformationJob":
-        return self._cognite_client.transformations.run(transformation_id=self.id, wait=wait)
+    def run(self, wait: bool = True, timeout: Optional[float] = None) -> "TransformationJob":
+        return self._cognite_client.transformations.run(transformation_id=self.id, wait=wait, timeout=timeout)
 
-    def run_async(self) -> Awaitable["TransformationJob"]:
-        return self._cognite_client.transformations.run_async(transformation_id=self.id)
+    def run_async(self, timeout: Optional[float] = None) -> Awaitable["TransformationJob"]:
+        return self._cognite_client.transformations.run_async(transformation_id=self.id, timeout=timeout)
 
     def jobs(self) -> "TransformationJobList":
         return self._cognite_client.transformations.jobs.list(transformation_id=self.id)
