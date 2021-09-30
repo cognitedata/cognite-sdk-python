@@ -38,7 +38,7 @@ class TestAPIKeysAPI:
         assert len(res) > 0
 
     def test_list_deleted(self):
-        res = COGNITE_CLIENT.iam.api_keys.list(include_deleted=True)
+        res = COGNITE_CLIENT.iam.api_keys.list(include_deleted=True, all=True)
         assert len(res) > 0
 
     def test_create_and_delete(self, service_account_id):
@@ -65,10 +65,6 @@ class TestGroupsAPI:
         )
         assert "bla" == group.name
         COGNITE_CLIENT.iam.groups.delete(group.id)
-
-    def test_list_service_accounts_in_group(self, group_id):
-        service_accounts = COGNITE_CLIENT.iam.groups.list_service_accounts(group_id)
-        assert len(service_accounts) > 0
 
 
 class TestSecurityCategoriesAPI:
