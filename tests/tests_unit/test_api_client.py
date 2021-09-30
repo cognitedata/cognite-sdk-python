@@ -1,5 +1,6 @@
 import os
 from collections import namedtuple
+from requests import Response
 
 import pytest
 
@@ -1016,6 +1017,15 @@ class TestHelpers:
         assert before != after
         APIClient._sanitize_headers(before)
         assert before == after
+
+    @pytest.mark.parametrize(
+        "content, expected",
+        [('{"foo": 42}'.encode(), '{"foo": 42}'), ("foobar".encode(), "foobar"), (b"\xed\xbc\xad", "<binary>")],
+    )
+    def test_get_response_content_safe(self, content, expected):
+        res = Response()
+        res._content = content
+        assert APIClient._get_response_content_safe(res) == expected
 
 
 class TestConnectionPooling:

@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.31.1] - 2021-09-27
+### Fixed
+- Fixed a bug related to handling of binary response payloads.
+
 ## [2.31.0] - 2021-08-26
 ### Added
 - View resolver for template fields.
