@@ -7,6 +7,8 @@ from cognite.client._api.data_sets import DataSetsAPI
 from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api.entity_matching import EntityMatchingAPI
 from cognite.client._api.events import EventsAPI
+from cognite.client._api.extractionpipelineruns import ExtractionPipelineRunsAPI
+from cognite.client._api.extractionpipelines import ExtractionPipelinesAPI
 from cognite.client._api.files import FilesAPI
 from cognite.client._api.iam import IAMAPI
 from cognite.client._api.labels import LabelsAPI
@@ -114,6 +116,10 @@ class CogniteClient:
         self.relationships = RelationshipsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.entity_matching = EntityMatchingAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.templates = TemplatesAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
+        self.extraction_pipelines = ExtractionPipelinesAPI(self._config, api_version="playground", cognite_client=self)
+        self.extraction_pipeline_runs = ExtractionPipelineRunsAPI(
+            self._config, api_version="playground", cognite_client=self
+        )
         self._api_client = APIClient(self._config, cognite_client=self)
 
     def get(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
