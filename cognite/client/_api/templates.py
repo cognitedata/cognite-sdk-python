@@ -32,7 +32,7 @@ class TemplatesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> query = '''
                 >>>    {
-                >>>        countryList {
+                >>>        countryQuery {
                 >>>           name,
                 >>>           demographics {
                 >>>               populationSize,
