@@ -47,7 +47,7 @@ class TemplatesAPI(APIClient):
                 >>>        }
                 >>>    }
                 >>>    '''
-                >>> result = c.templates.query.graphql_query("template-group-ext-id", 1, query)
+                >>> result = c.templates.graphql_query("template-group-ext-id", 1, query)
         """
         path = "/templategroups/{}/versions/{}/graphql"
         path = utils._auxiliary.interpolate_and_url_encode(path, external_id, version)
