@@ -4,6 +4,7 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client.testing import CogniteClientMock, monkeypatch_cognite_client
+from tests.utils import set_env_var
 
 
 def test_mock_cognite_client():
@@ -34,7 +35,8 @@ def test_mock_cognite_client():
 def test_cognite_client_accepts_arguments_during_and_after_mock():
     with monkeypatch_cognite_client():
         CogniteClient(api_key=None)
-    CogniteClient(api_key=None)
+    with set_env_var("COGNITE_API_KEY", "BLA"):
+        CogniteClient(api_key=None)
 
 
 def test_client_mock_can_access_attributes_not_explicitly_defined_on_children():
