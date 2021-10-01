@@ -22,7 +22,7 @@ class TestAPIError:
         assert "bla" in e.__str__()
 
     def test_unknown_fields_in_api_error(self, rsps):
-        with set_env_var("COGNITE_DISABLE_PYPI_VERSION_CHECK", "1"):
+        with set_env_var("COGNITE_DISABLE_PYPI_VERSION_CHECK", "1"), set_env_var("COGNITE_API_KEY", "BLA"):
             c = CogniteClient()
         rsps.add(
             rsps.GET,
