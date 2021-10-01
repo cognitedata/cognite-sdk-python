@@ -57,7 +57,7 @@ def set_request_limit(client, limit):
 
 
 @contextmanager
-def unset_env_var(name: Union[str, List[str]]):
+def unset_env_var(*name: str):
     if isinstance(name, str):
         name = [name]
     tmp = {}
