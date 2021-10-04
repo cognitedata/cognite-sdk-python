@@ -1,5 +1,3 @@
-from cognite.client.data_classes.events import Event
-from cognite.client.data_classes.templates import Source, TemplateInstanceUpdate, View, ViewResolver
 import uuid
 
 import pytest
@@ -14,6 +12,8 @@ from cognite.client.data_classes import (
     TemplateInstance,
     TemplateInstanceList,
 )
+from cognite.client.data_classes.events import Event
+from cognite.client.data_classes.templates import Source, TemplateInstanceUpdate, View, ViewResolver
 from cognite.client.exceptions import CogniteNotFoundError
 
 API = CogniteClient()
@@ -26,7 +26,7 @@ API_VIEWS = API.templates.views
 @pytest.fixture
 def new_template_group():
     external_id = uuid.uuid4().hex[0:20]
-    username = API.login.status().user
+    username = API.iam.token.inspect().subject
     template_group = API_GROUPS.create(
         TemplateGroup(
             external_id=external_id, description="some description", owners=[username, external_id + "@cognite.com"]
