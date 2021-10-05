@@ -1,6 +1,5 @@
 from typing import Any, Dict, List, Union
 
-from cognite.client.data_classes import TimestampRange
 from cognite.client.data_classes._base import *
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -9,6 +8,7 @@ from cognite.client.data_classes._base import (
     CogniteResourceList,
     CogniteUpdate,
 )
+from cognite.client.data_classes.shared import TimestampRange
 
 
 class ExtractionPipelineContact(dict):
