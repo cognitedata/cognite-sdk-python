@@ -14,6 +14,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+
+## [2.32.0] - 2021-10-04
+### Added
+ - Support for extraction pipelines
+
+
 ## [2.31.1] - 2021-09-27
 ### Fixed
 - Fixed a bug related to handling of binary response payloads.
