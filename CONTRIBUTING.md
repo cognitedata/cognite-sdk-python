@@ -19,6 +19,12 @@ Install pre-commit hooks
 pre-commit install
 ```
 
+### Getting client credentials for running integration tests
+- Request access to AAD tenant.
+- Create an app registration.
+- Add the app registration to the `python-sdk-integration-tester` group.
+- Create client credentials for the app registration and set environment variables as described in the next section.
+
 ### Environment Variables
 Set the following environment variables in a .env file:
 ```bash
@@ -27,7 +33,10 @@ COGNITE_MAX_RETRIES=20
 
 # Only necessary for running integration tests
 COGNITE_PROJECT=python-sdk-test
-COGNITE_API_KEY=<api-key>
+COGNITE_TOKEN_URL=https://login.microsoftonline.com/dff7763f-e2f5-4ffd-9b8a-4ba4bafba5ea/oauth2/v2.0/token
+COGNITE_TOKEN_SCOPES=https://greenfield.cognitedata.com/.default
+COGNITE_CLIENT_ID=<client-id-from-previous-step>
+COGNITE_CLIENT_SECRET=<client-secret-from-previous-step>
 COGNITE_BASE_URL=https://greenfield.cognitedata.com
 ```
 
