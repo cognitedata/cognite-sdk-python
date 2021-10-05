@@ -146,7 +146,7 @@ class ExtractionPipelinesAPI(APIClient):
             ExtractionPipeline, ExtractionPipelineUpdate, List[Union[ExtractionPipeline, ExtractionPipelineUpdate]]
         ],
     ) -> Union[ExtractionPipeline, ExtractionPipelineList]:
-        """Update one or more extraction pipelines
+        """`Update one or more extraction pipelines`_
 
         Args:
             item Union[ExtractionPipeline, ExtractionPipelineUpdate, List[Union[ExtractionPipeline, ExtractionPipelineUpdate]]]): Extraction pipeline(s) to update
