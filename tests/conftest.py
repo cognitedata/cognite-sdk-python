@@ -25,7 +25,7 @@ from cognite.client._api.three_d import (
     ThreeDRevisionsAPI,
 )
 from cognite.client._api.time_series import TimeSeriesAPI
-from tests.utils import BASE_URL
+from tests.utils import BASE_URL, set_env_var
 
 
 @pytest.fixture
