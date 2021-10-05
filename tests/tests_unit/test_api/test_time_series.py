@@ -234,7 +234,7 @@ class TestPlotTimeSeries:
     @mock.patch("matplotlib.pyplot.show")
     @mock.patch("pandas.core.frame.DataFrame.rename")
     def test_plot_time_series_name_labels(
-        self, cognite_client, pandas_rename_mock, plt_show_mock, mock_ts_response, mock_get_dps
+        self, pandas_rename_mock, plt_show_mock, mock_ts_response, mock_get_dps, cognite_client
     ):
         res = cognite_client.time_series.retrieve(id=0)
         df_mock = mock.MagicMock()
@@ -248,7 +248,7 @@ class TestPlotTimeSeries:
     @mock.patch("matplotlib.pyplot.show")
     @mock.patch("pandas.core.frame.DataFrame.plot")
     def test_plot_time_series_id_labels(
-        self, cognite_client, pandas_plot_mock, plt_show_mock, mock_ts_response, mock_get_dps
+        self, pandas_plot_mock, plt_show_mock, mock_ts_response, mock_get_dps, cognite_client
     ):
         res = cognite_client.time_series.retrieve(id=0)
         res.plot(id_labels=True, aggregates=["average"], granularity="1s")
@@ -259,7 +259,7 @@ class TestPlotTimeSeries:
     @mock.patch("matplotlib.pyplot.show")
     @mock.patch("pandas.core.frame.DataFrame.rename")
     def test_plot_time_series_list_name_labels(
-        self, cognite_client, pandas_rename_mock, plt_show_mock, mock_ts_response, mock_get_dps
+        self, pandas_rename_mock, plt_show_mock, mock_ts_response, mock_get_dps, cognite_client
     ):
         res = cognite_client.time_series.retrieve_multiple(ids=[0])
         df_mock = mock.MagicMock()
@@ -272,7 +272,7 @@ class TestPlotTimeSeries:
     @mock.patch("matplotlib.pyplot.show")
     @mock.patch("pandas.core.frame.DataFrame.plot")
     def test_plot_time_series_list_id_labels(
-        self, cognite_client, pandas_plot_mock, plt_show_mock, mock_ts_response, mock_get_dps
+        self, pandas_plot_mock, plt_show_mock, mock_ts_response, mock_get_dps, cognite_client
     ):
         res = cognite_client.time_series.retrieve_multiple(ids=[0])
         res.plot(id_labels=True)

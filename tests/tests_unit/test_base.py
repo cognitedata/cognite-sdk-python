@@ -175,7 +175,8 @@ class TestCogniteResource:
         pd.testing.assert_frame_equal(expected_df, actual_df, check_like=True)
 
     def test_resource_client_correct(self):
-        c = CogniteClient()
+        with set_env_var("COGNITE_API_KEY", "BLA"):
+            c = CogniteClient()
         with pytest.raises(CogniteMissingClientError):
             MyResource(1)._cognite_client
         assert MyResource(1, cognite_client=c)._cognite_client == c
