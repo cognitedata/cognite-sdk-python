@@ -61,7 +61,7 @@ class ExtractionPipelineRunsAPI(APIClient):
     def create(
         self, run: Union[ExtractionPipelineRun, List[ExtractionPipelineRun]]
     ) -> Union[ExtractionPipelineRun, ExtractionPipelineRunList]:
-        """Create one or more extraction pipeline runs.
+        """`Create one or more extraction pipeline runs.`_
 
         You can create an arbitrary number of extraction pipeline runs, and the SDK will split the request into multiple requests.
 
