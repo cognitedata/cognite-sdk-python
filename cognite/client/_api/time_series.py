@@ -9,7 +9,6 @@ from cognite.client.data_classes import (
     TimeSeriesList,
     TimeSeriesUpdate,
 )
-from cognite.client.data_classes.shared import TimestampRange
 
 
 class TimeSeriesAPI(APIClient):

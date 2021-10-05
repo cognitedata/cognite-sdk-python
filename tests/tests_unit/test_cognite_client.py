@@ -2,7 +2,6 @@ import datetime
 import logging
 import os
 import random
-import re
 import sys
 import threading
 import types
@@ -88,12 +87,12 @@ def environment_client_config():
 
 class TestCogniteClient:
     def test_project_is_correct(self, rsps_with_login_mock):
-        with unset_env_var("COGNITE_PROJECT"):
+        with unset_env_var("COGNITE_PROJECT"), set_env_var("COGNITE_API_KEY", "bla"):
             c = CogniteClient()
         assert c.config.project == "test"
 
     def test_no_api_key_no_token_set(self):
-        with unset_env_var("COGNITE_TOKEN_URL"):
+        with unset_env_var("COGNITE_TOKEN_URL", "COGNITE_API_KEY"):
             with pytest.raises(
                 CogniteAPIKeyError, match="No API key or token or token generation arguments have been specified"
             ):
@@ -256,6 +255,7 @@ class TestCogniteClient:
         log.propagate = False
 
     def test_version_check_disabled_env(self, rsps_with_login_mock):
+        rsps_with_login_mock.assert_all_requests_are_fired = False
         with unset_env_var("COGNITE_PROJECT"), set_env_var("COGNITE_API_KEY", "bla"):
             with set_env_var("COGNITE_DISABLE_PYPI_VERSION_CHECK", "1"):
                 CogniteClient()
@@ -263,6 +263,7 @@ class TestCogniteClient:
         assert rsps_with_login_mock.calls[0].request.url.startswith("https://greenfield.cognitedata.com")
 
     def test_version_check_disabled_arg(self, rsps_with_login_mock):
+        rsps_with_login_mock.assert_all_requests_are_fired = False
         with unset_env_var("COGNITE_PROJECT", "COGNITE_DISABLE_PYPI_VERSION_CHECK"), set_env_var(
             "COGNITE_API_KEY", "bla"
         ):

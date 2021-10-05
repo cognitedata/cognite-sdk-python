@@ -3,91 +3,88 @@ from unittest.mock import call
 
 import pytest
 
-from cognite.client import CogniteClient
 from cognite.client.data_classes import Asset, AssetList, Event, EventList, FileMetadata, FileMetadataList
-
-c = CogniteClient()
 
 
 class TestAsset:
-    def test_get_events(self):
-        c.events.list = mock.MagicMock()
-        a = Asset(id=1, cognite_client=c)
+    def test_get_events(self, cognite_client):
+        cognite_client.events.list = mock.MagicMock()
+        a = Asset(id=1, cognite_client=cognite_client)
         a.events()
-        assert c.events.list.call_args == call(asset_ids=[1])
-        assert c.events.list.call_count == 1
+        assert cognite_client.events.list.call_args == call(asset_ids=[1])
+        assert cognite_client.events.list.call_count == 1
 
-    def test_get_time_series(self):
-        c.time_series.list = mock.MagicMock()
-        a = Asset(id=1, cognite_client=c)
+    def test_get_time_series(self, cognite_client):
+        cognite_client.time_series.list = mock.MagicMock()
+        a = Asset(id=1, cognite_client=cognite_client)
         a.time_series()
-        assert c.time_series.list.call_args == call(asset_ids=[1])
-        assert c.time_series.list.call_count == 1
+        assert cognite_client.time_series.list.call_args == call(asset_ids=[1])
+        assert cognite_client.time_series.list.call_count == 1
 
-    def test_get_sequences(self):
-        c.sequences.list = mock.MagicMock()
-        a = Asset(id=1, cognite_client=c)
+    def test_get_sequences(self, cognite_client):
+        cognite_client.sequences.list = mock.MagicMock()
+        a = Asset(id=1, cognite_client=cognite_client)
         a.sequences()
-        assert c.sequences.list.call_args == call(asset_ids=[1])
-        assert c.sequences.list.call_count == 1
+        assert cognite_client.sequences.list.call_args == call(asset_ids=[1])
+        assert cognite_client.sequences.list.call_count == 1
 
-    def test_get_files(self):
-        c.files.list = mock.MagicMock()
-        a = Asset(id=1, cognite_client=c)
+    def test_get_files(self, cognite_client):
+        cognite_client.files.list = mock.MagicMock()
+        a = Asset(id=1, cognite_client=cognite_client)
         a.files()
-        assert c.files.list.call_args == call(asset_ids=[1])
-        assert c.files.list.call_count == 1
+        assert cognite_client.files.list.call_args == call(asset_ids=[1])
+        assert cognite_client.files.list.call_count == 1
 
-    def test_get_parent(self):
-        c.assets.retrieve = mock.MagicMock()
-        a1 = Asset(parent_id=1, cognite_client=c)
+    def test_get_parent(self, cognite_client):
+        cognite_client.assets.retrieve = mock.MagicMock()
+        a1 = Asset(parent_id=1, cognite_client=cognite_client)
         a1.parent()
-        assert c.assets.retrieve.call_args == call(id=1)
-        assert c.assets.retrieve.call_count == 1
+        assert cognite_client.assets.retrieve.call_args == call(id=1)
+        assert cognite_client.assets.retrieve.call_count == 1
 
-    def test_get_children(self):
-        c.assets.list = mock.MagicMock()
-        a1 = Asset(id=1, cognite_client=c)
+    def test_get_children(self, cognite_client):
+        cognite_client.assets.list = mock.MagicMock()
+        a1 = Asset(id=1, cognite_client=cognite_client)
         a1.children()
-        assert c.assets.list.call_args == call(parent_ids=[1], limit=None)
-        assert c.assets.list.call_count == 1
+        assert cognite_client.assets.list.call_args == call(parent_ids=[1], limit=None)
+        assert cognite_client.assets.list.call_count == 1
 
-    def test_get_subtree(self):
-        c.assets.retrieve_subtree = mock.MagicMock()
-        a1 = Asset(id=1, cognite_client=c)
+    def test_get_subtree(self, cognite_client):
+        cognite_client.assets.retrieve_subtree = mock.MagicMock()
+        a1 = Asset(id=1, cognite_client=cognite_client)
         a1.subtree(depth=1)
-        assert c.assets.retrieve_subtree.call_args == call(id=1, depth=1)
-        assert c.assets.retrieve_subtree.call_count == 1
+        assert cognite_client.assets.retrieve_subtree.call_args == call(id=1, depth=1)
+        assert cognite_client.assets.retrieve_subtree.call_count == 1
 
 
 class TestAssetList:
-    def test_get_events(self):
-        c.events.list = mock.MagicMock()
-        a = AssetList(resources=[Asset(id=1)], cognite_client=c)
+    def test_get_events(self, cognite_client):
+        cognite_client.events.list = mock.MagicMock()
+        a = AssetList(resources=[Asset(id=1)], cognite_client=cognite_client)
         a.events()
-        assert c.events.list.call_args == call(asset_ids=[1], limit=-1)
-        assert c.events.list.call_count == 1
+        assert cognite_client.events.list.call_args == call(asset_ids=[1], limit=-1)
+        assert cognite_client.events.list.call_count == 1
 
-    def test_get_time_series(self):
-        c.time_series.list = mock.MagicMock()
-        a = AssetList(resources=[Asset(id=1)], cognite_client=c)
+    def test_get_time_series(self, cognite_client):
+        cognite_client.time_series.list = mock.MagicMock()
+        a = AssetList(resources=[Asset(id=1)], cognite_client=cognite_client)
         a.time_series()
-        assert c.time_series.list.call_args == call(asset_ids=[1], limit=-1)
-        assert c.time_series.list.call_count == 1
+        assert cognite_client.time_series.list.call_args == call(asset_ids=[1], limit=-1)
+        assert cognite_client.time_series.list.call_count == 1
 
-    def test_get_sequences(self):
-        c.sequences.list = mock.MagicMock()
-        a = AssetList(resources=[Asset(id=1)], cognite_client=c)
+    def test_get_sequences(self, cognite_client):
+        cognite_client.sequences.list = mock.MagicMock()
+        a = AssetList(resources=[Asset(id=1)], cognite_client=cognite_client)
         a.sequences()
-        assert c.sequences.list.call_args == call(asset_ids=[1], limit=-1)
-        assert c.sequences.list.call_count == 1
+        assert cognite_client.sequences.list.call_args == call(asset_ids=[1], limit=-1)
+        assert cognite_client.sequences.list.call_count == 1
 
-    def test_get_files(self):
-        c.files.list = mock.MagicMock()
-        a = AssetList(resources=[Asset(id=1)], cognite_client=c)
+    def test_get_files(self, cognite_client):
+        cognite_client.files.list = mock.MagicMock()
+        a = AssetList(resources=[Asset(id=1)], cognite_client=cognite_client)
         a.files()
-        assert c.files.list.call_args == call(asset_ids=[1], limit=-1)
-        assert c.files.list.call_count == 1
+        assert cognite_client.files.list.call_args == call(asset_ids=[1], limit=-1)
+        assert cognite_client.files.list.call_count == 1
 
     @pytest.mark.parametrize(
         "resource_class, resource_list_class, method",
@@ -114,7 +111,7 @@ class TestAssetList:
         assert expected == resources
 
     @pytest.mark.dsl
-    def test_to_pandas_nullable_int(self):
+    def test_to_pandas_nullable_int(self, cognite_client):
         import pandas as pd
 
         for camel_case in [False, True]:

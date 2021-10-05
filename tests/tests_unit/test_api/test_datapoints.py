@@ -7,14 +7,11 @@ from unittest import mock
 
 import pytest
 
-from cognite.client import CogniteClient, utils
+from cognite.client import utils
 from cognite.client._api.datapoints import DatapointsBin, DatapointsFetcher, _DPTask, _DPWindow
 from cognite.client.data_classes import Datapoint, Datapoints, DatapointsList, DatapointsQuery
 from cognite.client.exceptions import CogniteAPIError, CogniteDuplicateColumnsError, CogniteNotFoundError
 from tests.utils import jsgz_load, set_request_limit
-
-COGNITE_CLIENT = CogniteClient()
-DPS_CLIENT = COGNITE_CLIENT.datapoints
 
 
 def generate_datapoints(start: int, end: int, aggregates=None, granularity=None):
@@ -36,7 +33,7 @@ def generate_datapoints(start: int, end: int, aggregates=None, granularity=None)
 
 
 @pytest.fixture
-def mock_get_datapoints(rsps):
+def mock_get_datapoints(rsps, cognite_client):
     def request_callback(request):
         payload = jsgz_load(request.body)
 
@@ -91,7 +88,7 @@ def mock_get_datapoints(rsps):
 
     rsps.add_callback(
         rsps.POST,
-        DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/list",
+        cognite_client.datapoints._get_base_url_with_base_path() + "/timeseries/data/list",
         callback=request_callback,
         content_type="application/json",
     )
@@ -99,10 +96,10 @@ def mock_get_datapoints(rsps):
 
 
 @pytest.fixture
-def mock_get_datapoints_empty(rsps):
+def mock_get_datapoints_empty(rsps, cognite_client):
     rsps.add(
         rsps.POST,
-        DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/list",
+        cognite_client.datapoints._get_base_url_with_base_path() + "/timeseries/data/list",
         status=200,
         json={
             "items": [{"id": 1, "externalId": "1", "isString": False, "isStep": False, "unit": "kPa", "datapoints": []}]
@@ -112,11 +109,11 @@ def mock_get_datapoints_empty(rsps):
 
 
 @pytest.fixture
-def mock_get_datapoints_include_outside(rsps):
+def mock_get_datapoints_include_outside(rsps, cognite_client):
     # return 100001 datapoints with one beyond 'end'
     rsps.add(
         rsps.POST,
-        DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/list",
+        cognite_client.datapoints._get_base_url_with_base_path() + "/timeseries/data/list",
         status=200,
         json={
             "items": [
@@ -134,10 +131,10 @@ def mock_get_datapoints_include_outside(rsps):
 
 
 @pytest.fixture
-def mock_get_datapoints_one_ts_empty(rsps):
+def mock_get_datapoints_one_ts_empty(rsps, cognite_client):
     rsps.add(
         rsps.POST,
-        DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/list",
+        cognite_client.datapoints._get_base_url_with_base_path() + "/timeseries/data/list",
         status=200,
         json={
             "items": [
@@ -153,7 +150,7 @@ def mock_get_datapoints_one_ts_empty(rsps):
     )
     rsps.add(
         rsps.POST,
-        DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/list",
+        cognite_client.datapoints._get_base_url_with_base_path() + "/timeseries/data/list",
         status=200,
         json={"items": [{"id": 2, "externalId": "2", "isString": False, "isStep": False, "datapoints": []}]},
     )
@@ -161,7 +158,7 @@ def mock_get_datapoints_one_ts_empty(rsps):
 
 
 @pytest.fixture
-def mock_get_datapoints_one_ts_has_missing_aggregates(rsps):
+def mock_get_datapoints_one_ts_has_missing_aggregates(rsps, cognite_client):
     def callback(request):
         item = jsgz_load(request.body)
         if item["aggregates"] == ["average"]:
@@ -196,7 +193,7 @@ def mock_get_datapoints_one_ts_has_missing_aggregates(rsps):
 
     rsps.add_callback(
         rsps.POST,
-        DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/list",
+        cognite_client.datapoints._get_base_url_with_base_path() + "/timeseries/data/list",
         callback=callback,
         content_type="application/json",
     )
@@ -204,7 +201,7 @@ def mock_get_datapoints_one_ts_has_missing_aggregates(rsps):
 
 
 @pytest.fixture
-def mock_get_datapoints_several_missing(rsps):
+def mock_get_datapoints_several_missing(rsps, cognite_client):
     def callback(request):
         item = jsgz_load(request.body)
         if item["aggregates"] == ["interpolation"]:
@@ -244,7 +241,7 @@ def mock_get_datapoints_several_missing(rsps):
 
     rsps.add_callback(
         rsps.POST,
-        DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/list",
+        cognite_client.datapoints._get_base_url_with_base_path() + "/timeseries/data/list",
         callback=callback,
         content_type="application/json",
     )
@@ -256,13 +253,18 @@ def mock_get_datapoints_several_missing(rsps):
             {"id": 3, "isStep": True, "isString": False},
         ]
     }
-    rsps.add(rsps.POST, DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/byids", status=200, json=response_body)
+    rsps.add(
+        rsps.POST,
+        cognite_client.datapoints._get_base_url_with_base_path() + "/timeseries/byids",
+        status=200,
+        json=response_body,
+    )
     rsps.assert_all_requests_are_fired = False
     yield rsps
 
 
 @pytest.fixture
-def mock_get_datapoints_single_isstep(rsps):
+def mock_get_datapoints_single_isstep(rsps, cognite_client):
     def callback(request):
         item = jsgz_load(request.body)
         if item["aggregates"] == ["interpolation"]:
@@ -277,7 +279,7 @@ def mock_get_datapoints_single_isstep(rsps):
 
     rsps.add_callback(
         rsps.POST,
-        DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/list",
+        cognite_client.datapoints._get_base_url_with_base_path() + "/timeseries/data/list",
         callback=callback,
         content_type="application/json",
     )
@@ -285,13 +287,13 @@ def mock_get_datapoints_single_isstep(rsps):
 
 
 @pytest.fixture
-def set_dps_workers():
+def set_dps_workers(cognite_client):
     def set_workers(limit):
-        DPS_CLIENT._config.max_workers = limit
+        cognite_client.datapoints._config.max_workers = limit
 
-    workers_tmp = DPS_CLIENT._config.max_workers
+    workers_tmp = cognite_client.datapoints._config.max_workers
     yield set_workers
-    DPS_CLIENT._config.max_workers = workers_tmp
+    cognite_client.datapoints._config.max_workers = workers_tmp
 
 
 def assert_dps_response_is_correct(calls, dps_object):
@@ -311,33 +313,33 @@ def assert_dps_response_is_correct(calls, dps_object):
 
 
 class TestGetDatapoints:
-    def test_retrieve_datapoints_by_id(self, mock_get_datapoints):
-        dps_res = DPS_CLIENT.retrieve(id=123, start=1000000, end=1100000)
+    def test_retrieve_datapoints_by_id(self, cognite_client, mock_get_datapoints):
+        dps_res = cognite_client.datapoints.retrieve(id=123, start=1000000, end=1100000)
         assert isinstance(dps_res, Datapoints)
         assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
 
-    def test_retrieve_datapoints_500(self, rsps):
+    def test_retrieve_datapoints_500(self, cognite_client, rsps):
         rsps.add(
             rsps.POST,
-            DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/list",
+            cognite_client.datapoints._get_base_url_with_base_path() + "/timeseries/data/list",
             json={"error": {"code": 500, "message": "Internal Server Error"}},
             status=500,
         )
         with pytest.raises(CogniteAPIError):
-            DPS_CLIENT.retrieve(id=123, start=1000000, end=1100000)
+            cognite_client.datapoints.retrieve(id=123, start=1000000, end=1100000)
 
-    def test_retrieve_datapoints_by_external_id(self, mock_get_datapoints):
-        dps_res = DPS_CLIENT.retrieve(external_id="123", start=1000000, end=1100000)
+    def test_retrieve_datapoints_by_external_id(self, cognite_client, mock_get_datapoints):
+        dps_res = cognite_client.datapoints.retrieve(external_id="123", start=1000000, end=1100000)
         assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
 
-    def test_retrieve_datapoints_aggregates(self, mock_get_datapoints):
-        dps_res = DPS_CLIENT.retrieve(
+    def test_retrieve_datapoints_aggregates(self, cognite_client, mock_get_datapoints):
+        dps_res = cognite_client.datapoints.retrieve(
             id=123, start=1000000, end=1100000, aggregates=["average", "stepInterpolation"], granularity="10s"
         )
         assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
 
-    def test_retrieve_datapoints_local_aggregates(self, mock_get_datapoints):
-        dps_res_list = DPS_CLIENT.retrieve(
+    def test_retrieve_datapoints_local_aggregates(self, cognite_client, mock_get_datapoints):
+        dps_res_list = cognite_client.datapoints.retrieve(
             external_id={"externalId": "123", "aggregates": ["average"]},
             id={"id": 234},
             start=1000000,
@@ -348,8 +350,10 @@ class TestGetDatapoints:
         for dps_res in dps_res_list:
             assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
 
-    def test_retrieve_datapoints_some_aggregates_omitted(self, mock_get_datapoints_one_ts_has_missing_aggregates):
-        dps_res_list = DPS_CLIENT.retrieve(
+    def test_retrieve_datapoints_some_aggregates_omitted(
+        self, cognite_client, mock_get_datapoints_one_ts_has_missing_aggregates
+    ):
+        dps_res_list = cognite_client.datapoints.retrieve(
             id={"id": 1, "aggregates": ["average"]},
             external_id={"externalId": "def", "aggregates": ["interpolation"]},
             start=0,
@@ -362,16 +366,20 @@ class TestGetDatapoints:
             elif dps.id == 2:
                 assert dps.interpolation == [None, 1, None, 3, None]
 
-    def test_datapoints_paging(self, mock_get_datapoints, set_dps_workers):
+    def test_datapoints_paging(self, cognite_client, mock_get_datapoints, set_dps_workers):
         set_dps_workers(1)
-        with set_request_limit(DPS_CLIENT, 2):
-            dps_res = DPS_CLIENT.retrieve(id=123, start=0, end=10000, aggregates=["average"], granularity="1s")
+        with set_request_limit(cognite_client.datapoints, 2):
+            dps_res = cognite_client.datapoints.retrieve(
+                id=123, start=0, end=10000, aggregates=["average"], granularity="1s"
+            )
         assert 6 == len(mock_get_datapoints.calls)
         assert 10 == len(dps_res)
 
-    def test_datapoints_concurrent(self, mock_get_datapoints):
-        with set_request_limit(DPS_CLIENT, 20):
-            dps_res = DPS_CLIENT.retrieve(id=123, start=0, end=100000, aggregates=["average"], granularity="1s")
+    def test_datapoints_concurrent(self, cognite_client, mock_get_datapoints):
+        with set_request_limit(cognite_client.datapoints, 20):
+            dps_res = cognite_client.datapoints.retrieve(
+                id=123, start=0, end=100000, aggregates=["average"], granularity="1s"
+            )
         requested_windows = sorted(
             [
                 (jsgz_load(call.request.body)["start"], jsgz_load(call.request.body)["end"])
@@ -383,15 +391,17 @@ class TestGetDatapoints:
         assert [(20000, 100000), (40000, 100000), (60000, 100000), (80000, 100000)] == requested_windows[2:]
         assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
 
-    def test_datapoints_paging_with_limit(self, mock_get_datapoints):
-        with set_request_limit(DPS_CLIENT, 3):
-            dps_res = DPS_CLIENT.retrieve(id=123, start=0, end=10000, aggregates=["average"], granularity="1s", limit=4)
+    def test_datapoints_paging_with_limit(self, cognite_client, mock_get_datapoints):
+        with set_request_limit(cognite_client.datapoints, 3):
+            dps_res = cognite_client.datapoints.retrieve(
+                id=123, start=0, end=10000, aggregates=["average"], granularity="1s", limit=4
+            )
         assert 4 == len(dps_res)
 
-    def test_retrieve_datapoints_multiple_time_series(self, mock_get_datapoints):
+    def test_retrieve_datapoints_multiple_time_series(self, cognite_client, mock_get_datapoints):
         ids = [1, 2, 3]
         external_ids = ["4", "5", "6"]
-        dps_res_list = DPS_CLIENT.retrieve(id=ids, external_id=external_ids, start=0, end=100000)
+        dps_res_list = cognite_client.datapoints.retrieve(id=ids, external_id=external_ids, start=0, end=100000)
         assert isinstance(dps_res_list, DatapointsList), type(dps_res_list)
         for dps_res in dps_res_list:
             if dps_res.id in ids:
@@ -402,33 +412,33 @@ class TestGetDatapoints:
         assert 0 == len(ids)
         assert 0 == len(external_ids)
 
-    def test_retrieve_datapoints_empty(self, mock_get_datapoints_empty):
-        res = DPS_CLIENT.retrieve(id=1, start=0, end=10000)
+    def test_retrieve_datapoints_empty(self, cognite_client, mock_get_datapoints_empty):
+        res = cognite_client.datapoints.retrieve(id=1, start=0, end=10000)
         assert 0 == len(res)
 
-    def test_retrieve_datapoints_empty_extrafields_set(self, mock_get_datapoints_empty):
-        res = DPS_CLIENT.retrieve(id=1, start=0, end=10000)
+    def test_retrieve_datapoints_empty_extrafields_set(self, cognite_client, mock_get_datapoints_empty):
+        res = cognite_client.datapoints.retrieve(id=1, start=0, end=10000)
         assert "kPa" == res.unit
         assert res.is_step is False
         assert res.is_string is False
 
-    def test_aggregate_limits_correct(self, mock_get_datapoints):
-        DPS_CLIENT.retrieve(id={"id": 1, "aggregates": ["average"]}, start=0, end=10, granularity="1d")
-        DPS_CLIENT.retrieve(id=1, start=0, end=10, granularity="1d", aggregates=["max"])
-        DPS_CLIENT.retrieve(id=1, start=0, end=10)
+    def test_aggregate_limits_correct(self, cognite_client, mock_get_datapoints):
+        cognite_client.datapoints.retrieve(id={"id": 1, "aggregates": ["average"]}, start=0, end=10, granularity="1d")
+        cognite_client.datapoints.retrieve(id=1, start=0, end=10, granularity="1d", aggregates=["max"])
+        cognite_client.datapoints.retrieve(id=1, start=0, end=10)
         assert 10000 == jsgz_load(mock_get_datapoints.calls[0].request.body)["limit"]
         assert 10000 == jsgz_load(mock_get_datapoints.calls[1].request.body)["limit"]
         assert 100000 == jsgz_load(mock_get_datapoints.calls[2].request.body)["limit"]
 
 
 class TestQueryDatapoints:
-    def test_query_single(self, mock_get_datapoints):
-        dps_res = DPS_CLIENT.query(query=DatapointsQuery(id=1, start=0, end=10000))
+    def test_query_single(self, cognite_client, mock_get_datapoints):
+        dps_res = cognite_client.datapoints.query(query=DatapointsQuery(id=1, start=0, end=10000))
         assert isinstance(dps_res, DatapointsList)
         assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res[0])
 
-    def test_query_multiple(self, mock_get_datapoints):
-        dps_res_list = DPS_CLIENT.query(
+    def test_query_multiple(self, cognite_client, mock_get_datapoints):
+        dps_res_list = cognite_client.datapoints.query(
             query=[
                 DatapointsQuery(id=1, start=0, end=10000),
                 DatapointsQuery(external_id="2", start=10000, end=20000, aggregates=["average"], granularity="2s"),
@@ -438,15 +448,15 @@ class TestQueryDatapoints:
         for dps_res in dps_res_list:
             assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res[0])
 
-    def test_query_empty(self, mock_get_datapoints_empty):
-        dps_res = DPS_CLIENT.query(query=DatapointsQuery(id=1, start=0, end=10000))
+    def test_query_empty(self, cognite_client, mock_get_datapoints_empty):
+        dps_res = cognite_client.datapoints.query(query=DatapointsQuery(id=1, start=0, end=10000))
         assert isinstance(dps_res, DatapointsList)
         assert 1 == len(dps_res)
         assert 0 == len(dps_res[0])
 
 
 @pytest.fixture
-def mock_retrieve_latest(rsps):
+def mock_retrieve_latest(rsps, cognite_client):
     def request_callback(request):
         payload = jsgz_load(request.body)
 
@@ -468,7 +478,7 @@ def mock_retrieve_latest(rsps):
 
     rsps.add_callback(
         rsps.POST,
-        DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/latest",
+        cognite_client.datapoints._get_base_url_with_base_path() + "/timeseries/data/latest",
         callback=request_callback,
         content_type="application/json",
     )
@@ -476,10 +486,10 @@ def mock_retrieve_latest(rsps):
 
 
 @pytest.fixture
-def mock_retrieve_latest_empty(rsps):
+def mock_retrieve_latest_empty(rsps, cognite_client):
     rsps.add(
         rsps.POST,
-        DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/latest",
+        cognite_client.datapoints._get_base_url_with_base_path() + "/timeseries/data/latest",
         status=200,
         json={
             "items": [
@@ -492,10 +502,10 @@ def mock_retrieve_latest_empty(rsps):
 
 
 @pytest.fixture
-def mock_retrieve_latest_with_failure(rsps):
+def mock_retrieve_latest_with_failure(rsps, cognite_client):
     rsps.add(
         rsps.POST,
-        DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/latest",
+        cognite_client.datapoints._get_base_url_with_base_path() + "/timeseries/data/latest",
         status=200,
         json={
             "items": [
@@ -506,7 +516,7 @@ def mock_retrieve_latest_with_failure(rsps):
     )
     rsps.add(
         rsps.POST,
-        DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/latest",
+        cognite_client.datapoints._get_base_url_with_base_path() + "/timeseries/data/latest",
         status=500,
         json={"error": {"code": 500, "message": "Internal Server Error"}},
     )
@@ -514,62 +524,64 @@ def mock_retrieve_latest_with_failure(rsps):
 
 
 class TestGetLatest:
-    def test_retrieve_latest(self, mock_retrieve_latest):
-        res = DPS_CLIENT.retrieve_latest(id=1)
+    def test_retrieve_latest(self, cognite_client, mock_retrieve_latest):
+        res = cognite_client.datapoints.retrieve_latest(id=1)
         assert isinstance(res, Datapoints)
         assert 10000 == res[0].timestamp
         assert isinstance(res[0].value, float)
 
-    def test_retrieve_latest_multiple_ts(self, mock_retrieve_latest):
-        res = DPS_CLIENT.retrieve_latest(id=1, external_id="2")
+    def test_retrieve_latest_multiple_ts(self, cognite_client, mock_retrieve_latest):
+        res = cognite_client.datapoints.retrieve_latest(id=1, external_id="2")
         assert isinstance(res, DatapointsList)
         for dps in res:
             assert 10000 == dps[0].timestamp
             assert isinstance(dps[0].value, float)
 
-    def test_retrieve_latest_with_before(self, mock_retrieve_latest):
-        res = DPS_CLIENT.retrieve_latest(id=1, before=10)
+    def test_retrieve_latest_with_before(self, cognite_client, mock_retrieve_latest):
+        res = cognite_client.datapoints.retrieve_latest(id=1, before=10)
         assert isinstance(res, Datapoints)
         assert 9 == res[0].timestamp
         assert isinstance(res[0].value, float)
 
-    def test_retrieve_latest_multiple_ts_with_before(self, mock_retrieve_latest):
-        res = DPS_CLIENT.retrieve_latest(id=[1, 2], external_id=["1", "2"], before=10)
+    def test_retrieve_latest_multiple_ts_with_before(self, cognite_client, mock_retrieve_latest):
+        res = cognite_client.datapoints.retrieve_latest(id=[1, 2], external_id=["1", "2"], before=10)
         assert isinstance(res, DatapointsList)
         for dps in res:
             assert 9 == dps[0].timestamp
             assert isinstance(dps[0].value, float)
 
-    def test_retrieve_latest_empty(self, mock_retrieve_latest_empty):
-        res = DPS_CLIENT.retrieve_latest(id=1)
+    def test_retrieve_latest_empty(self, cognite_client, mock_retrieve_latest_empty):
+        res = cognite_client.datapoints.retrieve_latest(id=1)
         assert isinstance(res, Datapoints)
         assert 0 == len(res)
 
-    def test_retrieve_latest_multiple_ts_empty(self, mock_retrieve_latest_empty):
-        res_list = DPS_CLIENT.retrieve_latest(id=[1, 2])
+    def test_retrieve_latest_multiple_ts_empty(self, cognite_client, mock_retrieve_latest_empty):
+        res_list = cognite_client.datapoints.retrieve_latest(id=[1, 2])
         assert isinstance(res_list, DatapointsList)
         assert 2 == len(res_list)
         for res in res_list:
             assert 0 == len(res)
 
-    def test_retrieve_latest_concurrent_fails(self, mock_retrieve_latest_with_failure):
-        with set_request_limit(DPS_CLIENT, 2):
+    def test_retrieve_latest_concurrent_fails(self, cognite_client, mock_retrieve_latest_with_failure):
+        with set_request_limit(cognite_client.datapoints, 2):
             with pytest.raises(CogniteAPIError) as e:
-                DPS_CLIENT.retrieve_latest(id=[1, 2, 3])
+                cognite_client.datapoints.retrieve_latest(id=[1, 2, 3])
             assert e.value.code == 500
 
 
 @pytest.fixture
-def mock_post_datapoints(rsps):
-    rsps.add(rsps.POST, DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/data", status=200, json={})
+def mock_post_datapoints(rsps, cognite_client):
+    rsps.add(
+        rsps.POST, cognite_client.datapoints._get_base_url_with_base_path() + "/timeseries/data", status=200, json={}
+    )
     yield rsps
 
 
 @pytest.fixture
-def mock_post_datapoints_400(rsps):
+def mock_post_datapoints_400(rsps, cognite_client):
     rsps.add(
         rsps.POST,
-        DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/data",
+        cognite_client.datapoints._get_base_url_with_base_path() + "/timeseries/data",
         status=400,
         json={"error": {"message": "Ts not found", "missing": [{"externalId": "does_not_exist"}]}},
     )
@@ -577,25 +589,25 @@ def mock_post_datapoints_400(rsps):
 
 
 class TestInsertDatapoints:
-    def test_insert_tuples(self, mock_post_datapoints):
+    def test_insert_tuples(self, cognite_client, mock_post_datapoints):
         dps = [(i * 1e11, i) for i in range(1, 11)]
-        res = DPS_CLIENT.insert(dps, id=1)
+        res = cognite_client.datapoints.insert(dps, id=1)
         assert res is None
         assert {
             "items": [{"id": 1, "datapoints": [{"timestamp": int(i * 1e11), "value": i} for i in range(1, 11)]}]
         } == jsgz_load(mock_post_datapoints.calls[0].request.body)
 
-    def test_insert_dicts(self, mock_post_datapoints):
+    def test_insert_dicts(self, cognite_client, mock_post_datapoints):
         dps = [{"timestamp": i * 1e11, "value": i} for i in range(1, 11)]
-        res = DPS_CLIENT.insert(dps, id=1)
+        res = cognite_client.datapoints.insert(dps, id=1)
         assert res is None
         assert {
             "items": [{"id": 1, "datapoints": [{"timestamp": int(i * 1e11), "value": i} for i in range(1, 11)]}]
         } == jsgz_load(mock_post_datapoints.calls[0].request.body)
 
-    def test_by_external_id(self, mock_post_datapoints):
+    def test_by_external_id(self, cognite_client, mock_post_datapoints):
         dps = [(i * 1e11, i) for i in range(1, 11)]
-        DPS_CLIENT.insert(dps, external_id="1")
+        cognite_client.datapoints.insert(dps, external_id="1")
         assert {
             "items": [
                 {"externalId": "1", "datapoints": [{"timestamp": int(i * 1e11), "value": i} for i in range(1, 11)]}
@@ -603,15 +615,15 @@ class TestInsertDatapoints:
         } == jsgz_load(mock_post_datapoints.calls[0].request.body)
 
     @pytest.mark.parametrize("ts_key, value_key", [("timestamp", "values"), ("timstamp", "value")])
-    def test_invalid_datapoints_keys(self, ts_key, value_key):
+    def test_invalid_datapoints_keys(self, cognite_client, ts_key, value_key):
         dps = [{ts_key: i * 1e11, value_key: i} for i in range(1, 11)]
         with pytest.raises(AssertionError, match="is missing the"):
-            DPS_CLIENT.insert(dps, id=1)
+            cognite_client.datapoints.insert(dps, id=1)
 
-    def test_insert_datapoints_over_limit(self, mock_post_datapoints):
+    def test_insert_datapoints_over_limit(self, cognite_client, mock_post_datapoints):
         dps = [(i * 1e11, i) for i in range(1, 11)]
-        with set_request_limit(DPS_CLIENT, 5):
-            res = DPS_CLIENT.insert(dps, id=1)
+        with set_request_limit(cognite_client.datapoints, 5):
+            res = cognite_client.datapoints.insert(dps, id=1)
         assert res is None
         request_bodies = [jsgz_load(call.request.body) for call in mock_post_datapoints.calls]
         assert {
@@ -621,14 +633,14 @@ class TestInsertDatapoints:
             "items": [{"id": 1, "datapoints": [{"timestamp": int(i * 1e11), "value": i} for i in range(6, 11)]}]
         } in request_bodies
 
-    def test_insert_datapoints_no_data(self):
+    def test_insert_datapoints_no_data(self, cognite_client):
         with pytest.raises(AssertionError, match="No datapoints provided"):
-            DPS_CLIENT.insert(id=1, datapoints=[])
+            cognite_client.datapoints.insert(id=1, datapoints=[])
 
-    def test_insert_datapoints_in_multiple_time_series(self, mock_post_datapoints):
+    def test_insert_datapoints_in_multiple_time_series(self, cognite_client, mock_post_datapoints):
         dps = [{"timestamp": i * 1e11, "value": i} for i in range(1, 11)]
         dps_objects = [{"externalId": "1", "datapoints": dps}, {"id": 1, "datapoints": dps}]
-        res = DPS_CLIENT.insert_multiple(dps_objects)
+        res = cognite_client.datapoints.insert_multiple(dps_objects)
         assert res is None
         request_body = jsgz_load(mock_post_datapoints.calls[0].request.body)
         assert {
@@ -638,56 +650,61 @@ class TestInsertDatapoints:
             ]
         } == request_body
 
-    def test_insert_datapoints_in_multiple_time_series_invalid_key(self):
+    def test_insert_datapoints_in_multiple_time_series_invalid_key(self, cognite_client):
         dps = [{"timestamp": i * 1e11, "value": i} for i in range(1, 11)]
         dps_objects = [{"extId": "1", "datapoints": dps}]
         with pytest.raises(ValueError, match="Invalid key 'extId'"):
-            DPS_CLIENT.insert_multiple(dps_objects)
+            cognite_client.datapoints.insert_multiple(dps_objects)
 
-    def test_insert_datapoints_ts_does_not_exist(self, mock_post_datapoints_400):
+    def test_insert_datapoints_ts_does_not_exist(self, cognite_client, mock_post_datapoints_400):
         with pytest.raises(CogniteNotFoundError):
-            DPS_CLIENT.insert(datapoints=[(1e14, 1)], external_id="does_not_exist")
+            cognite_client.datapoints.insert(datapoints=[(1e14, 1)], external_id="does_not_exist")
 
-    def test_insert_multiple_ts__below_ts_and_dps_limit(self, mock_post_datapoints):
+    def test_insert_multiple_ts__below_ts_and_dps_limit(self, cognite_client, mock_post_datapoints):
         dps = [{"timestamp": i * 1e11, "value": i} for i in range(1, 2)]
         dps_objects = [{"id": i, "datapoints": dps} for i in range(100)]
-        DPS_CLIENT.insert_multiple(dps_objects)
+        cognite_client.datapoints.insert_multiple(dps_objects)
         assert 1 == len(mock_post_datapoints.calls)
         request_body = jsgz_load(mock_post_datapoints.calls[0].request.body)
         for i, dps in enumerate(request_body["items"]):
             assert i == dps["id"]
 
     @pytest.fixture
-    def set_post_dps_objects_limit_to_100(self):
-        tmp = DPS_CLIENT._POST_DPS_OBJECTS_LIMIT
-        DPS_CLIENT._POST_DPS_OBJECTS_LIMIT = 100
+    def set_post_dps_objects_limit_to_100(self, cognite_client):
+        tmp = cognite_client.datapoints._POST_DPS_OBJECTS_LIMIT
+        cognite_client.datapoints._POST_DPS_OBJECTS_LIMIT = 100
         yield
-        DPS_CLIENT._POST_DPS_OBJECTS_LIMIT = tmp
+        cognite_client.datapoints._POST_DPS_OBJECTS_LIMIT = tmp
 
     def test_insert_multiple_ts_single_call__below_dps_limit_above_ts_limit(
-        self, mock_post_datapoints, set_post_dps_objects_limit_to_100
+        self, cognite_client, mock_post_datapoints, set_post_dps_objects_limit_to_100
     ):
         dps = [{"timestamp": i * 1e11, "value": i} for i in range(1, 2)]
         dps_objects = [{"id": i, "datapoints": dps} for i in range(101)]
-        DPS_CLIENT.insert_multiple(dps_objects)
+        cognite_client.datapoints.insert_multiple(dps_objects)
         assert 2 == len(mock_post_datapoints.calls)
 
-    def test_insert_multiple_ts_single_call__above_dps_limit_below_ts_limit(self, mock_post_datapoints):
+    def test_insert_multiple_ts_single_call__above_dps_limit_below_ts_limit(self, cognite_client, mock_post_datapoints):
         dps = [{"timestamp": i * 1e11, "value": i} for i in range(1, 1002)]
         dps_objects = [{"id": i, "datapoints": dps} for i in range(10)]
-        DPS_CLIENT.insert_multiple(dps_objects)
+        cognite_client.datapoints.insert_multiple(dps_objects)
         assert 2 == len(mock_post_datapoints.calls)
 
 
 @pytest.fixture
-def mock_delete_datapoints(rsps):
-    rsps.add(rsps.POST, DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/delete", status=200, json={})
+def mock_delete_datapoints(rsps, cognite_client):
+    rsps.add(
+        rsps.POST,
+        cognite_client.datapoints._get_base_url_with_base_path() + "/timeseries/data/delete",
+        status=200,
+        json={},
+    )
     yield rsps
 
 
 class TestDeleteDatapoints:
-    def test_delete_range(self, mock_delete_datapoints):
-        res = DPS_CLIENT.delete_range(start=datetime(2018, 1, 1), end=datetime(2018, 1, 2), id=1)
+    def test_delete_range(self, cognite_client, mock_delete_datapoints):
+        res = cognite_client.datapoints.delete_range(start=datetime(2018, 1, 1), end=datetime(2018, 1, 2), id=1)
         assert res is None
         assert {"items": [{"id": 1, "inclusiveBegin": 1514764800000, "exclusiveEnd": 1514851200000}]} == jsgz_load(
             mock_delete_datapoints.calls[0].request.body
@@ -697,17 +714,17 @@ class TestDeleteDatapoints:
         "id, external_id, exception",
         [(None, None, AssertionError), (1, "1", AssertionError), ("1", None, TypeError), (None, 1, TypeError)],
     )
-    def test_delete_range_invalid_id(self, id, external_id, exception):
+    def test_delete_range_invalid_id(self, cognite_client, id, external_id, exception):
         with pytest.raises(exception):
-            DPS_CLIENT.delete_range("1d-ago", "now", id, external_id)
+            cognite_client.datapoints.delete_range("1d-ago", "now", id, external_id)
 
-    def test_delete_range_start_after_end(self):
+    def test_delete_range_start_after_end(self, cognite_client):
         with pytest.raises(AssertionError, match="must be"):
-            DPS_CLIENT.delete_range(1, 0, 1)
+            cognite_client.datapoints.delete_range(1, 0, 1)
 
-    def test_delete_ranges(self, mock_delete_datapoints):
+    def test_delete_ranges(self, cognite_client, mock_delete_datapoints):
         ranges = [{"id": 1, "start": 0, "end": 1}, {"externalId": "1", "start": 0, "end": 1}]
-        DPS_CLIENT.delete_ranges(ranges)
+        cognite_client.datapoints.delete_ranges(ranges)
         assert {
             "items": [
                 {"id": 1, "inclusiveBegin": 0, "exclusiveEnd": 1},
@@ -715,20 +732,20 @@ class TestDeleteDatapoints:
             ]
         } == jsgz_load(mock_delete_datapoints.calls[0].request.body)
 
-    def test_delete_ranges_invalid_ids(self):
+    def test_delete_ranges_invalid_ids(self, cognite_client):
         ranges = [{"idz": 1, "start": 0, "end": 1}]
         with pytest.raises(AssertionError, match="Invalid key 'idz'"):
-            DPS_CLIENT.delete_ranges(ranges)
+            cognite_client.datapoints.delete_ranges(ranges)
         ranges = [{"start": 0, "end": 1}]
         with pytest.raises(AssertionError, match="Exactly one of id and external id must be specified"):
-            DPS_CLIENT.delete_ranges(ranges)
+            cognite_client.datapoints.delete_ranges(ranges)
 
 
 class TestDatapointsObject:
-    def test_len(self):
+    def test_len(self, cognite_client):
         assert 3 == len(Datapoints(id=1, timestamp=[1, 2, 3], value=[1, 2, 3]))
 
-    def test_get_non_empty_data_fields(self):
+    def test_get_non_empty_data_fields(self, cognite_client):
         assert sorted([("timestamp", [1, 2, 3]), ("value", [1, 2, 3])]) == sorted(
             Datapoints(id=1, timestamp=[1, 2, 3], value=[1, 2, 3])._get_non_empty_data_fields()
         )
@@ -745,12 +762,12 @@ class TestDatapointsObject:
         )
         assert [("timestamp", [])] == list(Datapoints(id=1)._get_non_empty_data_fields())
 
-    def test_iter(self):
+    def test_iter(self, cognite_client):
         for dp in Datapoints(id=1, timestamp=[1, 2, 3], value=[1, 2, 3]):
             assert dp.timestamp in [1, 2, 3]
             assert dp.value in [1, 2, 3]
 
-    def test_eq(self):
+    def test_eq(self, cognite_client):
         assert Datapoints(1) == Datapoints(1)
         assert Datapoints(1, timestamp=[1, 2, 3], value=[1, 2, 3]) == Datapoints(
             1, timestamp=[1, 2, 3], value=[1, 2, 3]
@@ -761,7 +778,7 @@ class TestDatapointsObject:
             1, timestamp=[1, 2, 3], value=[1, 2, 4]
         )
 
-    def test_get_item(self):
+    def test_get_item(self, cognite_client):
         dps = Datapoints(id=1, timestamp=[1, 2, 3], value=[1, 2, 3])
 
         assert Datapoint(timestamp=1, value=1) == dps[0]
@@ -769,7 +786,7 @@ class TestDatapointsObject:
         assert Datapoint(timestamp=3, value=3) == dps[2]
         assert Datapoints(id=1, timestamp=[1, 2], value=[1, 2]) == dps[:2]
 
-    def test_load(self):
+    def test_load(self, cognite_client):
         res = Datapoints._load(
             {
                 "id": 1,
@@ -788,7 +805,7 @@ class TestDatapointsObject:
         assert res.is_step is False
         assert res.is_string is False
 
-    def test_load_string(self):
+    def test_load_string(self, cognite_client):
         res = Datapoints._load(
             {
                 "id": 1,
@@ -805,11 +822,11 @@ class TestDatapointsObject:
         assert res.is_step is None
         assert res.unit is None
 
-    def test_slice(self):
+    def test_slice(self, cognite_client):
         res = Datapoints(id=1, timestamp=[1, 2, 3])._slice(slice(None, 1))
         assert [1] == res.timestamp
 
-    def test_extend(self):
+    def test_extend(self, cognite_client):
         d0 = Datapoints()
         d1 = Datapoints(id=1, external_id="1", timestamp=[1, 2, 3], value=[1, 2, 3])
         d2 = Datapoints(id=1, external_id="1", timestamp=[4, 5, 6], value=[4, 5, 6])
@@ -860,14 +877,14 @@ class TestPlotDatapoints:
 
 @pytest.mark.dsl
 class TestPandasIntegration:
-    def test_datapoint(self):
+    def test_datapoint(self, cognite_client):
         import pandas as pd
 
         d = Datapoint(timestamp=0, value=2, max=3)
         expected_df = pd.DataFrame({"value": [2], "max": [3]}, index=[utils._time.ms_to_datetime(0)])
         pd.testing.assert_frame_equal(expected_df, d.to_pandas(), check_like=True)
 
-    def test_datapoints(self):
+    def test_datapoints(self, cognite_client):
         import pandas as pd
 
         d = Datapoints(id=1, timestamp=[1, 2, 3], average=[2, 3, 4], step_interpolation=[3, 4, 5])
@@ -877,7 +894,7 @@ class TestPandasIntegration:
         )
         pd.testing.assert_frame_equal(expected_df, d.to_pandas())
 
-    def test_datapoints_no_names(self):
+    def test_datapoints_no_names(self, cognite_client):
         import pandas as pd
 
         d = Datapoints(id=1, timestamp=[1, 2, 3], average=[2, 3, 4])
@@ -886,7 +903,7 @@ class TestPandasIntegration:
         expected_df = pd.DataFrame({"1|average": [2, 3, 4]}, index=[utils._time.ms_to_datetime(ms) for ms in [1, 2, 3]])
         pd.testing.assert_frame_equal(expected_df, d.to_pandas(include_aggregate_name=True))
 
-    def test_id_and_external_id_set_gives_external_id_columns(self):
+    def test_id_and_external_id_set_gives_external_id_columns(self, cognite_client):
         import pandas as pd
 
         d = Datapoints(id=0, external_id="abc", timestamp=[1, 2, 3], average=[2, 3, 4], step_interpolation=[3, 4, 5])
@@ -896,11 +913,11 @@ class TestPandasIntegration:
         )
         pd.testing.assert_frame_equal(expected_df, d.to_pandas())
 
-    def test_datapoints_empty(self):
+    def test_datapoints_empty(self, cognite_client):
         d = Datapoints(external_id="1", timestamp=[], value=[])
         assert d.to_pandas().empty
 
-    def test_datapoints_list(self):
+    def test_datapoints_list(self, cognite_client):
         import pandas as pd
 
         d1 = Datapoints(id=1, timestamp=[1, 2, 3], average=[2, 3, 4], step_interpolation=[3, 4, 5])
@@ -919,7 +936,7 @@ class TestPandasIntegration:
         )
         pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas())
 
-    def test_datapoints_list_names(self):
+    def test_datapoints_list_names(self, cognite_client):
         import pandas as pd
 
         d1 = Datapoints(id=2, timestamp=[1, 2, 3], max=[2, 3, 4])
@@ -932,7 +949,7 @@ class TestPandasIntegration:
         expected_df.columns = [c[:1] for c in expected_df.columns]
         pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas(include_aggregate_name=False))
 
-    def test_datapoints_list_names_dup(self):
+    def test_datapoints_list_names_dup(self, cognite_client):
         import pandas as pd
 
         d1 = Datapoints(id=2, timestamp=[1, 2, 3], max=[2, 3, 4])
@@ -947,7 +964,7 @@ class TestPandasIntegration:
         with pytest.raises(CogniteDuplicateColumnsError):
             dps_list.to_pandas(include_aggregate_name=False)
 
-    def test_datapoints_list_non_aligned(self):
+    def test_datapoints_list_non_aligned(self, cognite_client):
         import pandas as pd
 
         d1 = Datapoints(id=1, timestamp=[1, 2, 3], value=[1, 2, 3])
@@ -961,12 +978,12 @@ class TestPandasIntegration:
         )
         pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas())
 
-    def test_datapoints_list_empty(self):
+    def test_datapoints_list_empty(self, cognite_client):
         dps_list = DatapointsList([])
         assert dps_list.to_pandas().empty
 
-    def test_retrieve_dataframe(self, mock_get_datapoints):
-        df = DPS_CLIENT.retrieve_dataframe(
+    def test_retrieve_dataframe(self, cognite_client, mock_get_datapoints):
+        df = cognite_client.datapoints.retrieve_dataframe(
             id=[1, {"id": 2, "aggregates": ["max"]}],
             external_id=["123"],
             start=1000000,
@@ -978,10 +995,12 @@ class TestPandasIntegration:
         assert {"1|average", "2|max", "123|average"} == set(df.columns)
         assert df.shape[0] > 0
 
-    def test_retrieve_datapoints_some_aggregates_omitted(self, mock_get_datapoints_one_ts_has_missing_aggregates):
+    def test_retrieve_datapoints_some_aggregates_omitted(
+        self, cognite_client, mock_get_datapoints_one_ts_has_missing_aggregates
+    ):
         import pandas as pd
 
-        df = DPS_CLIENT.retrieve_dataframe(
+        df = cognite_client.datapoints.retrieve_dataframe(
             id={"id": 1, "aggregates": ["average"]},
             external_id={"externalId": "def", "aggregates": ["interpolation"]},
             start=0,
@@ -996,14 +1015,16 @@ class TestPandasIntegration:
         )
         pd.testing.assert_frame_equal(df, expected_df)
 
-    def test_retrieve_datapoints_last_beyond_end(self, mock_get_datapoints_include_outside):
-        dpt = DPS_CLIENT.retrieve(id=1, include_outside_points=True, start=1000000000, end=1000000000 + 100000)
+    def test_retrieve_datapoints_last_beyond_end(self, cognite_client, mock_get_datapoints_include_outside):
+        dpt = cognite_client.datapoints.retrieve(
+            id=1, include_outside_points=True, start=1000000000, end=1000000000 + 100000
+        )
         assert 100001 == len(dpt)
 
-    def test_retrieve_dataframe_several_missing(self, mock_get_datapoints_several_missing):
+    def test_retrieve_dataframe_several_missing(self, cognite_client, mock_get_datapoints_several_missing):
         import pandas as pd
 
-        df = DPS_CLIENT.retrieve_dataframe(
+        df = cognite_client.datapoints.retrieve_dataframe(
             id=[
                 {"id": 1, "aggregates": ["average"]},
                 {"id": 2, "aggregates": ["interpolation"]},
@@ -1021,10 +1042,10 @@ class TestPandasIntegration:
         )
         pd.testing.assert_frame_equal(df, expected_df)
 
-    def test_retrieve_dataframe_complete_single_isstep(self, mock_get_datapoints_single_isstep):
+    def test_retrieve_dataframe_complete_single_isstep(self, cognite_client, mock_get_datapoints_single_isstep):
         import pandas as pd
 
-        df = DPS_CLIENT.retrieve_dataframe(
+        df = cognite_client.datapoints.retrieve_dataframe(
             id=[{"id": 3, "aggregates": ["interpolation"]}],
             aggregates=[],
             start=0,
@@ -1039,10 +1060,10 @@ class TestPandasIntegration:
         )
         pd.testing.assert_frame_equal(df, expected_df)
 
-    def test_retrieve_dataframe_several_missing_complete(self, mock_get_datapoints_several_missing):
+    def test_retrieve_dataframe_several_missing_complete(self, cognite_client, mock_get_datapoints_several_missing):
         import pandas as pd
 
-        df = DPS_CLIENT.retrieve_dataframe(
+        df = cognite_client.datapoints.retrieve_dataframe(
             id=[
                 {"id": 1, "aggregates": ["average"]},
                 {"id": 2, "aggregates": ["interpolation"]},
@@ -1065,8 +1086,8 @@ class TestPandasIntegration:
         )
         pd.testing.assert_frame_equal(df, expected_df)
 
-    def test_retrieve_dataframe_dict_empty(self, mock_get_datapoints_empty):
-        dfd = DPS_CLIENT.retrieve_dataframe_dict(
+    def test_retrieve_dataframe_dict_empty(self, cognite_client, mock_get_datapoints_empty):
+        dfd = cognite_client.datapoints.retrieve_dataframe_dict(
             id=1,
             aggregates=["count", "interpolation", "stepInterpolation", "totalVariation"],
             start=0,
@@ -1076,16 +1097,18 @@ class TestPandasIntegration:
         assert isinstance(dfd, dict)
         assert 4 == len(dfd)
 
-    def test_retrieve_dataframe_dict_empty_single_aggregate(self, mock_get_datapoints_empty):
-        dfd = DPS_CLIENT.retrieve_dataframe_dict(id=1, aggregates=["count"], start=0, end=1, granularity="1s")
+    def test_retrieve_dataframe_dict_empty_single_aggregate(self, cognite_client, mock_get_datapoints_empty):
+        dfd = cognite_client.datapoints.retrieve_dataframe_dict(
+            id=1, aggregates=["count"], start=0, end=1, granularity="1s"
+        )
         assert isinstance(dfd, dict)
         assert ["count"] == list(dfd.keys())
         assert dfd["count"].empty
 
-    def test_retrieve_dataframe_complete_all(self, mock_get_datapoints):
+    def test_retrieve_dataframe_complete_all(self, cognite_client, mock_get_datapoints):
         import pandas as pd
 
-        df = DPS_CLIENT.retrieve_dataframe(
+        df = cognite_client.datapoints.retrieve_dataframe(
             id=[1, 2],
             aggregates=["count", "sum", "average", "totalVariation"],
             start=0,
@@ -1096,10 +1119,10 @@ class TestPandasIntegration:
         assert isinstance(df, pd.DataFrame)
         assert 8 == df.shape[1]
 
-    def test_retrieve_dataframe_dict(self, mock_get_datapoints_several_missing):
+    def test_retrieve_dataframe_dict(self, cognite_client, mock_get_datapoints_several_missing):
         import pandas as pd
 
-        dfd = DPS_CLIENT.retrieve_dataframe_dict(
+        dfd = cognite_client.datapoints.retrieve_dataframe_dict(
             id=[
                 {"id": 1, "aggregates": ["average"]},
                 {"id": 2, "aggregates": ["interpolation"]},
@@ -1127,10 +1150,10 @@ class TestPandasIntegration:
         for k in expected_dict:
             pd.testing.assert_frame_equal(expected_dict[k], dfd[k])
 
-    def test_retrieve_dataframe_dict_complete(self, mock_get_datapoints_several_missing):
+    def test_retrieve_dataframe_dict_complete(self, cognite_client, mock_get_datapoints_several_missing):
         import pandas as pd
 
-        dfd = DPS_CLIENT.retrieve_dataframe_dict(
+        dfd = cognite_client.datapoints.retrieve_dataframe_dict(
             id=[{"id": 2, "aggregates": ["interpolation"]}, {"id": 3, "aggregates": ["count"]}],
             aggregates=[],
             start=0,
@@ -1154,7 +1177,7 @@ class TestPandasIntegration:
             pd.testing.assert_frame_equal(expected_dict[k], dfd[k])
 
         with pytest.raises(ValueError, match="is not supported for dataframe completion"):
-            dfd = DPS_CLIENT.retrieve_dataframe_dict(
+            dfd = cognite_client.datapoints.retrieve_dataframe_dict(
                 id=[{"id": 1, "aggregates": ["average"]}],
                 aggregates=[],
                 start=0,
@@ -1163,10 +1186,10 @@ class TestPandasIntegration:
                 complete="fill,dropna",
             )
 
-    def test_retrieve_dataframe_id_and_external_id_requested(self, rsps):
+    def test_retrieve_dataframe_id_and_external_id_requested(self, cognite_client, rsps):
         rsps.add(
             rsps.POST,
-            DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/list",
+            cognite_client.datapoints._get_base_url_with_base_path() + "/timeseries/data/list",
             status=200,
             json={
                 "items": [
@@ -1182,7 +1205,7 @@ class TestPandasIntegration:
         )
         rsps.add(
             rsps.POST,
-            DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/list",
+            cognite_client.datapoints._get_base_url_with_base_path() + "/timeseries/data/list",
             status=200,
             json={
                 "items": [
@@ -1196,12 +1219,12 @@ class TestPandasIntegration:
                 ]
             },
         )
-        res = DPS_CLIENT.retrieve_dataframe(
+        res = cognite_client.datapoints.retrieve_dataframe(
             start=0, end="now", id=1, external_id=["def"], aggregates=["average"], granularity="1m"
         )
         assert {"1|average", "def|average"} == set(res.columns)
 
-    def test_insert_dataframe(self, mock_post_datapoints):
+    def test_insert_dataframe(self, cognite_client, mock_post_datapoints):
         import pandas as pd
 
         timestamps = [1500000000000, 1510000000000, 1520000000000, 1530000000000]
@@ -1209,7 +1232,7 @@ class TestPandasIntegration:
             {"123": [1, 2, 3, 4], "456": [5.0, 6.0, 7.0, 8.0]},
             index=[utils._time.ms_to_datetime(ms) for ms in timestamps],
         )
-        res = DPS_CLIENT.insert_dataframe(df)
+        res = cognite_client.datapoints.insert_dataframe(df)
         assert res is None
         request_body = jsgz_load(mock_post_datapoints.calls[0].request.body)
         assert {
@@ -1225,7 +1248,7 @@ class TestPandasIntegration:
             ]
         } == request_body
 
-    def test_insert_dataframe_external_ids(self, mock_post_datapoints):
+    def test_insert_dataframe_external_ids(self, cognite_client, mock_post_datapoints):
         import pandas as pd
 
         timestamps = [1500000000000, 1510000000000, 1520000000000, 1530000000000]
@@ -1233,7 +1256,7 @@ class TestPandasIntegration:
             {"123": [1, 2, 3, 4], "456": [5.0, 6.0, 7.0, 8.0]},
             index=[utils._time.ms_to_datetime(ms) for ms in timestamps],
         )
-        res = DPS_CLIENT.insert_dataframe(df, external_id_headers=True)
+        res = cognite_client.datapoints.insert_dataframe(df, external_id_headers=True)
         assert res is None
         request_body = jsgz_load(mock_post_datapoints.calls[0].request.body)
         assert {
@@ -1249,7 +1272,7 @@ class TestPandasIntegration:
             ]
         } == request_body
 
-    def test_insert_dataframe_with_nans(self):
+    def test_insert_dataframe_with_nans(self, cognite_client):
         import pandas as pd
 
         timestamps = [1500000000000, 1510000000000, 1520000000000, 1530000000000]
@@ -1258,9 +1281,9 @@ class TestPandasIntegration:
             index=[utils._time.ms_to_datetime(ms) for ms in timestamps],
         )
         with pytest.raises(AssertionError, match="contains NaNs"):
-            DPS_CLIENT.insert_dataframe(df)
+            cognite_client.datapoints.insert_dataframe(df)
 
-    def test_insert_dataframe_with_dropna(self, mock_post_datapoints):
+    def test_insert_dataframe_with_dropna(self, cognite_client, mock_post_datapoints):
         import pandas as pd
 
         timestamps = [1500000000000, 1510000000000, 1520000000000, 1530000000000]
@@ -1268,7 +1291,7 @@ class TestPandasIntegration:
             {"123": [1, 2, None, 4], "456": [5.0, 6.0, 7.0, 8.0]},
             index=[utils._time.ms_to_datetime(ms) for ms in timestamps],
         )
-        res = DPS_CLIENT.insert_dataframe(df, dropna=True)
+        res = cognite_client.datapoints.insert_dataframe(df, dropna=True)
         assert res is None
         request_body = jsgz_load(mock_post_datapoints.calls[0].request.body)
         assert {
@@ -1286,15 +1309,15 @@ class TestPandasIntegration:
             ]
         } == request_body
 
-    def test_insert_dataframe_single_dp(self, mock_post_datapoints):
+    def test_insert_dataframe_single_dp(self, cognite_client, mock_post_datapoints):
         import pandas as pd
 
         timestamps = [1500000000000]
         df = pd.DataFrame({"a": [1.0], "b": [2.0]}, index=[utils._time.ms_to_datetime(ms) for ms in timestamps])
-        res = DPS_CLIENT.insert_dataframe(df, external_id_headers=True)
+        res = cognite_client.datapoints.insert_dataframe(df, external_id_headers=True)
         assert res is None
 
-    def test_insert_dataframe_with_infs(self):
+    def test_insert_dataframe_with_infs(self, cognite_client):
         import numpy as np
         import pandas as pd
 
@@ -1304,9 +1327,9 @@ class TestPandasIntegration:
             index=[utils._time.ms_to_datetime(ms) for ms in timestamps],
         )
         with pytest.raises(AssertionError, match="contains Infinity"):
-            DPS_CLIENT.insert_dataframe(df)
+            cognite_client.datapoints.insert_dataframe(df)
 
-    def test_insert_dataframe_with_strings(self, mock_post_datapoints):
+    def test_insert_dataframe_with_strings(self, cognite_client, mock_post_datapoints):
         import pandas as pd
 
         timestamps = [1500000000000, 1510000000000, 1520000000000, 1530000000000]
@@ -1314,21 +1337,23 @@ class TestPandasIntegration:
             {"123": ["a", "b", "c", "d"], "456": [5.0, 6.0, 7.0, 8.0]},
             index=[utils._time.ms_to_datetime(ms) for ms in timestamps],
         )
-        DPS_CLIENT.insert_dataframe(df)
+        cognite_client.datapoints.insert_dataframe(df)
 
-    def test_retrieve_datapoints_multiple_time_series_correct_ordering(self, mock_get_datapoints):
+    def test_retrieve_datapoints_multiple_time_series_correct_ordering(self, cognite_client, mock_get_datapoints):
         ids = [1, 2, 3]
         external_ids = ["4", "5", "6"]
-        dps_res_list = DPS_CLIENT.retrieve(id=ids, external_id=external_ids, start=0, end=100000)
+        dps_res_list = cognite_client.datapoints.retrieve(id=ids, external_id=external_ids, start=0, end=100000)
         assert list(dps_res_list.to_pandas().columns) == ["1", "2", "3", "4", "5", "6"], "Incorrect column ordering"
 
-    def test_retrieve_datapoints_one_ts_empty_correct_number_of_columns(self, mock_get_datapoints_one_ts_empty):
-        res = DPS_CLIENT.retrieve(id=[1, 2], start=0, end=10000)
+    def test_retrieve_datapoints_one_ts_empty_correct_number_of_columns(
+        self, cognite_client, mock_get_datapoints_one_ts_empty
+    ):
+        res = cognite_client.datapoints.retrieve(id=[1, 2], start=0, end=10000)
         assert 2 == len(res.to_pandas().columns)
 
 
 @pytest.fixture
-def mock_get_dps_count(rsps):
+def mock_get_dps_count(rsps, cognite_client):
     def request_callback(request):
         payload = jsgz_load(request.body)
         granularity = payload["granularity"]
@@ -1344,7 +1369,7 @@ def mock_get_dps_count(rsps):
 
     rsps.add_callback(
         rsps.POST,
-        DPS_CLIENT._get_base_url_with_base_path() + "/timeseries/data/list",
+        cognite_client.datapoints._get_base_url_with_base_path() + "/timeseries/data/list",
         callback=request_callback,
         content_type="application/json",
     )
@@ -1352,25 +1377,25 @@ def mock_get_dps_count(rsps):
 
 
 class TestDataPoster:
-    def test_datapoints_bin_add_dps_object(self):
+    def test_datapoints_bin_add_dps_object(self, cognite_client):
         bin = DatapointsBin(10, 10)
         dps_object = {"id": 100, "datapoints": [{"timestamp": 1, "value": 1}]}
         bin.add(dps_object)
         assert 1 == bin.current_num_datapoints
         assert [dps_object] == bin.dps_object_list
 
-    def test_datapoints_bin_will_fit__below_dps_and_ts_limit(self):
+    def test_datapoints_bin_will_fit__below_dps_and_ts_limit(self, cognite_client):
         bin = DatapointsBin(10, 10)
         assert bin.will_fit(10)
         assert not bin.will_fit(11)
 
-    def test_datapoints_bin_will_fit__below_dps_limit_above_ts_limit(self):
+    def test_datapoints_bin_will_fit__below_dps_limit_above_ts_limit(self, cognite_client):
         bin = DatapointsBin(1, 100)
         dps_object = {"id": 100, "datapoints": [{"timestamp": 1, "value": 1}]}
         bin.add(dps_object)
         assert not bin.will_fit(10)
 
-    def test_datapoints_bin_will_fit__above_dps_limit_above_ts_limit(self):
+    def test_datapoints_bin_will_fit__above_dps_limit_above_ts_limit(self, cognite_client):
         bin = DatapointsBin(1, 1)
         dps_object = {"id": 100, "datapoints": [{"timestamp": 1, "value": 1}]}
         bin.add(dps_object)
@@ -1404,29 +1429,42 @@ class TestDataFetcher:
             ),
         ],
     )
-    def test_validate_query(self, q, exc, message):
+    def test_validate_query(self, cognite_client, q, exc, message):
         with pytest.raises(exc, match=message):
-            DatapointsFetcher(DPS_CLIENT).fetch(q)
+            DatapointsFetcher(cognite_client.datapoints).fetch(q)
 
     @pytest.mark.parametrize(
-        "q, expected_q",
+        "fn",
         [
-            (
-                [_DPTask(DPS_CLIENT, 1, 2, {}, None, None, None, None, False)],
-                [_DPTask(DPS_CLIENT, 1, 2, {}, None, None, None, None, False)],
+            lambda cognite_client: (
+                [_DPTask(cognite_client.datapoints, 1, 2, {}, None, None, None, None, False)],
+                [_DPTask(cognite_client.datapoints, 1, 2, {}, None, None, None, None, False)],
             ),
-            (
-                [_DPTask(DPS_CLIENT, datetime(2018, 1, 1), datetime(2019, 1, 1), {}, None, None, None, None, False)],
-                [_DPTask(DPS_CLIENT, 1514764800000, 1546300800000, {}, None, None, None, None, False)],
+            lambda cognite_client: (
+                [
+                    _DPTask(
+                        cognite_client.datapoints,
+                        datetime(2018, 1, 1),
+                        datetime(2019, 1, 1),
+                        {},
+                        None,
+                        None,
+                        None,
+                        None,
+                        False,
+                    )
+                ],
+                [_DPTask(cognite_client.datapoints, 1514764800000, 1546300800000, {}, None, None, None, None, False)],
             ),
-            (
-                [_DPTask(DPS_CLIENT, gms("1h"), gms(("25h")), {}, ["average"], "1d", None, None, False)],
-                [_DPTask(DPS_CLIENT, gms("1d"), gms("2d"), {}, ["average"], "1d", None, None, False)],
+            lambda cognite_client: (
+                [_DPTask(cognite_client.datapoints, gms("1h"), gms(("25h")), {}, ["average"], "1d", None, None, False)],
+                [_DPTask(cognite_client.datapoints, gms("1d"), gms("2d"), {}, ["average"], "1d", None, None, False)],
             ),
         ],
     )
-    def test_preprocess_tasks(self, q, expected_q):
-        DatapointsFetcher(DPS_CLIENT)._preprocess_tasks(q)
+    def test_preprocess_tasks(self, cognite_client, fn):
+        q, expected_q = fn(cognite_client)
+        DatapointsFetcher(cognite_client.datapoints)._preprocess_tasks(q)
         for actual, expected in zip(q, expected_q):
             assert expected.start == actual.start
             assert expected.end == actual.end
@@ -1443,7 +1481,7 @@ class TestDataFetcher:
             (gms("90s"), "1s", gms("90s")),
         ],
     )
-    def test_align_with_granularity_unit(self, ts, granularity, expected_output):
+    def test_align_with_granularity_unit(self, cognite_client, ts, granularity, expected_output):
         assert expected_output == DatapointsFetcher._align_with_granularity_unit(ts, granularity)
 
     @pytest.mark.parametrize(
@@ -1474,11 +1512,11 @@ class TestDataFetcher:
         ],
     )
     def test_get_datapoints_windows(
-        self, start, end, granularity, request_limit, user_limit, expected_output, mock_get_dps_count
+        self, cognite_client, start, end, granularity, request_limit, user_limit, expected_output, mock_get_dps_count
     ):
         user_limit = user_limit or float("inf")
         task = _DPTask(
-            client=DPS_CLIENT,
+            client=cognite_client.datapoints,
             start=start,
             end=end,
             ts_item={},
@@ -1489,7 +1527,9 @@ class TestDataFetcher:
             ignore_unknown_ids=False,
         )
         task.request_limit = request_limit
-        res = DatapointsFetcher(DPS_CLIENT)._get_windows(id=0, task=task, remaining_user_limit=user_limit)
+        res = DatapointsFetcher(cognite_client.datapoints)._get_windows(
+            id=0, task=task, remaining_user_limit=user_limit
+        )
         for w in expected_output:
             w.limit = user_limit
         assert expected_output == res
@@ -1505,7 +1545,7 @@ class TestDataFetcher:
             (0, 10000, "1s", 10000),
         ],
     )
-    def test_align_window_end(self, start, end, granularity, expected_output):
+    def test_align_window_end(self, cognite_client, start, end, granularity, expected_output):
         assert expected_output == DatapointsFetcher._align_window_end(start, end, granularity)
 
     @pytest.mark.parametrize(
@@ -1525,7 +1565,7 @@ class TestDataFetcher:
             ),
         ],
     )
-    def test_process_time_series_input_ok(self, ids, external_ids, expected_output):
+    def test_process_time_series_input_ok(self, cognite_client, ids, external_ids, expected_output):
         assert expected_output == DatapointsFetcher._process_ts_identifiers(ids, external_ids)
 
     @pytest.mark.parametrize(
@@ -1541,6 +1581,6 @@ class TestDataFetcher:
             ({"externalId": 1}, None, ValueError, "Unknown key 'externalId'"),
         ],
     )
-    def test_process_time_series_input_fail(self, ids, external_ids, exception, match):
+    def test_process_time_series_input_fail(self, cognite_client, ids, external_ids, exception, match):
         with pytest.raises(exception, match=match):
             DatapointsFetcher._process_ts_identifiers(ids, external_ids)

@@ -6,8 +6,6 @@ import cognite.client.utils._time
 from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Datapoints, DatapointsList, TimeSeries
-from cognite.client.exceptions import CogniteAPIError
-from cognite.client.utils._experimental_warning import experimental_api
 
 
 class SyntheticDatapointsAPI(APIClient):
