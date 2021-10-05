@@ -15,7 +15,7 @@ from tests.utils import set_request_limit
 
 
 @pytest.fixture(scope="session")
-def test_time_series():
+def test_time_series(cognite_client):
     eids = ["test__constant_%d_with_noise" % i for i in range(10)]
     ts = cognite_client.time_series.retrieve_multiple(external_ids=eids, ignore_unknown_ids=True)
     yield {int(re.match(r"test__constant_(\d+)_with_noise", t.name).group(1)): t for t in ts}

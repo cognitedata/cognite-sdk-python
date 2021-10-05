@@ -77,7 +77,7 @@ class TestSequencesAPI:
         assert "newname" == res.name
         assert res.metadata == {}
 
-    def test_get_new(self, new_seq):
+    def test_get_new(self, cognite_client, new_seq):
         res = cognite_client.sequences.retrieve(id=new_seq.id)
         # assert ["DOUBLE"] == res.column_value_types # soon to change
         assert ["column0"] == res.column_external_ids
