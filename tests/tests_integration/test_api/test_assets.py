@@ -121,7 +121,7 @@ class TestAssetsAPI:
             assert isinstance(asset.aggregates["childCount"], int)
 
     def test_aggregate(self, cognite_client, new_asset):
-        res = cognite_client.assets.aggregate(filter=AssetFilter(name="any"))
+        res = cognite_client.assets.aggregate(filter=AssetFilter(name="mandatory"))
         assert res[0].count > 0
 
     def test_search(self, cognite_client):
