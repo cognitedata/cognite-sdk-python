@@ -20,6 +20,16 @@ from cognite.client.data_classes.contextualization import (
 from cognite.client.data_classes.data_sets import DataSet, DataSetAggregate, DataSetFilter, DataSetList, DataSetUpdate
 from cognite.client.data_classes.datapoints import Datapoint, Datapoints, DatapointsList, DatapointsQuery
 from cognite.client.data_classes.events import EndTimeFilter, Event, EventFilter, EventList, EventUpdate
+from cognite.client.data_classes.extractionpipelines import (
+    ExtractionPipeline,
+    ExtractionPipelineContact,
+    ExtractionPipelineList,
+    ExtractionPipelineRun,
+    ExtractionPipelineRunFilter,
+    ExtractionPipelineRunList,
+    ExtractionPipelineRunUpdate,
+    ExtractionPipelineUpdate,
+)
 from cognite.client.data_classes.files import (
     FileAggregate,
     FileMetadata,
