@@ -125,7 +125,7 @@ class ExtractionPipelinesAPI(APIClient):
 
         Args:
             id (Union[int, List[int]): Id or list of ids
-            external_id (Union[str, List[str]]): External ID or list of exgernal ids
+            external_id (Union[str, List[str]]): External ID or list of external ids
 
         Returns:
             None
