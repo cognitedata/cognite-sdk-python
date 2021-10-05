@@ -19,10 +19,6 @@ def cognite_client() -> CogniteClient:
         scopes = os.environ.get("COGNITE_TOKEN_SCOPES", "").split(",")
         app = PublicClientApplication(client_id=client_id, authority=authority_url)
         creds = app.acquire_token_interactive(scopes=scopes, port=REDIRECT_PORT)
-        return CogniteClient(
-            token_url=creds["id_token_claims"]["iss"],
-            token=creds["access_token"],
-            token_client_id=creds["id_token_claims"]["aud"],
-        )
+        return CogniteClient(token=creds["access_token"])
     else:
         raise ValueError("Environment variable LOGIN_FLOW must be set to either 'client_credentials' or 'interactive'")
