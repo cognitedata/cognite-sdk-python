@@ -10,7 +10,7 @@ class ExtractionPipelinesAPI(APIClient):
     _LIST_CLASS = ExtractionPipelineList
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[ExtractionPipeline]:
-        """Retrieve a single extraction pipeline by id.
+        """`Retrieve a single extraction pipeline by id.`_
 
         Args:
             id (int, optional): ID
