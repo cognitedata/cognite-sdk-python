@@ -43,7 +43,7 @@ class ExtractionPipelinesAPI(APIClient):
         external_ids: Optional[List[str]] = None,
         ignore_unknown_ids: bool = False,
     ) -> ExtractionPipelineList:
-        """Retrieve multiple extraction pipelines by ids and external ids.
+        """`Retrieve multiple extraction pipelines by ids and external ids.`_
 
         Args:
             ids (List[int], optional): IDs
