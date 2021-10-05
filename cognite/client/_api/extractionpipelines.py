@@ -97,7 +97,7 @@ class ExtractionPipelinesAPI(APIClient):
     def create(
         self, extractionPipeline: Union[ExtractionPipeline, List[ExtractionPipeline]]
     ) -> Union[ExtractionPipeline, ExtractionPipelineList]:
-        """Create one or more extraction pipelines.
+        """`Create one or more extraction pipelines.`_
 
         You can create an arbitrary number of extraction pipeline, and the SDK will split the request into multiple requests if necessary.
 
