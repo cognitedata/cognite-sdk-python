@@ -4,7 +4,6 @@ import gzip
 import json
 import os
 from contextlib import contextmanager
-from typing import List, Union
 
 BASE_URL = "https://greenfield.cognitedata.com"
 

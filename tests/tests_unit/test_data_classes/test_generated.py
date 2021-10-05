@@ -1,13 +1,6 @@
 import json
-from unittest import mock
-from unittest.mock import call
 
-import pytest
-
-from cognite.client import CogniteClient
 from cognite.client.data_classes import AggregateResultItem, TimestampRange
-
-c = CogniteClient()
 
 
 class TestGenerated:
