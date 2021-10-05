@@ -19,7 +19,7 @@ class ExtractionPipelineRunsAPI(APIClient):
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         limit: int = 25,
     ) -> ExtractionPipelineRunList:
-        """List runs for an extraction pipeline with given external_id <>`_
+        """`List runs for an extraction pipeline with given external_id <>`_
 
         Args:
             external_id (str): Extraction pipeline external Id.
