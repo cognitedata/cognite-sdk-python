@@ -3,30 +3,35 @@ import pytest
 from cognite.client import CogniteClient
 from cognite.client.exceptions import CogniteAPIError
 
-c = CogniteClient()
+
+@pytest.fixture
+def cognite_client_with_wrong_base_url(cognite_client):
+    url = cognite_client.config.base_url
+    cognite_client.config.base_url = "https://cognitedata.com"
+    yield cognite_client
+    cognite_client.config.base_url = url
 
 
 class TestCogniteClient:
-    def test_wrong_base_url_resulting_in_301(self):
-        c = CogniteClient(base_url="https://cognitedata.com")
+    def test_wrong_base_url_resulting_in_301(self, cognite_client_with_wrong_base_url):
         with pytest.raises(CogniteAPIError):
-            c.assets.list(limit=1)
+            cognite_client_with_wrong_base_url.assets.list(limit=1)
 
-    def test_get(self):
-        res = c.get("/login/status")
+    def test_get(self, cognite_client):
+        res = cognite_client.get("/login/status")
         assert res.status_code == 200
 
-    def test_post(self):
+    def test_post(self, cognite_client):
         with pytest.raises(CogniteAPIError) as e:
-            c.post("/login", json={})
+            cognite_client.post("/login", json={})
         assert e.value.code == 404
 
-    def test_put(self):
+    def test_put(self, cognite_client):
         with pytest.raises(CogniteAPIError) as e:
-            c.put("/login")
+            cognite_client.put("/login")
         assert e.value.code == 404
 
-    def test_delete(self):
+    def test_delete(self, cognite_client):
         with pytest.raises(CogniteAPIError) as e:
-            c.delete("/login")
+            cognite_client.delete("/login")
         assert e.value.code == 404
