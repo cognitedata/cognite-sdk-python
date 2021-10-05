@@ -121,7 +121,7 @@ class ExtractionPipelinesAPI(APIClient):
         return self._create_multiple(extractionPipeline)
 
     def delete(self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None) -> None:
-        """Delete one or more extraction pipelines
+        """`Delete one or more extraction pipelines`_
 
         Args:
             id (Union[int, List[int]): Id or list of ids
