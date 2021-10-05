@@ -74,7 +74,7 @@ class ExtractionPipelinesAPI(APIClient):
         )
 
     def list(self, limit: int = 25) -> ExtractionPipelineList:
-        """List extraction pipelines
+        """`List extraction pipelines`_
 
         Args:
             limit (int, optional): Maximum number of ExtractionPipelines to return. Defaults to 25. Set to -1, float("inf") or None
