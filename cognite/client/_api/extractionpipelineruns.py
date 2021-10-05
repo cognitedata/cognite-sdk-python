@@ -23,8 +23,8 @@ class ExtractionPipelineRunsAPI(APIClient):
 
         Args:
             external_id (str): Extraction pipeline external Id.
-            statuses (List[str]): success/failure/seen.
-            message_substring (str): failure message part.
+            statuses (List[str]): One or more among "success" / "failure" / "seen".
+            message_substring (str): Failure message part.
             created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
             limit (int, optional): Maximum number of ExtractionPipelines to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all items.
