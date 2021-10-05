@@ -600,7 +600,8 @@ class TestPandasIntegration:
     def test_asset_to_pandas(self, cognite_client, mock_assets_response):
         import pandas as pd
 
-        df = cognite_client.assets.retrieve(id=1).to_pandas()
+        asset = cognite_client.assets.retrieve(id=1)
+        df = asset.to_pandas()
         assert isinstance(df, pd.DataFrame)
         assert "metadata" not in df.columns
         assert 1 == df.loc["id"][0]

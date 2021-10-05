@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 pandas = "<1"
+numpy = "==1.19.4"
 requests = "*"
 pytest = "<5"
 sympy = "*"
