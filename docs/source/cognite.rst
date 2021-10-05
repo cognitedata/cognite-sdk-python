@@ -1045,6 +1045,55 @@ Data classes
     :show-inheritance:
 
 
+Extraction pipelines
+--------------------
+List extraction pipelines
+^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelinesAPI.list
+
+Create extraction pipeline
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelinesAPI.create
+
+Retrieve an extraction pipeline by ID
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelinesAPI.retrieve
+
+Retrieve multiple extraction pipelines by ID
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelinesAPI.retrieve_multiple
+
+Update extraction pipelines
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelinesAPI.update
+
+Delete extraction pipelines
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelinesAPI.delete
+
+
+Extraction pipeline runs
+^^^^^^^^^^^^^^^^^^^^^^^^
+List runs for an extraction pipeline
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.extractionpipelineruns.ExtractionPipelineRunsAPI.list
+
+Report new runs
+~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.extractionpipelineruns.ExtractionPipelineRunsAPI.create
+
+
+Data classes
+^^^^^^^^^^^^
+.. automodule:: cognite.client.data_classes.extractionpipelines
+    :members:
+    :show-inheritance:
+
+.. automodule:: cognite.client.data_classes.extractionpipelineruns
+    :members:
+    :show-inheritance:
+
+
 Base data classes
 -----------------
 CogniteResource
