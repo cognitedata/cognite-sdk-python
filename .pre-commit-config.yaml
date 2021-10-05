@@ -1,6 +1,19 @@
 repos:
-- repo: https://github.com/cognitedata/python-pre-commit-hooks
-  rev: e2944b2
-  hooks:
-  - id: isort
-  - id: black
+-   hooks:
+    -   id: autoflake
+        args:
+          - --remove-all-unused-imports
+          - --in-place
+    repo: https://github.com/humitos/mirrors-autoflake
+    rev: v1.1
+-   hooks:
+    -   id: isort
+        args:
+          - --profile
+          - black
+    repo: https://github.com/timothycrosley/isort
+    rev: 5.9.3
+-   hooks:
+    -   id: black
+    repo: https://github.com/psf/black
+    rev: 21.9b0

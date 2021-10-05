@@ -30,6 +30,7 @@ jobs:
 
     - name: Run tests
       env:
+          LOGIN_FLOW: client_credentials
           COGNITE_CLIENT_SECRET: ${{ secrets.COGNITE_CLIENT_SECRET }}
           COGNITE_TOKEN_URL: https://login.microsoftonline.com/dff7763f-e2f5-4ffd-9b8a-4ba4bafba5ea/oauth2/v2.0/token
           COGNITE_TOKEN_SCOPES: https://greenfield.cognitedata.com/.default
