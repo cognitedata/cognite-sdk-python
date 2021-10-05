@@ -1,8 +1,5 @@
-from unittest import mock
-
 import pytest
 
-from cognite.client import CogniteClient
 from cognite.client.data_classes import ExtractionPipeline, ExtractionPipelineRun, ExtractionPipelineUpdate
 from cognite.client.data_classes.extractionpipelines import ExtractionPipelineContact
 from cognite.client.exceptions import CogniteNotFoundError

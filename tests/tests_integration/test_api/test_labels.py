@@ -1,9 +1,7 @@
-from datetime import datetime
 from unittest import mock
 
 import pytest
 
-from cognite.client import CogniteClient
 from cognite.client.data_classes import Asset, AssetUpdate, Label, LabelDefinition
 from cognite.client.utils._auxiliary import random_string
 

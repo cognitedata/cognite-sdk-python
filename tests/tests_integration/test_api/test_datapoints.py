@@ -1,4 +1,3 @@
-import math
 import re
 from datetime import datetime, timedelta
 from unittest import mock
@@ -7,7 +6,7 @@ import numpy
 import pandas
 import pytest
 
-from cognite.client import CogniteClient, utils
+from cognite.client import utils
 from cognite.client.data_classes import DatapointsList, DatapointsQuery, TimeSeries
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._time import timestamp_to_ms

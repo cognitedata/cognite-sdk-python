@@ -4,7 +4,6 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory
 
 import pytest
 
-from cognite.client import CogniteClient
 from cognite.client.data_classes import (
     FileMetadata,
     FileMetadataFilter,

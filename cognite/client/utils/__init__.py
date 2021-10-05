@@ -7,4 +7,3 @@ from cognite.client.utils import (
     _token_generator,
     _version_checker,
 )
-from cognite.client.utils._time import ms_to_datetime, timestamp_to_ms

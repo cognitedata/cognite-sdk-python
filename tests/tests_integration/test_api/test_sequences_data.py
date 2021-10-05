@@ -3,7 +3,6 @@ from unittest import mock
 import numpy as np
 import pytest
 
-from cognite.client import CogniteClient
 from cognite.client.data_classes import Sequence, SequenceData, SequenceDataList
 
 

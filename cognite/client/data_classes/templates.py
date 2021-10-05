@@ -1,8 +1,5 @@
 from collections import UserDict
-from cognite.client.data_classes.assets import AssetFilter
-from enum import Enum, auto
-from cognite.client.data_classes.events import EventFilter
-from typing import List, Optional, Generic
+from typing import List, Optional
 
 from cognite.client.data_classes._base import *
 

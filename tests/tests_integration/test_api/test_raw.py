@@ -1,6 +1,6 @@
 import pytest
 
-from cognite.client import CogniteClient, utils
+from cognite.client import utils
 from cognite.client.data_classes import Row
 from cognite.client.utils._auxiliary import random_string
 

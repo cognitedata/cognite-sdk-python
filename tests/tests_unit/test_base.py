@@ -6,6 +6,7 @@ import pytest
 from cognite.client import CogniteClient
 from cognite.client.data_classes._base import *
 from cognite.client.exceptions import CogniteMissingClientError
+from tests.utils import set_env_var
 
 
 class MyResource(CogniteResource):
@@ -278,7 +279,8 @@ class TestCogniteResourceList:
             MyResourceList([1, 2, 3])
 
     def test_resource_list_client_correct(self):
-        c = CogniteClient()
+        with set_env_var("COGNITE_API_KEY", "bla"):
+            c = CogniteClient()
         with pytest.raises(CogniteMissingClientError):
             MyResource(1)._cognite_client
         assert MyResource(1, cognite_client=c)._cognite_client == c
@@ -419,7 +421,8 @@ class TestCogniteResponse:
         assert MyResponse(1) != MyResponse()
 
     def test_response_client_correct(self):
-        c = CogniteClient()
+        with set_env_var("COGNITE_API_KEY", "BLA"):
+            c = CogniteClient()
         with pytest.raises(CogniteMissingClientError):
             MyResource(1)._cognite_client
         assert MyResource(1, cognite_client=c)._cognite_client == c

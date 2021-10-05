@@ -1,6 +1,5 @@
 import pytest
 
-from cognite.client import CogniteClient
 from cognite.client.data_classes import ThreeDModelRevisionUpdate, ThreeDModelUpdate
 
 

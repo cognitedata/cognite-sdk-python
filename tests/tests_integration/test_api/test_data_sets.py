@@ -2,7 +2,6 @@ from unittest import mock
 
 import pytest
 
-from cognite.client import CogniteClient
 from cognite.client.data_classes import DataSet, DataSetFilter, DataSetUpdate
 from cognite.client.exceptions import CogniteNotFoundError
 from tests.utils import set_request_limit

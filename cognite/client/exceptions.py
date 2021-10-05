@@ -199,8 +199,6 @@ class CogniteAPIKeyError(CogniteException):
     Raised if the API key is missing or invalid.
     """
 
-    pass
-
 
 class CogniteDuplicateColumnsError(CogniteException):
     """Cognite Duplicate Columns Error

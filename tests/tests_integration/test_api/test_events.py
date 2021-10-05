@@ -4,7 +4,7 @@ from unittest import mock
 import pytest
 
 import cognite.client.utils._time
-from cognite.client import CogniteClient, utils
+from cognite.client import utils
 from cognite.client.data_classes import EndTimeFilter, Event, EventFilter, EventUpdate
 from cognite.client.exceptions import CogniteNotFoundError
 from tests.utils import set_request_limit

@@ -1,10 +1,8 @@
-import time
 from datetime import datetime
 from unittest import mock
 
 import pytest
 
-from cognite.client import CogniteClient
 from cognite.client.data_classes import TimeSeries, TimeSeriesFilter, TimeSeriesUpdate
 from tests.utils import set_request_limit
 

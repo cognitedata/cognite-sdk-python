@@ -1,9 +1,7 @@
-import time
 import uuid
 
 import pytest
 
-from cognite.client.beta import CogniteClient
 from cognite.client.data_classes import (
     Asset,
     Label,

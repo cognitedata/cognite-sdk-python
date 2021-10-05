@@ -4,9 +4,9 @@ from unittest import mock
 
 import pytest
 
-from cognite.client import CogniteClient, utils
+from cognite.client import utils
 from cognite.client.data_classes import Asset, AssetFilter, AssetList, AssetUpdate
-from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
+from cognite.client.exceptions import CogniteNotFoundError
 from tests.utils import set_request_limit
 
 

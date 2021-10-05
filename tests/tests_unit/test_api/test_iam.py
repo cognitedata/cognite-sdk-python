@@ -2,21 +2,18 @@ import re
 
 import pytest
 
-from cognite.client import CogniteClient
 from cognite.client._api.iam import APIKeyList, GroupList, SecurityCategoryList, ServiceAccountList
 from cognite.client.data_classes import APIKey, Group, SecurityCategory, ServiceAccount
 from cognite.client.data_classes.iam import ProjectSpec, TokenInspection
 from tests.utils import jsgz_load
 
-IAM_API = CogniteClient().iam
-
 
 @pytest.fixture
-def mock_service_accounts(rsps):
+def mock_service_accounts(rsps, cognite_client):
     response_body = {
         "items": [{"name": "service@bla.com", "groups": [1, 2, 3], "id": 0, "isDeleted": False, "deletedTime": 0}]
     }
-    url_pattern = re.compile(re.escape(IAM_API._get_base_url_with_base_path()) + "/serviceaccounts.*")
+    url_pattern = re.compile(re.escape(cognite_client.iam._get_base_url_with_base_path()) + "/serviceaccounts.*")
     rsps.assert_all_requests_are_fired = False
     rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
     rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
@@ -24,42 +21,42 @@ def mock_service_accounts(rsps):
 
 
 class TestServiceAccounts:
-    def test_list(self, mock_service_accounts):
-        res = IAM_API.service_accounts.list()
+    def test_list(self, cognite_client, mock_service_accounts):
+        res = cognite_client.iam.service_accounts.list()
         assert isinstance(res, ServiceAccountList)
         assert mock_service_accounts.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
-    def test_create(self, mock_service_accounts):
-        res = IAM_API.service_accounts.create(ServiceAccount(name="service@bla.com", groups=[1, 2, 3]))
+    def test_create(self, cognite_client, mock_service_accounts):
+        res = cognite_client.iam.service_accounts.create(ServiceAccount(name="service@bla.com", groups=[1, 2, 3]))
         assert isinstance(res, ServiceAccount)
         assert {"items": [{"name": "service@bla.com", "groups": [1, 2, 3]}]} == jsgz_load(
             mock_service_accounts.calls[0].request.body
         )
         assert mock_service_accounts.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
-    def test_create_multiple(self, mock_service_accounts):
-        res = IAM_API.service_accounts.create([ServiceAccount(name="service@bla.com", groups=[1, 2, 3])])
+    def test_create_multiple(self, cognite_client, mock_service_accounts):
+        res = cognite_client.iam.service_accounts.create([ServiceAccount(name="service@bla.com", groups=[1, 2, 3])])
         assert isinstance(res, ServiceAccountList)
         assert {"items": [{"name": "service@bla.com", "groups": [1, 2, 3]}]} == jsgz_load(
             mock_service_accounts.calls[0].request.body
         )
         assert mock_service_accounts.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
-    def test_delete(self, mock_service_accounts):
-        res = IAM_API.service_accounts.delete(1)
+    def test_delete(self, cognite_client, mock_service_accounts):
+        res = cognite_client.iam.service_accounts.delete(1)
         assert {"items": [1]} == jsgz_load(mock_service_accounts.calls[0].request.body)
         assert res is None
 
-    def test_delete_multiple(self, mock_service_accounts):
-        res = IAM_API.service_accounts.delete([1])
+    def test_delete_multiple(self, cognite_client, mock_service_accounts):
+        res = cognite_client.iam.service_accounts.delete([1])
         assert {"items": [1]} == jsgz_load(mock_service_accounts.calls[0].request.body)
         assert res is None
 
 
 @pytest.fixture
-def mock_api_keys(rsps):
+def mock_api_keys(rsps, cognite_client):
     response_body = {"items": [{"id": 1, "serviceAccountId": 1, "createdTime": 0, "status": "ACTIVE"}]}
-    url_pattern = re.compile(re.escape(IAM_API._get_base_url_with_base_path()) + "/apikeys.*")
+    url_pattern = re.compile(re.escape(cognite_client.iam._get_base_url_with_base_path()) + "/apikeys.*")
     rsps.assert_all_requests_are_fired = False
     rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
     rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
@@ -67,36 +64,36 @@ def mock_api_keys(rsps):
 
 
 class TestAPIKeys:
-    def test_list(self, mock_api_keys):
-        res = IAM_API.api_keys.list()
+    def test_list(self, cognite_client, mock_api_keys):
+        res = cognite_client.iam.api_keys.list()
         assert isinstance(res, APIKeyList)
         assert mock_api_keys.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
-    def test_create(self, mock_api_keys):
-        res = IAM_API.api_keys.create(1)
+    def test_create(self, cognite_client, mock_api_keys):
+        res = cognite_client.iam.api_keys.create(1)
         assert isinstance(res, APIKey)
         assert {"items": [{"serviceAccountId": 1}]} == jsgz_load(mock_api_keys.calls[0].request.body)
         assert mock_api_keys.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
-    def test_create_multiple(self, mock_api_keys):
-        res = IAM_API.api_keys.create([1])
+    def test_create_multiple(self, cognite_client, mock_api_keys):
+        res = cognite_client.iam.api_keys.create([1])
         assert isinstance(res, APIKeyList)
         assert {"items": [{"serviceAccountId": 1}]} == jsgz_load(mock_api_keys.calls[0].request.body)
         assert mock_api_keys.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
-    def test_delete(self, mock_api_keys):
-        res = IAM_API.api_keys.delete(1)
+    def test_delete(self, cognite_client, mock_api_keys):
+        res = cognite_client.iam.api_keys.delete(1)
         assert {"items": [1]} == jsgz_load(mock_api_keys.calls[0].request.body)
         assert res is None
 
-    def test_delete_multiple(self, mock_api_keys):
-        res = IAM_API.api_keys.delete([1])
+    def test_delete_multiple(self, cognite_client, mock_api_keys):
+        res = cognite_client.iam.api_keys.delete([1])
         assert {"items": [1]} == jsgz_load(mock_api_keys.calls[0].request.body)
         assert res is None
 
 
 @pytest.fixture
-def mock_groups(rsps):
+def mock_groups(rsps, cognite_client):
     response_body = {
         "items": [
             {
@@ -109,7 +106,7 @@ def mock_groups(rsps):
             }
         ]
     }
-    url_pattern = re.compile(re.escape(IAM_API._get_base_url_with_base_path()) + "/groups.*")
+    url_pattern = re.compile(re.escape(cognite_client.iam._get_base_url_with_base_path()) + "/groups.*")
     rsps.assert_all_requests_are_fired = False
     rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
     rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
@@ -117,7 +114,7 @@ def mock_groups(rsps):
 
 
 @pytest.fixture
-def mock_group_service_account_response(rsps):
+def mock_group_service_account_response(rsps, cognite_client):
     response_body = {
         "items": [
             {
@@ -129,7 +126,9 @@ def mock_group_service_account_response(rsps):
             }
         ]
     }
-    url_pattern = re.compile(re.escape(IAM_API._get_base_url_with_base_path()) + "/groups/1/serviceaccounts.*")
+    url_pattern = re.compile(
+        re.escape(cognite_client.iam._get_base_url_with_base_path()) + "/groups/1/serviceaccounts.*"
+    )
     rsps.assert_all_requests_are_fired = False
     rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
     rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
@@ -137,9 +136,11 @@ def mock_group_service_account_response(rsps):
 
 
 @pytest.fixture
-def mock_empty_response(rsps):
+def mock_empty_response(rsps, cognite_client):
     response_body = {}
-    url_pattern = re.compile(re.escape(IAM_API._get_base_url_with_base_path()) + "/groups/1/serviceaccounts.*")
+    url_pattern = re.compile(
+        re.escape(cognite_client.iam._get_base_url_with_base_path()) + "/groups/1/serviceaccounts.*"
+    )
     rsps.assert_all_requests_are_fired = False
     rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
     rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
@@ -147,67 +148,67 @@ def mock_empty_response(rsps):
 
 
 class TestGroups:
-    def test_list(self, mock_groups):
-        res = IAM_API.groups.list()
+    def test_list(self, cognite_client, mock_groups):
+        res = cognite_client.iam.groups.list()
         assert isinstance(res, GroupList)
         assert mock_groups.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
-    def test_create(self, mock_groups):
+    def test_create(self, cognite_client, mock_groups):
         my_capabilities = [{"groupsAcl": {"actions": ["LIST"], "scope": {"all": {}}}}]
         my_group = Group(name="My Group", capabilities=my_capabilities)
-        res = IAM_API.groups.create(my_group)
+        res = cognite_client.iam.groups.create(my_group)
         assert isinstance(res, Group)
         assert {"items": [{"name": "My Group", "capabilities": my_capabilities}]} == jsgz_load(
             mock_groups.calls[0].request.body
         )
         assert mock_groups.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
-    def test_create_multiple(self, mock_groups):
-        res = IAM_API.groups.create([1])
+    def test_create_multiple(self, cognite_client, mock_groups):
+        res = cognite_client.iam.groups.create([1])
         assert isinstance(res, GroupList)
         assert {"items": [1]} == jsgz_load(mock_groups.calls[0].request.body)
         assert mock_groups.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
-    def test_delete(self, mock_groups):
-        res = IAM_API.groups.delete(1)
+    def test_delete(self, cognite_client, mock_groups):
+        res = cognite_client.iam.groups.delete(1)
         assert {"items": [1]} == jsgz_load(mock_groups.calls[0].request.body)
         assert res is None
 
-    def test_delete_multiple(self, mock_groups):
-        res = IAM_API.groups.delete([1])
+    def test_delete_multiple(self, cognite_client, mock_groups):
+        res = cognite_client.iam.groups.delete([1])
         assert {"items": [1]} == jsgz_load(mock_groups.calls[0].request.body)
         assert res is None
 
-    def test_list_service_accounts(self, mock_group_service_account_response):
-        res = IAM_API.groups.list_service_accounts(1)
+    def test_list_service_accounts(self, cognite_client, mock_group_service_account_response):
+        res = cognite_client.iam.groups.list_service_accounts(1)
         assert isinstance(res, ServiceAccountList)
         assert mock_group_service_account_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
-    def test_add_service_account(self, mock_empty_response):
-        res = IAM_API.groups.add_service_account(1, 1)
+    def test_add_service_account(self, cognite_client, mock_empty_response):
+        res = cognite_client.iam.groups.add_service_account(1, 1)
         assert res is None
         assert {"items": [1]} == jsgz_load(mock_empty_response.calls[0].request.body)
 
-    def test_add_service_account_multiple(self, mock_empty_response):
-        res = IAM_API.groups.add_service_account(1, [1])
+    def test_add_service_account_multiple(self, cognite_client, mock_empty_response):
+        res = cognite_client.iam.groups.add_service_account(1, [1])
         assert res is None
         assert {"items": [1]} == jsgz_load(mock_empty_response.calls[0].request.body)
 
-    def test_remove_service_account(self, mock_empty_response):
-        res = IAM_API.groups.remove_service_account(1, 1)
+    def test_remove_service_account(self, cognite_client, mock_empty_response):
+        res = cognite_client.iam.groups.remove_service_account(1, 1)
         assert res is None
         assert {"items": [1]} == jsgz_load(mock_empty_response.calls[0].request.body)
 
-    def test_remove_service_account_multiple(self, mock_empty_response):
-        res = IAM_API.groups.remove_service_account(1, [1])
+    def test_remove_service_account_multiple(self, cognite_client, mock_empty_response):
+        res = cognite_client.iam.groups.remove_service_account(1, [1])
         assert res is None
         assert {"items": [1]} == jsgz_load(mock_empty_response.calls[0].request.body)
 
 
 @pytest.fixture
-def mock_security_categories(rsps):
+def mock_security_categories(rsps, cognite_client):
     response_body = {"items": [{"name": "bla", "id": 1}]}
-    url_pattern = re.compile(re.escape(IAM_API._get_base_url_with_base_path()) + "/securitycategories.*")
+    url_pattern = re.compile(re.escape(cognite_client.iam._get_base_url_with_base_path()) + "/securitycategories.*")
     rsps.assert_all_requests_are_fired = False
     rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
     rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
@@ -215,50 +216,52 @@ def mock_security_categories(rsps):
 
 
 class TestSecurityCategories:
-    def test_list(self, mock_security_categories):
-        res = IAM_API.security_categories.list()
+    def test_list(self, cognite_client, mock_security_categories):
+        res = cognite_client.iam.security_categories.list()
         assert isinstance(res, SecurityCategoryList)
         assert mock_security_categories.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
-    def test_create(self, mock_security_categories):
-        res = IAM_API.security_categories.create(SecurityCategory(name="My Category"))
+    def test_create(self, cognite_client, mock_security_categories):
+        res = cognite_client.iam.security_categories.create(SecurityCategory(name="My Category"))
         assert isinstance(res, SecurityCategory)
         assert {"items": [{"name": "My Category"}]} == jsgz_load(mock_security_categories.calls[0].request.body)
         assert mock_security_categories.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
-    def test_create_multiple(self, mock_security_categories):
-        res = IAM_API.security_categories.create([1])
+    def test_create_multiple(self, cognite_client, mock_security_categories):
+        res = cognite_client.iam.security_categories.create([1])
         assert isinstance(res, SecurityCategoryList)
         assert {"items": [1]} == jsgz_load(mock_security_categories.calls[0].request.body)
         assert mock_security_categories.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
-    def test_delete(self, mock_security_categories):
-        res = IAM_API.security_categories.delete(1)
+    def test_delete(self, cognite_client, mock_security_categories):
+        res = cognite_client.iam.security_categories.delete(1)
         assert {"items": [1]} == jsgz_load(mock_security_categories.calls[0].request.body)
         assert res is None
 
-    def test_delete_multiple(self, mock_security_categories):
-        res = IAM_API.security_categories.delete([1])
+    def test_delete_multiple(self, cognite_client, mock_security_categories):
+        res = cognite_client.iam.security_categories.delete([1])
         assert {"items": [1]} == jsgz_load(mock_security_categories.calls[0].request.body)
         assert res is None
 
 
 @pytest.fixture
-def mock_token_inspect(rsps):
+def mock_token_inspect(rsps, cognite_client):
     response_body = {
         "subject": "someSubject",
         "projects": [{"projectUrlName": "veryGoodUrlName", "groups": [1, 2, 3]}],
         "capabilities": [{"groupsAcl": {"actions": ["LIST"], "scope": {"all": {}}}}],
     }
-    url_pattern = re.compile(re.escape(IAM_API.token._get_base_url_with_base_path()) + "/api/v1/token/inspect")
+    url_pattern = re.compile(
+        re.escape(cognite_client.iam.token._get_base_url_with_base_path()) + "/api/v1/token/inspect"
+    )
     rsps.assert_all_requests_are_fired = False
     rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
     yield rsps
 
 
 class TestTokenAPI:
-    def test_token_inspect(self, mock_token_inspect):
-        res = IAM_API.token.inspect()
+    def test_token_inspect(self, cognite_client, mock_token_inspect):
+        res = cognite_client.iam.token.inspect()
         assert isinstance(res, TokenInspection)
         assert res.subject == "someSubject"
         assert res.projects == [ProjectSpec(url_name="veryGoodUrlName", groups=[1, 2, 3])]
