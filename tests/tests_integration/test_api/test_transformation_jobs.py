@@ -6,7 +6,12 @@ import time
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import Transformation, TransformationDestination, TransformationJobStatus
+from cognite.client.data_classes import (
+    OidcCredentials,
+    Transformation,
+    TransformationDestination,
+    TransformationJobStatus,
+)
 
 COGNITE_CLIENT = CogniteClient()
 
@@ -19,8 +24,20 @@ def new_transformation():
         external_id=f"{prefix}-transformation",
         destination=TransformationDestination.assets(),
         query="select id, name from _cdf.assets limit 1000",
-        source_api_key=COGNITE_CLIENT.config.api_key,
-        destination_api_key=COGNITE_CLIENT.config.api_key,
+        source_oidc_credentials=OidcCredentials(
+            client_id=COGNITE_CLIENT.config.token_client_id,
+            client_secret=COGNITE_CLIENT.config.token_client_secret,
+            scopes=",".join(COGNITE_CLIENT.config.token_scopes),
+            token_uri=COGNITE_CLIENT.config.token_url,
+            cdf_project_name=COGNITE_CLIENT.config.project,
+        ),
+        destination_oidc_credentials=OidcCredentials(
+            client_id=COGNITE_CLIENT.config.token_client_id,
+            client_secret=COGNITE_CLIENT.config.token_client_secret,
+            scopes=",".join(COGNITE_CLIENT.config.token_scopes),
+            token_uri=COGNITE_CLIENT.config.token_url,
+            cdf_project_name=COGNITE_CLIENT.config.project,
+        ),
         ignore_null_fields=True,
     )
     ts = COGNITE_CLIENT.transformations.create(transform)
@@ -100,7 +117,7 @@ class TestTransformationJobsAPI:
 
     def test_run_with_timeout(self, longer_transformation: Transformation):
         init = time.time()
-        timeout = 2
+        timeout = 0.1
         job = longer_transformation.run(timeout=timeout)
         final = time.time()
 
@@ -127,7 +144,7 @@ class TestTransformationJobsAPI:
     @pytest.mark.asyncio
     async def test_run_with_timeout_async(self, longer_transformation: Transformation):
         init = time.time()
-        timeout = 2
+        timeout = 0.1
         job = await longer_transformation.run_async(timeout=timeout)
         final = time.time()
 

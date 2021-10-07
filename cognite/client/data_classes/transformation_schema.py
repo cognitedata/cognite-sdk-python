@@ -60,9 +60,6 @@ class TransformationSchemaColumn(CogniteResource):
             instance.type = TransformationSchemaType(type=instance.type)
         return instance
 
-    def __hash__(self):
-        return hash(self.request_scheduler_id)
-
 
 class TransformationSchemaColumnList(CogniteResourceList):
     _RESOURCE = TransformationSchemaColumn

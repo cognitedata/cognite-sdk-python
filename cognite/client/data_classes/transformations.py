@@ -114,6 +114,27 @@ class OidcCredentials:
         self.audience = audience
         self.cdf_project_name = cdf_project_name
 
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+        """Dump the instance into a json serializable Python data type.
+
+        Args:
+            camel_case (bool): Use camelCase for attribute names. Defaults to False.
+
+        Returns:
+            Dict[str, Any]: A dictionary representation of the instance.
+        """
+        ret = {
+            "client_id": self.client_id,
+            "client_secret": self.client_secret,
+            "scopes": self.scopes,
+            "token_uri": self.token_uri,
+            "audience": self.audience,
+            "cdf_project_name": self.cdf_project_name,
+        }
+        if camel_case:
+            return {utils._auxiliary.to_camel_case(key): value for key, value in ret.items()}
+        return ret
+
 
 class TransformationJobBlockade:
     def __init__(self, reason: str = None, created_time: Optional[int] = None):
@@ -215,6 +236,26 @@ class Transformation(CogniteResource):
             else:
                 instance.destination = TransformationDestination(**snake_dict)
         return instance
+
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+        """Dump the instance into a json serializable Python data type.
+
+        Args:
+            camel_case (bool): Use camelCase for attribute names. Defaults to False.
+
+        Returns:
+            Dict[str, Any]: A dictionary representation of the instance.
+        """
+        ret = CogniteResource.dump(self, camel_case=camel_case)
+
+        if self.source_oidc_credentials:
+            source_key = "sourceOidcCredentials" if camel_case else "source_oidc_credentials"
+            ret[source_key] = self.source_oidc_credentials.dump(camel_case=camel_case)
+        if self.destination_oidc_credentials:
+            destination_key = "destinationOidcCredentials" if camel_case else "destination_oidc_credentials"
+            ret[destination_key] = self.destination_oidc_credentials.dump(camel_case=camel_case)
+
+        return ret
 
     def __hash__(self):
         return hash(self.external_id)
