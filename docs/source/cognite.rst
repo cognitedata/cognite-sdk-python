@@ -1076,11 +1076,11 @@ Extraction pipeline runs
 ^^^^^^^^^^^^^^^^^^^^^^^^
 List runs for an extraction pipeline
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.extractionpipelineruns.ExtractionPipelineRunsAPI.list
+.. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelineRunsAPI.list
 
 Report new runs
 ~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.extractionpipelineruns.ExtractionPipelineRunsAPI.create
+.. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelineRunsAPI.create
 
 
 Data classes
