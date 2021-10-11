@@ -1,5 +1,4 @@
 import copy
-from collections import defaultdict
 
 from cognite.client.data_classes._base import *
 from cognite.client.data_classes.assets import Asset

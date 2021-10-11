@@ -2,7 +2,6 @@ import datetime
 import logging
 import os
 import random
-import re
 import sys
 import threading
 import types
@@ -88,25 +87,23 @@ def environment_client_config():
 
 class TestCogniteClient:
     def test_project_is_correct(self, rsps_with_login_mock):
-        with unset_env_var("COGNITE_PROJECT"):
+        with unset_env_var("COGNITE_PROJECT"), set_env_var("COGNITE_API_KEY", "bla"):
             c = CogniteClient()
         assert c.config.project == "test"
 
     def test_no_api_key_no_token_set(self):
-        with unset_env_var(["COGNITE_API_KEY", "COGNITE_TOKEN_URL"]):
+        with unset_env_var("COGNITE_TOKEN_URL", "COGNITE_API_KEY"):
             with pytest.raises(
                 CogniteAPIKeyError, match="No API key or token or token generation arguments have been specified"
             ):
                 CogniteClient()
 
     def test_token_factory_set_no_api_key(self):
-        with unset_env_var("COGNITE_API_KEY"):
-            c = CogniteClient(token=lambda: "abc")
+        c = CogniteClient(token=lambda: "abc")
         assert c.config.token() == "abc"
 
     def test_token_set_no_api_key(self):
-        with unset_env_var("COGNITE_API_KEY"):
-            c = CogniteClient(token="abc")
+        c = CogniteClient(token="abc")
         assert c.config.token == "abc"
 
     def test_token_gen_no_api_key(self, rsps, environment_client_config):
@@ -118,13 +115,12 @@ class TestCogniteClient:
             json={"access_token": "abc", "expires_at": datetime.datetime.now().timestamp() + 1000},
         )
 
-        with unset_env_var("COGNITE_API_KEY"):
-            c = CogniteClient()
+        c = CogniteClient()
 
         assert c.config.token() == "abc"
 
     def test_token_factory_set_no_api_key_and_no_project(self, rsps_with_login_mock):
-        with unset_env_var(["COGNITE_API_KEY", "COGNITE_PROJECT"]):
+        with unset_env_var("COGNITE_PROJECT"):
             c = CogniteClient(token=lambda: "abc")
         assert c.config.project == "test"
 
@@ -136,12 +132,12 @@ class TestCogniteClient:
             status=200,
             json={"data": {"project": "", "loggedIn": False, "user": "", "projectId": -1}},
         )
-        with unset_env_var("COGNITE_PROJECT"):
+        with unset_env_var("COGNITE_PROJECT"), set_env_var("COGNITE_API_KEY", "invalid"):
             with pytest.raises(CogniteAPIKeyError):
                 CogniteClient()
 
     def test_no_client_name(self):
-        with unset_env_var("COGNITE_CLIENT_NAME"):
+        with unset_env_var("COGNITE_CLIENT_NAME"), set_env_var("COGNITE_API_KEY", "bla"):
             with pytest.raises(ValueError, match="No client name has been specified"):
                 CogniteClient()
 
@@ -179,7 +175,7 @@ class TestCogniteClient:
         assert config.token_scopes == token_scopes
 
     def test_default_config(self, rsps_with_login_mock, default_client_config):
-        with unset_env_var("COGNITE_PROJECT"):
+        with unset_env_var("COGNITE_PROJECT"), set_env_var("COGNITE_API_KEY", "bla"):
             client = CogniteClient()
         self.assert_config_is_correct(client.config, *default_client_config)
 
@@ -193,18 +189,18 @@ class TestCogniteClient:
         token_client_secret = "test-client-secret"
         token_url = "https://param-test.com/token"
         token_scopes = ["test-scope", "second-test-scope"]
-
-        client = CogniteClient(
-            project=project,
-            base_url=base_url,
-            max_workers=max_workers,
-            timeout=timeout,
-            client_name=client_name,
-            token_client_id=token_client_id,
-            token_client_secret=token_client_secret,
-            token_url=token_url,
-            token_scopes=token_scopes,
-        )
+        with set_env_var("COGNITE_API_KEY", "bla"):
+            client = CogniteClient(
+                project=project,
+                base_url=base_url,
+                max_workers=max_workers,
+                timeout=timeout,
+                client_name=client_name,
+                token_client_id=token_client_id,
+                token_client_secret=token_client_secret,
+                token_url=token_url,
+                token_scopes=token_scopes,
+            )
         self.assert_config_is_correct(
             client._config,
             base_url,
@@ -219,7 +215,8 @@ class TestCogniteClient:
         )
 
     def test_environment_config(self, environment_client_config):
-        client = CogniteClient()
+        with set_env_var("COGNITE_API_KEY", "bla"):
+            client = CogniteClient()
         self.assert_config_is_correct(client._config, *environment_client_config)
 
     @pytest.fixture
@@ -250,7 +247,7 @@ class TestCogniteClient:
             pool.map(self.create_client_and_check_config, list(range(16)))
 
     def test_client_debug_mode(self, rsps_with_login_mock):
-        with unset_env_var("COGNITE_PROJECT"):
+        with unset_env_var("COGNITE_PROJECT"), set_env_var("COGNITE_API_KEY", "bla"):
             CogniteClient(debug=True)
         log = logging.getLogger("cognite-sdk")
         assert isinstance(log.handlers[0].formatter, DebugLogFormatter)
@@ -259,7 +256,7 @@ class TestCogniteClient:
 
     def test_version_check_disabled_env(self, rsps_with_login_mock):
         rsps_with_login_mock.assert_all_requests_are_fired = False
-        with unset_env_var("COGNITE_PROJECT"):
+        with unset_env_var("COGNITE_PROJECT"), set_env_var("COGNITE_API_KEY", "bla"):
             with set_env_var("COGNITE_DISABLE_PYPI_VERSION_CHECK", "1"):
                 CogniteClient()
         assert len(rsps_with_login_mock.calls) == 1
@@ -267,33 +264,37 @@ class TestCogniteClient:
 
     def test_version_check_disabled_arg(self, rsps_with_login_mock):
         rsps_with_login_mock.assert_all_requests_are_fired = False
-        with unset_env_var(["COGNITE_PROJECT", "COGNITE_DISABLE_PYPI_VERSION_CHECK"]):
+        with unset_env_var("COGNITE_PROJECT", "COGNITE_DISABLE_PYPI_VERSION_CHECK"), set_env_var(
+            "COGNITE_API_KEY", "bla"
+        ):
             CogniteClient(disable_pypi_version_check=True)
         assert len(rsps_with_login_mock.calls) == 1
         assert rsps_with_login_mock.calls[0].request.url.startswith("https://greenfield.cognitedata.com")
 
     def test_api_version_present_in_header(self, rsps_with_login_mock, default_client_config):
-        c = CogniteClient()
+        with set_env_var("COGNITE_API_KEY", "bla"):
+            c = CogniteClient()
         c.login.status()
         assert rsps_with_login_mock.calls[1].request.headers["cdf-version"] == c.config.api_subversion
 
     def test_beta_header_for_beta_client(self, rsps_with_login_mock, default_client_config):
         from cognite.client.beta import CogniteClient as BetaClient
 
-        c = BetaClient()
+        with set_env_var("COGNITE_API_KEY", "bla"):
+            c = BetaClient()
         c.login.status()
         assert rsps_with_login_mock.calls[1].request.headers["cdf-version"] == "beta"
 
     def test_version_check_enabled(self, rsps_with_login_mock):
-        with unset_env_var("COGNITE_PROJECT"):
+        with unset_env_var("COGNITE_PROJECT"), set_env_var("COGNITE_API_KEY", "bla"):
             CogniteClient()
         assert len(rsps_with_login_mock.calls) == 2
 
     @patch("cognite.client.utils._version_checker.re.findall")
     @patch("cognite.client.utils._version_checker.requests")
     def test_verify_ssl_enabled_by_default(self, mock_requests, mock_findall):
-
-        c = CogniteClient()
+        with set_env_var("COGNITE_API_KEY", "bla"):
+            c = CogniteClient()
 
         mock_requests.get.assert_called_with(_PYPI_ADDRESS, verify=True, timeout=5)
         assert c._api_client._http_client_with_retry.session.verify is True
@@ -303,17 +304,20 @@ class TestCogniteClient:
     @patch("cognite.client.utils._version_checker.requests")
     def test_verify_ssl_disabled(self, mock_requests, mock_findall):
         with set_env_var("COGNITE_DISABLE_SSL", "1"):
-            CogniteClient()
+            with set_env_var("COGNITE_API_KEY", "bla"):
+                CogniteClient()
             mock_requests.get.assert_called_with(_PYPI_ADDRESS, verify=False, timeout=5)
 
 
 class TestInstantiateWithClient:
     @pytest.mark.parametrize("cls", [Asset, Event, FileMetadata, TimeSeries])
     def test_instantiate_resources_with_cognite_client(self, cls):
-        c = CogniteClient()
+        with set_env_var("COGNITE_API_KEY", "bla"):
+            c = CogniteClient()
         assert cls(cognite_client=c)._cognite_client == c
 
     @pytest.mark.parametrize("cls", [AssetList, Event, FileMetadataList, TimeSeriesList])
     def test_intantiate_resource_lists_with_cognite_client(self, cls):
-        c = CogniteClient()
+        with set_env_var("COGNITE_API_KEY", "bla"):
+            c = CogniteClient()
         assert cls([], cognite_client=c)._cognite_client == c

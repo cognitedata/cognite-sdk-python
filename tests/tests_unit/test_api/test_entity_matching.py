@@ -2,30 +2,19 @@ import re
 
 import pytest
 
-from cognite.client.beta import CogniteClient
 from cognite.client.data_classes import Asset, EntityMatchingModel, TimeSeries
 from cognite.client.exceptions import ModelFailedException
 from tests.utils import jsgz_load
 
-COGNITE_CLIENT = CogniteClient()
-EMAPI = COGNITE_CLIENT.entity_matching
-
 
 @pytest.fixture
-def mock_fit(rsps):
+def mock_fit(rsps, cognite_client):
     response_body = {"id": 123, "status": "Queued", "createdTime": 42}
     rsps.add(
-        rsps.POST, EMAPI._get_base_url_with_base_path() + EMAPI._RESOURCE_PATH + "/", status=200, json=response_body
-    )
-    yield rsps
-
-
-@pytest.fixture
-def mock_status_ok(rsps):
-    response_body = {"id": 123, "status": "Completed", "createdTime": 42, "statusTime": 456, "startTime": 789}
-    rsps.add(
-        rsps.GET,
-        re.compile(f"{EMAPI._get_base_url_with_base_path()}{EMAPI._RESOURCE_PATH}/\\d+"),
+        rsps.POST,
+        cognite_client.entity_matching._get_base_url_with_base_path()
+        + cognite_client.entity_matching._RESOURCE_PATH
+        + "/",
         status=200,
         json=response_body,
     )
@@ -33,13 +22,29 @@ def mock_status_ok(rsps):
 
 
 @pytest.fixture
-def mock_retrieve(rsps):
+def mock_status_ok(rsps, cognite_client):
+    response_body = {"id": 123, "status": "Completed", "createdTime": 42, "statusTime": 456, "startTime": 789}
+    rsps.add(
+        rsps.GET,
+        re.compile(
+            f"{cognite_client.entity_matching._get_base_url_with_base_path()}{cognite_client.entity_matching._RESOURCE_PATH}/\\d+"
+        ),
+        status=200,
+        json=response_body,
+    )
+    yield rsps
+
+
+@pytest.fixture
+def mock_retrieve(rsps, cognite_client):
     response_body = {
         "items": [{"id": 123, "status": "Completed", "createdTime": 42, "statusTime": 456, "startTime": 789}]
     }
     rsps.add(
         rsps.POST,
-        re.compile(f"{EMAPI._get_base_url_with_base_path()}{EMAPI._RESOURCE_PATH}/byids"),
+        re.compile(
+            f"{cognite_client.entity_matching._get_base_url_with_base_path()}{cognite_client.entity_matching._RESOURCE_PATH}/byids"
+        ),
         status=200,
         json=response_body,
     )
@@ -47,11 +52,13 @@ def mock_retrieve(rsps):
 
 
 @pytest.fixture
-def mock_status_failed(rsps):
+def mock_status_failed(rsps, cognite_client):
     response_body = {"id": 123, "status": "Failed", "errorMessage": "error message"}
     rsps.add(
         rsps.GET,
-        re.compile(f"{EMAPI._get_base_url_with_base_path()}{EMAPI._RESOURCE_PATH}/\\d+"),
+        re.compile(
+            f"{cognite_client.entity_matching._get_base_url_with_base_path()}{cognite_client.entity_matching._RESOURCE_PATH}/\\d+"
+        ),
         status=200,
         json=response_body,
     )
@@ -59,11 +66,13 @@ def mock_status_failed(rsps):
 
 
 @pytest.fixture
-def mock_status_rules_ok(rsps):
+def mock_status_rules_ok(rsps, cognite_client):
     response_body = {"jobId": 456, "status": "Completed", "items": [1]}
     rsps.add(
         rsps.GET,
-        re.compile(f"{EMAPI._get_base_url_with_base_path()}{EMAPI._RESOURCE_PATH}/rules/\\d+"),
+        re.compile(
+            f"{cognite_client.entity_matching._get_base_url_with_base_path()}{cognite_client.entity_matching._RESOURCE_PATH}/rules/\\d+"
+        ),
         status=200,
         json=response_body,
     )
@@ -71,10 +80,12 @@ def mock_status_rules_ok(rsps):
 
 
 class TestEntityMatching:
-    def test_fit(self, mock_fit, mock_status_ok):
+    def test_fit(self, cognite_client, mock_fit, mock_status_ok):
         entities_from = [{"id": 1, "name": "xx"}]
         entities_to = [{"id": 2, "name": "yy"}]
-        model = EMAPI.fit(sources=entities_from, targets=entities_to, true_matches=[(1, 2)], feature_type="bigram")
+        model = cognite_client.entity_matching.fit(
+            sources=entities_from, targets=entities_to, true_matches=[(1, 2)], feature_type="bigram"
+        )
         assert isinstance(model, EntityMatchingModel)
         assert "EntityMatchingModel(id: 123,status: Queued,error: None)" == str(model)
         assert 42 == model.created_time
@@ -108,11 +119,13 @@ class TestEntityMatching:
         assert 1 == n_fit_calls
         assert 1 == n_status_calls
 
-    def test_ml_fit(self, mock_fit, mock_status_ok):
+    def test_ml_fit(self, cognite_client, mock_fit, mock_status_ok):
         # fit_ml should produce the same output as fit. Will eventually be removed
         entities_from = [{"id": 1, "name": "xx"}]
         entities_to = [{"id": 2, "name": "yy"}]
-        model = EMAPI.fit(sources=entities_from, targets=entities_to, true_matches=[(1, 2)], feature_type="bigram")
+        model = cognite_client.entity_matching.fit(
+            sources=entities_from, targets=entities_to, true_matches=[(1, 2)], feature_type="bigram"
+        )
         assert isinstance(model, EntityMatchingModel)
         assert "EntityMatchingModel(id: 123,status: Queued,error: None)" == str(model)
         assert 42 == model.created_time
@@ -120,10 +133,12 @@ class TestEntityMatching:
         assert "Completed" == model.status
         assert 123 == model.id
 
-    def test_fit_cognite_resource(self, mock_fit):
+    def test_fit_cognite_resource(self, cognite_client, mock_fit):
         entities_from = [TimeSeries(id=1, name="x", metadata={"ka": "va"})]
         entities_to = [Asset(id=1, external_id="abc", name="x")]
-        EMAPI.fit(sources=entities_from, targets=entities_to, true_matches=[(1, "abc")], feature_type="bigram")
+        cognite_client.entity_matching.fit(
+            sources=entities_from, targets=entities_to, true_matches=[(1, "abc")], feature_type="bigram"
+        )
         assert {
             "sources": [{"id": 1, "name": "x", "metadata.ka": "va"}],
             "targets": [entities_to[0].dump(camel_case=True)],
@@ -137,10 +152,10 @@ class TestEntityMatching:
             "classifier": None,
         } == jsgz_load(mock_fit.calls[0].request.body)
 
-    def test_fit_fails(self, mock_fit, mock_status_failed):
+    def test_fit_fails(self, cognite_client, mock_fit, mock_status_failed):
         entities_from = [{"id": 1, "name": "xx"}]
         entities_to = [{"id": 2, "name": "yy"}]
-        model = EMAPI.fit(sources=entities_from, targets=entities_to)
+        model = cognite_client.entity_matching.fit(sources=entities_from, targets=entities_to)
         with pytest.raises(ModelFailedException) as exc_info:
             model.wait_for_completion()
         assert exc_info.type is ModelFailedException
@@ -148,8 +163,8 @@ class TestEntityMatching:
         assert "error message" == exc_info.value.error_message
         assert "EntityMatchingModel 123 failed with error 'error message'" == str(exc_info.value)
 
-    def test_retrieve(self, mock_retrieve):
-        model = EMAPI.retrieve(id=123)
+    def test_retrieve(self, cognite_client, mock_retrieve):
+        model = cognite_client.entity_matching.retrieve(id=123)
         assert isinstance(model, EntityMatchingModel)
         assert "Completed" == model.status
         assert 123 == model.id

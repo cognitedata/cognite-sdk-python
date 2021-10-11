@@ -1,6 +1,6 @@
 import os
 from concurrent.futures.thread import ThreadPoolExecutor
-from typing import Any, Dict, List
+from typing import Dict
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.model_hosting.versions import (

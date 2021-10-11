@@ -4,7 +4,6 @@ import gzip
 import json
 import os
 from contextlib import contextmanager
-from typing import List, Union
 
 BASE_URL = "https://greenfield.cognitedata.com"
 
@@ -57,7 +56,7 @@ def set_request_limit(client, limit):
 
 
 @contextmanager
-def unset_env_var(name: Union[str, List[str]]):
+def unset_env_var(*name: str):
     if isinstance(name, str):
         name = [name]
     tmp = {}

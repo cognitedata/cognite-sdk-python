@@ -1,8 +1,5 @@
 from collections import UserDict
-from cognite.client.data_classes.assets import AssetFilter
-from enum import Enum, auto
-from cognite.client.data_classes.events import EventFilter
-from typing import List, Optional, Generic
+from typing import List, Optional
 
 from cognite.client.data_classes._base import *
 
@@ -19,6 +16,7 @@ class TemplateGroup(CogniteResource):
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
         description (str): The description of the template groups.
         owners (List[str]): The list of owners for the template groups.
+        data_set_id (int): The dataSet which this Template Group belongs to
     """
 
     def __init__(
@@ -26,6 +24,7 @@ class TemplateGroup(CogniteResource):
         external_id: str = None,
         description: str = None,
         owners: Optional[List[str]] = None,
+        data_set_id: int = None,
         created_time: int = None,
         last_updated_time: int = None,
         cognite_client=None,
@@ -33,6 +32,7 @@ class TemplateGroup(CogniteResource):
         self.external_id = external_id
         self.description = description
         self.owners = owners
+        self.data_set_id = data_set_id
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self._cognite_client = cognite_client

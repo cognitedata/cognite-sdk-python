@@ -19,16 +19,23 @@ Install pre-commit hooks
 pre-commit install
 ```
 
+### Getting access to python-sdk-test tenant for running integration tests
+- Request access to python-sdk AAD tenant.
+- Set environment variables as per the interactive login flow below
+
 ### Environment Variables
 Set the following environment variables in a .env file:
 ```bash
-COGNITE_CLIENT_NAME=python-sdk-integration-tests
+COGNITE_CLIENT_NAME=python-sdk-integration-tests-<your-name>
 COGNITE_MAX_RETRIES=20
 
 # Only necessary for running integration tests
+LOGIN_FLOW=interactive
 COGNITE_PROJECT=python-sdk-test
-COGNITE_API_KEY=<api-key>
 COGNITE_BASE_URL=https://greenfield.cognitedata.com
+COGNITE_AUTHORITY_URL=https://login.microsoftonline.com/dff7763f-e2f5-4ffd-9b8a-4ba4bafba5ea
+COGNITE_CLIENT_ID=6b0b4266-ffa4-4b9b-8e13-ddbbc8a19ea6
+COGNITE_TOKEN_SCOPES=https://greenfield.cognitedata.com/.default
 ```
 
 ### Testing
