@@ -177,7 +177,7 @@ class TemplateGroupsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> c.templates.groups.delete(external_id=["a", "b"])
+                >>> c.templates.groups.delete(external_ids=["a", "b"])
         """
         return self._delete_multiple(
             True, external_ids=external_ids, extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids}
