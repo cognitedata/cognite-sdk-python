@@ -8,7 +8,7 @@ from cognite.client._api.transformation_notifications import TransformationNotif
 from cognite.client._api.transformation_schedules import TransformationSchedulesAPI
 from cognite.client._api.transformation_schema import TransformationSchemaAPI
 from cognite.client.data_classes import Transformation, TransformationList, TransformationJob
-from cognite.client.data_classes.transformations import TransformationFilter, TransformationUpdate
+from cognite.client.data_classes.transformations import TransformationFilter, TransformationUpdate, TransformationPreviewResult
 
 
 class TransformationsAPI(APIClient):
@@ -261,3 +261,48 @@ class TransformationsAPI(APIClient):
             transformation_id=transformation_id, transformation_external_id=transformation_external_id, wait=False
         )
         return job.wait_async(timeout=timeout)
+
+    def preview(
+        self,
+        query: str = None,
+        convert_to_string: bool = False,
+        limit: int = 100,
+        source_limit: Optional[int] = 100,
+        infer_schema_limit: Optional[int] = 1000,
+    ) -> TransformationPreviewResult:
+        """`. <https://docs.cognite.com/api/playground/#operation/runTransformation>`_
+
+        Args:
+            query (str): SQL query to run for preview.
+            convert_to_string (bool): Stringify values in the query results, default is False.
+            limit (int): Maximum number of rows to return in the final result, default is 100.
+            source_limit (Union[int,str]): Maximum number of items to read from the data source or None to run without limit, default is 100.
+            infer_schema_limit: Limit for how many rows that are used for inferring result schema, default is 1000.
+
+        Returns:
+            Result of the executed query
+
+        Examples:
+
+            Preview transformation results as schema and list of rows:
+
+                >>> from cognite.experimental import CogniteClient
+                >>> c = CogniteClient()
+                >>>
+                >>> query_result = c.transformations.preview(query="select * from _cdf.assets")
+
+            Preview transformation results as pandas dataframe:
+
+                >>> from cognite.experimental import CogniteClient
+                >>> c = CogniteClient()
+                >>>
+                >>> df = c.transformations.preview(query="select * from _cdf.assets").to_pandas()
+        """
+        request_body = {"query": query, "convertToString": convert_to_string}
+
+        params = {"limit": limit, "sourceLimit": source_limit, "inferSchemaLimit": infer_schema_limit}
+
+        response = self._post(url_path=self._RESOURCE_PATH + "/query/run", json=request_body, params=params)
+        result = TransformationPreviewResult._load(response.json(), cognite_client=self._cognite_client)
+
+        return result

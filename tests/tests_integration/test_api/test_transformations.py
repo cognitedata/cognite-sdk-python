@@ -72,11 +72,13 @@ class TestTransformationsAPI:
     def test_update_full(self, new_transformation):
         new_transformation.name = "new name"
         new_transformation.query = "SELECT * from _cdf.assets"
+        new_transformation.destination = TransformationDestination.raw("myDatabase", "myTable")
         updated_transformation = COGNITE_CLIENT.transformations.update(new_transformation)
         retrieved_transformation = COGNITE_CLIENT.transformations.retrieve(new_transformation.id)
         assert (
             updated_transformation.name == retrieved_transformation.name == "new name"
             and updated_transformation.query == retrieved_transformation.query == "SELECT * from _cdf.assets"
+            and updated_transformation.destination == TransformationDestination.raw("myDatabase", "myTable")
         )
 
     def test_update_partial(self, new_transformation):
@@ -93,3 +95,14 @@ class TestTransformationsAPI:
     def test_list(self, new_transformation):
         retrieved_transformations = COGNITE_CLIENT.transformations.list()
         assert new_transformation.id in [transformation.id for transformation in retrieved_transformations]
+
+    def test_preview(self):
+        query_result = COGNITE_CLIENT.transformations.preview(query="select 1 as id, 'asd' as name", limit=100)
+        assert (
+            query_result.schema is not None
+            and query_result.results is not None
+            and len(query_result.schema) == 2
+            and len(query_result.results) == 1
+            and query_result.results[0]["id"] == 1
+            and query_result.results[0]["name"] == "asd"
+        )
