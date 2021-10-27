@@ -1,6 +1,6 @@
 requests>=2.21.0,<3.0.0
-pytest-cov
-pytest-rerunfailures
+pytest-cov==2.*
+pytest-rerunfailures==9.*
 pytest
-responses
-requests_oauthlib
+responses==0.12.*
+requests_oauthlib==1.*
