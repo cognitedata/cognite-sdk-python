@@ -761,7 +761,7 @@ class FilesAPI(APIClient):
                     if chunk:  # filter out keep-alive new chunks
                         f.write(chunk)
 
-    def download_to_path(self, path: str, id: int = None, external_id: str = None):
+    def download_to_path(self, path: Union[Path, str], id: int = None, external_id: str = None):
         """Download a file to a specific target.
 
         Args:
@@ -779,9 +779,10 @@ class FilesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.files.download_to_path("~/mydir/my_downloaded_file.txt", id=123)
         """
+        if isinstance(path, str):
+            path = Path(path)
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
-        dirname = os.path.dirname(path)
-        assert os.path.isdir(dirname), "{} is not a directory".format(dirname)
+        assert path.parent.is_dir(), "{} is not a directory".format(path.parent)
         identifier = self._process_ids(ids=id, external_ids=external_id, wrap_ids=True)[0]
         download_link = self._get_download_link(identifier)
         self._download_file_to_path(download_link, path)
