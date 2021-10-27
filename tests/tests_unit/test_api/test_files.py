@@ -496,6 +496,22 @@ class TestFilesAPI:
             with open(fp2, "rb") as fh:
                 assert b"content2" == fh.read()
 
+    @pytest.fixture
+    def mock_byids_response__file_with_double_dots(self, rsps, cognite_client):
+        filename = "../file1"
+        rsps.add(
+            rsps.POST,
+            cognite_client.files._get_base_url_with_base_path() + "/files/byids",
+            status=200,
+            json={"items": [{"id": 1, "name": filename}]},
+        )
+        yield rsps
+
+    def test_download_file_outside_download_directory(self, cognite_client, mock_byids_response__file_with_double_dots):
+        with TemporaryDirectory() as dir:
+            with pytest.raises(RuntimeError, match="not inside download directory"):
+                cognite_client.files.download(directory=dir, id=[1])
+
     def test_download_one_file_fails(self, cognite_client, mock_file_download_response_one_fails):
         with TemporaryDirectory() as dir:
             with pytest.raises(CogniteAPIError) as e:

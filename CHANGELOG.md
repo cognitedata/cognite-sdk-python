@@ -15,10 +15,13 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 
+## [2.33.0] - 2021-10-27
+### Security
+- Disallow downloading files to path outside download directory in `files.download()`. 
+
 ## [2.32.0] - 2021-10-04
 ### Added
  - Support for extraction pipelines
-
 
 ## [2.31.1] - 2021-09-27
 ### Fixed

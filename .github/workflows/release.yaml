@@ -40,7 +40,7 @@ jobs:
           COGNITE_CLIENT_NAME: python-sdk-integration-tests
           CI: 1
       run: |
-        pipenv run coverage run --source cognite.client -m pytest -v tests
+        pipenv run coverage run --source cognite.client -m pytest -v --maxfail 10 tests
         pipenv run coverage xml
 
     - uses: codecov/codecov-action@v1

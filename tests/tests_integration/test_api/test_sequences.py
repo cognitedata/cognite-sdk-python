@@ -57,10 +57,6 @@ class TestSequencesAPI:
         res = cognite_client.sequences.list(asset_ids=[12345678910], limit=20)
         assert 0 == len(res)
 
-    def test_list_assetid(self, cognite_client):
-        res = cognite_client.sequences.list(asset_ids=[42], limit=20)
-        assert 1 == len(res)
-
     def test_aggregate(self, cognite_client):
         res = cognite_client.sequences.aggregate(filter=SequenceFilter(name="42"))
         assert res[0].count > 0
