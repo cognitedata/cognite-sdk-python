@@ -1,5 +1,6 @@
 import copy
 import os
+from pathlib import Path
 from typing import *
 from typing.io import BinaryIO, TextIO
 
@@ -672,11 +673,12 @@ class FilesAPI(APIClient):
         return FileMetadata._load(returned_file_metadata)
 
     def download(
-        self, directory: str, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None
+        self, directory: Union[str, Path], id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None
     ) -> None:
         """`Download files by id or external id. <https://docs.cognite.com/api/v1/#operation/downloadLinks>`_
 
-        This method will stream all files to disk, never keeping more than 2MB of a given file in memory.
+        This method will stream all files to disk, never keeping more than 2MB in memory per worker.
+        The files will be stored in the provided directory using the name retrieved from the file metadata in CDF.
 
 
         Args:
@@ -695,12 +697,14 @@ class FilesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.files.download(directory="my_directory", id=[1,2,3], external_id=["abc", "def"])
         """
+        if isinstance(directory, str):
+            directory = Path(directory)
         all_ids = self._process_ids(ids=id, external_ids=external_id, wrap_ids=True)
         id_to_metadata = self._get_id_to_metadata_map(all_ids)
-        assert os.path.isdir(directory), "{} is not a directory".format(directory)
+        assert directory.is_dir(), "{} is not a directory".format(directory)
         self._download_files_to_directory(directory, all_ids, id_to_metadata)
 
-    def _get_id_to_metadata_map(self, all_ids):
+    def _get_id_to_metadata_map(self, all_ids: List[Dict]) -> Dict[Union[str, int], FileMetadata]:
         ids = [id["id"] for id in all_ids if "id" in id]
         external_ids = [id["externalId"] for id in all_ids if "externalId" in id]
 
@@ -713,7 +717,12 @@ class FilesAPI(APIClient):
 
         return id_to_metadata
 
-    def _download_files_to_directory(self, directory, all_ids, id_to_metadata):
+    def _download_files_to_directory(
+        self,
+        directory: Path,
+        all_ids: List[Dict[str, Union[int, str]]],
+        id_to_metadata: Dict[Union[str, int], FileMetadata],
+    ) -> None:
         tasks = [(directory, id, id_to_metadata) for id in all_ids]
         tasks_summary = utils._concurrency.execute_tasks_concurrently(
             self._process_file_download, tasks, max_workers=self._config.max_workers
@@ -728,18 +737,26 @@ class FilesAPI(APIClient):
             "downloadUrl"
         ]
 
-    def _process_file_download(self, directory, identifier, id_to_metadata):
-        download_link = self._get_download_link(identifier)
+    def _process_file_download(
+        self,
+        directory: Path,
+        identifier: Dict[str, Union[int, str]],
+        id_to_metadata: Dict[Union[str, int], FileMetadata],
+    ):
         id = utils._auxiliary.unwrap_identifer(identifier)
         file_metadata = id_to_metadata[id]
-        file_path = os.path.join(directory, file_metadata.name)
+        file_path = (directory / file_metadata.name).resolve()
+        file_is_in_download_directory = directory.resolve() in file_path.parents
+        if not file_is_in_download_directory:
+            raise RuntimeError(f"Resolved file path '{file_path}' is not inside download directory")
+        download_link = self._get_download_link(identifier)
         self._download_file_to_path(download_link, file_path)
 
-    def _download_file_to_path(self, download_link: str, path: str, chunk_size: int = 2 ** 21):
+    def _download_file_to_path(self, download_link: str, path: Path, chunk_size: int = 2 ** 21):
         with self._http_client_with_retry.request(
             "GET", download_link, stream=True, timeout=self._config.file_transfer_timeout
         ) as r:
-            with open(path, "wb") as f:
+            with path.open("wb") as f:
                 for chunk in r.iter_content(chunk_size=chunk_size):
                     if chunk:  # filter out keep-alive new chunks
                         f.write(chunk)
