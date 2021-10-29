@@ -6,8 +6,8 @@ from cognite.client._api_client import APIClient
 from cognite.client.data_classes import (
     OidcCredentials,
     Transformation,
+    TransformationBlockedInfo,
     TransformationDestination,
-    TransformationJobBlockade,
     TransformationList,
     TransformationNotification,
     TransformationNotificationList,

@@ -111,7 +111,7 @@ from cognite.client.data_classes.transformation_jobs import TransformationJob, T
 from cognite.client.data_classes.transformation_notifications import TransformationNotification, TransformationNotificationList
 from cognite.client.data_classes.transformation_schedules import TransformationSchedule, TransformationScheduleList, TransformationScheduleUpdate
 from cognite.client.data_classes.transformation_schema import TransformationSchemaColumn, TransformationSchemaColumnList
-from cognite.client.data_classes.transformations import Transformation, TransformationList, TransformationUpdate, TransformationDestination, TransformationJobBlockade, OidcCredentials
+from cognite.client.data_classes.transformations import Transformation, TransformationList, TransformationUpdate, TransformationDestination, TransformationBlockedInfo, OidcCredentials
 
 from cognite.client.data_classes.shared import (  # isort: skip
     AggregateResult,

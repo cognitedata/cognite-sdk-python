@@ -8,8 +8,8 @@ from requests import Response
 from cognite.client.data_classes import (
     OidcCredentials,
     Transformation,
+    TransformationBlockedInfo,
     TransformationDestination,
-    TransformationJobBlockade,
     TransformationList,
     TransformationSchedule,
     TransformationScheduleList,

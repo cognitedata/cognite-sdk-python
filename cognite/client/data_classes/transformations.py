@@ -1,8 +1,5 @@
 from cognite.client.data_classes._base import *
 
-from cognite.client.data_classes.transformation_jobs import *
-from cognite.client.data_classes.transformation_schema import *
-
 
 class TransformationDestination:
     """TransformationDestination has static methods to define the target resource type of a transformation
@@ -142,7 +139,7 @@ class OidcCredentials:
         return ret
 
 
-class TransformationJobBlockade:
+class TransformationBlockedInfo:
     def __init__(self, reason: str = None, created_time: Optional[int] = None):
         self.reason = reason
         self.created_time = created_time
@@ -172,6 +169,10 @@ class Transformation(CogniteResource):
         has_destination_api_key (bool): Indicates if the transformation is configured with a destination api key.
         has_source_oidc_credentials (bool): Indicates if the transformation is configured with a source oidc credentials set.
         has_destination_oidc_credentials (bool): Indicates if the transformation is configured with a destination oidc credentials set.
+        running_job (TransformationJob): Details for the job of this transformation currently running.
+        last_finished_job (TransformationJob): Details for the last finished job of this transformation.
+        blocked (TransformationBlockedInfo): Provides reason and time if the transformation is blocked.
+        schedule (TransformationSchedule): Details for the schedule if the transformation is scheduled.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
@@ -197,6 +198,10 @@ class Transformation(CogniteResource):
         has_destination_api_key: Optional[bool] = None,
         has_source_oidc_credentials: Optional[bool] = None,
         has_destination_oidc_credentials: Optional[bool] = None,
+        running_job: "TransformationJob" = None,
+        last_finished_job: "TransformationJob" = None,
+        blocked: TransformationBlockedInfo = None,
+        schedule: "TransformationSchedule" = None,
         cognite_client=None,
     ):
         self.id = id
@@ -221,6 +226,10 @@ class Transformation(CogniteResource):
         self.last_updated_time = last_updated_time
         self.owner = owner
         self.owner_is_current_user = owner_is_current_user
+        self.running_job = running_job
+        self.last_finished_job = last_finished_job
+        self.blocked = blocked
+        self.schedule = schedule
         self._cognite_client = cognite_client
 
     def run(self, wait: bool = True, timeout: Optional[float] = None) -> "TransformationJob":
@@ -241,6 +250,20 @@ class Transformation(CogniteResource):
                 instance.destination = RawTable(**snake_dict)
             else:
                 instance.destination = TransformationDestination(**snake_dict)
+        if isinstance(instance.running_job, Dict):
+            snake_dict = {utils._auxiliary.to_snake_case(key): value for (key, value) in instance.running_job.items()}
+            instance.running_job = TransformationJob._load(snake_dict, cognite_client=cognite_client)
+        if isinstance(instance.last_finished_job, Dict):
+            snake_dict = {
+                utils._auxiliary.to_snake_case(key): value for (key, value) in instance.last_finished_job.items()
+            }
+            instance.last_finished_job = TransformationJob._load(snake_dict, cognite_client=cognite_client)
+        if isinstance(instance.blocked, Dict):
+            snake_dict = {utils._auxiliary.to_snake_case(key): value for (key, value) in instance.blocked.items()}
+            instance.blocked = TransformationBlockedInfo(**snake_dict)
+        if isinstance(instance.schedule, Dict):
+            snake_dict = {utils._auxiliary.to_snake_case(key): value for (key, value) in instance.schedule.items()}
+            instance.schedule = TransformationSchedule._load(snake_dict, cognite_client=cognite_client)
         return instance
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
@@ -376,3 +399,8 @@ class TransformationPreviewResult(CogniteResource):
         ret = super().dump(camel_case=camel_case)
         ret["schema"] = ret["schema"].dump(camel_case=camel_case)
         return ret
+
+
+from cognite.client.data_classes.transformation_jobs import TransformationJob, TransformationJobList
+from cognite.client.data_classes.transformation_schedules import TransformationSchedule
+from cognite.client.data_classes.transformation_schema import *

@@ -74,6 +74,13 @@ class TestTransformationSchedulesAPI:
             and new_schedule.last_updated_time is not None
         )
 
+    def test_schedule_member(self, new_schedule: TransformationSchedule):
+        retrieved_transformation = COGNITE_CLIENT.transformations.retrieve(id=new_schedule.id)
+        assert (
+            retrieved_transformation.schedule.interval == "0 * * * *"
+            and retrieved_transformation.schedule.is_paused == False
+        )
+
     def test_retrieve(self, new_schedule: TransformationSchedule):
         retrieved_schedule = COGNITE_CLIENT.transformations.schedules.retrieve(new_schedule.id)
         assert (

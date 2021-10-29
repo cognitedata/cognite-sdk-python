@@ -97,6 +97,9 @@ class TestTransformationJobsAPI:
             and job.error is None
             and job.ignore_null_fields
         )
+        retrieved_transformation = COGNITE_CLIENT.transformations.retrieve(id=new_transformation.id)
+
+        assert retrieved_transformation.running_job is not None and retrieved_transformation.running_job.id == job.id
 
     def test_run(self, new_transformation: Transformation):
         job = new_transformation.run()
@@ -113,6 +116,13 @@ class TestTransformationJobsAPI:
             and job.raw_query == new_transformation.query
             and job.error is None
             and job.ignore_null_fields
+        )
+
+        retrieved_transformation = COGNITE_CLIENT.transformations.retrieve(id=new_transformation.id)
+
+        assert (
+            retrieved_transformation.last_finished_job is not None
+            and retrieved_transformation.last_finished_job.id == job.id
         )
 
     def test_run_with_timeout(self, longer_transformation: Transformation):
