@@ -363,3 +363,16 @@ class TransformationPreviewResult(CogniteResource):
             if items is not None:
                 instance.results = items
         return instance
+
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+        """Dump the instance into a json serializable Python data type.
+
+        Args:
+            camel_case (bool): Use camelCase for attribute names. Defaults to False.
+
+        Returns:
+            Dict[str, Any]: A dictionary representation of the instance.
+        """
+        ret = super().dump(camel_case=camel_case)
+        ret["schema"] = ret["schema"].dump(camel_case=camel_case)
+        return ret

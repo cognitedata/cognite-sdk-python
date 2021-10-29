@@ -106,3 +106,7 @@ class TestTransformationsAPI:
             and query_result.results[0]["id"] == 1
             and query_result.results[0]["name"] == "asd"
         )
+
+    def test_preview_to_string(self):
+        query_result = COGNITE_CLIENT.transformations.preview(query="select 1 as id, 'asd' as name", limit=100)
+        dumped = str(query_result)

@@ -44,7 +44,7 @@ class TransformationSchemaColumn(CogniteResource):
         self.sql_type = sql_type
         self.type = type
         self.nullable = nullable
-        self.cognite_client = cognite_client
+        self._cognite_client = cognite_client
 
     @classmethod
     def _load(cls, resource: Union[Dict, str], cognite_client=None):
