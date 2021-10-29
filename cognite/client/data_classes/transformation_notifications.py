@@ -52,8 +52,12 @@ class TransformationNotificationFilter(CogniteFilter):
     Args:
         config_id (Optional[int]): List only notifications for the specified transformation. The transformation is identified by internal numeric ID.
         config_external_id (str): List only notifications for the specified transformation. The transformation is identified by externalId.
+        destination (str): Filter by notification destination.
     """
 
-    def __init__(self, transformation_id: Optional[int] = None, transformation_external_id: str = None):
+    def __init__(
+        self, transformation_id: Optional[int] = None, transformation_external_id: str = None, destination: str = None
+    ):
         self.transformation_id = transformation_id
         self.transformation_external_id = transformation_external_id
+        self.destination = destination
