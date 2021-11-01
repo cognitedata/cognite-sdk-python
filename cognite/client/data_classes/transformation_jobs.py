@@ -31,7 +31,7 @@ class TransformationJobMetric(CogniteResource):
         self.timestamp = timestamp
         self.name = name
         self.count = count
-        self.cognite_client = cognite_client
+        self._cognite_client = cognite_client
 
     @classmethod
     def _load(cls, resource: Union[Dict, str], cognite_client=None):
@@ -102,11 +102,11 @@ class TransformationJob(CogniteResource):
         self.started_time = started_time
         self.finished_time = finished_time
         self.last_seen_time = last_seen_time
-        self.cognite_client = cognite_client
+        self._cognite_client = cognite_client
 
     def update(self):
         """`Get updated job status. <https://docs.cognite.com/api/playground/#operation/runTransformation>`_"""
-        updated = self.cognite_client.transformations.jobs.retrieve(id=self.id)
+        updated = self._cognite_client.transformations.jobs.retrieve(id=self.id)
         self.status = updated.status
         self.error = updated.error
         self.started_time = updated.started_time
@@ -115,7 +115,7 @@ class TransformationJob(CogniteResource):
 
     def metrics(self):
         """`Get job metrics. <https://docs.cognite.com/api/playground/#operation/runTransformation>`_"""
-        return self.cognite_client.transformations.jobs.list_metrics(self.id)
+        return self._cognite_client.transformations.jobs.list_metrics(self.id)
 
     def wait(self, polling_interval: float = 1, timeout: Optional[float] = None) -> "TransformationJob":
         """`Waits for the job to finish.`_

@@ -104,3 +104,6 @@ class TestTransformationNotificationsAPI:
         )
         assert new_notification.id in [notification.id for notification in retrieved_notifications]
         assert len(retrieved_notifications) == 1
+
+    def test_notification_to_string(self, new_notification):
+        dumped = str(new_notification)

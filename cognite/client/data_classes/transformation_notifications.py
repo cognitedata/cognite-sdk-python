@@ -30,7 +30,7 @@ class TransformationNotification(CogniteResource):
         self.destination = destination
         self.created_time = created_time
         self.last_updated_time = last_updated_time
-        self.cognite_client = cognite_client
+        self._cognite_client = cognite_client
 
     @classmethod
     def _load(cls, resource: Union[Dict, str], cognite_client=None):
