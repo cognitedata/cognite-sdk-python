@@ -312,14 +312,14 @@ class View(CogniteResource):
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
         source (Source): Defines the data source for the view.
-        data_set_id (int): The dataSetId of the view
+        data_set_id (Optional[int]): The dataSetId of the view
     """
 
     def __init__(
         self,
         external_id: str = None,
         source: Source = None,
-        data_set_id: int = None,
+        data_set_id: Optional[int] = None,
         created_time: int = None,
         last_updated_time: int = None,
         cognite_client=None,
