@@ -14,6 +14,9 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.34.0] - 2021-11-5
+### Added
+- Added support for `data_set_id` on template views
 
 ## [2.33.0] - 2021-10-27
 ### Security
