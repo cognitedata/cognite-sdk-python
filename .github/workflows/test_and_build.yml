@@ -22,7 +22,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
 
     - name: Install pipenv
-      run: pip3 install pipenv
+      run: pip3 install pipenv==2021.5.29
 
     - name: Install core dependencies
       run: pipenv run pip install -r core-requirements.txt
