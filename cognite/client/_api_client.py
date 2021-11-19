@@ -136,7 +136,12 @@ class APIClient:
         headers.update(kwargs.get("headers") or {})
 
         if json_payload:
-            data = _json.dumps(json_payload, default=utils._auxiliary.json_dump_default)
+            try:
+                data = _json.dumps(json_payload, default=utils._auxiliary.json_dump_default, allow_nan=False)
+            except ValueError as e:
+                raise ValueError(f"{e}. Make sure your data does not contain NaN(s) or +/- Inf!").with_traceback(
+                    e.__traceback__
+                ) from None
             kwargs["data"] = data
             if method in ["PUT", "POST"] and not os.getenv("COGNITE_DISABLE_GZIP", False):
                 kwargs["data"] = gzip.compress(data.encode())
