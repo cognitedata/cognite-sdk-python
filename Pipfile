@@ -28,6 +28,7 @@ responses = "*"
 pytest-rerunfailures = "*"
 matplotlib = "*"
 secretstorage = "*"
+pytest-asyncio = "*"
 
 [pipenv]
 allow_prereleases = true
