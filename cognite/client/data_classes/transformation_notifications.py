@@ -55,5 +55,5 @@ class TransformationNotificationFilter(CogniteFilter):
     """
 
     def __init__(self, transformation_id: Optional[int] = None, transformation_external_id: str = None):
-        self.config_id = transformation_id
-        self.config_external_id = transformation_external_id
+        self.transformation_id = transformation_id
+        self.transformation_external_id = transformation_external_id
