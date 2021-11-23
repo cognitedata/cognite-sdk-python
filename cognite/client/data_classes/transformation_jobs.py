@@ -4,6 +4,7 @@ from enum import Enum
 from uuid import UUID
 
 from cognite.client.data_classes._base import *
+from cognite.client.data_classes.transformations_common import RawTable, TransformationDestination
 
 
 class TransformationJobStatus(str, Enum):
@@ -25,7 +26,12 @@ class TransformationJobMetric(CogniteResource):
     """
 
     def __init__(
-        self, id: int = None, timestamp: int = None, name: str = None, count: int = None, cognite_client=None,
+        self,
+        id: int = None,
+        timestamp: int = None,
+        name: str = None,
+        count: int = None,
+        cognite_client=None,
     ):
         self.id = id
         self.timestamp = timestamp
@@ -133,8 +139,8 @@ class TransformationJob(CogniteResource):
                 >>> from cognite.experimental import CogniteClient
                 >>> c = CogniteClient()
                 >>>
-                >>> job1 = c.transformations.run(id = 1, wait = False) 
-                >>> job2 = c.transformations.run(id = 2, wait = False)  
+                >>> job1 = c.transformations.run(id = 1, wait = False)
+                >>> job2 = c.transformations.run(id = 2, wait = False)
                 >>> job1.wait()
                 >>> job2.wait()
                 >>> if TransformationJobStatus.FAILED not in [job1.status, job2.status]:
@@ -145,7 +151,7 @@ class TransformationJob(CogniteResource):
                 >>> from cognite.experimental import CogniteClient
                 >>> c = CogniteClient()
                 >>>
-                >>> job = c.transformations.run(id = 1, wait = False)  
+                >>> job = c.transformations.run(id = 1, wait = False)
                 >>> job.wait(timeout = 5.0*60)
                 >>> if job.status == TransformationJobStatus.FAILED:
                 >>>     # do something if job failed
@@ -188,8 +194,8 @@ class TransformationJob(CogniteResource):
                 >>> c = CogniteClient()
                 >>>
                 >>> async def run_succesive_transformations():
-                >>>     job1 = c.transformations.run(id = 1, wait = False) 
-                >>>     job2 = c.transformations.run(id = 2, wait = False) 
+                >>>     job1 = c.transformations.run(id = 1, wait = False)
+                >>>     job2 = c.transformations.run(id = 2, wait = False)
                 >>>     await job1.wait_async()
                 >>>     await job2.wait_async()
                 >>>     if TransformationJobStatus.FAILED not in [job1.status, job2.status]:
@@ -205,7 +211,7 @@ class TransformationJob(CogniteResource):
                 >>>
                 >>> async def run_succesive_transformations():
                 >>>     job = c.transformations.run(id = 1, wait = False)
-                >>>     await job.wait_async(timeout = 5.0*60) 
+                >>>     await job.wait_async(timeout = 5.0*60)
                 >>>     if job.status == TransformationJobStatus.FAILED:
                 >>>         # do something if job failed
                 >>>     elif job.status == TransformationJobStatus.COMPLETED:
@@ -248,6 +254,3 @@ class TransformationJob(CogniteResource):
 class TransformationJobList(CogniteResourceList):
     _RESOURCE = TransformationJob
     _ASSERT_CLASSES = False
-
-
-from cognite.client.data_classes.transformations import RawTable, TransformationDestination
