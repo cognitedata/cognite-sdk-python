@@ -98,6 +98,35 @@ from cognite.client.data_classes.time_series import (
     TimeSeriesList,
     TimeSeriesUpdate,
 )
+from cognite.client.data_classes.transformation_jobs import (
+    TransformationJob,
+    TransformationJobList,
+    TransformationJobMetric,
+    TransformationJobMetricList,
+    TransformationJobStatus,
+)
+from cognite.client.data_classes.transformation_notifications import (
+    TransformationNotification,
+    TransformationNotificationList,
+)
+from cognite.client.data_classes.transformation_schedules import (
+    TransformationSchedule,
+    TransformationScheduleList,
+    TransformationScheduleUpdate,
+)
+from cognite.client.data_classes.transformations import (
+    OidcCredentials,
+    Transformation,
+    TransformationBlockedInfo,
+    TransformationDestination,
+    TransformationList,
+    TransformationUpdate,
+)
+
+from cognite.client.data_classes.transformation_schema import (  # isort: skip
+    TransformationSchemaColumn,
+    TransformationSchemaColumnList,
+)
 
 from cognite.client.data_classes.data_sets import (  # isort: skip
     DataSet,
@@ -107,11 +136,6 @@ from cognite.client.data_classes.data_sets import (  # isort: skip
     DataSetUpdate,
 )
 
-from cognite.client.data_classes.transformation_jobs import TransformationJob, TransformationJobList, TransformationJobStatus, TransformationJobMetric, TransformationJobMetricList
-from cognite.client.data_classes.transformation_notifications import TransformationNotification, TransformationNotificationList
-from cognite.client.data_classes.transformation_schedules import TransformationSchedule, TransformationScheduleList, TransformationScheduleUpdate
-from cognite.client.data_classes.transformation_schema import TransformationSchemaColumn, TransformationSchemaColumnList
-from cognite.client.data_classes.transformations import Transformation, TransformationList, TransformationUpdate, TransformationDestination, TransformationBlockedInfo, OidcCredentials
 
 from cognite.client.data_classes.shared import (  # isort: skip
     AggregateResult,

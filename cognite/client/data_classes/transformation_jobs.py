@@ -25,14 +25,7 @@ class TransformationJobMetric(CogniteResource):
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
-    def __init__(
-        self,
-        id: int = None,
-        timestamp: int = None,
-        name: str = None,
-        count: int = None,
-        cognite_client=None,
-    ):
+    def __init__(self, id: int = None, timestamp: int = None, name: str = None, count: int = None, cognite_client=None):
         self.id = id
         self.timestamp = timestamp
         self.name = name

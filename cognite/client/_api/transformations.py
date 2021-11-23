@@ -86,11 +86,7 @@ class TransformationsAPI(APIClient):
             ids=id, external_ids=external_id, wrap_ids=True, extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids}
         )
 
-    def list(
-        self,
-        include_public: bool = True,
-        limit: Optional[int] = 25,
-    ) -> TransformationList:
+    def list(self, include_public: bool = True, limit: Optional[int] = 25) -> TransformationList:
         """`List all transformations. <https://docs.cognite.com/api/playground/#operation/transformations>`_
 
         Args:
@@ -111,11 +107,7 @@ class TransformationsAPI(APIClient):
         """
         filter = TransformationFilter(include_public=include_public).dump(camel_case=True)
 
-        return self._list(
-            method="GET",
-            limit=limit,
-            filter=filter,
-        )
+        return self._list(method="GET", limit=limit, filter=filter)
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[Transformation]:
         """`Retrieve a single transformation by id. <https://docs.cognite.com/api/playground/#operation/getTransformation>`_

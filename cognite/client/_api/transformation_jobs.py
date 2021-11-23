@@ -39,10 +39,7 @@ class TransformationJobsAPI(APIClient):
             )
             return self._list(method="GET", limit=limit, resource_path=resource_path)
 
-        return self._list(
-            method="GET",
-            limit=limit,
-        )
+        return self._list(method="GET", limit=limit)
 
     def retrieve(self, id: int) -> Optional[TransformationJob]:
         """`Retrieve a single transformation job by id. <https://docs.cognite.com/api/playground/#operation/getTransformationJob>`_

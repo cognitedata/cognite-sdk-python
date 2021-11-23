@@ -116,11 +116,7 @@ class TransformationSchedulesAPI(APIClient):
             other_params=filter,
         )
 
-    def list(
-        self,
-        include_public: bool = True,
-        limit: Optional[int] = 25,
-    ) -> TransformationScheduleList:
+    def list(self, include_public: bool = True, limit: Optional[int] = 25) -> TransformationScheduleList:
         """`List all transformation schedules. <https://docs.cognite.com/api/playground/#operation/transformationSchedules>`_
 
         Args:
@@ -141,11 +137,7 @@ class TransformationSchedulesAPI(APIClient):
         """
         filter = TransformationFilter(include_public=include_public).dump(camel_case=True)
 
-        return self._list(
-            method="GET",
-            limit=limit,
-            filter=filter,
-        )
+        return self._list(method="GET", limit=limit, filter=filter)
 
     def delete(
         self,
@@ -172,10 +164,7 @@ class TransformationSchedulesAPI(APIClient):
                 >>> c.transformations.schedules.delete(id=[1,2,3], external_id="3")
         """
         self._delete_multiple(
-            ids=id,
-            external_ids=external_id,
-            wrap_ids=True,
-            extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
+            ids=id, external_ids=external_id, wrap_ids=True, extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids}
         )
 
     def update(
