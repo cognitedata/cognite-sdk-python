@@ -2,7 +2,6 @@ from typing import List, Optional, Union
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-
 from cognite.client.data_classes import (
     OidcCredentials,
     Transformation,
@@ -12,7 +11,6 @@ from cognite.client.data_classes import (
     TransformationNotification,
     TransformationNotificationList,
 )
-
 from cognite.client.data_classes.transformation_notifications import TransformationNotificationFilter
 
 
@@ -72,7 +70,7 @@ class TransformationNotificationsAPI(APIClient):
                 >>> from cognite.experimental import CogniteClient
                 >>> c = CogniteClient()
                 >>> notifications_list = c.transformations.notifications.list()
-            
+
             List all notifications by transformation id::
 
                 >>> from cognite.experimental import CogniteClient
@@ -97,9 +95,16 @@ class TransformationNotificationsAPI(APIClient):
             destination=destination,
         ).dump(camel_case=True)
 
-        return self._list(method="GET", limit=limit, filter=filter,)
+        return self._list(
+            method="GET",
+            limit=limit,
+            filter=filter,
+        )
 
-    def delete(self, id: Union[int, List[int]] = None,) -> None:
+    def delete(
+        self,
+        id: Union[int, List[int]] = None,
+    ) -> None:
         """`Deletes the specified notification subscriptions on the transformation. Does nothing when the subscriptions already don't exist <https://doc.cognitedata.com/api/playground/#operation/deleteTransformationNotifications>`_
 
         Args:
@@ -117,5 +122,6 @@ class TransformationNotificationsAPI(APIClient):
                 >>> c.transformations.notifications.delete(id=[1,2,3])
         """
         self._delete_multiple(
-            ids=id, wrap_ids=True,
+            ids=id,
+            wrap_ids=True,
         )

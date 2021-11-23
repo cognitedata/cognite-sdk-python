@@ -2,7 +2,6 @@ from typing import List, Optional
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-
 from cognite.client.data_classes import TransformationJob, TransformationJobList, TransformationJobMetricList
 
 
@@ -10,9 +9,7 @@ class TransformationJobsAPI(APIClient):
     _RESOURCE_PATH = "/transformations/jobs"
     _LIST_CLASS = TransformationJobList
 
-    def list(
-        self, limit: Optional[int] = 25, transformation_id: Optional[int] = None
-    ) -> TransformationJobList:
+    def list(self, limit: Optional[int] = 25, transformation_id: Optional[int] = None) -> TransformationJobList:
         """`List all running transformation jobs. <https://docs.cognite.com/api/playground/#operation/transformationJobs>`_
 
         Args:
@@ -42,7 +39,10 @@ class TransformationJobsAPI(APIClient):
             )
             return self._list(method="GET", limit=limit, resource_path=resource_path)
 
-        return self._list(method="GET", limit=limit,)
+        return self._list(
+            method="GET",
+            limit=limit,
+        )
 
     def retrieve(self, id: int) -> Optional[TransformationJob]:
         """`Retrieve a single transformation job by id. <https://docs.cognite.com/api/playground/#operation/getTransformationJob>`_
@@ -82,9 +82,7 @@ class TransformationJobsAPI(APIClient):
         """
         url_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/metrics", str(id))
 
-        return self._list(
-            method="GET", limit=None, resource_path=url_path, cls=TransformationJobMetricList
-        )
+        return self._list(method="GET", limit=None, resource_path=url_path, cls=TransformationJobMetricList)
 
     def retrieve_multiple(self, ids: List[int], ignore_unknown_ids: bool = False) -> TransformationJobList:
         """`Retrieve multiple transformation jobs by id. <https://docs.cognite.com/api/playground/#operation/getTransformationJob>`_

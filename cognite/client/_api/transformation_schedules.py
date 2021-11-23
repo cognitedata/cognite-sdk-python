@@ -1,10 +1,7 @@
-import json as _json
 from typing import List, Optional, Union
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from requests import Response
-
 from cognite.client.data_classes import (
     OidcCredentials,
     Transformation,
@@ -15,7 +12,6 @@ from cognite.client.data_classes import (
     TransformationScheduleList,
     TransformationScheduleUpdate,
 )
-
 from cognite.client.data_classes.transformations import TransformationFilter
 
 
@@ -121,7 +117,9 @@ class TransformationSchedulesAPI(APIClient):
         )
 
     def list(
-        self, include_public: bool = True, limit: Optional[int] = 25,
+        self,
+        include_public: bool = True,
+        limit: Optional[int] = 25,
     ) -> TransformationScheduleList:
         """`List all transformation schedules. <https://docs.cognite.com/api/playground/#operation/transformationSchedules>`_
 
@@ -143,7 +141,11 @@ class TransformationSchedulesAPI(APIClient):
         """
         filter = TransformationFilter(include_public=include_public).dump(camel_case=True)
 
-        return self._list(method="GET", limit=limit, filter=filter,)
+        return self._list(
+            method="GET",
+            limit=limit,
+            filter=filter,
+        )
 
     def delete(
         self,
@@ -170,7 +172,10 @@ class TransformationSchedulesAPI(APIClient):
                 >>> c.transformations.schedules.delete(id=[1,2,3], external_id="3")
         """
         self._delete_multiple(
-            ids=id, external_ids=external_id, wrap_ids=True, extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
+            ids=id,
+            external_ids=external_id,
+            wrap_ids=True,
+            extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
         )
 
     def update(

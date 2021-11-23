@@ -1,14 +1,17 @@
 from typing import Awaitable, List, Optional, Union
 
 from cognite.client import utils
-from cognite.client._api_client import APIClient
-
 from cognite.client._api.transformation_jobs import TransformationJobsAPI
 from cognite.client._api.transformation_notifications import TransformationNotificationsAPI
 from cognite.client._api.transformation_schedules import TransformationSchedulesAPI
 from cognite.client._api.transformation_schema import TransformationSchemaAPI
-from cognite.client.data_classes import Transformation, TransformationList, TransformationJob
-from cognite.client.data_classes.transformations import TransformationFilter, TransformationUpdate, TransformationPreviewResult
+from cognite.client._api_client import APIClient
+from cognite.client.data_classes import Transformation, TransformationJob, TransformationList
+from cognite.client.data_classes.transformations import (
+    TransformationFilter,
+    TransformationPreviewResult,
+    TransformationUpdate,
+)
 
 
 class TransformationsAPI(APIClient):
@@ -83,7 +86,11 @@ class TransformationsAPI(APIClient):
             ids=id, external_ids=external_id, wrap_ids=True, extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids}
         )
 
-    def list(self, include_public: bool = True, limit: Optional[int] = 25,) -> TransformationList:
+    def list(
+        self,
+        include_public: bool = True,
+        limit: Optional[int] = 25,
+    ) -> TransformationList:
         """`List all transformations. <https://docs.cognite.com/api/playground/#operation/transformations>`_
 
         Args:
@@ -104,7 +111,11 @@ class TransformationsAPI(APIClient):
         """
         filter = TransformationFilter(include_public=include_public).dump(camel_case=True)
 
-        return self._list(method="GET", limit=limit, filter=filter,)
+        return self._list(
+            method="GET",
+            limit=limit,
+            filter=filter,
+        )
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[Transformation]:
         """`Retrieve a single transformation by id. <https://docs.cognite.com/api/playground/#operation/getTransformation>`_

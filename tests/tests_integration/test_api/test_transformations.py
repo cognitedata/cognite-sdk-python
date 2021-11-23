@@ -1,6 +1,3 @@
-import random
-import string
-
 import pytest
 
 from cognite.client import CogniteClient
@@ -11,7 +8,10 @@ COGNITE_CLIENT = CogniteClient()
 
 @pytest.fixture
 def new_transformation():
-    transform = Transformation(name="any", destination=TransformationDestination.assets(),)
+    transform = Transformation(
+        name="any",
+        destination=TransformationDestination.assets(),
+    )
     ts = COGNITE_CLIENT.transformations.create(transform)
 
     yield ts
