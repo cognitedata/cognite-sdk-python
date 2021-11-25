@@ -15,7 +15,7 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 
-## [2.35.0] - 2021-11-22
+## [2.34.1] - 2021-11-22
 ### Added
 - `transformations` api client, which allows the creation, deletion, update and retrieval of transformations.
 - `transformations.schedules` api client, which allows the schedule, unschedule and retrieval of recurring runs of a transformation.
