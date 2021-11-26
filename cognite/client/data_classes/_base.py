@@ -300,6 +300,15 @@ class CogniteUpdate:
         update_obj["remove"] = value
         self._update_object[name] = update_obj
 
+    def _modify(self, name, value):
+        update_obj = self._update_object.get(name, {})
+        assert "set" not in update_obj, "Can not call remove or add fields after calling set on an update object."
+        assert (
+            "modify" not in update_obj
+        ), "Can not call modify twice on the same object, please combine your items and pass them to modify in one call."
+        update_obj["modify"] = value
+        self._update_object[name] = update_obj
+
     def dump(self):
         """Dump the instance into a json serializable Python data type.
 
@@ -364,6 +373,10 @@ class CogniteListUpdate:
 
     def _remove(self, value: List):
         self._update_object._remove(self._name, value)
+        return self._update_object
+
+    def _modify(self, value: List):
+        self._update_object._modify(self._name, value)
         return self._update_object
 
 

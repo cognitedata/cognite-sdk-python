@@ -346,6 +346,60 @@ class SequencesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> my_update = SequenceUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
                 >>> res = c.sequences.update(my_update)
+
+        Updating column definitions:
+
+            Currently, updating the column definitions of a sequence is only supported through partial update, using `add`, `remove` and `modify` methods on the `columns` property.
+
+            Add a single new column::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import SequenceUpdate
+                >>> c = CogniteClient()
+                >>>
+                >>> my_update = SequenceUpdate(id=1).columns.add({"valueType":"STRING","externalId":"user","description":"some description"})
+                >>> res = c.sequences.update(my_update)
+
+            Add multiple new columns::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import SequenceUpdate
+                >>> c = CogniteClient()
+                >>>
+                >>> column_def = [{"valueType":"STRING","externalId":"user","description":"some description"}, {"valueType":"DOUBLE","externalId":"amount"}]
+                >>> my_update = SequenceUpdate(id=1).columns.add(column_def)
+                >>> res = c.sequences.update(my_update)
+
+            Remove a single column::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import SequenceUpdate
+                >>> c = CogniteClient()
+                >>>
+                >>> my_update = SequenceUpdate(id=1).columns.remove("col_external_id1")
+                >>> res = c.sequences.update(my_update)
+
+            Remove multiple columns::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import SequenceUpdate
+                >>> c = CogniteClient()
+                >>>
+                >>> my_update = SequenceUpdate(id=1).columns.remove(["col_external_id1","col_external_id2"])
+                >>> res = c.sequences.update(my_update)
+
+            Update existing columns::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import SequenceUpdate
+                >>> c = CogniteClient()
+                >>>
+                >>> column_updates = [
+                >>>     SequenceColumnUpdate(external_id=new_seq.columns[0]["externalId"]).external_id.set("new_col_external_id"),
+                >>>     SequenceColumnUpdate(external_id=new_seq.columns[1]["externalId"]).description.set("my new description"),
+                >>> ]
+                >>> my_update = SequenceUpdate(id=1).columns.modify(column_updates)
+                >>> res = c.sequences.update(my_update)
         """
         return self._update_multiple(items=item)
 
