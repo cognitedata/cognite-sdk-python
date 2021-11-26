@@ -391,13 +391,13 @@ class SequencesAPI(APIClient):
             Update existing columns::
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import SequenceUpdate
+                >>> from cognite.client.data_classes import SequenceUpdate, SequenceColumnUpdate
                 >>> c = CogniteClient()
                 >>>
-                >>> column_updates = [
-                >>>     SequenceColumnUpdate(external_id=new_seq.columns[0]["externalId"]).external_id.set("new_col_external_id"),
-                >>>     SequenceColumnUpdate(external_id=new_seq.columns[1]["externalId"]).description.set("my new description"),
-                >>> ]
+                >>> column_updates = [\
+                      SequenceColumnUpdate(external_id="col_external_id_1").external_id.set("new_col_external_id"),\
+                      SequenceColumnUpdate(external_id="col_external_id_2").description.set("my new description"),\
+                    ]
                 >>> my_update = SequenceUpdate(id=1).columns.modify(column_updates)
                 >>> res = c.sequences.update(my_update)
         """
