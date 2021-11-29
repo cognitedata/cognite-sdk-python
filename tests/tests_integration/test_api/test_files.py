@@ -111,6 +111,14 @@ class TestFilesAPI:
         res = cognite_client.files.list(uploaded_time=A_WHILE_AGO, limit=2)
         assert res == cognite_client.files.retrieve_multiple([f.id for f in res])
 
+    def test_retrieve_download_urls(self, cognite_client):
+        f1 = cognite_client.files.upload_bytes(b"f1", external_id=random_string(10), name="bla")
+        f2 = cognite_client.files.upload_bytes(b"f2", external_id=random_string(10), name="bla")
+        download_links = cognite_client.files.retrieve_download_urls(id=f1.id, external_id=f2.external_id)
+        assert len(download_links.values()) == 2
+        assert download_links[f1.id].startswith("http")
+        assert download_links[f2.external_id].startswith("http")
+
     def test_list(self, cognite_client):
         res = cognite_client.files.list(limit=4)
         assert 4 == len(res)
