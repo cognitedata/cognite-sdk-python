@@ -1,5 +1,4 @@
 import gzip
-import json
 import json as _json
 import logging
 import numbers
@@ -139,9 +138,13 @@ class APIClient:
             try:
                 data = _json.dumps(json_payload, default=utils._auxiliary.json_dump_default, allow_nan=False)
             except ValueError as e:
-                raise ValueError(f"{e}. Make sure your data does not contain NaN(s) or +/- Inf!").with_traceback(
-                    e.__traceback__
-                ) from None
+                # A lot of work to give a more human friendly error message when nans and infs are present:
+                msg = "Out of range float values are not JSON compliant"
+                if msg in str(e):  # exc. might e.g. contain an extra ": nan", depending on build (_json.make_encoder)
+                    raise ValueError(f"{msg}. Make sure your data does not contain NaN(s) or +/- Inf!").with_traceback(
+                        e.__traceback__
+                    ) from None
+                raise
             kwargs["data"] = data
             if method in ["PUT", "POST"] and not os.getenv("COGNITE_DISABLE_GZIP", False):
                 kwargs["data"] = gzip.compress(data.encode())
@@ -799,7 +802,7 @@ class APIClient:
     @classmethod
     def _get_response_content_safe(cls, res: Response) -> str:
         try:
-            return json.dumps(res.json())
+            return _json.dumps(res.json())
         except JSONDecodeError:
             pass
 
