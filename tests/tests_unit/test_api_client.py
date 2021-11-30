@@ -1,3 +1,4 @@
+import math
 import os
 from collections import namedtuple
 
@@ -173,6 +174,24 @@ class TestBasicRequests:
 
         assert "api-key" not in headers
         assert "Bearer {}".format(api_client_with_token._config.token) == headers["Authorization"]
+
+    @pytest.mark.parametrize(
+        "payload",
+        [math.nan, math.inf, -math.inf, {"foo": {"bar": {"baz": [[[math.nan]]]}}}],
+    )
+    def test__do_request_raises_more_verbose_exception(self, api_client_with_token, payload):
+        with pytest.raises(ValueError, match=r"contain NaN\(s\) or \+/\- Inf\!"):
+            api_client_with_token._do_request("POST", URL_PATH, json=payload)
+
+    def test__do_request_raises_unmodified_exception(self, api_client_with_token):
+        # Create circular ref in payload to raise an arbitrary ValueError
+        # we want to make sure we _don't_ modify:
+        payload = []
+        payload.append(payload)
+        with pytest.raises(ValueError) as exc_info:
+            api_client_with_token._do_request("POST", URL_PATH, json=payload)
+        exc_msg = exc_info.value.args[0]
+        assert "contain NaN(s) or +/- Inf!" not in exc_msg
 
 
 class SomeUpdate(CogniteUpdate):
