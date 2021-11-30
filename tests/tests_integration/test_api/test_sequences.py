@@ -2,13 +2,18 @@ from unittest import mock
 
 import pytest
 
-from cognite.client.data_classes import Sequence, SequenceFilter, SequenceUpdate
+from cognite.client.data_classes import Sequence, SequenceColumnUpdate, SequenceFilter, SequenceUpdate
 from tests.utils import set_request_limit
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture
 def new_seq(cognite_client):
-    seq = cognite_client.sequences.create(Sequence(name="test_temp", columns=[{}], metadata={"a": "b"}))
+    column_def = [
+        {"valueType": "STRING", "externalId": "user", "description": "some description"},
+        {"valueType": "DOUBLE", "externalId": "amount"},
+        {"valueType": "LONG", "externalId": "age"},
+    ]
+    seq = cognite_client.sequences.create(Sequence(name="test_temp", columns=column_def, metadata={"a": "b"}))
     yield seq
     cognite_client.sequences.delete(id=seq.id)
     assert cognite_client.sequences.retrieve(seq.id) is None
@@ -72,7 +77,53 @@ class TestSequencesAPI:
         assert "newname" == res.name
         assert res.metadata == {}
 
+    def test_update_columns_add_remove_single(self, cognite_client, new_seq):
+        assert len(new_seq.columns) == 3
+        update_seq = SequenceUpdate(new_seq.id).columns.add(
+            {"valueType": "STRING", "externalId": "user_added", "description": "some description"}
+        )
+        res = cognite_client.sequences.update(update_seq)
+        assert len(res.columns) == 4
+        assert res.column_external_ids[3] == "user_added"
+
+    def test_update_columns_add_multiple(self, cognite_client, new_seq):
+        assert len(new_seq.columns) == 3
+        column_def = [
+            {"valueType": "STRING", "externalId": "user_added", "description": "some description"},
+            {"valueType": "DOUBLE", "externalId": "amount_added"},
+        ]
+        update_seq = SequenceUpdate(new_seq.id).columns.add(column_def)
+        res = cognite_client.sequences.update(update_seq)
+        assert len(res.columns) == 5
+        assert res.column_external_ids[3:5] == ["user_added", "amount_added"]
+
+    def test_update_columns_remove_single(self, cognite_client, new_seq):
+        assert len(new_seq.columns) == 3
+        update_seq = SequenceUpdate(new_seq.id).columns.remove(new_seq.columns[0]["externalId"])
+        res = cognite_client.sequences.update(update_seq)
+        assert len(res.columns) == 2
+        assert res.columns[0:2] == new_seq.columns[1:3]
+
+    def test_update_columns_remove_multiple(self, cognite_client, new_seq):
+        assert len(new_seq.columns) == 3
+        update_seq = SequenceUpdate(new_seq.id).columns.remove([col["externalId"] for col in new_seq.columns[0:2]])
+        res = cognite_client.sequences.update(update_seq)
+        assert len(res.columns) == 1
+        assert res.columns[0] == new_seq.columns[2]
+
+    def test_update_columns_modify(self, cognite_client, new_seq):
+        assert new_seq.columns[1].get("description") is None
+        column_update = [
+            SequenceColumnUpdate(external_id=new_seq.columns[0]["externalId"]).external_id.set("new_col_external_id"),
+            SequenceColumnUpdate(external_id=new_seq.columns[1]["externalId"]).description.set("my new description"),
+        ]
+        update_seq = SequenceUpdate(new_seq.id).columns.modify(column_update)
+        res = cognite_client.sequences.update(update_seq)
+        assert len(res.columns) == 3
+        assert res.columns[0]["externalId"] == "new_col_external_id"
+        assert res.columns[1]["description"] == "my new description"
+
     def test_get_new(self, cognite_client, new_seq):
         res = cognite_client.sequences.retrieve(id=new_seq.id)
         # assert ["DOUBLE"] == res.column_value_types # soon to change
-        assert ["column0"] == res.column_external_ids
+        assert len(new_seq.columns) == 3

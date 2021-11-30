@@ -62,6 +62,7 @@ from cognite.client.data_classes.relationships import (
 from cognite.client.data_classes.sequences import (
     Sequence,
     SequenceAggregate,
+    SequenceColumnUpdate,
     SequenceData,
     SequenceDataList,
     SequenceFilter,
