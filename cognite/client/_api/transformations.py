@@ -281,7 +281,7 @@ class TransformationsAPI(APIClient):
         source_limit: Optional[int] = 100,
         infer_schema_limit: Optional[int] = 1000,
     ) -> TransformationPreviewResult:
-        """`. <https://docs.cognite.com/api/playground/#operation/runTransformation>`_
+        """`Preview the result of a query. <https://docs.cognite.com/api/playground/#operation/runTransformation>`_
 
         Args:
             query (str): SQL query to run for preview.
