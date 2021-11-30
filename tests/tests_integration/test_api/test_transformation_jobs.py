@@ -83,7 +83,6 @@ class TestTransformationJobsAPI:
         (job, new_transformation) = new_running_transformation
         assert (
             job.id is not None
-            and job.uuid is not None
             and job.status == TransformationJobStatus.CREATED
             and job.transformation_id == new_transformation.id
             and job.source_project == cognite_client.config.project
@@ -104,7 +103,6 @@ class TestTransformationJobsAPI:
 
         assert (
             job.id is not None
-            and job.uuid is not None
             and job.status == TransformationJobStatus.COMPLETED
             and job.transformation_id == new_transformation.id
             and job.source_project == cognite_client.config.project
@@ -137,7 +135,6 @@ class TestTransformationJobsAPI:
 
         assert (
             job.id is not None
-            and job.uuid is not None
             and job.status == TransformationJobStatus.COMPLETED
             and job.transformation_id == new_transformation.id
             and job.source_project == cognite_client.config.project
@@ -164,7 +161,6 @@ class TestTransformationJobsAPI:
 
         assert (
             job.id is not None
-            and job.uuid is not None
             and job.status == TransformationJobStatus.COMPLETED
             and job.transformation_id == new_transformation.id
             and job.source_project == cognite_client.config.project

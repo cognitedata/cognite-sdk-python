@@ -1,7 +1,6 @@
 import asyncio
 import time
 from enum import Enum
-from uuid import UUID
 
 from cognite.client.data_classes._base import *
 from cognite.client.data_classes.transformations_common import RawTable, TransformationDestination
@@ -48,7 +47,6 @@ class TransformationJob(CogniteResource):
 
     Args:
         id (int): A server-generated ID for the object.
-        uuid (UUID): A server-generated UUID for the object.
         status (TransformationJobStatus): Status of the job.
         transformation_id (int): Server-generated ID of the transformation.
         source_project (str): Name of the CDF project the data will be read from.
@@ -70,7 +68,6 @@ class TransformationJob(CogniteResource):
     def __init__(
         self,
         id: int = None,
-        uuid: UUID = None,
         status: TransformationJobStatus = None,
         transformation_id: int = None,
         source_project: str = None,
@@ -87,7 +84,6 @@ class TransformationJob(CogniteResource):
         cognite_client=None,
     ):
         self.id = id
-        self.uuid = uuid
         self.status = status
         self.transformation_id = transformation_id
         self.source_project = source_project
