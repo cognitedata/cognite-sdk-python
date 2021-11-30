@@ -14,7 +14,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [2.34.1] - 2021-11-26
+## [2.35.0] - 2021-11-29
 ### Added
 - Added support for `columns` update on sequences
 
