@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.37.0] - 2021-11-30
+### Added
+- Added support for retrieving file download urls 
+
 ## [2.36.0] - 2021-11-30
 ### Fixed
 - Changes default JSON `.dumps()` behaviour to be in strict compliance with the standard: if any NaNs or +/- Infs are encountered, an exception will now be raised.
