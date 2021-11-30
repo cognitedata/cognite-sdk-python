@@ -100,7 +100,7 @@ class TransformationJob(CogniteResource):
         self._cognite_client = cognite_client
 
     def update(self):
-        """`Get updated job status. <https://docs.cognite.com/api/playground/#operation/runTransformation>`_"""
+        """`Get updated job status.`"""
         updated = self._cognite_client.transformations.jobs.retrieve(id=self.id)
         self.status = updated.status
         self.error = updated.error
@@ -109,11 +109,11 @@ class TransformationJob(CogniteResource):
         self.last_seen_time = updated.last_seen_time
 
     def metrics(self):
-        """`Get job metrics. <https://docs.cognite.com/api/playground/#operation/runTransformation>`_"""
+        """`Get job metrics.`"""
         return self._cognite_client.transformations.jobs.list_metrics(self.id)
 
     def wait(self, polling_interval: float = 1, timeout: Optional[float] = None) -> "TransformationJob":
-        """`Waits for the job to finish.`_
+        """`Waits for the job to finish.`
 
         Args:
             polling_interval (float): time (s) to wait between job status updates, default is one second.
