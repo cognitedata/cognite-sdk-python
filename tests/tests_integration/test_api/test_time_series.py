@@ -38,7 +38,7 @@ class TestTimeSeriesAPI:
     def test_retrieve_multiple_ignore_unknown(self, cognite_client):
         res = cognite_client.time_series.list(limit=2)
         retrieved_assets = cognite_client.time_series.retrieve_multiple(
-            [t.id for t in res] + [0, 1, 2, 3], ignore_unknown_ids=True
+            [t.id for t in res] + [1, 2, 3], ignore_unknown_ids=True
         )
         for listed_asset, retrieved_asset in zip(res, retrieved_assets):
             retrieved_asset.external_id = listed_asset.external_id
