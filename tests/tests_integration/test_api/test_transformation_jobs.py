@@ -5,7 +5,6 @@ import time
 
 import pytest
 
-from cognite.client import CogniteClient
 from cognite.client.data_classes import (
     OidcCredentials,
     Transformation,
@@ -13,11 +12,9 @@ from cognite.client.data_classes import (
     TransformationJobStatus,
 )
 
-COGNITE_CLIENT = CogniteClient()
-
 
 @pytest.fixture
-def new_transformation():
+def new_transformation(cognite_client):
     prefix = "".join(random.choice(string.ascii_letters) for i in range(6))
     transform = Transformation(
         name="any",
@@ -25,36 +22,36 @@ def new_transformation():
         destination=TransformationDestination.assets(),
         query="select id, name from _cdf.assets limit 1000",
         source_oidc_credentials=OidcCredentials(
-            client_id=COGNITE_CLIENT.config.token_client_id,
-            client_secret=COGNITE_CLIENT.config.token_client_secret,
-            scopes=",".join(COGNITE_CLIENT.config.token_scopes),
-            token_uri=COGNITE_CLIENT.config.token_url,
-            cdf_project_name=COGNITE_CLIENT.config.project,
+            client_id=cognite_client.config.token_client_id,
+            client_secret=cognite_client.config.token_client_secret,
+            scopes=",".join(cognite_client.config.token_scopes),
+            token_uri=cognite_client.config.token_url,
+            cdf_project_name=cognite_client.config.project,
         ),
         destination_oidc_credentials=OidcCredentials(
-            client_id=COGNITE_CLIENT.config.token_client_id,
-            client_secret=COGNITE_CLIENT.config.token_client_secret,
-            scopes=",".join(COGNITE_CLIENT.config.token_scopes),
-            token_uri=COGNITE_CLIENT.config.token_url,
-            cdf_project_name=COGNITE_CLIENT.config.project,
+            client_id=cognite_client.config.token_client_id,
+            client_secret=cognite_client.config.token_client_secret,
+            scopes=",".join(cognite_client.config.token_scopes),
+            token_uri=cognite_client.config.token_url,
+            cdf_project_name=cognite_client.config.project,
         ),
         ignore_null_fields=True,
     )
-    ts = COGNITE_CLIENT.transformations.create(transform)
+    ts = cognite_client.transformations.create(transform)
 
     yield ts
 
-    COGNITE_CLIENT.transformations.delete(id=ts.id)
-    assert COGNITE_CLIENT.transformations.retrieve(ts.id) is None
+    cognite_client.transformations.delete(id=ts.id)
+    assert cognite_client.transformations.retrieve(ts.id) is None
 
 
 other_transformation = new_transformation
 
 
 @pytest.fixture
-def longer_transformation(new_transformation):
+def longer_transformation(cognite_client, new_transformation):
     new_transformation.query = "select id, name from _cdf.assets limit 5000"
-    ts = COGNITE_CLIENT.transformations.update(new_transformation)
+    ts = cognite_client.transformations.update(new_transformation)
 
     yield ts
 
@@ -82,15 +79,15 @@ async def other_running_transformation(other_transformation):
 
 class TestTransformationJobsAPI:
     @pytest.mark.asyncio
-    async def test_run_without_wait(self, new_running_transformation):
+    async def test_run_without_wait(self, cognite_client, new_running_transformation):
         (job, new_transformation) = new_running_transformation
         assert (
             job.id is not None
             and job.uuid is not None
             and job.status == TransformationJobStatus.CREATED
             and job.transformation_id == new_transformation.id
-            and job.source_project == COGNITE_CLIENT.config.project
-            and job.destination_project == COGNITE_CLIENT.config.project
+            and job.source_project == cognite_client.config.project
+            and job.destination_project == cognite_client.config.project
             and job.destination == TransformationDestination.assets()
             and job.conflict_mode == "upsert"
             and job.raw_query == new_transformation.query
@@ -98,11 +95,11 @@ class TestTransformationJobsAPI:
             and job.ignore_null_fields
         )
         await asyncio.sleep(0.5)
-        retrieved_transformation = COGNITE_CLIENT.transformations.retrieve(id=new_transformation.id)
+        retrieved_transformation = cognite_client.transformations.retrieve(id=new_transformation.id)
 
         assert retrieved_transformation.running_job is not None and retrieved_transformation.running_job.id == job.id
 
-    def test_run(self, new_transformation: Transformation):
+    def test_run(self, cognite_client, new_transformation: Transformation):
         job = new_transformation.run()
 
         assert (
@@ -110,8 +107,8 @@ class TestTransformationJobsAPI:
             and job.uuid is not None
             and job.status == TransformationJobStatus.COMPLETED
             and job.transformation_id == new_transformation.id
-            and job.source_project == COGNITE_CLIENT.config.project
-            and job.destination_project == COGNITE_CLIENT.config.project
+            and job.source_project == cognite_client.config.project
+            and job.destination_project == cognite_client.config.project
             and job.destination == TransformationDestination.assets()
             and job.conflict_mode == "upsert"
             and job.raw_query == new_transformation.query
@@ -119,7 +116,7 @@ class TestTransformationJobsAPI:
             and job.ignore_null_fields
         )
 
-        retrieved_transformation = COGNITE_CLIENT.transformations.retrieve(id=new_transformation.id)
+        retrieved_transformation = cognite_client.transformations.retrieve(id=new_transformation.id)
 
         assert (
             retrieved_transformation.last_finished_job is not None
@@ -135,7 +132,7 @@ class TestTransformationJobsAPI:
         assert job.status == TransformationJobStatus.RUNNING and timeout <= final - init <= timeout + 1.5
 
     @pytest.mark.asyncio
-    async def test_run_async(self, new_transformation: Transformation):
+    async def test_run_async(self, cognite_client, new_transformation: Transformation):
         job = await new_transformation.run_async()
 
         assert (
@@ -143,8 +140,8 @@ class TestTransformationJobsAPI:
             and job.uuid is not None
             and job.status == TransformationJobStatus.COMPLETED
             and job.transformation_id == new_transformation.id
-            and job.source_project == COGNITE_CLIENT.config.project
-            and job.destination_project == COGNITE_CLIENT.config.project
+            and job.source_project == cognite_client.config.project
+            and job.destination_project == cognite_client.config.project
             and job.destination == TransformationDestination.assets()
             and job.conflict_mode == "upsert"
             and job.raw_query == new_transformation.query
@@ -162,16 +159,16 @@ class TestTransformationJobsAPI:
         assert job.status == TransformationJobStatus.RUNNING and timeout <= final - init <= timeout + 1.5
 
     @pytest.mark.asyncio
-    async def test_run_by_external_id_async(self, new_transformation: Transformation):
-        job = await COGNITE_CLIENT.transformations.run_async(transformation_external_id=new_transformation.external_id)
+    async def test_run_by_external_id_async(self, cognite_client, new_transformation: Transformation):
+        job = await cognite_client.transformations.run_async(transformation_external_id=new_transformation.external_id)
 
         assert (
             job.id is not None
             and job.uuid is not None
             and job.status == TransformationJobStatus.COMPLETED
             and job.transformation_id == new_transformation.id
-            and job.source_project == COGNITE_CLIENT.config.project
-            and job.destination_project == COGNITE_CLIENT.config.project
+            and job.source_project == cognite_client.config.project
+            and job.destination_project == cognite_client.config.project
             and job.destination == TransformationDestination.assets()
             and job.conflict_mode == "upsert"
             and job.raw_query == new_transformation.query
@@ -188,11 +185,11 @@ class TestTransformationJobsAPI:
         assert all(job.transformation_id == new_transformation.id for job in retrieved_jobs)
 
     @pytest.mark.asyncio
-    async def test_list_jobs(self, new_running_transformation, other_running_transformation):
+    async def test_list_jobs(self, cognite_client, new_running_transformation, other_running_transformation):
         (new_job, _) = new_running_transformation
         (other_job, _) = other_running_transformation
 
-        retrieved_jobs = COGNITE_CLIENT.transformations.jobs.list()
+        retrieved_jobs = cognite_client.transformations.jobs.list()
         assert new_job.id in [job.id for job in retrieved_jobs]
         assert other_job.id in [job.id for job in retrieved_jobs]
 
@@ -204,11 +201,11 @@ class TestTransformationJobsAPI:
         assert metrics is not None
 
     @pytest.mark.asyncio
-    async def test_retrieve_multiple(self, new_running_transformation, other_running_transformation):
+    async def test_retrieve_multiple(self, cognite_client, new_running_transformation, other_running_transformation):
         (new_job, _) = new_running_transformation
         (other_job, _) = other_running_transformation
 
-        retrieved_jobs = COGNITE_CLIENT.transformations.jobs.retrieve_multiple(ids=[new_job.id, other_job.id])
+        retrieved_jobs = cognite_client.transformations.jobs.retrieve_multiple(ids=[new_job.id, other_job.id])
         assert new_job.id in [job.id for job in retrieved_jobs]
         assert other_job.id in [job.id for job in retrieved_jobs]
         assert len(retrieved_jobs) == 2

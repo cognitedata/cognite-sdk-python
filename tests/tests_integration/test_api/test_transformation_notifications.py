@@ -3,58 +3,56 @@ import string
 
 import pytest
 
-from cognite.client import CogniteClient
 from cognite.client.data_classes import Transformation, TransformationDestination, TransformationNotification
 
-COGNITE_CLIENT = CogniteClient()
 prefix = "".join(random.choice(string.ascii_letters) for i in range(6))
 
 
 @pytest.fixture
-def new_transformation():
+def new_transformation(cognite_client):
     transform = Transformation(
         external_id=f"newTransformation-{prefix}",
         name="any",
         destination=TransformationDestination.assets(),
         query="select * from _cdf.assets",
-        source_api_key=COGNITE_CLIENT.config.api_key,
-        destination_api_key=COGNITE_CLIENT.config.api_key,
+        source_api_key=cognite_client.config.api_key,
+        destination_api_key=cognite_client.config.api_key,
     )
-    ts = COGNITE_CLIENT.transformations.create(transform)
+    ts = cognite_client.transformations.create(transform)
 
     yield ts
 
-    COGNITE_CLIENT.transformations.delete(id=ts.id)
-    assert COGNITE_CLIENT.transformations.retrieve(ts.id) is None
+    cognite_client.transformations.delete(id=ts.id)
+    assert cognite_client.transformations.retrieve(ts.id) is None
 
 
 @pytest.fixture
-def new_notification(new_transformation):
+def new_notification(cognite_client, new_transformation):
     notification = TransformationNotification(
         transformation_id=new_transformation.id, destination=f"my_{prefix}@email.com"
     )
-    tn = COGNITE_CLIENT.transformations.notifications.create(notification)
+    tn = cognite_client.transformations.notifications.create(notification)
 
     yield tn
 
-    COGNITE_CLIENT.transformations.notifications.delete(id=tn.id)
-    assert len(COGNITE_CLIENT.transformations.notifications.list(transformation_id=new_transformation.id)) == 0
+    cognite_client.transformations.notifications.delete(id=tn.id)
+    assert len(cognite_client.transformations.notifications.list(transformation_id=new_transformation.id)) == 0
     assert tn.transformation_id == new_transformation.id
 
 
 @pytest.fixture
-def new_notification_by_external_id(new_transformation):
+def new_notification_by_external_id(cognite_client, new_transformation):
     notification = TransformationNotification(
         transformation_external_id=new_transformation.external_id, destination=f"my_{prefix}@email.com"
     )
-    tn = COGNITE_CLIENT.transformations.notifications.create(notification)
+    tn = cognite_client.transformations.notifications.create(notification)
 
     yield (tn, new_transformation.external_id)
 
-    COGNITE_CLIENT.transformations.notifications.delete(id=tn.id)
+    cognite_client.transformations.notifications.delete(id=tn.id)
     assert (
         len(
-            COGNITE_CLIENT.transformations.notifications.list(transformation_external_id=new_transformation.external_id)
+            cognite_client.transformations.notifications.list(transformation_external_id=new_transformation.external_id)
         )
         == 0
     )
@@ -78,28 +76,28 @@ class TestTransformationNotificationsAPI:
             and new_notification.last_updated_time is not None
         )
 
-    def test_list_all(self, new_notification):
-        retrieved_notifications = COGNITE_CLIENT.transformations.notifications.list()
+    def test_list_all(self, cognite_client, new_notification):
+        retrieved_notifications = cognite_client.transformations.notifications.list()
         assert new_notification.id in [notification.id for notification in retrieved_notifications]
 
-    def test_list_by_id(self, new_notification):
-        retrieved_notifications = COGNITE_CLIENT.transformations.notifications.list(
+    def test_list_by_id(self, cognite_client, new_notification):
+        retrieved_notifications = cognite_client.transformations.notifications.list(
             transformation_id=new_notification.transformation_id
         )
         assert new_notification.id in [notification.id for notification in retrieved_notifications]
         assert len(retrieved_notifications) == 1
 
-    def test_list_by_external_id(self, new_notification_by_external_id):
+    def test_list_by_external_id(self, cognite_client, new_notification_by_external_id):
         new_notification = new_notification_by_external_id[0]
         external_id = new_notification_by_external_id[1]
-        retrieved_notifications = COGNITE_CLIENT.transformations.notifications.list(
+        retrieved_notifications = cognite_client.transformations.notifications.list(
             transformation_external_id=external_id
         )
         assert new_notification.id in [notification.id for notification in retrieved_notifications]
         assert len(retrieved_notifications) == 1
 
-    def test_list_by_destination(self, new_notification):
-        retrieved_notifications = COGNITE_CLIENT.transformations.notifications.list(
+    def test_list_by_destination(self, cognite_client, new_notification):
+        retrieved_notifications = cognite_client.transformations.notifications.list(
             destination=f"my_{prefix}@email.com"
         )
         assert new_notification.id in [notification.id for notification in retrieved_notifications]
