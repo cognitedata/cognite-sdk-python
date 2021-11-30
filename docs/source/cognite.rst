@@ -452,6 +452,10 @@ Upload a string or bytes
 ^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.files.FilesAPI.upload_bytes
 
+Retrieve download urls
+^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.files.FilesAPI.retrieve_download_urls
+
 Download files to disk
 ^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.files.FilesAPI.download
