@@ -15,13 +15,21 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 
-## [2.36.0] - 2021-11-30
+## [2.38.0] - 2021-11-30
 ### Added
 - `transformations` api client, which allows the creation, deletion, update, run and retrieval of transformations.
 - `transformations.schedules` api client, which allows the schedule, unschedule and retrieval of recurring runs of a transformation.
 - `transformations.notifications` api client, which allows the creation, deletion and retrieval of transformation email notifications.
 - `transformations.schema` api client, which allows the retrieval of the expected schema of sql transformations based on the destination data type.
 - `transformations.jobs` api client, which retrieves the  status of transformation runs.
+
+## [2.37.0] - 2021-11-30
+### Added
+- Added support for retrieving file download urls 
+
+## [2.36.0] - 2021-11-30
+### Fixed
+- Changes default JSON `.dumps()` behaviour to be in strict compliance with the standard: if any NaNs or +/- Infs are encountered, an exception will now be raised.
 
 ## [2.35.0] - 2021-11-29
 ### Added
@@ -33,7 +41,7 @@ Changes are grouped as follows
 
 ## [2.33.0] - 2021-10-27
 ### Security
-- Disallow downloading files to path outside download directory in `files.download()`. 
+- Disallow downloading files to path outside download directory in `files.download()`.
 
 ## [2.32.0] - 2021-10-04
 ### Added
