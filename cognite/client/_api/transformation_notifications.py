@@ -101,7 +101,7 @@ class TransformationNotificationsAPI(APIClient):
         """`Deletes the specified notification subscriptions on the transformation. Does nothing when the subscriptions already don't exist <https://doc.cognitedata.com/api/playground/#operation/deleteTransformationNotifications>`_
 
         Args:
-            id (Union[int, List[int]): Id or list of ids
+            id (Union[int, List[int]): Id or list of transformation notification ids
 
         Returns:
             None

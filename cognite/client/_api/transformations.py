@@ -202,8 +202,8 @@ class TransformationsAPI(APIClient):
         """`Run a transformation. <https://docs.cognite.com/api/playground/#operation/runTransformation>`_
 
         Args:
-            transformation_id (int): internal Transformation id
-            transformation_external_id (str): external Transformation id
+            transformation_id (int): Transformation internal id
+            transformation_external_id (str): Transformation external id
             wait (bool): Wait until the transformation run is finished. Defaults to True.
             timeout (Optional[float]): maximum time (s) to wait, default is None (infinite time). Once the timeout is reached, it returns with the current status. Won't have any effect if wait is False.
 
