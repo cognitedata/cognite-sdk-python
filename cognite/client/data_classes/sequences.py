@@ -128,6 +128,44 @@ class SequenceFilter(CogniteFilter):
         return instance
 
 
+class SequenceColumnUpdate(CogniteUpdate):
+    """No description.
+
+    Args:
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+    """
+
+    class _PrimitiveSequenceColumnUpdate(CognitePrimitiveUpdate):
+        def set(self, value: Any) -> "SequenceColumnUpdate":
+            return self._set(value)
+
+    class _ObjectSequenceColumnUpdate(CogniteObjectUpdate):
+        def set(self, value: Dict) -> "SequenceColumnUpdate":
+            return self._set(value)
+
+        def add(self, value: Dict) -> "SequenceColumnUpdate":
+            return self._add(value)
+
+        def remove(self, value: List) -> "SequenceColumnUpdate":
+            return self._remove(value)
+
+    @property
+    def description(self):
+        return SequenceColumnUpdate._PrimitiveSequenceColumnUpdate(self, "description")
+
+    @property
+    def external_id(self):
+        return SequenceColumnUpdate._PrimitiveSequenceColumnUpdate(self, "externalId")
+
+    @property
+    def name(self):
+        return SequenceColumnUpdate._PrimitiveSequenceColumnUpdate(self, "name")
+
+    @property
+    def metadata(self):
+        return SequenceColumnUpdate._ObjectSequenceColumnUpdate(self, "metadata")
+
+
 class SequenceUpdate(CogniteUpdate):
     """No description.
 
@@ -167,6 +205,24 @@ class SequenceUpdate(CogniteUpdate):
         def remove(self, value: List) -> "SequenceUpdate":
             return self._remove(value)
 
+    class _ColumnsSequenceUpdate(CogniteListUpdate):
+        def add(self, value: Union[Dict, List[Dict]]) -> "SequenceUpdate":
+            single_item = not isinstance(value, list)
+            if single_item:
+                value = [value]
+
+            return self._add(value)
+
+        def remove(self, value: Union[str, List[str]]) -> "SequenceUpdate":
+            single_item = not isinstance(value, list)
+            if single_item:
+                value = [value]
+
+            return self._remove([{"externalId": id} for id in value])
+
+        def modify(self, value: List[SequenceColumnUpdate]) -> "SequenceUpdate":
+            return self._modify([col.dump() for col in value])
+
     @property
     def name(self):
         return SequenceUpdate._PrimitiveSequenceUpdate(self, "name")
@@ -190,6 +246,10 @@ class SequenceUpdate(CogniteUpdate):
     @property
     def data_set_id(self):
         return SequenceUpdate._PrimitiveSequenceUpdate(self, "dataSetId")
+
+    @property
+    def columns(self):
+        return SequenceUpdate._ColumnsSequenceUpdate(self, "columns")
 
 
 class SequenceAggregate(dict):
