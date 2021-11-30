@@ -157,6 +157,9 @@ class TransformationsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.transformations.retrieve_multiple(ids=[1,2,3], external_ids=['transform-1','transform-2'])
         """
+        utils._auxiliary.assert_type(ids, "ids", [list], True)
+        utils._auxiliary.assert_type(external_ids, "external_ids", [list], True)
+
         return self._retrieve_multiple(
             ids=ids, external_ids=external_ids, wrap_ids=True, ignore_unknown_ids=ignore_unknown_ids
         )
