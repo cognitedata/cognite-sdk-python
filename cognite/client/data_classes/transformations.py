@@ -120,6 +120,7 @@ class Transformation(CogniteResource):
             instance.last_finished_job = TransformationJob._load(snake_dict, cognite_client=cognite_client)
         if isinstance(instance.blocked, Dict):
             snake_dict = {utils._auxiliary.to_snake_case(key): value for (key, value) in instance.blocked.items()}
+            snake_dict.pop("time")
             instance.blocked = TransformationBlockedInfo(**snake_dict)
         if isinstance(instance.schedule, Dict):
             snake_dict = {utils._auxiliary.to_snake_case(key): value for (key, value) in instance.schedule.items()}

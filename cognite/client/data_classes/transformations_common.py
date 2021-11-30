@@ -140,6 +140,6 @@ class OidcCredentials:
 
 
 class TransformationBlockedInfo:
-    def __init__(self, reason: str = None, created_time: Optional[int] = None, time: Optional[int] = None):
+    def __init__(self, reason: str = None, created_time: Optional[int] = None):
         self.reason = reason
         self.created_time = created_time
