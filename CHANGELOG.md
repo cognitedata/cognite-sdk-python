@@ -16,7 +16,7 @@ Changes are grouped as follows
 
 ## [2.37.1] - 2021-12-01
 ### Fixed
-- Issue with `sequences` full updates.
+- Bug where `sequences` full update attempts to "set" column spec. "set" is not supported for sequence column spec.
 
 ## [2.37.0] - 2021-11-30
 ### Added
