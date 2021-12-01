@@ -324,7 +324,7 @@ class CogniteUpdate:
 
     @classmethod
     def _get_update_properties(cls):
-        return [key for key in cls.__dict__.keys() if (not key.startswith("_")) and (not key == "labels")]
+        return [key for key in cls.__dict__.keys() if (not key.startswith("_")) and (not key in ["labels", "columns"])]
 
 
 class CognitePrimitiveUpdate:
