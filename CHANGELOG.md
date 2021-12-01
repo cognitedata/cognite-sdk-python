@@ -23,6 +23,10 @@ Changes are grouped as follows
 - `transformations.schema` api client, which allows the retrieval of the expected schema of sql transformations based on the destination data type.
 - `transformations.jobs` api client, which retrieves the  status of transformation runs.
 
+## [2.37.1] - 2021-12-01
+### Fixed
+- Bug where `sequences` full update attempts to "set" column spec. "set" is not supported for sequence column spec.
+
 ## [2.37.0] - 2021-11-30
 ### Added
 - Added support for retrieving file download urls 
