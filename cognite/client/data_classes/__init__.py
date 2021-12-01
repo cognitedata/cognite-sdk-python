@@ -99,22 +99,6 @@ from cognite.client.data_classes.time_series import (
     TimeSeriesList,
     TimeSeriesUpdate,
 )
-from cognite.client.data_classes.transformation_jobs import (
-    TransformationJob,
-    TransformationJobList,
-    TransformationJobMetric,
-    TransformationJobMetricList,
-    TransformationJobStatus,
-)
-from cognite.client.data_classes.transformation_notifications import (
-    TransformationNotification,
-    TransformationNotificationList,
-)
-from cognite.client.data_classes.transformation_schedules import (
-    TransformationSchedule,
-    TransformationScheduleList,
-    TransformationScheduleUpdate,
-)
 from cognite.client.data_classes.transformations import (
     OidcCredentials,
     Transformation,
@@ -123,8 +107,24 @@ from cognite.client.data_classes.transformations import (
     TransformationList,
     TransformationUpdate,
 )
+from cognite.client.data_classes.transformations.jobs import (
+    TransformationJob,
+    TransformationJobList,
+    TransformationJobMetric,
+    TransformationJobMetricList,
+    TransformationJobStatus,
+)
+from cognite.client.data_classes.transformations.notifications import (
+    TransformationNotification,
+    TransformationNotificationList,
+)
+from cognite.client.data_classes.transformations.schedules import (
+    TransformationSchedule,
+    TransformationScheduleList,
+    TransformationScheduleUpdate,
+)
 
-from cognite.client.data_classes.transformation_schema import (  # isort: skip
+from cognite.client.data_classes.transformations.schema import (  # isort: skip
     TransformationSchemaColumn,
     TransformationSchemaColumnList,
 )

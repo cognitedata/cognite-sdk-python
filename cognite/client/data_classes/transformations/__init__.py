@@ -1,8 +1,8 @@
 from cognite.client.data_classes._base import *
-from cognite.client.data_classes.transformation_jobs import TransformationJob, TransformationJobList
-from cognite.client.data_classes.transformation_schedules import TransformationSchedule
-from cognite.client.data_classes.transformation_schema import TransformationSchemaColumnList
-from cognite.client.data_classes.transformations_common import *
+from cognite.client.data_classes.transformations.common import *
+from cognite.client.data_classes.transformations.jobs import TransformationJob, TransformationJobList
+from cognite.client.data_classes.transformations.schedules import TransformationSchedule
+from cognite.client.data_classes.transformations.schema import TransformationSchemaColumnList
 
 
 class Transformation(CogniteResource):

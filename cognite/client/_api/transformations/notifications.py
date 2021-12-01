@@ -11,7 +11,7 @@ from cognite.client.data_classes import (
     TransformationNotification,
     TransformationNotificationList,
 )
-from cognite.client.data_classes.transformation_notifications import TransformationNotificationFilter
+from cognite.client.data_classes.transformations.notifications import TransformationNotificationFilter
 
 
 class TransformationNotificationsAPI(APIClient):

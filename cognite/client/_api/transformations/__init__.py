@@ -1,10 +1,10 @@
 from typing import Awaitable, List, Optional, Union
 
 from cognite.client import utils
-from cognite.client._api.transformation_jobs import TransformationJobsAPI
-from cognite.client._api.transformation_notifications import TransformationNotificationsAPI
-from cognite.client._api.transformation_schedules import TransformationSchedulesAPI
-from cognite.client._api.transformation_schema import TransformationSchemaAPI
+from cognite.client._api.transformations.jobs import TransformationJobsAPI
+from cognite.client._api.transformations.notifications import TransformationNotificationsAPI
+from cognite.client._api.transformations.schedules import TransformationSchedulesAPI
+from cognite.client._api.transformations.schema import TransformationSchemaAPI
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Transformation, TransformationJob, TransformationList
 from cognite.client.data_classes.transformations import (

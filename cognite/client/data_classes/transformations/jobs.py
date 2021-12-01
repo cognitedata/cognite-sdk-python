@@ -3,7 +3,7 @@ import time
 from enum import Enum
 
 from cognite.client.data_classes._base import *
-from cognite.client.data_classes.transformations_common import RawTable, TransformationDestination
+from cognite.client.data_classes.transformations.common import RawTable, TransformationDestination
 
 
 class TransformationJobStatus(str, Enum):
