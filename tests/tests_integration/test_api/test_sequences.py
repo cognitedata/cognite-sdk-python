@@ -77,6 +77,12 @@ class TestSequencesAPI:
         assert "newname" == res.name
         assert res.metadata == {}
 
+    def test_update_full(self, cognite_client, new_seq):
+        assert new_seq.metadata == {"a": "b"}
+        new_seq.name = "newname"
+        res = cognite_client.sequences.update(new_seq)
+        assert "newname" == res.name
+
     def test_update_columns_add_remove_single(self, cognite_client, new_seq):
         assert len(new_seq.columns) == 3
         update_seq = SequenceUpdate(new_seq.id).columns.add(
