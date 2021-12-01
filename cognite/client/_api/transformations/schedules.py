@@ -77,7 +77,6 @@ class TransformationSchedulesAPI(APIClient):
         self,
         ids: Optional[List[int]] = None,
         external_ids: Optional[List[str]] = None,
-        include_public: bool = True,
         ignore_unknown_ids: bool = False,
     ) -> TransformationScheduleList:
         """`Retrieve multiple transformation schedules by the ids or external ids of the corresponding transformations. <https://docs.cognite.com/api/playground/#operation/getTransformationSchedule>`_
@@ -85,7 +84,6 @@ class TransformationSchedulesAPI(APIClient):
         Args:
             ids (int, optional): transformation IDs
             external_ids (str, optional): transformation External IDs
-            include_public (bool): Whether public transformations should be included in the results. (default true).
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -107,13 +105,8 @@ class TransformationSchedulesAPI(APIClient):
         """
         utils._auxiliary.assert_type(ids, "id", [List], allow_none=True)
         utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=True)
-        filter = TransformationFilter(include_public=include_public).dump(camel_case=True)
         return self._retrieve_multiple(
-            ids=ids,
-            external_ids=external_ids,
-            ignore_unknown_ids=ignore_unknown_ids,
-            wrap_ids=True,
-            other_params=filter,
+            ids=ids, external_ids=external_ids, ignore_unknown_ids=ignore_unknown_ids, wrap_ids=True
         )
 
     def list(self, include_public: bool = True, limit: Optional[int] = 25) -> TransformationScheduleList:
