@@ -50,8 +50,8 @@ class TransformationNotificationFilter(CogniteFilter):
     """
 
     Args:
-        config_id (Optional[int]): List only notifications for the specified transformation. The transformation is identified by internal numeric ID.
-        config_external_id (str): List only notifications for the specified transformation. The transformation is identified by externalId.
+        transformation_id (Optional[int]): Filter by transformation internal numeric ID.
+        transformation_external_id (str): Filter by transformation externalId.
         destination (str): Filter by notification destination.
     """
 
