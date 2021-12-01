@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.37.1] - 2021-12-01
+### Fixed
+- Issue with `sequences` full updates.
+
 ## [2.37.0] - 2021-11-30
 ### Added
 - Added support for retrieving file download urls 
