@@ -672,6 +672,29 @@ class FilesAPI(APIClient):
         )
         return FileMetadata._load(returned_file_metadata)
 
+    def retrieve_download_urls(
+        self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None
+    ) -> Dict[Union[int, str], str]:
+        """Get download links by id or external id
+
+        Args:
+            id (Union[int, List[int]]: Id or list of ids.
+            external_id (Union[str, List[str]]: External id or list of external ids.
+
+        Returns:
+            Dict[Union[str, int], str]: Dictionary containing download urls.
+        """
+        batch_size = 100
+        identifiers = self._process_ids(id, external_id, wrap_ids=True)
+        identifier_batches = [identifiers[n : n + batch_size] for n in range(0, len(identifiers), batch_size)]
+        tasks = [dict(url_path="/files/downloadlink", json={"items": id_batch}) for id_batch in identifier_batches]
+        tasks_summary = utils._concurrency.execute_tasks_concurrently(
+            self._post, tasks, max_workers=self._config.max_workers
+        )
+        tasks_summary.raise_compound_exception_if_failed_tasks()
+        results = tasks_summary.joined_results(unwrap_fn=lambda res: res.json()["items"])
+        return {result.get("id") or result["externalId"]: result["downloadUrl"] for result in results}
+
     def download(
         self, directory: Union[str, Path], id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None
     ) -> None:
