@@ -10,7 +10,7 @@ class TransformationJobsAPI(APIClient):
     _LIST_CLASS = TransformationJobList
 
     def list(self, limit: Optional[int] = 25, transformation_id: Optional[int] = None) -> TransformationJobList:
-        """`List all running transformation jobs. <https://docs.cognite.com/api/playground/#operation/transformationJobs>`_
+        """`List all running transformation jobs. <https://docs.cognite.com/api/v1/#operation/getTransformationJobs>`_
 
         Args:
             limit (int): Limits the number of results to be returned. To retrieve all results use limit=-1, default limit is 25.
@@ -42,7 +42,7 @@ class TransformationJobsAPI(APIClient):
         return self._list(method="GET", limit=limit)
 
     def retrieve(self, id: int) -> Optional[TransformationJob]:
-        """`Retrieve a single transformation job by id. <https://docs.cognite.com/api/playground/#operation/getTransformationJob>`_
+        """`Retrieve a single transformation job by id. <https://docs.cognite.com/api/v1/#operation/getTransformationJobsByIds>`_
 
         Args:
             id (int): Job internal Id
@@ -61,7 +61,7 @@ class TransformationJobsAPI(APIClient):
         return self._retrieve(id=id)
 
     def list_metrics(self, id: int) -> TransformationJobMetricList:
-        """`List the metrics of a single transformation job. <https://docs.cognite.com/api/playground/#operation/getTransformationJob>`_
+        """`List the metrics of a single transformation job. <https://docs.cognite.com/api/v1/#operation/getTransformationJobsMetrics>`_
 
         Args:
             id (int): Job internal Id
@@ -82,7 +82,7 @@ class TransformationJobsAPI(APIClient):
         return self._list(method="GET", limit=None, resource_path=url_path, cls=TransformationJobMetricList)
 
     def retrieve_multiple(self, ids: List[int], ignore_unknown_ids: bool = False) -> TransformationJobList:
-        """`Retrieve multiple transformation jobs by id. <https://docs.cognite.com/api/playground/#operation/getTransformationJob>`_
+        """`Retrieve multiple transformation jobs by id. <https://docs.cognite.com/api/v1/#operation/getTransformationJobsByIds>`_
 
         Args:
             ids (List[int]): Job internal Ids

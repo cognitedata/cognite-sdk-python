@@ -8,7 +8,7 @@ class TransformationSchemaAPI(APIClient):
     _LIST_CLASS = TransformationSchemaColumnList
 
     def retrieve(self, destination: TransformationDestination = None) -> TransformationSchemaColumnList:
-        """`Get expected schema for a transformation destination. <https://docs.cognite.com/api/playground/#operation/transformations>`_
+        """`Get expected schema for a transformation destination. <https://docs.cognite.com/api/v1/#operation/getTransformationSchema>`_
 
         Args:
             destination (TransformationDestination): destination for which the schema is requested.

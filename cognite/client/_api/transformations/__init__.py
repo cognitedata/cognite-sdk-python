@@ -28,7 +28,7 @@ class TransformationsAPI(APIClient):
     def create(
         self, transformation: Union[Transformation, List[Transformation]]
     ) -> Union[Transformation, TransformationList]:
-        """`Create one or more transformations. <https://docs.cognite.com/api/playground/#operation/createTransformations>`_
+        """`Create one or more transformations. <https://docs.cognite.com/api/v1/#operation/createTransformations>`_
 
         Args:
             transformation (Union[Transformation, List[Transformation]]): Transformation or list of transformations to create.
@@ -64,7 +64,7 @@ class TransformationsAPI(APIClient):
         external_id: Union[str, List[str]] = None,
         ignore_unknown_ids: bool = False,
     ) -> None:
-        """`Delete one or more transformations. <https://docs.cognite.com/api/playground/#operation/deleteTransformations>`_
+        """`Delete one or more transformations. <https://docs.cognite.com/api/v1/#operation/deleteTransformations>`_
 
         Args:
             id (Union[int, List[int]): Id or list of ids.
@@ -87,7 +87,7 @@ class TransformationsAPI(APIClient):
         )
 
     def list(self, include_public: bool = True, limit: Optional[int] = 25) -> TransformationList:
-        """`List all transformations. <https://docs.cognite.com/api/playground/#operation/transformations>`_
+        """`List all transformations. <https://docs.cognite.com/api/v1/#operation/getTransformations>`_
 
         Args:
             include_public (bool): Whether public transformations should be included in the results. (default true).
@@ -110,7 +110,7 @@ class TransformationsAPI(APIClient):
         return self._list(method="GET", limit=limit, filter=filter)
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[Transformation]:
-        """`Retrieve a single transformation by id. <https://docs.cognite.com/api/playground/#operation/getTransformation>`_
+        """`Retrieve a single transformation by id. <https://docs.cognite.com/api/v1/#operation/getTransformationsByIds>`_
 
         Args:
             id (int, optional): ID
@@ -139,7 +139,7 @@ class TransformationsAPI(APIClient):
     def retrieve_multiple(
         self, ids: List[int] = None, external_ids: List[str] = None, ignore_unknown_ids: bool = False
     ) -> TransformationList:
-        """`Retrieve multiple transformations. <https://docs.cognite.com/api/playground/#operation/getTransformation>`_
+        """`Retrieve multiple transformations. <https://docs.cognite.com/api/v1/#operation/getTransformationsByIds>`_
 
         Args:
             ids (List[int]): List of ids to retrieve.
@@ -167,7 +167,7 @@ class TransformationsAPI(APIClient):
     def update(
         self, item: Union[Transformation, TransformationUpdate, List[Union[Transformation, TransformationUpdate]]]
     ) -> Union[Transformation, TransformationList]:
-        """`Update one or more transformations <https://docs.cognite.com/api/playground/#operation/updateTransformations>`_
+        """`Update one or more transformations <https://docs.cognite.com/api/v1/#operation/updateTransformations>`_
 
         Args:
             item (Union[Transformation, TransformationUpdate, List[Union[Transformation, TransformationUpdate]]]): Transformation(s) to update
@@ -202,7 +202,7 @@ class TransformationsAPI(APIClient):
         wait: bool = True,
         timeout: Optional[float] = None,
     ) -> TransformationJob:
-        """`Run a transformation. <https://docs.cognite.com/api/playground/#operation/runTransformation>`_
+        """`Run a transformation. <https://docs.cognite.com/api/v1/#operation/runTransformation>`_
 
         Args:
             transformation_id (int): Transformation internal id
@@ -244,7 +244,7 @@ class TransformationsAPI(APIClient):
     def run_async(
         self, transformation_id: int = None, transformation_external_id: str = None, timeout: Optional[float] = None
     ) -> Awaitable[TransformationJob]:
-        """`Run a transformation to completion asynchronously. <https://docs.cognite.com/api/playground/#operation/runTransformation>`_
+        """`Run a transformation to completion asynchronously. <https://docs.cognite.com/api/v1/#operation/runTransformation>`_
 
         Args:
             transformation_id (int): internal Transformation id
@@ -284,7 +284,7 @@ class TransformationsAPI(APIClient):
         source_limit: Optional[int] = 100,
         infer_schema_limit: Optional[int] = 1000,
     ) -> TransformationPreviewResult:
-        """`Preview the result of a query. <https://docs.cognite.com/api/playground/#operation/runTransformation>`_
+        """`Preview the result of a query. <https://docs.cognite.com/api/v1/#operation/runPreview>`_
 
         Args:
             query (str): SQL query to run for preview.

@@ -25,7 +25,7 @@ class TransformationSchedulesAPI(APIClient):
     def create(
         self, schedule: Union[TransformationSchedule, List[TransformationSchedule]]
     ) -> Union[TransformationSchedule, TransformationScheduleList]:
-        """`Schedule the specified transformation with the specified configuration(s). <https://docs.cognite.com/api/playground/#operation/scheduleTransformations>`_
+        """`Schedule the specified transformation with the specified configuration(s). <https://docs.cognite.com/api/v1/#operation/createTransformationSchedules>`_
 
         Args:
             schedule (Union[TransformationSchedule, List[TransformationSchedule]]): Configuration or list of configurations of the schedules to create.
@@ -47,7 +47,7 @@ class TransformationSchedulesAPI(APIClient):
         return self._create_multiple(schedule)
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[TransformationSchedule]:
-        """`Retrieve a single transformation schedule by the id or external id of its transformation. <https://docs.cognite.com/api/playground/#operation/getTransformationSchedule>`_
+        """`Retrieve a single transformation schedule by the id or external id of its transformation. <https://docs.cognite.com/api/v1/#operation/getTransformationSchedulesByIds>`_
 
         Args:
             id (int, optional): transformation ID
@@ -79,7 +79,7 @@ class TransformationSchedulesAPI(APIClient):
         external_ids: Optional[List[str]] = None,
         ignore_unknown_ids: bool = False,
     ) -> TransformationScheduleList:
-        """`Retrieve multiple transformation schedules by the ids or external ids of the corresponding transformations. <https://docs.cognite.com/api/playground/#operation/getTransformationSchedule>`_
+        """`Retrieve multiple transformation schedules by the ids or external ids of the corresponding transformations. <https://docs.cognite.com/api/v1/#operation/getTransformationSchedulesByIds>`_
 
         Args:
             ids (int, optional): transformation IDs
@@ -110,7 +110,7 @@ class TransformationSchedulesAPI(APIClient):
         )
 
     def list(self, include_public: bool = True, limit: Optional[int] = 25) -> TransformationScheduleList:
-        """`List all transformation schedules. <https://docs.cognite.com/api/playground/#operation/transformationSchedules>`_
+        """`List all transformation schedules. <https://docs.cognite.com/api/v1/#operation/getTransformationSchedules>`_
 
         Args:
             include_public (bool): Whether public transformations should be included in the results. (default true).
@@ -138,7 +138,7 @@ class TransformationSchedulesAPI(APIClient):
         external_id: Union[str, List[str]] = None,
         ignore_unknown_ids: bool = False,
     ) -> None:
-        """`Unschedule one or more transformations <https://doc.cognitedata.com/api/playground/#operation/deleteSchedules>`_
+        """`Unschedule one or more transformations <https://docs.cognite.com/api/v1/#operation/deleteTransformationSchedules>`_
 
         Args:
             id (Union[int, List[int]): Id or list of ids
@@ -168,7 +168,7 @@ class TransformationSchedulesAPI(APIClient):
             List[Union[TransformationSchedule, TransformationScheduleUpdate]],
         ],
     ) -> Union[TransformationSchedule, TransformationScheduleList]:
-        """`Update one or more transformation schedules <https://docs.cognite.com/api/playground/#operation/updateTransformationSchedules>`_
+        """`Update one or more transformation schedules <https://docs.cognite.com/api/v1/#operation/updateTransformationSchedules>`_
 
         Args:
             item (Union[TransformationSchedule, TransformationScheduleUpdate, List[Union[TransformationSchedule, TransformationScheduleUpdate]]]): Transformation schedule(s) to update

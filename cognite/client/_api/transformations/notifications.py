@@ -24,7 +24,7 @@ class TransformationNotificationsAPI(APIClient):
     def create(
         self, notification: Union[TransformationNotification, List[TransformationNotification]]
     ) -> Union[TransformationNotification, TransformationNotificationList]:
-        """`Subscribe for notifications on the transformation errors. <https://docs.cognite.com/api/playground/#operation/subscribeTransformationNotifications>`_
+        """`Subscribe for notifications on the transformation errors. <https://docs.cognite.com/api/v1/#operation/createTransformationNotifications>`_
 
         Args:
             notification (Union[TransformationNotification, List[TransformationNotification]]): Notification or list of notifications to create.
@@ -52,7 +52,7 @@ class TransformationNotificationsAPI(APIClient):
         destination: str = None,
         limit: Optional[int] = 25,
     ) -> TransformationNotificationList:
-        """`List notification subscriptions. <https://docs.cognite.com/api/playground/#operation/listTransformationNotifications>`_
+        """`List notification subscriptions. <https://docs.cognite.com/api/v1/#operation/getTransformationNotifications>`_
 
         Args:
             transformation_id (Optional[int]): Filter by transformation internal numeric ID.
@@ -86,7 +86,7 @@ class TransformationNotificationsAPI(APIClient):
         return self._list(method="GET", limit=limit, filter=filter)
 
     def delete(self, id: Union[int, List[int]] = None) -> None:
-        """`Deletes the specified notification subscriptions on the transformation. Does nothing when the subscriptions already don't exist <https://doc.cognitedata.com/api/playground/#operation/deleteTransformationNotifications>`_
+        """`Deletes the specified notification subscriptions on the transformation. Does nothing when the subscriptions already don't exist <https://docs.cognite.com/api/v1/#operation/deleteTransformationNotifications>`_
 
         Args:
             id (Union[int, List[int]): Id or list of transformation notification ids
