@@ -89,7 +89,7 @@ class TestTransformationJobsAPI:
             and job.destination_project == cognite_client.config.project
             and job.destination == TransformationDestination.assets()
             and job.conflict_mode == "upsert"
-            and job.raw_query == new_transformation.query
+            and job.query == new_transformation.query
             and job.error is None
             and job.ignore_null_fields
         )
@@ -109,7 +109,7 @@ class TestTransformationJobsAPI:
             and job.destination_project == cognite_client.config.project
             and job.destination == TransformationDestination.assets()
             and job.conflict_mode == "upsert"
-            and job.raw_query == new_transformation.query
+            and job.query == new_transformation.query
             and job.error is None
             and job.ignore_null_fields
         )
@@ -141,7 +141,7 @@ class TestTransformationJobsAPI:
             and job.destination_project == cognite_client.config.project
             and job.destination == TransformationDestination.assets()
             and job.conflict_mode == "upsert"
-            and job.raw_query == new_transformation.query
+            and job.query == new_transformation.query
             and job.error is None
             and job.ignore_null_fields
         )
@@ -167,7 +167,7 @@ class TestTransformationJobsAPI:
             and job.destination_project == cognite_client.config.project
             and job.destination == TransformationDestination.assets()
             and job.conflict_mode == "upsert"
-            and job.raw_query == new_transformation.query
+            and job.query == new_transformation.query
             and job.error is None
             and job.ignore_null_fields
         )
