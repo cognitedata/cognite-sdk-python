@@ -109,6 +109,7 @@ from cognite.client.data_classes.transformations import (
 )
 from cognite.client.data_classes.transformations.jobs import (
     TransformationJob,
+    TransformationJobFilter,
     TransformationJobList,
     TransformationJobMetric,
     TransformationJobMetricList,

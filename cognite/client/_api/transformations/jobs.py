@@ -2,19 +2,30 @@ from typing import List, Optional
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes import TransformationJob, TransformationJobList, TransformationJobMetricList
+from cognite.client.data_classes import (
+    TransformationJob,
+    TransformationJobFilter,
+    TransformationJobList,
+    TransformationJobMetricList,
+)
 
 
 class TransformationJobsAPI(APIClient):
     _RESOURCE_PATH = "/transformations/jobs"
     _LIST_CLASS = TransformationJobList
 
-    def list(self, limit: Optional[int] = 25, transformation_id: Optional[int] = None) -> TransformationJobList:
+    def list(
+        self,
+        limit: Optional[int] = 25,
+        transformation_id: Optional[int] = None,
+        transformation_external_id: Optional[str] = None,
+    ) -> TransformationJobList:
         """`List all running transformation jobs. <https://docs.cognite.com/api/v1/#operation/getTransformationJobs>`_
 
         Args:
             limit (int): Limits the number of results to be returned. To retrieve all results use limit=-1, default limit is 25.
             transformation_id (int): Filters the results by the internal transformation id.
+            transformation_external_id (str): Filters the results by the external transformation id.
 
         Returns:
             TransformationJobList: List of transformation jobs
@@ -33,13 +44,12 @@ class TransformationJobsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> transformation_jobs_list = c.transformations.jobs.list(transformation_id = 1)
         """
-        if transformation_id is not None:
-            resource_path = utils._auxiliary.interpolate_and_url_encode(
-                "/transformations/{}/jobs", str(transformation_id)
-            )
-            return self._list(method="GET", limit=limit, resource_path=resource_path)
 
-        return self._list(method="GET", limit=limit)
+        filter = TransformationJobFilter(
+            transformation_id=transformation_id, transformation_external_id=transformation_external_id
+        ).dump(camel_case=True)
+
+        return self._list(method="GET", limit=limit, filter=filter)
 
     def retrieve(self, id: int) -> Optional[TransformationJob]:
         """`Retrieve a single transformation job by id. <https://docs.cognite.com/api/v1/#operation/getTransformationJobsByIds>`_

@@ -243,3 +243,16 @@ class TransformationJob(CogniteResource):
 class TransformationJobList(CogniteResourceList):
     _RESOURCE = TransformationJob
     _ASSERT_CLASSES = False
+
+
+class TransformationJobFilter(CogniteFilter):
+    """
+
+    Args:
+        transformation_id (Optional[int]):  Filter jobs by transformation internal numeric ID.
+        transformation_external_id (str): Filter jobs by transformation external ID.
+    """
+
+    def __init__(self, transformation_id: Optional[int] = None, transformation_external_id: str = None):
+        self.transformation_id = transformation_id
+        self.transformation_external_id = transformation_external_id
