@@ -165,6 +165,10 @@ class TransformationUpdate(CogniteUpdate):
             return self._set(value)
 
     @property
+    def external_id(self):
+        return TransformationUpdate._PrimitiveTransformationUpdate(self, "externalId")
+
+    @property
     def name(self):
         return TransformationUpdate._PrimitiveTransformationUpdate(self, "name")
 

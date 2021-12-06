@@ -86,25 +86,33 @@ class TestTransformationsAPI:
         ] and other_transformation.id in [transformation.id for transformation in retrieved_transformations]
 
     def test_update_full(self, cognite_client, new_transformation):
+        expected_external_id = f"m__{new_transformation.external_id}"
+        new_transformation.external_id = expected_external_id
         new_transformation.name = "new name"
         new_transformation.query = "SELECT * from _cdf.assets"
         new_transformation.destination = TransformationDestination.raw("myDatabase", "myTable")
         updated_transformation = cognite_client.transformations.update(new_transformation)
         retrieved_transformation = cognite_client.transformations.retrieve(new_transformation.id)
         assert (
-            updated_transformation.name == retrieved_transformation.name == "new name"
+            updated_transformation.external_id == retrieved_transformation.external_id == expected_external_id
+            and updated_transformation.name == retrieved_transformation.name == "new name"
             and updated_transformation.query == retrieved_transformation.query == "SELECT * from _cdf.assets"
             and updated_transformation.destination == TransformationDestination.raw("myDatabase", "myTable")
         )
 
     def test_update_partial(self, cognite_client, new_transformation):
+        expected_external_id = f"m__{new_transformation.external_id}"
         update_transformation = (
-            TransformationUpdate(id=new_transformation.id).name.set("new name").query.set("SELECT * from _cdf.assets")
+            TransformationUpdate(id=new_transformation.id)
+            .external_id.set(expected_external_id)
+            .name.set("new name")
+            .query.set("SELECT * from _cdf.assets")
         )
         updated_transformation = cognite_client.transformations.update(update_transformation)
         retrieved_transformation = cognite_client.transformations.retrieve(new_transformation.id)
         assert (
-            updated_transformation.name == retrieved_transformation.name == "new name"
+            updated_transformation.external_id == retrieved_transformation.external_id == expected_external_id
+            and updated_transformation.name == retrieved_transformation.name == "new name"
             and updated_transformation.query == retrieved_transformation.query == "SELECT * from _cdf.assets"
         )
 
