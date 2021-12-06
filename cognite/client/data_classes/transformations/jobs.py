@@ -17,7 +17,6 @@ class TransformationJobMetric(CogniteResource):
     """The transformation job metric resource allows following details of execution of a transformation run.
 
     Args:
-        id (int): A server-generated ID for the object.
         timestamp (int): Time of the last metric update.
         name (str): Name of the metric.
         count (int): Value of the metric.
@@ -25,7 +24,6 @@ class TransformationJobMetric(CogniteResource):
     """
 
     def __init__(self, id: int = None, timestamp: int = None, name: str = None, count: int = None, cognite_client=None):
-        self.id = id
         self.timestamp = timestamp
         self.name = name
         self.count = count
