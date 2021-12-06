@@ -34,13 +34,13 @@ class TransformationJobsAPI(APIClient):
 
             List transformation jobs::
 
-                >>> from cognite.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> transformation_jobs_list = c.transformations.jobs.list()
 
             List transformation jobs of a single transformation::
 
-                >>> from cognite.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> transformation_jobs_list = c.transformations.jobs.list(transformation_id = 1)
         """
@@ -64,7 +64,7 @@ class TransformationJobsAPI(APIClient):
 
             Get transformation job by id:
 
-                >>> from cognite.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.transformations.jobs.retrieve(id=1)
         """
@@ -83,7 +83,7 @@ class TransformationJobsAPI(APIClient):
 
             Get metrics by transformation job id:
 
-                >>> from cognite.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.transformations.jobs.list_metrics(id=1)
         """
@@ -105,7 +105,7 @@ class TransformationJobsAPI(APIClient):
 
             Get jobs by id::
 
-                >>> from cognite.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.transformations.jobs.retrieve_multiple(ids=[1, 2, 3])
         """

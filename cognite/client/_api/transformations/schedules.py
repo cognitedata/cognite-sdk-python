@@ -37,8 +37,8 @@ class TransformationSchedulesAPI(APIClient):
 
             Create new schedules:
 
-                >>> from cognite.experimental import CogniteClient
-                >>> from cognite.experimental.data_classes import TransformationSchedule
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import TransformationSchedule
                 >>> c = CogniteClient()
                 >>> schedules = [TransformationSchedule(id = 1, interval = "0 * * * *"), TransformationSchedule(external_id="transformation2", interval = "5 * * * *"))]
                 >>> res = c.transformations.schedules.create(schedules)
@@ -60,13 +60,13 @@ class TransformationSchedulesAPI(APIClient):
 
             Get transformation schedule by transformation id:
 
-                >>> from cognite.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.transformations.schedules.retrieve(id=1)
 
             Get transformation schedule by transformation external id:
 
-                >>> from cognite.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.transformations.schedules.retrieve(external_id="1")
         """
@@ -93,13 +93,13 @@ class TransformationSchedulesAPI(APIClient):
 
             Get transformation schedules by transformation ids:
 
-                >>> from cognite.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.transformations.schedules.retrieve_multiple(ids=[1, 2, 3])
 
             Get transformation schedules by transformation external ids:
 
-                >>> from cognite.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.transformations.schedules.retrieve_multiple(external_ids=["t1", "t2"])
         """
@@ -124,7 +124,7 @@ class TransformationSchedulesAPI(APIClient):
 
             List schedules::
 
-                >>> from cognite.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> schedules_list = c.transformations.schedules.list()
         """
@@ -152,7 +152,7 @@ class TransformationSchedulesAPI(APIClient):
 
             Delete schedules by id or external id::
 
-                >>> from cognite.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> c.transformations.schedules.delete(id=[1,2,3], external_id="3")
         """
@@ -180,7 +180,7 @@ class TransformationSchedulesAPI(APIClient):
 
             Update a transformation schedule that you have fetched. This will perform a full update of the schedule::
 
-                >>> from cognite.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> transformation_schedule = c.transformations.schedules.retrieve(id=1)
                 >>> transformation_schedule.is_paused = True
@@ -188,8 +188,8 @@ class TransformationSchedulesAPI(APIClient):
 
             Perform a partial update on a transformation schedule, updating the interval and unpausing it::
 
-                >>> from cognite.experimental import CogniteClient
-                >>> from cognite.experimental.data_classes import TransformationScheduleUpdate
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import TransformationScheduleUpdate
                 >>> c = CogniteClient()
                 >>> my_update = TransformationScheduleUpdate(id=1).interval.set("0 * * * *").is_paused.set(False)
                 >>> res = c.transformations.schedules.update(my_update)

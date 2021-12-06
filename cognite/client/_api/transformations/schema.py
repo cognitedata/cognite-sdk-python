@@ -20,8 +20,8 @@ class TransformationSchemaAPI(APIClient):
 
             Get the schema for a transformation producing assets::
 
-                >>> from cognite.experimental import CogniteClient
-                >>> from cognite.experimental.data_classes import TransformationDestination
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import TransformationDestination
                 >>> c = CogniteClient()
                 >>> columns = c.transformations.schema.retrieve(destination = TransformationDestination.assets())
         """

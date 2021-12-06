@@ -125,7 +125,7 @@ class TransformationJob(CogniteResource):
         Examples:
             run transformations 1 and 2 in parallel, and run 3 once they finish successfully:
 
-                >>> from cognite.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>>
                 >>> job1 = c.transformations.run(id = 1, wait = False)
@@ -137,7 +137,7 @@ class TransformationJob(CogniteResource):
 
             wait transformation for 5 minutes and do something if still running:
 
-                >>> from cognite.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>>
                 >>> job = c.transformations.run(id = 1, wait = False)
@@ -179,7 +179,7 @@ class TransformationJob(CogniteResource):
             run transformations 1 and 2 in parallel, and run 3 once they finish successfully:
 
                 >>> from asyncio import ensure_future
-                >>> from cognite.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>>
                 >>> async def run_succesive_transformations():
@@ -195,7 +195,7 @@ class TransformationJob(CogniteResource):
             wait transformation for 5 minutes and do something if still running:
 
                 >>> from asyncio import ensure_future
-                >>> from cognite.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>>
                 >>> async def run_succesive_transformations():
