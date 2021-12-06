@@ -1,3 +1,6 @@
+import random
+import string
+
 import pytest
 
 from cognite.client.data_classes import Transformation, TransformationDestination, TransformationUpdate
@@ -5,7 +8,10 @@ from cognite.client.data_classes import Transformation, TransformationDestinatio
 
 @pytest.fixture
 def new_transformation(cognite_client):
-    transform = Transformation(name="any", destination=TransformationDestination.assets())
+    prefix = "".join(random.choice(string.ascii_letters) for i in range(6))
+    transform = Transformation(
+        name="any", external_id=f"{prefix}-transformation", destination=TransformationDestination.assets()
+    )
     ts = cognite_client.transformations.create(transform)
 
     yield ts
@@ -19,23 +25,39 @@ other_transformation = new_transformation
 
 class TestTransformationsAPI:
     def test_create_asset_transformation(self, cognite_client):
-        transform = Transformation(name="any", destination=TransformationDestination.assets())
+        prefix = "".join(random.choice(string.ascii_letters) for i in range(6))
+        transform = Transformation(
+            name="any", external_id=f"{prefix}-transformation", destination=TransformationDestination.assets()
+        )
         ts = cognite_client.transformations.create(transform)
         cognite_client.transformations.delete(id=ts.id)
 
     def test_create_raw_transformation(self, cognite_client):
-        transform = Transformation(name="any", destination=TransformationDestination.raw("myDatabase", "myTable"))
+        prefix = "".join(random.choice(string.ascii_letters) for i in range(6))
+        transform = Transformation(
+            name="any",
+            external_id=f"{prefix}-transformation",
+            destination=TransformationDestination.raw("myDatabase", "myTable"),
+        )
         ts = cognite_client.transformations.create(transform)
         cognite_client.transformations.delete(id=ts.id)
         assert ts.destination == TransformationDestination.raw("myDatabase", "myTable")
 
     def test_create_asset_hierarchy_transformation(self, cognite_client):
-        transform = Transformation(name="any", destination=TransformationDestination.asset_hierarchy())
+        prefix = "".join(random.choice(string.ascii_letters) for i in range(6))
+        transform = Transformation(
+            name="any", external_id=f"{prefix}-transformation", destination=TransformationDestination.asset_hierarchy()
+        )
         ts = cognite_client.transformations.create(transform)
         cognite_client.transformations.delete(id=ts.id)
 
     def test_create_string_datapoints_transformation(self, cognite_client):
-        transform = Transformation(name="any", destination=TransformationDestination.string_datapoints())
+        prefix = "".join(random.choice(string.ascii_letters) for i in range(6))
+        transform = Transformation(
+            name="any",
+            external_id=f"{prefix}-transformation",
+            destination=TransformationDestination.string_datapoints(),
+        )
         ts = cognite_client.transformations.create(transform)
         cognite_client.transformations.delete(id=ts.id)
 

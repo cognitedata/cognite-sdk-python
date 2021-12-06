@@ -1,3 +1,6 @@
+import random
+import string
+
 import pytest
 
 from cognite.client.data_classes import (
@@ -11,8 +14,10 @@ from cognite.client.data_classes import (
 
 @pytest.fixture
 def new_transformation(cognite_client):
+    prefix = "".join(random.choice(string.ascii_letters) for i in range(6))
     transform = Transformation(
         name="any",
+        external_id=f"{prefix}-transformation",
         destination=TransformationDestination.assets(),
         query="select * from _cdf.assets",
         source_oidc_credentials=OidcCredentials(
