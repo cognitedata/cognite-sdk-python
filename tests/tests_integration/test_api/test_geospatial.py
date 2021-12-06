@@ -3,7 +3,6 @@ import sys
 import time
 import uuid
 
-import geopandas
 import pytest
 from cognite.client.exceptions import CogniteAPIError
 

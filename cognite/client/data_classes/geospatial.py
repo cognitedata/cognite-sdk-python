@@ -1,6 +1,5 @@
 from typing import Any, Dict
 
-import geopandas
 from cognite.client import utils
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 
