@@ -107,6 +107,7 @@ class Transformation(CogniteResource):
         if isinstance(instance.destination, Dict):
             snake_dict = {utils._auxiliary.to_snake_case(key): value for (key, value) in instance.destination.items()}
             if instance.destination.get("type") == "raw":
+                snake_dict.pop("type")
                 instance.destination = RawTable(**snake_dict)
             else:
                 instance.destination = TransformationDestination(**snake_dict)
@@ -136,7 +137,7 @@ class Transformation(CogniteResource):
         Returns:
             Dict[str, Any]: A dictionary representation of the instance.
         """
-        ret = CogniteResource.dump(self, camel_case=camel_case)
+        ret = super().dump(camel_case=camel_case)
 
         if self.source_oidc_credentials:
             source_key = "sourceOidcCredentials" if camel_case else "source_oidc_credentials"

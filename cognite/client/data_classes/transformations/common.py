@@ -83,12 +83,12 @@ class TransformationDestination:
         Returns:
             TransformationDestination pointing to the target table
         """
-        return RawTable(type="raw", database=database, table=table)
+        return RawTable(database=database, table=table)
 
 
 class RawTable(TransformationDestination):
-    def __init__(self, type: str = None, database: str = None, table: str = None):
-        super().__init__(type=type)
+    def __init__(self, database: str = None, table: str = None):
+        super().__init__(type="raw")
         self.database = database
         self.table = table
 
