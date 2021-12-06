@@ -14,6 +14,15 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+
+## [2.38.0] - 2021-11-30
+### Added
+- `transformations` api client, which allows the creation, deletion, update, run and retrieval of transformations.
+- `transformations.schedules` api client, which allows the schedule, unschedule and retrieval of recurring runs of a transformation.
+- `transformations.notifications` api client, which allows the creation, deletion and retrieval of transformation email notifications.
+- `transformations.schema` api client, which allows the retrieval of the expected schema of sql transformations based on the destination data type.
+- `transformations.jobs` api client, which retrieves the  status of transformation runs.
+
 ## [2.37.1] - 2021-12-01
 ### Fixed
 - Bug where `sequences` full update attempts to "set" column spec. "set" is not supported for sequence column spec.
