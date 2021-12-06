@@ -100,50 +100,6 @@ class FeatureList(CogniteResourceList):
     _RESOURCE = Feature
     _ASSERT_CLASSES = False
 
-    def to_geopandas(self, geometry: str, camel_case: bool = True) -> "geopandas.GeoDataFrame":
-        """Convert the instance into a geopandas GeoDataFrame.
-
-        Args:
-            geometry (str): The name of the geometry attribute
-            camel_case (bool): Convert column names to camel case (e.g. `externalId` instead of `external_id`)
-
-        Returns:
-            geopandas.GeoDataFrame: The geodataframe.
-        """
-        df = self.to_pandas(camel_case)
-        wkt = utils._auxiliary.local_import("shapely.wkt")
-        df[geometry] = df[geometry].apply(lambda g: wkt.loads(g["wkt"]))
-        gpd = utils._auxiliary.local_import("geopandas")
-        gdf = gpd.GeoDataFrame(df, geometry=geometry)
-        return gdf
-
-    @staticmethod
-    def from_geopandas(feature_type: FeatureType, gdf: geopandas.GeoDataFrame) -> "FeatureList":
-        """Convert a GeoDataFrame instance into a FeatureList.
-
-        Args:
-            feature_type (FeatureType): The feature type the features will conform to
-            gdf (GeoDataFrame): the geodataframe instance to convert into features
-
-        Returns:
-            FeatureList: The list of features converted from the geodataframe rows.
-        """
-        features = []
-        for _, row in gdf.iterrows():
-            feature = Feature(external_id=row["externalId"])
-            for attr in feature_type.attributes.items():
-                attr_name = attr[0]
-                attr_type = attr[1]["type"]
-                if attr_name.startswith("_"):
-                    continue
-                if _is_geometry_type(attr_type):
-                    setattr(feature, attr_name, {"wkt": row[attr_name].wkt})
-                else:
-                    setattr(feature, attr_name, row[attr_name])
-            features.append(feature)
-        return FeatureList(features)
-
-
 class CoordinateReferenceSystem(CogniteResource):
     """A representation of a feature in the geospatial api.
     """
