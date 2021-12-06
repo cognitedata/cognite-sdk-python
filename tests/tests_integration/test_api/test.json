@@ -1,0 +1,95 @@
+{'items': [
+  {'externalId': 'test_QWE50MM2LU_0', 'name': 'test_QWE50MM2LU_0'},
+  {'externalId': 'test_QWE50MM2LU_01', 'parentExternalId': 'test_QWE50MM2LU_0', 'name': 'test_QWE50MM2LU_01'}]}
+
+X
+{'items': [
+  {'externalId': 'test_QWE50MM2LU_010', 'name': 'test_QWE50MM2LU_010', 'parentId': 3952185132277648},
+  {'externalId': 'test_QWE50MM2LU_0101', 'parentExternalId': 'test_QWE50MM2LU_010', 'name': 'test_QWE50MM2LU_0101'}]}
+
+{'items': [
+  {'externalId': 'test_QWE50MM2LU_011', 'name': 'test_QWE50MM2LU_011', 'parentId': 3952185132277648},
+  {'externalId': 'test_QWE50MM2LU_0110', 'parentExternalId': 'test_QWE50MM2LU_011', 'name': 'test_QWE50MM2LU_0110'}]}
+
+{'items': [
+  {'externalId': 'test_QWE50MM2LU_00', 'name': 'test_QWE50MM2LU_00', 'parentId': 1085259224653988},
+  {'externalId': 'test_QWE50MM2LU_001', 'parentExternalId': 'test_QWE50MM2LU_00', 'name': 'test_QWE50MM2LU_001'}]}
+
+{'items': [
+  {'externalId': 'test_QWE50MM2LU_0111', 'name': 'test_QWE50MM2LU_0111', 'parentId': 7799342159647242}]}
+
+{'items': [
+  {'externalId': 'test_QWE50MM2LU_000', 'name': 'test_QWE50MM2LU_000', 'parentId': 23209383825471},
+  {'externalId': 'test_QWE50MM2LU_0001', 'parentExternalId': 'test_QWE50MM2LU_000', 'name': 'test_QWE50MM2LU_0001'}]}
+
+{'items': [
+  {'externalId': 'test_QWE50MM2LU_0010', 'name': 'test_QWE50MM2LU_0010', 'parentId': 5803947573134498},
+  {'externalId': 'test_QWE50MM2LU_0011', 'name': 'test_QWE50MM2LU_0011', 'parentId': 5803947573134498}]}
+
+
+------------------------
+LATEST DETECTED DEADLOCK
+------------------------
+2019-05-16 14:43:42 0x7f40454e2700
+*** (1) TRANSACTION:
+TRANSACTION 2507, ACTIVE 0 sec starting index read
+mysql tables in use 1, locked 1
+LOCK WAIT 3 lock struct(s), heap size 1136, 2 row lock(s)
+MySQL thread id 47, OS thread handle 139914014680832, query id 17269 lts-api.local-test-services_default 172.18.0.10 cognite-test statistics
+select assets_v2.id, assets_v2.path from assets_v2 where (assets_v2.project_id = 7313221412646216 and assets_v2.id in (3952185132277648)) for update
+*** (1) WAITING FOR THIS LOCK TO BE GRANTED:
+RECORD LOCKS space id 53 page no 33 n bits 144 index PRIMARY of table `cognite`.`assets_v2` trx id 2507 lock_mode X locks rec but not gap waiting
+Record lock, heap no 75 PHYSICAL RECORD: n_fields 17; compact format; info bits 0
+ 0: len 8; hex 8019fb560c76ed48; asc    V v H;;
+ 1: len 8; hex 800e0a7dcee55f90; asc    }  _ ;;
+ 2: len 6; hex 0000000009c5; asc       ;;
+ 3: len 7; hex ee000001ae0129; asc       );;
+ 4: len 18; hex 746573745f51574535304d4d324c555f3031; asc test_QWE50MM2LU_01;;
+ 5: SQL NULL;
+ 6: len 30; hex 313038353235393232343635333938382f33393532313835313332323737; asc 1085259224653988/3952185132277; (total 33 bytes);
+ 7: len 8; hex 8000000000000001; asc         ;;
+ 8: len 5; hex 0000000400; asc      ;;
+ 9: len 8; hex 8003db099a9320a4; asc         ;;
+ 10: len 8; hex 8003db099a9320a4; asc         ;;
+ 11: SQL NULL;
+ 12: SQL NULL;
+ 13: len 8; hex 8000016ac1194e41; asc    j  NA;;
+ 14: len 8; hex 8000016ac1194e41; asc    j  NA;;
+ 15: SQL NULL;
+ 16: len 18; hex 746573745f51574535304d4d324c555f3031; asc test_QWE50MM2LU_01;;
+
+*** (2) TRANSACTION:
+TRANSACTION 2506, ACTIVE 0 sec inserting
+mysql tables in use 1, locked 1
+4 lock struct(s), heap size 1136, 3 row lock(s), undo log entries 1
+MySQL thread id 37, OS thread handle 139914017384192, query id 17272 lts-api.local-test-services_default 172.18.0.10 cognite-test update
+insert into assets_v2 (project_id, id, name, description, path, depth, metadata, parent_id, parent_id_not_null, type_fields, source, source_id, created_time, last_updated_time, external_id) values (7313221412646216, 7799342159647242, 'test_QWE50MM2LU_011', null, '1085259224653988/3952185132277648/7799342159647242', 2, '{}', 3952185132277648, 3952185132277648, null, null, null, 1558017822317, 1558017822317, 'test_QWE50MM2LU_011'), (7313221412646216, 7189907004712679, 'test_QWE50MM2LU_0110', null, '1085259224653988/3952185132277648/7799342159647242/7189907004712679', 3, '{}', 7799342159647242, 7799342159647242, null, null, null, 1558017822317, 1558017822317, 'test_QWE50MM2LU_0110')
+*** (2) HOLDS THE LOCK(S):
+RECORD LOCKS space id 53 page no 33 n bits 144 index PRIMARY of table `cognite`.`assets_v2` trx id 2506 lock_mode X locks rec but not gap
+Record lock, heap no 75 PHYSICAL RECORD: n_fields 17; compact format; info bits 0
+ 0: len 8; hex 8019fb560c76ed48; asc    V v H;;
+ 1: len 8; hex 800e0a7dcee55f90; asc    }  _ ;;
+ 2: len 6; hex 0000000009c5; asc       ;;
+ 3: len 7; hex ee000001ae0129; asc       );;
+ 4: len 18; hex 746573745f51574535304d4d324c555f3031; asc test_QWE50MM2LU_01;;
+ 5: SQL NULL;
+ 6: len 30; hex 313038353235393232343635333938382f33393532313835313332323737; asc 1085259224653988/3952185132277; (total 33 bytes);
+ 7: len 8; hex 8000000000000001; asc         ;;
+ 8: len 5; hex 0000000400; asc      ;;
+ 9: len 8; hex 8003db099a9320a4; asc         ;;
+ 10: len 8; hex 8003db099a9320a4; asc         ;;
+ 11: SQL NULL;
+ 12: SQL NULL;
+ 13: len 8; hex 8000016ac1194e41; asc    j  NA;;
+ 14: len 8; hex 8000016ac1194e41; asc    j  NA;;
+ 15: SQL NULL;
+ 16: len 18; hex 746573745f51574535304d4d324c555f3031; asc test_QWE50MM2LU_01;;
+
+*** (2) WAITING FOR THIS LOCK TO BE GRANTED:
+RECORD LOCKS space id 53 page no 71 n bits 360 index asset_v2_external_id of table `cognite`.`assets_v2` trx id 2506 lock_mode X locks gap before rec insert intention waiting
+Record lock, heap no 188 PHYSICAL RECORD: n_fields 3; compact format; info bits 0
+ 0: len 8; hex 8019fb560c76ed48; asc    V v H;;
+ 1: len 17; hex 746573745f515843533047434b37585f30; asc test_QXCS0GCK7X_0;;
+ 2: len 8; hex 80013309f29391b5; asc   3     ;;
+
+*** WE ROLL BACK TRANSACTION (1)
