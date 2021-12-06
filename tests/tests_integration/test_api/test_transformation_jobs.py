@@ -85,6 +85,7 @@ class TestTransformationJobsAPI:
             job.id is not None
             and job.status == TransformationJobStatus.CREATED
             and job.transformation_id == new_transformation.id
+            and job.transformation_external_id == new_transformation.external_id
             and job.source_project == cognite_client.config.project
             and job.destination_project == cognite_client.config.project
             and job.destination == TransformationDestination.assets()
@@ -105,6 +106,7 @@ class TestTransformationJobsAPI:
             job.id is not None
             and job.status == TransformationJobStatus.COMPLETED
             and job.transformation_id == new_transformation.id
+            and job.transformation_external_id == new_transformation.external_id
             and job.source_project == cognite_client.config.project
             and job.destination_project == cognite_client.config.project
             and job.destination == TransformationDestination.assets()
@@ -137,6 +139,7 @@ class TestTransformationJobsAPI:
             job.id is not None
             and job.status == TransformationJobStatus.COMPLETED
             and job.transformation_id == new_transformation.id
+            and job.transformation_external_id == new_transformation.external_id
             and job.source_project == cognite_client.config.project
             and job.destination_project == cognite_client.config.project
             and job.destination == TransformationDestination.assets()
@@ -163,6 +166,7 @@ class TestTransformationJobsAPI:
             job.id is not None
             and job.status == TransformationJobStatus.COMPLETED
             and job.transformation_id == new_transformation.id
+            and job.transformation_external_id == new_transformation.external_id
             and job.source_project == cognite_client.config.project
             and job.destination_project == cognite_client.config.project
             and job.destination == TransformationDestination.assets()
