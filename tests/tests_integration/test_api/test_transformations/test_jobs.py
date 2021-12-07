@@ -45,6 +45,15 @@ def new_transformation(cognite_client):
     assert cognite_client.transformations.retrieve(ts.id) is None
 
 
+@pytest.fixture
+def new_raw_transformation(cognite_client, new_transformation):
+    new_transformation.query = "select 1 as key, 'example2' as name, 'example' as externalId"
+    new_transformation.destination = TransformationDestination.raw("my_db", "my_table")
+    ts = cognite_client.transformations.update(new_transformation)
+
+    yield ts
+
+
 other_transformation = new_transformation
 
 
@@ -173,6 +182,23 @@ class TestTransformationJobsAPI:
             and job.conflict_mode == "upsert"
             and job.query == new_transformation.query
             and job.error is None
+            and job.ignore_null_fields
+        )
+
+    @pytest.mark.asyncio
+    async def test_run_raw_transformation(self, cognite_client, new_raw_transformation):
+        job = await new_raw_transformation.run_async()
+
+        assert (
+            job.id is not None
+            and job.status not in [TransformationJobStatus.CREATED, TransformationJobStatus.RUNNING]
+            and job.transformation_id == new_raw_transformation.id
+            and job.transformation_external_id == new_raw_transformation.external_id
+            and job.source_project == cognite_client.config.project
+            and job.destination_project == cognite_client.config.project
+            and job.destination == TransformationDestination.raw("my_db", "my_table")
+            and job.conflict_mode == "upsert"
+            and job.query == new_raw_transformation.query
             and job.ignore_null_fields
         )
 

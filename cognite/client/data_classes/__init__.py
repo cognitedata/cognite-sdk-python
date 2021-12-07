@@ -101,10 +101,12 @@ from cognite.client.data_classes.time_series import (
 )
 from cognite.client.data_classes.transformations import (
     OidcCredentials,
+    RawTable,
     Transformation,
     TransformationBlockedInfo,
     TransformationDestination,
     TransformationList,
+    TransformationPreviewResult,
     TransformationUpdate,
 )
 from cognite.client.data_classes.transformations.jobs import (
