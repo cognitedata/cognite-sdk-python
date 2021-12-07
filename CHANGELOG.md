@@ -14,6 +14,9 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.38.1] - 2021-11-30
+### Fixed
+- Bug where loading `transformations.jobs` from JSON fails for raw destinations.
 
 ## [2.38.0] - 2021-11-30
 ### Added
