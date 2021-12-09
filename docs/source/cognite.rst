@@ -1132,78 +1132,78 @@ Transformation Schedules
 
 Create transformation Schedules
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.transformation_schedules.TransformationSchedulesAPI.create
+.. automethod:: cognite.client._api.transformations.schedules.TransformationSchedulesAPI.create
 
 Retrieve transformation schedules
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.transformation_schedules.TransformationSchedulesAPI.retrieve
+.. automethod:: cognite.client._api.transformations.schedules.TransformationSchedulesAPI.retrieve
 
 Retrieve multiple transformation schedules
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.transformation_schedules.TransformationSchedulesAPI.retrieve_multiple
+.. automethod:: cognite.client._api.transformations.schedules.TransformationSchedulesAPI.retrieve_multiple
 
 List transformation schedules
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.transformation_schedules.TransformationSchedulesAPI.list
+.. automethod:: cognite.client._api.transformations.schedules.TransformationSchedulesAPI.list
 
 Update transformation schedules
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.transformation_schedules.TransformationSchedulesAPI.update
+.. automethod:: cognite.client._api.transformations.schedules.TransformationSchedulesAPI.update
 
 Delete transformation schedules
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.transformation_schedules.TransformationSchedulesAPI.delete
+.. automethod:: cognite.client._api.transformations.schedules.TransformationSchedulesAPI.delete
 
 Transformation Notifications
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Create transformation notifications
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.transformation_notifications.TransformationNotificationsAPI.create
+.. automethod:: cognite.client._api.transformations.notifications.TransformationNotificationsAPI.create
 
 List transformation notifications
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.transformation_notifications.TransformationNotificationsAPI.list
+.. automethod:: cognite.client._api.transformations.notifications.TransformationNotificationsAPI.list
 
 Delete transformation notifications
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.transformation_notifications.TransformationNotificationsAPI.delete
+.. automethod:: cognite.client._api.transformations.notifications.TransformationNotificationsAPI.delete
 
 Transformation Jobs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Retrieve transformation jobs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.transformation_jobs.TransformationJobsAPI.retrieve
+.. automethod:: cognite.client._api.transformations.jobs.TransformationJobsAPI.retrieve
 
-.. automethod:: cognite.client._api.transformation_jobs.TransformationJobsAPI.retrieve_multiple
+.. automethod:: cognite.client._api.transformations.jobs.TransformationJobsAPI.retrieve_multiple
 
 List transformation jobs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.transformation_jobs.TransformationJobsAPI.list
+.. automethod:: cognite.client._api.transformations.jobs.TransformationJobsAPI.list
 
 Transformation Schema
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Get transformation schema
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.transformation_schema.TransformationSchemaAPI.retrieve
+.. automethod:: cognite.client._api.transformations.schema.TransformationSchemaAPI.retrieve
 
 Data classes
 ^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.transformations
     :members:
     :show-inheritance:
-.. automodule:: cognite.client.data_classes.transformation_schedules
+.. automodule:: cognite.client.data_classes.transformations.schedules
     :members:
     :show-inheritance:
-.. automodule:: cognite.client.data_classes.transformation_notifications
+.. automodule:: cognite.client.data_classes.transformations.notifications
     :members:
     :show-inheritance:
-.. automodule:: cognite.client.data_classes.transformation_jobs
+.. automodule:: cognite.client.data_classes.transformations.jobs
     :members:
     :show-inheritance:
-.. automodule:: cognite.client.data_classes.transformation_schema
+.. automodule:: cognite.client.data_classes.transformations.schema
     :members:
     :show-inheritance:
 
