@@ -630,8 +630,10 @@ class TestStandardCreate:
     def test_standard_create_extra_body_fields(self, api_client_with_api_key, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH, status=200, json={"items": [{"x": 1, "y": 2}, {"x": 1}]})
         res = api_client_with_api_key._create_multiple(
-            cls=SomeResourceList, resource_path=URL_PATH, items=[SomeResource(1, 1), SomeResource(1)],
-            extra_body_fields={"foo": "bar"}
+            cls=SomeResourceList,
+            resource_path=URL_PATH,
+            items=[SomeResource(1, 1), SomeResource(1)],
+            extra_body_fields={"foo": "bar"},
         )
         assert {"items": [{"x": 1, "y": 1}, {"x": 1}], "foo": "bar"} == jsgz_load(rsps.calls[0].request.body)
 
