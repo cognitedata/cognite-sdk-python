@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.38.2] - 2021-12-09
+### Added
+- add the possibility to pass extra body fields to APIClient._create_multiple.
+
 ## [2.38.1] - 2021-12-07
 ### Fixed
 - Bug where loading `transformations.jobs` from JSON fails for raw destinations.
