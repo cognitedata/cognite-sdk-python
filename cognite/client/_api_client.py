@@ -529,6 +529,7 @@ class APIClient:
         resource_path: str = None,
         params: Dict = None,
         headers: Dict = None,
+        extra_body_fields: Dict = None,
         limit=None,
     ):
         cls = cls or self._LIST_CLASS
@@ -544,7 +545,7 @@ class APIClient:
                 items_chunk = [item.dump(camel_case=True) for item in items[i : i + limit]]
             else:
                 items_chunk = [item for item in items[i : i + limit]]
-            items_split.append({"items": items_chunk})
+            items_split.append({"items": items_chunk, **(extra_body_fields or {})})
 
         tasks = [(resource_path, task_items, params, headers) for task_items in items_split]
         summary = utils._concurrency.execute_tasks_concurrently(self._post, tasks, max_workers=self._config.max_workers)
