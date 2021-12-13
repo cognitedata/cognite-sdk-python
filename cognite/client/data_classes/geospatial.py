@@ -99,6 +99,7 @@ class FeatureList(CogniteResourceList):
     _RESOURCE = Feature
     _ASSERT_CLASSES = False
 
+
 class CoordinateReferenceSystem(CogniteResource):
     """A representation of a feature in the geospatial api.
     """
