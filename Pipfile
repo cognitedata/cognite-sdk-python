@@ -7,7 +7,7 @@ name = "pypi"
 pandas = "<1"
 numpy = "==1.19.4"
 requests = "*"
-pytest = "<5"
+pytest = "<7"
 sympy = "*"
 docutils = "==0.15.2"
 requests_oauthlib = "*"
@@ -28,6 +28,7 @@ responses = "*"
 pytest-rerunfailures = "*"
 matplotlib = "*"
 secretstorage = "*"
+pytest-asyncio = "*"
 
 [pipenv]
 allow_prereleases = true

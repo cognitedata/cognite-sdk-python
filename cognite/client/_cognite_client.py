@@ -19,6 +19,7 @@ from cognite.client._api.templates import TemplatesAPI
 from cognite.client._api.three_d import ThreeDAPI
 from cognite.client._api.time_series import TimeSeriesAPI
 from cognite.client._api.geospatial import GeospatialAPI
+from cognite.client._api.transformations import TransformationsAPI
 from cognite.client._api_client import APIClient
 from cognite.client.exceptions import CogniteAPIKeyError
 from cognite.client.utils._client_config import ClientConfig
@@ -121,6 +122,8 @@ class CogniteClient:
         self.extraction_pipeline_runs = ExtractionPipelineRunsAPI(
             self._config, api_version="playground", cognite_client=self
         )
+        self.transformations = TransformationsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
+
         self._api_client = APIClient(self._config, cognite_client=self)
 
     def get(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):

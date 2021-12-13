@@ -45,6 +45,7 @@ jobs:
       run: |
         pipenv sync
         pipenv run pip install matplotlib
+        pipenv run pip install pytest-asyncio
 
     - name: Install dev dependencies
       if: matrix.python-version == 3.8
