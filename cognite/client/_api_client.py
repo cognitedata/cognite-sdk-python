@@ -166,7 +166,8 @@ class APIClient:
 
         if not self._status_ok(res.status_code):
             self._raise_API_error(res, payload=json_payload)
-        self._log_request(res, payload=json_payload)
+        stream = kwargs.get("stream")
+        self._log_request(res, payload=json_payload, stream=stream)
         return res
 
     def _configure_headers(self, additional_headers: Dict[str, str]) -> CaseInsensitiveDict:
@@ -787,7 +788,9 @@ class APIClient:
         if extra["payload"] is None:
             del extra["payload"]
 
-        extra["response_payload"] = cls._truncate(cls._get_response_content_safe(res))
+        stream = kwargs.get("stream")
+        if not stream:
+            extra["response_payload"] = cls._truncate(cls._get_response_content_safe(res))
         extra["response_headers"] = res.headers
 
         http_protocol_version = ".".join(list(str(res.raw.version)))
