@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.38.4] - 2021-12-17
+### Fixed
+- Bug where list generator helper will return more than chunk_size items.
+
 ## [2.38.3] - 2021-12-13
 ### Fixed
 - Bug where client consumes all streaming content when logging request.
