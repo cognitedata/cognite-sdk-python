@@ -327,7 +327,7 @@ class APIClient:
             while True:
                 if limit:
                     num_of_remaining_items = limit - total_items_retrieved
-                    if num_of_remaining_items < self._LIST_LIMIT:
+                    if num_of_remaining_items < current_limit:
                         current_limit = num_of_remaining_items
 
                 if method == "GET":
