@@ -567,6 +567,19 @@ class TestStandardList:
         assert 10000 == total_resources
 
     @pytest.mark.usefixtures("mock_get_for_autopaging")
+    def test_standard_list_generator_with_chunk_size_below_default_limit_and_global_limit(
+        self, api_client_with_api_key
+    ):
+        total_resources = 0
+        for resource_chunk in api_client_with_api_key._list_generator(
+            cls=SomeResourceList, resource_path=URL_PATH, method="GET", limit=1000, chunk_size=100
+        ):
+            assert isinstance(resource_chunk, SomeResourceList)
+            assert 100 == len(resource_chunk)
+            total_resources += 100
+        assert 1000 == total_resources
+
+    @pytest.mark.usefixtures("mock_get_for_autopaging")
     def test_standard_list_generator__chunk_size_exceeds_max(self, api_client_with_api_key):
         total_resources = 0
         for resource_chunk in api_client_with_api_key._list_generator(
