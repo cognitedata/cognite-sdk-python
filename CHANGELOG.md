@@ -14,9 +14,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [2.38.4] - 2021-12-17
+## [2.38.5] - 2022-01-04
 ### Fixed
 - Bug where creating/updating/deleting more than 5 transformation schedules in a single call would fail.
+
+## [2.38.4] - 2021-12-17
+- Bug where list generator helper will return more than chunk_size items.
 
 ## [2.38.3] - 2021-12-13
 ### Fixed
