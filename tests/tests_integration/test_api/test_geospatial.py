@@ -253,7 +253,7 @@ class TestGeospatialAPI:
         try:
             COGNITE_CLIENT.geospatial.search_features(
                 feature_type=test_feature_type,
-                filter={"within": {"property": "location", "value": {"wkt": "", "srid": 3857}}},
+                filter={"stWithin": {"property": "location", "value": {"wkt": "", "srid": 3857}}},
                 limit=10,
             )
             raise pytest.fail("searching features using a geometry in invalid crs should have raised an exception")
