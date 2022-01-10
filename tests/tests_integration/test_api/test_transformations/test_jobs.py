@@ -71,7 +71,7 @@ async def run_transformation_without_waiting(new_transformation):
     yield (job, new_transformation)
 
     await job.wait_async()
-    assert job.status == TransformationJobStatus.COMPLETED
+    assert job.status in [TransformationJobStatus.COMPLETED, TransformationJobStatus.FAILED]
 
 
 @pytest.fixture
@@ -201,6 +201,14 @@ class TestTransformationJobsAPI:
             and job.query == new_raw_transformation.query
             and job.ignore_null_fields
         )
+
+    @pytest.mark.asyncio
+    async def test_cancel_by_transformation_id(self, cognite_client, new_running_transformation):
+        (new_job, new_transformation) = new_running_transformation
+        await asyncio.sleep(0.5)
+        cognite_client.transformations.cancel(transformation_id=new_transformation.id)
+        await new_job.wait_async()
+        assert new_job.status == TransformationJobStatus.FAILED and new_job.error == "Job cancelled by the user."
 
     @pytest.mark.asyncio
     async def test_list_jobs_by_transformation_id(self, new_running_transformation):
