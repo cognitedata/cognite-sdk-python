@@ -1115,6 +1115,10 @@ Run transformations by id
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.transformations.TransformationsAPI.run
 
+Cancel transformation run by id
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.transformations.TransformationsAPI.cancel
+
 List transformations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.transformations.TransformationsAPI.list
