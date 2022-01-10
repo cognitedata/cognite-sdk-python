@@ -95,6 +95,12 @@ class Transformation(CogniteResource):
     def run(self, wait: bool = True, timeout: Optional[float] = None) -> "TransformationJob":
         return self._cognite_client.transformations.run(transformation_id=self.id, wait=wait, timeout=timeout)
 
+    def cancel(self):
+        if self.id is None:
+            self._cognite_client.transformations.cancel(transformation_external_id=self.external_id)
+        else:
+            self._cognite_client.transformations.cancel(transformation_id=self.id)
+
     def run_async(self, timeout: Optional[float] = None) -> Awaitable["TransformationJob"]:
         return self._cognite_client.transformations.run_async(transformation_id=self.id, timeout=timeout)
 

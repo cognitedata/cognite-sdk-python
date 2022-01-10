@@ -203,10 +203,18 @@ class TestTransformationJobsAPI:
         )
 
     @pytest.mark.asyncio
-    async def test_cancel_by_transformation_id(self, cognite_client, new_running_transformation):
+    async def test_cancel_job(self, new_running_transformation):
+        (new_job, _) = new_running_transformation
+        await asyncio.sleep(0.5)
+        new_job.cancel()
+        await new_job.wait_async()
+        assert new_job.status == TransformationJobStatus.FAILED and new_job.error == "Job cancelled by the user."
+
+    @pytest.mark.asyncio
+    async def test_cancel_transformation(self, new_running_transformation):
         (new_job, new_transformation) = new_running_transformation
         await asyncio.sleep(0.5)
-        cognite_client.transformations.cancel(transformation_id=new_transformation.id)
+        new_transformation.cancel()
         await new_job.wait_async()
         assert new_job.status == TransformationJobStatus.FAILED and new_job.error == "Job cancelled by the user."
 
