@@ -287,24 +287,17 @@ class TransformationsAPI(APIClient):
             transformation_id (int): Transformation internal id
             transformation_external_id (str): Transformation external id
 
-        Returns:
-            Canceled transformation job
-
         Examples:
 
-            Run transformation to completion by id:
+            Wait transformation for 1 minute and cancel if still running:
 
                 >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import TransformationJobStatus
                 >>> c = CogniteClient()
                 >>>
-                >>> res = c.transformations.run(id = 1)
-
-            Start running transformation by id:
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>>
-                >>> res = c.transformations.run(id = 1, wait = False)
+                >>> res = c.transformations.run(id = 1, timeout = 60.0)
+                >>> if res.status == TransformationJobStatus.RUNNING:
+                >>>     res.cancel()
         """
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(transformation_id, transformation_external_id)
 
