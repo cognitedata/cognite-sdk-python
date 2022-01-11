@@ -84,7 +84,7 @@ class Feature(CogniteResource):
 
 
 def _is_geometry_type(property_type: str):
-    return property_type in {"POINT"}
+    return property_type in {"POINT", "POLYGON", "MULTIPOLYGON", "GEOMETRYCOLLECTION"}
 
 
 class FeatureList(CogniteResourceList):
