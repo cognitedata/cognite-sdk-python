@@ -276,11 +276,7 @@ class TransformationsAPI(APIClient):
         )
         return job.wait_async(timeout=timeout)
 
-    def cancel(
-        self,
-        transformation_id: int = None,
-        transformation_external_id: str = None,
-    ):
+    def cancel(self, transformation_id: int = None, transformation_external_id: str = None):
         """`Cancel a running transformation. <https://docs.cognite.com/api/v1/#operation/cancelTransformation>`_
 
         Args:
