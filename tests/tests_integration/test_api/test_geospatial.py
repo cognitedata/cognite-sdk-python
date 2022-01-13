@@ -336,7 +336,7 @@ class TestGeospatialAPI:
                         "pos_alt_idx": {"properties": ["position", "altitude"]},
                     },
                 ),
-            ),
+            )
         )
         assert len(res) == 1
         assert len(res[0].properties) == 8

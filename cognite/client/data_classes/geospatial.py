@@ -40,9 +40,7 @@ class FeatureTypeList(CogniteResourceList):
 class PropertyAndSearchSpec:
     """A representation of a feature type property and search spec."""
 
-    def __init__(
-        self, properties: Dict[str, Any] = None, search_spec: Dict[str, Any] = None,
-    ):
+    def __init__(self, properties: Dict[str, Any] = None, search_spec: Dict[str, Any] = None):
         self.properties = properties
         self.search_spec = search_spec
 
@@ -50,9 +48,7 @@ class PropertyAndSearchSpec:
 class FeatureTypeUpdate:
     """A representation of a feature type update in the geospatial api."""
 
-    def __init__(
-        self, external_id: str = None, add: PropertyAndSearchSpec = None, cognite_client=None
-    ):
+    def __init__(self, external_id: str = None, add: PropertyAndSearchSpec = None, cognite_client=None):
         self.external_id = external_id
         self.add = add
         self._cognite_client = cognite_client
@@ -66,9 +62,7 @@ class FeatureTypeUpdateList:
 class Feature(CogniteResource):
     """A representation of a feature in the geospatial api."""
 
-    def __init__(
-        self, external_id: str = None, cognite_client=None, **properties,
-    ):
+    def __init__(self, external_id: str = None, cognite_client=None, **properties):
         self.external_id = external_id
         for key in properties:
             setattr(self, key, properties[key])
@@ -183,8 +177,6 @@ class CoordinateReferenceSystemList(CogniteResourceList):
 class OrderSpec:
     """An order specification with respect to an property."""
 
-    def __init__(
-        self, property: str, direction: str,
-    ):
+    def __init__(self, property: str, direction: str):
         self.property = property
         self.direction = direction
