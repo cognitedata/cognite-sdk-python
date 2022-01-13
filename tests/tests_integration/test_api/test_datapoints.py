@@ -234,13 +234,12 @@ class TestDatapointsAPI:
         assert len(ids) > 10
         tmp = cognite_client.datapoints._RETRIEVE_LATEST_LIMIT
         cognite_client.datapoints._RETRIEVE_LATEST_LIMIT = 10
-        res = cognite_client.datapoints.retrieve_latest(id=ids)
+        res = cognite_client.datapoints.retrieve_latest(id=ids, ignore_unknown_ids=True)
         cognite_client.datapoints._RETRIEVE_LATEST_LIMIT = tmp
-        assert len(ids) == len(res)
+        assert set(dps.id for dps in res).issubset(set(ids))
         assert 2 == cognite_client.datapoints._post.call_count
-        for i, dps in enumerate(res):
+        for dps in res:
             assert len(dps) <= 1  # could be empty
-            assert ids[i] == res[i].id
 
     def test_retrieve_latest_before(self, cognite_client, test_time_series):
         ts = test_time_series[0]
