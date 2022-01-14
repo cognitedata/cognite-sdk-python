@@ -276,6 +276,31 @@ class TransformationsAPI(APIClient):
         )
         return job.wait_async(timeout=timeout)
 
+    def cancel(self, transformation_id: int = None, transformation_external_id: str = None):
+        """`Cancel a running transformation. <https://docs.cognite.com/api/v1/#operation/cancelTransformation>`_
+
+        Args:
+            transformation_id (int): Transformation internal id
+            transformation_external_id (str): Transformation external id
+
+        Examples:
+
+            Wait transformation for 1 minute and cancel if still running:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import TransformationJobStatus
+                >>> c = CogniteClient()
+                >>>
+                >>> res = c.transformations.run(id = 1, timeout = 60.0)
+                >>> if res.status == TransformationJobStatus.RUNNING:
+                >>>     res.cancel()
+        """
+        utils._auxiliary.assert_exactly_one_of_id_or_external_id(transformation_id, transformation_external_id)
+
+        id = {"externalId": transformation_external_id, "id": transformation_id}
+
+        self._post(json=id, url_path=self._RESOURCE_PATH + "/cancel")
+
     def preview(
         self,
         query: str = None,
