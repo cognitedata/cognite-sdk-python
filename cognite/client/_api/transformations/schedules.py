@@ -22,6 +22,10 @@ class TransformationSchedulesAPI(APIClient):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        self._CREATE_LIMIT = 5
+        self._DELETE_LIMIT = 5
+        self._UPDATE_LIMIT = 5
+
     def create(
         self, schedule: Union[TransformationSchedule, List[TransformationSchedule]]
     ) -> Union[TransformationSchedule, TransformationScheduleList]:
