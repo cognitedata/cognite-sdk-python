@@ -109,6 +109,12 @@ class TransformationJob(CogniteResource):
         self.finished_time = updated.finished_time
         self.last_seen_time = updated.last_seen_time
 
+    def cancel(self):
+        if self.transformation_id is None:
+            self._cognite_client.transformations.cancel(transformation_external_id=self.transformation_external_id)
+        else:
+            self._cognite_client.transformations.cancel(transformation_id=self.transformation_id)
+
     def metrics(self):
         """`Get job metrics.`"""
         return self._cognite_client.transformations.jobs.list_metrics(self.id)
