@@ -970,6 +970,12 @@ Data classes
 
 Identity and access management
 ------------------------------
+Tokens
+^^^^^^
+Inspect the token currently used by the client
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.iam.TokenAPI.inspect
+
 Service accounts
 ^^^^^^^^^^^^^^^^
 List service accounts
