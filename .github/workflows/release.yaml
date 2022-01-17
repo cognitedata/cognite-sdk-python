@@ -24,8 +24,6 @@ jobs:
       run: |
         pipenv sync --dev
         pipenv run pip install importlib_metadata
-        pipenv run pip install shapely==1.7.0
-        pipenv run pip install geopandas==0.10.0
 
     - name: Check codestyle
       run: pipenv run black -l 120 --check .

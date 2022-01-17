@@ -12,6 +12,8 @@ sympy = "*"
 docutils = "==0.15.2"
 requests_oauthlib = "*"
 msal = "*"
+shapely = "==1.7.0"
+geopandas = "==0.10.0"
 
 [dev-packages]
 sphinx = "*"
@@ -29,8 +31,6 @@ pytest-rerunfailures = "*"
 matplotlib = "*"
 secretstorage = "*"
 pytest-asyncio = "*"
-shapely = "==1.7.0"
-geopandas = "==0.10.0"
 
 [pipenv]
 allow_prereleases = true
