@@ -12,8 +12,8 @@ sympy = "*"
 docutils = "==0.15.2"
 requests_oauthlib = "*"
 msal = "*"
-shapely = "==1.7.0"
-geopandas = "==0.10.0"
+shapely = "==1.7.*"
+geopandas = "==0.10.*"
 
 [dev-packages]
 sphinx = "*"
