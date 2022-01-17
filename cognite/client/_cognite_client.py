@@ -111,7 +111,7 @@ class CogniteClient:
         self.data_sets = DataSetsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.sequences = SequencesAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.time_series = TimeSeriesAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
-        self.geospatial = GeospatialAPI(self._config, api_version="v1", cognite_client=self)
+        self.geospatial = GeospatialAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.raw = RawAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.three_d = ThreeDAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.labels = LabelsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
