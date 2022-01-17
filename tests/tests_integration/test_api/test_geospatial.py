@@ -7,7 +7,6 @@ import pytest
 from cognite.client import utils
 from cognite.client.exceptions import CogniteAPIError
 
-from cognite.client import CogniteClient
 from cognite.client.data_classes.geospatial import (
     CoordinateReferenceSystem,
     Feature,
