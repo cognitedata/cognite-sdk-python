@@ -40,10 +40,12 @@ def two_test_features(test_feature_type):
 
 class TestGeospatialAPI:
 
+    @pytest.mark.dsl
     def test_to_pandas(self, test_feature_type, two_test_features):
         df = two_test_features.to_pandas()
         assert set(list(df)) == set(["externalId", "position", "volume", "temperature", "pressure"])
 
+    @pytest.mark.dsl
     def test_to_geopandas(self, test_feature_type, two_test_features):
         gdf = two_test_features.to_geopandas(geometry="position")
         assert set(gdf) == set([
@@ -56,6 +58,7 @@ class TestGeospatialAPI:
         geopandas = utils._auxiliary.local_import("geopandas")
         assert type(gdf.dtypes["position"]) == geopandas.array.GeometryDtype
 
+    @pytest.mark.dsl
     def test_from_geopandas(self, test_feature_type, two_test_features):
         gdf = two_test_features.to_geopandas(geometry="position")
         fl = FeatureList.from_geopandas(test_feature_type, gdf)
