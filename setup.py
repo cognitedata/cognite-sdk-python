@@ -20,9 +20,9 @@ setup(
     install_requires=[
         "requests>=2.21.0,<3.0.0",
         "pandas",
-        "requests_oauthlib==1.3.0",
-        "geopandas==0.10.0",
-        "shapely==1.7.0",
+        "requests_oauthlib==1.*",
+        "geopandas==0.10.*",
+        "shapely==1.*",
     ],
     python_requires=">=3.5",
     packages=["cognite." + p for p in find_packages(where="cognite")],
