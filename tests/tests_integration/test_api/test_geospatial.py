@@ -84,7 +84,7 @@ def another_test_feature_type(cognite_client):
 def test_feature(cognite_client, test_feature_type):
     external_id = f"F_{uuid.uuid4().hex[:10]}"
     feature = cognite_client.geospatial.create_features(
-        test_feature_type,
+        test_feature_type.external_id,
         Feature(
             external_id=external_id,
             position={"wkt": "POINT(2.2768485 48.8589506)"},
@@ -94,7 +94,7 @@ def test_feature(cognite_client, test_feature_type):
         ),
     )
     yield feature
-    cognite_client.geospatial.delete_features(test_feature_type, external_id=external_id)
+    cognite_client.geospatial.delete_features(test_feature_type.external_id, external_id=external_id)
 
 
 @pytest.fixture
@@ -110,19 +110,20 @@ def two_test_features(cognite_client, test_feature_type):
         )
         for i in range(2)
     ]
-    feature = cognite_client.geospatial.create_features(test_feature_type, features)
+    feature = cognite_client.geospatial.create_features(test_feature_type.external_id, features)
     yield feature
-    cognite_client.geospatial.delete_features(test_feature_type, external_id=external_ids)
+    cognite_client.geospatial.delete_features(test_feature_type.external_id, external_id=external_ids)
 
 
 @pytest.fixture
 def another_test_feature(cognite_client, test_feature_type):
     external_id = f"F_{uuid.uuid4().hex[:10]}"
     feature = cognite_client.geospatial.create_features(
-        test_feature_type, Feature(external_id=external_id, temperature=-10.8, pressure=123.456, volume=654.2)
+        test_feature_type.external_id,
+        Feature(external_id=external_id, temperature=-10.8, pressure=123.456, volume=654.2),
     )
     yield feature
-    cognite_client.geospatial.delete_features(test_feature_type, external_id=external_id)
+    cognite_client.geospatial.delete_features(test_feature_type.external_id, external_id=external_id)
 
 
 @pytest.fixture
@@ -133,10 +134,10 @@ def many_features(cognite_client, large_feature_type):
         )
         for _ in range(0, 2000)
     ]
-    features = cognite_client.geospatial.create_features(large_feature_type, specs)
+    features = cognite_client.geospatial.create_features(large_feature_type.external_id, specs)
     yield features
     external_ids = [f.external_id for f in features]
-    cognite_client.geospatial.delete_features(large_feature_type, external_id=external_ids)
+    cognite_client.geospatial.delete_features(large_feature_type.external_id, external_id=external_ids)
 
 
 # we clean up the old feature types from a previous failed run
@@ -170,7 +171,7 @@ class TestGeospatialAPI:
     def test_create_features(self, cognite_client, test_feature_type, allow_crs_transformation):
         external_id = f"F_{uuid.uuid4().hex[:10]}"
         cognite_client.geospatial.create_features(
-            test_feature_type,
+            test_feature_type.external_id,
             Feature(
                 external_id=external_id,
                 position={"wkt": "POINT(50 50)"},
@@ -180,7 +181,7 @@ class TestGeospatialAPI:
             ),
             allow_crs_transformation=allow_crs_transformation,
         )
-        cognite_client.geospatial.delete_features(test_feature_type, external_id=external_id)
+        cognite_client.geospatial.delete_features(test_feature_type.external_id, external_id=external_id)
 
     def test_retrieve_single_feature_type_by_external_id(self, cognite_client, test_feature_type):
         assert (
@@ -194,13 +195,13 @@ class TestGeospatialAPI:
 
     def test_retrieve_single_feature_by_external_id(self, cognite_client, test_feature_type, test_feature):
         res = cognite_client.geospatial.retrieve_features(
-            feature_type=test_feature_type, external_id=test_feature.external_id
+            feature_type_external_id=test_feature_type.external_id, external_id=test_feature.external_id
         )
         assert res.external_id == test_feature.external_id
 
     def test_update_single_feature(self, cognite_client, allow_crs_transformation, test_feature_type, test_feature):
         res = cognite_client.geospatial.update_features(
-            feature_type=test_feature_type,
+            feature_type_external_id=test_feature_type.external_id,
             feature=Feature(external_id=test_feature.external_id, temperature=6.237, pressure=12.21, volume=34.43),
             allow_crs_transformation=allow_crs_transformation,
         )
@@ -209,12 +210,16 @@ class TestGeospatialAPI:
 
     def test_search_single_feature(self, cognite_client, test_feature_type, test_feature):
         res = cognite_client.geospatial.search_features(
-            feature_type=test_feature_type, filter={"range": {"property": "temperature", "gt": 12.0}}, limit=10
+            feature_type_external_id=test_feature_type.external_id,
+            filter={"range": {"property": "temperature", "gt": 12.0}},
+            limit=10,
         )
         assert res[0].external_id == test_feature.external_id
         assert res[0].temperature == 12.4
         res = cognite_client.geospatial.search_features(
-            feature_type=test_feature_type, filter={"range": {"property": "temperature", "lt": 12.0}}, limit=10
+            feature_type_external_id=test_feature_type.external_id,
+            filter={"range": {"property": "temperature", "lt": 12.0}},
+            limit=10,
         )
         assert len(res) == 0
 
@@ -234,18 +239,21 @@ class TestGeospatialAPI:
         self, cognite_client, test_feature_type, test_feature, another_test_feature
     ):
         res = cognite_client.geospatial.retrieve_features(
-            feature_type=test_feature_type, external_id=[test_feature.external_id, another_test_feature.external_id]
+            feature_type_external_id=test_feature_type.external_id,
+            external_id=[test_feature.external_id, another_test_feature.external_id],
         )
         assert res[0].external_id == test_feature.external_id
         assert res[1].external_id == another_test_feature.external_id
 
     def test_search_multiple_features(self, cognite_client, test_feature_type, test_feature, another_test_feature):
         res = cognite_client.geospatial.search_features(
-            feature_type=test_feature_type, filter={"range": {"property": "temperature", "gt": -20.0, "lt": 20.0}}
+            feature_type_external_id=test_feature_type.external_id,
+            filter={"range": {"property": "temperature", "gt": -20.0, "lt": 20.0}},
         )
         assert len(res) == 2
         res = cognite_client.geospatial.search_features(
-            feature_type=test_feature_type, filter={"range": {"property": "temperature", "gt": 0.0, "lt": 20.0}}
+            feature_type_external_id=test_feature_type.external_id,
+            filter={"range": {"property": "temperature", "gt": 0.0, "lt": 20.0}},
         )
         assert len(res) == 1
         assert res[0].external_id == test_feature.external_id
@@ -253,7 +261,7 @@ class TestGeospatialAPI:
     def test_search_wrong_crs(self, cognite_client, test_feature_type, test_feature):
         try:
             cognite_client.geospatial.search_features(
-                feature_type=test_feature_type,
+                feature_type_external_id=test_feature_type.external_id,
                 filter={"stWithin": {"property": "location", "value": {"wkt": "", "srid": 3857}}},
                 limit=10,
             )
@@ -286,13 +294,15 @@ class TestGeospatialAPI:
             FeatureType(external_id=external_id, properties={"temperature": {"type": "DOUBLE"}})
         )
         cognite_client.geospatial.create_features(
-            feature_type, Feature(external_id=f"F_{uuid.uuid4().hex[:10]}", temperature=12.4)
+            feature_type.external_id, Feature(external_id=f"F_{uuid.uuid4().hex[:10]}", temperature=12.4)
         )
         cognite_client.geospatial.delete_feature_types(external_id=external_id, recursive=True)
 
     def test_search_with_output_selection(self, cognite_client, test_feature_type, test_feature, another_test_feature):
         res = cognite_client.geospatial.search_features(
-            feature_type=test_feature_type, filter={}, properties={"temperature": {}, "volume": {}}
+            feature_type_external_id=test_feature_type.external_id,
+            filter={},
+            properties={"temperature": {}, "volume": {}},
         )
         assert len(res) == 2
         assert not hasattr(res[0], "pressure")
@@ -302,7 +312,7 @@ class TestGeospatialAPI:
         self, cognite_client, allow_crs_transformation, test_feature_type, test_feature, another_test_feature
     ):
         res = cognite_client.geospatial.search_features(
-            feature_type=test_feature_type,
+            feature_type_external_id=test_feature_type.external_id,
             filter={},
             properties={"position": {"srid": "3857"}},
             allow_crs_transformation=allow_crs_transformation,
@@ -315,13 +325,17 @@ class TestGeospatialAPI:
 
     def test_search_with_order_by(self, cognite_client, test_feature_type, test_feature, another_test_feature):
         res = cognite_client.geospatial.search_features(
-            feature_type=test_feature_type, filter={}, order_by=[OrderSpec(property="temperature", direction="ASC")]
+            feature_type_external_id=test_feature_type.external_id,
+            filter={},
+            order_by=[OrderSpec(property="temperature", direction="ASC")],
         )
         assert res[0].temperature == -10.8
         assert res[1].temperature == 12.4
 
         res = cognite_client.geospatial.search_features(
-            feature_type=test_feature_type, filter={}, order_by=[OrderSpec(property="temperature", direction="DESC")]
+            feature_type_external_id=test_feature_type.external_id,
+            filter={},
+            order_by=[OrderSpec(property="temperature", direction="DESC")],
         )
         assert res[0].temperature == 12.4
         assert res[1].temperature == -10.8
@@ -344,7 +358,9 @@ class TestGeospatialAPI:
         assert len(res[0].search_spec) == 6
 
     def test_stream_features(self, cognite_client, large_feature_type, many_features):
-        features = cognite_client.geospatial.stream_features(feature_type=large_feature_type, filter={})
+        features = cognite_client.geospatial.stream_features(
+            feature_type_external_id=large_feature_type.external_id, filter={}
+        )
         feature_list = FeatureList(list(features))
         assert len(feature_list) == len(many_features)
 
@@ -388,13 +404,16 @@ class TestGeospatialAPI:
 
     def test_aggregate(self, cognite_client, test_feature_type, two_test_features):
         res = cognite_client.geospatial.aggregate_features(
-            feature_type=test_feature_type, filter={}, property="temperature", aggregates=["min", "max"]
+            feature_type_external_id=test_feature_type.external_id,
+            filter={},
+            property="temperature",
+            aggregates=["min", "max"],
         )
         assert res[0].min == 12.4
         assert res[0].max == 13.4
 
         res = cognite_client.geospatial.aggregate_features(
-            feature_type=test_feature_type,
+            feature_type_external_id=test_feature_type.external_id,
             filter={"range": {"property": "temperature", "gt": 12.0, "lt": 13.0}},
             property="temperature",
             aggregates=["count"],
@@ -402,7 +421,7 @@ class TestGeospatialAPI:
         assert res[0].count == 1
 
         res = cognite_client.geospatial.aggregate_features(
-            feature_type=test_feature_type,
+            feature_type_external_id=test_feature_type.external_id,
             filter={},
             property="temperature",
             aggregates=["min", "max"],

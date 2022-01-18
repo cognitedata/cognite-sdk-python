@@ -25,8 +25,8 @@ class GeospatialAPI(APIClient):
     _RESOURCE_PATH = "/geospatial"
 
     @staticmethod
-    def _feature_resource_path(feature_type: FeatureType):
-        return f"{GeospatialAPI._RESOURCE_PATH}/featuretypes/{feature_type.external_id}/features"
+    def _feature_resource_path(feature_type_external_id: str):
+        return f"{GeospatialAPI._RESOURCE_PATH}/featuretypes/{feature_type_external_id}/features"
 
     def create_feature_types(
         self, feature_type: Union[FeatureType, List[FeatureType]]
@@ -157,13 +157,16 @@ class GeospatialAPI(APIClient):
         return FeatureTypeList._load(res.json()["items"], cognite_client=self._cognite_client)
 
     def create_features(
-        self, feature_type: FeatureType, feature: Union[Feature, List[Feature]], allow_crs_transformation: bool = False
+        self,
+        feature_type_external_id: str,
+        feature: Union[Feature, List[Feature]],
+        allow_crs_transformation: bool = False,
     ) -> Union[Feature, FeatureList]:
         """`Creates features`
         <https://docs.cognite.com/api/v1/#operation/createFeatures>
 
         Args:
-            feature_type : Feature type definition for the features to create.
+            feature_type_external_id : Feature type definition for the features to create.
             feature: one feature or a list of features to create
             allow_crs_transformation: If true, then input geometries will be transformed into the Coordinate Reference
                 System defined in the feature type specification. When it is false, then requests with geometries in
@@ -178,23 +181,21 @@ class GeospatialAPI(APIClient):
             Create a new feature:
 
                 >>> from cognite.experimental import CogniteClient
-                >>> from cognite.experimental.data_classes.geospatial import FeatureType
                 >>> c = CogniteClient()
-                >>> my_feature_type = c.geospatial.retrieve_feature_types(external_id="my_feature_type")
-                >>> res = c.geospatial.create_features(my_feature_types, Feature(external_id="my_feature", temperature=12.4))
+                >>> res = c.geospatial.create_features("my_feature_type", Feature(external_id="my_feature", temperature=12.4))
         """
-        resource_path = self._feature_resource_path(feature_type)
+        resource_path = self._feature_resource_path(feature_type_external_id)
         extra_body_fields = {"allowCrsTransformation": "true"} if allow_crs_transformation else {}
         return self._create_multiple(
             items=feature, resource_path=resource_path, cls=FeatureList, extra_body_fields=extra_body_fields
         )
 
-    def delete_features(self, feature_type: FeatureType, external_id: Union[str, List[str]] = None) -> None:
+    def delete_features(self, feature_type_external_id: str, external_id: Union[str, List[str]] = None) -> None:
         """`Delete one or more feature`
         <https://docs.cognite.com/api/v1/#operation/deleteFeatures>
 
         Args:
-            feature_type : Feature type definition for the features to delete.
+            feature_type_external_id : Feature type external id for the features to delete.
             external_id (Union[str, List[str]]): External ID or list of external ids
 
         Returns:
@@ -206,18 +207,19 @@ class GeospatialAPI(APIClient):
 
                 >>> from cognite.experimental import CogniteClient
                 >>> c = CogniteClient()
-                >>> my_feature_type = c.geospatial.retrieve_feature_types(external_id="my_feature_type")
-                >>> c.geospatial.delete_feature(my_feature_type, external_id=my_feature)
+                >>> c.geospatial.delete_feature("my_feature_type", external_id=my_feature)
         """
-        resource_path = self._feature_resource_path(feature_type)
+        resource_path = self._feature_resource_path(feature_type_external_id)
         self._delete_multiple(external_ids=external_id, wrap_ids=True, resource_path=resource_path)
 
-    def retrieve_features(self, feature_type: FeatureType, external_id: Union[str, List[str]] = None) -> FeatureList:
+    def retrieve_features(
+        self, feature_type_external_id: str, external_id: Union[str, List[str]] = None
+    ) -> FeatureList:
         """`Retrieve features`
         <https://docs.cognite.com/api/v1/#operation/getFeaturesByIds>
 
         Args:
-            feature_type : Feature type definition for the features to retrieve.
+            feature_type_external_id : Feature type external id for the features to retrieve.
             external_id (Union[str, List[str]]): External ID or list of external ids
 
         Returns:
@@ -229,22 +231,24 @@ class GeospatialAPI(APIClient):
 
                 >>> from cognite.experimental import CogniteClient
                 >>> c = CogniteClient()
-                >>> my_feature_type = c.geospatial.retrieve_feature_types(external_id="my_feature_type")
-                >>> c.geospatial.retrieve_feature(my_feature_type, external_id="my_feature")
+                >>> c.geospatial.retrieve_feature("my_feature_type", external_id="my_feature")
         """
-        resource_path = self._feature_resource_path(feature_type)
+        resource_path = self._feature_resource_path(feature_type_external_id)
         return self._retrieve_multiple(
             wrap_ids=True, external_ids=external_id, resource_path=resource_path, cls=FeatureList
         )
 
     def update_features(
-        self, feature_type: FeatureType, feature: Union[Feature, List[Feature]], allow_crs_transformation: bool = False
+        self,
+        feature_type_external_id: str,
+        feature: Union[Feature, List[Feature]],
+        allow_crs_transformation: bool = False,
     ) -> FeatureList:
         """`Update features`
         <https://docs.cognite.com/api/v1/#operation/updateFeatures>
 
         Args:
-            feature_type : Feature type definition for the features to update.
+            feature_type_external_id : Feature type definition for the features to update.
             feature (Union[Feature, List[Feature]]): feature or list of features.
             allow_crs_transformation: If true, then input geometries will be transformed into the Coordinate Reference
                 System defined in the feature type specification. When it is false, then requests with geometries in
@@ -260,14 +264,13 @@ class GeospatialAPI(APIClient):
 
                 >>> from cognite.experimental import CogniteClient
                 >>> c = CogniteClient()
-                >>> my_feature_type = c.geospatial.retrieve_feature_types(external_id="my_feature_type")
-                >>> my_feature = c.geospatial.create_features(my_feature_type, Feature(external_id="my_feature", temperature=12.4))
+                >>> my_feature = c.geospatial.create_features("my_feature_type", Feature(external_id="my_feature", temperature=12.4))
                 >>> # do some stuff
-                >>> my_updated_feature = c.geospatial.update_features(my_feature_type, Feature(external_id="my_feature", temperature=6.237))
+                >>> my_updated_feature = c.geospatial.update_features("my_feature_type", Feature(external_id="my_feature", temperature=6.237))
         """
         # updates for feature are not following the patch structure from other resources
         # they are more like a replace so an update looks like a feature creation (yeah, borderline ?)
-        resource_path = self._feature_resource_path(feature_type) + "/update"
+        resource_path = self._feature_resource_path(feature_type_external_id) + "/update"
         extra_body_fields = {"allowCrsTransformation": "true"} if allow_crs_transformation else {}
         return self._create_multiple(
             feature, resource_path=resource_path, cls=FeatureList, extra_body_fields=extra_body_fields
@@ -275,7 +278,7 @@ class GeospatialAPI(APIClient):
 
     def search_features(
         self,
-        feature_type: FeatureType,
+        feature_type_external_id: str,
         filter: Dict[str, Any],
         properties: Dict[str, Any] = None,
         limit: int = 100,
@@ -286,7 +289,7 @@ class GeospatialAPI(APIClient):
         <https://docs.cognite.com/api/v1/#operation/searchFeatures>
 
         Args:
-            feature_type: the feature type to search for
+            feature_type_external_id: the feature type to search for
             filter (Dict[str, Any]): the search filter
             limit (int): maximum number of results
             properties (Dict[str, Any]): the output property selection
@@ -307,7 +310,7 @@ class GeospatialAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> my_feature_type = c.geospatial.retrieve_feature_types(external_id="my_feature_type")
                 >>> my_feature = c.geospatial.create_features(my_feature_type, Feature(external_id="my_feature", temperature=12.4))
-                >>> res = c.geospatial.search_features(my_feature_type, filter={"range": {"property": "temperature", "gt": 12.0}})
+                >>> res = c.geospatial.search_features("my_feature_type", filter={"range": {"property": "temperature", "gt": 12.0}})
                 >>> for f in res:
                 ...     # do something with the features
 
@@ -320,7 +323,7 @@ class GeospatialAPI(APIClient):
                 >>> res = c.geospatial.search_features(my_feature_type, filter={}, order_by=[OrderSpec("temperature", "ASC"), OrderSpec("pressure", "DESC")])
 
         """
-        resource_path = self._feature_resource_path(feature_type) + "/search"
+        resource_path = self._feature_resource_path(feature_type_external_id) + "/search"
         cls = FeatureList
         order = None if order_by is None else [f"{item.property}:{item.direction}" for item in order_by]
         res = self._post(
@@ -337,7 +340,7 @@ class GeospatialAPI(APIClient):
 
     def stream_features(
         self,
-        feature_type: FeatureType,
+        feature_type_external_id: str,
         filter: Dict[str, Any],
         properties: Dict[str, Any] = None,
         allow_crs_transformation: bool = False,
@@ -346,7 +349,7 @@ class GeospatialAPI(APIClient):
         <https://docs.cognite.com/api/v1/#operation/searchFeaturesStreaming>
 
         Args:
-            feature_type: the feature type to search for
+            feature_type_external_id: the feature type to search for
             filter (Dict[str, Any]): the search filter
             properties (Dict[str, Any]): the output property selection
             allow_crs_transformation: If true, then input geometries will be transformed into the Coordinate Reference
@@ -363,20 +366,19 @@ class GeospatialAPI(APIClient):
 
                 >>> from cognite.experimental import CogniteClient
                 >>> c = CogniteClient()
-                >>> my_feature_type = c.geospatial.retrieve_feature_types(external_id="my_feature_type")
-                >>> my_feature = c.geospatial.create_features(my_feature_type, Feature(external_id="my_feature", temperature=12.4))
-                >>> features = c.geospatial.stream_features(my_feature_type, filter={"range": {"property": "temperature", "gt": 12.0}})
+                >>> my_feature = c.geospatial.create_features("my_feature_type", Feature(external_id="my_feature", temperature=12.4))
+                >>> features = c.geospatial.stream_features("my_feature_type", filter={"range": {"property": "temperature", "gt": 12.0}})
                 >>> for f in features:
                 ...     # do something with the features
 
             Stream features and select output properties:
 
-                >>> features = c.geospatial.stream_features(my_feature_type, filter={}, properties={"temperature": {}, "pressure": {}})
+                >>> features = c.geospatial.stream_features("my_feature_type", filter={}, properties={"temperature": {}, "pressure": {}})
                 >>> for f in features:
                 ...     # do something with the features
 
         """
-        resource_path = self._feature_resource_path(feature_type) + "/search-streaming"
+        resource_path = self._feature_resource_path(feature_type_external_id) + "/search-streaming"
         json = {"filter": filter, "output": {"properties": properties, "jsonStreamFormat": "NEW_LINE_DELIMITED"}}
         params = {"allowCrsTransformation": "true"} if allow_crs_transformation else None
         res = self._do_request(
@@ -391,7 +393,7 @@ class GeospatialAPI(APIClient):
 
     def aggregate_features(
         self,
-        feature_type: FeatureType,
+        feature_type_external_id: str,
         filter: Dict[str, Any],
         property: str,
         aggregates: List[str],
@@ -401,7 +403,7 @@ class GeospatialAPI(APIClient):
         <https://docs.cognite.com/api/v1/#operation/aggregateFeatures>
 
         Args:
-            feature_type: the feature type to filter features from
+            feature_type_external_id: the feature type to filter features from
             filter (Dict[str, Any]): the search filter
             property (str): the property for which aggregates should be calculated
             aggregates (List[str]): list of aggregates to be calculated
@@ -416,14 +418,13 @@ class GeospatialAPI(APIClient):
 
                 >>> from cognite.experimental import CogniteClient
                 >>> c = CogniteClient()
-                >>> my_feature_type = c.geospatial.retrieve_feature_types(external_id="my_feature_type")
-                >>> my_feature = c.geospatial.create_features(my_feature_type, Feature(external_id="my_feature", temperature=12.4))
-                >>> res = c.geospatial.aggregate_features(my_feature_type, filter={"range": {"property": "temperature", "gt": 12.0}}, property="temperature", aggregates=["max", "min"], groupBy=["category"])
+                >>> my_feature = c.geospatial.create_features("my_feature_type", Feature(external_id="my_feature", temperature=12.4))
+                >>> res = c.geospatial.aggregate_features("my_feature_type", filter={"range": {"property": "temperature", "gt": 12.0}}, property="temperature", aggregates=["max", "min"], groupBy=["category"])
                 >>> for a in res:
                 ...     # loop over aggregates in different groups
 
         """
-        resource_path = self._feature_resource_path(feature_type) + "/aggregate"
+        resource_path = self._feature_resource_path(feature_type_external_id) + "/aggregate"
         cls = FeatureAggregateList
         res = self._post(
             url_path=resource_path,
