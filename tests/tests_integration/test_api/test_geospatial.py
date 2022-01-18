@@ -218,7 +218,9 @@ class TestGeospatialAPI:
         )
         assert len(res) == 0
 
-    def test_retrieve_multiple_feature_types_by_external_id(self, cognite_client, test_feature_type, another_test_feature_type):
+    def test_retrieve_multiple_feature_types_by_external_id(
+        self, cognite_client, test_feature_type, another_test_feature_type
+    ):
         assert (
             len(
                 cognite_client.geospatial.retrieve_feature_types(
@@ -228,7 +230,9 @@ class TestGeospatialAPI:
             == 2
         )
 
-    def test_retrieve_multiple_features_by_external_id(self, cognite_client, test_feature_type, test_feature, another_test_feature):
+    def test_retrieve_multiple_features_by_external_id(
+        self, cognite_client, test_feature_type, test_feature, another_test_feature
+    ):
         res = cognite_client.geospatial.retrieve_features(
             feature_type=test_feature_type, external_id=[test_feature.external_id, another_test_feature.external_id]
         )
@@ -295,7 +299,7 @@ class TestGeospatialAPI:
         assert not hasattr(res[1], "pressure")
 
     def test_search_with_output_srid_selection(
-        self, cognite_client,  allow_crs_transformation, test_feature_type, test_feature, another_test_feature
+        self, cognite_client, allow_crs_transformation, test_feature_type, test_feature, another_test_feature
     ):
         res = cognite_client.geospatial.search_features(
             feature_type=test_feature_type,
