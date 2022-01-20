@@ -738,7 +738,7 @@ Geospatial
 
 Create feature types
 ^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.geospatial.GeospatialAPI.create_xfeature_types
+.. automethod:: cognite.client._api.geospatial.GeospatialAPI.create_feature_types
 
 Delete feature types
 ^^^^^^^^^^^^^^^^^^^^
