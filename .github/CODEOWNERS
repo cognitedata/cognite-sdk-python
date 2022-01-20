@@ -1,1 +1,3 @@
 * @cognitedata/starbase
+geospatial.py @cognitedata/geospatial
+test_geospatial.py @cognitedata/geospatial
