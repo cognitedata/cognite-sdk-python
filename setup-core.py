@@ -18,6 +18,15 @@ setup(
     author="Erlend Vollset",
     author_email="erlend.vollset@cognite.com",
     install_requires=["requests>=2.21.0,<3.0.0", "requests_oauthlib==1.3.0"],
+    extras_require={
+        "pandas": [
+            "pandas",
+        ],
+        "geo": [
+            "geopandas==0.10.*",
+            "shapely==1.*",
+        ],
+    },
     python_requires=">=3.5",
     packages=["cognite." + p for p in find_packages(where="cognite")],
     include_package_data=True,
