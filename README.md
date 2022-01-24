@@ -38,6 +38,11 @@ To install this package:
 $ pip install cognite-sdk
 ```
 
+To install with geopandas support.
+```bash
+$ pip install cognite-sdk[geo]
+```
+
 To install this package without the pandas and NumPy support:
 ```bash
 $ pip install cognite-sdk-core
