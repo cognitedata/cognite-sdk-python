@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.39.1] - 2022-01-24
+### Added
+- geospatial dependencies optional
+
 ## [2.39.0] - 2022-01-20
 ### Added
 - geospatial API support
