@@ -31,6 +31,14 @@ To install this package without the pandas and NumPy support:
 
    pip install cognite-sdk-core
 
+To install with pandas, geopandas and shapely support (equivalent to installing `cognite-sdk`).
+However, this gives you the option to only have pandas (and NumPy) support without geopandas.
+
+.. code-block:: bash
+
+   pip install cognite-sdk-core[pandas, geo]
+
+
 Contents
 ^^^^^^^^
 .. toctree::
