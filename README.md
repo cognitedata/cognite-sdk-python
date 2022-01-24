@@ -38,7 +38,7 @@ To install this package:
 $ pip install cognite-sdk
 ```
 
-To install with geopandas support.
+To install with geopandas and shapely support.
 ```bash
 $ pip install cognite-sdk[geo]
 ```
