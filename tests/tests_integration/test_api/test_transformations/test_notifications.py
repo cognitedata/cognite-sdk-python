@@ -58,6 +58,7 @@ def new_notification_by_external_id(cognite_client, new_transformation):
     )
 
 
+@pytest.mark.xfail
 class TestTransformationNotificationsAPI:
     def test_create(self, new_notification: TransformationNotification):
         assert (
