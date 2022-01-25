@@ -14,9 +14,9 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [2.39.1] - 2022-01-24
+## [2.39.1] - 2022-01-25
 ### Added
-- geospatial dependencies optional
+- pandas and geospatial dependencies optional for cognite-sdk-core.
 
 ## [2.39.0] - 2022-01-20
 ### Added
