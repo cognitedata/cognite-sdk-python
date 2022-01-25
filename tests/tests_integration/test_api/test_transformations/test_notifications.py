@@ -59,6 +59,7 @@ def new_notification_by_external_id(cognite_client, new_transformation):
 
 
 class TestTransformationNotificationsAPI:
+    @pytest.mark.xfail
     def test_create(self, new_notification: TransformationNotification):
         assert (
             new_notification.destination == f"my_{prefix}@email.com"
@@ -67,6 +68,7 @@ class TestTransformationNotificationsAPI:
             and new_notification.last_updated_time is not None
         )
 
+    @pytest.mark.xfail
     def test_create_by_external_id(self, new_notification_by_external_id: TransformationNotification):
         new_notification = new_notification_by_external_id[0]
         assert (
@@ -76,10 +78,12 @@ class TestTransformationNotificationsAPI:
             and new_notification.last_updated_time is not None
         )
 
+    @pytest.mark.xfail
     def test_list_all(self, cognite_client, new_notification):
         retrieved_notifications = cognite_client.transformations.notifications.list()
         assert new_notification.id in [notification.id for notification in retrieved_notifications]
 
+    @pytest.mark.xfail
     def test_list_by_id(self, cognite_client, new_notification):
         retrieved_notifications = cognite_client.transformations.notifications.list(
             transformation_id=new_notification.transformation_id
@@ -87,6 +91,7 @@ class TestTransformationNotificationsAPI:
         assert new_notification.id in [notification.id for notification in retrieved_notifications]
         assert len(retrieved_notifications) == 1
 
+    @pytest.mark.xfail
     def test_list_by_external_id(self, cognite_client, new_notification_by_external_id):
         new_notification = new_notification_by_external_id[0]
         external_id = new_notification_by_external_id[1]
@@ -96,6 +101,7 @@ class TestTransformationNotificationsAPI:
         assert new_notification.id in [notification.id for notification in retrieved_notifications]
         assert len(retrieved_notifications) == 1
 
+    @pytest.mark.xfail
     def test_list_by_destination(self, cognite_client, new_notification):
         retrieved_notifications = cognite_client.transformations.notifications.list(
             destination=f"my_{prefix}@email.com"
@@ -103,5 +109,6 @@ class TestTransformationNotificationsAPI:
         assert new_notification.id in [notification.id for notification in retrieved_notifications]
         assert len(retrieved_notifications) == 1
 
+    @pytest.mark.xfail
     def test_notification_to_string(self, new_notification):
         dumped = str(new_notification)
