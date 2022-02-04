@@ -4,9 +4,8 @@ import time
 import uuid
 
 import pytest
-from cognite.client import utils
-from cognite.client.exceptions import CogniteAPIError
 
+from cognite.client import utils
 from cognite.client.data_classes.geospatial import (
     CoordinateReferenceSystem,
     Feature,
@@ -16,6 +15,7 @@ from cognite.client.data_classes.geospatial import (
     OrderSpec,
     PropertyAndSearchSpec,
 )
+from cognite.client.exceptions import CogniteAPIError
 
 # sdk integration tests run concurrently on 3 python versions so this makes the CI builds independent from each other
 FIXED_SRID = 121111 + sys.version_info.minor

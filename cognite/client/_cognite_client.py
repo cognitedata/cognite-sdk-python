@@ -9,6 +9,7 @@ from cognite.client._api.entity_matching import EntityMatchingAPI
 from cognite.client._api.events import EventsAPI
 from cognite.client._api.extractionpipelines import ExtractionPipelineRunsAPI, ExtractionPipelinesAPI
 from cognite.client._api.files import FilesAPI
+from cognite.client._api.geospatial import GeospatialAPI
 from cognite.client._api.iam import IAMAPI
 from cognite.client._api.labels import LabelsAPI
 from cognite.client._api.login import LoginAPI
@@ -18,7 +19,6 @@ from cognite.client._api.sequences import SequencesAPI
 from cognite.client._api.templates import TemplatesAPI
 from cognite.client._api.three_d import ThreeDAPI
 from cognite.client._api.time_series import TimeSeriesAPI
-from cognite.client._api.geospatial import GeospatialAPI
 from cognite.client._api.transformations import TransformationsAPI
 from cognite.client._api_client import APIClient
 from cognite.client.exceptions import CogniteAPIKeyError

@@ -3,14 +3,33 @@ import string
 
 import pytest
 
-from cognite.client.data_classes import Transformation, TransformationDestination, TransformationUpdate
+from cognite.client.data_classes import DataSet, Transformation, TransformationDestination, TransformationUpdate
 
 
 @pytest.fixture
-def new_transformation(cognite_client):
+def new_datasets(cognite_client):
+    prefix = "".join(random.choice(string.ascii_letters) for i in range(6))
+    ds_ext_id1 = f"{prefix}-transformation-ds"
+    ds_ext_id2 = f"{prefix}-transformation-ds2"
+    ds1 = cognite_client.data_sets.retrieve(external_id=ds_ext_id1)
+    ds2 = cognite_client.data_sets.retrieve(external_id=ds_ext_id2)
+    if not ds1:
+        data_set1 = DataSet(name=ds_ext_id1, external_id=ds_ext_id1)
+        ds1 = cognite_client.data_sets.create(data_set1)
+    if not ds2:
+        data_set2 = DataSet(name=ds_ext_id2, external_id=ds_ext_id2)
+        ds2 = cognite_client.data_sets.create(data_set2)
+    yield ds1, ds2
+
+
+@pytest.fixture
+def new_transformation(cognite_client, new_datasets):
     prefix = "".join(random.choice(string.ascii_letters) for i in range(6))
     transform = Transformation(
-        name="any", external_id=f"{prefix}-transformation", destination=TransformationDestination.assets()
+        name="any",
+        external_id=f"{prefix}-transformation",
+        destination=TransformationDestination.assets(),
+        data_set_id=new_datasets[0].id,
     )
     ts = cognite_client.transformations.create(transform)
 
@@ -85,12 +104,13 @@ class TestTransformationsAPI:
             transformation.id for transformation in retrieved_transformations
         ] and other_transformation.id in [transformation.id for transformation in retrieved_transformations]
 
-    def test_update_full(self, cognite_client, new_transformation):
+    def test_update_full(self, cognite_client, new_transformation, new_datasets):
         expected_external_id = f"m__{new_transformation.external_id}"
         new_transformation.external_id = expected_external_id
         new_transformation.name = "new name"
         new_transformation.query = "SELECT * from _cdf.assets"
         new_transformation.destination = TransformationDestination.raw("myDatabase", "myTable")
+        new_transformation.data_set_id = new_datasets[1].id
         updated_transformation = cognite_client.transformations.update(new_transformation)
         retrieved_transformation = cognite_client.transformations.retrieve(new_transformation.id)
         assert (
@@ -98,6 +118,7 @@ class TestTransformationsAPI:
             and updated_transformation.name == retrieved_transformation.name == "new name"
             and updated_transformation.query == retrieved_transformation.query == "SELECT * from _cdf.assets"
             and updated_transformation.destination == TransformationDestination.raw("myDatabase", "myTable")
+            and updated_transformation.data_set_id == new_datasets[1].id
         )
 
     def test_update_partial(self, cognite_client, new_transformation):
