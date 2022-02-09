@@ -333,6 +333,7 @@ class GeospatialAPI(APIClient):
             Combining multiple filters:
 
                 >>> res = c.geospatial.search_features(my_feature_type, filter={"and": [{"range": {"property": "temperature", "gt": 12.0}}, {"stWithin": {"property": "location", "value": {"wkt": "POLYGON((0 0, 0 1, 1 1, 0 0))"}}}]})
+                >>> res = c.geospatial.search_features(my_feature_type, filter={"or": [{"range": {"property": "temperature", "gt": 12.0}}, {"stWithin": {"property": "location", "value": {"wkt": "POLYGON((0 0, 0 1, 1 1, 0 0))"}}}]})
 
 
         """
