@@ -1,12 +1,10 @@
-import functools
 import json as complexjson
 import numbers
 from typing import Any, Dict, Generator, List, Union
 
-from cognite.client._api_client import APIClient
-from cognite.client.exceptions import CogniteConnectionError
 from requests.exceptions import ChunkedEncodingError
 
+from cognite.client._api_client import APIClient
 from cognite.client.data_classes.geospatial import (
     CoordinateReferenceSystem,
     CoordinateReferenceSystemList,
@@ -18,6 +16,7 @@ from cognite.client.data_classes.geospatial import (
     FeatureTypeUpdate,
     OrderSpec,
 )
+from cognite.client.exceptions import CogniteConnectionError
 
 
 class GeospatialAPI(APIClient):

@@ -1,9 +1,9 @@
-import pytest
 import uuid
 
-from cognite.client import utils
+import pytest
 
-from cognite.client.data_classes.geospatial import FeatureType, Feature, FeatureList
+from cognite.client import utils
+from cognite.client.data_classes.geospatial import Feature, FeatureList, FeatureType
 
 
 @pytest.fixture()

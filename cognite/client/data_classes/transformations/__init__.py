@@ -62,6 +62,7 @@ class Transformation(CogniteResource):
         last_finished_job: "TransformationJob" = None,
         blocked: TransformationBlockedInfo = None,
         schedule: "TransformationSchedule" = None,
+        data_set_id: int = None,
         cognite_client=None,
     ):
         self.id = id
@@ -90,6 +91,7 @@ class Transformation(CogniteResource):
         self.last_finished_job = last_finished_job
         self.blocked = blocked
         self.schedule = schedule
+        self.data_set_id = data_set_id
         self._cognite_client = cognite_client
 
     def run(self, wait: bool = True, timeout: Optional[float] = None) -> "TransformationJob":
@@ -213,6 +215,10 @@ class TransformationUpdate(CogniteUpdate):
     @property
     def ignore_null_fields(self):
         return TransformationUpdate._PrimitiveTransformationUpdate(self, "ignoreNullFields")
+
+    @property
+    def data_set_id(self):
+        return TransformationUpdate._PrimitiveTransformationUpdate(self, "dataSetId")
 
 
 class TransformationList(CogniteResourceList):
