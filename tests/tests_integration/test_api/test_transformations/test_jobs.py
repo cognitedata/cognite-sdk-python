@@ -88,6 +88,7 @@ async def other_running_transformation(other_transformation):
 
 class TestTransformationJobsAPI:
     @pytest.mark.asyncio
+    @pytest.mark.skip(reason="As the resources in test tenant gone, we can't guarantee a query taking long enough")
     async def test_run_without_wait(self, cognite_client, new_running_transformation):
         (job, new_transformation) = new_running_transformation
         assert (
@@ -203,6 +204,7 @@ class TestTransformationJobsAPI:
         )
 
     @pytest.mark.asyncio
+    @pytest.mark.skip(reason="As the resources in test tenant gone, we can't guarantee a query taking long enough")
     async def test_cancel_job(self, new_running_transformation):
         (new_job, _) = new_running_transformation
         await asyncio.sleep(0.5)
@@ -211,6 +213,7 @@ class TestTransformationJobsAPI:
         assert new_job.status == TransformationJobStatus.FAILED and new_job.error == "Job cancelled by the user."
 
     @pytest.mark.asyncio
+    @pytest.mark.skip(reason="As the resources in test tenant gone, we can't guarantee a query taking long enough")
     async def test_cancel_transformation(self, new_running_transformation):
         (new_job, new_transformation) = new_running_transformation
         await asyncio.sleep(0.5)
