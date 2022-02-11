@@ -142,7 +142,7 @@ class GeospatialAPI(APIClient):
 
                 >>> from cognite.experimental import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.geospatial.update_feature_types(update=FeatureTypeUpdate(external_id="wells", add=PropertyAndSearchSpec(properties={"altitude": {"type": "DOUBLE"}})))
+                >>> res = c.geospatial.update_feature_types(update=FeatureTypeUpdate(external_id="wells", add=PropertyAndSearchSpec(properties={"altitude": {"type": "DOUBLE"}}, search_spec={"altitude_idx": {"properties": ["altitude"]}})))
         """
         if isinstance(update, FeatureTypeUpdate):
             update = [update]
@@ -177,11 +177,15 @@ class GeospatialAPI(APIClient):
 
         Examples:
 
-            Create a new feature:
+            Create a new feature type and corresponding feature:
 
                 >>> from cognite.experimental import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.geospatial.create_features("my_feature_type", Feature(external_id="my_feature", temperature=12.4))
+                >>> feature_types = [
+                ...     FeatureType(external_id="my_feature_type", properties={"location": {"type": "POINT", "srid": 4326}, "temperature": {"type": "DOUBLE"}})
+                ... ]
+                >>> res = c.geospatial.create_feature_types(feature_types)
+                >>> res = c.geospatial.create_features("my_feature_type", Feature(external_id="my_feature", location={"wkt": "POINT(1 1)"}, temperature=12.4))
         """
         resource_path = self._feature_resource_path(feature_type_external_id)
         extra_body_fields = {"allowCrsTransformation": "true"} if allow_crs_transformation else {}
@@ -308,7 +312,7 @@ class GeospatialAPI(APIClient):
                 >>> from cognite.experimental import CogniteClient
                 >>> c = CogniteClient()
                 >>> my_feature_type = c.geospatial.retrieve_feature_types(external_id="my_feature_type")
-                >>> my_feature = c.geospatial.create_features(my_feature_type, Feature(external_id="my_feature", temperature=12.4))
+                >>> my_feature = c.geospatial.create_features(my_feature_type, Feature(external_id="my_feature", temperature=12.4, location={"wkt": "POINT(0 1)"}))
                 >>> res = c.geospatial.search_features("my_feature_type", filter={"range": {"property": "temperature", "gt": 12.0}})
                 >>> for f in res:
                 ...     # do something with the features
@@ -320,6 +324,16 @@ class GeospatialAPI(APIClient):
             Search for features and order results:
 
                 >>> res = c.geospatial.search_features(my_feature_type, filter={}, order_by=[OrderSpec("temperature", "ASC"), OrderSpec("pressure", "DESC")])
+
+            Search for features with spatial filters:
+
+                >>> res = c.geospatial.search_features(my_feature_type, filter={"stWithin": {"property": "location", "value": {"wkt": "POLYGON((0 0, 0 1, 1 1, 0 0))"}}})
+
+            Combining multiple filters:
+
+                >>> res = c.geospatial.search_features(my_feature_type, filter={"and": [{"range": {"property": "temperature", "gt": 12.0}}, {"stWithin": {"property": "location", "value": {"wkt": "POLYGON((0 0, 0 1, 1 1, 0 0))"}}}]})
+                >>> res = c.geospatial.search_features(my_feature_type, filter={"or": [{"range": {"property": "temperature", "gt": 12.0}}, {"stWithin": {"property": "location", "value": {"wkt": "POLYGON((0 0, 0 1, 1 1, 0 0))"}}}]})
+
 
         """
         resource_path = self._feature_resource_path(feature_type_external_id) + "/search"
