@@ -44,6 +44,12 @@ COGNITE_BASE_URL=https://greenfield.cognitedata.com
 COGNITE_AUTHORITY_URL=https://login.microsoftonline.com/dff7763f-e2f5-4ffd-9b8a-4ba4bafba5ea
 COGNITE_CLIENT_ID=6b0b4266-ffa4-4b9b-8e13-ddbbc8a19ea6
 COGNITE_TOKEN_SCOPES=https://greenfield.cognitedata.com/.default
+
+# To run transformations tests locally:
+# login flow should be client credentials
+LOGIN_FLOW=client_credentials
+# and client secret should be provided along with the variables above
+COGNITE_CLIENT_SECRET=....
 ```
 
 ### Testing
