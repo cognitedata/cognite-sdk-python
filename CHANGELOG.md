@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.41.0] - 2022-02-16
+### Added
+- support for deleting properties and search specs in GeospatialAPI.update_feature_types(...).
+
 ## [2.40.0] - 2022-02-11
 ### Added
 - dataSetId support for transformations.
