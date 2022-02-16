@@ -141,9 +141,7 @@ class FeatureList(CogniteResourceList):
 class FeatureAggregate(CogniteResource):
     """A result of aggregating features in geospatial api."""
 
-    def __init__(self, cognite_client=None, **aggregates):
-        for key in aggregates:
-            setattr(self, key, aggregates[key])
+    def __init__(self, cognite_client=None):
         self._cognite_client = cognite_client
 
     @classmethod
