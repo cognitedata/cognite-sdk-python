@@ -351,11 +351,15 @@ class TestGeospatialAPI:
                         "pos_alt_idx": {"properties": ["position", "altitude"]},
                     },
                 ),
+                remove=PropertyAndSearchSpec(
+                    properties= ["volume"],
+                    search_spec= ["vol_press_idx"]
+                )
             )
         )
         assert len(res) == 1
-        assert len(res[0].properties) == 8
-        assert len(res[0].search_spec) == 6
+        assert len(res[0].properties) == 7
+        assert len(res[0].search_spec) == 5
 
     def test_stream_features(self, cognite_client, large_feature_type, many_features):
         features = cognite_client.geospatial.stream_features(

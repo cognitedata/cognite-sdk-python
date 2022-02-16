@@ -20,7 +20,6 @@ from cognite.client.exceptions import CogniteConnectionError
 
 
 class GeospatialAPI(APIClient):
-
     _RESOURCE_PATH = "/geospatial"
 
     @staticmethod
@@ -28,7 +27,7 @@ class GeospatialAPI(APIClient):
         return f"{GeospatialAPI._RESOURCE_PATH}/featuretypes/{feature_type_external_id}/features"
 
     def create_feature_types(
-        self, feature_type: Union[FeatureType, List[FeatureType]]
+            self, feature_type: Union[FeatureType, List[FeatureType]]
     ) -> Union[FeatureType, FeatureTypeList]:
         """`Creates feature types`
         <https://docs.cognite.com/api/v1/#operation/createFeatureTypes>
@@ -53,10 +52,12 @@ class GeospatialAPI(APIClient):
                 >>> res = c.geospatial.create_feature_types(feature_types)
         """
         return self._create_multiple(
-            items=feature_type, cls=FeatureTypeList, resource_path=f"{self._RESOURCE_PATH}/featuretypes"
+            items=feature_type, cls=FeatureTypeList,
+            resource_path=f"{self._RESOURCE_PATH}/featuretypes"
         )
 
-    def delete_feature_types(self, external_id: Union[str, List[str]], recursive: bool = False) -> None:
+    def delete_feature_types(self, external_id: Union[str, List[str]],
+                             recursive: bool = False) -> None:
         """`Delete one or more feature type`
         <https://docs.cognite.com/api/v1/#operation/GeospatialDeleteFeatureTypes>
 
@@ -99,7 +100,8 @@ class GeospatialAPI(APIClient):
                 >>> for feature_type in c.geospatial.list_feature_types():
                 ...     feature_type # do something with the feature type definition
         """
-        return self._list(method="POST", cls=FeatureTypeList, resource_path=f"{self._RESOURCE_PATH}/featuretypes")
+        return self._list(method="POST", cls=FeatureTypeList,
+                          resource_path=f"{self._RESOURCE_PATH}/featuretypes")
 
     def retrieve_feature_types(self, external_id: Union[str, List[str]] = None) -> FeatureTypeList:
         """`Retrieve feature types`
@@ -126,7 +128,8 @@ class GeospatialAPI(APIClient):
             resource_path=f"{self._RESOURCE_PATH}/featuretypes",
         )
 
-    def update_feature_types(self, update: Union[FeatureTypeUpdate, List[FeatureTypeUpdate]] = None) -> FeatureTypeList:
+    def update_feature_types(self, update: Union[
+        FeatureTypeUpdate, List[FeatureTypeUpdate]] = None) -> FeatureTypeList:
         """`Patch feature types`
         <https://docs.cognite.com/api/v1/#operation/updateFeatureTypes>
 
@@ -141,25 +144,31 @@ class GeospatialAPI(APIClient):
             Add one property to a feature type:
 
                 >>> from cognite.experimental import CogniteClient
+                >>> from cognite.client.data_classes.geospatial import PropertyAndSearchSpec
                 >>> c = CogniteClient()
                 >>> res = c.geospatial.update_feature_types(update=FeatureTypeUpdate(external_id="wells", add=PropertyAndSearchSpec(properties={"altitude": {"type": "DOUBLE"}}, search_spec={"altitude_idx": {"properties": ["altitude"]}})))
         """
         if isinstance(update, FeatureTypeUpdate):
             update = [update]
 
-        mapper = lambda it: {
-            "properties": None if not hasattr(it, "properties") else {"add": it.properties},
-            "searchSpec": None if not hasattr(it, "search_spec") else {"add": it.search_spec},
-        }
-        json = {"items": [{"externalId": it.external_id, "update": mapper(it.add)} for it in update]}
+        def mapper(it):
+            add_properties = it.add.properties if hasattr(it, "add") else None
+            remove_properties = it.remove.properties if hasattr(it, "remove") else None
+            add_search_spec = it.add.search_spec if hasattr(it, "add") else None
+            remove_search_spec = it.remove.search_spec if hasattr(it, "remove") else None
+            properties_update = {"add": add_properties, "remove": remove_properties}
+            search_spec_update = {"add": add_search_spec, "remove": remove_search_spec}
+            return {"properties": properties_update, "searchSpec": search_spec_update}
+
+        json = {"items": [{"externalId": it.external_id, "update": mapper(it)} for it in update]}
         res = self._post(url_path=f"{self._RESOURCE_PATH}/featuretypes/update", json=json)
         return FeatureTypeList._load(res.json()["items"], cognite_client=self._cognite_client)
 
     def create_features(
-        self,
-        feature_type_external_id: str,
-        feature: Union[Feature, List[Feature]],
-        allow_crs_transformation: bool = False,
+            self,
+            feature_type_external_id: str,
+            feature: Union[Feature, List[Feature]],
+            allow_crs_transformation: bool = False,
     ) -> Union[Feature, FeatureList]:
         """`Creates features`
         <https://docs.cognite.com/api/v1/#operation/createFeatures>
@@ -190,10 +199,12 @@ class GeospatialAPI(APIClient):
         resource_path = self._feature_resource_path(feature_type_external_id)
         extra_body_fields = {"allowCrsTransformation": "true"} if allow_crs_transformation else {}
         return self._create_multiple(
-            items=feature, resource_path=resource_path, cls=FeatureList, extra_body_fields=extra_body_fields
+            items=feature, resource_path=resource_path, cls=FeatureList,
+            extra_body_fields=extra_body_fields
         )
 
-    def delete_features(self, feature_type_external_id: str, external_id: Union[str, List[str]] = None) -> None:
+    def delete_features(self, feature_type_external_id: str,
+                        external_id: Union[str, List[str]] = None) -> None:
         """`Delete one or more feature`
         <https://docs.cognite.com/api/v1/#operation/deleteFeatures>
 
@@ -216,7 +227,7 @@ class GeospatialAPI(APIClient):
         self._delete_multiple(external_ids=external_id, wrap_ids=True, resource_path=resource_path)
 
     def retrieve_features(
-        self, feature_type_external_id: str, external_id: Union[str, List[str]] = None
+            self, feature_type_external_id: str, external_id: Union[str, List[str]] = None
     ) -> FeatureList:
         """`Retrieve features`
         <https://docs.cognite.com/api/v1/#operation/getFeaturesByIds>
@@ -242,10 +253,10 @@ class GeospatialAPI(APIClient):
         )
 
     def update_features(
-        self,
-        feature_type_external_id: str,
-        feature: Union[Feature, List[Feature]],
-        allow_crs_transformation: bool = False,
+            self,
+            feature_type_external_id: str,
+            feature: Union[Feature, List[Feature]],
+            allow_crs_transformation: bool = False,
     ) -> FeatureList:
         """`Update features`
         <https://docs.cognite.com/api/v1/#operation/updateFeatures>
@@ -276,17 +287,18 @@ class GeospatialAPI(APIClient):
         resource_path = self._feature_resource_path(feature_type_external_id) + "/update"
         extra_body_fields = {"allowCrsTransformation": "true"} if allow_crs_transformation else {}
         return self._create_multiple(
-            feature, resource_path=resource_path, cls=FeatureList, extra_body_fields=extra_body_fields
+            feature, resource_path=resource_path, cls=FeatureList,
+            extra_body_fields=extra_body_fields
         )
 
     def search_features(
-        self,
-        feature_type_external_id: str,
-        filter: Dict[str, Any],
-        properties: Dict[str, Any] = None,
-        limit: int = 100,
-        order_by: List[OrderSpec] = None,
-        allow_crs_transformation: bool = False,
+            self,
+            feature_type_external_id: str,
+            filter: Dict[str, Any],
+            properties: Dict[str, Any] = None,
+            limit: int = 100,
+            order_by: List[OrderSpec] = None,
+            allow_crs_transformation: bool = False,
     ) -> FeatureList:
         """`Search for features`
         <https://docs.cognite.com/api/v1/#operation/searchFeatures>
@@ -338,7 +350,8 @@ class GeospatialAPI(APIClient):
         """
         resource_path = self._feature_resource_path(feature_type_external_id) + "/search"
         cls = FeatureList
-        order = None if order_by is None else [f"{item.property}:{item.direction}" for item in order_by]
+        order = None if order_by is None else [f"{item.property}:{item.direction}" for item in
+                                               order_by]
         res = self._post(
             url_path=resource_path,
             json={
@@ -352,11 +365,11 @@ class GeospatialAPI(APIClient):
         return cls._load(res.json()["items"], cognite_client=self._cognite_client)
 
     def stream_features(
-        self,
-        feature_type_external_id: str,
-        filter: Dict[str, Any],
-        properties: Dict[str, Any] = None,
-        allow_crs_transformation: bool = False,
+            self,
+            feature_type_external_id: str,
+            filter: Dict[str, Any],
+            properties: Dict[str, Any] = None,
+            allow_crs_transformation: bool = False,
     ) -> Generator[Feature, None, None]:
         """`Stream features`
         <https://docs.cognite.com/api/v1/#operation/searchFeaturesStreaming>
@@ -392,10 +405,12 @@ class GeospatialAPI(APIClient):
 
         """
         resource_path = self._feature_resource_path(feature_type_external_id) + "/search-streaming"
-        json = {"filter": filter, "output": {"properties": properties, "jsonStreamFormat": "NEW_LINE_DELIMITED"}}
+        json = {"filter": filter,
+                "output": {"properties": properties, "jsonStreamFormat": "NEW_LINE_DELIMITED"}}
         params = {"allowCrsTransformation": "true"} if allow_crs_transformation else None
         res = self._do_request(
-            "POST", url_path=resource_path, json=json, timeout=self._config.timeout, stream=True, params=params
+            "POST", url_path=resource_path, json=json, timeout=self._config.timeout, stream=True,
+            params=params
         )
 
         try:
@@ -405,12 +420,12 @@ class GeospatialAPI(APIClient):
             raise CogniteConnectionError(e)
 
     def aggregate_features(
-        self,
-        feature_type_external_id: str,
-        filter: Dict[str, Any],
-        property: str,
-        aggregates: List[str],
-        group_by: List[str] = None,
+            self,
+            feature_type_external_id: str,
+            filter: Dict[str, Any],
+            property: str,
+            aggregates: List[str],
+            group_by: List[str] = None,
     ) -> FeatureAggregateList:
         """`Aggregate filtered features`
         <https://docs.cognite.com/api/v1/#operation/aggregateFeatures>
@@ -441,11 +456,13 @@ class GeospatialAPI(APIClient):
         cls = FeatureAggregateList
         res = self._post(
             url_path=resource_path,
-            json={"filter": filter, "property": property, "aggregates": aggregates, "groupBy": group_by},
+            json={"filter": filter, "property": property, "aggregates": aggregates,
+                  "groupBy": group_by},
         )
         return cls._load(res.json()["items"], cognite_client=self._cognite_client)
 
-    def get_coordinate_reference_systems(self, srids: Union[int, List[int]] = None) -> CoordinateReferenceSystemList:
+    def get_coordinate_reference_systems(self, srids: Union[
+        int, List[int]] = None) -> CoordinateReferenceSystemList:
         """`Get Coordinate Reference Systems`
         <https://docs.cognite.com/api/v1/#operation/getCoordinateReferenceSystem>
 
@@ -467,9 +484,11 @@ class GeospatialAPI(APIClient):
             srids = [srids]
 
         res = self._post(
-            url_path=f"{self._RESOURCE_PATH}/crs/byids", json={"items": [{"srid": srid} for srid in srids]}
+            url_path=f"{self._RESOURCE_PATH}/crs/byids",
+            json={"items": [{"srid": srid} for srid in srids]}
         )
-        return CoordinateReferenceSystemList._load(res.json()["items"], cognite_client=self._cognite_client)
+        return CoordinateReferenceSystemList._load(res.json()["items"],
+                                                   cognite_client=self._cognite_client)
 
     def list_coordinate_reference_systems(self, only_custom=False) -> CoordinateReferenceSystemList:
         """`List Coordinate Reference Systems`
@@ -490,10 +509,11 @@ class GeospatialAPI(APIClient):
                 >>> crs = c.geospatial.list_coordinate_reference_systems(only_custom=True)
         """
         res = self._get(url_path=f"{self._RESOURCE_PATH}/crs", params={"filterCustom": only_custom})
-        return CoordinateReferenceSystemList._load(res.json()["items"], cognite_client=self._cognite_client)
+        return CoordinateReferenceSystemList._load(res.json()["items"],
+                                                   cognite_client=self._cognite_client)
 
     def create_coordinate_reference_systems(
-        self, crs: Union[CoordinateReferenceSystem, List[CoordinateReferenceSystem]]
+            self, crs: Union[CoordinateReferenceSystem, List[CoordinateReferenceSystem]]
     ) -> CoordinateReferenceSystemList:
         """`Create Coordinate Reference System`
         <https://docs.cognite.com/api/v1/#operation/createGeospatialCoordinateReferenceSystems>
@@ -517,9 +537,11 @@ class GeospatialAPI(APIClient):
             crs = [crs]
 
         res = self._post(
-            url_path=f"{self._RESOURCE_PATH}/crs", json={"items": [it.dump(camel_case=True) for it in crs]}
+            url_path=f"{self._RESOURCE_PATH}/crs",
+            json={"items": [it.dump(camel_case=True) for it in crs]}
         )
-        return CoordinateReferenceSystemList._load(res.json()["items"], cognite_client=self._cognite_client)
+        return CoordinateReferenceSystemList._load(res.json()["items"],
+                                                   cognite_client=self._cognite_client)
 
     def delete_coordinate_reference_systems(self, srids: Union[int, List[int]] = None) -> None:
         """`Delete Coordinate Reference System`
@@ -542,4 +564,5 @@ class GeospatialAPI(APIClient):
         if isinstance(srids, numbers.Integral):
             srids = [srids]
 
-        self._post(url_path=f"{self._RESOURCE_PATH}/crs/delete", json={"items": [{"srid": srid} for srid in srids]})
+        self._post(url_path=f"{self._RESOURCE_PATH}/crs/delete",
+                   json={"items": [{"srid": srid} for srid in srids]})
