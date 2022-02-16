@@ -8,13 +8,13 @@ class FeatureType(CogniteResource):
     """A representation of a feature type in the geospatial api."""
 
     def __init__(
-            self,
-            external_id: str = None,
-            created_time: int = None,
-            last_updated_time: int = None,
-            properties: Dict[str, Any] = None,
-            search_spec: Dict[str, Any] = None,
-            cognite_client=None,
+        self,
+        external_id: str = None,
+        created_time: int = None,
+        last_updated_time: int = None,
+        properties: Dict[str, Any] = None,
+        search_spec: Dict[str, Any] = None,
+        cognite_client=None,
     ):
         self.external_id = external_id
         self.created_time = created_time
@@ -40,9 +40,9 @@ class FeatureTypeList(CogniteResourceList):
 class PropertyAndSearchSpec:
     """A representation of a feature type property and search spec."""
 
-    def __init__(self,
-                 properties: Union[Dict[str, Any], List[str]] = None,
-                 search_spec: Union[Dict[str, Any], List[str]] = None):
+    def __init__(
+        self, properties: Union[Dict[str, Any], List[str]] = None, search_spec: Union[Dict[str, Any], List[str]] = None
+    ):
         self.properties = properties
         self.search_spec = search_spec
 
@@ -50,8 +50,13 @@ class PropertyAndSearchSpec:
 class FeatureTypeUpdate:
     """A representation of a feature type update in the geospatial api."""
 
-    def __init__(self, external_id: str = None, add: PropertyAndSearchSpec = None,
-                 remove: PropertyAndSearchSpec = None, cognite_client=None):
+    def __init__(
+        self,
+        external_id: str = None,
+        add: PropertyAndSearchSpec = None,
+        remove: PropertyAndSearchSpec = None,
+        cognite_client=None,
+    ):
         self.external_id = external_id
         self.add = add
         self.remove = remove
@@ -158,8 +163,7 @@ class FeatureAggregateList(CogniteResourceList):
 class CoordinateReferenceSystem(CogniteResource):
     """A representation of a feature in the geospatial api."""
 
-    def __init__(self, srid: int = None, wkt: str = None, proj_string: str = None,
-                 cognite_client=None):
+    def __init__(self, srid: int = None, wkt: str = None, proj_string: str = None, cognite_client=None):
         self.srid = srid
         self.wkt = wkt
         self.proj_string = proj_string
