@@ -20,7 +20,6 @@ from cognite.client.exceptions import CogniteConnectionError
 
 
 class GeospatialAPI(APIClient):
-
     _RESOURCE_PATH = "/geospatial"
 
     @staticmethod
@@ -140,6 +139,7 @@ class GeospatialAPI(APIClient):
 
             Add one property to a feature type:
 
+                >>> from cognite.client.data_classes.geospatial import PropertyAndSearchSpec
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.geospatial.update_feature_types(update=FeatureTypeUpdate(external_id="wells", add=PropertyAndSearchSpec(properties={"altitude": {"type": "DOUBLE"}}, search_spec={"altitude_idx": {"properties": ["altitude"]}})))
@@ -147,11 +147,16 @@ class GeospatialAPI(APIClient):
         if isinstance(update, FeatureTypeUpdate):
             update = [update]
 
-        mapper = lambda it: {
-            "properties": None if not hasattr(it, "properties") else {"add": it.properties},
-            "searchSpec": None if not hasattr(it, "search_spec") else {"add": it.search_spec},
-        }
-        json = {"items": [{"externalId": it.external_id, "update": mapper(it.add)} for it in update]}
+        def mapper(it):
+            add_properties = it.add.properties if hasattr(it, "add") else None
+            remove_properties = it.remove.properties if hasattr(it, "remove") else None
+            add_search_spec = it.add.search_spec if hasattr(it, "add") else None
+            remove_search_spec = it.remove.search_spec if hasattr(it, "remove") else None
+            properties_update = {"add": add_properties, "remove": remove_properties}
+            search_spec_update = {"add": add_search_spec, "remove": remove_search_spec}
+            return {"properties": properties_update, "searchSpec": search_spec_update}
+
+        json = {"items": [{"externalId": it.external_id, "update": mapper(it)} for it in update]}
         res = self._post(url_path=f"{self._RESOURCE_PATH}/featuretypes/update", json=json)
         return FeatureTypeList._load(res.json()["items"], cognite_client=self._cognite_client)
 
