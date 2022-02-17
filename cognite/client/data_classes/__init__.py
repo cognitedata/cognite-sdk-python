@@ -71,12 +71,15 @@ from cognite.client.data_classes.sequences import (
 )
 from cognite.client.data_classes.templates import (
     ConstantResolver,
+    Source,
     TemplateGroup,
     TemplateGroupList,
     TemplateGroupVersion,
     TemplateGroupVersionList,
     TemplateInstance,
     TemplateInstanceList,
+    View,
+    ViewResolver,
 )
 from cognite.client.data_classes.three_d import (
     BoundingBox3D,
