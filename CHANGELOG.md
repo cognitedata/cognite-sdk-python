@@ -14,9 +14,14 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [2.40.2] - 2022-02-11
+
+## [2.40.3] - 2022-02-11
 ### Fixed
 - example for templates view.
+
+## [2.41.2] - 2022-02-16
+### Added
+- support for deleting properties and search specs in GeospatialAPI.update_feature_types(...).
 
 ## [2.40.1] - 2022-02-15
 ### Fixed
