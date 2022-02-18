@@ -15,7 +15,7 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 
-## [2.40.3] - 2022-02-11
+## [2.41.3] - 2022-02-11
 ### Fixed
 - example for templates view.
 
