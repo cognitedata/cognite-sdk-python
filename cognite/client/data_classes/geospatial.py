@@ -122,14 +122,14 @@ class FeatureList(CogniteResourceList):
 
     @staticmethod
     def from_geopandas(feature_type: FeatureType,
-                       gdf: "geopandas.GeoDataFrame",
+                       geodataframe: "geopandas.GeoDataFrame",
                        external_id_column: str = "externalId",
                        property_column_mapping: Dict[str, str] = None) -> "FeatureList":
         """Convert a GeoDataFrame instance into a FeatureList.
 
         Args:
             feature_type (FeatureType): The feature type the features will conform to
-            gdf (GeoDataFrame): the geodataframe instance to convert into features
+            geodataframe (GeoDataFrame): the geodataframe instance to convert into features
             external_id_column: the geodataframe column to use for the feature external id
             property_column_mapping: provides a mapping from featuretype property names to geodataframe columns
 
@@ -144,15 +144,15 @@ class FeatureList(CogniteResourceList):
                 >>> c = CogniteClient()
                 >>> my_feature_type = ... # some feature type with 'position' and 'temperature' properties
                 >>> my_geodataframe = ...  # some geodataframe with 'center_xy', 'temp' and 'id' columns
-                >>> feature_list = FeatureList.from_geopandas(feature_type=my_feature_type, gdf=my_geodataframe,
+                >>> feature_list = FeatureList.from_geopandas(feature_type=my_feature_type, geodataframe=my_geodataframe,
                 >>>     external_id_column="id", property_column_mapping={'position': 'center_xy', 'temperature': 'temp'})
-                >>> created_features = c.geospatial.create_features(my_feature_type.external_id, fl)
+                >>> created_features = c.geospatial.create_features(my_feature_type.external_id, feature_list)
             
         """
         features = []
         if property_column_mapping is None:
             property_column_mapping = {prop_name: prop_name for (prop_name, _) in feature_type.properties.items()}
-        for _, row in gdf.iterrows():
+        for _, row in geodataframe.iterrows():
             feature = Feature(external_id=row[external_id_column])
             for prop in feature_type.properties.items():
                 prop_name = prop[0]
