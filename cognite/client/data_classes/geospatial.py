@@ -124,7 +124,7 @@ class FeatureList(CogniteResourceList):
     def from_geopandas(feature_type: FeatureType,
                        gdf: "geopandas.GeoDataFrame",
                        external_id_column: str = "externalId",
-                       property_column_mapping: Dict[str, str] = None) -> List[Feature]:
+                       property_column_mapping: Dict[str, str] = None) -> "FeatureList":
         """Convert a GeoDataFrame instance into a FeatureList.
 
         Args:
@@ -135,6 +135,19 @@ class FeatureList(CogniteResourceList):
 
         Returns:
             FeatureList: The list of features converted from the geodataframe rows.
+
+        Examples:
+
+            Create features from a geopandas dataframe:
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> my_feature_type = ... # some feature type with 'position' and 'temperature' properties
+                >>> my_geodataframe = ...  # some geodataframe with 'center_xy', 'temp' and 'id' columns
+                >>> feature_list = FeatureList.from_geopandas(feature_type=my_feature_type, gdf=my_geodataframe,
+                >>>     external_id_column="id", property_column_mapping={'position': 'center_xy', 'temperature': 'temp'})
+                >>> created_features = c.geospatial.create_features(my_feature_type.external_id, fl)
+            
         """
         features = []
         if property_column_mapping is None:
@@ -156,7 +169,7 @@ class FeatureList(CogniteResourceList):
                 else:
                     setattr(feature, prop_name, column_value)
             features.append(feature)
-        return features
+        return FeatureList(features)
 
 
 class FeatureAggregate(CogniteResource):

@@ -435,7 +435,7 @@ class TestGeospatialAPI:
         df = pd.DataFrame({'some_unique_id': [f"F{i}_{uuid.uuid4().hex[:10]}" for i in range(4)],
                            'some_position': ['POINT(2.2768485 48.8589506)',
                                              'POLYGON((10.689 -25.02, 38.814 -35.639, 13.502 -39.155, 10.689 -25.02))',
-                                             'LINESTRING (30 10, 10 30, 40 40)',
+                                             None,
                                              'MULTILINESTRING ((10 10, 20 20, 10 40), (40 40, 30 30, 40 20, 30 10))'],
                            'some_temperature': [12.4, 13.4, 13.4, 13.4],
                            'some_volume': [1212.0, 1313.0, 1414.0, 1515.0],
