@@ -12,7 +12,7 @@ def test_feature_type():
     yield FeatureType(
         external_id=external_id,
         properties={
-            "position": {"type": "POINT", "srid": "4326", "optional": "true"},
+            "position": {"type": "GEOMETRY", "srid": "4326", "optional": "true"},
             "volume": {"type": "DOUBLE"},
             "temperature": {"type": "DOUBLE"},
             "pressure": {"type": "DOUBLE"},
@@ -22,41 +22,61 @@ def test_feature_type():
 
 
 @pytest.fixture
-def two_test_features(test_feature_type):
-    external_ids = [f"F{i}_{uuid.uuid4().hex[:10]}" for i in range(2)]
+def test_features(test_feature_type):
+    external_ids = [f"F{i}_{uuid.uuid4().hex[:10]}" for i in range(4)]
     yield FeatureList(
         [
             Feature(
-                external_id=external_ids[i],
+                external_id=external_ids[0],
                 position={"wkt": "POINT(2.2768485 48.8589506)"},
-                temperature=12.4 + i,
+                temperature=12.4,
+                volume=1212.0,
+                pressure=2121.0,
+            ),
+            Feature(
+                external_id=external_ids[1],
+                position={"wkt": "POLYGON((10.689 -25.092, 38.814 -35.639, 13.502 -39.155, 10.689 -25.092))"},
+                temperature=13.4,
+                volume=1212.0,
+                pressure=2121.0,
+            ),
+            Feature(
+                external_id=external_ids[2],
+                position={"wkt": "LINESTRING (30 10, 10 30, 40 40)"},
+                temperature=13.4,
+                volume=1212.0,
+                pressure=2121.0,
+            ),
+            Feature(
+                external_id=external_ids[3],
+                position={"wkt": "MULTILINESTRING ((10 10, 20 20, 10 40), (40 40, 30 30, 40 20, 30 10))"},
+                temperature=13.4,
                 volume=1212.0,
                 pressure=2121.0,
             )
-            for i in range(2)
         ]
     )
 
 
 class TestGeospatialAPI:
     @pytest.mark.dsl
-    def test_to_pandas(self, test_feature_type, two_test_features):
-        df = two_test_features.to_pandas()
+    def test_to_pandas(self, test_feature_type, test_features):
+        df = test_features.to_pandas()
         assert set(list(df)) == set(["externalId", "position", "volume", "temperature", "pressure"])
 
     @pytest.mark.dsl
-    def test_to_geopandas(self, test_feature_type, two_test_features):
-        gdf = two_test_features.to_geopandas(geometry="position")
+    def test_to_geopandas(self, test_feature_type, test_features):
+        gdf = test_features.to_geopandas(geometry="position")
         assert set(gdf) == set(["externalId", "position", "volume", "temperature", "pressure"])
         geopandas = utils._auxiliary.local_import("geopandas")
         assert type(gdf.dtypes["position"]) == geopandas.array.GeometryDtype
 
     @pytest.mark.dsl
-    def test_from_geopandas(self, test_feature_type, two_test_features):
-        gdf = two_test_features.to_geopandas(geometry="position")
+    def test_from_geopandas(self, test_feature_type, test_features):
+        gdf = test_features.to_geopandas(geometry="position")
         fl = FeatureList.from_geopandas(test_feature_type, gdf)
         assert type(fl) == FeatureList
-        assert len(fl) == 2
+        assert len(fl) == 4
         for f in fl:
             for attr in test_feature_type.properties.items():
                 attr_name = attr[0]

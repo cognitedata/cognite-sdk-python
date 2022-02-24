@@ -87,7 +87,16 @@ class Feature(CogniteResource):
 
 
 def _is_geometry_type(property_type: str):
-    return property_type in {"POINT", "POLYGON", "MULTIPOLYGON", "GEOMETRYCOLLECTION"}
+    return property_type in {"GEOMETRY", "POINT", "LINESTRING", "POLYGON", "MULTIPOINT", "MULTILINESTRING",
+                             "MULTIPOLYGON", "GEOMETRYCOLLECTION", "GEOMETRYZ", "POINTZ", "LINESTRINGZ", "POLYGONZ",
+                             "MULTIPOINTZ", "MULTILINESTRINGZ", "MULTIPOLYGONZ", "GEOMETRYCOLLECTIONZ", "GEOMETRYM",
+                             "POINTM", "LINESTRINGM", "POLYGONM", "MULTIPOINTM", "MULTILINESTRINGM", "MULTIPOLYGONM",
+                             "GEOMETRYCOLLECTIONM", "GEOMETRYZM", "POINTZM", "LINESTRINGZM", "POLYGONZM",
+                             "MULTIPOINTZM", "MULTILINESTRINGZM", "MULTIPOLYGONZM", "GEOMETRYCOLLECTIONZM"}
+
+
+def _is_reserved_property(property_name: str):
+    return property_name.startswith("_") or property_name in {"externalId", "createdTime", "lastUpdatedTime"}
 
 
 class FeatureList(CogniteResourceList):
@@ -112,30 +121,31 @@ class FeatureList(CogniteResourceList):
         return gdf
 
     @staticmethod
-    def from_geopandas(feature_type: FeatureType, gdf: "geopandas.GeoDataFrame") -> "FeatureList":
+    def from_geopandas(feature_type: FeatureType, gdf: "geopandas.GeoDataFrame", external_id_column: str = "externalId") -> List[Feature]:
         """Convert a GeoDataFrame instance into a FeatureList.
 
         Args:
             feature_type (FeatureType): The feature type the features will conform to
             gdf (GeoDataFrame): the geodataframe instance to convert into features
+            external_id_column: the geodataframe column to use for the feature external id
 
         Returns:
             FeatureList: The list of features converted from the geodataframe rows.
         """
         features = []
         for _, row in gdf.iterrows():
-            feature = Feature(external_id=row["externalId"])
+            feature = Feature(external_id=row[external_id_column])
             for attr in feature_type.properties.items():
                 attr_name = attr[0]
                 attr_type = attr[1]["type"]
-                if attr_name.startswith("_"):
+                if _is_reserved_property(attr_name):
                     continue
                 if _is_geometry_type(attr_type):
                     setattr(feature, attr_name, {"wkt": row[attr_name].wkt})
                 else:
                     setattr(feature, attr_name, row[attr_name])
             features.append(feature)
-        return FeatureList(features)
+        return features
 
 
 class FeatureAggregate(CogniteResource):
