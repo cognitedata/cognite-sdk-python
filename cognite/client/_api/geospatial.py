@@ -163,7 +163,7 @@ class GeospatialAPI(APIClient):
     def create_features(
         self,
         feature_type_external_id: str,
-        feature: Union[Feature, List[Feature]],
+        feature: Union[Feature, List[Feature], FeatureList],
         allow_crs_transformation: bool = False,
     ) -> Union[Feature, FeatureList]:
         """`Creates features`
@@ -171,7 +171,7 @@ class GeospatialAPI(APIClient):
 
         Args:
             feature_type_external_id : Feature type definition for the features to create.
-            feature: one feature or a list of features to create
+            feature: one feature or a list of features to create or a FeatureList object
             allow_crs_transformation: If true, then input geometries will be transformed into the Coordinate Reference
                 System defined in the feature type specification. When it is false, then requests with geometries in
                 Coordinate Reference System different from the ones defined in the feature type will result in
@@ -192,6 +192,8 @@ class GeospatialAPI(APIClient):
                 >>> res = c.geospatial.create_feature_types(feature_types)
                 >>> res = c.geospatial.create_features("my_feature_type", Feature(external_id="my_feature", location={"wkt": "POINT(1 1)"}, temperature=12.4))
         """
+        if isinstance(feature, FeatureList):
+            feature = list(feature)
         resource_path = self._feature_resource_path(feature_type_external_id)
         extra_body_fields = {"allowCrsTransformation": "true"} if allow_crs_transformation else {}
         return self._create_multiple(
@@ -276,6 +278,8 @@ class GeospatialAPI(APIClient):
                 >>> # do some stuff
                 >>> my_updated_feature = c.geospatial.update_features("my_feature_type", Feature(external_id="my_feature", temperature=6.237))
         """
+        if isinstance(feature, FeatureList):
+            feature = list(feature)
         # updates for feature are not following the patch structure from other resources
         # they are more like a replace so an update looks like a feature creation (yeah, borderline ?)
         resource_path = self._feature_resource_path(feature_type_external_id) + "/update"

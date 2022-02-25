@@ -14,6 +14,9 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.42.0] - 2022-02-11
+### Added
+- FeatureList.from_geopandas() improvements
 
 ## [2.41.3] - 2022-02-11
 ### Fixed
