@@ -87,12 +87,40 @@ class Feature(CogniteResource):
 
 
 def _is_geometry_type(property_type: str):
-    return property_type in {"GEOMETRY", "POINT", "LINESTRING", "POLYGON", "MULTIPOINT", "MULTILINESTRING",
-                             "MULTIPOLYGON", "GEOMETRYCOLLECTION", "GEOMETRYZ", "POINTZ", "LINESTRINGZ", "POLYGONZ",
-                             "MULTIPOINTZ", "MULTILINESTRINGZ", "MULTIPOLYGONZ", "GEOMETRYCOLLECTIONZ", "GEOMETRYM",
-                             "POINTM", "LINESTRINGM", "POLYGONM", "MULTIPOINTM", "MULTILINESTRINGM", "MULTIPOLYGONM",
-                             "GEOMETRYCOLLECTIONM", "GEOMETRYZM", "POINTZM", "LINESTRINGZM", "POLYGONZM",
-                             "MULTIPOINTZM", "MULTILINESTRINGZM", "MULTIPOLYGONZM", "GEOMETRYCOLLECTIONZM"}
+    return property_type in {
+        "GEOMETRY",
+        "POINT",
+        "LINESTRING",
+        "POLYGON",
+        "MULTIPOINT",
+        "MULTILINESTRING",
+        "MULTIPOLYGON",
+        "GEOMETRYCOLLECTION",
+        "GEOMETRYZ",
+        "POINTZ",
+        "LINESTRINGZ",
+        "POLYGONZ",
+        "MULTIPOINTZ",
+        "MULTILINESTRINGZ",
+        "MULTIPOLYGONZ",
+        "GEOMETRYCOLLECTIONZ",
+        "GEOMETRYM",
+        "POINTM",
+        "LINESTRINGM",
+        "POLYGONM",
+        "MULTIPOINTM",
+        "MULTILINESTRINGM",
+        "MULTIPOLYGONM",
+        "GEOMETRYCOLLECTIONM",
+        "GEOMETRYZM",
+        "POINTZM",
+        "LINESTRINGZM",
+        "POLYGONZM",
+        "MULTIPOINTZM",
+        "MULTILINESTRINGZM",
+        "MULTIPOLYGONZM",
+        "GEOMETRYCOLLECTIONZM",
+    }
 
 
 def _is_reserved_property(property_name: str):
@@ -121,10 +149,12 @@ class FeatureList(CogniteResourceList):
         return gdf
 
     @staticmethod
-    def from_geopandas(feature_type: FeatureType,
-                       geodataframe: "geopandas.GeoDataFrame",
-                       external_id_column: str = "externalId",
-                       property_column_mapping: Dict[str, str] = None) -> "FeatureList":
+    def from_geopandas(
+        feature_type: FeatureType,
+        geodataframe: "geopandas.GeoDataFrame",
+        external_id_column: str = "externalId",
+        property_column_mapping: Dict[str, str] = None,
+    ) -> "FeatureList":
         """Convert a GeoDataFrame instance into a FeatureList.
 
         Args:
@@ -147,7 +177,7 @@ class FeatureList(CogniteResourceList):
                 >>> feature_list = FeatureList.from_geopandas(feature_type=my_feature_type, geodataframe=my_geodataframe,
                 >>>     external_id_column="id", property_column_mapping={'position': 'center_xy', 'temperature': 'temp'})
                 >>> created_features = c.geospatial.create_features(my_feature_type.external_id, feature_list)
-            
+
         """
         features = []
         if property_column_mapping is None:

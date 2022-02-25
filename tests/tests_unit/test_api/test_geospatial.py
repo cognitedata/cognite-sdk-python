@@ -53,7 +53,7 @@ def test_features(test_feature_type):
                 temperature=13.4,
                 volume=1212.0,
                 pressure=2121.0,
-            )
+            ),
         ]
     )
 

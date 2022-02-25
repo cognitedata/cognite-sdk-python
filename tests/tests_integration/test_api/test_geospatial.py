@@ -128,7 +128,7 @@ def test_features(cognite_client, test_feature_type):
             temperature=23.4,
             volume=1212.0,
             pressure=2121.0,
-        )
+        ),
     ]
     feature = cognite_client.geospatial.create_features(test_feature_type.external_id, features)
     yield feature
@@ -205,9 +205,8 @@ class TestGeospatialAPI:
 
     def test_retrieve_single_feature_type_by_external_id(self, cognite_client, test_feature_type):
         assert (
-                test_feature_type.external_id
-                == cognite_client.geospatial.retrieve_feature_types(
-            external_id=test_feature_type.external_id).external_id
+            test_feature_type.external_id
+            == cognite_client.geospatial.retrieve_feature_types(external_id=test_feature_type.external_id).external_id
         )
 
     def test_list_feature_types(self, cognite_client, test_feature_type):
@@ -245,19 +244,19 @@ class TestGeospatialAPI:
         assert len(res) == 0
 
     def test_retrieve_multiple_feature_types_by_external_id(
-            self, cognite_client, test_feature_type, another_test_feature_type
+        self, cognite_client, test_feature_type, another_test_feature_type
     ):
         assert (
-                len(
-                    cognite_client.geospatial.retrieve_feature_types(
-                        external_id=[test_feature_type.external_id, another_test_feature_type.external_id]
-                    )
+            len(
+                cognite_client.geospatial.retrieve_feature_types(
+                    external_id=[test_feature_type.external_id, another_test_feature_type.external_id]
                 )
-                == 2
+            )
+            == 2
         )
 
     def test_retrieve_multiple_features_by_external_id(
-            self, cognite_client, test_feature_type, test_feature, another_test_feature
+        self, cognite_client, test_feature_type, test_feature, another_test_feature
     ):
         res = cognite_client.geospatial.retrieve_features(
             feature_type_external_id=test_feature_type.external_id,
@@ -330,7 +329,7 @@ class TestGeospatialAPI:
         assert not hasattr(res[1], "pressure")
 
     def test_search_with_output_srid_selection(
-            self, cognite_client, allow_crs_transformation, test_feature_type, test_feature, another_test_feature
+        self, cognite_client, allow_crs_transformation, test_feature_type, test_feature, another_test_feature
     ):
         res = cognite_client.geospatial.search_features(
             feature_type_external_id=test_feature_type.external_id,
@@ -414,39 +413,59 @@ class TestGeospatialAPI:
 
     def test_from_geopandas_basic(self, cognite_client, test_feature_type):
         pd = utils._auxiliary.local_import("pandas")
-        df = pd.DataFrame({'externalId': [f"F{i}_{uuid.uuid4().hex[:10]}" for i in range(4)],
-                           'position': ['POINT(2.2768485 48.8589506)',
-                                        'POLYGON((10.689 -25.092, 38.814 -35.639, 13.502 -39.155, 10.689 -25.092))',
-                                        'LINESTRING (30 10, 10 30, 40 40)',
-                                        'MULTILINESTRING ((10 10, 20 20, 10 40), (40 40, 30 30, 40 20, 30 10))'],
-                           'temperature': [12.4, 13.4, 13.4, 13.4],
-                           'volume': [1212.0, 1313.0, 1414.0, 1515.0],
-                           'pressure': [2121.0, 2121.0, 2121.0, 2121.0]})
+        df = pd.DataFrame(
+            {
+                "externalId": [f"F{i}_{uuid.uuid4().hex[:10]}" for i in range(4)],
+                "position": [
+                    "POINT(2.2768485 48.8589506)",
+                    "POLYGON((10.689 -25.092, 38.814 -35.639, 13.502 -39.155, 10.689 -25.092))",
+                    "LINESTRING (30 10, 10 30, 40 40)",
+                    "MULTILINESTRING ((10 10, 20 20, 10 40), (40 40, 30 30, 40 20, 30 10))",
+                ],
+                "temperature": [12.4, 13.4, 13.4, 13.4],
+                "volume": [1212.0, 1313.0, 1414.0, 1515.0],
+                "pressure": [2121.0, 2121.0, 2121.0, 2121.0],
+            }
+        )
         utils._auxiliary.local_import("shapely.wkt")
         geopandas = utils._auxiliary.local_import("geopandas")
-        df['position'] = geopandas.GeoSeries.from_wkt(df['position'])
-        gdf = geopandas.GeoDataFrame(df, geometry='position')
+        df["position"] = geopandas.GeoSeries.from_wkt(df["position"])
+        gdf = geopandas.GeoDataFrame(df, geometry="position")
         fl = FeatureList.from_geopandas(test_feature_type, gdf)
         res = cognite_client.geospatial.create_features(test_feature_type.external_id, fl)
         assert len(res) == 4
 
     def test_from_geopandas_flexible(self, cognite_client, test_feature_type):
         pd = utils._auxiliary.local_import("pandas")
-        df = pd.DataFrame({'some_unique_id': [f"F{i}_{uuid.uuid4().hex[:10]}" for i in range(4)],
-                           'some_position': ['POINT(2.2768485 48.8589506)',
-                                             'POLYGON((10.689 -25.02, 38.814 -35.639, 13.502 -39.155, 10.689 -25.02))',
-                                             None,
-                                             'MULTILINESTRING ((10 10, 20 20, 10 40), (40 40, 30 30, 40 20, 30 10))'],
-                           'some_temperature': [12.4, 13.4, 13.4, 13.4],
-                           'some_volume': [1212.0, 1313.0, 1414.0, 1515.0],
-                           'some_pressure': [2121.0, 2121.0, 2121.0, 2121.0]})
+        df = pd.DataFrame(
+            {
+                "some_unique_id": [f"F{i}_{uuid.uuid4().hex[:10]}" for i in range(4)],
+                "some_position": [
+                    "POINT(2.2768485 48.8589506)",
+                    "POLYGON((10.689 -25.02, 38.814 -35.639, 13.502 -39.155, 10.689 -25.02))",
+                    None,
+                    "MULTILINESTRING ((10 10, 20 20, 10 40), (40 40, 30 30, 40 20, 30 10))",
+                ],
+                "some_temperature": [12.4, 13.4, 13.4, 13.4],
+                "some_volume": [1212.0, 1313.0, 1414.0, 1515.0],
+                "some_pressure": [2121.0, 2121.0, 2121.0, 2121.0],
+            }
+        )
         utils._auxiliary.local_import("shapely.wkt")
         geopandas = utils._auxiliary.local_import("geopandas")
-        df['some_position'] = geopandas.GeoSeries.from_wkt(df['some_position'])
-        gdf = geopandas.GeoDataFrame(df, geometry='some_position')
-        fl = FeatureList.from_geopandas(test_feature_type, gdf, "some_unique_id",
-                                        {'position': 'some_position', 'temperature': 'some_temperature',
-                                         'volume': 'some_volume', 'pressure': 'some_pressure'})
+        df["some_position"] = geopandas.GeoSeries.from_wkt(df["some_position"])
+        gdf = geopandas.GeoDataFrame(df, geometry="some_position")
+        fl = FeatureList.from_geopandas(
+            test_feature_type,
+            gdf,
+            "some_unique_id",
+            {
+                "position": "some_position",
+                "temperature": "some_temperature",
+                "volume": "some_volume",
+                "pressure": "some_pressure",
+            },
+        )
         res = cognite_client.geospatial.create_features(test_feature_type.external_id, fl)
         assert len(res) == 4
 
