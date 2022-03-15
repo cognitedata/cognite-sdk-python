@@ -4,6 +4,7 @@ import string
 import pytest
 
 from cognite.client.data_classes import DataSet, Transformation, TransformationDestination, TransformationUpdate
+from cognite.client.data_classes.transformations.alphatypes import AlphaDataModelInstances
 
 
 @pytest.fixture
@@ -76,6 +77,16 @@ class TestTransformationsAPI:
             name="any",
             external_id=f"{prefix}-transformation",
             destination=TransformationDestination.string_datapoints(),
+        )
+        ts = cognite_client.transformations.create(transform)
+        cognite_client.transformations.delete(id=ts.id)
+
+    def test_create_data_model_instances_transformation(self, cognite_client):
+        prefix = "".join(random.choice(string.ascii_letters) for i in range(6))
+        transform = Transformation(
+            name="any",
+            external_id=f"{prefix}-transformation",
+            destination=AlphaDataModelInstances(model_external_id="a"),
         )
         ts = cognite_client.transformations.create(transform)
         cognite_client.transformations.delete(id=ts.id)

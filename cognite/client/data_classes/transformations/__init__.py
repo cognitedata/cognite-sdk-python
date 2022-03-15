@@ -1,4 +1,5 @@
 from cognite.client.data_classes._base import *
+from cognite.client.data_classes.transformations.alphatypes import AlphaDataModelInstances
 from cognite.client.data_classes.transformations.common import *
 from cognite.client.data_classes.transformations.jobs import TransformationJob, TransformationJobList
 from cognite.client.data_classes.transformations.schedules import TransformationSchedule
@@ -117,6 +118,9 @@ class Transformation(CogniteResource):
             if instance.destination.get("type") == "raw":
                 snake_dict.pop("type")
                 instance.destination = RawTable(**snake_dict)
+            elif instance.destination.get("type") == "data_model_instances":
+                snake_dict.pop("type")
+                instance.destination = AlphaDataModelInstances(**snake_dict)
             else:
                 instance.destination = TransformationDestination(**snake_dict)
         if isinstance(instance.running_job, Dict):
@@ -146,14 +150,14 @@ class Transformation(CogniteResource):
             Dict[str, Any]: A dictionary representation of the instance.
         """
         ret = super().dump(camel_case=camel_case)
-
         if self.source_oidc_credentials:
             source_key = "sourceOidcCredentials" if camel_case else "source_oidc_credentials"
             ret[source_key] = self.source_oidc_credentials.dump(camel_case=camel_case)
         if self.destination_oidc_credentials:
             destination_key = "destinationOidcCredentials" if camel_case else "destination_oidc_credentials"
             ret[destination_key] = self.destination_oidc_credentials.dump(camel_case=camel_case)
-
+        if isinstance(self.destination, AlphaDataModelInstances):
+            ret["destination"] = self.destination.dump(camel_case=camel_case)
         return ret
 
     def __hash__(self):

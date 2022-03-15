@@ -3,6 +3,7 @@ import time
 from enum import Enum
 
 from cognite.client.data_classes._base import *
+from cognite.client.data_classes.transformations.alphatypes import AlphaDataModelInstances
 from cognite.client.data_classes.transformations.common import RawTable, TransformationDestination
 
 
@@ -240,6 +241,9 @@ class TransformationJob(CogniteResource):
             if instance.destination.get("type") == "raw":
                 snake_dict.pop("type")
                 instance.destination = RawTable(**snake_dict)
+            elif instance.destination.get("type") == "data_model_instances":
+                snake_dict.pop("type")
+                instance.destination = AlphaDataModelInstances(**snake_dict)
             else:
                 instance.destination = TransformationDestination(**snake_dict)
         return instance
