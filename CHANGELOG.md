@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.42.1] - 2022-03-15
+### Added
+- support conflict mode parameter on `transformations.schema.retrieve`.
+
 ## [2.42.0] - 2022-02-11
 ### Added
 - FeatureList.from_geopandas() improvements
