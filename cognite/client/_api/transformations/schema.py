@@ -17,6 +17,7 @@ class TransformationSchemaAPI(APIClient):
         Args:
             destination (TransformationDestination): destination for which the schema is requested.
             conflict_mode (Optional[str]): conflict mode for which the schema is requested.
+
         Returns:
             TransformationSchemaColumnList: List of column descriptions
 

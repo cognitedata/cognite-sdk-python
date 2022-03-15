@@ -4,7 +4,7 @@ from cognite.client.data_classes.transformations.common import TransformationDes
 
 class AlphaDataModelInstances(TransformationDestination):
     """To be used when the transformation is meant to produce data model instances.
-        Flexible Data Models resource type is on `alpha` version currently and it may change.
+        Flexible Data Models resource type is on `alpha` version currently and the API may change.
 
     Args:
         model_external_id (str): external_id of the flexible data model.
