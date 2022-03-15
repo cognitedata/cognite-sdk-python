@@ -86,9 +86,10 @@ class TestTransformationsAPI:
         transform = Transformation(
             name="any",
             external_id=f"{prefix}-transformation",
-            destination=AlphaDataModelInstances(model_external_id="a"),
+            destination=AlphaDataModelInstances(model_external_id="testInstance"),
         )
         ts = cognite_client.transformations.create(transform)
+        assert ts.destination.type == "data_model_instances" and ts.destination.model_external_id == "testInstance"
         cognite_client.transformations.delete(id=ts.id)
 
     def test_create(self, new_transformation):

@@ -10,6 +10,16 @@ class TestTransformationSchemaAPI:
         assert [col for col in asset_columns if col.name == "metadata"][0].type.type == "map"
         assert [col for col in asset_columns if col.name == "metadata"][0].type.key_type == "string"
 
+    def test_assets_delete(self, cognite_client):
+        asset_columns = cognite_client.transformations.schema.retrieve(
+            destination=TransformationDestination.assets(), conflict_mode="delete"
+        )
+        assert len(asset_columns) == 1
+        assert asset_columns[0].type.type == "long"
+        assert asset_columns[0].sql_type == "BIGINT"
+        assert asset_columns[0].name == "id"
+        assert asset_columns[0].nullable == True
+
     def test_raw(self, cognite_client):
         asset_columns = cognite_client.transformations.schema.retrieve(destination=TransformationDestination.raw())
         assert len(asset_columns) > 0
