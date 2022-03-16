@@ -36,5 +36,7 @@ class TransformationSchemaAPI(APIClient):
         return self._list(method="GET", resource_path=url_path, filter=other_params)
 
     def alpha_retrieve_data_model_schema(self, modelExternalId: str = None) -> TransformationSchemaColumnList:
-        url_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH + "/{}", "datamodelinstances")
-        return self._list(method="GET", resource_path=url_path, filter={"externalId": modelExternalId})
+        if self._cognite_client._config.api_subversion == "alpha":
+            url_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH + "/{}", "datamodelinstances")
+            return self._list(method="GET", resource_path=url_path, filter={"externalId": modelExternalId})
+        raise NotImplementedError

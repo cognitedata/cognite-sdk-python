@@ -12,6 +12,7 @@ from cognite.client.data_classes.transformations import (
     TransformationPreviewResult,
     TransformationUpdate,
 )
+from cognite.client.data_classes.transformations.alphatypes import AlphaDataModelInstances
 
 
 class TransformationsAPI(APIClient):
@@ -24,6 +25,21 @@ class TransformationsAPI(APIClient):
         self.schedules = TransformationSchedulesAPI(*args, **kwargs)
         self.schema = TransformationSchemaAPI(*args, **kwargs)
         self.notifications = TransformationNotificationsAPI(*args, **kwargs)
+
+    def _check_alpha_destinations(
+        self,
+        api_subversion: str,
+        transformation: Union[Transformation, TransformationUpdate, List[Union[Transformation, TransformationUpdate]]],
+    ) -> None:
+        if isinstance(transformation, Transformation):
+            transformation = [transformation]
+        elif isinstance(transformation, TransformationUpdate):
+            transformation = [transformation]
+
+        if api_subversion != "alpha":
+            for t in transformation:
+                if isinstance(t.destination, AlphaDataModelInstances):
+                    raise NotImplementedError
 
     def create(
         self, transformation: Union[Transformation, List[Transformation]]
@@ -56,6 +72,7 @@ class TransformationsAPI(APIClient):
                 >>> res = c.transformations.create(transformations)
         """
         utils._auxiliary.assert_type(transformation, "transformation", [Transformation, list])
+        self._check_alpha_destinations(self._cognite_client._config.api_subversion, transformation)
         return self._create_multiple(transformation)
 
     def delete(
@@ -193,6 +210,7 @@ class TransformationsAPI(APIClient):
                 >>> my_update = TransformationUpdate(id=1).query.set("SELECT * FROM _cdf.assets").is_public.set(False)
                 >>> res = c.transformations.update(my_update)
         """
+        self._check_alpha_destinations(self._cognite_client._config.api_subversion, item)
         return self._update_multiple(items=item)
 
     def run(

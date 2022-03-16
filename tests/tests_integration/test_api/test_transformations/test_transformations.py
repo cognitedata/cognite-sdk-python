@@ -81,13 +81,17 @@ class TestTransformationsAPI:
         ts = cognite_client.transformations.create(transform)
         cognite_client.transformations.delete(id=ts.id)
 
-    def test_create_data_model_instances_transformation(self, cognite_client):
+    def test_create_alpha_dmi_transformation(self, cognite_client):
         prefix = "".join(random.choice(string.ascii_letters) for i in range(6))
         transform = Transformation(
             name="any",
             external_id=f"{prefix}-transformation",
             destination=AlphaDataModelInstances(model_external_id="testInstance"),
         )
+        with pytest.raises(NotImplementedError):
+            cognite_client.transformations.create(transform)
+
+        cognite_client.config.api_subversion = "alpha"
         ts = cognite_client.transformations.create(transform)
         assert ts.destination.type == "data_model_instances" and ts.destination.model_external_id == "testInstance"
         cognite_client.transformations.delete(id=ts.id)
@@ -167,3 +171,20 @@ class TestTransformationsAPI:
     def test_preview_to_string(self, cognite_client):
         query_result = cognite_client.transformations.preview(query="select 1 as id, 'asd' as name", limit=100)
         dumped = str(query_result)
+
+    def test_update_dmi_alpha(self, cognite_client, new_transformation):
+        new_transformation.destination = AlphaDataModelInstances("myTest")
+        with pytest.raises(NotImplementedError):
+            cognite_client.transformations.update(new_transformation)
+        partial_update = TransformationUpdate(id=new_transformation.id).destination.set(
+            AlphaDataModelInstances("myTest2")
+        )
+        with pytest.raises(NotImplementedError):
+            cognite_client.transformations.update(partial_update)
+
+        cognite_client.config.api_subversion = "alpha"
+        updated_transformation = cognite_client.transformations.update(new_transformation)
+        assert updated_transformation.destination == AlphaDataModelInstances("myTest")
+        # TODO: Fix partial update
+        # partial_updated = cognite_client.transformations.update(partial_update)
+        # assert partial_updated.destination == AlphaDataModelInstances("myTest2")

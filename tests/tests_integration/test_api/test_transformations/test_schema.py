@@ -1,5 +1,7 @@
 import os
 
+import pytest
+
 from cognite.client.data_classes import TransformationDestination
 
 
@@ -53,6 +55,10 @@ class TestTransformationSchemaAPI:
             params={},
             headers={"cdf-version": "alpha"},
         )
+        with pytest.raises(NotImplementedError):
+            cognite_client.transformations.schema.alpha_retrieve_data_model_schema(dm_name)
+
+        cognite_client.config.api_subversion = "alpha"
         model_cols = cognite_client.transformations.schema.alpha_retrieve_data_model_schema(dm_name)
         assert len(model_cols) == 3
         assert [col for col in model_cols if col.name == "externalId"][0].type.type == "string"
