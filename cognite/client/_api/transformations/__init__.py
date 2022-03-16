@@ -40,6 +40,10 @@ class TransformationsAPI(APIClient):
             for t in transformation:
                 if isinstance(t.destination, AlphaDataModelInstances):
                     raise NotImplementedError
+                elif isinstance(t, TransformationUpdate) and isinstance(
+                    t._update_object.get("destination", {}).get("set"), AlphaDataModelInstances
+                ):
+                    raise NotImplementedError
 
     def create(
         self, transformation: Union[Transformation, List[Transformation]]
