@@ -188,7 +188,6 @@ class TestTransformationsAPI:
         cognite_client.config.api_subversion = "alpha"
         updated_transformation = cognite_client.transformations.update(new_transformation)
         assert updated_transformation.destination == AlphaDataModelInstances("myTest")
-        # TODO: Fix partial update
-        # partial_updated = cognite_client.transformations.update(partial_update)
-        # assert partial_updated.destination == AlphaDataModelInstances("myTest2")
+        partial_updated = cognite_client.transformations.update(partial_update)
+        assert partial_updated.destination == AlphaDataModelInstances("myTest2")
         cognite_client.config.api_subversion = default_api_subversion

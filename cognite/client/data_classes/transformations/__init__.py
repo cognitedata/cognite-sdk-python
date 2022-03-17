@@ -224,6 +224,13 @@ class TransformationUpdate(CogniteUpdate):
     def data_set_id(self):
         return TransformationUpdate._PrimitiveTransformationUpdate(self, "dataSetId")
 
+    def dump(self, camel_case: bool = True):
+        obj = super().dump()
+        dest = obj.get("update", {}).get("destination", {}).get("set")
+        if isinstance(dest, AlphaDataModelInstances):
+            obj["update"]["destination"]["set"] = dest.dump(camel_case=camel_case)
+        return obj
+
 
 class TransformationList(CogniteResourceList):
     _RESOURCE = Transformation
