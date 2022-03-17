@@ -3,7 +3,7 @@ import time
 from enum import Enum
 
 from cognite.client.data_classes._base import *
-from cognite.client.data_classes.transformations.alphatypes import AlphaDataModelInstances
+from cognite.client.data_classes.transformations._alphatypes import AlphaDataModelInstances
 from cognite.client.data_classes.transformations.common import RawTable, TransformationDestination
 
 
