@@ -1,5 +1,4 @@
-from ast import Dict
-from typing import Any, Awaitable, List, Optional, Union
+from typing import Any, Awaitable, Dict, List, Optional, Union
 
 from cognite.client import utils
 from cognite.client._api.transformations.jobs import TransformationJobsAPI
@@ -147,8 +146,8 @@ class TransformationsAPI(APIClient):
             conflict_mode=conflict_mode,
             cdf_project_name=cdf_project_name,
             has_blocked_error=has_blocked_error,
-            # created_time=created_time,
-            # last_updated_time=last_updated_time,
+            created_time=created_time,
+            last_updated_time=last_updated_time,
             data_set_ids=ds_ids,
         ).dump(camel_case=True)
         return self._list(method="POST", url_path=f"{self._RESOURCE_PATH}/filter", limit=limit, filter=filter)

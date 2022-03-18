@@ -267,6 +267,16 @@ class TransformationFilter(CogniteFilter):
         self.last_updated_time = last_updated_time
         self.data_set_ids = data_set_ids
 
+    @classmethod
+    def _load(self, resource: Union[Dict, str], cognite_client=None):
+        instance = super(TransformationFilter, self)._load(resource, cognite_client)
+        if isinstance(resource, Dict):
+            if instance.created_time is not None:
+                instance.created_time = TimestampRange(**instance.created_time)
+            if instance.last_updated_time is not None:
+                instance.last_updated_time = TimestampRange(**instance.last_updated_time)
+        return instance
+
 
 class TransformationPreviewResult(CogniteResource):
     """Allows previewing the result of a sql transformation before executing it.
