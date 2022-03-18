@@ -245,7 +245,7 @@ class TransformationFilter(CogniteFilter):
 
     def __init__(
         self,
-        is_public: bool = True,
+        include_public: bool = True,
         name_regex: str = None,
         query_regex: str = None,
         destination_type: str = None,
@@ -256,7 +256,7 @@ class TransformationFilter(CogniteFilter):
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
         data_set_ids: List[Dict[str, Any]] = None,
     ):
-        self.is_public = is_public
+        self.include_public = include_public
         self.name_regex = name_regex
         self.query_regex = query_regex
         self.destination_type = destination_type
@@ -276,6 +276,13 @@ class TransformationFilter(CogniteFilter):
             if instance.last_updated_time is not None:
                 instance.last_updated_time = TimestampRange(**instance.last_updated_time)
         return instance
+
+    def dump(self, camel_case: bool = True):
+        obj = super().dump(camel_case=camel_case)
+        if obj.get("includePublic"):
+            is_public = obj.pop("includePublic")
+            obj["isPublic"] = is_public
+        return obj
 
 
 class TransformationPreviewResult(CogniteResource):

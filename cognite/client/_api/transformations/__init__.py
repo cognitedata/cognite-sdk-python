@@ -139,7 +139,7 @@ class TransformationsAPI(APIClient):
             ds_ids = [{"external_id": i} for i in data_set_external_ids]
 
         filter = TransformationFilter(
-            is_public=include_public,
+            include_public=include_public,
             name_regex=name_regex,
             query_regex=query_regex,
             destination_type=destination_type,
