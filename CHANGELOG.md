@@ -14,7 +14,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [2.42.1] - 2022-03-21
+## [2.43.0] - 2022-03-21
 ### Added
 - New list parameters added to `transformations.list`.
 
