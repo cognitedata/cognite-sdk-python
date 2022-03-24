@@ -14,9 +14,13 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.45.0] - 2022-03-25
+### Added
+- support `sequence_rows` destination type on Transformations.
+
 ## [2.44.1] - 2022-03-24
 ### Fixed
-- Fix typo in `data_set_ids` parameter type on `transformations.list`.
+- fix typo in `data_set_ids` parameter type on `transformations.list`.
 
 ## [2.44.0] - 2022-03-24
 ### Added
@@ -28,7 +32,7 @@ Changes are grouped as follows
  
 ## [2.43.0] - 2022-03-21
 ### Added
-- New list parameters added to `transformations.list`.
+- new list parameters added to `transformations.list`.
 
 ## [2.42.0] - 2022-02-11
 ### Added
