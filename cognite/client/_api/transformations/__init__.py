@@ -98,7 +98,7 @@ class TransformationsAPI(APIClient):
         has_blocked_error: bool = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
-        data_set_ids: List[Dict[str, Any]] = None,
+        data_set_ids: List[int] = None,
         data_set_external_ids: List[str] = None,
         limit: Optional[int] = 25,
     ) -> TransformationList:
@@ -111,7 +111,7 @@ class TransformationsAPI(APIClient):
             destination_type (str): Transformation destination resource name to filter by.
             conflict_mode (str): Filters by a selected transformation action type: abort/create, upsert, update, delete
             cdf_project_name (str): Project name to filter by configured source and destination project
-            has_blocked_error (str): Whether only the blocked transformations should be included in the results.
+            has_blocked_error (bool): Whether only the blocked transformations should be included in the results.
             created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps
             last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps
             data_set_ids (List[int]): Return only transformations in the specified data sets with these ids.
@@ -132,11 +132,11 @@ class TransformationsAPI(APIClient):
         """
         ds_ids = None
         if data_set_ids and data_set_external_ids:
-            ds_ids = [{"id": i} for i in data_set_ids] + [{"external_id": i} for i in data_set_external_ids]
+            ds_ids = [{"id": i} for i in data_set_ids] + [{"externalId": i} for i in data_set_external_ids]
         elif data_set_ids:
             ds_ids = [{"id": i} for i in data_set_ids]
         elif data_set_external_ids:
-            ds_ids = [{"external_id": i} for i in data_set_external_ids]
+            ds_ids = [{"externalId": i} for i in data_set_external_ids]
 
         filter = TransformationFilter(
             include_public=include_public,

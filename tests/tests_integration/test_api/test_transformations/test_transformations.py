@@ -9,9 +9,8 @@ from cognite.client.data_classes.transformations._alphatypes import AlphaDataMod
 
 @pytest.fixture
 def new_datasets(cognite_client):
-    prefix = "".join(random.choice(string.ascii_letters) for i in range(6))
-    ds_ext_id1 = f"{prefix}-transformation-ds"
-    ds_ext_id2 = f"{prefix}-transformation-ds2"
+    ds_ext_id1 = "transformation-ds"
+    ds_ext_id2 = "transformation-ds2"
     ds1 = cognite_client.data_sets.retrieve(external_id=ds_ext_id1)
     ds2 = cognite_client.data_sets.retrieve(external_id=ds_ext_id2)
     if not ds1:
@@ -149,8 +148,19 @@ class TestTransformationsAPI:
             and updated_transformation.query == retrieved_transformation.query == "SELECT * from _cdf.assets"
         )
 
-    def test_list(self, cognite_client, new_transformation):
+    def test_list(self, cognite_client, new_transformation, new_datasets):
+        # Filter by destination type
         retrieved_transformations = cognite_client.transformations.list(limit=None, destination_type="assets")
+        assert new_transformation.id in [transformation.id for transformation in retrieved_transformations]
+
+        # Filter by data set id
+        retrieved_transformations = cognite_client.transformations.list(limit=None, data_set_ids=[new_datasets[0].id])
+        assert new_transformation.id in [transformation.id for transformation in retrieved_transformations]
+
+        # Filter by data set external id
+        retrieved_transformations = cognite_client.transformations.list(
+            limit=None, data_set_external_ids=[new_datasets[0].external_id]
+        )
         assert new_transformation.id in [transformation.id for transformation in retrieved_transformations]
 
     def test_preview(self, cognite_client):
