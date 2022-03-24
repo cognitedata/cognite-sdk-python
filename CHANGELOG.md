@@ -18,6 +18,10 @@ Changes are grouped as follows
 ### Added
 - support conflict mode parameter on `transformations.schema.retrieve`.
 
+## [2.43.1] - 2022-03-24
+### Added
+- update pillow dependency 9.0.0 -> 9.0.1 
+ 
 ## [2.43.0] - 2022-03-21
 ### Added
 - New list parameters added to `transformations.list`.
