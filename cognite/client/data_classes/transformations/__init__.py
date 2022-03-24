@@ -1,5 +1,6 @@
 from cognite.client.data_classes._base import *
 from cognite.client.data_classes.transformations._alphatypes import AlphaDataModelInstances
+from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.data_classes.transformations.common import *
 from cognite.client.data_classes.transformations.jobs import TransformationJob, TransformationJobList
 from cognite.client.data_classes.transformations.schedules import TransformationSchedule
@@ -242,10 +243,57 @@ class TransformationFilter(CogniteFilter):
 
     Args:
         include_public (bool): Whether public transformations should be included in the results. The default is true.
+        name_regex (str): Regex expression to match the transformation name
+        query_regex (str): Regex expression to match the transformation query
+        destination_type (str): Transformation destination resource name to filter by.
+        conflict_mode (str): Filters by a selected transformation action type: abort/create, upsert, update, delete
+        cdf_project_name (str): Project name to filter by configured source and destination project
+        has_blocked_error (str): Whether only the blocked transformations should be included in the results.
+        created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps
+        last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps
+        data_set_ids (List[Dict[str, Any]]): Return only transformations in the specified data sets with these ids.
     """
 
-    def __init__(self, include_public: bool = True):
+    def __init__(
+        self,
+        include_public: bool = True,
+        name_regex: str = None,
+        query_regex: str = None,
+        destination_type: str = None,
+        conflict_mode: str = None,
+        cdf_project_name: str = None,
+        has_blocked_error: bool = None,
+        created_time: Union[Dict[str, Any], TimestampRange] = None,
+        last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
+        data_set_ids: List[Dict[str, Any]] = None,
+    ):
         self.include_public = include_public
+        self.name_regex = name_regex
+        self.query_regex = query_regex
+        self.destination_type = destination_type
+        self.conflict_mode = conflict_mode
+        self.has_blocked_error = has_blocked_error
+        self.cdf_project_name = cdf_project_name
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
+        self.data_set_ids = data_set_ids
+
+    @classmethod
+    def _load(self, resource: Union[Dict, str], cognite_client=None):
+        instance = super(TransformationFilter, self)._load(resource, cognite_client)
+        if isinstance(resource, Dict):
+            if instance.created_time is not None:
+                instance.created_time = TimestampRange(**instance.created_time)
+            if instance.last_updated_time is not None:
+                instance.last_updated_time = TimestampRange(**instance.last_updated_time)
+        return instance
+
+    def dump(self, camel_case: bool = True):
+        obj = super().dump(camel_case=camel_case)
+        if obj.get("includePublic"):
+            is_public = obj.pop("includePublic")
+            obj["isPublic"] = is_public
+        return obj
 
 
 class TransformationPreviewResult(CogniteResource):

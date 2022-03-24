@@ -150,7 +150,7 @@ class TestTransformationsAPI:
         )
 
     def test_list(self, cognite_client, new_transformation):
-        retrieved_transformations = cognite_client.transformations.list(limit=None)
+        retrieved_transformations = cognite_client.transformations.list(limit=None, destination_type="assets")
         assert new_transformation.id in [transformation.id for transformation in retrieved_transformations]
 
     def test_preview(self, cognite_client):
