@@ -158,10 +158,10 @@ class TestTransformationsAPI:
         assert new_transformation.id in [transformation.id for transformation in retrieved_transformations]
 
         # Filter by data set external id
-        retrieved_transformations2 = cognite_client.transformations.list(
+        retrieved_transformations = cognite_client.transformations.list(
             limit=None, data_set_external_ids=[new_datasets[0].external_id]
         )
-        assert new_transformation.id in [transformation.id for transformation in retrieved_transformations2]
+        assert new_transformation.id in [transformation.id for transformation in retrieved_transformations]
 
     def test_preview(self, cognite_client):
         query_result = cognite_client.transformations.preview(query="select 1 as id, 'asd' as name", limit=100)

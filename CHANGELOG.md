@@ -15,7 +15,7 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 ## [2.44.1] - 2022-03-24
-### Added
+### Fixed
 - Fix typo in `data_set_ids` parameter type on `transformations.list`.
 
 ## [2.44.0] - 2022-03-24
