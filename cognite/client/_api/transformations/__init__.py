@@ -111,7 +111,7 @@ class TransformationsAPI(APIClient):
             destination_type (str): Transformation destination resource name to filter by.
             conflict_mode (str): Filters by a selected transformation action type: abort/create, upsert, update, delete
             cdf_project_name (str): Project name to filter by configured source and destination project
-            has_blocked_error (str): Whether only the blocked transformations should be included in the results.
+            has_blocked_error (bool): Whether only the blocked transformations should be included in the results.
             created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps
             last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps
             data_set_ids (List[int]): Return only transformations in the specified data sets with these ids.
