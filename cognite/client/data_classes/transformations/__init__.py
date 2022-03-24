@@ -122,6 +122,9 @@ class Transformation(CogniteResource):
             elif instance.destination.get("type") == "data_model_instances":
                 snake_dict.pop("type")
                 instance.destination = AlphaDataModelInstances(**snake_dict)
+            elif instance.destination.get("type") == "sequence_rows":
+                snake_dict.pop("type")
+                instance.destination = SequenceRows(**snake_dict)
             else:
                 instance.destination = TransformationDestination(**snake_dict)
         if isinstance(instance.running_job, Dict):
@@ -157,7 +160,7 @@ class Transformation(CogniteResource):
         if self.destination_oidc_credentials:
             destination_key = "destinationOidcCredentials" if camel_case else "destination_oidc_credentials"
             ret[destination_key] = self.destination_oidc_credentials.dump(camel_case=camel_case)
-        if isinstance(self.destination, AlphaDataModelInstances):
+        if isinstance(self.destination, AlphaDataModelInstances) or isinstance(self.destination, SequenceRows):
             ret["destination"] = self.destination.dump(camel_case=camel_case)
         return ret
 
@@ -228,7 +231,7 @@ class TransformationUpdate(CogniteUpdate):
     def dump(self, camel_case: bool = True):
         obj = super().dump()
         dest = obj.get("update", {}).get("destination", {}).get("set")
-        if isinstance(dest, AlphaDataModelInstances):
+        if isinstance(dest, AlphaDataModelInstances) or isinstance(dest, SequenceRows):
             obj["update"]["destination"]["set"] = dest.dump(camel_case=camel_case)
         return obj
 

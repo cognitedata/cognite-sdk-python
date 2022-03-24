@@ -85,6 +85,18 @@ class TransformationDestination:
         """
         return RawTable(database=database, table=table)
 
+    @staticmethod
+    def sequence_rows(external_id: str = ""):
+        """To be used when the transformation is meant to produce sequence rows.
+
+        Args:
+            external_id (str): Sequence external id.
+
+        Returns:
+            TransformationDestination pointing to the target sequence rows
+        """
+        return SequenceRows(external_id=external_id)
+
 
 class RawTable(TransformationDestination):
     def __init__(self, database: str = None, table: str = None):
@@ -97,6 +109,24 @@ class RawTable(TransformationDestination):
 
     def __eq__(self, obj):
         return isinstance(obj, RawTable) and hash(obj) == hash(self)
+
+
+class SequenceRows(TransformationDestination):
+    def __init__(self, external_id: str = None):
+        super().__init__(type="sequence_rows")
+        self.external_id = external_id
+
+    def __hash__(self):
+        return hash((self.type, self.external_id))
+
+    def __eq__(self, obj):
+        return isinstance(obj, SequenceRows) and hash(obj) == hash(self)
+
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+        ret = {"external_id": self.external_id, "type": self.type}
+        if camel_case:
+            return {utils._auxiliary.to_camel_case(key): value for key, value in ret.items()}
+        return ret
 
 
 class OidcCredentials:

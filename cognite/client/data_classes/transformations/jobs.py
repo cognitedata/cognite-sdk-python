@@ -4,7 +4,7 @@ from enum import Enum
 
 from cognite.client.data_classes._base import *
 from cognite.client.data_classes.transformations._alphatypes import AlphaDataModelInstances
-from cognite.client.data_classes.transformations.common import RawTable, TransformationDestination
+from cognite.client.data_classes.transformations.common import RawTable, SequenceRows, TransformationDestination
 
 
 class TransformationJobStatus(str, Enum):
@@ -244,6 +244,9 @@ class TransformationJob(CogniteResource):
             elif instance.destination.get("type") == "data_model_instances":
                 snake_dict.pop("type")
                 instance.destination = AlphaDataModelInstances(**snake_dict)
+            elif instance.destination.get("type") == "sequence_rows":
+                snake_dict.pop("type")
+                instance.destination = SequenceRows(**snake_dict)
             else:
                 instance.destination = TransformationDestination(**snake_dict)
         return instance
