@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.44.0] - 2022-03-24
+### Added
+- support conflict mode parameter on `transformations.schema.retrieve`.
+
 ## [2.43.1] - 2022-03-24
 ### Added
 - update pillow dependency 9.0.0 -> 9.0.1 
