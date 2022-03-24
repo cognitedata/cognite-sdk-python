@@ -14,9 +14,13 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [2.42.1] - 2022-03-24
+## [2.43.1] - 2022-03-24
 ### Added
 - update pillow dependency 9.0.0 -> 9.0.1 
+ 
+## [2.43.0] - 2022-03-21
+### Added
+- New list parameters added to `transformations.list`.
 
 ## [2.42.0] - 2022-02-11
 ### Added
