@@ -21,8 +21,14 @@ setup(
         "requests>=2.21.0,<3.0.0",
         "pandas",
         "requests_oauthlib==1.*",
+        "gdal==3.4.2;platform_system=='Windows'",
+        "fiona==1.8.21;platform_system=='Windows'",
         "geopandas==0.10.*",
         "shapely==1.*",
+    ],
+    dependency_links=[
+        "https://download.lfd.uci.edu/pythonlibs/x6hvwk7i/GDAL-3.4.2-cp38-cp38-win_amd64.whl",
+        "https://download.lfd.uci.edu/pythonlibs/x6hvwk7i/Fiona-1.8.21-cp38-cp38-win_amd64.whl"
     ],
     python_requires=">=3.5",
     packages=["cognite." + p for p in find_packages(where="cognite")],

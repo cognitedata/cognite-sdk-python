@@ -13,7 +13,10 @@ docutils = "==0.15.2"
 requests_oauthlib = "*"
 msal = "*"
 shapely = "==1.7.*"
+gdal = {file = "https://download.lfd.uci.edu/pythonlibs/x6hvwk7i/GDAL-3.4.2-cp38-cp38-win_amd64.whl", sys_platform = "== 'win32'"}
+fiona = {file = "https://download.lfd.uci.edu/pythonlibs/x6hvwk7i/Fiona-1.8.21-cp38-cp38-win_amd64.whl", sys_platform = "== 'win32'"}
 geopandas = "==0.10.*"
+twine = "*"
 
 [dev-packages]
 sphinx = "*"
