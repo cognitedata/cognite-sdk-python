@@ -16,7 +16,7 @@ Changes are grouped as follows
 
 ## [2.46.0] - 2022-03-29
 ### Changed
-- Treat HTTP 204 as ok status
+- Fix retrieval of empty raster in experimental geospatial api: http 204 as ok status
 
 ## [2.45.0] - 2022-03-25
 ### Added
