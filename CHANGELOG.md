@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.46.0] - 2022-03-29
+### Changed
+- Fix retrieval of empty raster in experimental geospatial api: http 204 as ok status
+
 ## [2.45.0] - 2022-03-25
 ### Added
 - support `sequence_rows` destination type on Transformations.
