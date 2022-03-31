@@ -1,4 +1,4 @@
-from typing import Awaitable, List, Optional, Union
+from typing import Any, Awaitable, Dict, List, Optional, Union
 
 from cognite.client import utils
 from cognite.client._api.transformations.jobs import TransformationJobsAPI
@@ -7,6 +7,7 @@ from cognite.client._api.transformations.schedules import TransformationSchedule
 from cognite.client._api.transformations.schema import TransformationSchemaAPI
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Transformation, TransformationJob, TransformationList
+from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.data_classes.transformations import (
     TransformationFilter,
     TransformationPreviewResult,
@@ -86,11 +87,35 @@ class TransformationsAPI(APIClient):
             ids=id, external_ids=external_id, wrap_ids=True, extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids}
         )
 
-    def list(self, include_public: bool = True, limit: Optional[int] = 25) -> TransformationList:
+    def list(
+        self,
+        include_public: bool = True,
+        name_regex: str = None,
+        query_regex: str = None,
+        destination_type: str = None,
+        conflict_mode: str = None,
+        cdf_project_name: str = None,
+        has_blocked_error: bool = None,
+        created_time: Union[Dict[str, Any], TimestampRange] = None,
+        last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
+        data_set_ids: List[int] = None,
+        data_set_external_ids: List[str] = None,
+        limit: Optional[int] = 25,
+    ) -> TransformationList:
         """`List all transformations. <https://docs.cognite.com/api/v1/#operation/getTransformations>`_
 
         Args:
             include_public (bool): Whether public transformations should be included in the results. (default true).
+            name_regex (str): Regex expression to match the transformation name
+            query_regex (str): Regex expression to match the transformation query
+            destination_type (str): Transformation destination resource name to filter by.
+            conflict_mode (str): Filters by a selected transformation action type: abort/create, upsert, update, delete
+            cdf_project_name (str): Project name to filter by configured source and destination project
+            has_blocked_error (bool): Whether only the blocked transformations should be included in the results.
+            created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps
+            last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps
+            data_set_ids (List[int]): Return only transformations in the specified data sets with these ids.
+            data_set_external_ids (List[str]): Return only transformations in the specified data sets with these external ids.
             cursor (str): Cursor for paging through results.
             limit (int): Limits the number of results to be returned. To retrieve all results use limit=-1, default limit is 25.
 
@@ -105,9 +130,27 @@ class TransformationsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> transformations_list = c.transformations.list()
         """
-        filter = TransformationFilter(include_public=include_public).dump(camel_case=True)
+        ds_ids = None
+        if data_set_ids and data_set_external_ids:
+            ds_ids = [{"id": i} for i in data_set_ids] + [{"externalId": i} for i in data_set_external_ids]
+        elif data_set_ids:
+            ds_ids = [{"id": i} for i in data_set_ids]
+        elif data_set_external_ids:
+            ds_ids = [{"externalId": i} for i in data_set_external_ids]
 
-        return self._list(method="GET", limit=limit, filter=filter)
+        filter = TransformationFilter(
+            include_public=include_public,
+            name_regex=name_regex,
+            query_regex=query_regex,
+            destination_type=destination_type,
+            conflict_mode=conflict_mode,
+            cdf_project_name=cdf_project_name,
+            has_blocked_error=has_blocked_error,
+            created_time=created_time,
+            last_updated_time=last_updated_time,
+            data_set_ids=ds_ids,
+        ).dump(camel_case=True)
+        return self._list(method="POST", url_path=f"{self._RESOURCE_PATH}/filter", limit=limit, filter=filter)
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[Transformation]:
         """`Retrieve a single transformation by id. <https://docs.cognite.com/api/v1/#operation/getTransformationsByIds>`_

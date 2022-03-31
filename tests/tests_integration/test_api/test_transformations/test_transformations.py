@@ -4,13 +4,14 @@ import string
 import pytest
 
 from cognite.client.data_classes import DataSet, Transformation, TransformationDestination, TransformationUpdate
+from cognite.client.data_classes.transformations._alphatypes import AlphaDataModelInstances
+from cognite.client.data_classes.transformations.common import SequenceRows
 
 
 @pytest.fixture
 def new_datasets(cognite_client):
-    prefix = "".join(random.choice(string.ascii_letters) for i in range(6))
-    ds_ext_id1 = f"{prefix}-transformation-ds"
-    ds_ext_id2 = f"{prefix}-transformation-ds2"
+    ds_ext_id1 = "transformation-ds"
+    ds_ext_id2 = "transformation-ds2"
     ds1 = cognite_client.data_sets.retrieve(external_id=ds_ext_id1)
     ds2 = cognite_client.data_sets.retrieve(external_id=ds_ext_id2)
     if not ds1:
@@ -80,6 +81,28 @@ class TestTransformationsAPI:
         ts = cognite_client.transformations.create(transform)
         cognite_client.transformations.delete(id=ts.id)
 
+    def test_create_alpha_dmi_transformation(self, cognite_client):
+        prefix = "".join(random.choice(string.ascii_letters) for i in range(6))
+        transform = Transformation(
+            name="any",
+            external_id=f"{prefix}-transformation",
+            destination=AlphaDataModelInstances(model_external_id="testInstance"),
+        )
+        ts = cognite_client.transformations.create(transform)
+        assert ts.destination.type == "data_model_instances" and ts.destination.model_external_id == "testInstance"
+        cognite_client.transformations.delete(id=ts.id)
+
+    def test_create_sequence_rows_transformation(self, cognite_client):
+        prefix = "".join(random.choice(string.ascii_letters) for i in range(6))
+        transform = Transformation(
+            name="any",
+            external_id=f"{prefix}-transformation",
+            destination=TransformationDestination.sequence_rows(external_id="testSequenceRows"),
+        )
+        ts = cognite_client.transformations.create(transform)
+        assert ts.destination.type == "sequence_rows" and ts.destination.external_id == "testSequenceRows"
+        cognite_client.transformations.delete(id=ts.id)
+
     def test_create(self, new_transformation):
         assert (
             new_transformation.name == "any"
@@ -137,8 +160,19 @@ class TestTransformationsAPI:
             and updated_transformation.query == retrieved_transformation.query == "SELECT * from _cdf.assets"
         )
 
-    def test_list(self, cognite_client, new_transformation):
-        retrieved_transformations = cognite_client.transformations.list(limit=None)
+    def test_list(self, cognite_client, new_transformation, new_datasets):
+        # Filter by destination type
+        retrieved_transformations = cognite_client.transformations.list(limit=None, destination_type="assets")
+        assert new_transformation.id in [transformation.id for transformation in retrieved_transformations]
+
+        # Filter by data set id
+        retrieved_transformations = cognite_client.transformations.list(limit=None, data_set_ids=[new_datasets[0].id])
+        assert new_transformation.id in [transformation.id for transformation in retrieved_transformations]
+
+        # Filter by data set external id
+        retrieved_transformations = cognite_client.transformations.list(
+            limit=None, data_set_external_ids=[new_datasets[0].external_id]
+        )
         assert new_transformation.id in [transformation.id for transformation in retrieved_transformations]
 
     def test_preview(self, cognite_client):
@@ -155,3 +189,22 @@ class TestTransformationsAPI:
     def test_preview_to_string(self, cognite_client):
         query_result = cognite_client.transformations.preview(query="select 1 as id, 'asd' as name", limit=100)
         dumped = str(query_result)
+
+    def test_update_dmi_alpha(self, cognite_client, new_transformation):
+        new_transformation.destination = AlphaDataModelInstances("myTest")
+        partial_update = TransformationUpdate(id=new_transformation.id).destination.set(
+            AlphaDataModelInstances("myTest2")
+        )
+        updated_transformation = cognite_client.transformations.update(new_transformation)
+        assert updated_transformation.destination == AlphaDataModelInstances("myTest")
+        partial_updated = cognite_client.transformations.update(partial_update)
+        assert partial_updated.destination == AlphaDataModelInstances("myTest2")
+
+    def test_update_sequence_rows_update(self, cognite_client, new_transformation):
+        new_transformation.destination = SequenceRows("myTest")
+        updated_transformation = cognite_client.transformations.update(new_transformation)
+        assert updated_transformation.destination == TransformationDestination.sequence_rows("myTest")
+
+        partial_update = TransformationUpdate(id=new_transformation.id).destination.set(SequenceRows("myTest2"))
+        partial_updated = cognite_client.transformations.update(partial_update)
+        assert partial_updated.destination == TransformationDestination.sequence_rows("myTest2")
