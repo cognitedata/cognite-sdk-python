@@ -1288,6 +1288,9 @@ Data classes
 .. automodule:: cognite.client.data_classes.transformations.schema
     :members:
     :show-inheritance:
+.. automodule:: cognite.client.data_classes.transformations.common
+    :members:
+    :show-inheritance:
 
 
 Base data classes
