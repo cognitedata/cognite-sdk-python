@@ -20,11 +20,6 @@ from cognite.client.exceptions import CogniteConnectionError
 
 
 class GeospatialAPI(APIClient):
-    """
-    Note:
-        Check https://github.com/cognitedata/geospatial-examples for some complete examples.
-    """
-
     _RESOURCE_PATH = "/geospatial"
 
     @staticmethod
