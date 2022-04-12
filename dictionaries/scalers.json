@@ -1,0 +1,81 @@
+{
+    "deca": {
+        "scale factor": 10,
+        "aliases": [
+            "da"
+        ]
+    },
+    "hecto": {
+        "scale factor": 100
+    },
+    "kilo": {
+        "scale factor": 1000,
+        "aliases": [
+            "M",
+            "k"
+        ]
+    },
+    "kilodeca": {
+        "scale factor": 10000,
+        "aliases": [
+            "kda"
+        ]
+    },
+    "mega": {
+        "scale factor": 1000000,
+        "aliases": [
+            "MM"
+        ]
+    },
+    "giga": {
+        "scale factor": 1000000000,
+        "aliases": [
+            "B"
+        ]
+    },
+    "tera": {
+        "scale factor": 1000000000000
+    },
+    "peta": {
+        "scale factor": 1000000000000000
+    },
+    "exa": {
+        "scale factor": 1000000000000000000
+    },
+    "zetta": {
+        "scale factor": 1000000000000000000000
+    },
+    "yotta": {
+        "scale factor": 1000000000000000000000000
+    },
+    "deci": {
+        "scale factor": 0.1
+    },
+    "centi": {
+        "scale factor": 0.01
+    },
+    "milli": {
+        "scale factor": 0.001
+    },
+    "micro": {
+        "scale factor": 1e-06
+    },
+    "nano": {
+        "scale factor": 1e-09
+    },
+    "pico": {
+        "scale factor": 1e-12
+    },
+    "femto": {
+        "scale factor": 1e-15
+    },
+    "atto": {
+        "scale factor": 1e-18
+    },
+    "zepto": {
+        "scale factor": 1e-21
+    },
+    "yocto": {
+        "scale factor": 1e-24
+    }
+}

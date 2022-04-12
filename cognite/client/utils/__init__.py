@@ -9,3 +9,4 @@ from cognite.client.utils import (
 )
 
 from cognite.client.utils._time import ms_to_datetime, timestamp_to_ms  # isort: skip
+from cognite_units.unit_converter import unit_convert

@@ -1,0 +1,65 @@
+{
+    "-": [
+        "-"
+    ],
+    "mass": [
+        "mass"
+    ],
+    "time": [
+        "time"
+    ],
+    "distance": [
+        "distance"
+    ],
+    "temperature": [
+        "temperature"
+    ],
+    "area": [
+        "distance*distance",
+        "area"
+    ],
+    "volume": [
+        "distance*distance*distance",
+        "area*distance",
+        "volume"
+    ],
+    "volumetric_flowrate": [
+        "distance*distance*distance/time",
+        "area*distance/time",
+        "volume/time",
+        "volumetric_flowrate"
+    ],
+    "gas_flowrate": [
+        "volume/time",
+        "gas_flowrate"
+    ],
+    "mass_flowrate": [
+        "mass/time",
+        "mass_flowrate"
+    ],
+    "velocity": [
+        "distance/time",
+        "velocity"
+    ],
+    "pressure": [
+        "mass/(distance*time*time)",
+        "force/(distance*distance)",
+        "force/area",
+        "pressure"
+    ],
+    "acceleration": [
+        "distance/(time*time)",
+        "acceleration"
+    ],
+    "force": [
+        "mass*distance/(time*time)",
+        "mass*acceleration",
+        "force"
+    ],
+    "density": [
+        "mass/(distance*distance*distance)",
+        "mass/(area*distance)",
+        "mass/volume",
+        "density"
+    ]
+}

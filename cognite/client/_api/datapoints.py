@@ -10,6 +10,7 @@ from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Datapoints, DatapointsList, DatapointsQuery
 from cognite.client.exceptions import CogniteAPIError
+from cognite_units.unit_converter import unit_convert
 
 
 class DatapointsAPI(APIClient):
@@ -35,6 +36,8 @@ class DatapointsAPI(APIClient):
         ] = None,
         aggregates: List[str] = None,
         granularity: str = None,
+        input_unit: str = None,
+        output_unit: str = None,
         include_outside_points: bool = None,
         limit: int = None,
         ignore_unknown_ids: bool = False,
@@ -99,6 +102,8 @@ class DatapointsAPI(APIClient):
             external_id=external_id,
             aggregates=aggregates,
             granularity=granularity,
+            input_unit=input_unit,
+            output_unit=output_unit,
             include_outside_points=include_outside_points,
             limit=limit,
             ignore_unknown_ids=ignore_unknown_ids,
@@ -107,7 +112,18 @@ class DatapointsAPI(APIClient):
         if is_single_id:
             if len(dps_list) == 0 and ignore_unknown_ids is True:
                 return None
-            return dps_list[0]
+
+            if input_unit == None and output_unit == None:
+                return dps_list[0]
+            elif (input_unit != None and output_unit == None):
+                raise ValueError('Output unit needs to be defined') 
+            elif (input_unit == None and output_unit != None):
+                raise ValueError('Input unit needs to be defined')
+            else:
+                dps_list[0].value = unit_convert(dps_list[0].value, input_unit, output_unit)
+                dps_list[0].unit = output_unit
+                return dps_list[0]
+                
         return dps_list
 
     def retrieve_latest(

@@ -17,6 +17,7 @@ from cognite.client import utils
 from cognite.client._http_client import GLOBAL_REQUEST_SESSION, HTTPClient, HTTPClientConfig
 from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteUpdate
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
+from cognite_units.unit_converter import preprocess_unit
 
 log = logging.getLogger("cognite-sdk")
 
@@ -532,6 +533,8 @@ class APIClient:
         extra_body_fields: Dict = None,
         limit=None,
     ):
+        preprocess_unit(items.unit, None, None)
+        
         cls = cls or self._LIST_CLASS
         resource_path = resource_path or self._RESOURCE_PATH
         limit = limit or self._CREATE_LIMIT

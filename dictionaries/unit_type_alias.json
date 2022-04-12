@@ -1,0 +1,22 @@
+{
+    "gas_volumetric_flowrate": {
+        "unit_type_relation": "volumetric_flowrate",
+        "breakdown_restriction": [
+            "distance*distance*distance/time",
+            "volume/time"
+        ],
+        "unit_restriction": {
+            "volume": [
+                "scf"
+            ],
+            "time": [
+                "d",
+                "min"
+            ],
+            "distance": [
+                "m",
+                "ft"
+            ]
+        }
+    }
+}

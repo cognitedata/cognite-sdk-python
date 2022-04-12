@@ -374,6 +374,8 @@ class DatapointsQuery(CogniteResource):
         limit: int = None,
         aggregates: List[str] = None,
         granularity: str = None,
+        input_unit: str = None,
+        output_unit: str = None,
         include_outside_points: bool = None,
         ignore_unknown_ids: bool = False,
     ):
@@ -384,5 +386,7 @@ class DatapointsQuery(CogniteResource):
         self.limit = limit
         self.aggregates = aggregates
         self.granularity = granularity
+        self.input_unit = input_unit
+        self.output_unit = output_unit
         self.include_outside_points = include_outside_points
         self.ignore_unknown_ids = ignore_unknown_ids

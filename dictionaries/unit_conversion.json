@@ -1,0 +1,271 @@
+{
+    "-": {
+        "fundamental": "true",
+        "base_unit": "-",
+        "units": {
+            "-": {
+                "multiplier": "1.000000",
+                "description": "unitless [base unit]"
+            },
+            "%": {
+                "multiplier": "100.000000",
+                "description": "percentage"
+            }
+        }
+    },
+    "mass": {
+        "fundamental": "true",
+        "base_unit": "kg",
+        "units": {
+            "kg": {
+                "multiplier": "1.000000",
+                "description": "kilogram [base unit]"
+            },
+            "lbm": {
+                "multiplier": "2.204620",
+                "description": "pound mass"
+            },
+            "gram": {
+                "multiplier": "1000.000000",
+                "description": "gram"
+            },
+            "US_ton": {
+                "multiplier": "0.00110231",
+                "description": "US tonne"
+            }
+        }
+    },
+    "distance": {
+        "fundamental": "true",
+        "base_unit": "m",
+        "units": {
+            "m": {
+                "multiplier": "1.000000",
+                "description": "meter [base unit]"
+            },
+            "in": {
+                "multiplier": "39.370100",
+                "description": "inch"
+            },
+            "ft": {
+                "multiplier": "3.280840",
+                "description": "feet"
+            },
+            "mile": {
+                "multiplier": "0.000621371",
+                "description": "mile"
+            }
+        }
+    },
+    "time": {
+        "fundamental": "true",
+        "base_unit": "s",
+        "units": {
+            "s": {
+                "multiplier": "1.000000",
+                "description": "second [base unit]"
+            },
+            "min": {
+                "multiplier": "0.0166667",
+                "description": "minute"
+            },
+            "h": {
+                "multiplier": "0.00027777833333",
+                "description": "hour"
+            },
+            "d": {
+                "multiplier": "0.0000115741",
+                "description": "day"
+            },
+            "week": {
+                "multiplier": "0.0000016534",
+                "description": "week"
+            }
+        }
+    },
+    "temperature": {
+        "fundamental": "true",
+        "base_unit": "degC",
+        "units": {
+            "degC": {
+                "multiplier": "1.000000",
+                "description": "degrees celsius",
+                "aliases": [
+                    "deg_C",
+                    "deg C"
+                ]
+            },
+            "degF": {
+                "multiplier": "1.8000000000",
+                "shift": "32.000000",
+                "description": "degrees fahrenheit"
+            },
+            "degR": {
+                "multiplier": "1.8000000000",
+                "shift": "491.670000",
+                "description": "degrees rankine"
+            },
+            "degK": {
+                "multiplier": "1.000000",
+                "shift": "273.150000",
+                "description": "degrees kelvin"
+            }
+        }
+    },
+    "pressure": {
+        "base_unit": "kg/(m*s*s)",
+        "units": {
+            "kg/(m*s*s)": {
+                "multiplier": "1.000000",
+                "description": "kg/(m*s*s) [base unit]"
+            },
+            "Pa": {
+                "multiplier": "1.000000",
+                "description": "pascal"
+            },
+            "psi": {
+                "multiplier": "0.000145038",
+                "description": "pounds force per square inch"
+            },
+            "bar": {
+                "multiplier": "0.000010",
+                "description": "bar"
+            },
+            "Paa": {
+                "multiplier": "1.000000",
+                "shift": "101325.000000",
+                "description": "atmospheric pascal"
+            },
+            "psia": {
+                "multiplier": "0.000145038",
+                "shift": "14.695949",
+                "description": "atmospheric lbf per square inch"
+            },
+            "bara": {
+                "multiplier": "0.000010",
+                "shift": "1.013250",
+                "description": "atmospheric bar"
+            }
+        }
+    },
+    "area": {
+        "base_unit": "m*m",
+        "units": {
+            "m*m": {
+                "multiplier": "1.000000",
+                "description": "m2 [base unit]"
+            },
+            "acre": {
+                "multiplier": "0.0002471054",
+                "description": "acre"
+            },
+            "hectare": {
+                "multiplier": "0.000100",
+                "description": "hectare"
+            }
+        }
+    },
+    "volume": {
+        "base_unit": "m*m*m",
+        "units": {
+            "m*m*m": {
+                "multiplier": "1.000000",
+                "description": "meters^3 [base unit]"
+            },
+            "liter": {
+                "multiplier": "1000.000000",
+                "description": "liter"
+            },
+            "US_gallon": {
+                "multiplier": "264.170000",
+                "description": "US gallon"
+            },
+            "US_bbl_oil": {
+                "multiplier": "6.289811",
+                "description": "US oil barrel"
+            },
+            "US_bbl_liq": {
+                "multiplier": "8.386414",
+                "description": "US liq barrel"
+            },
+            "US_bbl_dry": {
+                "multiplier": "8.6484898",
+                "description": "US dry barrel"
+            },
+            "UK_bbl": {
+                "multiplier": "6.110257",
+                "description": "UK barrel"
+            },
+            "scf": {
+                "multiplier": "35.314667",
+                "description": "standard cubic feet"
+            }
+        }
+    },
+    "velocity": {
+        "base_unit": "m/s",
+        "units": {
+            "m/s": {
+                "multiplier": "1.000000",
+                "description": "meters per second [base unit]"
+            }
+        }
+    },
+    "volumetric_flowrate": {
+        "base_unit": "m*m*m/s",
+        "units": {
+            "m*m*m/s": {
+                "multiplier": "1.000000",
+                "description": "meters^3 per second [base unit]"
+            }
+        }
+    },
+    "mass_flowrate": {
+        "base_unit": "kg/s",
+        "units": {
+            "kg/s": {
+                "multiplier": "1.000000",
+                "description": "kilograms per second [base unit]"
+            }
+        }
+    },
+    "acceleration": {
+        "base_unit": "m/(s*s)",
+        "units": {
+            "m/(s*s)": {
+                "multiplier": "1.000000",
+                "description": "meters per second^2 [base unit]"
+            }
+        }
+    },
+    "force": {
+        "base_unit": "kg*m/(s*s)",
+        "units": {
+            "kg*m/(s*s)": {
+                "multiplier": "1.000000",
+                "description": "kg*m/(s*s) [base unit]"
+            },
+            "N": {
+                "multiplier": "1.000000",
+                "description": "Newton"
+            },
+            "lbf": {
+                "multiplier": "0.224809",
+                "description": "lb force"
+            },
+            "kgf": {
+                "multiplier": "0.101972",
+                "description": "kilogram force"
+            }
+        }
+    },
+    "density": {
+        "base_unit": "kg/(m*m*m)",
+        "units": {
+            "kg/(m*m*m)": {
+                "multiplier": "1.000000",
+                "description": "kilogram per meter^3 [base unit]"
+            }
+        }
+    }
+}
