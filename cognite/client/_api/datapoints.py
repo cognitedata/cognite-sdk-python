@@ -1,5 +1,6 @@
 import copy
 import math
+import logging
 import re as regexp
 from datetime import datetime
 from typing import *
@@ -166,6 +167,7 @@ class DatapointsAPI(APIClient):
             }
             for chunk in utils._auxiliary.split_into_chunks(all_ids, self._RETRIEVE_LATEST_LIMIT)
         ]
+        # post with task with json
         tasks_summary = utils._concurrency.execute_tasks_concurrently(
             self._post, tasks, max_workers=self._config.max_workers
         )
@@ -801,6 +803,7 @@ class _DPTask:
         return cognite.client.utils._time.granularity_to_ms(self.granularity) if self.granularity else 1
 
     def store_partial_result(self, raw_data, start, end):
+        # TODO problem: it retrieves each dataframe as it is checking if limit is exceeded.
         expected_fields = self.aggregates or ["value"]
 
         if self.include_outside_points and raw_data["datapoints"]:
@@ -863,11 +866,15 @@ class DatapointsFetcher:
         return self.fetch_multiple([query])[0]
 
     def fetch_multiple(self, queries: List[DatapointsQuery]) -> List[DatapointsList]:
-        task_lists = [self._create_tasks(q) for q in queries]
-        self._fetch_datapoints(sum(task_lists, []))
+        # queries = [{"id", 87687, "start_time", ...},] -> reach elements like query[0].id
+        # task_lists [(DPTask), () ...] -> per DPTask is per datapoint
+        task_lists = [self._create_tasks(q)[0] for q in queries]
+        ts_items = [self._create_tasks(q)[1] for q in queries]
+        self._fetch_datapoints(sum(task_lists, []), ts_items)
         return self._get_dps_results(task_lists)
 
     def _create_tasks(self, query: DatapointsQuery) -> List[_DPTask]:
+        # ts_items = [{"id", 4343}, ...]
         ts_items, _ = self._process_ts_identifiers(query.id, query.external_id)
         tasks = [
             _DPTask(
@@ -881,11 +888,12 @@ class DatapointsFetcher:
                 query.limit,
                 query.ignore_unknown_ids,
             )
+            #for chunk in utils._auxiliary.split_into_chunks(ts_items, 100) #DPTask is not supporting
             for ts_item in ts_items
         ]
         self._validate_tasks(tasks)
         self._preprocess_tasks(tasks)
-        return tasks
+        return tasks, ts_items
 
     def _validate_tasks(self, tasks: List[_DPTask]):
         identifiers_seen = set()
@@ -915,12 +923,42 @@ class DatapointsFetcher:
             for tl in task_lists
         ]
 
-    def _fetch_datapoints(self, tasks: List[_DPTask]):
+    def _fetch_datapoints(self, tasks: List[_DPTask], ts_items: List[Dict[str, Any]]):
+        """_summary_
+
+      def _fetch_datapoints(self, query, datapoints, limit):
+        while True:
+            query["limit"] = min(limit, self._DPS_LIMIT)
+            resp = self._post(url_path=self._RESOURCE_PATH + "/query", json={"items": [query]})
+            data = resp.json()["items"][0]
+            datapoints._extend(Datapoints._load(data, expected_fields=["value", "error"]))
+            limit -= len(data["datapoints"])
+            if len(data["datapoints"]) < self._DPS_LIMIT or limit <= 0:
+                break
+            query["start"] = data["datapoints"][-1]["timestamp"] + 1
+        return datapoints
+        """
+        # queries = [{"id", 87687, "start_time", ...},] -> reach elements like query[0].id
+        # task_lists [(DPTask), () ...] -> per DPTask is per datapoint
+        # tasks: sum of task_lists with []
+        # TODO get chunks from tasks and paste as json
+        # _fetch_dps_initial_and_return_remaining_tasks is called for each item on execute_tasks_concurrently
+        # so  task is per external_id
+        # chunk -> list of ts_items (dict)
+        #[tasks[0]] is for getting other items from DPTask which is common for chunks of datapoints.
+        ts_items_chunk=[ts_items_chunk for ts_items_chunk in utils._auxiliary.split_into_chunks(ts_items[0], 100)]
+        task_chunk=[task_chunk for task_chunk in utils._auxiliary.split_into_chunks(tasks, 100)]
+        logging.info("task_chunk: {}".format(task_chunk))
+        #logging.info("ts_items_chunk %s",len(ts_items_chunk))
+        #logging.info("ts_items_chunk %s",chunkss) # need [0]
         tasks_summary = utils._concurrency.execute_tasks_concurrently(
             self._fetch_dps_initial_and_return_remaining_tasks,
-            [(t,) for t in tasks],
+            [task_chunk], # list of <cognite.client._api.datapoints._DPTask object
             max_workers=self.client._config.max_workers,
+            ts_items_chunk=ts_items_chunk,
+            retrieve_multiple = True
         )
+        #logging.info("tasks_summary %s", tasks_summary.successful_tasks)
         if tasks_summary.exceptions:
             raise tasks_summary.exceptions[0]
 
@@ -928,12 +966,14 @@ class DatapointsFetcher:
         if len(remaining_tasks_with_windows) > 0:
             self._fetch_datapoints_for_remaining_queries(remaining_tasks_with_windows)
 
-    def _fetch_dps_initial_and_return_remaining_tasks(self, task: _DPTask) -> List[Tuple[_DPTask, _DPWindow]]:
-        ndp_in_first_task, last_timestamp = self._get_datapoints(task, None, True)
+    def _fetch_dps_initial_and_return_remaining_tasks(self, task: List[_DPTask], ts_items_chunk: List[Dict]) -> List[Tuple[_DPTask, _DPWindow]]:
+        task = task[0] # chunk of tasks for now take first element to retrieve keys TODO (maybe I can use the chunk)
+        ndp_in_first_task, last_timestamp = self._get_datapoints(task, ts_items_chunk, None, True)
         if ndp_in_first_task < task.request_limit:
             return []
         remaining_user_limit = task.limit - ndp_in_first_task
         task.start = last_timestamp + task.next_start_offset()
+        # TODO question: task.results[0] will yield  the same for all tasks as fist element was parsed.
         queries = self._split_task_into_windows(task.results[0].id, task, remaining_user_limit)
         return queries
 
@@ -941,6 +981,9 @@ class DatapointsFetcher:
         tasks_summary = utils._concurrency.execute_tasks_concurrently(
             self._get_datapoints_with_paging, tasks_with_windows, max_workers=self.client._config.max_workers
         )
+        #import logging
+        #logging.info("tasks_summary %s", tasks_summary.results)
+
         if tasks_summary.exceptions:
             raise tasks_summary.exceptions[0]
 
@@ -1026,11 +1069,16 @@ class DatapointsFetcher:
             window.start = last_time + task.next_start_offset()
 
     def _get_datapoints(
-        self, task: _DPTask, window: _DPWindow = None, first_page: bool = False
+        self, task: _DPTask, ts_items_chunk: List[Dict], window: _DPWindow = None, first_page: bool = False
     ) -> Tuple[int, Union[None, int]]:
+        # json has to be dict but items could be  chunks
+        task = task[0]
         window = window or _DPWindow(task.start, task.end, task.limit)
+        #logging.info("task.ts_item %s", task.ts_item) -> per external_id
+        # TODO: get multiple items (chunks) in payload. change concurrent function,
+        # such that it executes by chunks, not for every item.
         payload = {
-            "items": [task.ts_item],
+            "items": ts_items_chunk,
             "start": window.start,
             "end": window.end,
             "aggregates": task.aggregates,
@@ -1039,6 +1087,8 @@ class DatapointsFetcher:
             "ignoreUnknownIds": task.ignore_unknown_ids,
             "limit": min(window.limit, task.request_limit),
         }
+        # TODO  fix, check
+        #logging.info("payload %s", payload)
         res = self.client._post(self.client._RESOURCE_PATH + "/list", json=payload).json()["items"]
         if not res and task.ignore_unknown_ids:
             return task.mark_missing()
