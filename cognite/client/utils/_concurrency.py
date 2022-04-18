@@ -107,13 +107,13 @@ def collect_exc_info_and_raise(
         ) from dup_exc
 
 
-def execute_tasks_concurrently(func: Callable, tasks: Union[List[Tuple], List[Dict], List[List[Dict]]], max_workers: int, ts_items_chunk:List[List[Dict]]=[],  retrieve_multiple=False) -> TasksSummary:
+def execute_tasks_concurrently(func: Callable, tasks: Union[List[Tuple], List[Dict], List[List[Dict]]], max_workers: int, ts_items_chunk:List[List[Dict]]=[],  retrieve_multiple: bool =False) -> TasksSummary:
     assert max_workers > 0, "Number of workers should be >= 1, was {}".format(max_workers)
     with ThreadPoolExecutor(max_workers) as p:
         futures = []
         if retrieve_multiple:
             # then execute the function per chunk
-            # TODO fix
+            # TODO fix fetch_dps_samples -> list index out of range
             for index, chunk in enumerate(ts_items_chunk):
                 if isinstance(chunk, list):
                     # TODO TypeError: 'Future' object is not subscriptable
@@ -137,7 +137,7 @@ def execute_tasks_concurrently(func: Callable, tasks: Union[List[Tuple], List[Di
         unknown_result_tasks = []
         results = []
         exceptions = []
-        logging.info("futures %s", futures)
+        #logging.info("futures %s", futures)
         for i, f in enumerate(futures):
             try:
                 res = f.result()
