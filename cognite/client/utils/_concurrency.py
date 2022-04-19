@@ -112,17 +112,13 @@ def execute_tasks_concurrently(func: Callable, tasks: Union[List[Tuple], List[Di
     with ThreadPoolExecutor(max_workers) as p:
         futures = []
         if retrieve_multiple:
-            tasks = tasks[0] # list of  <cognite.client._api.datapoints._DPTask objects>
             # then execute the function per chunk
             for index, chunk in enumerate(ts_items_chunk):
                 if isinstance(chunk, list):
                     # TODO TypeError: 'Future' object is not subscriptable
-                    # TODO cognite.client.exceptions.CogniteAPIError: Sum of limits for aggregate data points can not exceed 10000...
+                    # TODO  cognite.client.exceptions.CogniteAPIError: Sum of limits for aggregate data points can not exceed 10000...
                     # tasks[index][0] is 1st element of relative chunk
                     fetch_dps_samples = p.submit(func, tasks[index][0], chunk)
-                    # if len(fetch_dps_samples[0]) > 0:
-                    #     futures.extend(fetch_dps_samples)
-                    # else:
                     futures.append(fetch_dps_samples)
             pass
         else:

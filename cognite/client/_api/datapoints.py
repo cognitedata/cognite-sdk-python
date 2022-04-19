@@ -39,7 +39,7 @@ class DatapointsAPI(APIClient):
         include_outside_points: bool = None,
         limit: int = None,
         ignore_unknown_ids: bool = False,
-        retrieve_multiple: bool = False,
+        retrieve_multiple: Optional[bool] = False,
     ) -> Union[None, Datapoints, DatapointsList]:
         """`Get datapoints for one or more time series. <https://docs.cognite.com/api/v1/#operation/getMultiTimeSeriesDatapoints>`_
 
@@ -870,15 +870,12 @@ class DatapointsFetcher:
         return self.fetch_multiple([query], retrieve_multiple=retrieve_multiple)[0]
 
     def fetch_multiple(self, queries: List[DatapointsQuery], retrieve_multiple: bool = False) -> List[DatapointsList]:
-        if retrieve_multiple:
-            # queries = [{"id", 87687, "start_time", ...},] -> reach elements like query[0].id
-            # task_lists [(DPTask), () ...] -> per DPTask is per datapoint
-            task_lists = [self._create_tasks(q)[0] for q in queries]
-            ts_items = [self._create_tasks(q)[1] for q in queries]
-            self._fetch_datapoints(sum(task_lists, []), ts_items=ts_items, retrieve_multiple=retrieve_multiple)
-        else:
-            task_lists = [self._create_tasks(q)[0] for q in queries]
-            self._fetch_datapoints(sum(task_lists, []))
+        # queries = [{"id", 87687, "start_time", ...},] -> reach elements like query[0].id
+        # task_lists [(DPTask), () ...] -> per DPTask is per externalid/id
+        # ts_items [{"id", 133}, ...] all
+        task_lists = [self._create_tasks(q)[0] for q in queries]
+        ts_items = [self._create_tasks(q)[1] for q in queries]
+        self._fetch_datapoints(sum(task_lists, []), ts_items=ts_items, retrieve_multiple=retrieve_multiple)
         return self._get_dps_results(task_lists)
 
     def _create_tasks(self, query: DatapointsQuery) -> List[_DPTask]:
@@ -896,7 +893,6 @@ class DatapointsFetcher:
                 query.limit,
                 query.ignore_unknown_ids,
             )
-            #for chunk in utils._auxiliary.split_into_chunks(ts_items, 100) #DPTask is not supporting
             for ts_item in ts_items
         ]
         self._validate_tasks(tasks)
@@ -930,8 +926,10 @@ class DatapointsFetcher:
             DatapointsList([t.result() for t in tl if not t.missing], cognite_client=self.client._cognite_client)
             for tl in task_lists
         ]
-    def _chunk_datapoints(self, ts_items: List[Dict[str, Any]], tasks: List[_DPTask]):
+    def _chunk_ids(self, ts_items: List[Dict[str, Any]], tasks: List[_DPTask]):
         """
+        Chunks the ids for processing multiple of them while fetching datapoints
+
         queries = [{"id", 87687, "start_time", ...},] -> reach elements like query[0].id
         task_lists [(DPTask), () ...] -> per DPTask is per datapoint
         tasks: sum of task_lists with []
@@ -940,17 +938,16 @@ class DatapointsFetcher:
         chunk -> list of ts_items (dict)
         [tasks[0]] is for getting other items from DPTask which is common for chunks of datapoints.
         """
-        ts_items_chunk=[ts_items_chunk for ts_items_chunk in utils._auxiliary.split_into_chunks(ts_items[0], 100)]
-        task_chunk=[task_chunk for task_chunk in utils._auxiliary.split_into_chunks(tasks, 100)]
+        ts_items_chunk = utils._auxiliary.split_into_chunks(ts_items[0], 99)
+        task_chunk = utils._auxiliary.split_into_chunks(tasks, 99)
         return ts_items_chunk, task_chunk
 
     def _fetch_datapoints(self, tasks: List[_DPTask], ts_items: List[Dict[str, Any]] = None, retrieve_multiple: bool = False):
         if retrieve_multiple:
-            ts_items_chunk, task_chunk = self._chunk_datapoints(ts_items, tasks)
-
+            ts_items_chunk, task_chunk = self._chunk_ids(ts_items, tasks)
             tasks_summary = utils._concurrency.execute_tasks_concurrently(
                 self._fetch_dps_initial_and_return_remaining_tasks,
-                [task_chunk], # list of <cognite.client._api.datapoints._DPTask object
+                task_chunk, # list of <cognite.client._api.datapoints._DPTask object
                 max_workers=self.client._config.max_workers,
                 ts_items_chunk=ts_items_chunk,
                 retrieve_multiple=True,
