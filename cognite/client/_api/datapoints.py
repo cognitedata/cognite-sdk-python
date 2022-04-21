@@ -1094,7 +1094,8 @@ class DatapointsFetcher:
         # res : [{"id": 12, 'externalId': "extid", "datapoints": [{"timestamp": 123, "average": 1}, {"timestamp": 124, "average": 2}]}]
         res = self.client._post(self.client._RESOURCE_PATH + "/list", json=payload).json()["items"]
         logging.info("result of post : %s", res)
-        logging.info("ts_items_chunk %s", len(ts_items_chunk))
+        if ts_items_chunk:
+            logging.info("ts_items_chunk %s", len(ts_items_chunk))
         if not res and task.ignore_unknown_ids:
             return task.mark_missing()
         else:
