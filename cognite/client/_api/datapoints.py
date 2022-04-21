@@ -18,6 +18,7 @@ class DatapointsAPI(APIClient):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # TODO limit set to 10000 here
         self._DPS_LIMIT_AGG = 10000
         self._DPS_LIMIT = 100000
         self._POST_DPS_OBJECTS_LIMIT = 10000
@@ -407,7 +408,7 @@ class DatapointsAPI(APIClient):
         include_aggregate_name=True,
         complete: str = None,
         ignore_unknown_ids: bool = False,
-        retrieve_multiple: bool = False,
+        retrieve_multiple: Optional[bool] = False,
     ) -> "pandas.DataFrame":
         """Get a pandas dataframe describing the requested data.
 
@@ -922,6 +923,12 @@ class DatapointsFetcher:
             t.end = new_end
 
     def _get_dps_results(self, task_lists: List[List[_DPTask]]) -> List[DatapointsList]:
+        for tl in task_lists:
+            logging.info("_get_dps_results, t %s", tl)
+            for t in tl:
+                logging.info("_get_dps_results, t %s", t)
+                logging.info("_get_dps_results, t.ts_item %s", t.ts_item)
+                #logging.info("_get_dps_results, t result %s", t.result())
         return [
             DatapointsList([t.result() for t in tl if not t.missing], cognite_client=self.client._cognite_client)
             for tl in task_lists
@@ -938,13 +945,15 @@ class DatapointsFetcher:
         chunk -> list of ts_items (dict)
         [tasks[0]] is for getting other items from DPTask which is common for chunks of datapoints.
         """
-        ts_items_chunk = utils._auxiliary.split_into_chunks(ts_items[0], 99)
-        task_chunk = utils._auxiliary.split_into_chunks(tasks, 99)
+        #logging.info("ts_items %s", ts_items)
+        ts_items_chunk = utils._auxiliary.split_into_chunks(ts_items, 50)
+        task_chunk = utils._auxiliary.split_into_chunks(tasks, 50)
         return ts_items_chunk, task_chunk
 
     def _fetch_datapoints(self, tasks: List[_DPTask], ts_items: List[Dict[str, Any]] = None, retrieve_multiple: bool = False):
         if retrieve_multiple:
-            ts_items_chunk, task_chunk = self._chunk_ids(ts_items, tasks)
+            ts_items_chunk, task_chunk = self._chunk_ids(ts_items[0], tasks)
+            #logging.info("task_chunk %s", task_chunk)
             tasks_summary = utils._concurrency.execute_tasks_concurrently(
                 self._fetch_dps_initial_and_return_remaining_tasks,
                 task_chunk, # list of <cognite.client._api.datapoints._DPTask object
@@ -962,17 +971,21 @@ class DatapointsFetcher:
             raise tasks_summary.exceptions[0]
 
         remaining_tasks_with_windows = tasks_summary.joined_results()
+        logging.info("remaining_tasks_with_windows   %s", remaining_tasks_with_windows)
         if len(remaining_tasks_with_windows) > 0:
             self._fetch_datapoints_for_remaining_queries(remaining_tasks_with_windows)
 
     def _fetch_dps_initial_and_return_remaining_tasks(self, task: List[_DPTask], ts_items_chunk: List[Dict] = None) -> List[Tuple[_DPTask, _DPWindow]]:
+        logging.info("task.request_limit %s", task.request_limit) #100000
         ndp_in_first_task, last_timestamp = self._get_datapoints(task, None, True, ts_items_chunk=ts_items_chunk)
+        # TODO it fails on get_datapoints therefore could not reach ndp_in_first_task
+        logging.info("ndp_in_first_task %s",ndp_in_first_task) # []
         if ndp_in_first_task < task.request_limit:
             return []
         remaining_user_limit = task.limit - ndp_in_first_task
         task.start = last_timestamp + task.next_start_offset()
-        # TODO question: task.results[0] will yield  the same for all tasks as fist element was parsed.
         queries = self._split_task_into_windows(task.results[0].id, task, remaining_user_limit)
+        logging.info("queries %s", queries)
         return queries
 
     def _fetch_datapoints_for_remaining_queries(self, tasks_with_windows: List[Tuple[_DPTask, _DPWindow]]):
@@ -1078,7 +1091,10 @@ class DatapointsFetcher:
             "limit": min(window.limit, task.request_limit),
         }
         # TODO  fix, check
+        # res : [{"id": 12, 'externalId': "extid", "datapoints": [{"timestamp": 123, "average": 1}, {"timestamp": 124, "average": 2}]}]
         res = self.client._post(self.client._RESOURCE_PATH + "/list", json=payload).json()["items"]
+        logging.info("result of post : %s", res)
+        logging.info("ts_items_chunk %s", len(ts_items_chunk))
         if not res and task.ignore_unknown_ids:
             return task.mark_missing()
         else:

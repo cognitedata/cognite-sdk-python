@@ -116,10 +116,11 @@ def execute_tasks_concurrently(func: Callable, tasks: Union[List[Tuple], List[Di
             for index, chunk in enumerate(ts_items_chunk):
                 if isinstance(chunk, list):
                     # TODO TypeError: 'Future' object is not subscriptable
-                    # TODO  cognite.client.exceptions.CogniteAPIError: Sum of limits for aggregate data points can not exceed 10000...
+                    # TODO cognite.client.exceptions.CogniteAPIError: Sum of limits for aggregate data points can not exceed 10000...
                     # tasks[index][0] is 1st element of relative chunk
                     fetch_dps_samples = p.submit(func, tasks[index][0], chunk)
                     futures.append(fetch_dps_samples)
+                    logging.info("future inside thread %s", len(futures))
             pass
         else:
             for task in tasks:
@@ -127,11 +128,13 @@ def execute_tasks_concurrently(func: Callable, tasks: Union[List[Tuple], List[Di
                     futures.append(p.submit(func, **task))
                 elif isinstance(task, tuple):
                     futures.append(p.submit(func, *task))
+                logging.info("future inside thread %s", len(futures))
         successful_tasks = []
         failed_tasks = []
         unknown_result_tasks = []
         results = []
         exceptions = []
+        logging.info("future length %s", len(futures))
         for i, f in enumerate(futures):
             try:
                 res = f.result()
