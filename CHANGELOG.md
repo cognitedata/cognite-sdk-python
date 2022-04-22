@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.40.1] - 2022-04-22
+### Changed
+- POST requests to the `sessions/revoke`-endpoint are now automatically retried
+
 ## [2.40.0] - 2022-02-11
 ### Added
 - dataSetId support for transformations.
