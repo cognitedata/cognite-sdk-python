@@ -107,6 +107,7 @@ class DatapointsAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
         dps_list = fetcher.fetch(query, retrieve_multiple=retrieve_multiple)
+        logging.info("dps_list %s", dps_list)
         if is_single_id:
             if len(dps_list) == 0 and ignore_unknown_ids is True:
                 return None
@@ -453,7 +454,8 @@ class DatapointsAPI(APIClient):
                 ...         aggregates=["interpolation"], granularity="1m", include_aggregate_name=False, complete="fill,dropna")
         """
         pd = utils._auxiliary.local_import("pandas")
-
+        import time
+        start_time = time.time()
         if id is not None:
             id_dpl = self.retrieve(
                 id=id,
@@ -485,6 +487,7 @@ class DatapointsAPI(APIClient):
             )
             if external_id_dpl is None:
                 external_id_dpl = DatapointsList([])
+            logging.info("DIFF TIME %s", time.time() - start_time)
             external_id_df = external_id_dpl.to_pandas()
         else:
             external_id_df = pd.DataFrame()
@@ -808,7 +811,6 @@ class _DPTask:
         return cognite.client.utils._time.granularity_to_ms(self.granularity) if self.granularity else 1
 
     def store_partial_result(self, raw_data, start, end):
-        # TODO problem: it retrieves each dataframe as it is checking if limit is exceeded.
         expected_fields = self.aggregates or ["value"]
 
         if self.include_outside_points and raw_data["datapoints"]:
@@ -828,8 +830,9 @@ class _DPTask:
                         copy_data, expected_fields, cognite_client=self.client._cognite_client
                     )
                 raw_data["datapoints"] = raw_data["datapoints"][:-1]
-
+        logging.info("loading data")
         self.results.append(Datapoints._load(raw_data, expected_fields, cognite_client=self.client._cognite_client))
+        logging.info("task.results %s", self.results)
         last_timestamp = raw_data["datapoints"] and raw_data["datapoints"][-1]["timestamp"]
         return len(raw_data["datapoints"]), last_timestamp
 
@@ -923,12 +926,12 @@ class DatapointsFetcher:
             t.end = new_end
 
     def _get_dps_results(self, task_lists: List[List[_DPTask]]) -> List[DatapointsList]:
+        # TODO Where it returns the result of the requested datapoints
         for tl in task_lists:
-            logging.info("_get_dps_results, t %s", tl)
             for t in tl:
                 logging.info("_get_dps_results, t %s", t)
-                logging.info("_get_dps_results, t.ts_item %s", t.ts_item)
-                #logging.info("_get_dps_results, t result %s", t.result())
+                #logging.info("_get_dps_results, t.ts_item %s", t.ts_item)
+                #logging.info("_get_dps_results, t result %s", t.result()) # datapoints only: fails
         return [
             DatapointsList([t.result() for t in tl if not t.missing], cognite_client=self.client._cognite_client)
             for tl in task_lists
@@ -969,17 +972,19 @@ class DatapointsFetcher:
             )
         if tasks_summary.exceptions:
             raise tasks_summary.exceptions[0]
-
         remaining_tasks_with_windows = tasks_summary.joined_results()
         logging.info("remaining_tasks_with_windows   %s", remaining_tasks_with_windows)
         if len(remaining_tasks_with_windows) > 0:
             self._fetch_datapoints_for_remaining_queries(remaining_tasks_with_windows)
 
     def _fetch_dps_initial_and_return_remaining_tasks(self, task: List[_DPTask], ts_items_chunk: List[Dict] = None) -> List[Tuple[_DPTask, _DPWindow]]:
-        logging.info("task.request_limit %s", task.request_limit) #100000
+        #logging.info("task.request_limit %s", task.request_limit) #100000
+        logging.info("task.ts_item %s", task.ts_item) # 136 from multiple fetch
         ndp_in_first_task, last_timestamp = self._get_datapoints(task, None, True, ts_items_chunk=ts_items_chunk)
-        # TODO it fails on get_datapoints therefore could not reach ndp_in_first_task
         logging.info("ndp_in_first_task %s",ndp_in_first_task) # []
+        # as we are limiting datapoints we retrieve, no need to check the limits
+        if ts_items_chunk:
+            return []
         if ndp_in_first_task < task.request_limit:
             return []
         remaining_user_limit = task.limit - ndp_in_first_task
@@ -1080,6 +1085,7 @@ class DatapointsFetcher:
         self, task: _DPTask, window: _DPWindow = None, first_page: bool = False, ts_items_chunk: List[Dict] = None
     ) -> Tuple[int, Union[None, int]]:
         window = window or _DPWindow(task.start, task.end, task.limit)
+        # TODO question is it ok to request same window start and end for multiple timeseries?
         payload = {
             "items": ts_items_chunk if ts_items_chunk else [task.ts_item],
             "start": window.start,
@@ -1093,12 +1099,20 @@ class DatapointsFetcher:
         # TODO  fix, check
         # res : [{"id": 12, 'externalId': "extid", "datapoints": [{"timestamp": 123, "average": 1}, {"timestamp": 124, "average": 2}]}]
         res = self.client._post(self.client._RESOURCE_PATH + "/list", json=payload).json()["items"]
-        logging.info("result of post : %s", res)
+        logging.info("result of post : %s", res) # gets full result
         if ts_items_chunk:
             logging.info("ts_items_chunk %s", len(ts_items_chunk))
         if not res and task.ignore_unknown_ids:
             return task.mark_missing()
         else:
+            # if retrieve_multiple and limit is set, no need to check datapoint amounts
+            if ts_items_chunk:
+                # iterate through task
+                for i in range(len(ts_items_chunk)):
+                    logging.info("iteration on items %s", i)
+                    if i == len(ts_items_chunk) - 1:
+                        return task.store_partial_result(res[i], window.start, window.end)
+                    task.store_partial_result(res[i], window.start, window.end)
             return task.store_partial_result(res[0], window.start, window.end)
 
     @staticmethod
