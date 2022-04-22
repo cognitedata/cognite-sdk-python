@@ -47,7 +47,7 @@ def test_feature_type(cognite_client):
         FeatureType(
             external_id=external_id,
             properties={
-                "position": {"type": "POINT", "srid": "4326", "optional": "true"},
+                "position": {"type": "GEOMETRY", "srid": "4326", "optional": "true"},
                 "volume": {"type": "DOUBLE"},
                 "temperature": {"type": "DOUBLE"},
                 "pressure": {"type": "DOUBLE"},
@@ -56,7 +56,7 @@ def test_feature_type(cognite_client):
         )
     )
     yield feature_type
-    cognite_client.geospatial.delete_feature_types(external_id=external_id)
+    cognite_client.geospatial.delete_feature_types(external_id=external_id, recursive=True)
 
 
 @pytest.fixture()
@@ -98,17 +98,37 @@ def test_feature(cognite_client, test_feature_type):
 
 
 @pytest.fixture
-def two_test_features(cognite_client, test_feature_type):
-    external_ids = [f"F{i}_{uuid.uuid4().hex[:10]}" for i in range(2)]
+def test_features(cognite_client, test_feature_type):
+    external_ids = [f"F{i}_{uuid.uuid4().hex[:10]}" for i in range(4)]
     features = [
         Feature(
-            external_id=external_ids[i],
+            external_id=external_ids[0],
             position={"wkt": "POINT(2.2768485 48.8589506)"},
-            temperature=12.4 + i,
+            temperature=12.4,
             volume=1212.0,
             pressure=2121.0,
-        )
-        for i in range(2)
+        ),
+        Feature(
+            external_id=external_ids[1],
+            position={"wkt": "POLYGON((10.689 -25.092, 38.814 -35.639, 13.502 -39.155, 10.689 -25.092))"},
+            temperature=13.4,
+            volume=1212.0,
+            pressure=2121.0,
+        ),
+        Feature(
+            external_id=external_ids[2],
+            position={"wkt": "LINESTRING (30 10, 10 30, 40 40)"},
+            temperature=3.4,
+            volume=1212.0,
+            pressure=2121.0,
+        ),
+        Feature(
+            external_id=external_ids[3],
+            position={"wkt": "MULTILINESTRING ((10 10, 20 20, 10 40), (40 40, 30 30, 40 20, 30 10))"},
+            temperature=23.4,
+            volume=1212.0,
+            pressure=2121.0,
+        ),
     ]
     feature = cognite_client.geospatial.create_features(test_feature_type.external_id, features)
     yield feature
@@ -351,11 +371,12 @@ class TestGeospatialAPI:
                         "pos_alt_idx": {"properties": ["position", "altitude"]},
                     },
                 ),
+                remove=PropertyAndSearchSpec(properties=["volume"], search_spec=["vol_press_idx"]),
             )
         )
         assert len(res) == 1
-        assert len(res[0].properties) == 8
-        assert len(res[0].search_spec) == 6
+        assert len(res[0].properties) == 7
+        assert len(res[0].search_spec) == 5
 
     def test_stream_features(self, cognite_client, large_feature_type, many_features):
         features = cognite_client.geospatial.stream_features(
@@ -364,8 +385,8 @@ class TestGeospatialAPI:
         feature_list = FeatureList(list(features))
         assert len(feature_list) == len(many_features)
 
-    def test_to_pandas(self, test_feature_type, two_test_features):
-        df = two_test_features.to_pandas()
+    def test_to_pandas(self, test_feature_type, test_features):
+        df = test_features.to_pandas()
         assert list(df) == [
             "externalId",
             "position",
@@ -376,8 +397,8 @@ class TestGeospatialAPI:
             "lastUpdatedTime",
         ]
 
-    def test_to_geopandas(self, test_feature_type, two_test_features):
-        gdf = two_test_features.to_geopandas(geometry="position")
+    def test_to_geopandas(self, test_feature_type, test_features):
+        gdf = test_features.to_geopandas(geometry="position")
         assert list(gdf) == [
             "externalId",
             "position",
@@ -390,27 +411,73 @@ class TestGeospatialAPI:
         geopandas = utils._auxiliary.local_import("geopandas")
         assert type(gdf.dtypes["position"]) == geopandas.array.GeometryDtype
 
-    def test_from_geopandas(self, cognite_client, test_feature_type, two_test_features):
-        gdf = two_test_features.to_geopandas(geometry="position")
+    def test_from_geopandas_basic(self, cognite_client, test_feature_type):
+        pd = utils._auxiliary.local_import("pandas")
+        df = pd.DataFrame(
+            {
+                "externalId": [f"F{i}_{uuid.uuid4().hex[:10]}" for i in range(4)],
+                "position": [
+                    "POINT(2.2768485 48.8589506)",
+                    "POLYGON((10.689 -25.092, 38.814 -35.639, 13.502 -39.155, 10.689 -25.092))",
+                    "LINESTRING (30 10, 10 30, 40 40)",
+                    "MULTILINESTRING ((10 10, 20 20, 10 40), (40 40, 30 30, 40 20, 30 10))",
+                ],
+                "temperature": [12.4, 13.4, 13.4, 13.4],
+                "volume": [1212.0, 1313.0, 1414.0, 1515.0],
+                "pressure": [2121.0, 2121.0, 2121.0, 2121.0],
+            }
+        )
+        utils._auxiliary.local_import("shapely.wkt")
+        geopandas = utils._auxiliary.local_import("geopandas")
+        df["position"] = geopandas.GeoSeries.from_wkt(df["position"])
+        gdf = geopandas.GeoDataFrame(df, geometry="position")
         fl = FeatureList.from_geopandas(test_feature_type, gdf)
-        assert type(fl) == FeatureList
-        assert len(fl) == 2
-        for f in fl:
-            for attr in test_feature_type.properties.items():
-                attr_name = attr[0]
-                if attr_name.startswith("_"):
-                    continue
-                assert hasattr(f, attr_name)
+        res = cognite_client.geospatial.create_features(test_feature_type.external_id, fl)
+        assert len(res) == 4
 
-    def test_aggregate(self, cognite_client, test_feature_type, two_test_features):
+    def test_from_geopandas_flexible(self, cognite_client, test_feature_type):
+        pd = utils._auxiliary.local_import("pandas")
+        df = pd.DataFrame(
+            {
+                "some_unique_id": [f"F{i}_{uuid.uuid4().hex[:10]}" for i in range(4)],
+                "some_position": [
+                    "POINT(2.2768485 48.8589506)",
+                    "POLYGON((10.689 -25.02, 38.814 -35.639, 13.502 -39.155, 10.689 -25.02))",
+                    None,
+                    "MULTILINESTRING ((10 10, 20 20, 10 40), (40 40, 30 30, 40 20, 30 10))",
+                ],
+                "some_temperature": [12.4, 13.4, 13.4, 13.4],
+                "some_volume": [1212.0, 1313.0, 1414.0, 1515.0],
+                "some_pressure": [2121.0, 2121.0, 2121.0, 2121.0],
+            }
+        )
+        utils._auxiliary.local_import("shapely.wkt")
+        geopandas = utils._auxiliary.local_import("geopandas")
+        df["some_position"] = geopandas.GeoSeries.from_wkt(df["some_position"])
+        gdf = geopandas.GeoDataFrame(df, geometry="some_position")
+        fl = FeatureList.from_geopandas(
+            test_feature_type,
+            gdf,
+            "some_unique_id",
+            {
+                "position": "some_position",
+                "temperature": "some_temperature",
+                "volume": "some_volume",
+                "pressure": "some_pressure",
+            },
+        )
+        res = cognite_client.geospatial.create_features(test_feature_type.external_id, fl)
+        assert len(res) == 4
+
+    def test_aggregate(self, cognite_client, test_feature_type, test_features):
         res = cognite_client.geospatial.aggregate_features(
             feature_type_external_id=test_feature_type.external_id,
             filter={},
             property="temperature",
             aggregates=["min", "max"],
         )
-        assert res[0].min == 12.4
-        assert res[0].max == 13.4
+        assert res[0].min == 3.4
+        assert res[0].max == 23.4
 
         res = cognite_client.geospatial.aggregate_features(
             feature_type_external_id=test_feature_type.external_id,
@@ -427,4 +494,4 @@ class TestGeospatialAPI:
             aggregates=["min", "max"],
             group_by=["externalId"],
         )
-        assert len(res) == 2
+        assert len(res) == 4

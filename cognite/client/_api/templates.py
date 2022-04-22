@@ -514,7 +514,7 @@ class TemplateViewsAPI(APIClient):
             Create new views:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import View
+                >>> from cognite.client.data_classes.templates import View
                 >>> c = CogniteClient()
                 >>> view = View(external_id="view",
                 >>>             source=Source(
@@ -550,7 +550,7 @@ class TemplateViewsAPI(APIClient):
             Upsert new views:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import View
+                >>> from cognite.client.data_classes.templates import View
                 >>> c = CogniteClient()
                 >>> view = View(external_id="view",
                 >>>             source=Source(

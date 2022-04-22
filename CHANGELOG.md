@@ -14,9 +14,49 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [2.40.1] - 2022-04-22
+## [2.46.1] - 2022-04-22
 ### Changed
 - POST requests to the `sessions/revoke`-endpoint are now automatically retried
+
+## [2.46.0] - 2022-03-29
+### Changed
+- Fix retrieval of empty raster in experimental geospatial api: http 204 as ok status
+
+## [2.45.0] - 2022-03-25
+### Added
+- support `sequence_rows` destination type on Transformations.
+
+## [2.44.1] - 2022-03-24
+### Fixed
+- fix typo in `data_set_ids` parameter type on `transformations.list`.
+
+## [2.44.0] - 2022-03-24
+### Added
+- support conflict mode parameter on `transformations.schema.retrieve`.
+
+## [2.43.1] - 2022-03-24
+### Added
+- update pillow dependency 9.0.0 -> 9.0.1 
+ 
+## [2.43.0] - 2022-03-21
+### Added
+- new list parameters added to `transformations.list`.
+
+## [2.42.0] - 2022-02-11
+### Added
+- FeatureList.from_geopandas() improvements
+
+## [2.41.3] - 2022-02-11
+### Fixed
+- example for templates view.
+
+## [2.41.2] - 2022-02-16
+### Added
+- support for deleting properties and search specs in GeospatialAPI.update_feature_types(...).
+
+## [2.40.1] - 2022-02-15
+### Fixed
+- geospatial examples.
 
 ## [2.40.0] - 2022-02-11
 ### Added

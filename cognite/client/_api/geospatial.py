@@ -20,7 +20,6 @@ from cognite.client.exceptions import CogniteConnectionError
 
 
 class GeospatialAPI(APIClient):
-
     _RESOURCE_PATH = "/geospatial"
 
     @staticmethod
@@ -43,8 +42,8 @@ class GeospatialAPI(APIClient):
 
             Create new type definitions:
 
-                >>> from cognite.experimental import CogniteClient
-                >>> from cognite.experimental.data_classes.geospatial import FeatureType
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.geospatial import FeatureType
                 >>> c = CogniteClient()
                 >>> feature_types = [
                 ...     FeatureType(external_id="wells", properties={"location": {"type": "POINT", "srid": 4326}})
@@ -71,7 +70,7 @@ class GeospatialAPI(APIClient):
 
             Delete feature type definitions external id:
 
-                >>> from cognite.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> c.geospatial.delete_feature_types(external_id=["wells", "pipelines"])
         """
@@ -94,7 +93,7 @@ class GeospatialAPI(APIClient):
 
             Iterate over feature type definitions:
 
-                >>> from cognite.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> for feature_type in c.geospatial.list_feature_types():
                 ...     feature_type # do something with the feature type definition
@@ -115,7 +114,7 @@ class GeospatialAPI(APIClient):
 
             Get Type by external id:
 
-                >>> from cognite.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.geospatial.retrieve_feature_types(external_id="1")
         """
@@ -140,25 +139,31 @@ class GeospatialAPI(APIClient):
 
             Add one property to a feature type:
 
-                >>> from cognite.experimental import CogniteClient
+                >>> from cognite.client.data_classes.geospatial import PropertyAndSearchSpec
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.geospatial.update_feature_types(update=FeatureTypeUpdate(external_id="wells", add=PropertyAndSearchSpec(properties={"altitude": {"type": "DOUBLE"}}, search_spec={"altitude_idx": {"properties": ["altitude"]}})))
         """
         if isinstance(update, FeatureTypeUpdate):
             update = [update]
 
-        mapper = lambda it: {
-            "properties": None if not hasattr(it, "properties") else {"add": it.properties},
-            "searchSpec": None if not hasattr(it, "search_spec") else {"add": it.search_spec},
-        }
-        json = {"items": [{"externalId": it.external_id, "update": mapper(it.add)} for it in update]}
+        def mapper(it):
+            add_properties = it.add.properties if hasattr(it, "add") else None
+            remove_properties = it.remove.properties if hasattr(it, "remove") else None
+            add_search_spec = it.add.search_spec if hasattr(it, "add") else None
+            remove_search_spec = it.remove.search_spec if hasattr(it, "remove") else None
+            properties_update = {"add": add_properties, "remove": remove_properties}
+            search_spec_update = {"add": add_search_spec, "remove": remove_search_spec}
+            return {"properties": properties_update, "searchSpec": search_spec_update}
+
+        json = {"items": [{"externalId": it.external_id, "update": mapper(it)} for it in update]}
         res = self._post(url_path=f"{self._RESOURCE_PATH}/featuretypes/update", json=json)
         return FeatureTypeList._load(res.json()["items"], cognite_client=self._cognite_client)
 
     def create_features(
         self,
         feature_type_external_id: str,
-        feature: Union[Feature, List[Feature]],
+        feature: Union[Feature, List[Feature], FeatureList],
         allow_crs_transformation: bool = False,
     ) -> Union[Feature, FeatureList]:
         """`Creates features`
@@ -166,7 +171,7 @@ class GeospatialAPI(APIClient):
 
         Args:
             feature_type_external_id : Feature type definition for the features to create.
-            feature: one feature or a list of features to create
+            feature: one feature or a list of features to create or a FeatureList object
             allow_crs_transformation: If true, then input geometries will be transformed into the Coordinate Reference
                 System defined in the feature type specification. When it is false, then requests with geometries in
                 Coordinate Reference System different from the ones defined in the feature type will result in
@@ -179,7 +184,7 @@ class GeospatialAPI(APIClient):
 
             Create a new feature type and corresponding feature:
 
-                >>> from cognite.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> feature_types = [
                 ...     FeatureType(external_id="my_feature_type", properties={"location": {"type": "POINT", "srid": 4326}, "temperature": {"type": "DOUBLE"}})
@@ -187,6 +192,8 @@ class GeospatialAPI(APIClient):
                 >>> res = c.geospatial.create_feature_types(feature_types)
                 >>> res = c.geospatial.create_features("my_feature_type", Feature(external_id="my_feature", location={"wkt": "POINT(1 1)"}, temperature=12.4))
         """
+        if isinstance(feature, FeatureList):
+            feature = list(feature)
         resource_path = self._feature_resource_path(feature_type_external_id)
         extra_body_fields = {"allowCrsTransformation": "true"} if allow_crs_transformation else {}
         return self._create_multiple(
@@ -208,7 +215,7 @@ class GeospatialAPI(APIClient):
 
             Delete feature type definitions external id:
 
-                >>> from cognite.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> c.geospatial.delete_feature("my_feature_type", external_id=my_feature)
         """
@@ -232,7 +239,7 @@ class GeospatialAPI(APIClient):
 
             Retrieve one feature by its external id:
 
-                >>> from cognite.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> c.geospatial.retrieve_feature("my_feature_type", external_id="my_feature")
         """
@@ -265,12 +272,14 @@ class GeospatialAPI(APIClient):
 
             Update one feature:
 
-                >>> from cognite.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> my_feature = c.geospatial.create_features("my_feature_type", Feature(external_id="my_feature", temperature=12.4))
                 >>> # do some stuff
                 >>> my_updated_feature = c.geospatial.update_features("my_feature_type", Feature(external_id="my_feature", temperature=6.237))
         """
+        if isinstance(feature, FeatureList):
+            feature = list(feature)
         # updates for feature are not following the patch structure from other resources
         # they are more like a replace so an update looks like a feature creation (yeah, borderline ?)
         resource_path = self._feature_resource_path(feature_type_external_id) + "/update"
@@ -309,7 +318,7 @@ class GeospatialAPI(APIClient):
 
             Search for features:
 
-                >>> from cognite.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> my_feature_type = c.geospatial.retrieve_feature_types(external_id="my_feature_type")
                 >>> my_feature = c.geospatial.create_features(my_feature_type, Feature(external_id="my_feature", temperature=12.4, location={"wkt": "POINT(0 1)"}))
@@ -377,7 +386,7 @@ class GeospatialAPI(APIClient):
 
             Stream features:
 
-                >>> from cognite.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> my_feature = c.geospatial.create_features("my_feature_type", Feature(external_id="my_feature", temperature=12.4))
                 >>> features = c.geospatial.stream_features("my_feature_type", filter={"range": {"property": "temperature", "gt": 12.0}})
@@ -429,7 +438,7 @@ class GeospatialAPI(APIClient):
 
             Aggregate property of features:
 
-                >>> from cognite.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> my_feature = c.geospatial.create_features("my_feature_type", Feature(external_id="my_feature", temperature=12.4))
                 >>> res = c.geospatial.aggregate_features("my_feature_type", filter={"range": {"property": "temperature", "gt": 12.0}}, property="temperature", aggregates=["max", "min"], groupBy=["category"])
@@ -459,7 +468,7 @@ class GeospatialAPI(APIClient):
 
             Get two CRS definitions:
 
-                >>> from cognite.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> crs = c.geospatial.get_coordinate_reference_systems(srids=[4326, 4327])
         """
@@ -485,7 +494,7 @@ class GeospatialAPI(APIClient):
 
             Fetch all custom CRSs:
 
-                >>> from cognite.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> crs = c.geospatial.list_coordinate_reference_systems(only_custom=True)
         """
@@ -508,7 +517,7 @@ class GeospatialAPI(APIClient):
 
             Create a custom CRS:
 
-                >>> from cognite.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> custom_crs = CoordinateReferenceSystem(srid = 121111, wkt="wkt", proj_string="proj")
                 >>> crs = c.geospatial.create_coordinate_reference_systems(custom_crs)
@@ -535,7 +544,7 @@ class GeospatialAPI(APIClient):
 
             Delete a custom CRS:
 
-                >>> from cognite.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> crs = c.geospatial.delete_coordinate_reference_systems(srids=[121111])
         """
