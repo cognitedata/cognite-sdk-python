@@ -18,7 +18,6 @@ class DatapointsAPI(APIClient):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # TODO limit set to 10000 here
         self._DPS_LIMIT_AGG = 10000
         self._DPS_LIMIT = 100000
         self._POST_DPS_OBJECTS_LIMIT = 10000
@@ -454,8 +453,6 @@ class DatapointsAPI(APIClient):
                 ...         aggregates=["interpolation"], granularity="1m", include_aggregate_name=False, complete="fill,dropna")
         """
         pd = utils._auxiliary.local_import("pandas")
-        import time
-        start_time = time.time()
         if id is not None:
             id_dpl = self.retrieve(
                 id=id,
@@ -487,7 +484,6 @@ class DatapointsAPI(APIClient):
             )
             if external_id_dpl is None:
                 external_id_dpl = DatapointsList([])
-            logging.info("DIFF TIME %s", time.time() - start_time)
             external_id_df = external_id_dpl.to_pandas()
         else:
             external_id_df = pd.DataFrame()
@@ -830,9 +826,7 @@ class _DPTask:
                         copy_data, expected_fields, cognite_client=self.client._cognite_client
                     )
                 raw_data["datapoints"] = raw_data["datapoints"][:-1]
-        logging.info("loading data")
         self.results.append(Datapoints._load(raw_data, expected_fields, cognite_client=self.client._cognite_client))
-        logging.info("task.results %s", self.results)
         last_timestamp = raw_data["datapoints"] and raw_data["datapoints"][-1]["timestamp"]
         return len(raw_data["datapoints"]), last_timestamp
 
@@ -874,11 +868,8 @@ class DatapointsFetcher:
         return self.fetch_multiple([query], retrieve_multiple=retrieve_multiple)[0]
 
     def fetch_multiple(self, queries: List[DatapointsQuery], retrieve_multiple: bool = False) -> List[DatapointsList]:
-        # queries = [{"id", 87687, "start_time", ...},] -> reach elements like query[0].id
-        # task_lists [(DPTask), () ...] -> per DPTask is per externalid/id
-        # ts_items [{"id", 133}, ...] all
-        task_lists = [self._create_tasks(q)[0] for q in queries]
-        ts_items = [self._create_tasks(q)[1] for q in queries]
+        task_lists : List[List[Dict]] = [self._create_tasks(q)[0] for q in queries]
+        ts_items : List[List[_DPTask]] = [self._create_tasks(q)[1] for q in queries]
         self._fetch_datapoints(sum(task_lists, []), ts_items=ts_items, retrieve_multiple=retrieve_multiple)
         return self._get_dps_results(task_lists)
 
@@ -926,37 +917,24 @@ class DatapointsFetcher:
             t.end = new_end
 
     def _get_dps_results(self, task_lists: List[List[_DPTask]]) -> List[DatapointsList]:
-        # TODO Where it returns the result of the requested datapoints
-        for tl in task_lists:
-            for t in tl:
-                logging.info("_get_dps_results, t %s", t)
-                #logging.info("_get_dps_results, t.ts_item %s", t.ts_item)
-                #logging.info("_get_dps_results, t result %s", t.result()) # datapoints only: fails
         return [
             DatapointsList([t.result() for t in tl if not t.missing], cognite_client=self.client._cognite_client)
             for tl in task_lists
         ]
-    def _chunk_ids(self, ts_items: List[Dict[str, Any]], tasks: List[_DPTask]):
+    def _chunk_ids(self, ts_items: List[Dict[str, Any]], tasks: List[_DPTask]) -> List[List[Dict[str, Any]]]:
         """
         Chunks the ids for processing multiple of them while fetching datapoints
-
-        queries = [{"id", 87687, "start_time", ...},] -> reach elements like query[0].id
-        task_lists [(DPTask), () ...] -> per DPTask is per datapoint
-        tasks: sum of task_lists with []
-        _fetch_dps_initial_and_return_remaining_tasks is called for each item on execute_tasks_concurrently
-        so task is per external_id
-        chunk -> list of ts_items (dict)
-        [tasks[0]] is for getting other items from DPTask which is common for chunks of datapoints.
         """
-        #logging.info("ts_items %s", ts_items)
+        logging.info("ts_items len {}".format(len(ts_items)))
         ts_items_chunk = utils._auxiliary.split_into_chunks(ts_items, 50)
+        for i in ts_items_chunk:
+            logging.info("ts_items_chunk len {}".format(len(i)))
         task_chunk = utils._auxiliary.split_into_chunks(tasks, 50)
         return ts_items_chunk, task_chunk
 
     def _fetch_datapoints(self, tasks: List[_DPTask], ts_items: List[Dict[str, Any]] = None, retrieve_multiple: bool = False):
         if retrieve_multiple:
             ts_items_chunk, task_chunk = self._chunk_ids(ts_items[0], tasks)
-            #logging.info("task_chunk %s", task_chunk)
             tasks_summary = utils._concurrency.execute_tasks_concurrently(
                 self._fetch_dps_initial_and_return_remaining_tasks,
                 task_chunk, # list of <cognite.client._api.datapoints._DPTask object
@@ -978,11 +956,9 @@ class DatapointsFetcher:
             self._fetch_datapoints_for_remaining_queries(remaining_tasks_with_windows)
 
     def _fetch_dps_initial_and_return_remaining_tasks(self, task: List[_DPTask], ts_items_chunk: List[Dict] = None) -> List[Tuple[_DPTask, _DPWindow]]:
-        #logging.info("task.request_limit %s", task.request_limit) #100000
-        logging.info("task.ts_item %s", task.ts_item) # 136 from multiple fetch
         ndp_in_first_task, last_timestamp = self._get_datapoints(task, None, True, ts_items_chunk=ts_items_chunk)
-        logging.info("ndp_in_first_task %s",ndp_in_first_task) # []
         # as we are limiting datapoints we retrieve, no need to check the limits
+        # TODO sum up ndp for chunks on _get_datapoints and improve the rest
         if ts_items_chunk:
             return []
         if ndp_in_first_task < task.request_limit:
@@ -990,7 +966,6 @@ class DatapointsFetcher:
         remaining_user_limit = task.limit - ndp_in_first_task
         task.start = last_timestamp + task.next_start_offset()
         queries = self._split_task_into_windows(task.results[0].id, task, remaining_user_limit)
-        logging.info("queries %s", queries)
         return queries
 
     def _fetch_datapoints_for_remaining_queries(self, tasks_with_windows: List[Tuple[_DPTask, _DPWindow]]):
@@ -1082,37 +1057,36 @@ class DatapointsFetcher:
             window.start = last_time + task.next_start_offset()
 
     def _get_datapoints(
-        self, task: _DPTask, window: _DPWindow = None, first_page: bool = False, ts_items_chunk: List[Dict] = None
+        self, task: Union[List[_DPTask], _DPTask], window: _DPWindow = None, first_page: bool = False, ts_items_chunk: List[Dict] = None
     ) -> Tuple[int, Union[None, int]]:
-        window = window or _DPWindow(task.start, task.end, task.limit)
-        # TODO question is it ok to request same window start and end for multiple timeseries?
+        if isinstance(task, list):
+           task_ = task[0]
+        else:
+            task_ = task
+        window = window or _DPWindow(task_.start, task_.end, task_.limit)
         payload = {
-            "items": ts_items_chunk if ts_items_chunk else [task.ts_item],
+            "items": ts_items_chunk if ts_items_chunk else [task_.ts_item],
             "start": window.start,
             "end": window.end,
-            "aggregates": task.aggregates,
-            "granularity": task.granularity,
-            "includeOutsidePoints": task.include_outside_points and first_page,
-            "ignoreUnknownIds": task.ignore_unknown_ids,
-            "limit": min(window.limit, task.request_limit),
+            "aggregates": task_.aggregates,
+            "granularity": task_.granularity,
+            "includeOutsidePoints": task_.include_outside_points and first_page,
+            "ignoreUnknownIds": task_.ignore_unknown_ids,
+            "limit": min(window.limit, task_.request_limit),
         }
-        # TODO  fix, check
-        # res : [{"id": 12, 'externalId': "extid", "datapoints": [{"timestamp": 123, "average": 1}, {"timestamp": 124, "average": 2}]}]
-        res = self.client._post(self.client._RESOURCE_PATH + "/list", json=payload).json()["items"]
+        res : list[Dict] = self.client._post(self.client._RESOURCE_PATH + "/list", json=payload).json()["items"]
         logging.info("result of post : %s", res) # gets full result
-        if ts_items_chunk:
-            logging.info("ts_items_chunk %s", len(ts_items_chunk))
-        if not res and task.ignore_unknown_ids:
-            return task.mark_missing()
+        if not res and task_.ignore_unknown_ids:
+            return task_.mark_missing()
         else:
-            # if retrieve_multiple and limit is set, no need to check datapoint amounts
             if ts_items_chunk:
-                # iterate through task
-                for i in range(len(ts_items_chunk)):
-                    logging.info("iteration on items %s", i)
-                    if i == len(ts_items_chunk) - 1:
-                        return task.store_partial_result(res[i], window.start, window.end)
-                    task.store_partial_result(res[i], window.start, window.end)
+                logging.info("len res %s", len(res))
+                logging.info("len(ts_items_chunk) %s", len(ts_items_chunk))
+                for i in range(len(res)):
+                    #logging.info("where it fails? %s", i) #47
+                    if i == len(res) - 1:
+                        return task[i].store_partial_result(res[i], window.start, window.end)
+                    task[i].store_partial_result(res[i], window.start, window.end)
             return task.store_partial_result(res[0], window.start, window.end)
 
     @staticmethod
