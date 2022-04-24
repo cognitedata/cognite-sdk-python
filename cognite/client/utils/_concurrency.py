@@ -1,9 +1,10 @@
+import logging
 from collections import UserList
 from concurrent.futures.thread import ThreadPoolExecutor
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
 from cognite.client.exceptions import CogniteAPIError, CogniteDuplicatedError, CogniteNotFoundError
-import logging
+
 
 class TasksSummary:
     def __init__(
@@ -121,7 +122,6 @@ def execute_tasks_concurrently(func: Callable, tasks: Union[List[Tuple], List[Di
                     fetch_dps_samples = p.submit(func, tasks[index], chunk)
                     futures.append(fetch_dps_samples)
                     logging.info("future inside thread %s", len(futures))
-            pass
         else:
             for task in tasks:
                 if isinstance(task, dict):
