@@ -112,17 +112,19 @@ def execute_tasks_concurrently(func: Callable, tasks: Union[List[Tuple], List[Di
     assert max_workers > 0, "Number of workers should be >= 1, was {}".format(max_workers)
     with ThreadPoolExecutor(max_workers) as p:
         futures = []
-        # then execute the function per chunk
-        for index, chunk in enumerate(ts_items_chunk):
-            if isinstance(chunk, list):
-                fetch_dps_samples = p.submit(func, tasks[index], chunk)
-                futures.append(fetch_dps_samples)
-        # else:
-        #     for task in tasks:
-        #         if isinstance(task, dict):
-        #             futures.append(p.submit(func, **task))
-        #         elif isinstance(task, tuple):
-        #             futures.append(p.submit(func, *task))
+        # TODO remove ts_items_chunk iteration or even use task items
+        if ts_items_chunk:
+            # then execute the function per chunk
+            for index, chunk in enumerate(ts_items_chunk):
+                if isinstance(chunk, list):
+                    fetch_dps_samples = p.submit(func, tasks[index], chunk)
+                    futures.append(fetch_dps_samples)
+        else:
+            for task in tasks:
+                if isinstance(task, dict):
+                    futures.append(p.submit(func, **task))
+                elif isinstance(task, tuple):
+                    futures.append(p.submit(func, *task))
         successful_tasks = []
         failed_tasks = []
         unknown_result_tasks = []
