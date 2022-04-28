@@ -1052,24 +1052,29 @@ class DatapointsFetcher:
 
         if isinstance(ids, List):
             is_list = True
-            for item in ids:
-                items.append(DatapointsFetcher._process_single_ts_item(item, False))
+            items.extend(
+                DatapointsFetcher._process_single_ts_item(item, False)
+                for item in ids
+            )
         elif ids is not None:
             items.append(DatapointsFetcher._process_single_ts_item(ids, False))
 
         if isinstance(external_ids, List):
             is_list = True
-            for item in external_ids:
-                items.append(DatapointsFetcher._process_single_ts_item(item, True))
+            items.extend(
+                DatapointsFetcher._process_single_ts_item(item, True)
+                for item in external_ids
+            )
+
         elif external_ids is not None:
             items.append(DatapointsFetcher._process_single_ts_item(external_ids, True))
 
         return items, not is_list and len(items) == 1
 
     @staticmethod
-    def _process_single_ts_item(item, external: bool):
-        item_type = "externalId" if external else "id"
-        id_type = str if external else int
+    def _process_single_ts_item(item, is_external: bool):
+        item_type = "externalId" if is_external else "id"
+        id_type = str if is_external else int
         if isinstance(item, id_type):
             return {item_type: item}
         elif isinstance(item, Dict):

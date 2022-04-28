@@ -58,7 +58,7 @@ def assert_exactly_one_of_id_or_external_id(id, external_id):
     has_external_id = external_id is not None
 
     assert (has_id or has_external_id) and not (
-        has_id and has_external_id
+            has_id and has_external_id
     ), "Exactly one of id and external id must be specified"
 
     if has_id:
@@ -173,17 +173,16 @@ class PriorityQueue:
 
 
 def split_into_chunks(collection: Union[List, Dict], chunk_size: int) -> List[Union[List, Dict]]:
-    chunks = []
-    if isinstance(collection, list):
-        for i in range(0, len(collection), chunk_size):
-            chunks.append(collection[i : i + chunk_size])
-        return chunks
+    if not isinstance(collection, (dict, list)):
+        raise ValueError("Can only split list or dict")
+    entry_constructor = lambda x: x
     if isinstance(collection, dict):
         collection = list(collection.items())
-        for i in range(0, len(collection), chunk_size):
-            chunks.append({k: v for k, v in collection[i : i + chunk_size]})
-        return chunks
-    raise ValueError("Can only split list or dict")
+        entry_constructor = dict
+    return [
+        entry_constructor(collection[i: i + chunk_size])
+        for i in range(0, len(collection), chunk_size)
+    ]
 
 
 def convert_true_match(true_match):
