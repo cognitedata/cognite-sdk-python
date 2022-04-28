@@ -58,7 +58,7 @@ def assert_exactly_one_of_id_or_external_id(id, external_id):
     has_external_id = external_id is not None
 
     assert (has_id or has_external_id) and not (
-            has_id and has_external_id
+        has_id and has_external_id
     ), "Exactly one of id and external id must be specified"
 
     if has_id:
@@ -179,10 +179,7 @@ def split_into_chunks(collection: Union[List, Dict], chunk_size: int) -> List[Un
     if isinstance(collection, dict):
         collection = list(collection.items())
         entry_constructor = dict
-    return [
-        entry_constructor(collection[i: i + chunk_size])
-        for i in range(0, len(collection), chunk_size)
-    ]
+    return [entry_constructor(collection[i : i + chunk_size]) for i in range(0, len(collection), chunk_size)]
 
 
 def convert_true_match(true_match):
