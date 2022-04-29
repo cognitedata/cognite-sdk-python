@@ -1521,7 +1521,7 @@ class TestDataFetcher:
             client=cognite_client.datapoints,
             start=start,
             end=end,
-            ts_item={},
+            ts_items=[{}],
             granularity=granularity,
             aggregates=[],
             limit=None,

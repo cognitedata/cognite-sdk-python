@@ -827,7 +827,16 @@ class _DPResult:
 
 class _DPTask:
     def __init__(
-        self, client, start, end, ts_items, aggregates, granularity, include_outside_points, limit, ignore_unknown_ids
+        self,
+        client,
+        start,
+        end,
+        ts_items: List[dict],
+        aggregates,
+        granularity,
+        include_outside_points,
+        limit,
+        ignore_unknown_ids,
     ):
         self.start = cognite.client.utils._time.timestamp_to_ms(start)
         self.end = cognite.client.utils._time.timestamp_to_ms(end)
