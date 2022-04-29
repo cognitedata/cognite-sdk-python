@@ -1020,7 +1020,7 @@ class DatapointsFetcher:
             count_granularity = task.granularity
         try:
             count_task = _DPTask(
-                self.client, start, task.end, {"id": id}, ["count"], count_granularity, False, None, False
+                self.client, start, task.end, [{"id": id}], ["count"], count_granularity, False, None, False
             )
             self._get_datapoints_with_paging(count_task, _DPWindow(start, task.end))
             # Todo Update with _DPTask
