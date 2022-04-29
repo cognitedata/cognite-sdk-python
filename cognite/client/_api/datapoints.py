@@ -908,7 +908,7 @@ class DatapointsFetcher:
         task_list = self._create_tasks(query, chunk_size)
         self._fetch_datapoints(task_list)
         return DatapointsList(
-            [result.compute() for task in task_list for result in task.results.values() if not result.missing],
+            [result.compute() for task in task_list for result in task.results.values()],
             cognite_client=self.client._cognite_client,
         )
 

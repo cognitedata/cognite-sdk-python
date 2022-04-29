@@ -272,26 +272,24 @@ class Datapoints:
                 value.extend(other_value)
 
     def _get_non_empty_data_fields(self, get_empty_lists=False, get_error=True) -> List[Tuple[str, Any]]:
-        non_empty_data_fields = []
-        for attr, value in self.__dict__.copy().items():
+        return [
+            (attr, value)
+            for attr, value in self.__dict__.copy().items()
             if (
                 attr not in ["id", "external_id", "is_string", "is_step", "unit"]
                 and attr[0] != "_"
                 and (attr != "error" or get_error)
-            ):
-                if value is not None or attr == "timestamp":
-                    if len(value) > 0 or get_empty_lists or attr == "timestamp":
-                        non_empty_data_fields.append((attr, value))
-        return non_empty_data_fields
+            )
+            and (value is not None or attr == "timestamp")
+            and (len(value) > 0 or get_empty_lists or attr == "timestamp")
+        ]
 
     def __get_datapoint_objects(self) -> List[Datapoint]:
         if self.__datapoint_objects is None:
             fields = self._get_non_empty_data_fields(get_error=False)
             self.__datapoint_objects = []
             for i in range(len(self)):
-                dp_args = {}
-                for attr, value in fields:
-                    dp_args[attr] = value[i]
+                dp_args = {attr: value[i] for attr, value in fields}
                 self.__datapoint_objects.append(Datapoint(**dp_args))
         return self.__datapoint_objects
 
