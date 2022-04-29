@@ -994,6 +994,8 @@ class DatapointsFetcher:
             return []
         remaining_tasks = []
         for result in results.values():
+            if result.datapoint_length < task.request_limit // ts_count:
+                continue
             remaining_user_limit = task.limit - result.datapoint_length
             start = result.last_timestamp + task.next_start_offset()
             tasks = self._split_task_into_windows(result.results[0].id, task, remaining_user_limit, start)
