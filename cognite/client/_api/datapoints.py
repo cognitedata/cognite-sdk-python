@@ -743,15 +743,10 @@ class DatapointsPoster:
                     bin = DatapointsBin(self.client._DPS_LIMIT, self.client._POST_DPS_OBJECTS_LIMIT)
                     bin.add(dps_object_chunk)
                     self.bins.append(bin)
-        binned_dps_object_list = []
-        for bin in self.bins:
-            binned_dps_object_list.append(bin.dps_object_list)
-        return binned_dps_object_list
+        return [bin.dps_object_list for bin in self.bins]
 
     def _insert_datapoints_concurrently(self, dps_object_lists: List[List[Dict[str, Any]]]):
-        tasks = []
-        for dps_object_list in dps_object_lists:
-            tasks.append((dps_object_list,))
+        tasks = [(dps_object_list,) for dps_object_list in dps_object_lists]
         summary = utils._concurrency.execute_tasks_concurrently(
             self._insert_datapoints, tasks, max_workers=self.client._config.max_workers
         )
