@@ -300,11 +300,13 @@ def assert_dps_response_is_correct(calls, dps_object):
     datapoints = []
     for call in calls:
         if jsgz_load(call.request.body)["limit"] > 1 and jsgz_load(call.request.body).get("aggregates") != ["count"]:
-            dps_response = call.response.json()["items"][0]
-            if dps_response["id"] == dps_object.id and dps_response["externalId"] == dps_object.external_id:
-                datapoints.extend(dps_response["datapoints"])
-                id = dps_response["id"]
-                external_id = dps_response["externalId"]
+            dps_responses = call.response.json()["items"]
+            for dps_response in dps_responses:
+                if dps_response["id"] == dps_object.id and dps_response["externalId"] == dps_object.external_id:
+                    datapoints.extend(dps_response["datapoints"])
+                    id = dps_response["id"]
+                    external_id = dps_response["externalId"]
+                    break
 
     expected_dps = sorted(datapoints, key=lambda x: x["timestamp"])
     assert id == dps_object.id
