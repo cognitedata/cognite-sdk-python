@@ -144,15 +144,10 @@ def mock_get_datapoints_one_ts_empty(rsps, cognite_client):
                     "isString": False,
                     "isStep": False,
                     "datapoints": [{"timestamp": 1, "value": 1}],
-                }
+                },
+                {"id": 2, "externalId": "2", "isString": False, "isStep": False, "datapoints": []},
             ]
         },
-    )
-    rsps.add(
-        rsps.POST,
-        cognite_client.datapoints._get_base_url_with_base_path() + "/timeseries/data/list",
-        status=200,
-        json={"items": [{"id": 2, "externalId": "2", "isString": False, "isStep": False, "datapoints": []}]},
     )
     yield rsps
 
