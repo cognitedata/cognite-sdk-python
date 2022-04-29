@@ -912,6 +912,10 @@ class DatapointsFetcher:
 
     def _create_tasks(self, query: DatapointsQuery, chunk_size=1) -> List[_DPTask]:
         ts_items, _ = self._process_ts_identifiers(query.id, query.external_id)
+
+        if any("aggregates" in ts_item for ts_item in ts_items):
+            chunk_size = 1
+
         tasks = [
             _DPTask(
                 self.client,
