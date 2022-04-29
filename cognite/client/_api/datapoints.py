@@ -990,8 +990,6 @@ class DatapointsFetcher:
     def _fetch_dps_initial_and_return_remaining_tasks(self, task: _DPTask) -> List[Tuple[_DPTask, _DPWindow]]:
         results = self._get_datapoints(task, None, True)
         ts_count = len(results)
-        if all(result.datapoint_length < task.request_limit // ts_count for result in results.values()):
-            return []
         remaining_tasks = []
         for result in results.values():
             if result.datapoint_length < task.request_limit // ts_count:
