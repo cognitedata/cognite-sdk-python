@@ -867,7 +867,7 @@ class _DPTask:
             key = next(iter(ts_item.items()))
             result = self.results[key]
             raw_data = result_by_identifiers.get(key)
-            if raw_data is None:
+            if raw_data is None and self.ignore_unknown_ids:
                 result.mark_missing()
             else:
                 result.store(
@@ -908,7 +908,7 @@ class DatapointsFetcher:
         task_list = self._create_tasks(query, chunk_size)
         self._fetch_datapoints(task_list)
         return DatapointsList(
-            [result.compute() for task in task_list for result in task.results.values()],
+            [result.compute() for task in task_list for result in task.results.values() if not result.missing],
             cognite_client=self.client._cognite_client,
         )
 
