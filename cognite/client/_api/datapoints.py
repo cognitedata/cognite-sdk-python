@@ -1,6 +1,7 @@
 import copy
 import math
 import re as regexp
+from collections import defaultdict
 from datetime import datetime
 from typing import *
 
@@ -842,7 +843,8 @@ class _DPTask:
 
         self.client = client
         self.request_limit = client._DPS_LIMIT_AGG if self.aggregates else client._DPS_LIMIT
-        self.results = []
+        self.results = defaultdict(lambda: _DPResult(self.limit))
+        self.last_result = None
 
     def next_start_offset(self):
         return cognite.client.utils._time.granularity_to_ms(self.granularity) if self.granularity else 1
@@ -858,16 +860,16 @@ class _DPTask:
         else:
             result_by_identifiers = {}
         for ts_item in self.ts_items:
-            identifier, item = next(iter(ts_item.items()))
-            result = _DPResult(self.limit)
-            raw_data = result_by_identifiers.get((identifier, item))
+            key = next(iter(ts_item.items()))
+            result = self.results[key]
+            raw_data = result_by_identifiers.get(key)
             if raw_data is None:
                 result.mark_missing()
             else:
                 result.store(
                     raw_data, start, end, expected_fields, self.include_outside_points, self.client._cognite_client
                 )
-            self.results.append(result)
+            self.last_result = result
         return self.results
 
     def as_tuples(self):
@@ -896,12 +898,13 @@ class DatapointsFetcher:
             end = utils._time.timestamp_to_ms(query.end)
             freq = utils._time.granularity_to_ms(query.granularity)
             max_datapoint_count = int((end - start) / freq) + 1 + (2 if query.include_outside_points else 0)
-            chunk_size = min(chunk_size, int(self.client._DPS_LIMIT_AGG / max_datapoint_count))
+            chunk_size = min(chunk_size, self.client._DPS_LIMIT_AGG // max_datapoint_count)
+        chunk_size = max(chunk_size, 1)
 
         task_list = self._create_tasks(query, chunk_size)
         self._fetch_datapoints(task_list)
         return DatapointsList(
-            [result.compute() for task in task_list for result in task.results if not result.missing],
+            [result.compute() for task in task_list for result in task.results.values() if not result.missing],
             cognite_client=self.client._cognite_client,
         )
 
@@ -960,7 +963,7 @@ class DatapointsFetcher:
     def _get_dps_results(self, task_lists: List[List[_DPTask]]) -> List[DatapointsList]:
         return [
             DatapointsList(
-                [result.compute() for result in task.results if not result.missing],
+                [result.compute() for result in task.results.values() if not result.missing],
                 cognite_client=self.client._cognite_client,
             )
             for task_list in task_lists
@@ -983,10 +986,10 @@ class DatapointsFetcher:
     def _fetch_dps_initial_and_return_remaining_tasks(self, task: _DPTask) -> List[Tuple[_DPTask, _DPWindow]]:
         results = self._get_datapoints(task, None, True)
         ts_count = len(results)
-        if all(result.datapoint_length < task.request_limit // ts_count for result in results):
+        if all(result.datapoint_length < task.request_limit // ts_count for result in results.values()):
             return []
         remaining_tasks = []
-        for result in results:
+        for result in results.values():
             remaining_user_limit = task.limit - result.datapoint_length
             start = result.last_timestamp + task.next_start_offset()
             tasks = self._split_task_into_windows(result.results[0].id, task, remaining_user_limit, start)
@@ -1027,8 +1030,7 @@ class DatapointsFetcher:
                 self.client, start, task.end, [{"id": id}], ["count"], count_granularity, False, None, False
             )
             self._get_datapoints_with_paging(count_task, _DPWindow(start, task.end))
-            # Todo Update with _DPTask
-            res = count_task.results[0].compute()
+            res = count_task.last_result.compute()
         except CogniteAPIError:
             res = []
         if not res:  # string based series or aggregates not yet calculated
@@ -1077,14 +1079,17 @@ class DatapointsFetcher:
     def _get_datapoints_with_paging(self, task, window):
         ndp_retrieved_total = 0
         while window.end > window.start and ndp_retrieved_total < window.limit:
-            result = self._get_datapoints(task, window)
-            ndp_retrieved, last_time = result[0].datapoint_length, result[0].last_timestamp
+            _ = self._get_datapoints(task, window)
+            last_result = task.last_result
+            ndp_retrieved, last_time = last_result.datapoint_length, last_result.last_timestamp
             if ndp_retrieved < min(window.limit, task.request_limit):
                 break
             window.limit -= ndp_retrieved
             window.start = last_time + task.next_start_offset()
 
-    def _get_datapoints(self, task: _DPTask, window: _DPWindow = None, first_page: bool = False) -> List[_DPResult]:
+    def _get_datapoints(
+        self, task: _DPTask, window: _DPWindow = None, first_page: bool = False
+    ) -> Dict[Any, _DPResult]:
         window = window or _DPWindow(task.start, task.end, task.limit)
         limit = min(window.limit * len(task.ts_items), task.request_limit // len(task.ts_items))
         payload = {
