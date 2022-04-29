@@ -878,15 +878,7 @@ class _DPTask:
 
     def as_tuples(self):
         return [
-            (
-                self.start,
-                self.end,
-                ts_item,
-                self.aggregates,
-                self.granularity,
-                self.include_outside_points,
-                self.limit,
-            )
+            (self.start, self.end, ts_item, self.aggregates, self.granularity, self.include_outside_points, self.limit)
             for ts_item in self.ts_items
         ]
 
