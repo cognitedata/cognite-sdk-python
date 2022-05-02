@@ -1,6 +1,7 @@
 import copy
 import math
 import re as regexp
+from collections import defaultdict
 from datetime import datetime
 from typing import *
 
@@ -21,6 +22,7 @@ class DatapointsAPI(APIClient):
         self._DPS_LIMIT = 100000
         self._POST_DPS_OBJECTS_LIMIT = 10000
         self._RETRIEVE_LATEST_LIMIT = 100
+        self._TS_LIMIT = 100
         self.synthetic = SyntheticDatapointsAPI(
             self._config, api_version=self._api_version, cognite_client=self._cognite_client
         )
@@ -741,15 +743,10 @@ class DatapointsPoster:
                     bin = DatapointsBin(self.client._DPS_LIMIT, self.client._POST_DPS_OBJECTS_LIMIT)
                     bin.add(dps_object_chunk)
                     self.bins.append(bin)
-        binned_dps_object_list = []
-        for bin in self.bins:
-            binned_dps_object_list.append(bin.dps_object_list)
-        return binned_dps_object_list
+        return [bin.dps_object_list for bin in self.bins]
 
     def _insert_datapoints_concurrently(self, dps_object_lists: List[List[Dict[str, Any]]]):
-        tasks = []
-        for dps_object_list in dps_object_lists:
-            tasks.append((dps_object_list,))
+        tasks = [(dps_object_list,) for dps_object_list in dps_object_lists]
         summary = utils._concurrency.execute_tasks_concurrently(
             self._insert_datapoints, tasks, max_workers=self.client._config.max_workers
         )
@@ -777,63 +774,42 @@ class _DPWindow:
         return [self.start, self.end, self.limit] == [other.start, other.end, other.limit]
 
 
-class _DPTask:
-    def __init__(
-        self, client, start, end, ts_item, aggregates, granularity, include_outside_points, limit, ignore_unknown_ids
-    ):
-        self.start = cognite.client.utils._time.timestamp_to_ms(start)
-        self.end = cognite.client.utils._time.timestamp_to_ms(end)
-        self.aggregates = ts_item.get("aggregates") or aggregates
-        self.ts_item = {k: v for k, v in ts_item.items() if k in ["id", "externalId"]}
-        self.granularity = granularity
-        self.include_outside_points = include_outside_points
-        self.limit = limit or float("inf")
-        self.ignore_unknown_ids = ignore_unknown_ids
-
-        self.client = client
-        self.request_limit = client._DPS_LIMIT_AGG if self.aggregates else client._DPS_LIMIT
-        self.missing = False
-        self.results = []
+class _DPResult:
+    def __init__(self, limit):
         self.point_before = Datapoints()
         self.point_after = Datapoints()
+        self.missing = False
+        self.results = []
+        self.limit = limit
+        self.datapoint_length = 0
+        self.last_timestamp = None
 
-    def next_start_offset(self):
-        return cognite.client.utils._time.granularity_to_ms(self.granularity) if self.granularity else 1
+    def mark_missing(self):
+        # for ignore unknown ids
+        self.missing = True
 
-    def store_partial_result(self, raw_data, start, end):
-        expected_fields = self.aggregates or ["value"]
-
-        if self.include_outside_points and raw_data["datapoints"]:
+    def store(self, raw_data, start, end, expected_fields, include_outside_points, cognite_client):
+        if include_outside_points and raw_data["datapoints"]:
             # assumes first query has full start/end range
             copy_data = copy.copy(raw_data)  # shallow copy
             if raw_data["datapoints"][0]["timestamp"] < start:
                 if not self.point_before:
                     copy_data["datapoints"] = raw_data["datapoints"][:1]
-                    self.point_before = Datapoints._load(
-                        copy_data, expected_fields, cognite_client=self.client._cognite_client
-                    )
+                    self.point_before = Datapoints._load(copy_data, expected_fields, cognite_client=cognite_client)
                 raw_data["datapoints"] = raw_data["datapoints"][1:]
             if raw_data["datapoints"] and raw_data["datapoints"][-1]["timestamp"] >= end:
                 if not self.point_after:
                     copy_data["datapoints"] = raw_data["datapoints"][-1:]
-                    self.point_after = Datapoints._load(
-                        copy_data, expected_fields, cognite_client=self.client._cognite_client
-                    )
+                    self.point_after = Datapoints._load(copy_data, expected_fields, cognite_client=cognite_client)
                 raw_data["datapoints"] = raw_data["datapoints"][:-1]
 
-        self.results.append(Datapoints._load(raw_data, expected_fields, cognite_client=self.client._cognite_client))
-        last_timestamp = raw_data["datapoints"] and raw_data["datapoints"][-1]["timestamp"]
-        return len(raw_data["datapoints"]), last_timestamp
+        self.results.append(Datapoints._load(raw_data, expected_fields, cognite_client=cognite_client))
+        self.last_timestamp = raw_data["datapoints"] and raw_data["datapoints"][-1]["timestamp"]
+        self.datapoint_length = len(raw_data["datapoints"])
 
-    def mark_missing(self):  # for ignore unknown ids
-        self.missing = True
-        return 0, None  # as in store partial result
-
-    def result(self):
+    def compute(self) -> Datapoints:
         def custom_sort_key(x):
-            if x.timestamp:
-                return x.timestamp[0]
-            return 0
+            return x.timestamp[0] if x.timestamp else 0
 
         dps = self.point_before
         for res in sorted(self.results, key=custom_sort_key):
@@ -843,16 +819,68 @@ class _DPTask:
             dps = dps[: self.limit]
         return dps
 
-    def as_tuple(self):
-        return (
-            self.start,
-            self.end,
-            self.ts_item,
-            self.aggregates,
-            self.granularity,
-            self.include_outside_points,
-            self.limit,
-        )
+
+class _DPTask:
+    def __init__(
+        self,
+        client,
+        start,
+        end,
+        ts_items: List[dict],
+        aggregates,
+        granularity,
+        include_outside_points,
+        limit,
+        ignore_unknown_ids,
+    ):
+        self.start = cognite.client.utils._time.timestamp_to_ms(start)
+        self.end = cognite.client.utils._time.timestamp_to_ms(end)
+        if len(ts_items) == 1:
+            self.aggregates = ts_items[0].get("aggregates") or aggregates
+        else:
+            self.aggregates = aggregates
+        self.ts_items = [{k: v for k, v in ts_item.items() if k in ["id", "externalId"]} for ts_item in ts_items]
+        self.granularity = granularity
+        self.include_outside_points = include_outside_points
+        self.limit = limit or float("inf")
+        self.ignore_unknown_ids = ignore_unknown_ids
+
+        self.client = client
+        self.request_limit = client._DPS_LIMIT_AGG if self.aggregates else client._DPS_LIMIT
+        self.results = defaultdict(lambda: _DPResult(self.limit))
+        self.last_result = None
+
+    def next_start_offset(self):
+        return cognite.client.utils._time.granularity_to_ms(self.granularity) if self.granularity else 1
+
+    def store_partial_result(self, request_result, start, end):
+        expected_fields = self.aggregates or ["value"]
+        if request_result:
+            result_by_identifiers = {
+                (identifier, entry[identifier]): entry
+                for entry in request_result
+                for identifier in ["id", "externalId"]
+            }
+        else:
+            result_by_identifiers = {}
+        for ts_item in self.ts_items:
+            key = next(iter(ts_item.items()))
+            result = self.results[key]
+            raw_data = result_by_identifiers.get(key)
+            if raw_data is None and self.ignore_unknown_ids:
+                result.mark_missing()
+            else:
+                result.store(
+                    raw_data, start, end, expected_fields, self.include_outside_points, self.client._cognite_client
+                )
+            self.last_result = result
+        return self.results
+
+    def as_tuples(self):
+        return [
+            (self.start, self.end, ts_item, self.aggregates, self.granularity, self.include_outside_points, self.limit)
+            for ts_item in self.ts_items
+        ]
 
 
 class DatapointsFetcher:
@@ -860,28 +888,46 @@ class DatapointsFetcher:
         self.client = client
 
     def fetch(self, query: DatapointsQuery) -> DatapointsList:
-        return self.fetch_multiple([query])[0]
+        chunk_size = self.client._TS_LIMIT
+        if query.granularity:
+            start = utils._time.timestamp_to_ms(query.start)
+            end = utils._time.timestamp_to_ms(query.end)
+            freq = utils._time.granularity_to_ms(query.granularity)
+            max_datapoint_count = int((end - start) / freq) + 1 + (2 if query.include_outside_points else 0)
+            chunk_size = min(chunk_size, self.client._DPS_LIMIT_AGG // max_datapoint_count)
+        chunk_size = max(chunk_size, 1)
+
+        task_list = self._create_tasks(query, chunk_size)
+        self._fetch_datapoints(task_list)
+        return DatapointsList(
+            [result.compute() for task in task_list for result in task.results.values() if not result.missing],
+            cognite_client=self.client._cognite_client,
+        )
 
     def fetch_multiple(self, queries: List[DatapointsQuery]) -> List[DatapointsList]:
         task_lists = [self._create_tasks(q) for q in queries]
         self._fetch_datapoints(sum(task_lists, []))
         return self._get_dps_results(task_lists)
 
-    def _create_tasks(self, query: DatapointsQuery) -> List[_DPTask]:
+    def _create_tasks(self, query: DatapointsQuery, chunk_size=1) -> List[_DPTask]:
         ts_items, _ = self._process_ts_identifiers(query.id, query.external_id)
+
+        if any("aggregates" in ts_item for ts_item in ts_items):
+            chunk_size = 1
+
         tasks = [
             _DPTask(
                 self.client,
                 query.start,
                 query.end,
-                ts_item,
+                ts_item_chunk,
                 query.aggregates,
                 query.granularity,
                 query.include_outside_points,
                 query.limit,
                 query.ignore_unknown_ids,
             )
-            for ts_item in ts_items
+            for ts_item_chunk in utils._auxiliary.split_into_chunks(ts_items, chunk_size)
         ]
         self._validate_tasks(tasks)
         self._preprocess_tasks(tasks)
@@ -890,10 +936,11 @@ class DatapointsFetcher:
     def _validate_tasks(self, tasks: List[_DPTask]):
         identifiers_seen = set()
         for t in tasks:
-            identifier = utils._auxiliary.unwrap_identifer(t.ts_item)
-            if identifier in identifiers_seen:
-                raise ValueError("Time series identifier '{}' is duplicated in query".format(identifier))
-            identifiers_seen.add(identifier)
+            for ts_item in t.ts_items:
+                identifier = utils._auxiliary.unwrap_identifer(ts_item)
+                if identifier in identifiers_seen:
+                    raise ValueError("Time series identifier '{}' is duplicated in query".format(identifier))
+                identifiers_seen.add(identifier)
             if t.aggregates is not None and t.granularity is None:
                 raise ValueError("When specifying aggregates, granularity must also be provided.")
             if t.granularity is not None and not t.aggregates:
@@ -911,8 +958,12 @@ class DatapointsFetcher:
 
     def _get_dps_results(self, task_lists: List[List[_DPTask]]) -> List[DatapointsList]:
         return [
-            DatapointsList([t.result() for t in tl if not t.missing], cognite_client=self.client._cognite_client)
-            for tl in task_lists
+            DatapointsList(
+                [result.compute() for result in task.results.values() if not result.missing],
+                cognite_client=self.client._cognite_client,
+            )
+            for task_list in task_lists
+            for task in task_list
         ]
 
     def _fetch_datapoints(self, tasks: List[_DPTask]):
@@ -929,13 +980,17 @@ class DatapointsFetcher:
             self._fetch_datapoints_for_remaining_queries(remaining_tasks_with_windows)
 
     def _fetch_dps_initial_and_return_remaining_tasks(self, task: _DPTask) -> List[Tuple[_DPTask, _DPWindow]]:
-        ndp_in_first_task, last_timestamp = self._get_datapoints(task, None, True)
-        if ndp_in_first_task < task.request_limit:
-            return []
-        remaining_user_limit = task.limit - ndp_in_first_task
-        task.start = last_timestamp + task.next_start_offset()
-        queries = self._split_task_into_windows(task.results[0].id, task, remaining_user_limit)
-        return queries
+        results = self._get_datapoints(task, None, True)
+        ts_count = len(results)
+        remaining_tasks = []
+        for result in results.values():
+            if result.datapoint_length < task.request_limit // ts_count:
+                continue
+            remaining_user_limit = task.limit - result.datapoint_length
+            start = result.last_timestamp + task.next_start_offset()
+            tasks = self._split_task_into_windows(result.results[0].id, task, remaining_user_limit, start)
+            remaining_tasks.extend(tasks)
+        return remaining_tasks
 
     def _fetch_datapoints_for_remaining_queries(self, tasks_with_windows: List[Tuple[_DPTask, _DPWindow]]):
         tasks_summary = utils._concurrency.execute_tasks_concurrently(
@@ -951,14 +1006,15 @@ class DatapointsFetcher:
             return ts
         return ts - (ts % gms) + gms
 
-    def _split_task_into_windows(self, id, task, remaining_user_limit):
-        windows = self._get_windows(id, task, remaining_user_limit)
+    def _split_task_into_windows(self, id, task, remaining_user_limit, start):
+        windows = self._get_windows(id, task, remaining_user_limit, start)
         return [(task, w) for w in windows]
 
-    def _get_windows(self, id, task, remaining_user_limit):
+    def _get_windows(self, id, task, remaining_user_limit, start=None):
+        start = start or task.start
         if remaining_user_limit <= 0:
             return []
-        if task.start >= task.end:
+        if start >= task.end:
             return []
         count_granularity = "1d"
         if task.granularity and cognite.client.utils._time.granularity_to_ms(
@@ -967,25 +1023,25 @@ class DatapointsFetcher:
             count_granularity = task.granularity
         try:
             count_task = _DPTask(
-                self.client, task.start, task.end, {"id": id}, ["count"], count_granularity, False, None, False
+                self.client, start, task.end, [{"id": id}], ["count"], count_granularity, False, None, False
             )
-            self._get_datapoints_with_paging(count_task, _DPWindow(task.start, task.end))
-            res = count_task.result()
+            self._get_datapoints_with_paging(count_task, _DPWindow(start, task.end))
+            res = count_task.last_result.compute()
         except CogniteAPIError:
             res = []
-        if len(res) == 0:  # string based series or aggregates not yet calculated
-            return [_DPWindow(task.start, task.end, remaining_user_limit)]
+        if not res:  # string based series or aggregates not yet calculated
+            return [_DPWindow(start, task.end, remaining_user_limit)]
         counts = list(zip(res.timestamp, res.count))
         windows = []
         total_count = 0
         current_window_count = 0
-        window_start = task.start
+        window_start = start
         granularity_ms = cognite.client.utils._time.granularity_to_ms(task.granularity) if task.granularity else None
         agg_count = lambda count: int(
             min(math.ceil(cognite.client.utils._time.granularity_to_ms(count_granularity) / granularity_ms), count)
         )
         for i, (ts, count) in enumerate(counts):
-            if ts < task.start:  # API rounds time stamps down, so some of the first day may have been retrieved already
+            if ts < start:  # API rounds time stamps down, so some of the first day may have been retrieved already
                 count = 0
 
             if i < len(counts) - 1:
@@ -1001,7 +1057,7 @@ class DatapointsFetcher:
             if current_window_count + next_count > task.request_limit or i == len(counts) - 1:
                 window_end = next_timestamp
                 if task.granularity:
-                    window_end = self._align_window_end(task.start, next_timestamp, task.granularity)
+                    window_end = self._align_window_end(start, next_timestamp, task.granularity)
                 windows.append(_DPWindow(window_start, window_end, remaining_user_limit))
                 window_start = window_end
                 current_window_count = 0
@@ -1019,7 +1075,9 @@ class DatapointsFetcher:
     def _get_datapoints_with_paging(self, task, window):
         ndp_retrieved_total = 0
         while window.end > window.start and ndp_retrieved_total < window.limit:
-            ndp_retrieved, last_time = self._get_datapoints(task, window)
+            self._get_datapoints(task, window)
+            last_result = task.last_result
+            ndp_retrieved, last_time = last_result.datapoint_length, last_result.last_timestamp
             if ndp_retrieved < min(window.limit, task.request_limit):
                 break
             window.limit -= ndp_retrieved
@@ -1027,23 +1085,21 @@ class DatapointsFetcher:
 
     def _get_datapoints(
         self, task: _DPTask, window: _DPWindow = None, first_page: bool = False
-    ) -> Tuple[int, Union[None, int]]:
+    ) -> Dict[Any, _DPResult]:
         window = window or _DPWindow(task.start, task.end, task.limit)
+        limit = min(window.limit * len(task.ts_items), task.request_limit // len(task.ts_items))
         payload = {
-            "items": [task.ts_item],
+            "items": task.ts_items,
             "start": window.start,
             "end": window.end,
             "aggregates": task.aggregates,
             "granularity": task.granularity,
             "includeOutsidePoints": task.include_outside_points and first_page,
             "ignoreUnknownIds": task.ignore_unknown_ids,
-            "limit": min(window.limit, task.request_limit),
+            "limit": limit,
         }
-        res = self.client._post(self.client._RESOURCE_PATH + "/list", json=payload).json()["items"]
-        if not res and task.ignore_unknown_ids:
-            return task.mark_missing()
-        else:
-            return task.store_partial_result(res[0], window.start, window.end)
+        result = self.client._post(self.client._RESOURCE_PATH + "/list", json=payload).json()["items"]
+        return task.store_partial_result(result, window.start, window.end)
 
     @staticmethod
     def _process_ts_identifiers(ids, external_ids) -> Tuple[List[Dict], bool]:
@@ -1052,24 +1108,23 @@ class DatapointsFetcher:
 
         if isinstance(ids, List):
             is_list = True
-            for item in ids:
-                items.append(DatapointsFetcher._process_single_ts_item(item, False))
+            items.extend(DatapointsFetcher._process_single_ts_item(item, False) for item in ids)
         elif ids is not None:
             items.append(DatapointsFetcher._process_single_ts_item(ids, False))
 
         if isinstance(external_ids, List):
             is_list = True
-            for item in external_ids:
-                items.append(DatapointsFetcher._process_single_ts_item(item, True))
+            items.extend(DatapointsFetcher._process_single_ts_item(item, True) for item in external_ids)
+
         elif external_ids is not None:
             items.append(DatapointsFetcher._process_single_ts_item(external_ids, True))
 
         return items, not is_list and len(items) == 1
 
     @staticmethod
-    def _process_single_ts_item(item, external: bool):
-        item_type = "externalId" if external else "id"
-        id_type = str if external else int
+    def _process_single_ts_item(item, is_external: bool):
+        item_type = "externalId" if is_external else "id"
+        id_type = str if is_external else int
         if isinstance(item, id_type):
             return {item_type: item}
         elif isinstance(item, Dict):
