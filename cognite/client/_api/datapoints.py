@@ -1075,7 +1075,7 @@ class DatapointsFetcher:
     def _get_datapoints_with_paging(self, task, window):
         ndp_retrieved_total = 0
         while window.end > window.start and ndp_retrieved_total < window.limit:
-            _ = self._get_datapoints(task, window)
+            self._get_datapoints(task, window)
             last_result = task.last_result
             ndp_retrieved, last_time = last_result.datapoint_length, last_result.last_timestamp
             if ndp_retrieved < min(window.limit, task.request_limit):
