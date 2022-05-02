@@ -16,7 +16,7 @@ Changes are grouped as follows
 
 ## [2.47.0] - 2022-05-02
 ### Changed
-- Performance gain for datapoints.retrieve by utilizing multiple timeseries in on requests.
+- Performance gain for `datapoints.retrieve` by grouping together time series in single requests against the underlying API.
 
 
 ## [2.46.1] - 2022-04-22
