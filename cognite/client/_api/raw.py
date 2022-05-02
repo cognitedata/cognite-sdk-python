@@ -328,7 +328,7 @@ class RawRowsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> rows = {"r1": {"col1": "val1", "col2": "val1"}, "r2": {"col1": "val2", "col2": "val2"}}
-                >>> res = c.raw.rows.insert("db1", "table1", rows)
+                >>> c.raw.rows.insert("db1", "table1", rows)
         """
         chunks = self._process_row_input(row)
 
