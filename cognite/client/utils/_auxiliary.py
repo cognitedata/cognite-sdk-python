@@ -174,7 +174,7 @@ class PriorityQueue:
 
 def split_into_chunks(collection: Union[List, Dict], chunk_size: int) -> List[Union[List, Dict]]:
     if not isinstance(collection, (dict, list)):
-        raise ValueError("Can only split list or dict")
+        raise TypeError("Can only split list or dict")
     entry_constructor = lambda x: x
     if isinstance(collection, dict):
         collection = list(collection.items())
