@@ -1,6 +1,5 @@
 import os
 import pprint
-import sys
 from typing import *
 
 from cognite.client import utils

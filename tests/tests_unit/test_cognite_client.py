@@ -1,12 +1,6 @@
 import datetime
 import logging
 import os
-import random
-import sys
-import threading
-import types
-from multiprocessing.pool import ThreadPool
-from time import sleep
 from unittest.mock import patch
 
 import pytest
