@@ -14,6 +14,15 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.47.0] - 2022-05-02
+### Changed
+- Performance gain for `datapoints.retrieve` by grouping together time series in single requests against the underlying API.
+
+
+## [2.46.1] - 2022-04-22
+### Changed
+- POST requests to the `sessions/revoke`-endpoint are now automatically retried
+
 ## [2.46.0] - 2022-03-29
 ### Changed
 - Fix retrieval of empty raster in experimental geospatial api: http 204 as ok status

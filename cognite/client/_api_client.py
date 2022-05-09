@@ -57,6 +57,7 @@ class APIClient:
         "/context/entitymatching/byids",
         "/context/entitymatching/list",
         "/context/entitymatching/jobs",
+        "/sessions/revoke",
     }
 
     def __init__(self, config: utils._client_config.ClientConfig, api_version: str = None, cognite_client=None) -> None:

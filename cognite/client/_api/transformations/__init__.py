@@ -157,7 +157,6 @@ class TransformationsAPI(APIClient):
 
         Args:
             id (int, optional): ID
-            external_id (str, optional): External ID
 
         Returns:
             Optional[Transformation]: Requested transformation or None if it does not exist.
@@ -263,14 +262,14 @@ class TransformationsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>>
-                >>> res = c.transformations.run(id = 1)
+                >>> res = c.transformations.run(transformation_id = 1)
 
             Start running transformation by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>>
-                >>> res = c.transformations.run(id = 1, wait = False)
+                >>> res = c.transformations.run(transformation_id = 1, wait = False)
         """
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(transformation_id, transformation_external_id)
 

@@ -743,6 +743,8 @@ Data classes
 
 Geospatial
 ----------
+.. note::
+   Check https://github.com/cognitedata/geospatial-examples for some complete examples.
 
 Create feature types
 ^^^^^^^^^^^^^^^^^^^^
