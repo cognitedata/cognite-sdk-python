@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.48.0] - 2022-05-09
+### Changed
+- Geospatial: Support output selection for getting features by ids 
+
 ## [2.47.0] - 2022-05-02
 ### Changed
 - Performance gain for `datapoints.retrieve` by grouping together time series in single requests against the underlying API.
