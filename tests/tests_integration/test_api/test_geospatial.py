@@ -318,6 +318,18 @@ class TestGeospatialAPI:
         )
         cognite_client.geospatial.delete_feature_types(external_id=external_id, recursive=True)
 
+    def test_get_features_by_ids_with_output_selection(
+        self, cognite_client, test_feature_type, test_feature, another_test_feature
+    ):
+        res = cognite_client.geospatial.retrieve_features(
+            feature_type_external_id=test_feature_type.external_id,
+            external_id=[test_feature.external_id, another_test_feature.external_id],
+            properties={"temperature": {}, "volume": {}},
+        )
+        assert len(res) == 2
+        assert not hasattr(res[0], "pressure")
+        assert not hasattr(res[1], "pressure")
+
     def test_search_with_output_selection(self, cognite_client, test_feature_type, test_feature, another_test_feature):
         res = cognite_client.geospatial.search_features(
             feature_type_external_id=test_feature_type.external_id,
