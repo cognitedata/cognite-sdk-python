@@ -14,7 +14,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [2.48.0] - 2022-09-05
+## [2.49.0] - 2022-05-09
+### Changed
+- Geospatial: Support output selection for getting features by ids 
+
+## [2.48.0] - 2022-05-09
 ### Removed
 - Experimental model hosting API
 
