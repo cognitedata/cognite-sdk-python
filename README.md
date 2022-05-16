@@ -49,7 +49,7 @@ However, this gives you the option to only have pandas (and NumPy) support witho
 $ pip install cognite-sdk-core[pandas, geo]
 ```
 
-On Windows, it is recommended to install `geopandas` and its dependencies using `conda` package manager.
+On Windows, it is recommended to install `geopandas` and its dependencies using `conda` package manager, see [geopandas installation page](https://geopandas.org/en/stable/getting_started/install.html#installation).
 The following commands create a new environment, install `geopandas` and `cognite-sdk`.
 ```bash
 conda create -n geo_env
