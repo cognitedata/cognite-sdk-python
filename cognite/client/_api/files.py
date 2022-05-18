@@ -2,7 +2,6 @@ import copy
 import os
 from pathlib import Path
 from typing import *
-from typing.io import BinaryIO, TextIO
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
