@@ -304,7 +304,7 @@ class RelationshipsAPI(APIClient):
 
                 - Notes:
                     - the source_type and target_type field in the Relationship(s) can be any string among "Asset", "TimeSeries", "File", "Event", "Sequence";
-                    - do not provide the value for the source and target arguments of the Relationship class, only source_external_id / source_type and target_external_id / target_type.
+                    - do not provide the value for the source and target arguments of the Relationship class, only source_external_id / source_type and target_external_id / target_type. These (source and target) are used as part of fetching actual resources specified in other fields.
 
         Returns:
             Union[Relationship, RelationshipList]: Created relationship(s)
