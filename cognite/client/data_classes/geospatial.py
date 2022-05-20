@@ -10,6 +10,7 @@ class FeatureType(CogniteResource):
     def __init__(
         self,
         external_id: str = None,
+        data_set_id: int = None,
         created_time: int = None,
         last_updated_time: int = None,
         properties: Dict[str, Any] = None,
@@ -17,6 +18,7 @@ class FeatureType(CogniteResource):
         cognite_client=None,
     ):
         self.external_id = external_id
+        self.data_set_id = data_set_id
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.properties = properties
