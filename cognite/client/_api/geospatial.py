@@ -217,7 +217,7 @@ class GeospatialAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> c.geospatial.delete_feature("my_feature_type", external_id=my_feature)
+                >>> c.geospatial.delete_features("my_feature_type", external_id=my_feature)
         """
         resource_path = self._feature_resource_path(feature_type_external_id)
         self._delete_multiple(external_ids=external_id, wrap_ids=True, resource_path=resource_path)
