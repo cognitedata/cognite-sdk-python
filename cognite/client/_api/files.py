@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 from typing import *
 
-if sys.version_info < (3, 6):
+if sys.version_info < (3, 9):
     from typing.io import BinaryIO, TextIO
 
 from cognite.client import utils
