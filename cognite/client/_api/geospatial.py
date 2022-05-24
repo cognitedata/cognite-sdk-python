@@ -130,7 +130,7 @@ class GeospatialAPI(APIClient):
         <https://docs.cognite.com/api/v1/#operation/updateFeatureTypes>
 
         Args:
-            update (Union[FeatureTypeUpdate, List[FeatureTypePatch]]): the update to apply
+            update (Union[FeatureTypeUpdate, List[FeatureTypeUpdate]]): the update to apply
 
         Returns:
             FeatureTypeList: The updated feature types.
@@ -139,11 +139,11 @@ class GeospatialAPI(APIClient):
 
             Add one property to a feature type:
 
-                >>> from cognite.client.data_classes.geospatial import PropertyAndSearchSpecDefinition
+                >>> from cognite.client.data_classes.geospatial import PropertyAndSearchSpec
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.geospatial.update_feature_types(update=FeatureTypeUpdate(external_id="wells",
-                ...         add=PropertyAndSearchSpecDefinition(properties={"altitude": {"type": "DOUBLE"}},
+                ...         add=PropertyAndSearchSpec(properties={"altitude": {"type": "DOUBLE"}},
                 ...         search_spec={"altitude_idx": {"properties": ["altitude"]}})))
         """
         if isinstance(update, FeatureTypeUpdate):
