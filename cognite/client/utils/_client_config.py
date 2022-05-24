@@ -1,6 +1,5 @@
 import os
 import pprint
-import sys
 from typing import *
 
 from cognite.client import utils
@@ -10,27 +9,12 @@ from cognite.client.exceptions import CogniteAPIKeyError
 _DEFAULT_API_SUBVERSION = __api_subversion__
 
 
-class _ThreadLocalConfig:
-    def __init__(self):
-        self.api_key = None
-        self.project = None
-        if "cognite._thread_local" in sys.modules:
-            from cognite._thread_local import credentials
-
-            thread_local_api_key = getattr(credentials, "api_key", None)
-            thread_local_project = getattr(credentials, "project", None)
-            self.api_key = thread_local_api_key
-            self.project = thread_local_project
-
-
 class _DefaultConfig:
     def __init__(self):
-        thread_local = _ThreadLocalConfig()
-
         # Per client
-        self.api_key = thread_local.api_key or os.getenv("COGNITE_API_KEY")
+        self.api_key = os.getenv("COGNITE_API_KEY")
         self.api_subversion = os.getenv("COGNITE_API_VERSION") or _DEFAULT_API_SUBVERSION
-        self.project = thread_local.project or os.getenv("COGNITE_PROJECT")
+        self.project = os.getenv("COGNITE_PROJECT")
         self.client_name = os.getenv("COGNITE_CLIENT_NAME")
         self.base_url = os.getenv("COGNITE_BASE_URL", "https://api.cognitedata.com")
         self.max_workers = int(os.getenv("COGNITE_MAX_WORKERS", 10))

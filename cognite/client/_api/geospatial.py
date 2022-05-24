@@ -223,7 +223,10 @@ class GeospatialAPI(APIClient):
         self._delete_multiple(external_ids=external_id, wrap_ids=True, resource_path=resource_path)
 
     def retrieve_features(
-        self, feature_type_external_id: str, external_id: Union[str, List[str]] = None
+        self,
+        feature_type_external_id: str,
+        external_id: Union[str, List[str]] = None,
+        properties: Dict[str, Any] = None,
     ) -> FeatureList:
         """`Retrieve features`
         <https://docs.cognite.com/api/v1/#operation/getFeaturesByIds>
@@ -231,6 +234,7 @@ class GeospatialAPI(APIClient):
         Args:
             feature_type_external_id : Feature type external id for the features to retrieve.
             external_id (Union[str, List[str]]): External ID or list of external ids
+            properties (Dict[str, Any]): the output property selection
 
         Returns:
             FeatureList: Requested features or None if it does not exist.
@@ -245,7 +249,11 @@ class GeospatialAPI(APIClient):
         """
         resource_path = self._feature_resource_path(feature_type_external_id)
         return self._retrieve_multiple(
-            wrap_ids=True, external_ids=external_id, resource_path=resource_path, cls=FeatureList
+            wrap_ids=True,
+            external_ids=external_id,
+            resource_path=resource_path,
+            other_params={"output": {"properties": properties}},
+            cls=FeatureList,
         )
 
     def update_features(
