@@ -15,6 +15,7 @@ from cognite.client.data_classes.geospatial import (
     FeatureTypeList,
     FeatureTypeUpdate,
     OrderSpec,
+    FeatureTypePatch,
 )
 from cognite.client.exceptions import CogniteConnectionError
 
@@ -126,7 +127,7 @@ class GeospatialAPI(APIClient):
         )
 
     def update_feature_types(self, update: Union[FeatureTypeUpdate, List[FeatureTypeUpdate]] = None) -> FeatureTypeList:
-        """`Patch feature types`
+        """`Update feature types`
         <https://docs.cognite.com/api/v1/#operation/updateFeatureTypes>
 
         Args:
@@ -159,6 +160,42 @@ class GeospatialAPI(APIClient):
             return {"properties": properties_update, "searchSpec": search_spec_update}
 
         json = {"items": [{"externalId": it.external_id, "update": mapper(it)} for it in update]}
+        res = self._post(url_path=f"{self._RESOURCE_PATH}/featuretypes/update", json=json)
+        return FeatureTypeList._load(res.json()["items"], cognite_client=self._cognite_client)
+
+    def patch_feature_types(self, patch: Union[FeatureTypePatch, List[FeatureTypePatch]] = None) -> FeatureTypeList:
+        """`Patch feature types`
+        <https://docs.cognite.com/api/v1/#operation/updateFeatureTypes>
+
+        Args:
+            patch (Union[FeatureTypePatch, List[FeatureTypePatch]]): the patch to apply
+
+        Returns:
+            FeatureTypeList: The patched feature types.
+
+        Examples:
+
+            Add one property to a feature type:
+
+                >>> from cognite.client.data_classes.geospatial import Updates
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.geospatial.patch_feature_types(update=FeatureTypePatch(external_id="wells",
+                ...         property_updates=Updates(add={"altitude": {"type": "DOUBLE"}}),
+                ...         search_spec_updates=Updates(add={"altitude_idx": {"properties": ["altitude"]}})
+                ... ))
+        """
+        if isinstance(patch, FeatureTypePatch):
+            patch = [patch]
+        json = {
+            "items": [
+                {
+                    "externalId": it.external_id,
+                    "update": {"properties": it.property_updates, "searchSpec": it.search_spec_updates},
+                }
+                for it in patch
+            ]
+        }
         res = self._post(url_path=f"{self._RESOURCE_PATH}/featuretypes/update", json=json)
         return FeatureTypeList._load(res.json()["items"], cognite_client=self._cognite_client)
 
