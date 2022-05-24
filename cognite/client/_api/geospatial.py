@@ -139,10 +139,12 @@ class GeospatialAPI(APIClient):
 
             Add one property to a feature type:
 
-                >>> from cognite.client.data_classes.geospatial import PropertyAndSearchSpec
+                >>> from cognite.client.data_classes.geospatial import PropertyAndSearchSpecDefinition
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.geospatial.update_feature_types(update=FeatureTypeUpdate(external_id="wells", add=PropertyAndSearchSpec(properties={"altitude": {"type": "DOUBLE"}}, search_spec={"altitude_idx": {"properties": ["altitude"]}})))
+                >>> res = c.geospatial.update_feature_types(update=FeatureTypeUpdate(external_id="wells",
+                ...         add=PropertyAndSearchSpecDefinition(properties={"altitude": {"type": "DOUBLE"}},
+                ...         search_spec={"altitude_idx": {"properties": ["altitude"]}})))
         """
         if isinstance(update, FeatureTypeUpdate):
             update = [update]

@@ -13,7 +13,8 @@ from cognite.client.data_classes.geospatial import (
     FeatureType,
     FeatureTypeUpdate,
     OrderSpec,
-    PropertyAndSearchSpec,
+    PropertyAndSearchSpecDefinition,
+    PropertyAndSearchSpecList,
 )
 from cognite.client.exceptions import CogniteAPIError
 
@@ -376,14 +377,14 @@ class TestGeospatialAPI:
         res = cognite_client.geospatial.update_feature_types(
             update=FeatureTypeUpdate(
                 external_id=test_feature_type.external_id,
-                add=PropertyAndSearchSpec(
+                add=PropertyAndSearchSpecDefinition(
                     properties={"altitude": {"type": "DOUBLE", "optional": True}},
                     search_spec={
                         "altitude_idx": {"properties": ["altitude"]},
                         "pos_alt_idx": {"properties": ["position", "altitude"]},
                     },
                 ),
-                remove=PropertyAndSearchSpec(properties=["volume"], search_spec=["vol_press_idx"]),
+                remove=PropertyAndSearchSpecList(properties=["volume"], search_spec=["vol_press_idx"]),
             )
         )
         assert len(res) == 1

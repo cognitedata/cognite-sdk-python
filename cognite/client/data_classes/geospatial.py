@@ -1,4 +1,5 @@
-from typing import Any, Dict, List, Union
+import dataclasses
+from typing import Any, Dict, List
 
 from cognite.client import utils
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
@@ -39,14 +40,18 @@ class FeatureTypeList(CogniteResourceList):
     _ASSERT_CLASSES = False
 
 
-class PropertyAndSearchSpec:
+@dataclasses.dataclass
+class PropertyAndSearchSpecDefinition:
     """A representation of a feature type property and search spec."""
 
-    def __init__(
-        self, properties: Union[Dict[str, Any], List[str]] = None, search_spec: Union[Dict[str, Any], List[str]] = None
-    ):
-        self.properties = properties
-        self.search_spec = search_spec
+    properties: Dict[str, Any] = None
+    search_spec: Dict[str, Any] = None
+
+
+@dataclasses.dataclass
+class PropertyAndSearchSpecList:
+    properties: List[str] = None
+    search_spec: List[str] = None
 
 
 class FeatureTypeUpdate:
@@ -55,8 +60,8 @@ class FeatureTypeUpdate:
     def __init__(
         self,
         external_id: str = None,
-        add: PropertyAndSearchSpec = None,
-        remove: PropertyAndSearchSpec = None,
+        add: PropertyAndSearchSpecDefinition = None,
+        remove: PropertyAndSearchSpecList = None,
         cognite_client=None,
     ):
         self.external_id = external_id
