@@ -1,3 +1,4 @@
+import dataclasses
 from typing import Any, Dict, List, Union
 
 from cognite.client import utils
@@ -63,6 +64,19 @@ class FeatureTypeUpdate:
         self.add = add
         self.remove = remove
         self._cognite_client = cognite_client
+
+
+@dataclasses.dataclass
+class Patches:
+    add: Dict[str, Any] = None
+    remove: List[str] = None
+
+
+@dataclasses.dataclass
+class FeatureTypePatch:
+    external_id: str = None
+    property_patches: Patches = None
+    search_spec_patches: Patches = None
 
 
 class FeatureTypeUpdateList:
