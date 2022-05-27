@@ -764,7 +764,7 @@ Retrieve feature types
 
 Update feature types
 ^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.geospatial.GeospatialAPI.update_feature_types
+.. automethod:: cognite.client._api.geospatial.GeospatialAPI.patch_feature_types
 
 Create features
 ^^^^^^^^^^^^^^^

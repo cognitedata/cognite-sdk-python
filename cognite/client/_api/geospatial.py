@@ -175,7 +175,7 @@ class GeospatialAPI(APIClient):
 
         Examples:
 
-            Add one property to a feature type:
+            Add one property to a feature type and add index on that property:
 
                 >>> from cognite.client.data_classes.geospatial import Updates
                 >>> from cognite.client import CogniteClient
@@ -183,6 +183,15 @@ class GeospatialAPI(APIClient):
                 >>> res = c.geospatial.patch_feature_types(update=FeatureTypePatch(external_id="wells",
                 ...         property_updates=Updates(add={"altitude": {"type": "DOUBLE"}}),
                 ...         search_spec_updates=Updates(add={"altitude_idx": {"properties": ["altitude"]}})
+                ... ))
+
+            Add an additional index to an existing property
+
+                >>> from cognite.client.data_classes.geospatial import Updates
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.geospatial.patch_feature_types(update=FeatureTypePatch(external_id="wells",
+                ...         search_spec_updates=Updates(add={"location_idx": {"properties": ["location"]}})
                 ... ))
         """
         if isinstance(patch, FeatureTypePatch):
