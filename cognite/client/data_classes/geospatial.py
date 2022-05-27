@@ -67,7 +67,7 @@ class FeatureTypeUpdate:
 
 
 @dataclasses.dataclass
-class Updates:
+class Patches:
     add: Dict[str, Any] = None
     remove: List[str] = None
 
@@ -75,8 +75,8 @@ class Updates:
 @dataclasses.dataclass
 class FeatureTypePatch:
     external_id: str = None
-    property_updates: Updates = None
-    search_spec_updates: Updates = None
+    property_patches: Patches = None
+    search_spec_patches: Patches = None
 
 
 class FeatureTypeUpdateList:

@@ -1,5 +1,6 @@
 import json as complexjson
 import numbers
+import warnings
 from typing import Any, Dict, Generator, List, Union
 
 from requests.exceptions import ChunkedEncodingError
@@ -48,7 +49,11 @@ class GeospatialAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> feature_types = [
                 ...     FeatureType(external_id="wells", properties={"location": {"type": "POINT", "srid": 4326}})
-                ...     FeatureType(external_id="pipelines", properties={"location": {"type": "LINESTRING", "srid": 2001}})
+                ...     FeatureType(
+                ...       external_id="cities",
+                ...       properties={"name": {"type": "STRING", "size": 10}},
+                ...       search_spec={"name_index": {"properties": ["name"]}}
+                ...     )
                 ... ]
                 >>> res = c.geospatial.create_feature_types(feature_types)
         """
@@ -73,7 +78,7 @@ class GeospatialAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> c.geospatial.delete_feature_types(external_id=["wells", "pipelines"])
+                >>> c.geospatial.delete_feature_types(external_id=["wells", "cities"])
         """
         extra_body_fields = {"recursive": True} if recursive else {}
         return self._delete_multiple(
@@ -127,7 +132,7 @@ class GeospatialAPI(APIClient):
         )
 
     def update_feature_types(self, update: Union[FeatureTypeUpdate, List[FeatureTypeUpdate]] = None) -> FeatureTypeList:
-        """`Update feature types`
+        """`Update feature types (Deprecated)`
         <https://docs.cognite.com/api/v1/#operation/updateFeatureTypes>
 
         Args:
@@ -147,6 +152,7 @@ class GeospatialAPI(APIClient):
                 ...         add=PropertyAndSearchSpec(properties={"altitude": {"type": "DOUBLE"}},
                 ...         search_spec={"altitude_idx": {"properties": ["altitude"]}})))
         """
+        warnings.warn("update_feature_types is deprecated, use patch_feature_types instead.", DeprecationWarning)
         if isinstance(update, FeatureTypeUpdate):
             update = [update]
 
@@ -175,24 +181,35 @@ class GeospatialAPI(APIClient):
 
         Examples:
 
-            Add one property to a feature type and add index on that property:
+            Add one property to a feature type and add indexes
 
-                >>> from cognite.client.data_classes.geospatial import Updates
+                >>> from cognite.client.data_classes.geospatial import Patches
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.geospatial.patch_feature_types(update=FeatureTypePatch(external_id="wells",
-                ...         property_updates=Updates(add={"altitude": {"type": "DOUBLE"}}),
-                ...         search_spec_updates=Updates(add={"altitude_idx": {"properties": ["altitude"]}})
-                ... ))
+                >>> res = c.geospatial.patch_feature_types(
+                ...    patch=FeatureTypePatch(
+                ...       external_id="wells",
+                ...       property_patches=Patches(add={"altitude": {"type": "DOUBLE"}}),
+                ...       search_spec_patches=Patches(
+                ...         add={
+                ...           "altitude_idx": {"properties": ["altitude"]},
+                ...           "composite_idx": {"properties": ["location", "altitude"]}
+                ...         }
+                ...       )
+                ...    )
+                ... )
 
             Add an additional index to an existing property
 
-                >>> from cognite.client.data_classes.geospatial import Updates
+                >>> from cognite.client.data_classes.geospatial import Patches
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.geospatial.patch_feature_types(update=FeatureTypePatch(external_id="wells",
-                ...         search_spec_updates=Updates(add={"location_idx": {"properties": ["location"]}})
+                >>> res = c.geospatial.patch_feature_types(
+                ...    patch=FeatureTypePatch(
+                ...         external_id="wells",
+                ...         search_spec_patches=Patches(add={"location_idx": {"properties": ["location"]}})
                 ... ))
+
         """
         if isinstance(patch, FeatureTypePatch):
             patch = [patch]
@@ -200,7 +217,7 @@ class GeospatialAPI(APIClient):
             "items": [
                 {
                     "externalId": it.external_id,
-                    "update": {"properties": it.property_updates, "searchSpec": it.search_spec_updates},
+                    "update": {"properties": it.property_patches, "searchSpec": it.search_spec_patches},
                 }
                 for it in patch
             ]
