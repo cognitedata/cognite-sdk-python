@@ -15,7 +15,7 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 
-## [2.50.1] - 2022-06-15
+## [2.51.0] - 2022-06-15
 
 ### Added
 - Annotations implementation, providing access to the corresponding [Annotations API](https://docs.cognite.com/api/v1/#tag/Annotations). 
