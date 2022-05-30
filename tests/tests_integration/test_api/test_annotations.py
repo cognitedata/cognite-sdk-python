@@ -53,10 +53,6 @@ def annotation() -> Annotation:
         creating_user=None,
         annotated_resource_type="file",
         annotated_resource_id=1,
-        annotated_resource_external_id=None,
-        linked_resource_type=None,
-        linked_resource_id=None,
-        linked_resource_external_id=None,
     )
 
 
@@ -191,8 +187,6 @@ class TestAnnotationsIntegration:
     def test_update_annotation_by_annotation(self, cognite_client: CogniteClient, base_annotation: Annotation) -> None:
         # Create annotation, make some local changes and cache a dump
         annotation = cognite_client.annotations.create(base_annotation)
-        annotation.linked_resource_type = "asset"
-        annotation.linked_resource_id = 1
         local_dump = annotation.dump()
         # Update the annotation on remote and make a dump
         annotation = cognite_client.annotations.update(annotation)
@@ -221,9 +215,6 @@ class TestAnnotationsIntegration:
             },
             "status": "rejected",
             "annotation_type": "diagrams.AssetLink",
-            "linked_resource_type": "asset",
-            "linked_resource_id": 1,
-            "linked_resource_external_id": None,
         }
         created_annotation = cognite_client.annotations.create(base_annotation)
 

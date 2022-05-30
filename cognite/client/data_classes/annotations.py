@@ -22,15 +22,10 @@ class Annotation(CogniteResource):
 
         annotated_resource_type (str): Type name of the CDF resource that is annotated, e.g. "file".
         annotated_resource_id (int, optional): The internal ID of the annotated resource. Either this field or the external ID of the linked resource is required (not both).
-        annotated_resource_external_id (str, optional): The external ID of the annotated resource. Either this field or the internal ID of the linked resource is required (not both).
 
         creating_app (str): The name of the app from which this annotation was created.
         creating_app_version (str): The version of the app that created this annotation. Must be a valid semantic versioning (SemVer) string.
         creating_user: (str, optional): A username, or email, or name. This is not checked nor enforced. If the value is None, it means the annotation was created by a service.
-
-        linked_resource_type (str, optional): The CDF resource type of an optional linked CDF resource. Defaults to None.
-        linked_resource_id (int, optional): The internal ID of the linked resource. Either this field or the external ID of the linked resource can be provided (not both).
-        linked_resource_external_id (str, optional): The external ID of the linked resource. Either this field or the internal ID of the linked resource can be provided (not both).
 
         id (int, optional): A server-generated id for the object. Read-only.
         created_time (int, optional): Time when this annotation was created in CDF. The time is measured in milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Read-only.
@@ -49,10 +44,6 @@ class Annotation(CogniteResource):
         creating_user: Optional[str],
         annotated_resource_type: str,
         annotated_resource_id: Optional[int] = None,
-        annotated_resource_external_id: Optional[str] = None,
-        linked_resource_id: Optional[int] = None,
-        linked_resource_external_id: Optional[str] = None,
-        linked_resource_type: Optional[str] = None,
     ) -> None:
         self.annotation_type = annotation_type
         self.data = data
@@ -62,10 +53,6 @@ class Annotation(CogniteResource):
         self.creating_user = creating_user
         self.annotated_resource_type = annotated_resource_type
         self.annotated_resource_id = annotated_resource_id
-        self.annotated_resource_external_id = annotated_resource_external_id
-        self.linked_resource_id = linked_resource_id
-        self.linked_resource_external_id = linked_resource_external_id
-        self.linked_resource_type = linked_resource_type
         self.id = None  # Read only
         self.created_time = None  # Read only
         self.last_updated_time = None  # Read only
@@ -92,10 +79,6 @@ class Annotation(CogniteResource):
             creating_user=data.get("creating_user"),
             annotated_resource_type=data["annotated_resource_type"],
             annotated_resource_id=data.get("annotated_resource_id"),
-            annotated_resource_external_id=data.get("annotated_resource_external_id"),
-            linked_resource_id=data.get("linked_resource_id"),
-            linked_resource_external_id=data.get("linked_resource_external_id"),
-            linked_resource_type=data.get("linked_resource_type"),
         )
         # Fill in read-only values, if available
         annotation.id = data.get("id")
@@ -117,13 +100,11 @@ class AnnotationFilter(CogniteFilter):
 
     Args:
         annotated_resource_type (str): The type of the CDF resource that is annotated, e.g. "file".
-        annotated_resource_ids (List[Dict[str, Any]]): List of ids and external ids of the annotated CDF resources to filter in. Example format: [{"id": 1234}, {"external_id": "ext_1234"}]. Must contain at least one item.
+        annotated_resource_ids (List[Dict[str, Any]]): List of ids of the annotated CDF resources to filter in. Example format: [{"id": 1234}, {"id": "4567"}]. Must contain at least one item.
         status (str, optional): Status of annotations to filter for, e.g. "suggested", "approved", "rejected".
         creating_user (str, optional): Name of the user who created the annotations to filter for. Can be set explicitly to "None" to filter for annotations created by a service.
         creating_app (str, optional): Name of the app from which the annotations to filter for where created.
         creating_app_version (str, optional): Version of the app from which the annotations to filter for were created.
-        linked_resource_type(str, optional): Type of the CDF resource the annotations to filter for are linked to, if any.
-        linked_resource_ids(List[Dict[str, Any]], optional): List of ids or external ids the annotations are linked to. Example format: [{"id": 1234}, {"external_id": "ext_1234"}] .
         annotation_type(str, optional): Type name of the annotations.
         data(Dict[str, Any], optional): The annotation data to filter by. Example format: {"label": "cat", "confidence": 0.9}
     """
@@ -131,13 +112,11 @@ class AnnotationFilter(CogniteFilter):
     def __init__(
         self,
         annotated_resource_type: str,
-        annotated_resource_ids: List[Dict[str, Any]],
+        annotated_resource_ids: List[Dict[str, int]],
         status: Optional[str] = None,
         creating_user: Optional[str] = "",  # None means filtering for a service
         creating_app: Optional[str] = None,
         creating_app_version: Optional[str] = None,
-        linked_resource_type: Optional[str] = None,
-        linked_resource_ids: Optional[List[Dict[str, Any]]] = None,
         annotation_type: Optional[str] = None,
         data: Optional[Dict[str, Any]] = None,
     ) -> None:
@@ -147,8 +126,6 @@ class AnnotationFilter(CogniteFilter):
         self.creating_user = creating_user
         self.creating_app = creating_app
         self.creating_app_version = creating_app_version
-        self.linked_resource_type = linked_resource_type
-        self.linked_resource_ids = linked_resource_ids
         self.annotation_type = annotation_type
         self.data = data
 
@@ -210,18 +187,6 @@ class AnnotationUpdate(CogniteUpdate):
     @property
     def annotation_type(self) -> "AnnotationUpdate._StrUpdate":
         return AnnotationUpdate._StrUpdate(self, "annotationType")
-
-    @property
-    def linked_resource_type(self) -> "AnnotationUpdate._OptionalStrUpdate":
-        return AnnotationUpdate._OptionalStrUpdate(self, "linkedResourceType")
-
-    @property
-    def linked_resource_id(self) -> "AnnotationUpdate._OptionalIntUpdate":
-        return AnnotationUpdate._OptionalIntUpdate(self, "linkedResourceId")
-
-    @property
-    def linked_resource_external_id(self) -> "AnnotationUpdate._OptionalStrUpdate":
-        return AnnotationUpdate._OptionalStrUpdate(self, "linkedResourceExternalId")
 
 
 class AnnotationList(CogniteResourceList):

@@ -27,10 +27,6 @@ def annotation() -> Annotation:
         creating_user=None,
         annotated_resource_type="file",
         annotated_resource_id=1,
-        annotated_resource_external_id=None,
-        linked_resource_type=None,
-        linked_resource_id=None,
-        linked_resource_external_id=None,
     )
 
 
@@ -38,14 +34,12 @@ def annotation() -> Annotation:
 def annotation_filter() -> AnnotationFilter:
     return AnnotationFilter(
         annotated_resource_type="file",
-        annotated_resource_ids=[{"id": 1234}, {"external_id": "ext_1234"}],
+        annotated_resource_ids=[{"id": 1234}, {"id": 4567}],
         annotation_type="diagrams.FileLink",
         status="approved",
         creating_app="UnitTest",
         creating_user="",
         creating_app_version="0.0.1",
-        linked_resource_type="file",
-        linked_resource_ids=[{"id": 1234}, {"external_id": "ext_1234"}],
     )
 
 
@@ -122,9 +116,6 @@ class TestAnnotationUpdate:
             },
             "status": "rejected",
             "annotationType": "diagrams.AssetLink",
-            "linkedResourceType": "asset",
-            "linkedResourceId": 1,
-            "linkedResourceExternalId": None,
         }
         annotation_update = AnnotationUpdate(id=1)
         for k, v in update.items():
