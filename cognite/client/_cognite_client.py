@@ -2,6 +2,7 @@ import warnings
 from typing import Any, Callable, Dict, List, Optional, Union
 
 from cognite.client import utils
+from cognite.client._api.annotations import AnnotationsAPI
 from cognite.client._api.assets import AssetsAPI
 from cognite.client._api.data_sets import DataSetsAPI
 from cognite.client._api.datapoints import DatapointsAPI
@@ -123,6 +124,7 @@ class CogniteClient:
             self._config, api_version="playground", cognite_client=self
         )
         self.transformations = TransformationsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
+        self.annotations = AnnotationsAPI(self._config, api_version="playground", cognite_client=self)
 
         self._api_client = APIClient(self._config, cognite_client=self)
 
