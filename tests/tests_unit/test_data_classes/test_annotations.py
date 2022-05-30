@@ -14,12 +14,7 @@ def annotation() -> Annotation:
         data={
             "fileRef": {"id": 1, "externalId": None},
             "pageNumber": 1,
-            "textRegion": {
-                "xMin": 0.0,
-                "xMax": 0.5,
-                "yMin": 0.5,
-                "yMax": 1.0,
-            },
+            "textRegion": {"xMin": 0.0, "xMax": 0.5, "yMin": 0.5, "yMax": 1.0},
         },
         status="approved",
         creating_app="UnitTest",
@@ -46,12 +41,7 @@ def annotation_filter() -> AnnotationFilter:
 class TestAnnotation:
     @pytest.mark.parametrize(
         "creating_user, camel_case",
-        [
-            ("john.doe@cognite.com", False),
-            ("john.doe@cognite.com", True),
-            (None, False),
-            (None, True),
-        ],
+        [("john.doe@cognite.com", False), ("john.doe@cognite.com", True), (None, False), (None, True)],
         ids=["snake_case", "camel_case", "snake_case_None", "camel_case_None"],
     )
     def test_dump(self, annotation: Annotation, creating_user: Optional[str], camel_case: bool) -> None:
@@ -105,15 +95,7 @@ class TestAnnotationFilter:
 class TestAnnotationUpdate:
     def test_set_chain(self):
         update = {
-            "data": {
-                "assetRef": {"id": 1},
-                "textRegion": {
-                    "xMin": 0.0,
-                    "xMax": 0.5,
-                    "yMin": 0.5,
-                    "yMax": 1.0,
-                },
-            },
+            "data": {"assetRef": {"id": 1}, "textRegion": {"xMin": 0.0, "xMax": 0.5, "yMin": 0.5, "yMax": 1.0}},
             "status": "rejected",
             "annotationType": "diagrams.AssetLink",
         }

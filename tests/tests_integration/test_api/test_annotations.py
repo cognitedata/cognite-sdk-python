@@ -40,12 +40,7 @@ def annotation() -> Annotation:
         data={
             "fileRef": {"id": 1, "externalId": None},
             "pageNumber": 1,
-            "textRegion": {
-                "xMin": 0.0,
-                "xMax": 0.5,
-                "yMin": 0.5,
-                "yMax": 1.0,
-            },
+            "textRegion": {"xMin": 0.0, "xMax": 0.5, "yMin": 0.5, "yMax": 1.0},
         },
         status="approved",
         creating_app="UnitTest",
@@ -64,9 +59,7 @@ def file_id(cognite_client: CogniteClient) -> int:
     yield file.id
     # Teardown all annotations to the file
     filter = AnnotationFilter(
-        annotated_resource_type="file",
-        annotated_resource_ids=[{"id": file.id}],
-        creating_app="UnitTest",
+        annotated_resource_type="file", annotated_resource_ids=[{"id": file.id}], creating_app="UnitTest"
     )
     annotation_ids = [a.id for a in cognite_client.annotations.list(filter=filter)]
     if annotation_ids:
