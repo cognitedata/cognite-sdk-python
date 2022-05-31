@@ -31,10 +31,6 @@ from cognite.client.data_classes.files import (
     FileMetadataFilter,
     FileMetadataList,
     FileMetadataUpdate,
-    GeoLocation,
-    GeoLocationFilter,
-    Geometry,
-    GeometryFilter,
 )
 from cognite.client.data_classes.iam import (
     APIKey,
@@ -143,10 +139,13 @@ from cognite.client.data_classes.data_sets import (  # isort: skip
     DataSetUpdate,
 )
 
-
 from cognite.client.data_classes.shared import (  # isort: skip
     AggregateResult,
     AggregateUniqueValuesResult,
+    GeoLocation,
+    GeoLocationFilter,
+    Geometry,
+    GeometryFilter,
     TimestampRange,
 )
 
