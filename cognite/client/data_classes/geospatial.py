@@ -87,6 +87,9 @@ class FeatureTypeUpdateList:
 class Feature(CogniteResource):
     """A representation of a feature in the geospatial api."""
 
+    PRE_DEFINED_NAMES = ["externalId", "createdTime", "lastUpdatedTime"]
+    PRE_DEFINED_SNAKE_CASE_NAMES = ["external_id", "created_time", "last_updated_time"]
+
     def __init__(self, external_id: str = None, cognite_client=None, **properties):
         self.external_id = external_id
         for key in properties:
@@ -97,9 +100,23 @@ class Feature(CogniteResource):
     def _load(cls, resource: Dict, cognite_client=None):
         instance = cls(cognite_client=cognite_client)
         for key, value in resource.items():
-            snake_case_key = utils._auxiliary.to_snake_case(key)
-            setattr(instance, snake_case_key, value)
+            # Keep properties defined in Feature Type as is
+            normalized_key = utils._auxiliary.to_snake_case(key) if key in cls.PRE_DEFINED_NAMES else key
+            setattr(instance, normalized_key, value)
         return instance
+
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+        def to_camel_case(key):
+            # Keep properties defined in Feature Type as is
+            if camel_case and key in self.PRE_DEFINED_SNAKE_CASE_NAMES:
+                return utils._auxiliary.to_camel_case(key)
+            return key
+
+        return {
+            to_camel_case(key): value
+            for key, value in self.__dict__.items()
+            if value is not None and not key.startswith("_")
+        }
 
 
 def _is_geometry_type(property_type: str):
