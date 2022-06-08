@@ -206,10 +206,14 @@ class FeatureList(CogniteResourceList):
                 prop_optional = prop[1].get("optional", False)
                 if _is_reserved_property(prop_name):
                     continue
-                column_name = property_column_mapping[prop[0]]
-                column_value = row[column_name]
-                if column_value is None and prop_optional:
-                    continue
+                column_name = property_column_mapping.get(prop[0], None)
+                column_value = row.get(column_name, None)
+                if column_name is None or column_value is None:
+                    if prop_optional:
+                        continue
+                    else:
+                        raise ValueError(f"Missing value for property {prop_name}")
+
                 if _is_geometry_type(prop_type):
                     setattr(feature, prop_name, {"wkt": column_value.wkt})
                 else:

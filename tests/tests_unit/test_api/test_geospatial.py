@@ -16,6 +16,7 @@ def test_feature_type():
             "volume": {"type": "DOUBLE"},
             "temperature": {"type": "DOUBLE"},
             "pressure": {"type": "DOUBLE"},
+            "description": {"type": "STRING", "optional": "true"}
         },
         search_spec={"vol_press_idx": {"properties": ["volume", "pressure"]}},
     )
@@ -80,6 +81,16 @@ class TestGeospatialAPI:
         for f in fl:
             for attr in test_feature_type.properties.items():
                 attr_name = attr[0]
-                if attr_name.startswith("_"):
+                if attr_name.startswith("_") or attr_name == "description":
                     continue
                 assert hasattr(f, attr_name)
+
+    @pytest.mark.dsl
+    def test_from_geopandas_missing_column(self, test_feature_type):
+        pd = utils._auxiliary.local_import("pandas")
+        df = pd.DataFrame([{"externalId": "12", "volume": 12.0}])
+        geopandas = utils._auxiliary.local_import("geopandas")
+        gdf = geopandas.GeoDataFrame(df)
+        with pytest.raises(ValueError) as error:
+            FeatureList.from_geopandas(test_feature_type, gdf)
+        assert str(error.value) == "Missing value for property temperature"
