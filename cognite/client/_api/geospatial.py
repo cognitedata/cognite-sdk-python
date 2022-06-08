@@ -1,5 +1,6 @@
 import json as complexjson
 import numbers
+import warnings
 from typing import Any, Dict, Generator, List, Union
 
 from requests.exceptions import ChunkedEncodingError
@@ -15,6 +16,7 @@ from cognite.client.data_classes.geospatial import (
     FeatureTypeList,
     FeatureTypeUpdate,
     OrderSpec,
+    FeatureTypePatch,
 )
 from cognite.client.exceptions import CogniteConnectionError
 
@@ -47,7 +49,11 @@ class GeospatialAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> feature_types = [
                 ...     FeatureType(external_id="wells", properties={"location": {"type": "POINT", "srid": 4326}})
-                ...     FeatureType(external_id="pipelines", properties={"location": {"type": "LINESTRING", "srid": 2001}})
+                ...     FeatureType(
+                ...       external_id="cities",
+                ...       properties={"name": {"type": "STRING", "size": 10}},
+                ...       search_spec={"name_index": {"properties": ["name"]}}
+                ...     )
                 ... ]
                 >>> res = c.geospatial.create_feature_types(feature_types)
         """
@@ -72,7 +78,7 @@ class GeospatialAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> c.geospatial.delete_feature_types(external_id=["wells", "pipelines"])
+                >>> c.geospatial.delete_feature_types(external_id=["wells", "cities"])
         """
         extra_body_fields = {"recursive": True} if recursive else {}
         return self._delete_multiple(
@@ -126,11 +132,11 @@ class GeospatialAPI(APIClient):
         )
 
     def update_feature_types(self, update: Union[FeatureTypeUpdate, List[FeatureTypeUpdate]] = None) -> FeatureTypeList:
-        """`Patch feature types`
+        """`Update feature types (Deprecated)`
         <https://docs.cognite.com/api/v1/#operation/updateFeatureTypes>
 
         Args:
-            update (Union[FeatureTypeUpdate, List[FeatureTypePatch]]): the update to apply
+            update (Union[FeatureTypeUpdate, List[FeatureTypeUpdate]]): the update to apply
 
         Returns:
             FeatureTypeList: The updated feature types.
@@ -142,8 +148,11 @@ class GeospatialAPI(APIClient):
                 >>> from cognite.client.data_classes.geospatial import PropertyAndSearchSpec
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.geospatial.update_feature_types(update=FeatureTypeUpdate(external_id="wells", add=PropertyAndSearchSpec(properties={"altitude": {"type": "DOUBLE"}}, search_spec={"altitude_idx": {"properties": ["altitude"]}})))
+                >>> res = c.geospatial.update_feature_types(update=FeatureTypeUpdate(external_id="wells",
+                ...         add=PropertyAndSearchSpec(properties={"altitude": {"type": "DOUBLE"}},
+                ...         search_spec={"altitude_idx": {"properties": ["altitude"]}})))
         """
+        warnings.warn("update_feature_types is deprecated, use patch_feature_types instead.", DeprecationWarning)
         if isinstance(update, FeatureTypeUpdate):
             update = [update]
 
@@ -157,6 +166,62 @@ class GeospatialAPI(APIClient):
             return {"properties": properties_update, "searchSpec": search_spec_update}
 
         json = {"items": [{"externalId": it.external_id, "update": mapper(it)} for it in update]}
+        res = self._post(url_path=f"{self._RESOURCE_PATH}/featuretypes/update", json=json)
+        return FeatureTypeList._load(res.json()["items"], cognite_client=self._cognite_client)
+
+    def patch_feature_types(self, patch: Union[FeatureTypePatch, List[FeatureTypePatch]] = None) -> FeatureTypeList:
+        """`Patch feature types`
+        <https://docs.cognite.com/api/v1/#operation/updateFeatureTypes>
+
+        Args:
+            patch (Union[FeatureTypePatch, List[FeatureTypePatch]]): the patch to apply
+
+        Returns:
+            FeatureTypeList: The patched feature types.
+
+        Examples:
+
+            Add one property to a feature type and add indexes
+
+                >>> from cognite.client.data_classes.geospatial import Patches
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.geospatial.patch_feature_types(
+                ...    patch=FeatureTypePatch(
+                ...       external_id="wells",
+                ...       property_patches=Patches(add={"altitude": {"type": "DOUBLE"}}),
+                ...       search_spec_patches=Patches(
+                ...         add={
+                ...           "altitude_idx": {"properties": ["altitude"]},
+                ...           "composite_idx": {"properties": ["location", "altitude"]}
+                ...         }
+                ...       )
+                ...    )
+                ... )
+
+            Add an additional index to an existing property
+
+                >>> from cognite.client.data_classes.geospatial import Patches
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.geospatial.patch_feature_types(
+                ...    patch=FeatureTypePatch(
+                ...         external_id="wells",
+                ...         search_spec_patches=Patches(add={"location_idx": {"properties": ["location"]}})
+                ... ))
+
+        """
+        if isinstance(patch, FeatureTypePatch):
+            patch = [patch]
+        json = {
+            "items": [
+                {
+                    "externalId": it.external_id,
+                    "update": {"properties": it.property_patches, "searchSpec": it.search_spec_patches},
+                }
+                for it in patch
+            ]
+        }
         res = self._post(url_path=f"{self._RESOURCE_PATH}/featuretypes/update", json=json)
         return FeatureTypeList._load(res.json()["items"], cognite_client=self._cognite_client)
 

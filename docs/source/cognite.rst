@@ -55,7 +55,7 @@ For the next examples, you will need to supply ids for the time series that you 
     >>> from cognite.client import CogniteClient
     >>> c = CogniteClient()
     >>> ts_list = c.time_series.list(include_metadata=False)
-    
+
 Plot time series
 ----------------
 There are several ways of plotting a time series you have fetched from the API. The easiest is to call
@@ -687,9 +687,17 @@ List rows in a table
 ~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.raw.RawRowsAPI.list
 
+Retrieve pandas dataframe
+^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.raw.RawRowsAPI.retrieve_dataframe
+
 Insert rows into a table
 ~~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.raw.RawRowsAPI.insert
+
+Insert pandas dataframe
+^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.raw.RawRowsAPI.insert_dataframe
 
 Delete rows from a table
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -756,7 +764,7 @@ Retrieve feature types
 
 Update feature types
 ^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.geospatial.GeospatialAPI.update_feature_types
+.. automethod:: cognite.client._api.geospatial.GeospatialAPI.patch_feature_types
 
 Create features
 ^^^^^^^^^^^^^^^
