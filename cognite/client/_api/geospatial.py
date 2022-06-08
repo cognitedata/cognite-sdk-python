@@ -245,7 +245,7 @@ class GeospatialAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> c.geospatial.retrieve_feature("my_feature_type", external_id="my_feature")
+                >>> c.geospatial.retrieve_features("my_feature_type", external_id="my_feature")
         """
         resource_path = self._feature_resource_path(feature_type_external_id)
         return self._retrieve_multiple(
