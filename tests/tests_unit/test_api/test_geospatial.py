@@ -16,7 +16,8 @@ def test_feature_type():
             "volume": {"type": "DOUBLE"},
             "temperature": {"type": "DOUBLE"},
             "pressure": {"type": "DOUBLE"},
-            "description": {"type": "STRING", "optional": "true"}
+            "description": {"type": "STRING", "optional": "true"},
+            "dataSetId": {"type": "LONG", "optional": "true"}
         },
         search_spec={"vol_press_idx": {"properties": ["volume", "pressure"]}},
     )
@@ -81,7 +82,7 @@ class TestGeospatialAPI:
         for f in fl:
             for attr in test_feature_type.properties.items():
                 attr_name = attr[0]
-                if attr_name.startswith("_") or attr_name == "description":
+                if attr_name.startswith("_") or attr_name in ["description", "dataSetId"]:
                     continue
                 assert hasattr(f, attr_name)
 
