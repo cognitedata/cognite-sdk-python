@@ -16,7 +16,7 @@ Changes are grouped as follows
 
 ## [2.50.2] - 2022-06-09
 ### Fixed
-- Geospatial: fix FeatureList.from_geopandas issue with optional properties 
+- Geospatial: fix FeatureList.from_geopandas issue with optional properties
 
 ## [2.50.1] - 2022-06-07
 ### Fixed

@@ -4,6 +4,8 @@ from typing import Any, Dict, List, Union
 from cognite.client import utils
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 
+RESERVED_PROPERTIES = {"externalId", "dataSetId", "createdTime", "lastUpdatedTime"}
+
 
 class FeatureType(CogniteResource):
     """A representation of a feature type in the geospatial api."""
@@ -87,8 +89,7 @@ class FeatureTypeUpdateList:
 class Feature(CogniteResource):
     """A representation of a feature in the geospatial api."""
 
-    PRE_DEFINED_NAMES = ["externalId", "createdTime", "lastUpdatedTime"]
-    PRE_DEFINED_SNAKE_CASE_NAMES = ["external_id", "created_time", "last_updated_time"]
+    PRE_DEFINED_SNAKE_CASE_NAMES = {utils._auxiliary.to_snake_case(key) for key in RESERVED_PROPERTIES}
 
     def __init__(self, external_id: str = None, cognite_client=None, **properties):
         self.external_id = external_id
@@ -101,7 +102,7 @@ class Feature(CogniteResource):
         instance = cls(cognite_client=cognite_client)
         for key, value in resource.items():
             # Keep properties defined in Feature Type as is
-            normalized_key = utils._auxiliary.to_snake_case(key) if key in cls.PRE_DEFINED_NAMES else key
+            normalized_key = utils._auxiliary.to_snake_case(key) if key in RESERVED_PROPERTIES else key
             setattr(instance, normalized_key, value)
         return instance
 
@@ -157,7 +158,7 @@ def _is_geometry_type(property_type: str):
 
 
 def _is_reserved_property(property_name: str):
-    return property_name.startswith("_") or property_name in {"externalId", "createdTime", "lastUpdatedTime"}
+    return property_name.startswith("_") or property_name in RESERVED_PROPERTIES
 
 
 class FeatureList(CogniteResourceList):
@@ -186,6 +187,7 @@ class FeatureList(CogniteResourceList):
         feature_type: FeatureType,
         geodataframe: "geopandas.GeoDataFrame",
         external_id_column: str = "externalId",
+        data_set_id_column: str = "dataSetId",
         property_column_mapping: Dict[str, str] = None,
     ) -> "FeatureList":
         """Convert a GeoDataFrame instance into a FeatureList.
@@ -194,6 +196,7 @@ class FeatureList(CogniteResourceList):
             feature_type (FeatureType): The feature type the features will conform to
             geodataframe (GeoDataFrame): the geodataframe instance to convert into features
             external_id_column: the geodataframe column to use for the feature external id
+            data_set_id_column: the geodataframe column to use for the feature dataSet id
             property_column_mapping: provides a mapping from featuretype property names to geodataframe columns
 
         Returns:
@@ -208,7 +211,8 @@ class FeatureList(CogniteResourceList):
                 >>> my_feature_type = ... # some feature type with 'position' and 'temperature' properties
                 >>> my_geodataframe = ...  # some geodataframe with 'center_xy', 'temp' and 'id' columns
                 >>> feature_list = FeatureList.from_geopandas(feature_type=my_feature_type, geodataframe=my_geodataframe,
-                >>>     external_id_column="id", property_column_mapping={'position': 'center_xy', 'temperature': 'temp'})
+                >>>     external_id_column="id", data_set_id_column="dataSetId",
+                >>>     property_column_mapping={'position': 'center_xy', 'temperature': 'temp'})
                 >>> created_features = c.geospatial.create_features(my_feature_type.external_id, feature_list)
 
         """
@@ -216,7 +220,7 @@ class FeatureList(CogniteResourceList):
         if property_column_mapping is None:
             property_column_mapping = {prop_name: prop_name for (prop_name, _) in feature_type.properties.items()}
         for _, row in geodataframe.iterrows():
-            feature = Feature(external_id=row[external_id_column])
+            feature = Feature(external_id=row[external_id_column], data_set_id=row.get(data_set_id_column, None))
             for prop in feature_type.properties.items():
                 prop_name = prop[0]
                 prop_type = prop[1]["type"]
