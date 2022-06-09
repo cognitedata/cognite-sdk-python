@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.50.1] - 2022-06-07
+### Fixed
+- Geospatial: keep feature properties as is
+
 ## [2.50.0] - 2022-05-27
 ### Changed
 - Geospatial: deprecate update_feature_types and add patch_feature_types
