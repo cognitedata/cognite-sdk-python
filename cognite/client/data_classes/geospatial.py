@@ -187,8 +187,8 @@ class FeatureList(CogniteResourceList):
         feature_type: FeatureType,
         geodataframe: "geopandas.GeoDataFrame",
         external_id_column: str = "externalId",
-        data_set_id_column: str = "dataSetId",
         property_column_mapping: Dict[str, str] = None,
+        data_set_id_column: str = "dataSetId",
     ) -> "FeatureList":
         """Convert a GeoDataFrame instance into a FeatureList.
 
