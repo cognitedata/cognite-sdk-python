@@ -11,6 +11,7 @@ from cognite.client.data_classes import (
     AssetFilter,
     AssetList,
     AssetUpdate,
+    GeoLocationFilter,
     LabelFilter,
     TimestampRange,
 )
@@ -35,6 +36,7 @@ class AssetsAPI(APIClient):
         data_set_ids: List[int] = None,
         data_set_external_ids: List[str] = None,
         labels: LabelFilter = None,
+        geo_location: GeoLocationFilter = None,
         source: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
@@ -61,6 +63,7 @@ class AssetsAPI(APIClient):
             data_set_ids (List[int]): Return only assets in the specified data sets with these ids.
             data_set_external_ids (List[str]): Return only assets in the specified data sets with these external ids.
             labels (LabelFilter): Return only the assets matching the specified label.
+            geo_location (GeoLocationFilter): Only include files matching the specified geographic relation.
             source (str): The source of this asset
             created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
@@ -91,6 +94,7 @@ class AssetsAPI(APIClient):
             asset_subtree_ids=asset_subtree_ids,
             data_set_ids=data_set_ids,
             labels=labels,
+            geo_location=geo_location,
             metadata=metadata,
             source=source,
             created_time=created_time,
@@ -193,6 +197,7 @@ class AssetsAPI(APIClient):
         data_set_ids: List[int] = None,
         data_set_external_ids: List[str] = None,
         labels: LabelFilter = None,
+        geo_location: GeoLocationFilter = None,
         metadata: Dict[str, str] = None,
         source: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
@@ -216,6 +221,7 @@ class AssetsAPI(APIClient):
             data_set_ids (List[int]): Return only assets in the specified data sets with these ids.
             data_set_external_ids (List[str]): Return only assets in the specified data sets with these external ids.
             labels (LabelFilter): Return only the assets matching the specified label filter.
+            geo_location (GeoLocationFilter): Only include files matching the specified geographic relation.
             metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value.
             source (str): The source of this asset.
             created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
@@ -279,6 +285,7 @@ class AssetsAPI(APIClient):
             asset_subtree_ids=asset_subtree_ids,
             data_set_ids=data_set_ids,
             labels=labels,
+            geo_location=geo_location,
             metadata=metadata,
             source=source,
             created_time=created_time,

@@ -2,7 +2,7 @@ import threading
 
 from cognite.client.data_classes._base import *
 from cognite.client.data_classes.labels import Label, LabelDefinition, LabelFilter
-from cognite.client.data_classes.shared import GeoLocation, TimestampRange
+from cognite.client.data_classes.shared import GeoLocation, GeoLocationFilter, TimestampRange
 
 
 class AssetAggregate(dict):
@@ -372,6 +372,7 @@ class AssetFilter(CogniteFilter):
         root (bool): Whether the filtered assets are root assets, or not. Set to True to only list root assets.
         external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
         labels (LabelFilter): Return only the resource matching the specified label constraints.
+        geo_location (GeoLocationFilter): Only include files matching the specified geographic relation.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
@@ -390,6 +391,7 @@ class AssetFilter(CogniteFilter):
         root: bool = None,
         external_id_prefix: str = None,
         labels: LabelFilter = None,
+        geo_location: GeoLocationFilter = None,
         cognite_client=None,
     ):
         self.name = name
@@ -405,6 +407,7 @@ class AssetFilter(CogniteFilter):
         self.root = root
         self.external_id_prefix = external_id_prefix
         self.labels = labels
+        self.geo_location = geo_location
         self._cognite_client = cognite_client
 
         if labels is not None and not isinstance(labels, LabelFilter):
