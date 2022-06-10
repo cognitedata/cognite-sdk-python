@@ -218,13 +218,12 @@ class TestAssetsAPI:
 
         try:
             a = cognite_client.assets.create(Asset(name="any", geo_location=geo_location))
-
             result_asset = cognite_client.assets.list(
-                id=a.id,
+                root_ids=[a.id],
                 geo_location=GeoLocationFilter(
                     relation="WITHIN", shape=GeometryFilter(
                         type="Polygon", coordinates=[[
-                            [-12.0, 75.0], [-65.0, 10.0], [144.0, -33.0], [139.0, 59.0], [-12.0, 75]
+                            [32.0, 83.0], [-86.0, -23.0], [119.0, -25.0], [32.0, 83.0]
                         ]]
                     )
                 )
