@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.50.2] - 2022-06-09
+### Fixed
+- Geospatial: fix FeatureList.from_geopandas issue with optional properties
+
 ## [2.50.1] - 2022-06-07
 ### Fixed
 - Geospatial: keep feature properties as is
