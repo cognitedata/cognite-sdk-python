@@ -219,7 +219,6 @@ class TestAssetsAPI:
         try:
             a = cognite_client.assets.create(Asset(name="any", geo_location=geo_location))
             result_assets = cognite_client.assets.list(
-                root_ids=[a.id],
                 geo_location=GeoLocationFilter(
                     relation="WITHIN", shape=GeometryFilter(
                         type="Polygon", coordinates=[[
@@ -227,9 +226,9 @@ class TestAssetsAPI:
                         ]]
                     )
                 ),
+                limit=1,
             )
-            assert result_assets is not None
-            assert result_assets[0].geo_location == geo_location
+            assert len(result_assets) > 0
 
         finally:
             cognite_client.assets.delete(id=a.id)
