@@ -7,6 +7,7 @@ from cognite.client._api.data_sets import DataSetsAPI
 from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api.entity_matching import EntityMatchingAPI
 from cognite.client._api.events import EventsAPI
+from cognite.client._api.functions import FunctionsAPI
 from cognite.client._api.extractionpipelines import ExtractionPipelineRunsAPI, ExtractionPipelinesAPI
 from cognite.client._api.files import FilesAPI
 from cognite.client._api.geospatial import GeospatialAPI
@@ -107,6 +108,7 @@ class CogniteClient:
         self.datapoints = DatapointsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.events = EventsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.files = FilesAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
+        self.functions = FunctionsAPI(self.config, api_version="playground", cognite_client=self)
         self.iam = IAMAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.data_sets = DataSetsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.sequences = SequencesAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
