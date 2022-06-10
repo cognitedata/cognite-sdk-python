@@ -5,7 +5,16 @@ from unittest import mock
 import pytest
 
 from cognite.client import utils
-from cognite.client.data_classes import Asset, AssetFilter, AssetList, AssetUpdate, GeoLocation, Geometry
+from cognite.client.data_classes import (
+    Asset,
+    AssetFilter,
+    AssetList,
+    AssetUpdate,
+    GeoLocation,
+    GeoLocationFilter,
+    Geometry,
+    GeometryFilter
+)
 from cognite.client.exceptions import CogniteNotFoundError
 from tests.utils import set_request_limit
 
@@ -194,6 +203,32 @@ class TestAssetsAPI:
             a = cognite_client.assets.create(Asset(name="any", geo_location=geo_location))
 
             result_asset = cognite_client.assets.retrieve(id=a.id)
+            assert result_asset is not None
+            assert result_asset.geo_location == geo_location
+
+        finally:
+            cognite_client.assets.delete(id=a.id)
+
+    def test_filter_by_geo_location(self, cognite_client):
+        geo_location = GeoLocation(
+            type="Feature",
+            geometry=Geometry(type="LineString", coordinates=[[1.0, 1.0], [2.0, 2.0], [3.0, 3.0]]),
+            properties={},
+        )
+
+        try:
+            a = cognite_client.assets.create(Asset(name="any", geo_location=geo_location))
+
+            result_asset = cognite_client.assets.list(
+                id=a.id,
+                geo_location=GeoLocationFilter(
+                    relation="WITHIN", shape=GeometryFilter(
+                        type="Polygon", coordinates=[[
+                            [-12.0, 75.0], [-65.0, 10.0], [144.0, -33.0], [139.0, 59.0], [-12.0, 75]
+                        ]]
+                    )
+                )
+            )
             assert result_asset is not None
             assert result_asset.geo_location == geo_location
 
