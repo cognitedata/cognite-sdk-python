@@ -11,6 +11,7 @@ class TestFeature:
                 "externalId": "f1",
                 "createdTime": 1654612200225,
                 "lastUpdatedTime": 1654612200225,
+                "dataSetId": 12,
             }
         )
         assert feature.firstName == "name"
@@ -19,13 +20,26 @@ class TestFeature:
         assert feature.external_id == "f1"
         assert feature.created_time == 1654612200225
         assert feature.last_updated_time == 1654612200225
+        assert feature.data_set_id == 12
 
     def test_dump_feature(self):
-        feature = Feature(external_id="f1", firstName="name", temperature_Hot=12.0, levelH2O=12.0)
+        feature = Feature(external_id="f1", firstName="name", temperature_Hot=12.0, levelH2O=12.0, data_set_id=12)
         dumped = feature.dump(camel_case=True)
-        assert dumped == {"externalId": "f1", "firstName": "name", "temperature_Hot": 12.0, "levelH2O": 12.0}
+        assert dumped == {
+            "externalId": "f1",
+            "firstName": "name",
+            "temperature_Hot": 12.0,
+            "levelH2O": 12.0,
+            "dataSetId": 12,
+        }
         dumped = feature.dump(camel_case=False)
-        assert dumped == {"external_id": "f1", "firstName": "name", "temperature_Hot": 12.0, "levelH2O": 12.0}
+        assert dumped == {
+            "external_id": "f1",
+            "firstName": "name",
+            "temperature_Hot": 12.0,
+            "levelH2O": 12.0,
+            "data_set_id": 12,
+        }
 
 
 class TestFeatureList:
@@ -39,6 +53,7 @@ class TestFeatureList:
                     "externalId": "f1",
                     "createdTime": 1654612200225,
                     "lastUpdatedTime": 1654612200225,
+                    "dataSetId": 12,
                 }
             ]
         )
@@ -52,8 +67,14 @@ class TestFeatureList:
         assert feature.last_updated_time == 1654612200225
 
     def test_dump_feature_list(self):
-        feature_list = FeatureList([Feature(external_id="f1", firstName="name", temperature_Hot=12.0, levelH2O=12.0)])
+        feature_list = FeatureList(
+            [Feature(external_id="f1", firstName="name", temperature_Hot=12.0, levelH2O=12.0, data_set_id=12)]
+        )
         dumped = feature_list.dump(camel_case=True)
-        assert dumped == [{"externalId": "f1", "firstName": "name", "temperature_Hot": 12.0, "levelH2O": 12.0}]
+        assert dumped == [
+            {"externalId": "f1", "firstName": "name", "temperature_Hot": 12.0, "levelH2O": 12.0, "dataSetId": 12}
+        ]
         dumped = feature_list.dump(camel_case=False)
-        assert dumped == [{"external_id": "f1", "firstName": "name", "temperature_Hot": 12.0, "levelH2O": 12.0}]
+        assert dumped == [
+            {"external_id": "f1", "firstName": "name", "temperature_Hot": 12.0, "levelH2O": 12.0, "data_set_id": 12}
+        ]
