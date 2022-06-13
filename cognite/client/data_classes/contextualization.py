@@ -33,6 +33,7 @@ class JobStatus(Enum):
 
 class ContextualizationJobType(Enum):
     ENTITY_MATCHING = "entity_matching"
+    DIAGRAM = "diagram"
 
 
 class ContextualizationJob(CogniteResource):
@@ -316,7 +317,7 @@ class DiagramConvertItem(CogniteResource):
 
 
 class DiagramConvertResults(ContextualizationJob):
-    _JOB_TYPE = ContextualizationJobType.PNID_PARSER
+    _JOB_TYPE = ContextualizationJobType.DIAGRAM
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -364,7 +365,7 @@ class DiagramDetectItem(CogniteResource):
 
 
 class DiagramDetectResults(ContextualizationJob):
-    _JOB_TYPE = ContextualizationJobType.PNID_PARSER
+    _JOB_TYPE = ContextualizationJobType.DIAGRAM
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
