@@ -1,5 +1,7 @@
 import numbers
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Union
+
+from requests import Response
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes._base import CogniteResource
@@ -8,19 +10,32 @@ from cognite.client.data_classes.contextualization import (
     DiagramConvertResults,
     DiagramDetectResults,
 )
+from cognite.client.utils._auxiliary import to_camel_case
 
 
 class DiagramsAPI(APIClient):
     _RESOURCE_PATH = "/context/diagram"
 
-    def _run_job(
-        self, job_path: str, items, status_path: Optional[str] = None, headers: Dict = None, job_cls: type = None
-    ) -> ContextualizationJob:
+    def _camel_post(
+        self,
+        context_path: str,
+        json: Dict[str, Any] = None,
+        params: Dict[str, Any] = None,
+        headers: Dict[str, Any] = None,
+    ) -> Response:
+        return self._post(
+            self._RESOURCE_PATH + context_path,
+            json={to_camel_case(k): v for k, v in (json or {}).items() if v is not None},
+            params=params,
+            headers=headers,
+        )
+
+    def _run_job(self, job_path, status_path=None, headers=None, job_cls=None, **kwargs) -> ContextualizationJob:
         job_cls = job_cls or ContextualizationJob
         if status_path is None:
             status_path = job_path + "/"
         return job_cls._load_with_status(
-            self._post(self._RESOURCE_PATH + job_path, json=items, headers=headers).json(),
+            self._camel_post(job_path, json=kwargs, headers=headers).json(),
             status_path=self._RESOURCE_PATH + status_path,
             cognite_client=self._cognite_client,
         )
