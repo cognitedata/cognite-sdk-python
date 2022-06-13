@@ -14,13 +14,13 @@ class DiagramsAPI(APIClient):
     _RESOURCE_PATH = "/context/diagram"
 
     def _run_job(
-        self, job_path: str, json, status_path: Optional[str] = None, headers: Dict = None, job_cls: type = None
+        self, job_path: str, items, status_path: Optional[str] = None, headers: Dict = None, job_cls: type = None
     ) -> ContextualizationJob:
         job_cls = job_cls or ContextualizationJob
         if status_path is None:
             status_path = job_path + "/"
         return job_cls._load_with_status(
-            self._post(self._RESOURCE_PATH + job_path, json=json, headers=headers).json(),
+            self._post(self._RESOURCE_PATH + job_path, json=items, headers=headers).json(),
             status_path=self._RESOURCE_PATH + status_path,
             cognite_client=self._cognite_client,
         )
