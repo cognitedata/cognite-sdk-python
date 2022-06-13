@@ -1,15 +1,9 @@
 import numbers
-from typing import Dict, List, Union
+from typing import List, Union
 
-from cognite.client.data_classes._base import CogniteResource
-
-from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes._base import CogniteResource
-from cognite.client.data_classes.contextualization import (
-    DiagramConvertResults,
-    DiagramDetectResults,
-)
+from cognite.client.data_classes.contextualization import DiagramConvertResults, DiagramDetectResults
 
 
 class DiagramsAPI(APIClient):

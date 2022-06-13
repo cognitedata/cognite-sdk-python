@@ -1,7 +1,4 @@
-import pytest
-
 from cognite.client.data_classes.contextualization import DiagramConvertResults, DiagramDetectItem, DiagramDetectResults
-from tests.tests_integration.conftest import cognite_client
 
 PNID_FILE_ID = 3261066797848581
 
