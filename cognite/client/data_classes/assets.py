@@ -2,7 +2,7 @@ import threading
 
 from cognite.client.data_classes._base import *
 from cognite.client.data_classes.labels import Label, LabelDefinition, LabelFilter
-from cognite.client.data_classes.shared import TimestampRange
+from cognite.client.data_classes.shared import GeoLocation, GeoLocationFilter, TimestampRange
 
 
 class AssetAggregate(dict):
@@ -52,6 +52,7 @@ class Asset(CogniteResource):
         metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
         source (str): The source of the asset.
         labels (List[Label]): A list of the labels associated with this resource item.
+        geo_location (GeoLocation): The geographic metadata of the asset.
         id (int): A server-generated ID for the object.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -71,6 +72,7 @@ class Asset(CogniteResource):
         metadata: Dict[str, str] = None,
         source: str = None,
         labels: List[Union[Label, str, LabelDefinition]] = None,
+        geo_location: GeoLocation = None,
         id: int = None,
         created_time: int = None,
         last_updated_time: int = None,
@@ -78,6 +80,8 @@ class Asset(CogniteResource):
         aggregates: Union[Dict[str, Any], AggregateResultItem] = None,
         cognite_client=None,
     ):
+        if geo_location is not None and not isinstance(geo_location, GeoLocation):
+            raise TypeError("Asset.geo_location should be of type GeoLocation")
         self.external_id = external_id
         self.name = name
         self.parent_id = parent_id
@@ -87,6 +91,7 @@ class Asset(CogniteResource):
         self.metadata = metadata
         self.source = source
         self.labels = Label._load_list(labels)
+        self.geo_location = geo_location
         self.id = id
         self.created_time = created_time
         self.last_updated_time = last_updated_time
@@ -101,6 +106,8 @@ class Asset(CogniteResource):
             if instance.aggregates is not None:
                 instance.aggregates = AggregateResultItem(**instance.aggregates)
         instance.labels = Label._load_list(instance.labels)
+        if instance.geo_location is not None:
+            instance.geo_location = GeoLocation._load(instance.geo_location)
         return instance
 
     def __hash__(self):
@@ -268,6 +275,10 @@ class AssetUpdate(CogniteUpdate):
     def labels(self):
         return AssetUpdate._LabelAssetUpdate(self, "labels")
 
+    @property
+    def geo_location(self):
+        return AssetUpdate._PrimitiveAssetUpdate(self, "geoLocation")
+
 
 class AssetList(CogniteResourceList):
     _RESOURCE = Asset
@@ -361,6 +372,7 @@ class AssetFilter(CogniteFilter):
         root (bool): Whether the filtered assets are root assets, or not. Set to True to only list root assets.
         external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
         labels (LabelFilter): Return only the resource matching the specified label constraints.
+        geo_location (GeoLocationFilter): Only include files matching the specified geographic relation.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
@@ -379,6 +391,7 @@ class AssetFilter(CogniteFilter):
         root: bool = None,
         external_id_prefix: str = None,
         labels: LabelFilter = None,
+        geo_location: GeoLocationFilter = None,
         cognite_client=None,
     ):
         self.name = name
@@ -394,6 +407,7 @@ class AssetFilter(CogniteFilter):
         self.root = root
         self.external_id_prefix = external_id_prefix
         self.labels = labels
+        self.geo_location = geo_location
         self._cognite_client = cognite_client
 
         if labels is not None and not isinstance(labels, LabelFilter):
