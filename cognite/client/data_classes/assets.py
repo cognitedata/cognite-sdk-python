@@ -276,7 +276,7 @@ class AssetUpdate(CogniteUpdate):
         return AssetUpdate._LabelAssetUpdate(self, "labels")
 
     @property
-    def geoLocation(self):
+    def geo_location(self):
         return AssetUpdate._PrimitiveAssetUpdate(self, "geoLocation")
 
 
