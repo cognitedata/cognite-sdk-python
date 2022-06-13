@@ -5,6 +5,7 @@ from cognite.client import utils
 from cognite.client._api.assets import AssetsAPI
 from cognite.client._api.data_sets import DataSetsAPI
 from cognite.client._api.datapoints import DatapointsAPI
+from cognite.client._api.diagrams import DiagramsAPI
 from cognite.client._api.entity_matching import EntityMatchingAPI
 from cognite.client._api.events import EventsAPI
 from cognite.client._api.extractionpipelines import ExtractionPipelineRunsAPI, ExtractionPipelinesAPI
@@ -123,6 +124,7 @@ class CogniteClient:
             self._config, api_version="playground", cognite_client=self
         )
         self.transformations = TransformationsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
+        self.diagrams = DiagramsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
 
         self._api_client = APIClient(self._config, cognite_client=self)
 
