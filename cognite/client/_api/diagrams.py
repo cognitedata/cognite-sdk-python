@@ -1,13 +1,29 @@
 import numbers
-from typing import List, Union
+from typing import Dict, List, Optional, Union
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes._base import CogniteResource
-from cognite.client.data_classes.contextualization import DiagramConvertResults, DiagramDetectResults
+from cognite.client.data_classes.contextualization import (
+    ContextualizationJob,
+    DiagramConvertResults,
+    DiagramDetectResults,
+)
 
 
 class DiagramsAPI(APIClient):
     _RESOURCE_PATH = "/context/diagram"
+
+    def _run_job(
+        self, job_path: str, json, status_path: Optional[str] = None, headers: Dict = None, job_cls: type = None
+    ) -> ContextualizationJob:
+        job_cls = job_cls or ContextualizationJob
+        if status_path is None:
+            status_path = job_path + "/"
+        return job_cls._load_with_status(
+            self._post(self._RESOURCE_PATH + job_path, json=json, headers=headers).json(),
+            status_path=self._RESOURCE_PATH + status_path,
+            cognite_client=self._cognite_client,
+        )
 
     @staticmethod
     def _process_file_ids(ids: Union[List[int], int, None], external_ids: Union[List[str], str, None]) -> List:
