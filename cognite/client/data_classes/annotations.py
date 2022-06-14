@@ -21,7 +21,7 @@ class Annotation(CogniteResource):
         status (str): The status of the annotation, e.g. "suggested", "approved", "rejected".
 
         annotated_resource_type (str): Type name of the CDF resource that is annotated, e.g. "file".
-        annotated_resource_id (int, optional): The internal ID of the annotated resource. Either this field or the external ID of the linked resource is required (not both).
+        annotated_resource_id (int, optional): The internal ID of the annotated resource.
 
         creating_app (str): The name of the app from which this annotation was created.
         creating_app_version (str): The version of the app that created this annotation. Must be a valid semantic versioning (SemVer) string.

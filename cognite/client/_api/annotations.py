@@ -78,11 +78,6 @@ class AnnotationsAPI(APIClient):
                 {to_camel_case(k): v for k, v in f.items()} for f in filter["annotatedResourceIds"]
             ]
 
-        if "linkedResourceIds" in filter:
-            filter["linkedResourceIds"] = [
-                {to_camel_case(k): v for k, v in f.items()} for f in filter["linkedResourceIds"]
-            ]
-
         return self._list(method="POST", limit=limit, filter=filter)
 
     @staticmethod
