@@ -389,8 +389,8 @@ class TestGeospatialAPI:
             )
         )
         assert len(res) == 1
-        assert len(res[0].properties) == len(test_feature_type.properties) + 1
-        assert len(res[0].search_spec) == len(test_feature_type.search_spec) + 2
+        assert len(res[0].properties) == len(test_feature_type.properties)
+        assert len(res[0].search_spec) == len(test_feature_type.search_spec) + 1
 
     def test_patch_feature_types(self, cognite_client, test_feature_type):
         res = cognite_client.geospatial.patch_feature_types(
@@ -407,8 +407,8 @@ class TestGeospatialAPI:
             )
         )
         assert len(res) == 1
-        assert len(res[0].properties) == len(test_feature_type.properties) + 1
-        assert len(res[0].search_spec) == len(test_feature_type.search_spec) + 2
+        assert len(res[0].properties) == len(test_feature_type.properties)
+        assert len(res[0].search_spec) == len(test_feature_type.search_spec) + 1
 
     def test_stream_features(self, cognite_client, large_feature_type, many_features):
         features = cognite_client.geospatial.stream_features(
