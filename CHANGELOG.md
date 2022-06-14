@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.52.0] - 2022-06-14
+### Added
+- added the diagrams API
+
 ## [2.51.0] - 2022-06-10
 ### Added
 - added the new geo_location field to the Asset resource
