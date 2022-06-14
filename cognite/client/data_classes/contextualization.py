@@ -33,7 +33,6 @@ class JobStatus(Enum):
 
 class ContextualizationJobType(Enum):
     ENTITY_MATCHING = "entity_matching"
-    PNID_PARSER = "pnid_parser"
     DIAGRAMS = "diagrams"
 
 
