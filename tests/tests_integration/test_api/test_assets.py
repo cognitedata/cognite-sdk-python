@@ -5,7 +5,16 @@ from unittest import mock
 import pytest
 
 from cognite.client import utils
-from cognite.client.data_classes import Asset, AssetFilter, AssetList, AssetUpdate
+from cognite.client.data_classes import (
+    Asset,
+    AssetFilter,
+    AssetList,
+    AssetUpdate,
+    GeoLocation,
+    GeoLocationFilter,
+    Geometry,
+    GeometryFilter,
+)
 from cognite.client.exceptions import CogniteNotFoundError
 from tests.utils import set_request_limit
 
@@ -182,3 +191,43 @@ class TestAssetsAPI:
                 assert asset.parent_id is None
             else:
                 assert asset.parent_id == external_id_to_id[asset.external_id[:-1]]
+
+    def test_create_with_geo_location(self, cognite_client):
+        geo_location = GeoLocation(
+            type="Feature",
+            geometry=Geometry(type="LineString", coordinates=[[1.0, 1.0], [2.0, 2.0], [3.0, 3.0]]),
+            properties={},
+        )
+
+        try:
+            a = cognite_client.assets.create(Asset(name="any", geo_location=geo_location))
+
+            result_asset = cognite_client.assets.retrieve(id=a.id)
+            assert result_asset is not None
+            assert result_asset.geo_location == geo_location
+
+        finally:
+            cognite_client.assets.delete(id=a.id)
+
+    def test_filter_by_geo_location(self, cognite_client):
+        geo_location = GeoLocation(
+            type="Feature",
+            geometry=Geometry(type="LineString", coordinates=[[1.0, 1.0], [2.0, 2.0], [3.0, 3.0]]),
+            properties={},
+        )
+
+        try:
+            a = cognite_client.assets.create(Asset(name="any", geo_location=geo_location))
+            result_assets = cognite_client.assets.list(
+                geo_location=GeoLocationFilter(
+                    relation="WITHIN",
+                    shape=GeometryFilter(
+                        type="Polygon", coordinates=[[[32.0, 83.0], [-86.0, -23.0], [119.0, -25.0], [32.0, 83.0]]]
+                    ),
+                ),
+                limit=1,
+            )
+            assert len(result_assets) > 0
+
+        finally:
+            cognite_client.assets.delete(id=a.id)
