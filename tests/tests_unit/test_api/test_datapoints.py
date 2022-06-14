@@ -144,10 +144,15 @@ def mock_get_datapoints_one_ts_empty(rsps, cognite_client):
                     "isString": False,
                     "isStep": False,
                     "datapoints": [{"timestamp": 1, "value": 1}],
-                },
-                {"id": 2, "externalId": "2", "isString": False, "isStep": False, "datapoints": []},
+                }
             ]
         },
+    )
+    rsps.add(
+        rsps.POST,
+        cognite_client.datapoints._get_base_url_with_base_path() + "/timeseries/data/list",
+        status=200,
+        json={"items": [{"id": 2, "externalId": "2", "isString": False, "isStep": False, "datapoints": []}]},
     )
     yield rsps
 
@@ -295,13 +300,11 @@ def assert_dps_response_is_correct(calls, dps_object):
     datapoints = []
     for call in calls:
         if jsgz_load(call.request.body)["limit"] > 1 and jsgz_load(call.request.body).get("aggregates") != ["count"]:
-            dps_responses = call.response.json()["items"]
-            for dps_response in dps_responses:
-                if dps_response["id"] == dps_object.id and dps_response["externalId"] == dps_object.external_id:
-                    datapoints.extend(dps_response["datapoints"])
-                    id = dps_response["id"]
-                    external_id = dps_response["externalId"]
-                    break
+            dps_response = call.response.json()["items"][0]
+            if dps_response["id"] == dps_object.id and dps_response["externalId"] == dps_object.external_id:
+                datapoints.extend(dps_response["datapoints"])
+                id = dps_response["id"]
+                external_id = dps_response["externalId"]
 
     expected_dps = sorted(datapoints, key=lambda x: x["timestamp"])
     assert id == dps_object.id
@@ -1516,7 +1519,7 @@ class TestDataFetcher:
             client=cognite_client.datapoints,
             start=start,
             end=end,
-            ts_items=[{}],
+            ts_item={},
             granularity=granularity,
             aggregates=[],
             limit=None,

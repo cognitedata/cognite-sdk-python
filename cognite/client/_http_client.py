@@ -72,7 +72,7 @@ class _RetryTracker:
         return int(min(t, self.config.max_backoff_seconds) * random.uniform(0, 1.0))
 
     def get_backoff_time(self) -> int:
-        backoff_time = self.config.backoff_factor * (2 ** self.total)
+        backoff_time = self.config.backoff_factor * (2**self.total)
         backoff_time_adjusted = self._max_backoff_and_jitter(backoff_time)
         return backoff_time_adjusted
 

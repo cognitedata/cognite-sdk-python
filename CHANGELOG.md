@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.52.0] - 2022-06-10
+### Changed
+- Reverted the optimizations introduced to datapoints fetching in 2.47.0 due to buggy implementation. 
+
 ## [2.51.0] - 2022-06-10
 ### Added
 - added the new geo_location field to the Asset resource

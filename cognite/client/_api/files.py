@@ -775,7 +775,7 @@ class FilesAPI(APIClient):
         download_link = self._get_download_link(identifier)
         self._download_file_to_path(download_link, file_path)
 
-    def _download_file_to_path(self, download_link: str, path: Path, chunk_size: int = 2 ** 21):
+    def _download_file_to_path(self, download_link: str, path: Path, chunk_size: int = 2**21):
         with self._http_client_with_retry.request(
             "GET", download_link, stream=True, timeout=self._config.file_transfer_timeout
         ) as r:
