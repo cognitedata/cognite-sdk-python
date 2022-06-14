@@ -15,7 +15,7 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 
-## [2.51.0] - 2022-06-15
+## [2.52.0] - 2022-06-15
 
 ### Added
 - Annotations implementation, providing access to the corresponding [Annotations API](https://docs.cognite.com/api/v1/#tag/Annotations). 
@@ -28,6 +28,18 @@ Changes are grouped as follows
     - **Update** annotations with `client.annotations.update` passing updated `Annotation` or `AnnotationUpdate` instance(s)
     - **Get single** annotation with `client.annotations.retrieve` passing the id
     - **Get multiple** annotations with `client.annotations.retrieve_multiple` passing the ids
+
+## [2.51.0] - 2022-06-10
+### Added
+- added the new geo_location field to the Asset resource
+
+## [2.50.2] - 2022-06-09
+### Fixed
+- Geospatial: fix FeatureList.from_geopandas issue with optional properties
+
+## [2.50.1] - 2022-06-07
+### Fixed
+- Geospatial: keep feature properties as is
 
 ## [2.50.0] - 2022-05-27
 ### Changed

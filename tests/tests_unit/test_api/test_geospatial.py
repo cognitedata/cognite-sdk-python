@@ -16,6 +16,8 @@ def test_feature_type():
             "volume": {"type": "DOUBLE"},
             "temperature": {"type": "DOUBLE"},
             "pressure": {"type": "DOUBLE"},
+            "description": {"type": "STRING", "optional": "true"},
+            "dataSetId": {"type": "LONG", "optional": "true"},
         },
         search_spec={"vol_press_idx": {"properties": ["volume", "pressure"]}},
     )
@@ -46,6 +48,7 @@ def test_features(test_feature_type):
                 temperature=13.4,
                 volume=1212.0,
                 pressure=2121.0,
+                data_set_id=12,
             ),
             Feature(
                 external_id=external_ids[3],
@@ -53,6 +56,7 @@ def test_features(test_feature_type):
                 temperature=13.4,
                 volume=1212.0,
                 pressure=2121.0,
+                data_set_id=12,
             ),
         ]
     )
@@ -62,12 +66,12 @@ class TestGeospatialAPI:
     @pytest.mark.dsl
     def test_to_pandas(self, test_feature_type, test_features):
         df = test_features.to_pandas()
-        assert set(list(df)) == set(["externalId", "position", "volume", "temperature", "pressure"])
+        assert set(list(df)) == {"externalId", "dataSetId", "position", "volume", "temperature", "pressure"}
 
     @pytest.mark.dsl
     def test_to_geopandas(self, test_feature_type, test_features):
         gdf = test_features.to_geopandas(geometry="position")
-        assert set(gdf) == set(["externalId", "position", "volume", "temperature", "pressure"])
+        assert set(gdf) == {"externalId", "dataSetId", "position", "volume", "temperature", "pressure"}
         geopandas = utils._auxiliary.local_import("geopandas")
         assert type(gdf.dtypes["position"]) == geopandas.array.GeometryDtype
 
@@ -77,9 +81,21 @@ class TestGeospatialAPI:
         fl = FeatureList.from_geopandas(test_feature_type, gdf)
         assert type(fl) == FeatureList
         assert len(fl) == 4
-        for f in fl:
-            for attr in test_feature_type.properties.items():
-                attr_name = attr[0]
-                if attr_name.startswith("_"):
+        for idx, f in enumerate(fl):
+            for attr_name in test_feature_type.properties:
+                if attr_name.startswith("_") or attr_name in ["description", "dataSetId"]:
                     continue
                 assert hasattr(f, attr_name)
+            assert not hasattr(f, "description")
+            if idx > 1:
+                assert hasattr(f, "data_set_id")
+
+    @pytest.mark.dsl
+    def test_from_geopandas_missing_column(self, test_feature_type):
+        pd = utils._auxiliary.local_import("pandas")
+        df = pd.DataFrame([{"externalId": "12", "volume": 12.0}])
+        geopandas = utils._auxiliary.local_import("geopandas")
+        gdf = geopandas.GeoDataFrame(df)
+        with pytest.raises(ValueError) as error:
+            FeatureList.from_geopandas(test_feature_type, gdf)
+        assert str(error.value) == "Missing value for property temperature"
