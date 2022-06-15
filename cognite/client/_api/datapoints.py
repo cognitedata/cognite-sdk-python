@@ -773,6 +773,9 @@ class _DPWindow:
     def __eq__(self, other):
         return [self.start, self.end, self.limit] == [other.start, other.end, other.limit]
 
+    def __hash__(self):
+        return hash((self.start, self.end, self.limit))
+
 
 class _DPResult:
     def __init__(self, limit):
@@ -990,7 +993,7 @@ class DatapointsFetcher:
             start = result.last_timestamp + task.next_start_offset()
             tasks = self._split_task_into_windows(result.results[0].id, task, remaining_user_limit, start)
             remaining_tasks.extend(tasks)
-        return remaining_tasks
+        return list(set(remaining_tasks))
 
     def _fetch_datapoints_for_remaining_queries(self, tasks_with_windows: List[Tuple[_DPTask, _DPWindow]]):
         tasks_summary = utils._concurrency.execute_tasks_concurrently(
