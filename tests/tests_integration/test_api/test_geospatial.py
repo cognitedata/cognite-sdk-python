@@ -11,11 +11,11 @@ from cognite.client.data_classes.geospatial import (
     Feature,
     FeatureList,
     FeatureType,
+    FeatureTypePatch,
     FeatureTypeUpdate,
     OrderSpec,
-    PropertyAndSearchSpec,
-    FeatureTypePatch,
     Patches,
+    PropertyAndSearchSpec,
 )
 from cognite.client.exceptions import CogniteAPIError
 
