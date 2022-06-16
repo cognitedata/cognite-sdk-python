@@ -1,5 +1,5 @@
 * @cognitedata/starbase
-geospatial.py @cognitedata/geospatial
-test_geospatial.py @cognitedata/geospatial
+geospatial.py @cognitedata/starbase @cognitedata/geospatial
+test_geospatial.py @cognitedata/starbase @cognitedata/geospatial
 CHANGELOG.md @cognitedata/starbase @cognitedata/geospatial
 _version.py @cognitedata/starbase @cognitedata/geospatial

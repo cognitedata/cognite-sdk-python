@@ -14,9 +14,9 @@ from cognite.client.data_classes.geospatial import (
     FeatureList,
     FeatureType,
     FeatureTypeList,
+    FeatureTypePatch,
     FeatureTypeUpdate,
     OrderSpec,
-    FeatureTypePatch,
 )
 from cognite.client.exceptions import CogniteConnectionError
 
