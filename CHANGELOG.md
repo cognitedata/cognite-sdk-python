@@ -14,6 +14,21 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+
+## [2.53.0] - 2022-06-16
+
+### Added
+- Annotations implementation, providing access to the corresponding [Annotations API](https://docs.cognite.com/api/v1/#tag/Annotations). 
+    - Added `Annotation`, `AnnotationFilter`, `AnnotationUpdate` dataclasses to `cognite.client.data_classes`
+    - Added `annotations` API to `cognite.client.CogniteClient`
+    - **Create** annotations with `client.annotations.create` passing `Annotation` instance(s)
+    - **Suggest** annotations with `client.annotations.suggest` passing `Annotation` instance(s) 
+    - **Delete** annotations with `client.annotations.delete` passing the id(s) of annotation(s) to delete
+    - **Filter** annotations with `client.annotations.list` passing a `AnnotationFilter `dataclass instance or a filter `dict`
+    - **Update** annotations with `client.annotations.update` passing updated `Annotation` or `AnnotationUpdate` instance(s)
+    - **Get single** annotation with `client.annotations.retrieve` passing the id
+    - **Get multiple** annotations with `client.annotations.retrieve_multiple` passing the ids
+
 ## [2.52.0] - 2022-06-10
 ### Changed
 - Reverted the optimizations introduced to datapoints fetching in 2.47.0 due to buggy implementation. 
