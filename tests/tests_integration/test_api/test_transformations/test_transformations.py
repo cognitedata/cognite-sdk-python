@@ -81,6 +81,7 @@ class TestTransformationsAPI:
         ts = cognite_client.transformations.create(transform)
         cognite_client.transformations.delete(id=ts.id)
 
+    @pytest.mark.skip
     def test_create_alpha_dmi_transformation(self, cognite_client):
         prefix = "".join(random.choice(string.ascii_letters) for i in range(6))
         transform = Transformation(
@@ -190,6 +191,7 @@ class TestTransformationsAPI:
         query_result = cognite_client.transformations.preview(query="select 1 as id, 'asd' as name", limit=100)
         dumped = str(query_result)
 
+    @pytest.mark.skip
     def test_update_dmi_alpha(self, cognite_client, new_transformation):
         new_transformation.destination = AlphaDataModelInstances("myTest")
         partial_update = TransformationUpdate(id=new_transformation.id).destination.set(
