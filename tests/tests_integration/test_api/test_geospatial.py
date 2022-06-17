@@ -1,4 +1,5 @@
 import random
+import re
 import sys
 import time
 import uuid
@@ -132,9 +133,13 @@ def test_features(cognite_client, test_feature_type):
             pressure=2121.0,
         ),
     ]
-    feature = cognite_client.geospatial.create_features(test_feature_type.external_id, features)
+    feature = cognite_client.geospatial.create_features(
+        feature_type_external_id=test_feature_type.external_id, feature=features, chunk_size=2
+    )
     yield feature
-    cognite_client.geospatial.delete_features(test_feature_type.external_id, external_id=external_ids)
+    cognite_client.geospatial.delete_features(
+        feature_type_external_id=test_feature_type.external_id, external_id=external_ids
+    )
 
 
 @pytest.fixture
@@ -229,6 +234,20 @@ class TestGeospatialAPI:
         )
         assert res.external_id == test_feature.external_id
         assert res.temperature == 6.237
+
+    def test_update_multiple_features(self, cognite_client, allow_crs_transformation, test_feature_type, test_features):
+        res = cognite_client.geospatial.update_features(
+            feature_type_external_id=test_feature_type.external_id,
+            feature=[
+                Feature(external_id=test_features[idx].external_id, temperature=6.237, pressure=12.21, volume=34.43)
+                for idx in range(0, len(test_features))
+            ],
+            allow_crs_transformation=allow_crs_transformation,
+            chunk_size=2,
+        )
+        for idx in range(0, len(test_features)):
+            assert res[idx].external_id == test_features[idx].external_id
+            assert res[idx].temperature == 6.237
 
     def test_search_single_feature(self, cognite_client, test_feature_type, test_feature):
         res = cognite_client.geospatial.search_features(
@@ -353,7 +372,7 @@ class TestGeospatialAPI:
         )
         assert len(res) == 2
         assert hasattr(res[0], "position")
-        assert res[0].position["wkt"] == "POINT(253457.6156334287 6250962.062720415)"
+        assert re.compile(r"^POINT\(253457.61[0-9]+ 6250962.06[0-9]+\)$").match(res[0].position["wkt"])
         assert not hasattr(res[0], "pressure")
         assert not hasattr(res[0], "volume")
 
