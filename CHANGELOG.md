@@ -14,10 +14,15 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.55.0] - 2022-06-17
+
+### Added
+- Geopandas support for the geospatial streaming search
+
 ## [2.54.0] - 2022-06-17
 
 ### Added
-- feature streaming generator
+- Allow to set the chunk size when creating or updating geospatial features
 
 ## [2.53.1] - 2022-06-17
 
