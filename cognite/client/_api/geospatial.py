@@ -230,7 +230,7 @@ class GeospatialAPI(APIClient):
         feature_type_external_id: str,
         feature: Union[Feature, List[Feature], FeatureList],
         allow_crs_transformation: bool = False,
-        chunk_size: int = None
+        chunk_size: int = None,
     ) -> Union[Feature, FeatureList]:
         """`Creates features`
         <https://docs.cognite.com/api/v1/#operation/createFeatures>
@@ -266,8 +266,11 @@ class GeospatialAPI(APIClient):
         resource_path = self._feature_resource_path(feature_type_external_id)
         extra_body_fields = {"allowCrsTransformation": "true"} if allow_crs_transformation else {}
         return self._create_multiple(
-            items=feature, resource_path=resource_path, cls=FeatureList,
-            extra_body_fields=extra_body_fields, limit=chunk_size
+            items=feature,
+            resource_path=resource_path,
+            cls=FeatureList,
+            extra_body_fields=extra_body_fields,
+            limit=chunk_size,
         )
 
     def delete_features(self, feature_type_external_id: str, external_id: Union[str, List[str]] = None) -> None:
@@ -331,7 +334,7 @@ class GeospatialAPI(APIClient):
         feature_type_external_id: str,
         feature: Union[Feature, List[Feature]],
         allow_crs_transformation: bool = False,
-        chunk_size: int = None
+        chunk_size: int = None,
     ) -> FeatureList:
         """`Update features`
         <https://docs.cognite.com/api/v1/#operation/updateFeatures>
@@ -367,8 +370,7 @@ class GeospatialAPI(APIClient):
         resource_path = self._feature_resource_path(feature_type_external_id) + "/update"
         extra_body_fields = {"allowCrsTransformation": "true"} if allow_crs_transformation else {}
         return self._create_multiple(
-            feature, resource_path=resource_path, cls=FeatureList,
-            extra_body_fields=extra_body_fields, limit=chunk_size
+            feature, resource_path=resource_path, cls=FeatureList, extra_body_fields=extra_body_fields, limit=chunk_size
         )
 
     def search_features(

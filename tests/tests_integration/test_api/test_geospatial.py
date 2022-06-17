@@ -1,8 +1,8 @@
 import random
+import re
 import sys
 import time
 import uuid
-import re
 
 import pytest
 
@@ -134,8 +134,7 @@ def test_features(cognite_client, test_feature_type):
         ),
     ]
     feature = cognite_client.geospatial.create_features(
-        feature_type_external_id=test_feature_type.external_id,
-        feature=features, chunk_size=2
+        feature_type_external_id=test_feature_type.external_id, feature=features, chunk_size=2
     )
     yield feature
     cognite_client.geospatial.delete_features(
@@ -244,7 +243,7 @@ class TestGeospatialAPI:
                 for idx in range(0, len(test_features))
             ],
             allow_crs_transformation=allow_crs_transformation,
-            chunk_size=2
+            chunk_size=2,
         )
         for idx in range(0, len(test_features)):
             assert res[idx].external_id == test_features[idx].external_id
@@ -373,7 +372,7 @@ class TestGeospatialAPI:
         )
         assert len(res) == 2
         assert hasattr(res[0], "position")
-        assert re.compile(r'^POINT\(253457.61[0-9]+ 6250962.06[0-9]+\)$').match(res[0].position["wkt"])
+        assert re.compile(r"^POINT\(253457.61[0-9]+ 6250962.06[0-9]+\)$").match(res[0].position["wkt"])
         assert not hasattr(res[0], "pressure")
         assert not hasattr(res[0], "volume")
 
