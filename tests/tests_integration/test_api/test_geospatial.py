@@ -441,13 +441,15 @@ class TestGeospatialAPI:
             feature_type_external_id=test_feature_type.external_id,
             geometry="position",
             filter={"range": {"property": "temperature", "gt": -100.0, "lt": 100.0}},
-            properties={"temperature": {}, "position": {"srid": 3857}},
+            properties={"externalId": {}, "temperature": {}, "position": {"srid": 3857}},
             allow_crs_transformation=True,
         )
         geopandas = utils._auxiliary.local_import("geopandas")
         assert type(gdf.dtypes["position"]) == geopandas.array.GeometryDtype
         assert len(gdf.index) == len(test_features)
-        assert list(gdf.columns) == ["temperature", "position"]
+        assert list(gdf.columns) == ["externalId", "temperature", "position"]
+        actual = gdf[gdf["externalId"] == test_features[0].external_id].iloc[0]["position"]
+        assert re.compile(r"^POINT \(253457.61[0-9]+ 6250962.06[0-9]+\)$").match(actual.wkt)
 
     def test_to_pandas(self, test_feature_type, test_features):
         df = test_features.to_pandas()
