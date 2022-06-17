@@ -486,6 +486,57 @@ class GeospatialAPI(APIClient):
         except (ChunkedEncodingError, ConnectionError) as e:
             raise CogniteConnectionError(e)
 
+    def stream_features_to_geopandas(
+        self,
+        feature_type_external_id: str,
+        geometry: str,
+        filter: Dict[str, Any],
+        properties: Dict[str, Any] = None,
+        allow_crs_transformation: bool = False,
+    ) -> "geopandas.GeoDataFrame":
+        """`Stream features to geopandas`
+        <https://docs.cognite.com/api/v1/#operation/searchFeaturesStreaming>
+
+        Args:
+            feature_type_external_id (str): the feature type to search for
+            geometry (str): The name of the geometry property
+            filter (Dict[str, Any]): the search filter
+            properties (Dict[str, Any]): the output property selection
+            allow_crs_transformation: If true, then input geometries will be transformed into the Coordinate Reference
+                System defined in the feature type specification. When it is false, then requests with geometries in
+                Coordinate Reference System different from the ones defined in the feature type will result in
+                CogniteAPIError exception.
+
+        Returns:
+            geopandas.GeoDataFrame: The GeoDataFrame built from the streaming output.
+
+        Examples:
+
+            Stream features into a GeoDataFrame:
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> # we assume there is an existing feature type "my_feature_type"
+                ...
+                >>> gdf = c.geospatial.stream_features_to_geopandas(
+                ...     feature_type_external_id="my_feature_type",
+                ...     geometry="location",
+                ...     properties={"temperature": {}, "location": {"srid": 3857}},
+                ...     filter={"range": {"property": "temperature", "gt": 12.0}},
+                ...     allow_crs_transformation=True
+                ... )
+                ...
+                >>> # do something with the GeoDataFrame
+        """
+        iterator = self.stream_features(
+            feature_type_external_id=feature_type_external_id,
+            filter=filter,
+            properties=properties,
+            allow_crs_transformation=allow_crs_transformation,
+        )
+        features = [f for f in iterator]
+        return FeatureList(features).to_geopandas(geometry=geometry)
+
     def aggregate_features(
         self,
         feature_type_external_id: str,

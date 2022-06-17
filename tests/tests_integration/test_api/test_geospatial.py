@@ -348,7 +348,7 @@ class TestGeospatialAPI:
         res = cognite_client.geospatial.search_features(
             feature_type_external_id=test_feature_type.external_id,
             filter={},
-            properties={"position": {"srid": "3857"}},
+            properties={"position": {"srid": 3857}},
             allow_crs_transformation=allow_crs_transformation,
         )
         assert len(res) == 2
@@ -416,6 +416,19 @@ class TestGeospatialAPI:
         )
         feature_list = FeatureList(list(features))
         assert len(feature_list) == len(many_features)
+
+    def test_stream_features_to_geopandas(self, cognite_client, test_feature_type, test_features):
+        gdf = cognite_client.geospatial.stream_features_to_geopandas(
+            feature_type_external_id=test_feature_type.external_id,
+            geometry="position",
+            filter={"range": {"property": "temperature", "gt": -100.0, "lt": 100.0}},
+            properties={"temperature": {}, "position": {"srid": 3857}},
+            allow_crs_transformation=True,
+        )
+        geopandas = utils._auxiliary.local_import("geopandas")
+        assert type(gdf.dtypes["position"]) == geopandas.array.GeometryDtype
+        assert len(gdf.index) == len(test_features)
+        assert list(gdf.columns) == ["temperature", "position"]
 
     def test_to_pandas(self, test_feature_type, test_features):
         df = test_features.to_pandas()
