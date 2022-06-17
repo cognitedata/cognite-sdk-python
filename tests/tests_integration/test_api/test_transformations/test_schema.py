@@ -70,9 +70,12 @@ class TestTransformationSchemaAPI:
         model_cols = cognite_client.transformations.schema._alpha_retrieve_data_model_schema(
             dm_name, space_name, space_name
         )
-        assert len(model_cols) == 3
+        assert len(model_cols) == 6
         assert [col for col in model_cols if col.name == "externalId"][0].type.type == "string"
         assert [col for col in model_cols if col.name == "test"][0].type.type == "string"
+        assert [col for col in model_cols if col.name == "description"][0].type.type == "string"
+        assert [col for col in model_cols if col.name == "type"][0].type.type == "string"
+        assert [col for col in model_cols if col.name == "name"][0].type.type == "string"
         assert [col for col in model_cols if col.name == "test2"][0].type.type == "long"
 
         # cognite_client.post(
