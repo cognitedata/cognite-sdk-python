@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.53.1] - 2022-06-17
+
+### Fixed
+- Fixed destination type decoding of `transformation.destination`
 
 ## [2.53.0] - 2022-06-16
 

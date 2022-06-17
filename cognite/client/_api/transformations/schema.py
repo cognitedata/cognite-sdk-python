@@ -35,6 +35,16 @@ class TransformationSchemaAPI(APIClient):
         other_params = {"conflictMode": conflict_mode} if conflict_mode else None
         return self._list(method="GET", resource_path=url_path, filter=other_params)
 
-    def _alpha_retrieve_data_model_schema(self, modelExternalId: str = None) -> TransformationSchemaColumnList:
-        url_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH + "/{}", "datamodelinstances")
-        return self._list(method="GET", resource_path=url_path, filter={"externalId": modelExternalId})
+    def _alpha_retrieve_data_model_schema(
+        self, modelExternalId: str = None, spaceExternalId: str = None, instanceExternalId: str = None
+    ) -> TransformationSchemaColumnList:
+        url_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH + "/{}", "alphadatamodelinstances")
+        return self._list(
+            method="GET",
+            resource_path=url_path,
+            filter={
+                "externalId": modelExternalId,
+                "spaceExternalId": spaceExternalId,
+                "instanceExternalId": instanceExternalId,
+            },
+        )
