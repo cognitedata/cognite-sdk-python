@@ -409,6 +409,23 @@ class TestGetDatapoints:
         assert 0 == len(ids)
         assert 0 == len(external_ids)
 
+    def test_retrieve_datapoints_multiple_time_series_with_paging(self, cognite_client, mock_get_datapoints):
+        ids = [1, 2, 3, 4, 5]
+        external_ids = ["6"]
+        test_lim = 50
+        tmp = cognite_client.datapoints._DPS_LIMIT
+        cognite_client.datapoints._DPS_LIMIT = test_lim
+        dps_res_list = cognite_client.datapoints.retrieve(id=ids, external_id=external_ids, start=0, end=100000)
+        cognite_client.datapoints._DPS_LIMIT = tmp
+        for dps_res in dps_res_list:
+            if dps_res.id in ids:
+                ids.remove(dps_res.id)
+            if dps_res.external_id in external_ids:
+                external_ids.remove(dps_res.external_id)
+            assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
+        assert 0 == len(ids)
+        assert 0 == len(external_ids)
+
     def test_retrieve_datapoints_empty(self, cognite_client, mock_get_datapoints_empty):
         res = cognite_client.datapoints.retrieve(id=1, start=0, end=10000)
         assert 0 == len(res)
