@@ -876,6 +876,26 @@ class _DPTask:
             self.last_result = result
         return self.results
 
+    def pop_ts_item(self, identifier: tuple) -> "_DPTask":
+        """
+        Removes the given ts_item and returns a new task
+        """
+        index = self.ts_items.index({identifier[0]: identifier[1]})
+        ts_item = self.ts_items.pop(index)
+        new_task = _DPTask(
+            self.client,
+            self.start,
+            self.end,
+            [ts_item],
+            self.aggregates,
+            self.granularity,
+            self.include_outside_points,
+            self.limit,
+            self.ignore_unknown_ids,
+        )
+        new_task.results[identifier] = self.results.pop(identifier)
+        return new_task
+
     def as_tuples(self):
         return [
             (self.start, self.end, ts_item, self.aggregates, self.granularity, self.include_outside_points, self.limit)
@@ -898,7 +918,8 @@ class DatapointsFetcher:
         chunk_size = max(chunk_size, 1)
 
         task_list = self._create_tasks(query, chunk_size)
-        self._fetch_datapoints(task_list)
+        extra_tasks = self._fetch_datapoints(task_list)
+        task_list.extend(extra_tasks)
         return DatapointsList(
             [result.compute() for task in task_list for result in task.results.values() if not result.missing],
             cognite_client=self.client._cognite_client,
@@ -966,7 +987,7 @@ class DatapointsFetcher:
             for task in task_list
         ]
 
-    def _fetch_datapoints(self, tasks: List[_DPTask]):
+    def _fetch_datapoints(self, tasks: List[_DPTask]) -> List[_DPTask]:
         tasks_summary = utils._concurrency.execute_tasks_concurrently(
             self._fetch_dps_initial_and_return_remaining_tasks,
             [(t,) for t in tasks],
@@ -978,17 +999,19 @@ class DatapointsFetcher:
         remaining_tasks_with_windows = tasks_summary.joined_results()
         if len(remaining_tasks_with_windows) > 0:
             self._fetch_datapoints_for_remaining_queries(remaining_tasks_with_windows)
+        return [task for task, _ in remaining_tasks_with_windows]
 
     def _fetch_dps_initial_and_return_remaining_tasks(self, task: _DPTask) -> List[Tuple[_DPTask, _DPWindow]]:
         results = self._get_datapoints(task, None, True)
         ts_count = len(results)
         remaining_tasks = []
-        for result in results.values():
+        for identifier, result in list(results.items()):
             if result.datapoint_length < task.request_limit // ts_count:
                 continue
             remaining_user_limit = task.limit - result.datapoint_length
             start = result.last_timestamp + task.next_start_offset()
-            tasks = self._split_task_into_windows(result.results[0].id, task, remaining_user_limit, start)
+            new_task = task.pop_ts_item(identifier)
+            tasks = self._split_task_into_windows(result.results[0].id, new_task, remaining_user_limit, start)
             remaining_tasks.extend(tasks)
         return remaining_tasks
 
