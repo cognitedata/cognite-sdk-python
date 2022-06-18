@@ -14,6 +14,13 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.55.0] - 2022-06-20
+### Changed
+- Reintroduced performance gain for `datapoints.retrieve` by grouping together time series in single requests against the underlying API.
+
+### Fixed
+- Fixed bug when fetching multiple timeseries with length longer than API limit.
+
 ## [2.54.0] - 2022-06-17
 
 ### Added
