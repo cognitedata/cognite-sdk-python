@@ -896,6 +896,11 @@ class _DPTask:
         new_task.results[identifier] = self.results.pop(identifier)
         return new_task
 
+    def append_task(self, task: "_DPTask"):
+        self.ts_items.extend(task.ts_items)
+        for key in task.results:
+            self.results[key] = task.results[key]
+
     def as_tuples(self):
         return [
             (self.start, self.end, ts_item, self.aggregates, self.granularity, self.include_outside_points, self.limit)
@@ -1012,7 +1017,10 @@ class DatapointsFetcher:
             start = result.last_timestamp + task.next_start_offset()
             new_task = task.pop_ts_item(identifier)
             tasks = self._split_task_into_windows(result.results[0].id, new_task, remaining_user_limit, start)
-            remaining_tasks.extend(tasks)
+            if tasks:
+                remaining_tasks.extend(tasks)
+            else:
+                task.append_task(new_task)
         return remaining_tasks
 
     def _fetch_datapoints_for_remaining_queries(self, tasks_with_windows: List[Tuple[_DPTask, _DPWindow]]):
