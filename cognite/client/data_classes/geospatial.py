@@ -166,14 +166,28 @@ class FeatureList(CogniteResourceList):
     _ASSERT_CLASSES = False
 
     def to_geopandas(self, geometry: str, camel_case: bool = True) -> "geopandas.GeoDataFrame":
-        """Convert the instance into a geopandas GeoDataFrame.
+        """Convert the instance into a GeoPandas GeoDataFrame.
 
         Args:
-            geometry (str): The name of the geometry property
+            geometry (str): The name of the feature type geometry property to use in the GeoDataFrame
             camel_case (bool): Convert column names to camel case (e.g. `externalId` instead of `external_id`)
 
         Returns:
-            geopandas.GeoDataFrame: The geodataframe.
+            geopandas.GeoDataFrame: The GeoPandas GeoDataFrame.
+
+        Examples:
+
+            Convert a FeatureList into a GeoPandas GeoDataFrame:
+
+                >>> from cognite.client.data_classes.geospatial import PropertyAndSearchSpec
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> features = c.geospatial.search_features(...)
+                >>> gdf = features.to_geopandas(
+                ...     geometry="position",
+                ...     camel_case=False
+                ... )
+                >>> gdf.head()
         """
         df = self.to_pandas(camel_case)
         wkt = utils._auxiliary.local_import("shapely.wkt")
