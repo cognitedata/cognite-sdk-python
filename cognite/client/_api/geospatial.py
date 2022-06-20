@@ -143,14 +143,32 @@ class GeospatialAPI(APIClient):
 
         Examples:
 
-            Add one property to a feature type:
+            Add one property and one index to a feature type:
 
                 >>> from cognite.client.data_classes.geospatial import PropertyAndSearchSpec
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.geospatial.update_feature_types(update=FeatureTypeUpdate(external_id="wells",
-                ...         add=PropertyAndSearchSpec(properties={"altitude": {"type": "DOUBLE"}},
-                ...         search_spec={"altitude_idx": {"properties": ["altitude"]}})))
+                >>> res = c.geospatial.update_feature_types(
+                ...     update=FeatureTypeUpdate(external_id="wells",
+                ...         add=PropertyAndSearchSpec(
+                ...             properties={"altitude": {"type": "DOUBLE"}},
+                ...             search_spec={"altitude_idx": {"properties": ["altitude"]}}
+                ...         )
+                ...     )
+                ... )
+
+            Remove one property and one index from a feature type:
+                >>> from cognite.client.data_classes.geospatial import PropertyAndSearchSpec
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.geospatial.update_feature_types(
+                ...     update=FeatureTypeUpdate(external_id="wells",
+                ...         remove=PropertyAndSearchSpec(
+                ...             properties=["volume"],
+                ...             search_spec=["vol_press_idx"]
+                ...         )
+                ...     )
+                ... )
         """
         warnings.warn("update_feature_types is deprecated, use patch_feature_types instead.", DeprecationWarning)
         if isinstance(update, FeatureTypeUpdate):

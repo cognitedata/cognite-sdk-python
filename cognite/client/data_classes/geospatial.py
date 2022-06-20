@@ -63,8 +63,8 @@ class FeatureTypeUpdate:
         cognite_client=None,
     ):
         self.external_id = external_id
-        self.add = add
-        self.remove = remove
+        self.add = add if add is not None else PropertyAndSearchSpec()
+        self.remove = remove if remove is not None else PropertyAndSearchSpec()
         self._cognite_client = cognite_client
 
 
