@@ -1056,6 +1056,43 @@ Data classes
     :members:
     :show-inheritance:
 
+Annotations
+-----------
+
+Retrieve an annotation by id
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.annotations.AnnotationsAPI.retrieve
+
+Retrieve multiple annotations by id
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.annotations.AnnotationsAPI.retrieve_multiple
+
+List annotation
+^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.annotations.AnnotationsAPI.list
+
+Create an annotation
+^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.annotations.AnnotationsAPI.create
+
+Suggest an annotation
+^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.annotations.AnnotationsAPI.suggest
+
+Update annotations
+^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.annotations.AnnotationsAPI.update
+
+Delete annotations
+^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.annotations.AnnotationsAPI.delete
+
+Data classes
+^^^^^^^^^^^^
+.. automodule:: cognite.client.data_classes.annotations
+    :members:
+    :show-inheritance:
+
 Identity and access management
 ------------------------------
 Tokens

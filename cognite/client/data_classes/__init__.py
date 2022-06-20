@@ -1,3 +1,9 @@
+from cognite.client.data_classes.annotations import (  # isort: skip
+    Annotation,
+    AnnotationFilter,
+    AnnotationList,
+    AnnotationUpdate,
+)
 from cognite.client.data_classes.assets import (
     AggregateResultItem,
     Asset,
