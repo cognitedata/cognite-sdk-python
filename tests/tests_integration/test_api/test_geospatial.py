@@ -354,7 +354,6 @@ class TestGeospatialAPI:
     def test_search_with_output_selection(self, cognite_client, test_feature_type, test_feature, another_test_feature):
         res = cognite_client.geospatial.search_features(
             feature_type_external_id=test_feature_type.external_id,
-            filter={},
             properties={"temperature": {}, "volume": {}},
         )
         assert len(res) == 2
@@ -366,7 +365,6 @@ class TestGeospatialAPI:
     ):
         res = cognite_client.geospatial.search_features(
             feature_type_external_id=test_feature_type.external_id,
-            filter={},
             properties={"position": {"srid": "3857"}},
             allow_crs_transformation=allow_crs_transformation,
         )
@@ -379,7 +377,6 @@ class TestGeospatialAPI:
     def test_search_with_order_by(self, cognite_client, test_feature_type, test_feature, another_test_feature):
         res = cognite_client.geospatial.search_features(
             feature_type_external_id=test_feature_type.external_id,
-            filter={},
             order_by=[OrderSpec(property="temperature", direction="ASC")],
         )
         assert res[0].temperature == -10.8
@@ -387,7 +384,6 @@ class TestGeospatialAPI:
 
         res = cognite_client.geospatial.search_features(
             feature_type_external_id=test_feature_type.external_id,
-            filter={},
             order_by=[OrderSpec(property="temperature", direction="DESC")],
         )
         assert res[0].temperature == 12.4
@@ -431,7 +427,7 @@ class TestGeospatialAPI:
 
     def test_stream_features(self, cognite_client, large_feature_type, many_features):
         features = cognite_client.geospatial.stream_features(
-            feature_type_external_id=large_feature_type.external_id, filter={}
+            feature_type_external_id=large_feature_type.external_id,
         )
         feature_list = FeatureList(list(features))
         assert len(feature_list) == len(many_features)
@@ -523,7 +519,6 @@ class TestGeospatialAPI:
     def test_aggregate(self, cognite_client, test_feature_type, test_features):
         res = cognite_client.geospatial.aggregate_features(
             feature_type_external_id=test_feature_type.external_id,
-            filter={},
             property="temperature",
             aggregates=["min", "max"],
         )
@@ -540,7 +535,6 @@ class TestGeospatialAPI:
 
         res = cognite_client.geospatial.aggregate_features(
             feature_type_external_id=test_feature_type.external_id,
-            filter={},
             property="temperature",
             aggregates=["min", "max"],
             group_by=["externalId"],
