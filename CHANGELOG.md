@@ -14,10 +14,16 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [2.55.0] - 2022-06-17
+## [2.56.0] - 2022-06-20
 
 ### Added
 - Geopandas support for the geospatial streaming search
+
+## [2.55.0] - 2022-06-20
+
+### Fixed
+- Improve geospatial documentation and implement better parameter resilience for filter and feature type update
+>>>>>>> origin/master
 
 ## [2.54.0] - 2022-06-17
 
