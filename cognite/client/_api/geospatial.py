@@ -427,9 +427,8 @@ class GeospatialAPI(APIClient):
         """`Search for features`
         <https://docs.cognite.com/api/v1/#operation/searchFeatures>
 
-        The `search_features(...)` method allows to order the result by one or more of the
-        properties of the feature type. However, the number of items returned is  limited to 1000
-        and there is no support for cursors yet.
+        This method allows to order the result by one or more of the properties of the feature type.
+        However, the number of items returned is  limited to 1000 and there is no support for cursors yet.
         If you need to return more than 1000 items, use the `stream_features(...)` method instead.
 
         Args:
@@ -547,8 +546,8 @@ class GeospatialAPI(APIClient):
         """`Stream features`
         <https://docs.cognite.com/api/v1/#operation/searchFeaturesStreaming>
 
-        The `stream_features(...)` method allows to return any number of items until the underlying
-        api calls times out. The order of the results is not deterministic.
+        This method allows to return any number of items until the underlying
+        api calls times out. The order of the result items is not deterministic.
         If you need to order the results, use the `search_features(...)` method instead.
 
         Args:
