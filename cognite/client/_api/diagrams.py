@@ -84,7 +84,7 @@ class DiagramsAPI(APIClient):
             partial_match (bool): Allow for a partial match (e.g. missing prefix).
             min_tokens (int): Minimal number of tokens a match must be based on
             file_ids (int): ID of the files, should already be uploaded in the same tenant.
-            file_external_ids: File external ids
+            file_external_ids: File external ids.
         Returns:
             DiagramDetectResults: Resulting queued job. Note that .result property of this job will block waiting for results."""
 
