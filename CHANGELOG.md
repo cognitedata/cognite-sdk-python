@@ -23,7 +23,6 @@ Changes are grouped as follows
 
 ### Fixed
 - Improve geospatial documentation and implement better parameter resilience for filter and feature type update
->>>>>>> origin/master
 
 ## [2.54.0] - 2022-06-17
 
