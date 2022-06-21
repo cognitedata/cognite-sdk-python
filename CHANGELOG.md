@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.56.0] - 2022-06-21
+### Added
+- added the diagrams API
+
 ## [2.55.0] - 2022-06-20
 
 ### Fixed
