@@ -635,6 +635,7 @@ class APIClient:
             {"url_path": resource_path + "/update", "json": {"items": chunk}, "params": params, "headers": headers}
             for chunk in patch_object_chunks
         ]
+
         tasks_summary = utils._concurrency.execute_tasks_concurrently(
             self._post, tasks, max_workers=self._config.max_workers
         )
