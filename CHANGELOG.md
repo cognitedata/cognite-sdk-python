@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.56.1] - 2022-06-22
+### Added
+- Time series property `is_step` can now be updated.
+
 ## [2.56.0] - 2022-06-21
 ### Added
 - added the diagrams API
@@ -36,11 +40,11 @@ Changes are grouped as follows
 ## [2.53.0] - 2022-06-16
 
 ### Added
-- Annotations implementation, providing access to the corresponding [Annotations API](https://docs.cognite.com/api/v1/#tag/Annotations). 
+- Annotations implementation, providing access to the corresponding [Annotations API](https://docs.cognite.com/api/v1/#tag/Annotations).
     - Added `Annotation`, `AnnotationFilter`, `AnnotationUpdate` dataclasses to `cognite.client.data_classes`
     - Added `annotations` API to `cognite.client.CogniteClient`
     - **Create** annotations with `client.annotations.create` passing `Annotation` instance(s)
-    - **Suggest** annotations with `client.annotations.suggest` passing `Annotation` instance(s) 
+    - **Suggest** annotations with `client.annotations.suggest` passing `Annotation` instance(s)
     - **Delete** annotations with `client.annotations.delete` passing the id(s) of annotation(s) to delete
     - **Filter** annotations with `client.annotations.list` passing a `AnnotationFilter `dataclass instance or a filter `dict`
     - **Update** annotations with `client.annotations.update` passing updated `Annotation` or `AnnotationUpdate` instance(s)
@@ -49,7 +53,7 @@ Changes are grouped as follows
 
 ## [2.52.0] - 2022-06-10
 ### Changed
-- Reverted the optimizations introduced to datapoints fetching in 2.47.0 due to buggy implementation. 
+- Reverted the optimizations introduced to datapoints fetching in 2.47.0 due to buggy implementation.
 
 ## [2.51.0] - 2022-06-10
 ### Added
@@ -73,7 +77,7 @@ Changes are grouped as follows
 
 ## [2.49.0] - 2022-05-09
 ### Changed
-- Geospatial: Support output selection for getting features by ids 
+- Geospatial: Support output selection for getting features by ids
 
 ## [2.48.0] - 2022-05-09
 ### Removed
@@ -105,8 +109,8 @@ Changes are grouped as follows
 
 ## [2.43.1] - 2022-03-24
 ### Added
-- update pillow dependency 9.0.0 -> 9.0.1 
- 
+- update pillow dependency 9.0.0 -> 9.0.1
+
 ## [2.43.0] - 2022-03-21
 ### Added
 - new list parameters added to `transformations.list`.
@@ -177,7 +181,7 @@ Changes are grouped as follows
 
 ## [2.37.0] - 2021-11-30
 ### Added
-- Added support for retrieving file download urls 
+- Added support for retrieving file download urls
 
 ## [2.36.0] - 2021-11-30
 ### Fixed

@@ -254,6 +254,10 @@ class TimeSeriesUpdate(CogniteUpdate):
         return TimeSeriesUpdate._PrimitiveTimeSeriesUpdate(self, "description")
 
     @property
+    def is_step(self):
+        return TimeSeriesUpdate._PrimitiveTimeSeriesUpdate(self, "isStep")
+
+    @property
     def security_categories(self):
         return TimeSeriesUpdate._ListTimeSeriesUpdate(self, "securityCategories")
 
