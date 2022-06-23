@@ -122,8 +122,8 @@ def mock_sessions_with_client_credentials(rsps):
                 {
                     "items": [
                         {
-                            "clientId": os.environ.get("COGNITE_CLIENT_ID"),
-                            "clientSecret": os.environ.get("COGNITE_CLIENT_SECRET"),
+                            "clientId": COGNITE_CLIENT.config.token_client_id,
+                            "clientSecret": COGNITE_CLIENT.config.token_client_secret,
                         }
                     ]
                 }
