@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [2.XX.0] - 2002-XX-XX
+### Added
+- Moved Cognite Functions from Experimental SDK to Main SDK.
+
 ## [2.56.1] - 2022-06-22
 ### Added
 - Time series property `is_step` can now be updated.
