@@ -9,7 +9,7 @@ from tempfile import TemporaryDirectory
 from typing import Callable, Dict, List, Optional, Union
 from zipfile import ZipFile
 
-from cognite.client import CogniteClient, utils
+from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import TimestampRange
 from cognite.client.exceptions import CogniteAPIError
@@ -426,7 +426,7 @@ class FunctionsAPI(APIClient):
             )
 
 
-def _use_client_credentials(cognite_client: CogniteClient, client_credentials: Optional[Dict] = None) -> str:
+def _use_client_credentials(cognite_client: "CogniteClient", client_credentials: Optional[Dict] = None) -> str:
     """
     If client_credentials is passed, will use those, otherwise will implicitly use those the client was instantiated
     with
@@ -457,7 +457,7 @@ def _use_client_credentials(cognite_client: CogniteClient, client_credentials: O
         raise CogniteAPIError("Failed to create session using client credentials flow.") from e
 
 
-def _use_token_exchange(cognite_client: CogniteClient) -> str:
+def _use_token_exchange(cognite_client: "CogniteClient") -> str:
     session_url = f"/api/v1/projects/{cognite_client.config.project}/sessions"
     payload = {"items": [{"tokenExchange": True}]}
     try:
@@ -468,7 +468,7 @@ def _use_token_exchange(cognite_client: CogniteClient) -> str:
         raise CogniteAPIError("Failed to create session using token exchange flow.") from e
 
 
-def _using_client_credential_flow(cognite_client: CogniteClient):
+def _using_client_credential_flow(cognite_client: "CogniteClient"):
     """
     Determine whether the Cognite client is configured for client-credential flow.
     """
