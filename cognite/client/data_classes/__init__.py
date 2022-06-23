@@ -159,3 +159,16 @@ from cognite.client.data_classes.datapoints import Datapoint, Datapoints, Datapo
 from cognite.client.data_classes.events import EndTimeFilter, Event, EventFilter, EventList, EventUpdate  # isort: skip
 from cognite.client.data_classes.login import LoginStatus  # isort: skip
 from cognite.client.data_classes.raw import Database, DatabaseList, Row, RowList, Table, TableList  # isort: skip
+from cognite.client.data_classes.functions import ( # isort: skip
+    Function,
+    FunctionFilter,
+    FunctionSchedule,
+    FunctionSchedulesFilter,
+    FunctionSchedulesList,
+    FunctionList,
+    FunctionCall,
+    FunctionCallList,
+    FunctionCallLogEntry,
+    FunctionCallLog, 
+    FunctionsLimits,
+)
