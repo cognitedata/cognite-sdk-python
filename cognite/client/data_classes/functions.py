@@ -2,10 +2,9 @@ import time
 from numbers import Number
 from typing import Dict, List, Optional, Union
 
+from cognite.client._constants import LIST_LIMIT_CEILING, LIST_LIMIT_DEFAULT
 from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteResourceList, CogniteResponse
 from cognite.client.data_classes.shared import TimestampRange
-
-from cognite.client._constants import LIST_LIMIT_CEILING, LIST_LIMIT_DEFAULT
 
 
 class Function(CogniteResource):
@@ -26,7 +25,8 @@ class Function(CogniteResource):
         env_vars (Dict[str, str]): User specified environment variables on the function ((key, value) pairs).
         cpu (Number): Number of CPU cores per function. Defaults to 0.25. Allowed values are in the range [0.1, 0.6].
         memory (Number): Memory per function measured in GB. Defaults to 1. Allowed values are in the range [0.1, 2.5].
-        runtime (str): Runtime of the function. Allowed values are ["py37", "py38", "py39"]. The runtime "py3x" resolves to the latest version of the Python 3.x.y series. Will default to "py38" if not specified.
+        runtime (str): Runtime of the function. Allowed values are ["py37", "py38", "py39"]. The runtime "py38" resolves to the latest version of the Python 3.8 series. Will default to "py38" if not specified.
+        runtime_version (str): The complete specification of the function runtime with major, minor and patch version numbers.
         metadata(Dict[str, str): Metadata associated with a function as a set of key:value pairs.
         error(Dict[str, str]): Dictionary with keys "message" and "trace", which is populated if deployment fails.
         cognite_client (CogniteClient): An optional CogniteClient to associate with this data class.
@@ -49,6 +49,7 @@ class Function(CogniteResource):
         cpu: Number = None,
         memory: Number = None,
         runtime: str = None,
+        runtime_version: str = None,
         metadata: Dict = None,
         error: Dict = None,
         cognite_client=None,
@@ -68,12 +69,13 @@ class Function(CogniteResource):
         self.cpu = cpu
         self.memory = memory
         self.runtime = runtime
+        self.runtime_version = runtime_version
         self.metadata = metadata
         self.error = error
         self._cognite_client = cognite_client
 
     def call(self, data=None, wait: bool = True) -> "FunctionCall":
-        """`Call this particular function. <https://docs.cognite.com/api/playground/#operation/post-api-playground-projects-project-functions-function_name-call>`_
+        """`Call this particular function. <https://docs.cognite.com/api/v1/#operation/postFunctionsCall>`_
 
         Args:
             data (Union[str, dict], optional): Input data to the function (JSON serializable). This data is passed deserialized into the function through one of the arguments called data. **WARNING:** Secrets or other confidential information should not be passed via this argument. There is a dedicated `secrets` argument in FunctionsAPI.create() for this purpose.
@@ -114,7 +116,7 @@ class Function(CogniteResource):
         )
 
     def list_schedules(self, limit: Optional[int] = LIST_LIMIT_DEFAULT) -> "FunctionSchedulesList":
-        """`List all schedules associated with this function. <https://docs.cognite.com/api/playground/#operation/get-api-playground-projects-project-functions-schedules>`_
+        """`List all schedules associated with this function. <https://docs.cognite.com/api/v1/#operation/getFunctionSchedules>`_
 
         Args:
             limit (int): Maximum number of schedules to list. Pass in -1, float('inf') or None to list all.
@@ -133,7 +135,7 @@ class Function(CogniteResource):
         return (schedules_by_external_id + schedules_by_id)[:limit]
 
     def retrieve_call(self, id: int) -> "FunctionCall":
-        """`Retrieve call by id. <https://docs.cognite.com/api/playground/#operation/get-api-playground-projects-project-functions-function_name-calls-call_id>`_
+        """`Retrieve call by id. <https://docs.cognite.com/api/v1/#operation/getFunctionCall>`_
 
         Args:
             id (int): ID of the call.
@@ -297,7 +299,7 @@ class FunctionCall(CogniteResource):
         return self._cognite_client.functions.calls.get_response(call_id=self.id, function_id=self.function_id)
 
     def get_logs(self) -> "FunctionCallLog":
-        """`Retrieve logs for this function call. <https://docs.cognite.com/api/playground/#operation/get-api-playground-projects-project-functions-function_name-calls>`_
+        """`Retrieve logs for this function call. <https://docs.cognite.com/api/v1/#operation/getFunctionCallLogs>`_
 
         Returns:
             FunctionCallLog: Log for the function call.

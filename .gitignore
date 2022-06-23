@@ -32,6 +32,8 @@ wheels/
 test.py
 do_release.py
 .env
+.venv
+.old_env
 
 # Coverage
 .coverage

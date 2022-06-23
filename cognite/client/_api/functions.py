@@ -9,11 +9,8 @@ from tempfile import TemporaryDirectory
 from typing import Callable, Dict, List, Optional, Union
 from zipfile import ZipFile
 
-from cognite.client import CogniteClient, utils
+from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes import TimestampRange
-from cognite.client.exceptions import CogniteAPIError
-
 from cognite.client._constants import HANDLER_FILE_NAME, LIST_LIMIT_CEILING, LIST_LIMIT_DEFAULT, MAX_RETRIES
 from cognite.client.data_classes import (
     Function,
@@ -26,7 +23,9 @@ from cognite.client.data_classes import (
     FunctionSchedulesFilter,
     FunctionSchedulesList,
     FunctionsLimits,
+    TimestampRange,
 )
+from cognite.client.exceptions import CogniteAPIError
 
 
 class FunctionsAPI(APIClient):
@@ -58,7 +57,7 @@ class FunctionsAPI(APIClient):
         index_url: Optional[str] = None,
         extra_index_urls: Optional[List[str]] = None,
     ) -> Function:
-        """`When creating a function, <https://docs.cognite.com/api/v1/#operation/post-api-v1-projects-project-functions>`_
+        """`When creating a function, <https://docs.cognite.com/api/v1/#operation/postFunctions>`_
         the source code can be specified in one of three ways:\n
         - Via the `folder` argument, which is the path to the folder where the source code is located. `function_path` must point to a python file in the folder within which a function named `handle` must be defined.\n
         - Via the `file_id` argument, which is the ID of a zip-file uploaded to the files API. `function_path` must point to a python file in the zipped folder within which a function named `handle` must be defined.\n
@@ -84,10 +83,10 @@ class FunctionsAPI(APIClient):
             env_vars (Dict[str, str]):               Environment variables as key/value pairs. Keys can contain only letters, numbers or the underscore character. You can create at most 100 environment variables.
             cpu (Number, optional):                  Number of CPU cores per function. Allowed values are in the range [0.1, 0.6], and None translates to the API default which is 0.25 in GCP. The argument is unavailable in Azure.
             memory (Number, optional):               Memory per function measured in GB. Allowed values are in the range [0.1, 2.5], and None translates to the API default which is 1 GB in GCP. The argument is unavailable in Azure.
-            runtime (str, optional):                 The function runtime. Valid values are ["py37", "py38", "py39", `None`], and `None` translates to the API default which currently is "py38". The runtime "py3x" resolves to the latest version of the Python 3.x.y series.
+            runtime (str, optional):                 The function runtime. Valid values are ["py37", "py38", "py39", `None`], and `None` translates to the API default which currently is "py38". The runtime "py38" resolves to the latest version of the Python 3.8 series.
             metadata (Dict[str, str], optional):     Metadata for the function as key/value pairs. Key & values can be at most 32, 512 characters long respectively. You can have at the most 16 key-value pairs, with a maximum size of 512 bytes.
-            index_url (str, optional):               Index URL for Python Package Manager to use. Be aware of the intrinsic security implications of using the `index_url` option. [More information can be found on official docs](https://docs.cognite.com/cdf/functions/#additional-arguments)
-            extra_index_urls (List[str], optional):  Extra Index URLs for Python Package Manager to use. Be aware of the intrinsic security implications of using the `extra_index_urls` option. [More information can be found on official docs](https://docs.cognite.com/cdf/functions/#additional-arguments)
+            index_url (str, optional):               Index URL for Python Package Manager to use. Be aware of the intrinsic security implications of using the `index_url` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
+            extra_index_urls (List[str], optional):  Extra Index URLs for Python Package Manager to use. Be aware of the intrinsic security implications of using the `extra_index_urls` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
         Returns:
             Function: The created function.
 
@@ -165,7 +164,7 @@ class FunctionsAPI(APIClient):
         return Function._load(res.json()["items"][0], cognite_client=self._cognite_client)
 
     def delete(self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None) -> None:
-        """`Delete one or more functions. <https://docs.cognite.com/api/v1/#operation/post-api-v1-projects-project-functions-delete>`_
+        """`Delete one or more functions. <https://docs.cognite.com/api/v1/#operation/deleteFunctions>`_
 
         Args:
             id (Union[int, List[int]): Id or list of ids.
@@ -232,7 +231,7 @@ class FunctionsAPI(APIClient):
         return self._LIST_CLASS._load(res.json()["items"], cognite_client=self._cognite_client)
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[Function]:
-        """`Retrieve a single function by id. <https://docs.cognite.com/api/v1/#operation/post-api-v1-projects-project-context-functions-byids>`_
+        """`Retrieve a single function by id. <https://docs.cognite.com/api/v1/#operation/byIdsFunctions>`_
 
         Args:
             id (int, optional): ID
@@ -261,7 +260,7 @@ class FunctionsAPI(APIClient):
     def retrieve_multiple(
         self, ids: Optional[List[int]] = None, external_ids: Optional[List[str]] = None
     ) -> FunctionList:
-        """`Retrieve multiple functions by id. <https://docs.cognite.com/api/v1/#operation/post-api-v1-projects-project-context-functions-byids>`_
+        """`Retrieve multiple functions by id. <https://docs.cognite.com/api/v1/#operation/byIdsFunctions>`_
 
         Args:
             ids (List[int], optional): IDs
@@ -295,7 +294,7 @@ class FunctionsAPI(APIClient):
         data: Optional[Dict] = None,
         wait: bool = True,
     ) -> FunctionCall:
-        """Call a function by its ID or external ID. <https://docs.cognite.com/api/v1/#operation/post-api-v1-projects-project-functions-function_name-call>`_.
+        """`Call a function by its ID or external ID. <https://docs.cognite.com/api/v1/#operation/postFunctionsCall>`_.
 
         Args:
             id (int, optional): ID
@@ -347,6 +346,19 @@ class FunctionsAPI(APIClient):
         return function_call
 
     def limits(self):
+        """`Get service limits. <https://docs.cognite.com/api/v1/#operation/functionsLimits>`_.
+
+        Returns:
+            FunctionsLimits: A function limits object.
+
+        Examples:
+
+            Call a function by id::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> limits = c.functions.limits()
+        """
         res = self._get("/functions/limits")
         return FunctionsLimits._load(res.json())
 
@@ -413,7 +425,7 @@ class FunctionsAPI(APIClient):
             )
 
 
-def _use_client_credentials(cognite_client: CogniteClient, client_credentials: Optional[Dict] = None) -> str:
+def _use_client_credentials(cognite_client: "CogniteClient", client_credentials: Optional[Dict] = None) -> str:
     """
     If client_credentials is passed, will use those, otherwise will implicitly use those the client was instantiated
     with
@@ -436,6 +448,7 @@ def _use_client_credentials(cognite_client: CogniteClient, client_credentials: O
 
     session_url = f"/api/v1/projects/{cognite_client.config.project}/sessions"
     payload = {"items": [{"clientId": client_id, "clientSecret": client_secret}]}
+
     try:
         res = cognite_client.post(session_url, json=payload)
         nonce = res.json()["items"][0]["nonce"]
@@ -444,7 +457,7 @@ def _use_client_credentials(cognite_client: CogniteClient, client_credentials: O
         raise CogniteAPIError("Failed to create session using client credentials flow.") from e
 
 
-def _use_token_exchange(cognite_client: CogniteClient) -> str:
+def _use_token_exchange(cognite_client: "CogniteClient") -> str:
     session_url = f"/api/v1/projects/{cognite_client.config.project}/sessions"
     payload = {"items": [{"tokenExchange": True}]}
     try:
@@ -455,7 +468,7 @@ def _use_token_exchange(cognite_client: CogniteClient) -> str:
         raise CogniteAPIError("Failed to create session using token exchange flow.") from e
 
 
-def _using_client_credential_flow(cognite_client: CogniteClient):
+def _using_client_credential_flow(cognite_client: "CogniteClient"):
     """
     Determine whether the Cognite client is configured for client-credential flow.
     """
@@ -545,7 +558,7 @@ class FunctionCallsAPI(APIClient):
         end_time: Optional[Dict[str, int]] = None,
         limit: Optional[int] = LIST_LIMIT_DEFAULT,
     ) -> FunctionCallList:
-        """List all calls associated with a specific function id. Either function_id or function_external_id must be specified.
+        """`List all calls associated with a specific function id. <https://docs.cognite.com/api/v1/#operation/listFunctionCalls>`_ Either function_id or function_external_id must be specified.
 
         Args:
             function_id (int, optional): ID of the function on which the calls were made.
@@ -586,7 +599,7 @@ class FunctionCallsAPI(APIClient):
     def retrieve(
         self, call_id: int, function_id: Optional[int] = None, function_external_id: Optional[str] = None
     ) -> Optional[FunctionCall]:
-        """`Retrieve a single function call by id. <https://docs.cognite.com/api/v1/#operation/byidsFunctionCalls>`_
+        """`Retrieve a single function call by id. <https://docs.cognite.com/api/v1/#operation/byIdsFunctionCalls>`_
 
         Args:
             call_id (int): ID of the call.
@@ -619,7 +632,7 @@ class FunctionCallsAPI(APIClient):
         return self._retrieve_multiple(wrap_ids=True, resource_path=resource_path, ids=call_id)
 
     def get_response(self, call_id: int, function_id: Optional[int] = None, function_external_id: Optional[str] = None):
-        """Retrieve the response from a function call.
+        """`Retrieve the response from a function call. <https://docs.cognite.com/api/v1/#operation/getFunctionCallResponse>`_
 
         Args:
             call_id (int): ID of the call.
@@ -655,7 +668,7 @@ class FunctionCallsAPI(APIClient):
     def get_logs(
         self, call_id: int, function_id: Optional[int] = None, function_external_id: Optional[str] = None
     ) -> FunctionCallLog:
-        """`Retrieve logs for function call. <https://docs.cognite.com/api/v1/#operation/get-api-v1-projects-project-functions-function_name-calls>`_
+        """`Retrieve logs for function call. <https://docs.cognite.com/api/v1/#operation/getFunctionCalls>`_
 
         Args:
             call_id (int): ID of the call.
@@ -694,7 +707,7 @@ class FunctionSchedulesAPI(APIClient):
     _LIST_CLASS = FunctionSchedulesList
 
     def retrieve(self, id: int) -> Optional[FunctionSchedule]:
-        """`Retrieve a single function schedule by id. <https://docs.cognite.com/api/v1/#operation/byidsFunctionSchedules>`_
+        """`Retrieve a single function schedule by id. <https://docs.cognite.com/api/v1/#operation/byIdsFunctionSchedules>`_
 
         Args:
             id (int): ID
@@ -779,7 +792,7 @@ class FunctionSchedulesAPI(APIClient):
         description: str = "",
         data: Optional[Dict] = None,
     ) -> FunctionSchedule:
-        """`Create a schedule associated with a specific project. <https://docs.cognite.com/api/v1/#operation/post-api-v1-projects-project-functions-schedules>`_
+        """`Create a schedule associated with a specific project. <https://docs.cognite.com/api/v1/#operation/postFunctionSchedules>`_
 
         Args:
             name (str): Name of the schedule.
@@ -837,7 +850,7 @@ class FunctionSchedulesAPI(APIClient):
         return FunctionSchedule._load(res.json()["items"][0])
 
     def delete(self, id: int) -> None:
-        """`Delete a schedule associated with a specific project. <https://docs.cognite.com/api/v1/#operation/post-api-v1-projects-project-functions-schedules-delete>`_
+        """`Delete a schedule associated with a specific project. <https://docs.cognite.com/api/v1/#operation/deleteFunctionSchedules>`_
 
         Args:
             id (int): Id of the schedule
@@ -859,8 +872,7 @@ class FunctionSchedulesAPI(APIClient):
         self._post(url, json=body)
 
     def get_input_data(self, id: int) -> Dict:
-        """
-        Retrieve the input data to the associated function.
+        """`Retrieve the input data to the associated function. <https://docs.cognite.com/api/v1/#operation/getFunctionScheduleInputData>`_
         Args:
             id (int): Id of the schedule
 

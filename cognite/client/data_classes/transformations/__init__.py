@@ -119,7 +119,7 @@ class Transformation(CogniteResource):
             if instance.destination.get("type") == "raw":
                 snake_dict.pop("type")
                 instance.destination = RawTable(**snake_dict)
-            elif instance.destination.get("type") == "data_model_instances":
+            elif instance.destination.get("type") == "alpha_data_model_instances":
                 snake_dict.pop("type")
                 instance.destination = AlphaDataModelInstances(**snake_dict)
             elif instance.destination.get("type") == "sequence_rows":

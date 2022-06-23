@@ -26,7 +26,7 @@ jobs:
         pipenv run pip install importlib_metadata
 
     - name: Check codestyle
-      run: pipenv run black -l 120 --check .
+      run: pipenv run pre-commit install & pipenv run pre-commit run --all-files --show-diff-on-failure
 
     - name: Run tests
       env:

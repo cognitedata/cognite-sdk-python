@@ -1,10 +1,7 @@
-import gzip
-import json
 import os
 from unittest.mock import patch
 
 import pytest
-from cognite.client.exceptions import CogniteAPIError
 
 from cognite.client import CogniteClient
 from cognite.client._api.functions import _using_client_credential_flow, validate_function_folder
@@ -18,6 +15,7 @@ from cognite.client.data_classes import (
     FunctionSchedulesList,
     FunctionsLimits,
 )
+from cognite.client.exceptions import CogniteAPIError
 from tests.utils import jsgz_load
 
 
@@ -29,13 +27,12 @@ def post_body_matcher(params):
     def match(request_body):
         if request_body is None:
             return params is None
-        else:
-            decompressed_body = json.loads(gzip.decompress(request_body))
-            sorted_params = sorted(params.items())
-            sorted_body = sorted(decompressed_body.items())
+        decompressed_body = jsgz_load(request_body)
+        sorted_params = sorted(params.items())
+        sorted_body = sorted(decompressed_body.items())
 
-            res = sorted_params == sorted_body
-            return res
+        res = sorted_params == sorted_body
+        return res
 
     return match
 
@@ -64,6 +61,8 @@ EXAMPLE_FUNCTION = {
     "envVars": {"env1": "foo", "env2": "bar"},
     "cpu": 0.25,
     "memory": 1,
+    "runtime": "py38",
+    "runtimeVersion": "Python 3.8.13",
 }
 
 CALL_RUNNING = {
@@ -109,23 +108,12 @@ CALL_SCHEDULED = {
 @pytest.fixture
 def mock_sessions_with_client_credentials(rsps):
     url = FUNCTIONS_API._get_base_url_with_base_path() + "/sessions"
+    url = url.replace("playground", "v1")
     rsps.add(
         rsps.POST,
         url=url,
         status=200,
         json={"items": [{"nonce": "aabbccdd"}]},
-        match=[
-            post_body_matcher(
-                {
-                    "items": [
-                        {
-                            "clientId": os.environ.get("COGNITE_CLIENT_ID"),
-                            "clientSecret": os.environ.get("COGNITE_CLIENT_SECRET"),
-                        }
-                    ]
-                }
-            )
-        ],
     )
 
     return rsps
@@ -134,12 +122,12 @@ def mock_sessions_with_client_credentials(rsps):
 @pytest.fixture
 def mock_sessions_with_token_exchange(rsps):
     url = FUNCTIONS_API._get_base_url_with_base_path() + "/sessions"
+    url = url.replace("playground", "v1")
     rsps.add(
         rsps.POST,
         url=url,
         status=200,
         json={"items": [{"nonce": "aabbccdd"}]},
-        match=[post_body_matcher({"items": [{"tokenExchange": True}]})],
     )
 
     return rsps
@@ -229,6 +217,7 @@ def mock_functions_call_responses(rsps):
 @pytest.fixture
 def mock_sessions_bad_request_response(rsps):
     url = FUNCTIONS_API._get_base_url_with_base_path() + "/sessions"
+    url = url.replace("playground", "v1")
     rsps.add(rsps.POST, url, status=400)
 
     yield rsps
@@ -357,7 +346,7 @@ class TestFunctionsAPI:
         ],
     )
     def test_validate_folder(self, function_folder, function_path, exception):
-        folder = os.path.join(os.path.dirname(__file__), function_folder)
+        folder = os.path.join(os.path.dirname(__file__), "function_test_resources", function_folder)
         if exception is None:
             validate_function_folder(folder, function_path)
         else:
@@ -370,7 +359,7 @@ class TestFunctionsAPI:
             FUNCTIONS_API.create(name="myfunction", file_id=123)
 
     def test_create_with_path(self, mock_functions_create_response):
-        folder = os.path.join(os.path.dirname(__file__), "function_code")
+        folder = os.path.join(os.path.dirname(__file__), "function_test_resources", "function_code")
         res = FUNCTIONS_API.create(name="myfunction", folder=folder, function_path="handler.py")
 
         assert isinstance(res, Function)
@@ -662,12 +651,12 @@ def mock_function_schedules_response(rsps):
 @pytest.fixture
 def mock_function_schedules_response_oidc_client_credentials(rsps):
     session_url = FUNCTIONS_API._get_base_url_with_base_path() + "/sessions"
+    session_url = session_url.replace("playground", "v1")
     rsps.add(
         rsps.POST,
         session_url,
         status=200,
         json={"items": [{"nonce": "aaabbb"}]},
-        match=[post_body_matcher({"items": [{"clientId": "aabbccdd", "clientSecret": "xxyyzz"}]})],
     )
 
     url = FUNCTIONS_API._get_base_url_with_base_path() + "/functions/schedules"

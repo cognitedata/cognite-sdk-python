@@ -548,6 +548,7 @@ Data classes
     :members:
     :show-inheritance:
 
+
 Time series
 -----------
 Retrieve a time series by id
@@ -1017,6 +1018,14 @@ Predict Using an Entity Matching Model
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.entity_matching.EntityMatchingAPI.predict
 
+Detect entities in Engineering Diagrams
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.pnid_parsing.DiagramsAPI.detect
+
+Convert to an interactive SVG where the provided annotations are highlighted
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.pnid_parsing.DiagramsAPI.convert
+
 Contextualization Data Classes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.contextualization
@@ -1110,6 +1119,43 @@ Delete Views
 Data classes
 ^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.templates
+    :members:
+    :show-inheritance:
+
+Annotations
+-----------
+
+Retrieve an annotation by id
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.annotations.AnnotationsAPI.retrieve
+
+Retrieve multiple annotations by id
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.annotations.AnnotationsAPI.retrieve_multiple
+
+List annotation
+^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.annotations.AnnotationsAPI.list
+
+Create an annotation
+^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.annotations.AnnotationsAPI.create
+
+Suggest an annotation
+^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.annotations.AnnotationsAPI.suggest
+
+Update annotations
+^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.annotations.AnnotationsAPI.update
+
+Delete annotations
+^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.annotations.AnnotationsAPI.delete
+
+Data classes
+^^^^^^^^^^^^
+.. automodule:: cognite.client.data_classes.annotations
     :members:
     :show-inheritance:
 
@@ -1444,7 +1490,7 @@ Use a context manager to monkeypatch CogniteClient
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. autofunction:: cognite.client.testing.monkeypatch_cognite_client
 
-Experimental features
+client features
 =====================
 .. WARNING::
     These features are subject to breaking changes and should not be used in production code.
