@@ -4,7 +4,6 @@ import os
 from unittest.mock import patch
 
 import pytest
-from cognite.client.exceptions import CogniteAPIError
 
 from cognite.client import CogniteClient
 from cognite.client._api.functions import _using_client_credential_flow, validate_function_folder
@@ -18,6 +17,7 @@ from cognite.client.data_classes import (
     FunctionSchedulesList,
     FunctionsLimits,
 )
+from cognite.client.exceptions import CogniteAPIError
 from tests.utils import jsgz_load
 
 
@@ -362,7 +362,7 @@ class TestFunctionsAPI:
         ],
     )
     def test_validate_folder(self, function_folder, function_path, exception):
-        folder = os.path.join(os.path.dirname(__file__), function_folder)
+        folder = os.path.join(os.path.dirname(__file__), "function_test_resources", function_folder)
         if exception is None:
             validate_function_folder(folder, function_path)
         else:
@@ -375,7 +375,7 @@ class TestFunctionsAPI:
             FUNCTIONS_API.create(name="myfunction", file_id=123)
 
     def test_create_with_path(self, mock_functions_create_response):
-        folder = os.path.join(os.path.dirname(__file__), "function_code")
+        folder = os.path.join(os.path.dirname(__file__), "function_test_resources", "function_code")
         res = FUNCTIONS_API.create(name="myfunction", folder=folder, function_path="handler.py")
 
         assert isinstance(res, Function)
