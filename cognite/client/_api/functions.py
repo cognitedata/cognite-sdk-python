@@ -11,9 +11,6 @@ from zipfile import ZipFile
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes import TimestampRange
-from cognite.client.exceptions import CogniteAPIError
-
 from cognite.client._constants import HANDLER_FILE_NAME, LIST_LIMIT_CEILING, LIST_LIMIT_DEFAULT, MAX_RETRIES
 from cognite.client.data_classes import (
     Function,
@@ -26,7 +23,9 @@ from cognite.client.data_classes import (
     FunctionSchedulesFilter,
     FunctionSchedulesList,
     FunctionsLimits,
+    TimestampRange,
 )
+from cognite.client.exceptions import CogniteAPIError
 
 
 class FunctionsAPI(APIClient):

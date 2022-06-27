@@ -2,10 +2,9 @@ import time
 from numbers import Number
 from typing import Dict, List, Optional, Union
 
+from cognite.client._constants import LIST_LIMIT_CEILING, LIST_LIMIT_DEFAULT
 from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteResourceList, CogniteResponse
 from cognite.client.data_classes.shared import TimestampRange
-
-from cognite.client._constants import LIST_LIMIT_CEILING, LIST_LIMIT_DEFAULT
 
 
 class Function(CogniteResource):
