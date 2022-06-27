@@ -1,9 +1,8 @@
-import gzip
-import json
 import os
 from unittest.mock import patch
 
 import pytest
+from requests import PreparedRequest
 
 from cognite.client import CogniteClient
 from cognite.client._api.functions import _using_client_credential_flow, validate_function_folder
@@ -28,14 +27,17 @@ def post_body_matcher(params):
 
     def match(request_body):
         if request_body is None:
-            return params is None
+            return params is None, None
         else:
-            decompressed_body = json.loads(gzip.decompress(request_body))
+            if isinstance(request_body, PreparedRequest):
+                decompressed_body = jsgz_load(request_body.body)
+            else:
+                decompressed_body = jsgz_load(request_body)
             sorted_params = sorted(params.items())
             sorted_body = sorted(decompressed_body.items())
 
             res = sorted_params == sorted_body
-            return res
+            return res, None
 
     return match
 
