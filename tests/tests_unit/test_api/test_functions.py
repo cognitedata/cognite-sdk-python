@@ -113,7 +113,7 @@ CALL_SCHEDULED = {
 @pytest.fixture
 def mock_sessions_with_client_credentials(rsps):
     url = FUNCTIONS_API._get_base_url_with_base_path() + "/sessions"
-    url = url.replace("playground", "v1")
+
     rsps.add(
         rsps.POST,
         url=url,
@@ -139,7 +139,7 @@ def mock_sessions_with_client_credentials(rsps):
 @pytest.fixture
 def mock_sessions_with_token_exchange(rsps):
     url = FUNCTIONS_API._get_base_url_with_base_path() + "/sessions"
-    url = url.replace("playground", "v1")
+
     rsps.add(
         rsps.POST,
         url=url,
@@ -235,7 +235,7 @@ def mock_functions_call_responses(rsps):
 @pytest.fixture
 def mock_sessions_bad_request_response(rsps):
     url = FUNCTIONS_API._get_base_url_with_base_path() + "/sessions"
-    url = url.replace("playground", "v1")
+
     rsps.add(rsps.POST, url, status=400)
 
     yield rsps
@@ -669,7 +669,7 @@ def mock_function_schedules_response(rsps):
 @pytest.fixture
 def mock_function_schedules_response_oidc_client_credentials(rsps):
     session_url = FUNCTIONS_API._get_base_url_with_base_path() + "/sessions"
-    session_url = session_url.replace("playground", "v1")
+
     rsps.add(
         rsps.POST,
         session_url,
