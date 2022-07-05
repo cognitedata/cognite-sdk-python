@@ -5,7 +5,14 @@ import pytest
 from requests import PreparedRequest
 
 from cognite.client import CogniteClient
-from cognite.client._api.functions import _using_client_credential_flow, validate_function_folder
+from cognite.client._api.functions import (
+    _using_client_credential_flow,
+    extract_requirements_from_doc_string,
+    extract_requirements_from_file,
+    get_requirements_handle,
+    validate_function_folder,
+    validate_requirements,
+)
 from cognite.client.data_classes import (
     Function,
     FunctionCall,
@@ -371,6 +378,22 @@ class TestFunctionsAPI:
             with pytest.raises(exception):
                 validate_function_folder(folder, function_path)
 
+    @pytest.mark.parametrize(
+        "function_folder, function_name, exception",
+        [
+            ("function_code", "function_w_no_requirements", None),
+            ("function_code_with_requirements", "function_w_requirements", None),
+            ("function_code_with_invalid_requirements", "function_w_bad_requirements", ValueError),
+        ],
+    )
+    def test_zip_and_upload_folder(self, function_folder, function_name, exception):
+        folder = os.path.join(os.path.dirname(__file__), "function_test_resources", function_folder)
+        if exception is None:
+            FUNCTIONS_API._zip_and_upload_folder(folder, function_name)
+        else:
+            with pytest.raises(exception):
+                FUNCTIONS_API._zip_and_upload_folder(folder, function_name)
+
     @patch("cognite.client._api.functions.MAX_RETRIES", 1)
     def test_create_function_with_file_not_uploaded(self, mock_file_not_uploaded):
         with pytest.raises(IOError):
@@ -590,6 +613,87 @@ class TestFunctionsAPI:
         res = FUNCTIONS_API.limits()
         assert isinstance(res, FunctionsLimits)
         assert mock_functions_limit_response.calls[0].response.json() == res.dump(camel_case=True)
+
+
+class TestRequirementsParser:
+    """Test extraction of requirements.txt from docstring in handle-function"""
+
+    def test_validate_requirements(self):
+        out_path = validate_requirements(["asyncio==3.4.3", "numpy==1.23.0", "pandas==1.4.3"])
+        assert os.path.exists(out_path)
+        os.remove(out_path)
+
+    def test_validate_requirements_error(self):
+        reqs = [["asyncio=3.4.3"], ["num py==1.23.0"], ["pandas==1.4.3 python_version=='3.8'"]]
+        for req in reqs:
+            with pytest.raises(Exception):
+                validate_requirements(req)
+
+    def test_get_requirements_handle(self):
+        def fn():
+            """
+            [requirements]
+            asyncio
+            [/requirements]
+            """
+            return None
+
+        res = get_requirements_handle(fn=fn)
+        assert res != None
+        os.remove(res)
+
+    def test_get_requirements_handle_error(self):
+        def fn():
+            return None
+
+        assert get_requirements_handle(fn=fn) == None
+
+    def test_get_requirements_handle_no_docstr(self):
+        def fn():
+            """
+            [requirements]
+            asyncio=3.4.3
+            [/requirements]
+            """
+            return None
+
+        with pytest.raises(Exception):
+            get_requirements_handle(fn=fn) == None
+
+    def test_get_requirements_handle_no_reqs(self):
+        def fn():
+            """
+            [requirements]
+            [/requirements]
+            """
+            return None
+
+        assert get_requirements_handle(fn=fn) == None
+
+    def test_extract_requirements_from_file(self, tmpdir):
+        req = "somepackage == 3.8.1"
+        file = os.path.join(tmpdir, "requirements.txt")
+        with open(file, "w+") as f:
+            f.writelines("\n".join(["# this should not be included", "     " + req]))
+            f.close()
+        reqs = extract_requirements_from_file(file_name=file)
+        assert type(reqs) == list
+        assert len(reqs) == 1
+        assert req in reqs
+
+    def test_extract_requirements_from_doc_string(self):
+        req_mock = '[requirements]\nSomePackage==3.4.3, >3.4.1; python_version=="3.7"\nSomePackage==21.4.0; python_version=="3.7" and python_full_version<"3.0.0" or python_full_version>="3.5.0" and python_version>="3.7"\nSomePackage==2022.6.15; python_version>="3.8" and python_version<"4"\ncSomePackage==1.15.0; python_version>="3.6"\n[/requirements]\n'
+        doc_string_mock = "this should not be included\n" + req_mock + "neither should this\n"
+        expected = req_mock.splitlines()[1:-1]
+        assert extract_requirements_from_doc_string(doc_string_mock) == expected
+
+    def test_extract_requirements_from_doc_string_empty(self):
+        doc_string = "[requirements]\n[/requirements]\n"
+        assert extract_requirements_from_doc_string(doc_string) == []
+
+    def test_extract_requirements_from_doc_string_no_defined(self):
+        doc_string = "no requirements here"
+        assert extract_requirements_from_doc_string(doc_string) is None
 
 
 @pytest.fixture

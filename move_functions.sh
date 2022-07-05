@@ -23,6 +23,8 @@ cp -r ../cognite-sdk-python-experimental/tests/tests_unit/test_api/bad_function_
 cp -r ../cognite-sdk-python-experimental/tests/tests_unit/test_api/function_code tests/tests_unit/test_api/function_test_resources
 cp -r ../cognite-sdk-python-experimental/tests/tests_unit/test_api/good_absolute_import tests/tests_unit/test_api/function_test_resources
 cp -r ../cognite-sdk-python-experimental/tests/tests_unit/test_api/relative_imports tests/tests_unit/test_api/function_test_resources
+cp -r ../cognite-sdk-python-experimental/tests/tests_unit/test_api/function_code_with_requirements tests/tests_unit/test_api/function_test_resources
+cp -r ../cognite-sdk-python-experimental/tests/tests_unit/test_api/function_code_with_invalid_requirements tests/tests_unit/test_api/function_test_resources
 cp ../cognite-sdk-python-experimental/tests/tests_unit/test_api/handler.py tests/tests_unit/test_api/function_test_resources
 cp ../cognite-sdk-python-experimental/tests/tests_unit/test_api/__init__.py tests/tests_unit/test_api/function_test_resources
 echo "Copied test folders to tests/tests_unit/test_api/function_test_resources"
