@@ -438,14 +438,14 @@ class DatapointsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> df = c.datapoints.retrieve_dataframe(id=[1,2,3], start="2w-ago", end="now",
-                ...         aggregates=["average","sum"], granularity="1h")
+                ...         aggregates=["average","sum"], granularity="1h").to_pandas()
 
             Get a pandas dataframe with the index regularly spaced at 1 minute intervals, missing values completed and without the aggregate name in the columns::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> df = c.datapoints.retrieve_dataframe(id=[1,2,3], start="2w-ago", end="now",
-                ...         aggregates=["interpolation"], granularity="1m", include_aggregate_name=False, complete="fill,dropna")
+                ...         aggregates=["interpolation"], granularity="1m", include_aggregate_name=False, complete="fill,dropna").to_pandas()
         """
         pd = utils._auxiliary.local_import("pandas")
 
