@@ -61,7 +61,7 @@ Initiate unit tests by running the following command from the root directory:
 
 `pytest tests/tests_unit`
 
-If you have an appropriate API key, you can run the integratino tests like this:
+If you have an appropriate API key, you can run the integration tests like this:
 
 `pytest tests/tests_integration`
 

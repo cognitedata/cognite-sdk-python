@@ -189,7 +189,7 @@ You can set default configurations with these environment variables:
 
 .. code:: bash
 
-    # Can be overrided by Client Configuration
+    # Can be overridden by Client Configuration
     $ export COGNITE_API_KEY = <your-api-key>
     $ export COGNITE_PROJECT = <your-default-project>
     $ export COGNITE_BASE_URL = http://<host>:<port>
@@ -924,7 +924,7 @@ Data classes
 
 Contextualization
 -----------------
-These APIs will return as soon as possible, defering a blocking wait until the last moment. Nevertheless, they can block for a long time awaiting results.
+These APIs will return as soon as possible, deferring a blocking wait until the last moment. Nevertheless, they can block for a long time awaiting results.
 
 Fit Entity Matching Model
 ^^^^^^^^^^^^^^^^^^^^^^^^^
