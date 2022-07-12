@@ -8,7 +8,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(
-    name="cognite-sdk",
+    name="cognite-sdk-core",
     version=version,
     description="Client library for Cognite Data Fusion (CDF)",
     long_description=long_description,
@@ -17,13 +17,8 @@ setup(
     download_url="https://github.com/cognitedata/cognite-sdk-python/archive/{}.tar.gz".format(version),
     author="Erlend Vollset",
     author_email="erlend.vollset@cognite.com",
-    install_requires=[
-        "requests>=2.21.0,<3.0.0",
-        "pandas",
-        "requests_oauthlib==1.*",
-        "geopandas==0.10.*",
-        "shapely==1.*",
-    ],
+    install_requires=["requests>=2.21.0,<3.0.0", "requests_oauthlib==1.3.0"],
+    extras_require={"pandas": ["pandas"], "geo": ["geopandas==0.10.*", "shapely==1.*"]},
     python_requires=">=3.5",
     packages=["cognite." + p for p in find_packages(where="cognite")],
     include_package_data=True,

@@ -1,6 +1,0 @@
-requests>=2.21.0,<3.0.0
-pytest-cov==2.*
-pytest-rerunfailures==9.*
-pytest
-responses==0.12.*
-requests_oauthlib==1.*
