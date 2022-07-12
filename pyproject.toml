@@ -25,7 +25,7 @@ packages = [
 [tool.poetry.dependencies]
 python = ">=3.7"
 pandas = "<1"
-numpy = "*"
+numpy = "==1.19.4"
 requests = "*"
 pytest = "<7"
 sympy = "*"
