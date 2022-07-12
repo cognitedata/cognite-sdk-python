@@ -18,6 +18,8 @@ Changes are grouped as follows
 ### Changed
 - Poetry build, one single package "cognite-sdk"
 - Require python 3.8 or greater (used to be 3.5 or greater)
+### Removed
+- root_asset_ids support
 
 # Removed
 - support for root_asset_id and root_asset_external_id filters. use asset subtree filters instead.
