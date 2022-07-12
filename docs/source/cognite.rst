@@ -250,6 +250,7 @@ you should install the sdk along with its optional dependencies. The available e
 These can be installed with the following command:
 
 pip
+
 .. code:: bash
 
     $ pip install cognite-sdk[pandas, geo]
