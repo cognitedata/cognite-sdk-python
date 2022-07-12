@@ -10,16 +10,22 @@ jobs:
 
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
-        python-version: [3.5, 3.8]
+        python-version: [3.7, 3.8]
 
     steps:
     - uses: actions/checkout@v2
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v1
       with:
         python-version: ${{ matrix.python-version }}
+
+    - uses: actions/cache@v2
+      with:
+        path: ${{ env.pythonLocation }}
+        key: ${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml') }}
 
     - name: Install dependencies
       run: |
@@ -27,6 +33,10 @@ jobs:
         poetry config virtualenvs.create false
         poetry install
         poetry install -E geopandas
+
+    - name: Check codestyle
+      run: |
+        pre-commit run --all-files
 
     - name: Test core
       env:
@@ -39,50 +49,17 @@ jobs:
           COGNITE_BASE_URL: https://greenfield.cognitedata.com
           COGNITE_CLIENT_NAME: python-sdk-integration-tests
           CI: 1
-      run: pipenv run pytest tests/tests_unit --maxfail 10 -m 'not dsl' --test-deps-only-core
-
-    - name: Install all dependencies
-      if: matrix.python-version != 3.8
       run: |
-        pipenv sync
-        pipenv run pip install matplotlib
-        pipenv run pip install pytest-asyncio
-
-    - name: Install dev dependencies
-      if: matrix.python-version == 3.8
-      run: pipenv sync --dev
-
-    - name: Run tests
-      env:
-          LOGIN_FLOW: client_credentials
-          COGNITE_CLIENT_SECRET: ${{ secrets.COGNITE_CLIENT_SECRET }}
-          COGNITE_TOKEN_URL: https://login.microsoftonline.com/dff7763f-e2f5-4ffd-9b8a-4ba4bafba5ea/oauth2/v2.0/token
-          COGNITE_TOKEN_SCOPES: https://greenfield.cognitedata.com/.default
-          COGNITE_CLIENT_ID: 14fd282e-f77a-457d-add5-928ec2bcbf04
-          COGNITE_PROJECT: python-sdk-test
-          COGNITE_BASE_URL: https://greenfield.cognitedata.com
-          COGNITE_CLIENT_NAME: python-sdk-integration-tests
-          CI: 1
-      run: |
-        pipenv run coverage run --source cognite.client -m pytest -v tests --reruns 2 --maxfail 10
-        pipenv run coverage xml
-
-    - name: Check codestyle
-      if: matrix.python-version == 3.8
-      run: pipenv run pre-commit install & pipenv run pre-commit run --all-files --show-diff-on-failure
+        coverage run --source cognite -m pytest -v tests
+        coverage xml
 
     - uses: codecov/codecov-action@v1
-      if: matrix.python-version == 3.8
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         file: ./coverage.xml
 
     - name: Build package
-      if: matrix.python-version == 3.8
-      run: |
-        pipenv run python setup.py sdist
-        pipenv run python setup.py bdist_wheel
+      run: poetry build
 
     - name: Build docs
-      if: matrix.python-version == 3.8
-      run: cd docs && pipenv run make html
+      run: cd docs && make html

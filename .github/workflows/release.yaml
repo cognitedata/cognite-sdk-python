@@ -1,7 +1,7 @@
 name: release
 
 on:
-  push:
+  pull_request:
     branches: [ master ]
 
 jobs:
@@ -16,19 +16,23 @@ jobs:
       with:
         python-version: 3.8
 
+    - uses: actions/cache@v2
+      with:
+        path: ${{ env.pythonLocation }}
+        key: ${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml') }}
 
-    - name: Install pipenv
-      run: pip3 install pipenv
-
-    - name: Install all dependencies
+    - name: Install dependencies
       run: |
-        pipenv sync --dev
-        pipenv run pip install importlib_metadata
+        python3 -m pip install --upgrade pip poetry
+        poetry config virtualenvs.create false
+        poetry install
+        poetry install -E geopandas
 
     - name: Check codestyle
-      run: pipenv run pre-commit install & pipenv run pre-commit run --all-files --show-diff-on-failure
+      run: |
+        pre-commit run --all-files
 
-    - name: Run tests
+    - name: Test core
       env:
           LOGIN_FLOW: client_credentials
           COGNITE_CLIENT_SECRET: ${{ secrets.COGNITE_CLIENT_SECRET }}
@@ -40,8 +44,8 @@ jobs:
           COGNITE_CLIENT_NAME: python-sdk-integration-tests
           CI: 1
       run: |
-        pipenv run coverage run --source cognite.client -m pytest -v --reruns 2 --maxfail 10 tests
-        pipenv run coverage xml
+        coverage run --source cognite -m pytest -v tests
+        coverage xml
 
     - uses: codecov/codecov-action@v1
       with:
@@ -49,18 +53,16 @@ jobs:
         file: ./coverage.xml
 
     - name: Build package
-      run: |
-        pipenv run python setup.py sdist
-        pipenv run python setup.py bdist_wheel
+      run: poetry build
 
     - name: Build docs
-      run: cd docs && pipenv run make html
+      run: cd docs && make html
 
     - name: Release to PyPI
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-      run: pipenv run twine upload --verbose dist/* || echo 'Version exists'
+      run: twine upload --verbose dist/* || echo 'Version exists'
 
     - name: Push code snippets to service-contracts
       env:
