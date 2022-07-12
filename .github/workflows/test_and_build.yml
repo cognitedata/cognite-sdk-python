@@ -25,11 +25,12 @@ jobs:
     - name: Install required dependencies
       run: |
         python3 -m pip install --upgrade pip poetry
+        poetry config virtualenvs.create false
         poetry install
 
     - name: Check codestyle
       run: |
-        poetry run pre-commit run --all-files
+        pre-commit run --all-files
 
     - name: Test core
       env:
