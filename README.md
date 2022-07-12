@@ -32,30 +32,34 @@ $ export COGNITE_API_KEY=<your API key>
 On Windows, you can follows [these instructions](https://www.computerhope.com/issues/ch000549.htm) to set the API key as an environment variable.
 
 ## Installation
-To install this package:
+
+### without pandas or geopandas support
+
+To install this package without pandas and geopandas support:
 ```bash
 $ pip install cognite-sdk
 ```
 
-To install this package without the pandas and NumPy support:
-```bash
-$ pip install cognite-sdk-core
-```
+### with pandas and geopandas support
 
-To install with pandas, geopandas and shapely support (equivalent to installing `cognite-sdk`).
-However, this gives you the option to only have pandas (and NumPy) support without geopandas.
+To install with pandas, geopandas and shapely support.
 ```bash
 $ pip install cognite-sdk-core[pandas, geo]
 ```
 
-On Windows, it is recommended to install `geopandas` and its dependencies using `conda` package manager, see [geopandas installation page](https://geopandas.org/en/stable/getting_started/install.html#installation).
+### Windows specific
+
+On Windows, it is recommended to install `geopandas` and its dependencies using `conda` package manager,
+see [geopandas installation page](https://geopandas.org/en/stable/getting_started/install.html#installation).
 The following commands create a new environment, install `geopandas` and `cognite-sdk`.
+
 ```bash
 conda create -n geo_env
 conda activate geo_env
 conda install --channel conda-forge geopandas
 pip install cognite-sdk
 ```
+
 ## Examples
 For a collection of scripts and Jupyter Notebooks that explain how to perform various tasks in Cognite Data Fusion (CDF) 
 using Python, see the GitHub repository [here](https://github.com/cognitedata/cognite-python-docs)

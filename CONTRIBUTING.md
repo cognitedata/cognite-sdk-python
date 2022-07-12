@@ -10,12 +10,12 @@ cd cognite-sdk-python
 ```
 
 Install dependencies and initialize a shell within the virtual environment.
+To get the virtual environment, install [poetry](https://pypi.org/project/poetry/).
 
-To get the virtual environment, install [pipenv](https://pypi.org/project/pipenv/). Then execute:
+Then execute:
 
 ```bash
-pipenv shell
-pipenv sync -d
+poetry build
 ```
 
 Install pre-commit hooks
