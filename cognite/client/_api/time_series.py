@@ -24,7 +24,6 @@ class TimeSeriesAPI(APIClient):
         is_step: bool = None,
         asset_ids: List[int] = None,
         asset_external_ids: List[str] = None,
-        root_asset_ids: List[int] = None,
         asset_subtree_ids: List[int] = None,
         asset_subtree_external_ids: List[str] = None,
         data_set_ids: List[int] = None,
@@ -34,7 +33,6 @@ class TimeSeriesAPI(APIClient):
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
         limit: int = None,
-        include_metadata=True,
         partitions: int = None,
     ) -> Generator[Union[TimeSeries, TimeSeriesList], None, None]:
         """Iterate over time series
@@ -49,7 +47,6 @@ class TimeSeriesAPI(APIClient):
             is_step (bool): Whether the time series is a step (piecewise constant) time series.
             asset_ids (List[int], optional): List time series related to these assets.
             asset_external_ids  (List[str], optional): List time series related to these assets.
-            root_asset_ids (List[int], optional): List time series related to assets under these root assets.
             asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
             asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
             data_set_ids (List[int]): Return only time series in the specified data sets with these ids.
@@ -59,7 +56,6 @@ class TimeSeriesAPI(APIClient):
             last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
             limit (int, optional): Maximum number of time series to return. Defaults to return all items.
-            include_metadata (bool, optional): Ignored. Only present in parameter list for backward compatibility.
             partitions (int): Retrieve assets in parallel using this number of workers. Also requires `limit=None` to be passed.
 
         Yields:
@@ -77,7 +73,6 @@ class TimeSeriesAPI(APIClient):
             is_string=is_string,
             asset_ids=asset_ids,
             asset_external_ids=asset_external_ids,
-            root_asset_ids=root_asset_ids,
             asset_subtree_ids=asset_subtree_ids,
             metadata=metadata,
             created_time=created_time,
@@ -170,7 +165,6 @@ class TimeSeriesAPI(APIClient):
         is_step: bool = None,
         asset_ids: List[int] = None,
         asset_external_ids: List[str] = None,
-        root_asset_ids: List[int] = None,
         asset_subtree_ids: List[int] = None,
         asset_subtree_external_ids: List[str] = None,
         data_set_ids: List[int] = None,
@@ -181,7 +175,6 @@ class TimeSeriesAPI(APIClient):
         last_updated_time: Dict[str, Any] = None,
         partitions: int = None,
         limit: int = 25,
-        include_metadata=True,
     ) -> TimeSeriesList:
         """`List over time series <https://docs.cognite.com/api/v1/#operation/listTimeSeries>`_
 
@@ -194,7 +187,6 @@ class TimeSeriesAPI(APIClient):
             is_step (bool): Whether the time series is a step (piecewise constant) time series.
             asset_ids (List[int], optional): List time series related to these assets.
             asset_external_ids (List[str], optional): List time series related to these assets.
-            root_asset_ids (List[int], optional): List time series related to assets under these root assets.
             asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
             asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
             data_set_ids (List[int]): Return only assets in the specified data sets with these ids.
@@ -205,7 +197,6 @@ class TimeSeriesAPI(APIClient):
             external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
             limit (int, optional): Maximum number of time series to return.  Defaults to 25. Set to -1, float("inf") or None to return all items.
             partitions (int): Retrieve time series in parallel using this number of workers. Also requires `limit=None` to be passed.
-            include_metadata (bool, optional): Ignored. Only present in parameter list for backward compatibility.
 
 
         Returns:
@@ -245,7 +236,6 @@ class TimeSeriesAPI(APIClient):
             is_string=is_string,
             asset_ids=asset_ids,
             asset_external_ids=asset_external_ids,
-            root_asset_ids=root_asset_ids,
             asset_subtree_ids=asset_subtree_ids,
             metadata=metadata,
             data_set_ids=data_set_ids,

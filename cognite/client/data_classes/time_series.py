@@ -138,7 +138,6 @@ class TimeSeriesFilter(CogniteFilter):
         metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         asset_ids (List[int]): Only include time series that reference these specific asset IDs.
         asset_external_ids (List[str]): Asset External IDs of related equipment that this time series relates to.
-        root_asset_ids (List[int]): Only include time series that have a related asset in a tree rooted at any of these root assetIds.
         asset_subtree_ids (List[Dict[str, Any]]): Only include time series that are related to an asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
         data_set_ids (List[Dict[str, Any]]): No description.
         external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
@@ -156,7 +155,6 @@ class TimeSeriesFilter(CogniteFilter):
         metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
         asset_external_ids: List[str] = None,
-        root_asset_ids: List[int] = None,
         asset_subtree_ids: List[Dict[str, Any]] = None,
         data_set_ids: List[Dict[str, Any]] = None,
         external_id_prefix: str = None,
@@ -171,7 +169,6 @@ class TimeSeriesFilter(CogniteFilter):
         self.metadata = metadata
         self.asset_ids = asset_ids
         self.asset_external_ids = asset_external_ids
-        self.root_asset_ids = root_asset_ids
         self.asset_subtree_ids = asset_subtree_ids
         self.data_set_ids = data_set_ids
         self.external_id_prefix = external_id_prefix

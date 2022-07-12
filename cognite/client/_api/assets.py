@@ -28,8 +28,6 @@ class AssetsAPI(APIClient):
         name: str = None,
         parent_ids: List[int] = None,
         parent_external_ids: List[str] = None,
-        root_ids: List[int] = None,
-        root_external_ids: List[str] = None,
         asset_subtree_ids: List[int] = None,
         asset_subtree_external_ids: List[str] = None,
         metadata: Dict[str, str] = None,
@@ -55,8 +53,6 @@ class AssetsAPI(APIClient):
             name (str): Name of asset. Often referred to as tag.
             parent_ids (List[int]): Return only the direct descendants of the specified assets.
             parent_external_ids (List[str]): Return only the direct descendants of the specified assets.
-            root_ids (List[int], optional): List of root ids ids to filter on.
-            root_external_ids (List[str], optional): List of root external ids to filter on.
             asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
             asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
             metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value
@@ -78,9 +74,6 @@ class AssetsAPI(APIClient):
         """
         if aggregated_properties:
             aggregated_properties = [utils._auxiliary.to_camel_case(s) for s in aggregated_properties]
-        # dict option for backward compatibility
-        if (root_ids and not isinstance(root_ids[0], dict)) or root_external_ids:
-            root_ids = self._process_ids(root_ids, root_external_ids, wrap_ids=True)
         if asset_subtree_ids or asset_subtree_external_ids:
             asset_subtree_ids = self._process_ids(asset_subtree_ids, asset_subtree_external_ids, wrap_ids=True)
         if data_set_ids or data_set_external_ids:
@@ -90,7 +83,6 @@ class AssetsAPI(APIClient):
             name=name,
             parent_ids=parent_ids,
             parent_external_ids=parent_external_ids,
-            root_ids=root_ids,
             asset_subtree_ids=asset_subtree_ids,
             data_set_ids=data_set_ids,
             labels=labels,
@@ -190,8 +182,6 @@ class AssetsAPI(APIClient):
         name: str = None,
         parent_ids: List[int] = None,
         parent_external_ids: List[str] = None,
-        root_ids: List[int] = None,
-        root_external_ids: List[str] = None,
         asset_subtree_ids: List[int] = None,
         asset_subtree_external_ids: List[str] = None,
         data_set_ids: List[int] = None,
@@ -214,8 +204,6 @@ class AssetsAPI(APIClient):
             name (str): Name of asset. Often referred to as tag.
             parent_ids (List[int]): Return only the direct descendants of the specified assets.
             parent_external_ids (List[str]): Return only the direct descendants of the specified assets.
-            root_ids (List[int], optional): List of root ids ids to filter on.
-            root_external_ids (List[str], optional): List of root external ids to filter on.
             asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
             asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
             data_set_ids (List[int]): Return only assets in the specified data sets with these ids.
@@ -269,9 +257,6 @@ class AssetsAPI(APIClient):
         if aggregated_properties:
             aggregated_properties = [utils._auxiliary.to_camel_case(s) for s in aggregated_properties]
 
-        # dict option for backward compatibility
-        if (root_ids and not isinstance(root_ids[0], dict)) or root_external_ids:
-            root_ids = self._process_ids(root_ids, root_external_ids, wrap_ids=True)
         if asset_subtree_ids or asset_subtree_external_ids:
             asset_subtree_ids = self._process_ids(asset_subtree_ids, asset_subtree_external_ids, wrap_ids=True)
         if data_set_ids or data_set_external_ids:
@@ -281,7 +266,6 @@ class AssetsAPI(APIClient):
             name=name,
             parent_ids=parent_ids,
             parent_external_ids=parent_external_ids,
-            root_ids=root_ids,
             asset_subtree_ids=asset_subtree_ids,
             data_set_ids=data_set_ids,
             labels=labels,

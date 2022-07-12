@@ -31,7 +31,6 @@ class SequencesAPI(APIClient):
         external_id_prefix: str = None,
         metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
-        root_asset_ids: List[int] = None,
         asset_subtree_ids: List[int] = None,
         asset_subtree_external_ids: List[str] = None,
         data_set_ids: List[int] = None,
@@ -50,7 +49,6 @@ class SequencesAPI(APIClient):
             external_id_prefix (str): Filter out sequences that do not have this string as the start of the externalId
             metadata (Dict[str, Any]): Filter out sequences that do not match these metadata fields and values (case-sensitive). Format is {"key1":"value1","key2":"value2"}.
             asset_ids (List[int]): Filter out sequences that are not linked to any of these assets.
-            root_asset_ids (List[int]): Filter out sequences not linked to assets with one of these assets as the root asset.
             asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
             asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
             data_set_ids (List[int]): Return only events in the specified data sets with these ids.
@@ -73,7 +71,6 @@ class SequencesAPI(APIClient):
             metadata=metadata,
             external_id_prefix=external_id_prefix,
             asset_ids=asset_ids,
-            root_asset_ids=root_asset_ids,
             asset_subtree_ids=asset_subtree_ids,
             created_time=created_time,
             last_updated_time=last_updated_time,
@@ -154,7 +151,6 @@ class SequencesAPI(APIClient):
         external_id_prefix: str = None,
         metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
-        root_asset_ids: List[int] = None,
         asset_subtree_ids: List[int] = None,
         asset_subtree_external_ids: List[str] = None,
         data_set_ids: List[int] = None,
@@ -172,7 +168,6 @@ class SequencesAPI(APIClient):
             external_id_prefix (str): Filter out sequences that do not have this string as the start of the externalId
             metadata (Dict[str, Any]): Filter out sequences that do not match these metadata fields and values (case-sensitive). Format is {"key1":"value1","key2":"value2"}.
             asset_ids (List[int]): Filter out sequences that are not linked to any of these assets.
-            root_asset_ids (List[int]): Filter out sequences not linked to assets with one of these assets as the root asset.
             asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
             asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
             data_set_ids (List[int]): Return only events in the specified data sets with these ids.
@@ -217,7 +212,6 @@ class SequencesAPI(APIClient):
             metadata=metadata,
             external_id_prefix=external_id_prefix,
             asset_ids=asset_ids,
-            root_asset_ids=root_asset_ids,
             asset_subtree_ids=asset_subtree_ids,
             created_time=created_time,
             last_updated_time=last_updated_time,
@@ -526,9 +520,7 @@ class SequencesDataAPI(APIClient):
         )
         summary.raise_compound_exception_if_failed_tasks()
 
-    def insert_dataframe(
-        self, dataframe, external_id_headers: bool = True, id: int = None, external_id: str = None
-    ) -> None:
+    def insert_dataframe(self, dataframe, id: int = None, external_id: str = None) -> None:
         """`Insert a Pandas dataframe. <https://docs.cognite.com/api/v1/#operation/postSequenceData>`_
 
         The index of the dataframe must contain the row numbers. The names of the remaining columns specify the column external ids.
@@ -536,7 +528,6 @@ class SequencesDataAPI(APIClient):
 
         Args:
             dataframe (pandas.DataFrame):  Pandas DataFrame object containing the sequence data.
-            external_id_headers (bool): Ignored parameter here for backwards compatibility. Dataframe columns should always match sequence column external ids.
             id (int): Id of sequence to insert rows into.
             external_id (str): External id of sequence to insert rows into.
 
