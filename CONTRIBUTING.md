@@ -16,6 +16,7 @@ Then execute:
 
 ```bash
 poetry shell
+poetry install
 ```
 
 Install pre-commit hooks
