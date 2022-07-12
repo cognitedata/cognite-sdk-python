@@ -15,7 +15,7 @@ To get the virtual environment, install [poetry](https://pypi.org/project/poetry
 Then execute:
 
 ```bash
-poetry build
+poetry shell
 ```
 
 Install pre-commit hooks
