@@ -191,4 +191,3 @@ class AnnotationUpdate(CogniteUpdate):
 
 class AnnotationList(CogniteResourceList):
     _RESOURCE = Annotation
-    _UPDATE = AnnotationUpdate

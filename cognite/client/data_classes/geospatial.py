@@ -39,7 +39,6 @@ class FeatureType(CogniteResource):
 
 class FeatureTypeList(CogniteResourceList):
     _RESOURCE = FeatureType
-    _ASSERT_CLASSES = False
 
 
 class PropertyAndSearchSpec:
@@ -83,7 +82,6 @@ class FeatureTypePatch:
 
 class FeatureTypeUpdateList:
     _RESOURCE = FeatureTypeUpdate
-    _ASSERT_CLASSES = False
 
 
 class Feature(CogniteResource):
@@ -163,7 +161,6 @@ def _is_reserved_property(property_name: str):
 
 class FeatureList(CogniteResourceList):
     _RESOURCE = Feature
-    _ASSERT_CLASSES = False
 
     def to_geopandas(self, geometry: str, camel_case: bool = True) -> "geopandas.GeoDataFrame":  # noqa: F821
         """Convert the instance into a GeoPandas GeoDataFrame.
@@ -274,7 +271,6 @@ class FeatureAggregate(CogniteResource):
 
 class FeatureAggregateList(CogniteResourceList):
     _RESOURCE = FeatureAggregate
-    _ASSERT_CLASSES = False
 
 
 class CoordinateReferenceSystem(CogniteResource):
@@ -297,7 +293,6 @@ class CoordinateReferenceSystem(CogniteResource):
 
 class CoordinateReferenceSystemList(CogniteResourceList):
     _RESOURCE = CoordinateReferenceSystem
-    _ASSERT_CLASSES = False
 
 
 class OrderSpec:

@@ -48,7 +48,9 @@ class TransformationSchedulesAPI(APIClient):
                 >>> res = c.transformations.schedules.create(schedules)
         """
         utils._auxiliary.assert_type(schedule, "schedule", [TransformationSchedule, list])
-        return self._create_multiple(schedule)
+        return self._create_multiple(
+            list_cls=TransformationScheduleList, resource_cls=TransformationSchedule, items=schedule
+        )
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[TransformationSchedule]:
         """`Retrieve a single transformation schedule by the id or external id of its transformation. <https://docs.cognite.com/api/v1/#operation/getTransformationSchedulesByIds>`_
@@ -75,7 +77,13 @@ class TransformationSchedulesAPI(APIClient):
                 >>> res = c.transformations.schedules.retrieve(external_id="1")
         """
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
-        return self._retrieve_multiple(ids=id, external_ids=external_id, wrap_ids=True)
+        return self._retrieve_multiple(
+            list_cls=TransformationScheduleList,
+            resource_cls=TransformationSchedule,
+            ids=id,
+            external_ids=external_id,
+            wrap_ids=True,
+        )
 
     def retrieve_multiple(
         self,
@@ -110,7 +118,12 @@ class TransformationSchedulesAPI(APIClient):
         utils._auxiliary.assert_type(ids, "id", [List], allow_none=True)
         utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=True)
         return self._retrieve_multiple(
-            ids=ids, external_ids=external_ids, ignore_unknown_ids=ignore_unknown_ids, wrap_ids=True
+            list_cls=TransformationScheduleList,
+            resource_cls=TransformationSchedule,
+            ids=ids,
+            external_ids=external_ids,
+            ignore_unknown_ids=ignore_unknown_ids,
+            wrap_ids=True,
         )
 
     def list(self, include_public: bool = True, limit: Optional[int] = 25) -> TransformationScheduleList:
@@ -134,7 +147,13 @@ class TransformationSchedulesAPI(APIClient):
         """
         filter = TransformationFilter(include_public=include_public).dump(camel_case=True)
 
-        return self._list(method="GET", limit=limit, filter=filter)
+        return self._list(
+            list_cls=TransformationScheduleList,
+            resource_cls=TransformationSchedule,
+            method="GET",
+            limit=limit,
+            filter=filter,
+        )
 
     def delete(
         self,
@@ -198,4 +217,9 @@ class TransformationSchedulesAPI(APIClient):
                 >>> my_update = TransformationScheduleUpdate(id=1).interval.set("0 * * * *").is_paused.set(False)
                 >>> res = c.transformations.schedules.update(my_update)
         """
-        return self._update_multiple(items=item)
+        return self._update_multiple(
+            list_cls=TransformationScheduleList,
+            resource_cls=TransformationSchedule,
+            update_cls=TransformationScheduleUpdate,
+            items=item,
+        )

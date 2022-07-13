@@ -224,7 +224,6 @@ class SomeResource(CogniteResource):
 
 class SomeResourceList(CogniteResourceList):
     _RESOURCE = SomeResource
-    _UPDATE = SomeUpdate
 
 
 class SomeFilter(CogniteFilter):
@@ -270,49 +269,62 @@ class TestStandardRetrieveMultiple:
 
     def test_by_id_no_wrap_OK(self, mock_by_ids, api_client_with_api_key):
         assert SomeResourceList([SomeResource(1, 2), SomeResource(1)]) == api_client_with_api_key._retrieve_multiple(
-            cls=SomeResourceList, resource_path=URL_PATH, wrap_ids=False, ids=[1, 2]
+            list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, wrap_ids=False, ids=[1, 2]
         )
         assert {"items": [1, 2]} == jsgz_load(mock_by_ids.calls[0].request.body)
 
     def test_by_single_id_no_wrap_OK(self, api_client_with_api_key, mock_by_ids):
         assert SomeResource(1, 2) == api_client_with_api_key._retrieve_multiple(
-            cls=SomeResourceList, resource_path=URL_PATH, wrap_ids=False, ids=1
+            list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, wrap_ids=False, ids=1
         )
         assert {"items": [1]} == jsgz_load(mock_by_ids.calls[0].request.body)
 
     def test_by_id_wrap_OK(self, api_client_with_api_key, mock_by_ids):
         assert SomeResourceList([SomeResource(1, 2), SomeResource(1)]) == api_client_with_api_key._retrieve_multiple(
-            cls=SomeResourceList, resource_path=URL_PATH, wrap_ids=True, ids=[1, 2]
+            list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, wrap_ids=True, ids=[1, 2]
         )
         assert {"items": [{"id": 1}, {"id": 2}]} == jsgz_load(mock_by_ids.calls[0].request.body)
 
     def test_by_single_id_wrap_OK(self, api_client_with_api_key, mock_by_ids):
         assert SomeResource(1, 2) == api_client_with_api_key._retrieve_multiple(
-            cls=SomeResourceList, resource_path=URL_PATH, wrap_ids=True, ids=1
+            list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, wrap_ids=True, ids=1
         )
         assert {"items": [{"id": 1}]} == jsgz_load(mock_by_ids.calls[0].request.body)
 
     def test_by_external_id_wrap_OK(self, api_client_with_api_key, mock_by_ids):
         assert SomeResourceList([SomeResource(1, 2), SomeResource(1)]) == api_client_with_api_key._retrieve_multiple(
-            cls=SomeResourceList, resource_path=URL_PATH, wrap_ids=True, external_ids=["1", "2"]
+            list_cls=SomeResourceList,
+            resource_cls=SomeResource,
+            resource_path=URL_PATH,
+            wrap_ids=True,
+            external_ids=["1", "2"],
         )
         assert {"items": [{"externalId": "1"}, {"externalId": "2"}]} == jsgz_load(mock_by_ids.calls[0].request.body)
 
     def test_by_single_external_id_wrap_OK(self, api_client_with_api_key, mock_by_ids):
         assert SomeResource(1, 2) == api_client_with_api_key._retrieve_multiple(
-            cls=SomeResourceList, resource_path=URL_PATH, wrap_ids=True, external_ids="1"
+            list_cls=SomeResourceList,
+            resource_cls=SomeResource,
+            resource_path=URL_PATH,
+            wrap_ids=True,
+            external_ids="1",
         )
         assert {"items": [{"externalId": "1"}]} == jsgz_load(mock_by_ids.calls[0].request.body)
 
     def test_by_external_id_no_wrap(self, api_client_with_api_key):
         with pytest.raises(ValueError, match="must be wrapped"):
             api_client_with_api_key._retrieve_multiple(
-                cls=SomeResourceList, resource_path=URL_PATH, wrap_ids=False, external_ids=["1", "2"]
+                list_cls=SomeResourceList,
+                resource_cls=SomeResource,
+                resource_path=URL_PATH,
+                wrap_ids=False,
+                external_ids=["1", "2"],
             )
 
     def test_retrieve_multiple_ignore_unknown(self, api_client_with_api_key, mock_by_ids):
         assert SomeResourceList([SomeResource(1, 2), SomeResource(1)]) == api_client_with_api_key._retrieve_multiple(
-            cls=SomeResourceList,
+            list_cls=SomeResourceList,
+            resource_cls=SomeResource,
             resource_path=URL_PATH,
             wrap_ids=True,
             ids=1,
@@ -325,7 +337,12 @@ class TestStandardRetrieveMultiple:
 
     def test_id_and_external_id_mixed(self, api_client_with_api_key, mock_by_ids):
         assert SomeResourceList([SomeResource(1, 2), SomeResource(1)]) == api_client_with_api_key._retrieve_multiple(
-            cls=SomeResourceList, resource_path=URL_PATH, wrap_ids=True, ids=1, external_ids=["2"]
+            list_cls=SomeResourceList,
+            resource_cls=SomeResource,
+            resource_path=URL_PATH,
+            wrap_ids=True,
+            ids=1,
+            external_ids=["2"],
         )
         assert {"items": [{"id": 1}, {"externalId": "2"}]} == jsgz_load(mock_by_ids.calls[0].request.body)
 
@@ -333,14 +350,16 @@ class TestStandardRetrieveMultiple:
         rsps.add(rsps.POST, BASE_URL + URL_PATH + "/byids", status=400, json={"error": {"message": "Client Error"}})
         with pytest.raises(CogniteAPIError, match="Client Error") as e:
             api_client_with_api_key._retrieve_multiple(
-                cls=SomeResourceList, resource_path=URL_PATH, wrap_ids=True, ids=[1, 2]
+                list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, wrap_ids=True, ids=[1, 2]
             )
         assert "Client Error" == e.value.message
         assert 400 == e.value.code
 
     def test_ids_all_None(self, api_client_with_api_key):
         with pytest.raises(ValueError, match="No ids specified"):
-            api_client_with_api_key._retrieve_multiple(cls=SomeResourceList, resource_path=URL_PATH, wrap_ids=False)
+            api_client_with_api_key._retrieve_multiple(
+                list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, wrap_ids=False
+            )
 
     def test_single_id_not_found(self, api_client_with_api_key, rsps):
         rsps.add(
@@ -350,7 +369,7 @@ class TestStandardRetrieveMultiple:
             json={"error": {"message": "Not Found", "missing": [{"id": 1}]}},
         )
         res = api_client_with_api_key._retrieve_multiple(
-            cls=SomeResourceList, resource_path=URL_PATH, wrap_ids=True, ids=1
+            list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, wrap_ids=True, ids=1
         )
         assert res is None
 
@@ -370,7 +389,11 @@ class TestStandardRetrieveMultiple:
         with set_request_limit(api_client_with_api_key, 1):
             with pytest.raises(CogniteNotFoundError) as e:
                 api_client_with_api_key._retrieve_multiple(
-                    cls=SomeResourceList, resource_path=URL_PATH, wrap_ids=True, ids=[1, 2]
+                    list_cls=SomeResourceList,
+                    resource_cls=SomeResource,
+                    resource_path=URL_PATH,
+                    wrap_ids=True,
+                    ids=[1, 2],
                 )
         assert [{"id": 1}, {"id": 2}] == e.value.not_found
 
@@ -378,7 +401,7 @@ class TestStandardRetrieveMultiple:
         assert (
             cognite_client
             == api_client_with_api_key._retrieve_multiple(
-                cls=SomeResourceList, resource_path=URL_PATH, wrap_ids=True, ids=[1, 2]
+                list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, wrap_ids=True, ids=[1, 2]
             )._cognite_client
         )
 
@@ -388,7 +411,7 @@ class TestStandardRetrieveMultiple:
 
         with set_request_limit(api_client_with_api_key, 1):
             api_client_with_api_key._retrieve_multiple(
-                cls=SomeResourceList, resource_path=URL_PATH, ids=[1, 2], wrap_ids=False
+                list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, ids=[1, 2], wrap_ids=False
             )
 
         assert {"items": [1]} == jsgz_load(rsps.calls[0].request.body)
@@ -400,7 +423,9 @@ class TestStandardList:
         rsps.add(rsps.GET, BASE_URL + URL_PATH, status=200, json={"items": [{"x": 1, "y": 2}, {"x": 1}]})
         assert (
             SomeResourceList([SomeResource(1, 2), SomeResource(1)]).dump()
-            == api_client_with_api_key._list(cls=SomeResourceList, resource_path=URL_PATH, method="GET").dump()
+            == api_client_with_api_key._list(
+                list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, method="GET"
+            ).dump()
         )
 
     def test_standard_list_with_filter_GET_ok(self, api_client_with_api_key, rsps):
@@ -408,7 +433,11 @@ class TestStandardList:
         assert (
             SomeResourceList([SomeResource(1, 2), SomeResource(1)]).dump()
             == api_client_with_api_key._list(
-                cls=SomeResourceList, resource_path=URL_PATH, method="GET", filter={"filter": "bla"}
+                list_cls=SomeResourceList,
+                resource_cls=SomeResource,
+                resource_path=URL_PATH,
+                method="GET",
+                filter={"filter": "bla"},
             ).dump()
         )
         assert "filter=bla" in rsps.calls[0].request.path_url
@@ -416,14 +445,20 @@ class TestStandardList:
     def test_standard_list_with_filter_POST_ok(self, api_client_with_api_key, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH + "/list", status=200, json={"items": [{"x": 1, "y": 2}, {"x": 1}]})
         assert SomeResourceList([SomeResource(1, 2), SomeResource(1)]) == api_client_with_api_key._list(
-            cls=SomeResourceList, resource_path=URL_PATH, method="POST", filter={"filter": "bla"}
+            list_cls=SomeResourceList,
+            resource_cls=SomeResource,
+            resource_path=URL_PATH,
+            method="POST",
+            filter={"filter": "bla"},
         )
         assert {"filter": {"filter": "bla"}, "limit": 1000, "cursor": None} == jsgz_load(rsps.calls[0].request.body)
 
     def test_standard_list_fail(self, api_client_with_api_key, rsps):
         rsps.add(rsps.GET, BASE_URL + URL_PATH, status=400, json={"error": {"message": "Client Error"}})
         with pytest.raises(CogniteAPIError, match="Client Error") as e:
-            api_client_with_api_key._list(cls=SomeResourceList, resource_path=URL_PATH, method="GET")
+            api_client_with_api_key._list(
+                list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, method="GET"
+            )
         assert 400 == e.value.code
         assert "Client Error" == e.value.message
 
@@ -433,7 +468,8 @@ class TestStandardList:
     def test_list_partitions(self, api_client_with_api_key, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH + "/list", status=200, json={"items": [{"x": 1, "y": 2}, {"x": 1}]})
         res = api_client_with_api_key._list(
-            cls=SomeResourceList,
+            list_cls=SomeResourceList,
+            resource_cls=SomeResource,
             resource_path=URL_PATH,
             method="POST",
             partitions=3,
@@ -466,7 +502,12 @@ class TestStandardList:
         )
         with pytest.raises(CogniteAPIError) as exc:
             api_client_with_api_key._list(
-                cls=SomeResourceList, resource_path=URL_PATH, method="POST", partitions=4, limit=None
+                list_cls=SomeResourceList,
+                resource_cls=SomeResource,
+                resource_path=URL_PATH,
+                method="POST",
+                partitions=4,
+                limit=None,
             )
         assert 503 == exc.value.code
         assert 4 == len(rsps.calls)
@@ -510,7 +551,7 @@ class TestStandardList:
     def test_standard_list_generator(self, api_client_with_api_key):
         total_resources = 0
         for resource in api_client_with_api_key._list_generator(
-            cls=SomeResourceList, resource_path=URL_PATH, method="GET"
+            list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, method="GET"
         ):
             assert isinstance(resource, SomeResource)
             total_resources += 1
@@ -520,7 +561,7 @@ class TestStandardList:
     def test_standard_list_generator_with_limit(self, api_client_with_api_key):
         total_resources = 0
         for resource in api_client_with_api_key._list_generator(
-            cls=SomeResourceList, resource_path=URL_PATH, method="GET", limit=10000
+            list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, method="GET", limit=10000
         ):
             assert isinstance(resource, SomeResource)
             total_resources += 1
@@ -530,7 +571,7 @@ class TestStandardList:
     def test_standard_list_generator_with_chunk_size(self, api_client_with_api_key):
         total_resources = 0
         for resource_chunk in api_client_with_api_key._list_generator(
-            cls=SomeResourceList, resource_path=URL_PATH, method="GET", chunk_size=1000
+            list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, method="GET", chunk_size=1000
         ):
             assert isinstance(resource_chunk, SomeResourceList)
             if len(resource_chunk) == 1000:
@@ -545,7 +586,7 @@ class TestStandardList:
     def test_standard_list_generator_with_chunk_size_chunk_edge_case(self, api_client_with_api_key):
         total_resources = 0
         for resource_chunk in api_client_with_api_key._list_generator(
-            cls=SomeResourceList, resource_path=URL_PATH, method="GET", chunk_size=2500
+            list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, method="GET", chunk_size=2500
         ):
             assert isinstance(resource_chunk, SomeResourceList)
             total_resources += len(resource_chunk)
@@ -556,7 +597,12 @@ class TestStandardList:
     def test_standard_list_generator_with_chunk_size_chunk_limit(self, api_client_with_api_key):
         total_resources = 0
         for resource_chunk in api_client_with_api_key._list_generator(
-            cls=SomeResourceList, resource_path=URL_PATH, method="GET", chunk_size=2500, limit=2563
+            list_cls=SomeResourceList,
+            resource_cls=SomeResource,
+            resource_path=URL_PATH,
+            method="GET",
+            chunk_size=2500,
+            limit=2563,
         ):
             assert isinstance(resource_chunk, SomeResourceList)
             total_resources += len(resource_chunk)
@@ -567,7 +613,12 @@ class TestStandardList:
     def test_standard_list_generator_with_chunk_size_with_limit(self, api_client_with_api_key):
         total_resources = 0
         for resource_chunk in api_client_with_api_key._list_generator(
-            cls=SomeResourceList, resource_path=URL_PATH, method="GET", limit=10000, chunk_size=1000
+            list_cls=SomeResourceList,
+            resource_cls=SomeResource,
+            resource_path=URL_PATH,
+            method="GET",
+            limit=10000,
+            chunk_size=1000,
         ):
             assert isinstance(resource_chunk, SomeResourceList)
             assert 1000 == len(resource_chunk)
@@ -580,7 +631,12 @@ class TestStandardList:
     ):
         total_resources = 0
         for resource_chunk in api_client_with_api_key._list_generator(
-            cls=SomeResourceList, resource_path=URL_PATH, method="GET", limit=1000, chunk_size=100
+            list_cls=SomeResourceList,
+            resource_cls=SomeResource,
+            resource_path=URL_PATH,
+            method="GET",
+            limit=1000,
+            chunk_size=100,
         ):
             assert isinstance(resource_chunk, SomeResourceList)
             assert 100 == len(resource_chunk)
@@ -591,7 +647,12 @@ class TestStandardList:
     def test_standard_list_generator__chunk_size_exceeds_max(self, api_client_with_api_key):
         total_resources = 0
         for resource_chunk in api_client_with_api_key._list_generator(
-            cls=SomeResourceList, resource_path=URL_PATH, method="GET", limit=2002, chunk_size=1001
+            list_cls=SomeResourceList,
+            resource_cls=SomeResource,
+            resource_path=URL_PATH,
+            method="GET",
+            limit=2002,
+            chunk_size=1001,
         ):
             assert isinstance(resource_chunk, SomeResourceList)
             assert 1001 == len(resource_chunk)
@@ -600,12 +661,16 @@ class TestStandardList:
 
     @pytest.mark.usefixtures("mock_get_for_autopaging")
     def test_standard_list_autopaging(self, api_client_with_api_key):
-        res = api_client_with_api_key._list(cls=SomeResourceList, resource_path=URL_PATH, method="GET")
+        res = api_client_with_api_key._list(
+            list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, method="GET"
+        )
         assert self.NUMBER_OF_ITEMS_FOR_AUTOPAGING == len(res)
 
     @pytest.mark.usefixtures("mock_get_for_autopaging")
     def test_standard_list_autopaging_with_limit(self, api_client_with_api_key):
-        res = api_client_with_api_key._list(cls=SomeResourceList, resource_path=URL_PATH, method="GET", limit=5333)
+        res = api_client_with_api_key._list(
+            list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, method="GET", limit=5333
+        )
         assert 5333 == len(res)
 
     def test_cognite_client_is_set(self, cognite_client, api_client_with_api_key, rsps):
@@ -614,12 +679,14 @@ class TestStandardList:
         assert (
             cognite_client
             == api_client_with_api_key._list(
-                cls=SomeResourceList, resource_path=URL_PATH, method="POST"
+                list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, method="POST"
             )._cognite_client
         )
         assert (
             cognite_client
-            == api_client_with_api_key._list(cls=SomeResourceList, resource_path=URL_PATH, method="GET")._cognite_client
+            == api_client_with_api_key._list(
+                list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, method="GET"
+            )._cognite_client
         )
 
 
@@ -642,7 +709,10 @@ class TestStandardCreate:
     def test_standard_create_ok(self, api_client_with_api_key, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH, status=200, json={"items": [{"x": 1, "y": 2}, {"x": 1}]})
         res = api_client_with_api_key._create_multiple(
-            cls=SomeResourceList, resource_path=URL_PATH, items=[SomeResource(1, 1), SomeResource(1)]
+            list_cls=SomeResourceList,
+            resource_cls=SomeResource,
+            resource_path=URL_PATH,
+            items=[SomeResource(1, 1), SomeResource(1)],
         )
         assert {"items": [{"x": 1, "y": 1}, {"x": 1}]} == jsgz_load(rsps.calls[0].request.body)
         assert SomeResource(1, 2) == res[0]
@@ -651,7 +721,8 @@ class TestStandardCreate:
     def test_standard_create_extra_body_fields(self, api_client_with_api_key, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH, status=200, json={"items": [{"x": 1, "y": 2}, {"x": 1}]})
         api_client_with_api_key._create_multiple(
-            cls=SomeResourceList,
+            list_cls=SomeResourceList,
+            resource_cls=SomeResource,
             resource_path=URL_PATH,
             items=[SomeResource(1, 1), SomeResource(1)],
             extra_body_fields={"foo": "bar"},
@@ -661,7 +732,7 @@ class TestStandardCreate:
     def test_standard_create_single_item_ok(self, api_client_with_api_key, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH, status=200, json={"items": [{"x": 1, "y": 2}]})
         res = api_client_with_api_key._create_multiple(
-            cls=SomeResourceList, resource_path=URL_PATH, items=SomeResource(1, 2)
+            list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, items=SomeResource(1, 2)
         )
         assert {"items": [{"x": 1, "y": 2}]} == jsgz_load(rsps.calls[0].request.body)
         assert SomeResource(1, 2) == res
@@ -669,7 +740,7 @@ class TestStandardCreate:
     def test_standard_create_single_item_in_list_ok(self, api_client_with_api_key, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH, status=200, json={"items": [{"x": 1, "y": 2}]})
         res = api_client_with_api_key._create_multiple(
-            cls=SomeResourceList, resource_path=URL_PATH, items=[SomeResource(1, 2)]
+            list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, items=[SomeResource(1, 2)]
         )
         assert {"items": [{"x": 1, "y": 2}]} == jsgz_load(rsps.calls[0].request.body)
         assert SomeResourceList([SomeResource(1, 2)]) == res
@@ -683,7 +754,8 @@ class TestStandardCreate:
         with set_request_limit(api_client_with_api_key, 1):
             with pytest.raises(CogniteAPIError) as e:
                 api_client_with_api_key._create_multiple(
-                    cls=SomeResourceList,
+                    list_cls=SomeResourceList,
+                    resource_cls=SomeResource,
                     resource_path=URL_PATH,
                     items=[
                         SomeResource(1, external_id="400"),
@@ -701,7 +773,11 @@ class TestStandardCreate:
         rsps.add(rsps.POST, BASE_URL + URL_PATH, status=200, json={"items": [{"x": 3, "y": 4}]})
 
         res = api_client_with_api_key._create_multiple(
-            cls=SomeResourceList, resource_path=URL_PATH, items=[SomeResource(1, 2), SomeResource(3, 4)], limit=1
+            list_cls=SomeResourceList,
+            resource_cls=SomeResource,
+            resource_path=URL_PATH,
+            items=[SomeResource(1, 2), SomeResource(3, 4)],
+            limit=1,
         )
         assert SomeResourceList([SomeResource(1, 2), SomeResource(3, 4)]) == res
 
@@ -713,13 +789,13 @@ class TestStandardCreate:
         assert (
             cognite_client
             == api_client_with_api_key._create_multiple(
-                cls=SomeResourceList, resource_path=URL_PATH, items=SomeResource()
+                list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, items=SomeResource()
             )._cognite_client
         )
         assert (
             cognite_client
             == api_client_with_api_key._create_multiple(
-                cls=SomeResourceList, resource_path=URL_PATH, items=[SomeResource()]
+                list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, items=[SomeResource()]
             )._cognite_client
         )
 
@@ -795,7 +871,11 @@ class TestStandardUpdate:
 
     def test_standard_update_with_cognite_resource_OK(self, api_client_with_api_key, mock_update):
         res = api_client_with_api_key._update_multiple(
-            cls=SomeResourceList, resource_path=URL_PATH, items=[SomeResource(id=1, y=100)]
+            update_cls=SomeUpdate,
+            list_cls=SomeResourceList,
+            resource_cls=SomeResource,
+            resource_path=URL_PATH,
+            items=[SomeResource(id=1, y=100)],
         )
         assert SomeResourceList([SomeResource(id=1, x=1, y=100)]) == res
         assert {"items": [{"id": 1, "update": {"y": {"set": 100}}}]} == jsgz_load(mock_update.calls[0].request.body)
@@ -804,7 +884,11 @@ class TestStandardUpdate:
         self, api_client_with_api_key, mock_update
     ):
         api_client_with_api_key._update_multiple(
-            cls=SomeResourceList, resource_path=URL_PATH, items=[SomeResource(id=1, external_id="abc", y=100)]
+            update_cls=SomeUpdate,
+            list_cls=SomeResourceList,
+            resource_cls=SomeResource,
+            resource_path=URL_PATH,
+            items=[SomeResource(id=1, external_id="abc", y=100)],
         )
         assert {"items": [{"id": 1, "update": {"y": {"set": 100}, "externalId": {"set": "abc"}}}]} == jsgz_load(
             mock_update.calls[0].request.body
@@ -812,14 +896,22 @@ class TestStandardUpdate:
 
     def test_standard_update_with_cognite_resource__non_update_attributes(self, api_client_with_api_key, mock_update):
         res = api_client_with_api_key._update_multiple(
-            cls=SomeResourceList, resource_path=URL_PATH, items=[SomeResource(id=1, y=100, x=1)]
+            update_cls=SomeUpdate,
+            list_cls=SomeResourceList,
+            resource_cls=SomeResource,
+            resource_path=URL_PATH,
+            items=[SomeResource(id=1, y=100, x=1)],
         )
         assert SomeResourceList([SomeResource(id=1, x=1, y=100)]) == res
         assert {"items": [{"id": 1, "update": {"y": {"set": 100}}}]} == jsgz_load(mock_update.calls[0].request.body)
 
     def test_standard_update_with_cognite_resource__id_and_external_id_set(self, api_client_with_api_key, mock_update):
         api_client_with_api_key._update_multiple(
-            cls=SomeResourceList, resource_path=URL_PATH, items=[SomeResource(id=1, external_id="1", y=100, x=1)]
+            update_cls=SomeUpdate,
+            list_cls=SomeResourceList,
+            resource_cls=SomeResource,
+            resource_path=URL_PATH,
+            items=[SomeResource(id=1, external_id="1", y=100, x=1)],
         )
         assert {"items": [{"id": 1, "update": {"y": {"set": 100}, "externalId": {"set": "1"}}}]} == jsgz_load(
             mock_update.calls[0].request.body
@@ -827,7 +919,11 @@ class TestStandardUpdate:
 
     def test_standard_update_with_cognite_resource_and_external_id_OK(self, api_client_with_api_key, mock_update):
         res = api_client_with_api_key._update_multiple(
-            cls=SomeResourceList, resource_path=URL_PATH, items=[SomeResource(external_id="1", y=100)]
+            update_cls=SomeUpdate,
+            list_cls=SomeResourceList,
+            resource_cls=SomeResource,
+            resource_path=URL_PATH,
+            items=[SomeResource(external_id="1", y=100)],
         )
         assert SomeResourceList([SomeResource(id=1, x=1, y=100)]) == res
         assert {"items": [{"externalId": "1", "update": {"y": {"set": 100}}}]} == jsgz_load(
@@ -836,21 +932,33 @@ class TestStandardUpdate:
 
     def test_standard_update_with_cognite_update_object_OK(self, api_client_with_api_key, mock_update):
         res = api_client_with_api_key._update_multiple(
-            cls=SomeResourceList, resource_path=URL_PATH, items=[SomeUpdate(id=1).y.set(100)]
+            update_cls=SomeUpdate,
+            list_cls=SomeResourceList,
+            resource_cls=SomeResource,
+            resource_path=URL_PATH,
+            items=[SomeUpdate(id=1).y.set(100)],
         )
         assert SomeResourceList([SomeResource(id=1, x=1, y=100)]) == res
         assert {"items": [{"id": 1, "update": {"y": {"set": 100}}}]} == jsgz_load(mock_update.calls[0].request.body)
 
     def test_standard_update_single_object(self, api_client_with_api_key, mock_update):
         res = api_client_with_api_key._update_multiple(
-            cls=SomeResourceList, resource_path=URL_PATH, items=SomeUpdate(id=1).y.set(100)
+            update_cls=SomeUpdate,
+            list_cls=SomeResourceList,
+            resource_cls=SomeResource,
+            resource_path=URL_PATH,
+            items=SomeUpdate(id=1).y.set(100),
         )
         assert SomeResource(id=1, x=1, y=100) == res
         assert {"items": [{"id": 1, "update": {"y": {"set": 100}}}]} == jsgz_load(mock_update.calls[0].request.body)
 
     def test_standard_update_with_cognite_update_object_and_external_id_OK(self, api_client_with_api_key, mock_update):
         res = api_client_with_api_key._update_multiple(
-            cls=SomeResourceList, resource_path=URL_PATH, items=[SomeUpdate(external_id="1").y.set(100)]
+            update_cls=SomeUpdate,
+            list_cls=SomeResourceList,
+            resource_cls=SomeResource,
+            resource_path=URL_PATH,
+            items=[SomeUpdate(external_id="1").y.set(100)],
         )
         assert SomeResourceList([SomeResource(id=1, x=1, y=100)]) == res
         assert {"items": [{"externalId": "1", "update": {"y": {"set": 100}}}]} == jsgz_load(
@@ -861,7 +969,9 @@ class TestStandardUpdate:
         rsps.add(rsps.POST, BASE_URL + URL_PATH + "/update", status=400, json={"error": {"message": "Client Error"}})
         with pytest.raises(CogniteAPIError) as e:
             api_client_with_api_key._update_multiple(
-                cls=SomeResourceList,
+                update_cls=SomeUpdate,
+                list_cls=SomeResourceList,
+                resource_cls=SomeResource,
                 resource_path=URL_PATH,
                 items=[SomeResource(id=0), SomeResource(external_id="abc")],
             )
@@ -873,7 +983,9 @@ class TestStandardUpdate:
         rsps.add(rsps.POST, BASE_URL + URL_PATH + "/update", status=500, json={"error": {"message": "Server Error"}})
         with pytest.raises(CogniteAPIError) as e:
             api_client_with_api_key._update_multiple(
-                cls=SomeResourceList,
+                update_cls=SomeUpdate,
+                list_cls=SomeResourceList,
+                resource_cls=SomeResource,
                 resource_path=URL_PATH,
                 items=[SomeResource(id=0), SomeResource(external_id="abc")],
             )
@@ -893,7 +1005,9 @@ class TestStandardUpdate:
         with set_request_limit(api_client_with_api_key, 1):
             with pytest.raises(CogniteAPIError) as e:
                 api_client_with_api_key._update_multiple(
-                    cls=SomeResourceList,
+                    update_cls=SomeUpdate,
+                    list_cls=SomeResourceList,
+                    resource_cls=SomeResource,
                     resource_path=URL_PATH,
                     items=[SomeResource(id=0), SomeResource(external_id="abc")],
                 )
@@ -905,13 +1019,21 @@ class TestStandardUpdate:
         assert (
             cognite_client
             == api_client_with_api_key._update_multiple(
-                cls=SomeResourceList, resource_path=URL_PATH, items=SomeResource(id=0)
+                update_cls=SomeUpdate,
+                list_cls=SomeResourceList,
+                resource_cls=SomeResource,
+                resource_path=URL_PATH,
+                items=SomeResource(id=0),
             )._cognite_client
         )
         assert (
             cognite_client
             == api_client_with_api_key._update_multiple(
-                cls=SomeResourceList, resource_path=URL_PATH, items=[SomeResource(id=0)]
+                update_cls=SomeUpdate,
+                list_cls=SomeResourceList,
+                resource_cls=SomeResource,
+                resource_path=URL_PATH,
+                items=[SomeResource(id=0)],
             )._cognite_client
         )
 
@@ -921,7 +1043,11 @@ class TestStandardUpdate:
 
         with set_request_limit(api_client_with_api_key, 1):
             api_client_with_api_key._update_multiple(
-                cls=SomeResourceList, resource_path=URL_PATH, items=[SomeResource(1, 2, id=1), SomeResource(3, 4, id=2)]
+                update_cls=SomeUpdate,
+                list_cls=SomeResourceList,
+                resource_cls=SomeResource,
+                resource_path=URL_PATH,
+                items=[SomeResource(1, 2, id=1), SomeResource(3, 4, id=2)],
             )
 
         assert {"items": [{"id": 1, "update": {"y": {"set": 2}}}]} == jsgz_load(rsps.calls[0].request.body)
@@ -933,7 +1059,7 @@ class TestStandardSearch:
         rsps.add(rsps.POST, BASE_URL + URL_PATH + "/search", status=200, json={"items": [{"x": 1, "y": 2}]})
 
         res = api_client_with_api_key._search(
-            cls=SomeResourceList,
+            list_cls=SomeResourceList,
             resource_path=URL_PATH,
             search={"name": "bla"},
             filter=SomeFilter(var_x=1, var_y=1),
@@ -948,7 +1074,7 @@ class TestStandardSearch:
         rsps.add(rsps.POST, BASE_URL + URL_PATH + "/search", status=200, json={"items": [{"x": 1, "y": 2}]})
 
         res = api_client_with_api_key._search(
-            cls=SomeResourceList,
+            list_cls=SomeResourceList,
             resource_path=URL_PATH,
             search={"name": "bla"},
             filter={"var_x": 1, "varY": 1},
@@ -964,7 +1090,7 @@ class TestStandardSearch:
 
         with pytest.raises(CogniteAPIError, match="Client Error") as e:
             api_client_with_api_key._search(
-                cls=SomeResourceList, resource_path=URL_PATH, search=None, filter=None, limit=None
+                list_cls=SomeResourceList, resource_path=URL_PATH, search=None, filter=None, limit=None
             )
         assert "Client Error" == e.value.message
         assert 400 == e.value.code
@@ -975,7 +1101,11 @@ class TestStandardSearch:
         assert (
             cognite_client
             == api_client_with_api_key._search(
-                cls=SomeResourceList, resource_path=URL_PATH, search={"name": "bla"}, filter={"name": "bla"}, limit=1000
+                list_cls=SomeResourceList,
+                resource_path=URL_PATH,
+                search={"name": "bla"},
+                filter={"name": "bla"},
+                limit=1000,
             )._cognite_client
         )
 
@@ -1073,7 +1203,7 @@ class TestHelpers:
 
     def test_get_status_codes_to_retry(self):
         os.environ["COGNITE_STATUS_FORCELIST"] = "1,2, 3,4"
-        assert [1, 2, 3, 4] == utils._client_config._DefaultConfig().status_forcelist
+        assert {1, 2, 3, 4} == utils._client_config._DefaultConfig().status_forcelist
         del os.environ["COGNITE_STATUS_FORCELIST"]
 
     @pytest.mark.parametrize(

@@ -45,7 +45,6 @@ class TransformationNotification(CogniteResource):
 
 class TransformationNotificationList(CogniteResourceList):
     _RESOURCE = TransformationNotification
-    _ASSERT_CLASSES = False
 
 
 class TransformationNotificationFilter(CogniteFilter):

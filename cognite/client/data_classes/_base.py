@@ -1,6 +1,6 @@
 import json
 from collections import UserList
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Type, Union
 
 from cognite.client import utils
 from cognite.client.exceptions import CogniteMissingClientError
@@ -156,14 +156,9 @@ class CognitePropertyClassUtil:
 
 
 class CogniteResourceList(UserList):
-    _RESOURCE = None
-    _UPDATE = None
-    _ASSERT_CLASSES = True
+    _RESOURCE: Type[CogniteResource]
 
     def __init__(self, resources: List[Any], cognite_client=None):
-        if self._ASSERT_CLASSES:
-            assert self._RESOURCE is not None, "{} does not have _RESOURCE set".format(self.__class__.__name__)
-            assert self._UPDATE is not None, "{} does not have _UPDATE set".format(self.__class__.__name__)
         for resource in resources:
             if not isinstance(resource, self._RESOURCE):
                 raise TypeError(

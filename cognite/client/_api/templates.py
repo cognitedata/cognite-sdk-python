@@ -13,6 +13,7 @@ from cognite.client.data_classes.templates import (
     TemplateInstanceUpdate,
     View,
     ViewList,
+    ViewResolveItem,
     ViewResolveList,
 )
 
@@ -70,7 +71,6 @@ class TemplatesAPI(APIClient):
 
 class TemplateGroupsAPI(APIClient):
     _RESOURCE_PATH = "/templategroups"
-    _LIST_CLASS = TemplateGroupList
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -96,7 +96,7 @@ class TemplateGroupsAPI(APIClient):
                 >>> template_group_2 = TemplateGroup("sdk-test-group-2", "This is another test group")
                 >>> c.templates.groups.create([template_group_1, template_group_2])
         """
-        return self._create_multiple(items=template_groups)
+        return self._create_multiple(list_cls=TemplateGroupList, resource_cls=TemplateGroup, items=template_groups)
 
     def upsert(
         self, template_groups: Union[TemplateGroup, List[TemplateGroup]]
@@ -125,7 +125,7 @@ class TemplateGroupsAPI(APIClient):
         if is_single:
             template_groups = [template_groups]
         updated = self._post(path, {"items": [item.dump(camel_case=True) for item in template_groups]}).json()["items"]
-        res = self._LIST_CLASS._load(updated, cognite_client=self._cognite_client)
+        res = TemplateGroupList._load(updated, cognite_client=self._cognite_client)
         if is_single:
             return res[0]
         return res
@@ -147,7 +147,13 @@ class TemplateGroupsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.templates.groups.retrieve_multiple(external_ids=["abc", "def"])
         """
-        return self._retrieve_multiple(external_ids=external_ids, ignore_unknown_ids=ignore_unknown_ids, wrap_ids=True)
+        return self._retrieve_multiple(
+            list_cls=TemplateGroupList,
+            resource_cls=TemplateGroup,
+            external_ids=external_ids,
+            ignore_unknown_ids=ignore_unknown_ids,
+            wrap_ids=True,
+        )
 
     def list(self, limit: int = 25, owners: List[str] = None) -> TemplateGroupList:
         """`Lists template groups stored in the project based on a query filter given in the payload of this request.`
@@ -171,11 +177,17 @@ class TemplateGroupsAPI(APIClient):
         filter = {}
         if owners is not None:
             filter["owners"] = owners
-        return self._list(method="POST", limit=limit, filter=filter, partitions=None, sort=None)
+        return self._list(
+            list_cls=TemplateGroupList,
+            resource_cls=TemplateGroup,
+            method="POST",
+            limit=limit,
+            filter=filter,
+            partitions=None,
+            sort=None,
+        )
 
-    def delete(
-        self, external_ids: Union[str, List[str]], ignore_unknown_ids: bool = False
-    ) -> Union[TemplateGroup, TemplateGroupList]:
+    def delete(self, external_ids: Union[str, List[str]], ignore_unknown_ids: bool = False) -> None:
         """`Delete one or more template groups.`
 
         Args:
@@ -193,13 +205,12 @@ class TemplateGroupsAPI(APIClient):
                 >>> c.templates.groups.delete(external_ids=["a", "b"])
         """
         return self._delete_multiple(
-            True, external_ids=external_ids, extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids}
+            wrap_ids=True, external_ids=external_ids, extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids}
         )
 
 
 class TemplateGroupVersionsAPI(APIClient):
     _RESOURCE_PATH = "/templategroups/{}/versions"
-    _LIST_CLASS = TemplateGroupVersionList
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -277,7 +288,14 @@ class TemplateGroupVersionsAPI(APIClient):
             filter["minVersion"] = min_version
         if max_version is not None:
             filter["maxVersion"] = max_version
-        return self._list(resource_path=resource_path, method="POST", limit=limit, filter=filter)
+        return self._list(
+            list_cls=TemplateGroupVersionList,
+            resource_cls=TemplateGroupVersion,
+            resource_path=resource_path,
+            method="POST",
+            limit=limit,
+            filter=filter,
+        )
 
     def delete(self, external_id: str, version: int) -> None:
         """`Delete a template group version.`
@@ -342,7 +360,9 @@ class TemplateInstancesAPI(APIClient):
                 >>> c.templates.instances.create("sdk-test-group", 1, [template_instance_1, template_instance_2])
         """
         resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
-        return self._create_multiple(resource_path=resource_path, items=instances)
+        return self._create_multiple(
+            list_cls=TemplateInstanceList, resource_cls=TemplateInstance, resource_path=resource_path, items=instances
+        )
 
     def upsert(
         self, external_id: str, version: int, instances: Union[TemplateGroup, List[TemplateGroup]]
@@ -415,7 +435,13 @@ class TemplateInstancesAPI(APIClient):
                 >>> res = c.templates.instances.update("sdk-test-group", 1, my_update)
         """
         resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
-        return self._update_multiple(items=item, resource_path=resource_path)
+        return self._update_multiple(
+            list_cls=TemplateInstanceList,
+            resource_cls=TemplateInstance,
+            update_cls=TemplateInstanceUpdate,
+            items=item,
+            resource_path=resource_path,
+        )
 
     def retrieve_multiple(
         self, external_id: str, version: int, external_ids: List[str], ignore_unknown_ids: bool = False
@@ -440,7 +466,12 @@ class TemplateInstancesAPI(APIClient):
         """
         resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
         return self._retrieve_multiple(
-            resource_path=resource_path, external_ids=external_ids, ignore_unknown_ids=ignore_unknown_ids, wrap_ids=True
+            list_cls=TemplateInstanceList,
+            resource_cls=TemplateInstance,
+            resource_path=resource_path,
+            external_ids=external_ids,
+            ignore_unknown_ids=ignore_unknown_ids,
+            wrap_ids=True,
         )
 
     def list(
@@ -478,7 +509,14 @@ class TemplateInstancesAPI(APIClient):
             filter["dataSetIds"] = data_set_ids
         if template_names is not None:
             filter["templateNames"] = template_names
-        return self._list(resource_path=resource_path, method="POST", limit=limit, filter=filter)
+        return self._list(
+            list_cls=TemplateInstanceList,
+            resource_cls=TemplateInstance,
+            resource_path=resource_path,
+            method="POST",
+            limit=limit,
+            filter=filter,
+        )
 
     def delete(self, external_id: str, version: int, external_ids: List[str], ignore_unknown_ids: bool = False) -> None:
         """`Delete one or more template instances.`
@@ -510,7 +548,6 @@ class TemplateInstancesAPI(APIClient):
 
 class TemplateViewsAPI(APIClient):
     _RESOURCE_PATH = "/templategroups/{}/versions/{}/views"
-    _LIST_CLASS = ViewList
 
     def create(self, external_id: str, version: int, views: Union[View, List[View]]) -> Union[View, ViewList]:
         """`Create one or more template views.`
@@ -546,7 +583,7 @@ class TemplateViewsAPI(APIClient):
                 >>> c.templates.views.create("sdk-test-group", 1, [view])
         """
         resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
-        return self._create_multiple(resource_path=resource_path, items=views)
+        return self._create_multiple(list_cls=ViewList, resource_cls=View, resource_path=resource_path, items=views)
 
     def upsert(self, external_id: str, version: int, views: Union[View, List[View]]) -> Union[View, ViewList]:
         """`Upsert one or more template views.`
@@ -617,9 +654,10 @@ class TemplateViewsAPI(APIClient):
         """
         url_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version) + "/resolve"
         return self._list(
+            list_cls=ViewResolveList,
+            resource_cls=ViewResolveItem,
             url_path=url_path,
             method="POST",
-            cls=ViewResolveList,
             limit=limit,
             other_params={"externalId": view_external_id, "input": input},
         )
@@ -645,7 +683,7 @@ class TemplateViewsAPI(APIClient):
                 >>> c.templates.views.list("template-group-ext-id", 1, limit=5)
         """
         resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
-        return self._list(resource_path=resource_path, method="POST", limit=limit)
+        return self._list(list_cls=ViewList, resource_cls=View, resource_path=resource_path, method="POST", limit=limit)
 
     def delete(
         self, external_id: str, version: int, view_external_id: Union[List[str], str], ignore_unknown_ids: bool = False

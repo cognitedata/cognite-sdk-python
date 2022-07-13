@@ -1,7 +1,7 @@
 import copy
 import os
 from pathlib import Path
-from typing import Any, BinaryIO, Dict, Generator, List, Optional, TextIO, Tuple, Union
+from typing import Any, BinaryIO, Dict, Iterator, List, Optional, TextIO, Tuple, Union
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -21,7 +21,6 @@ from cognite.client.data_classes import (
 
 class FilesAPI(APIClient):
     _RESOURCE_PATH = "/files"
-    _LIST_CLASS = FileMetadataList
 
     def __call__(
         self,
@@ -47,7 +46,7 @@ class FilesAPI(APIClient):
         directory_prefix: str = None,
         uploaded: bool = None,
         limit: int = None,
-    ) -> Generator[Union[FileMetadata, FileMetadataList], None, None]:
+    ) -> Union[Iterator[FileMetadata], Iterator[FileMetadataList]]:
         """Iterate over files
 
         Fetches file metadata objects as they are iterated over, so you keep a limited number of metadata objects in memory.
@@ -105,9 +104,16 @@ class FilesAPI(APIClient):
             uploaded=uploaded,
             data_set_ids=data_set_ids,
         ).dump(camel_case=True)
-        return self._list_generator(method="POST", chunk_size=chunk_size, filter=filter, limit=limit)
+        return self._list_generator(
+            list_cls=FileMetadataList,
+            resource_cls=FileMetadata,
+            method="POST",
+            chunk_size=chunk_size,
+            filter=filter,
+            limit=limit,
+        )
 
-    def __iter__(self) -> Generator[FileMetadata, None, None]:
+    def __iter__(self) -> Iterator[FileMetadata]:
         """Iterate over files
 
         Fetches file metadata objects as they are iterated over, so you keep a limited number of metadata objects in memory.
@@ -176,7 +182,9 @@ class FilesAPI(APIClient):
                 >>> res = c.files.retrieve(external_id="1")
         """
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
-        return self._retrieve_multiple(ids=id, external_ids=external_id, wrap_ids=True)
+        return self._retrieve_multiple(
+            list_cls=FileMetadataList, resource_cls=FileMetadata, ids=id, external_ids=external_id, wrap_ids=True
+        )
 
     def retrieve_multiple(
         self, ids: Optional[List[int]] = None, external_ids: Optional[List[str]] = None
@@ -206,7 +214,9 @@ class FilesAPI(APIClient):
         """
         utils._auxiliary.assert_type(ids, "id", [List], allow_none=True)
         utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=True)
-        return self._retrieve_multiple(ids=ids, external_ids=external_ids, wrap_ids=True)
+        return self._retrieve_multiple(
+            list_cls=FileMetadataList, resource_cls=FileMetadata, ids=ids, external_ids=external_ids, wrap_ids=True
+        )
 
     def list(
         self,
@@ -325,7 +335,9 @@ class FilesAPI(APIClient):
             data_set_ids=data_set_ids,
         ).dump(camel_case=True)
 
-        return self._list(method="POST", limit=limit, filter=filter)
+        return self._list(
+            list_cls=FileMetadataList, resource_cls=FileMetadata, method="POST", limit=limit, filter=filter
+        )
 
     def aggregate(self, filter: Union[FileMetadataFilter, Dict] = None) -> List[FileAggregate]:
         """`Aggregate files <https://docs.cognite.com/api/v1/#operation/aggregateFiles>`_
@@ -413,7 +425,13 @@ class FilesAPI(APIClient):
                 >>> my_update = FileMetadataUpdate(id=1).labels.remove("PUMP")
                 >>> res = c.files.update(my_update)
         """
-        return self._update_multiple(cls=FileMetadataList, resource_path=self._RESOURCE_PATH, items=item)
+        return self._update_multiple(
+            list_cls=FileMetadataList,
+            resource_cls=FileMetadata,
+            update_cls=FileMetadataUpdate,
+            resource_path=self._RESOURCE_PATH,
+            items=item,
+        )
 
     def search(
         self, name: str = None, filter: Union[FileMetadataFilter, dict] = None, limit: int = 100
@@ -444,7 +462,7 @@ class FilesAPI(APIClient):
                 >>> my_label_filter = LabelFilter(contains_all=["WELL LOG"])
                 >>> res = c.assets.search(name="xyz",filter=FileMetadataFilter(labels=my_label_filter))
         """
-        return self._search(search={"name": name}, filter=filter, limit=limit)
+        return self._search(list_cls=FileMetadataList, search={"name": name}, filter=filter, limit=limit)
 
     def upload(
         self,

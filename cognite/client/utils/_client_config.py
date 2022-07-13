@@ -1,6 +1,6 @@
 import os
 import pprint
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Union
 
 from cognite.client import utils
 from cognite.client._version import __api_subversion__
@@ -37,11 +37,11 @@ class _DefaultConfig:
         self.disable_ssl = os.getenv("COGNITE_DISABLE_SSL", False)
 
     @staticmethod
-    def _get_status_forcelist() -> List[int]:
+    def _get_status_forcelist() -> Set[int]:
         env_forcelist = os.getenv("COGNITE_STATUS_FORCELIST")
         if env_forcelist is None:
-            return [429, 502, 503, 504]
-        return [int(c) for c in env_forcelist.split(",")]
+            return {429, 502, 503, 504}
+        return {int(c) for c in env_forcelist.split(",")}
 
 
 class ClientConfig(_DefaultConfig):

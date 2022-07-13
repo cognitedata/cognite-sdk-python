@@ -276,7 +276,6 @@ class SequenceAggregate(dict):
 
 class SequenceList(CogniteResourceList):
     _RESOURCE = Sequence
-    _UPDATE = SequenceUpdate
 
 
 class SequenceData:
@@ -426,7 +425,6 @@ class SequenceData:
 
 class SequenceDataList(CogniteResourceList):
     _RESOURCE = SequenceData
-    _ASSERT_CLASSES = False
 
     def __str__(self):
         return json.dumps(self.dump(), indent=4)

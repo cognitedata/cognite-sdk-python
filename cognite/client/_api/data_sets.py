@@ -1,4 +1,4 @@
-from typing import Any, Dict, Generator, List, Optional, Union
+from typing import Any, Dict, Iterator, List, Optional, Union
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -14,7 +14,6 @@ from cognite.client.data_classes import (
 
 class DataSetsAPI(APIClient):
     _RESOURCE_PATH = "/datasets"
-    _LIST_CLASS = DataSetList
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -29,7 +28,7 @@ class DataSetsAPI(APIClient):
         external_id_prefix: str = None,
         write_protected: bool = None,
         limit: int = None,
-    ) -> Generator[Union[DataSet, DataSetList], None, None]:
+    ) -> Union[Iterator[DataSet], Iterator[DataSetList]]:
         """Iterate over data sets
 
         Fetches data sets as they are iterated over, so you keep a limited number of data sets in memory.
@@ -53,9 +52,11 @@ class DataSetsAPI(APIClient):
             external_id_prefix=external_id_prefix,
             write_protected=write_protected,
         ).dump(camel_case=True)
-        return self._list_generator(method="POST", chunk_size=chunk_size, filter=filter, limit=limit)
+        return self._list_generator(
+            list_cls=DataSetList, resource_cls=DataSet, method="POST", chunk_size=chunk_size, filter=filter, limit=limit
+        )
 
-    def __iter__(self) -> Generator[DataSet, None, None]:
+    def __iter__(self) -> Iterator[DataSet]:
         """Iterate over data sets
 
         Fetches data sets as they are iterated over, so you keep a limited number of data sets in memory.
@@ -84,7 +85,7 @@ class DataSetsAPI(APIClient):
                 >>> data_sets = [DataSet(name="1st level"), DataSet(name="2nd level")]
                 >>> res = c.data_sets.create(data_sets)
         """
-        return self._create_multiple(items=data_set)
+        return self._create_multiple(list_cls=DataSetList, resource_cls=DataSet, items=data_set)
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[DataSet]:
         """`Retrieve a single data set by id. <https://docs.cognite.com/api/v1/#operation/getDataSets>`_
@@ -111,7 +112,9 @@ class DataSetsAPI(APIClient):
                 >>> res = c.data_sets.retrieve(external_id="1")
         """
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
-        return self._retrieve_multiple(ids=id, external_ids=external_id, wrap_ids=True)
+        return self._retrieve_multiple(
+            list_cls=DataSetList, resource_cls=DataSet, ids=id, external_ids=external_id, wrap_ids=True
+        )
 
     def retrieve_multiple(
         self,
@@ -146,7 +149,12 @@ class DataSetsAPI(APIClient):
         utils._auxiliary.assert_type(ids, "id", [List], allow_none=True)
         utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=True)
         return self._retrieve_multiple(
-            ids=ids, external_ids=external_ids, ignore_unknown_ids=ignore_unknown_ids, wrap_ids=True
+            list_cls=DataSetList,
+            resource_cls=DataSet,
+            ids=ids,
+            external_ids=external_ids,
+            ignore_unknown_ids=ignore_unknown_ids,
+            wrap_ids=True,
         )
 
     def list(
@@ -202,7 +210,7 @@ class DataSetsAPI(APIClient):
             external_id_prefix=external_id_prefix,
             write_protected=write_protected,
         ).dump(camel_case=True)
-        return self._list(method="POST", limit=limit, filter=filter)
+        return self._list(list_cls=DataSetList, resource_cls=DataSet, method="POST", limit=limit, filter=filter)
 
     def aggregate(self, filter: Union[DataSetFilter, Dict] = None) -> List[DataSetAggregate]:
         """`Aggregate data sets <https://docs.cognite.com/api/v1/#operation/aggregateDataSets>`_
@@ -253,4 +261,4 @@ class DataSetsAPI(APIClient):
                 >>> my_update = DataSetUpdate(id=1).description.set("New description").metadata.remove(["key"])
                 >>> res = c.data_sets.update(my_update)
         """
-        return self._update_multiple(items=item)
+        return self._update_multiple(list_cls=DataSetList, resource_cls=DataSet, update_cls=DataSetUpdate, items=item)

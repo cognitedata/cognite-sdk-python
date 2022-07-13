@@ -294,7 +294,6 @@ class AssetUpdate(CogniteUpdate):
 
 class AssetList(CogniteResourceList):
     _RESOURCE = Asset
-    _UPDATE = AssetUpdate
 
     def __init__(self, resources: List[Any], cognite_client=None):
         super().__init__(resources, cognite_client)

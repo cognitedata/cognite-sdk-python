@@ -289,7 +289,6 @@ class TimeSeriesAggregate(dict):
 
 class TimeSeriesList(CogniteResourceList):
     _RESOURCE = TimeSeries
-    _UPDATE = TimeSeriesUpdate
 
     def plot(
         self, start="1d-ago", end="now", aggregates=None, granularity=None, id_labels: bool = False, *args, **kwargs

@@ -57,7 +57,7 @@ class TransformationsAPI(APIClient):
                 >>> res = c.transformations.create(transformations)
         """
         utils._auxiliary.assert_type(transformation, "transformation", [Transformation, list])
-        return self._create_multiple(transformation)
+        return self._create_multiple(list_cls=TransformationList, resource_cls=Transformation, items=transformation)
 
     def delete(
         self,
@@ -150,7 +150,14 @@ class TransformationsAPI(APIClient):
             last_updated_time=last_updated_time,
             data_set_ids=ds_ids,
         ).dump(camel_case=True)
-        return self._list(method="POST", url_path=f"{self._RESOURCE_PATH}/filter", limit=limit, filter=filter)
+        return self._list(
+            list_cls=TransformationList,
+            resource_cls=Transformation,
+            method="POST",
+            url_path=f"{self._RESOURCE_PATH}/filter",
+            limit=limit,
+            filter=filter,
+        )
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[Transformation]:
         """`Retrieve a single transformation by id. <https://docs.cognite.com/api/v1/#operation/getTransformationsByIds>`_
@@ -176,7 +183,9 @@ class TransformationsAPI(APIClient):
                 >>> res = c.transformations.retrieve(external_id="1")
         """
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
-        return self._retrieve_multiple(ids=id, external_ids=external_id, wrap_ids=True)
+        return self._retrieve_multiple(
+            list_cls=TransformationList, resource_cls=Transformation, ids=id, external_ids=external_id, wrap_ids=True
+        )
 
     def retrieve_multiple(
         self, ids: List[int] = None, external_ids: List[str] = None, ignore_unknown_ids: bool = False
@@ -203,7 +212,12 @@ class TransformationsAPI(APIClient):
         utils._auxiliary.assert_type(external_ids, "external_ids", [list], True)
 
         return self._retrieve_multiple(
-            ids=ids, external_ids=external_ids, wrap_ids=True, ignore_unknown_ids=ignore_unknown_ids
+            list_cls=TransformationList,
+            resource_cls=Transformation,
+            ids=ids,
+            external_ids=external_ids,
+            wrap_ids=True,
+            ignore_unknown_ids=ignore_unknown_ids,
         )
 
     def update(
@@ -235,7 +249,9 @@ class TransformationsAPI(APIClient):
                 >>> my_update = TransformationUpdate(id=1).query.set("SELECT * FROM _cdf.assets").is_public.set(False)
                 >>> res = c.transformations.update(my_update)
         """
-        return self._update_multiple(items=item)
+        return self._update_multiple(
+            list_cls=TransformationList, resource_cls=Transformation, update_cls=TransformationUpdate, items=item
+        )
 
     def run(
         self,

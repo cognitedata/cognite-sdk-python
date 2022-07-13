@@ -1,6 +1,6 @@
 from collections import UserList
 from concurrent.futures.thread import ThreadPoolExecutor
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from typing import Callable, Dict, List, Optional, Sequence, Tuple, Union
 
 from cognite.client.exceptions import CogniteAPIError, CogniteDuplicatedError, CogniteNotFoundError
 
@@ -62,8 +62,8 @@ def collect_exc_info_and_raise(
     unknown: Optional[List] = None,
     unwrap_fn: Optional[Callable] = None,
 ) -> None:
-    missing = []
-    duplicated = []
+    missing: List = []
+    duplicated: List = []
     missing_exc = None
     dup_exc = None
     unknown_exc: Optional[Exception] = None
@@ -107,7 +107,9 @@ def collect_exc_info_and_raise(
         ) from dup_exc
 
 
-def execute_tasks_concurrently(func: Callable, tasks: Union[List[Tuple], List[Dict]], max_workers: int) -> TasksSummary:
+def execute_tasks_concurrently(
+    func: Callable, tasks: Union[Sequence[Tuple], List[Dict]], max_workers: int
+) -> TasksSummary:
     assert max_workers > 0, "Number of workers should be >= 1, was {}".format(max_workers)
     with ThreadPoolExecutor(max_workers) as p:
         futures = []

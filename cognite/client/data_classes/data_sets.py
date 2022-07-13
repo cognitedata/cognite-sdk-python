@@ -167,4 +167,3 @@ class DataSetAggregate(dict):
 
 class DataSetList(CogniteResourceList):
     _RESOURCE = DataSet
-    _UPDATE = DataSetUpdate

@@ -71,4 +71,3 @@ class TransformationScheduleUpdate(CogniteUpdate):
 
 class TransformationScheduleList(CogniteResourceList):
     _RESOURCE = TransformationSchedule
-    _UPDATE = TransformationScheduleUpdate

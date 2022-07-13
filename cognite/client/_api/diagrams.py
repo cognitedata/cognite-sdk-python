@@ -1,5 +1,5 @@
 import numbers
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Type, TypeVar, Union
 
 from requests import Response
 
@@ -11,6 +11,8 @@ from cognite.client.data_classes.contextualization import (
     DiagramDetectResults,
 )
 from cognite.client.utils._auxiliary import to_camel_case
+
+T_ContextualizationJob = TypeVar("T_ContextualizationJob", bound=ContextualizationJob)
 
 
 class DiagramsAPI(APIClient):
@@ -30,7 +32,9 @@ class DiagramsAPI(APIClient):
             headers=headers,
         )
 
-    def _run_job(self, job_path, status_path=None, headers=None, job_cls=None, **kwargs) -> ContextualizationJob:
+    def _run_job(
+        self, job_path, status_path=None, headers=None, job_cls: Type[T_ContextualizationJob] = None, **kwargs
+    ) -> T_ContextualizationJob:
         job_cls = job_cls or ContextualizationJob
         if status_path is None:
             status_path = job_path + "/"

@@ -309,7 +309,6 @@ class Datapoints:
 
 class DatapointsList(CogniteResourceList):
     _RESOURCE = Datapoints
-    _ASSERT_CLASSES = False
 
     def __str__(self):
         item = self.dump()

@@ -1,5 +1,5 @@
 import copy
-from typing import Any, Dict, Generator, List, Optional, Union
+from typing import Any, Dict, Iterator, List, Optional, Union
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -9,7 +9,6 @@ from cognite.client.data_classes.labels import LabelFilter
 
 class RelationshipsAPI(APIClient):
     _RESOURCE_PATH = "/relationships"
-    _LIST_CLASS = RelationshipList
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -65,7 +64,7 @@ class RelationshipsAPI(APIClient):
         fetch_resources: bool = False,
         chunk_size: int = None,
         partitions: int = None,
-    ) -> Generator[Union[Relationship, RelationshipList], None, None]:
+    ) -> Union[Iterator[Relationship], Iterator[RelationshipList]]:
         """Iterate over relationships
 
         Fetches relationships as they are iterated over, so you keep a limited number of relationships in memory.
@@ -118,6 +117,8 @@ class RelationshipsAPI(APIClient):
             )
 
         return self._list_generator(
+            list_cls=RelationshipList,
+            resource_cls=Relationship,
             method="POST",
             limit=limit,
             filter=filter,
@@ -126,7 +127,7 @@ class RelationshipsAPI(APIClient):
             other_params={"fetchResources": fetch_resources},
         )
 
-    def __iter__(self) -> Generator[Relationship, None, None]:
+    def __iter__(self) -> Iterator[Relationship]:
         """Iterate over relationships
 
         Fetches relationships as they are iterated over, so you keep a limited number of relationships in memory.
@@ -156,7 +157,11 @@ class RelationshipsAPI(APIClient):
                 >>> res = c.relationships.retrieve(external_id="1")
         """
         return self._retrieve_multiple(
-            external_ids=external_id, wrap_ids=True, other_params={"fetchResources": fetch_resources}
+            list_cls=RelationshipList,
+            resource_cls=Relationship,
+            external_ids=external_id,
+            wrap_ids=True,
+            other_params={"fetchResources": fetch_resources},
         )
 
     def retrieve_multiple(self, external_ids: List[str], fetch_resources: bool = False) -> RelationshipList:
@@ -180,7 +185,11 @@ class RelationshipsAPI(APIClient):
         """
         utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=False)
         return self._retrieve_multiple(
-            external_ids=external_ids, wrap_ids=True, other_params={"fetchResources": fetch_resources}
+            list_cls=RelationshipList,
+            resource_cls=Relationship,
+            external_ids=external_ids,
+            wrap_ids=True,
+            other_params={"fetchResources": fetch_resources},
         )
 
     def list(
@@ -282,6 +291,8 @@ class RelationshipsAPI(APIClient):
 
             tasks_summary = utils._concurrency.execute_tasks_concurrently(
                 lambda filter: self._list(
+                    list_cls=RelationshipList,
+                    resource_cls=Relationship,
                     method="POST",
                     limit=limit,
                     filter=filter,
@@ -294,7 +305,14 @@ class RelationshipsAPI(APIClient):
             if tasks_summary.exceptions:
                 raise tasks_summary.exceptions[0]
             return RelationshipList(tasks_summary.joined_results())
-        return self._list(method="POST", limit=limit, filter=filter, other_params={"fetchResources": fetch_resources})
+        return self._list(
+            list_cls=RelationshipList,
+            resource_cls=Relationship,
+            method="POST",
+            limit=limit,
+            filter=filter,
+            other_params={"fetchResources": fetch_resources},
+        )
 
     def create(self, relationship: Union[Relationship, List[Relationship]]) -> Union[Relationship, RelationshipList]:
         """`Create one or more relationships. <https://docs.cognite.com/api/v1/#operation/createRelationships>`_
@@ -323,7 +341,7 @@ class RelationshipsAPI(APIClient):
         else:
             relationship = relationship._validate_resource_types()
 
-        return self._create_multiple(items=relationship)
+        return self._create_multiple(list_cls=RelationshipList, resource_cls=Relationship, items=relationship)
 
     def update(
         self, item: Union[Relationship, RelationshipUpdate, List[Union[Relationship, RelationshipUpdate]]]
@@ -373,7 +391,9 @@ class RelationshipsAPI(APIClient):
                 >>> my_update = RelationshipUpdate(external_id="flow_1").labels.remove("PUMP")
                 >>> res = c.relationships.update(my_update)
         """
-        return self._update_multiple(items=item)
+        return self._update_multiple(
+            list_cls=RelationshipList, resource_cls=Relationship, update_cls=RelationshipUpdate, items=item
+        )
 
     def delete(self, external_id: Union[str, List[str]], ignore_unknown_ids: bool = False) -> None:
         """`Delete one or more relationships. <https://docs.cognite.com/api/v1/#operation/deleteRelationships>`_

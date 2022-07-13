@@ -38,7 +38,6 @@ class Row(CogniteResource):
 
 class RowList(CogniteResourceList):
     _RESOURCE = Row
-    _ASSERT_CLASSES = False
 
     def to_pandas(self):
         """Convert the instance into a pandas DataFrame.
@@ -86,7 +85,6 @@ class Table(CogniteResource):
 
 class TableList(CogniteResourceList):
     _RESOURCE = Table
-    _ASSERT_CLASSES = False
 
 
 class Database(CogniteResource):
@@ -117,4 +115,3 @@ class Database(CogniteResource):
 
 class DatabaseList(CogniteResourceList):
     _RESOURCE = Database
-    _ASSERT_CLASSES = False

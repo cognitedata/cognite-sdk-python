@@ -63,8 +63,6 @@ class LabelDefinitionFilter(CogniteFilter):
 
 class LabelDefinitionList(CogniteResourceList):
     _RESOURCE = LabelDefinition
-    _UPDATE = None
-    _ASSERT_CLASSES = False  # because no Update
 
 
 class Label(dict):

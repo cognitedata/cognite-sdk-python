@@ -66,4 +66,3 @@ class TransformationSchemaColumn(CogniteResource):
 
 class TransformationSchemaColumnList(CogniteResourceList):
     _RESOURCE = TransformationSchemaColumn
-    _ASSERT_CLASSES = False

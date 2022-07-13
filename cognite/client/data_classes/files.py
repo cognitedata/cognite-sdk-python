@@ -292,4 +292,3 @@ class FileAggregate(dict):
 
 class FileMetadataList(CogniteResourceList):
     _RESOURCE = FileMetadata
-    _UPDATE = FileMetadataUpdate

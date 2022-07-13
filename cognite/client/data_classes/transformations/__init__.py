@@ -253,7 +253,6 @@ class TransformationUpdate(CogniteUpdate):
 
 class TransformationList(CogniteResourceList):
     _RESOURCE = Transformation
-    _UPDATE = TransformationUpdate
 
 
 class TransformationFilter(CogniteFilter):

@@ -16,7 +16,6 @@ from cognite.client.data_classes.extractionpipelines import StringFilter
 
 class ExtractionPipelinesAPI(APIClient):
     _RESOURCE_PATH = "/extpipes"
-    _LIST_CLASS = ExtractionPipelineList
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[ExtractionPipeline]:
         """`Retrieve a single extraction pipeline by id.`_
@@ -44,7 +43,13 @@ class ExtractionPipelinesAPI(APIClient):
         """
 
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
-        return self._retrieve_multiple(ids=id, external_ids=external_id, wrap_ids=True)
+        return self._retrieve_multiple(
+            list_cls=ExtractionPipelineList,
+            resource_cls=ExtractionPipeline,
+            ids=id,
+            external_ids=external_id,
+            wrap_ids=True,
+        )
 
     def retrieve_multiple(
         self,
@@ -79,7 +84,12 @@ class ExtractionPipelinesAPI(APIClient):
         utils._auxiliary.assert_type(ids, "id", [List], allow_none=True)
         utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=True)
         return self._retrieve_multiple(
-            ids=ids, external_ids=external_ids, ignore_unknown_ids=ignore_unknown_ids, wrap_ids=True
+            list_cls=ExtractionPipelineList,
+            resource_cls=ExtractionPipeline,
+            ids=ids,
+            external_ids=external_ids,
+            ignore_unknown_ids=ignore_unknown_ids,
+            wrap_ids=True,
         )
 
     def list(self, limit: int = 25) -> ExtractionPipelineList:
@@ -101,7 +111,7 @@ class ExtractionPipelinesAPI(APIClient):
                 >>> ep_list = c.extraction_pipelines.list(limit=5)
         """
 
-        return self._list(method="GET", limit=limit)
+        return self._list(list_cls=ExtractionPipelineList, resource_cls=ExtractionPipeline, method="GET", limit=limit)
 
     def create(
         self, extractionPipeline: Union[ExtractionPipeline, List[ExtractionPipeline]]
@@ -127,7 +137,9 @@ class ExtractionPipelinesAPI(APIClient):
                 >>> res = c.extraction_pipelines.create(extpipes)
         """
         utils._auxiliary.assert_type(extractionPipeline, "extraction_pipeline", [ExtractionPipeline, list])
-        return self._create_multiple(extractionPipeline)
+        return self._create_multiple(
+            list_cls=ExtractionPipelineList, resource_cls=ExtractionPipeline, items=extractionPipeline
+        )
 
     def delete(self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None) -> None:
         """`Delete one or more extraction pipelines`_
@@ -173,7 +185,12 @@ class ExtractionPipelinesAPI(APIClient):
                 >>> update.description.set("Another new extpipe")
                 >>> res = c.extraction_pipelines.update(update)
         """
-        return self._update_multiple(items=item)
+        return self._update_multiple(
+            list_cls=ExtractionPipelineList,
+            resource_cls=ExtractionPipeline,
+            update_cls=ExtractionPipelineUpdate,
+            items=item,
+        )
 
 
 class ExtractionPipelineRunsAPI(APIClient):
@@ -223,9 +240,21 @@ class ExtractionPipelineRunsAPI(APIClient):
                 message=StringFilter(substring=message_substring),
                 created_time=created_time,
             ).dump(camel_case=True)
-            return self._list(method="POST", limit=limit, filter=filter)
+            return self._list(
+                list_cls=ExtractionPipelineRunList,
+                resource_cls=ExtractionPipelineRun,
+                method="POST",
+                limit=limit,
+                filter=filter,
+            )
 
-        return self._list(method="GET", limit=limit, filter={"externalId": external_id})
+        return self._list(
+            list_cls=ExtractionPipelineRunList,
+            resource_cls=ExtractionPipelineRun,
+            method="GET",
+            limit=limit,
+            filter={"externalId": external_id},
+        )
 
     def create(
         self, run: Union[ExtractionPipelineRun, List[ExtractionPipelineRun]]
@@ -250,4 +279,4 @@ class ExtractionPipelineRunsAPI(APIClient):
                 >>> res = c.extraction_pipeline_runs.create(ExtractionPipelineRun(status="success", external_id="extId"))
         """
         utils._auxiliary.assert_type(run, "run", [ExtractionPipelineRun, list])
-        return self._create_multiple(run)
+        return self._create_multiple(list_cls=ExtractionPipelineRunList, resource_cls=ExtractionPipelineRun, items=run)

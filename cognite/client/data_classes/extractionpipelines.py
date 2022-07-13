@@ -191,7 +191,6 @@ class ExtractionPipelineUpdate(CogniteUpdate):
 
 class ExtractionPipelineList(CogniteResourceList):
     _RESOURCE = ExtractionPipeline
-    _UPDATE = ExtractionPipelineUpdate
 
 
 class ExtractionPipelineRun(CogniteResource):
@@ -228,7 +227,6 @@ class ExtractionPipelineRunUpdate(CogniteUpdate):
 
 class ExtractionPipelineRunList(CogniteResourceList):
     _RESOURCE = ExtractionPipelineRun
-    _UPDATE = ExtractionPipelineRunUpdate
 
 
 class StringFilter(CogniteFilter):

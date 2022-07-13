@@ -1,5 +1,5 @@
 import json
-from typing import Callable, Dict, List
+from typing import Callable, Dict, List, Sequence
 
 
 class CogniteException(Exception):
@@ -19,7 +19,9 @@ class CogniteReadTimeout(CogniteException):
 
 
 class CogniteMultiException(CogniteException):
-    def __init__(self, successful: List = None, failed: List = None, unknown: List = None, unwrap_fn: Callable = None):
+    def __init__(
+        self, successful: Sequence = None, failed: Sequence = None, unknown: Sequence = None, unwrap_fn: Callable = None
+    ):
         self.successful = successful or []
         self.failed = failed or []
         self.unknown = unknown or []
@@ -76,11 +78,11 @@ class CogniteAPIError(CogniteMultiException):
         message: str,
         code: int,
         x_request_id: str = None,
-        missing: List = None,
-        duplicated: List = None,
-        successful: List = None,
-        failed: List = None,
-        unknown: List = None,
+        missing: Sequence = None,
+        duplicated: Sequence = None,
+        successful: Sequence = None,
+        failed: Sequence = None,
+        unknown: Sequence = None,
         unwrap_fn: Callable = None,
         extra: Dict = None,
     ) -> None:

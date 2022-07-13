@@ -98,7 +98,6 @@ class MyFilter(CogniteFilter):
 
 class MyResourceList(CogniteResourceList):
     _RESOURCE = MyResource
-    _UPDATE = MyUpdate
 
     def use(self):
         return self._cognite_client

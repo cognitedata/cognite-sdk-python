@@ -1,4 +1,4 @@
-from typing import Any, Dict, Generator, List, Optional, Union
+from typing import Any, Dict, Iterator, List, Optional, Union
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -13,7 +13,6 @@ from cognite.client.data_classes import (
 
 class TimeSeriesAPI(APIClient):
     _RESOURCE_PATH = "/timeseries"
-    _LIST_CLASS = TimeSeriesList
 
     def __call__(
         self,
@@ -34,7 +33,7 @@ class TimeSeriesAPI(APIClient):
         last_updated_time: Dict[str, Any] = None,
         limit: int = None,
         partitions: int = None,
-    ) -> Generator[Union[TimeSeries, TimeSeriesList], None, None]:
+    ) -> Union[Iterator[TimeSeries], Iterator[TimeSeriesList]]:
         """Iterate over time series
 
         Fetches time series as they are iterated over, so you keep a limited number of objects in memory.
@@ -81,10 +80,16 @@ class TimeSeriesAPI(APIClient):
             external_id_prefix=external_id_prefix,
         ).dump(camel_case=True)
         return self._list_generator(
-            method="POST", chunk_size=chunk_size, filter=filter, limit=limit, partitions=partitions
+            list_cls=TimeSeriesList,
+            resource_cls=TimeSeries,
+            method="POST",
+            chunk_size=chunk_size,
+            filter=filter,
+            limit=limit,
+            partitions=partitions,
         )
 
-    def __iter__(self) -> Generator[TimeSeries, None, None]:
+    def __iter__(self) -> Iterator[TimeSeries]:
         """Iterate over time series
 
         Fetches time series as they are iterated over, so you keep a limited number of metadata objects in memory.
@@ -119,7 +124,9 @@ class TimeSeriesAPI(APIClient):
                 >>> res = c.time_series.retrieve(external_id="1")
         """
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
-        return self._retrieve_multiple(ids=id, external_ids=external_id, wrap_ids=True)
+        return self._retrieve_multiple(
+            list_cls=TimeSeriesList, resource_cls=TimeSeries, ids=id, external_ids=external_id, wrap_ids=True
+        )
 
     def retrieve_multiple(
         self,
@@ -154,7 +161,12 @@ class TimeSeriesAPI(APIClient):
         utils._auxiliary.assert_type(ids, "id", [List], allow_none=True)
         utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=True)
         return self._retrieve_multiple(
-            ids=ids, external_ids=external_ids, ignore_unknown_ids=ignore_unknown_ids, wrap_ids=True
+            list_cls=TimeSeriesList,
+            resource_cls=TimeSeries,
+            ids=ids,
+            external_ids=external_ids,
+            ignore_unknown_ids=ignore_unknown_ids,
+            wrap_ids=True,
         )
 
     def list(
@@ -243,7 +255,14 @@ class TimeSeriesAPI(APIClient):
             last_updated_time=last_updated_time,
             external_id_prefix=external_id_prefix,
         ).dump(camel_case=True)
-        return self._list(method="POST", filter=filter, limit=limit, partitions=partitions)
+        return self._list(
+            list_cls=TimeSeriesList,
+            resource_cls=TimeSeries,
+            method="POST",
+            filter=filter,
+            limit=limit,
+            partitions=partitions,
+        )
 
     def aggregate(self, filter: Union[TimeSeriesFilter, Dict] = None) -> List[TimeSeriesAggregate]:
         """`Aggregate time series <https://docs.cognite.com/api/v1/#operation/aggregateTimeSeries>`_
@@ -283,7 +302,7 @@ class TimeSeriesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> ts = c.time_series.create(TimeSeries(name="my ts"))
         """
-        return self._create_multiple(items=time_series)
+        return self._create_multiple(list_cls=TimeSeriesList, resource_cls=TimeSeries, items=time_series)
 
     def delete(
         self,
@@ -342,7 +361,9 @@ class TimeSeriesAPI(APIClient):
                 >>> my_update = TimeSeriesUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
                 >>> res = c.time_series.update(my_update)
         """
-        return self._update_multiple(items=item)
+        return self._update_multiple(
+            list_cls=TimeSeriesList, resource_cls=TimeSeries, update_cls=TimeSeriesUpdate, items=item
+        )
 
     def search(
         self,
@@ -381,5 +402,8 @@ class TimeSeriesAPI(APIClient):
                 >>> res = c.time_series.search(filter={"asset_ids":[123]})
         """
         return self._search(
-            search={"name": name, "description": description, "query": query}, filter=filter, limit=limit
+            list_cls=TimeSeriesList,
+            search={"name": name, "description": description, "query": query},
+            filter=filter,
+            limit=limit,
         )

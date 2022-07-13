@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Type, TypeVar, Union
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -12,14 +12,20 @@ from cognite.client.data_classes.contextualization import (
 )
 from cognite.client.utils._auxiliary import convert_true_match
 
+T_ContextualizationJob = TypeVar("T_ContextualizationJob", bound=ContextualizationJob)
+
 
 class EntityMatchingAPI(APIClient):
     _RESOURCE_PATH = EntityMatchingModel._RESOURCE_PATH
-    _LIST_CLASS = EntityMatchingModelList
 
     def _run_job(
-        self, job_path: str, json, status_path: Optional[str] = None, headers: Dict = None, job_cls: type = None
-    ) -> ContextualizationJob:
+        self,
+        job_path: str,
+        json,
+        status_path: Optional[str] = None,
+        headers: Dict = None,
+        job_cls: Type[T_ContextualizationJob] = None,
+    ) -> T_ContextualizationJob:
         job_cls = job_cls or ContextualizationJob
         if status_path is None:
             status_path = job_path + "/"
@@ -39,7 +45,13 @@ class EntityMatchingAPI(APIClient):
         Returns:
             EntityMatchingModel: Model requested."""
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
-        return self._retrieve_multiple(ids=id, external_ids=external_id, wrap_ids=True)
+        return self._retrieve_multiple(
+            list_cls=EntityMatchingModelList,
+            resource_cls=EntityMatchingModel,
+            ids=id,
+            external_ids=external_id,
+            wrap_ids=True,
+        )
 
     def retrieve_multiple(
         self, ids: Optional[List[int]] = None, external_ids: Optional[List[str]] = None
@@ -54,7 +66,13 @@ class EntityMatchingAPI(APIClient):
             EntityMatchingModelList: Models requested."""
         utils._auxiliary.assert_type(ids, "id", [List], allow_none=True)
         utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=True)
-        return self._retrieve_multiple(ids=ids, external_ids=external_ids, wrap_ids=True)
+        return self._retrieve_multiple(
+            list_cls=EntityMatchingModelList,
+            resource_cls=EntityMatchingModel,
+            ids=ids,
+            external_ids=external_ids,
+            wrap_ids=True,
+        )
 
     def update(
         self,
@@ -67,7 +85,12 @@ class EntityMatchingAPI(APIClient):
         Args:
             item (Union[EntityMatchingModel,EntityMatchingModelUpdate,List[Union[EntityMatchingModel,EntityMatchingModelUpdate]]) : Model(s) to update
         """
-        return self._update_multiple(items=item)
+        return self._update_multiple(
+            list_cls=EntityMatchingModelList,
+            resource_cls=EntityMatchingModel,
+            update_cls=EntityMatchingModelUpdate,
+            items=item,
+        )
 
     def list(
         self,
@@ -103,7 +126,7 @@ class EntityMatchingAPI(APIClient):
         # NB no pagination support yet
         models = self._post(self._RESOURCE_PATH + "/list", json={"filter": filter, "limit": limit}).json()["items"]
         return EntityMatchingModelList(
-            [self._LIST_CLASS._RESOURCE._load(model, cognite_client=self._cognite_client) for model in models]
+            [EntityMatchingModel._load(model, cognite_client=self._cognite_client) for model in models]
         )
 
     def list_jobs(self) -> ContextualizationJobList:
@@ -174,7 +197,7 @@ class EntityMatchingAPI(APIClient):
                 "ignoreMissingFields": ignore_missing_fields,
             },
         )
-        return self._LIST_CLASS._RESOURCE._load(response.json(), cognite_client=self._cognite_client)
+        return EntityMatchingModel._load(response.json(), cognite_client=self._cognite_client)
 
     def predict(
         self,

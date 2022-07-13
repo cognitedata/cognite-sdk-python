@@ -1,7 +1,7 @@
 import queue
 import threading
 from collections import OrderedDict
-from typing import Any, Dict, Generator, List, Optional, Set, Union
+from typing import Any, Dict, Iterator, List, Optional, Set, Union
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -20,7 +20,6 @@ from cognite.client.exceptions import CogniteAPIError
 
 class AssetsAPI(APIClient):
     _RESOURCE_PATH = "/assets"
-    _LIST_CLASS = AssetList
 
     def __call__(
         self,
@@ -43,7 +42,7 @@ class AssetsAPI(APIClient):
         aggregated_properties: List[str] = None,
         limit: int = None,
         partitions: int = None,
-    ) -> Generator[Union[Asset, AssetList], None, None]:
+    ) -> Union[Iterator[Asset], Iterator[AssetList]]:
         """Iterate over assets
 
         Fetches assets as they are iterated over, so you keep a limited number of assets in memory.
@@ -96,6 +95,8 @@ class AssetsAPI(APIClient):
         ).dump(camel_case=True)
 
         return self._list_generator(
+            list_cls=AssetList,
+            resource_cls=Asset,
             method="POST",
             chunk_size=chunk_size,
             filter=filter,
@@ -104,7 +105,7 @@ class AssetsAPI(APIClient):
             other_params={"aggregatedProperties": aggregated_properties} if aggregated_properties else {},
         )
 
-    def __iter__(self) -> Generator[Asset, None, None]:
+    def __iter__(self) -> Iterator[Asset]:
         """Iterate over assets
 
         Fetches assets as they are iterated over, so you keep a limited number of assets in memory.
@@ -139,7 +140,9 @@ class AssetsAPI(APIClient):
                 >>> res = c.assets.retrieve(external_id="1")
         """
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
-        return self._retrieve_multiple(ids=id, external_ids=external_id, wrap_ids=True)
+        return self._retrieve_multiple(
+            list_cls=AssetList, resource_cls=Asset, ids=id, external_ids=external_id, wrap_ids=True
+        )
 
     def retrieve_multiple(
         self,
@@ -174,7 +177,12 @@ class AssetsAPI(APIClient):
         utils._auxiliary.assert_type(ids, "id", [List], allow_none=True)
         utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=True)
         return self._retrieve_multiple(
-            ids=ids, external_ids=external_ids, ignore_unknown_ids=ignore_unknown_ids, wrap_ids=True
+            list_cls=AssetList,
+            resource_cls=Asset,
+            ids=ids,
+            external_ids=external_ids,
+            ignore_unknown_ids=ignore_unknown_ids,
+            wrap_ids=True,
         )
 
     def list(
@@ -278,6 +286,8 @@ class AssetsAPI(APIClient):
             external_id_prefix=external_id_prefix,
         ).dump(camel_case=True)
         return self._list(
+            list_cls=AssetList,
+            resource_cls=Asset,
             method="POST",
             limit=limit,
             filter=filter,
@@ -335,7 +345,7 @@ class AssetsAPI(APIClient):
                 >>> res = c.assets.create(asset)
         """
         utils._auxiliary.assert_type(asset, "asset", [Asset, list])
-        return self._create_multiple(asset)
+        return self._create_multiple(list_cls=AssetList, resource_cls=Asset, items=asset)
 
     def create_hierarchy(self, assets: List[Asset]) -> AssetList:
         """Create asset hierarchy. Like the create() method, when posting a large number of assets, the IDE will split the request into smaller requests.
@@ -453,7 +463,7 @@ class AssetsAPI(APIClient):
                 >>> my_update = AssetUpdate(id=1).labels.set("PUMP")
                 >>> res = c.assets.update(my_update)
         """
-        return self._update_multiple(items=item)
+        return self._update_multiple(list_cls=AssetList, resource_cls=Asset, update_cls=AssetUpdate, items=item)
 
     def search(
         self,
@@ -510,7 +520,10 @@ class AssetsAPI(APIClient):
                 >>> res = c.assets.search(name="xyz",filter=AssetFilter(labels=my_label_filter))
         """
         return self._search(
-            search={"name": name, "description": description, "query": query}, filter=filter, limit=limit
+            list_cls=AssetList,
+            search={"name": name, "description": description, "query": query},
+            filter=filter,
+            limit=limit,
         )
 
     def retrieve_subtree(self, id: int = None, external_id: str = None, depth: int = None) -> AssetList:

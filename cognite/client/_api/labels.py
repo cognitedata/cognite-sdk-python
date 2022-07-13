@@ -1,4 +1,4 @@
-from typing import Generator, List, Union
+from typing import Iterator, List, Union
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import LabelDefinition, LabelDefinitionFilter, LabelDefinitionList
@@ -6,9 +6,8 @@ from cognite.client.data_classes import LabelDefinition, LabelDefinitionFilter, 
 
 class LabelsAPI(APIClient):
     _RESOURCE_PATH = "/labels"
-    _LIST_CLASS = LabelDefinitionList
 
-    def __iter__(self) -> Generator[LabelDefinition, None, None]:
+    def __iter__(self) -> Iterator[LabelDefinition]:
         """Iterate over Labels
 
         Fetches Labels as they are iterated over, so you keep a limited number of Labels in memory.
@@ -26,13 +25,20 @@ class LabelsAPI(APIClient):
         chunk_size: int = None,
         data_set_ids: List[int] = None,
         data_set_external_ids: List[str] = None,
-    ):
+    ) -> Union[Iterator[LabelDefinition], Iterator[LabelDefinitionList]]:
         if data_set_ids or data_set_external_ids:
             data_set_ids = self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
         filter = LabelDefinitionFilter(
             name=name, external_id_prefix=external_id_prefix, data_set_ids=data_set_ids
         ).dump(camel_case=True)
-        return self._list_generator(method="POST", limit=limit, filter=filter, chunk_size=chunk_size)
+        return self._list_generator(
+            list_cls=LabelDefinitionList,
+            resource_cls=LabelDefinition,
+            method="POST",
+            limit=limit,
+            filter=filter,
+            chunk_size=chunk_size,
+        )
 
     def list(
         self,
@@ -81,7 +87,9 @@ class LabelsAPI(APIClient):
         filter = LabelDefinitionFilter(
             name=name, external_id_prefix=external_id_prefix, data_set_ids=data_set_ids
         ).dump(camel_case=True)
-        return self._list(method="POST", limit=limit, filter=filter)
+        return self._list(
+            list_cls=LabelDefinitionList, resource_cls=LabelDefinition, method="POST", limit=limit, filter=filter
+        )
 
     def create(
         self, label: Union[LabelDefinition, List[LabelDefinition]]
@@ -109,7 +117,7 @@ class LabelsAPI(APIClient):
                 raise TypeError("'label' must be of type List[LabelDefinition]")
         elif not isinstance(label, LabelDefinition):
             raise TypeError("'label' must be of type LabelDefinition")
-        return self._create_multiple(items=label)
+        return self._create_multiple(list_cls=LabelDefinitionList, resource_cls=LabelDefinition, items=label)
 
     def delete(self, external_id: Union[str, List[str]] = None) -> None:
         """`Delete one or more label definitions <https://docs.cognite.com/api/v1/#operation/deleteLabels>`_

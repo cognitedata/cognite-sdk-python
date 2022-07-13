@@ -126,8 +126,6 @@ class ContextualizationJob(CogniteResource):
 
 class ContextualizationJobList(CogniteResourceList):
     _RESOURCE = ContextualizationJob
-    _UPDATE = None
-    _ASSERT_CLASSES = False
 
 
 class EntityMatchingModel(CogniteResource):
@@ -280,7 +278,6 @@ class EntityMatchingModelUpdate(CogniteUpdate):
 
 class EntityMatchingModelList(CogniteResourceList):
     _RESOURCE = EntityMatchingModel
-    _UPDATE = EntityMatchingModelUpdate
 
 
 class DiagramConvertPage(CogniteResource):
@@ -293,7 +290,6 @@ class DiagramConvertPage(CogniteResource):
 
 class DiagramConvertPageList(CogniteResourceList):
     _RESOURCE = DiagramConvertPage
-    _ASSERT_CLASSES = False
 
 
 class DiagramConvertItem(CogniteResource):
@@ -346,7 +342,7 @@ class DiagramConvertResults(ContextualizationJob):
         return self._items
 
     @items.setter
-    def items(self, items) -> List[DiagramConvertItem]:
+    def items(self, items) -> None:
         self._items = items
 
 

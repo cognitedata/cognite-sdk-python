@@ -40,7 +40,6 @@ class TransformationJobMetric(CogniteResource):
 
 class TransformationJobMetricList(CogniteResourceList):
     _RESOURCE = TransformationJobMetric
-    _ASSERT_CLASSES = False
 
 
 class TransformationJob(CogniteResource):
@@ -259,7 +258,6 @@ class TransformationJob(CogniteResource):
 
 class TransformationJobList(CogniteResourceList):
     _RESOURCE = TransformationJob
-    _ASSERT_CLASSES = False
 
 
 class TransformationJobFilter(CogniteFilter):

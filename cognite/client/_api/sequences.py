@@ -1,6 +1,6 @@
 import copy
 import math
-from typing import Any, Dict, Generator, List, Optional, Tuple, Union
+from typing import Any, Dict, Generator, Iterator, List, Optional, Tuple, Union
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -18,7 +18,6 @@ from cognite.client.data_classes.shared import TimestampRange
 
 class SequencesAPI(APIClient):
     _RESOURCE_PATH = "/sequences"
-    _LIST_CLASS = SequenceList
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -38,7 +37,7 @@ class SequencesAPI(APIClient):
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
         limit: int = None,
-    ) -> Generator[Union[Sequence, SequenceList], None, None]:
+    ) -> Union[Iterator[Sequence], Iterator[SequenceList]]:
         """Iterate over sequences
 
         Fetches sequences as they are iterated over, so you keep a limited number of objects in memory.
@@ -76,9 +75,16 @@ class SequencesAPI(APIClient):
             last_updated_time=last_updated_time,
             data_set_ids=data_set_ids,
         ).dump(camel_case=True)
-        return self._list_generator(method="POST", chunk_size=chunk_size, filter=filter, limit=limit)
+        return self._list_generator(
+            list_cls=SequenceList,
+            resource_cls=Sequence,
+            method="POST",
+            chunk_size=chunk_size,
+            filter=filter,
+            limit=limit,
+        )
 
-    def __iter__(self) -> Generator[Sequence, None, None]:
+    def __iter__(self) -> Iterator[Sequence]:
         """Iterate over sequences
 
         Fetches sequences as they are iterated over, so you keep a limited number of metadata objects in memory.
@@ -113,7 +119,9 @@ class SequencesAPI(APIClient):
                 >>> res = c.sequences.retrieve(external_id="1")
         """
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
-        return self._retrieve_multiple(ids=id, external_ids=external_id, wrap_ids=True)
+        return self._retrieve_multiple(
+            list_cls=SequenceList, resource_cls=Sequence, ids=id, external_ids=external_id, wrap_ids=True
+        )
 
     def retrieve_multiple(
         self, ids: Optional[List[int]] = None, external_ids: Optional[List[str]] = None
@@ -143,7 +151,9 @@ class SequencesAPI(APIClient):
         """
         utils._auxiliary.assert_type(ids, "id", [List], allow_none=True)
         utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=True)
-        return self._retrieve_multiple(ids=ids, external_ids=external_ids, wrap_ids=True)
+        return self._retrieve_multiple(
+            list_cls=SequenceList, resource_cls=Sequence, ids=ids, external_ids=external_ids, wrap_ids=True
+        )
 
     def list(
         self,
@@ -217,7 +227,7 @@ class SequencesAPI(APIClient):
             last_updated_time=last_updated_time,
             data_set_ids=data_set_ids,
         ).dump(camel_case=True)
-        return self._list(method="POST", filter=filter, limit=limit)
+        return self._list(list_cls=SequenceList, resource_cls=Sequence, method="POST", filter=filter, limit=limit)
 
     def aggregate(self, filter: Union[SequenceFilter, Dict] = None) -> List[SequenceAggregate]:
         """`Aggregate sequences <https://docs.cognite.com/api/v1/#operation/aggregateSequences>`_
@@ -273,7 +283,7 @@ class SequencesAPI(APIClient):
             sequence = [self._clean_columns(seq) for seq in sequence]
         else:
             sequence = self._clean_columns(sequence)
-        return self._create_multiple(items=sequence)
+        return self._create_multiple(list_cls=SequenceList, resource_cls=Sequence, items=sequence)
 
     def _clean_columns(self, sequence):
         sequence = copy.copy(sequence)
@@ -395,7 +405,9 @@ class SequencesAPI(APIClient):
                 >>> my_update = SequenceUpdate(id=1).columns.modify(column_updates)
                 >>> res = c.sequences.update(my_update)
         """
-        return self._update_multiple(items=item)
+        return self._update_multiple(
+            list_cls=SequenceList, resource_cls=Sequence, update_cls=SequenceUpdate, items=item
+        )
 
     def search(
         self,
@@ -428,7 +440,10 @@ class SequencesAPI(APIClient):
                 >>> res = c.sequences.search(name="some name")
         """
         return self._search(
-            search={"name": name, "description": description, "query": query}, filter=filter, limit=limit
+            list_cls=SequenceList,
+            search={"name": name, "description": description, "query": query},
+            filter=filter,
+            limit=limit,
         )
 
 

@@ -121,7 +121,6 @@ class ThreeDModelUpdate(CogniteUpdate):
 
 class ThreeDModelList(CogniteResourceList):
     _RESOURCE = ThreeDModel
-    _UPDATE = ThreeDModelUpdate
 
 
 class ThreeDModelRevision(CogniteResource):
@@ -236,7 +235,6 @@ class ThreeDModelRevisionUpdate(CogniteUpdate):
 
 class ThreeDModelRevisionList(CogniteResourceList):
     _RESOURCE = ThreeDModelRevision
-    _UPDATE = ThreeDModelRevisionUpdate
 
 
 class ThreeDNode(CogniteResource):
@@ -287,7 +285,6 @@ class ThreeDNode(CogniteResource):
 
 class ThreeDNodeList(CogniteResourceList):
     _RESOURCE = ThreeDNode
-    _ASSERT_CLASSES = False
 
 
 class ThreeDAssetMapping(CogniteResource):
@@ -318,4 +315,3 @@ class ThreeDAssetMapping(CogniteResource):
 
 class ThreeDAssetMappingList(CogniteResourceList):
     _RESOURCE = ThreeDAssetMapping
-    _ASSERT_CLASSES = False

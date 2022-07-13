@@ -35,7 +35,6 @@ class ServiceAccount(CogniteResource):
 
 class ServiceAccountList(CogniteResourceList):
     _RESOURCE = ServiceAccount
-    _ASSERT_CLASSES = False
 
 
 class APIKey(CogniteResource):
@@ -69,7 +68,6 @@ class APIKey(CogniteResource):
 
 class APIKeyList(CogniteResourceList):
     _RESOURCE = APIKey
-    _ASSERT_CLASSES = False
 
 
 class Group(CogniteResource):
@@ -106,7 +104,6 @@ class Group(CogniteResource):
 
 class GroupList(CogniteResourceList):
     _RESOURCE = Group
-    _ASSERT_CLASSES = False
 
 
 class SecurityCategory(CogniteResource):
@@ -126,7 +123,6 @@ class SecurityCategory(CogniteResource):
 
 class SecurityCategoryList(CogniteResourceList):
     _RESOURCE = SecurityCategory
-    _ASSERT_CLASSES = False
 
 
 class ProjectSpec(CogniteResponse):

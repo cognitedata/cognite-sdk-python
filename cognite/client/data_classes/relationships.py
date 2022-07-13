@@ -227,4 +227,3 @@ class RelationshipUpdate(CogniteUpdate):
 
 class RelationshipList(CogniteResourceList):
     _RESOURCE = Relationship
-    _UPDATE = RelationshipUpdate

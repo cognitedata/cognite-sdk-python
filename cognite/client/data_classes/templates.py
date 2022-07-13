@@ -48,7 +48,6 @@ class TemplateGroup(CogniteResource):
 
 class TemplateGroupList(CogniteResourceList):
     _RESOURCE = TemplateGroup
-    _UPDATE = CogniteUpdate
 
 
 class TemplateGroupVersion(CogniteResource):
@@ -85,7 +84,6 @@ class TemplateGroupVersion(CogniteResource):
 
 class TemplateGroupVersionList(CogniteResourceList):
     _RESOURCE = TemplateGroupVersion
-    _UPDATE = CogniteUpdate
 
 
 class ConstantResolver(CogniteResource):
@@ -381,10 +379,10 @@ class View(CogniteResource):
         raise TypeError("Resource must be json str or Dict, not {}".format(type(resource)))
 
 
-class ViewResolveItem(UserDict):
+class ViewResolveItem(UserDict, CogniteResource):
     def __init__(self, data: Dict[str, any], cognite_client=None) -> None:
-        self._cognite_client = cognite_client
         super().__init__(data)
+        self._cognite_client = cognite_client
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         return self.data
@@ -416,14 +414,11 @@ class GraphQlResponse(CogniteResource):
 
 class TemplateInstanceList(CogniteResourceList):
     _RESOURCE = TemplateInstance
-    _UPDATE = CogniteUpdate
 
 
 class ViewList(CogniteResourceList):
     _RESOURCE = View
-    _UPDATE = CogniteUpdate
 
 
 class ViewResolveList(CogniteResourceList):
     _RESOURCE = ViewResolveItem
-    _UPDATE = CogniteUpdate

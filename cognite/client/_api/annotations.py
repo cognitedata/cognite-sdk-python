@@ -9,7 +9,6 @@ from cognite.client.utils._auxiliary import assert_type, to_camel_case
 
 class AnnotationsAPI(APIClient):
     _RESOURCE_PATH = "/annotations"
-    _LIST_CLASS = AnnotationList
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -24,7 +23,9 @@ class AnnotationsAPI(APIClient):
             Union[Annotation, AnnotationList]: created annotation(s)
         """
         assert_type(annotations, "annotations", [Annotation, list])
-        return self._create_multiple(resource_path=self._RESOURCE_PATH + "/", items=annotations)
+        return self._create_multiple(
+            list_cls=AnnotationList, resource_cls=Annotation, resource_path=self._RESOURCE_PATH + "/", items=annotations
+        )
 
     def suggest(self, annotations: Union[Annotation, List[Annotation]]) -> Union[Annotation, AnnotationList]:
         """Suggest annotations
@@ -42,7 +43,12 @@ class AnnotationsAPI(APIClient):
             if isinstance(annotations, list)
             else AnnotationsAPI._sanitize_suggest_item(annotations)
         )
-        return self._create_multiple(resource_path=self._RESOURCE_PATH + "/suggest", items=items)
+        return self._create_multiple(
+            list_cls=AnnotationList,
+            resource_cls=Annotation,
+            resource_path=self._RESOURCE_PATH + "/suggest",
+            items=items,
+        )
 
     @staticmethod
     def _sanitize_suggest_item(annotation: Annotation) -> Dict[str, any]:
@@ -78,7 +84,7 @@ class AnnotationsAPI(APIClient):
                 {to_camel_case(k): v for k, v in f.items()} for f in filter["annotatedResourceIds"]
             ]
 
-        return self._list(method="POST", limit=limit, filter=filter)
+        return self._list(list_cls=AnnotationList, resource_cls=Annotation, method="POST", limit=limit, filter=filter)
 
     @staticmethod
     def _convert_resource_to_patch_object(resource: CogniteResource, update_attributes: List[str]):
@@ -98,7 +104,9 @@ class AnnotationsAPI(APIClient):
         Args:
             id (Union[int, List[int]]): ID or list of IDs to be deleted
         """
-        return self._update_multiple(items=item)
+        return self._update_multiple(
+            list_cls=AnnotationList, resource_cls=Annotation, update_cls=AnnotationUpdate, items=item
+        )
 
     def delete(self, id: Union[int, List[int]]) -> None:
         """Delete annotations
@@ -118,7 +126,7 @@ class AnnotationsAPI(APIClient):
             AnnotationList: list of annotations
         """
         assert_type(ids, "ids", [List], allow_none=False)
-        return self._retrieve_multiple(ids=ids, wrap_ids=True)
+        return self._retrieve_multiple(list_cls=AnnotationList, resource_cls=Annotation, ids=ids, wrap_ids=True)
 
     def retrieve(self, id: int) -> Annotation:
         """Retrieve an annotation by id
@@ -130,4 +138,4 @@ class AnnotationsAPI(APIClient):
             Annotation: annotation requested
         """
         assert_type(id, "id", [int], allow_none=False)
-        return self._retrieve_multiple(ids=id, wrap_ids=True)
+        return self._retrieve_multiple(list_cls=AnnotationList, resource_cls=Annotation, ids=id, wrap_ids=True)

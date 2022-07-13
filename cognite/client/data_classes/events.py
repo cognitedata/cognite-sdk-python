@@ -241,4 +241,3 @@ class EventUpdate(CogniteUpdate):
 
 class EventList(CogniteResourceList):
     _RESOURCE = Event
-    _UPDATE = EventUpdate
