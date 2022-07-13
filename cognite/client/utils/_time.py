@@ -21,11 +21,11 @@ def datetime_to_ms(dt):
     return int(1000 * dt.timestamp())
 
 
-def ms_to_datetime(ms: float) -> datetime:
+def ms_to_datetime(ms: Union[int, float]) -> datetime:
     """Converts milliseconds since epoch to datetime object.
 
     Args:
-        ms (float): Milliseconds since epoch
+        ms (Union[int, float]): Milliseconds since epoch
 
     Returns:
         datetime: Naive datetime object in UTC.
