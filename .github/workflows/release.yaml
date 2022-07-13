@@ -37,7 +37,7 @@ jobs:
         COGNITE_BASE_URL: https://greenfield.cognitedata.com
         COGNITE_CLIENT_NAME: python-sdk-integration-tests
         CI: 1
-      run: pytest tests/tests_unit --maxfail 10 -m 'not dsl' --test-deps-only-core
+      run: pytest tests/tests_unit -n4 --dist loadscope --maxfail 10 -m 'not dsl' --test-deps-only-core
 
     - name: Install optional dependencies
       run: poetry install -E all
@@ -54,7 +54,7 @@ jobs:
         COGNITE_CLIENT_NAME: python-sdk-integration-tests
         CI: 1
       run: |
-        coverage run --source cognite -m pytest -v tests --reruns 2
+        coverage run --source cognite -m pytest -v tests -n4 --dist loadscope --reruns 2
         coverage xml
 
     - name: Build package
