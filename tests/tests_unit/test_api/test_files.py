@@ -228,16 +228,13 @@ class TestFilesAPI:
         assert 10 == jsgz_load(mock_files_response.calls[0].request.body)["limit"]
 
     def test_list_params(self, cognite_client, mock_files_response):
-        cognite_client.files.list(
-            root_asset_ids=[1, 2], root_asset_external_ids=["a"], data_set_external_ids=["x"], limit=10
-        )
+        cognite_client.files.list(data_set_external_ids=["x"], limit=10)
         calls = mock_files_response.calls
         assert 1 == len(calls)
         assert {
             "cursor": None,
             "limit": 10,
             "filter": {
-                "rootAssetIds": [{"id": 1}, {"id": 2}, {"externalId": "a"}],
                 "dataSetIds": [{"externalId": "x"}],
             },
         } == jsgz_load(calls[0].request.body)

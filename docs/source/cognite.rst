@@ -216,8 +216,8 @@ to the API, you can either pass the :code:`max_workers` attribute when you insta
 If you are working with multiple instances of :code:`CogniteClient`, all instances will share the same connection pool.
 If you have several instances, you can increase the max connection pool size to reuse connections if you are performing a large amount of concurrent requests. You can increase the max connection pool size by setting the :code:`COGNITE_MAX_CONNECTION_POOL_SIZE` environment variable.
 
-Extensions and core library
-============================
+Extensions and optional dependencies
+====================================
 Pandas integration
 ------------------
 The SDK is tightly integrated with the `pandas <https://pandas.pydata.org/pandas-docs/stable/>`_ library.
@@ -237,15 +237,29 @@ You need to install the matplotlib package manually:
 
     $ pip install matplotlib
 
-:code:`cognite-sdk` vs. :code:`cognite-sdk-core`
-------------------------------------------------
-If your application doesn't require the functionality from the :code:`pandas`
-or :code:`numpy` dependencies, you should install the :code:`cognite-sdk-core` library.
+How to install extra dependencies
+---------------------------------
+If your application requires the functionality from e.g. the :code:`pandas`, :code:`numpy`, or :code:`geopandas` dependencies,
+you should install the sdk along with its optional dependencies. The available extras are:
 
-The two libraries are exactly the same, except that :code:`cognite-sdk-core` does not specify :code:`pandas`
-or :code:`numpy` as dependencies. This means that :code:`cognite-sdk-core` only has a subset
-of the features available through the :code:`cognite-sdk` package. If you attempt to use functionality
-that :code:`cognite-sdk-core` does not support, a :code:`CogniteImportError` is raised.
+- pandas
+- geo
+- sympy
+- all (will install dependencies for all the above)
+
+These can be installed with the following command:
+
+pip
+
+.. code:: bash
+
+    $ pip install cognite-sdk[pandas, geo]
+
+poetry
+
+.. code:: bash
+
+    $ poetry add cognite-sdk -E pandas -E geo
 
 API
 ===

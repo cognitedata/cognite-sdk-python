@@ -87,7 +87,6 @@ class EventFilter(CogniteFilter):
         metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 128000 bytes, up to 256 key-value pairs, of total size at most 200000.
         asset_ids (List[int]): Asset IDs of equipment that this event relates to.
         asset_external_ids (List[str]): Asset External IDs of equipment that this event relates to.
-        root_asset_ids (List[Dict[str, Any]]): This parameter is deprecated. Use assetSubtreeIds instead. Only include events that have a related asset in a tree rooted at any of these root assetIds.
         asset_subtree_ids (List[Dict[str, Any]]): Only include events that have a related asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
         data_set_ids (List[Dict[str, Any]]): Only include events that belong to these datasets.
         source (str): The source of this event.
@@ -107,7 +106,6 @@ class EventFilter(CogniteFilter):
         metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
         asset_external_ids: List[str] = None,
-        root_asset_ids: List[Dict[str, Any]] = None,
         asset_subtree_ids: List[Dict[str, Any]] = None,
         data_set_ids: List[Dict[str, Any]] = None,
         source: str = None,
@@ -124,7 +122,6 @@ class EventFilter(CogniteFilter):
         self.metadata = metadata
         self.asset_ids = asset_ids
         self.asset_external_ids = asset_external_ids
-        self.root_asset_ids = root_asset_ids
         self.asset_subtree_ids = asset_subtree_ids
         self.data_set_ids = data_set_ids
         self.source = source

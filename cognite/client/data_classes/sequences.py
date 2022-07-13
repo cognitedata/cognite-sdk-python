@@ -85,7 +85,6 @@ class SequenceFilter(CogniteFilter):
         external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
         metadata (Dict[str, Any]): Filter the sequences by metadata fields and values (case-sensitive). Format is {"key1":"value1","key2":"value2"}.
         asset_ids (List[int]): Return only sequences linked to one of the specified assets.
-        root_asset_ids (List[int]): Only include sequences that have a related asset in a tree rooted at any of these root assetIds.
         asset_subtree_ids (List[Dict[str, Any]]): Only include sequences that have a related asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
         created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
         last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
@@ -99,7 +98,6 @@ class SequenceFilter(CogniteFilter):
         external_id_prefix: str = None,
         metadata: Dict[str, Any] = None,
         asset_ids: List[int] = None,
-        root_asset_ids: List[int] = None,
         asset_subtree_ids: List[Dict[str, Any]] = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
@@ -110,7 +108,6 @@ class SequenceFilter(CogniteFilter):
         self.external_id_prefix = external_id_prefix
         self.metadata = metadata
         self.asset_ids = asset_ids
-        self.root_asset_ids = root_asset_ids
         self.asset_subtree_ids = asset_subtree_ids
         self.created_time = created_time
         self.last_updated_time = last_updated_time

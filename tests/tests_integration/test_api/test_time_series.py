@@ -59,8 +59,6 @@ class TestTimeSeriesAPI:
             last_updated_time={"min": 45},
             created_time={"max": 123},
             asset_ids=[1, 2],
-            root_asset_ids=[1231],
-            include_metadata=False,
         )
         assert 0 == len(res)
         assert 1 == cognite_client.time_series._post.call_count

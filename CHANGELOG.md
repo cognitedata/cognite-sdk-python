@@ -14,6 +14,13 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [3.0.0] - 2022-07-12
+### Changed
+- Poetry build, one single package "cognite-sdk"
+- Require python 3.8 or greater (used to be 3.5 or greater)
+### Removed
+- support for root_asset_id and root_asset_external_id filters. use asset subtree filters instead.
+
 ## [2.56.1] - 2022-06-22
 ### Added
 - Time series property `is_step` can now be updated.

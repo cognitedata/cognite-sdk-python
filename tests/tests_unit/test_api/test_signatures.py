@@ -14,7 +14,6 @@ class TestListAndIterSignatures:
                 assets.AssetsAPI,
                 assets.AssetFilter,
                 [
-                    "root_external_ids",
                     "asset_subtree_external_ids",
                     "data_set_external_ids",
                     "aggregated_properties",
@@ -25,7 +24,6 @@ class TestListAndIterSignatures:
                 events.EventsAPI,
                 events.EventFilter,
                 [
-                    "root_asset_external_ids",
                     "asset_subtree_external_ids",
                     "data_set_external_ids",
                     "partitions",
@@ -35,13 +33,13 @@ class TestListAndIterSignatures:
             (
                 files.FilesAPI,
                 files.FileMetadataFilter,
-                ["root_asset_external_ids", "data_set_external_ids", "asset_subtree_external_ids"],
+                ["data_set_external_ids", "asset_subtree_external_ids"],
             ),
             (sequences.SequencesAPI, sequences.SequenceFilter, ["asset_subtree_external_ids", "data_set_external_ids"]),
             (
                 time_series.TimeSeriesAPI,
                 time_series.TimeSeriesFilter,
-                ["asset_subtree_external_ids", "data_set_external_ids", "include_metadata", "partitions"],
+                ["asset_subtree_external_ids", "data_set_external_ids", "partitions"],
             ),
             (data_sets.DataSetsAPI, data_sets.DataSetFilter, []),
         ],

@@ -44,7 +44,7 @@ class TestLocalImport:
 
     @pytest.mark.coredeps
     def test_dsl_deps_not_installed(self):
-        for dep in ["numpy", "pandas"]:
+        for dep in ["geopandas", "pandas", "shapely", "sympy"]:
             with pytest.raises(CogniteImportError, match=dep):
                 utils._auxiliary.local_import(dep)
 
