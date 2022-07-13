@@ -15,9 +15,9 @@ class TasksSummary:
         self.results = results
         self.exceptions = exceptions
 
-    def joined_results(self, unwrap_fn: Callable = None):
+    def joined_results(self, unwrap_fn: Optional[Callable] = None) -> list:
         unwrap_fn = unwrap_fn or (lambda x: x)
-        joined_results = []
+        joined_results: list = []
         for result in self.results:
             unwrapped = unwrap_fn(result)
             if isinstance(unwrapped, (list, UserList)):
@@ -28,10 +28,10 @@ class TasksSummary:
 
     def raise_compound_exception_if_failed_tasks(
         self,
-        task_unwrap_fn: Callable = None,
-        task_list_element_unwrap_fn: Callable = None,
-        str_format_element_fn: Callable = None,
-    ):
+        task_unwrap_fn: Optional[Callable] = None,
+        task_list_element_unwrap_fn: Optional[Callable] = None,
+        str_format_element_fn: Optional[Callable] = None,
+    ) -> None:
         if not self.exceptions:
             return
         task_unwrap_fn = (lambda x: x) if task_unwrap_fn is None else task_unwrap_fn
@@ -61,12 +61,12 @@ def collect_exc_info_and_raise(
     failed: Optional[List] = None,
     unknown: Optional[List] = None,
     unwrap_fn: Optional[Callable] = None,
-):
+) -> None:
     missing = []
     duplicated = []
     missing_exc = None
     dup_exc = None
-    unknown_exc = None
+    unknown_exc: Optional[Exception] = None
     for exc in exceptions:
         if isinstance(exc, CogniteAPIError):
             if exc.code in [400, 422] and exc.missing is not None:

@@ -9,8 +9,13 @@ from cognite.client.exceptions import CogniteAPIKeyError
 
 class TokenGenerator:
     def __init__(
-        self, token_url: str, client_id: str, client_secret: str, scopes: List[str], custom_args: Dict[str, str]
-    ):
+        self,
+        token_url: Optional[str],
+        client_id: Optional[str],
+        client_secret: Optional[str],
+        scopes: Optional[List[str]],
+        custom_args: Dict[str, str],
+    ) -> None:
         self.token_url = token_url
         self.client_id = client_id
         self.client_secret = client_secret
@@ -23,7 +28,7 @@ class TokenGenerator:
             self._access_token = None
             self._access_token_expires_at = None
 
-    def return_access_token(self):
+    def return_access_token(self) -> str:
         if not self.token_params_set():
             raise CogniteAPIKeyError("Could not generate access token - missing token generation arguments")
         elif self._access_token is None:
@@ -34,7 +39,7 @@ class TokenGenerator:
 
         return self._access_token
 
-    def _generate_access_token(self):
+    def _generate_access_token(self) -> None:
         try:
             client = BackendApplicationClient(client_id=self.client_id)
             oauth = OAuth2Session(client=client)
@@ -55,7 +60,7 @@ class TokenGenerator:
             self._access_token = token_result.get("access_token")
             self._access_token_expires_at = token_result.get("expires_at")
 
-    def token_params_set(self):
+    def token_params_set(self) -> bool:
         return (
             self.client_id is not None
             and self.client_secret is not None

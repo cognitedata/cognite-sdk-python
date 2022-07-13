@@ -3,7 +3,7 @@ import random
 import socket
 import time
 from http import cookiejar
-from typing import Callable, Optional, Set, Tuple, Type, Union
+from typing import Any, Callable, Optional, Set, Tuple, Type, Union
 
 import requests
 import requests.adapters
@@ -19,7 +19,7 @@ class BlockAll(cookiejar.CookiePolicy):
     rfc2965 = hide_cookie2 = False
 
 
-def _init_requests_session():
+def _init_requests_session() -> requests.Session:
     session = requests.Session()
     session.cookies.set_policy(BlockAll())
     cognite_config = utils._client_config._DefaultConfig()
@@ -65,7 +65,7 @@ class _RetryTracker:
         self.connect = 0
 
     @property
-    def total(self):
+    def total(self) -> int:
         return self.status + self.read + self.connect
 
     def _max_backoff_and_jitter(self, t: int) -> int:
@@ -101,7 +101,7 @@ class HTTPClient:
         self.config = config
         self.retry_tracker_factory = retry_tracker_factory  # needed for tests
 
-    def request(self, method: str, url: str, **kwargs) -> requests.Response:
+    def request(self, method: str, url: str, **kwargs: Any) -> requests.Response:
         retry_tracker = self.retry_tracker_factory(self.config)
         last_status = None
         while True:
@@ -123,7 +123,7 @@ class HTTPClient:
                     raise e
             time.sleep(retry_tracker.get_backoff_time())
 
-    def _do_request(self, method: str, url: str, **kwargs) -> requests.Response:
+    def _do_request(self, method: str, url: str, **kwargs: Any) -> requests.Response:
         """requests/urllib3 adds 2 or 3 layers of exceptions on top of built-in networking exceptions.
 
         Sometimes the appropriate built-in networking exception is not in the context, sometimes the requests

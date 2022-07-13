@@ -3,13 +3,13 @@ import re
 import time
 import warnings
 from datetime import datetime, timezone
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 
 _unit_in_ms_without_week = {"s": 1000, "m": 60000, "h": 3600000, "d": 86400000}
 _unit_in_ms = {**_unit_in_ms_without_week, "w": 604800000}
 
 
-def datetime_to_ms(dt):
+def datetime_to_ms(dt: datetime) -> int:
     if dt.tzinfo is None:
         warnings.warn(
             "Interpreting given naive datetime as UTC instead of local time (against Python default behaviour). "
@@ -43,7 +43,7 @@ def ms_to_datetime(ms: Union[int, float]) -> datetime:
     return datetime.utcfromtimestamp(ms / 1000)
 
 
-def time_string_to_ms(pattern, string, unit_in_ms):
+def time_string_to_ms(pattern: str, string: str, unit_in_ms: Dict[str, int]) -> Optional[int]:
     pattern = pattern.format("|".join(unit_in_ms))
     res = re.fullmatch(pattern, string)
     if res:
@@ -93,7 +93,7 @@ def timestamp_to_ms(timestamp: Union[int, float, str, datetime]) -> int:
         int: Milliseconds since epoch representation of timestamp
     """
     if isinstance(timestamp, numbers.Number):  # float, int, int64 etc
-        ms = int(timestamp)
+        ms = int(timestamp)  # type: ignore[arg-type]
     elif isinstance(timestamp, str):
         ms = int(round(time.time() * 1000)) - time_ago_to_ms(timestamp)
     elif isinstance(timestamp, datetime):

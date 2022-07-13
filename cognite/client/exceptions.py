@@ -25,7 +25,7 @@ class CogniteMultiException(CogniteException):
         self.unknown = unknown or []
         self._unwrap_fn = unwrap_fn or (lambda x: x)
 
-    def _get_multi_exception_summary(self):
+    def _get_multi_exception_summary(self) -> str:
         if len(self.successful) > 0 or len(self.unknown) > 0 or len(self.failed) > 0:
             return "\nThe API Failed to process some items.\nSuccessful (2xx): {}\nUnknown (5xx): {}\nFailed (4xx): {}".format(
                 [self._unwrap_fn(f) for f in self.successful],
@@ -74,7 +74,7 @@ class CogniteAPIError(CogniteMultiException):
     def __init__(
         self,
         message: str,
-        code: int = None,
+        code: int,
         x_request_id: str = None,
         missing: List = None,
         duplicated: List = None,
@@ -83,7 +83,7 @@ class CogniteAPIError(CogniteMultiException):
         unknown: List = None,
         unwrap_fn: Callable = None,
         extra: Dict = None,
-    ):
+    ) -> None:
         self.message = message
         self.code = code
         self.x_request_id = x_request_id
@@ -92,7 +92,7 @@ class CogniteAPIError(CogniteMultiException):
         self.extra = extra
         super().__init__(successful, failed, unknown, unwrap_fn)
 
-    def __str__(self):
+    def __str__(self) -> str:
         msg = "{} | code: {} | X-Request-ID: {}".format(self.message, self.code, self.x_request_id)
         if self.missing:
             msg += "\nMissing: {}".format(self.missing)
@@ -128,7 +128,7 @@ class CogniteNotFoundError(CogniteMultiException):
         self.not_found = not_found
         super().__init__(successful, failed, unknown, unwrap_fn)
 
-    def __str__(self):
+    def __str__(self) -> str:
         msg = "Not found: {}".format(self.not_found)
         msg += self._get_multi_exception_summary()
         return msg
@@ -157,7 +157,7 @@ class CogniteDuplicatedError(CogniteMultiException):
         self.duplicated = duplicated
         super().__init__(successful, failed, unknown, unwrap_fn)
 
-    def __str__(self):
+    def __str__(self) -> str:
         msg = "Duplicated: {}".format(self.duplicated)
         msg += self._get_multi_exception_summary()
         return msg
@@ -179,7 +179,7 @@ class CogniteImportError(CogniteException):
             self.module
         )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.message
 
 
@@ -189,7 +189,7 @@ class CogniteMissingClientError(CogniteException):
     Raised if the user attempts to make use of a method which requires the cognite_client being set, but it is not.
     """
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "A CogniteClient has not been set on this object. Pass it in the constructor to use it."
 
 
@@ -206,20 +206,20 @@ class CogniteDuplicateColumnsError(CogniteException):
     Raised if the user attempts to create a dataframe through include_aggregate_names=False which results in duplicate column names.
     """
 
-    def __init__(self, dups):
+    def __init__(self, dups: list) -> None:
         self.message = "Can not remove aggregate names from this dataframe as it would result in duplicate column name(s) '{}'".format(
             "', '".join(dups)
         )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.message
 
 
 class ModelFailedException(Exception):
-    def __init__(self, typename, id, error_message):
+    def __init__(self, typename: str, id: int, error_message: str) -> None:
         self.typename = typename
         self.id = id
         self.error_message = error_message
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.typename} {self.id} failed with error '{self.error_message}'"
