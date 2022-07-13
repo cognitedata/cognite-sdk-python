@@ -76,6 +76,12 @@ pytest tests/tests_unit --cov-report html \
 
 Open `htmlcov/index.html` in the browser to navigate through the report.
 
+To speed up test runs pass the following arguments (this will parallelize across 4 processes):
+
+```
+pytest -n4 --dist loadscope tests
+```
+
 ### Documentation
 
 Build html files of documentation locally by running
