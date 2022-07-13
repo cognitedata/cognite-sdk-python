@@ -41,6 +41,13 @@ repos:
           pass_filenames: false
       repo: local
   -   hooks:
+        -   id: flake8
+# TODO: add this too
+#            additional_dependencies:
+#              - flake8-builtins
+      repo: https://gitlab.com/pycqa/flake8
+      rev: 3.9.2
+  -   hooks:
         -   id: version-match-check
             name: version-match-check
             entry: python check_version_match.py
