@@ -44,7 +44,7 @@ $ pip install cognite-sdk
 
 To install with pandas, geopandas and shapely support.
 ```bash
-$ pip install cognite-sdk-core[pandas, geo]
+$ pip install cognite-sdk[pandas, geo]
 ```
 
 ### Windows specific
