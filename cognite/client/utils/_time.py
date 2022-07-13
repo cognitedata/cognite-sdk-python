@@ -12,7 +12,7 @@ _unit_in_ms = {**_unit_in_ms_without_week, "w": 604800000}
 def datetime_to_ms(dt):
     if dt.tzinfo is None:
         warnings.warn(
-            "Interpreting given naive datetime as UTC instead of local time (Python default behaviour). "
+            "Interpreting given naive datetime as UTC instead of local time (against Python default behaviour). "
             "This will change in the next major release (4.0.0). Please use (timezone) aware datetimes "
             "or convert it yourself to integer (number of milliseconds since epoch, leap seconds excluded).",
             FutureWarning,
@@ -35,9 +35,9 @@ def ms_to_datetime(ms: float) -> datetime:
         raise ValueError("ms must be greater than or equal to zero.")
 
     warnings.warn(
-        "This function, `ms_to_datetime` returns a naive datetime object in UTC. This is different from "
-        "the default interpretation of naive datetimes in Python (local time). This behaviour will "
-        "change to returning timezone-aware datetimes in the next major release (4.0.0).",
+        "This function, `ms_to_datetime` returns a naive datetime object in UTC. This is against "
+        "the default interpretation of naive datetimes in Python (i.e. local time). This behaviour will "
+        "change to returning timezone-aware datetimes in UTC in the next major release (4.0.0).",
         FutureWarning,
     )
     return datetime.utcfromtimestamp(ms / 1000)
@@ -83,11 +83,11 @@ def time_ago_to_ms(time_ago_string: str) -> int:
     return ms
 
 
-def timestamp_to_ms(timestamp: Union[float, str, datetime]) -> int:
+def timestamp_to_ms(timestamp: Union[int, float, str, datetime]) -> int:
     """Returns the ms representation of some timestamp given by milliseconds, time-ago format or datetime object
 
     Args:
-        timestamp (Union[float, str, datetime]): Convert this timestamp to ms.
+        timestamp (Union[int, float, str, datetime]): Convert this timestamp to ms.
 
     Returns:
         int: Milliseconds since epoch representation of timestamp
