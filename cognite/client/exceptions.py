@@ -47,7 +47,7 @@ class CogniteAPIError(CogniteMultiException):
         code (int): The error code produced by the failure
         x_request_id (str): The request-id generated for the failed request.
         extra (Dict): A dict of any additional information.
-        successful (List): List of items which were successfully proccessed.
+        successful (List): List of items which were successfully processed.
         failed (List): List of items which failed.
         unknown (List): List of items which may or may not have been successfully processed.
 
@@ -112,7 +112,7 @@ class CogniteNotFoundError(CogniteMultiException):
 
     Args:
         not_found (List): The ids not found.
-        successful (List): List of items which were successfully proccessed.
+        successful (List): List of items which were successfully processed.
         failed (List): List of items which failed.
         unknown (List): List of items which may or may not have been successfully processed.
     """
@@ -141,7 +141,7 @@ class CogniteDuplicatedError(CogniteMultiException):
 
     Args:
         duplicated (list): The duplicated ids.
-        successful (List): List of items which were successfully proccessed.
+        successful (List): List of items which were successfully processed.
         failed (List): List of items which failed.
         unknown (List): List of items which may or may not have been successfully processed.
     """

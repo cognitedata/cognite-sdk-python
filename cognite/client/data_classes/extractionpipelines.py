@@ -43,9 +43,9 @@ class ExtractionPipeline(CogniteResource):
     Args:
         id (int): A server-generated ID for the object.
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        name (str): The name of the extraction pipepeline.
-        description (str): The description of the extraction pipepeline.
-        data_set_id (int): The id of the dataset this extraction pipepeline related with.
+        name (str): The name of the extraction pipeline.
+        description (str): The description of the extraction pipeline.
+        data_set_id (int): The id of the dataset this extraction pipeline related with.
         raw_tables (List[Dict[str, str]): list of raw tables in list format: [{"dbName": "value", "tableName" : "value"}].
         last_success (int): Milliseconds value of last success status.
         last_failure (int): Milliseconds value of last failure status.
@@ -54,11 +54,11 @@ class ExtractionPipeline(CogniteResource):
         schedule (str): None/On trigger/Continuous/cron regex.
         contacts (List[ExtractionPipelineContact]): list of contacts
         metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
-        source (str): Source text value for extraction pipepeline.
-        documentation (str): Documentation text value for extraction pipepeline.
+        source (str): Source text value for extraction pipeline.
+        documentation (str): Documentation text value for extraction pipeline.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_by (str): Extraction pipepeline creator, usually an email.
+        created_by (str): Extraction pipeline creator, usually an email.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 

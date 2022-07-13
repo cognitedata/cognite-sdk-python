@@ -1,4 +1,4 @@
-"""Utilites for Cognite API SDK
+"""Utilities for Cognite API SDK
 
 This module provides helper methods and different utilities for the Cognite API Python SDK.
 
