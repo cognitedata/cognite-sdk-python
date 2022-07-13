@@ -100,7 +100,7 @@ class Relationship(CogniteResource):
 
 
 class RelationshipFilter(CogniteFilter):
-    """Filter on relationships with exact match. Multiple filter elments in one property, e.g. `sourceExternalIds: [ "a", "b" ]`, will return all relationships where the `sourceExternalId` field is either `a` or `b`. Filters in multiple properties will return the relationships that match all criteria. If the filter is not specified it default to an empty filter.
+    """Filter on relationships with exact match. Multiple filter elements in one property, e.g. `sourceExternalIds: [ "a", "b" ]`, will return all relationships where the `sourceExternalId` field is either `a` or `b`. Filters in multiple properties will return the relationships that match all criteria. If the filter is not specified it default to an empty filter.
 
     Args:
         source_external_ids (List[str]): Include relationships that have any of these values in their `sourceExternalId` field
@@ -108,8 +108,8 @@ class RelationshipFilter(CogniteFilter):
         target_external_ids (List[str]): Include relationships that have any of these values in their `targetExternalId` field
         target_types (List[str]): Include relationships that have any of these values in their `targetType` field
         data_set_ids (List[Dict[str, Any]]): Either one of `internalId` (int) or `externalId` (str)
-        start_time (Dict[str, int]): Range between two timestamps, minimum and maximum milli seconds (inclusive)
-        end_time (Dict[str, int]): Range between two timestamps, minimum and maximum milli seconds (inclusive)
+        start_time (Dict[str, int]): Range between two timestamps, minimum and maximum milliseconds (inclusive)
+        end_time (Dict[str, int]): Range between two timestamps, minimum and maximum milliseconds (inclusive)
         confidence (Dict[str, int]): Range to filter the field for. (inclusive)
         last_updated_time (Dict[str, Any]): Range to filter the field for. (inclusive)
         created_time (Dict[str, int]): Range to filter the field for. (inclusive)
