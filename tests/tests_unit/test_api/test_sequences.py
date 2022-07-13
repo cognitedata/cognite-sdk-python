@@ -48,7 +48,7 @@ def mock_seq_response(rsps, cognite_client):
     }
     url_pattern = re.compile(
         re.escape(cognite_client.sequences._get_base_url_with_base_path())
-        + "/sequences(?:/byids|/list|/update|/delete|/search|$|\?.+)"
+        + r"/sequences(?:/byids|/list|/update|/delete|/search|$|\?.+)"
     )
     rsps.assert_all_requests_are_fired = False
 
@@ -62,7 +62,7 @@ def mock_sequences_empty(rsps, cognite_client):
     response_body = {"items": []}
     url_pattern = re.compile(
         re.escape(cognite_client.sequences._get_base_url_with_base_path())
-        + "/sequences(?:/byids|/update|/list|/delete|/search|$|\?.+)"
+        + r"/sequences(?:/byids|/update|/list|/delete|/search|$|\?.+)"
     )
     rsps.assert_all_requests_are_fired = False
 
