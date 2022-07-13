@@ -1,11 +1,51 @@
-[tool.black]
-line-length = 120
-target_version = ['py38']
-include = '\.py$'
+[tool.poetry]
+name = "cognite-sdk"
 
-[tool.isort]
-line_length = 120
-multi_line_output = 3
-include_trailing_comma = true
-skip_glob = '^((?!py$).)*$'    # isort all Python files
-float_to_top = true
+version = "3.0.1"
+
+description = "Cognite Python SDK"
+readme = "README.md"
+documentation = "https://cognite-sdk-python.readthedocs-hosted.com"
+authors = ["Erlend Vollset <erlend.vollset@cognite.com>"]
+
+packages = [{ include="cognite", from="." }]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+
+requests = "^2"
+requests_oauthlib = "^1"
+msal = "^1"
+sympy = { version = "*", optional = true }
+pandas = { version = "*", optional = true }
+geopandas = { version = ">=0.10.0", optional = true }
+shapely = { version = ">=1.7.0", optional = true }
+
+[tool.poetry.extras]
+pandas = ["pandas"]
+geo = ["geopandas", "shapely"]
+sympy = ["sympy"]
+all = ["pandas", "geopandas", "shapely", "sympy"]
+
+[tool.poetry.dev-dependencies]
+docutils = "==0.15.2"
+sphinx = "^5.0.1"
+sphinx-rtd-theme = "^1.0.0"
+pytest = "^6.2.5"
+pytest-cov = "^3.0.0"
+twine = "^4.0.1"
+pre-commit = "^2.20.0"
+responses = "^0.21.0"
+pytest-rerunfailures = "^10.2"
+pytest-asyncio = "^0.18.3"
+toml = "^0.10.2"
+matplotlib = "^3.5.2"
+python-dotenv = "^0.20.0"
+
+[[tool.poetry.source]]
+name = "snakepit"
+url = "https://cognite.jfrog.io/cognite/api/pypi/snakepit/simple"
+
+[build-system]
+requires = ["poetry>=1.0"]
+build-backend = "poetry.masonry.api"

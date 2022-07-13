@@ -29,8 +29,6 @@ class EventsAPI(APIClient):
         metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
         asset_external_ids: List[str] = None,
-        root_asset_ids: List[int] = None,
-        root_asset_external_ids: List[str] = None,
         asset_subtree_ids: List[int] = None,
         asset_subtree_external_ids: List[str] = None,
         data_set_ids: List[int] = None,
@@ -57,8 +55,6 @@ class EventsAPI(APIClient):
             metadata (Dict[str, str]): Customizable extra data about the event. String key -> String value.
             asset_ids (List[int]): Asset IDs of related equipments that this event relates to.
             asset_external_ids (List[str]): Asset External IDs of related equipment that this event relates to.
-            root_asset_ids (List[int]): The IDs of the root assets that the related assets should be children of.
-            root_asset_external_ids (List[str]): The external IDs of the root assets that the related assets should be children of.
             asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
             asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
             data_set_ids (List[int]): Return only events in the specified data sets with these ids.
@@ -74,8 +70,6 @@ class EventsAPI(APIClient):
         Yields:
             Union[Event, EventList]: yields Event one by one if chunk is not specified, else EventList objects.
         """
-        if (root_asset_ids and not isinstance(root_asset_ids[0], dict)) or root_asset_external_ids:
-            root_asset_ids = self._process_ids(root_asset_ids, root_asset_external_ids, wrap_ids=True)
         if asset_subtree_ids or asset_subtree_external_ids:
             asset_subtree_ids = self._process_ids(asset_subtree_ids, asset_subtree_external_ids, wrap_ids=True)
         if data_set_ids or data_set_external_ids:
@@ -88,7 +82,6 @@ class EventsAPI(APIClient):
             metadata=metadata,
             asset_ids=asset_ids,
             asset_external_ids=asset_external_ids,
-            root_asset_ids=root_asset_ids,
             asset_subtree_ids=asset_subtree_ids,
             data_set_ids=data_set_ids,
             source=source,
@@ -185,8 +178,6 @@ class EventsAPI(APIClient):
         metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
         asset_external_ids: List[str] = None,
-        root_asset_ids: List[int] = None,
-        root_asset_external_ids: List[str] = None,
         asset_subtree_ids: List[int] = None,
         asset_subtree_external_ids: List[str] = None,
         data_set_ids: List[int] = None,
@@ -210,8 +201,6 @@ class EventsAPI(APIClient):
             metadata (Dict[str, str]): Customizable extra data about the event. String key -> String value.
             asset_ids (List[int]): Asset IDs of related equipments that this event relates to.
             asset_external_ids (List[str]): Asset External IDs of related equipment that this event relates to.
-            root_asset_ids (List[int]): The IDs of the root assets that the related assets should be children of.
-            root_asset_external_ids (List[str]): The external IDs of the root assets that the related assets should be children of.
             asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
             asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
             data_set_ids (List[int]): Return only events in the specified data sets with these ids.
@@ -250,8 +239,6 @@ class EventsAPI(APIClient):
                 >>> for event_list in c.events(chunk_size=2500):
                 ...     event_list # do something with the events
         """
-        if (root_asset_ids and not isinstance(root_asset_ids[0], dict)) or root_asset_external_ids:
-            root_asset_ids = self._process_ids(root_asset_ids, root_asset_external_ids, wrap_ids=True)
         if asset_subtree_ids or asset_subtree_external_ids:
             asset_subtree_ids = self._process_ids(asset_subtree_ids, asset_subtree_external_ids, wrap_ids=True)
         if data_set_ids or data_set_external_ids:
@@ -266,7 +253,6 @@ class EventsAPI(APIClient):
             metadata=metadata,
             asset_ids=asset_ids,
             asset_external_ids=asset_external_ids,
-            root_asset_ids=root_asset_ids,
             asset_subtree_ids=asset_subtree_ids,
             source=source,
             data_set_ids=data_set_ids,

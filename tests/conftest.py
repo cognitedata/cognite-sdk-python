@@ -1,6 +1,7 @@
 import os
 from unittest import mock
 
+import dotenv
 import pytest
 import responses
 
@@ -25,6 +26,8 @@ from cognite.client._api.three_d import (
 )
 from cognite.client._api.time_series import TimeSeriesAPI
 from tests.utils import BASE_URL
+
+dotenv.load_dotenv()
 
 
 @pytest.fixture

@@ -64,8 +64,6 @@ class TestTimeSeries:
             asset_external_ids=["aeid"],
             data_set_ids=[1, 2],
             data_set_external_ids=["x"],
-            root_asset_ids=[1231],
-            include_metadata=False,
             asset_subtree_ids=[1],
             asset_subtree_external_ids=["a"],
         )
@@ -78,7 +76,6 @@ class TestTimeSeries:
             "assetExternalIds": ["aeid"],
             "assetSubtreeIds": [{"id": 1}, {"externalId": "a"}],
             "dataSetIds": [{"id": 1}, {"id": 2}, {"externalId": "x"}],
-            "rootAssetIds": [1231],
             "createdTime": {"max": 123},
             "lastUpdatedTime": {"min": 45},
         } == jsgz_load(mock_ts_response.calls[0].request.body)["filter"]
@@ -91,15 +88,6 @@ class TestTimeSeries:
         cognite_client.time_series.list(asset_ids=[numpy.int64(1)])
         for i in range(len(mock_ts_response.calls)):
             assert [1] == jsgz_load(mock_ts_response.calls[i].request.body)["filter"]["assetIds"]
-
-    @pytest.mark.dsl
-    def test_list_with_root_asset_ids(self, cognite_client, mock_ts_response):
-        import numpy
-
-        cognite_client.time_series.list(root_asset_ids=[1])
-        cognite_client.time_series.list(root_asset_ids=[numpy.int64(1)])
-        for i in range(len(mock_ts_response.calls)):
-            assert [1] == jsgz_load(mock_ts_response.calls[i].request.body)["filter"]["rootAssetIds"]
 
     def test_create_single(self, cognite_client, mock_ts_response):
         res = cognite_client.time_series.create(TimeSeries(external_id="1", name="blabla"))

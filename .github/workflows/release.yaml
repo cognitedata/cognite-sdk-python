@@ -12,57 +12,62 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: Set up Python
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v2
       with:
         python-version: 3.8
 
-
-    - name: Install pipenv
-      run: pip3 install pipenv
-
-    - name: Install all dependencies
+    - name: Install required dependencies
       run: |
-        pipenv sync --dev
-        pipenv run pip install importlib_metadata
+        python3 -m pip install --upgrade pip poetry
+        poetry config virtualenvs.create false
+        poetry install
 
     - name: Check codestyle
-      run: pipenv run pre-commit install & pipenv run pre-commit run --all-files --show-diff-on-failure
-
-    - name: Run tests
-      env:
-          LOGIN_FLOW: client_credentials
-          COGNITE_CLIENT_SECRET: ${{ secrets.COGNITE_CLIENT_SECRET }}
-          COGNITE_TOKEN_URL: https://login.microsoftonline.com/dff7763f-e2f5-4ffd-9b8a-4ba4bafba5ea/oauth2/v2.0/token
-          COGNITE_TOKEN_SCOPES: https://greenfield.cognitedata.com/.default
-          COGNITE_CLIENT_ID: 14fd282e-f77a-457d-add5-928ec2bcbf04
-          COGNITE_PROJECT: python-sdk-test
-          COGNITE_BASE_URL: https://greenfield.cognitedata.com
-          COGNITE_CLIENT_NAME: python-sdk-integration-tests
-          CI: 1
       run: |
-        pipenv run coverage run --source cognite.client -m pytest -v --reruns 2 --maxfail 10 tests
-        pipenv run coverage xml
+        pre-commit run --all-files
 
-    - uses: codecov/codecov-action@v1
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        file: ./coverage.xml
+    - name: Test core
+      env:
+        LOGIN_FLOW: client_credentials
+        COGNITE_CLIENT_SECRET: ${{ secrets.COGNITE_CLIENT_SECRET }}
+        COGNITE_TOKEN_URL: https://login.microsoftonline.com/dff7763f-e2f5-4ffd-9b8a-4ba4bafba5ea/oauth2/v2.0/token
+        COGNITE_TOKEN_SCOPES: https://greenfield.cognitedata.com/.default
+        COGNITE_CLIENT_ID: 14fd282e-f77a-457d-add5-928ec2bcbf04
+        COGNITE_PROJECT: python-sdk-test
+        COGNITE_BASE_URL: https://greenfield.cognitedata.com
+        COGNITE_CLIENT_NAME: python-sdk-integration-tests
+        CI: 1
+      run: pytest tests/tests_unit --maxfail 10 -m 'not dsl' --test-deps-only-core
+
+    - name: Install optional dependencies
+      run: poetry install -E all
+
+    - name: Test all
+      env:
+        LOGIN_FLOW: client_credentials
+        COGNITE_CLIENT_SECRET: ${{ secrets.COGNITE_CLIENT_SECRET }}
+        COGNITE_TOKEN_URL: https://login.microsoftonline.com/dff7763f-e2f5-4ffd-9b8a-4ba4bafba5ea/oauth2/v2.0/token
+        COGNITE_TOKEN_SCOPES: https://greenfield.cognitedata.com/.default
+        COGNITE_CLIENT_ID: 14fd282e-f77a-457d-add5-928ec2bcbf04
+        COGNITE_PROJECT: python-sdk-test
+        COGNITE_BASE_URL: https://greenfield.cognitedata.com
+        COGNITE_CLIENT_NAME: python-sdk-integration-tests
+        CI: 1
+      run: |
+        coverage run --source cognite -m pytest -v tests --reruns 2
+        coverage xml
 
     - name: Build package
-      run: |
-        pipenv run python setup.py sdist
-        pipenv run python setup.py bdist_wheel
-        pipenv run python setup-core.py sdist
-        pipenv run python setup-core.py bdist_wheel
+      run: poetry build
 
     - name: Build docs
-      run: cd docs && pipenv run make html
+      run: cd docs && make html
 
     - name: Release to PyPI
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-      run: pipenv run twine upload --verbose dist/* || echo 'Version exists'
+      run: twine upload --verbose dist/* || echo 'Version exists'
 
     - name: Push code snippets to service-contracts
       env:
