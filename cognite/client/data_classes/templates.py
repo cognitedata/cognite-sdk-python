@@ -1,7 +1,15 @@
+import json
 from collections import UserDict
-from typing import List, Optional
+from typing import Any, Dict, List, Optional, Union
 
-from cognite.client.data_classes._base import *
+from cognite.client import utils
+from cognite.client.data_classes._base import (
+    EXCLUDE_VALUE,
+    CogniteObjectUpdate,
+    CogniteResource,
+    CogniteResourceList,
+    CogniteUpdate,
+)
 
 
 class TemplateGroup(CogniteResource):

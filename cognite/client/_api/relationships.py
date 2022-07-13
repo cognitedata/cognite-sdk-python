@@ -1,5 +1,5 @@
 import copy
-from typing import *
+from typing import Any, Dict, Generator, List, Optional, Union
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient

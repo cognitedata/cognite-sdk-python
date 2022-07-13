@@ -198,7 +198,8 @@ class TestTransformationsAPI:
 
     def test_preview_to_string(self, cognite_client):
         query_result = cognite_client.transformations.preview(query="select 1 as id, 'asd' as name", limit=100)
-        dumped = str(query_result)
+        # just make sure it doesnt raise exceptions
+        str(query_result)
 
     @pytest.mark.skip
     def test_update_dmi_alpha(self, cognite_client, new_transformation):

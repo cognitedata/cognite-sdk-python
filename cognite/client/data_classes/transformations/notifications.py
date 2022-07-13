@@ -1,4 +1,6 @@
-from cognite.client.data_classes._base import *
+from typing import Dict, Optional, Union
+
+from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteResourceList
 
 
 class TransformationNotification(CogniteResource):

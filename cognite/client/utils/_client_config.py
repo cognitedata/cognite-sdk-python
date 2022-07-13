@@ -1,6 +1,6 @@
 import os
 import pprint
-from typing import *
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from cognite.client import utils
 from cognite.client._version import __api_subversion__

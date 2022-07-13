@@ -2,7 +2,7 @@ import copy
 import math
 import re as regexp
 from datetime import datetime
-from typing import *
+from typing import Any, Dict, List, Tuple, Union
 
 import cognite.client.utils._time
 from cognite.client import utils
@@ -404,7 +404,7 @@ class DatapointsAPI(APIClient):
         include_aggregate_name=True,
         complete: str = None,
         ignore_unknown_ids: bool = False,
-    ) -> "pandas.DataFrame":
+    ) -> "pandas.DataFrame":  # noqa: F821
         """Get a pandas dataframe describing the requested data.
 
         Note that you cannot specify the same ids/external_ids multiple times.
@@ -558,7 +558,7 @@ class DatapointsAPI(APIClient):
         limit: int = None,
         ignore_unknown_ids: bool = False,
         complete: bool = None,
-    ) -> Dict[str, "pandas.DataFrame"]:
+    ) -> Dict[str, "pandas.DataFrame"]:  # noqa: F821
         """Get a dictionary of aggregate: pandas dataframe describing the requested data.
 
         Args:

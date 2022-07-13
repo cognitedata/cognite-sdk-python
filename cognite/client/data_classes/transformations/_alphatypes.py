@@ -1,4 +1,6 @@
-from cognite.client.data_classes._base import *
+from typing import Any, Dict
+
+from cognite.client import utils
 from cognite.client.data_classes.transformations.common import TransformationDestination
 
 

@@ -1,5 +1,5 @@
 import numbers
-from typing import *
+from typing import List, Union
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -368,4 +368,4 @@ class TokenAPI(APIClient):
         Returns:
             TokenInspection: The object with token inspection details.
         """
-        return TokenInspection._load(self._get(f"/api/v1/token/inspect").json())
+        return TokenInspection._load(self._get("/api/v1/token/inspect").json())

@@ -1,4 +1,7 @@
-from cognite.client.data_classes._base import *
+from typing import Any, Dict, List
+
+from cognite.client import utils
+from cognite.client.data_classes._base import CogniteResource, CogniteResourceList, CogniteResponse
 
 
 class ServiceAccount(CogniteResource):

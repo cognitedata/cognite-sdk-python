@@ -1,5 +1,5 @@
 import json
-from typing import *
+from typing import Callable, Dict, List
 
 
 class CogniteException(Exception):

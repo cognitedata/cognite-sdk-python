@@ -1,6 +1,6 @@
 import copy
 import math
-from typing import *
+from typing import Any, Dict, Generator, List, Optional, Tuple, Union
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient

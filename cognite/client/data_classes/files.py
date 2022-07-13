@@ -1,6 +1,16 @@
-from typing import Dict, List
+from typing import Any, Dict, List, Union
 
-from cognite.client.data_classes._base import *
+from cognite.client.data_classes._base import (
+    CogniteFilter,
+    CogniteLabelUpdate,
+    CogniteListUpdate,
+    CogniteObjectUpdate,
+    CognitePrimitiveUpdate,
+    CognitePropertyClassUtil,
+    CogniteResource,
+    CogniteResourceList,
+    CogniteUpdate,
+)
 from cognite.client.data_classes.labels import Label, LabelFilter
 from cognite.client.data_classes.shared import GeoLocation, GeoLocationFilter, TimestampRange
 

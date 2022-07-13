@@ -1,7 +1,20 @@
-from typing import List, Union
+from typing import Dict, List, Optional, Union
 
+from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes.templates import *
+from cognite.client.data_classes.templates import (
+    GraphQlResponse,
+    TemplateGroup,
+    TemplateGroupList,
+    TemplateGroupVersion,
+    TemplateGroupVersionList,
+    TemplateInstance,
+    TemplateInstanceList,
+    TemplateInstanceUpdate,
+    View,
+    ViewList,
+    ViewResolveList,
+)
 
 
 class TemplatesAPI(APIClient):

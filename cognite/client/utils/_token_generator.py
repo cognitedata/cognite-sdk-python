@@ -1,5 +1,5 @@
 import datetime
-from typing import *
+from typing import Dict, List, Optional
 
 from oauthlib.oauth2 import BackendApplicationClient, OAuth2Error
 from requests_oauthlib import OAuth2Session

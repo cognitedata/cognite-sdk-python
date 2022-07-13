@@ -1,10 +1,12 @@
 import collections
+import json
 import re as regexp
 from datetime import datetime
-from typing import *
+from typing import Any, Dict, Generator, List, Tuple, Union
 
 import cognite.client.utils._time
-from cognite.client.data_classes._base import *
+from cognite.client import utils
+from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.exceptions import CogniteDuplicateColumnsError
 
 
@@ -54,7 +56,7 @@ class Datapoint(CogniteResource):
         self.discrete_variance = discrete_variance
         self.total_variation = total_variation
 
-    def to_pandas(self, camel_case=True) -> "pandas.DataFrame":
+    def to_pandas(self, camel_case=True) -> "pandas.DataFrame":  # noqa: F821
         """Convert the datapoint into a pandas DataFrame.
              camel_case (bool): Convert column names to camel case (e.g. `stepInterpolation` instead of `step_interpolation`)
 
@@ -188,7 +190,7 @@ class Datapoints:
 
     def to_pandas(
         self, column_names: str = "externalId", include_aggregate_name: bool = True, include_errors: bool = False
-    ) -> "pandas.DataFrame":
+    ) -> "pandas.DataFrame":  # noqa: F821
         """Convert the datapoints into a pandas DataFrame.
 
         Args:
@@ -315,7 +317,9 @@ class DatapointsList(CogniteResourceList):
             i["datapoints"] = utils._time.convert_time_attributes_to_datetime(i["datapoints"])
         return json.dumps(item, default=lambda x: x.__dict__, indent=4)
 
-    def to_pandas(self, column_names: str = "externalId", include_aggregate_name: bool = True) -> "pandas.DataFrame":
+    def to_pandas(
+        self, column_names: str = "externalId", include_aggregate_name: bool = True
+    ) -> "pandas.DataFrame":  # noqa: F821
         """Convert the datapoints list into a pandas DataFrame.
 
         Args:

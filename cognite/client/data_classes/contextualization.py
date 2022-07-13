@@ -216,8 +216,8 @@ class EntityMatchingModel(CogniteResource):
             ContextualizationJob: object which can be used to wait for and retrieve results."""
         self.wait_for_completion()
         return self._cognite_client.entity_matching._run_job(
-            job_path=f"/predict",
-            status_path=f"/jobs/",
+            job_path="/predict",
+            status_path="/jobs/",
             json={
                 "id": self.id,
                 "sources": self._dump_entities(sources),

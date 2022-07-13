@@ -1,6 +1,6 @@
 import json
 from collections import UserList
-from typing import *
+from typing import Any, Dict, List, Optional, Union
 
 from cognite.client import utils
 from cognite.client.exceptions import CogniteMissingClientError
@@ -226,7 +226,7 @@ class CogniteResourceList(UserList):
             return self._id_to_item.get(id)
         return self._external_id_to_item.get(external_id)
 
-    def to_pandas(self, camel_case=True) -> "pandas.DataFrame":
+    def to_pandas(self, camel_case=True) -> "pandas.DataFrame":  # noqa: F821
         """Convert the instance into a pandas DataFrame.
 
         Returns:
@@ -324,7 +324,7 @@ class CogniteUpdate:
 
     @classmethod
     def _get_update_properties(cls):
-        return [key for key in cls.__dict__.keys() if (not key.startswith("_")) and (not key in ["labels", "columns"])]
+        return [key for key in cls.__dict__.keys() if (not key.startswith("_")) and (key not in ["labels", "columns"])]
 
 
 class CognitePrimitiveUpdate:

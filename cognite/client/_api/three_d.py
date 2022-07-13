@@ -1,4 +1,4 @@
-from typing import *
+from typing import Dict, Generator, List, Union
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient

@@ -1,6 +1,18 @@
 import threading
+from typing import Any, Dict, List, Union
 
-from cognite.client.data_classes._base import *
+from cognite.client import utils
+from cognite.client.data_classes._base import (
+    CogniteFilter,
+    CogniteLabelUpdate,
+    CogniteListUpdate,
+    CogniteObjectUpdate,
+    CognitePrimitiveUpdate,
+    CognitePropertyClassUtil,
+    CogniteResource,
+    CogniteResourceList,
+    CogniteUpdate,
+)
 from cognite.client.data_classes.labels import Label, LabelDefinition, LabelFilter
 from cognite.client.data_classes.shared import GeoLocation, GeoLocationFilter, TimestampRange
 
@@ -142,7 +154,7 @@ class Asset(CogniteResource):
         """
         return self._cognite_client.assets.retrieve_subtree(id=self.id, depth=depth)
 
-    def time_series(self, **kwargs) -> "TimeSeriesList":
+    def time_series(self, **kwargs) -> "TimeSeriesList":  # noqa: F821
         """Retrieve all time series related to this asset.
 
         Returns:
@@ -150,7 +162,7 @@ class Asset(CogniteResource):
         """
         return self._cognite_client.time_series.list(asset_ids=[self.id], **kwargs)
 
-    def sequences(self, **kwargs) -> "SequenceList":
+    def sequences(self, **kwargs) -> "SequenceList":  # noqa: F821
         """Retrieve all sequences related to this asset.
 
         Returns:
@@ -158,7 +170,7 @@ class Asset(CogniteResource):
         """
         return self._cognite_client.sequences.list(asset_ids=[self.id], **kwargs)
 
-    def events(self, **kwargs) -> "EventList":
+    def events(self, **kwargs) -> "EventList":  # noqa: F821
         """Retrieve all events related to this asset.
 
         Returns:
@@ -167,7 +179,7 @@ class Asset(CogniteResource):
 
         return self._cognite_client.events.list(asset_ids=[self.id], **kwargs)
 
-    def files(self, **kwargs) -> "FileMetadataList":
+    def files(self, **kwargs) -> "FileMetadataList":  # noqa: F821
         """Retrieve all files metadata related to this asset.
 
         Returns:
@@ -288,7 +300,7 @@ class AssetList(CogniteResourceList):
         super().__init__(resources, cognite_client)
         self._retrieve_chunk_size = 100
 
-    def time_series(self) -> "TimeSeriesList":
+    def time_series(self) -> "TimeSeriesList":  # noqa: F821
         """Retrieve all time series related to these assets.
 
         Returns:
@@ -298,7 +310,7 @@ class AssetList(CogniteResourceList):
 
         return self._retrieve_related_resources(TimeSeriesList, self._cognite_client.time_series)
 
-    def sequences(self) -> "SequenceList":
+    def sequences(self) -> "SequenceList":  # noqa: F821
         """Retrieve all sequences related to these assets.
 
         Returns:
@@ -308,7 +320,7 @@ class AssetList(CogniteResourceList):
 
         return self._retrieve_related_resources(SequenceList, self._cognite_client.sequences)
 
-    def events(self) -> "EventList":
+    def events(self) -> "EventList":  # noqa: F821
         """Retrieve all events related to these assets.
 
         Returns:
@@ -318,7 +330,7 @@ class AssetList(CogniteResourceList):
 
         return self._retrieve_related_resources(EventList, self._cognite_client.events)
 
-    def files(self) -> "FileMetadataList":
+    def files(self) -> "FileMetadataList":  # noqa: F821
         """Retrieve all files metadata related to these assets.
 
         Returns:

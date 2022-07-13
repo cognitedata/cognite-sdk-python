@@ -1,4 +1,7 @@
-from cognite.client.data_classes._base import *
+from typing import Dict, Union
+
+from cognite.client import utils
+from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 
 
 class TransformationSchemaType:

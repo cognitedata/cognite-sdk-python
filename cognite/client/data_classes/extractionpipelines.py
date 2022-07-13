@@ -1,9 +1,12 @@
 from typing import Any, Dict, List, Union
 
-from cognite.client.data_classes._base import *
+from cognite.client import utils
 from cognite.client.data_classes._base import (
     CogniteFilter,
+    CogniteListUpdate,
+    CogniteObjectUpdate,
     CognitePrimitiveUpdate,
+    CognitePropertyClassUtil,
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,

@@ -1,6 +1,14 @@
 import copy
+from typing import Any, Dict, List, Union
 
-from cognite.client.data_classes._base import *
+from cognite.client.data_classes._base import (
+    CogniteFilter,
+    CogniteLabelUpdate,
+    CognitePrimitiveUpdate,
+    CogniteResource,
+    CogniteResourceList,
+    CogniteUpdate,
+)
 from cognite.client.data_classes.assets import Asset
 from cognite.client.data_classes.events import Event
 from cognite.client.data_classes.files import FileMetadata

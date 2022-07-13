@@ -1,4 +1,11 @@
-from cognite.client.data_classes._base import *
+from typing import Any, Dict, Union
+
+from cognite.client.data_classes._base import (
+    CognitePrimitiveUpdate,
+    CogniteResource,
+    CogniteResourceList,
+    CogniteUpdate,
+)
 
 
 class TransformationSchedule(CogniteResource):

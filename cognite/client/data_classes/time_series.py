@@ -1,7 +1,17 @@
-from typing import *
-from typing import List
+from typing import Any, Dict, List, Optional, Union
 
-from cognite.client.data_classes._base import *
+from cognite.client import utils
+from cognite.client.data_classes._base import (
+    CogniteFilter,
+    CogniteLabelUpdate,
+    CogniteListUpdate,
+    CogniteObjectUpdate,
+    CognitePrimitiveUpdate,
+    CognitePropertyClassUtil,
+    CogniteResource,
+    CogniteResourceList,
+    CogniteUpdate,
+)
 from cognite.client.data_classes.shared import TimestampRange
 
 
@@ -92,7 +102,7 @@ class TimeSeries(CogniteResource):
         )
         return sum(dps.count)
 
-    def latest(self) -> Optional["Datapoint"]:
+    def latest(self) -> Optional["Datapoint"]:  # noqa: F821
         """Returns the latest datapoint in this time series
 
         Returns:
@@ -104,7 +114,7 @@ class TimeSeries(CogniteResource):
             return list(dps)[0]
         return None
 
-    def first(self) -> Optional["Datapoint"]:
+    def first(self) -> Optional["Datapoint"]:  # noqa: F821
         """Returns the first datapoint in this time series.
 
         Returns:
@@ -116,7 +126,7 @@ class TimeSeries(CogniteResource):
             return list(dps)[0]
         return None
 
-    def asset(self) -> "Asset":
+    def asset(self) -> "Asset":  # noqa: F821
         """Returns the asset this time series belongs to.
 
         Returns:

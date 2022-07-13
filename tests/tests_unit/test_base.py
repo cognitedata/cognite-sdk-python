@@ -1,10 +1,22 @@
+import json
 from decimal import Decimal
+from typing import Any, Dict, List
 from unittest import mock
 
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes._base import *
+from cognite.client.data_classes._base import (
+    CogniteFilter,
+    CogniteLabelUpdate,
+    CogniteListUpdate,
+    CogniteObjectUpdate,
+    CognitePrimitiveUpdate,
+    CogniteResource,
+    CogniteResourceList,
+    CogniteResponse,
+    CogniteUpdate,
+)
 from cognite.client.exceptions import CogniteMissingClientError
 from tests.utils import set_env_var
 

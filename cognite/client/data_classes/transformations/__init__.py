@@ -1,7 +1,22 @@
-from cognite.client.data_classes._base import *
+from typing import Any, Awaitable, Dict, List, Optional, Union
+
+from cognite.client import utils
+from cognite.client.data_classes._base import (
+    CogniteFilter,
+    CognitePrimitiveUpdate,
+    CogniteResource,
+    CogniteResourceList,
+    CogniteUpdate,
+)
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.data_classes.transformations._alphatypes import AlphaDataModelInstances
-from cognite.client.data_classes.transformations.common import *
+from cognite.client.data_classes.transformations.common import (
+    OidcCredentials,
+    RawTable,
+    SequenceRows,
+    TransformationBlockedInfo,
+    TransformationDestination,
+)
 from cognite.client.data_classes.transformations.jobs import TransformationJob, TransformationJobList
 from cognite.client.data_classes.transformations.schedules import TransformationSchedule
 from cognite.client.data_classes.transformations.schema import TransformationSchemaColumnList

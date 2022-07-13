@@ -177,7 +177,7 @@ def clean_old_feature_types(cognite_client):
             if feature_type_age_in_milliseconds > one_hour_in_milliseconds:
                 print(f"Deleting old feature type {ft.external_id}")
                 cognite_client.geospatial.delete_feature_types(external_id=ft.external_id, recursive=True)
-    except:
+    except Exception:
         pass
 
 
@@ -186,11 +186,11 @@ def clean_old_feature_types(cognite_client):
 def clean_old_custom_crs(cognite_client):
     try:
         cognite_client.geospatial.delete_coordinate_reference_systems(srids=[121111])  # clean up
-    except:
+    except Exception:
         pass
     try:
         cognite_client.geospatial.delete_coordinate_reference_systems(srids=[FIXED_SRID])  # clean up
-    except:
+    except Exception:
         pass
 
 

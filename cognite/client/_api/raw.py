@@ -1,4 +1,4 @@
-from typing import *
+from typing import Any, Dict, Generator, List, Optional, Union
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -548,7 +548,7 @@ class RawRowsAPI(APIClient):
         max_last_updated_time: int = None,
         columns: List[str] = None,
         limit: int = 25,
-    ) -> "pandas.DataFrame":
+    ) -> "pandas.DataFrame":  # noqa: F821
         """`Retrieve rows in a table as a pandas dataframe. <https://docs.cognite.com/api/v1/#operation/getRows>`_
 
         Rowkeys are used as the index.

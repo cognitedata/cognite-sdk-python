@@ -1,8 +1,19 @@
+import json
 import math
-from typing import *
-from typing import List
+from typing import Any, Dict, Generator, List, Optional, Tuple, Union
 
-from cognite.client.data_classes._base import *
+from cognite.client import utils
+from cognite.client.data_classes._base import (
+    CogniteFilter,
+    CogniteLabelUpdate,
+    CogniteListUpdate,
+    CogniteObjectUpdate,
+    CognitePrimitiveUpdate,
+    CognitePropertyClassUtil,
+    CogniteResource,
+    CogniteResourceList,
+    CogniteUpdate,
+)
 from cognite.client.data_classes.shared import TimestampRange
 
 
@@ -363,7 +374,7 @@ class SequenceData:
             dumped = {utils._auxiliary.to_camel_case(key): value for key, value in dumped.items()}
         return {key: value for key, value in dumped.items() if value is not None}
 
-    def to_pandas(self, column_names: str = "columnExternalId") -> "pandas.DataFrame":
+    def to_pandas(self, column_names: str = "columnExternalId") -> "pandas.DataFrame":  # noqa: F821
         """Convert the sequence data into a pandas DataFrame.
 
         Args:
@@ -420,7 +431,7 @@ class SequenceDataList(CogniteResourceList):
     def __str__(self):
         return json.dumps(self.dump(), indent=4)
 
-    def to_pandas(self, column_names: str = "externalId|columnExternalId") -> "pandas.DataFrame":
+    def to_pandas(self, column_names: str = "externalId|columnExternalId") -> "pandas.DataFrame":  # noqa: F821
         """Convert the sequence data list into a pandas DataFrame. Each column will be a sequence.
 
         Args:

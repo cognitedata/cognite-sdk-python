@@ -120,7 +120,7 @@ class TestEvents:
         } == jsgz_load(calls[0].request.body)
 
     def test_list_subtree(self, cognite_client, mock_events_response):
-        res = cognite_client.events.list(limit=10, asset_subtree_external_ids=["a"], asset_subtree_ids=[1, 2])
+        cognite_client.events.list(limit=10, asset_subtree_external_ids=["a"], asset_subtree_ids=[1, 2])
         calls = mock_events_response.calls
         assert 1 == len(calls)
         assert {

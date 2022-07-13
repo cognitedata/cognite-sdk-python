@@ -1,6 +1,15 @@
-from typing import *
+from typing import Any, Dict, List, Union
 
-from cognite.client.data_classes._base import *
+from cognite.client.data_classes._base import (
+    CogniteLabelUpdate,
+    CogniteListUpdate,
+    CogniteObjectUpdate,
+    CognitePrimitiveUpdate,
+    CognitePropertyClassUtil,
+    CogniteResource,
+    CogniteResourceList,
+    CogniteUpdate,
+)
 
 
 class RevisionCameraProperties(dict):

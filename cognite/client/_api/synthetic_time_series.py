@@ -17,7 +17,7 @@ class SyntheticDatapointsAPI(APIClient):
 
     def query(
         self,
-        expressions: Union[str, "sympy.Expr", List[Union[str, "sympy.Expr"]]],
+        expressions: Union[str, "sympy.Expr", List[Union[str, "sympy.Expr"]]],  # noqa: F821
         start: Union[int, str, datetime],
         end: Union[int, str, datetime],
         limit: int = None,

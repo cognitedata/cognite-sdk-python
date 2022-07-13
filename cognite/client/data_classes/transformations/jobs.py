@@ -1,8 +1,10 @@
 import asyncio
 import time
 from enum import Enum
+from typing import Dict, Optional, Union
 
-from cognite.client.data_classes._base import *
+from cognite.client import utils
+from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteResourceList
 from cognite.client.data_classes.transformations._alphatypes import AlphaDataModelInstances
 from cognite.client.data_classes.transformations.common import RawTable, SequenceRows, TransformationDestination
 
