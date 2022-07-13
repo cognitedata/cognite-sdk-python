@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [3.1.0] - 2022-07-13
+### Changed
+- Helper functions for conversion to/from datetime now warns on naive datetimes and their interpretation.
+
 ## [3.0.1] - 2022-07-13
 ### Fixed
 - fixed missing README.md in package
