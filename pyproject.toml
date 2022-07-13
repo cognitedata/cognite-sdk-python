@@ -1,9 +1,11 @@
 [tool.poetry]
 name = "cognite-sdk"
 
-version = "3.0.0"
+version = "3.0.1"
 
 description = "Cognite Python SDK"
+readme = "README.md"
+documentation = "https://cognite-sdk-python.readthedocs-hosted.com"
 authors = ["Erlend Vollset <erlend.vollset@cognite.com>"]
 
 packages = [{ include="cognite", from="." }]
