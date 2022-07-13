@@ -1,7 +1,8 @@
 import numbers
 import re
 import time
-from datetime import datetime
+import warnings
+from datetime import datetime, timezone
 from typing import Dict, List, Union
 
 _unit_in_ms_without_week = {"s": 1000, "m": 60000, "h": 3600000, "d": 86400000}
@@ -9,22 +10,36 @@ _unit_in_ms = {**_unit_in_ms_without_week, "w": 604800000}
 
 
 def datetime_to_ms(dt):
-    epoch = datetime.utcfromtimestamp(0)
-    return int((dt - epoch).total_seconds() * 1000.0)
+    if dt.tzinfo is None:
+        warnings.warn(
+            "Interpreting given naive datetime as UTC instead of local time (Python default behaviour). "
+            "This will change in the next major release (4.0.0). Please use (timezone) aware datetimes "
+            "or pass an integer with number of milliseconds since epoch (leap seconds excluded).",
+            FutureWarning,
+        )
+        dt = dt.replace(tzinfo=timezone.utc)
+    return int(1000 * dt.timestamp())
 
 
-def ms_to_datetime(ms: Union[int, float]) -> datetime:
+def ms_to_datetime(ms: float) -> datetime:
     """Converts milliseconds since epoch to datetime object.
 
     Args:
-        ms (Union[int, float]): Milliseconds since epoch
+        ms (float): Milliseconds since epoch
 
     Returns:
-        datetime: Datetime object.
+        datetime: Naive datetime object in UTC.
 
     """
     if ms < 0:
         raise ValueError("ms must be greater than or equal to zero.")
+
+    warnings.warn(
+        "This function, `ms_to_datetime` returns a naive datetime object in UTC. This is different from "
+        "the default interpretation of naive datetimes in Python (local time). This behaviour will "
+        "change to returning timezone-aware timestamps in the next major release (4.0.0).",
+        FutureWarning,
+    )
     return datetime.utcfromtimestamp(ms / 1000)
 
 
@@ -68,11 +83,11 @@ def time_ago_to_ms(time_ago_string: str) -> int:
     return ms
 
 
-def timestamp_to_ms(timestamp: Union[int, float, str, datetime]) -> int:
+def timestamp_to_ms(timestamp: Union[float, str, datetime]) -> int:
     """Returns the ms representation of some timestamp given by milliseconds, time-ago format or datetime object
 
     Args:
-        timestamp (Union[int, float, str, datetime]): Convert this timestamp to ms.
+        timestamp (Union[float, str, datetime]): Convert this timestamp to ms.
 
     Returns:
         int: Milliseconds since epoch representation of timestamp
