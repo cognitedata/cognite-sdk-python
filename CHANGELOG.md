@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [3.0.1] - 2022-07-13
+### Fixed
+- fixed missing README.md in package
+
 ## [3.0.0] - 2022-07-12
 ### Changed
 - Poetry build, one single package "cognite-sdk"
