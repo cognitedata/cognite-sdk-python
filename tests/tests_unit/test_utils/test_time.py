@@ -14,8 +14,20 @@ class TestDatetimeToMs:
         assert utils._time.datetime_to_ms(datetime(2018, 1, 31)) == 1517356800000
         assert utils._time.datetime_to_ms(datetime(2018, 1, 31, 11, 11, 11)) == 1517397071000
         assert utils._time.datetime_to_ms(datetime(100, 1, 31)) == -59008867200000
-        with pytest.raises(TypeError):
+        with pytest.raises(AttributeError):
             utils._time.datetime_to_ms(None)
+
+    def test_aware_datetime_to_ms(self):
+        from datetime import datetime, timezone
+
+        # TODO: Starting from PY39 we should also add tests using:
+        # from zoneinfo import ZoneInfo
+        # datetime(2020, 10, 31, 12, tzinfo=ZoneInfo("America/Los_Angeles"))
+
+        utc = timezone.utc
+        assert utils._time.datetime_to_ms(datetime(2018, 1, 31, tzinfo=utc)) == 1517356800000
+        assert utils._time.datetime_to_ms(datetime(2018, 1, 31, 11, 11, 11, tzinfo=utc)) == 1517397071000
+        assert utils._time.datetime_to_ms(datetime(100, 1, 31, tzinfo=utc)) == -59008867200000
 
     def test_ms_to_datetime(self):
         from datetime import datetime
