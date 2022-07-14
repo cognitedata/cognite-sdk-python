@@ -1,6 +1,6 @@
 import json
 import math
-from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, Tuple, Union, cast
 
 from cognite.client import utils
 from cognite.client.data_classes._base import (
@@ -414,14 +414,14 @@ class SequenceData(CogniteResource):
         )
 
     @property
-    def column_external_ids(self) -> List[Optional[str]]:
+    def column_external_ids(self) -> List[str]:
         """Retrieves list of column external ids for the sequence, for use in e.g. data retrieve or insert methods.
 
         Returns:
             List of sequence column external ids.
         """
         assert self.columns is not None
-        return [cast(Optional[str], c.get("externalId")) for c in self.columns]
+        return [cast(str, c.get("externalId")) for c in self.columns]
 
     @property
     def column_value_types(self) -> List[str]:

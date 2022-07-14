@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, cast
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -19,7 +19,7 @@ from cognite.client.data_classes.templates import (
 
 
 class TemplatesAPI(APIClient):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.groups = TemplateGroupsAPI(*args, **kwargs)
         self.versions = TemplateGroupVersionsAPI(*args, **kwargs)
@@ -72,7 +72,7 @@ class TemplatesAPI(APIClient):
 class TemplateGroupsAPI(APIClient):
     _RESOURCE_PATH = "/templategroups"
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
     def create(
@@ -123,8 +123,12 @@ class TemplateGroupsAPI(APIClient):
         path = self._RESOURCE_PATH + "/upsert"
         is_single = not isinstance(template_groups, list)
         if is_single:
-            template_groups = [template_groups]
-        updated = self._post(path, {"items": [item.dump(camel_case=True) for item in template_groups]}).json()["items"]
+            template_groups_processed: List[TemplateGroup] = cast(List[TemplateGroup], [template_groups])
+        else:
+            template_groups_processed = cast(List[TemplateGroup], template_groups)
+        updated = self._post(
+            path, {"items": [item.dump(camel_case=True) for item in template_groups_processed]}
+        ).json()["items"]
         res = TemplateGroupList._load(updated, cognite_client=self._cognite_client)
         if is_single:
             return res[0]
@@ -147,12 +151,15 @@ class TemplateGroupsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.templates.groups.retrieve_multiple(external_ids=["abc", "def"])
         """
-        return self._retrieve_multiple(
-            list_cls=TemplateGroupList,
-            resource_cls=TemplateGroup,
-            external_ids=external_ids,
-            ignore_unknown_ids=ignore_unknown_ids,
-            wrap_ids=True,
+        return cast(
+            TemplateGroupList,
+            self._retrieve_multiple(
+                list_cls=TemplateGroupList,
+                resource_cls=TemplateGroup,
+                external_ids=external_ids,
+                ignore_unknown_ids=ignore_unknown_ids,
+                wrap_ids=True,
+            ),
         )
 
     def list(self, limit: int = 25, owners: List[str] = None) -> TemplateGroupList:
@@ -212,10 +219,10 @@ class TemplateGroupsAPI(APIClient):
 class TemplateGroupVersionsAPI(APIClient):
     _RESOURCE_PATH = "/templategroups/{}/versions"
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
-    def upsert(self, external_id: str, version: TemplateGroupVersion):
+    def upsert(self, external_id: str, version: TemplateGroupVersion) -> TemplateGroupVersion:
         """`Upsert a template group version.`
         A Template Group update supports specifying different conflict modes, which is used when an existing schema already exists.
 
@@ -256,8 +263,8 @@ class TemplateGroupVersionsAPI(APIClient):
                 >>> c.templates.versions.upsert(template_group.external_id, template_group_version)
         """
         resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id) + "/upsert"
-        version = self._post(resource_path, version.dump(camel_case=True)).json()
-        return TemplateGroupVersion._load(version)
+        version_res = self._post(resource_path, version.dump(camel_case=True)).json()
+        return TemplateGroupVersion._load(version_res)
 
     def list(
         self, external_id: str, limit: int = 25, min_version: Optional[int] = None, max_version: Optional[int] = None
@@ -365,7 +372,7 @@ class TemplateInstancesAPI(APIClient):
         )
 
     def upsert(
-        self, external_id: str, version: int, instances: Union[TemplateGroup, List[TemplateGroup]]
+        self, external_id: str, version: int, instances: Union[TemplateInstance, List[TemplateInstance]]
     ) -> Union[TemplateInstance, TemplateInstanceList]:
         """`Upsert one or more template instances.`
         Will overwrite existing instances.
@@ -417,7 +424,7 @@ class TemplateInstancesAPI(APIClient):
 
     def update(
         self, external_id: str, version: int, item: Union[TemplateInstanceUpdate, List[TemplateInstanceUpdate]]
-    ) -> Union[TemplateInstance, List[TemplateInstance]]:
+    ) -> Union[TemplateInstance, TemplateInstanceList]:
         """`Update one or more template instances`
         Args:
             item (Union[TemplateInstanceUpdate, List[TemplateInstanceUpdate]]): Templates instance(s) to update
@@ -465,13 +472,16 @@ class TemplateInstancesAPI(APIClient):
                 >>> res = c.templates.instances.retrieve_multiple(external_id="sdk-test-group", version=1, external_ids=["abc", "def"])
         """
         resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
-        return self._retrieve_multiple(
-            list_cls=TemplateInstanceList,
-            resource_cls=TemplateInstance,
-            resource_path=resource_path,
-            external_ids=external_ids,
-            ignore_unknown_ids=ignore_unknown_ids,
-            wrap_ids=True,
+        return cast(
+            TemplateInstanceList,
+            self._retrieve_multiple(
+                list_cls=TemplateInstanceList,
+                resource_cls=TemplateInstance,
+                resource_path=resource_path,
+                external_ids=external_ids,
+                ignore_unknown_ids=ignore_unknown_ids,
+                wrap_ids=True,
+            ),
         )
 
     def list(
@@ -504,7 +514,7 @@ class TemplateInstancesAPI(APIClient):
                 >>> template_instances_list = c.templates.instances.list("template-group-ext-id", 1, limit=5)
         """
         resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
-        filter = {}
+        filter: Dict[str, Any] = {}
         if data_set_ids is not None:
             filter["dataSetIds"] = data_set_ids
         if template_names is not None:
@@ -630,7 +640,7 @@ class TemplateViewsAPI(APIClient):
         return res
 
     def resolve(
-        self, external_id: str, version: int, view_external_id: str, input: Optional[Dict[str, any]], limit: int = 25
+        self, external_id: str, version: int, view_external_id: str, input: Optional[Dict[str, Any]], limit: int = 25
     ) -> ViewResolveList:
         """`Resolves a View.`
         It resolves the source specified in a View with the provided input and applies the mapping rules to the response.

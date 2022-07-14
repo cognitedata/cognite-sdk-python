@@ -1,5 +1,5 @@
 import copy
-from typing import Any, Dict, Iterator, List, Optional, Union
+from typing import Any, Dict, Iterator, List, Optional, Union, cast
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -10,7 +10,7 @@ from cognite.client.data_classes.labels import LabelFilter
 class RelationshipsAPI(APIClient):
     _RESOURCE_PATH = "/relationships"
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self._CREATE_LIMIT = 1000
         self._LIST_SUBQUERY_LIMIT = 1000
@@ -29,7 +29,7 @@ class RelationshipsAPI(APIClient):
         created_time: Dict[str, int] = None,
         active_at_time: Dict[str, int] = None,
         labels: LabelFilter = None,
-    ):
+    ) -> Dict[str, Any]:
         return RelationshipFilter(
             source_external_ids=source_external_ids,
             source_types=source_types,
@@ -89,15 +89,18 @@ class RelationshipsAPI(APIClient):
         Yields:
             Union[Relationship, RelationshipList]: yields Relationship one by one if chunk is not specified, else RelationshipList objects.
         """
+        data_set_ids_processed = None
         if data_set_ids or data_set_external_ids:
-            data_set_ids = self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
+            data_set_ids_processed = cast(
+                List[Dict[str, Any]], self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
+            )
 
         filter = self._create_filter(
             source_external_ids=source_external_ids,
             source_types=source_types,
             target_external_ids=target_external_ids,
             target_types=target_types,
-            data_set_ids=data_set_ids,
+            data_set_ids=data_set_ids_processed,
             start_time=start_time,
             end_time=end_time,
             confidence=confidence,
@@ -135,7 +138,7 @@ class RelationshipsAPI(APIClient):
         Yields:
             Relationship: yields Relationships one by one.
         """
-        return self.__call__()
+        return cast(Iterator[Relationship], self.__call__())
 
     def retrieve(self, external_id: str, fetch_resources: bool = False) -> Optional[Relationship]:
         """Retrieve a single relationship by external id.
@@ -156,12 +159,15 @@ class RelationshipsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.relationships.retrieve(external_id="1")
         """
-        return self._retrieve_multiple(
-            list_cls=RelationshipList,
-            resource_cls=Relationship,
-            external_ids=external_id,
-            wrap_ids=True,
-            other_params={"fetchResources": fetch_resources},
+        return cast(
+            Optional[Relationship],
+            self._retrieve_multiple(
+                list_cls=RelationshipList,
+                resource_cls=Relationship,
+                external_ids=external_id,
+                wrap_ids=True,
+                other_params={"fetchResources": fetch_resources},
+            ),
         )
 
     def retrieve_multiple(self, external_ids: List[str], fetch_resources: bool = False) -> RelationshipList:
@@ -184,12 +190,15 @@ class RelationshipsAPI(APIClient):
                 >>> res = c.relationships.retrieve_multiple(external_ids=["abc", "def"])
         """
         utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=False)
-        return self._retrieve_multiple(
-            list_cls=RelationshipList,
-            resource_cls=Relationship,
-            external_ids=external_ids,
-            wrap_ids=True,
-            other_params={"fetchResources": fetch_resources},
+        return cast(
+            RelationshipList,
+            self._retrieve_multiple(
+                list_cls=RelationshipList,
+                resource_cls=Relationship,
+                external_ids=external_ids,
+                wrap_ids=True,
+                other_params={"fetchResources": fetch_resources},
+            ),
         )
 
     def list(
@@ -252,15 +261,18 @@ class RelationshipsAPI(APIClient):
                 ...     relationship # do something with the relationship
         """
 
+        data_set_ids_processed = None
         if data_set_ids or data_set_external_ids:
-            data_set_ids = self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
+            data_set_ids_processed = cast(
+                List[Dict[str, Any]], self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
+            )
 
         filter = self._create_filter(
             source_external_ids=source_external_ids,
             source_types=source_types,
             target_external_ids=target_external_ids,
             target_types=target_types,
-            data_set_ids=data_set_ids,
+            data_set_ids=data_set_ids_processed,
             start_time=start_time,
             end_time=end_time,
             confidence=confidence,
@@ -269,9 +281,12 @@ class RelationshipsAPI(APIClient):
             active_at_time=active_at_time,
             labels=labels,
         )
-        target_external_ids = filter.get("targetExternalIds", [])
-        source_external_ids = filter.get("sourceExternalIds", [])
-        if len(target_external_ids) > self._LIST_SUBQUERY_LIMIT or len(source_external_ids) > self._LIST_SUBQUERY_LIMIT:
+        target_external_id_list: List[str] = filter.get("targetExternalIds", [])
+        source_external_id_list: List[str] = filter.get("sourceExternalIds", [])
+        if (
+            len(target_external_id_list) > self._LIST_SUBQUERY_LIMIT
+            or len(source_external_id_list) > self._LIST_SUBQUERY_LIMIT
+        ):
             if limit not in [-1, None, float("inf")]:
                 raise ValueError(
                     "Querying more than {} source_external_ids/target_external_ids only supported for queries without limit (pass -1 / None / inf instead of {}".format(
@@ -280,13 +295,13 @@ class RelationshipsAPI(APIClient):
                 )
             tasks = []
 
-            for ti in range(0, max(1, len(target_external_ids)), self._LIST_SUBQUERY_LIMIT):
-                for si in range(0, max(1, len(source_external_ids)), self._LIST_SUBQUERY_LIMIT):
+            for ti in range(0, max(1, len(target_external_id_list)), self._LIST_SUBQUERY_LIMIT):
+                for si in range(0, max(1, len(source_external_id_list)), self._LIST_SUBQUERY_LIMIT):
                     task_filter = copy.copy(filter)
-                    if target_external_ids:  # keep null if it was
-                        task_filter["targetExternalIds"] = target_external_ids[ti : ti + self._LIST_SUBQUERY_LIMIT]
-                    if source_external_ids:  # keep null if it was
-                        task_filter["sourceExternalIds"] = source_external_ids[si : si + self._LIST_SUBQUERY_LIMIT]
+                    if target_external_id_list:  # keep null if it was
+                        task_filter["targetExternalIds"] = target_external_id_list[ti : ti + self._LIST_SUBQUERY_LIMIT]
+                    if source_external_id_list:  # keep null if it was
+                        task_filter["sourceExternalIds"] = source_external_id_list[si : si + self._LIST_SUBQUERY_LIMIT]
                     tasks.append((task_filter,))
 
             tasks_summary = utils._concurrency.execute_tasks_concurrently(

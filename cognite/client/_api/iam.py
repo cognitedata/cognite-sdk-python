@@ -1,5 +1,5 @@
 import numbers
-from typing import List, Union
+from typing import Any, List, Union
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -17,7 +17,9 @@ from cognite.client.data_classes.iam import TokenInspection
 
 
 class IAMAPI(APIClient):
-    def __init__(self, config: utils._client_config.ClientConfig, api_version: str = None, cognite_client=None) -> None:
+    def __init__(
+        self, config: utils._client_config.ClientConfig, api_version: str = None, cognite_client: Any = None
+    ) -> None:
         super().__init__(config, api_version=api_version, cognite_client=cognite_client)
         self.service_accounts = ServiceAccountsAPI(config, api_version=api_version, cognite_client=cognite_client)
         self.api_keys = APIKeysAPI(config, api_version=api_version, cognite_client=cognite_client)
@@ -133,11 +135,12 @@ class APIKeysAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.iam.api_keys.create(1)
         """
-        utils._auxiliary.assert_type(service_account_id, "service_account_id", [numbers.Integral, list])
         if isinstance(service_account_id, numbers.Integral):
             items = {"serviceAccountId": service_account_id}
-        else:
+        elif isinstance(service_account_id, list):
             items = [{"serviceAccountId": sa_id} for sa_id in service_account_id]
+        else:
+            raise TypeError("service_account_id must be an int or a list of ints")
         return self._create_multiple(list_cls=APIKeyList, resource_cls=APIKey, items=items)
 
     def delete(self, id: Union[int, List[int]]) -> None:

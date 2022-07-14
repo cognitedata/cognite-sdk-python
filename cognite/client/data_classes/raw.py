@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from typing import TYPE_CHECKING, Any, Dict, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Optional, Union, cast
 
 from cognite.client import utils
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
@@ -69,7 +69,7 @@ class Table(CogniteResource):
         self.created_time = created_time
         self._cognite_client = cast(Any, cognite_client)
 
-        self._db_name = None
+        self._db_name: Optional[str] = None
 
     def rows(self, key: str = None, limit: int = None) -> Union[Row, RowList]:
         """Get the rows in this table.

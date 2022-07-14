@@ -1,13 +1,16 @@
-from typing import Any, Dict, Iterator, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union, cast
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Database, DatabaseList, Row, RowList, Table, TableList
 from cognite.client.utils._auxiliary import local_import
 
+if TYPE_CHECKING:
+    import pandas
+
 
 class RawAPI(APIClient):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.databases = RawDatabasesAPI(*args, **kwargs)
         self.tables = RawTablesAPI(*args, **kwargs)
@@ -31,7 +34,7 @@ class RawDatabasesAPI(APIClient):
         )
 
     def __iter__(self) -> Iterator[Database]:
-        return self.__call__()
+        return cast(Iterator[Database], self.__call__())
 
     def create(self, name: Union[str, List[str]]) -> Union[Database, DatabaseList]:
         """`Create one or more databases. <https://docs.cognite.com/api/v1/#operation/createDBs>`_
@@ -52,7 +55,7 @@ class RawDatabasesAPI(APIClient):
         """
         utils._auxiliary.assert_type(name, "name", [str, list])
         if isinstance(name, str):
-            items = {"name": name}
+            items: Union[Dict[str, Any], List[Dict[str, Any]]] = {"name": name}
         else:
             items = [{"name": n} for n in name]
         return self._create_multiple(list_cls=DatabaseList, resource_cls=Database, items=items)
@@ -169,7 +172,7 @@ class RawTablesAPI(APIClient):
         """
         utils._auxiliary.assert_type(name, "name", [str, list])
         if isinstance(name, str):
-            items = {"name": name}
+            items: Union[Dict[str, Any], List[Dict[str, Any]]] = {"name": name}
         else:
             items = [{"name": n} for n in name]
         tb = self._create_multiple(
@@ -255,7 +258,7 @@ class RawTablesAPI(APIClient):
             method="GET",
             limit=limit,
         )
-        return self._set_db_name_on_tables(tb, db_name)
+        return cast(TableList, self._set_db_name_on_tables(tb, db_name))
 
     def _set_db_name_on_tables(self, tb: Union[Table, TableList], db_name: str) -> Union[Table, TableList]:
         if isinstance(tb, Table):
@@ -271,7 +274,9 @@ class RawTablesAPI(APIClient):
 class RawRowsAPI(APIClient):
     _RESOURCE_PATH = "/raw/dbs/{}/tables/{}/rows"
 
-    def __init__(self, config: utils._client_config.ClientConfig, api_version: str = None, cognite_client=None):
+    def __init__(
+        self, config: utils._client_config.ClientConfig, api_version: Optional[str] = None, cognite_client: Any = None
+    ) -> None:
         super().__init__(config, api_version, cognite_client)
         self._CREATE_LIMIT = 10000
         self._LIST_LIMIT = 10000
@@ -380,7 +385,7 @@ class RawRowsAPI(APIClient):
         rows = [Row(key=key, columns=cols) for key, cols in df_dict.items()]
         self.insert(db_name, table_name, rows)
 
-    def _process_row_input(self, row: List[Union[List, Dict, Row]]):
+    def _process_row_input(self, row: Union[List[Row], Row, Dict]) -> List[Union[List, Dict]]:
         utils._auxiliary.assert_type(row, "row", [list, dict, Row])
         rows = []
         if isinstance(row, dict):
@@ -539,16 +544,15 @@ class RawRowsAPI(APIClient):
             raise summary.exceptions[0]
         return RowList(summary.joined_results())
 
-    def _make_columns_param(self, columns: List[str]) -> Optional[str]:
+    def _make_columns_param(self, columns: Optional[List[str]]) -> Optional[str]:
         if columns is None:
             return None
         if not isinstance(columns, List):
             raise ValueError("Expected a list for argument columns")
         if len(columns) == 0:
-            columns = ","
+            return ","
         else:
-            columns = ",".join([str(x) for x in columns])
-        return columns
+            return ",".join([str(x) for x in columns])
 
     def retrieve_dataframe(
         self,
@@ -558,7 +562,7 @@ class RawRowsAPI(APIClient):
         max_last_updated_time: int = None,
         columns: List[str] = None,
         limit: int = 25,
-    ) -> "pandas.DataFrame":  # noqa: F821
+    ) -> "pandas.DataFrame":
         """`Retrieve rows in a table as a pandas dataframe. <https://docs.cognite.com/api/v1/#operation/getRows>`_
 
         Rowkeys are used as the index.
@@ -582,7 +586,7 @@ class RawRowsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> df = c.raw.rows.retrieve_dataframe("db1", "t1", limit=5)
         """
-        pd = local_import("pandas")
+        pd = cast(Any, local_import("pandas"))
         rows = self.list(db_name, table_name, min_last_updated_time, max_last_updated_time, columns, limit)
         idx = [r.key for r in rows]
         cols = [r.columns for r in rows]

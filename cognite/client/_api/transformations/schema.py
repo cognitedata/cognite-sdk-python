@@ -13,7 +13,7 @@ class TransformationSchemaAPI(APIClient):
     _RESOURCE_PATH = "/transformations/schema"
 
     def retrieve(
-        self, destination: TransformationDestination = None, conflict_mode: Optional[str] = None
+        self, destination: TransformationDestination, conflict_mode: Optional[str] = None
     ) -> TransformationSchemaColumnList:
         """`Get expected schema for a transformation destination. <https://docs.cognite.com/api/v1/#operation/getTransformationSchema>`_
 

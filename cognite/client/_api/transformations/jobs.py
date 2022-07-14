@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, cast
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -70,8 +70,11 @@ class TransformationJobsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.transformations.jobs.retrieve(id=1)
         """
-        return self._retrieve_multiple(
-            list_cls=TransformationJobList, resource_cls=TransformationJob, ids=id, wrap_ids=True
+        return cast(
+            Optional[TransformationJob],
+            self._retrieve_multiple(
+                list_cls=TransformationJobList, resource_cls=TransformationJob, ids=id, wrap_ids=True
+            ),
         )
 
     def list_metrics(self, id: int) -> TransformationJobMetricList:
@@ -120,10 +123,13 @@ class TransformationJobsAPI(APIClient):
                 >>> res = c.transformations.jobs.retrieve_multiple(ids=[1, 2, 3])
         """
         utils._auxiliary.assert_type(ids, "id", [List], allow_none=True)
-        return self._retrieve_multiple(
-            list_cls=TransformationJobList,
-            resource_cls=TransformationJob,
-            ids=ids,
-            ignore_unknown_ids=ignore_unknown_ids,
-            wrap_ids=True,
+        return cast(
+            TransformationJobList,
+            self._retrieve_multiple(
+                list_cls=TransformationJobList,
+                resource_cls=TransformationJob,
+                ids=ids,
+                ignore_unknown_ids=ignore_unknown_ids,
+                wrap_ids=True,
+            ),
         )

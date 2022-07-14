@@ -53,10 +53,10 @@ class Annotation(CogniteResource):
         self.creating_user = creating_user
         self.annotated_resource_type = annotated_resource_type
         self.annotated_resource_id = annotated_resource_id
-        self.id = None  # Read only
-        self.created_time = None  # Read only
-        self.last_updated_time = None  # Read only
-        self._cognite_client = None  # Read only
+        self.id: Optional[int] = None  # Read only
+        self.created_time: Optional[int] = None  # Read only
+        self.last_updated_time: Optional[int] = None  # Read only
+        self._cognite_client: Any = None  # Read only
 
     @classmethod
     def _load(cls, resource: Union[Dict[str, Any], str], cognite_client: Any = None) -> "Annotation":

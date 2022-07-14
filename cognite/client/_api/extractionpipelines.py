@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, cast
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -43,12 +43,15 @@ class ExtractionPipelinesAPI(APIClient):
         """
 
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
-        return self._retrieve_multiple(
-            list_cls=ExtractionPipelineList,
-            resource_cls=ExtractionPipeline,
-            ids=id,
-            external_ids=external_id,
-            wrap_ids=True,
+        return cast(
+            Optional[ExtractionPipeline],
+            self._retrieve_multiple(
+                list_cls=ExtractionPipelineList,
+                resource_cls=ExtractionPipeline,
+                ids=id,
+                external_ids=external_id,
+                wrap_ids=True,
+            ),
         )
 
     def retrieve_multiple(
@@ -83,13 +86,16 @@ class ExtractionPipelinesAPI(APIClient):
         """
         utils._auxiliary.assert_type(ids, "id", [List], allow_none=True)
         utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=True)
-        return self._retrieve_multiple(
-            list_cls=ExtractionPipelineList,
-            resource_cls=ExtractionPipeline,
-            ids=ids,
-            external_ids=external_ids,
-            ignore_unknown_ids=ignore_unknown_ids,
-            wrap_ids=True,
+        return cast(
+            ExtractionPipelineList,
+            self._retrieve_multiple(
+                list_cls=ExtractionPipelineList,
+                resource_cls=ExtractionPipeline,
+                ids=ids,
+                external_ids=external_ids,
+                ignore_unknown_ids=ignore_unknown_ids,
+                wrap_ids=True,
+            ),
         )
 
     def list(self, limit: int = 25) -> ExtractionPipelineList:

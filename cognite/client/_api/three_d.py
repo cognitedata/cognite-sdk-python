@@ -1,4 +1,4 @@
-from typing import Dict, Iterator, List, Union
+from typing import Any, Dict, Iterator, List, Optional, Sequence, Union, cast
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -17,7 +17,7 @@ from cognite.client.data_classes import (
 
 
 class ThreeDAPI(APIClient):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.models = ThreeDModelsAPI(*args, **kwargs)
         self.revisions = ThreeDRevisionsAPI(*args, **kwargs)
@@ -60,9 +60,9 @@ class ThreeDModelsAPI(APIClient):
         Yields:
             ThreeDModel: yields models one by one.
         """
-        return self.__call__()
+        return cast(Iterator[ThreeDModel], self.__call__())
 
-    def retrieve(self, id: int) -> ThreeDModel:
+    def retrieve(self, id: int) -> Optional[ThreeDModel]:
         """`Retrieve a 3d model by id <https://docs.cognite.com/api/v1/#operation/get3DModel>`_
 
         Args:
@@ -141,13 +141,13 @@ class ThreeDModelsAPI(APIClient):
         """
         utils._auxiliary.assert_type(name, "name", [str, list])
         if isinstance(name, str):
-            name = {"name": name}
+            name_processed: Union[Dict[str, Any], Sequence[Dict[str, Any]]] = {"name": name}
         else:
-            name = [{"name": n} for n in name]
-        return self._create_multiple(list_cls=ThreeDModelList, resource_cls=ThreeDModel, items=name)
+            name_processed = [{"name": n} for n in name]
+        return self._create_multiple(list_cls=ThreeDModelList, resource_cls=ThreeDModel, items=name_processed)
 
     def update(
-        self, item: Union[ThreeDModel, ThreeDModelUpdate, List[Union[ThreeDModel, ThreeDModelList]]]
+        self, item: Union[ThreeDModel, ThreeDModelUpdate, List[Union[ThreeDModel, ThreeDModelUpdate]]]
     ) -> Union[ThreeDModel, ThreeDModelList]:
         """`Update 3d models. <https://docs.cognite.com/api/v1/#operation/update3DModels>`_
 
@@ -230,7 +230,7 @@ class ThreeDRevisionsAPI(APIClient):
             limit=limit,
         )
 
-    def retrieve(self, model_id: int, id: int) -> ThreeDModelRevision:
+    def retrieve(self, model_id: int, id: int) -> Optional[ThreeDModelRevision]:
         """`Retrieve a 3d model revision by id <https://docs.cognite.com/api/v1/#operation/get3DRevision>`_
 
         Args:
@@ -238,7 +238,7 @@ class ThreeDRevisionsAPI(APIClient):
             id (int): Get the model revision with this id.
 
         Returns:
-            ThreeDModelRevision: The requested 3d model revision.
+            Optional[ThreeDModelRevision]: The requested 3d model revision.
 
         Example:
 
@@ -316,7 +316,7 @@ class ThreeDRevisionsAPI(APIClient):
         self,
         model_id: int,
         item: Union[
-            ThreeDModelRevision, ThreeDModelRevisionUpdate, List[Union[ThreeDModelRevision, ThreeDModelRevisionList]]
+            ThreeDModelRevision, ThreeDModelRevisionUpdate, List[Union[ThreeDModelRevision, ThreeDModelRevisionUpdate]]
         ],
     ) -> Union[ThreeDModelRevision, ThreeDModelRevisionList]:
         """`Update 3d model revisions. <https://docs.cognite.com/api/v1/#operation/update3DRevisions>`_

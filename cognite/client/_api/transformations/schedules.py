@@ -1,4 +1,4 @@
-from typing import List, Optional, Union
+from typing import Any, List, Optional, Union, cast
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -19,7 +19,7 @@ class TransformationSchedulesAPI(APIClient):
     _RESOURCE_PATH = "/transformations/schedules"
     _LIST_CLASS = TransformationScheduleList
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
         self._CREATE_LIMIT = 5
@@ -77,12 +77,15 @@ class TransformationSchedulesAPI(APIClient):
                 >>> res = c.transformations.schedules.retrieve(external_id="1")
         """
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
-        return self._retrieve_multiple(
-            list_cls=TransformationScheduleList,
-            resource_cls=TransformationSchedule,
-            ids=id,
-            external_ids=external_id,
-            wrap_ids=True,
+        return cast(
+            Optional[TransformationSchedule],
+            self._retrieve_multiple(
+                list_cls=TransformationScheduleList,
+                resource_cls=TransformationSchedule,
+                ids=id,
+                external_ids=external_id,
+                wrap_ids=True,
+            ),
         )
 
     def retrieve_multiple(
@@ -117,13 +120,16 @@ class TransformationSchedulesAPI(APIClient):
         """
         utils._auxiliary.assert_type(ids, "id", [List], allow_none=True)
         utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=True)
-        return self._retrieve_multiple(
-            list_cls=TransformationScheduleList,
-            resource_cls=TransformationSchedule,
-            ids=ids,
-            external_ids=external_ids,
-            ignore_unknown_ids=ignore_unknown_ids,
-            wrap_ids=True,
+        return cast(
+            TransformationScheduleList,
+            self._retrieve_multiple(
+                list_cls=TransformationScheduleList,
+                resource_cls=TransformationSchedule,
+                ids=ids,
+                external_ids=external_ids,
+                ignore_unknown_ids=ignore_unknown_ids,
+                wrap_ids=True,
+            ),
         )
 
     def list(self, include_public: bool = True, limit: Optional[int] = 25) -> TransformationScheduleList:

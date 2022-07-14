@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterator, List, Optional, Union
+from typing import Any, Dict, Iterator, List, Optional, Union, cast
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -15,7 +15,7 @@ from cognite.client.data_classes import (
 class DataSetsAPI(APIClient):
     _RESOURCE_PATH = "/datasets"
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self._CREATE_LIMIT = 10
 
@@ -64,7 +64,7 @@ class DataSetsAPI(APIClient):
         Yields:
             Event: yields DataSet one by one.
         """
-        return self.__call__()
+        return cast(Iterator[DataSet], self.__call__())
 
     def create(self, data_set: Union[DataSet, List[DataSet]]) -> Union[DataSet, DataSetList]:
         """`Create one or more data sets. <https://docs.cognite.com/api/v1/#operation/createDataSets>`_
@@ -112,8 +112,11 @@ class DataSetsAPI(APIClient):
                 >>> res = c.data_sets.retrieve(external_id="1")
         """
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
-        return self._retrieve_multiple(
-            list_cls=DataSetList, resource_cls=DataSet, ids=id, external_ids=external_id, wrap_ids=True
+        return cast(
+            Optional[DataSet],
+            self._retrieve_multiple(
+                list_cls=DataSetList, resource_cls=DataSet, ids=id, external_ids=external_id, wrap_ids=True
+            ),
         )
 
     def retrieve_multiple(
@@ -148,13 +151,16 @@ class DataSetsAPI(APIClient):
         """
         utils._auxiliary.assert_type(ids, "id", [List], allow_none=True)
         utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=True)
-        return self._retrieve_multiple(
-            list_cls=DataSetList,
-            resource_cls=DataSet,
-            ids=ids,
-            external_ids=external_ids,
-            ignore_unknown_ids=ignore_unknown_ids,
-            wrap_ids=True,
+        return cast(
+            DataSetList,
+            self._retrieve_multiple(
+                list_cls=DataSetList,
+                resource_cls=DataSet,
+                ids=ids,
+                external_ids=external_ids,
+                ignore_unknown_ids=ignore_unknown_ids,
+                wrap_ids=True,
+            ),
         )
 
     def list(

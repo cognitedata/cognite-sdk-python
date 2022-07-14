@@ -1,6 +1,6 @@
 import copy
 import math
-from typing import Any, Dict, Generator, Iterator, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple, Union, cast
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -15,11 +15,14 @@ from cognite.client.data_classes import (
 )
 from cognite.client.data_classes.shared import TimestampRange
 
+if TYPE_CHECKING:
+    import pandas
+
 
 class SequencesAPI(APIClient):
     _RESOURCE_PATH = "/sequences"
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.data = SequencesDataAPI(self, *args, **kwargs)
 
@@ -60,20 +63,26 @@ class SequencesAPI(APIClient):
             Union[Sequence, SequenceList]: yields Sequence one by one if chunk is not specified, else SequenceList objects.
         """
 
+        asset_subtree_ids_processed = None
         if asset_subtree_ids or asset_subtree_external_ids:
-            asset_subtree_ids = self._process_ids(asset_subtree_ids, asset_subtree_external_ids, wrap_ids=True)
+            asset_subtree_ids_processed = cast(
+                List[Dict[str, Any]], self._process_ids(asset_subtree_ids, asset_subtree_external_ids, wrap_ids=True)
+            )
+        data_set_ids_processed = None
         if data_set_ids or data_set_external_ids:
-            data_set_ids = self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
+            data_set_ids_processed = cast(
+                List[Dict[str, Any]], self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
+            )
 
         filter = SequenceFilter(
             name=name,
             metadata=metadata,
             external_id_prefix=external_id_prefix,
             asset_ids=asset_ids,
-            asset_subtree_ids=asset_subtree_ids,
+            asset_subtree_ids=asset_subtree_ids_processed,
             created_time=created_time,
             last_updated_time=last_updated_time,
-            data_set_ids=data_set_ids,
+            data_set_ids=data_set_ids_processed,
         ).dump(camel_case=True)
         return self._list_generator(
             list_cls=SequenceList,
@@ -92,7 +101,7 @@ class SequencesAPI(APIClient):
         Yields:
             Sequence: yields Sequence one by one.
         """
-        return self.__call__()
+        return cast(Iterator[Sequence], self.__call__())
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[Sequence]:
         """`Retrieve a single sequence by id. <https://docs.cognite.com/api/v1/#operation/getSequenceById>`_
@@ -119,8 +128,11 @@ class SequencesAPI(APIClient):
                 >>> res = c.sequences.retrieve(external_id="1")
         """
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
-        return self._retrieve_multiple(
-            list_cls=SequenceList, resource_cls=Sequence, ids=id, external_ids=external_id, wrap_ids=True
+        return cast(
+            Optional[Sequence],
+            self._retrieve_multiple(
+                list_cls=SequenceList, resource_cls=Sequence, ids=id, external_ids=external_id, wrap_ids=True
+            ),
         )
 
     def retrieve_multiple(
@@ -151,8 +163,11 @@ class SequencesAPI(APIClient):
         """
         utils._auxiliary.assert_type(ids, "id", [List], allow_none=True)
         utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=True)
-        return self._retrieve_multiple(
-            list_cls=SequenceList, resource_cls=Sequence, ids=ids, external_ids=external_ids, wrap_ids=True
+        return cast(
+            SequenceList,
+            self._retrieve_multiple(
+                list_cls=SequenceList, resource_cls=Sequence, ids=ids, external_ids=external_ids, wrap_ids=True
+            ),
         )
 
     def list(
@@ -212,20 +227,26 @@ class SequencesAPI(APIClient):
                 >>> for seq_list in c.sequences(chunk_size=2500):
                 ...     seq_list # do something with the sequences
         """
+        asset_subtree_ids_processed = None
         if asset_subtree_ids or asset_subtree_external_ids:
-            asset_subtree_ids = self._process_ids(asset_subtree_ids, asset_subtree_external_ids, wrap_ids=True)
+            asset_subtree_ids_processed = cast(
+                List[Dict[str, Any]], self._process_ids(asset_subtree_ids, asset_subtree_external_ids, wrap_ids=True)
+            )
+        data_set_ids_processed = None
         if data_set_ids or data_set_external_ids:
-            data_set_ids = self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
+            data_set_ids_processed = cast(
+                List[Dict[str, Any]], self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
+            )
 
         filter = SequenceFilter(
             name=name,
             metadata=metadata,
             external_id_prefix=external_id_prefix,
             asset_ids=asset_ids,
-            asset_subtree_ids=asset_subtree_ids,
+            asset_subtree_ids=asset_subtree_ids_processed,
             created_time=created_time,
             last_updated_time=last_updated_time,
-            data_set_ids=data_set_ids,
+            data_set_ids=data_set_ids_processed,
         ).dump(camel_case=True)
         return self._list(list_cls=SequenceList, resource_cls=Sequence, method="POST", filter=filter, limit=limit)
 
@@ -285,7 +306,7 @@ class SequencesAPI(APIClient):
             sequence = self._clean_columns(sequence)
         return self._create_multiple(list_cls=SequenceList, resource_cls=Sequence, items=sequence)
 
-    def _clean_columns(self, sequence):
+    def _clean_columns(self, sequence: Sequence) -> Sequence:
         sequence = copy.copy(sequence)
         sequence.columns = [
             {
@@ -293,7 +314,7 @@ class SequencesAPI(APIClient):
                 for k, v in utils._auxiliary.convert_all_keys_to_camel_case(col).items()
                 if k in ["externalId", "valueType", "metadata", "name", "description"]
             }
-            for col in sequence.columns
+            for col in cast(List, sequence.columns)
         ]
         for i in range(len(sequence.columns)):
             if not sequence.columns[i].get("externalId"):
@@ -442,7 +463,7 @@ class SequencesAPI(APIClient):
         return self._search(
             list_cls=SequenceList,
             search={"name": name, "description": description, "query": query},
-            filter=filter,
+            filter=filter or {},
             limit=limit,
         )
 
@@ -450,7 +471,7 @@ class SequencesAPI(APIClient):
 class SequencesDataAPI(APIClient):
     _DATA_PATH = "/sequences/data"
 
-    def __init__(self, sequences_api, *args, **kwargs):
+    def __init__(self, sequences_api: SequencesAPI, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self._sequences_api = sequences_api
         self._SEQ_POST_LIMIT = 10000
@@ -460,7 +481,7 @@ class SequencesDataAPI(APIClient):
         self,
         rows: Union[
             Dict[int, List[Union[int, float, str]]],
-            List[Tuple[int, Union[int, float, str]]],
+            List[Tuple[int, List[Union[int, float, str]]]],
             List[Dict[str, Any]],
             SequenceData,
         ],
@@ -472,7 +493,7 @@ class SequencesDataAPI(APIClient):
 
         Args:
             column_external_ids (Optional[List[str]]): List of external id for the columns of the sequence.
-            rows (Union[ Dict[int, List[Union[int, float, str]]], List[Tuple[int,Union[int, float, str]]], List[Dict[str,Any]], SequenceData]):  The rows you wish to insert.
+            rows (Union[ Dict[int, List[Union[int, float, str]]], List[Tuple[int, List[Union[int, float, str]]]], List[Dict[str,Any]], SequenceData]):  The rows you wish to insert.
                 Can either be a list of tuples, a list of {"rowNumber":... ,"values": ...} objects, a dictionary of rowNumber: data, or a SequenceData object. See examples below.
             id (int): Id of sequence to insert rows into.
             external_id (str): External id of sequence to insert rows into.
@@ -516,7 +537,7 @@ class SequencesDataAPI(APIClient):
             rows = [{"rowNumber": k, "values": v} for k, v in rows.items()]
 
         if isinstance(rows, dict):
-            all_rows = [{"rowNumber": k, "values": v} for k, v in rows.items()]
+            all_rows: Union[Dict, List] = [{"rowNumber": k, "values": v} for k, v in rows.items()]
         elif isinstance(rows, list) and len(rows) > 0 and isinstance(rows[0], dict):
             all_rows = rows
         elif isinstance(rows, list) and (len(rows) == 0 or isinstance(rows[0], tuple)):
@@ -524,18 +545,18 @@ class SequencesDataAPI(APIClient):
         else:
             raise ValueError("Invalid format for 'rows', expected a list of tuples, list of dict or dict")
 
-        base_obj = self._process_ids(id, external_id, wrap_ids=True)[0]
+        base_obj = cast(Dict[str, Any], self._process_ids(id, external_id, wrap_ids=True)[0])
         base_obj.update(self._process_columns(column_external_ids))
         row_objs = [
             {"rows": all_rows[i : i + self._SEQ_POST_LIMIT]} for i in range(0, len(all_rows), self._SEQ_POST_LIMIT)
         ]
-        tasks = [({**base_obj, **rows},) for rows in row_objs]
+        tasks = [({**base_obj, **rows},) for rows in row_objs]  # type: ignore
         summary = utils._concurrency.execute_tasks_concurrently(
             self._insert_data, tasks, max_workers=self._config.max_workers
         )
         summary.raise_compound_exception_if_failed_tasks()
 
-    def insert_dataframe(self, dataframe, id: int = None, external_id: str = None) -> None:
+    def insert_dataframe(self, dataframe: "pandas.DataFrame", id: int = None, external_id: str = None) -> None:
         """`Insert a Pandas dataframe. <https://docs.cognite.com/api/v1/#operation/postSequenceData>`_
 
         The index of the dataframe must contain the row numbers. The names of the remaining columns specify the column external ids.
@@ -562,7 +583,7 @@ class SequencesDataAPI(APIClient):
         column_external_ids = [str(s) for s in dataframe.columns]
         self.insert(rows=data, column_external_ids=column_external_ids, id=id, external_id=external_id)
 
-    def _insert_data(self, task):
+    def _insert_data(self, task: Dict[str, Any]) -> None:
         self._post(url_path=self._DATA_PATH, json={"items": [task]})
 
     def delete(self, rows: List[int], id: int = None, external_id: str = None) -> None:
@@ -583,7 +604,7 @@ class SequencesDataAPI(APIClient):
                 >>> c.sequences.data.delete(id=0, rows=[1,2,42])
         """
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
-        post_obj = self._process_ids(id, external_id, wrap_ids=True)[0]
+        post_obj = cast(Dict[str, Any], self._process_ids(id, external_id, wrap_ids=True)[0])
         post_obj["rows"] = rows
 
         self._post(url_path=self._DATA_PATH + "/delete", json={"items": [post_obj]})
@@ -609,7 +630,8 @@ class SequencesDataAPI(APIClient):
         """
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
         sequence = self._sequences_api.retrieve(id=id, external_id=external_id)
-        post_obj = self._process_ids(id, external_id, wrap_ids=True)[0]
+        assert sequence is not None
+        post_obj = cast(Dict[str, Any], self._process_ids(id, external_id, wrap_ids=True)[0])
         post_obj.update(self._process_columns(column_external_ids=[sequence.column_external_ids[0]]))
         post_obj.update({"start": start, "end": end})
         for data, _ in self._fetch_data(post_obj):
@@ -652,11 +674,11 @@ class SequencesDataAPI(APIClient):
         """
         post_objs = self._process_ids(id, external_id, wrap_ids=True)
 
-        def _fetch_sequence(post_obj):
+        def _fetch_sequence(post_obj: Dict[str, Any]) -> SequenceData:
             post_obj.update(self._process_columns(column_external_ids=column_external_ids))
             post_obj.update({"start": start, "end": end, "limit": limit})
-            seqdata = []
-            columns = []
+            seqdata: List = []
+            columns: List = []
             for data, columns in self._fetch_data(post_obj):
                 seqdata.extend(data)
             return SequenceData(
@@ -683,7 +705,7 @@ class SequencesDataAPI(APIClient):
         column_names: str = None,
         id: int = None,
         limit: int = None,
-    ):
+    ) -> "pandas.DataFrame":
         """`Retrieve data from a sequence as a pandas dataframe <https://docs.cognite.com/api/v1/#operation/getSequenceData>`_
 
         Args:
@@ -713,9 +735,9 @@ class SequencesDataAPI(APIClient):
             column_names=column_names or column_names_default
         )
 
-    def _fetch_data(self, task) -> Generator[Tuple[List, List], None, None]:
+    def _fetch_data(self, task: Dict[str, Any]) -> Iterator[Tuple[List, List]]:
         remaining_limit = task.get("limit")
-        columns = []
+        columns: List[str] = []
         cursor = None
         if task["end"] == -1:
             task["end"] = None
@@ -732,7 +754,7 @@ class SequencesDataAPI(APIClient):
             if not cursor or (remaining_limit is not None and remaining_limit <= 0):
                 break
 
-    def _process_columns(self, column_external_ids):
+    def _process_columns(self, column_external_ids: Optional[List[str]]) -> Dict[str, List[str]]:
         if column_external_ids is None:
             return {}  # for defaults
         return {"columns": column_external_ids}

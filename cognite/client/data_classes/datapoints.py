@@ -358,6 +358,14 @@ class DatapointsList(CogniteResourceList):
         plt.show()  # type: ignore
 
 
+DatapointsIdMaybeAggregate = Union[
+    int, List[int], Dict[str, Union[int, List[str]]], List[Dict[str, Union[int, List[str]]]]
+]
+DatapointsExternalIdMaybeAggregate = Union[
+    str, List[str], Dict[str, Union[int, List[str]]], List[Dict[str, Union[int, List[str]]]]
+]
+
+
 class DatapointsQuery(CogniteResource):
     """Parameters describing a query for datapoints.
 
@@ -366,8 +374,8 @@ class DatapointsQuery(CogniteResource):
         end (Union[str, int, datetime]): Get datapoints up to this time. The format is the same as for start.
         id (Union[int, List[int], Dict[str, Any], List[Dict[str, Any]]]: Id or list of ids. Can also be object
                 specifying aggregates. See example below.
-            external_id (Union[str, List[str], Dict[str, Any], List[Dict[str, Any]]]): External id or list of external
-                ids. Can also be object specifying aggregates. See example below.
+        external_id (Union[str, List[str], Dict[str, Any], List[Dict[str, Any]]]): External id or list of external
+            ids. Can also be object specifying aggregates. See example below.
         limit (int): Return up to this number of datapoints.
         aggregates (List[str]): The aggregates to be returned.  Use default if null. An empty string must be sent to get raw data if the default is a set of aggregates.
         granularity (str): The granularity size and granularity of the aggregates.
@@ -379,10 +387,8 @@ class DatapointsQuery(CogniteResource):
         self,
         start: Union[str, int, datetime],
         end: Union[str, int, datetime],
-        id: Union[int, List[int], Dict[str, Union[int, List[str]]], List[Dict[str, Union[int, List[str]]]]] = None,
-        external_id: Union[
-            str, List[str], Dict[str, Union[int, List[str]]], List[Dict[str, Union[int, List[str]]]]
-        ] = None,
+        id: DatapointsIdMaybeAggregate = None,
+        external_id: DatapointsExternalIdMaybeAggregate = None,
         limit: int = None,
         aggregates: List[str] = None,
         granularity: str = None,

@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Tuple, Type, TypeVar, Union
+from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar, Union, cast
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -21,12 +21,11 @@ class EntityMatchingAPI(APIClient):
     def _run_job(
         self,
         job_path: str,
-        json,
+        job_cls: Type[T_ContextualizationJob],
+        json: Dict[str, Any],
         status_path: Optional[str] = None,
         headers: Dict = None,
-        job_cls: Type[T_ContextualizationJob] = None,
     ) -> T_ContextualizationJob:
-        job_cls = job_cls or ContextualizationJob
         if status_path is None:
             status_path = job_path + "/"
         return job_cls._load_with_status(
@@ -45,12 +44,15 @@ class EntityMatchingAPI(APIClient):
         Returns:
             EntityMatchingModel: Model requested."""
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
-        return self._retrieve_multiple(
-            list_cls=EntityMatchingModelList,
-            resource_cls=EntityMatchingModel,
-            ids=id,
-            external_ids=external_id,
-            wrap_ids=True,
+        return cast(
+            Optional[EntityMatchingModel],
+            self._retrieve_multiple(
+                list_cls=EntityMatchingModelList,
+                resource_cls=EntityMatchingModel,
+                ids=id,
+                external_ids=external_id,
+                wrap_ids=True,
+            ),
         )
 
     def retrieve_multiple(
@@ -66,12 +68,15 @@ class EntityMatchingAPI(APIClient):
             EntityMatchingModelList: Models requested."""
         utils._auxiliary.assert_type(ids, "id", [List], allow_none=True)
         utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=True)
-        return self._retrieve_multiple(
-            list_cls=EntityMatchingModelList,
-            resource_cls=EntityMatchingModel,
-            ids=ids,
-            external_ids=external_ids,
-            wrap_ids=True,
+        return cast(
+            EntityMatchingModelList,
+            self._retrieve_multiple(
+                list_cls=EntityMatchingModelList,
+                resource_cls=EntityMatchingModel,
+                ids=ids,
+                external_ids=external_ids,
+                wrap_ids=True,
+            ),
         )
 
     def update(
@@ -79,7 +84,7 @@ class EntityMatchingAPI(APIClient):
         item: Union[
             EntityMatchingModel, EntityMatchingModelUpdate, List[Union[EntityMatchingModel, EntityMatchingModelUpdate]]
         ],
-    ) -> Union[EntityMatchingModel, List[EntityMatchingModel]]:
+    ) -> Union[EntityMatchingModelList, EntityMatchingModel]:
         """Update model
 
         Args:
@@ -99,7 +104,7 @@ class EntityMatchingAPI(APIClient):
         original_id: int = None,
         feature_type: str = None,
         classifier: str = None,
-        limit=100,
+        limit: int = 100,
     ) -> EntityMatchingModelList:
         """List models
 
@@ -179,7 +184,11 @@ class EntityMatchingAPI(APIClient):
             EntityMatchingModel: Resulting queued model."""
 
         if match_fields:
-            match_fields = [ft if isinstance(ft, dict) else {"source": ft[0], "target": ft[1]} for ft in match_fields]
+            match_fields_processed = [
+                ft if isinstance(ft, dict) else {"source": ft[0], "target": ft[1]} for ft in match_fields
+            ]
+        else:
+            match_fields_processed = None
         if true_matches:
             true_matches = [convert_true_match(true_match) for true_match in true_matches]
         response = self._post(
@@ -191,7 +200,7 @@ class EntityMatchingAPI(APIClient):
                 "sources": EntityMatchingModel._dump_entities(sources),
                 "targets": EntityMatchingModel._dump_entities(targets),
                 "trueMatches": true_matches,
-                "matchFields": match_fields,
+                "matchFields": match_fields_processed,
                 "featureType": feature_type,
                 "classifier": classifier,
                 "ignoreMissingFields": ignore_missing_fields,
@@ -203,8 +212,8 @@ class EntityMatchingAPI(APIClient):
         self,
         sources: Optional[List[Dict]] = None,
         targets: Optional[List[Dict]] = None,
-        num_matches=1,
-        score_threshold=None,
+        num_matches: int = 1,
+        score_threshold: float = None,
         id: Optional[int] = None,
         external_id: Optional[str] = None,
     ) -> ContextualizationJob:
@@ -222,9 +231,9 @@ class EntityMatchingAPI(APIClient):
             external_id: external ids of the model to use.
         Returns:
             ContextualizationJob: object which can be used to wait for and retrieve results."""
-        return self.retrieve(
-            id=id, external_id=external_id
-        ).predict(  # could call predict directly but this is friendlier
+        model = self.retrieve(id=id, external_id=external_id)
+        assert model
+        return model.predict(  # could call predict directly but this is friendlier
             sources=EntityMatchingModel._dump_entities(sources),
             targets=EntityMatchingModel._dump_entities(targets),
             num_matches=num_matches,
@@ -236,7 +245,7 @@ class EntityMatchingAPI(APIClient):
         true_matches: List[Union[Dict, Tuple[Union[int, str], Union[int, str]]]],
         id: Optional[int] = None,
         external_id: Optional[str] = None,
-    ) -> "EntityMatchingModel":
+    ) -> EntityMatchingModel:
         """Re-fits an entity matching model, using the combination of the old and new true matches.
         Note: All users on this CDF subscription with assets read-all and entitymatching read-all and write-all
         capabilities in the project, are able to access the data sent to this endpoint.
@@ -248,4 +257,6 @@ class EntityMatchingAPI(APIClient):
             external_id: external ids of the model to use.
         Returns:
             EntityMatchingModel: new model refitted to true_matches."""
-        return self.retrieve(id=id, external_id=external_id).refit(true_matches=true_matches)
+        model = self.retrieve(id=id, external_id=external_id)
+        assert model
+        return model.refit(true_matches=true_matches)

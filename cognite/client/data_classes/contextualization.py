@@ -1,6 +1,6 @@
 import time
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple, Type, TypeVar, Union, cast
 
 from cognite.client.data_classes._base import (
     CognitePrimitiveUpdate,
@@ -37,6 +37,9 @@ class JobStatus(Enum):
 class ContextualizationJobType(Enum):
     ENTITY_MATCHING = "entity_matching"
     DIAGRAMS = "diagrams"
+
+
+T_ContextualizationJob = TypeVar("T_ContextualizationJob", bound="ContextualizationJob")
 
 
 class ContextualizationJob(CogniteResource):
@@ -117,7 +120,9 @@ class ContextualizationJob(CogniteResource):
         return f"{self.__class__.__name__}(id: {self.job_id},status: {self.status},error: {self.error_message})"
 
     @classmethod
-    def _load_with_status(cls, data: Dict[str, Any], status_path: str, cognite_client: Any) -> "ContextualizationJob":
+    def _load_with_status(
+        cls: Type[T_ContextualizationJob], data: Dict[str, Any], status_path: str, cognite_client: Any
+    ) -> T_ContextualizationJob:
         obj = cls._load(data, cognite_client=cognite_client)
         obj._status_path = status_path
         return obj
@@ -217,6 +222,7 @@ class EntityMatchingModel(CogniteResource):
         self.wait_for_completion()
         return self._cognite_client.entity_matching._run_job(
             job_path="/predict",
+            job_cls=ContextualizationJob,
             status_path="/jobs/",
             json={
                 "id": self.id,

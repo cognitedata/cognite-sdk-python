@@ -1,4 +1,4 @@
-from typing import Iterator, List, Union
+from typing import Any, Dict, Iterator, List, Union, cast
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import LabelDefinition, LabelDefinitionFilter, LabelDefinitionList
@@ -15,7 +15,7 @@ class LabelsAPI(APIClient):
         Yields:
             Type: yields Labels one by one.
         """
-        return self.__call__()
+        return cast(Iterator[LabelDefinition], self.__call__())
 
     def __call__(
         self,
@@ -26,10 +26,13 @@ class LabelsAPI(APIClient):
         data_set_ids: List[int] = None,
         data_set_external_ids: List[str] = None,
     ) -> Union[Iterator[LabelDefinition], Iterator[LabelDefinitionList]]:
+        data_set_ids_processed = None
         if data_set_ids or data_set_external_ids:
-            data_set_ids = self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
+            data_set_ids_processed = cast(
+                List[Dict[str, Any]], self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
+            )
         filter = LabelDefinitionFilter(
-            name=name, external_id_prefix=external_id_prefix, data_set_ids=data_set_ids
+            name=name, external_id_prefix=external_id_prefix, data_set_ids=data_set_ids_processed
         ).dump(camel_case=True)
         return self._list_generator(
             list_cls=LabelDefinitionList,
@@ -82,10 +85,13 @@ class LabelsAPI(APIClient):
                 >>> for label_list in c.labels(chunk_size=2500):
                 ...     label_list # do something with the type definitions
         """
+        data_set_ids_processed = None
         if data_set_ids or data_set_external_ids:
-            data_set_ids = self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
+            data_set_ids_processed = cast(
+                List[Dict[str, Any]], self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
+            )
         filter = LabelDefinitionFilter(
-            name=name, external_id_prefix=external_id_prefix, data_set_ids=data_set_ids
+            name=name, external_id_prefix=external_id_prefix, data_set_ids=data_set_ids_processed
         ).dump(camel_case=True)
         return self._list(
             list_cls=LabelDefinitionList, resource_cls=LabelDefinition, method="POST", limit=limit, filter=filter

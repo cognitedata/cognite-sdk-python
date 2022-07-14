@@ -554,7 +554,7 @@ class APIClient:
 
     def _create_multiple(
         self,
-        items: Union[List[CogniteResource], List[Dict[str, Any]], CogniteResource, Dict[str, Any]],
+        items: Union[Sequence[CogniteResource], Sequence[Dict[str, Any]], CogniteResource, Dict[str, Any]],
         list_cls: Type[T_CogniteResourceList],
         resource_cls: Type[T_CogniteResource],
         resource_path: Optional[str] = None,
@@ -567,9 +567,9 @@ class APIClient:
         limit = limit or self._CREATE_LIMIT
         single_item = not isinstance(items, list)
         if single_item:
-            items = cast(Union[List[CogniteResource], List[Dict[str, Any]]], [items])
+            items = cast(Union[Sequence[CogniteResource], Sequence[Dict[str, Any]]], [items])
         else:
-            items = cast(Union[List[CogniteResource], List[Dict[str, Any]]], items)
+            items = cast(Union[Sequence[CogniteResource], Sequence[Dict[str, Any]]], items)
 
         items_split = []
         for i in range(0, len(items), limit):
@@ -639,7 +639,7 @@ class APIClient:
 
     def _update_multiple(
         self,
-        items: Union[List[CogniteResource], List[CogniteUpdate], CogniteResource, CogniteUpdate],
+        items: Union[Sequence[Union[CogniteResource, CogniteUpdate]], CogniteResource, CogniteUpdate],
         list_cls: Type[T_CogniteResourceList],
         resource_cls: Type[T_CogniteResource],
         update_cls: Type[CogniteUpdate],
@@ -651,9 +651,9 @@ class APIClient:
         patch_objects = []
         single_item = not isinstance(items, (list, UserList))
         if single_item:
-            item_list = cast(Union[List[CogniteResource], List[CogniteUpdate]], [items])
+            item_list = cast(Union[Sequence[CogniteResource], Sequence[CogniteUpdate]], [items])
         else:
-            item_list = cast(Union[List[CogniteResource], List[CogniteUpdate]], items)
+            item_list = cast(Union[Sequence[CogniteResource], Sequence[CogniteUpdate]], items)
 
         for index, item in enumerate(item_list):
             if isinstance(item, CogniteResource):

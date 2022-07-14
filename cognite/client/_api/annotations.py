@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import Dict, List, Union
+from typing import Any, Collection, Dict, List, Optional, Union, cast
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Annotation, AnnotationFilter, AnnotationList, AnnotationUpdate
@@ -10,7 +10,7 @@ from cognite.client.utils._auxiliary import assert_type, to_camel_case
 class AnnotationsAPI(APIClient):
     _RESOURCE_PATH = "/annotations"
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
     def create(self, annotations: Union[Annotation, List[Annotation]]) -> Union[Annotation, AnnotationList]:
@@ -39,19 +39,19 @@ class AnnotationsAPI(APIClient):
         assert_type(annotations, "annotations", [Annotation, list])
         # Deal with status fields in both cases: Single item and list of items
         items = (
-            [AnnotationsAPI._sanitize_suggest_item(ann) for ann in annotations]
+            [self._sanitize_suggest_item(ann) for ann in annotations]
             if isinstance(annotations, list)
-            else AnnotationsAPI._sanitize_suggest_item(annotations)
+            else self._sanitize_suggest_item(annotations)
         )
         return self._create_multiple(
             list_cls=AnnotationList,
             resource_cls=Annotation,
             resource_path=self._RESOURCE_PATH + "/suggest",
-            items=items,
+            items=items,  # type: ignore[arg-type]
         )
 
     @staticmethod
-    def _sanitize_suggest_item(annotation: Annotation) -> Dict[str, any]:
+    def _sanitize_suggest_item(annotation: Union[Annotation, Dict[str, Any]]) -> Dict[str, Any]:
         # Check that status is set to suggested if it is set and afterwards remove it
         item = annotation.dump(camel_case=True) if isinstance(annotation, Annotation) else deepcopy(annotation)
         if "status" in item:
@@ -87,10 +87,14 @@ class AnnotationsAPI(APIClient):
         return self._list(list_cls=AnnotationList, resource_cls=Annotation, method="POST", limit=limit, filter=filter)
 
     @staticmethod
-    def _convert_resource_to_patch_object(resource: CogniteResource, update_attributes: List[str]):
+    def _convert_resource_to_patch_object(
+        resource: CogniteResource, update_attributes: Collection[str]
+    ) -> Dict[str, Dict[str, Dict]]:
         if not isinstance(resource, Annotation):
             return APIClient._convert_resource_to_patch_object(resource, update_attributes)
         annotation: Annotation = resource
+
+        assert annotation.id is not None
         annotation_update = AnnotationUpdate(id=annotation.id)
         for attr in update_attributes:
             getattr(annotation_update, attr).set(getattr(annotation, attr))
@@ -126,9 +130,12 @@ class AnnotationsAPI(APIClient):
             AnnotationList: list of annotations
         """
         assert_type(ids, "ids", [List], allow_none=False)
-        return self._retrieve_multiple(list_cls=AnnotationList, resource_cls=Annotation, ids=ids, wrap_ids=True)
+        return cast(
+            AnnotationList,
+            self._retrieve_multiple(list_cls=AnnotationList, resource_cls=Annotation, ids=ids, wrap_ids=True),
+        )
 
-    def retrieve(self, id: int) -> Annotation:
+    def retrieve(self, id: int) -> Optional[Annotation]:
         """Retrieve an annotation by id
 
         Args:
@@ -138,4 +145,7 @@ class AnnotationsAPI(APIClient):
             Annotation: annotation requested
         """
         assert_type(id, "id", [int], allow_none=False)
-        return self._retrieve_multiple(list_cls=AnnotationList, resource_cls=Annotation, ids=id, wrap_ids=True)
+        return cast(
+            Optional[Annotation],
+            self._retrieve_multiple(list_cls=AnnotationList, resource_cls=Annotation, ids=id, wrap_ids=True),
+        )

@@ -1,5 +1,5 @@
 import threading
-from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Type, Union, cast
+from typing import TYPE_CHECKING, Any, Collection, Dict, List, Sequence, Type, Union, cast
 
 from cognite.client import utils
 from cognite.client.data_classes._base import (
@@ -303,7 +303,7 @@ class AssetUpdate(CogniteUpdate):
 class AssetList(CogniteResourceList):
     _RESOURCE = Asset
 
-    def __init__(self, resources: List[Any], cognite_client: Any = None):
+    def __init__(self, resources: Collection[Any], cognite_client: Any = None):
         super().__init__(resources, cognite_client)
         self._retrieve_chunk_size = 100
 

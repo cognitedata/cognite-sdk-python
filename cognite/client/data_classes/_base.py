@@ -1,6 +1,6 @@
 import json
 from collections import UserList
-from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional, Sequence, Type, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, Collection, Dict, Generic, List, Optional, Sequence, Type, TypeVar, Union, cast
 
 from cognite.client import utils
 from cognite.client.exceptions import CogniteMissingClientError
@@ -175,7 +175,7 @@ T_CogniteResourceList = TypeVar("T_CogniteResourceList", bound="CogniteResourceL
 class CogniteResourceList(UserList):
     _RESOURCE: Type[CogniteResource]
 
-    def __init__(self, resources: List[Any], cognite_client: Any = None):
+    def __init__(self, resources: Collection[Any], cognite_client: Any = None):
         for resource in resources:
             if not isinstance(resource, self._RESOURCE):
                 raise TypeError(
