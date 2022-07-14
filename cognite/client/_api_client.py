@@ -13,6 +13,7 @@ from typing import (
     Iterator,
     List,
     Literal,
+    MutableMapping,
     NoReturn,
     Optional,
     Sequence,
@@ -191,8 +192,8 @@ class APIClient:
         self._log_request(res, payload=json_payload, stream=stream)
         return res
 
-    def _configure_headers(self, additional_headers: Dict[str, str]) -> CaseInsensitiveDict:
-        headers = CaseInsensitiveDict()
+    def _configure_headers(self, additional_headers: Dict[str, str]) -> MutableMapping[str, Any]:
+        headers: MutableMapping[str, Any] = CaseInsensitiveDict()
         headers.update(requests.utils.default_headers())
         if self._config.token is None:
             headers["api-key"] = self._config.api_key
@@ -792,11 +793,11 @@ class APIClient:
                     if k not in ["message", "missing", "duplicated", "code"]:
                         extra[k] = v
             else:
-                msg = res.content
+                msg = res.content.decode()
         except Exception:
-            msg = res.content
+            msg = res.content.decode()
 
-        error_details = {"X-Request-ID": x_request_id}
+        error_details: Dict[str, Any] = {"X-Request-ID": x_request_id}
         if payload:
             error_details["payload"] = payload
         if missing:
@@ -811,11 +812,9 @@ class APIClient:
         if res.history:
             for res_hist in res.history:
                 log.debug(
-                    "REDIRECT AFTER HTTP Error {} {} {}: {}".format(
-                        res_hist.status_code, res_hist.request.method, res_hist.request.url, res_hist.content
-                    )
+                    f"REDIRECT AFTER HTTP Error {res_hist.status_code} {res_hist.request.method} {res_hist.request.url}: {res_hist.content.decode()}"
                 )
-        log.debug("HTTP Error {} {} {}: {}".format(code, res.request.method, res.request.url, msg), extra=error_details)
+        log.debug(f"HTTP Error {code} {res.request.method} {res.request.url}: {msg}", extra=error_details)
         raise CogniteAPIError(msg, code, x_request_id, missing=missing, duplicated=duplicated, extra=extra)
 
     @classmethod

@@ -111,7 +111,7 @@ class HTTPClient:
                 retry_tracker.status += 1
                 if not retry_tracker.should_retry(status_code=last_status):
                     # Cache .json() return value in order to avoid redecoding JSON if called multiple times
-                    res.json = functools.lru_cache(maxsize=1)(res.json)
+                    res.json = functools.lru_cache(maxsize=1)(res.json)  # type: ignore[assignment]
                     return res
             except CogniteReadTimeout as e:
                 retry_tracker.read += 1
