@@ -24,11 +24,11 @@ class AlphaDataModelInstances(TransformationDestination):
         self.space_external_id = space_external_id
         self.instance_space_external_id = instance_space_external_id
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.type, self.model_external_id))
 
-    def __eq__(self, obj):
-        return isinstance(obj, AlphaDataModelInstances) and hash(obj) == hash(self)
+    def __eq__(self, other: Any) -> bool:
+        return isinstance(other, AlphaDataModelInstances) and hash(other) == hash(self)
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         ret = {

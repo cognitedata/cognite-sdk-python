@@ -12,7 +12,7 @@ class TimestampRange(dict):
         min (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
     """
 
-    def __init__(self, max: int = None, min: int = None, **kwargs):
+    def __init__(self, max: int = None, min: int = None, **kwargs: Any):
         self.max = max
         self.min = min
         self.update(kwargs)
@@ -28,7 +28,7 @@ class AggregateResult(dict):
         count (int): Size of the aggregation group
     """
 
-    def __init__(self, count: int = None, **kwargs):
+    def __init__(self, count: int = None, **kwargs: Any):
         self.count = count
         self.update(kwargs)
 
@@ -43,7 +43,7 @@ class AggregateUniqueValuesResult(AggregateResult):
         value (Union(int, str)): A unique value from the requested field
     """
 
-    def __init__(self, count: int = None, value: Union[int, str] = None, **kwargs):
+    def __init__(self, count: int = None, value: Union[int, str] = None, **kwargs: Any):
         super().__init__(count, **kwargs)
         self.value = value
 
@@ -115,10 +115,10 @@ class Geometry(dict):
     coordinates = CognitePropertyClassUtil.declare_property("coordinates")
 
     @classmethod
-    def _load(self, raw_geometry: Dict[str, Any]):
+    def _load(self, raw_geometry: Dict[str, Any]) -> "Geometry":
         return Geometry(type=raw_geometry["type"], coordinates=raw_geometry["coordinates"])
 
-    def dump(self, camel_case: bool = False):
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         dump_key = lambda key: key if not camel_case else utils._auxiliary.to_camel_case(key)
         return {dump_key(key): value for key, value in self.items()}
 
@@ -161,14 +161,14 @@ class GeoLocation(dict):
     properties = CognitePropertyClassUtil.declare_property("properties")
 
     @classmethod
-    def _load(self, raw_geoLocation: Dict[str, Any]):
+    def _load(self, raw_geoLocation: Dict[str, Any]) -> "GeoLocation":
         return GeoLocation(
             type=raw_geoLocation.get("type", "Feature"),
             geometry=raw_geoLocation["geometry"],
             properties=raw_geoLocation.get("properties"),
         )
 
-    def dump(self, camel_case: bool = False):
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         dump_key = lambda key: key if not camel_case else utils._auxiliary.to_camel_case(key)
         return {dump_key(key): value for key, value in self.items()}
 
@@ -188,9 +188,9 @@ class GeoLocationFilter(dict):
     shape = CognitePropertyClassUtil.declare_property("shape")
 
     @classmethod
-    def _load(self, raw_geoLocation_filter: Dict[str, Any]):
+    def _load(self, raw_geoLocation_filter: Dict[str, Any]) -> "GeoLocationFilter":
         return GeoLocationFilter(relation=raw_geoLocation_filter["relation"], shape=raw_geoLocation_filter["shape"])
 
-    def dump(self, camel_case: bool = False):
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         dump_key = lambda key: key if not camel_case else utils._auxiliary.to_camel_case(key)
         return {dump_key(key): value for key, value in self.items()}

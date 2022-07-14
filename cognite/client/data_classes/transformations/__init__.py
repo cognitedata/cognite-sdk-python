@@ -1,4 +1,4 @@
-from typing import Any, Awaitable, Dict, List, Optional, Union
+from typing import Any, Awaitable, Dict, List, Optional, Union, cast
 
 from cognite.client import utils
 from cognite.client.data_classes._base import (
@@ -80,7 +80,7 @@ class Transformation(CogniteResource):
         blocked: TransformationBlockedInfo = None,
         schedule: "TransformationSchedule" = None,
         data_set_id: int = None,
-        cognite_client=None,
+        cognite_client: Any = None,
     ):
         self.id = id
         self.external_id = external_id
@@ -109,12 +109,12 @@ class Transformation(CogniteResource):
         self.blocked = blocked
         self.schedule = schedule
         self.data_set_id = data_set_id
-        self._cognite_client = cognite_client
+        self._cognite_client = cast(Any, cognite_client)
 
     def run(self, wait: bool = True, timeout: Optional[float] = None) -> "TransformationJob":
         return self._cognite_client.transformations.run(transformation_id=self.id, wait=wait, timeout=timeout)
 
-    def cancel(self):
+    def cancel(self) -> None:
         if self.id is None:
             self._cognite_client.transformations.cancel(transformation_external_id=self.external_id)
         else:
@@ -127,7 +127,7 @@ class Transformation(CogniteResource):
         return self._cognite_client.transformations.jobs.list(transformation_id=self.id)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client=None):
+    def _load(cls, resource: Union[Dict, str], cognite_client: Any = None) -> "Transformation":
         instance = super(Transformation, cls)._load(resource, cognite_client)
         if isinstance(instance.destination, Dict):
             snake_dict = {utils._auxiliary.to_snake_case(key): value for (key, value) in instance.destination.items()}
@@ -179,7 +179,7 @@ class Transformation(CogniteResource):
             ret["destination"] = self.destination.dump(camel_case=camel_case)
         return ret
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.external_id)
 
 
@@ -196,54 +196,54 @@ class TransformationUpdate(CogniteUpdate):
             return self._set(value)
 
     @property
-    def external_id(self):
+    def external_id(self) -> "_PrimitiveTransformationUpdate":
         return TransformationUpdate._PrimitiveTransformationUpdate(self, "externalId")
 
     @property
-    def name(self):
+    def name(self) -> "_PrimitiveTransformationUpdate":
         return TransformationUpdate._PrimitiveTransformationUpdate(self, "name")
 
     @property
-    def destination(self):
+    def destination(self) -> "_PrimitiveTransformationUpdate":
         return TransformationUpdate._PrimitiveTransformationUpdate(self, "destination")
 
     @property
-    def conflict_mode(self):
+    def conflict_mode(self) -> "_PrimitiveTransformationUpdate":
         return TransformationUpdate._PrimitiveTransformationUpdate(self, "conflictMode")
 
     @property
-    def query(self):
+    def query(self) -> "_PrimitiveTransformationUpdate":
         return TransformationUpdate._PrimitiveTransformationUpdate(self, "query")
 
     @property
-    def source_oidc_credentials(self):
+    def source_oidc_credentials(self) -> "_PrimitiveTransformationUpdate":
         return TransformationUpdate._PrimitiveTransformationUpdate(self, "sourceOidcCredentials")
 
     @property
-    def destination_oidc_credentials(self):
+    def destination_oidc_credentials(self) -> "_PrimitiveTransformationUpdate":
         return TransformationUpdate._PrimitiveTransformationUpdate(self, "destinationOidcCredentials")
 
     @property
-    def source_api_key(self):
+    def source_api_key(self) -> "_PrimitiveTransformationUpdate":
         return TransformationUpdate._PrimitiveTransformationUpdate(self, "sourceApiKey")
 
     @property
-    def destination_api_key(self):
+    def destination_api_key(self) -> "_PrimitiveTransformationUpdate":
         return TransformationUpdate._PrimitiveTransformationUpdate(self, "destinationApiKey")
 
     @property
-    def is_public(self):
+    def is_public(self) -> "_PrimitiveTransformationUpdate":
         return TransformationUpdate._PrimitiveTransformationUpdate(self, "isPublic")
 
     @property
-    def ignore_null_fields(self):
+    def ignore_null_fields(self) -> "_PrimitiveTransformationUpdate":
         return TransformationUpdate._PrimitiveTransformationUpdate(self, "ignoreNullFields")
 
     @property
-    def data_set_id(self):
+    def data_set_id(self) -> "_PrimitiveTransformationUpdate":
         return TransformationUpdate._PrimitiveTransformationUpdate(self, "dataSetId")
 
-    def dump(self, camel_case: bool = True):
+    def dump(self, camel_case: bool = True) -> Dict[str, Any]:
         obj = super().dump()
         dest = obj.get("update", {}).get("destination", {}).get("set")
         if isinstance(dest, AlphaDataModelInstances) or isinstance(dest, SequenceRows):
@@ -265,7 +265,7 @@ class TransformationFilter(CogniteFilter):
         destination_type (str): Transformation destination resource name to filter by.
         conflict_mode (str): Filters by a selected transformation action type: abort/create, upsert, update, delete
         cdf_project_name (str): Project name to filter by configured source and destination project
-        has_blocked_error (str): Whether only the blocked transformations should be included in the results.
+        has_blocked_error (bool): Whether only the blocked transformations should be included in the results.
         created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps
         last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps
         data_set_ids (List[Dict[str, Any]]): Return only transformations in the specified data sets with these ids.
@@ -296,8 +296,8 @@ class TransformationFilter(CogniteFilter):
         self.data_set_ids = data_set_ids
 
     @classmethod
-    def _load(self, resource: Union[Dict, str], cognite_client=None):
-        instance = super(TransformationFilter, self)._load(resource, cognite_client)
+    def _load(self, resource: Union[Dict, str]) -> "TransformationFilter":
+        instance = super(TransformationFilter, self)._load(resource)
         if isinstance(resource, Dict):
             if instance.created_time is not None:
                 instance.created_time = TimestampRange(**instance.created_time)
@@ -305,7 +305,7 @@ class TransformationFilter(CogniteFilter):
                 instance.last_updated_time = TimestampRange(**instance.last_updated_time)
         return instance
 
-    def dump(self, camel_case: bool = True):
+    def dump(self, camel_case: bool = True) -> Dict[str, Any]:
         obj = super().dump(camel_case=camel_case)
         if obj.get("includePublic"):
             is_public = obj.pop("includePublic")
@@ -322,14 +322,14 @@ class TransformationPreviewResult(CogniteResource):
     """
 
     def __init__(
-        self, schema: "TransformationSchemaColumnList" = None, results: List[Dict] = None, cognite_client=None
-    ):
+        self, schema: "TransformationSchemaColumnList" = None, results: List[Dict] = None, cognite_client: Any = None
+    ) -> None:
         self.schema = schema
         self.results = results
-        self._cognite_client = cognite_client
+        self._cognite_client = cast(Any, cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client=None):
+    def _load(cls, resource: Union[Dict, str], cognite_client: Any = None) -> "TransformationPreviewResult":
         instance = super(TransformationPreviewResult, cls)._load(resource, cognite_client)
         if isinstance(instance.schema, Dict):
             items = instance.schema.get("items")

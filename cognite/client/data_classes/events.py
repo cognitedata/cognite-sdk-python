@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Union, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -23,7 +23,7 @@ class EndTimeFilter(dict):
         is_null (bool): Set to true if you want to search for data with field value not set, false to search for cases where some value is present.
     """
 
-    def __init__(self, max: int = None, min: int = None, is_null: bool = None, **kwargs):
+    def __init__(self, max: int = None, min: int = None, is_null: bool = None, **kwargs: Any) -> None:
         self.max = max
         self.min = min
         self.is_null = is_null
@@ -69,7 +69,7 @@ class Event(CogniteResource):
         id: int = None,
         last_updated_time: int = None,
         created_time: int = None,
-        cognite_client=None,
+        cognite_client: Any = None,
     ):
         self.external_id = external_id
         self.data_set_id = data_set_id
@@ -84,7 +84,7 @@ class Event(CogniteResource):
         self.id = id
         self.last_updated_time = last_updated_time
         self.created_time = created_time
-        self._cognite_client = cognite_client
+        self._cognite_client = cast(Any, cognite_client)
 
 
 class EventFilter(CogniteFilter):
@@ -124,7 +124,7 @@ class EventFilter(CogniteFilter):
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
         external_id_prefix: str = None,
-        cognite_client=None,
+        cognite_client: Any = None,
     ):
         self.start_time = start_time
         self.end_time = end_time
@@ -140,11 +140,11 @@ class EventFilter(CogniteFilter):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.external_id_prefix = external_id_prefix
-        self._cognite_client = cognite_client
+        self._cognite_client = cast(Any, cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client=None):
-        instance = super(EventFilter, cls)._load(resource, cognite_client)
+    def _load(cls, resource: Union[Dict, str]) -> "EventFilter":
+        instance = super(EventFilter, cls)._load(resource)
         if isinstance(resource, Dict):
             if instance.start_time is not None:
                 instance.start_time = TimestampRange(**instance.start_time)
@@ -199,43 +199,43 @@ class EventUpdate(CogniteUpdate):
             return self._remove(value)
 
     @property
-    def external_id(self):
+    def external_id(self) -> "_PrimitiveEventUpdate":
         return EventUpdate._PrimitiveEventUpdate(self, "externalId")
 
     @property
-    def data_set_id(self):
+    def data_set_id(self) -> "_PrimitiveEventUpdate":
         return EventUpdate._PrimitiveEventUpdate(self, "dataSetId")
 
     @property
-    def start_time(self):
+    def start_time(self) -> "_PrimitiveEventUpdate":
         return EventUpdate._PrimitiveEventUpdate(self, "startTime")
 
     @property
-    def end_time(self):
+    def end_time(self) -> "_PrimitiveEventUpdate":
         return EventUpdate._PrimitiveEventUpdate(self, "endTime")
 
     @property
-    def description(self):
+    def description(self) -> "_PrimitiveEventUpdate":
         return EventUpdate._PrimitiveEventUpdate(self, "description")
 
     @property
-    def metadata(self):
+    def metadata(self) -> "_ObjectEventUpdate":
         return EventUpdate._ObjectEventUpdate(self, "metadata")
 
     @property
-    def asset_ids(self):
+    def asset_ids(self) -> "_ListEventUpdate":
         return EventUpdate._ListEventUpdate(self, "assetIds")
 
     @property
-    def source(self):
+    def source(self) -> "_PrimitiveEventUpdate":
         return EventUpdate._PrimitiveEventUpdate(self, "source")
 
     @property
-    def type(self):
+    def type(self) -> "_PrimitiveEventUpdate":
         return EventUpdate._PrimitiveEventUpdate(self, "type")
 
     @property
-    def subtype(self):
+    def subtype(self) -> "_PrimitiveEventUpdate":
         return EventUpdate._PrimitiveEventUpdate(self, "subtype")
 
 

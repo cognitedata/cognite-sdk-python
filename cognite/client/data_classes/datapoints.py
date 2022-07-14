@@ -2,12 +2,15 @@ import collections
 import json
 import re as regexp
 from datetime import datetime
-from typing import Any, Dict, Generator, List, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Tuple, Union, cast
 
 import cognite.client.utils._time
 from cognite.client import utils
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.exceptions import CogniteDuplicateColumnsError
+
+if TYPE_CHECKING:
+    import pandas
 
 
 class Datapoint(CogniteResource):
@@ -56,14 +59,14 @@ class Datapoint(CogniteResource):
         self.discrete_variance = discrete_variance
         self.total_variation = total_variation
 
-    def to_pandas(self, camel_case=True) -> "pandas.DataFrame":  # noqa: F821
+    def to_pandas(self, camel_case: bool = True) -> "pandas.DataFrame":  # type: ignore[override]
         """Convert the datapoint into a pandas DataFrame.
              camel_case (bool): Convert column names to camel case (e.g. `stepInterpolation` instead of `step_interpolation`)
 
         Returns:
             pandas.DataFrame: The dataframe.
         """
-        pd = utils._auxiliary.local_import("pandas")
+        pd = cast(Any, utils._auxiliary.local_import("pandas"))
 
         dumped = self.dump(camel_case=camel_case)
         timestamp = dumped.pop("timestamp")
@@ -75,7 +78,7 @@ class Datapoint(CogniteResource):
         return df
 
 
-class Datapoints:
+class Datapoints(CogniteResource):
     """An object representing a list of datapoints.
 
     Args:
@@ -138,9 +141,9 @@ class Datapoints:
         self.total_variation = total_variation
         self.error = error
 
-        self.__datapoint_objects = None
+        self.__datapoint_objects: Optional[List[Datapoint]] = None
 
-    def __str__(self):
+    def __str__(self) -> str:
         item = self.dump()
         item["datapoints"] = utils._time.convert_time_attributes_to_datetime(item["datapoints"])
         return json.dumps(item, indent=4)
@@ -148,7 +151,7 @@ class Datapoints:
     def __len__(self) -> int:
         return len(self.timestamp)
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         return (
             type(self) == type(other)
             and self.id == other.id
@@ -156,7 +159,7 @@ class Datapoints:
             and list(self._get_non_empty_data_fields()) == list(other._get_non_empty_data_fields())
         )
 
-    def __getitem__(self, item) -> Union[Datapoint, "Datapoints"]:
+    def __getitem__(self, item: Any) -> Union[Datapoint, "Datapoints"]:
         if isinstance(item, slice):
             return self._slice(item)
         dp_args = {}
@@ -188,9 +191,9 @@ class Datapoints:
             dumped = {utils._auxiliary.to_camel_case(key): value for key, value in dumped.items()}
         return {key: value for key, value in dumped.items() if value is not None}
 
-    def to_pandas(
+    def to_pandas(  # type: ignore[override]
         self, column_names: str = "externalId", include_aggregate_name: bool = True, include_errors: bool = False
-    ) -> "pandas.DataFrame":  # noqa: F821
+    ) -> "pandas.DataFrame":
         """Convert the datapoints into a pandas DataFrame.
 
         Args:
@@ -223,14 +226,14 @@ class Datapoints:
             Datapoints._strip_aggregate_names(df)
         return df
 
-    def plot(self, *args, **kwargs) -> None:
+    def plot(self, *args: Any, **kwargs: Any) -> None:
         """Plot the datapoints."""
-        plt = utils._auxiliary.local_import("matplotlib.pyplot")
+        plt = cast(Any, utils._auxiliary.local_import("matplotlib.pyplot"))
         self.to_pandas().plot(*args, **kwargs)
         plt.show()
 
     @staticmethod
-    def _strip_aggregate_names(df):
+    def _strip_aggregate_names(df: "pandas.DataFrame") -> "pandas.DataFrame":
         df.rename(columns=lambda s: regexp.sub(r"\|\w+$", "", s), inplace=True)
         if len(set(df.columns)) < df.shape[1]:
             raise CogniteDuplicateColumnsError(
@@ -239,7 +242,9 @@ class Datapoints:
         return df
 
     @classmethod
-    def _load(cls, dps_object, expected_fields: List[str] = None, cognite_client=None):
+    def _load(  # type: ignore[override]
+        cls, dps_object: Dict[str, Any], expected_fields: List[str] = None, cognite_client: Any = None
+    ) -> "Datapoints":
         instance = cls()
         instance.id = dps_object.get("id")
         instance.external_id = dps_object.get("externalId")
@@ -258,7 +263,7 @@ class Datapoints:
                 setattr(instance, snake_key, data)
         return instance
 
-    def _extend(self, other_dps):
+    def _extend(self, other_dps: "Datapoints") -> None:
         if self.id is None and self.external_id is None:
             self.id = other_dps.id
             self.external_id = other_dps.external_id
@@ -273,7 +278,9 @@ class Datapoints:
             else:
                 value.extend(other_value)
 
-    def _get_non_empty_data_fields(self, get_empty_lists=False, get_error=True) -> List[Tuple[str, Any]]:
+    def _get_non_empty_data_fields(
+        self, get_empty_lists: bool = False, get_error: bool = True
+    ) -> List[Tuple[str, Any]]:
         non_empty_data_fields = []
         for attr, value in self.__dict__.copy().items():
             if (
@@ -287,38 +294,40 @@ class Datapoints:
         return non_empty_data_fields
 
     def __get_datapoint_objects(self) -> List[Datapoint]:
-        if self.__datapoint_objects is None:
-            fields = self._get_non_empty_data_fields(get_error=False)
-            self.__datapoint_objects = []
-            for i in range(len(self)):
-                dp_args = {}
-                for attr, value in fields:
-                    dp_args[attr] = value[i]
-                self.__datapoint_objects.append(Datapoint(**dp_args))
+        if self.__datapoint_objects is not None:
+            return self.__datapoint_objects
+        fields = self._get_non_empty_data_fields(get_error=False)
+        new_dps_objects = []
+        for i in range(len(self)):
+            dp_args = {}
+            for attr, value in fields:
+                dp_args[attr] = value[i]
+            new_dps_objects.append(Datapoint(**dp_args))
+        self.__datapoint_objects = new_dps_objects
         return self.__datapoint_objects
 
-    def _slice(self, slice: slice):
+    def _slice(self, slice: slice) -> "Datapoints":
         truncated_datapoints = Datapoints(id=self.id, external_id=self.external_id)
         for attr, value in self._get_non_empty_data_fields():
             setattr(truncated_datapoints, attr, value[slice])
         return truncated_datapoints
 
-    def _repr_html_(self):
+    def _repr_html_(self) -> str:
         return self.to_pandas(include_errors=True)._repr_html_()
 
 
 class DatapointsList(CogniteResourceList):
     _RESOURCE = Datapoints
 
-    def __str__(self):
+    def __str__(self) -> str:
         item = self.dump()
         for i in item:
             i["datapoints"] = utils._time.convert_time_attributes_to_datetime(i["datapoints"])
         return json.dumps(item, default=lambda x: x.__dict__, indent=4)
 
-    def to_pandas(
+    def to_pandas(  # type: ignore[override]
         self, column_names: str = "externalId", include_aggregate_name: bool = True
-    ) -> "pandas.DataFrame":  # noqa: F821
+    ) -> "pandas.DataFrame":
         """Convert the datapoints list into a pandas DataFrame.
 
         Args:
@@ -328,7 +337,7 @@ class DatapointsList(CogniteResourceList):
         Returns:
             pandas.DataFrame: The datapoints list as a pandas DataFrame.
         """
-        pd = utils._auxiliary.local_import("pandas")
+        pd = cast(Any, utils._auxiliary.local_import("pandas"))
 
         dfs = [df.to_pandas(column_names=column_names) for df in self.data]
         if dfs:
@@ -339,14 +348,14 @@ class DatapointsList(CogniteResourceList):
 
         return pd.DataFrame()
 
-    def _repr_html_(self):
+    def _repr_html_(self) -> str:
         return self.to_pandas()._repr_html_()
 
-    def plot(self, *args, **kwargs) -> None:
+    def plot(self, *args: Any, **kwargs: Any) -> None:
         """Plot the list of datapoints."""
         plt = utils._auxiliary.local_import("matplotlib.pyplot")
         self.to_pandas().plot(*args, **kwargs)
-        plt.show()
+        plt.show()  # type: ignore
 
 
 class DatapointsQuery(CogniteResource):

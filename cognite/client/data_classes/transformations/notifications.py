@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Union
+from typing import Any, Dict, Optional, Union, cast
 
 from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteResourceList
 
@@ -24,7 +24,7 @@ class TransformationNotification(CogniteResource):
         destination: str = None,
         created_time: int = None,
         last_updated_time: int = None,
-        cognite_client=None,
+        cognite_client: Any = None,
     ):
         self.id = id
         self.transformation_id = transformation_id
@@ -32,14 +32,14 @@ class TransformationNotification(CogniteResource):
         self.destination = destination
         self.created_time = created_time
         self.last_updated_time = last_updated_time
-        self._cognite_client = cognite_client
+        self._cognite_client = cast(Any, cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client=None):
+    def _load(cls, resource: Union[Dict, str], cognite_client: Any = None) -> "TransformationNotification":
         instance = super(TransformationNotification, cls)._load(resource, cognite_client)
         return instance
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.id)
 
 

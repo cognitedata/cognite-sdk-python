@@ -562,7 +562,7 @@ class APIClient:
         headers: Optional[Dict] = None,
         extra_body_fields: Optional[Dict] = None,
         limit: Optional[int] = None,
-    ) -> T_CogniteResourceList:
+    ) -> Union[T_CogniteResourceList, T_CogniteResource]:
         resource_path = resource_path or self._RESOURCE_PATH
         limit = limit or self._CREATE_LIMIT
         single_item = not isinstance(items, list)

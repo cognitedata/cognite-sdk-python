@@ -1,6 +1,6 @@
 import time
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 
 from cognite.client.data_classes._base import (
     CognitePrimitiveUpdate,
@@ -10,6 +10,9 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.exceptions import ModelFailedException
 from cognite.client.utils._auxiliary import convert_true_match
+
+if TYPE_CHECKING:
+    import pandas
 
 
 class JobStatus(Enum):
@@ -51,16 +54,15 @@ class ContextualizationJob(CogniteResource):
 
     def __init__(
         self,
-        job_id=None,
-        model_id=None,
-        status=None,
-        error_message=None,
-        created_time=None,
-        start_time=None,
-        status_time=None,
-        status_path=None,
-        cognite_client=None,
-        **kwargs,
+        job_id: int = None,
+        model_id: int = None,
+        status: str = None,
+        error_message: str = None,
+        created_time: int = None,
+        start_time: int = None,
+        status_time: int = None,
+        status_path: str = None,
+        cognite_client: Any = None,
     ):
         """Data class for the result of a contextualization job."""
         self.job_id = job_id
@@ -70,8 +72,8 @@ class ContextualizationJob(CogniteResource):
         self.start_time = start_time
         self.status_time = status_time
         self.error_message = error_message
-        self._cognite_client = cognite_client
-        self._result = None
+        self._cognite_client = cast(Any, cognite_client)
+        self._result: Optional[Dict[str, Any]] = None
         self._status_path = status_path
 
     def update_status(self) -> str:
@@ -85,13 +87,14 @@ class ContextualizationJob(CogniteResource):
         self.created_time = self.created_time or data.get("createdTime")
         self.error_message = data.get("errorMessage")
         self._result = {k: v for k, v in data.items() if k not in self._COMMON_FIELDS}
+        assert self.status is not None
         return self.status
 
-    def wait_for_completion(self, timeout=None, interval=1):
+    def wait_for_completion(self, timeout: int = None, interval: int = 1) -> None:
         """Waits for job completion, raising ModelFailedException if fit failed - generally not needed to call as it is called by result.
         Args:
-            timeout: Time out after this many seconds. (None means wait indefinitely)
-            interval: Poll status every this many seconds.
+            timeout (int): Time out after this many seconds. (None means wait indefinitely)
+            interval (int): Poll status every this many seconds.
         """
         start = time.time()
         while timeout is None or time.time() < start + timeout:
@@ -100,25 +103,21 @@ class ContextualizationJob(CogniteResource):
                 break
             time.sleep(interval)
         if JobStatus(self.status) == JobStatus.FAILED:
-            raise ModelFailedException(self.__class__.__name__, self.job_id, self.error_message)
+            raise ModelFailedException(self.__class__.__name__, cast(int, self.job_id), cast(str, self.error_message))
 
     @property
-    def result(self):
+    def result(self) -> Dict[str, Any]:
         """Waits for the job to finish and returns the results."""
         if not self._result:
             self.wait_for_completion()
+        assert self._result is not None
         return self._result
 
-    def __str__(self):
-        return "%s(id: %d,status: %s,error: %s)" % (
-            self.__class__.__name__,
-            self.job_id,
-            self.status,
-            self.error_message,
-        )
+    def __str__(self) -> str:
+        return f"{self.__class__.__name__}(id: {self.job_id},status: {self.status},error: {self.error_message})"
 
     @classmethod
-    def _load_with_status(cls, data, status_path, cognite_client):
+    def _load_with_status(cls, data: Dict[str, Any], status_path: str, cognite_client: Any) -> "ContextualizationJob":
         obj = cls._load(data, cognite_client=cognite_client)
         obj._status_path = status_path
         return obj
@@ -134,20 +133,20 @@ class EntityMatchingModel(CogniteResource):
 
     def __init__(
         self,
-        id=None,
-        status=None,
-        error_message=None,
-        created_time=None,
-        start_time=None,
-        status_time=None,
-        cognite_client=None,
-        classifier=None,
-        feature_type=None,
-        match_fields=None,
-        model_type=None,
-        name=None,
-        description=None,
-        external_id=None,
+        id: int = None,
+        status: str = None,
+        error_message: str = None,
+        created_time: int = None,
+        start_time: int = None,
+        status_time: int = None,
+        classifier: str = None,
+        feature_type: str = None,
+        match_fields: List[str] = None,
+        model_type: str = None,
+        name: str = None,
+        description: str = None,
+        external_id: str = None,
+        cognite_client: Any = None,
     ):
         """Entity matching model. See the `fit` method for the meaning of these fields."""
         self.id = id
@@ -163,10 +162,10 @@ class EntityMatchingModel(CogniteResource):
         self.name = name
         self.description = description
         self.external_id = external_id
-        self._cognite_client = cognite_client
+        self._cognite_client = cast(Any, cognite_client)
 
-    def __str__(self):
-        return "%s(id: %d,status: %s,error: %s)" % (self.__class__.__name__, self.id, self.status, self.error_message)
+    def __str__(self) -> str:
+        return f"{self.__class__.__name__}(id: {self.id},status: {self.status},error: {self.error_message})"
 
     def update_status(self) -> str:
         """Updates the model status and returns it"""
@@ -176,6 +175,7 @@ class EntityMatchingModel(CogniteResource):
         self.start_time = data.get("startTime")
         self.created_time = self.created_time or data.get("createdTime")
         self.error_message = data.get("errorMessage")
+        assert self.status is not None
         return self.status
 
     def wait_for_completion(self, timeout: int = None, interval: int = 1) -> None:
@@ -192,14 +192,16 @@ class EntityMatchingModel(CogniteResource):
                 break
             time.sleep(interval)
         if JobStatus(self.status) == JobStatus.FAILED:
+            assert self.id is not None
+            assert self.error_message is not None
             raise ModelFailedException(self.__class__.__name__, self.id, self.error_message)
 
     def predict(
         self,
         sources: Optional[List[Dict]] = None,
         targets: Optional[List[Dict]] = None,
-        num_matches=1,
-        score_threshold=None,
+        num_matches: int = 1,
+        score_threshold: float = None,
     ) -> ContextualizationJob:
         """Predict entity matching. NB. blocks and waits for the model to be ready if it has been recently created.
 
@@ -241,7 +243,7 @@ class EntityMatchingModel(CogniteResource):
         return self._load(response.json(), cognite_client=self._cognite_client)
 
     @staticmethod
-    def _flatten_entity(entity: Dict) -> Dict:
+    def _flatten_entity(entity: Union[dict, CogniteResource]) -> Dict:
         if isinstance(entity, CogniteResource):
             entity = entity.dump(camel_case=True)
         if "metadata" in entity and isinstance(entity["metadata"], dict):
@@ -250,9 +252,10 @@ class EntityMatchingModel(CogniteResource):
         return {k: v for k, v in entity.items() if k == "id" or isinstance(v, str)}
 
     @staticmethod
-    def _dump_entities(entities: List[Union[Dict, CogniteResource]]) -> Optional[List[Dict]]:
+    def _dump_entities(entities: Optional[Sequence[Union[Dict, CogniteResource]]]) -> Optional[List[Dict]]:
         if entities:
             return [EntityMatchingModel._flatten_entity(e) for e in entities]
+        return None
 
 
 class EntityMatchingModelUpdate(CogniteUpdate):
@@ -268,11 +271,11 @@ class EntityMatchingModelUpdate(CogniteUpdate):
             return self._set(value)
 
     @property
-    def name(self):
+    def name(self) -> _PrimitiveUpdate:
         return EntityMatchingModelUpdate._PrimitiveUpdate(self, "name")
 
     @property
-    def description(self):
+    def description(self) -> _PrimitiveUpdate:
         return EntityMatchingModelUpdate._PrimitiveUpdate(self, "description")
 
 
@@ -281,11 +284,11 @@ class EntityMatchingModelList(CogniteResourceList):
 
 
 class DiagramConvertPage(CogniteResource):
-    def __init__(self, page=None, png_url=None, svg_url=None, cognite_client=None):
+    def __init__(self, page: int = None, png_url: str = None, svg_url: str = None, cognite_client: Any = None):
         self.page = page
         self.png_url = png_url
         self.svg_url = svg_url
-        self._cognite_client = cognite_client
+        self._cognite_client = cast(Any, cognite_client)
 
 
 class DiagramConvertPageList(CogniteResourceList):
@@ -293,20 +296,24 @@ class DiagramConvertPageList(CogniteResourceList):
 
 
 class DiagramConvertItem(CogniteResource):
-    def __init__(self, file_id=None, file_external_id=None, results=None, cognite_client=None):
+    def __init__(
+        self, file_id: int = None, file_external_id: str = None, results: list = None, cognite_client: Any = None
+    ):
         self.file_id = file_id
         self.file_external_id = file_external_id
         self.results = results
-        self._cognite_client = cognite_client
+        self._cognite_client = cast(Any, cognite_client)
 
-    def __len__(self):
+    def __len__(self) -> int:
+        assert self.results
         return len(self.results)
 
     @property
-    def pages(self):
+    def pages(self) -> DiagramConvertPageList:
+        assert self.results is not None
         return DiagramConvertPageList._load(self.results, cognite_client=self._cognite_client)
 
-    def to_pandas(self, camel_case: bool = False):
+    def to_pandas(self, camel_case: bool = False) -> "pandas.DataFrame":  # type: ignore[override]
         df = super().to_pandas(camel_case=camel_case)
         df.loc["results"] = f"{len(df['results'])} pages"
         return df
@@ -315,11 +322,11 @@ class DiagramConvertItem(CogniteResource):
 class DiagramConvertResults(ContextualizationJob):
     _JOB_TYPE = ContextualizationJobType.DIAGRAMS
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
-        self._items = None
+        self._items: Optional[list] = None
 
-    def __getitem__(self, find_id) -> DiagramConvertItem:
+    def __getitem__(self, find_id: Any) -> DiagramConvertItem:
         """retrieves the results for the file with (external) id"""
         found = [
             item
@@ -342,19 +349,26 @@ class DiagramConvertResults(ContextualizationJob):
         return self._items
 
     @items.setter
-    def items(self, items) -> None:
+    def items(self, items: list) -> None:
         self._items = items
 
 
 class DiagramDetectItem(CogniteResource):
-    def __init__(self, file_id=None, file_external_id=None, annotations=None, error_message=None, cognite_client=None):
+    def __init__(
+        self,
+        file_id: int = None,
+        file_external_id: str = None,
+        annotations: list = None,
+        error_message: str = None,
+        cognite_client: Any = None,
+    ):
         self.file_id = file_id
         self.file_external_id = file_external_id
         self.annotations = annotations
         self.error_message = error_message
-        self._cognite_client = cognite_client
+        self._cognite_client = cast(Any, cognite_client)
 
-    def to_pandas(self, camel_case: bool = False):
+    def to_pandas(self, camel_case: bool = False) -> "pandas.DataFrame":  # type: ignore[override]
         df = super().to_pandas(camel_case=camel_case)
         df.loc["annotations"] = f"{len(df['annotations'])} annotations"
         return df
@@ -363,11 +377,11 @@ class DiagramDetectItem(CogniteResource):
 class DiagramDetectResults(ContextualizationJob):
     _JOB_TYPE = ContextualizationJobType.DIAGRAMS
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
-        self._items = None
+        self._items: Optional[List[DiagramDetectItem]] = None
 
-    def __getitem__(self, find_id) -> DiagramDetectItem:
+    def __getitem__(self, find_id: Any) -> DiagramDetectItem:
         """retrieves the results for the file with (external) id"""
         found = [
             item
@@ -390,7 +404,7 @@ class DiagramDetectResults(ContextualizationJob):
         return self._items
 
     @items.setter
-    def items(self, items) -> List[DiagramDetectItem]:
+    def items(self, items: List[DiagramDetectItem]) -> None:
         self._items = items
 
     @property

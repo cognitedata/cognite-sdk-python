@@ -1,7 +1,7 @@
 import asyncio
 import time
 from enum import Enum
-from typing import Dict, Optional, Union
+from typing import Any, Dict, Optional, Union, cast
 
 from cognite.client import utils
 from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteResourceList
@@ -26,14 +26,16 @@ class TransformationJobMetric(CogniteResource):
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
-    def __init__(self, id: int = None, timestamp: int = None, name: str = None, count: int = None, cognite_client=None):
+    def __init__(
+        self, id: int = None, timestamp: int = None, name: str = None, count: int = None, cognite_client: Any = None
+    ):
         self.timestamp = timestamp
         self.name = name
         self.count = count
-        self._cognite_client = cognite_client
+        self._cognite_client = cast(Any, cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client=None):
+    def _load(cls, resource: Union[Dict, str], cognite_client: Any = None) -> "TransformationJobMetric":
         instance = super(TransformationJobMetric, cls)._load(resource, cognite_client)
         return instance
 
@@ -83,7 +85,7 @@ class TransformationJob(CogniteResource):
         started_time: int = None,
         finished_time: int = None,
         last_seen_time: int = None,
-        cognite_client=None,
+        cognite_client: Any = None,
     ):
         self.id = id
         self.status = status
@@ -100,9 +102,9 @@ class TransformationJob(CogniteResource):
         self.started_time = started_time
         self.finished_time = finished_time
         self.last_seen_time = last_seen_time
-        self._cognite_client = cognite_client
+        self._cognite_client = cast(Any, cognite_client)
 
-    def update(self):
+    def update(self) -> None:
         """`Get updated job status.`"""
         updated = self._cognite_client.transformations.jobs.retrieve(id=self.id)
         self.status = updated.status
@@ -111,14 +113,15 @@ class TransformationJob(CogniteResource):
         self.finished_time = updated.finished_time
         self.last_seen_time = updated.last_seen_time
 
-    def cancel(self):
+    def cancel(self) -> None:
         if self.transformation_id is None:
             self._cognite_client.transformations.cancel(transformation_external_id=self.transformation_external_id)
         else:
             self._cognite_client.transformations.cancel(transformation_id=self.transformation_id)
 
-    def metrics(self):
+    def metrics(self) -> TransformationJobMetricList:
         """`Get job metrics.`"""
+        assert self.id is not None
         return self._cognite_client.transformations.jobs.list_metrics(self.id)
 
     def wait(self, polling_interval: float = 1, timeout: Optional[float] = None) -> "TransformationJob":
@@ -235,7 +238,7 @@ class TransformationJob(CogniteResource):
         return self
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client=None):
+    def _load(cls, resource: Union[Dict, str], cognite_client: Any = None) -> "TransformationJob":
         instance = super(TransformationJob, cls)._load(resource, cognite_client)
         if isinstance(instance.destination, Dict):
             snake_dict = {utils._auxiliary.to_snake_case(key): value for (key, value) in instance.destination.items()}
@@ -252,7 +255,7 @@ class TransformationJob(CogniteResource):
                 instance.destination = TransformationDestination(**snake_dict)
         return instance
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.id)
 
 

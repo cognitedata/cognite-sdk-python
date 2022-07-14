@@ -59,7 +59,7 @@ class Annotation(CogniteResource):
         self._cognite_client = None  # Read only
 
     @classmethod
-    def _load(cls, resource: Union[Dict[str, Any], str], cognite_client=None) -> "Annotation":
+    def _load(cls, resource: Union[Dict[str, Any], str], cognite_client: Any = None) -> "Annotation":
         if isinstance(resource, str):
             return cls._load(json.loads(resource), cognite_client=cognite_client)
         elif isinstance(resource, dict):
@@ -67,7 +67,7 @@ class Annotation(CogniteResource):
         raise TypeError("Resource must be json str or Dict, not {}".format(type(resource)))
 
     @classmethod
-    def from_dict(cls, resource: Dict[str, Any], cognite_client=None) -> "Annotation":
+    def from_dict(cls, resource: Dict[str, Any], cognite_client: Any = None) -> "Annotation":
         # Create base annotation
         data = {to_snake_case(key): val for key, val in resource.items()}
         annotation = Annotation(
@@ -129,7 +129,7 @@ class AnnotationFilter(CogniteFilter):
         self.annotation_type = annotation_type
         self.data = data
 
-    def dump(self, camel_case: bool = False):
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         result = super(AnnotationFilter, self).dump(camel_case=camel_case)
         # Special handling for creating_user, which hasa valid None value
         key = "creatingUser" if camel_case else "creating_user"

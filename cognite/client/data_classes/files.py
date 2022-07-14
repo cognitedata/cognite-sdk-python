@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Union, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -60,7 +60,7 @@ class FileMetadata(CogniteResource):
         uploaded_time: int = None,
         created_time: int = None,
         last_updated_time: int = None,
-        cognite_client=None,
+        cognite_client: Any = None,
     ):
         if geo_location is not None and not isinstance(geo_location, GeoLocation):
             raise TypeError("FileMetadata.geo_location should be of type GeoLocation")
@@ -82,10 +82,10 @@ class FileMetadata(CogniteResource):
         self.uploaded_time = uploaded_time
         self.created_time = created_time
         self.last_updated_time = last_updated_time
-        self._cognite_client = cognite_client
+        self._cognite_client = cast(Any, cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client=None):
+    def _load(cls, resource: Union[Dict, str], cognite_client: Any = None) -> "FileMetadata":
         instance = super(FileMetadata, cls)._load(resource, cognite_client)
         instance.labels = Label._load_list(instance.labels)
         if instance.geo_location is not None:
@@ -138,7 +138,7 @@ class FileMetadataFilter(CogniteFilter):
         external_id_prefix: str = None,
         directory_prefix: str = None,
         uploaded: bool = None,
-        cognite_client=None,
+        cognite_client: Any = None,
     ):
         self.name = name
         self.mime_type = mime_type
@@ -158,7 +158,7 @@ class FileMetadataFilter(CogniteFilter):
         self.external_id_prefix = external_id_prefix
         self.directory_prefix = directory_prefix
         self.uploaded = uploaded
-        self._cognite_client = cognite_client
+        self._cognite_client = cast(Any, cognite_client)
 
         if labels is not None and not isinstance(labels, LabelFilter):
             raise TypeError("FileMetadataFilter.labels must be of type LabelFilter")
@@ -166,8 +166,8 @@ class FileMetadataFilter(CogniteFilter):
             raise TypeError("FileMetadata.geo_location should be of type GeoLocationFilter")
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client=None):
-        instance = super(FileMetadataFilter, cls)._load(resource, cognite_client)
+    def _load(cls, resource: Union[Dict, str]) -> "FileMetadataFilter":
+        instance = super()._load(resource)
         if isinstance(resource, Dict):
             if instance.created_time is not None:
                 instance.created_time = TimestampRange(**instance.created_time)
@@ -176,12 +176,12 @@ class FileMetadataFilter(CogniteFilter):
             if instance.uploaded_time is not None:
                 instance.uploaded_time = TimestampRange(**instance.uploaded_time)
             if instance.labels is not None:
-                instance.labels = [Label._load(label) for label in instance.labels]
+                instance.labels = LabelFilter._load(instance.labels)
             if instance.geo_location is not None:
                 instance.geo_location = GeoLocationFilter._load(**instance.geo_location)
         return instance
 
-    def dump(self, camel_case: bool = False):
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         result = super(FileMetadataFilter, self).dump(camel_case)
         if isinstance(self.labels, LabelFilter):
             result["labels"] = self.labels.dump(camel_case)
@@ -228,51 +228,51 @@ class FileMetadataUpdate(CogniteUpdate):
             return self._remove(value)
 
     @property
-    def external_id(self):
+    def external_id(self) -> "_PrimitiveFileMetadataUpdate":
         return FileMetadataUpdate._PrimitiveFileMetadataUpdate(self, "externalId")
 
     @property
-    def directory(self):
+    def directory(self) -> "_PrimitiveFileMetadataUpdate":
         return FileMetadataUpdate._PrimitiveFileMetadataUpdate(self, "directory")
 
     @property
-    def source(self):
+    def source(self) -> "_PrimitiveFileMetadataUpdate":
         return FileMetadataUpdate._PrimitiveFileMetadataUpdate(self, "source")
 
     @property
-    def mime_type(self):
+    def mime_type(self) -> "_PrimitiveFileMetadataUpdate":
         return FileMetadataUpdate._PrimitiveFileMetadataUpdate(self, "mimeType")
 
     @property
-    def metadata(self):
+    def metadata(self) -> "_ObjectFileMetadataUpdate":
         return FileMetadataUpdate._ObjectFileMetadataUpdate(self, "metadata")
 
     @property
-    def asset_ids(self):
+    def asset_ids(self) -> "_ListFileMetadataUpdate":
         return FileMetadataUpdate._ListFileMetadataUpdate(self, "assetIds")
 
     @property
-    def source_created_time(self):
+    def source_created_time(self) -> "_PrimitiveFileMetadataUpdate":
         return FileMetadataUpdate._PrimitiveFileMetadataUpdate(self, "sourceCreatedTime")
 
     @property
-    def source_modified_time(self):
+    def source_modified_time(self) -> "_PrimitiveFileMetadataUpdate":
         return FileMetadataUpdate._PrimitiveFileMetadataUpdate(self, "sourceModifiedTime")
 
     @property
-    def data_set_id(self):
+    def data_set_id(self) -> "_PrimitiveFileMetadataUpdate":
         return FileMetadataUpdate._PrimitiveFileMetadataUpdate(self, "dataSetId")
 
     @property
-    def labels(self):
+    def labels(self) -> "_LabelFileMetadataUpdate":
         return FileMetadataUpdate._LabelFileMetadataUpdate(self, "labels")
 
     @property
-    def geoLocation(self):
+    def geoLocation(self) -> "_PrimitiveFileMetadataUpdate":
         return FileMetadataUpdate._PrimitiveFileMetadataUpdate(self, "geoLocation")
 
     @property
-    def security_categories(self):
+    def security_categories(self) -> "_ListFileMetadataUpdate":
         return FileMetadataUpdate._ListFileMetadataUpdate(self, "securityCategories")
 
 
@@ -283,7 +283,7 @@ class FileAggregate(dict):
         count (int): Number of filtered items included in aggregation
     """
 
-    def __init__(self, count: int = None, **kwargs):
+    def __init__(self, count: int = None, **kwargs: Any) -> None:
         self.count = count
         self.update(kwargs)
 
