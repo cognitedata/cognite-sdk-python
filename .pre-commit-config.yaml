@@ -35,7 +35,7 @@ repos:
   -   hooks:
         - id: mypy
           name: mypy
-          entry: mypy cognite
+          entry: mypy cognite --non-interactive --install-types
           language: system
           files: ^.*.(py|pyi)$
           pass_filenames: false
