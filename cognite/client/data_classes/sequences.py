@@ -1,9 +1,25 @@
+import json
 import math
-from typing import *
-from typing import List
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, Tuple, Union, cast
 
-from cognite.client.data_classes._base import *
+from cognite.client import utils
+from cognite.client.data_classes._base import (
+    CogniteFilter,
+    CogniteLabelUpdate,
+    CogniteListUpdate,
+    CogniteObjectUpdate,
+    CognitePrimitiveUpdate,
+    CognitePropertyClassUtil,
+    CogniteResource,
+    CogniteResourceList,
+    CogniteUpdate,
+)
 from cognite.client.data_classes.shared import TimestampRange
+
+if TYPE_CHECKING:
+    import pandas
+
+    from cognite.client import CogniteClient
 
 
 class Sequence(CogniteResource):
@@ -35,7 +51,7 @@ class Sequence(CogniteResource):
         created_time: int = None,
         last_updated_time: int = None,
         data_set_id: int = None,
-        cognite_client=None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.id = id
         self.name = name
@@ -47,7 +63,7 @@ class Sequence(CogniteResource):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.data_set_id = data_set_id
-        self._cognite_client = cognite_client
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     def rows(self, start: int, end: int) -> List[dict]:
         """Retrieves rows from this sequence.
@@ -59,22 +75,24 @@ class Sequence(CogniteResource):
         return self._cognite_client.sequences.data.retrieve(**identifier, start=start, end=end)
 
     @property
-    def column_external_ids(self):
+    def column_external_ids(self) -> List[str]:
         """Retrieves list of column external ids for the sequence, for use in e.g. data retrieve or insert methods
 
         Returns:
             List of sequence column external ids
         """
-        return [c.get("externalId") for c in self.columns]
+        assert self.columns is not None
+        return [cast(str, c.get("externalId")) for c in self.columns]
 
     @property
-    def column_value_types(self):
+    def column_value_types(self) -> List[str]:
         """Retrieves list of column value types
 
         Returns:
             List of column value types
         """
-        return [c.get("valueType") for c in self.columns]
+        assert self.columns is not None
+        return [cast(str, c.get("valueType")) for c in self.columns]
 
 
 class SequenceFilter(CogniteFilter):
@@ -102,7 +120,7 @@ class SequenceFilter(CogniteFilter):
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
         data_set_ids: List[Dict[str, Any]] = None,
-        cognite_client=None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.name = name
         self.external_id_prefix = external_id_prefix
@@ -112,11 +130,11 @@ class SequenceFilter(CogniteFilter):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.data_set_ids = data_set_ids
-        self._cognite_client = cognite_client
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client=None):
-        instance = super(SequenceFilter, cls)._load(resource, cognite_client)
+    def _load(cls, resource: Union[Dict, str]) -> "SequenceFilter":
+        instance = super(SequenceFilter, cls)._load(resource)
         if isinstance(resource, Dict):
             if instance.created_time is not None:
                 instance.created_time = TimestampRange(**instance.created_time)
@@ -147,19 +165,19 @@ class SequenceColumnUpdate(CogniteUpdate):
             return self._remove(value)
 
     @property
-    def description(self):
+    def description(self) -> _PrimitiveSequenceColumnUpdate:
         return SequenceColumnUpdate._PrimitiveSequenceColumnUpdate(self, "description")
 
     @property
-    def external_id(self):
+    def external_id(self) -> _PrimitiveSequenceColumnUpdate:
         return SequenceColumnUpdate._PrimitiveSequenceColumnUpdate(self, "externalId")
 
     @property
-    def name(self):
+    def name(self) -> _PrimitiveSequenceColumnUpdate:
         return SequenceColumnUpdate._PrimitiveSequenceColumnUpdate(self, "name")
 
     @property
-    def metadata(self):
+    def metadata(self) -> _ObjectSequenceColumnUpdate:
         return SequenceColumnUpdate._ObjectSequenceColumnUpdate(self, "metadata")
 
 
@@ -206,46 +224,50 @@ class SequenceUpdate(CogniteUpdate):
         def add(self, value: Union[Dict, List[Dict]]) -> "SequenceUpdate":
             single_item = not isinstance(value, list)
             if single_item:
-                value = [value]
+                value_list = cast(List[str], [value])
+            else:
+                value_list = cast(List[str], value)
 
-            return self._add(value)
+            return self._add(value_list)
 
         def remove(self, value: Union[str, List[str]]) -> "SequenceUpdate":
             single_item = not isinstance(value, list)
             if single_item:
-                value = [value]
+                value_list = cast(List[str], [value])
+            else:
+                value_list = cast(List[str], value)
 
-            return self._remove([{"externalId": id} for id in value])
+            return self._remove([{"externalId": id} for id in value_list])
 
         def modify(self, value: List[SequenceColumnUpdate]) -> "SequenceUpdate":
             return self._modify([col.dump() for col in value])
 
     @property
-    def name(self):
+    def name(self) -> _PrimitiveSequenceUpdate:
         return SequenceUpdate._PrimitiveSequenceUpdate(self, "name")
 
     @property
-    def description(self):
+    def description(self) -> _PrimitiveSequenceUpdate:
         return SequenceUpdate._PrimitiveSequenceUpdate(self, "description")
 
     @property
-    def asset_id(self):
+    def asset_id(self) -> _PrimitiveSequenceUpdate:
         return SequenceUpdate._PrimitiveSequenceUpdate(self, "assetId")
 
     @property
-    def external_id(self):
+    def external_id(self) -> _PrimitiveSequenceUpdate:
         return SequenceUpdate._PrimitiveSequenceUpdate(self, "externalId")
 
     @property
-    def metadata(self):
+    def metadata(self) -> _ObjectSequenceUpdate:
         return SequenceUpdate._ObjectSequenceUpdate(self, "metadata")
 
     @property
-    def data_set_id(self):
+    def data_set_id(self) -> _PrimitiveSequenceUpdate:
         return SequenceUpdate._PrimitiveSequenceUpdate(self, "dataSetId")
 
     @property
-    def columns(self):
+    def columns(self) -> _ColumnsSequenceUpdate:
         return SequenceUpdate._ColumnsSequenceUpdate(self, "columns")
 
 
@@ -256,7 +278,7 @@ class SequenceAggregate(dict):
         count (int): No description.
     """
 
-    def __init__(self, count: int = None, **kwargs):
+    def __init__(self, count: int = None, **kwargs: Any):
         self.count = count
         self.update(kwargs)
 
@@ -265,10 +287,9 @@ class SequenceAggregate(dict):
 
 class SequenceList(CogniteResourceList):
     _RESOURCE = Sequence
-    _UPDATE = SequenceUpdate
 
 
-class SequenceData:
+class SequenceData(CogniteResource):
     """An object representing a list of rows from a sequence.
 
     Args:
@@ -287,7 +308,7 @@ class SequenceData:
         rows: List[dict] = None,
         row_numbers: List[int] = None,
         values: List[List[Union[int, str, float]]] = None,
-        columns: List[dict] = None,
+        columns: List[Dict[str, Any]] = None,
     ):
         if rows:
             row_numbers = [r["rowNumber"] for r in rows]
@@ -298,16 +319,16 @@ class SequenceData:
         self.values = values or []
         self.columns = columns
 
-    def __str__(self):
+    def __str__(self) -> str:
         return json.dumps(self.dump(), indent=4)
 
-    def _repr_html_(self):
+    def _repr_html_(self) -> str:
         return self.to_pandas()._repr_html_()
 
     def __len__(self) -> int:
         return len(self.row_numbers)
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         return (
             type(self) == type(other)
             and self.id == other.id
@@ -363,7 +384,7 @@ class SequenceData:
             dumped = {utils._auxiliary.to_camel_case(key): value for key, value in dumped.items()}
         return {key: value for key, value in dumped.items() if value is not None}
 
-    def to_pandas(self, column_names: str = "columnExternalId") -> "pandas.DataFrame":
+    def to_pandas(self, column_names: str = "columnExternalId") -> "pandas.DataFrame":  # type: ignore[override]
         """Convert the sequence data into a pandas DataFrame.
 
         Args:
@@ -388,20 +409,21 @@ class SequenceData:
             for eid in self.column_external_ids
         ]
 
-        return pd.DataFrame(
+        return pd.DataFrame(  # type: ignore
             [[x if x is not None else math.nan for x in r] for r in self.values],
             index=self.row_numbers,
             columns=df_columns,
         )
 
     @property
-    def column_external_ids(self) -> List[Optional[str]]:
+    def column_external_ids(self) -> List[str]:
         """Retrieves list of column external ids for the sequence, for use in e.g. data retrieve or insert methods.
 
         Returns:
             List of sequence column external ids.
         """
-        return [c.get("externalId") for c in self.columns]
+        assert self.columns is not None
+        return [cast(str, c.get("externalId")) for c in self.columns]
 
     @property
     def column_value_types(self) -> List[str]:
@@ -410,17 +432,17 @@ class SequenceData:
         Returns:
             List of column value types
         """
-        return [c.get("valueType") for c in self.columns]
+        assert self.columns is not None
+        return [cast(str, c.get("valueType")) for c in self.columns]
 
 
 class SequenceDataList(CogniteResourceList):
     _RESOURCE = SequenceData
-    _ASSERT_CLASSES = False
 
-    def __str__(self):
+    def __str__(self) -> str:
         return json.dumps(self.dump(), indent=4)
 
-    def to_pandas(self, column_names: str = "externalId|columnExternalId") -> "pandas.DataFrame":
+    def to_pandas(self, column_names: str = "externalId|columnExternalId") -> "pandas.DataFrame":  # type: ignore[override]
         """Convert the sequence data list into a pandas DataFrame. Each column will be a sequence.
 
         Args:
@@ -431,7 +453,7 @@ class SequenceDataList(CogniteResourceList):
             pandas.DataFrame: The sequence data list as a pandas DataFrame.
         """
         pd = utils._auxiliary.local_import("pandas")
-        return pd.concat([seq_data.to_pandas(column_names=column_names) for seq_data in self.data], axis=1)
+        return pd.concat([seq_data.to_pandas(column_names=column_names) for seq_data in self.data], axis=1)  # type: ignore
 
-    def _repr_html_(self):
+    def _repr_html_(self) -> str:
         return self.to_pandas()._repr_html_()

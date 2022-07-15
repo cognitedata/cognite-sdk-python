@@ -1,14 +1,20 @@
-from typing import Any, Dict, List, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Union, cast
 
-from cognite.client.data_classes._base import *
+from cognite.client import utils
 from cognite.client.data_classes._base import (
     CogniteFilter,
+    CogniteListUpdate,
+    CogniteObjectUpdate,
     CognitePrimitiveUpdate,
+    CognitePropertyClassUtil,
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
 )
 from cognite.client.data_classes.shared import TimestampRange
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 class ExtractionPipelineContact(dict):
@@ -32,7 +38,7 @@ class ExtractionPipelineContact(dict):
     role = CognitePropertyClassUtil.declare_property("role")
     send_notification = CognitePropertyClassUtil.declare_property("sendNotification")
 
-    def dump(self, camel_case: bool = False):
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         dump_key = lambda key: key if not camel_case else utils._auxiliary.to_camel_case(key)
         return {dump_key(key): value for key, value in self.items()}
 
@@ -82,7 +88,7 @@ class ExtractionPipeline(CogniteResource):
         created_time: int = None,
         last_updated_time: int = None,
         created_by: str = None,
-        cognite_client=None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.id = id
         self.external_id = external_id
@@ -102,14 +108,14 @@ class ExtractionPipeline(CogniteResource):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.created_by = created_by
-        self._cognite_client = cognite_client
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client=None):
+    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> "ExtractionPipeline":
         instance = super(ExtractionPipeline, cls)._load(resource, cognite_client)
         return instance
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.external_id)
 
 
@@ -146,49 +152,48 @@ class ExtractionPipelineUpdate(CogniteUpdate):
             return self._remove(value)
 
     @property
-    def external_id(self):
+    def external_id(self) -> _PrimitiveExtractionPipelineUpdate:
         return ExtractionPipelineUpdate._PrimitiveExtractionPipelineUpdate(self, "externalId")
 
     @property
-    def name(self):
+    def name(self) -> _PrimitiveExtractionPipelineUpdate:
         return ExtractionPipelineUpdate._PrimitiveExtractionPipelineUpdate(self, "name")
 
     @property
-    def description(self):
+    def description(self) -> _PrimitiveExtractionPipelineUpdate:
         return ExtractionPipelineUpdate._PrimitiveExtractionPipelineUpdate(self, "description")
 
     @property
-    def data_set_id(self):
+    def data_set_id(self) -> _PrimitiveExtractionPipelineUpdate:
         return ExtractionPipelineUpdate._PrimitiveExtractionPipelineUpdate(self, "dataSetId")
 
     @property
-    def raw_tables(self):
+    def raw_tables(self) -> _ListExtractionPipelineUpdate:
         return ExtractionPipelineUpdate._ListExtractionPipelineUpdate(self, "rawTables")
 
     @property
-    def metadata(self):
+    def metadata(self) -> _ObjectExtractionPipelineUpdate:
         return ExtractionPipelineUpdate._ObjectExtractionPipelineUpdate(self, "metadata")
 
     @property
-    def source(self):
+    def source(self) -> _PrimitiveExtractionPipelineUpdate:
         return ExtractionPipelineUpdate._PrimitiveExtractionPipelineUpdate(self, "source")
 
     @property
-    def documentation(self):
+    def documentation(self) -> _PrimitiveExtractionPipelineUpdate:
         return ExtractionPipelineUpdate._PrimitiveExtractionPipelineUpdate(self, "documentation")
 
     @property
-    def schedule(self):
+    def schedule(self) -> _PrimitiveExtractionPipelineUpdate:
         return ExtractionPipelineUpdate._PrimitiveExtractionPipelineUpdate(self, "schedule")
 
     @property
-    def contacts(self):
+    def contacts(self) -> _ListExtractionPipelineUpdate:
         return ExtractionPipelineUpdate._ListExtractionPipelineUpdate(self, "contacts")
 
 
 class ExtractionPipelineList(CogniteResourceList):
     _RESOURCE = ExtractionPipeline
-    _UPDATE = ExtractionPipelineUpdate
 
 
 class ExtractionPipelineRun(CogniteResource):
@@ -208,13 +213,13 @@ class ExtractionPipelineRun(CogniteResource):
         status: str = None,
         message: str = None,
         created_time: int = None,
-        cognite_client=None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.external_id = external_id
         self.status = status
         self.message = message
         self.created_time = created_time
-        self._cognite_client = cognite_client
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class ExtractionPipelineRunUpdate(CogniteUpdate):
@@ -225,7 +230,6 @@ class ExtractionPipelineRunUpdate(CogniteUpdate):
 
 class ExtractionPipelineRunList(CogniteResourceList):
     _RESOURCE = ExtractionPipelineRun
-    _UPDATE = ExtractionPipelineRunUpdate
 
 
 class StringFilter(CogniteFilter):
@@ -256,17 +260,17 @@ class ExtractionPipelineRunFilter(CogniteFilter):
         statuses: List[str] = None,
         message: StringFilter = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
-        cognite_client=None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.external_id = external_id
         self.statuses = statuses
         self.message = message
         self.created_time = created_time
-        self._cognite_client = cognite_client
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client=None):
-        instance = super(ExtractionPipelineRunFilter, cls)._load(resource, cognite_client)
+    def _load(cls, resource: Union[Dict, str]) -> "ExtractionPipelineRunFilter":
+        instance = super(ExtractionPipelineRunFilter, cls)._load(resource)
         if isinstance(resource, Dict):
             if instance.created_time is not None:
                 instance.created_time = TimestampRange(**instance.created_time)

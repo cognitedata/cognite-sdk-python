@@ -2,7 +2,7 @@ from pathlib import Path
 
 import toml
 
-from cognite.client import __version__
+from cognite.client._version import __version__
 
 with (Path(__file__).parent / "pyproject.toml").open() as fh:
     pyproject_toml = toml.load(fh)

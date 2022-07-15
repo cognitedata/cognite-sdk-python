@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [3.2.0] - 2022-07-15
+### Removed
+- Unused cognite.client.experimental module
+
 ## [3.1.0] - 2022-07-13
 ### Changed
 - Helper functions for conversion to/from datetime now warns on naive datetimes and their interpretation.

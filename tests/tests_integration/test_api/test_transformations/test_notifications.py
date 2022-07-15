@@ -105,4 +105,5 @@ class TestTransformationNotificationsAPI:
         assert len(retrieved_notifications) == 1
 
     def test_notification_to_string(self, new_notification):
-        dumped = str(new_notification)
+        # just make sure it doesnt throw exceptions
+        str(new_notification)

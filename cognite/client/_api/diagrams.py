@@ -1,5 +1,5 @@
 import numbers
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Type, Union
 
 from requests import Response
 
@@ -9,6 +9,7 @@ from cognite.client.data_classes.contextualization import (
     ContextualizationJob,
     DiagramConvertResults,
     DiagramDetectResults,
+    T_ContextualizationJob,
 )
 from cognite.client.utils._auxiliary import to_camel_case
 
@@ -30,8 +31,14 @@ class DiagramsAPI(APIClient):
             headers=headers,
         )
 
-    def _run_job(self, job_path, status_path=None, headers=None, job_cls=None, **kwargs) -> ContextualizationJob:
-        job_cls = job_cls or ContextualizationJob
+    def _run_job(
+        self,
+        job_cls: Type[T_ContextualizationJob],
+        job_path: str,
+        status_path: str = None,
+        headers: Dict[str, Any] = None,
+        **kwargs: Any,
+    ) -> T_ContextualizationJob:
         if status_path is None:
             status_path = job_path + "/"
         return job_cls._load_with_status(
@@ -59,10 +66,9 @@ class DiagramsAPI(APIClient):
         else:
             raise TypeError("external_ids must be str or list of str")
 
-        ids = [{"fileId": id} for id in ids]
-        external_ids = [{"fileExternalId": external_id} for external_id in external_ids]
-        all_ids = ids + external_ids
-        return all_ids
+        id_objs = [{"fileId": id} for id in ids]
+        external_id_objs = [{"fileExternalId": external_id} for external_id in external_ids]
+        return [*id_objs, *external_id_objs]
 
     def detect(
         self,

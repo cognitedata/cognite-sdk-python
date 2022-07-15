@@ -1437,8 +1437,3 @@ Object to use as a mock for CogniteClient
 Use a context manager to monkeypatch CogniteClient
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. autofunction:: cognite.client.testing.monkeypatch_cognite_client
-
-Experimental features
-=====================
-.. WARNING::
-    These features are subject to breaking changes and should not be used in production code.

@@ -1,7 +1,20 @@
-from typing import *
+from typing import TYPE_CHECKING, Any, Dict, List, Union, cast
 
-from cognite.client.data_classes._base import *
+from cognite.client.data_classes._base import (
+    CogniteFilter,
+    CogniteLabelUpdate,
+    CogniteListUpdate,
+    CogniteObjectUpdate,
+    CognitePrimitiveUpdate,
+    CognitePropertyClassUtil,
+    CogniteResource,
+    CogniteResourceList,
+    CogniteUpdate,
+)
 from cognite.client.data_classes.shared import TimestampRange
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 class DataSet(CogniteResource):
@@ -29,7 +42,7 @@ class DataSet(CogniteResource):
         id: int = None,
         created_time: int = None,
         last_updated_time: int = None,
-        cognite_client=None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.external_id = external_id
         self.name = name
@@ -39,7 +52,7 @@ class DataSet(CogniteResource):
         self.id = id
         self.created_time = created_time
         self.last_updated_time = last_updated_time
-        self._cognite_client = cognite_client
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class DataSetFilter(CogniteFilter):
@@ -61,18 +74,18 @@ class DataSetFilter(CogniteFilter):
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
         external_id_prefix: str = None,
         write_protected: bool = None,
-        cognite_client=None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.metadata = metadata
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.external_id_prefix = external_id_prefix
         self.write_protected = write_protected
-        self._cognite_client = cognite_client
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client=None):
-        instance = super(DataSetFilter, cls)._load(resource, cognite_client)
+    def _load(cls, resource: Union[Dict, str]) -> "DataSetFilter":
+        instance = super(DataSetFilter, cls)._load(resource)
         if isinstance(resource, Dict):
             if instance.created_time is not None:
                 instance.created_time = TimestampRange(**instance.created_time)
@@ -121,23 +134,23 @@ class DataSetUpdate(CogniteUpdate):
             return self._remove(value)
 
     @property
-    def external_id(self):
+    def external_id(self) -> "_PrimitiveDataSetUpdate":
         return DataSetUpdate._PrimitiveDataSetUpdate(self, "externalId")
 
     @property
-    def name(self):
+    def name(self) -> "_PrimitiveDataSetUpdate":
         return DataSetUpdate._PrimitiveDataSetUpdate(self, "name")
 
     @property
-    def description(self):
+    def description(self) -> "_PrimitiveDataSetUpdate":
         return DataSetUpdate._PrimitiveDataSetUpdate(self, "description")
 
     @property
-    def metadata(self):
+    def metadata(self) -> "_ObjectDataSetUpdate":
         return DataSetUpdate._ObjectDataSetUpdate(self, "metadata")
 
     @property
-    def write_protected(self):
+    def write_protected(self) -> "_PrimitiveDataSetUpdate":
         return DataSetUpdate._PrimitiveDataSetUpdate(self, "writeProtected")
 
 
@@ -148,7 +161,7 @@ class DataSetAggregate(dict):
         count (int): Size of the aggregation group
     """
 
-    def __init__(self, count: int = None, **kwargs):
+    def __init__(self, count: int = None, **kwargs: Any) -> None:
         self.count = count
         self.update(kwargs)
 
@@ -157,4 +170,3 @@ class DataSetAggregate(dict):
 
 class DataSetList(CogniteResourceList):
     _RESOURCE = DataSet
-    _UPDATE = DataSetUpdate

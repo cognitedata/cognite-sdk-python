@@ -1,4 +1,4 @@
-from typing import Any, Awaitable, Dict, List, Optional, Union
+from typing import Any, Awaitable, Dict, List, Optional, Union, cast
 
 from cognite.client import utils
 from cognite.client._api.transformations.jobs import TransformationJobsAPI
@@ -19,7 +19,7 @@ class TransformationsAPI(APIClient):
     _RESOURCE_PATH = "/transformations"
     _LIST_CLASS = TransformationList
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.jobs = TransformationJobsAPI(*args, **kwargs)
         self.schedules = TransformationSchedulesAPI(*args, **kwargs)
@@ -57,7 +57,7 @@ class TransformationsAPI(APIClient):
                 >>> res = c.transformations.create(transformations)
         """
         utils._auxiliary.assert_type(transformation, "transformation", [Transformation, list])
-        return self._create_multiple(transformation)
+        return self._create_multiple(list_cls=TransformationList, resource_cls=Transformation, items=transformation)
 
     def delete(
         self,
@@ -130,9 +130,9 @@ class TransformationsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> transformations_list = c.transformations.list()
         """
-        ds_ids = None
+        ds_ids: Optional[List[Dict[str, Any]]] = None
         if data_set_ids and data_set_external_ids:
-            ds_ids = [{"id": i} for i in data_set_ids] + [{"externalId": i} for i in data_set_external_ids]
+            ds_ids = [*[{"id": i} for i in data_set_ids], *[{"externalId": i} for i in data_set_external_ids]]
         elif data_set_ids:
             ds_ids = [{"id": i} for i in data_set_ids]
         elif data_set_external_ids:
@@ -150,7 +150,14 @@ class TransformationsAPI(APIClient):
             last_updated_time=last_updated_time,
             data_set_ids=ds_ids,
         ).dump(camel_case=True)
-        return self._list(method="POST", url_path=f"{self._RESOURCE_PATH}/filter", limit=limit, filter=filter)
+        return self._list(
+            list_cls=TransformationList,
+            resource_cls=Transformation,
+            method="POST",
+            url_path=f"{self._RESOURCE_PATH}/filter",
+            limit=limit,
+            filter=filter,
+        )
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[Transformation]:
         """`Retrieve a single transformation by id. <https://docs.cognite.com/api/v1/#operation/getTransformationsByIds>`_
@@ -176,7 +183,16 @@ class TransformationsAPI(APIClient):
                 >>> res = c.transformations.retrieve(external_id="1")
         """
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
-        return self._retrieve_multiple(ids=id, external_ids=external_id, wrap_ids=True)
+        return cast(
+            Optional[Transformation],
+            self._retrieve_multiple(
+                list_cls=TransformationList,
+                resource_cls=Transformation,
+                ids=id,
+                external_ids=external_id,
+                wrap_ids=True,
+            ),
+        )
 
     def retrieve_multiple(
         self, ids: List[int] = None, external_ids: List[str] = None, ignore_unknown_ids: bool = False
@@ -202,8 +218,16 @@ class TransformationsAPI(APIClient):
         utils._auxiliary.assert_type(ids, "ids", [list], True)
         utils._auxiliary.assert_type(external_ids, "external_ids", [list], True)
 
-        return self._retrieve_multiple(
-            ids=ids, external_ids=external_ids, wrap_ids=True, ignore_unknown_ids=ignore_unknown_ids
+        return cast(
+            TransformationList,
+            self._retrieve_multiple(
+                list_cls=TransformationList,
+                resource_cls=Transformation,
+                ids=ids,
+                external_ids=external_ids,
+                wrap_ids=True,
+                ignore_unknown_ids=ignore_unknown_ids,
+            ),
         )
 
     def update(
@@ -235,7 +259,9 @@ class TransformationsAPI(APIClient):
                 >>> my_update = TransformationUpdate(id=1).query.set("SELECT * FROM _cdf.assets").is_public.set(False)
                 >>> res = c.transformations.update(my_update)
         """
-        return self._update_multiple(items=item)
+        return self._update_multiple(
+            list_cls=TransformationList, resource_cls=Transformation, update_cls=TransformationUpdate, items=item
+        )
 
     def run(
         self,
@@ -318,7 +344,7 @@ class TransformationsAPI(APIClient):
         )
         return job.wait_async(timeout=timeout)
 
-    def cancel(self, transformation_id: int = None, transformation_external_id: str = None):
+    def cancel(self, transformation_id: int = None, transformation_external_id: str = None) -> None:
         """`Cancel a running transformation. <https://docs.cognite.com/api/v1/#operation/cancelTransformation>`_
 
         Args:

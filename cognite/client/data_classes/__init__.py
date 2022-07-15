@@ -80,6 +80,7 @@ from cognite.client.data_classes.templates import (
     TemplateGroupVersionList,
     TemplateInstance,
     TemplateInstanceList,
+    TemplateInstanceUpdate,
     View,
     ViewResolver,
 )

@@ -1,8 +1,14 @@
 import dataclasses
-from typing import Any, Dict, List, Union
+import json
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
 
 from cognite.client import utils
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
+
+if TYPE_CHECKING:
+    import geopandas
+
+    from cognite.client import CogniteClient
 
 RESERVED_PROPERTIES = {"externalId", "dataSetId", "createdTime", "lastUpdatedTime"}
 
@@ -18,7 +24,7 @@ class FeatureType(CogniteResource):
         last_updated_time: int = None,
         properties: Dict[str, Any] = None,
         search_spec: Dict[str, Any] = None,
-        cognite_client=None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.external_id = external_id
         self.data_set_id = data_set_id
@@ -26,10 +32,12 @@ class FeatureType(CogniteResource):
         self.last_updated_time = last_updated_time
         self.properties = properties
         self.search_spec = search_spec
-        self._cognite_client = cognite_client
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Dict, cognite_client=None):
+    def _load(cls, resource: Union[str, Dict[str, Any]], cognite_client: "CogniteClient" = None) -> "FeatureType":
+        if isinstance(resource, str):
+            return cls._load(json.loads(resource), cognite_client=cognite_client)
         instance = cls(cognite_client=cognite_client)
         for key, value in resource.items():
             snake_case_key = utils._auxiliary.to_snake_case(key)
@@ -39,7 +47,6 @@ class FeatureType(CogniteResource):
 
 class FeatureTypeList(CogniteResourceList):
     _RESOURCE = FeatureType
-    _ASSERT_CLASSES = False
 
 
 class PropertyAndSearchSpec:
@@ -60,30 +67,29 @@ class FeatureTypeUpdate:
         external_id: str = None,
         add: PropertyAndSearchSpec = None,
         remove: PropertyAndSearchSpec = None,
-        cognite_client=None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.external_id = external_id
         self.add = add if add is not None else PropertyAndSearchSpec()
         self.remove = remove if remove is not None else PropertyAndSearchSpec()
-        self._cognite_client = cognite_client
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 @dataclasses.dataclass
 class Patches:
-    add: Dict[str, Any] = None
-    remove: List[str] = None
+    add: Optional[Dict[str, Any]] = None
+    remove: Optional[List[str]] = None
 
 
 @dataclasses.dataclass
 class FeatureTypePatch:
-    external_id: str = None
-    property_patches: Patches = None
-    search_spec_patches: Patches = None
+    external_id: Optional[str] = None
+    property_patches: Optional[Patches] = None
+    search_spec_patches: Optional[Patches] = None
 
 
 class FeatureTypeUpdateList:
     _RESOURCE = FeatureTypeUpdate
-    _ASSERT_CLASSES = False
 
 
 class Feature(CogniteResource):
@@ -91,14 +97,16 @@ class Feature(CogniteResource):
 
     PRE_DEFINED_SNAKE_CASE_NAMES = {utils._auxiliary.to_snake_case(key) for key in RESERVED_PROPERTIES}
 
-    def __init__(self, external_id: str = None, cognite_client=None, **properties):
+    def __init__(self, external_id: str = None, cognite_client: "CogniteClient" = None, **properties: Any):
         self.external_id = external_id
         for key in properties:
             setattr(self, key, properties[key])
-        self._cognite_client = cognite_client
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Dict, cognite_client=None):
+    def _load(cls, resource: Union[str, Dict[str, Any]], cognite_client: "CogniteClient" = None) -> "Feature":
+        if isinstance(resource, str):
+            return cls._load(json.loads(resource), cognite_client=cognite_client)
         instance = cls(cognite_client=cognite_client)
         for key, value in resource.items():
             # Keep properties defined in Feature Type as is
@@ -107,7 +115,7 @@ class Feature(CogniteResource):
         return instance
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
-        def to_camel_case(key):
+        def to_camel_case(key: str) -> str:
             # Keep properties defined in Feature Type as is
             if camel_case and key in self.PRE_DEFINED_SNAKE_CASE_NAMES:
                 return utils._auxiliary.to_camel_case(key)
@@ -120,7 +128,7 @@ class Feature(CogniteResource):
         }
 
 
-def _is_geometry_type(property_type: str):
+def _is_geometry_type(property_type: str) -> bool:
     return property_type in {
         "GEOMETRY",
         "POINT",
@@ -157,15 +165,14 @@ def _is_geometry_type(property_type: str):
     }
 
 
-def _is_reserved_property(property_name: str):
+def _is_reserved_property(property_name: str) -> bool:
     return property_name.startswith("_") or property_name in RESERVED_PROPERTIES
 
 
 class FeatureList(CogniteResourceList):
     _RESOURCE = Feature
-    _ASSERT_CLASSES = False
 
-    def to_geopandas(self, geometry: str, camel_case: bool = True) -> "geopandas.GeoDataFrame":
+    def to_geopandas(self, geometry: str, camel_case: bool = True) -> "geopandas.GeoDataFrame":  # noqa: F821
         """Convert the instance into a GeoPandas GeoDataFrame.
 
         Args:
@@ -190,16 +197,16 @@ class FeatureList(CogniteResourceList):
                 >>> gdf.head()
         """
         df = self.to_pandas(camel_case)
-        wkt = utils._auxiliary.local_import("shapely.wkt")
+        wkt = cast(Any, utils._auxiliary.local_import("shapely.wkt"))
         df[geometry] = df[geometry].apply(lambda g: wkt.loads(g["wkt"]))
-        geopandas = utils._auxiliary.local_import("geopandas")
+        geopandas = cast(Any, utils._auxiliary.local_import("geopandas"))
         gdf = geopandas.GeoDataFrame(df, geometry=geometry)
         return gdf
 
     @staticmethod
     def from_geopandas(
         feature_type: FeatureType,
-        geodataframe: "geopandas.GeoDataFrame",
+        geodataframe: "geopandas.GeoDataFrame",  # noqa: F821
         external_id_column: str = "externalId",
         property_column_mapping: Dict[str, str] = None,
         data_set_id_column: str = "dataSetId",
@@ -231,6 +238,7 @@ class FeatureList(CogniteResourceList):
 
         """
         features = []
+        assert feature_type.properties
         if property_column_mapping is None:
             property_column_mapping = {prop_name: prop_name for (prop_name, _) in feature_type.properties.items()}
         for _, row in geodataframe.iterrows():
@@ -260,11 +268,13 @@ class FeatureList(CogniteResourceList):
 class FeatureAggregate(CogniteResource):
     """A result of aggregating features in geospatial api."""
 
-    def __init__(self, cognite_client=None):
-        self._cognite_client = cognite_client
+    def __init__(self, cognite_client: "CogniteClient" = None):
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Dict, cognite_client=None):
+    def _load(cls, resource: Union[str, Dict[str, Any]], cognite_client: "CogniteClient" = None) -> "FeatureAggregate":
+        if isinstance(resource, str):
+            return cls._load(json.loads(resource), cognite_client=cognite_client)
         instance = cls(cognite_client=cognite_client)
         for key, value in resource.items():
             snake_case_key = utils._auxiliary.to_snake_case(key)
@@ -274,20 +284,25 @@ class FeatureAggregate(CogniteResource):
 
 class FeatureAggregateList(CogniteResourceList):
     _RESOURCE = FeatureAggregate
-    _ASSERT_CLASSES = False
 
 
 class CoordinateReferenceSystem(CogniteResource):
     """A representation of a feature in the geospatial api."""
 
-    def __init__(self, srid: int = None, wkt: str = None, proj_string: str = None, cognite_client=None):
+    def __init__(
+        self, srid: int = None, wkt: str = None, proj_string: str = None, cognite_client: "CogniteClient" = None
+    ):
         self.srid = srid
         self.wkt = wkt
         self.proj_string = proj_string
-        self._cognite_client = cognite_client
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Dict, cognite_client=None):
+    def _load(
+        cls, resource: Union[str, Dict[str, Any]], cognite_client: "CogniteClient" = None
+    ) -> "CoordinateReferenceSystem":
+        if isinstance(resource, str):
+            return cls._load(json.loads(resource), cognite_client=cognite_client)
         instance = cls(cognite_client=cognite_client)
         for key, value in resource.items():
             snake_case_key = utils._auxiliary.to_snake_case(key)
@@ -297,7 +312,6 @@ class CoordinateReferenceSystem(CogniteResource):
 
 class CoordinateReferenceSystemList(CogniteResourceList):
     _RESOURCE = CoordinateReferenceSystem
-    _ASSERT_CLASSES = False
 
 
 class OrderSpec:

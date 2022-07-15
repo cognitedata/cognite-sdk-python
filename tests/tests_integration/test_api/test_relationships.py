@@ -159,7 +159,7 @@ class TestRelationshipscognite_client:
         )
         assert isinstance(updated_rel, Relationship)
         assert updated_rel.target_type == "timeSeries"
-        assert updated_rel.confidence == None
+        assert updated_rel.confidence is None
 
     def test_list_filter(self, cognite_client, create_multiple_relationships):
         relationships_ext_ids, ext_id, source_ext_id = create_multiple_relationships

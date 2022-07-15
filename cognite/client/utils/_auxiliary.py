@@ -14,7 +14,8 @@ import re
 import string
 import warnings
 from decimal import Decimal
-from typing import Any, Dict, List, Union
+from types import ModuleType
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 from urllib.parse import quote
 
 import cognite.client
@@ -23,25 +24,25 @@ from cognite.client.exceptions import CogniteImportError
 
 
 @functools.lru_cache(maxsize=128)
-def to_camel_case(snake_case_string: str):
+def to_camel_case(snake_case_string: str) -> str:
     components = snake_case_string.split("_")
     return components[0] + "".join(x.title() for x in components[1:])
 
 
 @functools.lru_cache(maxsize=128)
-def to_snake_case(camel_case_string: str):
+def to_snake_case(camel_case_string: str) -> str:
     s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", camel_case_string)
     return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
 
 
-def convert_all_keys_to_camel_case(d: Dict):
+def convert_all_keys_to_camel_case(d: dict) -> dict:
     new_d = {}
     for k, v in d.items():
         new_d[to_camel_case(k)] = v
     return new_d
 
 
-def json_dump_default(x):
+def json_dump_default(x: Any) -> Any:
     if isinstance(x, numbers.Integral):
         return int(x)
     if isinstance(x, (Decimal, numbers.Real)):
@@ -51,7 +52,9 @@ def json_dump_default(x):
     raise TypeError("Object {} of type {} can't be serialized by the JSON encoder".format(x, x.__class__))
 
 
-def assert_exactly_one_of_id_or_external_id(id, external_id):
+def assert_exactly_one_of_id_or_external_id(
+    id: Optional[int], external_id: Optional[str]
+) -> Dict[str, Union[str, int]]:
     assert_type(id, "id", [numbers.Integral], allow_none=True)
     assert_type(external_id, "external_id", [str], allow_none=True)
     has_id = id is not None
@@ -62,25 +65,29 @@ def assert_exactly_one_of_id_or_external_id(id, external_id):
     ), "Exactly one of id and external id must be specified"
 
     if has_id:
-        return {"id": id}
+        return {"id": cast(int, id)}
     elif has_external_id:
-        return {"external_id": external_id}
+        return {"external_id": cast(str, external_id)}
+    raise RuntimeError("shouldn't reach this")
 
 
-def assert_at_least_one_of_id_or_external_id(id, external_id):
+def assert_at_least_one_of_id_or_external_id(
+    id: Optional[int], external_id: Optional[str]
+) -> Dict[str, Union[str, int]]:
     assert_type(id, "id", [numbers.Integral], allow_none=True)
     assert_type(external_id, "external_id", [str], allow_none=True)
     has_id = id is not None
     has_external_id = external_id is not None
     assert has_id or has_external_id, "At least one of id and external id must be specified"
     if has_id:
-        return {"id": id}
+        return {"id": cast(int, id)}
     elif has_external_id:
-        return {"external_id": external_id}
+        return {"external_id": cast(str, external_id)}
+    raise RuntimeError("shouldn't reach this")
 
 
-def unwrap_identifer(identifier: Union[str, int, Dict]):
-    if type(identifier) in [str, int]:
+def unwrap_identifer(identifier: Union[str, int, Dict]) -> Union[str, int]:
+    if isinstance(identifier, (str, int)):
         return identifier
     if "externalId" in identifier:
         return identifier["externalId"]
@@ -89,7 +96,7 @@ def unwrap_identifer(identifier: Union[str, int, Dict]):
     raise ValueError("{} does not contain 'id' or 'externalId'".format(identifier))
 
 
-def assert_type(var: Any, var_name: str, types: List, allow_none=False):
+def assert_type(var: Any, var_name: str, types: List[type], allow_none: bool = False) -> None:
     if var is None:
         if not allow_none:
             raise TypeError("{} cannot be None".format(var_name))
@@ -97,11 +104,11 @@ def assert_type(var: Any, var_name: str, types: List, allow_none=False):
         raise TypeError("{} must be one of types {}".format(var_name, types))
 
 
-def interpolate_and_url_encode(path, *args):
+def interpolate_and_url_encode(path: str, *args: Any) -> str:
     return path.format(*[quote(str(arg), safe="") for arg in args])
 
 
-def local_import(*module: str):
+def local_import(*module: str) -> Union[ModuleType, Tuple[ModuleType, ...]]:
     assert_type(module, "module", [tuple])
     if len(module) == 1:
         name = module[0]
@@ -119,12 +126,12 @@ def local_import(*module: str):
     return tuple(modules)
 
 
-def get_current_sdk_version():
+def get_current_sdk_version() -> str:
     return cognite.client.__version__
 
 
 @functools.lru_cache(maxsize=1)
-def get_user_agent():
+def get_user_agent() -> str:
     sdk_version = "CognitePythonSDK/{}".format(get_current_sdk_version())
 
     python_version = "{}/{} ({};{})".format(
@@ -133,13 +140,13 @@ def get_user_agent():
 
     os_version_info = [platform.release(), platform.machine(), platform.architecture()[0]]
     os_version_info = [s for s in os_version_info if s]  # Ignore empty strings
-    os_version_info = "-".join(os_version_info)
-    operating_system = "{}/{}".format(platform.system(), os_version_info)
+    os_version_info_str = "-".join(os_version_info)
+    operating_system = "{}/{}".format(platform.system(), os_version_info_str)
 
     return "{} {} {}".format(sdk_version, python_version, operating_system)
 
 
-def _check_client_has_newest_major_version():
+def _check_client_has_newest_major_version() -> None:
     this_version = utils._auxiliary.get_current_sdk_version()
     newest_version = utils._version_checker.get_newest_version_in_major_release("cognite-sdk", this_version)
     if newest_version != this_version:
@@ -151,29 +158,29 @@ def _check_client_has_newest_major_version():
         )
 
 
-def random_string(size=100):
+def random_string(size: int = 100) -> str:
     return "".join(random.choice(string.ascii_uppercase + string.digits) for _ in range(size))
 
 
 class PriorityQueue:
-    def __init__(self):
-        self.heap = []
-        self.id = 0
+    def __init__(self) -> None:
+        self.__heap: List[Any] = []
+        self.__id = 0
 
-    def add(self, elem, priority):
-        heapq.heappush(self.heap, (-priority, self.id, elem))
-        self.id += 1
+    def add(self, elem: Any, priority: int) -> None:
+        heapq.heappush(self.__heap, (-priority, self.__id, elem))
+        self.__id += 1
 
-    def get(self):
-        _, _, elem = heapq.heappop(self.heap)
+    def get(self) -> Any:
+        _, _, elem = heapq.heappop(self.__heap)
         return elem
 
-    def __bool__(self):
-        return len(self.heap) > 0
+    def __bool__(self) -> bool:
+        return len(self.__heap) > 0
 
 
 def split_into_chunks(collection: Union[List, Dict], chunk_size: int) -> List[Union[List, Dict]]:
-    chunks = []
+    chunks: List[Union[List, Dict]] = []
     if isinstance(collection, list):
         for i in range(0, len(collection), chunk_size):
             chunks.append(collection[i : i + chunk_size])
@@ -186,8 +193,8 @@ def split_into_chunks(collection: Union[List, Dict], chunk_size: int) -> List[Un
     raise ValueError("Can only split list or dict")
 
 
-def convert_true_match(true_match):
-    if not isinstance(true_match, dict) and len(true_match) == 2:
+def convert_true_match(true_match: Union[dict, list, Tuple[Union[int, str], Union[int, str]]]) -> dict:
+    if isinstance(true_match, Sequence) and len(true_match) == 2:
         converted_true_match = {}
         for i, fromto in enumerate(["source", "target"]):
             if isinstance(true_match[i], str):
