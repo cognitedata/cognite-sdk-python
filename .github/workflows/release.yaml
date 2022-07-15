@@ -5,14 +5,29 @@ on:
     branches: [ master ]
 
 jobs:
-  build:
+  lint:
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.8
 
+      - name: Install required dependencies
+        run: |
+          python3 -m pip install --upgrade pip poetry
+          poetry config virtualenvs.create false
+          poetry install
+
+      - name: Linting and static code checks
+        run: |
+          pre-commit run --all-files
+
+  test_and_release:
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-
-    - name: Set up Python
-      uses: actions/setup-python@v4
+    - uses: actions/setup-python@v4
       with:
         python-version: 3.8
 
@@ -21,10 +36,6 @@ jobs:
         python3 -m pip install --upgrade pip poetry
         poetry config virtualenvs.create false
         poetry install
-
-    - name: Linting and static code checks
-      run: |
-        pre-commit run --all-files
 
     - name: Test core
       env:
