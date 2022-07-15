@@ -1,6 +1,6 @@
 import json
 from collections import UserDict
-from typing import Any, Dict, List, Optional, Type, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union, cast
 
 from cognite.client import utils
 from cognite.client.data_classes._base import (
@@ -10,6 +10,9 @@ from cognite.client.data_classes._base import (
     CogniteResourceList,
     CogniteUpdate,
 )
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 class TemplateGroup(CogniteResource):
@@ -35,7 +38,7 @@ class TemplateGroup(CogniteResource):
         data_set_id: int = None,
         created_time: int = None,
         last_updated_time: int = None,
-        cognite_client: Any = None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.external_id = external_id
         self.description = description
@@ -43,7 +46,7 @@ class TemplateGroup(CogniteResource):
         self.data_set_id = data_set_id
         self.created_time = created_time
         self.last_updated_time = last_updated_time
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class TemplateGroupList(CogniteResourceList):
@@ -72,14 +75,14 @@ class TemplateGroupVersion(CogniteResource):
         conflict_mode: str = None,
         created_time: int = None,
         last_updated_time: int = None,
-        cognite_client: Any = None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.schema = schema
         self.version = version
         self.conflict_mode = conflict_mode
         self.created_time = created_time
         self.last_updated_time = last_updated_time
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class TemplateGroupVersionList(CogniteResourceList):
@@ -93,10 +96,10 @@ class ConstantResolver(CogniteResource):
         value (any): The value of the field.
     """
 
-    def __init__(self, value: Any = None, cognite_client: Any = None):
+    def __init__(self, value: Any = None, cognite_client: "CogniteClient" = None):
         self.type = "constant"
         self.value = value
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class RawResolver(CogniteResource):
@@ -115,14 +118,14 @@ class RawResolver(CogniteResource):
         table_name: str = None,
         row_key: str = None,
         column_name: str = None,
-        cognite_client: Any = None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.type = "raw"
         self.db_name = db_name
         self.table_name = table_name
         self.row_key = row_key
         self.column_name = column_name
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class SyntheticTimeSeriesResolver(CogniteResource):
@@ -147,7 +150,7 @@ class SyntheticTimeSeriesResolver(CogniteResource):
         is_step: Optional[bool] = None,
         is_string: Optional[bool] = None,
         unit: Optional[str] = None,
-        cognite_client: Any = None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.type = "syntheticTimeSeries"
         self.expression = expression
@@ -157,7 +160,7 @@ class SyntheticTimeSeriesResolver(CogniteResource):
         self.is_step = is_step
         self.is_string = is_string
         self.unit = unit
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class ViewResolver(CogniteResource):
@@ -169,12 +172,12 @@ class ViewResolver(CogniteResource):
     """
 
     def __init__(
-        self, external_id: str = None, input: Optional[Dict[str, Any]] = None, cognite_client: Any = None
+        self, external_id: str = None, input: Optional[Dict[str, Any]] = None, cognite_client: "CogniteClient" = None
     ) -> None:
         self.type = "view"
         self.external_id = external_id
         self.input = input
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 FieldResolvers = Union[ConstantResolver, RawResolver, SyntheticTimeSeriesResolver, str, ViewResolver]
@@ -200,7 +203,7 @@ class TemplateInstance(CogniteResource):
         data_set_id: Optional[int] = None,
         created_time: int = None,
         last_updated_time: int = None,
-        cognite_client: Any = None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.external_id = external_id
         self.template_name = template_name
@@ -208,7 +211,7 @@ class TemplateInstance(CogniteResource):
         self.data_set_id = data_set_id
         self.created_time = created_time
         self.last_updated_time = last_updated_time
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     field_resolver_mapper: Dict[str, Type[CogniteResource]] = {
         "constant": ConstantResolver,
@@ -250,7 +253,7 @@ class TemplateInstance(CogniteResource):
         }
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: Any = None) -> "TemplateInstance":
+    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> "TemplateInstance":
         if isinstance(resource, str):
             return cls._load(json.loads(resource), cognite_client=cognite_client)
         elif isinstance(resource, Dict):
@@ -273,7 +276,7 @@ class TemplateInstance(CogniteResource):
         raise TypeError("Resource must be json str or Dict, not {}".format(type(resource)))
 
     @staticmethod
-    def _field_resolver_load(resource: Dict, cognite_client: Any = None) -> CogniteResource:
+    def _field_resolver_load(resource: Dict, cognite_client: "CogniteClient" = None) -> CogniteResource:
         return TemplateInstance.field_resolver_mapper[resource["type"]]._load(resource, cognite_client)
 
 
@@ -314,12 +317,12 @@ class Source(CogniteResource):
         type: str = None,
         filter: Dict[str, Any] = None,
         mappings: Dict[str, str] = None,
-        cognite_client: Any = None,
+        cognite_client: "CogniteClient" = None,
     ) -> None:
         self.type = type
         self.filter = filter
         self.mappings = mappings
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class View(CogniteResource):
@@ -339,14 +342,14 @@ class View(CogniteResource):
         data_set_id: Optional[int] = None,
         created_time: int = None,
         last_updated_time: int = None,
-        cognite_client: Any = None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.external_id = external_id
         self.source = source
         self.data_set_id = data_set_id
         self.created_time = created_time
         self.last_updated_time = last_updated_time
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
@@ -377,7 +380,7 @@ class View(CogniteResource):
             return value
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: Any = None) -> "View":
+    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> "View":
         if isinstance(resource, str):
             return cls._load(json.loads(resource), cognite_client=cognite_client)
         elif isinstance(resource, Dict):
@@ -392,15 +395,15 @@ class View(CogniteResource):
 
 
 class ViewResolveItem(UserDict, CogniteResource):
-    def __init__(self, data: Dict[str, Any], cognite_client: Any = None) -> None:
+    def __init__(self, data: Dict[str, Any], cognite_client: "CogniteClient" = None) -> None:
         super().__init__(data)
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         return self.data
 
     @classmethod
-    def _load(cls, data: Union[Dict, str], cognite_client: Any = None) -> "ViewResolveItem":
+    def _load(cls, data: Union[Dict, str], cognite_client: "CogniteClient" = None) -> "ViewResolveItem":
         if isinstance(data, str):
             return cls._load(json.loads(data), cognite_client=cognite_client)
         elif isinstance(data, Dict):
@@ -413,19 +416,19 @@ class GraphQlError(CogniteResource):
         message: str = None,
         path: List[str] = None,
         locations: List[Dict[str, Any]] = None,
-        cognite_client: Any = None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.message = message
         self.path = path
         self.locations = locations
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class GraphQlResponse(CogniteResource):
-    def __init__(self, data: Any = None, errors: List[GraphQlError] = None, cognite_client: Any = None):
+    def __init__(self, data: Any = None, errors: List[GraphQlError] = None, cognite_client: "CogniteClient" = None):
         self.data = data
         self.errors = errors
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class TemplateInstanceList(CogniteResourceList):

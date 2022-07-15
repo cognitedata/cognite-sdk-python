@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Union, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -12,6 +12,9 @@ from cognite.client.data_classes._base import (
     CogniteUpdate,
 )
 from cognite.client.data_classes.shared import TimestampRange
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 class EndTimeFilter(dict):
@@ -69,7 +72,7 @@ class Event(CogniteResource):
         id: int = None,
         last_updated_time: int = None,
         created_time: int = None,
-        cognite_client: Any = None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.external_id = external_id
         self.data_set_id = data_set_id
@@ -84,7 +87,7 @@ class Event(CogniteResource):
         self.id = id
         self.last_updated_time = last_updated_time
         self.created_time = created_time
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class EventFilter(CogniteFilter):
@@ -124,7 +127,7 @@ class EventFilter(CogniteFilter):
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
         external_id_prefix: str = None,
-        cognite_client: Any = None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.start_time = start_time
         self.end_time = end_time
@@ -140,7 +143,7 @@ class EventFilter(CogniteFilter):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.external_id_prefix = external_id_prefix
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
     def _load(cls, resource: Union[Dict, str]) -> "EventFilter":

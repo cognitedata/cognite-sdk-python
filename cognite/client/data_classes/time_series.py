@@ -15,7 +15,8 @@ from cognite.client.data_classes._base import (
 from cognite.client.data_classes.shared import TimestampRange
 
 if TYPE_CHECKING:
-    from cognite.client.data_classes import Asset, Datapoint
+    from cognite.client import CogniteClient
+    from cognite.client.data_classes import Asset, Datapoint, DatapointsList
 
 
 class TimeSeries(CogniteResource):
@@ -55,7 +56,7 @@ class TimeSeries(CogniteResource):
         created_time: int = None,
         last_updated_time: int = None,
         legacy_name: str = None,
-        cognite_client: Any = None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.id = id
         self.external_id = external_id
@@ -71,7 +72,7 @@ class TimeSeries(CogniteResource):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.legacy_name = legacy_name
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     def plot(
         self,
@@ -181,7 +182,7 @@ class TimeSeriesFilter(CogniteFilter):
         external_id_prefix: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
-        cognite_client: Any = None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.name = name
         self.unit = unit
@@ -195,7 +196,7 @@ class TimeSeriesFilter(CogniteFilter):
         self.external_id_prefix = external_id_prefix
         self.created_time = created_time
         self.last_updated_time = last_updated_time
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
     def _load(cls, resource: Union[Dict, str]) -> "TimeSeriesFilter":
@@ -312,8 +313,11 @@ class TimeSeriesList(CogniteResourceList):
         **kwargs: Any,
     ) -> None:
         plt = utils._auxiliary.local_import("matplotlib.pyplot")
-        dps = self._cognite_client.datapoints.retrieve(
-            id=[ts.id for ts in self.data], start=start, end=end, aggregates=aggregates, granularity=granularity
+        dps = cast(
+            "DatapointsList",
+            self._cognite_client.datapoints.retrieve(
+                id=[ts.id for ts in self.data], start=start, end=end, aggregates=aggregates, granularity=granularity
+            ),
         )
         if id_labels:
             dps.plot(*args, **kwargs)

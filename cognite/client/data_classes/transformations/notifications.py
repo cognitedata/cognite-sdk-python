@@ -1,6 +1,9 @@
-from typing import Any, Dict, Optional, Union, cast
+from typing import TYPE_CHECKING, Dict, Optional, Union, cast
 
 from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteResourceList
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 class TransformationNotification(CogniteResource):
@@ -24,7 +27,7 @@ class TransformationNotification(CogniteResource):
         destination: str = None,
         created_time: int = None,
         last_updated_time: int = None,
-        cognite_client: Any = None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.id = id
         self.transformation_id = transformation_id
@@ -32,10 +35,10 @@ class TransformationNotification(CogniteResource):
         self.destination = destination
         self.created_time = created_time
         self.last_updated_time = last_updated_time
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: Any = None) -> "TransformationNotification":
+    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> "TransformationNotification":
         instance = super(TransformationNotification, cls)._load(resource, cognite_client)
         return instance
 

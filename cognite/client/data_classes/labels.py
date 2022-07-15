@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, cast
 
 from cognite.client import utils
 from cognite.client.data_classes._base import (
@@ -7,6 +7,9 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
 )
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 class LabelDefinition(CogniteResource):
@@ -28,14 +31,14 @@ class LabelDefinition(CogniteResource):
         description: str = None,
         created_time: int = None,
         data_set_id: int = None,
-        cognite_client: Any = None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.external_id = external_id
         self.name = name
         self.description = description
         self.created_time = created_time
         self.data_set_id = data_set_id
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class LabelDefinitionFilter(CogniteFilter):
@@ -53,12 +56,12 @@ class LabelDefinitionFilter(CogniteFilter):
         name: str = None,
         external_id_prefix: str = None,
         data_set_ids: List[Dict[str, Any]] = None,
-        cognite_client: Any = None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.name = name
         self.external_id_prefix = external_id_prefix
         self.data_set_ids = data_set_ids
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class LabelDefinitionList(CogniteResourceList):
@@ -128,10 +131,12 @@ class LabelFilter(dict, CogniteFilter):
                 >>> my_label_filter = LabelFilter(contains_any=["PUMP", "VALVE"])
     """
 
-    def __init__(self, contains_any: List[str] = None, contains_all: List[str] = None, cognite_client: Any = None):
+    def __init__(
+        self, contains_any: List[str] = None, contains_all: List[str] = None, cognite_client: "CogniteClient" = None
+    ):
         self.contains_any = contains_any
         self.contains_all = contains_all
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         dump_key = lambda key: key if not camel_case else utils._auxiliary.to_camel_case(key)

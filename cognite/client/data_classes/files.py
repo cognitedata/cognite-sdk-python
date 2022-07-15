@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Union, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -13,6 +13,9 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.data_classes.labels import Label, LabelFilter
 from cognite.client.data_classes.shared import GeoLocation, GeoLocationFilter, TimestampRange
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 class FileMetadata(CogniteResource):
@@ -60,7 +63,7 @@ class FileMetadata(CogniteResource):
         uploaded_time: int = None,
         created_time: int = None,
         last_updated_time: int = None,
-        cognite_client: Any = None,
+        cognite_client: "CogniteClient" = None,
     ):
         if geo_location is not None and not isinstance(geo_location, GeoLocation):
             raise TypeError("FileMetadata.geo_location should be of type GeoLocation")
@@ -82,10 +85,10 @@ class FileMetadata(CogniteResource):
         self.uploaded_time = uploaded_time
         self.created_time = created_time
         self.last_updated_time = last_updated_time
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: Any = None) -> "FileMetadata":
+    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> "FileMetadata":
         instance = super(FileMetadata, cls)._load(resource, cognite_client)
         instance.labels = Label._load_list(instance.labels)
         if instance.geo_location is not None:
@@ -138,7 +141,7 @@ class FileMetadataFilter(CogniteFilter):
         external_id_prefix: str = None,
         directory_prefix: str = None,
         uploaded: bool = None,
-        cognite_client: Any = None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.name = name
         self.mime_type = mime_type
@@ -158,7 +161,7 @@ class FileMetadataFilter(CogniteFilter):
         self.external_id_prefix = external_id_prefix
         self.directory_prefix = directory_prefix
         self.uploaded = uploaded
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
         if labels is not None and not isinstance(labels, LabelFilter):
             raise TypeError("FileMetadataFilter.labels must be of type LabelFilter")

@@ -1,5 +1,5 @@
 import numbers
-from typing import Any, List, Union
+from typing import TYPE_CHECKING, List, Union
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -15,10 +15,13 @@ from cognite.client.data_classes import (
 )
 from cognite.client.data_classes.iam import TokenInspection
 
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
+
 
 class IAMAPI(APIClient):
     def __init__(
-        self, config: utils._client_config.ClientConfig, api_version: str = None, cognite_client: Any = None
+        self, config: utils._client_config.ClientConfig, api_version: str = None, cognite_client: "CogniteClient" = None
     ) -> None:
         super().__init__(config, api_version=api_version, cognite_client=cognite_client)
         self.service_accounts = ServiceAccountsAPI(config, api_version=api_version, cognite_client=cognite_client)

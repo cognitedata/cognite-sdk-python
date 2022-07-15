@@ -1,12 +1,15 @@
 import asyncio
 import time
 from enum import Enum
-from typing import Any, Dict, Optional, Union, cast
+from typing import TYPE_CHECKING, Dict, Optional, Union, cast
 
 from cognite.client import utils
 from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteResourceList
 from cognite.client.data_classes.transformations._alphatypes import AlphaDataModelInstances
 from cognite.client.data_classes.transformations.common import RawTable, SequenceRows, TransformationDestination
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 class TransformationJobStatus(str, Enum):
@@ -27,15 +30,20 @@ class TransformationJobMetric(CogniteResource):
     """
 
     def __init__(
-        self, id: int = None, timestamp: int = None, name: str = None, count: int = None, cognite_client: Any = None
+        self,
+        id: int = None,
+        timestamp: int = None,
+        name: str = None,
+        count: int = None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.timestamp = timestamp
         self.name = name
         self.count = count
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: Any = None) -> "TransformationJobMetric":
+    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> "TransformationJobMetric":
         instance = super(TransformationJobMetric, cls)._load(resource, cognite_client)
         return instance
 
@@ -85,7 +93,7 @@ class TransformationJob(CogniteResource):
         started_time: int = None,
         finished_time: int = None,
         last_seen_time: int = None,
-        cognite_client: Any = None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.id = id
         self.status = status
@@ -102,7 +110,7 @@ class TransformationJob(CogniteResource):
         self.started_time = started_time
         self.finished_time = finished_time
         self.last_seen_time = last_seen_time
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     def update(self) -> None:
         """`Get updated job status.`"""
@@ -238,7 +246,7 @@ class TransformationJob(CogniteResource):
         return self
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: Any = None) -> "TransformationJob":
+    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> "TransformationJob":
         instance = super(TransformationJob, cls)._load(resource, cognite_client)
         if isinstance(instance.destination, Dict):
             snake_dict = {utils._auxiliary.to_snake_case(key): value for (key, value) in instance.destination.items()}

@@ -7,6 +7,7 @@ import re
 from collections import UserList
 from json.decoder import JSONDecodeError
 from typing import (
+    TYPE_CHECKING,
     Any,
     Collection,
     Dict,
@@ -40,6 +41,9 @@ from cognite.client.data_classes._base import (
     T_CogniteResourceList,
 )
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 log = logging.getLogger("cognite-sdk")
 
@@ -85,7 +89,7 @@ class APIClient:
     }
 
     def __init__(
-        self, config: utils._client_config.ClientConfig, api_version: str = None, cognite_client: Any = None
+        self, config: utils._client_config.ClientConfig, api_version: str = None, cognite_client: "CogniteClient" = None
     ) -> None:
         self._config = config
         self._api_version = api_version

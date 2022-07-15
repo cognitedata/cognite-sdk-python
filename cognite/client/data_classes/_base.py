@@ -8,6 +8,8 @@ from cognite.client.exceptions import CogniteMissingClientError
 if TYPE_CHECKING:
     import pandas
 
+    from cognite.client import CogniteClient
+
 EXCLUDE_VALUE = [None]
 
 T_CogniteResponse = TypeVar("T_CogniteResponse", bound="CogniteResponse")
@@ -103,7 +105,7 @@ class CogniteResource:
 
     @classmethod
     def _load(
-        cls: Type[T_CogniteResource], resource: Union[Dict, str], cognite_client: Any = None
+        cls: Type[T_CogniteResource], resource: Union[Dict, str], cognite_client: "CogniteClient" = None
     ) -> T_CogniteResource:
         if isinstance(resource, str):
             return cls._load(json.loads(resource), cognite_client=cognite_client)
@@ -175,7 +177,7 @@ T_CogniteResourceList = TypeVar("T_CogniteResourceList", bound="CogniteResourceL
 class CogniteResourceList(UserList):
     _RESOURCE: Type[CogniteResource]
 
-    def __init__(self, resources: Collection[Any], cognite_client: Any = None):
+    def __init__(self, resources: Collection[Any], cognite_client: "CogniteClient" = None):
         for resource in resources:
             if not isinstance(resource, self._RESOURCE):
                 raise TypeError(
@@ -183,7 +185,7 @@ class CogniteResourceList(UserList):
                         self.__class__.__name__, self._RESOURCE.__name__, type(resource)
                     )
                 )
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
         super().__init__(resources)
         if self.data:
             if hasattr(self.data[0], "external_id"):
@@ -262,7 +264,7 @@ class CogniteResourceList(UserList):
 
     @classmethod
     def _load(
-        cls: Type[T_CogniteResourceList], resource_list: Union[List, str], cognite_client: Any = None
+        cls: Type[T_CogniteResourceList], resource_list: Union[List, str], cognite_client: "CogniteClient" = None
     ) -> T_CogniteResourceList:
         if isinstance(resource_list, str):
             return cls._load(json.loads(resource_list), cognite_client=cognite_client)

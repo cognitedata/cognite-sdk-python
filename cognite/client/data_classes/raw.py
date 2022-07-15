@@ -7,6 +7,8 @@ from cognite.client.data_classes._base import CogniteResource, CogniteResourceLi
 if TYPE_CHECKING:
     import pandas
 
+    from cognite.client import CogniteClient
+
 
 class Row(CogniteResource):
     """No description.
@@ -19,12 +21,16 @@ class Row(CogniteResource):
     """
 
     def __init__(
-        self, key: str = None, columns: Dict[str, Any] = None, last_updated_time: int = None, cognite_client: Any = None
+        self,
+        key: str = None,
+        columns: Dict[str, Any] = None,
+        last_updated_time: int = None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.key = key
         self.columns = columns
         self.last_updated_time = last_updated_time
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     def to_pandas(self) -> "pandas.DataFrame":  # type: ignore[override]
         """Convert the instance into a pandas DataFrame.
@@ -64,10 +70,10 @@ class Table(CogniteResource):
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
-    def __init__(self, name: str = None, created_time: int = None, cognite_client: Any = None):
+    def __init__(self, name: str = None, created_time: int = None, cognite_client: "CogniteClient" = None):
         self.name = name
         self.created_time = created_time
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
         self._db_name: Optional[str] = None
 
@@ -99,10 +105,10 @@ class Database(CogniteResource):
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
-    def __init__(self, name: str = None, created_time: int = None, cognite_client: Any = None):
+    def __init__(self, name: str = None, created_time: int = None, cognite_client: "CogniteClient" = None):
         self.name = name
         self.created_time = created_time
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     def tables(self, limit: int = None) -> TableList:
         """Get the tables in this database.

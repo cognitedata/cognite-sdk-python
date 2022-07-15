@@ -12,6 +12,8 @@ from cognite.client.exceptions import CogniteDuplicateColumnsError
 if TYPE_CHECKING:
     import pandas
 
+    from cognite.client import CogniteClient
+
 
 class Datapoint(CogniteResource):
     """An object representing a datapoint.
@@ -243,7 +245,7 @@ class Datapoints(CogniteResource):
 
     @classmethod
     def _load(  # type: ignore[override]
-        cls, dps_object: Dict[str, Any], expected_fields: List[str] = None, cognite_client: Any = None
+        cls, dps_object: Dict[str, Any], expected_fields: List[str] = None, cognite_client: "CogniteClient" = None
     ) -> "Datapoints":
         instance = cls()
         instance.id = dps_object.get("id")

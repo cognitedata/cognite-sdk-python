@@ -1,5 +1,5 @@
 import copy
-from typing import Any, Dict, List, Optional, Type, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -15,6 +15,9 @@ from cognite.client.data_classes.files import FileMetadata
 from cognite.client.data_classes.labels import Label, LabelDefinition, LabelFilter
 from cognite.client.data_classes.sequences import Sequence
 from cognite.client.data_classes.time_series import TimeSeries
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 class Relationship(CogniteResource):
@@ -54,7 +57,7 @@ class Relationship(CogniteResource):
         labels: List[Union[Label, str, LabelDefinition, dict]] = None,
         created_time: int = None,
         last_updated_time: int = None,
-        cognite_client: Any = None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.external_id = external_id
         self.source_external_id = source_external_id
@@ -70,7 +73,7 @@ class Relationship(CogniteResource):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.labels = Label._load_list(labels)
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     def _validate_resource_types(self) -> "Relationship":
         rel = copy.copy(self)
@@ -85,7 +88,7 @@ class Relationship(CogniteResource):
             raise TypeError("Invalid source or target '{}' in relationship".format(resource_type))
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: Any = None) -> "Relationship":
+    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> "Relationship":
         instance = super(Relationship, cls)._load(resource, cognite_client)
         if instance.source is not None:
             instance.source = instance._convert_resource(instance.source, instance.source_type)  # type: ignore
@@ -142,7 +145,7 @@ class RelationshipFilter(CogniteFilter):
         created_time: Dict[str, int] = None,
         active_at_time: Dict[str, int] = None,
         labels: LabelFilter = None,
-        cognite_client: Any = None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.source_external_ids = source_external_ids
         self.source_types = source_types
@@ -156,7 +159,7 @@ class RelationshipFilter(CogniteFilter):
         self.created_time = created_time
         self.active_at_time = active_at_time
         self.labels = labels
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         result = super(RelationshipFilter, self).dump(camel_case)

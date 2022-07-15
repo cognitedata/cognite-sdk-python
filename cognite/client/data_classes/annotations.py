@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -10,6 +10,9 @@ from cognite.client.data_classes._base import (
     CogniteUpdate,
 )
 from cognite.client.utils._auxiliary import to_snake_case
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 class Annotation(CogniteResource):
@@ -56,10 +59,10 @@ class Annotation(CogniteResource):
         self.id: Optional[int] = None  # Read only
         self.created_time: Optional[int] = None  # Read only
         self.last_updated_time: Optional[int] = None  # Read only
-        self._cognite_client: Any = None  # Read only
+        self._cognite_client: "CogniteClient" = cast("CogniteClient", None)  # Read only
 
     @classmethod
-    def _load(cls, resource: Union[Dict[str, Any], str], cognite_client: Any = None) -> "Annotation":
+    def _load(cls, resource: Union[Dict[str, Any], str], cognite_client: "CogniteClient" = None) -> "Annotation":
         if isinstance(resource, str):
             return cls._load(json.loads(resource), cognite_client=cognite_client)
         elif isinstance(resource, dict):
@@ -67,7 +70,7 @@ class Annotation(CogniteResource):
         raise TypeError("Resource must be json str or Dict, not {}".format(type(resource)))
 
     @classmethod
-    def from_dict(cls, resource: Dict[str, Any], cognite_client: Any = None) -> "Annotation":
+    def from_dict(cls, resource: Dict[str, Any], cognite_client: "CogniteClient" = None) -> "Annotation":
         # Create base annotation
         data = {to_snake_case(key): val for key, val in resource.items()}
         annotation = Annotation(
@@ -84,7 +87,7 @@ class Annotation(CogniteResource):
         annotation.id = data.get("id")
         annotation.created_time = data.get("created_time")
         annotation.last_updated_time = data.get("last_updated_time")
-        annotation._cognite_client = cognite_client
+        annotation._cognite_client = cast("CogniteClient", cognite_client)
         return annotation
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:

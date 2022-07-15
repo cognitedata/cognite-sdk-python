@@ -19,6 +19,8 @@ from cognite.client.data_classes.shared import TimestampRange
 if TYPE_CHECKING:
     import pandas
 
+    from cognite.client import CogniteClient
+
 
 class Sequence(CogniteResource):
     """Information about the sequence stored in the database
@@ -49,7 +51,7 @@ class Sequence(CogniteResource):
         created_time: int = None,
         last_updated_time: int = None,
         data_set_id: int = None,
-        cognite_client: Any = None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.id = id
         self.name = name
@@ -61,7 +63,7 @@ class Sequence(CogniteResource):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.data_set_id = data_set_id
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     def rows(self, start: int, end: int) -> List[dict]:
         """Retrieves rows from this sequence.
@@ -118,7 +120,7 @@ class SequenceFilter(CogniteFilter):
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
         data_set_ids: List[Dict[str, Any]] = None,
-        cognite_client: Any = None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.name = name
         self.external_id_prefix = external_id_prefix
@@ -128,7 +130,7 @@ class SequenceFilter(CogniteFilter):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.data_set_ids = data_set_ids
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
     def _load(cls, resource: Union[Dict, str]) -> "SequenceFilter":

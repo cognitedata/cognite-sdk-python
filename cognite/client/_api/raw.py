@@ -8,6 +8,8 @@ from cognite.client.utils._auxiliary import local_import
 if TYPE_CHECKING:
     import pandas
 
+    from cognite.client import CogniteClient
+
 
 class RawAPI(APIClient):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -275,7 +277,10 @@ class RawRowsAPI(APIClient):
     _RESOURCE_PATH = "/raw/dbs/{}/tables/{}/rows"
 
     def __init__(
-        self, config: utils._client_config.ClientConfig, api_version: Optional[str] = None, cognite_client: Any = None
+        self,
+        config: utils._client_config.ClientConfig,
+        api_version: Optional[str] = None,
+        cognite_client: "CogniteClient" = None,
     ) -> None:
         super().__init__(config, api_version, cognite_client)
         self._CREATE_LIMIT = 10000

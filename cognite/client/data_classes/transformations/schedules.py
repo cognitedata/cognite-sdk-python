@@ -1,4 +1,4 @@
-from typing import Any, Dict, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Union, cast
 
 from cognite.client.data_classes._base import (
     CognitePrimitiveUpdate,
@@ -6,6 +6,9 @@ from cognite.client.data_classes._base import (
     CogniteResourceList,
     CogniteUpdate,
 )
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 class TransformationSchedule(CogniteResource):
@@ -29,7 +32,7 @@ class TransformationSchedule(CogniteResource):
         last_updated_time: int = None,
         interval: str = None,
         is_paused: bool = False,
-        cognite_client: Any = None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.id = id
         self.external_id = external_id
@@ -37,10 +40,10 @@ class TransformationSchedule(CogniteResource):
         self.last_updated_time = last_updated_time
         self.interval = interval
         self.is_paused = is_paused
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: Any = None) -> "TransformationSchedule":
+    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> "TransformationSchedule":
         instance = super(TransformationSchedule, cls)._load(resource, cognite_client)
         return instance
 

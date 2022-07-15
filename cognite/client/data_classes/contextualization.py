@@ -14,6 +14,8 @@ from cognite.client.utils._auxiliary import convert_true_match
 if TYPE_CHECKING:
     import pandas
 
+    from cognite.client import CogniteClient
+
 
 class JobStatus(Enum):
     QUEUED = "Queued"
@@ -65,7 +67,7 @@ class ContextualizationJob(CogniteResource):
         start_time: int = None,
         status_time: int = None,
         status_path: str = None,
-        cognite_client: Any = None,
+        cognite_client: "CogniteClient" = None,
     ):
         """Data class for the result of a contextualization job."""
         self.job_id = job_id
@@ -75,7 +77,7 @@ class ContextualizationJob(CogniteResource):
         self.start_time = start_time
         self.status_time = status_time
         self.error_message = error_message
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
         self._result: Optional[Dict[str, Any]] = None
         self._status_path = status_path
 
@@ -151,7 +153,7 @@ class EntityMatchingModel(CogniteResource):
         name: str = None,
         description: str = None,
         external_id: str = None,
-        cognite_client: Any = None,
+        cognite_client: "CogniteClient" = None,
     ):
         """Entity matching model. See the `fit` method for the meaning of these fields."""
         self.id = id
@@ -167,7 +169,7 @@ class EntityMatchingModel(CogniteResource):
         self.name = name
         self.description = description
         self.external_id = external_id
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     def __str__(self) -> str:
         return f"{self.__class__.__name__}(id: {self.id},status: {self.status},error: {self.error_message})"
@@ -290,11 +292,13 @@ class EntityMatchingModelList(CogniteResourceList):
 
 
 class DiagramConvertPage(CogniteResource):
-    def __init__(self, page: int = None, png_url: str = None, svg_url: str = None, cognite_client: Any = None):
+    def __init__(
+        self, page: int = None, png_url: str = None, svg_url: str = None, cognite_client: "CogniteClient" = None
+    ):
         self.page = page
         self.png_url = png_url
         self.svg_url = svg_url
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class DiagramConvertPageList(CogniteResourceList):
@@ -303,12 +307,16 @@ class DiagramConvertPageList(CogniteResourceList):
 
 class DiagramConvertItem(CogniteResource):
     def __init__(
-        self, file_id: int = None, file_external_id: str = None, results: list = None, cognite_client: Any = None
+        self,
+        file_id: int = None,
+        file_external_id: str = None,
+        results: list = None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.file_id = file_id
         self.file_external_id = file_external_id
         self.results = results
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     def __len__(self) -> int:
         assert self.results
@@ -366,13 +374,13 @@ class DiagramDetectItem(CogniteResource):
         file_external_id: str = None,
         annotations: list = None,
         error_message: str = None,
-        cognite_client: Any = None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.file_id = file_id
         self.file_external_id = file_external_id
         self.annotations = annotations
         self.error_message = error_message
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     def to_pandas(self, camel_case: bool = False) -> "pandas.DataFrame":  # type: ignore[override]
         df = super().to_pandas(camel_case=camel_case)

@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Union, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -12,6 +12,9 @@ from cognite.client.data_classes._base import (
     CogniteUpdate,
 )
 from cognite.client.data_classes.shared import TimestampRange
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 class DataSet(CogniteResource):
@@ -39,7 +42,7 @@ class DataSet(CogniteResource):
         id: int = None,
         created_time: int = None,
         last_updated_time: int = None,
-        cognite_client: Any = None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.external_id = external_id
         self.name = name
@@ -49,7 +52,7 @@ class DataSet(CogniteResource):
         self.id = id
         self.created_time = created_time
         self.last_updated_time = last_updated_time
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class DataSetFilter(CogniteFilter):
@@ -71,14 +74,14 @@ class DataSetFilter(CogniteFilter):
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
         external_id_prefix: str = None,
         write_protected: bool = None,
-        cognite_client: Any = None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.metadata = metadata
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.external_id_prefix = external_id_prefix
         self.write_protected = write_protected
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
     def _load(cls, resource: Union[Dict, str]) -> "DataSetFilter":

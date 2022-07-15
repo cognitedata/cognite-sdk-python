@@ -1,7 +1,10 @@
-from typing import Any, Dict, List, cast
+from typing import TYPE_CHECKING, Any, Dict, List, cast
 
 from cognite.client import utils
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList, CogniteResponse
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 class ServiceAccount(CogniteResource):
@@ -23,14 +26,14 @@ class ServiceAccount(CogniteResource):
         id: int = None,
         is_deleted: bool = None,
         deleted_time: int = None,
-        cognite_client: Any = None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.name = name
         self.groups = groups
         self.id = id
         self.is_deleted = is_deleted
         self.deleted_time = deleted_time
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class ServiceAccountList(CogniteResourceList):
@@ -56,14 +59,14 @@ class APIKey(CogniteResource):
         created_time: int = None,
         status: str = None,
         value: str = None,
-        cognite_client: Any = None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.id = id
         self.service_account_id = service_account_id
         self.created_time = created_time
         self.status = status
         self.value = value
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class APIKeyList(CogniteResourceList):
@@ -91,7 +94,7 @@ class Group(CogniteResource):
         id: int = None,
         is_deleted: bool = None,
         deleted_time: int = None,
-        cognite_client: Any = None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.name = name
         self.source_id = source_id
@@ -99,7 +102,7 @@ class Group(CogniteResource):
         self.id = id
         self.is_deleted = is_deleted
         self.deleted_time = deleted_time
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class GroupList(CogniteResourceList):
@@ -115,10 +118,10 @@ class SecurityCategory(CogniteResource):
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
-    def __init__(self, name: str = None, id: int = None, cognite_client: Any = None):
+    def __init__(self, name: str = None, id: int = None, cognite_client: "CogniteClient" = None):
         self.name = name
         self.id = id
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class SecurityCategoryList(CogniteResourceList):

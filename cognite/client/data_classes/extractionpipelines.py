@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Union, cast
 
 from cognite.client import utils
 from cognite.client.data_classes._base import (
@@ -12,6 +12,9 @@ from cognite.client.data_classes._base import (
     CogniteUpdate,
 )
 from cognite.client.data_classes.shared import TimestampRange
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 class ExtractionPipelineContact(dict):
@@ -85,7 +88,7 @@ class ExtractionPipeline(CogniteResource):
         created_time: int = None,
         last_updated_time: int = None,
         created_by: str = None,
-        cognite_client: Any = None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.id = id
         self.external_id = external_id
@@ -105,10 +108,10 @@ class ExtractionPipeline(CogniteResource):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.created_by = created_by
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: Any = None) -> "ExtractionPipeline":
+    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> "ExtractionPipeline":
         instance = super(ExtractionPipeline, cls)._load(resource, cognite_client)
         return instance
 
@@ -210,13 +213,13 @@ class ExtractionPipelineRun(CogniteResource):
         status: str = None,
         message: str = None,
         created_time: int = None,
-        cognite_client: Any = None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.external_id = external_id
         self.status = status
         self.message = message
         self.created_time = created_time
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class ExtractionPipelineRunUpdate(CogniteUpdate):
@@ -257,13 +260,13 @@ class ExtractionPipelineRunFilter(CogniteFilter):
         statuses: List[str] = None,
         message: StringFilter = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
-        cognite_client: Any = None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.external_id = external_id
         self.statuses = statuses
         self.message = message
         self.created_time = created_time
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
     def _load(cls, resource: Union[Dict, str]) -> "ExtractionPipelineRunFilter":

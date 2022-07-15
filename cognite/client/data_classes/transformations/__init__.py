@@ -1,4 +1,4 @@
-from typing import Any, Awaitable, Dict, List, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Awaitable, Dict, List, Optional, Union, cast
 
 from cognite.client import utils
 from cognite.client.data_classes._base import (
@@ -20,6 +20,9 @@ from cognite.client.data_classes.transformations.common import (
 from cognite.client.data_classes.transformations.jobs import TransformationJob, TransformationJobList
 from cognite.client.data_classes.transformations.schedules import TransformationSchedule
 from cognite.client.data_classes.transformations.schema import TransformationSchemaColumnList
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 class Transformation(CogniteResource):
@@ -80,7 +83,7 @@ class Transformation(CogniteResource):
         blocked: TransformationBlockedInfo = None,
         schedule: "TransformationSchedule" = None,
         data_set_id: int = None,
-        cognite_client: Any = None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.id = id
         self.external_id = external_id
@@ -109,7 +112,7 @@ class Transformation(CogniteResource):
         self.blocked = blocked
         self.schedule = schedule
         self.data_set_id = data_set_id
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     def run(self, wait: bool = True, timeout: Optional[float] = None) -> "TransformationJob":
         return self._cognite_client.transformations.run(transformation_id=self.id, wait=wait, timeout=timeout)
@@ -127,7 +130,7 @@ class Transformation(CogniteResource):
         return self._cognite_client.transformations.jobs.list(transformation_id=self.id)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: Any = None) -> "Transformation":
+    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> "Transformation":
         instance = super(Transformation, cls)._load(resource, cognite_client)
         if isinstance(instance.destination, Dict):
             snake_dict = {utils._auxiliary.to_snake_case(key): value for (key, value) in instance.destination.items()}
@@ -322,14 +325,17 @@ class TransformationPreviewResult(CogniteResource):
     """
 
     def __init__(
-        self, schema: "TransformationSchemaColumnList" = None, results: List[Dict] = None, cognite_client: Any = None
+        self,
+        schema: "TransformationSchemaColumnList" = None,
+        results: List[Dict] = None,
+        cognite_client: "CogniteClient" = None,
     ) -> None:
         self.schema = schema
         self.results = results
-        self._cognite_client = cast(Any, cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: Any = None) -> "TransformationPreviewResult":
+    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> "TransformationPreviewResult":
         instance = super(TransformationPreviewResult, cls)._load(resource, cognite_client)
         if isinstance(instance.schema, Dict):
             items = instance.schema.get("items")
