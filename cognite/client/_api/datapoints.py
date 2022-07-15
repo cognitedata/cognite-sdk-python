@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple, Union, 
 import cognite.client.utils._time
 from cognite.client import utils
 from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
+from cognite.client._api.tmp_refactor_datapoints import NewDatapointsQuery, TSQueryList
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Datapoints, DatapointsList, DatapointsQuery
 from cognite.client.data_classes.datapoints import DatapointsExternalIdMaybeAggregate, DatapointsIdMaybeAggregate
@@ -28,6 +29,45 @@ class DatapointsAPI(APIClient):
         self.synthetic = SyntheticDatapointsAPI(
             self._config, api_version=self._api_version, cognite_client=self._cognite_client
         )
+
+    def retrieve_new(
+        self,
+        start: Union[int, str, datetime, None] = None,
+        end: Union[int, str, datetime, None] = None,
+        id: Optional[Any] = None,  # TODO(haakonvt): Fix type... uuuh pain
+        external_id: Optional[Any] = None,  # TODO(haakonvt): Fix type... uuuh pain
+        aggregates: Optional[List[str]] = None,
+        granularity: Optional[str] = None,
+        limit: Optional[int] = None,
+        include_outside_points: bool = False,
+        ignore_unknown_ids: bool = False,
+    ):
+        q = NewDatapointsQuery(
+            client=self,  # TODO(haakonvt): Probably shouldn't
+            start=start,
+            end=end,
+            id=id,
+            external_id=external_id,
+            aggregates=aggregates,
+            granularity=granularity,
+            limit=limit,
+            include_outside_points=include_outside_points,
+            ignore_unknown_ids=ignore_unknown_ids,
+        )
+        tsql = TSQueryList(q.all_validated_queries)
+        from pprint import pprint
+
+        print("Parsed raw dps queries:")
+        pprint(tsql.raw_queries)
+        print("Parsed agg. dps queries:")
+        pprint(tsql.agg_queries)
+        return NotImplemented
+
+    def query_new(self, *a, **kw):
+        return NotImplemented
+
+    def retrieve_dataframe_new(*a, **kw):
+        return NotImplemented
 
     def retrieve(
         self,

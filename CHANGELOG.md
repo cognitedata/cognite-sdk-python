@@ -14,6 +14,15 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [4.0.0] - xx-yy-zz
+### Added/Changed/Fixed
+- Increased speed of varied datapoints fetch queries, especially when fetching many time series. Now matches API endpoint more closely:
+  - DatapointsAPI/retrieve does no longer require `start` (default: `0`) and `end` (default: `now`)
+  - DatapointsAPI/retrieve accepts a list of full query dictionaries for `id` and `external_id` giving full flexibility for e.g. individual start times, limits etc.
+  - `limit=0` returns 0, not "unlimited"
+  - `return_outside_points` returns both outside points (if they exist), regardless of `limit` setting
+  - Aggregates returned now include the time period(s) (given by `granularity` unit) that start and end are part of (as opposed to only "fully in-between" points).
+
 ## [3.2.0] - 2022-07-15
 ### Removed
 - Unused cognite.client.experimental module
