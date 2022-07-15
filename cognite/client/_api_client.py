@@ -31,14 +31,19 @@ from requests.structures import CaseInsensitiveDict
 
 from cognite.client import utils
 from cognite.client._http_client import GLOBAL_REQUEST_SESSION, HTTPClient, HTTPClientConfig
-from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteResourceList, CogniteUpdate
+from cognite.client.data_classes._base import (
+    CogniteFilter,
+    CogniteResource,
+    CogniteResourceList,
+    CogniteUpdate,
+    T_CogniteResource,
+    T_CogniteResourceList,
+)
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 
 log = logging.getLogger("cognite-sdk")
 
 T = TypeVar("T")
-T_CogniteResource = TypeVar("T_CogniteResource", bound=CogniteResource)
-T_CogniteResourceList = TypeVar("T_CogniteResourceList", bound=CogniteResourceList)
 
 
 class APIClient:
