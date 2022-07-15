@@ -228,51 +228,51 @@ class FileMetadataUpdate(CogniteUpdate):
             return self._remove(value)
 
     @property
-    def external_id(self) -> "_PrimitiveFileMetadataUpdate":
+    def external_id(self) -> _PrimitiveFileMetadataUpdate:
         return FileMetadataUpdate._PrimitiveFileMetadataUpdate(self, "externalId")
 
     @property
-    def directory(self) -> "_PrimitiveFileMetadataUpdate":
+    def directory(self) -> _PrimitiveFileMetadataUpdate:
         return FileMetadataUpdate._PrimitiveFileMetadataUpdate(self, "directory")
 
     @property
-    def source(self) -> "_PrimitiveFileMetadataUpdate":
+    def source(self) -> _PrimitiveFileMetadataUpdate:
         return FileMetadataUpdate._PrimitiveFileMetadataUpdate(self, "source")
 
     @property
-    def mime_type(self) -> "_PrimitiveFileMetadataUpdate":
+    def mime_type(self) -> _PrimitiveFileMetadataUpdate:
         return FileMetadataUpdate._PrimitiveFileMetadataUpdate(self, "mimeType")
 
     @property
-    def metadata(self) -> "_ObjectFileMetadataUpdate":
+    def metadata(self) -> _ObjectFileMetadataUpdate:
         return FileMetadataUpdate._ObjectFileMetadataUpdate(self, "metadata")
 
     @property
-    def asset_ids(self) -> "_ListFileMetadataUpdate":
+    def asset_ids(self) -> _ListFileMetadataUpdate:
         return FileMetadataUpdate._ListFileMetadataUpdate(self, "assetIds")
 
     @property
-    def source_created_time(self) -> "_PrimitiveFileMetadataUpdate":
+    def source_created_time(self) -> _PrimitiveFileMetadataUpdate:
         return FileMetadataUpdate._PrimitiveFileMetadataUpdate(self, "sourceCreatedTime")
 
     @property
-    def source_modified_time(self) -> "_PrimitiveFileMetadataUpdate":
+    def source_modified_time(self) -> _PrimitiveFileMetadataUpdate:
         return FileMetadataUpdate._PrimitiveFileMetadataUpdate(self, "sourceModifiedTime")
 
     @property
-    def data_set_id(self) -> "_PrimitiveFileMetadataUpdate":
+    def data_set_id(self) -> _PrimitiveFileMetadataUpdate:
         return FileMetadataUpdate._PrimitiveFileMetadataUpdate(self, "dataSetId")
 
     @property
-    def labels(self) -> "_LabelFileMetadataUpdate":
+    def labels(self) -> _LabelFileMetadataUpdate:
         return FileMetadataUpdate._LabelFileMetadataUpdate(self, "labels")
 
     @property
-    def geoLocation(self) -> "_PrimitiveFileMetadataUpdate":
+    def geoLocation(self) -> _PrimitiveFileMetadataUpdate:
         return FileMetadataUpdate._PrimitiveFileMetadataUpdate(self, "geoLocation")
 
     @property
-    def security_categories(self) -> "_ListFileMetadataUpdate":
+    def security_categories(self) -> _ListFileMetadataUpdate:
         return FileMetadataUpdate._ListFileMetadataUpdate(self, "securityCategories")
 
 

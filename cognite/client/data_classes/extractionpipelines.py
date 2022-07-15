@@ -149,43 +149,43 @@ class ExtractionPipelineUpdate(CogniteUpdate):
             return self._remove(value)
 
     @property
-    def external_id(self) -> "_PrimitiveExtractionPipelineUpdate":
+    def external_id(self) -> _PrimitiveExtractionPipelineUpdate:
         return ExtractionPipelineUpdate._PrimitiveExtractionPipelineUpdate(self, "externalId")
 
     @property
-    def name(self) -> "_PrimitiveExtractionPipelineUpdate":
+    def name(self) -> _PrimitiveExtractionPipelineUpdate:
         return ExtractionPipelineUpdate._PrimitiveExtractionPipelineUpdate(self, "name")
 
     @property
-    def description(self) -> "_PrimitiveExtractionPipelineUpdate":
+    def description(self) -> _PrimitiveExtractionPipelineUpdate:
         return ExtractionPipelineUpdate._PrimitiveExtractionPipelineUpdate(self, "description")
 
     @property
-    def data_set_id(self) -> "_PrimitiveExtractionPipelineUpdate":
+    def data_set_id(self) -> _PrimitiveExtractionPipelineUpdate:
         return ExtractionPipelineUpdate._PrimitiveExtractionPipelineUpdate(self, "dataSetId")
 
     @property
-    def raw_tables(self) -> "_ListExtractionPipelineUpdate":
+    def raw_tables(self) -> _ListExtractionPipelineUpdate:
         return ExtractionPipelineUpdate._ListExtractionPipelineUpdate(self, "rawTables")
 
     @property
-    def metadata(self) -> "_ObjectExtractionPipelineUpdate":
+    def metadata(self) -> _ObjectExtractionPipelineUpdate:
         return ExtractionPipelineUpdate._ObjectExtractionPipelineUpdate(self, "metadata")
 
     @property
-    def source(self) -> "_PrimitiveExtractionPipelineUpdate":
+    def source(self) -> _PrimitiveExtractionPipelineUpdate:
         return ExtractionPipelineUpdate._PrimitiveExtractionPipelineUpdate(self, "source")
 
     @property
-    def documentation(self) -> "_PrimitiveExtractionPipelineUpdate":
+    def documentation(self) -> _PrimitiveExtractionPipelineUpdate:
         return ExtractionPipelineUpdate._PrimitiveExtractionPipelineUpdate(self, "documentation")
 
     @property
-    def schedule(self) -> "_PrimitiveExtractionPipelineUpdate":
+    def schedule(self) -> _PrimitiveExtractionPipelineUpdate:
         return ExtractionPipelineUpdate._PrimitiveExtractionPipelineUpdate(self, "schedule")
 
     @property
-    def contacts(self) -> "_ListExtractionPipelineUpdate":
+    def contacts(self) -> _ListExtractionPipelineUpdate:
         return ExtractionPipelineUpdate._ListExtractionPipelineUpdate(self, "contacts")
 
 

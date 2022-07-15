@@ -191,39 +191,39 @@ class RelationshipUpdate(CogniteUpdate):
             return self._remove(value)
 
     @property
-    def source_external_id(self) -> "_PrimitiveRelationshipUpdate":
+    def source_external_id(self) -> _PrimitiveRelationshipUpdate:
         return RelationshipUpdate._PrimitiveRelationshipUpdate(self, "sourceExternalId")
 
     @property
-    def source_type(self) -> "_PrimitiveRelationshipUpdate":
+    def source_type(self) -> _PrimitiveRelationshipUpdate:
         return RelationshipUpdate._PrimitiveRelationshipUpdate(self, "sourceType")
 
     @property
-    def target_external_id(self) -> "_PrimitiveRelationshipUpdate":
+    def target_external_id(self) -> _PrimitiveRelationshipUpdate:
         return RelationshipUpdate._PrimitiveRelationshipUpdate(self, "targetExternalId")
 
     @property
-    def target_type(self) -> "_PrimitiveRelationshipUpdate":
+    def target_type(self) -> _PrimitiveRelationshipUpdate:
         return RelationshipUpdate._PrimitiveRelationshipUpdate(self, "targetType")
 
     @property
-    def start_time(self) -> "_PrimitiveRelationshipUpdate":
+    def start_time(self) -> _PrimitiveRelationshipUpdate:
         return RelationshipUpdate._PrimitiveRelationshipUpdate(self, "startTime")
 
     @property
-    def end_time(self) -> "_PrimitiveRelationshipUpdate":
+    def end_time(self) -> _PrimitiveRelationshipUpdate:
         return RelationshipUpdate._PrimitiveRelationshipUpdate(self, "endTime")
 
     @property
-    def data_set_id(self) -> "_PrimitiveRelationshipUpdate":
+    def data_set_id(self) -> _PrimitiveRelationshipUpdate:
         return RelationshipUpdate._PrimitiveRelationshipUpdate(self, "dataSetId")
 
     @property
-    def confidence(self) -> "_PrimitiveRelationshipUpdate":
+    def confidence(self) -> _PrimitiveRelationshipUpdate:
         return RelationshipUpdate._PrimitiveRelationshipUpdate(self, "confidence")
 
     @property
-    def labels(self) -> "_LabelRelationshipUpdate":
+    def labels(self) -> _LabelRelationshipUpdate:
         return RelationshipUpdate._LabelRelationshipUpdate(self, "labels")
 
 

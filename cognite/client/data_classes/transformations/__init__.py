@@ -196,51 +196,51 @@ class TransformationUpdate(CogniteUpdate):
             return self._set(value)
 
     @property
-    def external_id(self) -> "_PrimitiveTransformationUpdate":
+    def external_id(self) -> _PrimitiveTransformationUpdate:
         return TransformationUpdate._PrimitiveTransformationUpdate(self, "externalId")
 
     @property
-    def name(self) -> "_PrimitiveTransformationUpdate":
+    def name(self) -> _PrimitiveTransformationUpdate:
         return TransformationUpdate._PrimitiveTransformationUpdate(self, "name")
 
     @property
-    def destination(self) -> "_PrimitiveTransformationUpdate":
+    def destination(self) -> _PrimitiveTransformationUpdate:
         return TransformationUpdate._PrimitiveTransformationUpdate(self, "destination")
 
     @property
-    def conflict_mode(self) -> "_PrimitiveTransformationUpdate":
+    def conflict_mode(self) -> _PrimitiveTransformationUpdate:
         return TransformationUpdate._PrimitiveTransformationUpdate(self, "conflictMode")
 
     @property
-    def query(self) -> "_PrimitiveTransformationUpdate":
+    def query(self) -> _PrimitiveTransformationUpdate:
         return TransformationUpdate._PrimitiveTransformationUpdate(self, "query")
 
     @property
-    def source_oidc_credentials(self) -> "_PrimitiveTransformationUpdate":
+    def source_oidc_credentials(self) -> _PrimitiveTransformationUpdate:
         return TransformationUpdate._PrimitiveTransformationUpdate(self, "sourceOidcCredentials")
 
     @property
-    def destination_oidc_credentials(self) -> "_PrimitiveTransformationUpdate":
+    def destination_oidc_credentials(self) -> _PrimitiveTransformationUpdate:
         return TransformationUpdate._PrimitiveTransformationUpdate(self, "destinationOidcCredentials")
 
     @property
-    def source_api_key(self) -> "_PrimitiveTransformationUpdate":
+    def source_api_key(self) -> _PrimitiveTransformationUpdate:
         return TransformationUpdate._PrimitiveTransformationUpdate(self, "sourceApiKey")
 
     @property
-    def destination_api_key(self) -> "_PrimitiveTransformationUpdate":
+    def destination_api_key(self) -> _PrimitiveTransformationUpdate:
         return TransformationUpdate._PrimitiveTransformationUpdate(self, "destinationApiKey")
 
     @property
-    def is_public(self) -> "_PrimitiveTransformationUpdate":
+    def is_public(self) -> _PrimitiveTransformationUpdate:
         return TransformationUpdate._PrimitiveTransformationUpdate(self, "isPublic")
 
     @property
-    def ignore_null_fields(self) -> "_PrimitiveTransformationUpdate":
+    def ignore_null_fields(self) -> _PrimitiveTransformationUpdate:
         return TransformationUpdate._PrimitiveTransformationUpdate(self, "ignoreNullFields")
 
     @property
-    def data_set_id(self) -> "_PrimitiveTransformationUpdate":
+    def data_set_id(self) -> _PrimitiveTransformationUpdate:
         return TransformationUpdate._PrimitiveTransformationUpdate(self, "dataSetId")
 
     def dump(self, camel_case: bool = True) -> Dict[str, Any]:

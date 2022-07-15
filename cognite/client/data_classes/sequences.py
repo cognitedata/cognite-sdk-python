@@ -241,31 +241,31 @@ class SequenceUpdate(CogniteUpdate):
             return self._modify([col.dump() for col in value])
 
     @property
-    def name(self) -> "_PrimitiveSequenceUpdate":
+    def name(self) -> _PrimitiveSequenceUpdate:
         return SequenceUpdate._PrimitiveSequenceUpdate(self, "name")
 
     @property
-    def description(self) -> "_PrimitiveSequenceUpdate":
+    def description(self) -> _PrimitiveSequenceUpdate:
         return SequenceUpdate._PrimitiveSequenceUpdate(self, "description")
 
     @property
-    def asset_id(self) -> "_PrimitiveSequenceUpdate":
+    def asset_id(self) -> _PrimitiveSequenceUpdate:
         return SequenceUpdate._PrimitiveSequenceUpdate(self, "assetId")
 
     @property
-    def external_id(self) -> "_PrimitiveSequenceUpdate":
+    def external_id(self) -> _PrimitiveSequenceUpdate:
         return SequenceUpdate._PrimitiveSequenceUpdate(self, "externalId")
 
     @property
-    def metadata(self) -> "_ObjectSequenceUpdate":
+    def metadata(self) -> _ObjectSequenceUpdate:
         return SequenceUpdate._ObjectSequenceUpdate(self, "metadata")
 
     @property
-    def data_set_id(self) -> "_PrimitiveSequenceUpdate":
+    def data_set_id(self) -> _PrimitiveSequenceUpdate:
         return SequenceUpdate._PrimitiveSequenceUpdate(self, "dataSetId")
 
     @property
-    def columns(self) -> "_ColumnsSequenceUpdate":
+    def columns(self) -> _ColumnsSequenceUpdate:
         return SequenceUpdate._ColumnsSequenceUpdate(self, "columns")
 
 
