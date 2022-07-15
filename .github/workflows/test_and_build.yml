@@ -8,19 +8,13 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    strategy:
-      fail-fast: false
-      max-parallel: 1
-      matrix:
-        python-version: [3.8]
-
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+    - name: Set up Python
+      uses: actions/setup-python@v4
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: 3.8
 
     - name: Install required dependencies
       run: |
@@ -28,7 +22,7 @@ jobs:
         poetry config virtualenvs.create false
         poetry install
 
-    - name: Check codestyle
+    - name: Linting and static code checks
       run: |
         pre-commit run --all-files
 
@@ -62,7 +56,7 @@ jobs:
       run: |
         pytest -v tests --cov --cov-report xml:coverage.xml -n4 --dist loadscope --reruns 2
 
-    - uses: codecov/codecov-action@v1
+    - uses: codecov/codecov-action@v3
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         file: ./coverage.xml
