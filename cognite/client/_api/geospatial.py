@@ -29,6 +29,14 @@ class GeospatialAPI(APIClient):
     def _feature_resource_path(feature_type_external_id: str) -> str:
         return f"{GeospatialAPI._RESOURCE_PATH}/featuretypes/{feature_type_external_id}/features"
 
+    @overload
+    def create_feature_types(self, feature_type: FeatureType) -> FeatureType:
+        ...
+
+    @overload
+    def create_feature_types(self, feature_type: List[FeatureType]) -> FeatureTypeList:
+        ...
+
     def create_feature_types(
         self, feature_type: Union[FeatureType, List[FeatureType]]
     ) -> Union[FeatureType, FeatureTypeList]:
@@ -260,6 +268,26 @@ class GeospatialAPI(APIClient):
         }
         res = self._post(url_path=f"{self._RESOURCE_PATH}/featuretypes/update", json=json)
         return FeatureTypeList._load(res.json()["items"], cognite_client=self._cognite_client)
+
+    @overload
+    def create_features(
+        self,
+        feature_type_external_id: str,
+        feature: Feature,
+        allow_crs_transformation: bool = False,
+        chunk_size: int = None,
+    ) -> Feature:
+        ...
+
+    @overload
+    def create_features(
+        self,
+        feature_type_external_id: str,
+        feature: Union[List[Feature], FeatureList],
+        allow_crs_transformation: bool = False,
+        chunk_size: int = None,
+    ) -> FeatureList:
+        ...
 
     def create_features(
         self,

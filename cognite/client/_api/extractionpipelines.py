@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, overload
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -107,6 +107,14 @@ class ExtractionPipelinesAPI(APIClient):
 
         return self._list(list_cls=ExtractionPipelineList, resource_cls=ExtractionPipeline, method="GET", limit=limit)
 
+    @overload
+    def create(self, extractionPipeline: ExtractionPipeline) -> ExtractionPipeline:
+        ...
+
+    @overload
+    def create(self, extractionPipeline: List[ExtractionPipeline]) -> ExtractionPipelineList:
+        ...
+
     def create(
         self, extractionPipeline: Union[ExtractionPipeline, List[ExtractionPipeline]]
     ) -> Union[ExtractionPipeline, ExtractionPipelineList]:
@@ -154,6 +162,14 @@ class ExtractionPipelinesAPI(APIClient):
                 >>> c.extraction_pipelines.delete(id=[1,2,3], external_id="3")
         """
         self._delete_multiple(identifiers=IdentifierSequence.load(id, external_id), wrap_ids=True, extra_body_fields={})
+
+    @overload
+    def update(self, item: Union[ExtractionPipeline, ExtractionPipelineUpdate]) -> ExtractionPipeline:
+        ...
+
+    @overload
+    def update(self, item: List[Union[ExtractionPipeline, ExtractionPipelineUpdate]]) -> ExtractionPipelineList:
+        ...
 
     def update(
         self,
@@ -249,6 +265,14 @@ class ExtractionPipelineRunsAPI(APIClient):
             limit=limit,
             filter={"externalId": external_id},
         )
+
+    @overload
+    def create(self, run: ExtractionPipelineRun) -> ExtractionPipelineRun:
+        ...
+
+    @overload
+    def create(self, run: List[ExtractionPipelineRun]) -> ExtractionPipelineRunList:
+        ...
 
     def create(
         self, run: Union[ExtractionPipelineRun, List[ExtractionPipelineRun]]

@@ -1,6 +1,6 @@
 import copy
 import math
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple, Union, cast, overload
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -257,6 +257,14 @@ class SequencesAPI(APIClient):
 
         return self._aggregate(filter=filter, cls=SequenceAggregate)
 
+    @overload
+    def create(self, sequence: Sequence) -> Sequence:
+        ...
+
+    @overload
+    def create(self, sequence: List[Sequence]) -> SequenceList:
+        ...
+
     def create(self, sequence: Union[Sequence, List[Sequence]]) -> Union[Sequence, SequenceList]:
         """`Create one or more sequences. <https://docs.cognite.com/api/v1/#operation/createSequence>`_
 
@@ -329,6 +337,14 @@ class SequencesAPI(APIClient):
                 >>> c.sequences.delete(id=[1,2,3], external_id="3")
         """
         self._delete_multiple(identifiers=IdentifierSequence.load(ids=id, external_ids=external_id), wrap_ids=True)
+
+    @overload
+    def update(self, item: Union[Sequence, SequenceUpdate]) -> Sequence:
+        ...
+
+    @overload
+    def update(self, item: List[Union[Sequence, SequenceUpdate]]) -> SequenceList:
+        ...
 
     def update(
         self, item: Union[Sequence, SequenceUpdate, List[Union[Sequence, SequenceUpdate]]]
