@@ -14,6 +14,14 @@ class Identifier(Generic[T_ID]):
             raise ValueError("Exactly one of id or external id must be specified")
         return Identifier(id or external_id)
 
+    @classmethod
+    def load(cls, id: Optional[int] = None, external_id: Optional[str] = None) -> "Identifier":
+        if id is not None:
+            return Identifier(id)
+        if external_id is not None:
+            return Identifier(external_id)
+        raise ValueError("At least one of id and external id must be specified")
+
     def as_primitive(self) -> T_ID:
         return self.__value
 
@@ -48,9 +56,12 @@ class IdentifierSequence:
     def is_singleton(self) -> bool:
         return self.__is_singleton
 
-    def as_singleton(self) -> "SingletonIdentifierSequence":
+    def assert_singleton(self) -> None:
         if not self.is_singleton():
             raise ValueError("Exactly one of id or external id must be specified")
+
+    def as_singleton(self) -> "SingletonIdentifierSequence":
+        self.assert_singleton()
         return cast(SingletonIdentifierSequence, self)
 
     def chunked(self, chunk_size: int) -> Iterable["IdentifierSequence"]:

@@ -15,7 +15,7 @@ import string
 import warnings
 from decimal import Decimal
 from types import ModuleType
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
+from typing import Any, Dict, List, Sequence, Tuple, Union
 from urllib.parse import quote
 
 import cognite.client
@@ -50,40 +50,6 @@ def json_dump_default(x: Any) -> Any:
     if hasattr(x, "__dict__"):
         return x.__dict__
     raise TypeError("Object {} of type {} can't be serialized by the JSON encoder".format(x, x.__class__))
-
-
-def assert_exactly_one_of_id_or_external_id(
-    id: Optional[int], external_id: Optional[str]
-) -> Dict[str, Union[str, int]]:
-    assert_type(id, "id", [numbers.Integral], allow_none=True)
-    assert_type(external_id, "external_id", [str], allow_none=True)
-    has_id = id is not None
-    has_external_id = external_id is not None
-
-    assert (has_id or has_external_id) and not (
-        has_id and has_external_id
-    ), "Exactly one of id and external id must be specified"
-
-    if has_id:
-        return {"id": cast(int, id)}
-    elif has_external_id:
-        return {"external_id": cast(str, external_id)}
-    raise RuntimeError("shouldn't reach this")
-
-
-def assert_at_least_one_of_id_or_external_id(
-    id: Optional[int], external_id: Optional[str]
-) -> Dict[str, Union[str, int]]:
-    assert_type(id, "id", [numbers.Integral], allow_none=True)
-    assert_type(external_id, "external_id", [str], allow_none=True)
-    has_id = id is not None
-    has_external_id = external_id is not None
-    assert has_id or has_external_id, "At least one of id and external id must be specified"
-    if has_id:
-        return {"id": cast(int, id)}
-    elif has_external_id:
-        return {"external_id": cast(str, external_id)}
-    raise RuntimeError("shouldn't reach this")
 
 
 def unwrap_identifer(identifier: Union[str, int, Dict]) -> Union[str, int]:

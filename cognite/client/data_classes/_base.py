@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, Collection, Dict, Generic, List, Optional
 
 from cognite.client import utils
 from cognite.client.exceptions import CogniteMissingClientError
+from cognite.client.utils._identifier import IdentifierSequence
 
 if TYPE_CHECKING:
     import pandas
@@ -235,7 +236,7 @@ class CogniteResourceList(UserList):
         Returns:
             Optional[CogniteResource]: The requested item
         """
-        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
+        IdentifierSequence.load(id, external_id).assert_singleton()
         if id:
             return self._id_to_item.get(id)
         return self._external_id_to_item.get(external_id)

@@ -346,7 +346,6 @@ class DatapointsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.datapoints.delete_range(start="1w-ago", end="now", id=1)
         """
-        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
         start = utils._time.timestamp_to_ms(start)
         end = utils._time.timestamp_to_ms(end)
         assert end > start, "end must be larger than start"
@@ -383,7 +382,6 @@ class DatapointsAPI(APIClient):
                     )
             id = range.get("id")
             external_id = range.get("externalId")
-            utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
             valid_range = Identifier.of_either(id, external_id).as_object()
             start = utils._time.timestamp_to_ms(range["start"])
             end = utils._time.timestamp_to_ms(range["end"])

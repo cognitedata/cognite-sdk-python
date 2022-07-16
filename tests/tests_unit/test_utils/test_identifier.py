@@ -40,3 +40,9 @@ class TestIdentifierSequence:
     def test_is_singleton(self, id, external_id, expected):
         identifiers = IdentifierSequence.load(id, external_id)
         assert identifiers.is_singleton() == expected
+
+    def test_assert_singleton(self) -> None:
+        with pytest.raises(ValueError):
+            IdentifierSequence.load(1, "1").assert_singleton()
+        IdentifierSequence.load(1, None).assert_singleton()
+        IdentifierSequence.load(None, "1").assert_singleton()

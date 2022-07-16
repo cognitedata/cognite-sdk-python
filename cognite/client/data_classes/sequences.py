@@ -15,6 +15,7 @@ from cognite.client.data_classes._base import (
     CogniteUpdate,
 )
 from cognite.client.data_classes.shared import TimestampRange
+from cognite.client.utils._identifier import Identifier
 
 if TYPE_CHECKING:
     import pandas
@@ -71,7 +72,7 @@ class Sequence(CogniteResource):
         Returns:
             List of sequence data.
         """
-        identifier = utils._auxiliary.assert_at_least_one_of_id_or_external_id(self.id, self.external_id)
+        identifier = Identifier.load(self.id, self.external_id).as_object()
         return self._cognite_client.sequences.data.retrieve(**identifier, start=start, end=end)
 
     @property

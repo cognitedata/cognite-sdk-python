@@ -316,7 +316,7 @@ class TransformationsAPI(APIClient):
                 >>>
                 >>> res = c.transformations.run(transformation_id = 1, wait = False)
         """
-        utils._auxiliary.assert_exactly_one_of_id_or_external_id(transformation_id, transformation_external_id)
+        IdentifierSequence.load(transformation_id, transformation_external_id).assert_singleton()
 
         id = {"externalId": transformation_external_id, "id": transformation_id}
 
@@ -382,7 +382,7 @@ class TransformationsAPI(APIClient):
                 >>> if res.status == TransformationJobStatus.RUNNING:
                 >>>     res.cancel()
         """
-        utils._auxiliary.assert_exactly_one_of_id_or_external_id(transformation_id, transformation_external_id)
+        IdentifierSequence.load(transformation_id, transformation_external_id).assert_singleton()
 
         id = {"externalId": transformation_external_id, "id": transformation_id}
 

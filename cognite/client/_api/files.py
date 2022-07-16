@@ -821,7 +821,6 @@ class FilesAPI(APIClient):
         """
         if isinstance(path, str):
             path = Path(path)
-        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
         assert path.parent.is_dir(), "{} is not a directory".format(path.parent)
         identifier = Identifier.of_either(id, external_id).as_object()
         download_link = self._get_download_link(identifier)
@@ -842,7 +841,6 @@ class FilesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> file_content = c.files.download_bytes(id=1)
         """
-        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
         identifier = Identifier.of_either(id, external_id).as_object()
         download_link = self._get_download_link(identifier)
         return self._download_file(download_link)

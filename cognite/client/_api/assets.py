@@ -557,7 +557,6 @@ class AssetsAPI(APIClient):
         Returns:
             AssetList: The requested assets or empty AssetList if asset does not exist.
         """
-        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
         asset = self.retrieve(id=id, external_id=external_id)
         if asset is None:
             return AssetList([], self._cognite_client)

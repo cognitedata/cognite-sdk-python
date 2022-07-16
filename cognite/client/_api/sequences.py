@@ -518,7 +518,6 @@ class SequencesDataAPI(APIClient):
                 >>> data = c.sequences.data.retrieve(id=2,start=0,end=10)
                 >>> c.sequences.data.insert(rows=data, id=1,column_external_ids=None)
         """
-        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
         if isinstance(rows, SequenceData):
             column_external_ids = rows.column_external_ids
             rows = [{"rowNumber": k, "values": v} for k, v in rows.items()]
@@ -590,7 +589,6 @@ class SequencesDataAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.sequences.data.delete(id=0, rows=[1,2,42])
         """
-        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
         post_obj = Identifier.of_either(id, external_id).as_object()
         post_obj["rows"] = rows
 
@@ -615,7 +613,6 @@ class SequencesDataAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.sequences.data.delete_range(id=0, start=0, end=None)
         """
-        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
         sequence = self._sequences_api.retrieve(id=id, external_id=external_id)
         assert sequence is not None
         post_obj = Identifier.of_either(id, external_id).as_object()
