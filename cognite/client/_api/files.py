@@ -17,6 +17,7 @@ from cognite.client.data_classes import (
     LabelFilter,
     TimestampRange,
 )
+from cognite.client.utils._identifier import IdentifierSequence
 
 
 class FilesAPI(APIClient):
@@ -187,13 +188,8 @@ class FilesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.files.retrieve(external_id="1")
         """
-        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
-        return cast(
-            Optional[FileMetadata],
-            self._retrieve_multiple(
-                list_cls=FileMetadataList, resource_cls=FileMetadata, ids=id, external_ids=external_id, wrap_ids=True
-            ),
-        )
+        identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
+        return self._retrieve_multiple(list_cls=FileMetadataList, resource_cls=FileMetadata, identifiers=identifiers)
 
     def retrieve_multiple(
         self, ids: Optional[List[int]] = None, external_ids: Optional[List[str]] = None
@@ -221,14 +217,8 @@ class FilesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.files.retrieve_multiple(external_ids=["abc", "def"])
         """
-        utils._auxiliary.assert_type(ids, "id", [List], allow_none=True)
-        utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=True)
-        return cast(
-            FileMetadataList,
-            self._retrieve_multiple(
-                list_cls=FileMetadataList, resource_cls=FileMetadata, ids=ids, external_ids=external_ids, wrap_ids=True
-            ),
-        )
+        identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
+        return self._retrieve_multiple(list_cls=FileMetadataList, resource_cls=FileMetadata, identifiers=identifiers)
 
     def list(
         self,

@@ -4,6 +4,7 @@ from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Database, DatabaseList, Row, RowList, Table, TableList
 from cognite.client.utils._auxiliary import local_import
+from cognite.client.utils._identifier import Identifier
 
 if TYPE_CHECKING:
     import pandas
@@ -468,7 +469,7 @@ class RawRowsAPI(APIClient):
         return self._retrieve(
             cls=Row,
             resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
-            id=key,
+            identifier=Identifier(key),
         )
 
     def list(

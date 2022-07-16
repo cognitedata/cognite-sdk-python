@@ -1,10 +1,11 @@
 from copy import deepcopy
-from typing import Any, Collection, Dict, List, Optional, Union, cast
+from typing import Any, Collection, Dict, List, Optional, Union, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Annotation, AnnotationFilter, AnnotationList, AnnotationUpdate
 from cognite.client.data_classes._base import CogniteResource
 from cognite.client.utils._auxiliary import assert_type, to_camel_case
+from cognite.client.utils._identifier import IdentifierSequence
 
 
 class AnnotationsAPI(APIClient):
@@ -27,6 +28,14 @@ class AnnotationsAPI(APIClient):
             list_cls=AnnotationList, resource_cls=Annotation, resource_path=self._RESOURCE_PATH + "/", items=annotations
         )
 
+    @overload
+    def suggest(self, annotations: Annotation) -> Annotation:
+        ...
+
+    @overload
+    def suggest(self, annotations: List[Annotation]) -> AnnotationList:
+        ...
+
     def suggest(self, annotations: Union[Annotation, List[Annotation]]) -> Union[Annotation, AnnotationList]:
         """Suggest annotations
 
@@ -38,7 +47,7 @@ class AnnotationsAPI(APIClient):
         """
         assert_type(annotations, "annotations", [Annotation, list])
         # Deal with status fields in both cases: Single item and list of items
-        items = (
+        items: Union[List[Dict[str, Any]], Dict[str, Any]] = (
             [self._sanitize_suggest_item(ann) for ann in annotations]
             if isinstance(annotations, list)
             else self._sanitize_suggest_item(annotations)
@@ -129,11 +138,8 @@ class AnnotationsAPI(APIClient):
         Returns:
             AnnotationList: list of annotations
         """
-        assert_type(ids, "ids", [List], allow_none=False)
-        return cast(
-            AnnotationList,
-            self._retrieve_multiple(list_cls=AnnotationList, resource_cls=Annotation, ids=ids, wrap_ids=True),
-        )
+        identifiers = IdentifierSequence.load(ids=ids, external_ids=None)
+        return self._retrieve_multiple(list_cls=AnnotationList, resource_cls=Annotation, identifiers=identifiers)
 
     def retrieve(self, id: int) -> Optional[Annotation]:
         """Retrieve an annotation by id
@@ -144,8 +150,5 @@ class AnnotationsAPI(APIClient):
         Returns:
             Annotation: annotation requested
         """
-        assert_type(id, "id", [int], allow_none=False)
-        return cast(
-            Optional[Annotation],
-            self._retrieve_multiple(list_cls=AnnotationList, resource_cls=Annotation, ids=id, wrap_ids=True),
-        )
+        identifiers = IdentifierSequence.load(ids=id, external_ids=None).as_singleton()
+        return self._retrieve_multiple(list_cls=AnnotationList, resource_cls=Annotation, identifiers=identifiers)

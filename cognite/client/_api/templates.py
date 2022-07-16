@@ -16,6 +16,7 @@ from cognite.client.data_classes.templates import (
     ViewResolveItem,
     ViewResolveList,
 )
+from cognite.client.utils._identifier import IdentifierSequence
 
 
 class TemplatesAPI(APIClient):
@@ -151,15 +152,12 @@ class TemplateGroupsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.templates.groups.retrieve_multiple(external_ids=["abc", "def"])
         """
-        return cast(
-            TemplateGroupList,
-            self._retrieve_multiple(
-                list_cls=TemplateGroupList,
-                resource_cls=TemplateGroup,
-                external_ids=external_ids,
-                ignore_unknown_ids=ignore_unknown_ids,
-                wrap_ids=True,
-            ),
+        identifiers = IdentifierSequence.load(ids=None, external_ids=external_ids)
+        return self._retrieve_multiple(
+            list_cls=TemplateGroupList,
+            resource_cls=TemplateGroup,
+            identifiers=identifiers,
+            ignore_unknown_ids=ignore_unknown_ids,
         )
 
     def list(self, limit: int = 25, owners: List[str] = None) -> TemplateGroupList:
@@ -472,16 +470,13 @@ class TemplateInstancesAPI(APIClient):
                 >>> res = c.templates.instances.retrieve_multiple(external_id="sdk-test-group", version=1, external_ids=["abc", "def"])
         """
         resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
-        return cast(
-            TemplateInstanceList,
-            self._retrieve_multiple(
-                list_cls=TemplateInstanceList,
-                resource_cls=TemplateInstance,
-                resource_path=resource_path,
-                external_ids=external_ids,
-                ignore_unknown_ids=ignore_unknown_ids,
-                wrap_ids=True,
-            ),
+        identifiers = IdentifierSequence.load(ids=None, external_ids=external_ids)
+        return self._retrieve_multiple(
+            list_cls=TemplateInstanceList,
+            resource_cls=TemplateInstance,
+            resource_path=resource_path,
+            identifiers=identifiers,
+            ignore_unknown_ids=ignore_unknown_ids,
         )
 
     def list(

@@ -283,7 +283,6 @@ class APIClient:
         list_cls: Type[T_CogniteResourceList],
         resource_cls: Type[T_CogniteResource],
         identifiers: SingletonIdentifierSequence,
-        wrap_ids: bool,
         resource_path: Optional[str] = None,
         ignore_unknown_ids: Optional[bool] = None,
         headers: Optional[Dict[str, Any]] = None,
@@ -297,7 +296,6 @@ class APIClient:
         list_cls: Type[T_CogniteResourceList],
         resource_cls: Type[T_CogniteResource],
         identifiers: IdentifierSequence,
-        wrap_ids: bool,
         resource_path: Optional[str] = None,
         ignore_unknown_ids: Optional[bool] = None,
         headers: Optional[Dict[str, Any]] = None,
@@ -310,7 +308,6 @@ class APIClient:
         list_cls: Type[T_CogniteResourceList],
         resource_cls: Type[T_CogniteResource],
         identifiers: Union[SingletonIdentifierSequence, IdentifierSequence],
-        wrap_ids: bool,
         resource_path: Optional[str] = None,
         ignore_unknown_ids: Optional[bool] = None,
         headers: Optional[Dict[str, Any]] = None,
@@ -323,7 +320,7 @@ class APIClient:
             {
                 "url_path": resource_path + "/byids",
                 "json": {
-                    "items": id_chunk.as_objects() if wrap_ids else id_chunk.as_primitives(),
+                    "items": id_chunk.as_objects(),
                     **ignore_unknown_obj,
                     **(other_params or {}),
                 },

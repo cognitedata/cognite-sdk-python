@@ -5,6 +5,7 @@ from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Relationship, RelationshipFilter, RelationshipList, RelationshipUpdate
 from cognite.client.data_classes.labels import LabelFilter
+from cognite.client.utils._identifier import IdentifierSequence
 
 
 class RelationshipsAPI(APIClient):
@@ -159,15 +160,12 @@ class RelationshipsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.relationships.retrieve(external_id="1")
         """
-        return cast(
-            Optional[Relationship],
-            self._retrieve_multiple(
-                list_cls=RelationshipList,
-                resource_cls=Relationship,
-                external_ids=external_id,
-                wrap_ids=True,
-                other_params={"fetchResources": fetch_resources},
-            ),
+        identifiers = IdentifierSequence.load(ids=None, external_ids=external_id).as_singleton()
+        return self._retrieve_multiple(
+            list_cls=RelationshipList,
+            resource_cls=Relationship,
+            identifiers=identifiers,
+            other_params={"fetchResources": fetch_resources},
         )
 
     def retrieve_multiple(self, external_ids: List[str], fetch_resources: bool = False) -> RelationshipList:
@@ -189,16 +187,12 @@ class RelationshipsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.relationships.retrieve_multiple(external_ids=["abc", "def"])
         """
-        utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=False)
-        return cast(
-            RelationshipList,
-            self._retrieve_multiple(
-                list_cls=RelationshipList,
-                resource_cls=Relationship,
-                external_ids=external_ids,
-                wrap_ids=True,
-                other_params={"fetchResources": fetch_resources},
-            ),
+        identifiers = IdentifierSequence.load(ids=None, external_ids=external_ids)
+        return self._retrieve_multiple(
+            list_cls=RelationshipList,
+            resource_cls=Relationship,
+            identifiers=identifiers,
+            other_params={"fetchResources": fetch_resources},
         )
 
     def list(

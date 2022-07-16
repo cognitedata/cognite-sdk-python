@@ -1,4 +1,4 @@
-from typing import List, Optional, cast
+from typing import List, Optional
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -9,6 +9,7 @@ from cognite.client.data_classes import (
     TransformationJobMetric,
     TransformationJobMetricList,
 )
+from cognite.client.utils._identifier import IdentifierSequence
 
 
 class TransformationJobsAPI(APIClient):
@@ -70,11 +71,9 @@ class TransformationJobsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.transformations.jobs.retrieve(id=1)
         """
-        return cast(
-            Optional[TransformationJob],
-            self._retrieve_multiple(
-                list_cls=TransformationJobList, resource_cls=TransformationJob, ids=id, wrap_ids=True
-            ),
+        identifiers = IdentifierSequence.load(ids=id, external_ids=None).as_singleton()
+        return self._retrieve_multiple(
+            list_cls=TransformationJobList, resource_cls=TransformationJob, identifiers=identifiers
         )
 
     def list_metrics(self, id: int) -> TransformationJobMetricList:
@@ -122,14 +121,10 @@ class TransformationJobsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.transformations.jobs.retrieve_multiple(ids=[1, 2, 3])
         """
-        utils._auxiliary.assert_type(ids, "id", [List], allow_none=True)
-        return cast(
-            TransformationJobList,
-            self._retrieve_multiple(
-                list_cls=TransformationJobList,
-                resource_cls=TransformationJob,
-                ids=ids,
-                ignore_unknown_ids=ignore_unknown_ids,
-                wrap_ids=True,
-            ),
+        identifiers = IdentifierSequence.load(ids=ids, external_ids=None)
+        return self._retrieve_multiple(
+            list_cls=TransformationJobList,
+            resource_cls=TransformationJob,
+            identifiers=identifiers,
+            ignore_unknown_ids=ignore_unknown_ids,
         )

@@ -1,7 +1,7 @@
 import queue
 import threading
 from collections import OrderedDict
-from typing import Any, Dict, Iterator, List, Optional, Set, Union, cast
+from typing import Any, Dict, Iterator, List, Optional, Set, Union, cast, overload
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -16,6 +16,7 @@ from cognite.client.data_classes import (
     TimestampRange,
 )
 from cognite.client.exceptions import CogniteAPIError
+from cognite.client.utils._identifier import IdentifierSequence
 
 
 class AssetsAPI(APIClient):
@@ -147,13 +148,8 @@ class AssetsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.assets.retrieve(external_id="1")
         """
-        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
-        return cast(
-            Optional[Asset],
-            self._retrieve_multiple(
-                list_cls=AssetList, resource_cls=Asset, ids=id, external_ids=external_id, wrap_ids=True
-            ),
-        )
+        identifier = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
+        return self._retrieve_multiple(list_cls=AssetList, resource_cls=Asset, identifiers=identifier)
 
     def retrieve_multiple(
         self,
@@ -185,18 +181,9 @@ class AssetsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.assets.retrieve_multiple(external_ids=["abc", "def"], ignore_unknown_ids=True)
         """
-        utils._auxiliary.assert_type(ids, "id", [List], allow_none=True)
-        utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=True)
-        return cast(
-            AssetList,
-            self._retrieve_multiple(
-                list_cls=AssetList,
-                resource_cls=Asset,
-                ids=ids,
-                external_ids=external_ids,
-                ignore_unknown_ids=ignore_unknown_ids,
-                wrap_ids=True,
-            ),
+        identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
+        return self._retrieve_multiple(
+            list_cls=AssetList, resource_cls=Asset, identifiers=identifiers, ignore_unknown_ids=ignore_unknown_ids
         )
 
     def list(
@@ -335,6 +322,14 @@ class AssetsAPI(APIClient):
         """
         return self._aggregate(filter=filter, cls=AssetAggregate)
 
+    @overload
+    def create(self, asset: List[Asset]) -> AssetList:
+        ...
+
+    @overload
+    def create(self, asset: Asset) -> Asset:
+        ...
+
     def create(self, asset: Union[Asset, List[Asset]]) -> Union[Asset, AssetList]:
         """`Create one or more assets. <https://docs.cognite.com/api/v1/#operation/createAssets>`_
 
@@ -425,6 +420,14 @@ class AssetsAPI(APIClient):
             wrap_ids=True,
             extra_body_fields={"recursive": recursive, "ignoreUnknownIds": ignore_unknown_ids},
         )
+
+    @overload
+    def update(self, item: List[Union[Asset, AssetUpdate]]) -> AssetList:
+        ...
+
+    @overload
+    def update(self, item: Union[Asset, AssetUpdate]) -> Asset:
+        ...
 
     def update(self, item: Union[Asset, AssetUpdate, List[Union[Asset, AssetUpdate]]]) -> Union[Asset, AssetList]:
         """`Update one or more assets <https://docs.cognite.com/api/v1/#operation/updateAssets>`_

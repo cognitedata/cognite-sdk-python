@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, Dict, List, Optional, Union
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -12,6 +12,7 @@ from cognite.client.data_classes import (
     TimestampRange,
 )
 from cognite.client.data_classes.extractionpipelines import StringFilter
+from cognite.client.utils._identifier import IdentifierSequence
 
 
 class ExtractionPipelinesAPI(APIClient):
@@ -42,16 +43,9 @@ class ExtractionPipelinesAPI(APIClient):
                 >>> res = c.extraction_pipelines.retrieve(external_id="1")
         """
 
-        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
-        return cast(
-            Optional[ExtractionPipeline],
-            self._retrieve_multiple(
-                list_cls=ExtractionPipelineList,
-                resource_cls=ExtractionPipeline,
-                ids=id,
-                external_ids=external_id,
-                wrap_ids=True,
-            ),
+        identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
+        return self._retrieve_multiple(
+            list_cls=ExtractionPipelineList, resource_cls=ExtractionPipeline, identifiers=identifiers
         )
 
     def retrieve_multiple(
@@ -84,18 +78,12 @@ class ExtractionPipelinesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.extraction_pipelines.retrieve_multiple(external_ids=["abc", "def"], ignore_unknown_ids=True)
         """
-        utils._auxiliary.assert_type(ids, "id", [List], allow_none=True)
-        utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=True)
-        return cast(
-            ExtractionPipelineList,
-            self._retrieve_multiple(
-                list_cls=ExtractionPipelineList,
-                resource_cls=ExtractionPipeline,
-                ids=ids,
-                external_ids=external_ids,
-                ignore_unknown_ids=ignore_unknown_ids,
-                wrap_ids=True,
-            ),
+        identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
+        return self._retrieve_multiple(
+            list_cls=ExtractionPipelineList,
+            resource_cls=ExtractionPipeline,
+            identifiers=identifiers,
+            ignore_unknown_ids=ignore_unknown_ids,
         )
 
     def list(self, limit: int = 25) -> ExtractionPipelineList:

@@ -14,6 +14,7 @@ from cognite.client.data_classes import (
     SequenceUpdate,
 )
 from cognite.client.data_classes.shared import TimestampRange
+from cognite.client.utils._identifier import IdentifierSequence
 
 if TYPE_CHECKING:
     import pandas
@@ -127,13 +128,8 @@ class SequencesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.sequences.retrieve(external_id="1")
         """
-        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
-        return cast(
-            Optional[Sequence],
-            self._retrieve_multiple(
-                list_cls=SequenceList, resource_cls=Sequence, ids=id, external_ids=external_id, wrap_ids=True
-            ),
-        )
+        identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
+        return self._retrieve_multiple(list_cls=SequenceList, resource_cls=Sequence, identifiers=identifiers)
 
     def retrieve_multiple(
         self, ids: Optional[List[int]] = None, external_ids: Optional[List[str]] = None
@@ -161,14 +157,8 @@ class SequencesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.sequences.retrieve_multiple(external_ids=["abc", "def"])
         """
-        utils._auxiliary.assert_type(ids, "id", [List], allow_none=True)
-        utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=True)
-        return cast(
-            SequenceList,
-            self._retrieve_multiple(
-                list_cls=SequenceList, resource_cls=Sequence, ids=ids, external_ids=external_ids, wrap_ids=True
-            ),
-        )
+        identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
+        return self._retrieve_multiple(list_cls=SequenceList, resource_cls=Sequence, identifiers=identifiers)
 
     def list(
         self,
