@@ -417,5 +417,7 @@ class RelationshipsAPI(APIClient):
                 >>> c.relationships.delete(external_id=["a","b"])
         """
         self._delete_multiple(
-            external_ids=external_id, wrap_ids=True, extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids}
+            identifiers=IdentifierSequence.load(external_ids=external_id),
+            wrap_ids=True,
+            extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
         )

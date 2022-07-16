@@ -210,7 +210,9 @@ class TemplateGroupsAPI(APIClient):
                 >>> c.templates.groups.delete(external_ids=["a", "b"])
         """
         return self._delete_multiple(
-            wrap_ids=True, external_ids=external_ids, extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids}
+            wrap_ids=True,
+            identifiers=IdentifierSequence.load(external_ids=external_ids),
+            extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
         )
 
 
@@ -545,7 +547,7 @@ class TemplateInstancesAPI(APIClient):
         resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
         return self._delete_multiple(
             resource_path=resource_path,
-            external_ids=external_ids,
+            identifiers=IdentifierSequence.load(external_ids=external_ids),
             wrap_ids=True,
             extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
         )
@@ -714,7 +716,7 @@ class TemplateViewsAPI(APIClient):
         resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
         return self._delete_multiple(
             resource_path=resource_path,
-            external_ids=view_external_id,
+            identifiers=IdentifierSequence.load(external_ids=view_external_id),
             wrap_ids=True,
             extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
         )

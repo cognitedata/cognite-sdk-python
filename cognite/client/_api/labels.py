@@ -139,4 +139,4 @@ class LabelsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.labels.delete(external_id=["big_pump", "small_pump"])
         """
-        self._delete_multiple(external_ids=external_id, wrap_ids=True)
+        self._delete_multiple(identifiers=IdentifierSequence.load(external_ids=external_id), wrap_ids=True)

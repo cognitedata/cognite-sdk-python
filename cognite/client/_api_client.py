@@ -677,25 +677,25 @@ class APIClient:
 
     def _delete_multiple(
         self,
+        identifiers: IdentifierSequence,
         wrap_ids: bool,
         resource_path: Optional[str] = None,
-        ids: Optional[Union[List[int], int]] = None,
-        external_ids: Optional[Union[List[str], str]] = None,
         params: Optional[Dict[str, Any]] = None,
         headers: Optional[Dict[str, Any]] = None,
         extra_body_fields: Optional[Dict[str, Any]] = None,
     ) -> None:
         resource_path = resource_path or self._RESOURCE_PATH
-        all_ids = IdentifierSequence.load(ids, external_ids).as_objects()
-        id_chunks = utils._auxiliary.split_into_chunks(all_ids, self._DELETE_LIMIT)
         tasks = [
             {
                 "url_path": resource_path + "/delete",
-                "json": {"items": chunk, **(extra_body_fields or {})},
+                "json": {
+                    "items": chunk.as_objects() if wrap_ids else chunk.as_primitives(),
+                    **(extra_body_fields or {}),
+                },
                 "params": params,
                 "headers": headers,
             }
-            for chunk in id_chunks
+            for chunk in identifiers.chunked(self._DELETE_LIMIT)
         ]
         summary = utils._concurrency.execute_tasks_concurrently(self._post, tasks, max_workers=self._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks(

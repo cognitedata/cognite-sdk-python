@@ -153,7 +153,7 @@ class ExtractionPipelinesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.extraction_pipelines.delete(id=[1,2,3], external_id="3")
         """
-        self._delete_multiple(ids=id, external_ids=external_id, wrap_ids=True, extra_body_fields={})
+        self._delete_multiple(identifiers=IdentifierSequence.load(id, external_id), wrap_ids=True, extra_body_fields={})
 
     def update(
         self,

@@ -127,7 +127,7 @@ class AnnotationsAPI(APIClient):
         Args:
             id (Union[int, List[int]]): ID or list of IDs to be deleted
         """
-        self._delete_multiple(ids=id, wrap_ids=True)
+        self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=True)
 
     def retrieve_multiple(self, ids: List[int]) -> AnnotationList:
         """Retrieve annotations by IDs

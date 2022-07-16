@@ -97,7 +97,7 @@ class ServiceAccountsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.iam.service_accounts.delete(1)
         """
-        self._delete_multiple(ids=id, wrap_ids=False)
+        self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=False)
 
 
 class APIKeysAPI(APIClient):
@@ -170,7 +170,7 @@ class APIKeysAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.iam.api_keys.delete(1)
         """
-        self._delete_multiple(ids=id, wrap_ids=False)
+        self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=False)
 
 
 class GroupsAPI(APIClient):
@@ -234,7 +234,7 @@ class GroupsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.iam.groups.delete(1)
         """
-        self._delete_multiple(ids=id, wrap_ids=False)
+        self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=False)
 
     def list_service_accounts(self, id: int) -> ServiceAccountList:
         """`List service accounts in a group. <https://docs.cognite.com/api/v1/#operation/getMembersOfGroups>`_
@@ -367,7 +367,7 @@ class SecurityCategoriesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.iam.security_categories.delete(1)
         """
-        self._delete_multiple(ids=id, wrap_ids=False)
+        self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=False)
 
 
 class TokenAPI(APIClient):

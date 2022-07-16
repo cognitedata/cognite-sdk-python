@@ -328,7 +328,7 @@ class SequencesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.sequences.delete(id=[1,2,3], external_id="3")
         """
-        self._delete_multiple(wrap_ids=True, ids=id, external_ids=external_id)
+        self._delete_multiple(identifiers=IdentifierSequence.load(ids=id, external_ids=external_id), wrap_ids=True)
 
     def update(
         self, item: Union[Sequence, SequenceUpdate, List[Union[Sequence, SequenceUpdate]]]

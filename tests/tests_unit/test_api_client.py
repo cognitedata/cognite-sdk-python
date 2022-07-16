@@ -803,23 +803,31 @@ class TestStandardCreate:
 class TestStandardDelete:
     def test_standard_delete_multiple_ok(self, api_client_with_api_key, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH + "/delete", status=200, json={})
-        api_client_with_api_key._delete_multiple(resource_path=URL_PATH, wrap_ids=False, ids=[1, 2])
+        api_client_with_api_key._delete_multiple(
+            resource_path=URL_PATH, wrap_ids=False, identifiers=IdentifierSequence.of([1, 2])
+        )
         assert {"items": [1, 2]} == jsgz_load(rsps.calls[0].request.body)
 
     def test_standard_delete_multiple_ok__single_id(self, api_client_with_api_key, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH + "/delete", status=200, json={})
-        api_client_with_api_key._delete_multiple(resource_path=URL_PATH, wrap_ids=False, ids=1)
+        api_client_with_api_key._delete_multiple(
+            resource_path=URL_PATH, wrap_ids=False, identifiers=IdentifierSequence.of(1)
+        )
         assert {"items": [1]} == jsgz_load(rsps.calls[0].request.body)
 
     def test_standard_delete_multiple_ok__single_id_in_list(self, api_client_with_api_key, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH + "/delete", status=200, json={})
-        api_client_with_api_key._delete_multiple(resource_path=URL_PATH, wrap_ids=False, ids=[1])
+        api_client_with_api_key._delete_multiple(
+            resource_path=URL_PATH, wrap_ids=False, identifiers=IdentifierSequence.of([1])
+        )
         assert {"items": [1]} == jsgz_load(rsps.calls[0].request.body)
 
     def test_standard_delete_multiple_fail_4xx(self, api_client_with_api_key, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH + "/delete", status=400, json={"error": {"message": "Client Error"}})
         with pytest.raises(CogniteAPIError) as e:
-            api_client_with_api_key._delete_multiple(resource_path=URL_PATH, wrap_ids=False, ids=[1, 2])
+            api_client_with_api_key._delete_multiple(
+                resource_path=URL_PATH, wrap_ids=False, identifiers=IdentifierSequence.of([1, 2])
+            )
         assert 400 == e.value.code
         assert "Client Error" == e.value.message
         assert e.value.failed == [1, 2]
@@ -827,7 +835,9 @@ class TestStandardDelete:
     def test_standard_delete_multiple_fail_5xx(self, api_client_with_api_key, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH + "/delete", status=500, json={"error": {"message": "Server Error"}})
         with pytest.raises(CogniteAPIError) as e:
-            api_client_with_api_key._delete_multiple(resource_path=URL_PATH, wrap_ids=False, ids=[1, 2])
+            api_client_with_api_key._delete_multiple(
+                resource_path=URL_PATH, wrap_ids=False, identifiers=IdentifierSequence.of([1, 2])
+            )
         assert 500 == e.value.code
         assert "Server Error" == e.value.message
         assert e.value.unknown == [1, 2]
@@ -848,7 +858,9 @@ class TestStandardDelete:
         )
         with set_request_limit(api_client_with_api_key, 2):
             with pytest.raises(CogniteNotFoundError) as e:
-                api_client_with_api_key._delete_multiple(resource_path=URL_PATH, wrap_ids=False, ids=[1, 2, 3])
+                api_client_with_api_key._delete_multiple(
+                    resource_path=URL_PATH, wrap_ids=False, identifiers=IdentifierSequence.of([1, 2, 3])
+                )
 
         assert [{"id": 1}, {"id": 3}] == e.value.not_found
         assert [1, 2, 3] == e.value.failed
@@ -858,7 +870,9 @@ class TestStandardDelete:
         rsps.add(rsps.POST, BASE_URL + URL_PATH + "/delete", status=200, json={})
 
         with set_request_limit(api_client_with_api_key, 2):
-            api_client_with_api_key._delete_multiple(resource_path=URL_PATH, ids=[1, 2, 3, 4], wrap_ids=False)
+            api_client_with_api_key._delete_multiple(
+                resource_path=URL_PATH, identifiers=IdentifierSequence.of([1, 2, 3, 4]), wrap_ids=False
+            )
         assert {"items": [1, 2]} == jsgz_load(rsps.calls[0].request.body)
         assert {"items": [3, 4]} == jsgz_load(rsps.calls[1].request.body)
 

@@ -14,7 +14,7 @@ from cognite.client.data_classes import (
     ThreeDNode,
     ThreeDNodeList,
 )
-from cognite.client.utils._identifier import InternalId
+from cognite.client.utils._identifier import IdentifierSequence, InternalId
 
 
 class ThreeDAPI(APIClient):
@@ -198,7 +198,7 @@ class ThreeDModelsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.three_d.models.delete(id=1)
         """
-        self._delete_multiple(ids=id, wrap_ids=True)
+        self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=True)
 
 
 class ThreeDRevisionsAPI(APIClient):
@@ -376,7 +376,7 @@ class ThreeDRevisionsAPI(APIClient):
         """
         self._delete_multiple(
             resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
-            ids=id,
+            identifiers=IdentifierSequence.load(ids=id),
             wrap_ids=True,
         )
 

@@ -86,7 +86,7 @@ class GeospatialAPI(APIClient):
         """
         extra_body_fields = {"recursive": True} if recursive else {}
         return self._delete_multiple(
-            external_ids=external_id,
+            identifiers=IdentifierSequence.load(external_ids=external_id),
             wrap_ids=True,
             resource_path=f"{self._RESOURCE_PATH}/featuretypes",
             extra_body_fields=extra_body_fields,
@@ -346,7 +346,9 @@ class GeospatialAPI(APIClient):
                 ... )
         """
         resource_path = self._feature_resource_path(feature_type_external_id)
-        self._delete_multiple(external_ids=external_id, wrap_ids=True, resource_path=resource_path)
+        self._delete_multiple(
+            identifiers=IdentifierSequence.load(external_ids=external_id), resource_path=resource_path, wrap_ids=True
+        )
 
     @overload
     def retrieve_features(
