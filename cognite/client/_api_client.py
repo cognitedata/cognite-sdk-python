@@ -23,6 +23,7 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    overload,
 )
 from urllib.parse import urljoin
 
@@ -35,12 +36,12 @@ from cognite.client._http_client import GLOBAL_REQUEST_SESSION, HTTPClient, HTTP
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteResource,
-    CogniteResourceList,
     CogniteUpdate,
     T_CogniteResource,
     T_CogniteResourceList,
 )
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
+from cognite.client.utils._identifier import Identifier, IdentifierSequence, SingletonIdentifierSequence
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -255,7 +256,7 @@ class APIClient:
 
     def _retrieve(
         self,
-        id: Union[int, str],
+        identifier: Identifier,
         cls: Type[T_CogniteResource],
         resource_path: str = None,
         params: Dict = None,
@@ -264,7 +265,9 @@ class APIClient:
         resource_path = resource_path or self._RESOURCE_PATH
         try:
             res = self._get(
-                url_path=utils._auxiliary.interpolate_and_url_encode(resource_path + "/{}", str(id)),
+                url_path=utils._auxiliary.interpolate_and_url_encode(
+                    resource_path + "/{}", str(identifier.as_primitive())
+                ),
                 params=params,
                 headers=headers,
             )
@@ -274,30 +277,59 @@ class APIClient:
                 raise
         return None
 
+    @overload
     def _retrieve_multiple(
         self,
-        wrap_ids: bool,
         list_cls: Type[T_CogniteResourceList],
         resource_cls: Type[T_CogniteResource],
+        identifiers: SingletonIdentifierSequence,
+        wrap_ids: bool,
         resource_path: Optional[str] = None,
-        ids: Optional[Union[List[int], int]] = None,
-        external_ids: Optional[Union[List[str], str]] = None,
         ignore_unknown_ids: Optional[bool] = None,
         headers: Optional[Dict[str, Any]] = None,
         other_params: Optional[Dict[str, Any]] = None,
-    ) -> Optional[Union[T_CogniteResourceList, T_CogniteResource]]:
+    ) -> Optional[T_CogniteResource]:
+        ...
+
+    @overload
+    def _retrieve_multiple(
+        self,
+        list_cls: Type[T_CogniteResourceList],
+        resource_cls: Type[T_CogniteResource],
+        identifiers: IdentifierSequence,
+        wrap_ids: bool,
+        resource_path: Optional[str] = None,
+        ignore_unknown_ids: Optional[bool] = None,
+        headers: Optional[Dict[str, Any]] = None,
+        other_params: Optional[Dict[str, Any]] = None,
+    ) -> T_CogniteResourceList:
+        ...
+
+    def _retrieve_multiple(
+        self,
+        list_cls: Type[T_CogniteResourceList],
+        resource_cls: Type[T_CogniteResource],
+        identifiers: Union[SingletonIdentifierSequence, IdentifierSequence],
+        wrap_ids: bool,
+        resource_path: Optional[str] = None,
+        ignore_unknown_ids: Optional[bool] = None,
+        headers: Optional[Dict[str, Any]] = None,
+        other_params: Optional[Dict[str, Any]] = None,
+    ) -> Union[T_CogniteResourceList, Optional[T_CogniteResource]]:
         resource_path = resource_path or self._RESOURCE_PATH
-        all_ids = self._process_ids(ids, external_ids, wrap_ids=wrap_ids)
-        id_chunks = utils._auxiliary.split_into_chunks(all_ids, self._RETRIEVE_LIMIT)
 
         ignore_unknown_obj = {} if ignore_unknown_ids is None else {"ignoreUnknownIds": ignore_unknown_ids}
         tasks: List[Dict[str, Union[str, Dict[str, Any], None]]] = [
             {
                 "url_path": resource_path + "/byids",
-                "json": {"items": id_chunk, **ignore_unknown_obj, **(other_params or {})},
+                "json": {
+                    "items": id_chunk.as_objects() if wrap_ids else id_chunk.as_primitives(),
+                    **ignore_unknown_obj,
+                    **(other_params or {}),
+                },
                 "headers": headers,
             }
-            for id_chunk in id_chunks
+            for id_chunk in identifiers.chunked(self._RETRIEVE_LIMIT)
         ]
         tasks_summary = utils._concurrency.execute_tasks_concurrently(
             self._post, tasks, max_workers=self._config.max_workers
@@ -307,13 +339,13 @@ class APIClient:
             try:
                 utils._concurrency.collect_exc_info_and_raise(tasks_summary.exceptions)
             except CogniteNotFoundError:
-                if self._is_single_identifier(ids, external_ids):
+                if identifiers.is_singleton():
                     return None
                 raise
 
         retrieved_items = tasks_summary.joined_results(lambda res: res.json()["items"])
 
-        if self._is_single_identifier(ids, external_ids):
+        if identifiers.is_singleton():
             return resource_cls._load(retrieved_items[0], cognite_client=self._cognite_client)
         return list_cls._load(retrieved_items, cognite_client=self._cognite_client)
 
@@ -561,6 +593,34 @@ class APIClient:
             body["fields"] = fields
         res = self._post(url_path=resource_path + "/aggregate", json=body, headers=headers)
         return [cls(**agg) for agg in res.json()["items"]]
+
+    @overload
+    def _create_multiple(
+        self,
+        items: Union[Sequence[T_CogniteResource], Sequence[Dict[str, Any]]],
+        list_cls: Type[T_CogniteResourceList],
+        resource_cls: Type[T_CogniteResource],
+        resource_path: Optional[str] = None,
+        params: Optional[Dict] = None,
+        headers: Optional[Dict] = None,
+        extra_body_fields: Optional[Dict] = None,
+        limit: Optional[int] = None,
+    ) -> T_CogniteResourceList:
+        ...
+
+    @overload
+    def _create_multiple(
+        self,
+        items: Union[T_CogniteResource, Dict[str, Any]],
+        list_cls: Type[T_CogniteResourceList],
+        resource_cls: Type[T_CogniteResource],
+        resource_path: Optional[str] = None,
+        params: Optional[Dict] = None,
+        headers: Optional[Dict] = None,
+        extra_body_fields: Optional[Dict] = None,
+        limit: Optional[int] = None,
+    ) -> T_CogniteResource:
+        ...
 
     def _create_multiple(
         self,
