@@ -14,6 +14,14 @@ class AnnotationsAPI(APIClient):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
+    @overload
+    def create(self, annotations: Annotation) -> Annotation:
+        ...
+
+    @overload
+    def create(self, annotations: List[Annotation]) -> AnnotationList:
+        ...
+
     def create(self, annotations: Union[Annotation, List[Annotation]]) -> Union[Annotation, AnnotationList]:
         """Create annotations
 
@@ -108,6 +116,14 @@ class AnnotationsAPI(APIClient):
         for attr in update_attributes:
             getattr(annotation_update, attr).set(getattr(annotation, attr))
         return annotation_update.dump()
+
+    @overload
+    def update(self, item: Union[Annotation, AnnotationUpdate]) -> Annotation:
+        ...
+
+    @overload
+    def update(self, item: List[Union[Annotation, AnnotationUpdate]]) -> AnnotationList:
+        ...
 
     def update(
         self, item: Union[Annotation, AnnotationUpdate, List[Union[Annotation, AnnotationUpdate]]]

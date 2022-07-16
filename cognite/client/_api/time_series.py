@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterator, List, Optional, Union, cast
+from typing import Any, Dict, Iterator, List, Optional, Union, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import (
@@ -287,6 +287,14 @@ class TimeSeriesAPI(APIClient):
 
         return self._aggregate(filter=filter, cls=TimeSeriesAggregate)
 
+    @overload
+    def create(self, time_series: List[TimeSeries]) -> TimeSeriesList:
+        ...
+
+    @overload
+    def create(self, time_series: TimeSeries) -> TimeSeries:
+        ...
+
     def create(self, time_series: Union[TimeSeries, List[TimeSeries]]) -> Union[TimeSeries, TimeSeriesList]:
         """`Create one or more time series. <https://docs.cognite.com/api/v1/#operation/postTimeSeries>`_
 
@@ -336,6 +344,14 @@ class TimeSeriesAPI(APIClient):
             wrap_ids=True,
             extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
         )
+
+    @overload
+    def update(self, item: List[Union[TimeSeries, TimeSeriesUpdate]]) -> TimeSeriesList:
+        ...
+
+    @overload
+    def update(self, item: Union[TimeSeries, TimeSeriesUpdate]) -> TimeSeries:
+        ...
 
     def update(
         self, item: Union[TimeSeries, TimeSeriesUpdate, List[Union[TimeSeries, TimeSeriesUpdate]]]

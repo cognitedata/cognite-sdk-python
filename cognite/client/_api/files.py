@@ -1,7 +1,7 @@
 import copy
 import os
 from pathlib import Path
-from typing import Any, BinaryIO, Dict, Iterator, List, Optional, TextIO, Tuple, Union, cast
+from typing import Any, BinaryIO, Dict, Iterator, List, Optional, TextIO, Tuple, Union, cast, overload
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -384,6 +384,14 @@ class FilesAPI(APIClient):
                 >>> c.files.delete(id=[1,2,3], external_id="3")
         """
         self._delete_multiple(identifiers=IdentifierSequence.load(ids=id, external_ids=external_id), wrap_ids=True)
+
+    @overload
+    def update(self, item: Union[FileMetadata, FileMetadataUpdate]) -> FileMetadata:
+        ...
+
+    @overload
+    def update(self, item: List[Union[FileMetadata, FileMetadataUpdate]]) -> FileMetadataList:
+        ...
 
     def update(
         self, item: Union[FileMetadata, FileMetadataUpdate, List[Union[FileMetadata, FileMetadataUpdate]]]

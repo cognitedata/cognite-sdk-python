@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterator, List, Optional, Union, cast
+from typing import Any, Dict, Iterator, List, Optional, Union, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import (
@@ -331,6 +331,14 @@ class EventsAPI(APIClient):
 
         return self._aggregate(filter=filter, fields=fields, aggregate="uniqueValues", cls=AggregateUniqueValuesResult)
 
+    @overload
+    def create(self, event: List[Event]) -> EventList:
+        ...
+
+    @overload
+    def create(self, event: Event) -> Event:
+        ...
+
     def create(self, event: Union[Event, List[Event]]) -> Union[Event, EventList]:
         """`Create one or more events. <https://docs.cognite.com/api/v1/#operation/createEvents>`_
 
@@ -380,6 +388,14 @@ class EventsAPI(APIClient):
             wrap_ids=True,
             extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
         )
+
+    @overload
+    def update(self, item: List[Union[Event, EventUpdate]]) -> EventList:
+        ...
+
+    @overload
+    def update(self, item: Union[Event, EventUpdate]) -> Event:
+        ...
 
     def update(self, item: Union[Event, EventUpdate, List[Union[Event, EventUpdate]]]) -> Union[Event, EventList]:
         """`Update one or more events <https://docs.cognite.com/api/v1/#operation/updateEvents>`_

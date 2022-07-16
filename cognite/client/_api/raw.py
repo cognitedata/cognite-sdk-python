@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union, cast, overload
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -38,6 +38,14 @@ class RawDatabasesAPI(APIClient):
 
     def __iter__(self) -> Iterator[Database]:
         return cast(Iterator[Database], self.__call__())
+
+    @overload
+    def create(self, name: str) -> Database:
+        ...
+
+    @overload
+    def create(self, name: List[str]) -> DatabaseList:
+        ...
 
     def create(self, name: Union[str, List[str]]) -> Union[Database, DatabaseList]:
         """`Create one or more databases. <https://docs.cognite.com/api/v1/#operation/createDBs>`_
@@ -154,6 +162,14 @@ class RawTablesAPI(APIClient):
             limit=limit,
         ):
             yield self._set_db_name_on_tables(tb, db_name)
+
+    @overload
+    def create(self, db_name: str, name: str) -> Table:
+        ...
+
+    @overload
+    def create(self, db_name: str, name: List[str]) -> TableList:
+        ...
 
     def create(self, db_name: str, name: Union[str, List[str]]) -> Union[Table, TableList]:
         """`Create one or more tables. <https://docs.cognite.com/api/v1/#operation/createTables>`_
