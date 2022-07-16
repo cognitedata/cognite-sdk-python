@@ -123,5 +123,4 @@ class IdentifierSequence:
 
 
 class SingletonIdentifierSequence(IdentifierSequence):
-    def as_identifier(self) -> Identifier:
-        return self._identifiers[0]
+    ...
