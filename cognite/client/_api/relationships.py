@@ -92,7 +92,7 @@ class RelationshipsAPI(APIClient):
         """
         data_set_ids_processed = None
         if data_set_ids or data_set_external_ids:
-            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_objects()
+            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
 
         filter = self._create_filter(
             source_external_ids=source_external_ids,
@@ -254,7 +254,7 @@ class RelationshipsAPI(APIClient):
         """
         data_set_ids_processed = None
         if data_set_ids or data_set_external_ids:
-            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_objects()
+            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
 
         filter = self._create_filter(
             source_external_ids=source_external_ids,

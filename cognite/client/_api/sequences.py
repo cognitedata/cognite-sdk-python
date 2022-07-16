@@ -67,11 +67,11 @@ class SequencesAPI(APIClient):
         if asset_subtree_ids or asset_subtree_external_ids:
             asset_subtree_ids_processed = IdentifierSequence.load(
                 asset_subtree_ids, asset_subtree_external_ids
-            ).as_objects()
+            ).as_dicts()
 
         data_set_ids_processed = None
         if data_set_ids or data_set_external_ids:
-            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_objects()
+            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
 
         filter = SequenceFilter(
             name=name,
@@ -219,11 +219,11 @@ class SequencesAPI(APIClient):
         if asset_subtree_ids or asset_subtree_external_ids:
             asset_subtree_ids_processed = IdentifierSequence.load(
                 asset_subtree_ids, asset_subtree_external_ids
-            ).as_objects()
+            ).as_dicts()
 
         data_set_ids_processed = None
         if data_set_ids or data_set_external_ids:
-            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_objects()
+            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
 
         filter = SequenceFilter(
             name=name,
@@ -531,7 +531,7 @@ class SequencesDataAPI(APIClient):
         else:
             raise ValueError("Invalid format for 'rows', expected a list of tuples, list of dict or dict")
 
-        base_obj = Identifier.of_either(id, external_id).as_object()
+        base_obj = Identifier.of_either(id, external_id).as_dict()
         base_obj.update(self._process_columns(column_external_ids))
         row_objs = [
             {"rows": all_rows[i : i + self._SEQ_POST_LIMIT]} for i in range(0, len(all_rows), self._SEQ_POST_LIMIT)
@@ -589,7 +589,7 @@ class SequencesDataAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.sequences.data.delete(id=0, rows=[1,2,42])
         """
-        post_obj = Identifier.of_either(id, external_id).as_object()
+        post_obj = Identifier.of_either(id, external_id).as_dict()
         post_obj["rows"] = rows
 
         self._post(url_path=self._DATA_PATH + "/delete", json={"items": [post_obj]})
@@ -615,7 +615,7 @@ class SequencesDataAPI(APIClient):
         """
         sequence = self._sequences_api.retrieve(id=id, external_id=external_id)
         assert sequence is not None
-        post_obj = Identifier.of_either(id, external_id).as_object()
+        post_obj = Identifier.of_either(id, external_id).as_dict()
         post_obj.update(self._process_columns(column_external_ids=[sequence.column_external_ids[0]]))
         post_obj.update({"start": start, "end": end})
         for data, _ in self._fetch_data(post_obj):
@@ -656,7 +656,7 @@ class SequencesDataAPI(APIClient):
                 >>> col = res.get_column(external_id='columnExtId') # ... get the array of values for a specific column,
                 >>> df = res.to_pandas() # ... or convert the result to a dataframe
         """
-        post_objs = IdentifierSequence.load(id, external_id).as_objects()
+        post_objs = IdentifierSequence.load(id, external_id).as_dicts()
 
         def _fetch_sequence(post_obj: Dict[str, Any]) -> SequenceData:
             post_obj.update(self._process_columns(column_external_ids=column_external_ids))

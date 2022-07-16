@@ -21,7 +21,7 @@ class TestIdentifierSequence:
     def test_load_and_dump(self, ids, external_ids, wrap_ids, expected) -> None:
         identifiers = IdentifierSequence.load(ids, external_ids)
         if wrap_ids:
-            assert identifiers.as_objects() == expected
+            assert identifiers.as_dicts() == expected
         else:
             assert identifiers.as_primitives() == expected
 

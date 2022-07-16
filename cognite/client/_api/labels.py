@@ -29,7 +29,7 @@ class LabelsAPI(APIClient):
     ) -> Union[Iterator[LabelDefinition], Iterator[LabelDefinitionList]]:
         data_set_ids_processed = None
         if data_set_ids or data_set_external_ids:
-            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_objects()
+            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
         filter = LabelDefinitionFilter(
             name=name, external_id_prefix=external_id_prefix, data_set_ids=data_set_ids_processed
         ).dump(camel_case=True)
@@ -86,7 +86,7 @@ class LabelsAPI(APIClient):
         """
         data_set_ids_processed = None
         if data_set_ids or data_set_external_ids:
-            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_objects()
+            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
         filter = LabelDefinitionFilter(
             name=name, external_id_prefix=external_id_prefix, data_set_ids=data_set_ids_processed
         ).dump(camel_case=True)

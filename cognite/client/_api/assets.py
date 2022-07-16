@@ -79,11 +79,11 @@ class AssetsAPI(APIClient):
         if asset_subtree_ids or asset_subtree_external_ids:
             asset_subtree_ids_processed = IdentifierSequence.load(
                 asset_subtree_ids, asset_subtree_external_ids
-            ).as_objects()
+            ).as_dicts()
 
         data_set_ids_processed = None
         if data_set_ids or data_set_external_ids:
-            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_objects()
+            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
 
         filter = AssetFilter(
             name=name,
@@ -268,11 +268,11 @@ class AssetsAPI(APIClient):
         if asset_subtree_ids or asset_subtree_external_ids:
             asset_subtree_ids_processed = IdentifierSequence.load(
                 asset_subtree_ids, asset_subtree_external_ids
-            ).as_objects()
+            ).as_dicts()
 
         data_set_ids_processed = None
         if data_set_ids or data_set_external_ids:
-            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_objects()
+            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
 
         filter = AssetFilter(
             name=name,

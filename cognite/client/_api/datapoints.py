@@ -159,7 +159,7 @@ class DatapointsAPI(APIClient):
         """
         before = cognite.client.utils._time.timestamp_to_ms(before) if before else None
         id_seq = IdentifierSequence.load(id, external_id)
-        all_ids = id_seq.as_objects()
+        all_ids = id_seq.as_dicts()
         if before:
             for id_ in all_ids:
                 id_.update({"before": before})
@@ -273,7 +273,7 @@ class DatapointsAPI(APIClient):
                 >>> data = c.datapoints.retrieve(external_id="abc",start=datetime(2018,1,1),end=datetime(2018,2,2))
                 >>> c.datapoints.insert(data, external_id="def")
         """
-        post_dps_object = Identifier.of_either(id, external_id).as_object()
+        post_dps_object = Identifier.of_either(id, external_id).as_dict()
         if isinstance(datapoints, Datapoints):
             datapoints = [(t, v) for t, v in zip(datapoints.timestamp, datapoints.value)]
         post_dps_object.update({"datapoints": datapoints})
@@ -350,7 +350,7 @@ class DatapointsAPI(APIClient):
         end = utils._time.timestamp_to_ms(end)
         assert end > start, "end must be larger than start"
 
-        delete_dps_object = Identifier.of_either(id, external_id).as_object()
+        delete_dps_object = Identifier.of_either(id, external_id).as_dict()
         delete_dps_object.update({"inclusiveBegin": start, "exclusiveEnd": end})
         self._delete_datapoints_ranges([delete_dps_object])
 
@@ -382,7 +382,7 @@ class DatapointsAPI(APIClient):
                     )
             id = range.get("id")
             external_id = range.get("externalId")
-            valid_range = Identifier.of_either(id, external_id).as_object()
+            valid_range = Identifier.of_either(id, external_id).as_dict()
             start = utils._time.timestamp_to_ms(range["start"])
             end = utils._time.timestamp_to_ms(range["end"])
             valid_range.update({"inclusiveBegin": start, "exclusiveEnd": end})

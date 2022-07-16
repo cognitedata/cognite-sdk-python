@@ -319,7 +319,7 @@ class APIClient:
             {
                 "url_path": resource_path + "/byids",
                 "json": {
-                    "items": id_chunk.as_objects(),
+                    "items": id_chunk.as_dicts(),
                     **ignore_unknown_obj,
                     **(other_params or {}),
                 },
@@ -689,7 +689,7 @@ class APIClient:
             {
                 "url_path": resource_path + "/delete",
                 "json": {
-                    "items": chunk.as_objects() if wrap_ids else chunk.as_primitives(),
+                    "items": chunk.as_dicts() if wrap_ids else chunk.as_primitives(),
                     **(extra_body_fields or {}),
                 },
                 "params": params,

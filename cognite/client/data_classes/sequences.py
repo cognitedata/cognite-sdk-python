@@ -72,7 +72,7 @@ class Sequence(CogniteResource):
         Returns:
             List of sequence data.
         """
-        identifier = Identifier.load(self.id, self.external_id).as_object()
+        identifier = Identifier.load(self.id, self.external_id).as_dict()
         return self._cognite_client.sequences.data.retrieve(**identifier, start=start, end=end)
 
     @property

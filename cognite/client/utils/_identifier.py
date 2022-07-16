@@ -25,7 +25,7 @@ class Identifier(Generic[T_ID]):
     def as_primitive(self) -> T_ID:
         return self.__value
 
-    def as_object(self) -> Dict[str, T_ID]:
+    def as_dict(self) -> Dict[str, T_ID]:
         if isinstance(self.__value, str):
             return {"externalId": self.__value}
         else:
@@ -70,8 +70,8 @@ class IdentifierSequence:
             for i in range(0, len(self), chunk_size)
         ]
 
-    def as_objects(self) -> List[Dict[str, Union[int, str]]]:
-        return [identifier.as_object() for identifier in self._identifiers]
+    def as_dicts(self) -> List[Dict[str, Union[int, str]]]:
+        return [identifier.as_dict() for identifier in self._identifiers]
 
     def as_primitives(self) -> List[Union[int, str]]:
         return [identifier.as_primitive() for identifier in self._identifiers]

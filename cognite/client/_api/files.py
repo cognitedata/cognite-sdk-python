@@ -84,11 +84,11 @@ class FilesAPI(APIClient):
         if asset_subtree_ids or asset_subtree_external_ids:
             asset_subtree_ids_processed = IdentifierSequence.load(
                 asset_subtree_ids, asset_subtree_external_ids
-            ).as_objects()
+            ).as_dicts()
 
         data_set_ids_processed = None
         if data_set_ids or data_set_external_ids:
-            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_objects()
+            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
 
         filter = FileMetadataFilter(
             name=name,
@@ -314,11 +314,11 @@ class FilesAPI(APIClient):
         if asset_subtree_ids or asset_subtree_external_ids:
             asset_subtree_ids_processed = IdentifierSequence.load(
                 asset_subtree_ids, asset_subtree_external_ids
-            ).as_objects()
+            ).as_dicts()
 
         data_set_ids_processed = None
         if data_set_ids or data_set_external_ids:
-            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_objects()
+            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
 
         filter = FileMetadataFilter(
             name=name,
@@ -703,7 +703,7 @@ class FilesAPI(APIClient):
             Dict[Union[str, int], str]: Dictionary containing download urls.
         """
         batch_size = 100
-        id_batches = [seq.as_objects() for seq in IdentifierSequence.load(id, external_id).chunked(batch_size)]
+        id_batches = [seq.as_dicts() for seq in IdentifierSequence.load(id, external_id).chunked(batch_size)]
         tasks = [dict(url_path="/files/downloadlink", json={"items": id_batch}) for id_batch in id_batches]
         tasks_summary = utils._concurrency.execute_tasks_concurrently(
             self._post, tasks, max_workers=self._config.max_workers
@@ -739,7 +739,7 @@ class FilesAPI(APIClient):
         """
         if isinstance(directory, str):
             directory = Path(directory)
-        all_ids = IdentifierSequence.load(id, external_id).as_objects()
+        all_ids = IdentifierSequence.load(id, external_id).as_dicts()
         id_to_metadata = self._get_id_to_metadata_map(all_ids)
         assert directory.is_dir(), "{} is not a directory".format(directory)
         self._download_files_to_directory(directory, all_ids, id_to_metadata)
@@ -822,7 +822,7 @@ class FilesAPI(APIClient):
         if isinstance(path, str):
             path = Path(path)
         assert path.parent.is_dir(), "{} is not a directory".format(path.parent)
-        identifier = Identifier.of_either(id, external_id).as_object()
+        identifier = Identifier.of_either(id, external_id).as_dict()
         download_link = self._get_download_link(identifier)
         self._download_file_to_path(download_link, path)
 
@@ -841,7 +841,7 @@ class FilesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> file_content = c.files.download_bytes(id=1)
         """
-        identifier = Identifier.of_either(id, external_id).as_object()
+        identifier = Identifier.of_either(id, external_id).as_dict()
         download_link = self._get_download_link(identifier)
         return self._download_file(download_link)
 
