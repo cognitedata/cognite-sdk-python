@@ -17,7 +17,7 @@ from cognite.client.data_classes import (
     LabelFilter,
     TimestampRange,
 )
-from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils._identifier import Identifier, IdentifierSequence
 
 
 class FilesAPI(APIClient):
@@ -82,14 +82,13 @@ class FilesAPI(APIClient):
         """
         asset_subtree_ids_processed = None
         if asset_subtree_ids or asset_subtree_external_ids:
-            asset_subtree_ids_processed = cast(
-                List[Dict[str, Any]], self._process_ids(asset_subtree_ids, asset_subtree_external_ids, wrap_ids=True)
-            )
+            asset_subtree_ids_processed = IdentifierSequence.load(
+                asset_subtree_ids, asset_subtree_external_ids
+            ).as_objects()
+
         data_set_ids_processed = None
         if data_set_ids or data_set_external_ids:
-            data_set_ids_processed = cast(
-                List[Dict[str, Any]], self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
-            )
+            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_objects()
 
         filter = FileMetadataFilter(
             name=name,
@@ -313,14 +312,13 @@ class FilesAPI(APIClient):
         """
         asset_subtree_ids_processed = None
         if asset_subtree_ids or asset_subtree_external_ids:
-            asset_subtree_ids_processed = cast(
-                List[Dict[str, Any]], self._process_ids(asset_subtree_ids, asset_subtree_external_ids, wrap_ids=True)
-            )
+            asset_subtree_ids_processed = IdentifierSequence.load(
+                asset_subtree_ids, asset_subtree_external_ids
+            ).as_objects()
+
         data_set_ids_processed = None
         if data_set_ids or data_set_external_ids:
-            data_set_ids_processed = cast(
-                List[Dict[str, Any]], self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
-            )
+            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_objects()
 
         filter = FileMetadataFilter(
             name=name,
@@ -697,9 +695,8 @@ class FilesAPI(APIClient):
             Dict[Union[str, int], str]: Dictionary containing download urls.
         """
         batch_size = 100
-        identifiers = self._process_ids(id, external_id, wrap_ids=True)
-        identifier_batches = [identifiers[n : n + batch_size] for n in range(0, len(identifiers), batch_size)]
-        tasks = [dict(url_path="/files/downloadlink", json={"items": id_batch}) for id_batch in identifier_batches]
+        id_batches = [seq.as_objects() for seq in IdentifierSequence.load(id, external_id).chunked(batch_size)]
+        tasks = [dict(url_path="/files/downloadlink", json={"items": id_batch}) for id_batch in id_batches]
         tasks_summary = utils._concurrency.execute_tasks_concurrently(
             self._post, tasks, max_workers=self._config.max_workers
         )
@@ -734,7 +731,7 @@ class FilesAPI(APIClient):
         """
         if isinstance(directory, str):
             directory = Path(directory)
-        all_ids = cast(List[Dict[str, Any]], self._process_ids(ids=id, external_ids=external_id, wrap_ids=True))
+        all_ids = IdentifierSequence.load(id, external_id).as_objects()
         id_to_metadata = self._get_id_to_metadata_map(all_ids)
         assert directory.is_dir(), "{} is not a directory".format(directory)
         self._download_files_to_directory(directory, all_ids, id_to_metadata)
@@ -818,9 +815,7 @@ class FilesAPI(APIClient):
             path = Path(path)
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
         assert path.parent.is_dir(), "{} is not a directory".format(path.parent)
-        identifier = cast(
-            Dict[str, Union[int, str]], self._process_ids(ids=id, external_ids=external_id, wrap_ids=True)[0]
-        )
+        identifier = Identifier.of_either(id, external_id).as_object()
         download_link = self._get_download_link(identifier)
         self._download_file_to_path(download_link, path)
 
@@ -840,9 +835,7 @@ class FilesAPI(APIClient):
                 >>> file_content = c.files.download_bytes(id=1)
         """
         utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
-        identifier = cast(
-            Dict[str, Union[int, str]], self._process_ids(ids=id, external_ids=external_id, wrap_ids=True)[0]
-        )
+        identifier = Identifier.of_either(id, external_id).as_object()
         download_link = self._get_download_link(identifier)
         return self._download_file(download_link)
 

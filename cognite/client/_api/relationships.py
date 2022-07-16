@@ -92,9 +92,7 @@ class RelationshipsAPI(APIClient):
         """
         data_set_ids_processed = None
         if data_set_ids or data_set_external_ids:
-            data_set_ids_processed = cast(
-                List[Dict[str, Any]], self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
-            )
+            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_objects()
 
         filter = self._create_filter(
             source_external_ids=source_external_ids,
@@ -254,12 +252,9 @@ class RelationshipsAPI(APIClient):
                 >>> for relationship in c.relationships:
                 ...     relationship # do something with the relationship
         """
-
         data_set_ids_processed = None
         if data_set_ids or data_set_external_ids:
-            data_set_ids_processed = cast(
-                List[Dict[str, Any]], self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
-            )
+            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_objects()
 
         filter = self._create_filter(
             source_external_ids=source_external_ids,

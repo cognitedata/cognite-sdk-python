@@ -1112,44 +1112,6 @@ class TestStandardSearch:
 
 class TestHelpers:
     @pytest.mark.parametrize(
-        "ids, external_ids, wrap_ids, expected",
-        [
-            (1, None, False, [1]),
-            ([1, 2], None, False, [1, 2]),
-            (1, None, True, [{"id": 1}]),
-            ([1, 2], None, True, [{"id": 1}, {"id": 2}]),
-            (1, "1", True, [{"id": 1}, {"externalId": "1"}]),
-            (1, ["1"], True, [{"id": 1}, {"externalId": "1"}]),
-            ([1, 2], ["1"], True, [{"id": 1}, {"id": 2}, {"externalId": "1"}]),
-            (None, "1", True, [{"externalId": "1"}]),
-            (None, ["1", "2"], True, [{"externalId": "1"}, {"externalId": "2"}]),
-        ],
-    )
-    def test_process_ids(self, api_client_with_api_key, ids, external_ids, wrap_ids, expected):
-        assert expected == api_client_with_api_key._process_ids(ids, external_ids, wrap_ids)
-
-    @pytest.mark.parametrize(
-        "ids, external_ids, wrap_ids, exception, match",
-        [
-            (None, None, False, ValueError, "No ids specified"),
-            (None, ["1", "2"], False, ValueError, "externalIds must be wrapped"),
-            ([1], ["1"], False, ValueError, "externalIds must be wrapped"),
-            ("1", None, False, TypeError, "must be int or list of int"),
-            (1, 1, True, TypeError, "must be str or list of str"),
-        ],
-    )
-    def test_process_ids_fail(self, api_client_with_api_key, ids, external_ids, wrap_ids, exception, match):
-        with pytest.raises(exception, match=match):
-            api_client_with_api_key._process_ids(ids, external_ids, wrap_ids)
-
-    @pytest.mark.parametrize(
-        "id, external_id, expected",
-        [(1, None, True), (None, "1", True), (None, None, False), ([1], None, False), (None, ["1"], False)],
-    )
-    def test_is_single_identifier(self, api_client_with_api_key, id, external_id, expected):
-        assert expected == api_client_with_api_key._is_single_identifier(id, external_id)
-
-    @pytest.mark.parametrize(
         "method, path, expected",
         [
             ("GET", "https://api.cognitedata.com/login/status", True),

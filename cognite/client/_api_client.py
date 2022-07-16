@@ -1,7 +1,6 @@
 import gzip
 import json as _json
 import logging
-import numbers
 import os
 import re
 from collections import UserList
@@ -687,7 +686,7 @@ class APIClient:
         extra_body_fields: Optional[Dict[str, Any]] = None,
     ) -> None:
         resource_path = resource_path or self._RESOURCE_PATH
-        all_ids = self._process_ids(ids, external_ids, wrap_ids)
+        all_ids = IdentifierSequence.load(ids, external_ids).as_objects()
         id_chunks = utils._auxiliary.split_into_chunks(all_ids, self._DELETE_LIMIT)
         tasks = [
             {
@@ -794,47 +793,6 @@ class APIClient:
             if utils._auxiliary.to_snake_case(key) in update_attributes:
                 patch_object["update"][key] = {"set": value}
         return patch_object
-
-    @staticmethod
-    def _process_ids(
-        ids: Union[List[int], int, None], external_ids: Union[List[str], str, None], wrap_ids: bool
-    ) -> Union[List[Union[Dict[str, int], Dict[str, str]]], List[Union[int, str]]]:
-        if external_ids is None and ids is None:
-            raise ValueError("No ids specified")
-        if external_ids and not wrap_ids:
-            raise ValueError("externalIds must be wrapped")
-
-        if isinstance(ids, numbers.Integral):
-            id_list = [ids]
-        elif isinstance(ids, list) or ids is None:
-            id_list = ids or []
-        else:
-            raise TypeError("ids must be int or list of int")
-
-        if isinstance(external_ids, str):
-            external_id_list = [external_ids]
-        elif isinstance(external_ids, list) or external_ids is None:
-            external_id_list = external_ids or []
-        else:
-            raise TypeError("external_ids must be str or list of str")
-
-        if wrap_ids:
-            id_objs = [{"id": id} for id in id_list]
-            external_id_objs = [{"externalId": external_id} for external_id in external_id_list]
-            all_wrapped_ids: List[Union[Dict[str, int], Dict[str, str]]] = [*id_objs, *external_id_objs]
-            return all_wrapped_ids
-
-        all_ids: List[Union[int, str]] = [*id_list, *external_id_list]
-        return all_ids
-
-    @staticmethod
-    def _is_single_identifier(
-        ids: Optional[Union[int, numbers.Integral, Sequence[numbers.Integral], Sequence[int]]],
-        external_ids: Optional[Union[str, Sequence[str]]],
-    ) -> bool:
-        single_id = isinstance(ids, (numbers.Integral, int)) and external_ids is None
-        single_external_id = isinstance(external_ids, str) and ids is None
-        return single_id or single_external_id
 
     @staticmethod
     def _status_ok(status_code: int) -> bool:

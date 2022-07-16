@@ -19,6 +19,7 @@ from cognite.client.data_classes import (
     SessionList,
 )
 from cognite.client.data_classes.iam import TokenInspection
+from cognite.client.utils._identifier import IdentifierSequence
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -275,7 +276,7 @@ class GroupsAPI(APIClient):
         """
         resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/serviceaccounts", id)
 
-        all_ids = self._process_ids(service_account_id, None, False)
+        all_ids = IdentifierSequence.load(ids=service_account_id, external_ids=None).as_primitives()
         self._post(resource_path, json={"items": all_ids})
 
     def remove_service_account(self, id: int, service_account_id: Union[int, List[int]]) -> None:
@@ -298,7 +299,7 @@ class GroupsAPI(APIClient):
         """
         url_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/serviceaccounts/remove", id)
 
-        all_ids = self._process_ids(service_account_id, None, False)
+        all_ids = IdentifierSequence.load(ids=service_account_id).as_primitives()
         self._post(url_path, json={"items": all_ids})
 
 
