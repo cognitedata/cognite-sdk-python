@@ -703,6 +703,32 @@ class APIClient:
             task_list_element_unwrap_fn=utils._auxiliary.unwrap_identifer,
         )
 
+    @overload
+    def _update_multiple(
+        self,
+        items: Union[CogniteResource, CogniteUpdate],
+        list_cls: Type[T_CogniteResourceList],
+        resource_cls: Type[T_CogniteResource],
+        update_cls: Type[CogniteUpdate],
+        resource_path: str = None,
+        params: Dict = None,
+        headers: Dict = None,
+    ) -> T_CogniteResource:
+        ...
+
+    @overload
+    def _update_multiple(
+        self,
+        items: Sequence[Union[CogniteResource, CogniteUpdate]],
+        list_cls: Type[T_CogniteResourceList],
+        resource_cls: Type[T_CogniteResource],
+        update_cls: Type[CogniteUpdate],
+        resource_path: str = None,
+        params: Dict = None,
+        headers: Dict = None,
+    ) -> T_CogniteResourceList:
+        ...
+
     def _update_multiple(
         self,
         items: Union[Sequence[Union[CogniteResource, CogniteUpdate]], CogniteResource, CogniteUpdate],
