@@ -2,6 +2,10 @@
 __pycache__/
 *.py[cod]
 
+# Local credentials
+local_cog_client.py
+cache.bin
+
 # Distribution / packaging
 .Python
 env/
