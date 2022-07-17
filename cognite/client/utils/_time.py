@@ -3,7 +3,7 @@ import re
 import time
 import warnings
 from datetime import datetime, timezone
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 _unit_in_ms_without_week = {"s": 1000, "m": 60000, "h": 3600000, "d": 86400000}
 _unit_in_ms = {**_unit_in_ms_without_week, "w": 604800000}
@@ -112,7 +112,7 @@ def timestamp_to_ms(timestamp: Union[int, float, str, datetime]) -> int:
 
 
 def _convert_time_attributes_in_dict(item: Dict) -> Dict:
-    TIME_ATTRIBUTES = [
+    TIME_ATTRIBUTES = {
         "start_time",
         "end_time",
         "last_updated_time",
@@ -121,7 +121,7 @@ def _convert_time_attributes_in_dict(item: Dict) -> Dict:
         "scheduled_execution_time",
         "source_created_time",
         "source_modified_time",
-    ]
+    }
     new_item = {}
     for k, v in item.items():
         if k in TIME_ATTRIBUTES:
@@ -142,3 +142,17 @@ def convert_time_attributes_to_datetime(item: Union[Dict, List[Dict]]) -> Union[
             new_items.append(_convert_time_attributes_in_dict(el))
         return new_items
     raise TypeError("item must be dict or list of dicts")
+
+
+def align_start_and_end_for_granularity(start: int, end: int, granularity: str) -> Tuple[int, int]:
+    # Note the API always aligns `start` with 1s, 1m, 1h or 1d (even when given e.g. 73h)
+    remainder = start % granularity_unit_to_ms(granularity)
+    if remainder:
+        # Floor `start` when not exactly at boundary
+        start -= remainder
+    gms = granularity_to_ms(granularity)
+    remainder = (end - start) % gms
+    if remainder:
+        # Ceil `end` when not exactly at boundary decided by `start + N * granularity`
+        end += gms - remainder
+    return start, end

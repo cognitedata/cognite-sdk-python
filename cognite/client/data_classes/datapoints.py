@@ -1,13 +1,35 @@
+from __future__ import annotations
+
 import collections
 import json
+import math
+import numbers
 import re as regexp
+import warnings
+from dataclasses import dataclass
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Tuple, Union, cast
+from functools import cached_property
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Generator,
+    Iterable,
+    List,
+    NoReturn,
+    Optional,
+    Tuple,
+    TypedDict,
+    Union,
+    cast,
+)
 
 import cognite.client.utils._time
 from cognite.client import utils
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.exceptions import CogniteDuplicateColumnsError
+from cognite.client.utils._auxiliary import to_camel_case, to_snake_case
+from cognite.client.utils._time import align_start_and_end_for_granularity, timestamp_to_ms
 
 if TYPE_CHECKING:
     import pandas
@@ -364,7 +386,7 @@ DatapointsIdMaybeAggregate = Union[
     int, List[int], Dict[str, Union[int, List[str]]], List[Dict[str, Union[int, List[str]]]]
 ]
 DatapointsExternalIdMaybeAggregate = Union[
-    str, List[str], Dict[str, Union[int, List[str]]], List[Dict[str, Union[int, List[str]]]]
+    str, List[str], Dict[str, Union[str, List[str]]], List[Dict[str, Union[str, List[str]]]]
 ]
 
 
@@ -377,7 +399,7 @@ class DatapointsQuery(CogniteResource):
         id (Union[int, List[int], Dict[str, Any], List[Dict[str, Any]]]: Id or list of ids. Can also be object
                 specifying aggregates. See example below.
         external_id (Union[str, List[str], Dict[str, Any], List[Dict[str, Any]]]): External id or list of external
-            ids. Can also be object specifying aggregates. See example below.
+            ids. Can also be object specifying aggregates. See example below (TODO: Where?).
         limit (int): Return up to this number of datapoints.
         aggregates (List[str]): The aggregates to be returned.  Use default if null. An empty string must be sent to get raw data if the default is a set of aggregates.
         granularity (str): The granularity size and granularity of the aggregates.
@@ -406,3 +428,258 @@ class DatapointsQuery(CogniteResource):
         self.granularity = granularity
         self.include_outside_points = include_outside_points
         self.ignore_unknown_ids = ignore_unknown_ids
+
+
+class CustomDatapoints(TypedDict, total=False):
+    # No field required
+    start: Union[int, str, datetime, None]
+    end: Union[int, str, datetime, None]
+    aggregates: Optional[List[str]]
+    granularity: Optional[str]
+    limit: Optional[int]
+    include_outside_points: bool
+
+
+class DatapointsQueryId(CustomDatapoints):
+    id: int  # required field
+
+
+class DatapointsQueryExternalId(CustomDatapoints):
+    external_id: str  # required field
+
+
+DatapointsIdTypes = Union[int, DatapointsQueryId, Iterable[Union[int, DatapointsQueryId]]]
+DatapointsExternalIdTypes = Union[str, DatapointsQueryExternalId, Iterable[Union[str, DatapointsQueryExternalId]]]
+
+
+@dataclass
+class DatapointsQueryNew(CogniteResource):
+    start: Union[int, str, datetime, None] = None
+    end: Union[int, str, datetime, None] = None
+    id: Optional[DatapointsIdTypes] = None
+    external_id: Optional[DatapointsExternalIdTypes] = None
+    aggregates: Optional[List[str]] = None
+    granularity: Optional[str] = None
+    limit: Optional[int] = None
+    include_outside_points: bool = False
+    ignore_unknown_ids: bool = False
+
+    @cached_property
+    def defaults(self):
+        return dict(
+            id=None,  # We have to parse these
+            external_id=None,  # We have to parse these
+            start=self.start,
+            end=self.end,
+            limit=self.limit,
+            aggregates=self.aggregates,
+            granularity=self.granularity,
+            include_outside_points=self.include_outside_points,
+            ignore_unknown_ids=self.ignore_unknown_ids,
+        )
+
+    def validate(self) -> None:
+        self.validate_and_create_queries()
+
+    def validate_and_create_queries(self) -> List[SingleTSQuery]:
+        queries = []
+        if self.id is not None:
+            queries.extend(self._validate_id_or_xid(id_or_xid=self.id, is_external_id=False, defaults=self.defaults))
+        if self.external_id is not None:
+            queries.extend(
+                self._validate_id_or_xid(id_or_xid=self.external_id, is_external_id=True, defaults=self.defaults)
+            )
+        if queries:
+            return queries
+        raise ValueError("Pass at least one time series `id` or `external_id`!")
+
+    def _validate_id_or_xid(self, id_or_xid, is_external_id: bool, defaults: Dict):
+        if is_external_id:
+            arg_name, exp_type = "external_id", str
+        else:
+            arg_name, exp_type = "id", numbers.Integral
+
+        if isinstance(id_or_xid, (exp_type, dict)):
+            id_or_xid = [id_or_xid]  # Lazy - we postpone evaluation
+
+        if not isinstance(id_or_xid, Iterable):
+            self._raise_on_wrong_ts_identifier_type(id_or_xid, arg_name, exp_type)
+
+        queries = []
+        for ts in id_or_xid:
+            if isinstance(ts, exp_type):
+                queries.append(SingleTSQuery.from_dict_with_validation({arg_name: ts}, self.defaults))
+
+            elif isinstance(ts, dict):
+                ts_validated = self._validate_ts_query_dct(ts, arg_name, exp_type)
+                queries.append(SingleTSQuery.from_dict_with_validation(ts_validated, self.defaults))
+            else:
+                self._raise_on_wrong_ts_identifier_type(ts, arg_name, exp_type)
+        return queries
+
+    @staticmethod
+    def _raise_on_wrong_ts_identifier_type(id_or_xid, arg_name, exp_type) -> NoReturn:
+        raise TypeError(
+            f"Got unsupported type {type(id_or_xid)}, as, or part of argument `{arg_name}`. Expected one of "
+            f"{exp_type}, {dict} or a (mixed) list of these, but got `{id_or_xid}`."
+        )
+
+    @staticmethod
+    def _validate_ts_query_dct(dct, arg_name, exp_type) -> Union[DatapointsQueryId, DatapointsQueryExternalId]:
+        if arg_name not in dct:
+            if to_camel_case(arg_name) in dct:
+                # For backwards compatability we accept identifier in camel case:
+                dct = dct.copy()  # Avoid side effects for user's input. Also means we need to return it.
+                dct[arg_name] = dct.pop(to_camel_case(arg_name))
+            else:
+                raise KeyError(f"Missing key `{arg_name}` in dict passed as, or part of argument `{arg_name}`")
+
+        ts_identifier = dct[arg_name]
+        if not isinstance(ts_identifier, exp_type):
+            DatapointsQueryNew._raise_on_wrong_ts_identifier_type(ts_identifier, arg_name, exp_type)
+
+        opt_dct_keys = {"start", "end", "aggregates", "granularity", "include_outside_points", "limit"}
+        bad_keys = set(dct) - opt_dct_keys - {arg_name}
+        if not bad_keys:
+            return dct
+        raise KeyError(
+            f"Dict provided by argument `{arg_name}` included key(s) not understood: {sorted(bad_keys)}. "
+            f"Required key: `{arg_name}`. Optional: {list(opt_dct_keys)}."
+        )
+
+
+@dataclass
+class SingleTSQuery:
+    id: Optional[int]
+    external_id: Optional[str]
+    start: Union[int, str, datetime, None]
+    end: Union[int, str, datetime, None]
+    aggregates: Optional[List[str]]
+    granularity: Optional[str]
+    limit: Optional[int]
+    include_outside_points: Optional[bool]
+    ignore_unknown_ids: Optional[bool]
+
+    def __post_init__(self):
+        self._is_missing = None  # I.e. not set...
+        self._is_string = None  # ...or unknown
+        self._verify_time_range()
+        self._verify_limit()
+        self._verify_identifier()
+        if self.include_outside_points and self.limit is not None:
+            warnings.warn(
+                "When using `include_outside_points=True` with a non-infinite `limit` you may get a large gap "
+                "between the last 'inside datapoint' and the 'after/outside' datapoint. Note also that the "
+                "up-to-two outside points come in addition to your given `limit`; asking for 5 datapoints might "
+                "yield 5, 6 or 7. It's a feature, not a bug ;)",
+                UserWarning,
+            )
+
+    @classmethod
+    def from_dict_with_validation(cls, ts_dct, defaults) -> SingleTSQuery:
+        # We merge 'defaults' and given ts-dict, ts-dict takes precedence:
+        dct = {**defaults, **ts_dct}
+        granularity, aggregates = dct["granularity"], dct["aggregates"]
+
+        if not (granularity is None or isinstance(granularity, str)):
+            raise TypeError(f"Expected `granularity` to be of type `str` or None, not {type(granularity)}")
+
+        elif not (aggregates is None or isinstance(aggregates, list)):
+            raise TypeError(f"Expected `aggregates` to be of type `list[str]` or None, not {type(aggregates)}")
+
+        elif aggregates is None:
+            if granularity is None:
+                return cls(**dct)  # Request for raw datapoints
+            raise ValueError("When passing `granularity`, argument `aggregates` is also required.")
+
+        # Aggregates must be a list at this point:
+        elif len(aggregates) == 0:
+            raise ValueError("Empty list of `aggregates` passed, expected at least one!")
+
+        elif granularity is None:
+            raise ValueError("When passing `aggregates`, argument `granularity` is also required.")
+
+        elif dct["include_outside_points"] is True:
+            raise ValueError("'Include outside points' is not supported for aggregates.")
+        return cls(**dct)  # Request for one or more aggregates
+
+    def _verify_identifier(self):
+        if self.id is not None:
+            self.identifier_type = "id"
+            self.identifier = int(self.id)
+        elif self.external_id is not None:
+            self.identifier_type = "externalId"
+            self.identifier = str(self.external_id)
+        else:
+            raise ValueError("Pass exactly one of `id` or `external_id`. Got neither.")
+        # Shortcuts for hashing and API queries:
+        self.identifier_tpl = (self.identifier_type, self.identifier)
+        self.identifier_dct = {self.identifier_type: self.identifier}
+        self.identifier_dct_sc = {to_snake_case(self.identifier_type): self.identifier}
+
+    def _verify_limit(self):
+        if self.limit in {None, -1, math.inf}:
+            self.limit = None
+        elif isinstance(self.limit, numbers.Integral):  # limit=0 is accepted by the API
+            self.limit = int(self.limit)  # We don't want weird stuff like numpy dtypes etc.
+        else:
+            raise TypeError(f"Limit must be an integer or one of [None, -1, inf], got {type(self.limit)}")
+
+    def _verify_time_range(self):
+        if self.start is None:
+            self.start = 0  # 1970-01-01
+        else:
+            self.start = timestamp_to_ms(self.start)
+        if self.end is None:
+            self.end = "now"
+        self.end = timestamp_to_ms(self.end)
+
+        if self.end <= self.start:
+            raise ValueError("Invalid time range, `end` must be later than `start`")
+
+        if not self.is_raw_query:  # API rounds aggregate queries in a very particular fashion
+            self.start, self.end = align_start_and_end_for_granularity(self.start, self.end, self.granularity)
+
+    @property
+    def is_missing(self):
+        if self._is_missing is None:
+            raise RuntimeError("Before making API-calls the `is_missing` status is unknown")
+        return self._is_missing
+
+    @is_missing.setter
+    def is_missing(self, value):
+        assert isinstance(value, bool)
+        self._is_missing = value
+
+    @property
+    def is_string(self):
+        if self._is_string is None:
+            raise RuntimeError("Before making API-calls the `is_string` status is unknown")
+        return self._is_string
+
+    @is_string.setter
+    def is_string(self, value):
+        assert isinstance(value, bool)
+        self._is_string = value
+
+    @property
+    def is_raw_query(self):
+        return self.aggregates is None
+
+    @property
+    def max_query_limit(self, /, agg_max=10_000, raw_max=100_000):
+        # TODO: Remove double definitions of 10 k and 100 k
+        if self.is_raw_query:
+            return raw_max
+        return agg_max
+
+    def __repr__(self):
+        # TODO(haakonvt): Remove __repr__
+        from dataclasses import fields
+
+        s = ", ".join(
+            f"{field.name}={getattr(self, field.name)!r}"
+            for field in fields(self)
+            if field.name == "limit" or getattr(self, field.name) is not None
+        )
+        return f"{type(self).__name__}({s})"

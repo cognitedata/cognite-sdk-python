@@ -1,20 +1,49 @@
+from __future__ import annotations
+
 import copy
+import dataclasses
+import itertools
 import math
 import re as regexp
+from dataclasses import dataclass
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Set, Tuple, Union, cast
 
 import cognite.client.utils._time
 from cognite.client import utils
 from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
-from cognite.client._api.tmp_refactor_datapoints import NewDatapointsQuery, TSQueryList
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Datapoints, DatapointsList, DatapointsQuery
-from cognite.client.data_classes.datapoints import DatapointsExternalIdMaybeAggregate, DatapointsIdMaybeAggregate
+from cognite.client.data_classes.datapoints import (
+    DatapointsExternalIdMaybeAggregate,
+    DatapointsExternalIdTypes,
+    DatapointsIdMaybeAggregate,
+    DatapointsIdTypes,
+    DatapointsQueryNew,
+    SingleTSQuery,
+)
 from cognite.client.exceptions import CogniteAPIError
 
 if TYPE_CHECKING:
     import pandas
+
+
+print("RUNNING REPOS/COG-SDK, NOT FROM PIP")
+
+
+@dataclass
+class DpsFetchOrchestrator:
+    client: DatapointsAPI
+    queries: List[DatapointsQueryNew]
+    raw_queries: List[SingleTSQuery] = dataclasses.field(default_factory=list, init=False)
+    agg_queries: List[SingleTSQuery] = dataclasses.field(default_factory=list, init=False)
+
+    def __post_init__(self):
+        split_qs = [], []
+        all_queries = [q.validate_and_create_queries() for q in self.queries]
+        for q in itertools.chain(*all_queries):
+            split_qs[q.is_raw_query].append(q)
+        self.agg_queries, self.raw_queries = split_qs
 
 
 class DatapointsAPI(APIClient):
@@ -22,9 +51,10 @@ class DatapointsAPI(APIClient):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self._DPS_LIMIT_AGG = 10000
-        self._DPS_LIMIT = 100000
-        self._POST_DPS_OBJECTS_LIMIT = 10000
+        self._DPS_LIMIT_AGG = 10_000
+        self._DPS_LIMIT = 100_000
+        self._POST_DPS_OBJECTS_LIMIT = 10_000
+        self._FETCH_TS_LIMIT = 100
         self._RETRIEVE_LATEST_LIMIT = 100
         self.synthetic = SyntheticDatapointsAPI(
             self._config, api_version=self._api_version, cognite_client=self._cognite_client
@@ -34,16 +64,15 @@ class DatapointsAPI(APIClient):
         self,
         start: Union[int, str, datetime, None] = None,
         end: Union[int, str, datetime, None] = None,
-        id: Optional[Any] = None,  # TODO(haakonvt): Fix type... uuuh pain
-        external_id: Optional[Any] = None,  # TODO(haakonvt): Fix type... uuuh pain
+        id: Optional[DatapointsIdTypes] = None,
+        external_id: Optional[DatapointsExternalIdTypes] = None,
         aggregates: Optional[List[str]] = None,
         granularity: Optional[str] = None,
         limit: Optional[int] = None,
         include_outside_points: bool = False,
         ignore_unknown_ids: bool = False,
     ):
-        q = NewDatapointsQuery(
-            client=self,  # TODO(haakonvt): Probably shouldn't
+        query = DatapointsQueryNew(
             start=start,
             end=end,
             id=id,
@@ -54,16 +83,27 @@ class DatapointsAPI(APIClient):
             include_outside_points=include_outside_points,
             ignore_unknown_ids=ignore_unknown_ids,
         )
-        tsql = TSQueryList(q.all_validated_queries)
+        dps_orchestrator = DpsFetchOrchestrator(client=self, queries=[query])
+
         from pprint import pprint
 
-        print("Parsed raw dps queries:")
-        pprint(tsql.raw_queries)
-        print("Parsed agg. dps queries:")
-        pprint(tsql.agg_queries)
+        print("\nParsed raw dps queries:")
+        pprint(dps_orchestrator.raw_queries)
+        print("\nParsed agg. dps queries:")
+        pprint(dps_orchestrator.agg_queries)
         return NotImplemented
 
-    def query_new(self, *a, **kw):
+    def query_new(
+        self,
+        query: Union[Iterable[DatapointsQueryNew], DatapointsQueryNew],
+    ) -> DatapointsList:
+        # Note: With the changes to .retrieve, the -only- valid reason to use .query is if one bunch
+        #       of time series must be fetched with ignore_unknown_ids=True AND another ignore_unknown_ids=False
+        # Note: You always get a single DatapointsList returned. The order is id, then external_id,
+        #       for the first query then the second etc.
+        if isinstance(query, DatapointsQueryNew):
+            query = [query]
+        dps_orchestrator = DpsFetchOrchestrator(client=self, queries=query)  # noqa
         return NotImplemented
 
     def retrieve_dataframe_new(*a, **kw):
@@ -250,6 +290,7 @@ class DatapointsAPI(APIClient):
                 ...                             granularity="1m")]
                 >>> res = c.datapoints.query(queries)
         """
+        # TODO: Suggestion to deprecate this method - almost no point any more
         fetcher = DatapointsFetcher(self)
         if isinstance(query, DatapointsQuery):
             return fetcher.fetch(query)

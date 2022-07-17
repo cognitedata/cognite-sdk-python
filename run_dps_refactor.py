@@ -58,7 +58,9 @@ EXTERNAL_ID = [
 
 max_workers = 10
 client = setup_local_cog_client(max_workers, debug=False)
-query = client.datapoints.retrieve_new(
+
+# query1 = DatapointsQuery(
+res = client.datapoints.retrieve_new(
     start=START,
     end=END,
     id=ID,
@@ -69,3 +71,15 @@ query = client.datapoints.retrieve_new(
     limit=LIMIT,
     ignore_unknown_ids=IGNORE_UNKNOWN_IDS,
 )
+# query2 = DatapointsQuery(
+#     start=START,
+#     end=END,
+#     id=None,
+#     external_id=EXTERNAL_ID,
+#     aggregates=AGGREGATES,
+#     granularity=GRANULARITY,
+#     include_outside_points=INCLUDE_OUTSIDE_POINTS,
+#     limit=LIMIT,
+#     ignore_unknown_ids=IGNORE_UNKNOWN_IDS,
+# )
+# res = client.datapoints.query_new([query1, query2])
