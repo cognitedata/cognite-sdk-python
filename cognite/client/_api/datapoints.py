@@ -988,6 +988,19 @@ class DatapointsFetcher:
         self._preprocess_tasks(tasks)
         return tasks
 
+    @staticmethod
+    def _validate_tasks(tasks: List[_DPTask]) -> None:
+        identifiers_seen = set()
+        for t in tasks:
+            identifier = utils._auxiliary.unwrap_identifer(t.ts_item)
+            if identifier in identifiers_seen:
+                raise ValueError("Time series identifier '{}' is duplicated in query".format(identifier))
+            identifiers_seen.add(identifier)
+            if t.aggregates is not None and t.granularity is None:
+                raise ValueError("When specifying aggregates, granularity must also be provided.")
+            if t.granularity is not None and not t.aggregates:
+                raise ValueError("When specifying granularity, aggregates must also be provided.")
+
     def _preprocess_tasks(self, tasks: List[_DPTask]) -> None:
         for t in tasks:
             new_start = cognite.client.utils._time.timestamp_to_ms(t.start)
@@ -1182,19 +1195,6 @@ class DatapointsFetcher:
                 )
             return item
         raise TypeError("Invalid type '{}' for argument '{}'".format(type(item), item_type))
-
-    @staticmethod
-    def _validate_tasks(tasks: List[_DPTask]) -> None:
-        identifiers_seen = set()
-        for t in tasks:
-            identifier = utils._auxiliary.unwrap_identifer(t.ts_item)
-            if identifier in identifiers_seen:
-                raise ValueError("Time series identifier '{}' is duplicated in query".format(identifier))
-            identifiers_seen.add(identifier)
-            if t.aggregates is not None and t.granularity is None:
-                raise ValueError("When specifying aggregates, granularity must also be provided.")
-            if t.granularity is not None and not t.aggregates:
-                raise ValueError("When specifying granularity, aggregates must also be provided.")
 
 
 # Temporary class to be replaced by real classes
