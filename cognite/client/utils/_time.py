@@ -15,7 +15,7 @@ def datetime_to_ms(dt: datetime) -> int:
             "Interpreting given naive datetime as UTC instead of local time (against Python default behaviour). "
             "This will change in the next major release (4.0.0). Please use (timezone) aware datetimes "
             "or convert it yourself to integer (number of milliseconds since epoch, leap seconds excluded).",
-            DeprecationWarning,
+            FutureWarning,
         )
         dt = dt.replace(tzinfo=timezone.utc)
     return int(1000 * dt.timestamp())
@@ -38,7 +38,7 @@ def ms_to_datetime(ms: Union[int, float]) -> datetime:
         "This function, `ms_to_datetime` returns a naive datetime object in UTC. This is against "
         "the default interpretation of naive datetimes in Python (i.e. local time). This behaviour will "
         "change to returning timezone-aware datetimes in UTC in the next major release (4.0.0).",
-        DeprecationWarning,
+        FutureWarning,
     )
     return datetime.utcfromtimestamp(ms / 1000)
 
