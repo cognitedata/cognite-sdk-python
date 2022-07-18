@@ -179,6 +179,11 @@ class PriorityQueue:
         return len(self.__heap) > 0
 
 
+def split_into_n(seq: Sequence, /, n: int):
+    # NB: Weird sampling/ordering (jumps n for each starting positions)
+    yield from (seq[i::n] for i in range(n))
+
+
 def split_into_chunks(collection: Union[List, Dict], chunk_size: int) -> List[Union[List, Dict]]:
     chunks: List[Union[List, Dict]] = []
     if isinstance(collection, list):

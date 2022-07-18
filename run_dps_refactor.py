@@ -18,7 +18,7 @@ ID = [
     {"id": 226740051491},
     {"id": 2546012653669},  # string
     {"id": 1111111111111},  # missing...
-    {"id": 2546012653669, "aggregates": ["max", "average"], "granularity": "1d"},  # string
+    # {"id": 2546012653669, "aggregates": ["max", "average"], "granularity": "1d"},  # string
 ]
 EXTERNAL_ID = [
     # {"limit": None, "external_id": "ts-test-#01-daily-111/650"},
@@ -53,7 +53,7 @@ EXTERNAL_ID = [
     },
 ]
 # EXTERNAL_ID = [
-#     f"ts-test-#01-daily-{i}/650" for i in range(1, 301)
+#     f"ts-test-#01-daily-{i}/650" for i in range(1, 651)
 # ]
 
 max_workers = 10

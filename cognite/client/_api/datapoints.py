@@ -5,6 +5,7 @@ import dataclasses
 import itertools
 import math
 import re as regexp
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Set, Tuple, Union, cast
@@ -23,6 +24,7 @@ from cognite.client.data_classes.datapoints import (
     SingleTSQuery,
 )
 from cognite.client.exceptions import CogniteAPIError
+from cognite.client.utils._auxiliary import split_into_n
 
 if TYPE_CHECKING:
     import pandas
@@ -30,20 +32,75 @@ if TYPE_CHECKING:
 
 print("RUNNING REPOS/COG-SDK, NOT FROM PIP")
 
+# API-limits:
+DPS_LIMIT_AGG = 10_000
+DPS_LIMIT = 100_000
+POST_DPS_OBJECTS_LIMIT = 10_000
+FETCH_TS_LIMIT = 100
+RETRIEVE_LATEST_LIMIT = 100
+
 
 @dataclass
 class DpsFetchOrchestrator:
-    client: DatapointsAPI
-    queries: List[DatapointsQueryNew]
+    dps_client: DatapointsAPI
+    user_queries: List[DatapointsQueryNew]
     raw_queries: List[SingleTSQuery] = dataclasses.field(default_factory=list, init=False)
     agg_queries: List[SingleTSQuery] = dataclasses.field(default_factory=list, init=False)
+    pool: Optional[ThreadPoolExecutor] = dataclasses.field(default=None, init=False)
 
     def __post_init__(self):
+        self.max_workers = self.dps_client._config.max_workers
+        assert self.max_workers >= 1, "Invalid option for `max_workers`. Must be at least 1"
         split_qs = [], []
-        all_queries = [q.validate_and_create_queries() for q in self.queries]
+        all_queries = [q.validate_and_create_queries() for q in self.user_queries]
         for q in itertools.chain(*all_queries):
             split_qs[q.is_raw_query].append(q)
         self.agg_queries, self.raw_queries = split_qs
+
+    def initiate_thread_pool(self) -> ThreadPoolExecutor:
+        if self.pool is None or self.pool._shutdown:
+            self.pool = ThreadPoolExecutor(max_workers=self.max_workers)
+        return self.pool
+
+    def request_datapoints(self, payload):
+        return self.dps_client._post(self.dps_client._RESOURCE_PATH + "/list", json=payload).json()["items"]
+
+    def mmmmmmove_this_algo_to_utils(self, limits, max_limit):
+        # TODO: What on Earth do I name this function???
+        limits = [max_limit if lim is None else min(lim, max_limit) for lim in limits]
+        actual_lims = [0] * len(limits)
+        sorted_lims = sorted(limits)
+        idx_not_done = set(range(len(sorted_lims)))
+        while idx_not_done:
+            c_per_p = max_limit // len(idx_not_done)
+            if not c_per_p:
+                break
+            for i in idx_not_done.copy():
+                if c_per_p >= sorted_lims[i]:
+                    idx_not_done.remove(i)
+                c_per_p = min(c_per_p, sorted_lims[i])
+                actual_lims[i] += c_per_p
+                max_limit -= c_per_p
+                sorted_lims[i] -= c_per_p
+        return actual_lims
+
+    def chunk_queries_for_initial_request(self):
+        n_agg, n_raw = len(self.agg_queries), len(self.raw_queries)
+        # Optimal queries uses the entire worker pool (but we may be forced to use more or less):
+        n = min(max(n_agg, n_raw), max(self.max_workers, (n_agg + n_raw) / FETCH_TS_LIMIT))
+
+        items_lst = []
+        for chunks in zip(split_into_n(self.agg_queries, n=n), split_into_n(self.raw_queries, n=n)):
+            # Agg and raw limits are independent in the query, so we max out on both:
+            items = []
+            for query_chunk, max_lim in zip(chunks, [DPS_LIMIT_AGG, DPS_LIMIT]):
+                query_limits = [query.limit for query in query_chunk]
+                query_limits = self.mmmmmmove_this_algo_to_utils(query_limits, max_lim)
+                items.extend(
+                    [{**query.to_payload(), "limit": limit} for query, limit in zip(query_chunk, query_limits)]
+                )
+            items_lst.append(items)
+        return items_lst
 
 
 class DatapointsAPI(APIClient):
@@ -51,11 +108,11 @@ class DatapointsAPI(APIClient):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self._DPS_LIMIT_AGG = 10_000
-        self._DPS_LIMIT = 100_000
-        self._POST_DPS_OBJECTS_LIMIT = 10_000
-        self._FETCH_TS_LIMIT = 100
-        self._RETRIEVE_LATEST_LIMIT = 100
+        self._DPS_LIMIT_AGG = DPS_LIMIT_AGG
+        self._DPS_LIMIT = DPS_LIMIT
+        self._POST_DPS_OBJECTS_LIMIT = POST_DPS_OBJECTS_LIMIT
+        self._FETCH_TS_LIMIT = FETCH_TS_LIMIT
+        self._RETRIEVE_LATEST_LIMIT = RETRIEVE_LATEST_LIMIT
         self.synthetic = SyntheticDatapointsAPI(
             self._config, api_version=self._api_version, cognite_client=self._cognite_client
         )
@@ -83,14 +140,27 @@ class DatapointsAPI(APIClient):
             include_outside_points=include_outside_points,
             ignore_unknown_ids=ignore_unknown_ids,
         )
-        dps_orchestrator = DpsFetchOrchestrator(client=self, queries=[query])
+        fetcher = DpsFetchOrchestrator(self, user_queries=[query])
 
-        from pprint import pprint
+        # print("\nParsed raw dps queries:")
+        # pprint(fetcher.raw_queries)
+        # print("\nParsed agg. dps queries:")
+        # pprint(fetcher.agg_queries)
 
-        print("\nParsed raw dps queries:")
-        pprint(dps_orchestrator.raw_queries)
-        print("\nParsed agg. dps queries:")
-        pprint(dps_orchestrator.agg_queries)
+        with fetcher.initiate_thread_pool() as pool:
+            items_lst = fetcher.chunk_queries_for_initial_request()
+            futures_dct = {
+                pool.submit(fetcher.request_datapoints, {"ignoreUnknownIds": True, "items": items}): i
+                for i, items in enumerate(items_lst)
+            }
+
+            for res in as_completed(futures_dct):
+                i = futures_dct[res]
+                res = res.result()
+                print(f"Task: {i=}, {len(res)}, {[len(r['datapoints']) for r in res]=}")
+                print()
+                # TODO: Aggregates are not supported for string time series
+
         return NotImplemented
 
     def query_new(
@@ -103,7 +173,7 @@ class DatapointsAPI(APIClient):
         #       for the first query then the second etc.
         if isinstance(query, DatapointsQueryNew):
             query = [query]
-        dps_orchestrator = DpsFetchOrchestrator(client=self, queries=query)  # noqa
+        fetcher = DpsFetchOrchestrator(client=self, queries=query)  # noqa
         return NotImplemented
 
     def retrieve_dataframe_new(*a, **kw):

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import collections
+import dataclasses
 import json
 import math
 import numbers
@@ -574,6 +575,13 @@ class SingleTSQuery:
                 "yield 5, 6 or 7. It's a feature, not a bug ;)",
                 UserWarning,
             )
+
+    def to_payload(self):
+        payload = dataclasses.asdict(self)
+        for k in ("id", "external_id", "ignore_unknown_ids", "include_outside_points"):
+            del payload[k]
+        payload["includeOutsidePoints"] = self.include_outside_points
+        return {**payload, **self.identifier_dct}
 
     @classmethod
     def from_dict_with_validation(cls, ts_dct, defaults) -> SingleTSQuery:
