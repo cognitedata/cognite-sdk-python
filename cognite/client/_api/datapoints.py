@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import copy
-import dataclasses
+import functools
 import itertools
 import math
 import re as regexp
@@ -24,8 +24,8 @@ from cognite.client.data_classes.datapoints import (
     DatapointsQueryNew,
     SingleTSQuery,
 )
-from cognite.client.exceptions import CogniteAPIError
-from cognite.client.utils._auxiliary import split_into_n
+from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
+from cognite.client.utils._auxiliary import split_into_n_parts
 
 if TYPE_CHECKING:
     import pandas
@@ -40,15 +40,11 @@ FETCH_TS_LIMIT = 100
 RETRIEVE_LATEST_LIMIT = 100
 
 
-@dataclass
 class DpsFetchOrchestrator:
-    dps_client: DatapointsAPI
-    user_queries: List[DatapointsQueryNew]
-    raw_queries: List[SingleTSQuery] = dataclasses.field(default_factory=list, init=False)
-    agg_queries: List[SingleTSQuery] = dataclasses.field(default_factory=list, init=False)
-    pool: Optional[ThreadPoolExecutor] = dataclasses.field(default=None, init=False)
-
-    def __post_init__(self):
+    def __init__(self, dps_client: DatapointsAPI, user_queries: List[DatapointsQueryNew]):
+        self.dps_client = dps_client
+        self.user_queries = user_queries
+        self.pool: Optional[ThreadPoolExecutor] = None
         self.max_workers = self.dps_client._config.max_workers
         assert self.max_workers >= 1, "Invalid option for `max_workers`. Must be at least 1"
         split_qs = [], []
@@ -65,42 +61,97 @@ class DpsFetchOrchestrator:
     def request_datapoints(self, payload):
         return self.dps_client._post(self.dps_client._RESOURCE_PATH + "/list", json=payload).json()["items"]
 
-    def mmmmmmove_this_algo_to_utils(self, limits, max_limit):
-        # TODO: What on Earth do I name this function???
+    def create_initial_tasks(self):
+        futures_dct = {}
+        queries_lst, items_lst = self._chunk_queries_for_initial_request()
+        for queries, items in zip(queries_lst, items_lst):
+            future = self.pool.submit(self.request_datapoints, {"ignoreUnknownIds": True, "items": items})
+            futures_dct[future] = queries
+        return futures_dct
+
+    def parse_initial_query_result(self, results, agg_queries, raw_queries):
+        print(f"{len(results)=}, {len(agg_queries)=}, {len(raw_queries)=}")
+        if len(results) < len(agg_queries) + len(raw_queries):
+            # We have at least 1 missing time series:
+            agg_queries, raw_queries = self._handle_missing_ts(results, agg_queries, raw_queries)
+        # Split raw queries based on `is_string` status:
+        raw_numeric_qs, raw_string_qs = self._handle_string_ts(results, raw_queries)
+
+        # TODO: xxxxx
+        print(f"{len(agg_queries)=}, {len(raw_numeric_qs)=}, {len(raw_string_qs)=}")
+        input("...")
+
+    @staticmethod
+    def _handle_string_ts(res, queries):
+        return_queries = [], []
+        is_string = {("id", r["id"]) for r in res if r["isString"]}.union(
+            ("externalId", r["externalId"]) for r in res if r["isString"]
+        )
+        for q in queries:
+            # Update SingleTSQuery objects with `is_string` status:
+            q.is_string = q.identifier_tpl in is_string
+            return_queries[q.is_string].append(q)
+
+        not_str_qs, str_qs = return_queries
+        return not_str_qs, str_qs
+
+    @staticmethod
+    def _handle_missing_ts(res, agg_queries, raw_queries):
+        missing = set()
+        not_missing = {("id", r["id"]) for r in res}.union(("externalId", r["externalId"]) for r in res)
+        for q in itertools.chain(agg_queries, raw_queries):
+            # Update SingleTSQuery objects with `is_missing` status:
+            q.is_missing = q.identifier_tpl not in not_missing
+            if q.is_missing:
+                missing.add(q)
+        # We might be handling multiple simultaneous top-level queries, each with a
+        # different settings for "ignore unknown": (Note: *_sc = 'snake case')
+        missing_to_raise = [q.identifier_dct_sc for q in missing if q.is_missing and not q.ignore_unknown_ids]
+        if missing_to_raise:
+            raise CogniteNotFoundError(not_found=missing_to_raise)
+        return [q for q in agg_queries if not q.is_missing], [q for q in raw_queries if not q.is_missing]
+
+    @staticmethod
+    def _find_initial_query_limits(limits, max_limit):
         limits = [max_limit if lim is None else min(lim, max_limit) for lim in limits]
         actual_lims = [0] * len(limits)
-        sorted_lims = sorted(limits)
-        idx_not_done = set(range(len(sorted_lims)))
-        while idx_not_done:
-            c_per_p = max_limit // len(idx_not_done)
-            if not c_per_p:
+        not_done = set(range(len(limits)))
+        while not_done:
+            part = max_limit // len(not_done)
+            if not part:
+                # We still might not have not reached max_limit, but we can no longer distribute evenly
                 break
-            for i in idx_not_done.copy():
-                if c_per_p >= sorted_lims[i]:
-                    idx_not_done.remove(i)
-                c_per_p = min(c_per_p, sorted_lims[i])
-                actual_lims[i] += c_per_p
-                max_limit -= c_per_p
-                sorted_lims[i] -= c_per_p
+            rm_idx = set()
+            for i in not_done:
+                i_part = min(part, limits[i])  # A query of limit=10 does not need more of max_limit than 10
+                actual_lims[i] += i_part
+                max_limit -= i_part
+                if i_part == limits[i]:
+                    rm_idx.add(i)
+                else:
+                    limits[i] -= i_part
+            not_done -= rm_idx
         return actual_lims
 
-    def chunk_queries_for_initial_request(self):
+    def _chunk_queries_for_initial_request(self):
         n_agg, n_raw = len(self.agg_queries), len(self.raw_queries)
-        # Optimal queries uses the entire worker pool (but we may be forced to use more or less):
-        n = min(max(n_agg, n_raw), max(self.max_workers, (n_agg + n_raw) / FETCH_TS_LIMIT))
+        # Optimal queries uses the entire worker pool. We may be forced to use more (queue) when we
+        # can't fit all individual time series (maxes out at `FETCH_TS_LIMIT * max_workers`).
+        # ...or less - when the number is lower than `max_workers`:
+        # TODO: Probably need a fastpath for when len(n_agg + n_raw) <= max_workers
+        n_queries = min(max(n_agg, n_raw), max(self.max_workers, (n_agg + n_raw) / FETCH_TS_LIMIT))
 
-        items_lst = []
-        for chunks in zip(split_into_n(self.agg_queries, n=n), split_into_n(self.raw_queries, n=n)):
+        query_lst, items_lst = [], []
+        splitter = functools.partial(split_into_n_parts, n=n_queries)
+        for chunks in zip(splitter(self.agg_queries), splitter(self.raw_queries)):
             # Agg and raw limits are independent in the query, so we max out on both:
             items = []
-            for query_chunk, max_lim in zip(chunks, [DPS_LIMIT_AGG, DPS_LIMIT]):
-                query_limits = [query.limit for query in query_chunk]
-                query_limits = self.mmmmmmove_this_algo_to_utils(query_limits, max_lim)
-                items.extend(
-                    [{**query.to_payload(), "limit": limit} for query, limit in zip(query_chunk, query_limits)]
-                )
+            query_lst.append(chunks)
+            for queries, max_lim in zip(chunks, [DPS_LIMIT_AGG, DPS_LIMIT]):
+                maxed_limits = self._find_initial_query_limits([q.limit for q in queries], max_lim)
+                items.extend([{**q.to_payload(), "limit": lim} for q, lim in zip(queries, maxed_limits)])
             items_lst.append(items)
-        return items_lst
+        return query_lst, items_lst
 
 
 class DatapointsAPI(APIClient):
@@ -141,25 +192,15 @@ class DatapointsAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
         fetcher = DpsFetchOrchestrator(self, user_queries=[query])
+        with fetcher.initiate_thread_pool():
+            initial_futures_dct = fetcher.create_initial_tasks()
 
-        # print("\nParsed raw dps queries:")
-        # pprint(fetcher.raw_queries)
-        # print("\nParsed agg. dps queries:")
-        # pprint(fetcher.agg_queries)
-
-        with fetcher.initiate_thread_pool() as pool:
-            items_lst = fetcher.chunk_queries_for_initial_request()
-            futures_dct = {
-                pool.submit(fetcher.request_datapoints, {"ignoreUnknownIds": True, "items": items}): i
-                for i, items in enumerate(items_lst)
-            }
-
-            for res in as_completed(futures_dct):
-                i = futures_dct[res]
-                res = res.result()
-                print(f"Task: {i=}, {len(res)}, {[len(r['datapoints']) for r in res]=}")
-                print()
-                # TODO: Aggregates are not supported for string time series
+            # The initial futures are important - as they tell us which time series are
+            # missing, which are string etc. We use this info when we choose the best fetch-strategy.
+            # futures_dct = {}
+            for future in as_completed(initial_futures_dct):  # We schedule new work as soon as possible
+                res, (agg_queries, raw_queries) = future.result(), initial_futures_dct[future]
+                new_tasks = fetcher.parse_initial_query_result(res, agg_queries, raw_queries)  # noqa
 
         return NotImplemented
 

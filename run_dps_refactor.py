@@ -12,7 +12,7 @@ LIMIT = 1000
 AGGREGATES = None  # ["average"]
 GRANULARITY = None  # "12h"
 INCLUDE_OUTSIDE_POINTS = None
-IGNORE_UNKNOWN_IDS = False
+IGNORE_UNKNOWN_IDS = True
 # ID = None
 ID = [
     {"id": 226740051491},

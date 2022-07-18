@@ -549,7 +549,9 @@ class DatapointsQueryNew(CogniteResource):
         )
 
 
-@dataclass
+# Note on `@dataclass(eq=False)`: We need all individual queries to be hashable (and unique), even two exactly
+# similar queries. With `eq=False`, we inherit __hash__ from `object` (just id(self)) - exactly what we need!
+@dataclass(eq=False)
 class SingleTSQuery:
     id: Optional[int]
     external_id: Optional[str]

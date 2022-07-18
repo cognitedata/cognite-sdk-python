@@ -159,7 +159,7 @@ def _check_client_has_newest_major_version() -> None:
 
 
 def random_string(size: int = 100) -> str:
-    return "".join(random.choice(string.ascii_uppercase + string.digits) for _ in range(size))
+    return "".join(random.choices(string.ascii_uppercase + string.digits, k=size))
 
 
 class PriorityQueue:
@@ -179,8 +179,8 @@ class PriorityQueue:
         return len(self.__heap) > 0
 
 
-def split_into_n(seq: Sequence, /, n: int):
-    # NB: Weird sampling/ordering (jumps n for each starting positions)
+def split_into_n_parts(seq: Sequence, /, n: int):
+    # NB: Chaotic sampling: jumps n for each starting position
     yield from (seq[i::n] for i in range(n))
 
 
