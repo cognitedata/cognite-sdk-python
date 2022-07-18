@@ -130,6 +130,6 @@ class TestSequencesAPI:
         assert res.columns[1]["description"] == "my new description"
 
     def test_get_new(self, cognite_client, new_seq):
-        res = cognite_client.sequences.retrieve(id=new_seq.id)
+        cognite_client.sequences.retrieve(id=new_seq.id)
         # assert ["DOUBLE"] == res.column_value_types # soon to change
         assert len(new_seq.columns) == 3

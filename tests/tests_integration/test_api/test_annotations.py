@@ -139,7 +139,7 @@ class TestAnnotationsIntegration:
         created_annotation = cognite_client.annotations.create(base_annotation)
         assert isinstance(created_annotation, Annotation)
         check_created_vs_base(base_annotation, created_annotation)
-        assert created_annotation.creating_user == None
+        assert created_annotation.creating_user is None
 
     def test_create_single_annotation2(self, cognite_client: CogniteClient, base_annotation: Annotation) -> None:
         base_annotation.status = "rejected"
@@ -161,7 +161,7 @@ class TestAnnotationsIntegration:
         suggested_annotation = cognite_client.annotations.suggest(base_suggest_annotation)
         assert isinstance(suggested_annotation, Annotation)
         check_created_vs_base(base_suggest_annotation, suggested_annotation)
-        assert suggested_annotation.creating_user == None
+        assert suggested_annotation.creating_user is None
 
     def test_suggest_annotations(self, cognite_client: CogniteClient, base_suggest_annotation: Annotation) -> None:
         suggested_annotations = cognite_client.annotations.suggest([base_suggest_annotation] * 30)
@@ -234,7 +234,7 @@ class TestAnnotationsIntegration:
     def test_list_with_data_filter(self, cognite_client: CogniteClient, base_annotation: Annotation) -> None:
         base_annotation.annotation_type = "images.Classification"
         base_annotation.data = {"label": "test_0"}
-        created_annotation_0 = cognite_client.annotations.create(base_annotation)
+        cognite_client.annotations.create(base_annotation)
         base_annotation.data = {"label": "test_1"}
         created_annotation_1 = cognite_client.annotations.create(base_annotation)
 

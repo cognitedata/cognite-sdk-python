@@ -6,7 +6,24 @@ import os
 import re
 from collections import UserList
 from json.decoder import JSONDecodeError
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Collection,
+    Dict,
+    Iterator,
+    List,
+    Literal,
+    MutableMapping,
+    NoReturn,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 from urllib.parse import urljoin
 
 import requests.utils
@@ -15,15 +32,26 @@ from requests.structures import CaseInsensitiveDict
 
 from cognite.client import utils
 from cognite.client._http_client import GLOBAL_REQUEST_SESSION, HTTPClient, HTTPClientConfig
-from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteUpdate
+from cognite.client.data_classes._base import (
+    CogniteFilter,
+    CogniteResource,
+    CogniteResourceList,
+    CogniteUpdate,
+    T_CogniteResource,
+    T_CogniteResourceList,
+)
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 log = logging.getLogger("cognite-sdk")
 
+T = TypeVar("T")
+
 
 class APIClient:
-    _RESOURCE_PATH = None
-    _LIST_CLASS = None
+    _RESOURCE_PATH: str
 
     # TODO: This following set should be generated from the openapi spec somehow.
     RETRYABLE_POST_ENDPOINTS = {
@@ -60,7 +88,9 @@ class APIClient:
         "/sessions/revoke",
     }
 
-    def __init__(self, config: utils._client_config.ClientConfig, api_version: str = None, cognite_client=None) -> None:
+    def __init__(
+        self, config: utils._client_config.ClientConfig, api_version: str = None, cognite_client: "CogniteClient" = None
+    ) -> None:
         self._config = config
         self._api_version = api_version
         self._api_subversion = config.api_subversion
@@ -128,7 +158,7 @@ class APIClient:
     ) -> requests.Response:
         return self._do_request("PUT", url_path, json=json, headers=headers, timeout=self._config.timeout)
 
-    def _do_request(self, method: str, url_path: str, **kwargs) -> requests.Response:
+    def _do_request(self, method: str, url_path: str, **kwargs: Any) -> requests.Response:
         is_retryable, full_url = self._resolve_url(method, url_path)
 
         json_payload = kwargs.get("json")
@@ -171,14 +201,14 @@ class APIClient:
         self._log_request(res, payload=json_payload, stream=stream)
         return res
 
-    def _configure_headers(self, additional_headers: Dict[str, str]) -> CaseInsensitiveDict:
-        headers = CaseInsensitiveDict()
+    def _configure_headers(self, additional_headers: Dict[str, str]) -> MutableMapping[str, Any]:
+        headers: MutableMapping[str, Any] = CaseInsensitiveDict()
         headers.update(requests.utils.default_headers())
         if self._config.token is None:
             headers["api-key"] = self._config.api_key
         elif isinstance(self._config.token, str):
             headers["Authorization"] = "Bearer {}".format(self._config.token)
-        elif isinstance(self._config.token, Callable):
+        elif callable(self._config.token):
             headers["Authorization"] = "Bearer {}".format(self._config.token())
         else:
             raise TypeError("'token' must be str, Callable, or None.")
@@ -224,9 +254,13 @@ class APIClient:
         return False
 
     def _retrieve(
-        self, id: Union[int, str], cls=None, resource_path: str = None, params: Dict = None, headers: Dict = None
-    ):
-        cls = cls or self._LIST_CLASS._RESOURCE
+        self,
+        id: Union[int, str],
+        cls: Type[T_CogniteResource],
+        resource_path: str = None,
+        params: Dict = None,
+        headers: Dict = None,
+    ) -> Optional[T_CogniteResource]:
         resource_path = resource_path or self._RESOURCE_PATH
         try:
             res = self._get(
@@ -238,28 +272,29 @@ class APIClient:
         except CogniteAPIError as e:
             if e.code != 404:
                 raise
+        return None
 
     def _retrieve_multiple(
         self,
         wrap_ids: bool,
-        cls=None,
-        resource_path: str = None,
-        ids: Union[List[int], int] = None,
-        external_ids: Union[List[str], str] = None,
-        ignore_unknown_ids=None,
-        headers: Dict = None,
-        other_params: Dict = None,
-    ):
-        cls = cls or self._LIST_CLASS
+        list_cls: Type[T_CogniteResourceList],
+        resource_cls: Type[T_CogniteResource],
+        resource_path: Optional[str] = None,
+        ids: Optional[Union[List[int], int]] = None,
+        external_ids: Optional[Union[List[str], str]] = None,
+        ignore_unknown_ids: Optional[bool] = None,
+        headers: Optional[Dict[str, Any]] = None,
+        other_params: Optional[Dict[str, Any]] = None,
+    ) -> Optional[Union[T_CogniteResourceList, T_CogniteResource]]:
         resource_path = resource_path or self._RESOURCE_PATH
         all_ids = self._process_ids(ids, external_ids, wrap_ids=wrap_ids)
         id_chunks = utils._auxiliary.split_into_chunks(all_ids, self._RETRIEVE_LIMIT)
 
-        ignore_unknown = {} if ignore_unknown_ids is None else {"ignoreUnknownIds": ignore_unknown_ids}
-        tasks = [
+        ignore_unknown_obj = {} if ignore_unknown_ids is None else {"ignoreUnknownIds": ignore_unknown_ids}
+        tasks: List[Dict[str, Union[str, Dict[str, Any], None]]] = [
             {
                 "url_path": resource_path + "/byids",
-                "json": {"items": id_chunk, **ignore_unknown, **(other_params or {})},
+                "json": {"items": id_chunk, **ignore_unknown_obj, **(other_params or {})},
                 "headers": headers,
             }
             for id_chunk in id_chunks
@@ -279,27 +314,27 @@ class APIClient:
         retrieved_items = tasks_summary.joined_results(lambda res: res.json()["items"])
 
         if self._is_single_identifier(ids, external_ids):
-            return cls._RESOURCE._load(retrieved_items[0], cognite_client=self._cognite_client)
-        return cls._load(retrieved_items, cognite_client=self._cognite_client)
+            return resource_cls._load(retrieved_items[0], cognite_client=self._cognite_client)
+        return list_cls._load(retrieved_items, cognite_client=self._cognite_client)
 
     def _list_generator(
         self,
         method: str,
-        cls=None,
-        resource_path: str = None,
-        url_path: str = None,
-        limit: int = None,
-        chunk_size: int = None,
-        filter: Dict = None,
-        sort: List[str] = None,
-        other_params: Dict = None,
-        partitions: int = None,
-        headers: Dict = None,
+        list_cls: Type[T_CogniteResourceList],
+        resource_cls: Type[T_CogniteResource],
+        resource_path: Optional[str] = None,
+        url_path: Optional[str] = None,
+        limit: Optional[int] = None,
+        chunk_size: Optional[int] = None,
+        filter: Optional[Dict[str, Any]] = None,
+        sort: Optional[List[str]] = None,
+        other_params: Optional[Dict[str, Any]] = None,
+        partitions: Optional[int] = None,
+        headers: Optional[Dict[str, Any]] = None,
         initial_cursor: Optional[str] = None,
-    ):
+    ) -> Union[Iterator[T_CogniteResourceList], Iterator[T_CogniteResource]]:
         if limit == -1 or limit == float("inf"):
             limit = None
-        cls = cls or self._LIST_CLASS
         resource_path = resource_path or self._RESOURCE_PATH
 
         if partitions:
@@ -310,7 +345,7 @@ class APIClient:
 
             yield from self._list_generator_partitioned(
                 partitions=partitions,
-                cls=cls,
+                resource_cls=resource_cls,
                 resource_path=resource_path,
                 filter=filter,
                 other_params=other_params,
@@ -350,32 +385,32 @@ class APIClient:
 
                 if not chunk_size:
                     for item in last_received_items:
-                        yield cls._RESOURCE._load(item, cognite_client=self._cognite_client)
+                        yield resource_cls._load(item, cognite_client=self._cognite_client)
                 else:
                     current_items.extend(last_received_items)
                     if len(current_items) >= chunk_size:
                         items_to_yield = current_items[:chunk_size]
                         current_items = current_items[chunk_size:]
-                        yield cls._load(items_to_yield, cognite_client=self._cognite_client)
+                        yield list_cls._load(items_to_yield, cognite_client=self._cognite_client)
 
                 next_cursor = res.json().get("nextCursor")
                 if total_items_retrieved == limit or next_cursor is None:
                     if chunk_size and current_items:
-                        yield cls._load(current_items, cognite_client=self._cognite_client)
+                        yield list_cls._load(current_items, cognite_client=self._cognite_client)
                     break
 
     def _list_generator_partitioned(
         self,
         partitions: int,
-        cls,
+        resource_cls: Type[T_CogniteResource],
         resource_path: str,
-        filter: Dict = None,
-        other_params: Dict = None,
-        headers: Dict = None,
-    ):
+        filter: Optional[Dict] = None,
+        other_params: Optional[Dict] = None,
+        headers: Optional[Dict] = None,
+    ) -> Iterator[T_CogniteResource]:
         next_cursors = {i + 1: None for i in range(partitions)}
 
-        def get_partition(partition_num):
+        def get_partition(partition_num: int) -> List[Dict[str, Any]]:
             next_cursor = next_cursors[partition_num]
 
             body = {
@@ -399,25 +434,26 @@ class APIClient:
                 raise tasks_summary.exceptions[0]
 
             for item in tasks_summary.joined_results():
-                yield cls._RESOURCE._load(item, cognite_client=self._cognite_client)
+                yield resource_cls._load(item, cognite_client=self._cognite_client)
 
             # Remove None from cursor dict
             next_cursors = {partition: next_cursors[partition] for partition in next_cursors if next_cursors[partition]}
 
     def _list(
         self,
-        method: str,
-        cls=None,
-        resource_path: str = None,
-        url_path: str = None,
-        limit: int = None,
-        filter: Dict = None,
-        other_params=None,
-        partitions=None,
-        sort=None,
-        headers: Dict = None,
+        method: Literal["POST", "GET"],
+        list_cls: Type[T_CogniteResourceList],
+        resource_cls: Type[T_CogniteResource],
+        resource_path: Optional[str] = None,
+        url_path: Optional[str] = None,
+        limit: Optional[int] = None,
+        filter: Optional[Dict] = None,
+        other_params: Optional[Dict] = None,
+        partitions: Optional[int] = None,
+        sort: Optional[List[str]] = None,
+        headers: Optional[Dict] = None,
         initial_cursor: Optional[str] = None,
-    ):
+    ) -> T_CogniteResourceList:
         if partitions:
             if limit not in [None, -1, float("inf")]:
                 raise ValueError("When using partitions, limit should be `None`, `-1` or `inf`.")
@@ -426,18 +462,18 @@ class APIClient:
             return self._list_partitioned(
                 partitions=partitions,
                 method=method,
-                cls=cls,
+                list_cls=list_cls,
                 resource_path=resource_path,
                 filter=filter,
                 other_params=other_params,
                 headers=headers,
             )
 
-        cls = cls or self._LIST_CLASS
         resource_path = resource_path or self._RESOURCE_PATH
-        items = []
+        items: List[T_CogniteResource] = []
         for resource_list in self._list_generator(
-            cls=cls,
+            list_cls=list_cls,
+            resource_cls=resource_cls,
             resource_path=resource_path,
             url_path=url_path,
             method=method,
@@ -450,22 +486,19 @@ class APIClient:
             initial_cursor=initial_cursor,
         ):
             items.extend(resource_list.data)
-        return cls(items, cognite_client=self._cognite_client)
+        return list_cls(items, cognite_client=self._cognite_client)
 
     def _list_partitioned(
         self,
-        partitions,
-        method,
-        cls=None,
-        resource_path: str = None,
-        filter: Dict = None,
-        other_params=None,
-        headers: Dict = None,
-    ):
-        cls = cls or self._LIST_CLASS
-        resource_path = resource_path or self._RESOURCE_PATH
-
-        def get_partition(partition):
+        partitions: int,
+        method: Literal["POST", "GET"],
+        list_cls: Type[T_CogniteResourceList],
+        resource_path: Optional[str] = None,
+        filter: Optional[Dict] = None,
+        other_params: Optional[Dict] = None,
+        headers: Optional[Dict] = None,
+    ) -> T_CogniteResourceList:
+        def get_partition(partition: int) -> List[Dict[str, Any]]:
             next_cursor = None
             retrieved_items = []
             while True:
@@ -477,7 +510,9 @@ class APIClient:
                         "partition": partition,
                         **(other_params or {}),
                     }
-                    res = self._post(url_path=resource_path + "/list", json=body, headers=headers)
+                    res = self._post(
+                        url_path=(resource_path or self._RESOURCE_PATH) + "/list", json=body, headers=headers
+                    )
                 elif method == "GET":
                     params = {
                         **(filter or {}),
@@ -486,7 +521,9 @@ class APIClient:
                         "partition": partition,
                         **(other_params or {}),
                     }
-                    res = self._get(url_path=resource_path, params=params, headers=headers)
+                    res = self._get(url_path=(resource_path or self._RESOURCE_PATH), params=params, headers=headers)
+                else:
+                    raise ValueError(f"Unsupported method: {method}")
                 retrieved_items.extend(res.json()["items"])
                 next_cursor = res.json().get("nextCursor")
                 if next_cursor is None:
@@ -497,25 +534,27 @@ class APIClient:
         tasks_summary = utils._concurrency.execute_tasks_concurrently(get_partition, tasks, max_workers=partitions)
         if tasks_summary.exceptions:
             raise tasks_summary.exceptions[0]
-        return cls._load(tasks_summary.joined_results(), cognite_client=self._cognite_client)
+        return list_cls._load(tasks_summary.joined_results(), cognite_client=self._cognite_client)
 
     def _aggregate(
         self,
-        resource_path: str = None,
-        filter: Union[CogniteFilter, Dict] = None,
-        aggregate: str = None,
-        fields: List[str] = None,
-        headers: Dict = None,
-        cls=None,
-    ):
+        cls: Type[T],
+        resource_path: Optional[str] = None,
+        filter: Optional[Union[CogniteFilter, Dict]] = None,
+        aggregate: Optional[str] = None,
+        fields: Optional[List[str]] = None,
+        headers: Optional[Dict] = None,
+    ) -> List[T]:
         utils._auxiliary.assert_type(filter, "filter", [dict, CogniteFilter], allow_none=True)
         utils._auxiliary.assert_type(fields, "fields", [list], allow_none=True)
         if isinstance(filter, CogniteFilter):
-            filter = filter.dump(camel_case=True)
+            dumped_filter = filter.dump(camel_case=True)
         elif isinstance(filter, Dict):
-            filter = utils._auxiliary.convert_all_keys_to_camel_case(filter)
+            dumped_filter = utils._auxiliary.convert_all_keys_to_camel_case(filter)
+        else:
+            dumped_filter = {}
         resource_path = resource_path or self._RESOURCE_PATH
-        body = {"filter": filter or {}}
+        body: Dict[str, Any] = {"filter": dumped_filter}
         if aggregate is not None:
             body["aggregate"] = aggregate
         if fields is not None:
@@ -525,39 +564,43 @@ class APIClient:
 
     def _create_multiple(
         self,
-        items: Union[List[Any], Any],
-        cls: Any = None,
-        resource_path: str = None,
-        params: Dict = None,
-        headers: Dict = None,
-        extra_body_fields: Dict = None,
-        limit=None,
-    ):
-        cls = cls or self._LIST_CLASS
+        items: Union[Sequence[CogniteResource], Sequence[Dict[str, Any]], CogniteResource, Dict[str, Any]],
+        list_cls: Type[T_CogniteResourceList],
+        resource_cls: Type[T_CogniteResource],
+        resource_path: Optional[str] = None,
+        params: Optional[Dict] = None,
+        headers: Optional[Dict] = None,
+        extra_body_fields: Optional[Dict] = None,
+        limit: Optional[int] = None,
+    ) -> Union[T_CogniteResourceList, T_CogniteResource]:
         resource_path = resource_path or self._RESOURCE_PATH
         limit = limit or self._CREATE_LIMIT
         single_item = not isinstance(items, list)
         if single_item:
-            items = [items]
+            items = cast(Union[Sequence[CogniteResource], Sequence[Dict[str, Any]]], [items])
+        else:
+            items = cast(Union[Sequence[CogniteResource], Sequence[Dict[str, Any]]], items)
 
         items_split = []
         for i in range(0, len(items), limit):
             if isinstance(items[i], CogniteResource):
+                items = cast(List[CogniteResource], items)
                 items_chunk = [item.dump(camel_case=True) for item in items[i : i + limit]]
             else:
+                items = cast(List[Dict[str, Any]], items)
                 items_chunk = [item for item in items[i : i + limit]]
             items_split.append({"items": items_chunk, **(extra_body_fields or {})})
 
         tasks = [(resource_path, task_items, params, headers) for task_items in items_split]
         summary = utils._concurrency.execute_tasks_concurrently(self._post, tasks, max_workers=self._config.max_workers)
 
-        def unwrap_element(el):
+        def unwrap_element(el: T) -> Union[CogniteResource, T]:
             if isinstance(el, dict):
-                return cls._RESOURCE._load(el, cognite_client=self._cognite_client)
+                return resource_cls._load(el, cognite_client=self._cognite_client)
             else:
                 return el
 
-        def str_format_element(el):
+        def str_format_element(el: T) -> Union[str, Dict, T]:
             if isinstance(el, CogniteResource):
                 dumped = el.dump()
                 if "external_id" in dumped:
@@ -573,19 +616,19 @@ class APIClient:
         created_resources = summary.joined_results(lambda res: res.json()["items"])
 
         if single_item:
-            return cls._RESOURCE._load(created_resources[0], cognite_client=self._cognite_client)
-        return cls._load(created_resources, cognite_client=self._cognite_client)
+            return resource_cls._load(created_resources[0], cognite_client=self._cognite_client)
+        return list_cls._load(created_resources, cognite_client=self._cognite_client)
 
     def _delete_multiple(
         self,
         wrap_ids: bool,
-        resource_path: str = None,
-        ids: Union[List[int], int] = None,
-        external_ids: Union[List[str], str] = None,
-        params: Dict = None,
-        headers: Dict = None,
-        extra_body_fields: Dict = None,
-    ):
+        resource_path: Optional[str] = None,
+        ids: Optional[Union[List[int], int]] = None,
+        external_ids: Optional[Union[List[str], str]] = None,
+        params: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, Any]] = None,
+        extra_body_fields: Optional[Dict[str, Any]] = None,
+    ) -> None:
         resource_path = resource_path or self._RESOURCE_PATH
         all_ids = self._process_ids(ids, external_ids, wrap_ids)
         id_chunks = utils._auxiliary.split_into_chunks(all_ids, self._DELETE_LIMIT)
@@ -606,22 +649,25 @@ class APIClient:
 
     def _update_multiple(
         self,
-        items: Union[List[Any], Any],
-        cls: Any = None,
+        items: Union[Sequence[Union[CogniteResource, CogniteUpdate]], CogniteResource, CogniteUpdate],
+        list_cls: Type[T_CogniteResourceList],
+        resource_cls: Type[T_CogniteResource],
+        update_cls: Type[CogniteUpdate],
         resource_path: str = None,
         params: Dict = None,
         headers: Dict = None,
-    ):
-        cls = cls or self._LIST_CLASS
+    ) -> Union[T_CogniteResourceList, T_CogniteResource]:
         resource_path = resource_path or self._RESOURCE_PATH
         patch_objects = []
         single_item = not isinstance(items, (list, UserList))
         if single_item:
-            items = [items]
+            item_list = cast(Union[Sequence[CogniteResource], Sequence[CogniteUpdate]], [items])
+        else:
+            item_list = cast(Union[Sequence[CogniteResource], Sequence[CogniteUpdate]], items)
 
-        for index, item in enumerate(items):
+        for index, item in enumerate(item_list):
             if isinstance(item, CogniteResource):
-                patch_objects.append(self._convert_resource_to_patch_object(item, cls._UPDATE._get_update_properties()))
+                patch_objects.append(self._convert_resource_to_patch_object(item, update_cls._get_update_properties()))
             elif isinstance(item, CogniteUpdate):
                 patch_objects.append(item.dump())
                 patch_object_update = patch_objects[index]["update"]
@@ -646,25 +692,24 @@ class APIClient:
         updated_items = tasks_summary.joined_results(lambda res: res.json()["items"])
 
         if single_item:
-            return cls._RESOURCE._load(updated_items[0], cognite_client=self._cognite_client)
-        return cls._load(updated_items, cognite_client=self._cognite_client)
+            return resource_cls._load(updated_items[0], cognite_client=self._cognite_client)
+        return list_cls._load(updated_items, cognite_client=self._cognite_client)
 
     def _search(
         self,
+        list_cls: Type[T_CogniteResourceList],
         search: Dict,
         filter: Union[Dict, CogniteFilter],
         limit: int,
-        cls: Any = None,
-        resource_path: str = None,
-        params: Dict = None,
-        headers: Dict = None,
-    ):
+        resource_path: Optional[str] = None,
+        params: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, Any]] = None,
+    ) -> T_CogniteResourceList:
         utils._auxiliary.assert_type(filter, "filter", [dict, CogniteFilter], allow_none=True)
         if isinstance(filter, CogniteFilter):
             filter = filter.dump(camel_case=True)
         elif isinstance(filter, dict):
             filter = utils._auxiliary.convert_all_keys_to_camel_case(filter)
-        cls = cls or self._LIST_CLASS
         resource_path = resource_path or self._RESOURCE_PATH
         res = self._post(
             url_path=resource_path + "/search",
@@ -672,15 +717,17 @@ class APIClient:
             params=params,
             headers=headers,
         )
-        return cls._load(res.json()["items"], cognite_client=self._cognite_client)
+        return list_cls._load(res.json()["items"], cognite_client=self._cognite_client)
 
     @staticmethod
-    def _convert_resource_to_patch_object(resource, update_attributes):
+    def _convert_resource_to_patch_object(
+        resource: CogniteResource, update_attributes: Collection[str]
+    ) -> Dict[str, Dict[str, Dict]]:
         dumped_resource = resource.dump(camel_case=True)
         has_id = "id" in dumped_resource
         has_external_id = "externalId" in dumped_resource
 
-        patch_object = {"update": {}}
+        patch_object: Dict[str, Dict[str, Dict]] = {"update": {}}
         if has_id:
             patch_object["id"] = dumped_resource.pop("id")
         elif has_external_id:
@@ -694,46 +741,50 @@ class APIClient:
     @staticmethod
     def _process_ids(
         ids: Union[List[int], int, None], external_ids: Union[List[str], str, None], wrap_ids: bool
-    ) -> List:
+    ) -> Union[List[Union[Dict[str, int], Dict[str, str]]], List[Union[int, str]]]:
         if external_ids is None and ids is None:
             raise ValueError("No ids specified")
         if external_ids and not wrap_ids:
             raise ValueError("externalIds must be wrapped")
 
         if isinstance(ids, numbers.Integral):
-            ids = [ids]
+            id_list = [ids]
         elif isinstance(ids, list) or ids is None:
-            ids = ids or []
+            id_list = ids or []
         else:
             raise TypeError("ids must be int or list of int")
 
         if isinstance(external_ids, str):
-            external_ids = [external_ids]
+            external_id_list = [external_ids]
         elif isinstance(external_ids, list) or external_ids is None:
-            external_ids = external_ids or []
+            external_id_list = external_ids or []
         else:
             raise TypeError("external_ids must be str or list of str")
 
         if wrap_ids:
-            ids = [{"id": id} for id in ids]
-            external_ids = [{"externalId": external_id} for external_id in external_ids]
+            id_objs = [{"id": id} for id in id_list]
+            external_id_objs = [{"externalId": external_id} for external_id in external_id_list]
+            all_wrapped_ids: List[Union[Dict[str, int], Dict[str, str]]] = [*id_objs, *external_id_objs]
+            return all_wrapped_ids
 
-        all_ids = ids + external_ids
-
+        all_ids: List[Union[int, str]] = [*id_list, *external_id_list]
         return all_ids
 
     @staticmethod
-    def _is_single_identifier(ids, external_ids):
-        single_id = isinstance(ids, numbers.Integral) and external_ids is None
+    def _is_single_identifier(
+        ids: Optional[Union[int, numbers.Integral, Sequence[numbers.Integral], Sequence[int]]],
+        external_ids: Optional[Union[str, Sequence[str]]],
+    ) -> bool:
+        single_id = isinstance(ids, (numbers.Integral, int)) and external_ids is None
         single_external_id = isinstance(external_ids, str) and ids is None
         return single_id or single_external_id
 
     @staticmethod
-    def _status_ok(status_code: int):
+    def _status_ok(status_code: int) -> bool:
         return status_code in {200, 201, 202, 204}
 
     @classmethod
-    def _raise_API_error(cls, res: Response, payload: Dict):
+    def _raise_API_error(cls, res: Response, payload: Dict) -> NoReturn:
         x_request_id = res.headers.get("X-Request-Id")
         code = res.status_code
         missing = None
@@ -751,11 +802,11 @@ class APIClient:
                     if k not in ["message", "missing", "duplicated", "code"]:
                         extra[k] = v
             else:
-                msg = res.content
+                msg = res.content.decode()
         except Exception:
-            msg = res.content
+            msg = res.content.decode()
 
-        error_details = {"X-Request-ID": x_request_id}
+        error_details: Dict[str, Any] = {"X-Request-ID": x_request_id}
         if payload:
             error_details["payload"] = payload
         if missing:
@@ -770,15 +821,13 @@ class APIClient:
         if res.history:
             for res_hist in res.history:
                 log.debug(
-                    "REDIRECT AFTER HTTP Error {} {} {}: {}".format(
-                        res_hist.status_code, res_hist.request.method, res_hist.request.url, res_hist.content
-                    )
+                    f"REDIRECT AFTER HTTP Error {res_hist.status_code} {res_hist.request.method} {res_hist.request.url}: {res_hist.content.decode()}"
                 )
-        log.debug("HTTP Error {} {} {}: {}".format(code, res.request.method, res.request.url, msg), extra=error_details)
+        log.debug(f"HTTP Error {code} {res.request.method} {res.request.url}: {msg}", extra=error_details)
         raise CogniteAPIError(msg, code, x_request_id, missing=missing, duplicated=duplicated, extra=extra)
 
     @classmethod
-    def _log_request(cls, res: Response, **kwargs):
+    def _log_request(cls, res: Response, **kwargs: Any) -> None:
         method = res.request.method
         url = res.request.url
         status_code = res.status_code
@@ -819,7 +868,7 @@ class APIClient:
         return "<binary>"
 
     @staticmethod
-    def _sanitize_headers(headers: Optional[Dict]):
+    def _sanitize_headers(headers: Optional[Dict]) -> None:
         if headers is None:
             return
         if "api-key" in headers:

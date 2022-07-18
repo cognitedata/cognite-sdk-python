@@ -48,7 +48,7 @@ def mock_seq_response(rsps, cognite_client):
     }
     url_pattern = re.compile(
         re.escape(cognite_client.sequences._get_base_url_with_base_path())
-        + "/sequences(?:/byids|/list|/update|/delete|/search|$|\?.+)"
+        + r"/sequences(?:/byids|/list|/update|/delete|/search|$|\?.+)"
     )
     rsps.assert_all_requests_are_fired = False
 
@@ -62,7 +62,7 @@ def mock_sequences_empty(rsps, cognite_client):
     response_body = {"items": []}
     url_pattern = re.compile(
         re.escape(cognite_client.sequences._get_base_url_with_base_path())
-        + "/sequences(?:/byids|/update|/list|/delete|/search|$|\?.+)"
+        + r"/sequences(?:/byids|/update|/list|/delete|/search|$|\?.+)"
     )
     rsps.assert_all_requests_are_fired = False
 
@@ -214,7 +214,6 @@ class TestSequences:
             last_updated_time={"min": 45},
             created_time={"max": 123},
             asset_ids=[1, 2],
-            root_asset_ids=[1231],
             data_set_ids=[11],
             data_set_external_ids=["fml"],
             asset_subtree_ids=[1],
@@ -225,7 +224,6 @@ class TestSequences:
             "metadata": {"a": "b"},
             "assetIds": [1, 2],
             "assetSubtreeIds": [{"id": 1}, {"externalId": "a"}],
-            "rootAssetIds": [1231],
             "createdTime": {"max": 123},
             "lastUpdatedTime": {"min": 45},
             "dataSetIds": [{"id": 11}, {"externalId": "fml"}],

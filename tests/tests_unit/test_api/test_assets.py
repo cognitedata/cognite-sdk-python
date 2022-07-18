@@ -120,14 +120,6 @@ class TestAssets:
             "dataSetIds"
         ]
 
-    def test_list_root(self, cognite_client, mock_assets_response):
-        cognite_client.assets.list(root_ids=[{"id": 1}, {"externalId": "abc"}], limit=10)
-        calls = mock_assets_response.calls
-        assert 1 == len(calls)
-        assert {"cursor": None, "limit": 10, "filter": {"rootIds": [{"id": 1}, {"externalId": "abc"}]}} == jsgz_load(
-            calls[0].request.body
-        )
-
     def test_list_parent(self, cognite_client, mock_assets_response):
         cognite_client.assets.list(parent_ids=[1, 2], parent_external_ids=["abc"], limit=10)
         calls = mock_assets_response.calls
@@ -157,32 +149,6 @@ class TestAssets:
         cognite_client.assets.list(created_time=TimestampRange(min=20))
         assert 20 == jsgz_load(mock_assets_response.calls[0].request.body)["filter"]["createdTime"]["min"]
         assert "max" not in jsgz_load(mock_assets_response.calls[0].request.body)["filter"]["createdTime"]
-
-    def test_call_root(self, cognite_client, mock_assets_response):
-        list(cognite_client.assets.__call__(root_ids=[{"id": 1}, {"externalId": "abc"}], limit=10))
-        calls = mock_assets_response.calls
-        assert 1 == len(calls)
-        assert {"cursor": None, "limit": 10, "filter": {"rootIds": [{"id": 1}, {"externalId": "abc"}]}} == jsgz_load(
-            calls[0].request.body
-        )
-
-    def test_list_root_ids_list(self, cognite_client, mock_assets_response):
-        cognite_client.assets.list(root_ids=[1, 2], limit=10)
-        calls = mock_assets_response.calls
-        assert 1 == len(calls)
-        assert {"cursor": None, "limit": 10, "filter": {"rootIds": [{"id": 1}, {"id": 2}]}} == jsgz_load(
-            calls[0].request.body
-        )
-
-    def test_list_root_extids_list(self, cognite_client, mock_assets_response):
-        cognite_client.assets.list(root_external_ids=["1", "2"], limit=10)
-        calls = mock_assets_response.calls
-        assert 1 == len(calls)
-        assert {
-            "cursor": None,
-            "limit": 10,
-            "filter": {"rootIds": [{"externalId": "1"}, {"externalId": "2"}]},
-        } == jsgz_load(calls[0].request.body)
 
     def test_create_single(self, cognite_client, mock_assets_response):
         res = cognite_client.assets.create(Asset(external_id="1", name="blabla"))

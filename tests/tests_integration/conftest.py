@@ -1,11 +1,10 @@
 import os
+import random
 
 import pytest
 from msal import PublicClientApplication
 
 from cognite.client import CogniteClient
-
-REDIRECT_PORT = 53000
 
 
 def make_cognite_client_with_interactive_flow() -> CogniteClient:
@@ -13,7 +12,8 @@ def make_cognite_client_with_interactive_flow() -> CogniteClient:
     client_id = os.environ["COGNITE_CLIENT_ID"]
     scopes = os.environ.get("COGNITE_TOKEN_SCOPES", "").split(",")
     app = PublicClientApplication(client_id=client_id, authority=authority_url)
-    creds = app.acquire_token_interactive(scopes=scopes, port=REDIRECT_PORT)
+    redirect_port = random.randint(53000, 60000)  # random port so we can run the test suite in parallel
+    creds = app.acquire_token_interactive(scopes=scopes, port=redirect_port)
     return CogniteClient(token=creds["access_token"])
 
 

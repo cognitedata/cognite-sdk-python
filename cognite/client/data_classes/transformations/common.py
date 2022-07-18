@@ -1,4 +1,6 @@
-from cognite.client.data_classes._base import *
+from typing import Any, Dict, Optional
+
+from cognite.client import utils
 
 
 class TransformationDestination:
@@ -11,69 +13,69 @@ class TransformationDestination:
     def __init__(self, type: str = None):
         self.type = type
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.type)
 
-    def __eq__(self, obj):
-        return isinstance(obj, TransformationDestination) and hash(obj) == hash(self)
+    def __eq__(self, other: Any) -> bool:
+        return isinstance(other, TransformationDestination) and hash(other) == hash(self)
 
     @staticmethod
-    def assets():
+    def assets() -> "TransformationDestination":
         """To be used when the transformation is meant to produce assets."""
         return TransformationDestination(type="assets")
 
     @staticmethod
-    def timeseries():
+    def timeseries() -> "TransformationDestination":
         """To be used when the transformation is meant to produce time series."""
         return TransformationDestination(type="timeseries")
 
     @staticmethod
-    def asset_hierarchy():
+    def asset_hierarchy() -> "TransformationDestination":
         """To be used when the transformation is meant to produce asset hierarchies."""
         return TransformationDestination(type="asset_hierarchy")
 
     @staticmethod
-    def events():
+    def events() -> "TransformationDestination":
         """To be used when the transformation is meant to produce events."""
         return TransformationDestination(type="events")
 
     @staticmethod
-    def datapoints():
+    def datapoints() -> "TransformationDestination":
         """To be used when the transformation is meant to produce numeric data points."""
         return TransformationDestination(type="datapoints")
 
     @staticmethod
-    def string_datapoints():
+    def string_datapoints() -> "TransformationDestination":
         """To be used when the transformation is meant to produce string data points."""
         return TransformationDestination(type="string_datapoints")
 
     @staticmethod
-    def sequences():
+    def sequences() -> "TransformationDestination":
         """To be used when the transformation is meant to produce sequences."""
         return TransformationDestination(type="sequences")
 
     @staticmethod
-    def files():
+    def files() -> "TransformationDestination":
         """To be used when the transformation is meant to produce files."""
         return TransformationDestination(type="files")
 
     @staticmethod
-    def labels():
+    def labels() -> "TransformationDestination":
         """To be used when the transformation is meant to produce labels."""
         return TransformationDestination(type="labels")
 
     @staticmethod
-    def relationships():
+    def relationships() -> "TransformationDestination":
         """To be used when the transformation is meant to produce relationships."""
         return TransformationDestination(type="relationships")
 
     @staticmethod
-    def data_sets():
+    def data_sets() -> "TransformationDestination":
         """To be used when the transformation is meant to produce data sets."""
         return TransformationDestination(type="data_sets")
 
     @staticmethod
-    def raw(database: str = "", table: str = ""):
+    def raw(database: str = "", table: str = "") -> "RawTable":
         """To be used when the transformation is meant to produce raw table rows.
 
         Args:
@@ -86,7 +88,7 @@ class TransformationDestination:
         return RawTable(database=database, table=table)
 
     @staticmethod
-    def sequence_rows(external_id: str = ""):
+    def sequence_rows(external_id: str = "") -> "SequenceRows":
         """To be used when the transformation is meant to produce sequence rows.
 
         Args:
@@ -104,11 +106,11 @@ class RawTable(TransformationDestination):
         self.database = database
         self.table = table
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.type, self.database, self.table))
 
-    def __eq__(self, obj):
-        return isinstance(obj, RawTable) and hash(obj) == hash(self)
+    def __eq__(self, other: Any) -> bool:
+        return isinstance(other, RawTable) and hash(other) == hash(self)
 
 
 class SequenceRows(TransformationDestination):
@@ -116,11 +118,11 @@ class SequenceRows(TransformationDestination):
         super().__init__(type="sequence_rows")
         self.external_id = external_id
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.type, self.external_id))
 
-    def __eq__(self, obj):
-        return isinstance(obj, SequenceRows) and hash(obj) == hash(self)
+    def __eq__(self, other: Any) -> bool:
+        return isinstance(other, SequenceRows) and hash(other) == hash(self)
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         ret = {"external_id": self.external_id, "type": self.type}

@@ -1,5 +1,5 @@
 import numbers
-from typing import *
+from typing import TYPE_CHECKING, List, Union
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -15,9 +15,14 @@ from cognite.client.data_classes import (
 )
 from cognite.client.data_classes.iam import TokenInspection
 
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
+
 
 class IAMAPI(APIClient):
-    def __init__(self, config: utils._client_config.ClientConfig, api_version: str = None, cognite_client=None) -> None:
+    def __init__(
+        self, config: utils._client_config.ClientConfig, api_version: str = None, cognite_client: "CogniteClient" = None
+    ) -> None:
         super().__init__(config, api_version=api_version, cognite_client=cognite_client)
         self.service_accounts = ServiceAccountsAPI(config, api_version=api_version, cognite_client=cognite_client)
         self.api_keys = APIKeysAPI(config, api_version=api_version, cognite_client=cognite_client)
@@ -28,7 +33,6 @@ class IAMAPI(APIClient):
 
 class ServiceAccountsAPI(APIClient):
     _RESOURCE_PATH = "/serviceaccounts"
-    _LIST_CLASS = ServiceAccountList
 
     def list(self) -> ServiceAccountList:
         """`List service accounts. <https://docs.cognite.com/api/v1/#operation/getServiceAccounts>`_
@@ -67,7 +71,7 @@ class ServiceAccountsAPI(APIClient):
                 >>> my_account = ServiceAccount(name="my@service.com", groups=[1, 2, 3])
                 >>> res = c.iam.service_accounts.create(my_account)
         """
-        return self._create_multiple(items=service_account)
+        return self._create_multiple(list_cls=ServiceAccountList, resource_cls=ServiceAccount, items=service_account)
 
     def delete(self, id: Union[int, List[int]]) -> None:
         """`Delete one or more service accounts. <https://docs.cognite.com/api/v1/#operation/deleteServiceAccounts>`_
@@ -91,7 +95,6 @@ class ServiceAccountsAPI(APIClient):
 
 class APIKeysAPI(APIClient):
     _RESOURCE_PATH = "/apikeys"
-    _LIST_CLASS = APIKeyList
 
     def list(self, include_deleted: bool = False, all: bool = False, service_account_id: bool = None) -> APIKeyList:
         """`List api keys. <https://docs.cognite.com/api/v1/#operation/getApiKeys>`_
@@ -135,12 +138,13 @@ class APIKeysAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.iam.api_keys.create(1)
         """
-        utils._auxiliary.assert_type(service_account_id, "service_account_id", [numbers.Integral, list])
         if isinstance(service_account_id, numbers.Integral):
             items = {"serviceAccountId": service_account_id}
-        else:
+        elif isinstance(service_account_id, list):
             items = [{"serviceAccountId": sa_id} for sa_id in service_account_id]
-        return self._create_multiple(items=items)
+        else:
+            raise TypeError("service_account_id must be an int or a list of ints")
+        return self._create_multiple(list_cls=APIKeyList, resource_cls=APIKey, items=items)
 
     def delete(self, id: Union[int, List[int]]) -> None:
         """`Delete one or more api keys. <https://docs.cognite.com/api/v1/#operation/deleteApiKeys>`_
@@ -164,7 +168,6 @@ class APIKeysAPI(APIClient):
 
 class GroupsAPI(APIClient):
     _RESOURCE_PATH = "/groups"
-    _LIST_CLASS = GroupList
 
     def list(self, all: bool = False) -> GroupList:
         """`List groups. <https://docs.cognite.com/api/v1/#operation/getGroups>`_
@@ -205,7 +208,7 @@ class GroupsAPI(APIClient):
                 >>> my_group = Group(name="My Group", capabilities=my_capabilities)
                 >>> res = c.iam.groups.create(my_group)
         """
-        return self._create_multiple(group)
+        return self._create_multiple(list_cls=GroupList, resource_cls=Group, items=group)
 
     def delete(self, id: Union[int, List[int]]) -> None:
         """`Delete one or more groups. <https://docs.cognite.com/api/v1/#operation/deleteGroups>`_
@@ -295,7 +298,6 @@ class GroupsAPI(APIClient):
 
 class SecurityCategoriesAPI(APIClient):
     _RESOURCE_PATH = "/securitycategories"
-    _LIST_CLASS = SecurityCategoryList
 
     def list(self, limit: int = 25) -> SecurityCategoryList:
         """`List security categories. <https://docs.cognite.com/api/v1/#operation/getSecurityCategories>`_
@@ -314,7 +316,7 @@ class SecurityCategoriesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.iam.security_categories.list()
         """
-        return self._list(method="GET", limit=limit)
+        return self._list(list_cls=SecurityCategoryList, resource_cls=SecurityCategory, method="GET", limit=limit)
 
     def create(
         self, security_category: Union[SecurityCategory, List[SecurityCategory]]
@@ -337,7 +339,9 @@ class SecurityCategoriesAPI(APIClient):
                 >>> my_category = SecurityCategory(name="My Category")
                 >>> res = c.iam.security_categories.create(my_category)
         """
-        return self._create_multiple(security_category)
+        return self._create_multiple(
+            list_cls=SecurityCategoryList, resource_cls=SecurityCategory, items=security_category
+        )
 
     def delete(self, id: Union[int, List[int]]) -> None:
         """`Delete one or more security categories. <https://docs.cognite.com/api/v1/#operation/deleteSecurityCategories>`_
@@ -368,4 +372,4 @@ class TokenAPI(APIClient):
         Returns:
             TokenInspection: The object with token inspection details.
         """
-        return TokenInspection._load(self._get(f"/api/v1/token/inspect").json())
+        return TokenInspection._load(self._get("/api/v1/token/inspect").json())

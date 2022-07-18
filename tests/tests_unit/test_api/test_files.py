@@ -1,7 +1,7 @@
 import json
 import os
 import re
-from io import BufferedReader, TextIOWrapper
+from io import BufferedReader
 from tempfile import TemporaryDirectory
 
 import pytest
@@ -228,16 +228,13 @@ class TestFilesAPI:
         assert 10 == jsgz_load(mock_files_response.calls[0].request.body)["limit"]
 
     def test_list_params(self, cognite_client, mock_files_response):
-        cognite_client.files.list(
-            root_asset_ids=[1, 2], root_asset_external_ids=["a"], data_set_external_ids=["x"], limit=10
-        )
+        cognite_client.files.list(data_set_external_ids=["x"], limit=10)
         calls = mock_files_response.calls
         assert 1 == len(calls)
         assert {
             "cursor": None,
             "limit": 10,
             "filter": {
-                "rootAssetIds": [{"id": 1}, {"id": 2}, {"externalId": "a"}],
                 "dataSetIds": [{"externalId": "x"}],
             },
         } == jsgz_load(calls[0].request.body)
@@ -467,14 +464,14 @@ class TestFilesAPI:
 
     def test_upload_using_file_handle(self, cognite_client, mock_file_upload_response):
         path = os.path.join(os.path.dirname(__file__), "files_for_test_upload", "file_for_test_upload_1.txt")
-        with open(path) as fh:
+        with open(path, "rb") as fh:
             res = cognite_client.files.upload_bytes(fh, name="bla")
         response_body = mock_file_upload_response.calls[0].response.json()
         del response_body["uploadUrl"]
         assert FileMetadata._load(response_body) == res
         assert "https://upload.here/" == mock_file_upload_response.calls[1].request.url
         assert {"name": "bla"} == jsgz_load(mock_file_upload_response.calls[0].request.body)
-        assert isinstance(mock_file_upload_response.calls[1].request.body, TextIOWrapper)
+        assert isinstance(mock_file_upload_response.calls[1].request.body, BufferedReader)
 
     def test_upload_path_does_not_exist(self, cognite_client):
         with pytest.raises(ValueError, match="does not exist"):

@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, cast
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -6,13 +6,13 @@ from cognite.client.data_classes import (
     TransformationJob,
     TransformationJobFilter,
     TransformationJobList,
+    TransformationJobMetric,
     TransformationJobMetricList,
 )
 
 
 class TransformationJobsAPI(APIClient):
     _RESOURCE_PATH = "/transformations/jobs"
-    _LIST_CLASS = TransformationJobList
 
     def list(
         self,
@@ -49,7 +49,9 @@ class TransformationJobsAPI(APIClient):
             transformation_id=transformation_id, transformation_external_id=transformation_external_id
         ).dump(camel_case=True)
 
-        return self._list(method="GET", limit=limit, filter=filter)
+        return self._list(
+            list_cls=TransformationJobList, resource_cls=TransformationJob, method="GET", limit=limit, filter=filter
+        )
 
     def retrieve(self, id: int) -> Optional[TransformationJob]:
         """`Retrieve a single transformation job by id. <https://docs.cognite.com/api/v1/#operation/getTransformationJobsByIds>`_
@@ -68,7 +70,12 @@ class TransformationJobsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.transformations.jobs.retrieve(id=1)
         """
-        return self._retrieve_multiple(ids=id, wrap_ids=True)
+        return cast(
+            Optional[TransformationJob],
+            self._retrieve_multiple(
+                list_cls=TransformationJobList, resource_cls=TransformationJob, ids=id, wrap_ids=True
+            ),
+        )
 
     def list_metrics(self, id: int) -> TransformationJobMetricList:
         """`List the metrics of a single transformation job. <https://docs.cognite.com/api/v1/#operation/getTransformationJobsMetrics>`_
@@ -89,7 +96,13 @@ class TransformationJobsAPI(APIClient):
         """
         url_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/metrics", str(id))
 
-        return self._list(method="GET", limit=None, resource_path=url_path, cls=TransformationJobMetricList)
+        return self._list(
+            list_cls=TransformationJobMetricList,
+            resource_cls=TransformationJobMetric,
+            method="GET",
+            limit=None,
+            resource_path=url_path,
+        )
 
     def retrieve_multiple(self, ids: List[int], ignore_unknown_ids: bool = False) -> TransformationJobList:
         """`Retrieve multiple transformation jobs by id. <https://docs.cognite.com/api/v1/#operation/getTransformationJobsByIds>`_
@@ -110,4 +123,13 @@ class TransformationJobsAPI(APIClient):
                 >>> res = c.transformations.jobs.retrieve_multiple(ids=[1, 2, 3])
         """
         utils._auxiliary.assert_type(ids, "id", [List], allow_none=True)
-        return self._retrieve_multiple(ids=ids, ignore_unknown_ids=ignore_unknown_ids, wrap_ids=True)
+        return cast(
+            TransformationJobList,
+            self._retrieve_multiple(
+                list_cls=TransformationJobList,
+                resource_cls=TransformationJob,
+                ids=ids,
+                ignore_unknown_ids=ignore_unknown_ids,
+                wrap_ids=True,
+            ),
+        )
