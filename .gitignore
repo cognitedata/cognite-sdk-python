@@ -2,7 +2,7 @@
 __pycache__/
 *.py[cod]
 
-# Local credentials
+# Local credentials  # TODO: remove before merge->master
 local_cog_client.py
 cache.bin
 
