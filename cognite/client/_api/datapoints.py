@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import copy
 import dataclasses
 import itertools
@@ -8,7 +9,7 @@ import re as regexp
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Set, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, Set, Tuple, Union, cast
 
 import cognite.client.utils._time
 from cognite.client import utils
@@ -28,7 +29,6 @@ from cognite.client.utils._auxiliary import split_into_n
 
 if TYPE_CHECKING:
     import pandas
-
 
 print("RUNNING REPOS/COG-SDK, NOT FROM PIP")
 
@@ -1265,3 +1265,138 @@ class DatapointsFetcher:
                 )
             return item
         raise TypeError("Invalid type '{}' for argument '{}'".format(type(item), item_type))
+
+
+# Temporary class to be replaced by real classes
+@dataclass
+class Task:
+    query: DatapointsQueryNew
+
+
+@dataclass
+class TaskCompleted:
+    query: DatapointsQueryNew
+    retrieved_datapoints: int
+    retrieved_start: int
+    retrieved_end: int
+    is_complete: bool
+
+
+@dataclass
+class Result:
+    query: DatapointsQueryNew
+    datapoints: List[int]
+
+
+class DatapointsFetcherNew:
+    FETCH_WORKER_QUEUE_SIZE = 15
+    FETCH_WORKER_COUNT = 5
+    RESULT_WORKER_QUEUE_SIZE = 15
+    RESULT_WORKER_COUNT = 5
+
+    RESULT_QUEUE_SIZE = 20
+    RESULT_HANDLER_COUNT = 5
+
+    REMAINING_QUEUE_SIZE = 10
+
+    def __init__(self, client: DatapointsAPI):
+        self.client = client
+
+    # Todo Return native format for datapoints
+    def fetch(self, queries: List[DatapointsQueryNew]) -> Any:
+        return asyncio.run(self._fetch(queries))
+
+    async def _fetch(self, queries: List[DatapointsQueryNew]) -> Any:
+        from collections import defaultdict
+
+        results = defaultdict(list)
+
+        def datapoint_callback(result: Result):
+            results[result.query.id].extend(result.datapoints)
+
+        task_queue = asyncio.Queue(maxsize=self.FETCH_WORKER_QUEUE_SIZE)
+        result_queue = asyncio.Queue(maxsize=self.RESULT_QUEUE_SIZE)
+        remaining_queue = asyncio.Queue(maxsize=self.REMAINING_QUEUE_SIZE)
+
+        is_producer_completed = asyncio.Event()
+        is_producer_completed.clear()
+        producer_task = asyncio.create_task(
+            self._produce_tasks(queries, task_queue, remaining_queue, is_producer_completed)
+        )
+
+        workers = [
+            asyncio.create_task(self._fetch_worker(task_queue, result_queue)) for _ in range(self.FETCH_WORKER_COUNT)
+        ]
+        workers.extend(
+            [
+                asyncio.create_task(self._result_worker(result_queue, remaining_queue, datapoint_callback))
+                for _ in range(self.RESULT_WORKER_COUNT)
+            ]
+        )
+
+        await is_producer_completed.wait()
+        await task_queue.join()
+        await result_queue.join()
+        await remaining_queue.join()
+
+        # Just to be sure
+        producer_task.cancel()
+
+        for worker in workers:
+            worker.cancel()
+
+        return dict(results)
+
+    async def _produce_tasks(
+        self,
+        initial_queries: List[DatapointsQueryNew],
+        task_queue: asyncio.Queue,
+        remaining_queue: asyncio.Queue,
+        is_completed: asyncio.Event,
+    ):
+        task_count = len(initial_queries)
+        for query in initial_queries:
+            await task_queue.put(Task(query))
+        while task_count:
+            remaining: TaskCompleted = await remaining_queue.get()
+            if remaining.is_complete:
+                task_count -= 1
+            else:
+                # Todo create new tasks
+                raise NotImplementedError()
+            remaining_queue.task_done()
+        is_completed.set()
+
+    @classmethod
+    async def _fetch_worker(cls, task_queue: asyncio.Queue, result_queue: asyncio.Queue):
+        while True:
+            task: Task = await task_queue.get()
+            query = task.query
+
+            # Simulate latency
+            await asyncio.sleep(1)
+            # Simulate retrieving data points
+            datapoint_count = query.end - query.start
+
+            result = Result(query, list(range(datapoint_count)))
+            await result_queue.put(result)
+
+            task_queue.task_done()
+
+    @classmethod
+    async def _result_worker(
+        cls, result_queue: asyncio.Queue, remaining_queue: asyncio.Queue, result_callback: Callable[[Result], None]
+    ):
+        while True:
+            result = await result_queue.get()
+            result_callback(result)
+
+            remaining = TaskCompleted(
+                query=result.query,
+                retrieved_datapoints=len(result.datapoints),
+                retrieved_start=result.datapoints[0],
+                retrieved_end=result.datapoints[-1],
+                is_complete=True,
+            )
+            await remaining_queue.put(remaining)
+            result_queue.task_done()
