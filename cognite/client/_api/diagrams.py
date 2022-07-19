@@ -79,20 +79,21 @@ class DiagramsAPI(APIClient):
         file_ids: List[int] = None,
         file_external_ids: List[str] = None,
     ) -> DiagramDetectResults:
-        """Detect entities in a PNID.
+        """Detect entities in an engineering diagram.
         The results are not written to CDF.
         Note: All users on this CDF subscription with assets read-all and files read-all capabilities in the project,
         are able to access the data sent to this endpoint.
 
         Args:
             entities (List[Union[dict,CogniteResource]]): List of entities to detect
-            search_field (str): If entities is a list of dictionaries, this is the key to the values to detect in the PnId
+            search_field (str): If entities is a list of dictionaries, this is the key to the values to detect in the diagram
             partial_match (bool): Allow for a partial match (e.g. missing prefix).
             min_tokens (int): Minimal number of tokens a match must be based on
             file_ids (int): ID of the files, should already be uploaded in the same tenant.
             file_external_ids: File external ids.
         Returns:
-            DiagramDetectResults: Resulting queued job. Note that .result property of this job will block waiting for results."""
+            DiagramDetectResults: Resulting queued job. Note that .result property of this job will block waiting for results.
+        """
 
         entities = [
             entity.dump(camel_case=True) if isinstance(entity, CogniteResource) else entity for entity in entities
@@ -125,7 +126,7 @@ class DiagramsAPI(APIClient):
         return items
 
     def convert(self, detect_job: DiagramDetectResults) -> DiagramConvertResults:
-        """Convert a P&ID to interactive SVGs where the provided annotations are highlighted.
+        """Convert an engineering diagram to interactive SVGs where the provided annotations are highlighted.
 
         Args:
             detect_job(DiagramConvertResults): detect job
