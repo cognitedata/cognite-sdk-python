@@ -79,8 +79,7 @@ class DiagramsAPI(APIClient):
         file_ids: List[int] = None,
         file_external_ids: List[str] = None,
     ) -> DiagramDetectResults:
-        """Detect entities in an engineering diagram.
-        The results are not written to CDF.
+        """Detect entities in an engineering diagram. The results are not written to CDF.
         Note: All users on this CDF subscription with assets read-all and files read-all capabilities in the project,
         are able to access the data sent to this endpoint.
 
@@ -92,8 +91,7 @@ class DiagramsAPI(APIClient):
             file_ids (int): ID of the files, should already be uploaded in the same tenant.
             file_external_ids: File external ids.
         Returns:
-            DiagramDetectResults: Resulting queued job. Note that .result property of this job will block waiting for results.
-        """
+            DiagramDetectResults: Resulting queued job. Note that .result property of this job will block waiting for results."""
 
         entities = [
             entity.dump(camel_case=True) if isinstance(entity, CogniteResource) else entity for entity in entities
@@ -118,8 +116,7 @@ class DiagramsAPI(APIClient):
             detect_job (DiagramDetectResults): detect job
 
         Returns:
-            items: the format complies with diagram convert schema
-        """
+            items: the format complies with diagram convert schema"""
         items = [
             {k: v for k, v in item.items() if k in {"annotations", "fileId"}} for item in detect_job.result["items"]
         ]  # diagram detect always return file id.
@@ -132,8 +129,7 @@ class DiagramsAPI(APIClient):
             detect_job(DiagramConvertResults): detect job
 
         Returns:
-            DiagramConvertResults: Resulting queued job. Note that .result property of this job will block waiting for results.
-        """
+            DiagramConvertResults: Resulting queued job. Note that .result property of this job will block waiting for results."""
         return self._run_job(
             job_path="/convert",
             status_path="/convert/",
