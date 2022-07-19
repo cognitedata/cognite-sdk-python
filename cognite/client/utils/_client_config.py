@@ -17,7 +17,7 @@ class _DefaultConfig:
         self.project = os.getenv("COGNITE_PROJECT")
         self.client_name = os.getenv("COGNITE_CLIENT_NAME")
         self.base_url = os.getenv("COGNITE_BASE_URL", "https://api.cognitedata.com")
-        self.max_workers = int(os.getenv("COGNITE_MAX_WORKERS", 10))
+        self.max_workers = int(os.getenv("COGNITE_MAX_WORKERS", 20))
         self.headers: Dict[str, Any] = {}
         self.timeout = int(os.getenv("COGNITE_TIMEOUT", 30))
         self.file_transfer_timeout = int(os.getenv("COGNITE_FILE_TRANSFER_TIMEOUT", 600))

@@ -602,7 +602,7 @@ class SingleTSQuery:
         payload = dataclasses.asdict(self)
         for k in ("id", "external_id", "ignore_unknown_ids", "include_outside_points"):
             del payload[k]
-        payload["includeOutsidePoints"] = self.include_outside_points
+        payload["includeOutsidePoints"] = self.include_outside_points  # Camel case...
         return {**payload, **self.identifier_dct}
 
     @classmethod
