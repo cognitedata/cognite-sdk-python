@@ -449,6 +449,14 @@ class DatapointsQueryExternalId(CustomDatapoints):
     external_id: str  # required field
 
 
+class DatapointsFromAPI(TypedDict):
+    id: int
+    externalId: Optional[str]
+    isString: bool
+    isStep: bool
+    datapoints: List[Dict[str, Union[int, float, str]]]
+
+
 DatapointsIdTypes = Union[int, DatapointsQueryId, Iterable[Union[int, DatapointsQueryId]]]
 DatapointsExternalIdTypes = Union[str, DatapointsQueryExternalId, Iterable[Union[str, DatapointsQueryExternalId]]]
 
@@ -477,6 +485,16 @@ class DatapointsQueryNew(CogniteResource):
             granularity=self.granularity,
             include_outside_points=self.include_outside_points,
             ignore_unknown_ids=self.ignore_unknown_ids,
+        )
+
+    @property
+    def is_single_identifier(self):
+        # No lists given and exactly one of id/xid was given:
+        return (
+            isinstance(self.id, (dict, numbers.Integral))
+            and self.external_id is None
+            or isinstance(self.external_id, (dict, str))
+            and self.id is None
         )
 
     def validate(self) -> None:
@@ -564,11 +582,13 @@ class SingleTSQuery:
     ignore_unknown_ids: Optional[bool]
 
     def __post_init__(self):
-        self._is_missing = None  # I.e. not set...
-        self._is_string = None  # ...or unknown
         self._verify_time_range()
         self._verify_limit()
         self._verify_identifier()
+        self._is_missing = None  # I.e. not set...
+        self._is_string = None  # ...or unknown
+        if not self.is_raw_query:
+            self._is_string = False  # No aggregates exist for string time series
         if self.include_outside_points and self.limit is not None:
             warnings.warn(
                 "When using `include_outside_points=True` with a non-infinite `limit` you may get a large gap "
@@ -664,7 +684,10 @@ class SingleTSQuery:
     @property
     def is_string(self):
         if self._is_string is None:
-            raise RuntimeError("Before making API-calls the `is_string` status is unknown")
+            raise RuntimeError(
+                "For queries asking for raw datapoints, the `is_string` status is unknown before "
+                "any API-calls have been made"
+            )
         return self._is_string
 
     @is_string.setter

@@ -2,9 +2,6 @@ import math
 
 from local_cog_client import setup_local_cog_client
 
-# Specify the aggregates to return. Use default if null.
-# If the default is a set of aggregates,
-# specify an empty string to get raw data.
 make_agg_dct = {"aggregates": ["average"], "granularity": "12h"}
 START = None
 END = None

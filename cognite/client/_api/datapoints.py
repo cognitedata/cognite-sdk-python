@@ -9,16 +9,19 @@ import re as regexp
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from datetime import datetime
+from pprint import pprint
 from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, Set, Tuple, Union, cast
 
 import cognite.client.utils._time
 from cognite.client import utils
+from cognite.client._api.datapoint_tasks import dps_task_type_selector
 from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Datapoints, DatapointsList, DatapointsQuery
 from cognite.client.data_classes.datapoints import (
     DatapointsExternalIdMaybeAggregate,
     DatapointsExternalIdTypes,
+    DatapointsFromAPI,
     DatapointsIdMaybeAggregate,
     DatapointsIdTypes,
     DatapointsQueryNew,
@@ -30,7 +33,7 @@ from cognite.client.utils._auxiliary import split_into_n_parts
 if TYPE_CHECKING:
     import pandas
 
-print("RUNNING REPOS/COG-SDK, NOT FROM PIP")
+pprint("RUNNING REPOS/COG-SDK, NOT FROM PIP")
 
 # API-limits:
 DPS_LIMIT_AGG = 10_000
@@ -44,59 +47,56 @@ class DpsFetchOrchestrator:
     def __init__(self, dps_client: DatapointsAPI, user_queries: List[DatapointsQueryNew]):
         self.dps_client = dps_client
         self.user_queries = user_queries
-        self.pool: Optional[ThreadPoolExecutor] = None
         self.max_workers = self.dps_client._config.max_workers
         assert self.max_workers >= 1, "Invalid option for `max_workers`. Must be at least 1"
         split_qs = [], []
-        all_queries = [q.validate_and_create_queries() for q in self.user_queries]
+        all_queries = [uq.validate_and_create_queries() for uq in self.user_queries]
         for q in itertools.chain(*all_queries):
             split_qs[q.is_raw_query].append(q)
         self.agg_queries, self.raw_queries = split_qs
 
-    def initiate_thread_pool(self) -> ThreadPoolExecutor:
-        if self.pool is None or self.pool._shutdown:
-            self.pool = ThreadPoolExecutor(max_workers=self.max_workers)
-        return self.pool
+    def fetch_all_datapoints(self):
+        with ThreadPoolExecutor(max_workers=self.max_workers) as pool:
+            initial_futures_dct = self.create_initial_tasks(pool)
+            # The initial tasks are important - as they tell us which time series are missing,
+            # which are string etc. We use this info when we choose the best fetch-strategy.
+            # futures_dct = {}
+            new_t = []
+            for future in as_completed(initial_futures_dct):  # We schedule new work as soon as possible
+                res, (agg_queries, raw_queries) = future.result(), initial_futures_dct[future]
+                new_tasks = self.parse_initial_query_result_into_tasks(res, agg_queries, raw_queries)
+                new_t.extend(new_tasks)
+        breakpoint()
 
-    def request_datapoints(self, payload):
+    def request_datapoints(self, payload) -> DatapointsFromAPI:
         return self.dps_client._post(self.dps_client._RESOURCE_PATH + "/list", json=payload).json()["items"]
 
-    def create_initial_tasks(self):
+    def create_initial_tasks(self, pool):
         futures_dct = {}
-        queries_lst, items_lst = self._chunk_queries_for_initial_request()
+        queries_lst, items_lst = self.chunk_queries_for_initial_request()
         for queries, items in zip(queries_lst, items_lst):
-            future = self.pool.submit(self.request_datapoints, {"ignoreUnknownIds": True, "items": items})
+            future = pool.submit(self.request_datapoints, {"ignoreUnknownIds": True, "items": items})
             futures_dct[future] = queries
         return futures_dct
 
-    def parse_initial_query_result(self, results, agg_queries, raw_queries):
-        print(f"{len(results)=}, {len(agg_queries)=}, {len(raw_queries)=}")
+    def parse_initial_query_result_into_tasks(self, results, agg_queries, raw_queries):
         if len(results) < len(agg_queries) + len(raw_queries):
             # We have at least 1 missing time series:
-            agg_queries, raw_queries = self._handle_missing_ts(results, agg_queries, raw_queries)
-        # Split raw queries based on `is_string` status:
-        raw_numeric_qs, raw_string_qs = self._handle_string_ts(results, raw_queries)
-
-        # TODO: xxxxx
-        print(f"{len(agg_queries)=}, {len(raw_numeric_qs)=}, {len(raw_string_qs)=}")
-        input("...")
+            agg_queries, raw_queries = self.handle_missing_ts(results, agg_queries, raw_queries)
+        self.update_queries_is_string(results, raw_queries)
+        return [dps_task_type_selector(q)(q, res) for res, q in zip(results, itertools.chain(agg_queries, raw_queries))]
 
     @staticmethod
-    def _handle_string_ts(res, queries):
-        return_queries = [], []
+    def update_queries_is_string(res, queries):
         is_string = {("id", r["id"]) for r in res if r["isString"]}.union(
             ("externalId", r["externalId"]) for r in res if r["isString"]
         )
         for q in queries:
             # Update SingleTSQuery objects with `is_string` status:
             q.is_string = q.identifier_tpl in is_string
-            return_queries[q.is_string].append(q)
-
-        not_str_qs, str_qs = return_queries
-        return not_str_qs, str_qs
 
     @staticmethod
-    def _handle_missing_ts(res, agg_queries, raw_queries):
+    def handle_missing_ts(res, agg_queries, raw_queries):
         missing = set()
         not_missing = {("id", r["id"]) for r in res}.union(("externalId", r["externalId"]) for r in res)
         for q in itertools.chain(agg_queries, raw_queries):
@@ -112,7 +112,7 @@ class DpsFetchOrchestrator:
         return [q for q in agg_queries if not q.is_missing], [q for q in raw_queries if not q.is_missing]
 
     @staticmethod
-    def _find_initial_query_limits(limits, max_limit):
+    def find_initial_query_limits(limits, max_limit):
         limits = [max_limit if lim is None else min(lim, max_limit) for lim in limits]
         actual_lims = [0] * len(limits)
         not_done = set(range(len(limits)))
@@ -133,7 +133,7 @@ class DpsFetchOrchestrator:
             not_done -= rm_idx
         return actual_lims
 
-    def _chunk_queries_for_initial_request(self):
+    def chunk_queries_for_initial_request(self):
         n_agg, n_raw = len(self.agg_queries), len(self.raw_queries)
         # Optimal queries uses the entire worker pool. We may be forced to use more (queue) when we
         # can't fit all individual time series (maxes out at `FETCH_TS_LIMIT * max_workers`).
@@ -148,7 +148,7 @@ class DpsFetchOrchestrator:
             items = []
             query_lst.append(chunks)
             for queries, max_lim in zip(chunks, [DPS_LIMIT_AGG, DPS_LIMIT]):
-                maxed_limits = self._find_initial_query_limits([q.limit for q in queries], max_lim)
+                maxed_limits = self.find_initial_query_limits([q.limit for q in queries], max_lim)
                 items.extend([{**q.to_payload(), "limit": lim} for q, lim in zip(queries, maxed_limits)])
             items_lst.append(items)
         return query_lst, items_lst
@@ -192,17 +192,12 @@ class DatapointsAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
         fetcher = DpsFetchOrchestrator(self, user_queries=[query])
-        with fetcher.initiate_thread_pool():
-            initial_futures_dct = fetcher.create_initial_tasks()
-
-            # The initial futures are important - as they tell us which time series are
-            # missing, which are string etc. We use this info when we choose the best fetch-strategy.
-            # futures_dct = {}
-            for future in as_completed(initial_futures_dct):  # We schedule new work as soon as possible
-                res, (agg_queries, raw_queries) = future.result(), initial_futures_dct[future]
-                new_tasks = fetcher.parse_initial_query_result(res, agg_queries, raw_queries)  # noqa
-
-        return NotImplemented
+        dps_list = fetcher.fetch_all_datapoints()
+        if query.is_single_identifier:
+            if not dps_list and ignore_unknown_ids:
+                return None
+            return dps_list[0]
+        return dps_list
 
     def query_new(
         self,
@@ -214,8 +209,8 @@ class DatapointsAPI(APIClient):
         #       for the first query then the second etc.
         if isinstance(query, DatapointsQueryNew):
             query = [query]
-        fetcher = DpsFetchOrchestrator(client=self, queries=query)  # noqa
-        return NotImplemented
+        fetcher = DpsFetchOrchestrator(self, user_queries=[query])
+        return fetcher.fetch_all_datapoints()
 
     def retrieve_dataframe_new(*a, **kw):
         return NotImplemented
@@ -1329,7 +1324,7 @@ class Result:
     datapoints: List[int]
 
 
-class DatapointsFetcherNew:
+class DatapointsFetcherNewAsync:
     FETCH_WORKER_QUEUE_SIZE = 15
     FETCH_WORKER_COUNT = 5
     RESULT_WORKER_QUEUE_SIZE = 15
