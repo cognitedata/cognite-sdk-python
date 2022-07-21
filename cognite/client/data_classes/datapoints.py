@@ -4,7 +4,6 @@ import re as regexp
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Tuple, Union, cast
 
-import cognite.client.utils._time
 from cognite.client import utils
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.exceptions import CogniteDuplicateColumnsError
@@ -73,11 +72,7 @@ class Datapoint(CogniteResource):
         dumped = self.dump(camel_case=camel_case)
         timestamp = dumped.pop("timestamp")
 
-        for k, v in dumped.items():
-            dumped[k] = [v]
-        df = pd.DataFrame(dumped, index=[cognite.client.utils._time.ms_to_datetime(timestamp)])
-
-        return df
+        return pd.DataFrame(dumped, index=[pd.Timestamp(timestamp, unit="ms")])
 
 
 class Datapoints(CogniteResource):
