@@ -120,7 +120,7 @@ class Transformation(CogniteResource):
         self.destination_nonce = destination_nonce
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-    def _process_credentials(self, sessions_dict: Dict[str, NonceCredentials], keep_none: bool = False) -> None:
+    def _process_credentials(self, sessions_cache: Dict[str, NonceCredentials] = {}, keep_none: bool = False) -> None:
         def try_get_or_create_nonce(oidc_credentials: Optional[OidcCredentials]) -> Optional[NonceCredentials]:
             if keep_none and oidc_credentials is None:
                 return None
@@ -131,7 +131,7 @@ class Transformation(CogniteResource):
                 else "DEFAULT"
             )
 
-            ret = sessions_dict.get(key)
+            ret = sessions_cache.get(key)
             if not ret:
                 if oidc_credentials and oidc_credentials.client_id and oidc_credentials.client_secret:
                     credentials = ClientCredentials(oidc_credentials.client_id, oidc_credentials.client_secret)
@@ -140,7 +140,7 @@ class Transformation(CogniteResource):
                 try:
                     session = self._cognite_client.iam.sessions.create(credentials)
                     ret = NonceCredentials(str(session.id), session.nonce, self._cognite_client._config.project)
-                    sessions_dict[key] = ret
+                    sessions_cache[key] = ret
                 except Exception:
                     ret = None
             return ret

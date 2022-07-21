@@ -62,10 +62,10 @@ class TransformationsAPI(APIClient):
             sessions = {}
             for t in transformation:
                 t._cognite_client = self._cognite_client
-                t._process_credentials(sessions)
+                t._process_credentials(sessions_cache=sessions)
         elif isinstance(transformation, Transformation):
             transformation._cognite_client = self._cognite_client
-            transformation._process_credentials({})
+            transformation._process_credentials()
 
         return self._create_multiple(list_cls=TransformationList, resource_cls=Transformation, items=transformation)
 
@@ -274,10 +274,10 @@ class TransformationsAPI(APIClient):
             sessions = {}
             for t in item:
                 t._cognite_client = self._cognite_client
-                t._process_credentials(sessions, True)
+                t._process_credentials(sessions_cache=sessions, keep_none=True)
         elif isinstance(item, Transformation):
             item._cognite_client = self._cognite_client
-            item._process_credentials({}, True)
+            item._process_credentials(keep_none=True)
 
         return self._update_multiple(
             list_cls=TransformationList, resource_cls=Transformation, update_cls=TransformationUpdate, items=item
