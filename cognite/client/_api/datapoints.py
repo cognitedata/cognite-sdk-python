@@ -14,16 +14,20 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional,
 
 import cognite.client.utils._time
 from cognite.client import utils
+from cognite.client._api._type_defs import DatapointsExternalIdTypes, DatapointsFromAPI, DatapointsIdTypes
 from cognite.client._api.datapoint_tasks import dps_task_type_selector
 from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes import Datapoints, DatapointsList, DatapointsQuery
+from cognite.client.data_classes import (
+    Datapoints,
+    DatapointsArray,
+    DatapointsArrayList,
+    DatapointsList,
+    DatapointsQuery,
+)
 from cognite.client.data_classes.datapoints import (
     DatapointsExternalIdMaybeAggregate,
-    DatapointsExternalIdTypes,
-    DatapointsFromAPI,
     DatapointsIdMaybeAggregate,
-    DatapointsIdTypes,
     DatapointsQueryNew,
     SingleTSQuery,
 )
@@ -57,18 +61,18 @@ class DpsFetchOrchestrator:
         with ThreadPoolExecutor(max_workers=self.max_workers) as pool:
             initial_futures_dct = self._create_initial_tasks(pool)
             if self.eager_fetching:
-                result = self._fetch_all_eager(pool, initial_futures_dct)
+                results = self._fetch_all_eager(pool, initial_futures_dct)
             else:
-                result = self._fetch_all_with_query_chunking(pool, initial_futures_dct)
-        return self.massage_result_based_on_user_query(result)
+                results = self._fetch_all_with_query_chunking(pool, initial_futures_dct)
+        return self.finalize_tasks(results)
 
     def _fetch_all_eager(self, pool, initial_futures_dct):
         finished_tasks, future_dct = [], {}
         for future in as_completed(initial_futures_dct):
-            res, raw_or_agg_query = future.result(), initial_futures_dct[future]
+            res, query = future.result(), initial_futures_dct[future]
             if not res:
-                continue  # The time series did not exist
-            ts_task = self._create_task_from_initial_result(res, raw_or_agg_query)
+                continue  # The time series did not exist (and was part of a ignore_unknown_ids=True query)
+            (ts_task,) = self._create_task_from_initial_result(res, query)  # Unpack with "comma operator" :D
             if ts_task.is_done:
                 finished_tasks.append(ts_task)
                 continue
@@ -79,7 +83,7 @@ class DpsFetchOrchestrator:
         # Run until all tasks are complete:
         while future_dct:
             future = next(as_completed(future_dct))
-            (res,) = future.result()  # Unpack the single dps result with "comma operator" xD
+            (res,) = future.result()
             subtask_id, ts_task = future_dct.pop(future)
             ts_task.store_partial_result(subtask_id, res)
             if ts_task.is_done:
@@ -89,6 +93,7 @@ class DpsFetchOrchestrator:
             new_future = pool.submit(self._request_datapoints, payload)
             future_dct[new_future] = (subtask_id, ts_task)
             # TODO: XXXXX
+        return finished_tasks
 
     def _fetch_all_with_query_chunking(self, pool, initial_futures_dct):
         # The initial tasks are important - as they tell us which time series are missing,
@@ -111,10 +116,12 @@ class DpsFetchOrchestrator:
         tot_queries = len(self.agg_queries) + len(self.raw_queries)
         return tot_queries <= self.max_workers
 
-    def massage_result_based_on_user_query(self, res):
-        print("NOT IMPLEMENTED (...and change name lol): massage_result_based_on_user_query :)")
-        # TODO: Ordering should follow: UQ1-ID, UQ1-XID, UQ2-ID, ..., UQN-ID, UQN-XID
-        return res
+    def finalize_tasks(self, res) -> DatapointsArrayList:
+        # TODO: Make sure ordering follows: UserQuery#1-ID, UQ1-XID, UQ2-ID, ..., UQN-ID, UQN-XID
+        return DatapointsArrayList._load(
+            [r.get_result() for r in res],
+            cognite_client=self.dps_client._cognite_client,
+        )
 
     def _validate_and_split_user_queries(self, user_queries):
         split_qs = [], []
@@ -142,7 +149,7 @@ class DpsFetchOrchestrator:
             params = ([], [query])
         else:
             params = ([query], [])
-        return self._parse_initial_query_result_into_tasks([result], *params)
+        return self._parse_initial_query_result_into_tasks(result, *params)
 
     def _parse_initial_query_result_into_tasks(self, results, agg_queries, raw_queries):
         if len(results) < len(agg_queries) + len(raw_queries):
@@ -253,7 +260,7 @@ class DatapointsAPI(APIClient):
         limit: Optional[int] = None,
         include_outside_points: bool = False,
         ignore_unknown_ids: bool = False,
-    ):
+    ) -> Union[None, Datapoints, DatapointsList]:
         query = DatapointsQueryNew(
             start=start,
             end=end,

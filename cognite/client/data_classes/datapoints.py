@@ -25,17 +25,42 @@ from typing import (
     cast,
 )
 
+import numpy.typing as npt
+
 import cognite.client.utils._time
 from cognite.client import utils
+from cognite.client._api._type_defs import (
+    DatapointsExternalIdTypes,
+    DatapointsIdTypes,
+    DatapointsQueryExternalId,
+    DatapointsQueryId,
+    NumpyFloat64Array,
+    NumpyInt64Array,
+    NumpyObjArray,
+)
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.exceptions import CogniteDuplicateColumnsError
-from cognite.client.utils._auxiliary import to_camel_case, to_snake_case
+from cognite.client.utils._auxiliary import to_camel_case, to_snake_case, valfilter
 from cognite.client.utils._time import align_start_and_end_for_granularity, timestamp_to_ms
 
 if TYPE_CHECKING:
     import pandas
 
     from cognite.client import CogniteClient
+
+
+ALL_DATAPOINT_AGGREGATES = [
+    "average",
+    "max",
+    "min",
+    "count",
+    "sum",
+    "interpolation",
+    "step_interpolation",
+    "continuous_variance",
+    "discrete_variance",
+    "total_variation",
+]
 
 
 class Datapoint(CogniteResource):
@@ -103,17 +128,93 @@ class Datapoint(CogniteResource):
         return df
 
 
+class DatapointsArray(CogniteResource):
+    """An object representing datapoints using numpy arrays."""
+
+    def __init__(
+        self,
+        id: int = None,
+        external_id: str = None,
+        is_string: bool = None,
+        is_step: bool = None,
+        unit: str = None,
+        timestamp: NumpyInt64Array = None,
+        value: Union[NumpyFloat64Array, NumpyObjArray] = None,
+        average: NumpyFloat64Array = None,
+        max: NumpyFloat64Array = None,
+        min: NumpyFloat64Array = None,
+        count: NumpyInt64Array = None,
+        sum: NumpyFloat64Array = None,
+        interpolation: NumpyFloat64Array = None,
+        step_interpolation: NumpyFloat64Array = None,
+        continuous_variance: NumpyFloat64Array = None,
+        discrete_variance: NumpyFloat64Array = None,
+        total_variation: NumpyFloat64Array = None,
+    ):
+        self.id = id
+        self.external_id = external_id
+        self.is_string = is_string
+        self.is_step = is_step
+        self.unit = unit
+        self.timestamp = timestamp
+        self.value = value
+        self.average = average
+        self.max = max
+        self.min = min
+        self.count = count
+        self.sum = sum
+        self.interpolation = interpolation
+        self.step_interpolation = step_interpolation
+        self.continuous_variance = continuous_variance
+        self.discrete_variance = discrete_variance
+        self.total_variation = total_variation
+
+    @classmethod
+    def _load(
+        cls,
+        dps_dct: Dict[str, Union[int, str, bool, npt.NDArray]],
+        cognite_client: "CogniteClient" = None,
+    ) -> DatapointsArray:
+        del cognite_client  # Just needed for signature
+        return cls(**dict(zip(map(to_snake_case, dps_dct.keys()), dps_dct.values())))
+
+    def to_pandas(self, column_names: str = "external_id", include_aggregate_name: bool = True) -> "pandas.DataFrame":
+        pd = utils._auxiliary.local_import("pandas")
+        if column_names not in {"id", "external_id"}:
+            raise ValueError("Argument `column_names` must be either 'external_id' or 'id'")
+        identifier = {"id": self.id, "external_id": self.external_id}[column_names]
+        if identifier is None:
+            identifier = self.id
+            warnings.warn(
+                f"Time series does not have an external ID, so its ID ({self.id}) was used instead as "
+                'the column name in the DataFrame. If this is expected, consider passing `column_names="id"` '
+                "to silence this warning.",
+                UserWarning,
+            )
+
+        if self.value is not None:
+            columns = {identifier: self.value}
+        else:
+
+            def col_name(agg):
+                return identifier + include_aggregate_name * f"|{to_camel_case(agg)}"
+
+            columns = valfilter({col_name(agg): getattr(self, agg) for agg in ALL_DATAPOINT_AGGREGATES})
+
+        return pd.DataFrame(columns, index=pd.to_datetime(self.timestamp, unit="ms"))
+
+
 class Datapoints(CogniteResource):
     """An object representing a list of datapoints.
 
     Args:
         id (int): Id of the timeseries the datapoints belong to
-        external_id (str): External id of the timeseries the datapoints belong to (Only if id is not set)
+        external_id (str): External id of the timeseries the datapoints belong to
         is_string (bool): Whether the time series is string valued or not.
         is_step (bool): Whether the time series is a step series or not.
         unit (str): The physical unit of the time series.
-        timestamp (List[Union[int, float]]): The data timestamps in milliseconds since the epoch (Jan 1, 1970).
-        value (List[Union[int, str, float]]): The data values. Can be String or numeric depending on the metric
+        timestamp (List[int]): The data timestamps in milliseconds since the epoch (Jan 1, 1970).
+        value (List[Union[str, float]]): The data values. Can be String or numeric depending on the metric
         average (List[float]): The integral average values in the aggregate period
         max (List[float]): The maximum values in the aggregate period
         min (List[float]): The minimum values in the aggregate period
@@ -133,8 +234,8 @@ class Datapoints(CogniteResource):
         is_string: bool = None,
         is_step: bool = None,
         unit: str = None,
-        timestamp: List[Union[int, float]] = None,
-        value: List[Union[int, str, float]] = None,
+        timestamp: List[int] = None,
+        value: List[Union[str, float]] = None,
         average: List[float] = None,
         max: List[float] = None,
         min: List[float] = None,
@@ -152,7 +253,7 @@ class Datapoints(CogniteResource):
         self.is_string = is_string
         self.is_step = is_step
         self.unit = unit
-        self.timestamp = timestamp or []
+        self.timestamp = timestamp or []  # Needed in __len__
         self.value = value
         self.average = average
         self.max = max
@@ -217,27 +318,27 @@ class Datapoints(CogniteResource):
         return {key: value for key, value in dumped.items() if value is not None}
 
     def to_pandas(  # type: ignore[override]
-        self, column_names: str = "externalId", include_aggregate_name: bool = True, include_errors: bool = False
+        self, column_names: str = "external_id", include_aggregate_name: bool = True, include_errors: bool = False
     ) -> "pandas.DataFrame":
         """Convert the datapoints into a pandas DataFrame.
 
         Args:
-            column_names (str):  Which field to use as column header. Defaults to "externalId", can also be "id".
+            column_names (str):  Which field to use as column header. Defaults to "external_id", can also be "id". For time series with no external ID, ID will be used instead.
             include_aggregate_name (bool): Include aggregate in the column name
             include_errors (bool): For synthetic datapoint queries, include a column with errors.
 
         Returns:
             pandas.DataFrame: The dataframe.
         """
-        np, pd = utils._auxiliary.local_import("numpy", "pandas")
+        pd = utils._auxiliary.local_import("pandas")
         data_fields = {}
         timestamps = []
-        if column_names == "externalId":
+        if column_names in ["external_id", "externalId"]:  # Camel case for backwards compat
             identifier = self.external_id if self.external_id is not None else self.id
         elif column_names == "id":
             identifier = self.id
         else:
-            raise ValueError("column_names must be 'externalId' or 'id'")
+            raise ValueError("column_names must be 'external_id' or 'id'")
         for attr, value in self._get_non_empty_data_fields(get_empty_lists=True, get_error=include_errors):
             if attr == "timestamp":
                 timestamps = value
@@ -246,9 +347,9 @@ class Datapoints(CogniteResource):
                 if attr != "value":
                     id_with_agg += "|{}".format(utils._auxiliary.to_camel_case(attr))
                 data_fields[id_with_agg] = value
-        df = pd.DataFrame(data_fields, index=pd.DatetimeIndex(data=np.array(timestamps, dtype="datetime64[ms]")))
+        df = pd.DataFrame(data_fields, index=pd.to_datetime(timestamps, unit="ms"))
         if not include_aggregate_name:
-            Datapoints._strip_aggregate_names(df)
+            df = Datapoints._strip_aggregate_names(df)
         return df
 
     def plot(self, *args: Any, **kwargs: Any) -> None:
@@ -259,7 +360,7 @@ class Datapoints(CogniteResource):
 
     @staticmethod
     def _strip_aggregate_names(df: "pandas.DataFrame") -> "pandas.DataFrame":
-        df.rename(columns=lambda s: regexp.sub(r"\|\w+$", "", s), inplace=True)
+        df = df.rename(columns=lambda s: regexp.sub(r"\|\w+$", "", s))
         if len(set(df.columns)) < df.shape[1]:
             raise CogniteDuplicateColumnsError(
                 [item for item, count in collections.Counter(df.columns).items() if count > 1]
@@ -270,12 +371,13 @@ class Datapoints(CogniteResource):
     def _load(  # type: ignore[override]
         cls, dps_object: Dict[str, Any], expected_fields: List[str] = None, cognite_client: "CogniteClient" = None
     ) -> "Datapoints":
-        instance = cls()
-        instance.id = dps_object.get("id")
-        instance.external_id = dps_object.get("externalId")
-        instance.is_string = dps_object["isString"]  # should never be missing
-        instance.is_step = dps_object.get("isStep")  # NB can be null if isString is true
-        instance.unit = dps_object.get("unit")
+        instance = cls(
+            id=dps_object["id"],
+            external_id=dps_object.get("externalId"),
+            is_string=dps_object["isString"],
+            is_step=dps_object["isStep"],
+            unit=dps_object.get("unit"),
+        )
         expected_fields = (expected_fields or ["value"]) + ["timestamp"]
         if len(dps_object["datapoints"]) == 0:
             for key in expected_fields:
@@ -283,7 +385,7 @@ class Datapoints(CogniteResource):
                 setattr(instance, snake_key, [])
         else:
             for key in expected_fields:
-                data = [dp[key] if key in dp else None for dp in dps_object["datapoints"]]
+                data = [dp.get(key) for dp in dps_object["datapoints"]]
                 snake_key = utils._auxiliary.to_snake_case(key)
                 setattr(instance, snake_key, data)
         return instance
@@ -341,6 +443,26 @@ class Datapoints(CogniteResource):
         return self.to_pandas(include_errors=True)._repr_html_()
 
 
+class DatapointsArrayList(CogniteResourceList):
+    _RESOURCE = DatapointsArray
+
+    def __str__(self) -> str:
+        return "TODO :trololol:"  # No really, TODO
+        # item = utils._time.convert_time_attributes_to_datetime(self.dump())
+        # return json.dumps(item, default=utils._auxiliary.json_dump_default, indent=4)
+
+    def to_pandas(self, column_names: str = "external_id", include_aggregate_name: bool = True) -> "pandas.DataFrame":
+        pd = cast(Any, utils._auxiliary.local_import("pandas"))
+        dfs = [dps_arr.to_pandas(column_names=column_names) for dps_arr in self.data]
+        if dfs:
+            df = pd.concat(dfs, axis="columns")
+            if not include_aggregate_name:  # do not pass in to_pandas above, so we check for duplicate columns
+                df = Datapoints._strip_aggregate_names(df)
+            return df
+
+        return pd.DataFrame()
+
+
 class DatapointsList(CogniteResourceList):
     _RESOURCE = Datapoints
 
@@ -351,12 +473,12 @@ class DatapointsList(CogniteResourceList):
         return json.dumps(item, default=lambda x: x.__dict__, indent=4)
 
     def to_pandas(  # type: ignore[override]
-        self, column_names: str = "externalId", include_aggregate_name: bool = True
+        self, column_names: str = "external_id", include_aggregate_name: bool = True
     ) -> "pandas.DataFrame":
         """Convert the datapoints list into a pandas DataFrame.
 
         Args:
-            column_names (str): Which field to use as column header. Defaults to "externalId", can also be "id".
+            column_names (str): Which field to use as column header. Defaults to "external_id", can also be "id". For time series with no external ID, ID will be used instead.
             include_aggregate_name (bool): Include aggregate in the column name
 
         Returns:
@@ -368,7 +490,7 @@ class DatapointsList(CogniteResourceList):
         if dfs:
             df = pd.concat(dfs, axis="columns")
             if not include_aggregate_name:  # do not pass in to_pandas above, so we check for duplicate columns
-                Datapoints._strip_aggregate_names(df)
+                df = Datapoints._strip_aggregate_names(df)
             return df
 
         return pd.DataFrame()
@@ -395,7 +517,7 @@ class DatapointsQuery(CogniteResource):
     """Parameters describing a query for datapoints.
 
     Args:
-        start (Union[str, int, datetime]): Get datapoints after this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s. Example: '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since epoch.
+        start (Union[str, int, datetime]): Get datapoints starting from this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s. Example: '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since epoch.
         end (Union[str, int, datetime]): Get datapoints up to this time. The format is the same as for start.
         id (Union[int, List[int], Dict[str, Any], List[Dict[str, Any]]]: Id or list of ids. Can also be object
                 specifying aggregates. See example below.
@@ -429,36 +551,6 @@ class DatapointsQuery(CogniteResource):
         self.granularity = granularity
         self.include_outside_points = include_outside_points
         self.ignore_unknown_ids = ignore_unknown_ids
-
-
-class CustomDatapoints(TypedDict, total=False):
-    # No field required
-    start: Union[int, str, datetime, None]
-    end: Union[int, str, datetime, None]
-    aggregates: Optional[List[str]]
-    granularity: Optional[str]
-    limit: Optional[int]
-    include_outside_points: bool
-
-
-class DatapointsQueryId(CustomDatapoints):
-    id: int  # required field
-
-
-class DatapointsQueryExternalId(CustomDatapoints):
-    external_id: str  # required field
-
-
-class DatapointsFromAPI(TypedDict):
-    id: int
-    externalId: Optional[str]
-    isString: bool
-    isStep: bool
-    datapoints: List[Dict[str, Union[int, float, str]]]
-
-
-DatapointsIdTypes = Union[int, DatapointsQueryId, Iterable[Union[int, DatapointsQueryId]]]
-DatapointsExternalIdTypes = Union[str, DatapointsQueryExternalId, Iterable[Union[str, DatapointsQueryExternalId]]]
 
 
 @dataclass

@@ -2,7 +2,7 @@ import random
 import time
 
 from cognite.client._api.datapoints import DatapointsFetcherNew
-from cognite.client.data_classes.datapoints import DatapointsQueryNew
+from cognite.client.data_classes import DatapointsQueryNew
 
 random.seed(42)
 
