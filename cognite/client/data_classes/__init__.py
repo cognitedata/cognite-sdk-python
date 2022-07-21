@@ -41,12 +41,17 @@ from cognite.client.data_classes.files import (
 from cognite.client.data_classes.iam import (
     APIKey,
     APIKeyList,
+    ClientCredentials,
+    CreatedSession,
+    CreatedSessionList,
     Group,
     GroupList,
     SecurityCategory,
     SecurityCategoryList,
     ServiceAccount,
     ServiceAccountList,
+    Session,
+    SessionList,
 )
 from cognite.client.data_classes.labels import (
     Label,
