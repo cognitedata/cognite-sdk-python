@@ -126,7 +126,7 @@ def _convert_time_attributes_in_dict(item: Dict) -> Dict:
     for k, v in item.items():
         if k in TIME_ATTRIBUTES:
             try:
-                v = ms_to_datetime(v).strftime("%Y-%m-%d %H:%M:%S")
+                v = str(datetime.utcfromtimestamp(v / 1000))
             except (ValueError, OSError):
                 pass
         new_item[k] = v
