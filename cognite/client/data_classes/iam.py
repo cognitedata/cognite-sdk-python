@@ -175,3 +175,83 @@ class TokenInspection(CogniteResponse):
         if camel_case:
             dumped = {utils._auxiliary.to_camel_case(key): value for key, value in dumped.items()}
         return dumped
+
+
+class CreatedSession(CogniteResource):
+    """session creation related information
+
+    Args:
+        id (int): ID of the created session.
+        type (str): Credentials kind used to create the session.
+        status (str): Current status of the session.
+        nonce (str): Nonce to be passed to the internal service that will bind the session
+        client_id (str): Client ID in identity provider. Returned only if the session was created using client credentials
+    """
+
+    def __init__(
+        self,
+        id: int = None,
+        type: str = None,
+        status: str = None,
+        nonce: str = None,
+        client_id: str = None,
+        cognite_client: "CogniteClient" = None,
+    ):
+        self.id = id
+        self.type = type
+        self.status = status
+        self.nonce = nonce
+        self.client_id = client_id
+
+
+class CreatedSessionList(CogniteResourceList):
+    _RESOURCE = CreatedSession
+    _ASSERT_CLASSES = False
+
+
+class Session(CogniteResource):
+    """Session status
+
+    Args:
+        id (int): ID of the session.
+        type (str): Credentials kind used to create the session.
+        status (str): Current status of the session.
+        creation_time (int): Session creation time, in milliseconds since 1970
+        expiration_time (int): Session expiry time, in milliseconds since 1970. This value is updated on refreshing a token
+        client_id (str): Client ID in identity provider. Returned only if the session was created using client credentials
+    """
+
+    def __init__(
+        self,
+        id: int = None,
+        type: str = None,
+        status: str = None,
+        creation_time: int = None,
+        expiration_time: int = None,
+        client_id: str = None,
+        cognite_client: "CogniteClient" = None,
+    ):
+        self.id = id
+        self.type = type
+        self.status = status
+        self.creation_time = creation_time
+        self.expiration_time = expiration_time
+        self.client_id = client_id
+
+
+class SessionList(CogniteResourceList):
+    _RESOURCE = Session
+    _ASSERT_CLASSES = False
+
+
+class ClientCredentials(CogniteResource):
+    """Client credentials for session creation
+
+    Args:
+        client_id (str): Client ID from identity provider.
+        client_secret (str): Client secret from identity provider.
+    """
+
+    def __init__(self, client_id: str, client_secret: str):
+        self.client_id = client_id
+        self.client_secret = client_secret
