@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [3.2.1] - 2022-07-18
+### Fixed
+- Fix the wrong destination name in transformations.
+
 ## [3.2.0] - 2022-07-15
 ### Removed
 - Unused cognite.client.experimental module

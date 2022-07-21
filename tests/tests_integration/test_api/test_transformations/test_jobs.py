@@ -105,7 +105,7 @@ class TestTransformationJobsAPI:
             and job.error is None
             and job.ignore_null_fields
         )
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(0.8)
         retrieved_transformation = cognite_client.transformations.retrieve(id=new_transformation.id)
 
         assert retrieved_transformation.running_job is not None and retrieved_transformation.running_job.id == job.id
