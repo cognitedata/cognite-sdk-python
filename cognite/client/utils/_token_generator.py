@@ -1,10 +1,13 @@
 import datetime
+import threading
 from typing import Dict, List, Optional
 
 from oauthlib.oauth2 import BackendApplicationClient, OAuth2Error
 from requests_oauthlib import OAuth2Session
 
 from cognite.client.exceptions import CogniteAPIKeyError
+
+LOCK = threading.Lock()
 
 
 class TokenGenerator:
@@ -29,15 +32,16 @@ class TokenGenerator:
             self._access_token_expires_at = None
 
     def return_access_token(self) -> str:
-        if not self.token_params_set():
-            raise CogniteAPIKeyError("Could not generate access token - missing token generation arguments")
-        elif self._access_token is None:
-            raise CogniteAPIKeyError("Could not generate access token from provided token generation arguments")
+        with LOCK:
+            if not self.token_params_set():
+                raise CogniteAPIKeyError("Could not generate access token - missing token generation arguments")
+            elif self._access_token is None:
+                raise CogniteAPIKeyError("Could not generate access token from provided token generation arguments")
 
-        if self._access_token_expires_at < datetime.datetime.now().timestamp():
-            self._generate_access_token()
+            if self._access_token_expires_at < datetime.datetime.now().timestamp() - 10:
+                self._generate_access_token()
 
-        return self._access_token
+            return self._access_token
 
     def _generate_access_token(self) -> None:
         try:
