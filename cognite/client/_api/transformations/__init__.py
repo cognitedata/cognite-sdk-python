@@ -57,6 +57,16 @@ class TransformationsAPI(APIClient):
                 >>> res = c.transformations.create(transformations)
         """
         utils._auxiliary.assert_type(transformation, "transformation", [Transformation, list])
+
+        if isinstance(transformation, TransformationList):
+            sessions = {}
+            for t in transformation:
+                t._cognite_client = self._cognite_client
+                t._process_credentials(sessions)
+        elif isinstance(transformation, Transformation):
+            transformation._cognite_client = self._cognite_client
+            transformation._process_credentials({})
+
         return self._create_multiple(list_cls=TransformationList, resource_cls=Transformation, items=transformation)
 
     def delete(
@@ -259,6 +269,16 @@ class TransformationsAPI(APIClient):
                 >>> my_update = TransformationUpdate(id=1).query.set("SELECT * FROM _cdf.assets").is_public.set(False)
                 >>> res = c.transformations.update(my_update)
         """
+
+        if isinstance(item, TransformationList):
+            sessions = {}
+            for t in item:
+                t._cognite_client = self._cognite_client
+                t._process_credentials(sessions, True)
+        elif isinstance(item, Transformation):
+            item._cognite_client = self._cognite_client
+            item._process_credentials({}, True)
+
         return self._update_multiple(
             list_cls=TransformationList, resource_cls=Transformation, update_cls=TransformationUpdate, items=item
         )

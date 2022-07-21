@@ -14,6 +14,14 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [3.4.0] - 2022-07-21
+### Added
+- added support for nonce authentication on transformations
+
+### Changed
+- if no credentials are provided on transformation create, an attempt will be made to create a session with the CogniteClient credentials, if it succeeds the nonce will be sent to the service.
+- if OIDC credentials are provided on transformation create/update, an attempt will be made to create a session with the given credentials, if it succeeds the nonce will be sent to the service (instead of the client credentials).
+
 ## [3.3.0] - 2022-07-21
 ### Added
 - added the sessions API

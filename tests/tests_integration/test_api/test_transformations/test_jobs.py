@@ -134,7 +134,7 @@ class TestTransformationJobsAPI:
             and retrieved_transformation.last_finished_job.id == job.id
         )
 
-    @pytest.mark.skip("fails consistently")
+    @pytest.mark.xfail(reason="sometimes it takes longer to start")
     def test_run_with_timeout(self, longer_transformation: Transformation):
         init = time.time()
         timeout = 0.1
@@ -162,7 +162,7 @@ class TestTransformationJobsAPI:
         )
 
     @pytest.mark.asyncio
-    @pytest.mark.skip("fails consistently")
+    @pytest.mark.xfail(reason="sometimes it takes longer to start")
     async def test_run_with_timeout_async(self, longer_transformation: Transformation):
         init = time.time()
         timeout = 0.1

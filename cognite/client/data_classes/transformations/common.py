@@ -171,6 +171,33 @@ class OidcCredentials:
         return ret
 
 
+class NonceCredentials:
+    def __init__(
+        self,
+        session_id: str,
+        nonce: str,
+        cdf_project_name: str,
+    ):
+        self.session_id = session_id
+        self.nonce = nonce
+        self.cdf_project_name = cdf_project_name
+
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+        """Dump the instance into a json serializable Python data type.
+
+        Args:
+            camel_case (bool): Use camelCase for attribute names. Defaults to False.
+
+        Returns:
+            Dict[str, Any]: A dictionary representation of the instance.
+        """
+        ret = self.__dict__
+
+        if camel_case:
+            return {utils._auxiliary.to_camel_case(key): value for key, value in ret.items()}
+        return ret
+
+
 class TransformationBlockedInfo:
     def __init__(self, reason: str = None, created_time: Optional[int] = None):
         self.reason = reason

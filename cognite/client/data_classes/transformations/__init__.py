@@ -8,9 +8,11 @@ from cognite.client.data_classes._base import (
     CogniteResourceList,
     CogniteUpdate,
 )
+from cognite.client.data_classes.iam import ClientCredentials
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.data_classes.transformations._alphatypes import AlphaDataModelInstances
 from cognite.client.data_classes.transformations.common import (
+    NonceCredentials,
     OidcCredentials,
     RawTable,
     SequenceRows,
@@ -84,6 +86,8 @@ class Transformation(CogniteResource):
         schedule: "TransformationSchedule" = None,
         data_set_id: int = None,
         cognite_client: "CogniteClient" = None,
+        source_nonce: Optional[NonceCredentials] = None,
+        destination_nonce: Optional[NonceCredentials] = None,
     ):
         self.id = id
         self.external_id = external_id
@@ -112,7 +116,44 @@ class Transformation(CogniteResource):
         self.blocked = blocked
         self.schedule = schedule
         self.data_set_id = data_set_id
+        self.source_nonce = source_nonce
+        self.destination_nonce = destination_nonce
         self._cognite_client = cast("CogniteClient", cognite_client)
+
+    def _process_credentials(self, sessions_dict: Dict[str, NonceCredentials], keep_none: bool = False) -> None:
+        def try_get_or_create_nonce(oidc_credentials: Optional[OidcCredentials]) -> Optional[NonceCredentials]:
+            if keep_none and oidc_credentials is None:
+                return None
+
+            key = (
+                f"{oidc_credentials.client_id}:{oidc_credentials.client_secret.__hash__()}"
+                if oidc_credentials
+                else "DEFAULT"
+            )
+
+            ret = sessions_dict.get(key)
+            if not ret:
+                if oidc_credentials and oidc_credentials.client_id and oidc_credentials.client_secret:
+                    credentials = ClientCredentials(oidc_credentials.client_id, oidc_credentials.client_secret)
+                else:
+                    credentials = None
+                try:
+                    session = self._cognite_client.iam.sessions.create(credentials)
+                    ret = NonceCredentials(str(session.id), session.nonce, self._cognite_client._config.project)
+                    sessions_dict[key] = ret
+                except Exception:
+                    ret = None
+            return ret
+
+        if self.source_api_key is None and self.source_nonce is None:
+            self.source_nonce = try_get_or_create_nonce(self.source_oidc_credentials)
+            if self.source_nonce:
+                self.source_oidc_credentials = None
+
+        if self.destination_api_key is None and self.destination_nonce is None:
+            self.destination_nonce = try_get_or_create_nonce(self.destination_oidc_credentials)
+            if self.destination_nonce:
+                self.destination_oidc_credentials = None
 
     def run(self, wait: bool = True, timeout: Optional[float] = None) -> "TransformationJob":
         return self._cognite_client.transformations.run(transformation_id=self.id, wait=wait, timeout=timeout)
@@ -178,6 +219,13 @@ class Transformation(CogniteResource):
         if self.destination_oidc_credentials:
             destination_key = "destinationOidcCredentials" if camel_case else "destination_oidc_credentials"
             ret[destination_key] = self.destination_oidc_credentials.dump(camel_case=camel_case)
+
+        if self.source_nonce:
+            destination_key = "sourceNonce" if camel_case else "source_nonce"
+            ret[destination_key] = self.source_nonce.dump(camel_case=camel_case)
+        if self.destination_nonce:
+            destination_key = "destinationNonce" if camel_case else "destination_nonce"
+            ret[destination_key] = self.destination_nonce.dump(camel_case=camel_case)
         if isinstance(self.destination, AlphaDataModelInstances) or isinstance(self.destination, SequenceRows):
             ret["destination"] = self.destination.dump(camel_case=camel_case)
         return ret
