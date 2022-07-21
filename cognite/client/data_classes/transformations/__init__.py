@@ -120,10 +120,16 @@ class Transformation(CogniteResource):
         self.destination_nonce = destination_nonce
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-    def _process_credentials(self, sessions_cache: Dict[str, NonceCredentials] = {}, keep_none: bool = False) -> None:
+    def _process_credentials(self, sessions_cache: Dict[str, NonceCredentials] = None, keep_none: bool = False) -> None:
+        if sessions_cache is None:
+            sessions_cache = {}
+
         def try_get_or_create_nonce(oidc_credentials: Optional[OidcCredentials]) -> Optional[NonceCredentials]:
             if keep_none and oidc_credentials is None:
                 return None
+
+            # MyPy requires this to make sure it's not changed to None after inner declaration
+            assert sessions_cache is not None
 
             key = (
                 f"{oidc_credentials.client_id}:{oidc_credentials.client_secret.__hash__()}"

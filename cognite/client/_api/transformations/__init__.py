@@ -13,6 +13,7 @@ from cognite.client.data_classes.transformations import (
     TransformationPreviewResult,
     TransformationUpdate,
 )
+from cognite.client.data_classes.transformations.common import NonceCredentials
 
 
 class TransformationsAPI(APIClient):
@@ -58,8 +59,8 @@ class TransformationsAPI(APIClient):
         """
         utils._auxiliary.assert_type(transformation, "transformation", [Transformation, list])
 
-        if isinstance(transformation, TransformationList):
-            sessions = {}
+        if isinstance(transformation, list):
+            sessions: Dict[str, NonceCredentials] = {}
             for t in transformation:
                 t._cognite_client = self._cognite_client
                 t._process_credentials(sessions_cache=sessions)
@@ -270,11 +271,12 @@ class TransformationsAPI(APIClient):
                 >>> res = c.transformations.update(my_update)
         """
 
-        if isinstance(item, TransformationList):
-            sessions = {}
+        if isinstance(item, list):
+            sessions: Dict[str, NonceCredentials] = {}
             for t in item:
-                t._cognite_client = self._cognite_client
-                t._process_credentials(sessions_cache=sessions, keep_none=True)
+                if isinstance(t, Transformation):
+                    t._cognite_client = self._cognite_client
+                    t._process_credentials(sessions_cache=sessions, keep_none=True)
         elif isinstance(item, Transformation):
             item._cognite_client = self._cognite_client
             item._process_credentials(keep_none=True)
