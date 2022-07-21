@@ -27,7 +27,6 @@ from typing import (
 
 import numpy.typing as npt
 
-import cognite.client.utils._time
 from cognite.client import utils
 from cognite.client._api._type_defs import (
     DatapointsExternalIdTypes,
@@ -121,11 +120,7 @@ class Datapoint(CogniteResource):
         dumped = self.dump(camel_case=camel_case)
         timestamp = dumped.pop("timestamp")
 
-        for k, v in dumped.items():
-            dumped[k] = [v]
-        df = pd.DataFrame(dumped, index=[cognite.client.utils._time.ms_to_datetime(timestamp)])
-
-        return df
+        return pd.DataFrame(dumped, index=[pd.Timestamp(timestamp, unit="ms")])
 
 
 class DatapointsArray(CogniteResource):
