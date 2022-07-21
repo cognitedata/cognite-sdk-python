@@ -414,20 +414,21 @@ class SessionsAPI(APIClient):
             id (Union[int, List[int]): Id or list of session ids
 
         Returns:
-            None
+            List of revoked sessions. If the user does not have the sessionsAcl:LIST  capability,
+            then only the session IDs will be present in the response.
         """
         items = {"items": self._process_ids(id, None, wrap_ids=True)}
 
         return SessionList._load(self._post(self._RESOURCE_PATH + "/revoke", items).json()["items"])
 
     def list(self, status: Optional[str] = None) -> SessionList:
-        """`Revoke access to a session. Revocation of a session may in some cases take up to 1 hour to take effect.
+        """`List all sessions in the current project.
 
         Args:
             status (Optional[str]): If given, only sessions with the given status are returned.
 
         Returns:
-            SessionList: all sessions in the current project.
+            SessionList: a list of sessions in the current project.
         """
         filter = {"status": status} if status else None
         return self._list(list_cls=SessionList, resource_cls=Session, method="GET", filter=filter)
