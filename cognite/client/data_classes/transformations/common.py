@@ -174,7 +174,7 @@ class OidcCredentials:
 class NonceCredentials:
     def __init__(
         self,
-        session_id: str,
+        session_id: int,
         nonce: str,
         cdf_project_name: str,
     ):
