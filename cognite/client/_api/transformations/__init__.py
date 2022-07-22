@@ -58,10 +58,13 @@ class TransformationsAPI(APIClient):
                 >>> res = c.transformations.create(transformations)
         """
         utils._auxiliary.assert_type(transformation, "transformation", [Transformation, list])
+        transformation = transformation.copy()
 
         if isinstance(transformation, list):
             sessions: Dict[str, NonceCredentials] = {}
-            for t in transformation:
+            for (i, t) in enumerate(transformation):
+                t = t.copy()
+                transformation[i] = t
                 t._cognite_client = self._cognite_client
                 t._process_credentials(sessions_cache=sessions)
         elif isinstance(transformation, Transformation):
@@ -272,12 +275,16 @@ class TransformationsAPI(APIClient):
         """
 
         if isinstance(item, list):
+            item = item.copy()
             sessions: Dict[str, NonceCredentials] = {}
-            for t in item:
+            for (i, t) in enumerate(item):
                 if isinstance(t, Transformation):
+                    t = t.copy()
+                    item[i] = t
                     t._cognite_client = self._cognite_client
                     t._process_credentials(sessions_cache=sessions, keep_none=True)
         elif isinstance(item, Transformation):
+            item = item.copy()
             item._cognite_client = self._cognite_client
             item._process_credentials(keep_none=True)
 

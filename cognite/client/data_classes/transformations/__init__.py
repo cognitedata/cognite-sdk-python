@@ -120,6 +120,38 @@ class Transformation(CogniteResource):
         self.destination_nonce = destination_nonce
         self._cognite_client = cast("CogniteClient", cognite_client)
 
+    def copy(self) -> "Transformation":
+        return Transformation(
+            self.id,
+            self.external_id,
+            self.name,
+            self.query,
+            self.destination,
+            self.conflict_mode,
+            self.is_public,
+            self.ignore_null_fields,
+            self.source_api_key,
+            self.destination_api_key,
+            self.source_oidc_credentials,
+            self.destination_oidc_credentials,
+            self.created_time,
+            self.last_updated_time,
+            self.owner,
+            self.owner_is_current_user,
+            self.has_source_api_key,
+            self.has_destination_api_key,
+            self.has_source_oidc_credentials,
+            self.has_destination_oidc_credentials,
+            self.running_job,
+            self.last_finished_job,
+            self.blocked,
+            self.schedule,
+            self.data_set_id,
+            None,
+            self.source_nonce,
+            self.destination_nonce,
+        )
+
     def _process_credentials(self, sessions_cache: Dict[str, NonceCredentials] = None, keep_none: bool = False) -> None:
         if sessions_cache is None:
             sessions_cache = {}
