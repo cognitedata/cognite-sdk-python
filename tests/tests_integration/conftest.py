@@ -24,12 +24,15 @@ def make_cognite_client_with_interactive_flow() -> CogniteClient:
     authority_url = os.environ["COGNITE_AUTHORITY_URL"]
     client_id = os.environ["COGNITE_CLIENT_ID"]
     scopes = os.environ.get("COGNITE_TOKEN_SCOPES", "").split(",")
-    app = PublicClientApplication(client_id=client_id, authority=authority_url, token_cache=create_cache())
+    use_cache = os.environ.get("INTERACTIVE", "") == "cache"
+    kwargs = dict(token=create_cache()) if use_cache else {}
+
+    app = PublicClientApplication(client_id=client_id, authority=authority_url, **kwargs)
     redirect_port = random.randint(53000, 60000)
     # random port so we can run the test suite in parallel
     creds = (
         app.acquire_token_silent(scopes, account=accounts[0])
-        if (accounts := app.get_accounts())
+        if (accounts := app.get_accounts()) and use_cache
         else app.acquire_token_interactive(
             scopes=scopes,
             port=redirect_port,
