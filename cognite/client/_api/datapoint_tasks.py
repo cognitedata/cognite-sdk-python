@@ -4,14 +4,14 @@ import dataclasses
 import itertools
 import math
 import operator as op
-from abc import ABC
 from dataclasses import InitVar, dataclass
 from pprint import pprint
 from typing import TYPE_CHECKING, List, Optional, Tuple
 
 import numpy as np
+import numpy.typing as npt
 
-from cognite.client._api._type_defs import DatapointsFromAPI, NumpyInt64Array, NumpyObjArray
+from cognite.client._api._type_defs import DatapointsFromAPI, NumpyInt64Array
 from cognite.client.data_classes import DatapointsArray
 from cognite.client.data_classes.datapoints import SingleTSQuery
 
@@ -31,38 +31,149 @@ def dps_task_type_selector(query):
     condition = (query.is_string, query.is_raw_query, query.limit is None)
     return {  # O pattern matching, where art thou?
         # String tasks:
-        (True, True, True): UnlimitedStringTask,
-        # (True, True, False): LimitedStringTask,
+        (True, True, True): ParallelUnlimitedStringTask,
+        (True, True, False): ParallelLimitedStringTask,
         # # Raw numeric tasks:
-        # (False, True, True): UnlimitedRawNumericTask,
-        # (False, True, False): LimitedRawNumericTask,
+        # (False, True, True): ParallelUnlimitedRawNumericTask,
+        # (False, True, False): ParallelLimitedRawNumericTask,
         # # Agg. numeric tasks:
-        # (False, False, True): UnlimitedAggNumericTask,
-        # (False, False, False): LimitedAggNumericTask,
+        # (False, False, True): ParallelUnlimitedAggNumericTask,
+        # (False, False, False): ParallelLimitedAggNumericTask,
     }[condition]
 
 
-# WORKAROUND: Python does not allow us to easily define abstract dataclasses
-# QUESTION  : Do we need it? ;P
-class AbstractDpsTask(ABC):
-    ...
-    # @abstractmethod
-    # def get_result(self):
-    #     ...
-
-
 @dataclass(eq=False)  # __hash__ cant be inherited (for safety), so we add eq=False for all
-class BaseDpsTask(AbstractDpsTask):
+class BaseDpsTask:
     query: SingleTSQuery
 
 
 @dataclass(eq=False)
-class RawSerialSubtask(BaseDpsTask):
-    # Just fetches serially until complete, nice and simple. Stores data in parent
+class BaseSubtask(BaseDpsTask):
     subtask_idx: int
-    parent: BaseDpsTask
+    parent: BaseConcurrentTask
     is_done: bool = False
+
+
+@dataclass(eq=False)
+class BaseConcurrentTask(BaseDpsTask):
+    first_dps_batch: InitVar[DatapointsFromAPI]
+    eager_mode: bool
+    first_start: Optional[int] = dataclasses.field(default=None, init=False)
+    ts_info: DatapointsFromAPI = dataclasses.field(default=None, init=False)
+    ts_lst: List[List[NumpyInt64Array]] = dataclasses.field(default_factory=list, init=False)
+    dps_lst: List[List[npt.NDArray]] = dataclasses.field(default_factory=list, init=False)
+    subtasks: List[BaseSubtask] = dataclasses.field(default_factory=list, init=False)
+    _is_done: bool = dataclasses.field(default=False, init=False)
+
+
+@dataclass(eq=False)
+class ConcurrentRawTask(BaseConcurrentTask):
     offset_next: int = 1  # ms
+    has_limit: Optional[bool] = dataclasses.field(default=None, init=False)
+    dp_outside_start: Optional[Tuple[int, str]] = dataclasses.field(default=None, init=False)
+    dp_outside_end: Optional[Tuple[int, str]] = dataclasses.field(default=None, init=False)
+
+    def __post_init__(self, first_dps_batch):
+        self.has_limit = self.query.limit is not None
+        # The first batch will handle everything we need for queries with `include_outside_points=True`:
+        dps = first_dps_batch.pop("datapoints")
+        self.ts_info = first_dps_batch  # Store just the ts info
+        self._store_first_batch(dps)
+
+    def get_result(self) -> DatapointsArray:
+        if self.query.include_outside_points:
+            self._include_outside_points_in_result()
+        return DatapointsArray._load(
+            {
+                **self.ts_info,
+                "timestamp": np.hstack(list(itertools.chain.from_iterable(self.ts_lst))),
+                "value": np.hstack(list(itertools.chain.from_iterable(self.dps_lst))),
+            }
+        )
+
+    def split_task_into_subtasks(self, max_workers) -> List[SubtaskRawSerial]:
+        start, end = self.first_start, self.query.end
+        tot_ms = end - start
+        n_periods = self._find_number_of_subtasks(self, tot_ms, max_workers)
+        delta_ms = math.ceil(tot_ms / n_periods)  # Ceil makes sure we "overshoot" end
+        boundaries = [min(end, start + delta_ms * i) for i in range(n_periods + 1)]
+        # Make a separate dps bucket for each subtask:
+        self.ts_lst.extend([[] for _ in range(n_periods)])
+        self.dps_lst.extend([[] for _ in range(n_periods)])
+        for i, (period_start, period_end) in enumerate(zip(boundaries[:-1], boundaries[1:]), 1):
+            subtask = SubtaskRawSerial(
+                query=SingleTSQuery(**self.query.identifier_dct_sc, start=period_start, end=period_end),
+                subtask_idx=i,
+                parent=self,
+                # Limited queries will be prioritised in chrono. order (to quit as early as possible):
+                priority=i - 1 if self.has_limit else 0,
+            )
+            self.subtasks.append(subtask)
+        return self.subtasks
+
+    def _include_outside_points_in_result(self):
+        if self.dp_outside_start:
+            start_ts, start_dp = self.dp_outside_start
+            self.ts_lst.insert(0, [start_ts])
+            self.dps_lst.insert(0, [start_dp])
+        if self.dp_outside_end:
+            end_ts, end_dp = self.dp_outside_end
+            self.dp_outside_end
+            self.ts_lst.append([end_ts])
+            self.dps_lst.append([end_dp])
+
+    def _store_first_batch(self, dps):
+        if not dps:
+            self._is_done = True
+            return
+
+        if self.query.include_outside_points:
+            self._extract_outside_points(dps)
+            if not dps:  # We might have only gotten outside points
+                self._is_done = True
+                return
+
+        # Set `start` for the first subtask:
+        self.first_start = dps[-1]["timestamp"] + self.offset_next
+        if self.first_start == self.query.end:
+            self._is_done = True
+            return
+
+        # Make room for dps batch 0:
+        self.ts_lst.append([])
+        self.dps_lst.append([])
+        self._unpack_and_store(0, dps)
+
+        # In eager mode, we can infer if we got all dps (we know query limit used):
+        if self.eager_mode:
+            if self.query.limit is None:
+                if len(dps) < self.query.max_query_limit:
+                    self._is_done = True
+            else:
+                if len(dps) < self.query.limit:
+                    self._is_done = True
+
+    def _unpack_and_store(self, subtask_idx, dps):
+        # Faster than feeding listcomp to np.array:
+        self.ts_lst[subtask_idx].append(np.fromiter(map(DpsUnpackFns.ts, dps), dtype=np.int64, count=len(dps)))
+        self.dps_lst[subtask_idx].append(np.fromiter(map(DpsUnpackFns.raw_dp, dps), dtype=np.object_, count=len(dps)))
+
+    def _extract_outside_points(self, dps):
+        first_dp = dps[0]
+        if first_dp["timestamp"] < self.query.start:
+            # We got a dp before `start`, this should not impact our count towards `limit`:
+            self.dp_outside_start = DpsUnpackFns.ts_dp_tpl(dps.pop(0))  # Slow pop :(
+        if dps:
+            last_dp = dps[-1]
+            if last_dp["timestamp"] >= self.query.end:  # >= because `end` is exclusive
+                self.dp_outside_end = DpsUnpackFns.ts_dp_tpl(dps.pop())  # Fast pop :)
+
+
+@dataclass(eq=False)
+class SubtaskRawSerial(BaseSubtask):
+    # Just fetches serially until complete, nice and simple. Stores data in parent
+    offset_next: int = 1  # ms
+    priority: int = 0  # Lower number is a higher priority
 
     def __post_init__(self):
         self.n_dps_left = self.query.limit
@@ -77,7 +188,7 @@ class RawSerialSubtask(BaseDpsTask):
             return
 
         n, last_ts = len(dps), dps[-1]["timestamp"]
-        self.parent.unpack_and_store(self.subtask_idx, dps)
+        self.parent._unpack_and_store(self.subtask_idx, dps)
         self.update_state_for_next_payload(last_ts, n)
         if self.is_task_done(n):
             self.is_done = True
@@ -104,68 +215,15 @@ class RawSerialSubtask(BaseDpsTask):
 
 
 @dataclass(eq=False)
-class UnlimitedStringTask:
-    query: SingleTSQuery
-    first_dps_batch: InitVar[DatapointsFromAPI]
-    first_start: Optional[int] = None
-    offset_next: int = 1  # ms
-    ts_info: DatapointsFromAPI = dataclasses.field(default=None, init=False)
-    ts_lst: List[List[NumpyInt64Array]] = dataclasses.field(default_factory=list, init=False)
-    dps_lst: List[List[NumpyObjArray]] = dataclasses.field(default_factory=list, init=False)
-    subtasks: List[RawSerialSubtask] = dataclasses.field(default_factory=list, init=False)
-    _is_done: bool = dataclasses.field(default=False, init=False)
-    dp_outside_start: Optional[Tuple[int, str]] = dataclasses.field(default=None, init=False)
-    dp_outside_end: Optional[Tuple[int, str]] = dataclasses.field(default=None, init=False)
+class ParallelUnlimitedStringTask(ConcurrentRawTask):
+    # LIMIT = None
+    # LIMIT = None
 
-    def __post_init__(self, first_dps_batch):
-        # The first batch will handle everything we need for queries with `include_outside_points=True`:
-        dps = first_dps_batch.pop("datapoints")
-        self.ts_info = first_dps_batch  # Store just the ts info
-        self.store_first_batch(dps)
-
-    def get_result(self) -> DatapointsArray:
-        if self.query.include_outside_points:
-            if self.dp_outside_start:
-                start_ts, start_dp = self.dp_outside_start
-                self.ts_lst.insert(0, [start_ts])
-                self.dps_lst.insert(0, [start_dp])
-            if self.dp_outside_end:
-                end_ts, end_dp = self.dp_outside_end
-                self.dp_outside_end
-                self.ts_lst.append([end_ts])
-                self.dps_lst.append([end_dp])
-        return DatapointsArray._load(
-            {
-                **self.ts_info,
-                "timestamp": np.hstack(list(itertools.chain.from_iterable(self.ts_lst))),
-                "value": np.hstack(list(itertools.chain.from_iterable(self.dps_lst))),
-            }
-        )
-
-    def split_task_into_subtasks(self, max_workers) -> List[RawSerialSubtask]:
-        # This is were we decide the initial splitting of the time domain (start to end) to tasks:
-        # 1. Estimate the max number of dps needed to fetch
-        # 2. Create subtasks with this as parent, up to max `max_workers`
-        #
+    def _find_number_of_subtasks(self, tot_ms, max_workers) -> int:
         # It makes no sense to split beyond what the max-size of a query allows (for a maximum dense time series),
         # but that is rarely useful as 100k dps is just 1 min 40 sec... we guess an average density of
         # points at 1 dp/sec, giving us split-windows no smaller than ~1 day:
-        start, end = self.first_start, self.query.end
-        tot_ms = end - start
-        n_periods = min(max_workers, max(1, math.ceil((tot_ms / 1000) / self.query.max_query_limit)))
-        delta_ms = math.ceil(tot_ms / n_periods)  # Ceil makes sure we "overshoot" end
-        boundaries = [min(end, start + delta_ms * i) for i in range(n_periods + 1)]
-        # Make a separate dps bucket for each subtask:
-        self.ts_lst.extend([[] for _ in range(n_periods)])
-        self.dps_lst.extend([[] for _ in range(n_periods)])
-        for i, (period_start, period_end) in enumerate(zip(boundaries[:-1], boundaries[1:]), 1):
-            subtask = RawSerialSubtask(
-                query=SingleTSQuery(**self.query.identifier_dct_sc, start=period_start, end=period_end),
-                subtask_idx=i,
-                parent=self,
-            )
-            self.subtasks.append(subtask)
-        return self.subtasks
+        return min(max_workers, math.ceil((tot_ms / 1000) / self.query.max_query_limit))
 
     @property
     def is_done(self):
@@ -173,46 +231,38 @@ class UnlimitedStringTask:
             self._is_done = self._is_done or all(sub.is_done for sub in self.subtasks)
         return self._is_done
 
-    def store_first_batch(self, dps):
-        if not dps:
-            self._is_done = True
-            return
 
-        if self.query.include_outside_points:
-            self.handle_outside_points(dps)
-            if not dps:  # We might have only gotten outside points
-                self._is_done = True
-                return
+@dataclass(eq=False)
+class ParallelLimitedStringTask(ConcurrentRawTask):
+    # LIMIT = 123
+    # LIMIT = 123
 
-        # Set `start` for the first subtask:
-        self.first_start = dps[-1]["timestamp"] + self.offset_next
-        if self.first_start == self.query.end:
-            self._is_done = True
-            return
+    def _find_number_of_subtasks(self, tot_ms, max_workers) -> int:
+        # We make the guess that the time series has ~1 dp/sec and use this in combination with the given
+        # limit to not split into too many queries (highest throughput when each request close to max limit)
+        n_estimate_periods = math.ceil((tot_ms / 1000) / self.query.max_query_limit)
+        n_periods = math.ceil(self.query.limit / self.query.max_query_limit)
+        # Cap at max_workers and pick the smallest N from constraints:
+        return min(max_workers, n_periods, n_estimate_periods)
 
-        # Make room for dps batch 0:
-        self.ts_lst.append([])
-        self.dps_lst.append([])
-        self.unpack_and_store(0, dps)
+    @property
+    def is_done(self):
+        # Checking if subtasks are done is not enough; we need to check if sum of "takewhile is_done"
+        # has reached the limit. If yes, we would want to cancel already queued futures (try at least)...
+        raise NotImplementedError
+        # if self.subtasks:
+        #     self._is_done = self._is_done or all(sub.is_done for sub in self.subtasks)
+        # return self._is_done
 
-    def unpack_and_store(self, subtask_idx, dps):
-        # Faster than feeding listcomp to np.array:
-        self.ts_lst[subtask_idx].append(np.fromiter(map(DpsUnpackFns.ts, dps), dtype=np.int64, count=len(dps)))
-        self.dps_lst[subtask_idx].append(np.fromiter(map(DpsUnpackFns.raw_dp, dps), dtype=np.object_, count=len(dps)))
 
-    def handle_outside_points(self, dps):
-        first_dp = dps[0]
-        if first_dp["timestamp"] < self.query.start:
-            # We got a dp before `start`, this should not impact our count towards `limit`:
-            self.dp_outside_start = DpsUnpackFns.ts_dp_tpl(dps.pop(0))  # Slow pop :(
-        if dps:
-            last_dp = dps[-1]
-            if last_dp["timestamp"] >= self.query.end:  # >= because `end` is exclusive
-                self.dp_outside_end = DpsUnpackFns.ts_dp_tpl(dps.pop())  # Fast pop :)
+# BELOW: UNFINISHED
+# BELOW: UNFINISHED
+# BELOW: UNFINISHED
+# BELOW: UNFINISHED
 
 
 @dataclass(eq=False)
-class LimitedStringTask:
+class ParallelUnlimitedRawNumericTask:
     query: SingleTSQuery
     first_dps_batch: InitVar[DatapointsFromAPI]
 
@@ -222,7 +272,7 @@ class LimitedStringTask:
 
 
 @dataclass(eq=False)
-class UnlimitedRawNumericTask:
+class ParallelLimitedRawNumericTask:
     query: SingleTSQuery
     first_dps_batch: InitVar[DatapointsFromAPI]
 
@@ -232,17 +282,7 @@ class UnlimitedRawNumericTask:
 
 
 @dataclass(eq=False)
-class LimitedRawNumericTask:
-    query: SingleTSQuery
-    first_dps_batch: InitVar[DatapointsFromAPI]
-
-    def __post_init__(self, first_dps_batch):
-        # TODO: Handle outside points, if any
-        pass
-
-
-@dataclass(eq=False)
-class UnlimitedAggNumericTask:
+class ParallelUnlimitedAggNumericTask:
     query: SingleTSQuery
     first_dps_batch: InitVar[DatapointsFromAPI]
 
@@ -251,7 +291,7 @@ class UnlimitedAggNumericTask:
 
 
 @dataclass(eq=False)
-class LimitedAggNumericTask:
+class ParallelLimitedAggNumericTask:
     query: SingleTSQuery
     first_dps_batch: InitVar[DatapointsFromAPI]
 

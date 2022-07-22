@@ -160,7 +160,10 @@ class DpsFetchOrchestrator:
             agg_queries, raw_queries = self._handle_missing_ts(results, agg_queries, raw_queries)
         self._update_queries_is_string(results, raw_queries)
         # Align initial results with corresponding queries and create tasks:
-        return [dps_task_type_selector(q)(q, res) for res, q in zip(results, itertools.chain(agg_queries, raw_queries))]
+        return [
+            dps_task_type_selector(q)(q, res, self.eager_fetching)
+            for res, q in zip(results, itertools.chain(agg_queries, raw_queries))
+        ]
 
     @staticmethod
     def _update_queries_is_string(res, queries):
@@ -187,7 +190,7 @@ class DpsFetchOrchestrator:
         return [q for q in agg_queries if not q.is_missing], [q for q in raw_queries if not q.is_missing]
 
     def _create_single_queries_for_initial_request(self):
-        assert self.eager_fetching is True
+        assert self.eager_fetching is True  # TODO: remove
 
         items = []
         queries = self.agg_queries + self.raw_queries  # Good thing we split these :kappa:
@@ -197,7 +200,7 @@ class DpsFetchOrchestrator:
         return queries, items
 
     def _chunk_queries_for_initial_request(self):
-        assert self.eager_fetching is False
+        assert self.eager_fetching is False  # TODO: remove
 
         n_agg, n_raw = len(self.agg_queries), len(self.raw_queries)
         # Optimal queries uses the entire worker pool. We may be forced to use more (queue) when we
