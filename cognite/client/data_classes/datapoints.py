@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import collections
 import dataclasses
 import json
 import math
@@ -66,8 +65,8 @@ class Datapoint(CogniteResource):
     """An object representing a datapoint.
 
     Args:
-        timestamp (Union[int, float]): The data timestamp in milliseconds since the epoch (Jan 1, 1970).
-        value (Union[str, int, float]): The data value. Can be String or numeric depending on the metric
+        timestamp (int): The data timestamp in milliseconds since the epoch (Jan 1, 1970).
+        value (Union[str, float]): The data value. Can be String or numeric depending on the metric
         average (float): The integral average value in the aggregate period
         max (float): The maximum value in the aggregate period
         min (float): The minimum value in the aggregate period
@@ -82,8 +81,8 @@ class Datapoint(CogniteResource):
 
     def __init__(
         self,
-        timestamp: Union[int, float] = None,
-        value: Union[str, int, float] = None,
+        timestamp: int = None,
+        value: Union[str, float] = None,
         average: float = None,
         max: float = None,
         min: float = None,
@@ -173,11 +172,16 @@ class DatapointsArray(CogniteResource):
         del cognite_client  # Just needed for signature
         return cls(**dict(zip(map(to_snake_case, dps_dct.keys()), dps_dct.values())))
 
+    def __len__(self):
+        if self.timestamp is None:
+            return 0
+        return len(self.timestamp)
+
     def to_pandas(self, column_names: str = "external_id", include_aggregate_name: bool = True) -> "pandas.DataFrame":
         pd = utils._auxiliary.local_import("pandas")
         if column_names not in {"id", "external_id"}:
             raise ValueError("Argument `column_names` must be either 'external_id' or 'id'")
-        identifier = {"id": self.id, "external_id": self.external_id}[column_names]
+        identifier = {"id": str(self.id), "external_id": self.external_id}[column_names]
         if identifier is None:
             identifier = self.id
             warnings.warn(
@@ -355,11 +359,10 @@ class Datapoints(CogniteResource):
 
     @staticmethod
     def _strip_aggregate_names(df: "pandas.DataFrame") -> "pandas.DataFrame":
-        df = df.rename(columns=lambda s: regexp.sub(r"\|\w+$", "", s))
-        if len(set(df.columns)) < df.shape[1]:
-            raise CogniteDuplicateColumnsError(
-                [item for item, count in collections.Counter(df.columns).items() if count > 1]
-            )
+        expr = f"\\|({'|'.join(ALL_DATAPOINT_AGGREGATES)})$"
+        df = df.rename(columns=lambda col: regexp.sub(expr, "", col))
+        if not df.columns.is_unique:
+            raise CogniteDuplicateColumnsError([col for col, count in df.columns.value_counts().items() if count > 1])
         return df
 
     @classmethod
@@ -442,7 +445,7 @@ class DatapointsArrayList(CogniteResourceList):
     _RESOURCE = DatapointsArray
 
     def __str__(self) -> str:
-        return "TODO :trololol:"  # No really, TODO
+        return "DatapointsArrayList.__str__ not implemented"  # No really, TODO
         # item = utils._time.convert_time_attributes_to_datetime(self.dump())
         # return json.dumps(item, default=utils._auxiliary.json_dump_default, indent=4)
 
@@ -590,16 +593,14 @@ class DatapointsQueryNew(CogniteResource):
     def validate_and_create_queries(self) -> List[SingleTSQuery]:
         queries = []
         if self.id is not None:
-            queries.extend(self._validate_id_or_xid(id_or_xid=self.id, is_external_id=False, defaults=self.defaults))
+            queries.extend(self._validate_id_or_xid(id_or_xid=self.id, is_external_id=False))
         if self.external_id is not None:
-            queries.extend(
-                self._validate_id_or_xid(id_or_xid=self.external_id, is_external_id=True, defaults=self.defaults)
-            )
+            queries.extend(self._validate_id_or_xid(id_or_xid=self.external_id, is_external_id=True))
         if queries:
             return queries
         raise ValueError("Pass at least one time series `id` or `external_id`!")
 
-    def _validate_id_or_xid(self, id_or_xid, is_external_id: bool, defaults: Dict):
+    def _validate_id_or_xid(self, id_or_xid, is_external_id: bool):
         if is_external_id:
             arg_name, exp_type = "external_id", str
         else:
@@ -658,15 +659,15 @@ class DatapointsQueryNew(CogniteResource):
 # similar queries. With `eq=False`, we inherit __hash__ from `object` (just id(self)) - exactly what we need!
 @dataclass(eq=False)
 class SingleTSQuery:
-    id: Optional[int]
-    external_id: Optional[str]
-    start: Union[int, str, datetime, None]
-    end: Union[int, str, datetime, None]
-    aggregates: Optional[List[str]]
-    granularity: Optional[str]
-    limit: Optional[int]
-    include_outside_points: Optional[bool]
-    ignore_unknown_ids: Optional[bool]
+    id: Optional[int] = None
+    external_id: Optional[str] = None
+    start: Union[int, str, datetime, None] = None
+    end: Union[int, str, datetime, None] = None
+    aggregates: Optional[List[str]] = None
+    granularity: Optional[str] = None
+    limit: Optional[int] = None
+    include_outside_points: Optional[bool] = False
+    ignore_unknown_ids: Optional[bool] = False
 
     def __post_init__(self):
         self._verify_time_range()
@@ -675,7 +676,7 @@ class SingleTSQuery:
         self._is_missing = None  # I.e. not set...
         self._is_string = None  # ...or unknown
         if not self.is_raw_query:
-            self._is_string = False  # No aggregates exist for string time series
+            self._is_string = False  # No aggregates exist for string time series, yet ;)
         if self.include_outside_points and self.limit is not None:
             warnings.warn(
                 "When using `include_outside_points=True` with a non-infinite `limit` you may get a large gap "

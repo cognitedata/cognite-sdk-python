@@ -77,22 +77,24 @@ class DpsFetchOrchestrator:
                 finished_tasks.append(ts_task)
                 continue
             # Thanks to `as_completed` we are able to schedule new work asap:
+            subtasks = ts_task.split_task_into_subtasks(max_workers=self.max_workers)
+            payloads = [sub.get_next_payload() for sub in subtasks]
             future_dct.update(
-                {pool.submit(self._request_datapoints, p): (p_id, ts_task) for p_id, p in ts_task.get_payloads()}
+                {pool.submit(self._request_datapoints, {"items": [item]}): sub for sub, item in zip(subtasks, payloads)}
             )
         # Run until all tasks are complete:
         while future_dct:
             future = next(as_completed(future_dct))
             (res,) = future.result()
-            subtask_id, ts_task = future_dct.pop(future)
-            ts_task.store_partial_result(subtask_id, res)
-            if ts_task.is_done:
-                finished_tasks.append(ts_task)
+            subtask = future_dct.pop(future)
+            subtask.store_partial_result(res)
+            if subtask.is_done:
+                if subtask.parent.is_done:
+                    finished_tasks.append(subtask.parent)
                 continue
-            subtask_id, payload = ts_task.get_next_payload()
+            payload = {"items": [subtask.get_next_payload()]}
             new_future = pool.submit(self._request_datapoints, payload)
-            future_dct[new_future] = (subtask_id, ts_task)
-            # TODO: XXXXX
+            future_dct[new_future] = subtask
         return finished_tasks
 
     def _fetch_all_with_query_chunking(self, pool, initial_futures_dct):
@@ -105,7 +107,7 @@ class DpsFetchOrchestrator:
         #     res, (agg_queries, raw_queries) = future.result(), initial_futures_dct[future]
         #     new_tasks = self._parse_initial_query_result_into_tasks(res, agg_queries, raw_queries)
         #     new_t.extend(new_tasks)
-        breakpoint()
+        raise NotImplementedError
 
     def _request_datapoints(self, payload) -> DatapointsFromAPI:
         return self.dps_client._post(self.dps_client._RESOURCE_PATH + "/list", json=payload).json()["items"]
@@ -117,8 +119,9 @@ class DpsFetchOrchestrator:
         return tot_queries <= self.max_workers
 
     def finalize_tasks(self, res) -> DatapointsArrayList:
-        # TODO: Make sure ordering follows: UserQuery#1-ID, UQ1-XID, UQ2-ID, ..., UQN-ID, UQN-XID
-        return DatapointsArrayList._load(
+        # TODO: Current order is random... make sure ordering follows:
+        #       UserQuery#1-ID -> UQ1-XID -> UQ2-ID, ..., UQN-ID -> UQN-XID
+        return DatapointsArrayList(
             [r.get_result() for r in res],
             cognite_client=self.dps_client._cognite_client,
         )
@@ -477,7 +480,6 @@ class DatapointsAPI(APIClient):
                 ...                             granularity="1m")]
                 >>> res = c.datapoints.query(queries)
         """
-        # TODO: Suggestion to deprecate this method - almost no point any more
         fetcher = DatapointsFetcher(self)
         if isinstance(query, DatapointsQuery):
             return fetcher.fetch(query)

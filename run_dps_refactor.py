@@ -1,26 +1,34 @@
+import math  # noqa
+from timeit import default_timer as timer
+
 from local_cog_client import setup_local_cog_client
 
 make_agg_dct = {"aggregates": ["average"], "granularity": "12h"}
-START = None
-END = None
-LIMIT = 5
+START = 31539600000
+END = 946688400000
+LIMIT = None
 AGGREGATES = None  # ["average"]
 GRANULARITY = None  # "12h"
-INCLUDE_OUTSIDE_POINTS = None
+INCLUDE_OUTSIDE_POINTS = True
 IGNORE_UNKNOWN_IDS = True
 # ID = None
 ID = [
     # {"id": 226740051491},
-    {"id": 2546012653669},  # string
-    {"id": 1111111111111},  # missing...
+    # {"id": 2546012653669, "start": 1534029331000},  # string, xid=9694359_cargo_type
+    # {"id": 1111111111111},  # missing...
     # {"id": 2546012653669, "aggregates": ["max", "average"], "granularity": "1d"},  # string
 ]
 EXTERNAL_ID = [
     # {"limit": None, "external_id": "ts-test-#01-daily-111/650"},
     # {"limit": 2, "external_id": "ts-test-#01-daily-222/650", **make_agg_dct},
     # {"limit": 1, "external_id": "ts-test-#01-daily-444/650"},
-    {"limit": 7, "external_id": "8400074_destination"},  # string
-    {"limit": 9, "external_id": "9624122_cargo_type"},  # string
+    # {"limit": -1, "external_id": "8400074_destination"},  # string
+    {"limit": -1, "external_id": "benchmark:1-string-#1/50"},  # string
+    {"limit": math.inf, "external_id": "benchmark:1-string-#2/50"},  # string
+    {"limit": None, "external_id": "benchmark:1-string-#3/50"},  # string
+    # {"external_id": "benchmark:1-string-#4/50"},  # string
+    # {"external_id": "benchmark:1-string-#5/50"},  # string
+    # {"limit": math.inf, "external_id": "9694359_cargo_type", "end": 1534031491000},  # string
     # {"limit": None, "external_id": "ts-test-#01-daily-651/650", **make_agg_dct},  # missing
     # {
     #     "include_outside_points": True,
@@ -55,6 +63,7 @@ max_workers = 20
 client = setup_local_cog_client(max_workers, debug=False)
 
 # query1 = DatapointsQuery(
+t0 = timer()
 res = client.datapoints.retrieve_new(
     start=START,
     end=END,
@@ -66,7 +75,14 @@ res = client.datapoints.retrieve_new(
     limit=LIMIT,
     ignore_unknown_ids=IGNORE_UNKNOWN_IDS,
 )
-print("\n\nDONE\n\nres:", res)
+t1 = timer()
+print(res.to_pandas())
+
+tot_t = t1 - t0
+n_dps_fetched = sum(map(len, res))
+dps_ps = round(n_dps_fetched / tot_t, 2)
+print(f"Dps/sec={dps_ps}, ~t: {round(tot_t, 4)} sec")
+
 # query2 = DatapointsQuery(
 #     start=START,
 #     end=END,
