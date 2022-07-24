@@ -6,7 +6,7 @@ import functools
 import itertools
 import math
 import re as regexp
-from concurrent.futures import as_completed
+from concurrent.futures import CancelledError, as_completed
 from dataclasses import dataclass
 from datetime import datetime
 from pprint import pprint
@@ -91,8 +91,11 @@ class DpsFetchOrchestrator:
         # Run until all tasks are complete:
         while future_dct:
             future = next(as_completed(future_dct))
-            (res,) = future.result()
             subtask = future_dct.pop(future)
+            try:
+                (res,) = future.result()
+            except CancelledError:
+                continue
             subtask.store_partial_result(res)
             if subtask.is_done:
                 if subtask.parent.has_limit and subtask.parent.is_done:
