@@ -6,7 +6,7 @@ import functools
 import itertools
 import math
 import re as regexp
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import as_completed
 from dataclasses import dataclass
 from datetime import datetime
 from pprint import pprint
@@ -14,8 +14,17 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional,
 
 import cognite.client.utils._time
 from cognite.client import utils
-from cognite.client._api._type_defs import DatapointsExternalIdTypes, DatapointsFromAPI, DatapointsIdTypes
-from cognite.client._api.datapoint_tasks import dps_task_type_selector
+from cognite.client._api.datapoint_constants import (
+    DPS_LIMIT,
+    DPS_LIMIT_AGG,
+    FETCH_TS_LIMIT,
+    POST_DPS_OBJECTS_LIMIT,
+    RETRIEVE_LATEST_LIMIT,
+    DatapointsExternalIdTypes,
+    DatapointsFromAPI,
+    DatapointsIdTypes,
+)
+from cognite.client._api.datapoint_tasks import BaseConcurrentTask, dps_task_type_selector
 from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import (
@@ -33,18 +42,12 @@ from cognite.client.data_classes.datapoints import (
 )
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import split_into_n_parts
+from cognite.client.utils._priority_tpe import PriorityThreadPoolExecutor
 
 if TYPE_CHECKING:
     import pandas
 
 pprint("RUNNING REPOS/COG-SDK, NOT FROM PIP")
-
-# API-limits:
-DPS_LIMIT_AGG = 10_000
-DPS_LIMIT = 100_000
-POST_DPS_OBJECTS_LIMIT = 10_000
-FETCH_TS_LIMIT = 100
-RETRIEVE_LATEST_LIMIT = 100
 
 
 class DpsFetchOrchestrator:
@@ -58,29 +61,32 @@ class DpsFetchOrchestrator:
         self.eager_fetching = self._decide_run_mode()  # Must be done last in __init__
 
     def fetch_all_datapoints(self):
-        with ThreadPoolExecutor(max_workers=self.max_workers) as pool:
+        with PriorityThreadPoolExecutor(max_workers=self.max_workers) as pool:
             initial_futures_dct = self._create_initial_tasks(pool)
             if self.eager_fetching:
-                results = self._fetch_all_eager(pool, initial_futures_dct)
+                ordered_results = self._fetch_all_eager(pool, initial_futures_dct)
             else:
-                results = self._fetch_all_with_query_chunking(pool, initial_futures_dct)
-        return self.finalize_tasks(results)
+                ordered_results = self._fetch_all_with_query_chunking(pool, initial_futures_dct)
+        return self._finalize_tasks(ordered_results)
 
-    def _fetch_all_eager(self, pool, initial_futures_dct):
-        finished_tasks, future_dct = [], {}
+    def _fetch_all_eager(self, pool, initial_futures_dct) -> Dict[SingleTSQuery, BaseConcurrentTask]:
+        future_dct, query_task_lookup = {}, {}
         for future in as_completed(initial_futures_dct):
             res, query = future.result(), initial_futures_dct[future]
-            if not res:
-                continue  # The time series did not exist (and was part of a ignore_unknown_ids=True query)
+            if not res and query.ignore_unknown_ids:
+                continue
             (ts_task,) = self._create_task_from_initial_result(res, query)  # Unpack with "comma operator" :D
+            query_task_lookup[query] = ts_task  # Keep track of order of top-level tasks (dicts are ordered)
             if ts_task.is_done:
-                finished_tasks.append(ts_task)
                 continue
             # Thanks to `as_completed` we are able to schedule new work asap:
             subtasks = ts_task.split_task_into_subtasks(max_workers=self.max_workers)
-            payloads = [sub.get_next_payload() for sub in subtasks]
+            payloads = [task.get_next_payload() for task in subtasks]
             future_dct.update(
-                {pool.submit(self._request_datapoints, {"items": [item]}): sub for sub, item in zip(subtasks, payloads)}
+                {
+                    pool.submit(self._request_datapoints, {"items": [item]}, priority=task.priority): task
+                    for task, item in zip(subtasks, payloads)
+                }
             )
         # Run until all tasks are complete:
         while future_dct:
@@ -89,13 +95,20 @@ class DpsFetchOrchestrator:
             subtask = future_dct.pop(future)
             subtask.store_partial_result(res)
             if subtask.is_done:
-                if subtask.parent.is_done:
-                    finished_tasks.append(subtask.parent)
+                if subtask.parent.has_limit and subtask.parent.is_done:
+                    # For finished limited queries, kill off any unstarted futures:
+                    self._cancel_futures_for_finished_limited_query(subtask.parent, future_dct)
                 continue
             payload = {"items": [subtask.get_next_payload()]}
-            new_future = pool.submit(self._request_datapoints, payload)
+            new_future = pool.submit(self._request_datapoints, payload, priority=subtask.priority)
             future_dct[new_future] = subtask
-        return finished_tasks
+        return query_task_lookup
+
+    def _cancel_futures_for_finished_limited_query(self, ts_task, future_dct):
+        for future, subtask in future_dct.items():
+            if subtask.parent is ts_task:
+                success = future.cancel()
+                print("-", subtask.parent.identifier_dct_sc, success)
 
     def _fetch_all_with_query_chunking(self, pool, initial_futures_dct):
         # The initial tasks are important - as they tell us which time series are missing,
@@ -118,18 +131,16 @@ class DpsFetchOrchestrator:
         tot_queries = len(self.agg_queries) + len(self.raw_queries)
         return tot_queries <= self.max_workers
 
-    def finalize_tasks(self, res) -> DatapointsArrayList:
-        # TODO: Current order is random... make sure ordering follows:
-        #       UserQuery#1-ID -> UQ1-XID -> UQ2-ID, ..., UQN-ID -> UQN-XID
+    def _finalize_tasks(self, ordered_results) -> DatapointsArrayList:
         return DatapointsArrayList(
-            [r.get_result() for r in res],
+            [r.get_result() for r in ordered_results.values()],
             cognite_client=self.dps_client._cognite_client,
         )
 
     def _validate_and_split_user_queries(self, user_queries):
         split_qs = [], []
-        all_queries = [uq.validate_and_create_queries() for uq in user_queries]
-        for q in itertools.chain(*all_queries):
+        all_queries = list(itertools.chain.from_iterable([uq.validate_and_create_queries() for uq in user_queries]))
+        for q in all_queries:
             split_qs[q.is_raw_query].append(q)
         return split_qs
 
@@ -143,7 +154,7 @@ class DpsFetchOrchestrator:
         futures_dct = {}
         queries_lst, items_lst = create_fn()
         for query, item in zip(queries_lst, items_lst):
-            future = pool.submit(self._request_datapoints, {"ignoreUnknownIds": True, "items": item})
+            future = pool.submit(self._request_datapoints, {"ignoreUnknownIds": True, "items": item}, priority=0)
             futures_dct[future] = query
         return futures_dct
 
@@ -195,7 +206,7 @@ class DpsFetchOrchestrator:
         items = []
         queries = self.agg_queries + self.raw_queries  # Good thing we split these :kappa:
         for q in queries:
-            limit = q.max_query_limit if q.limit is None else q.limit
+            limit = min(q.max_query_limit, q.max_query_limit if q.limit is None else q.limit)
             items.append([{**q.to_payload(), "limit": limit}])
         return queries, items
 
@@ -206,6 +217,8 @@ class DpsFetchOrchestrator:
         # Optimal queries uses the entire worker pool. We may be forced to use more (queue) when we
         # can't fit all individual time series (maxes out at `FETCH_TS_LIMIT * max_workers`):
         n_queries = max(self.max_workers, (n_agg + n_raw) / FETCH_TS_LIMIT)
+        # TODO: can n_queries be float?
+        breakpoint()
         query_lst, items_lst = [], []
         splitter = functools.partial(split_into_n_parts, n=n_queries)
         for chunks in zip(splitter(self.agg_queries), splitter(self.raw_queries)):

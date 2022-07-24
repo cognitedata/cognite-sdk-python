@@ -4,6 +4,8 @@ import dataclasses
 import itertools
 import math
 import operator as op
+import threading
+from abc import abstractmethod
 from dataclasses import InitVar, dataclass
 from pprint import pprint
 from typing import TYPE_CHECKING, List, Optional, Tuple
@@ -11,12 +13,15 @@ from typing import TYPE_CHECKING, List, Optional, Tuple
 import numpy as np
 import numpy.typing as npt
 
-from cognite.client._api._type_defs import DatapointsFromAPI, NumpyInt64Array
+from cognite.client._api.datapoint_constants import DatapointsFromAPI, NumpyInt64Array
 from cognite.client.data_classes import DatapointsArray
 from cognite.client.data_classes.datapoints import SingleTSQuery
 
 if TYPE_CHECKING:
     pprint("type checkin'")  # TODO: Remove.
+
+
+LOCK = threading.Lock()
 
 
 class DpsUnpackFns:
@@ -26,10 +31,10 @@ class DpsUnpackFns:
 
 
 def dps_task_type_selector(query):
-    # Note: We could add "include-outside-points" to our condition, but since
-    # the "initial query" already includes this, when True, we don't.
-    condition = (query.is_string, query.is_raw_query, query.limit is None)
-    return {  # O pattern matching, where art thou?
+    # Note: We could add "include-outside-points" to our conditions, but since
+    # the "initial query" already includes all of these (when True) we don't need to!
+    conditions = (query.is_string, query.is_raw_query, query.limit is None)
+    return {  # O'pattern matching, where art thou?
         # String tasks:
         (True, True, True): ParallelUnlimitedStringTask,
         (True, True, False): ParallelLimitedStringTask,
@@ -39,7 +44,7 @@ def dps_task_type_selector(query):
         # # Agg. numeric tasks:
         # (False, False, True): ParallelUnlimitedAggNumericTask,
         # (False, False, False): ParallelLimitedAggNumericTask,
-    }[condition]
+    }[conditions]
 
 
 @dataclass(eq=False)  # __hash__ cant be inherited (for safety), so we add eq=False for all
@@ -51,6 +56,7 @@ class BaseDpsTask:
 class BaseSubtask(BaseDpsTask):
     subtask_idx: int
     parent: BaseConcurrentTask
+    priority: int  # Lower numbers has higher priority
     is_done: bool = False
 
 
@@ -81,6 +87,8 @@ class ConcurrentRawTask(BaseConcurrentTask):
         self._store_first_batch(dps)
 
     def get_result(self) -> DatapointsArray:
+        if self.has_limit:
+            self._cap_dps_at_limit()
         if self.query.include_outside_points:
             self._include_outside_points_in_result()
         return DatapointsArray._load(
@@ -91,10 +99,14 @@ class ConcurrentRawTask(BaseConcurrentTask):
             }
         )
 
+    @abstractmethod
+    def _find_number_of_subtasks(self):
+        ...
+
     def split_task_into_subtasks(self, max_workers) -> List[SubtaskRawSerial]:
         start, end = self.first_start, self.query.end
         tot_ms = end - start
-        n_periods = self._find_number_of_subtasks(self, tot_ms, max_workers)
+        n_periods = self._find_number_of_subtasks(tot_ms, max_workers)
         delta_ms = math.ceil(tot_ms / n_periods)  # Ceil makes sure we "overshoot" end
         boundaries = [min(end, start + delta_ms * i) for i in range(n_periods + 1)]
         # Make a separate dps bucket for each subtask:
@@ -110,6 +122,26 @@ class ConcurrentRawTask(BaseConcurrentTask):
             )
             self.subtasks.append(subtask)
         return self.subtasks
+
+    def _cap_dps_at_limit(self):
+        # Note 1: Outside points do not count towards given limit
+        # Note 2: Lock not needed; called after pool is shut down
+        count = 0
+        for i, sublist in enumerate(self.ts_lst):
+            for j, arr in enumerate(sublist):
+                if count + len(arr) < self.query.limit:
+                    count += len(arr)
+                    continue
+                end = self.query.limit - count
+                self.ts_lst[i][j] = arr[:end]
+                self.dps_lst[i][j] = self.dps_lst[i][j][:end]
+                # Chop off later arrays in same sublist:
+                self.ts_lst[i] = self.ts_lst[i][: j + 1]
+                self.dps_lst[i] = self.dps_lst[i][: j + 1]
+                # Chop off later sublist:
+                self.ts_lst = self.ts_lst[: i + 1]
+                self.dps_lst = self.dps_lst[: i + 1]
+                return
 
     def _include_outside_points_in_result(self):
         if self.dp_outside_start:
@@ -146,11 +178,11 @@ class ConcurrentRawTask(BaseConcurrentTask):
 
         # In eager mode, we can infer if we got all dps (we know query limit used):
         if self.eager_mode:
-            if self.query.limit is None:
-                if len(dps) < self.query.max_query_limit:
+            if self.has_limit:
+                if len(dps) < min(self.query.max_query_limit, self.query.limit):
                     self._is_done = True
             else:
-                if len(dps) < self.query.limit:
+                if len(dps) < self.query.max_query_limit:
                     self._is_done = True
 
     def _unpack_and_store(self, subtask_idx, dps):
@@ -173,7 +205,6 @@ class ConcurrentRawTask(BaseConcurrentTask):
 class SubtaskRawSerial(BaseSubtask):
     # Just fetches serially until complete, nice and simple. Stores data in parent
     offset_next: int = 1  # ms
-    priority: int = 0  # Lower number is a higher priority
 
     def __post_init__(self):
         self.n_dps_left = self.query.limit
@@ -247,12 +278,28 @@ class ParallelLimitedStringTask(ConcurrentRawTask):
 
     @property
     def is_done(self):
-        # Checking if subtasks are done is not enough; we need to check if sum of "takewhile is_done"
-        # has reached the limit. If yes, we would want to cancel already queued futures (try at least)...
-        raise NotImplementedError
-        # if self.subtasks:
-        #     self._is_done = self._is_done or all(sub.is_done for sub in self.subtasks)
-        # return self._is_done
+        if self._is_done:
+            return self._is_done
+        # Checking if subtasks are done is not enough; we need to check if sum of
+        # "len of dps takewhile is_done" has reached the limit. These are shared, so lock needed:
+        if self.subtasks:
+            n_dps_to_fetch = self.query.limit - len(self.ts_lst[0][0])
+            with LOCK:
+                for i, task in enumerate(self.subtasks):
+                    if task.is_done:
+                        n_dps_to_fetch -= sum(map(len, self.ts_lst[task.subtask_idx]))
+                    else:
+                        break
+                    if n_dps_to_fetch <= 0:
+                        self._is_done = True
+                        # Update all consecutive subtasks to "is done":
+                        for task in self.subtasks[i + 1 :]:
+                            task.is_done = True
+                        break
+                else:
+                    # All subtasks are done, but limited was not reached:
+                    self._is_done = True
+        return self._is_done
 
 
 # BELOW: UNFINISHED

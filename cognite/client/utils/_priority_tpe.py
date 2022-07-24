@@ -1,4 +1,5 @@
 """
+This code has been modified from the original created by Oleg Lupats, 2019, under an MIT license:
 project = 'PriorityThreadPoolExecutor'
 url = 'https://github.com/oleglpts/PriorityThreadPoolExecutor'
 copyright = '2019, Oleg Lupats'
@@ -29,13 +30,15 @@ SOFTWARE.
 """
 
 import atexit
+import inspect
 import queue
 import sys
 import threading
 import weakref
 from concurrent.futures.thread import ThreadPoolExecutor, _base, _python_exit, _threads_queues, _WorkItem
+from random import random
 
-NULL_ENTRY = (sys.maxsize, _WorkItem(None, None, (), {}))
+NULL_ENTRY = (sys.maxsize, None, _WorkItem(None, None, (), {}))
 _SHUTDOWN = False
 
 
@@ -56,9 +59,9 @@ atexit.register(python_exit)
 def _worker(executor_reference, work_queue):
     try:
         while True:
-            work_item = work_queue.get(block=True)
-            if work_item[0] != sys.maxsize:
-                work_item = work_item[1]
+            priority, _, work_item = work_queue.get(block=True)
+            if priority != sys.maxsize:
+                # print(f"Running task with priority {priority}")  # TODO(haakonvt): remove
                 work_item.run()
                 del work_item
                 continue
@@ -81,7 +84,10 @@ class PriorityThreadPoolExecutor(ThreadPoolExecutor):
     def submit(self, fn, *args, **kwargs):
         with self._shutdown_lock:
             if self._shutdown:
-                raise RuntimeError("cannot schedule new futures after shutdown")
+                raise RuntimeError("Cannot schedule new futures after shutdown")
+
+            if "priority" in inspect.signature(fn).parameters:
+                raise TypeError(f"Given function {fn} cannot accept reserved parameter name `priority`")
 
             priority = kwargs.pop("priority", None)
             assert isinstance(priority, int), "`priority` has to be an integer"
@@ -89,7 +95,7 @@ class PriorityThreadPoolExecutor(ThreadPoolExecutor):
             f = _base.Future()
             w = _WorkItem(f, fn, args, kwargs)
 
-            self._work_queue.put((priority, w))
+            self._work_queue.put((priority, random(), w))  # random() to break ties
             self._adjust_thread_count()
             return f
 

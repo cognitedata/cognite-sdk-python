@@ -5,16 +5,16 @@ from local_cog_client import setup_local_cog_client
 
 make_agg_dct = {"aggregates": ["average"], "granularity": "12h"}
 START = 31539600000
-END = 31569600000
-LIMIT = None
+END = "now"  # 1231539300000  # 31569600000
+LIMIT = 5_000_000
 AGGREGATES = None  # ["average"]
 GRANULARITY = None  # "12h"
 INCLUDE_OUTSIDE_POINTS = True
-IGNORE_UNKNOWN_IDS = True
+IGNORE_UNKNOWN_IDS = False
 # ID = None
 ID = [
     # {"id": 226740051491},
-    # {"id": 2546012653669, "start": 1534029331000},  # string, xid=9694359_cargo_type
+    # {"id": 2546012653669, "start": 1031539300000},  # string, xid=9694359_cargo_type
     # {"id": 1111111111111},  # missing...
     # {"id": 2546012653669, "aggregates": ["max", "average"], "granularity": "1d"},  # string
 ]
@@ -23,9 +23,17 @@ EXTERNAL_ID = [
     # {"limit": 2, "external_id": "ts-test-#01-daily-222/650", **make_agg_dct},
     # {"limit": 1, "external_id": "ts-test-#01-daily-444/650"},
     # {"limit": -1, "external_id": "8400074_destination"},  # string
-    {"limit": -1, "external_id": "benchmark:1-string-#1/50"},  # string
-    {"limit": math.inf, "external_id": "benchmark:1-string-#2/50"},  # string
-    {"limit": None, "external_id": "benchmark:1-string-#3/50"},  # string
+    {"external_id": "benchmark:2-string-5m-gran-#1/1"},  # string
+    # {"external_id": "benchmark:1-string-1h-gran-#1/50"},  # string
+    # {"external_id": "benchmark:1-string-1h-gran-#2/50"},  # string
+    # {"external_id": "benchmark:1-string-1h-gran-#3/50"},  # string
+    # {"external_id": "benchmark:1-string-1h-gran-#4/50"},  # string
+    # {"external_id": "benchmark:1-string-1h-gran-#5/50"},  # string
+    # {"external_id": "benchmark:1-string-1h-gran-#6/50"},  # string
+    # {"external_id": "benchmark:1-string-1h-gran-#7/50"},  # string
+    # {"external_id": "benchmark:1-string-1h-gran-#8/50"},  # string
+    # {"external_id": "benchmark:1-string-1h-gran-#9/50"},  # string
+    # {"external_id": "benchmark:1-string-1h-gran-#10/50"},  # string
     # {"external_id": "benchmark:1-string-#4/50"},  # string
     # {"external_id": "benchmark:1-string-#5/50"},  # string
     # {"limit": math.inf, "external_id": "9694359_cargo_type", "end": 1534031491000},  # string
@@ -59,7 +67,7 @@ EXTERNAL_ID = [
 #     f"ts-test-#01-daily-{i}/650" for i in range(1, 651)
 # ]
 
-max_workers = 20
+max_workers = 10
 client = setup_local_cog_client(max_workers, debug=False)
 
 # query1 = DatapointsQuery(

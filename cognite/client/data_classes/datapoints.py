@@ -27,7 +27,9 @@ from typing import (
 import numpy.typing as npt
 
 from cognite.client import utils
-from cognite.client._api._type_defs import (
+from cognite.client._api.datapoint_constants import (
+    DPS_LIMIT,
+    DPS_LIMIT_AGG,
     DatapointsExternalIdTypes,
     DatapointsIdTypes,
     DatapointsQueryExternalId,
@@ -670,9 +672,10 @@ class SingleTSQuery:
     ignore_unknown_ids: Optional[bool] = False
 
     def __post_init__(self):
-        self._verify_time_range()
-        self._verify_limit()
+        # NB: Do not change order of _verify fns without care:
         self._verify_identifier()
+        self._verify_limit()
+        self._verify_time_range()
         self._is_missing = None  # I.e. not set...
         self._is_string = None  # ...or unknown
         if not self.is_raw_query:
@@ -753,7 +756,9 @@ class SingleTSQuery:
         self.end = timestamp_to_ms(self.end)
 
         if self.end <= self.start:
-            raise ValueError("Invalid time range, `end` must be later than `start`")
+            raise ValueError(
+                f"Invalid time range, `end` must be later than `start` (from query: {self.identifier_dct_sc})"
+            )
 
         if not self.is_raw_query:  # API rounds aggregate queries in a very particular fashion
             self.start, self.end = align_start_and_end_for_granularity(self.start, self.end, self.granularity)
@@ -788,19 +793,7 @@ class SingleTSQuery:
         return self.aggregates is None
 
     @property
-    def max_query_limit(self, /, agg_max=10_000, raw_max=100_000):
-        # TODO: Remove double definitions of 10 k and 100 k
+    def max_query_limit(self):
         if self.is_raw_query:
-            return raw_max
-        return agg_max
-
-    def __repr__(self):
-        # TODO(haakonvt): Remove __repr__
-        from dataclasses import fields
-
-        s = ", ".join(
-            f"{field.name}={getattr(self, field.name)!r}"
-            for field in fields(self)
-            if field.name == "limit" or getattr(self, field.name) is not None
-        )
-        return f"{type(self).__name__}({s})"
+            return DPS_LIMIT
+        return DPS_LIMIT_AGG
