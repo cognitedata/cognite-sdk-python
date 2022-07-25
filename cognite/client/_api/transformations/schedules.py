@@ -2,16 +2,7 @@ from typing import Any, List, Optional, Union, cast
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes import (
-    OidcCredentials,
-    Transformation,
-    TransformationBlockedInfo,
-    TransformationDestination,
-    TransformationList,
-    TransformationSchedule,
-    TransformationScheduleList,
-    TransformationScheduleUpdate,
-)
+from cognite.client.data_classes import TransformationSchedule, TransformationScheduleList, TransformationScheduleUpdate
 from cognite.client.data_classes.transformations import TransformationFilter
 
 
