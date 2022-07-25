@@ -4,13 +4,13 @@ from timeit import default_timer as timer
 from local_cog_client import setup_local_cog_client
 
 make_agg_dct = {"aggregates": ["average"], "granularity": "12h"}
-START = 31539600000
-END = "now"  # 1231539300000  # 31569600000
-LIMIT = 5_000_000
+START = 31539600000 + 1
+END = "now"  # 112548548397  # 31569600000
+LIMIT = 500_000
 AGGREGATES = None  # ["average"]
 GRANULARITY = None  # "12h"
 INCLUDE_OUTSIDE_POINTS = True
-IGNORE_UNKNOWN_IDS = False
+IGNORE_UNKNOWN_IDS = True
 # ID = None
 ID = [
     # {"id": 226740051491},
@@ -19,25 +19,29 @@ ID = [
     # {"id": 2546012653669, "aggregates": ["max", "average"], "granularity": "1d"},  # string
 ]
 EXTERNAL_ID = [
-    # {"limit": None, "external_id": "ts-test-#01-daily-111/650"},
-    # {"limit": 2, "external_id": "ts-test-#01-daily-222/650", **make_agg_dct},
-    # {"limit": 1, "external_id": "ts-test-#01-daily-444/650"},
+    # {"external_id": "ts-test-#01-daily-111/650"},
+    # {"external_id": "ts-test-#01-daily-222/650"},
+    {"external_id": "ts-test-#04-ten-mill-dps-1/1"},
+    # {"limit": 99_999 + 3, "external_id": "benchmark:1-string-1h-gran-#3/50"},  # string
     # {"limit": -1, "external_id": "8400074_destination"},  # string
-    {"external_id": "benchmark:2-string-5m-gran-#1/1"},  # string
+    # {"external_id": "benchmark:2-string-5m-gran-#1/1"},  # string
     # {"external_id": "benchmark:1-string-1h-gran-#1/50"},  # string
-    # {"external_id": "benchmark:1-string-1h-gran-#2/50"},  # string
+    # {"external_id": "benchmark:1-string-1h-gran-#8/50"},  # string
     # {"external_id": "benchmark:1-string-1h-gran-#3/50"},  # string
     # {"external_id": "benchmark:1-string-1h-gran-#4/50"},  # string
-    # {"external_id": "benchmark:1-string-1h-gran-#5/50"},  # string
-    # {"external_id": "benchmark:1-string-1h-gran-#6/50"},  # string
-    # {"external_id": "benchmark:1-string-1h-gran-#7/50"},  # string
-    # {"external_id": "benchmark:1-string-1h-gran-#8/50"},  # string
-    # {"external_id": "benchmark:1-string-1h-gran-#9/50"},  # string
     # {"external_id": "benchmark:1-string-1h-gran-#10/50"},  # string
+    # {"external_id": "benchmark:1-string-1h-gran-#6/50"},  # string
+    # {"limit": None, "external_id": "ts-test-#01-daily-651/650"},  # missing
+    # {"external_id": "benchmark:1-string-1h-gran-#9/50"},  # string
+    # {"external_id": "benchmark:1-string-1h-gran-#9/50"},  # string
+    # {"external_id": "benchmark:1-string-1h-gran-#9/50"},  # string
+    # {"external_id": "benchmark:1-string-1h-gran-#2/50"},  # string
+    # {"limit": None, "external_id": "ts-test-#01-daily-651/650"},  # missing
+    # {"external_id": "benchmark:1-string-1h-gran-#7/50"},  # string
+    # {"external_id": "benchmark:1-string-1h-gran-#5/50"},  # string
     # {"external_id": "benchmark:1-string-#4/50"},  # string
     # {"external_id": "benchmark:1-string-#5/50"},  # string
     # {"limit": math.inf, "external_id": "9694359_cargo_type", "end": 1534031491000},  # string
-    # {"limit": None, "external_id": "ts-test-#01-daily-651/650", **make_agg_dct},  # missing
     # {
     #     "include_outside_points": True,
     #     "limit": 1,
@@ -67,7 +71,7 @@ EXTERNAL_ID = [
 #     f"ts-test-#01-daily-{i}/650" for i in range(1, 651)
 # ]
 
-max_workers = 10
+max_workers = 20
 client = setup_local_cog_client(max_workers, debug=False)
 
 # query1 = DatapointsQuery(
@@ -84,7 +88,12 @@ res = client.datapoints.retrieve_new(
     ignore_unknown_ids=IGNORE_UNKNOWN_IDS,
 )
 t1 = timer()
-print(res.to_pandas())
+df = res.to_pandas()
+print(df.head())
+if len(df) >= 10:
+    print("...")
+    print("\n".join(str(df.tail()).splitlines()[1:]))
+print(f"{df.shape=}, {df.count().sum()=}")
 
 tot_t = t1 - t0
 n_dps_fetched = sum(map(len, res))

@@ -55,7 +55,7 @@ class DpsFetchOrchestrator:
         self.dps_client = dps_client
         self.max_workers = self.dps_client._config.max_workers
         assert self.max_workers >= 1, "Invalid option for `max_workers`. Must be at least 1"
-        self.agg_queries, self.raw_queries = self._validate_and_split_user_queries(user_queries)
+        self.all_queries, (self.agg_queries, self.raw_queries) = self._validate_and_split_user_queries(user_queries)
 
         # Set flag for fastpath used for small queries:
         self.eager_fetching = self._decide_run_mode()  # Must be done last in __init__
@@ -69,18 +69,18 @@ class DpsFetchOrchestrator:
                 ordered_results = self._fetch_all_with_query_chunking(pool, initial_futures_dct)
         return self._finalize_tasks(ordered_results)
 
-    def _fetch_all_eager(self, pool, initial_futures_dct) -> Dict[SingleTSQuery, BaseConcurrentTask]:
-        future_dct, query_task_lookup = {}, {}
+    def _fetch_all_eager(self, pool, initial_futures_dct) -> List[BaseConcurrentTask]:
+        future_dct, parent_task_lookup = {}, {}
         for future in as_completed(initial_futures_dct):
             res, query = future.result(), initial_futures_dct[future]
             if not res and query.ignore_unknown_ids:
                 continue
             (ts_task,) = self._create_task_from_initial_result(res, query)  # Unpack with "comma operator" :D
-            query_task_lookup[query] = ts_task  # Keep track of order of top-level tasks (dicts are ordered)
+            parent_task_lookup[query] = ts_task
             if ts_task.is_done:
                 continue
             # Thanks to `as_completed` we are able to schedule new work asap:
-            subtasks = ts_task.split_task_into_subtasks(max_workers=self.max_workers)
+            subtasks = ts_task.split_task_into_subtasks_uniformly(self.max_workers)
             payloads = [task.get_next_payload() for task in subtasks]
             future_dct.update(
                 {
@@ -88,30 +88,39 @@ class DpsFetchOrchestrator:
                     for task, item in zip(subtasks, payloads)
                 }
             )
-        # Run until all tasks are complete:
+        # Run until all top level tasks are complete:
         while future_dct:
             future = next(as_completed(future_dct))
             subtask = future_dct.pop(future)
             try:
                 (res,) = future.result()
             except CancelledError:
+                # print(f"HIT: CancelledError!!! {subtask=}")  # TODO(haakonvt): remove
                 continue
             subtask.store_partial_result(res)
-            if subtask.is_done:
-                if subtask.parent.has_limit and subtask.parent.is_done:
-                    # For finished limited queries, kill off any unstarted futures:
+            if subtask.parent.is_done:  # Parent might be done before a serial subtask is finished
+                if all(p.is_done for p in parent_task_lookup.values()):
+                    # print("Forced pool shutdown!")  # TODO(haakonvt): remove
+                    pool.shutdown(wait=False)
+                    break
+                if subtask.parent.has_limit:
+                    # For finished limited queries, cancel all unstarted futures for same parent:
                     self._cancel_futures_for_finished_limited_query(subtask.parent, future_dct)
+                continue
+            elif subtask.is_done:
                 continue
             payload = {"items": [subtask.get_next_payload()]}
             new_future = pool.submit(self._request_datapoints, payload, priority=subtask.priority)
             future_dct[new_future] = subtask
-        return query_task_lookup
+        # Return only actual tasks in correct order given by `all_queries`:
+        return list(filter(None, map(parent_task_lookup.get, self.all_queries)))
 
     def _cancel_futures_for_finished_limited_query(self, ts_task, future_dct):
+        # print("HIT: _cancel_futures_for_finished_limited_query")  # TODO(haakonvt): Remove
         for future, subtask in future_dct.items():
             if subtask.parent is ts_task:
-                success = future.cancel()
-                print("-", subtask.parent.identifier_dct_sc, success)
+                _ = future.cancel()
+                # print("-", subtask.query.identifier_dct_sc, "got_cancelled:", _)  # TODO(haakonvt): Remove
 
     def _fetch_all_with_query_chunking(self, pool, initial_futures_dct):
         # The initial tasks are important - as they tell us which time series are missing,
@@ -136,7 +145,7 @@ class DpsFetchOrchestrator:
 
     def _finalize_tasks(self, ordered_results) -> DatapointsArrayList:
         return DatapointsArrayList(
-            [r.get_result() for r in ordered_results.values()],
+            [r.get_result() for r in ordered_results],
             cognite_client=self.dps_client._cognite_client,
         )
 
@@ -145,7 +154,7 @@ class DpsFetchOrchestrator:
         all_queries = list(itertools.chain.from_iterable([uq.validate_and_create_queries() for uq in user_queries]))
         for q in all_queries:
             split_qs[q.is_raw_query].append(q)
-        return split_qs
+        return all_queries, split_qs
 
     def _create_initial_tasks(self, pool):
         if self.eager_fetching:
@@ -282,7 +291,7 @@ class DatapointsAPI(APIClient):
         limit: Optional[int] = None,
         include_outside_points: bool = False,
         ignore_unknown_ids: bool = False,
-    ) -> Union[None, Datapoints, DatapointsList]:
+    ) -> Union[None, DatapointsArray, DatapointsArrayList]:
         query = DatapointsQueryNew(
             start=start,
             end=end,

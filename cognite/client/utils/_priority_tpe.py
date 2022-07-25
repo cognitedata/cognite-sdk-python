@@ -92,6 +92,8 @@ class PriorityThreadPoolExecutor(ThreadPoolExecutor):
             priority = kwargs.pop("priority", None)
             assert isinstance(priority, int), "`priority` has to be an integer"
 
+            # print(f"Submitted task with: {args[0]}")
+
             f = _base.Future()
             w = _WorkItem(f, fn, args, kwargs)
 
@@ -117,3 +119,7 @@ class PriorityThreadPoolExecutor(ThreadPoolExecutor):
         if wait:
             for t in self._threads:
                 t.join()
+        else:
+            # See: https://gist.github.com/clchiou/f2608cbe54403edb0b13
+            self._threads.clear()
+            _threads_queues.clear()
