@@ -9,11 +9,11 @@ from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Transformation, TransformationJob, TransformationList
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.data_classes.transformations import (
+    NonceCredentials,
     TransformationFilter,
     TransformationPreviewResult,
     TransformationUpdate,
 )
-from cognite.client.data_classes.transformations.common import NonceCredentials
 
 
 class TransformationsAPI(APIClient):
@@ -58,16 +58,15 @@ class TransformationsAPI(APIClient):
                 >>> res = c.transformations.create(transformations)
         """
         utils._auxiliary.assert_type(transformation, "transformation", [Transformation, list])
-        transformation = transformation.copy()
 
         if isinstance(transformation, list):
             sessions: Dict[str, NonceCredentials] = {}
-            for (i, t) in enumerate(transformation):
-                t = t.copy()
-                transformation[i] = t
+            transformation = [t.copy() for t in transformation]
+            for t in transformation:
                 t._cognite_client = self._cognite_client
                 t._process_credentials(sessions_cache=sessions)
         elif isinstance(transformation, Transformation):
+            transformation = transformation.copy()
             transformation._cognite_client = self._cognite_client
             transformation._process_credentials()
 

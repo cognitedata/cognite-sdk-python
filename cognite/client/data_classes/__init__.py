@@ -111,6 +111,7 @@ from cognite.client.data_classes.time_series import (
     TimeSeriesUpdate,
 )
 from cognite.client.data_classes.transformations import (
+    NonceCredentials,
     OidcCredentials,
     RawTable,
     Transformation,
