@@ -19,8 +19,8 @@ Changes are grouped as follows
 - added support for nonce authentication on transformations
 
 ### Changed
-- if no credentials are provided on transformation create, an attempt will be made to create a session with the CogniteClient credentials, if it succeeds the nonce will be sent to the service.
-- if OIDC credentials are provided on transformation create/update, an attempt will be made to create a session with the given credentials, if it succeeds the nonce will be sent to the service (instead of the client credentials).
+- if no source or destination credentials are provided on transformation create, an attempt will be made to create a session with the CogniteClient credentials, if it succeeds the aquired nonce will be used.
+- if OIDC credentials are provided on transformation create/update, an attempt will be made to create a session with the given credentials, if it succeeds the aquired nonce credentials will replace the given client credentials before sending the request.
 
 ## [3.3.0] - 2022-07-21
 ### Added
