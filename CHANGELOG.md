@@ -17,7 +17,7 @@ Changes are grouped as follows
 
 ## [3.7.0] - 2022-08-10
 ### Changed
-- Changed grouping of Sequence rows on ingest. Each group now contains at most 100k values
+- Changed grouping of Sequence rows on insert. Each group now contains at most 100k values and at most 10k rows.
 
 ## [3.6.1] - 2022-08-10
 ### Fixed
