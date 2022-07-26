@@ -551,14 +551,14 @@ class SequencesDataAPI(APIClient):
         base_obj = Identifier.of_either(id, external_id).as_dict()
         base_obj.update(self._process_columns(column_external_ids))
 
-        if(len(all_rows) > 0):
-            rows_per_request = min(self._SEQ_POST_LIMIT_ROWS, int(self._SEQ_POST_LIMIT_VALUES/len(all_rows[0].values)))
+        if len(all_rows) > 0:
+            rows_per_request = min(
+                self._SEQ_POST_LIMIT_ROWS, int(self._SEQ_POST_LIMIT_VALUES / len(all_rows[0]["values"]))
+            )
         else:
             rows_per_request = self._SEQ_POST_LIMIT_ROWS
 
-        row_objs = [
-            {"rows": all_rows[i : i + rows_per_request]} for i in range(0, len(all_rows), rows_per_request)
-        ]
+        row_objs = [{"rows": all_rows[i : i + rows_per_request]} for i in range(0, len(all_rows), rows_per_request)]
         tasks = [({**base_obj, **rows},) for rows in row_objs]  # type: ignore
         summary = utils._concurrency.execute_tasks_concurrently(
             self._insert_data, tasks, max_workers=self._config.max_workers
