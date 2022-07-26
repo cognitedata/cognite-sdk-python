@@ -148,6 +148,18 @@ class BaseConcurrentTask(BaseDpsTask):
             }
         )
 
+    def split_task_into_subtasks(self, max_workers, count_agg):
+        print("IN: split_task_into_subtasks", self.query.identifier, count_agg is None)
+        if count_agg is None:
+            # Main mode for string is and fallback for numeric ts missing count aggregate for some reason
+            return self.split_task_into_subtasks_uniformly(max_workers)
+        # Main mode for numeric ts:
+        return self.split_task_into_subtasks_from_count_aggs(count_agg)
+
+    def split_task_into_subtasks_from_count_aggs(self, count_agg):
+        # TODO
+        breakpoint()
+
     def _find_number_of_subtasks_uniform_split(self, tot_ms, max_workers) -> int:
         # It makes no sense to split beyond what the max-size of a query allows (for a maximally dense
         # time series), but that is rarely useful as 100k dps is just 1 min 40 sec... we guess an
@@ -187,7 +199,7 @@ class BaseConcurrentTask(BaseDpsTask):
                 # Chop off later arrays in same sublist (if any):
                 self.ts_lst[i] = self.ts_lst[i][: j + 1]
                 self.dps_lst[i] = self.dps_lst[i][: j + 1]
-                # Chop off later sublist (if any):
+                # Chop off later sublists (if any):
                 self.ts_lst = self.ts_lst[: i + 1]
                 self.dps_lst = self.dps_lst[: i + 1]
                 return

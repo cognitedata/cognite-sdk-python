@@ -41,7 +41,11 @@ from cognite.client._api.datapoint_constants import (
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.exceptions import CogniteDuplicateColumnsError
 from cognite.client.utils._auxiliary import to_camel_case, to_snake_case, valfilter
-from cognite.client.utils._time import align_start_and_end_for_granularity, timestamp_to_ms
+from cognite.client.utils._time import (
+    align_start_and_end_for_granularity,
+    compute_granularity_for_count_agg_query,
+    timestamp_to_ms,
+)
 
 if TYPE_CHECKING:
     import pandas
@@ -689,12 +693,27 @@ class SingleTSQuery:
                 UserWarning,
             )
 
-    def to_payload(self):
+    def to_payload(self) -> Dict:
         payload = dataclasses.asdict(self)
-        for k in ("id", "external_id", "ignore_unknown_ids", "include_outside_points"):
+        for k in ("id", "external_id", "ignore_unknown_ids"):
+            # `ignore_unknown_ids` is only allowed as top-level parameter, not as part of `items`
             del payload[k]
-        payload["includeOutsidePoints"] = self.include_outside_points  # Camel case...
+        payload["includeOutsidePoints"] = payload.pop("include_outside_points")  # Camel case...
         return {**payload, **self.identifier_dct}
+
+    def to_count_agg_payload(self, max_windows) -> Optional[Dict]:
+        # Returns payload to get count aggs when useful, else None
+        if not self.is_raw_query:
+            return None
+        if self.limit and self.limit < 2 * DPS_LIMIT + 1:
+            return None
+        limit, granularity = compute_granularity_for_count_agg_query(self.start, self.end, max_windows)
+        return {
+            **self.identifier_dct,
+            "aggregates": ["count"],
+            "granularity": granularity,
+            "limit": limit,
+        }
 
     @classmethod
     def from_dict_with_validation(cls, ts_dct, defaults) -> SingleTSQuery:

@@ -62,25 +62,50 @@ class DpsFetchOrchestrator:
 
     def fetch_all_datapoints(self):
         with PriorityThreadPoolExecutor(max_workers=self.max_workers) as pool:
-            initial_futures_dct = self._create_initial_tasks(pool)
             if self.eager_fetching:
-                ordered_results = self._fetch_all_eager(pool, initial_futures_dct)
+                init_create_fn = self._create_single_queries_for_initial_request
+                fetch_fn = self._fetch_all_eager
             else:
-                ordered_results = self._fetch_all_with_query_chunking(pool, initial_futures_dct)
+                init_create_fn = self._chunk_queries_for_initial_request
+                fetch_fn = self._fetch_all_with_query_chunking
+
+            initial_futures_dct = self._create_initial_tasks(pool, init_create_fn)
+            ordered_results = fetch_fn(pool, initial_futures_dct)
         return self._finalize_tasks(ordered_results)
+
+    def _requeue_ts_query_without_count_agg(self, q, pool):
+        limit = min(q.max_query_limit, q.max_query_limit if q.limit is None else q.limit)
+        return pool.submit(
+            self._request_datapoints,
+            {"ignoreUnknownIds": True, "items": [{**q.to_payload(), "limit": limit}]},
+            priority=0,
+        )
 
     def _fetch_all_eager(self, pool, initial_futures_dct) -> List[BaseConcurrentTask]:
         future_dct, parent_task_lookup = {}, {}
-        for future in as_completed(initial_futures_dct):
-            res, query = future.result(), initial_futures_dct[future]
+        while initial_futures_dct:
+            future = next(as_completed(initial_futures_dct))
+            query = initial_futures_dct.pop(future)
+            try:
+                res = future.result()
+            except CogniteAPIError as err:
+                # This optimization assumes most queries ask for numeric data. Thus we ask for
+                # count aggregate in the same initial query to save one API-request, but this fails
+                # for string time series, so they need a retry (who needs those anyway!!):
+                if err.code == 400:
+                    future = self._requeue_ts_query_without_count_agg(query, pool)
+                    initial_futures_dct[future] = query
+                    continue
+                raise
             if not res and query.ignore_unknown_ids:
                 continue
-            (ts_task,) = self._create_task_from_initial_result(res, query)  # Unpack with "comma operator" :D
+            (ts_task,) = self._create_task_from_initial_result(res[:1], query)  # Unpack with "comma operator" :D
             parent_task_lookup[query] = ts_task
             if ts_task.is_done:
                 continue
             # Thanks to `as_completed` we are able to schedule new work asap:
-            subtasks = ts_task.split_task_into_subtasks_uniformly(self.max_workers)
+            count_agg = res[1:2] or None
+            subtasks = ts_task.split_task_into_subtasks(self.max_workers, count_agg)
             payloads = [task.get_next_payload() for task in subtasks]
             future_dct.update(
                 {
@@ -156,18 +181,12 @@ class DpsFetchOrchestrator:
             split_qs[q.is_raw_query].append(q)
         return all_queries, split_qs
 
-    def _create_initial_tasks(self, pool):
-        if self.eager_fetching:
-            create_fn = self._create_single_queries_for_initial_request
-        else:
-            create_fn = self._chunk_queries_for_initial_request
-
-        # Note: Each query and item may contain multiple when `eager_fetching=False`:
+    def _create_initial_tasks(self, pool, init_create_fn):
         futures_dct = {}
-        queries_lst, items_lst = create_fn()
-        for query, item in zip(queries_lst, items_lst):
-            future = pool.submit(self._request_datapoints, {"ignoreUnknownIds": True, "items": item}, priority=0)
-            futures_dct[future] = query
+        queries_lst, items_lst = init_create_fn()
+        for queries, items in zip(queries_lst, items_lst):
+            future = pool.submit(self._request_datapoints, {"ignoreUnknownIds": True, "items": items}, priority=0)
+            futures_dct[future] = queries
         return futures_dct
 
     def _create_task_from_initial_result(self, result, query):
@@ -216,11 +235,18 @@ class DpsFetchOrchestrator:
         assert self.eager_fetching is True  # TODO: remove
 
         items = []
-        queries = self.agg_queries + self.raw_queries  # Good thing we split these :kappa:
-        for q in queries:
+        for q in self.agg_queries:
             limit = min(q.max_query_limit, q.max_query_limit if q.limit is None else q.limit)
             items.append([{**q.to_payload(), "limit": limit}])
-        return queries, items
+
+        for q in self.raw_queries:
+            limit = min(q.max_query_limit, q.max_query_limit if q.limit is None else q.limit)
+            items.append([{**q.to_payload(), "limit": limit}])
+            agg_payload = q.to_count_agg_payload(max_windows=500)
+            # print("\nagg_payload:\n", agg_payload, "\n")  # TODO: Remove
+            if agg_payload:  # Only larger queries warrant fetching count aggs
+                items[-1].append(agg_payload)
+        return self.all_queries, items
 
     def _chunk_queries_for_initial_request(self):
         assert self.eager_fetching is False  # TODO: remove

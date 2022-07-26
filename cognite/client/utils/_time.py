@@ -1,9 +1,12 @@
+import math
 import numbers
 import re
 import time
 import warnings
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Tuple, Union
+
+from cognite.client._api.datapoint_constants import DPS_LIMIT
 
 _unit_in_ms_without_week = {"s": 1000, "m": 60000, "h": 3600000, "d": 86400000}
 _unit_in_ms = {**_unit_in_ms_without_week, "w": 604800000}
@@ -156,3 +159,27 @@ def align_start_and_end_for_granularity(start: int, end: int, granularity: str) 
         # Ceil `end` when not exactly at boundary decided by `start + N * granularity`
         end += gms - remainder
     return start, end
+
+
+def compute_granularity_for_count_agg_query(start: int, end: int, max_windows: int = 200) -> Tuple[int, str]:
+    tot_ms = end - start
+    n_windows_estimate = min(max_windows, math.ceil(tot_ms / DPS_LIMIT))
+    gran_ms = tot_ms / n_windows_estimate
+
+    if gran_ms < 40 * (min_ms := _unit_in_ms_without_week["m"]):
+        n = math.ceil(gran_ms / min_ms)
+        n_windows = math.ceil(tot_ms / (n * min_ms))
+        return n_windows, f"{n}m"
+
+    # Although the API support up to 100k hour granularity, we'd much rather send "7d" than "168h"
+    elif gran_ms < 20 * (hour_ms := _unit_in_ms_without_week["h"]):
+        n = math.ceil(gran_ms / hour_ms)
+        n_windows = math.ceil(tot_ms / (n * hour_ms))
+        return n_windows, f"{n}h"
+
+    elif gran_ms < 100_000 * (day_ms := _unit_in_ms_without_week["d"]):
+        n = math.ceil(gran_ms / day_ms)
+        n_windows = math.ceil(tot_ms / (n * day_ms))
+        return n_windows, f"{n}d"
+
+    raise RuntimeError(f"Unable to find count granularity for {start=}, {end=} and {max_windows=}")
