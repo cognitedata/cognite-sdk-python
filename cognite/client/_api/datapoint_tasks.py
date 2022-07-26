@@ -16,6 +16,7 @@ from cognite.client._api.datapoint_constants import DPS_LIMIT, DatapointsFromAPI
 from cognite.client.data_classes import DatapointsArray
 from cognite.client.data_classes.datapoints import SingleTSQuery
 from cognite.client.utils._auxiliary import to_camel_case
+from cognite.client.utils._time import granularity_to_ms
 
 if TYPE_CHECKING:
     pprint("type checkin'")  # TODO: Remove.
@@ -148,55 +149,71 @@ class BaseConcurrentTask(BaseDpsTask):
             }
         )
 
-    def split_task_into_subtasks(self, max_workers, count_agg):
+    def split_task_into_subtasks(self, max_workers, count_agg, count_agg_gran):
         if count_agg is not None:
             # Main mode for numeric ts:
-            return self.split_task_into_subtasks_from_count_aggs(count_agg)
+            dps = count_agg[0]["datapoints"]
+            if dps:
+                return self.split_task_into_subtasks_from_count_aggs(dps, count_agg_gran)
         # Main mode for string is and fallback for numeric ts missing count aggregate (for any reason)
         return self.split_task_into_subtasks_uniformly(max_workers)
 
-    def split_task_into_subtasks_from_count_aggs(self, count_agg):
+    def split_task_into_subtasks_from_count_aggs(self, count_dps, count_agg_gran):
         if self.has_limit:
             raise NotImplementedError("Can't split limited queries into tasks based on counts - yet")
+
         arr = self.ts_lst[0][0]
-        count_dps = count_agg[0]["datapoints"]
-        c_ts, counts = zip(*map(DpsUnpackFns.ts_count_tpl, count_dps))
+        count_ts, counts = map(list, zip(*map(DpsUnpackFns.ts_count_tpl, count_dps)))
+        if count_ts[-1] < self.query.end:
+            # Equal when end is aligned with the dynamically chosen gran of the count agg request
+            count_ts.append(self.query.end)
 
         # Find first count interval we are to start from:
         latest = arr[-1]
-        for i, (start, end) in enumerate(itertools.zip_longest(c_ts, c_ts[1:], fillvalue=math.inf)):
-            if start >= latest < end:  # Note: Last interval end=inf
+        for i, (start, end) in enumerate(zip(count_ts[:-1], count_ts[1:])):
+            if start >= latest < end:
                 break
-        else:
-            i = None
-
-        # Single subtask territory:
-        if i is None or len(count_dps) <= 1:
-            self.ts_lst.append([])
-            self.dps_lst.append([])
-            limit = self.query.limit - self.n_dps_first_batch if self.has_limit else None
-            query = SingleTSQuery(
-                **self.query.identifier_dct_sc, start=self.first_start, end=self.query.end, limit=limit
-            )
-            self.subtasks.append(SubtaskRawSerial(query=query, subtask_idx=1, parent=self, priority=0))
-            return self.subtasks
 
         # How many points already fetched in first window?
-        n_arr_dps = np.logical_and(c_ts[i] <= arr, arr < c_ts[i + 1]).sum()  # Sums number of True
-        current_count = counts[i] - n_arr_dps  # ...subtract this amount!
+        n_arr_dps = np.logical_and(count_ts[i] <= arr, arr < count_ts[i + 1]).sum()  # Sums number of True
+        counts[i] -= n_arr_dps  # ...subtract this amount!
+        count_ts[i] = query_start = self.first_start  # ...and move start
 
-        subqueries = []
-        query_start = self.first_start
-        i += 1  # Move to next: current count already added
-        for start, end, count in zip(c_ts[i:-1], c_ts[i + 1 :], counts[i:]):
-            if current_count + count > DPS_LIMIT:
-                subqueries.append((query_start, end))
-                current_count = count
-                query_start = end
-            else:
-                current_count += count
+        count_gran_in_ms = granularity_to_ms(count_agg_gran)
+        current_count, subqueries = 0, []
+        for start, end, count in zip(count_ts[i:-1], count_ts[i + 1 :], counts[i:]):
+            if count <= DPS_LIMIT:
+                if current_count + count > DPS_LIMIT:
+                    subqueries.append((query_start, end, current_count))
+                    current_count = count
+                    query_start = end
+                else:
+                    current_count += count
+                continue
+            # We have hit a hot-spot of a 'bursty' time series (meaning single count agg interval > DPS_LIMIT).
+            # This optimization - subdividing a hot-spot - has amazing perf. benefits (avoids serial fetching):
+            n_periods = math.ceil(count / DPS_LIMIT)
+            sub_count = math.ceil(count / n_periods)
+            delta_ms = math.ceil(count_gran_in_ms / n_periods)
+
+            # We split the single period (length: count_gran_in_ms) into n_periods, but make sure that
+            # the last of these has its end shifted all the way to `end`; i.e. start of next period, which
+            # might be `start + count_gran_in_ms` but can be an arbitrary long period of time:
+            sub_periods = [start + delta_ms * i for i in range(n_periods)]
+            sub_periods.append(end)
+            for sub_start, sub_end in zip(sub_periods[:-1], sub_periods[1:]):
+                if current_count + sub_count > DPS_LIMIT:
+                    subqueries.append((query_start, sub_end, current_count))
+                    current_count = sub_count
+                    query_start = sub_end
+                else:
+                    current_count += sub_count
+
         # Store last subtask interval:
-        subqueries.append((query_start, self.query.end))
+        if query_start < self.query.end:
+            subqueries.append((query_start, self.query.end, current_count))
+        pprint(subqueries)
+        subqueries = [sub[:2] for sub in subqueries]
 
         # Make room for subquery results:
         self.ts_lst.extend([[] for _ in range(len(subqueries))])

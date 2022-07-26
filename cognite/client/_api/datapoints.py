@@ -57,6 +57,9 @@ class DpsFetchOrchestrator:
         assert self.max_workers >= 1, "Invalid option for `max_workers`. Must be at least 1"
         self.all_queries, (self.agg_queries, self.raw_queries) = self._validate_and_split_user_queries(user_queries)
 
+        # Store query->granularity mapping for queries were we ask for count aggregates:
+        self.count_agg_grans = {}
+
         # Set flag for fastpath used for small queries:
         self.eager_fetching = self._decide_run_mode()  # Must be done last in __init__
 
@@ -104,8 +107,9 @@ class DpsFetchOrchestrator:
             if ts_task.is_done:
                 continue
             # Thanks to `as_completed` we are able to schedule new work asap:
-            count_agg = res[1:2] or None
-            subtasks = ts_task.split_task_into_subtasks(self.max_workers, count_agg)
+            count_aggs = res[1:2] or None
+            count_agg_gran = self.count_agg_grans.get(query)
+            subtasks = ts_task.split_task_into_subtasks(self.max_workers, count_aggs, count_agg_gran)
             payloads = [task.get_next_payload() for task in subtasks]
             future_dct.update(
                 {
@@ -242,9 +246,9 @@ class DpsFetchOrchestrator:
         for q in self.raw_queries:
             limit = min(q.max_query_limit, q.max_query_limit if q.limit is None else q.limit)
             items.append([{**q.to_payload(), "limit": limit}])
-            agg_payload = q.to_count_agg_payload(max_windows=500)
-            # print("\nagg_payload:\n", agg_payload, "\n")  # TODO: Remove
+            agg_payload = q.to_count_agg_payload(max_windows=1000)
             if agg_payload:  # Only larger queries warrant fetching count aggs
+                self.count_agg_grans[q] = agg_payload["granularity"]
                 items[-1].append(agg_payload)
         return self.all_queries, items
 
