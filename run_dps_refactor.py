@@ -5,8 +5,8 @@ from local_cog_client import setup_local_cog_client
 
 make_agg_dct = {"aggregates": ["average"], "granularity": "12h"}
 START = 31539600000 + 1
-END = "now"  # 112548548397  # 31569600000
-LIMIT = 300_000
+END = 62548548397  # 112548548397  # 31569600000
+LIMIT = None
 AGGREGATES = None  # ["average"]
 GRANULARITY = None  # "12h"
 INCLUDE_OUTSIDE_POINTS = True

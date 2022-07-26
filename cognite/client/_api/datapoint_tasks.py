@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, List, Optional, Tuple
 import numpy as np
 import numpy.typing as npt
 
-from cognite.client._api.datapoint_constants import DatapointsFromAPI, NumpyInt64Array
+from cognite.client._api.datapoint_constants import DPS_LIMIT, DatapointsFromAPI, NumpyInt64Array
 from cognite.client.data_classes import DatapointsArray
 from cognite.client.data_classes.datapoints import SingleTSQuery
 from cognite.client.utils._auxiliary import to_camel_case
@@ -25,7 +25,7 @@ class DpsUnpackFns:
     ts = op.itemgetter("timestamp")
     raw_dp = op.itemgetter("value")
     ts_dp_tpl = op.itemgetter("timestamp", "value")
-    count = op.itemgetter("count")
+    ts_count_tpl = op.itemgetter("timestamp", "count")
 
     @staticmethod
     def custom_aggregates_no_count(lst):
@@ -149,16 +149,63 @@ class BaseConcurrentTask(BaseDpsTask):
         )
 
     def split_task_into_subtasks(self, max_workers, count_agg):
-        print("IN: split_task_into_subtasks", self.query.identifier, count_agg is None)
-        if count_agg is None:
-            # Main mode for string is and fallback for numeric ts missing count aggregate for some reason
-            return self.split_task_into_subtasks_uniformly(max_workers)
-        # Main mode for numeric ts:
-        return self.split_task_into_subtasks_from_count_aggs(count_agg)
+        if count_agg is not None:
+            # Main mode for numeric ts:
+            return self.split_task_into_subtasks_from_count_aggs(count_agg)
+        # Main mode for string is and fallback for numeric ts missing count aggregate (for any reason)
+        return self.split_task_into_subtasks_uniformly(max_workers)
 
     def split_task_into_subtasks_from_count_aggs(self, count_agg):
-        # TODO
-        breakpoint()
+        if self.has_limit:
+            raise NotImplementedError("Can't split limited queries into tasks based on counts - yet")
+        arr = self.ts_lst[0][0]
+        count_dps = count_agg[0]["datapoints"]
+        c_ts, counts = zip(*map(DpsUnpackFns.ts_count_tpl, count_dps))
+
+        # Find first count interval we are to start from:
+        latest = arr[-1]
+        for i, (start, end) in enumerate(itertools.zip_longest(c_ts, c_ts[1:], fillvalue=math.inf)):
+            if start >= latest < end:  # Note: Last interval end=inf
+                break
+        else:
+            i = None
+
+        # Single subtask territory:
+        if i is None or len(count_dps) <= 1:
+            self.ts_lst.append([])
+            self.dps_lst.append([])
+            limit = self.query.limit - self.n_dps_first_batch if self.has_limit else None
+            query = SingleTSQuery(
+                **self.query.identifier_dct_sc, start=self.first_start, end=self.query.end, limit=limit
+            )
+            self.subtasks.append(SubtaskRawSerial(query=query, subtask_idx=1, parent=self, priority=0))
+            return self.subtasks
+
+        # How many points already fetched in first window?
+        n_arr_dps = np.logical_and(c_ts[i] <= arr, arr < c_ts[i + 1]).sum()  # Sums number of True
+        current_count = counts[i] - n_arr_dps  # ...subtract this amount!
+
+        subqueries = []
+        query_start = self.first_start
+        i += 1  # Move to next: current count already added
+        for start, end, count in zip(c_ts[i:-1], c_ts[i + 1 :], counts[i:]):
+            if current_count + count > DPS_LIMIT:
+                subqueries.append((query_start, end))
+                current_count = count
+                query_start = end
+            else:
+                current_count += count
+        # Store last subtask interval:
+        subqueries.append((query_start, self.query.end))
+
+        # Make room for subquery results:
+        self.ts_lst.extend([[] for _ in range(len(subqueries))])
+        self.dps_lst.extend([[] for _ in range(len(subqueries))])
+        for i, (period_start, period_end) in enumerate(subqueries, 1):
+            query = SingleTSQuery(**self.query.identifier_dct_sc, start=period_start, end=period_end, limit=None)
+            priority = i - 1 if self.has_limit else 0
+            self.subtasks.append(SubtaskRawSerial(query=query, subtask_idx=i, parent=self, priority=priority))
+        return self.subtasks
 
     def _find_number_of_subtasks_uniform_split(self, tot_ms, max_workers) -> int:
         # It makes no sense to split beyond what the max-size of a query allows (for a maximally dense
