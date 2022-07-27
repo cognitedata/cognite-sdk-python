@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [3.0.1] - 2022-07-27
+### Fixed
+- fixed exception when printing exceptions generated on transformations creation/update.
+
 ## [3.4.0] - 2022-07-21
 ### Added
 - added support for nonce authentication on transformations
