@@ -1187,6 +1187,21 @@ Delete security categories
 .. automethod:: cognite.client._api.iam.SecurityCategoriesAPI.delete
 
 
+Sessions
+^^^^^^^^^^^^^^^^^^^
+List sessions
+~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.iam.SessionsAPI.list
+
+Create a session
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.iam.SessionsAPI.create
+
+Revoke a session
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.iam.SessionsAPI.delete
+
+
 Data classes
 ^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.iam

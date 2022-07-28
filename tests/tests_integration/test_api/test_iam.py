@@ -77,3 +77,10 @@ class TestSecurityCategoriesAPI:
         assert res.id in {s.id for s in cognite_client.iam.security_categories.list()}
         cognite_client.iam.security_categories.delete(res.id)
         assert res.id not in {s.id for s in cognite_client.iam.security_categories.list()}
+
+
+class TestSessionsAPI:
+    def test_create_and_revoke(self, cognite_client):
+        res = cognite_client.iam.sessions.create()
+        assert res.id in {s.id for s in cognite_client.iam.sessions.list("READY")}
+        assert res.id in {s.id for s in cognite_client.iam.sessions.revoke(res.id) if s.status == "REVOKED"}
