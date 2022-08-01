@@ -251,17 +251,17 @@ class Transformation(CogniteResource):
             Dict[str, Any]: A dictionary representation of the instance.
         """
         ret = super().dump(camel_case=camel_case)
-        if self.source_oidc_credentials:
+        if isinstance(self.source_oidc_credentials, OidcCredentials):
             source_key = "sourceOidcCredentials" if camel_case else "source_oidc_credentials"
             ret[source_key] = self.source_oidc_credentials.dump(camel_case=camel_case)
-        if self.destination_oidc_credentials:
+        if isinstance(self.destination_oidc_credentials, OidcCredentials):
             destination_key = "destinationOidcCredentials" if camel_case else "destination_oidc_credentials"
             ret[destination_key] = self.destination_oidc_credentials.dump(camel_case=camel_case)
 
-        if self.source_nonce:
+        if isinstance(self.source_nonce, NonceCredentials):
             destination_key = "sourceNonce" if camel_case else "source_nonce"
             ret[destination_key] = self.source_nonce.dump(camel_case=camel_case)
-        if self.destination_nonce:
+        if isinstance(self.destination_nonce, NonceCredentials):
             destination_key = "destinationNonce" if camel_case else "destination_nonce"
             ret[destination_key] = self.destination_nonce.dump(camel_case=camel_case)
         if isinstance(self.destination, AlphaDataModelInstances) or isinstance(self.destination, SequenceRows):
