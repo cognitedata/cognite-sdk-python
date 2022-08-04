@@ -5,7 +5,7 @@ from local_cog_client import setup_local_cog_client
 
 make_agg_dct = {"aggregates": ["average"], "granularity": "12h"}
 START = 0
-END = 1653696000000  # 112548548397  # 31569600000
+END = 1  # 112548548397  # 31569600000
 LIMIT = None
 AGGREGATES = None  # ["average"]
 GRANULARITY = None  # "12h"
@@ -78,7 +78,7 @@ EXTERNAL_ID = [
 #     f"ts-test-#01-daily-{i}/650" for i in range(1, 651)
 # ]
 
-max_workers = 20
+max_workers = 10
 client = setup_local_cog_client(max_workers, debug=False)
 
 # query1 = DatapointsQuery(
