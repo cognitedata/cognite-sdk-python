@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
     from cognite.client import CogniteClient
 
-RESERVED_PROPERTIES = {"externalId", "dataSetId", "createdTime", "lastUpdatedTime"}
+RESERVED_PROPERTIES = {"externalId", "dataSetId", "assetIds", "createdTime", "lastUpdatedTime"}
 
 
 class FeatureType(CogniteResource):
@@ -110,7 +110,7 @@ class Feature(CogniteResource):
         instance = cls(cognite_client=cognite_client)
         for key, value in resource.items():
             # Keep properties defined in Feature Type as is
-            normalized_key = utils._auxiliary.to_snake_case(key) if key in RESERVED_PROPERTIES else key
+            normalized_key = to_feature_property_name(key)
             setattr(instance, normalized_key, value)
         return instance
 
@@ -167,6 +167,10 @@ def _is_geometry_type(property_type: str) -> bool:
 
 def _is_reserved_property(property_name: str) -> bool:
     return property_name.startswith("_") or property_name in RESERVED_PROPERTIES
+
+
+def to_feature_property_name(property_name: str) -> str:
+    return utils._auxiliary.to_snake_case(property_name) if property_name in RESERVED_PROPERTIES else property_name
 
 
 class FeatureList(CogniteResourceList):
@@ -245,11 +249,15 @@ class FeatureList(CogniteResourceList):
             feature = Feature(external_id=row[external_id_column], data_set_id=row.get(data_set_id_column, None))
             for prop in feature_type.properties.items():
                 prop_name = prop[0]
+                # skip generated columns
+                if prop_name.startswith("_") or prop_name in ["createdTime", "lastUpdatedTime"]:
+                    continue
                 prop_type = prop[1]["type"]
                 prop_optional = prop[1].get("optional", False)
-                if _is_reserved_property(prop_name):
+                column_name = property_column_mapping.get(prop_name, None)
+                # skip parsed columns
+                if column_name in [external_id_column, data_set_id_column]:
                     continue
-                column_name = property_column_mapping.get(prop[0], None)
                 column_value = row.get(column_name, None)
                 if column_name is None or column_value is None:
                     if prop_optional:
@@ -257,6 +265,7 @@ class FeatureList(CogniteResourceList):
                     else:
                         raise ValueError(f"Missing value for property {prop_name}")
 
+                prop_name = to_feature_property_name(prop_name)
                 if _is_geometry_type(prop_type):
                     setattr(feature, prop_name, {"wkt": column_value.wkt})
                 else:

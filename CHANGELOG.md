@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [3.8.1] - 2022-08-12
+### Fixed
+- geospatial: support asset links for features
+
 
 ## [3.8.0] - 2022-08-11
 ### Added
