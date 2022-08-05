@@ -1,15 +1,22 @@
 import math  # noqa
 from timeit import default_timer as timer
 
+import pandas as pd
+
 from local_cog_client import setup_local_cog_client
 
-make_agg_dct = {"aggregates": ["average"], "granularity": "12h"}
 START = 0
-END = 1  # 112548548397  # 31569600000
+END = "now"  # 112548548397  # 31569600000
+START = pd.Timestamp("1990-01-01 00:00:00").value // int(1e6)
+END = pd.Timestamp("1990-01-12 13:46:39").value // int(1e6) + 1
 LIMIT = None
-AGGREGATES = None  # ["average"]
-GRANULARITY = None  # "12h"
-INCLUDE_OUTSIDE_POINTS = True
+AGGREGATES = ["sum"]
+# AGGREGATES = [
+#     "average", "max", "min", "count", "sum", "interpolation", "stepInterpolation",
+#     "continuousVariance", "discreteVariance", "totalVariation"
+# ]
+GRANULARITY = "1s"
+INCLUDE_OUTSIDE_POINTS = False
 IGNORE_UNKNOWN_IDS = False
 # ID = None
 ID = [
@@ -23,10 +30,10 @@ EXTERNAL_ID = [
     # {"external_id": "ts-test-#01-daily-222/650"},
     # {"external_id": "ts-test-#04-ten-mill-dps-1/1"},
     {"external_id": "benchmark:11-1mill-blob-sec-after-1990-#1/10"},
-    {"external_id": "benchmark:11-1mill-blob-sec-after-1990-#2/10"},
-    {"external_id": "benchmark:11-1mill-blob-sec-after-1990-#3/10"},
-    {"external_id": "benchmark:11-1mill-blob-sec-after-1990-#4/10"},
-    {"external_id": "benchmark:11-1mill-blob-sec-after-1990-#5/10"},
+    # {"external_id": "benchmark:11-1mill-blob-sec-after-1990-#2/10"},
+    # {"external_id": "benchmark:11-1mill-blob-sec-after-1990-#3/10"},
+    # {"external_id": "benchmark:11-1mill-blob-sec-after-1990-#4/10"},
+    # {"external_id": "benchmark:11-1mill-blob-sec-after-1990-#5/10"},
     # {"external_id": "benchmark:10-1mill-blob-ms-after-1990-#1/10"},
     # {"external_id": "benchmark:10-1mill-blob-ms-after-1990-#2/10"},
     # {"limit": 99_999 + 3, "external_id": "benchmark:1-string-1h-gran-#3/50"},  # string
@@ -81,7 +88,6 @@ EXTERNAL_ID = [
 max_workers = 10
 client = setup_local_cog_client(max_workers, debug=False)
 
-# query1 = DatapointsQuery(
 t0 = timer()
 res = client.datapoints.retrieve_new(
     start=START,
@@ -105,7 +111,11 @@ print(f"{df.shape=}, {df.count().sum()=}")
 tot_t = t1 - t0
 n_dps_fetched = sum(map(len, res))
 dps_ps = round(n_dps_fetched / tot_t, 2)
-print(f"Dps/sec={dps_ps}, ~t: {round(tot_t, 4)} sec")
+
+tot_dps = df.count().sum()  # Ignores simultaneously fetched aggs
+tot_dps_ps = round(tot_dps / tot_t, 2)
+print(f"Dps/sec={dps_ps}, (double counting aggs: {tot_dps_ps}) ~t: {round(tot_t, 4)} sec")
+print(f"Dps/sec, (counting all aggs.): {tot_dps_ps}")
 
 # query2 = DatapointsQuery(
 #     start=START,

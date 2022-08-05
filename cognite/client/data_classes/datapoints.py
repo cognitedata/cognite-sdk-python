@@ -40,7 +40,7 @@ from cognite.client._api.datapoint_constants import (
 )
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.exceptions import CogniteDuplicateColumnsError
-from cognite.client.utils._auxiliary import to_camel_case, to_snake_case, valfilter
+from cognite.client.utils._auxiliary import to_camel_case, to_snake_case
 from cognite.client.utils._time import (
     align_start_and_end_for_granularity,
     compute_granularity_for_count_agg_query,
@@ -204,7 +204,9 @@ class DatapointsArray(CogniteResource):
             def col_name(agg):
                 return identifier + include_aggregate_name * f"|{to_camel_case(agg)}"
 
-            columns = valfilter({col_name(agg): getattr(self, agg) for agg in ALL_DATAPOINT_AGGREGATES})
+            columns = {
+                col_name(agg): arr for agg in ALL_DATAPOINT_AGGREGATES if (arr := getattr(self, agg)) is not None
+            }
 
         return pd.DataFrame(columns, index=pd.to_datetime(self.timestamp, unit="ms"))
 
@@ -693,13 +695,14 @@ class SingleTSQuery:
                 UserWarning,
             )
 
-    def to_payload(self) -> Dict:
-        payload = dataclasses.asdict(self)
+    def to_payload(self) -> Union[DatapointsQueryId, DatapointsQueryExternalId]:
+        payload = {**dataclasses.asdict(self), **self.identifier_dct}
         for k in ("id", "external_id", "ignore_unknown_ids"):
             # `ignore_unknown_ids` is only allowed as top-level parameter, not as part of `items`
             del payload[k]
-        payload["includeOutsidePoints"] = payload.pop("include_outside_points")  # Camel case...
-        return {**payload, **self.identifier_dct}
+        if not self.is_raw_query:
+            payload["aggregates"] = self.aggregates_cc
+        return dict(zip(map(to_camel_case, payload.keys()), payload.values()))
 
     def to_count_agg_payload(self, max_windows) -> Optional[Dict]:
         # Returns payload to get count aggs when useful, else None
@@ -810,6 +813,12 @@ class SingleTSQuery:
     @property
     def is_raw_query(self):
         return self.aggregates is None
+
+    @cached_property
+    def aggregates_cc(self):
+        if self.is_raw_query:
+            return self.aggregates
+        return list(map(to_camel_case, self.aggregates))
 
     @property
     def max_query_limit(self):

@@ -15,7 +15,7 @@ import string
 import warnings
 from decimal import Decimal
 from types import ModuleType
-from typing import Any, Collection, Dict, List, Mapping, Optional, Sequence, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 from urllib.parse import quote
 
 import cognite.client
@@ -211,11 +211,3 @@ def convert_true_match(true_match: Union[dict, list, Tuple[Union[int, str], Unio
         return true_match
     else:
         raise ValueError("true_matches should be a dictionary or a two-element list: found {}".format(true_match))
-
-
-def valfilter(d: Mapping, to_remove: Collection = frozenset({None})) -> Mapping:
-    new = type(d)()
-    for k, v in d.items():
-        if v not in to_remove:
-            new[k] = v
-    return new

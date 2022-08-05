@@ -85,7 +85,7 @@ class DpsFetchOrchestrator:
         )
 
     def _fetch_all_eager(self, pool, initial_futures_dct) -> List[BaseConcurrentTask]:
-        future_dct, parent_task_lookup = {}, {}
+        failed_queries, future_dct, parent_task_lookup = set(), {}, {}
         while initial_futures_dct:
             future = next(as_completed(initial_futures_dct))
             query = initial_futures_dct.pop(future)
@@ -95,7 +95,8 @@ class DpsFetchOrchestrator:
                 # This optimization assumes most queries ask for numeric data. Thus we ask for
                 # count aggregate in the same initial query to save one API-request, but this fails
                 # for string time series, so they need a retry (who needs those anyway!!):
-                if err.code == 400:
+                if query.is_raw_query and query not in failed_queries and err.code == 400:
+                    failed_queries.add(query)  # Break ∞ retries (retry exactly once)
                     future = self._requeue_ts_query_without_count_agg(query, pool)
                     initial_futures_dct[future] = query
                     continue
@@ -107,9 +108,12 @@ class DpsFetchOrchestrator:
             if ts_task.is_done:
                 continue
             # Thanks to `as_completed` we are able to schedule new work asap:
-            count_aggs = res[1:2] or None
-            count_agg_gran = self.count_agg_grans.get(query)
-            subtasks = ts_task.split_task_into_subtasks(self.max_workers, count_aggs, count_agg_gran)
+            split_args = ()
+            if query.is_raw_query:
+                count_aggs = res[1:2] or None
+                count_agg_gran = self.count_agg_grans.get(query)
+                split_args = (count_aggs, count_agg_gran)
+            subtasks = ts_task.split_into_subtasks(self.max_workers, *split_args)
             payloads = [task.get_next_payload() for task in subtasks]
             future_dct.update(
                 {
@@ -124,12 +128,10 @@ class DpsFetchOrchestrator:
             try:
                 (res,) = future.result()
             except CancelledError:
-                # print(f"HIT: CancelledError!!! {subtask=}")  # TODO(haakonvt): remove
                 continue
             subtask.store_partial_result(res)
             if subtask.parent.is_done:  # Parent might be done before a serial subtask is finished
                 if all(p.is_done for p in parent_task_lookup.values()):
-                    # print("Forced pool shutdown!")  # TODO(haakonvt): remove
                     pool.shutdown(wait=False)
                     break
                 if subtask.parent.has_limit:
@@ -145,11 +147,9 @@ class DpsFetchOrchestrator:
         return list(filter(None, map(parent_task_lookup.get, self.all_queries)))
 
     def _cancel_futures_for_finished_limited_query(self, ts_task, future_dct):
-        # print("HIT: _cancel_futures_for_finished_limited_query")  # TODO(haakonvt): Remove
         for future, subtask in future_dct.items():
             if subtask.parent is ts_task:
-                _ = future.cancel()
-                # print("-", subtask.query.identifier_dct_sc, "got_cancelled:", _)  # TODO(haakonvt): Remove
+                future.cancel()
 
     def _fetch_all_with_query_chunking(self, pool, initial_futures_dct):
         # The initial tasks are important - as they tell us which time series are missing,
