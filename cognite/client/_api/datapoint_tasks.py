@@ -217,6 +217,15 @@ class BaseConcurrentRawTask(BaseConcurrentTask):
 
     def get_result(self) -> DatapointsArray:
         if self.has_limit:
+            if self.query.limit == 0:
+                raw_dtype = np.object_ if self.query.is_string else np.float64
+                return DatapointsArray._load(
+                    {
+                        **self.ts_info,
+                        "timestamp": np.array([], dtype=np.int64),
+                        "value": np.array([], dtype=raw_dtype),
+                    }
+                )
             self._cap_dps_at_limit()
         if self.query.include_outside_points:
             self._include_outside_points_in_result()
@@ -463,9 +472,21 @@ class BaseConcurrentAggTask(BaseConcurrentTask):
         return subtasks
 
     def get_result(self) -> DatapointsArray:
-        if self.has_limit:
-            self._cap_dps_at_limit()
         agg_arrays = {}
+        if self.has_limit:
+            if self.query.limit == 0:
+                if self.is_count_query:
+                    agg_arrays["count"] = np.array([], dtype=np.int64)
+                if self.has_non_count_aggs:
+                    agg_arrays.update({agg: np.array([], dtype=np.float64) for agg in self.float_aggs})
+                return DatapointsArray._load(
+                    {
+                        **self.ts_info,
+                        "timestamp": np.array([], dtype=np.int64),
+                        **agg_arrays,
+                    }
+                )
+            self._cap_dps_at_limit()
         if self.is_count_query:
             agg_arrays["count"] = np.hstack(list(itertools.chain.from_iterable(self.count_dps_lst)))
         if self.has_non_count_aggs:
