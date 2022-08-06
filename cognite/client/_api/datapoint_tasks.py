@@ -471,27 +471,25 @@ class BaseConcurrentAggTask(BaseConcurrentTask):
         self.count_dps_lst.extend([] for _ in range(len(self.ts_lst) - 1))
         return subtasks
 
-    def get_result(self) -> DatapointsArray:
+    def _create_empty_result(self) -> DatapointsArray:
         agg_arrays = {}
+        if self.is_count_query:
+            agg_arrays["count"] = np.array([], dtype=np.int64)
+        if self.has_non_count_aggs:
+            agg_arrays.update({agg: np.array([], dtype=np.float64) for agg in self.float_aggs})
+        return DatapointsArray._load({**self.ts_info, "timestamp": np.array([], dtype=np.int64), **agg_arrays})
+
+    def get_result(self) -> DatapointsArray:
         if self.has_limit:
             if self.query.limit == 0:
-                if self.is_count_query:
-                    agg_arrays["count"] = np.array([], dtype=np.int64)
-                if self.has_non_count_aggs:
-                    agg_arrays.update({agg: np.array([], dtype=np.float64) for agg in self.float_aggs})
-                return DatapointsArray._load(
-                    {
-                        **self.ts_info,
-                        "timestamp": np.array([], dtype=np.int64),
-                        **agg_arrays,
-                    }
-                )
+                return self._create_empty_result()
             self._cap_dps_at_limit()
+
+        agg_arrays = {}
         if self.is_count_query:
             agg_arrays["count"] = np.hstack(list(itertools.chain.from_iterable(self.count_dps_lst)))
         if self.has_non_count_aggs:
-            # TODO: Is filter needed?
-            aggs_arr = np.vstack(list(itertools.chain.from_iterable(filter(None, self.dps_lst))))
+            aggs_arr = np.vstack(list(itertools.chain.from_iterable(self.dps_lst)))
             agg_arrays.update({agg: aggs_arr[:, i] for i, agg in enumerate(self.float_aggs)})
         ts_arr = np.hstack(list(itertools.chain.from_iterable(self.ts_lst)))
         return DatapointsArray._load({**self.ts_info, "timestamp": ts_arr, **agg_arrays})
