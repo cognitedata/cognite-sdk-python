@@ -61,7 +61,7 @@ def _worker(executor_reference, work_queue):
         while True:
             priority, _, work_item = work_queue.get(block=True)
             if priority != sys.maxsize:
-                # print(f"Running task with priority {priority}")  # TODO(haakonvt): remove
+                print(f"Running task with priority {priority}")  # TODO(haakonvt): remove
                 work_item.run()
                 del work_item
                 continue

@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import dataclasses
-import itertools
 import math
 import operator as op
 from abc import abstractmethod
 from dataclasses import InitVar, dataclass
 from functools import cached_property
+from itertools import chain
 from pprint import pprint
 from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple, Union
 
@@ -210,30 +210,67 @@ class BaseConcurrentTask(BaseDpsTask):
 
 
 @dataclass(eq=False)
+class ConcurrentLimitedMixin(BaseConcurrentTask):
+    @property
+    def is_done(self):
+        if self._is_done:
+            return self._is_done
+        if self.subtasks:  # No lock needed; this - and storing dps - is only run by the main thread
+            # Checking if subtasks are done is not enough; we need to check if the sum of
+            # "len of dps takewhile is_done" has reached the limit. Additionally, each subtask might
+            # need to fetch a lot of the time subdomain. We want to quit early also when the limit is
+            # reached in the first (chronologically) non-finished subtask:
+            i_first_in_progress = True
+            n_dps_to_fetch = self.query.limit - self.n_dps_first_batch
+            for i, task in enumerate(self.subtasks):
+                if task.is_done:
+                    n_dps_to_fetch -= sum(map(len, self.ts_lst[task.subtask_idx]))
+                elif i_first_in_progress:
+                    n_dps_to_fetch -= sum(map(len, self.ts_lst[task.subtask_idx]))
+                    i_first_in_progress = False
+                else:
+                    break
+                if n_dps_to_fetch <= 0:
+                    self._is_done = True
+                    # Update all consecutive subtasks to "is done":
+                    for task in self.subtasks[i + 1 :]:
+                        task.is_done = True
+                    break
+                # Stop forward search as current task is not done, and limit was not reached:
+                # (We risk that the next task is already done, and will thus miscount)
+                if not i_first_in_progress:
+                    break
+            else:
+                # All subtasks are done, but limited was -not- reached:
+                self._is_done = True
+        return self._is_done
+
+
+@dataclass(eq=False)
 class BaseConcurrentRawTask(BaseConcurrentTask):
     offset_next: int = dataclasses.field(default=1, init=False)  # ms
     dp_outside_start: Optional[Tuple[int, Union[float, str]]] = dataclasses.field(default=None, init=False)
     dp_outside_end: Optional[Tuple[int, Union[float, str]]] = dataclasses.field(default=None, init=False)
 
+    def _create_empty_result(self) -> DatapointsArray:
+        dtype = np.object_ if self.query.is_string else np.float64
+        return DatapointsArray._load(
+            {**self.ts_info, "timestamp": np.array([], dtype=np.int64), "value": np.array([], dtype=dtype)}
+        )
+
     def get_result(self) -> DatapointsArray:
         if self.has_limit:
             if self.query.limit == 0:
-                raw_dtype = np.object_ if self.query.is_string else np.float64
-                return DatapointsArray._load(
-                    {
-                        **self.ts_info,
-                        "timestamp": np.array([], dtype=np.int64),
-                        "value": np.array([], dtype=raw_dtype),
-                    }
-                )
+                return self._create_empty_result()
             self._cap_dps_at_limit()
+
         if self.query.include_outside_points:
             self._include_outside_points_in_result()
         return DatapointsArray._load(
             {
                 **self.ts_info,
-                "timestamp": np.hstack(list(itertools.chain.from_iterable(self.ts_lst))),
-                "value": np.hstack(list(itertools.chain.from_iterable(self.dps_lst))),
+                "timestamp": np.hstack(list(chain.from_iterable(self.ts_lst))),
+                "value": np.hstack(list(chain.from_iterable(self.dps_lst))),
             }
         )
 
@@ -376,7 +413,7 @@ ParallelUnlimitedRawNumericTask = ConcurrentUnlimitedRawTask
 
 
 @dataclass(eq=False)
-class ConcurrentLimitedRawTask(BaseConcurrentRawTask):
+class ConcurrentLimitedRawTask(ConcurrentLimitedMixin, BaseConcurrentRawTask):
     def _find_number_of_subtasks_uniform_split(self, tot_ms: int, max_workers: int) -> int:
         # We make the guess that the time series has ~1 dp/sec and use this in combination with the given
         # limit to not split into too many queries (highest throughput when each request close to max limit)
@@ -386,51 +423,9 @@ class ConcurrentLimitedRawTask(BaseConcurrentRawTask):
         # Pick the smallest N from constraints:
         return min(max_workers, n_periods, n_estimate_periods)
 
-    @property
-    def is_done(self):
-        if self._is_done:
-            return self._is_done
-        if self.subtasks:  # No lock needed; this - and storing dps - is only run by the main thread
-            # Checking if subtasks are done is not enough; we need to check if the sum of
-            # "len of dps takewhile is_done" has reached the limit. Additionally, each subtask might
-            # need to fetch a lot of the time subdomain. We want to quit early also when the limit is
-            # reached in the first (chronologically) non-finished subtask:
-            i_first_in_progress = True
-            n_dps_to_fetch = self.query.limit - self.n_dps_first_batch
-            for i, task in enumerate(self.subtasks):
-                if task.is_done:
-                    n_dps_to_fetch -= sum(map(len, self.ts_lst[task.subtask_idx]))
-                elif i_first_in_progress:
-                    n_dps_to_fetch -= sum(map(len, self.ts_lst[task.subtask_idx]))
-                    i_first_in_progress = False
-                else:
-                    break
-                if n_dps_to_fetch <= 0:
-                    self._is_done = True
-                    # Update all consecutive subtasks to "is done":
-                    for task in self.subtasks[i + 1 :]:
-                        task.is_done = True
-                    break
-                # Stop forward search as current task is not done, and limit was not reached:
-                # (We risk that the next task is already done, and will thus miscount)
-                if not i_first_in_progress:
-                    break
-            else:
-                # All subtasks are done, but limited was -not- reached:
-                self._is_done = True
-        return self._is_done
-
 
 ParallelLimitedRawNumericTask = ConcurrentLimitedRawTask
 ParallelLimitedRawStringTask = ConcurrentLimitedRawTask
-
-
-@dataclass(eq=False)
-class BaseAggSubtask(BaseDpsTask):
-    subtask_idx: int
-    parent: BaseConcurrentAggTask
-    priority: int  # Lower numbers have higher priority
-    is_done: bool = False
 
 
 @dataclass(eq=False)
@@ -472,12 +467,12 @@ class BaseConcurrentAggTask(BaseConcurrentTask):
         return subtasks
 
     def _create_empty_result(self) -> DatapointsArray:
-        agg_arrays = {}
+        arr_dct = {}
         if self.is_count_query:
-            agg_arrays["count"] = np.array([], dtype=np.int64)
+            arr_dct["count"] = np.array([], dtype=np.int64)
         if self.has_non_count_aggs:
-            agg_arrays.update({agg: np.array([], dtype=np.float64) for agg in self.float_aggs})
-        return DatapointsArray._load({**self.ts_info, "timestamp": np.array([], dtype=np.int64), **agg_arrays})
+            arr_dct.update({agg: np.array([], dtype=np.float64) for agg in self.float_aggs})
+        return DatapointsArray._load({**self.ts_info, "timestamp": np.array([], dtype=np.int64), **arr_dct})
 
     def get_result(self) -> DatapointsArray:
         if self.has_limit:
@@ -485,14 +480,14 @@ class BaseConcurrentAggTask(BaseConcurrentTask):
                 return self._create_empty_result()
             self._cap_dps_at_limit()
 
-        agg_arrays = {}
+        arr_dct = {}
         if self.is_count_query:
-            agg_arrays["count"] = np.hstack(list(itertools.chain.from_iterable(self.count_dps_lst)))
+            arr_dct["count"] = np.hstack(list(chain.from_iterable(self.count_dps_lst)))
         if self.has_non_count_aggs:
-            aggs_arr = np.vstack(list(itertools.chain.from_iterable(self.dps_lst)))
-            agg_arrays.update({agg: aggs_arr[:, i] for i, agg in enumerate(self.float_aggs)})
-        ts_arr = np.hstack(list(itertools.chain.from_iterable(self.ts_lst)))
-        return DatapointsArray._load({**self.ts_info, "timestamp": ts_arr, **agg_arrays})
+            aggs_arr = np.vstack(list(chain.from_iterable(self.dps_lst)))
+            arr_dct.update({agg: aggs_arr[:, i] for i, agg in enumerate(self.float_aggs)})
+        ts_arr = np.hstack(list(chain.from_iterable(self.ts_lst)))
+        return DatapointsArray._load({**self.ts_info, "timestamp": ts_arr, **arr_dct})
 
     def _cap_dps_at_limit(self):
         count, data_lsts = 0, [self.ts_lst]
@@ -533,5 +528,8 @@ class ParallelUnlimitedAggNumericTask(BaseConcurrentAggTask):
 
 
 @dataclass(eq=False)
-class ParallelLimitedAggNumericTask(BaseConcurrentAggTask):
-    pass
+class ParallelLimitedAggNumericTask(ConcurrentLimitedMixin, BaseConcurrentAggTask):
+    def _find_number_of_subtasks_uniform_split(self, tot_ms: int, max_workers: int) -> int:
+        remaining_limit = self.query.limit - self.n_dps_first_batch
+        n_max_dps = min(remaining_limit, tot_ms // self.offset_next)
+        return min(max_workers, math.ceil(n_max_dps / DPS_LIMIT_AGG))

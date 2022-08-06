@@ -9,15 +9,15 @@ START = 0
 END = "now"  # 112548548397  # 31569600000
 START = pd.Timestamp("1990-01-01 00:00:00").value // int(1e6)
 END = pd.Timestamp("1990-01-12 13:46:39").value // int(1e6) + 1
-LIMIT = 10001
+LIMIT = 100_001
 AGGREGATES = None
-AGGREGATES = ["sum"]
+# AGGREGATES = ["sum"]
 # AGGREGATES = [
 #     "average", "max", "min", "count", "sum", "interpolation", "stepInterpolation",
 #     "continuousVariance", "discreteVariance", "totalVariation"
 # ]
 GRANULARITY = None
-GRANULARITY = "1s"
+# GRANULARITY = "1s"
 INCLUDE_OUTSIDE_POINTS = False
 IGNORE_UNKNOWN_IDS = False
 # ID = None
