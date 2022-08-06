@@ -16,6 +16,7 @@ from typing import (
     Generator,
     Iterable,
     List,
+    Literal,
     NoReturn,
     Optional,
     Tuple,
@@ -183,7 +184,9 @@ class DatapointsArray(CogniteResource):
             return 0
         return len(self.timestamp)
 
-    def to_pandas(self, column_names: str = "external_id", include_aggregate_name: bool = True) -> "pandas.DataFrame":
+    def to_pandas(
+        self, column_names: Literal["id", "external_id"] = "external_id", include_aggregate_name: bool = True
+    ) -> "pandas.DataFrame":
         pd = utils._auxiliary.local_import("pandas")
         if column_names not in {"id", "external_id"}:
             raise ValueError("Argument `column_names` must be either 'external_id' or 'id'")
@@ -457,7 +460,9 @@ class DatapointsArrayList(CogniteResourceList):
         # item = utils._time.convert_time_attributes_to_datetime(self.dump())
         # return json.dumps(item, default=utils._auxiliary.json_dump_default, indent=4)
 
-    def to_pandas(self, column_names: str = "external_id", include_aggregate_name: bool = True) -> "pandas.DataFrame":
+    def to_pandas(
+        self, column_names: Literal["id", "external_id"] = "external_id", include_aggregate_name: bool = True
+    ) -> "pandas.DataFrame":
         pd = cast(Any, utils._auxiliary.local_import("pandas"))
         dfs = [dps_arr.to_pandas(column_names=column_names) for dps_arr in self.data]
         if dfs:
@@ -642,12 +647,11 @@ class DatapointsQueryNew(CogniteResource):
     @staticmethod
     def _validate_ts_query_dct(dct, arg_name, exp_type) -> Union[DatapointsQueryId, DatapointsQueryExternalId]:
         if arg_name not in dct:
-            if to_camel_case(arg_name) in dct:
-                # For backwards compatability we accept identifier in camel case:
-                dct = dct.copy()  # Avoid side effects for user's input. Also means we need to return it.
-                dct[arg_name] = dct.pop(to_camel_case(arg_name))
-            else:
+            if to_camel_case(arg_name) not in dct:
                 raise KeyError(f"Missing key `{arg_name}` in dict passed as, or part of argument `{arg_name}`")
+            # For backwards compatability we accept identifier in camel case:
+            dct = dct.copy()  # Avoid side effects for user's input. Also means we need to return it.
+            dct[arg_name] = dct.pop(to_camel_case(arg_name))
 
         ts_identifier = dct[arg_name]
         if not isinstance(ts_identifier, exp_type):
