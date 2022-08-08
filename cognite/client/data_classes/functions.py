@@ -381,3 +381,23 @@ class FunctionsLimits(CogniteResponse):
             runtimes=api_response["runtimes"],
             response_size_mb=api_response.get("responseSizeMb"),
         )
+
+
+class FunctionsStatus(CogniteResponse):
+    """Activation Status for the associated project.
+
+    Args:
+        status (str): Activation Status for the associated project.
+    """
+
+    def __init__(
+        self,
+        status: str,
+    ):
+        self.status = status
+
+    @classmethod
+    def _load(cls, api_response):
+        return cls(
+            status=api_response["status"],
+        )

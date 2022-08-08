@@ -35,6 +35,7 @@ from cognite.client.data_classes import (
     FunctionsLimits,
     TimestampRange,
 )
+from cognite.client.data_classes.functions import FunctionsStatus
 from cognite.client.exceptions import CogniteAPIError
 
 
@@ -472,6 +473,40 @@ class FunctionsAPI(APIClient):
                 + ", ".join(given_source_code_options)
                 + " were given."
             )
+
+    def activate(self):
+        """`Activate functions for the Project. <https://docs.cognite.com/api/v1/#tag/Functions/operation/postFunctionsStatus>`_.
+
+        Returns:
+            FunctionsStatus: A function activation status.
+
+        Examples:
+
+            Call activate::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> status = c.functions.activate()
+        """
+        res = self._post("/functions/status")
+        return FunctionsStatus._load(res.json())
+
+    def status(self):
+        """`Functions activation status for the Project. <https://docs.cognite.com/api/v1/#tag/Functions/operation/getFunctionsStatus>`_.
+
+        Returns:
+            FunctionsStatus: A function activation status.
+
+        Examples:
+
+            Call status::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> status = c.functions.status()
+        """
+        res = self._get("/functions/status")
+        return FunctionsStatus._load(res.json())
 
 
 def _use_client_credentials(cognite_client: "CogniteClient", client_credentials: Optional[Dict] = None) -> str:

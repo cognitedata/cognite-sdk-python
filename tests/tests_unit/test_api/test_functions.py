@@ -23,6 +23,7 @@ from cognite.client.data_classes import (
     FunctionSchedulesList,
     FunctionsLimits,
 )
+from cognite.client.data_classes.functions import FunctionsStatus
 from cognite.client.exceptions import CogniteAPIError
 from tests.utils import jsgz_load
 
@@ -356,6 +357,16 @@ def mock_functions_limit_response(rsps):
     yield rsps
 
 
+@pytest.fixture
+def mock_functions_status_response(rsps):
+    response_body = {"status": "IN PROGRESS"}
+    url = FUNCTIONS_API._get_base_url_with_base_path() + f"/functions/status"
+    rsps.add(rsps.POST, url, status=200, json=response_body)
+    rsps.add(rsps.GET, url, status=200, json=response_body)
+
+    yield rsps
+
+
 class TestFunctionsAPI:
     @pytest.mark.parametrize(
         "function_folder, function_path, exception",
@@ -613,6 +624,15 @@ class TestFunctionsAPI:
         res = FUNCTIONS_API.limits()
         assert isinstance(res, FunctionsLimits)
         assert mock_functions_limit_response.calls[0].response.json() == res.dump(camel_case=True)
+
+    def test_functions_status_endpoint(self, mock_functions_status_response):
+        res = FUNCTIONS_API.activate()
+        assert isinstance(res, FunctionsStatus)
+        assert mock_functions_status_response.calls[0].response.json() == res.dump(camel_case=True)
+
+        res = FUNCTIONS_API.status()
+        assert isinstance(res, FunctionsStatus)
+        assert mock_functions_status_response.calls[1].response.json() == res.dump(camel_case=True)
 
 
 class TestRequirementsParser:
