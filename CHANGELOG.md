@@ -17,11 +17,28 @@ Changes are grouped as follows
 ## [4.0.0] - xx-yy-zz
 ### Added/Changed/Fixed
 - Increased speed of varied datapoints fetch queries, especially when fetching many time series. Now matches API endpoint more closely:
-  - DatapointsAPI/retrieve does no longer require `start` (default: `0`) and `end` (default: `now`)
-  - DatapointsAPI/retrieve accepts a list of full query dictionaries for `id` and `external_id` giving full flexibility for e.g. individual start times, limits etc.
-  - `limit=0` returns 0, not "unlimited"
-  - `return_outside_points` returns both outside points (if they exist), regardless of `limit` setting
-  - Aggregates returned now include the time period(s) (given by `granularity` unit) that start and end are part of (as opposed to only "fully in-between" points).
+- DatapointsAPI/retrieve does no longer require `start` (default: `0`) and `end` (default: `now`)
+- DatapointsAPI/retrieve accepts a list of full query dictionaries for `id` and `external_id` giving full flexibility for e.g. individual start times, limits etc.
+- `limit=0` returns 0, not "unlimited"
+- `return_outside_points` returns both outside points (if they exist), regardless of `limit` setting
+- Aggregates returned now include the time period(s) (given by `granularity` unit) that start and end are part of (as opposed to only "fully in-between" points).
+- Aggregates now work properly with the `limit` parameter (used to only return first few batches).
+
+## [3.4.1] - 2022-07-27
+### Fixed
+- fixed exception when printing exceptions generated on transformations creation/update.
+
+## [3.4.0] - 2022-07-21
+### Added
+- added support for nonce authentication on transformations
+
+### Changed
+- if no source or destination credentials are provided on transformation create, an attempt will be made to create a session with the CogniteClient credentials, if it succeeds the acquired nonce will be used.
+- if OIDC credentials are provided on transformation create/update, an attempt will be made to create a session with the given credentials, if it succeeds the acquired nonce credentials will replace the given client credentials before sending the request.
+
+## [3.3.0] - 2022-07-21
+### Added
+- added the sessions API
 
 ## [3.2.0] - 2022-07-15
 ### Removed

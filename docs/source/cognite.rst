@@ -701,21 +701,22 @@ List rows in a table
 ~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.raw.RawRowsAPI.list
 
-Retrieve pandas dataframe
-^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.raw.RawRowsAPI.retrieve_dataframe
-
 Insert rows into a table
 ~~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.raw.RawRowsAPI.insert
 
-Insert pandas dataframe
-^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.raw.RawRowsAPI.insert_dataframe
-
 Delete rows from a table
 ~~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.raw.RawRowsAPI.delete
+
+Retrieve pandas dataframe
+~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.raw.RawRowsAPI.retrieve_dataframe
+
+Insert pandas dataframe
+~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.raw.RawRowsAPI.insert_dataframe
+
 
 Data classes
 ^^^^^^^^^^^^
@@ -1185,6 +1186,21 @@ Create security categories
 Delete security categories
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.iam.SecurityCategoriesAPI.delete
+
+
+Sessions
+^^^^^^^^^^^^^^^^^^^
+List sessions
+~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.iam.SessionsAPI.list
+
+Create a session
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.iam.SessionsAPI.create
+
+Revoke a session
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.iam.SessionsAPI.delete
 
 
 Data classes

@@ -1,17 +1,22 @@
 import numbers
-from typing import TYPE_CHECKING, List, Union
+from typing import TYPE_CHECKING, List, Optional, Union
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import (
     APIKey,
     APIKeyList,
+    ClientCredentials,
+    CreatedSession,
+    CreatedSessionList,
     Group,
     GroupList,
     SecurityCategory,
     SecurityCategoryList,
     ServiceAccount,
     ServiceAccountList,
+    Session,
+    SessionList,
 )
 from cognite.client.data_classes.iam import TokenInspection
 
@@ -28,6 +33,7 @@ class IAMAPI(APIClient):
         self.api_keys = APIKeysAPI(config, api_version=api_version, cognite_client=cognite_client)
         self.groups = GroupsAPI(config, api_version=api_version, cognite_client=cognite_client)
         self.security_categories = SecurityCategoriesAPI(config, api_version=api_version, cognite_client=cognite_client)
+        self.sessions = SessionsAPI(config, api_version=api_version, cognite_client=cognite_client)
         self.token = TokenAPI(config, cognite_client=cognite_client)
 
 
@@ -373,3 +379,56 @@ class TokenAPI(APIClient):
             TokenInspection: The object with token inspection details.
         """
         return TokenInspection._load(self._get("/api/v1/token/inspect").json())
+
+
+class SessionsAPI(APIClient):
+    _LIST_CLASS = SessionList
+    _RESOURCE_PATH = "/sessions"
+
+    def __init__(
+        self, config: utils._client_config.ClientConfig, api_version: str = None, cognite_client: "CogniteClient" = None
+    ) -> None:
+        super().__init__(config, api_version=api_version, cognite_client=cognite_client)
+        self._LIST_LIMIT = 100
+
+    def create(self, client_credentials: Optional[ClientCredentials] = None) -> CreatedSession:
+        """Create a session.
+
+        Args:
+            client_credentials (Optional[ClientCredentials]): client credentials to create the session, set to None to create session with token exchange.
+
+        Returns:
+            CreatedSession: The object with token inspection details.
+        """
+        if client_credentials is None and self._config.token_client_id and self._config.token_client_secret:
+            client_credentials = ClientCredentials(self._config.token_client_id, self._config.token_client_secret)
+
+        json = {"items": [client_credentials.dump(True) if client_credentials else {"tokenExchange": True}]}
+
+        return CreatedSessionList._load(self._post(self._RESOURCE_PATH, json).json()["items"])[0]
+
+    def revoke(self, id: Union[int, List[int]]) -> SessionList:
+        """`Revoke access to a session. Revocation of a session may in some cases take up to 1 hour to take effect.
+
+        Args:
+            id (Union[int, List[int]): Id or list of session ids
+
+        Returns:
+            List of revoked sessions. If the user does not have the sessionsAcl:LIST  capability,
+            then only the session IDs will be present in the response.
+        """
+        items = {"items": self._process_ids(id, None, wrap_ids=True)}
+
+        return SessionList._load(self._post(self._RESOURCE_PATH + "/revoke", items).json()["items"])
+
+    def list(self, status: Optional[str] = None) -> SessionList:
+        """`List all sessions in the current project.
+
+        Args:
+            status (Optional[str]): If given, only sessions with the given status are returned.
+
+        Returns:
+            SessionList: a list of sessions in the current project.
+        """
+        filter = {"status": status} if status else None
+        return self._list(list_cls=SessionList, resource_cls=Session, method="GET", filter=filter)

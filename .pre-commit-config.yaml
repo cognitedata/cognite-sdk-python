@@ -50,7 +50,7 @@ repos:
   -   hooks:
         -   id: version-match-check
             name: version-match-check
-            entry: python check_version_match.py
+            entry: poetry run python check_version_match.py
             language: system
             pass_filenames: false
       repo: local
