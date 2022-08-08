@@ -44,6 +44,20 @@ other_transformation = new_transformation
 
 
 class TestTransformationsAPI:
+    def test_create_transformation_error(self, cognite_client):
+        prefix = "".join(random.choice(string.ascii_letters) for i in range(6))
+        transform_without_name = Transformation(
+            external_id=f"{prefix}-transformation", destination=TransformationDestination.assets()
+        )
+        try:
+            ts = cognite_client.transformations.create(transform_without_name)
+            failed = False
+            cognite_client.transformations.delete(id=ts.id)
+        except Exception as ex:
+            failed = True
+            str(ex)
+        assert failed
+
     def test_create_asset_transformation(self, cognite_client):
         prefix = "".join(random.choice(string.ascii_letters) for i in range(6))
         transform = Transformation(
