@@ -25,7 +25,7 @@ class AlphaDataModelInstances(TransformationDestination):
         self.instance_space_external_id = instance_space_external_id
 
     def __hash__(self) -> int:
-        return hash((self.type, self.model_external_id))
+        return hash((self.type, self.model_external_id, self.space_external_id, self.instance_space_external_id))
 
     def __eq__(self, other: Any) -> bool:
         return isinstance(other, AlphaDataModelInstances) and hash(other) == hash(self)
