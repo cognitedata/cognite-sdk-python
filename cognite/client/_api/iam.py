@@ -418,7 +418,8 @@ class SessionsAPI(APIClient):
             List of revoked sessions. If the user does not have the sessionsAcl:LIST  capability,
             then only the session IDs will be present in the response.
         """
-        items = {"items": self._process_ids(id, None, wrap_ids=True)}
+        identifiers = IdentifierSequence.load(ids=id, external_ids=None)
+        items = {"items": identifiers.as_dicts()}
 
         return SessionList._load(self._post(self._RESOURCE_PATH + "/revoke", items).json()["items"])
 
