@@ -88,6 +88,7 @@ async def other_running_transformation(other_transformation):
         yield transform
 
 
+@pytest.mark.skip
 class TestTransformationJobsAPI:
     @pytest.mark.asyncio
     async def test_run_without_wait(self, cognite_client, new_running_transformation):
