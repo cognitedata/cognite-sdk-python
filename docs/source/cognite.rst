@@ -1200,7 +1200,7 @@ Create a session
 
 Revoke a session
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.SessionsAPI.delete
+.. automethod:: cognite.client._api.iam.SessionsAPI.revoke
 
 
 Data classes

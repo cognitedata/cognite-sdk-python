@@ -409,7 +409,7 @@ class SessionsAPI(APIClient):
         return CreatedSessionList._load(self._post(self._RESOURCE_PATH, json).json()["items"])[0]
 
     def revoke(self, id: Union[int, List[int]]) -> SessionList:
-        """`Revoke access to a session. Revocation of a session may in some cases take up to 1 hour to take effect.
+        """Revoke access to a session. Revocation of a session may in some cases take up to 1 hour to take effect.
 
         Args:
             id (Union[int, List[int]): Id or list of session ids
@@ -424,7 +424,7 @@ class SessionsAPI(APIClient):
         return SessionList._load(self._post(self._RESOURCE_PATH + "/revoke", items).json()["items"])
 
     def list(self, status: Optional[str] = None) -> SessionList:
-        """`List all sessions in the current project.
+        """List all sessions in the current project.
 
         Args:
             status (Optional[str]): If given, only sessions with the given status are returned.
