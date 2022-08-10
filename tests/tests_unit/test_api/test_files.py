@@ -556,8 +556,8 @@ class TestFilesAPI:
             .metadata.remove([])
             .labels.add(["WELL LOG"])
             .labels.remove(["CV"])
-            .geoLocation.set(mock_geo_location)
-            .geoLocation.set(None)
+            .geo_location.set(mock_geo_location)
+            .geo_location.set(None)
             .source.set(1)
             .source.set(None),
             FileMetadataUpdate,

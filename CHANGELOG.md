@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [3.6.1] - 2022-07-28
+### Fixed
+- Fixed a minor casing error for the geo_location field on files
+
 ## [3.6.0] - 2022-08-10
 ### Added
 - Add ignore_unknown_ids parameter to files.retrieve_multiple
