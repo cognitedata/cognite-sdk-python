@@ -1,7 +1,7 @@
 import json as complexjson
 import numbers
 import warnings
-from typing import Any, Dict, Generator, List, Optional, Sequence, Union, cast
+from typing import Any, Dict, Generator, List, Optional, Sequence, Union, cast, overload
 
 from requests.exceptions import ChunkedEncodingError
 
@@ -19,6 +19,7 @@ from cognite.client.data_classes.geospatial import (
     OrderSpec,
 )
 from cognite.client.exceptions import CogniteConnectionError
+from cognite.client.utils._identifier import IdentifierSequence
 
 
 class GeospatialAPI(APIClient):
@@ -27,6 +28,14 @@ class GeospatialAPI(APIClient):
     @staticmethod
     def _feature_resource_path(feature_type_external_id: str) -> str:
         return f"{GeospatialAPI._RESOURCE_PATH}/featuretypes/{feature_type_external_id}/features"
+
+    @overload
+    def create_feature_types(self, feature_type: FeatureType) -> FeatureType:
+        ...
+
+    @overload
+    def create_feature_types(self, feature_type: List[FeatureType]) -> FeatureTypeList:
+        ...
 
     def create_feature_types(
         self, feature_type: Union[FeatureType, List[FeatureType]]
@@ -85,7 +94,7 @@ class GeospatialAPI(APIClient):
         """
         extra_body_fields = {"recursive": True} if recursive else {}
         return self._delete_multiple(
-            external_ids=external_id,
+            identifiers=IdentifierSequence.load(external_ids=external_id),
             wrap_ids=True,
             resource_path=f"{self._RESOURCE_PATH}/featuretypes",
             extra_body_fields=extra_body_fields,
@@ -114,7 +123,15 @@ class GeospatialAPI(APIClient):
             resource_path=f"{self._RESOURCE_PATH}/featuretypes",
         )
 
-    def retrieve_feature_types(self, external_id: Union[str, List[str]] = None) -> FeatureTypeList:
+    @overload
+    def retrieve_feature_types(self, external_id: str) -> FeatureType:
+        ...
+
+    @overload
+    def retrieve_feature_types(self, external_id: List[str]) -> FeatureTypeList:
+        ...
+
+    def retrieve_feature_types(self, external_id: Union[str, List[str]]) -> Union[FeatureType, FeatureTypeList]:
         """`Retrieve feature types`
         <https://docs.cognite.com/api/v1/#operation/getFeatureTypesByIds>
 
@@ -132,15 +149,12 @@ class GeospatialAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.geospatial.retrieve_feature_types(external_id="1")
         """
-        return cast(
-            FeatureTypeList,
-            self._retrieve_multiple(
-                list_cls=FeatureTypeList,
-                resource_cls=FeatureType,
-                wrap_ids=True,
-                external_ids=external_id,
-                resource_path=f"{self._RESOURCE_PATH}/featuretypes",
-            ),
+        identifiers = IdentifierSequence.load(ids=None, external_ids=external_id)
+        return self._retrieve_multiple(
+            list_cls=FeatureTypeList,
+            resource_cls=FeatureType,
+            identifiers=identifiers.as_singleton() if identifiers.is_singleton() else identifiers,
+            resource_path=f"{self._RESOURCE_PATH}/featuretypes",
         )
 
     def update_feature_types(self, update: Union[FeatureTypeUpdate, List[FeatureTypeUpdate]]) -> FeatureTypeList:
@@ -255,6 +269,26 @@ class GeospatialAPI(APIClient):
         res = self._post(url_path=f"{self._RESOURCE_PATH}/featuretypes/update", json=json)
         return FeatureTypeList._load(res.json()["items"], cognite_client=self._cognite_client)
 
+    @overload
+    def create_features(
+        self,
+        feature_type_external_id: str,
+        feature: Feature,
+        allow_crs_transformation: bool = False,
+        chunk_size: int = None,
+    ) -> Feature:
+        ...
+
+    @overload
+    def create_features(
+        self,
+        feature_type_external_id: str,
+        feature: Union[List[Feature], FeatureList],
+        allow_crs_transformation: bool = False,
+        chunk_size: int = None,
+    ) -> FeatureList:
+        ...
+
     def create_features(
         self,
         feature_type_external_id: str,
@@ -340,14 +374,34 @@ class GeospatialAPI(APIClient):
                 ... )
         """
         resource_path = self._feature_resource_path(feature_type_external_id)
-        self._delete_multiple(external_ids=external_id, wrap_ids=True, resource_path=resource_path)
+        self._delete_multiple(
+            identifiers=IdentifierSequence.load(external_ids=external_id), resource_path=resource_path, wrap_ids=True
+        )
+
+    @overload
+    def retrieve_features(
+        self,
+        feature_type_external_id: str,
+        external_id: str,
+        properties: Dict[str, Any] = None,
+    ) -> Feature:
+        ...
+
+    @overload
+    def retrieve_features(
+        self,
+        feature_type_external_id: str,
+        external_id: List[str],
+        properties: Dict[str, Any] = None,
+    ) -> FeatureList:
+        ...
 
     def retrieve_features(
         self,
         feature_type_external_id: str,
-        external_id: Union[str, List[str]] = None,
+        external_id: Union[str, List[str]],
         properties: Dict[str, Any] = None,
-    ) -> FeatureList:
+    ) -> Union[FeatureList, Feature]:
         """`Retrieve features`
         <https://docs.cognite.com/api/v1/#operation/getFeaturesByIds>
 
@@ -371,16 +425,13 @@ class GeospatialAPI(APIClient):
                 ... )
         """
         resource_path = self._feature_resource_path(feature_type_external_id)
-        return cast(
-            FeatureList,
-            self._retrieve_multiple(
-                list_cls=FeatureList,
-                resource_cls=Feature,
-                wrap_ids=True,
-                external_ids=external_id,
-                resource_path=resource_path,
-                other_params={"output": {"properties": properties}},
-            ),
+        identifiers = IdentifierSequence.load(ids=None, external_ids=external_id)
+        return self._retrieve_multiple(
+            list_cls=FeatureList,
+            resource_cls=Feature,
+            identifiers=identifiers.as_singleton() if identifiers.is_singleton() else identifiers,
+            resource_path=resource_path,
+            other_params={"output": {"properties": properties}},
         )
 
     def update_features(

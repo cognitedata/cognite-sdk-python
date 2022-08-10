@@ -4,6 +4,7 @@ from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import TransformationNotification, TransformationNotificationList
 from cognite.client.data_classes.transformations.notifications import TransformationNotificationFilter
+from cognite.client.utils._identifier import IdentifierSequence
 
 
 class TransformationNotificationsAPI(APIClient):
@@ -102,4 +103,4 @@ class TransformationNotificationsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.transformations.notifications.delete(id=[1,2,3])
         """
-        self._delete_multiple(ids=id, wrap_ids=True)
+        self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=True)

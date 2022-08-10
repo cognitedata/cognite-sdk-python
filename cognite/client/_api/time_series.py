@@ -1,6 +1,5 @@
-from typing import Any, Dict, Iterator, List, Optional, Union, cast
+from typing import Any, Dict, Iterator, List, Optional, Union, cast, overload
 
-from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import (
     TimeSeries,
@@ -9,6 +8,7 @@ from cognite.client.data_classes import (
     TimeSeriesList,
     TimeSeriesUpdate,
 )
+from cognite.client.utils._identifier import IdentifierSequence
 
 
 class TimeSeriesAPI(APIClient):
@@ -62,14 +62,13 @@ class TimeSeriesAPI(APIClient):
         """
         asset_subtree_ids_processed = None
         if asset_subtree_ids or asset_subtree_external_ids:
-            asset_subtree_ids_processed = cast(
-                List[Dict[str, Any]], self._process_ids(asset_subtree_ids, asset_subtree_external_ids, wrap_ids=True)
-            )
+            asset_subtree_ids_processed = IdentifierSequence.load(
+                asset_subtree_ids, asset_subtree_external_ids
+            ).as_dicts()
+
         data_set_ids_processed = None
         if data_set_ids or data_set_external_ids:
-            data_set_ids_processed = cast(
-                List[Dict[str, Any]], self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
-            )
+            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
         filter = TimeSeriesFilter(
             name=name,
             unit=unit,
@@ -128,13 +127,8 @@ class TimeSeriesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.time_series.retrieve(external_id="1")
         """
-        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
-        return cast(
-            Optional[TimeSeries],
-            self._retrieve_multiple(
-                list_cls=TimeSeriesList, resource_cls=TimeSeries, ids=id, external_ids=external_id, wrap_ids=True
-            ),
-        )
+        identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
+        return self._retrieve_multiple(list_cls=TimeSeriesList, resource_cls=TimeSeries, identifiers=identifiers)
 
     def retrieve_multiple(
         self,
@@ -166,18 +160,12 @@ class TimeSeriesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.time_series.retrieve_multiple(external_ids=["abc", "def"])
         """
-        utils._auxiliary.assert_type(ids, "id", [List], allow_none=True)
-        utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=True)
-        return cast(
-            TimeSeriesList,
-            self._retrieve_multiple(
-                list_cls=TimeSeriesList,
-                resource_cls=TimeSeries,
-                ids=ids,
-                external_ids=external_ids,
-                ignore_unknown_ids=ignore_unknown_ids,
-                wrap_ids=True,
-            ),
+        identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
+        return self._retrieve_multiple(
+            list_cls=TimeSeriesList,
+            resource_cls=TimeSeries,
+            identifiers=identifiers,
+            ignore_unknown_ids=ignore_unknown_ids,
         )
 
     def list(
@@ -249,15 +237,13 @@ class TimeSeriesAPI(APIClient):
         """
         asset_subtree_ids_processed = None
         if asset_subtree_ids or asset_subtree_external_ids:
-            asset_subtree_ids_processed = cast(
-                List[Dict[str, Any]], self._process_ids(asset_subtree_ids, asset_subtree_external_ids, wrap_ids=True)
-            )
+            asset_subtree_ids_processed = IdentifierSequence.load(
+                asset_subtree_ids, asset_subtree_external_ids
+            ).as_dicts()
+
         data_set_ids_processed = None
         if data_set_ids or data_set_external_ids:
-            data_set_ids_processed = cast(
-                List[Dict[str, Any]], self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
-            )
-
+            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
         filter = TimeSeriesFilter(
             name=name,
             unit=unit,
@@ -300,6 +286,14 @@ class TimeSeriesAPI(APIClient):
         """
 
         return self._aggregate(filter=filter, cls=TimeSeriesAggregate)
+
+    @overload
+    def create(self, time_series: List[TimeSeries]) -> TimeSeriesList:
+        ...
+
+    @overload
+    def create(self, time_series: TimeSeries) -> TimeSeries:
+        ...
 
     def create(self, time_series: Union[TimeSeries, List[TimeSeries]]) -> Union[TimeSeries, TimeSeriesList]:
         """`Create one or more time series. <https://docs.cognite.com/api/v1/#operation/postTimeSeries>`_
@@ -346,8 +340,18 @@ class TimeSeriesAPI(APIClient):
                 >>> c.time_series.delete(id=[1,2,3], external_id="3")
         """
         self._delete_multiple(
-            wrap_ids=True, ids=id, external_ids=external_id, extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids}
+            identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
+            wrap_ids=True,
+            extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
         )
+
+    @overload
+    def update(self, item: List[Union[TimeSeries, TimeSeriesUpdate]]) -> TimeSeriesList:
+        ...
+
+    @overload
+    def update(self, item: Union[TimeSeries, TimeSeriesUpdate]) -> TimeSeries:
+        ...
 
     def update(
         self, item: Union[TimeSeries, TimeSeriesUpdate, List[Union[TimeSeries, TimeSeriesUpdate]]]

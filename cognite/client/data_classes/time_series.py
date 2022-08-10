@@ -13,6 +13,7 @@ from cognite.client.data_classes._base import (
     CogniteUpdate,
 )
 from cognite.client.data_classes.shared import TimestampRange
+from cognite.client.utils._identifier import Identifier
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -85,7 +86,7 @@ class TimeSeries(CogniteResource):
         **kwargs: Any,
     ) -> None:
         plt = utils._auxiliary.local_import("matplotlib.pyplot")
-        identifier = utils._auxiliary.assert_at_least_one_of_id_or_external_id(self.id, self.external_id)
+        identifier = Identifier.load(self.id, self.external_id).as_dict()
         dps = self._cognite_client.datapoints.retrieve(
             start=start, end=end, aggregates=aggregates, granularity=granularity, **identifier
         )
@@ -108,7 +109,7 @@ class TimeSeries(CogniteResource):
         Returns:
             int: The number of datapoints in this time series.
         """
-        identifier = utils._auxiliary.assert_at_least_one_of_id_or_external_id(self.id, self.external_id)
+        identifier = Identifier.load(self.id, self.external_id).as_dict()
         dps = self._cognite_client.datapoints.retrieve(
             start=0, end="now", aggregates=["count"], granularity="10d", **identifier
         )
@@ -120,7 +121,7 @@ class TimeSeries(CogniteResource):
         Returns:
             Datapoint: A datapoint object containing the value and timestamp of the latest datapoint.
         """
-        identifier = utils._auxiliary.assert_at_least_one_of_id_or_external_id(self.id, self.external_id)
+        identifier = Identifier.load(self.id, self.external_id).as_dict()
         dps = self._cognite_client.datapoints.retrieve_latest(**identifier)
         if len(dps) > 0:
             return list(dps)[0]
@@ -132,7 +133,7 @@ class TimeSeries(CogniteResource):
         Returns:
             Datapoint: A datapoint object containing the value and timestamp of the first datapoint.
         """
-        identifier = utils._auxiliary.assert_at_least_one_of_id_or_external_id(self.id, self.external_id)
+        identifier = Identifier.load(self.id, self.external_id).as_dict()
         dps = self._cognite_client.datapoints.retrieve(**identifier, start=0, end="now", limit=1)
         if len(dps) > 0:
             return list(dps)[0]

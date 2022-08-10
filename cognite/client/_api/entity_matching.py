@@ -1,6 +1,5 @@
-from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar, Union, cast
+from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar, Union
 
-from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes._base import CogniteResource
 from cognite.client.data_classes.contextualization import (
@@ -11,6 +10,7 @@ from cognite.client.data_classes.contextualization import (
     EntityMatchingModelUpdate,
 )
 from cognite.client.utils._auxiliary import convert_true_match
+from cognite.client.utils._identifier import IdentifierSequence
 
 T_ContextualizationJob = TypeVar("T_ContextualizationJob", bound=ContextualizationJob)
 
@@ -43,16 +43,9 @@ class EntityMatchingAPI(APIClient):
 
         Returns:
             EntityMatchingModel: Model requested."""
-        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
-        return cast(
-            Optional[EntityMatchingModel],
-            self._retrieve_multiple(
-                list_cls=EntityMatchingModelList,
-                resource_cls=EntityMatchingModel,
-                ids=id,
-                external_ids=external_id,
-                wrap_ids=True,
-            ),
+        identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
+        return self._retrieve_multiple(
+            list_cls=EntityMatchingModelList, resource_cls=EntityMatchingModel, identifiers=identifiers
         )
 
     def retrieve_multiple(
@@ -66,17 +59,9 @@ class EntityMatchingAPI(APIClient):
 
         Returns:
             EntityMatchingModelList: Models requested."""
-        utils._auxiliary.assert_type(ids, "id", [List], allow_none=True)
-        utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=True)
-        return cast(
-            EntityMatchingModelList,
-            self._retrieve_multiple(
-                list_cls=EntityMatchingModelList,
-                resource_cls=EntityMatchingModel,
-                ids=ids,
-                external_ids=external_ids,
-                wrap_ids=True,
-            ),
+        identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
+        return self._retrieve_multiple(
+            list_cls=EntityMatchingModelList, resource_cls=EntityMatchingModel, identifiers=identifiers
         )
 
     def update(
@@ -149,7 +134,8 @@ class EntityMatchingAPI(APIClient):
         Args:
             id (Union[int, List[int]): Id or list of ids
             external_id (Union[str, List[str]]): External ID or list of external ids"""
-        self._delete_multiple(ids=id, external_ids=external_id, wrap_ids=True)
+
+        self._delete_multiple(identifiers=IdentifierSequence.load(ids=id, external_ids=external_id), wrap_ids=True)
 
     def fit(
         self,

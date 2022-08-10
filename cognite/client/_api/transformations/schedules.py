@@ -1,9 +1,10 @@
-from typing import Any, List, Optional, Union, cast
+from typing import Any, List, Optional, Union
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import TransformationSchedule, TransformationScheduleList, TransformationScheduleUpdate
 from cognite.client.data_classes.transformations import TransformationFilter
+from cognite.client.utils._identifier import IdentifierSequence
 
 
 class TransformationSchedulesAPI(APIClient):
@@ -67,16 +68,9 @@ class TransformationSchedulesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.transformations.schedules.retrieve(external_id="1")
         """
-        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
-        return cast(
-            Optional[TransformationSchedule],
-            self._retrieve_multiple(
-                list_cls=TransformationScheduleList,
-                resource_cls=TransformationSchedule,
-                ids=id,
-                external_ids=external_id,
-                wrap_ids=True,
-            ),
+        identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
+        return self._retrieve_multiple(
+            list_cls=TransformationScheduleList, resource_cls=TransformationSchedule, identifiers=identifiers
         )
 
     def retrieve_multiple(
@@ -109,18 +103,12 @@ class TransformationSchedulesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.transformations.schedules.retrieve_multiple(external_ids=["t1", "t2"])
         """
-        utils._auxiliary.assert_type(ids, "id", [List], allow_none=True)
-        utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=True)
-        return cast(
-            TransformationScheduleList,
-            self._retrieve_multiple(
-                list_cls=TransformationScheduleList,
-                resource_cls=TransformationSchedule,
-                ids=ids,
-                external_ids=external_ids,
-                ignore_unknown_ids=ignore_unknown_ids,
-                wrap_ids=True,
-            ),
+        identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
+        return self._retrieve_multiple(
+            list_cls=TransformationScheduleList,
+            resource_cls=TransformationSchedule,
+            identifiers=identifiers,
+            ignore_unknown_ids=ignore_unknown_ids,
         )
 
     def list(self, include_public: bool = True, limit: Optional[int] = 25) -> TransformationScheduleList:
@@ -177,7 +165,9 @@ class TransformationSchedulesAPI(APIClient):
                 >>> c.transformations.schedules.delete(id=[1,2,3], external_id="3")
         """
         self._delete_multiple(
-            ids=id, external_ids=external_id, wrap_ids=True, extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids}
+            identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
+            wrap_ids=True,
+            extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
         )
 
     def update(

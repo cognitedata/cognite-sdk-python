@@ -1,7 +1,8 @@
-from typing import Any, Dict, Iterator, List, Union, cast
+from typing import Iterator, List, Union, cast
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import LabelDefinition, LabelDefinitionFilter, LabelDefinitionList
+from cognite.client.utils._identifier import IdentifierSequence
 
 
 class LabelsAPI(APIClient):
@@ -28,9 +29,7 @@ class LabelsAPI(APIClient):
     ) -> Union[Iterator[LabelDefinition], Iterator[LabelDefinitionList]]:
         data_set_ids_processed = None
         if data_set_ids or data_set_external_ids:
-            data_set_ids_processed = cast(
-                List[Dict[str, Any]], self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
-            )
+            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
         filter = LabelDefinitionFilter(
             name=name, external_id_prefix=external_id_prefix, data_set_ids=data_set_ids_processed
         ).dump(camel_case=True)
@@ -87,9 +86,7 @@ class LabelsAPI(APIClient):
         """
         data_set_ids_processed = None
         if data_set_ids or data_set_external_ids:
-            data_set_ids_processed = cast(
-                List[Dict[str, Any]], self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
-            )
+            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
         filter = LabelDefinitionFilter(
             name=name, external_id_prefix=external_id_prefix, data_set_ids=data_set_ids_processed
         ).dump(camel_case=True)
@@ -142,4 +139,4 @@ class LabelsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.labels.delete(external_id=["big_pump", "small_pump"])
         """
-        self._delete_multiple(external_ids=external_id, wrap_ids=True)
+        self._delete_multiple(identifiers=IdentifierSequence.load(external_ids=external_id), wrap_ids=True)

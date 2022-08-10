@@ -19,6 +19,7 @@ from cognite.client.data_classes import (
     SessionList,
 )
 from cognite.client.data_classes.iam import TokenInspection
+from cognite.client.utils._identifier import IdentifierSequence
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -96,7 +97,7 @@ class ServiceAccountsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.iam.service_accounts.delete(1)
         """
-        self._delete_multiple(ids=id, wrap_ids=False)
+        self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=False)
 
 
 class APIKeysAPI(APIClient):
@@ -169,7 +170,7 @@ class APIKeysAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.iam.api_keys.delete(1)
         """
-        self._delete_multiple(ids=id, wrap_ids=False)
+        self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=False)
 
 
 class GroupsAPI(APIClient):
@@ -233,7 +234,7 @@ class GroupsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.iam.groups.delete(1)
         """
-        self._delete_multiple(ids=id, wrap_ids=False)
+        self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=False)
 
     def list_service_accounts(self, id: int) -> ServiceAccountList:
         """`List service accounts in a group. <https://docs.cognite.com/api/v1/#operation/getMembersOfGroups>`_
@@ -275,7 +276,7 @@ class GroupsAPI(APIClient):
         """
         resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/serviceaccounts", id)
 
-        all_ids = self._process_ids(service_account_id, None, False)
+        all_ids = IdentifierSequence.load(ids=service_account_id, external_ids=None).as_primitives()
         self._post(resource_path, json={"items": all_ids})
 
     def remove_service_account(self, id: int, service_account_id: Union[int, List[int]]) -> None:
@@ -298,7 +299,7 @@ class GroupsAPI(APIClient):
         """
         url_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/serviceaccounts/remove", id)
 
-        all_ids = self._process_ids(service_account_id, None, False)
+        all_ids = IdentifierSequence.load(ids=service_account_id).as_primitives()
         self._post(url_path, json={"items": all_ids})
 
 
@@ -366,7 +367,7 @@ class SecurityCategoriesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.iam.security_categories.delete(1)
         """
-        self._delete_multiple(ids=id, wrap_ids=False)
+        self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=False)
 
 
 class TokenAPI(APIClient):
@@ -417,7 +418,8 @@ class SessionsAPI(APIClient):
             List of revoked sessions. If the user does not have the sessionsAcl:LIST  capability,
             then only the session IDs will be present in the response.
         """
-        items = {"items": self._process_ids(id, None, wrap_ids=True)}
+        identifiers = IdentifierSequence.load(ids=id, external_ids=None)
+        items = {"items": identifiers.as_dicts()}
 
         return SessionList._load(self._post(self._RESOURCE_PATH + "/revoke", items).json()["items"])
 

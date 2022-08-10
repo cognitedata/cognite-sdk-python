@@ -14,6 +14,7 @@ from cognite.client.data_classes import (
     ThreeDNode,
     ThreeDNodeList,
 )
+from cognite.client.utils._identifier import IdentifierSequence, InternalId
 
 
 class ThreeDAPI(APIClient):
@@ -79,7 +80,7 @@ class ThreeDModelsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.three_d.models.retrieve(id=1)
         """
-        return self._retrieve(cls=ThreeDModel, id=id)
+        return self._retrieve(cls=ThreeDModel, identifier=InternalId(id))
 
     def list(self, published: bool = None, limit: int = 25) -> ThreeDModelList:
         """`List 3d models. <https://docs.cognite.com/api/v1/#operation/get3DModels>`_
@@ -197,7 +198,7 @@ class ThreeDModelsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.three_d.models.delete(id=1)
         """
-        self._delete_multiple(ids=id, wrap_ids=True)
+        self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=True)
 
 
 class ThreeDRevisionsAPI(APIClient):
@@ -251,7 +252,7 @@ class ThreeDRevisionsAPI(APIClient):
         return self._retrieve(
             cls=ThreeDModelRevision,
             resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
-            id=id,
+            identifier=InternalId(id),
         )
 
     def create(
@@ -375,7 +376,7 @@ class ThreeDRevisionsAPI(APIClient):
         """
         self._delete_multiple(
             resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
-            ids=id,
+            identifiers=IdentifierSequence.load(ids=id),
             wrap_ids=True,
         )
 

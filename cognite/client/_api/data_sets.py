@@ -1,6 +1,5 @@
 from typing import Any, Dict, Iterator, List, Optional, Union, cast
 
-from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import (
     DataSet,
@@ -10,6 +9,7 @@ from cognite.client.data_classes import (
     DataSetUpdate,
     TimestampRange,
 )
+from cognite.client.utils._identifier import IdentifierSequence
 
 
 class DataSetsAPI(APIClient):
@@ -111,13 +111,8 @@ class DataSetsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.data_sets.retrieve(external_id="1")
         """
-        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
-        return cast(
-            Optional[DataSet],
-            self._retrieve_multiple(
-                list_cls=DataSetList, resource_cls=DataSet, ids=id, external_ids=external_id, wrap_ids=True
-            ),
-        )
+        identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
+        return self._retrieve_multiple(list_cls=DataSetList, resource_cls=DataSet, identifiers=identifiers)
 
     def retrieve_multiple(
         self,
@@ -149,18 +144,9 @@ class DataSetsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.data_sets.retrieve_multiple(external_ids=["abc", "def"], ignore_unknown_ids=True)
         """
-        utils._auxiliary.assert_type(ids, "id", [List], allow_none=True)
-        utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=True)
-        return cast(
-            DataSetList,
-            self._retrieve_multiple(
-                list_cls=DataSetList,
-                resource_cls=DataSet,
-                ids=ids,
-                external_ids=external_ids,
-                ignore_unknown_ids=ignore_unknown_ids,
-                wrap_ids=True,
-            ),
+        identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
+        return self._retrieve_multiple(
+            list_cls=DataSetList, resource_cls=DataSet, identifiers=identifiers, ignore_unknown_ids=ignore_unknown_ids
         )
 
     def list(
