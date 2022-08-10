@@ -19,7 +19,7 @@ class ExtractionPipelinesAPI(APIClient):
     _RESOURCE_PATH = "/extpipes"
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[ExtractionPipeline]:
-        """`Retrieve a single extraction pipeline by id.`_
+        """`Retrieve a single extraction pipeline by id. <https://docs.cognite.com/api/v1/#operation/showExtPipe>`_
 
         Args:
             id (int, optional): ID
@@ -54,7 +54,7 @@ class ExtractionPipelinesAPI(APIClient):
         external_ids: Optional[List[str]] = None,
         ignore_unknown_ids: bool = False,
     ) -> ExtractionPipelineList:
-        """`Retrieve multiple extraction pipelines by ids and external ids.`_
+        """`Retrieve multiple extraction pipelines by ids and external ids. <https://docs.cognite.com/api/v1/#operation/byidsExtPipes>`_
 
         Args:
             ids (List[int], optional): IDs
@@ -87,7 +87,7 @@ class ExtractionPipelinesAPI(APIClient):
         )
 
     def list(self, limit: int = 25) -> ExtractionPipelineList:
-        """`List extraction pipelines`_
+        """`List extraction pipelines <https://docs.cognite.com/api/v1/#operation/listExtPipes>`_
 
         Args:
             limit (int, optional): Maximum number of ExtractionPipelines to return. Defaults to 25. Set to -1, float("inf") or None
@@ -118,7 +118,7 @@ class ExtractionPipelinesAPI(APIClient):
     def create(
         self, extractionPipeline: Union[ExtractionPipeline, List[ExtractionPipeline]]
     ) -> Union[ExtractionPipeline, ExtractionPipelineList]:
-        """`Create one or more extraction pipelines.`_
+        """`Create one or more extraction pipelines. <https://docs.cognite.com/api/v1/#operation/createExtPipes>`_
 
         You can create an arbitrary number of extraction pipeline, and the SDK will split the request into multiple requests if necessary.
 
@@ -144,7 +144,7 @@ class ExtractionPipelinesAPI(APIClient):
         )
 
     def delete(self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None) -> None:
-        """`Delete one or more extraction pipelines`_
+        """`Delete one or more extraction pipelines <https://docs.cognite.com/api/v1/#operation/deleteExtPipes>`_
 
         Args:
             id (Union[int, List[int]): Id or list of ids
@@ -177,7 +177,7 @@ class ExtractionPipelinesAPI(APIClient):
             ExtractionPipeline, ExtractionPipelineUpdate, List[Union[ExtractionPipeline, ExtractionPipelineUpdate]]
         ],
     ) -> Union[ExtractionPipeline, ExtractionPipelineList]:
-        """`Update one or more extraction pipelines`_
+        """`Update one or more extraction pipelines <https://docs.cognite.com/api/v1/#operation/updateExtPipes>`_
 
         Args:
             item (Union[ExtractionPipeline, ExtractionPipelineUpdate, List[Union[ExtractionPipeline, ExtractionPipelineUpdate]]]): Extraction pipeline(s) to update
@@ -215,7 +215,7 @@ class ExtractionPipelineRunsAPI(APIClient):
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         limit: int = 25,
     ) -> ExtractionPipelineRunList:
-        """`List runs for an extraction pipeline with given external_id <>`_
+        """`List runs for an extraction pipeline with given external_id <https://docs.cognite.com/api/v1/#operation/filterRuns>`_
 
         Args:
             external_id (str): Extraction pipeline external Id.
@@ -277,7 +277,7 @@ class ExtractionPipelineRunsAPI(APIClient):
     def create(
         self, run: Union[ExtractionPipelineRun, List[ExtractionPipelineRun]]
     ) -> Union[ExtractionPipelineRun, ExtractionPipelineRunList]:
-        """`Create one or more extraction pipeline runs.`_
+        """`Create one or more extraction pipeline runs. <https://docs.cognite.com/api/v1/#operation/createRuns>`_
 
         You can create an arbitrary number of extraction pipeline runs, and the SDK will split the request into multiple requests.
 

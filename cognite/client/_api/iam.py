@@ -393,7 +393,7 @@ class SessionsAPI(APIClient):
         self._LIST_LIMIT = 100
 
     def create(self, client_credentials: Optional[ClientCredentials] = None) -> CreatedSession:
-        """Create a session.
+        """`Create a session. <https://docs.cognite.com/api/v1/#operation/createSessions>`_
 
         Args:
             client_credentials (Optional[ClientCredentials]): client credentials to create the session, set to None to create session with token exchange.
@@ -409,7 +409,7 @@ class SessionsAPI(APIClient):
         return CreatedSessionList._load(self._post(self._RESOURCE_PATH, json).json()["items"])[0]
 
     def revoke(self, id: Union[int, List[int]]) -> SessionList:
-        """`Revoke access to a session. Revocation of a session may in some cases take up to 1 hour to take effect.
+        """`Revoke access to a session. Revocation of a session may in some cases take up to 1 hour to take effect. <https://docs.cognite.com/api/v1/#operation/revokeSessions>`_
 
         Args:
             id (Union[int, List[int]): Id or list of session ids
@@ -424,7 +424,7 @@ class SessionsAPI(APIClient):
         return SessionList._load(self._post(self._RESOURCE_PATH + "/revoke", items).json()["items"])
 
     def list(self, status: Optional[str] = None) -> SessionList:
-        """`List all sessions in the current project.
+        """`List all sessions in the current project. <https://docs.cognite.com/api/v1/#operation/listSessions>`_
 
         Args:
             status (Optional[str]): If given, only sessions with the given status are returned.
