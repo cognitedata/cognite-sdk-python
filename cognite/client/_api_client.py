@@ -355,7 +355,7 @@ class APIClient:
         limit: Optional[int] = None,
         chunk_size: Optional[int] = None,
         filter: Optional[Dict[str, Any]] = None,
-        sort: Optional[List[str]] = None,
+        sort: Optional[Sequence[str]] = None,
         other_params: Optional[Dict[str, Any]] = None,
         partitions: Optional[int] = None,
         headers: Optional[Dict[str, Any]] = None,
@@ -478,7 +478,7 @@ class APIClient:
         filter: Optional[Dict] = None,
         other_params: Optional[Dict] = None,
         partitions: Optional[int] = None,
-        sort: Optional[List[str]] = None,
+        sort: Optional[Sequence[str]] = None,
         headers: Optional[Dict] = None,
         initial_cursor: Optional[str] = None,
     ) -> T_CogniteResourceList:
@@ -570,7 +570,7 @@ class APIClient:
         resource_path: Optional[str] = None,
         filter: Optional[Union[CogniteFilter, Dict]] = None,
         aggregate: Optional[str] = None,
-        fields: Optional[List[str]] = None,
+        fields: Optional[Sequence[str]] = None,
         headers: Optional[Dict] = None,
     ) -> List[T]:
         utils._auxiliary.assert_type(filter, "filter", [dict, CogniteFilter], allow_none=True)
@@ -631,7 +631,7 @@ class APIClient:
     ) -> Union[T_CogniteResourceList, T_CogniteResource]:
         resource_path = resource_path or self._RESOURCE_PATH
         limit = limit or self._CREATE_LIMIT
-        single_item = not isinstance(items, list)
+        single_item = not isinstance(items, Sequence)
         if single_item:
             items = cast(Union[Sequence[CogniteResource], Sequence[Dict[str, Any]]], [items])
         else:
@@ -741,7 +741,7 @@ class APIClient:
     ) -> Union[T_CogniteResourceList, T_CogniteResource]:
         resource_path = resource_path or self._RESOURCE_PATH
         patch_objects = []
-        single_item = not isinstance(items, (list, UserList))
+        single_item = not isinstance(items, (Sequence, UserList))
         if single_item:
             item_list = cast(Union[Sequence[CogniteResource], Sequence[CogniteUpdate]], [items])
         else:

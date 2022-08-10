@@ -34,10 +34,8 @@ class DatapointsAPI(APIClient):
         self,
         start: Union[int, str, datetime],
         end: Union[int, str, datetime],
-        id: Union[int, List[int], Dict[str, Union[int, List[str]]], List[Dict[str, Union[int, List[str]]]]] = None,
-        external_id: Union[
-            str, List[str], Dict[str, Union[int, List[str]]], List[Dict[str, Union[int, List[str]]]]
-        ] = None,
+        id: DatapointsIdMaybeAggregate = None,
+        external_id: DatapointsExternalIdMaybeAggregate = None,
         aggregates: List[str] = None,
         granularity: str = None,
         include_outside_points: bool = None,
@@ -51,9 +49,9 @@ class DatapointsAPI(APIClient):
         Args:
             start (Union[int, str, datetime]): Inclusive start.
             end (Union[int, str, datetime]): Exclusive end.
-            id (Union[int, List[int], Dict[str, Any], List[Dict[str, Any]]]): Id or list of ids. Can also be object
+            id (DatapointsIdMaybeAggregate): Id or list of ids. Can also be object
                 specifying aggregates. See example below.
-            external_id (Union[str, List[str], Dict[str, Any], List[Dict[str, Any]]]): External id or list of external
+            external_id (DatapointsExternalIdMaybeAggregate): External id or list of external
                 ids. Can also be object specifying aggregates. See example below.
             aggregates (List[str]): List of aggregate functions to apply.
             granularity (str): The granularity to fetch aggregates at. e.g. '1s', '2h', '10d'.
