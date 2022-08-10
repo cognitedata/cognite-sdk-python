@@ -24,7 +24,7 @@ def get_all_versions(package_name: str) -> List[str]:
     disable_ssl = os.getenv("COGNITE_DISABLE_SSL", False)
     verify_ssl = not disable_ssl
     res = requests.get("https://pypi.python.org/simple/{}/#history".format(package_name), verify=verify_ssl, timeout=5)
-    versions = re.findall("cognite-sdk-(\d+\.\d+.[\dabrc]+)", res.content.decode())
+    versions = re.findall(r"cognite-sdk-(\d+\.\d+.[\dabrc]+)", res.content.decode())
     return versions
 
 
@@ -59,7 +59,7 @@ def _is_newer_pre_release(
 
 
 def _parse_version(version: str) -> Tuple[int, int, int, str, Optional[int]]:
-    pattern = "(\d+)\.(\d+)\.(\d+)(?:([abrc]+)(\d+))?"
+    pattern = r"(\d+)\.(\d+)\.(\d+)(?:([abrc]+)(\d+))?"
     match = re.match(pattern, version)
     if not match:
         raise ValueError("Could not parse version {}".format(version))
