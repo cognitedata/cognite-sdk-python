@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [3.4.3] - 2022-07-28
+### Changed
+- Cache result from pypi version check so it's not executed for every client instantiation.
+
 ## [3.4.2] - 2022-07-28
 ### Fixed
 - Fix the wrong destination name in transformations.

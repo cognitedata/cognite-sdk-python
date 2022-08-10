@@ -1,4 +1,5 @@
 import argparse
+import functools
 import os
 import re
 from typing import List, Optional, Tuple
@@ -11,6 +12,7 @@ def check_if_version_exists(package_name: str, version: str) -> bool:
     return version in versions
 
 
+@functools.lru_cache(maxsize=1)
 def get_newest_version_in_major_release(package_name: str, version: str) -> str:
     major, minor, micro, pr_cycle, pr_version = _parse_version(version)
     versions = get_all_versions(package_name)
