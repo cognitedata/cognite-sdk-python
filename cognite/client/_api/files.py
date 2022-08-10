@@ -191,13 +191,17 @@ class FilesAPI(APIClient):
         return self._retrieve_multiple(list_cls=FileMetadataList, resource_cls=FileMetadata, identifiers=identifiers)
 
     def retrieve_multiple(
-        self, ids: Optional[List[int]] = None, external_ids: Optional[List[str]] = None
+        self,
+        ids: Optional[List[int]] = None,
+        external_ids: Optional[List[str]] = None,
+        ignore_unknown_ids: bool = False,
     ) -> FileMetadataList:
         """`Retrieve multiple file metadatas by id. <https://docs.cognite.com/api/v1/#operation/byIdsFiles>`_
 
         Args:
             ids (List[int], optional): IDs
             external_ids (List[str], optional): External IDs
+            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
             FileMetadataList: The requested file metadatas.
@@ -217,7 +221,12 @@ class FilesAPI(APIClient):
                 >>> res = c.files.retrieve_multiple(external_ids=["abc", "def"])
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
-        return self._retrieve_multiple(list_cls=FileMetadataList, resource_cls=FileMetadata, identifiers=identifiers)
+        return self._retrieve_multiple(
+            list_cls=FileMetadataList,
+            resource_cls=FileMetadata,
+            identifiers=identifiers,
+            ignore_unknown_ids=ignore_unknown_ids,
+        )
 
     def list(
         self,

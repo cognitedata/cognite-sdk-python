@@ -111,6 +111,11 @@ class TestFilesAPI:
         res = cognite_client.files.list(uploaded_time=A_WHILE_AGO, limit=2)
         assert res == cognite_client.files.retrieve_multiple([f.id for f in res])
 
+    def test_retrieve_multiple_ignore_unknown_ids(self, cognite_client):
+        assert [] == cognite_client.files.retrieve_multiple(
+            external_ids=["this file doesn't exist"], ignore_unknown_ids=True
+        )
+
     def test_retrieve_download_urls(self, cognite_client):
         f1 = cognite_client.files.upload_bytes(b"f1", external_id=random_string(10), name="bla")
         f2 = cognite_client.files.upload_bytes(b"f2", external_id=random_string(10), name="bla")

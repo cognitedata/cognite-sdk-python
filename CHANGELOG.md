@@ -14,11 +14,15 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [3.5.0] - 2022-07-28
+## [3.6.0] - 2022-08-10
+### Added
+- Add ignore_unknown_ids parameter to files.retrieve_multiple
+
+## [3.5.0] - 2022-08-10
 ### Changed
 - Improve type annotations. Use overloads in more places to help static type checkers.
 
-## [3.4.3] - 2022-07-28
+## [3.4.3] - 2022-08-10
 ### Changed
 - Cache result from pypi version check so it's not executed for every client instantiation.
 
