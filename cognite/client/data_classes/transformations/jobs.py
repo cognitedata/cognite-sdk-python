@@ -185,7 +185,7 @@ class TransformationJob(CogniteResource):
         return self
 
     async def wait_async(self, polling_interval: float = 1, timeout: Optional[float] = None) -> "TransformationJob":
-        """`Asyncio coroutine, waits for the job to finish asynchronously.`_
+        """Asyncio coroutine, waits for the job to finish asynchronously.
 
         Args:
             polling_interval (float): time (s) to wait between job status updates, default is one second.

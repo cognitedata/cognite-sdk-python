@@ -89,4 +89,4 @@ jobs:
       run: poetry build
 
     - name: Build docs
-      run: cd docs && make html
+      run: cd docs && make html SPHINXOPTS="-W --keep-going"

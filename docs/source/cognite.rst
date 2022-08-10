@@ -969,11 +969,11 @@ Predict Using an Entity Matching Model
 
 Detect entities in Engineering Diagrams
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.pnid_parsing.DiagramsAPI.detect
+.. automethod:: cognite.client._api.diagrams.DiagramsAPI.detect
 
 Convert to an interactive SVG where the provided annotations are highlighted
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.pnid_parsing.DiagramsAPI.convert
+.. automethod:: cognite.client._api.diagrams.DiagramsAPI.convert
 
 Contextualization Data Classes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1251,10 +1251,6 @@ Report new runs
 Data classes
 ^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.extractionpipelines
-    :members:
-    :show-inheritance:
-
-.. automodule:: cognite.client.data_classes.extractionpipelineruns
     :members:
     :show-inheritance:
 
