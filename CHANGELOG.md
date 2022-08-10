@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [3.5.0] - 2022-07-28
+### Changed
+- Improve type annotations. Use overloads in more places to help static type checkers.
+
 ## [3.4.3] - 2022-07-28
 ### Changed
 - Cache result from pypi version check so it's not executed for every client instantiation.
