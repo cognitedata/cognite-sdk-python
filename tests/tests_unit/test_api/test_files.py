@@ -480,7 +480,7 @@ class TestFilesAPI:
     def test_download(self, cognite_client, mock_file_download_response):
         with TemporaryDirectory() as dir:
             res = cognite_client.files.download(directory=dir, id=[1], external_id=["2"])
-            assert {"items": [{"id": 1}, {"externalId": "2"}]} == jsgz_load(
+            assert {"ignoreUnknownIds": False, "items": [{"id": 1}, {"externalId": "2"}]} == jsgz_load(
                 mock_file_download_response.calls[0].request.body
             )
             assert res is None
@@ -538,8 +538,8 @@ class TestFilesAPI:
             with TemporaryDirectory() as dir:
                 res = cognite_client.files.download(directory=dir, id=[1], external_id=["2"])
                 bodies = [jsgz_load(mock_file_download_response.calls[i].request.body) for i in range(2)]
-                assert {"items": [{"id": 1}]} in bodies
-                assert {"items": [{"externalId": "2"}]} in bodies
+                assert {"ignoreUnknownIds": False, "items": [{"id": 1}]} in bodies
+                assert {"ignoreUnknownIds": False, "items": [{"externalId": "2"}]} in bodies
                 assert res is None
                 assert os.path.isfile(os.path.join(dir, "file1"))
                 assert os.path.isfile(os.path.join(dir, "file2"))
