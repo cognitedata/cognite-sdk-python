@@ -27,7 +27,7 @@ def new_extpipe(cognite_client):
     yield extpipe
     try:
         cognite_client.extraction_pipelines.delete(id=extpipe.id)
-    except:
+    except Exception:
         pass
     assert cognite_client.extraction_pipelines.retrieve(extpipe.id) is None
 

@@ -351,7 +351,7 @@ def mock_functions_limit_response(rsps):
         "responseSizeMb": 1,
         "runtimes": ["py37", "py38", "py39"],
     }
-    url = FUNCTIONS_API._get_base_url_with_base_path() + f"/functions/limits"
+    url = FUNCTIONS_API._get_base_url_with_base_path() + "/functions/limits"
     rsps.add(rsps.GET, url, status=200, json=response_body)
 
     yield rsps
@@ -360,7 +360,7 @@ def mock_functions_limit_response(rsps):
 @pytest.fixture
 def mock_functions_status_response(rsps):
     response_body = {"status": "IN PROGRESS"}
-    url = FUNCTIONS_API._get_base_url_with_base_path() + f"/functions/status"
+    url = FUNCTIONS_API._get_base_url_with_base_path() + "/functions/status"
     rsps.add(rsps.POST, url, status=200, json=response_body)
     rsps.add(rsps.GET, url, status=200, json=response_body)
 
@@ -496,7 +496,7 @@ class TestFunctionsAPI:
         assert mock_functions_retrieve_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
     def test_retrieve_by_id_and_external_id_raises(self):
-        with pytest.raises(AssertionError):
+        with pytest.raises(ValueError):
             FUNCTIONS_API.retrieve(id=1, external_id="func1")
 
     def test_retrieve_multiple_by_ids(self, mock_functions_retrieve_response):
@@ -659,14 +659,14 @@ class TestRequirementsParser:
             return None
 
         res = get_requirements_handle(fn=fn)
-        assert res != None
+        assert res is not None
         os.remove(res)
 
     def test_get_requirements_handle_error(self):
         def fn():
             return None
 
-        assert get_requirements_handle(fn=fn) == None
+        assert get_requirements_handle(fn=fn) is None
 
     def test_get_requirements_handle_no_docstr(self):
         def fn():
@@ -678,7 +678,7 @@ class TestRequirementsParser:
             return None
 
         with pytest.raises(Exception):
-            get_requirements_handle(fn=fn) == None
+            get_requirements_handle(fn=fn) is None
 
     def test_get_requirements_handle_no_reqs(self):
         def fn():
@@ -688,7 +688,7 @@ class TestRequirementsParser:
             """
             return None
 
-        assert get_requirements_handle(fn=fn) == None
+        assert get_requirements_handle(fn=fn) is None
 
     def test_extract_requirements_from_file(self, tmpdir):
         req = "somepackage == 3.8.1"

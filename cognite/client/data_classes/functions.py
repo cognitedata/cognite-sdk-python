@@ -1,6 +1,6 @@
 import time
 from numbers import Number
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union, cast
 
 from cognite.client._constants import LIST_LIMIT_CEILING, LIST_LIMIT_DEFAULT
 from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteResourceList, CogniteResponse
@@ -52,10 +52,10 @@ class Function(CogniteResource):
         runtime_version: str = None,
         metadata: Dict = None,
         error: Dict = None,
-        cognite_client=None,
-    ):
-        self.id = id
-        self.name = name
+        cognite_client: "CogniteClient" = None,  # type: ignore # noqa: F821 # Correct Fix casues Circular Import
+    ) -> None:
+        self.id = cast(int, id)
+        self.name = cast(str, name)
         self.external_id = external_id
         self.description = description
         self.owner = owner
@@ -72,9 +72,11 @@ class Function(CogniteResource):
         self.runtime_version = runtime_version
         self.metadata = metadata
         self.error = error
-        self._cognite_client = cognite_client
+        self._cognite_client = cast(
+            "CogniteClient", cognite_client  # type: ignore # noqa: F821 # Correct Fix casues Circular Import
+        )
 
-    def call(self, data=None, wait: bool = True) -> "FunctionCall":
+    def call(self, data: Optional[Dict] = None, wait: bool = True) -> "FunctionCall":
         """`Call this particular function. <https://docs.cognite.com/api/v1/#operation/postFunctionsCall>`_
 
         Args:
@@ -171,7 +173,7 @@ class FunctionFilter(CogniteFilter):
         status: str = None,
         external_id_prefix: str = None,
         created_time: Union[Dict[str, int], TimestampRange] = None,
-    ):
+    ) -> None:
         self.name = name
         self.owner = owner
         self.file_id = file_id
@@ -205,8 +207,8 @@ class FunctionSchedule(CogniteResource):
         created_time: int = None,
         cron_expression: str = None,
         session_id: int = None,
-        cognite_client=None,
-    ):
+        cognite_client: "CogniteClient" = None,  # type: ignore # noqa: F821 # Correct Fix casues Circular Import
+    ) -> None:
         self.id = id
         self.name = name
         self.function_id = function_id
@@ -215,7 +217,9 @@ class FunctionSchedule(CogniteResource):
         self.cron_expression = cron_expression
         self.created_time = created_time
         self.session_id = session_id
-        self._cognite_client = cognite_client
+        self._cognite_client = cast(
+            "CogniteClient", cognite_client  # type: ignore # noqa: F821 # Correct Fix casues Circular Import
+        )
 
     def get_input_data(self) -> dict:
         """
@@ -236,7 +240,7 @@ class FunctionSchedulesFilter(CogniteFilter):
         function_external_id: str = None,
         created_time: Union[Dict[str, int], TimestampRange] = None,
         cron_expression: str = None,
-    ):
+    ) -> None:
         self.name = name
         self.function_id = function_id
         self.function_external_id = function_external_id
@@ -278,8 +282,8 @@ class FunctionCall(CogniteResource):
         schedule_id: int = None,
         error: dict = None,
         function_id: int = None,
-        cognite_client=None,
-    ):
+        cognite_client: "CogniteClient" = None,  # type: ignore # noqa: F821 # Correct Fix casues Circular Import
+    ) -> None:
         self.id = id
         self.start_time = start_time
         self.end_time = end_time
@@ -288,9 +292,11 @@ class FunctionCall(CogniteResource):
         self.schedule_id = schedule_id
         self.error = error
         self.function_id = function_id
-        self._cognite_client = cognite_client
+        self._cognite_client = cast(
+            "CogniteClient", cognite_client  # type: ignore # noqa: F821 # Correct Fix casues Circular Import
+        )
 
-    def get_response(self):
+    def get_response(self) -> Dict:
         """Retrieve the response from this function call.
 
         Returns:
@@ -317,7 +323,7 @@ class FunctionCall(CogniteResource):
         self.end_time = latest.end_time
         self.error = latest.error
 
-    def wait(self):
+    def wait(self) -> None:
         while self.status == "Running":
             self.update()
             time.sleep(1.0)
@@ -336,10 +342,17 @@ class FunctionCallLogEntry(CogniteResource):
         message (str): Single line from stdout / stderr.
     """
 
-    def __init__(self, timestamp: int = None, message: str = None, cognite_client=None):
+    def __init__(
+        self,
+        timestamp: int = None,
+        message: str = None,
+        cognite_client: "CogniteClient" = None,  # type: ignore # noqa: F821 # Correct Fix casues Circular Import
+    ):
         self.timestamp = timestamp
         self.message = message
-        self._cognite_client = cognite_client
+        self._cognite_client = cast(
+            "CogniteClient", cognite_client  # type: ignore # noqa: F821 # Correct Fix casues Circular Import
+        )
 
 
 class FunctionCallLog(CogniteResourceList):
@@ -365,7 +378,7 @@ class FunctionsLimits(CogniteResponse):
         memory_gb: Dict[str, float],
         runtimes: List[str],
         response_size_mb: Optional[int] = None,
-    ):
+    ) -> None:
         self.timeout_minutes = timeout_minutes
         self.cpu_cores = cpu_cores
         self.memory_gb = memory_gb
@@ -373,7 +386,7 @@ class FunctionsLimits(CogniteResponse):
         self.response_size_mb = response_size_mb
 
     @classmethod
-    def _load(cls, api_response):
+    def _load(cls, api_response: Dict):  # type: ignore # Should be fixed by Self class but it will be available on 3.11
         return cls(
             timeout_minutes=api_response["timeoutMinutes"],
             cpu_cores=api_response["cpuCores"],
@@ -393,11 +406,11 @@ class FunctionsStatus(CogniteResponse):
     def __init__(
         self,
         status: str,
-    ):
+    ) -> None:
         self.status = status
 
     @classmethod
-    def _load(cls, api_response):
+    def _load(cls, api_response: Dict):  # type: ignore # Should be fixed by Self class but it will be available on 3.11
         return cls(
             status=api_response["status"],
         )

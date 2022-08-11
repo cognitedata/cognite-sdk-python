@@ -126,7 +126,6 @@ class TestTimeSeries:
         assert 1 == jsgz_load(mock_get_first_dp_in_ts.calls[1].request.body)["limit"]
 
     def test_asset(self, cognite_client, mock_ts_by_ids_response, mock_asset_by_ids_response):
-        now = utils.timestamp_to_ms("now")
         asset = cognite_client.time_series.retrieve(id=1).asset()
         assert isinstance(asset, Asset)
         assert "assetname" == asset.name

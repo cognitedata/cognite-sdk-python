@@ -44,6 +44,20 @@ other_transformation = new_transformation
 
 
 class TestTransformationsAPI:
+    def test_create_transformation_error(self, cognite_client):
+        prefix = "".join(random.choice(string.ascii_letters) for i in range(6))
+        transform_without_name = Transformation(
+            external_id=f"{prefix}-transformation", destination=TransformationDestination.assets()
+        )
+        try:
+            ts = cognite_client.transformations.create(transform_without_name)
+            failed = False
+            cognite_client.transformations.delete(id=ts.id)
+        except Exception as ex:
+            failed = True
+            str(ex)
+        assert failed
+
     def test_create_asset_transformation(self, cognite_client):
         prefix = "".join(random.choice(string.ascii_letters) for i in range(6))
         transform = Transformation(
@@ -198,7 +212,8 @@ class TestTransformationsAPI:
 
     def test_preview_to_string(self, cognite_client):
         query_result = cognite_client.transformations.preview(query="select 1 as id, 'asd' as name", limit=100)
-        dumped = str(query_result)
+        # just make sure it doesnt raise exceptions
+        str(query_result)
 
     @pytest.mark.skip
     def test_update_dmi_alpha(self, cognite_client, new_transformation):

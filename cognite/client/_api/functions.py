@@ -6,7 +6,7 @@ from inspect import getdoc, getsource
 from numbers import Integral, Number
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
-from typing import Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union, cast
 from zipfile import ZipFile
 
 from pip._internal.req.constructors import install_req_from_line
@@ -35,25 +35,48 @@ from cognite.client.data_classes import (
     FunctionsLimits,
     TimestampRange,
 )
+from cognite.client.data_classes.files import FileMetadata
 from cognite.client.data_classes.functions import FunctionsStatus
 from cognite.client.exceptions import CogniteAPIError
+from cognite.client.utils._identifier import IdentifierSequence
+
+# if TYPE_CHECKING:
+#     from cognite.client import CogniteClient
+
+
+def _get_function_id_from_external_id(
+    _cognite_client: "CogniteClient",  # type: ignore # noqa: F821 # Correct Fix casues Circular Import
+    function_id: Optional[int],
+    function_external_id: Optional[str],
+) -> int:
+    if function_id:
+        return function_id
+    if function_external_id:
+        function = _cognite_client.functions.retrieve(external_id=function_external_id)
+        if function:
+            function_id = function.id
+
+    if not function_id:
+        raise ValueError("Function with this external ID is not found")
+    return function_id
 
 
 class FunctionsAPI(APIClient):
     _RESOURCE_PATH = "/functions"
     _LIST_CLASS = FunctionList
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.calls = FunctionCallsAPI(*args, **kwargs)
         self.schedules = FunctionSchedulesAPI(*args, **kwargs)
+        self._cognite_client: "CogniteClient" = cast("CogniteClient", self._cognite_client)  # type: ignore # noqa: F821 # Correct Fix casues Circular Import
 
     def create(
         self,
         name: str,
         folder: Optional[str] = None,
         file_id: Optional[int] = None,
-        function_path: Optional[str] = HANDLER_FILE_NAME,
+        function_path: str = HANDLER_FILE_NAME,
         function_handle: Optional[Callable] = None,
         external_id: Optional[str] = None,
         description: Optional[str] = "",
@@ -84,7 +107,7 @@ class FunctionsAPI(APIClient):
             name (str):                              The name of the function.
             folder (str, optional):                  Path to the folder where the function source code is located.
             file_id (int, optional):                 File ID of the code uploaded to the Files API.
-            function_path (str, optional):           Relative path from the root folder to the file containing the `handle` function. Defaults to `handler.py`. Must be on POSIX path format.
+            function_path (str):                     Relative path from the root folder to the file containing the `handle` function. Defaults to `handler.py`. Must be on POSIX path format.
             function_handle (Callable, optional):    Reference to a function object, which must be named `handle`.
             external_id (str, optional):             External id of the function.
             description (str, optional):             Description of the function.
@@ -162,7 +185,7 @@ class FunctionsAPI(APIClient):
             raise IOError("Could not retrieve file from files API")
 
         url = "/functions"
-        function = {
+        function: Dict[str, Any] = {
             "name": name,
             "description": description,
             "owner": owner,
@@ -210,7 +233,7 @@ class FunctionsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.functions.delete(id=[1,2,3], external_id="function3")
         """
-        self._delete_multiple(ids=id, external_ids=external_id, wrap_ids=True)
+        self._delete_multiple(identifiers=IdentifierSequence.load(ids=id, external_ids=external_id), wrap_ids=True)
 
     def list(
         self,
@@ -259,7 +282,9 @@ class FunctionsAPI(APIClient):
 
         return self._LIST_CLASS._load(res.json()["items"], cognite_client=self._cognite_client)
 
-    def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[Function]:
+    def retrieve(
+        self, id: Optional[int] = None, external_id: Optional[str] = None
+    ) -> Union[FunctionList, Function, None]:
         """`Retrieve a single function by id. <https://docs.cognite.com/api/v1/#operation/byIdsFunctions>`_
 
         Args:
@@ -283,12 +308,12 @@ class FunctionsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.functions.retrieve(external_id="1")
         """
-        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
-        return self._retrieve_multiple(ids=id, external_ids=external_id, wrap_ids=True)
+        identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
+        return self._retrieve_multiple(identifiers=identifiers, resource_cls=Function, list_cls=FunctionList)
 
     def retrieve_multiple(
         self, ids: Optional[List[int]] = None, external_ids: Optional[List[str]] = None
-    ) -> FunctionList:
+    ) -> Union[FunctionList, Function, None]:
         """`Retrieve multiple functions by id. <https://docs.cognite.com/api/v1/#operation/byIdsFunctions>`_
 
         Args:
@@ -314,7 +339,11 @@ class FunctionsAPI(APIClient):
         """
         utils._auxiliary.assert_type(ids, "id", [List], allow_none=True)
         utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=True)
-        return self._retrieve_multiple(ids=ids, external_ids=external_ids, wrap_ids=True)
+        return self._retrieve_multiple(
+            identifiers=IdentifierSequence.load(ids=ids, external_ids=external_ids),
+            resource_cls=Function,
+            list_cls=FunctionList,
+        )
 
     def call(
         self,
@@ -349,9 +378,9 @@ class FunctionsAPI(APIClient):
                 >>> func = c.functions.retrieve(id=1)
                 >>> call = func.call()
         """
-        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
+        IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
         if external_id:
-            id = self.retrieve(external_id=external_id).id
+            id = _get_function_id_from_external_id(self._cognite_client, id, external_id)
 
         # Case 1: Client credentials inferred from the instantiated client.
         # Case 2: Token on behalf of the user. We use token exchange.
@@ -374,7 +403,7 @@ class FunctionsAPI(APIClient):
 
         return function_call
 
-    def limits(self):
+    def limits(self) -> FunctionsLimits:
         """`Get service limits. <https://docs.cognite.com/api/v1/#operation/functionsLimits>`_.
 
         Returns:
@@ -423,11 +452,16 @@ class FunctionsAPI(APIClient):
                 zf.close()
 
                 overwrite = True if external_id else False
-                file = self._cognite_client.files.upload(
-                    zip_path, name=f"{name}.zip", external_id=external_id, overwrite=overwrite
+                file = cast(
+                    FileMetadata,
+                    self._cognite_client.files.upload(
+                        zip_path, name=f"{name}.zip", external_id=external_id, overwrite=overwrite
+                    ),
                 )
 
-            return file.id
+            file_id = cast(int, file.id)
+
+            return file_id
 
         finally:
             os.chdir(current_dir)
@@ -455,14 +489,21 @@ class FunctionsAPI(APIClient):
             zf.close()
 
             overwrite = True if external_id else False
-            file = self._cognite_client.files.upload(
-                zip_path, name=f"{name}.zip", external_id=external_id, overwrite=overwrite
+            file = cast(
+                FileMetadata,
+                self._cognite_client.files.upload(
+                    zip_path, name=f"{name}.zip", external_id=external_id, overwrite=overwrite
+                ),
             )
 
-        return file.id
+            file_id = cast(int, file.id)
+
+        return file_id
 
     @staticmethod
-    def _assert_exactly_one_of_folder_or_file_id_or_function_handle(folder, file_id, function_handle):
+    def _assert_exactly_one_of_folder_or_file_id_or_function_handle(
+        folder: Optional[str], file_id: Optional[int], function_handle: Optional[Callable[..., Any]]
+    ) -> None:
         source_code_options = {"folder": folder, "file_id": file_id, "function_handle": function_handle}
         given_source_code_options = [key for key in source_code_options.keys() if source_code_options[key]]
         if len(given_source_code_options) < 1:
@@ -474,7 +515,7 @@ class FunctionsAPI(APIClient):
                 + " were given."
             )
 
-    def activate(self):
+    def activate(self) -> FunctionsStatus:
         """`Activate functions for the Project. <https://docs.cognite.com/api/v1/#tag/Functions/operation/postFunctionsStatus>`_.
 
         Returns:
@@ -491,7 +532,7 @@ class FunctionsAPI(APIClient):
         res = self._post("/functions/status")
         return FunctionsStatus._load(res.json())
 
-    def status(self):
+    def status(self) -> FunctionsStatus:
         """`Functions activation status for the Project. <https://docs.cognite.com/api/v1/#tag/Functions/operation/getFunctionsStatus>`_.
 
         Returns:
@@ -509,7 +550,10 @@ class FunctionsAPI(APIClient):
         return FunctionsStatus._load(res.json())
 
 
-def _use_client_credentials(cognite_client: "CogniteClient", client_credentials: Optional[Dict] = None) -> str:
+def _use_client_credentials(
+    cognite_client: "CogniteClient",  # type: ignore # noqa: F821 # Correct Fix casues Circular Import
+    client_credentials: Optional[Dict] = None,
+) -> str:
     """
     If client_credentials is passed, will use those, otherwise will implicitly use those the client was instantiated
     with
@@ -537,10 +581,12 @@ def _use_client_credentials(cognite_client: "CogniteClient", client_credentials:
         nonce = res.json()["items"][0]["nonce"]
         return nonce
     except CogniteAPIError as e:
-        raise CogniteAPIError("Failed to create session using client credentials flow.") from e
+        raise CogniteAPIError("Failed to create session using client credentials flow.", 403) from e
 
 
-def _use_token_exchange(cognite_client: "CogniteClient") -> str:
+def _use_token_exchange(
+    cognite_client: "CogniteClient",  # type: ignore # noqa: F821 # Correct Fix casues Circular Import
+) -> str:
     session_url = f"/api/v1/projects/{cognite_client.config.project}/sessions"
     payload = {"items": [{"tokenExchange": True}]}
     try:
@@ -548,10 +594,12 @@ def _use_token_exchange(cognite_client: "CogniteClient") -> str:
         nonce = res.json()["items"][0]["nonce"]
         return nonce
     except CogniteAPIError as e:
-        raise CogniteAPIError("Failed to create session using token exchange flow.") from e
+        raise CogniteAPIError("Failed to create session using token exchange flow.", 403) from e
 
 
-def _using_client_credential_flow(cognite_client: "CogniteClient"):
+def _using_client_credential_flow(
+    cognite_client: "CogniteClient",  # type: ignore # noqa: F821 # Correct Fix casues Circular Import
+) -> bool:
     """
     Determine whether the Cognite client is configured for client-credential flow.
     """
@@ -564,11 +612,11 @@ def _using_client_credential_flow(cognite_client: "CogniteClient"):
     )
 
 
-def convert_file_path_to_module_path(file_path: str):
+def convert_file_path_to_module_path(file_path: str) -> str:
     return ".".join(Path(file_path).with_suffix("").parts)
 
 
-def validate_function_folder(root_path, function_path):
+def validate_function_folder(root_path: str, function_path: str) -> None:
     file_extension = Path(function_path).suffix
     if file_extension != ".py":
         raise TypeError(f"{function_path} is not a valid value for function_path. File extension must be .py.")
@@ -596,7 +644,7 @@ def validate_function_folder(root_path, function_path):
     sys.path.remove(root_path)
 
 
-def _validate_function_handle(function_handle):
+def _validate_function_handle(function_handle: Callable[..., Any]) -> None:
     if not function_handle.__code__.co_name == "handle":
         raise TypeError("Function referenced by function_handle must be named handle.")
     if not set(function_handle.__code__.co_varnames[: function_handle.__code__.co_argcount]).issubset(
@@ -607,7 +655,9 @@ def _validate_function_handle(function_handle):
         )
 
 
-def _assert_exactly_one_of_function_id_and_function_external_id(function_id, function_external_id):
+def _assert_exactly_one_of_function_id_and_function_external_id(
+    function_id: Optional[int], function_external_id: Optional[str]
+) -> None:
     utils._auxiliary.assert_type(function_id, "function_id", [Integral], allow_none=True)
     utils._auxiliary.assert_type(function_external_id, "function_external_id", [str], allow_none=True)
     has_function_id = function_id is not None
@@ -618,7 +668,9 @@ def _assert_exactly_one_of_function_id_and_function_external_id(function_id, fun
     ), "Exactly one of function_id and function_external_id must be specified"
 
 
-def _assert_at_most_one_of_function_id_and_function_external_id(function_id, function_external_id):
+def _assert_at_most_one_of_function_id_and_function_external_id(
+    function_id: Optional[int], function_external_id: Optional[str]
+) -> None:
     utils._auxiliary.assert_type(function_id, "function_id", [Integral], allow_none=True)
     utils._auxiliary.assert_type(function_external_id, "function_external_id", [str], allow_none=True)
     has_function_id = function_id is not None
@@ -765,16 +817,22 @@ class FunctionCallsAPI(APIClient):
 
         """
         _assert_exactly_one_of_function_id_and_function_external_id(function_id, function_external_id)
-        if function_external_id:
-            function_id = self._cognite_client.functions.retrieve(external_id=function_external_id).id
+        function_id = _get_function_id_from_external_id(self._cognite_client, function_id, function_external_id)
         filter = {"status": status, "scheduleId": schedule_id, "startTime": start_time, "endTime": end_time}
         resource_path = f"/functions/{function_id}/calls"
 
-        return self._list(method="POST", resource_path=resource_path, filter=filter, limit=limit)
+        return self._list(
+            method="POST",
+            resource_path=resource_path,
+            filter=filter,
+            limit=limit,
+            resource_cls=FunctionCall,
+            list_cls=FunctionCallList,
+        )
 
     def retrieve(
         self, call_id: int, function_id: Optional[int] = None, function_external_id: Optional[str] = None
-    ) -> Optional[FunctionCall]:
+    ) -> Union[FunctionCallList, FunctionCall, None]:
         """`Retrieve a single function call by id. <https://docs.cognite.com/api/v1/#operation/byIdsFunctionCalls>`_
 
         Args:
@@ -783,7 +841,7 @@ class FunctionCallsAPI(APIClient):
             function_external_id (str, optional): External ID of the function on which the call was made.
 
         Returns:
-            Optional[FunctionCall]: Requested function call.
+            Union[FunctionCallList, FunctionCall, None]: Requested function call.
 
         Examples:
 
@@ -802,12 +860,21 @@ class FunctionCallsAPI(APIClient):
 
         """
         _assert_exactly_one_of_function_id_and_function_external_id(function_id, function_external_id)
-        if function_external_id:
-            function_id = self._cognite_client.functions.retrieve(external_id=function_external_id).id
-        resource_path = f"/functions/{function_id}/calls"
-        return self._retrieve_multiple(wrap_ids=True, resource_path=resource_path, ids=call_id)
+        function_id = _get_function_id_from_external_id(self._cognite_client, function_id, function_external_id)
 
-    def get_response(self, call_id: int, function_id: Optional[int] = None, function_external_id: Optional[str] = None):
+        resource_path = f"/functions/{function_id}/calls"
+        identifiers = IdentifierSequence.load(ids=call_id).as_singleton()
+
+        return self._retrieve_multiple(
+            resource_path=resource_path,
+            identifiers=identifiers,
+            resource_cls=FunctionCall,
+            list_cls=FunctionCallList,
+        )
+
+    def get_response(
+        self, call_id: int, function_id: Optional[int] = None, function_external_id: Optional[str] = None
+    ) -> Dict:
         """`Retrieve the response from a function call. <https://docs.cognite.com/api/v1/#operation/getFunctionCallResponse>`_
 
         Args:
@@ -835,8 +902,7 @@ class FunctionCallsAPI(APIClient):
 
         """
         _assert_exactly_one_of_function_id_and_function_external_id(function_id, function_external_id)
-        if function_external_id:
-            function_id = self._cognite_client.functions.retrieve(external_id=function_external_id).id
+        function_id = _get_function_id_from_external_id(self._cognite_client, function_id, function_external_id)
         url = f"/functions/{function_id}/calls/{call_id}/response"
         res = self._get(url)
         return res.json().get("response")
@@ -871,8 +937,8 @@ class FunctionCallsAPI(APIClient):
 
         """
         _assert_exactly_one_of_function_id_and_function_external_id(function_id, function_external_id)
-        if function_external_id:
-            function_id = self._cognite_client.functions.retrieve(external_id=function_external_id).id
+        function_id = _get_function_id_from_external_id(self._cognite_client, function_id, function_external_id)
+
         url = f"/functions/{function_id}/calls/{call_id}/logs"
         res = self._get(url)
         return FunctionCallLog._load(res.json()["items"])
@@ -882,7 +948,7 @@ class FunctionSchedulesAPI(APIClient):
     _RESOURCE_PATH = "/functions/schedules"
     _LIST_CLASS = FunctionSchedulesList
 
-    def retrieve(self, id: int) -> Optional[FunctionSchedule]:
+    def retrieve(self, id: int) -> Union[FunctionSchedule, FunctionSchedulesList, None]:
         """`Retrieve a single function schedule by id. <https://docs.cognite.com/api/v1/#operation/byIdsFunctionSchedules>`_
 
         Args:
@@ -901,8 +967,9 @@ class FunctionSchedulesAPI(APIClient):
                 >>> res = c.functions.schedules.retrieve(id=1)
 
         """
-        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id=id, external_id=None)
-        return self._retrieve_multiple(ids=id, wrap_ids=True)
+        return self._retrieve_multiple(
+            identifiers=IdentifierSequence.load(ids=id), resource_cls=FunctionSchedule, list_cls=FunctionSchedulesList
+        )
 
     def list(
         self,
@@ -1005,7 +1072,7 @@ class FunctionSchedulesAPI(APIClient):
             assert function_id is not None, "function_id must be set when creating a schedule with client_credentials."
             nonce = _use_client_credentials(self._cognite_client, client_credentials)
 
-        body = {
+        body: Dict[str, List[Dict[str, Union[str, int, None, Dict]]]] = {
             "items": [
                 {
                     "name": name,

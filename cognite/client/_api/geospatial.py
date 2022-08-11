@@ -1,7 +1,7 @@
 import json as complexjson
 import numbers
 import warnings
-from typing import Any, Dict, Generator, List, Union
+from typing import Any, Dict, Generator, List, Optional, Sequence, Union, cast, overload
 
 from requests.exceptions import ChunkedEncodingError
 
@@ -19,14 +19,23 @@ from cognite.client.data_classes.geospatial import (
     OrderSpec,
 )
 from cognite.client.exceptions import CogniteConnectionError
+from cognite.client.utils._identifier import IdentifierSequence
 
 
 class GeospatialAPI(APIClient):
     _RESOURCE_PATH = "/geospatial"
 
     @staticmethod
-    def _feature_resource_path(feature_type_external_id: str):
+    def _feature_resource_path(feature_type_external_id: str) -> str:
         return f"{GeospatialAPI._RESOURCE_PATH}/featuretypes/{feature_type_external_id}/features"
+
+    @overload
+    def create_feature_types(self, feature_type: FeatureType) -> FeatureType:
+        ...
+
+    @overload
+    def create_feature_types(self, feature_type: List[FeatureType]) -> FeatureTypeList:
+        ...
 
     def create_feature_types(
         self, feature_type: Union[FeatureType, List[FeatureType]]
@@ -58,7 +67,10 @@ class GeospatialAPI(APIClient):
                 >>> res = c.geospatial.create_feature_types(feature_types)
         """
         return self._create_multiple(
-            items=feature_type, cls=FeatureTypeList, resource_path=f"{self._RESOURCE_PATH}/featuretypes"
+            list_cls=FeatureTypeList,
+            resource_cls=FeatureType,
+            items=feature_type,
+            resource_path=f"{self._RESOURCE_PATH}/featuretypes",
         )
 
     def delete_feature_types(self, external_id: Union[str, List[str]], recursive: bool = False) -> None:
@@ -82,7 +94,7 @@ class GeospatialAPI(APIClient):
         """
         extra_body_fields = {"recursive": True} if recursive else {}
         return self._delete_multiple(
-            external_ids=external_id,
+            identifiers=IdentifierSequence.load(external_ids=external_id),
             wrap_ids=True,
             resource_path=f"{self._RESOURCE_PATH}/featuretypes",
             extra_body_fields=extra_body_fields,
@@ -104,9 +116,22 @@ class GeospatialAPI(APIClient):
                 >>> for feature_type in c.geospatial.list_feature_types():
                 ...     feature_type # do something with the feature type definition
         """
-        return self._list(method="POST", cls=FeatureTypeList, resource_path=f"{self._RESOURCE_PATH}/featuretypes")
+        return self._list(
+            list_cls=FeatureTypeList,
+            resource_cls=FeatureType,
+            method="POST",
+            resource_path=f"{self._RESOURCE_PATH}/featuretypes",
+        )
 
-    def retrieve_feature_types(self, external_id: Union[str, List[str]] = None) -> FeatureTypeList:
+    @overload
+    def retrieve_feature_types(self, external_id: str) -> FeatureType:
+        ...
+
+    @overload
+    def retrieve_feature_types(self, external_id: List[str]) -> FeatureTypeList:
+        ...
+
+    def retrieve_feature_types(self, external_id: Union[str, List[str]]) -> Union[FeatureType, FeatureTypeList]:
         """`Retrieve feature types`
         <https://docs.cognite.com/api/v1/#operation/getFeatureTypesByIds>
 
@@ -124,14 +149,15 @@ class GeospatialAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.geospatial.retrieve_feature_types(external_id="1")
         """
+        identifiers = IdentifierSequence.load(ids=None, external_ids=external_id)
         return self._retrieve_multiple(
-            wrap_ids=True,
-            external_ids=external_id,
-            cls=FeatureTypeList,
+            list_cls=FeatureTypeList,
+            resource_cls=FeatureType,
+            identifiers=identifiers.as_singleton() if identifiers.is_singleton() else identifiers,
             resource_path=f"{self._RESOURCE_PATH}/featuretypes",
         )
 
-    def update_feature_types(self, update: Union[FeatureTypeUpdate, List[FeatureTypeUpdate]] = None) -> FeatureTypeList:
+    def update_feature_types(self, update: Union[FeatureTypeUpdate, List[FeatureTypeUpdate]]) -> FeatureTypeList:
         """`Update feature types (Deprecated)`
         <https://docs.cognite.com/api/v1/#operation/updateFeatureTypes>
 
@@ -174,7 +200,7 @@ class GeospatialAPI(APIClient):
         if isinstance(update, FeatureTypeUpdate):
             update = [update]
 
-        def mapper(it):
+        def mapper(it: FeatureTypeUpdate) -> Dict[str, Any]:
             add_properties = it.add.properties if hasattr(it, "add") else None
             remove_properties = it.remove.properties if hasattr(it, "remove") else None
             add_search_spec = it.add.search_spec if hasattr(it, "add") else None
@@ -187,7 +213,7 @@ class GeospatialAPI(APIClient):
         res = self._post(url_path=f"{self._RESOURCE_PATH}/featuretypes/update", json=json)
         return FeatureTypeList._load(res.json()["items"], cognite_client=self._cognite_client)
 
-    def patch_feature_types(self, patch: Union[FeatureTypePatch, List[FeatureTypePatch]] = None) -> FeatureTypeList:
+    def patch_feature_types(self, patch: Union[FeatureTypePatch, List[FeatureTypePatch]]) -> FeatureTypeList:
         """`Patch feature types`
         <https://docs.cognite.com/api/v1/#operation/updateFeatureTypes>
 
@@ -243,6 +269,26 @@ class GeospatialAPI(APIClient):
         res = self._post(url_path=f"{self._RESOURCE_PATH}/featuretypes/update", json=json)
         return FeatureTypeList._load(res.json()["items"], cognite_client=self._cognite_client)
 
+    @overload
+    def create_features(
+        self,
+        feature_type_external_id: str,
+        feature: Feature,
+        allow_crs_transformation: bool = False,
+        chunk_size: int = None,
+    ) -> Feature:
+        ...
+
+    @overload
+    def create_features(
+        self,
+        feature_type_external_id: str,
+        feature: Union[List[Feature], FeatureList],
+        allow_crs_transformation: bool = False,
+        chunk_size: int = None,
+    ) -> FeatureList:
+        ...
+
     def create_features(
         self,
         feature_type_external_id: str,
@@ -297,9 +343,10 @@ class GeospatialAPI(APIClient):
         resource_path = self._feature_resource_path(feature_type_external_id)
         extra_body_fields = {"allowCrsTransformation": "true"} if allow_crs_transformation else {}
         return self._create_multiple(
+            list_cls=FeatureList,
+            resource_cls=Feature,
             items=feature,
             resource_path=resource_path,
-            cls=FeatureList,
             extra_body_fields=extra_body_fields,
             limit=chunk_size,
         )
@@ -327,14 +374,34 @@ class GeospatialAPI(APIClient):
                 ... )
         """
         resource_path = self._feature_resource_path(feature_type_external_id)
-        self._delete_multiple(external_ids=external_id, wrap_ids=True, resource_path=resource_path)
+        self._delete_multiple(
+            identifiers=IdentifierSequence.load(external_ids=external_id), resource_path=resource_path, wrap_ids=True
+        )
+
+    @overload
+    def retrieve_features(
+        self,
+        feature_type_external_id: str,
+        external_id: str,
+        properties: Dict[str, Any] = None,
+    ) -> Feature:
+        ...
+
+    @overload
+    def retrieve_features(
+        self,
+        feature_type_external_id: str,
+        external_id: List[str],
+        properties: Dict[str, Any] = None,
+    ) -> FeatureList:
+        ...
 
     def retrieve_features(
         self,
         feature_type_external_id: str,
-        external_id: Union[str, List[str]] = None,
+        external_id: Union[str, List[str]],
         properties: Dict[str, Any] = None,
-    ) -> FeatureList:
+    ) -> Union[FeatureList, Feature]:
         """`Retrieve features`
         <https://docs.cognite.com/api/v1/#operation/getFeaturesByIds>
 
@@ -358,12 +425,13 @@ class GeospatialAPI(APIClient):
                 ... )
         """
         resource_path = self._feature_resource_path(feature_type_external_id)
+        identifiers = IdentifierSequence.load(ids=None, external_ids=external_id)
         return self._retrieve_multiple(
-            wrap_ids=True,
-            external_ids=external_id,
+            list_cls=FeatureList,
+            resource_cls=Feature,
+            identifiers=identifiers.as_singleton() if identifiers.is_singleton() else identifiers,
             resource_path=resource_path,
             other_params={"output": {"properties": properties}},
-            cls=FeatureList,
         )
 
     def update_features(
@@ -411,14 +479,22 @@ class GeospatialAPI(APIClient):
         # they are more like a replace so an update looks like a feature creation
         resource_path = self._feature_resource_path(feature_type_external_id) + "/update"
         extra_body_fields = {"allowCrsTransformation": "true"} if allow_crs_transformation else {}
-        return self._create_multiple(
-            feature, resource_path=resource_path, cls=FeatureList, extra_body_fields=extra_body_fields, limit=chunk_size
+        return cast(
+            FeatureList,
+            self._create_multiple(
+                list_cls=FeatureList,
+                resource_cls=Feature,
+                items=feature,
+                resource_path=resource_path,
+                extra_body_fields=extra_body_fields,
+                limit=chunk_size,
+            ),
         )
 
     def search_features(
         self,
         feature_type_external_id: str,
-        filter: Dict[str, Any] = {},
+        filter: Optional[Dict[str, Any]] = None,
         properties: Dict[str, Any] = None,
         limit: int = 100,
         order_by: List[OrderSpec] = None,
@@ -527,7 +603,7 @@ class GeospatialAPI(APIClient):
         res = self._post(
             url_path=resource_path,
             json={
-                "filter": filter,
+                "filter": filter or {},
                 "limit": limit,
                 "output": {"properties": properties},
                 "sort": order,
@@ -539,7 +615,7 @@ class GeospatialAPI(APIClient):
     def stream_features(
         self,
         feature_type_external_id: str,
-        filter: Dict[str, Any] = {},
+        filter: Optional[Dict[str, Any]] = None,
         properties: Dict[str, Any] = None,
         allow_crs_transformation: bool = False,
     ) -> Generator[Feature, None, None]:
@@ -591,7 +667,7 @@ class GeospatialAPI(APIClient):
 
         """
         resource_path = self._feature_resource_path(feature_type_external_id) + "/search-streaming"
-        json = {"filter": filter, "output": {"properties": properties, "jsonStreamFormat": "NEW_LINE_DELIMITED"}}
+        json = {"filter": filter or {}, "output": {"properties": properties, "jsonStreamFormat": "NEW_LINE_DELIMITED"}}
         params = {"allowCrsTransformation": "true"} if allow_crs_transformation else None
         res = self._do_request(
             "POST", url_path=resource_path, json=json, timeout=self._config.timeout, stream=True, params=params
@@ -608,7 +684,7 @@ class GeospatialAPI(APIClient):
         feature_type_external_id: str,
         property: str,
         aggregates: List[str],
-        filter: Dict[str, Any] = {},
+        filter: Optional[Dict[str, Any]] = None,
         group_by: List[str] = None,
     ) -> FeatureAggregateList:
         """`Aggregate filtered features`
@@ -648,11 +724,11 @@ class GeospatialAPI(APIClient):
         cls = FeatureAggregateList
         res = self._post(
             url_path=resource_path,
-            json={"filter": filter, "property": property, "aggregates": aggregates, "groupBy": group_by},
+            json={"filter": filter or {}, "property": property, "aggregates": aggregates, "groupBy": group_by},
         )
         return cls._load(res.json()["items"], cognite_client=self._cognite_client)
 
-    def get_coordinate_reference_systems(self, srids: Union[int, List[int]] = None) -> CoordinateReferenceSystemList:
+    def get_coordinate_reference_systems(self, srids: Union[int, List[int]]) -> CoordinateReferenceSystemList:
         """`Get Coordinate Reference Systems`
         <https://docs.cognite.com/api/v1/#operation/getCoordinateReferenceSystem>
 
@@ -670,20 +746,22 @@ class GeospatialAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> crs = c.geospatial.get_coordinate_reference_systems(srids=[4326, 4327])
         """
-        if isinstance(srids, numbers.Integral):
-            srids = [srids]
+        if isinstance(srids, (int, numbers.Integral)):
+            srids_processed: Sequence[Union[numbers.Integral, int]] = [srids]
+        else:
+            srids_processed = srids
 
         res = self._post(
-            url_path=f"{self._RESOURCE_PATH}/crs/byids", json={"items": [{"srid": srid} for srid in srids]}
+            url_path=f"{self._RESOURCE_PATH}/crs/byids", json={"items": [{"srid": srid} for srid in srids_processed]}
         )
         return CoordinateReferenceSystemList._load(res.json()["items"], cognite_client=self._cognite_client)
 
-    def list_coordinate_reference_systems(self, only_custom=False) -> CoordinateReferenceSystemList:
+    def list_coordinate_reference_systems(self, only_custom: bool = False) -> CoordinateReferenceSystemList:
         """`List Coordinate Reference Systems`
         <https://docs.cognite.com/api/v1/#operation/listGeospatialCoordinateReferenceSystems>
 
         Args:
-            only_custom: list only custom CRSs or not
+            only_custom (bool): list only custom CRSs or not
 
         Returns:
             CoordinateReferenceSystemList: list of CRSs.
@@ -760,7 +838,7 @@ class GeospatialAPI(APIClient):
         )
         return CoordinateReferenceSystemList._load(res.json()["items"], cognite_client=self._cognite_client)
 
-    def delete_coordinate_reference_systems(self, srids: Union[int, List[int]] = None) -> None:
+    def delete_coordinate_reference_systems(self, srids: Union[int, List[int]]) -> None:
         """`Delete Coordinate Reference System`
         <https://docs.cognite.com/api/v1/#operation/deleteGeospatialCoordinateReferenceSystems>
 
@@ -778,7 +856,11 @@ class GeospatialAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> crs = c.geospatial.delete_coordinate_reference_systems(srids=[121111])
         """
-        if isinstance(srids, numbers.Integral):
-            srids = [srids]
+        if isinstance(srids, (int, numbers.Integral)):
+            srids_processed: Sequence[Union[numbers.Integral, int]] = [srids]
+        else:
+            srids_processed = srids
 
-        self._post(url_path=f"{self._RESOURCE_PATH}/crs/delete", json={"items": [{"srid": srid} for srid in srids]})
+        self._post(
+            url_path=f"{self._RESOURCE_PATH}/crs/delete", json={"items": [{"srid": srid} for srid in srids_processed]}
+        )

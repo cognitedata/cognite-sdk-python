@@ -35,14 +35,14 @@ class TestTokenGeneration:
         mock_backend_client().return_value = Mock()
         mock_oauth_session.fetch_token.return_value = {}
         generator = setup_token_generator()
-        assert True == generator.token_params_set()
+        assert generator.token_params_set() is True
 
     @pytest.mark.parametrize("missing", ["token_url", "client_id", "client_secret", "token_scopes"])
     def test_missing_token_environment_vars(self, missing):
         generator_args = default_token_generator_args()
         generator_args[missing] = None
         generator = setup_token_generator(generator_args)
-        assert False == generator.token_params_set()
+        assert generator.token_params_set() is False
 
     @patch("cognite.client.utils._token_generator.BackendApplicationClient")
     @patch("cognite.client.utils._token_generator.OAuth2Session")

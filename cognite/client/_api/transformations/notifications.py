@@ -1,24 +1,17 @@
-from typing import List, Optional, Union
+from typing import Any, List, Optional, Union
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes import (
-    OidcCredentials,
-    Transformation,
-    TransformationBlockedInfo,
-    TransformationDestination,
-    TransformationList,
-    TransformationNotification,
-    TransformationNotificationList,
-)
+from cognite.client.data_classes import TransformationNotification, TransformationNotificationList
 from cognite.client.data_classes.transformations.notifications import TransformationNotificationFilter
+from cognite.client.utils._identifier import IdentifierSequence
 
 
 class TransformationNotificationsAPI(APIClient):
     _RESOURCE_PATH = "/transformations/notifications"
     _LIST_CLASS = TransformationNotificationList
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
     def create(
@@ -43,7 +36,9 @@ class TransformationNotificationsAPI(APIClient):
                 >>> res = c.transformations.notifications.create(notifications)
         """
         utils._auxiliary.assert_type(notification, "notification", [TransformationNotification, list])
-        return self._create_multiple(notification)
+        return self._create_multiple(
+            list_cls=TransformationNotificationList, resource_cls=TransformationNotification, items=notification
+        )
 
     def list(
         self,
@@ -83,7 +78,13 @@ class TransformationNotificationsAPI(APIClient):
             destination=destination,
         ).dump(camel_case=True)
 
-        return self._list(method="GET", limit=limit, filter=filter)
+        return self._list(
+            list_cls=TransformationNotificationList,
+            resource_cls=TransformationNotification,
+            method="GET",
+            limit=limit,
+            filter=filter,
+        )
 
     def delete(self, id: Union[int, List[int]] = None) -> None:
         """`Deletes the specified notification subscriptions on the transformation. Does nothing when the subscriptions already don't exist <https://docs.cognite.com/api/v1/#operation/deleteTransformationNotifications>`_
@@ -102,4 +103,4 @@ class TransformationNotificationsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.transformations.notifications.delete(id=[1,2,3])
         """
-        self._delete_multiple(ids=id, wrap_ids=True)
+        self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=True)

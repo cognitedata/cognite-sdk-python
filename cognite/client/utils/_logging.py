@@ -27,12 +27,12 @@ class DebugLogFormatter(logging.Formatter):
         "threadName",
     )
 
-    def __init__(self):
+    def __init__(self) -> None:
         fmt = "%(asctime)s.%(msecs)03d [%(levelname)-8s] %(threadName)s. %(message)s (%(filename)s:%(lineno)s)"
         datefmt = "%Y-%m-%d %H:%M:%S"
         super().__init__(fmt, datefmt)
 
-    def format(self, record):
+    def format(self, record: logging.LogRecord) -> str:
 
         record.message = record.getMessage()
         if self.usesTime():
@@ -60,7 +60,7 @@ class DebugLogFormatter(logging.Formatter):
         return s
 
 
-def _configure_logger_for_debug_mode():
+def _configure_logger_for_debug_mode() -> None:
     logger = logging.getLogger("cognite-sdk")
     logger.setLevel("DEBUG")
     log_handler = logging.StreamHandler()

@@ -1,6 +1,5 @@
-from typing import *
+from typing import Any, Dict, Iterator, List, Optional, Union, cast, overload
 
-from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import (
     AggregateResult,
@@ -12,11 +11,11 @@ from cognite.client.data_classes import (
     EventUpdate,
     TimestampRange,
 )
+from cognite.client.utils._identifier import IdentifierSequence
 
 
 class EventsAPI(APIClient):
     _RESOURCE_PATH = "/events"
-    _LIST_CLASS = EventList
 
     def __call__(
         self,
@@ -29,8 +28,6 @@ class EventsAPI(APIClient):
         metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
         asset_external_ids: List[str] = None,
-        root_asset_ids: List[int] = None,
-        root_asset_external_ids: List[str] = None,
         asset_subtree_ids: List[int] = None,
         asset_subtree_external_ids: List[str] = None,
         data_set_ids: List[int] = None,
@@ -42,7 +39,7 @@ class EventsAPI(APIClient):
         sort: List[str] = None,
         limit: int = None,
         partitions: int = None,
-    ) -> Generator[Union[Event, EventList], None, None]:
+    ) -> Union[Iterator[Event], Iterator[EventList]]:
         """Iterate over events
 
         Fetches events as they are iterated over, so you keep a limited number of events in memory.
@@ -57,8 +54,6 @@ class EventsAPI(APIClient):
             metadata (Dict[str, str]): Customizable extra data about the event. String key -> String value.
             asset_ids (List[int]): Asset IDs of related equipments that this event relates to.
             asset_external_ids (List[str]): Asset External IDs of related equipment that this event relates to.
-            root_asset_ids (List[int]): The IDs of the root assets that the related assets should be children of.
-            root_asset_external_ids (List[str]): The external IDs of the root assets that the related assets should be children of.
             asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
             asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
             data_set_ids (List[int]): Return only events in the specified data sets with these ids.
@@ -74,12 +69,15 @@ class EventsAPI(APIClient):
         Yields:
             Union[Event, EventList]: yields Event one by one if chunk is not specified, else EventList objects.
         """
-        if (root_asset_ids and not isinstance(root_asset_ids[0], dict)) or root_asset_external_ids:
-            root_asset_ids = self._process_ids(root_asset_ids, root_asset_external_ids, wrap_ids=True)
+        asset_subtree_ids_processed = None
         if asset_subtree_ids or asset_subtree_external_ids:
-            asset_subtree_ids = self._process_ids(asset_subtree_ids, asset_subtree_external_ids, wrap_ids=True)
+            asset_subtree_ids_processed = IdentifierSequence.load(
+                asset_subtree_ids, asset_subtree_external_ids
+            ).as_dicts()
+
+        data_set_ids_processed = None
         if data_set_ids or data_set_external_ids:
-            data_set_ids = self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
+            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
 
         filter = EventFilter(
             start_time=start_time,
@@ -88,9 +86,8 @@ class EventsAPI(APIClient):
             metadata=metadata,
             asset_ids=asset_ids,
             asset_external_ids=asset_external_ids,
-            root_asset_ids=root_asset_ids,
-            asset_subtree_ids=asset_subtree_ids,
-            data_set_ids=data_set_ids,
+            asset_subtree_ids=asset_subtree_ids_processed,
+            data_set_ids=data_set_ids_processed,
             source=source,
             created_time=created_time,
             last_updated_time=last_updated_time,
@@ -99,10 +96,17 @@ class EventsAPI(APIClient):
             subtype=subtype,
         ).dump(camel_case=True)
         return self._list_generator(
-            method="POST", chunk_size=chunk_size, filter=filter, limit=limit, sort=sort, partitions=partitions
+            list_cls=EventList,
+            resource_cls=Event,
+            method="POST",
+            chunk_size=chunk_size,
+            filter=filter,
+            limit=limit,
+            sort=sort,
+            partitions=partitions,
         )
 
-    def __iter__(self) -> Generator[Event, None, None]:
+    def __iter__(self) -> Iterator[Event]:
         """Iterate over events
 
         Fetches events as they are iterated over, so you keep a limited number of events in memory.
@@ -110,7 +114,7 @@ class EventsAPI(APIClient):
         Yields:
             Event: yields Events one by one.
         """
-        return self.__call__()
+        return cast(Iterator[Event], self.__call__())
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[Event]:
         """`Retrieve a single event by id. <https://docs.cognite.com/api/v1/#operation/getEventByInternalId>`_
@@ -136,8 +140,8 @@ class EventsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.events.retrieve(external_id="1")
         """
-        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
-        return self._retrieve_multiple(ids=id, external_ids=external_id, wrap_ids=True)
+        identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
+        return self._retrieve_multiple(list_cls=EventList, resource_cls=Event, identifiers=identifiers)
 
     def retrieve_multiple(
         self,
@@ -169,10 +173,9 @@ class EventsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.events.retrieve_multiple(external_ids=["abc", "def"])
         """
-        utils._auxiliary.assert_type(ids, "id", [List], allow_none=True)
-        utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=True)
+        identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
         return self._retrieve_multiple(
-            ids=ids, external_ids=external_ids, ignore_unknown_ids=ignore_unknown_ids, wrap_ids=True
+            list_cls=EventList, resource_cls=Event, identifiers=identifiers, ignore_unknown_ids=ignore_unknown_ids
         )
 
     def list(
@@ -185,8 +188,6 @@ class EventsAPI(APIClient):
         metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
         asset_external_ids: List[str] = None,
-        root_asset_ids: List[int] = None,
-        root_asset_external_ids: List[str] = None,
         asset_subtree_ids: List[int] = None,
         asset_subtree_external_ids: List[str] = None,
         data_set_ids: List[int] = None,
@@ -210,8 +211,6 @@ class EventsAPI(APIClient):
             metadata (Dict[str, str]): Customizable extra data about the event. String key -> String value.
             asset_ids (List[int]): Asset IDs of related equipments that this event relates to.
             asset_external_ids (List[str]): Asset External IDs of related equipment that this event relates to.
-            root_asset_ids (List[int]): The IDs of the root assets that the related assets should be children of.
-            root_asset_external_ids (List[str]): The external IDs of the root assets that the related assets should be children of.
             asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
             asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
             data_set_ids (List[int]): Return only events in the specified data sets with these ids.
@@ -250,12 +249,16 @@ class EventsAPI(APIClient):
                 >>> for event_list in c.events(chunk_size=2500):
                 ...     event_list # do something with the events
         """
-        if (root_asset_ids and not isinstance(root_asset_ids[0], dict)) or root_asset_external_ids:
-            root_asset_ids = self._process_ids(root_asset_ids, root_asset_external_ids, wrap_ids=True)
+        asset_subtree_ids_processed = None
         if asset_subtree_ids or asset_subtree_external_ids:
-            asset_subtree_ids = self._process_ids(asset_subtree_ids, asset_subtree_external_ids, wrap_ids=True)
+            asset_subtree_ids_processed = IdentifierSequence.load(
+                asset_subtree_ids, asset_subtree_external_ids
+            ).as_dicts()
+
+        data_set_ids_processed = None
         if data_set_ids or data_set_external_ids:
-            data_set_ids = self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
+            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
+
         if end_time and ("max" in end_time or "min" in end_time) and "isNull" in end_time:
             raise ValueError("isNull cannot be used with min or max values")
 
@@ -266,17 +269,24 @@ class EventsAPI(APIClient):
             metadata=metadata,
             asset_ids=asset_ids,
             asset_external_ids=asset_external_ids,
-            root_asset_ids=root_asset_ids,
-            asset_subtree_ids=asset_subtree_ids,
+            asset_subtree_ids=asset_subtree_ids_processed,
             source=source,
-            data_set_ids=data_set_ids,
+            data_set_ids=data_set_ids_processed,
             created_time=created_time,
             last_updated_time=last_updated_time,
             external_id_prefix=external_id_prefix,
             type=type,
             subtype=subtype,
         ).dump(camel_case=True)
-        return self._list(method="POST", limit=limit, filter=filter, partitions=partitions, sort=sort)
+        return self._list(
+            list_cls=EventList,
+            resource_cls=Event,
+            method="POST",
+            limit=limit,
+            filter=filter,
+            partitions=partitions,
+            sort=sort,
+        )
 
     def aggregate(self, filter: Union[EventFilter, Dict] = None) -> List[AggregateResult]:
         """`Aggregate events <https://docs.cognite.com/api/v1/#operation/aggregateEvents>`_
@@ -321,6 +331,14 @@ class EventsAPI(APIClient):
 
         return self._aggregate(filter=filter, fields=fields, aggregate="uniqueValues", cls=AggregateUniqueValuesResult)
 
+    @overload
+    def create(self, event: List[Event]) -> EventList:
+        ...
+
+    @overload
+    def create(self, event: Event) -> Event:
+        ...
+
     def create(self, event: Union[Event, List[Event]]) -> Union[Event, EventList]:
         """`Create one or more events. <https://docs.cognite.com/api/v1/#operation/createEvents>`_
 
@@ -340,7 +358,7 @@ class EventsAPI(APIClient):
                 >>> events = [Event(start_time=0, end_time=1), Event(start_time=2, end_time=3)]
                 >>> res = c.events.create(events)
         """
-        return self._create_multiple(items=event)
+        return self._create_multiple(list_cls=EventList, resource_cls=Event, items=event)
 
     def delete(
         self,
@@ -366,8 +384,18 @@ class EventsAPI(APIClient):
                 >>> c.events.delete(id=[1,2,3], external_id="3")
         """
         self._delete_multiple(
-            ids=id, external_ids=external_id, wrap_ids=True, extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids}
+            identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
+            wrap_ids=True,
+            extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
         )
+
+    @overload
+    def update(self, item: List[Union[Event, EventUpdate]]) -> EventList:
+        ...
+
+    @overload
+    def update(self, item: Union[Event, EventUpdate]) -> Event:
+        ...
 
     def update(self, item: Union[Event, EventUpdate, List[Union[Event, EventUpdate]]]) -> Union[Event, EventList]:
         """`Update one or more events <https://docs.cognite.com/api/v1/#operation/updateEvents>`_
@@ -396,7 +424,7 @@ class EventsAPI(APIClient):
                 >>> my_update = EventUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
                 >>> res = c.events.update(my_update)
         """
-        return self._update_multiple(items=item)
+        return self._update_multiple(list_cls=EventList, resource_cls=Event, update_cls=EventUpdate, items=item)
 
     def search(self, description: str = None, filter: Union[EventFilter, Dict] = None, limit: int = 100) -> EventList:
         """`Search for events <https://docs.cognite.com/api/v1/#operation/searchEvents>`_
@@ -418,4 +446,4 @@ class EventsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.events.search(description="some description")
         """
-        return self._search(search={"description": description}, filter=filter, limit=limit)
+        return self._search(list_cls=EventList, search={"description": description}, filter=filter or {}, limit=limit)

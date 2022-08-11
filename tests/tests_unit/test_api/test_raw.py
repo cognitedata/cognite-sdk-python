@@ -12,7 +12,7 @@ def mock_raw_db_response(rsps, cognite_client):
     response_body = {"items": [{"name": "db1"}]}
 
     url_pattern = re.compile(
-        re.escape(cognite_client.raw._get_base_url_with_base_path()) + "/raw/dbs(?:/delete|$|\?.+)"
+        re.escape(cognite_client.raw._get_base_url_with_base_path()) + r"/raw/dbs(?:/delete|$|\?.+)"
     )
     rsps.assert_all_requests_are_fired = False
 
@@ -26,7 +26,7 @@ def mock_raw_table_response(rsps, cognite_client):
     response_body = {"items": [{"name": "table1"}]}
 
     url_pattern = re.compile(
-        re.escape(cognite_client.raw._get_base_url_with_base_path()) + "/raw/dbs/db1/tables(?:/delete|$|\?.+)"
+        re.escape(cognite_client.raw._get_base_url_with_base_path()) + r"/raw/dbs/db1/tables(?:/delete|$|\?.+)"
     )
     rsps.assert_all_requests_are_fired = False
 
@@ -40,7 +40,7 @@ def mock_raw_row_response(rsps, cognite_client):
     response_body = {"items": [{"key": "row1", "columns": {"c1": 1, "c2": "2"}}]}
 
     raw_path_prefix = re.escape(cognite_client.raw._get_base_url_with_base_path()) + "/raw/dbs/db1/tables/table1"
-    url_pattern = re.compile(raw_path_prefix + "/rows(?:/delete|/row1|$|\?.+)")
+    url_pattern = re.compile(raw_path_prefix + r"/rows(?:/delete|/row1|$|\?.+)")
     cursors_url_pattern = re.compile(raw_path_prefix + "/cursors")
     rsps.assert_all_requests_are_fired = False
 

@@ -1,8 +1,7 @@
 import copy
 import os
 from pathlib import Path
-from typing import *
-from typing.io import BinaryIO, TextIO
+from typing import Any, BinaryIO, Dict, Iterator, List, Optional, TextIO, Tuple, Union, cast, overload
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -18,11 +17,11 @@ from cognite.client.data_classes import (
     LabelFilter,
     TimestampRange,
 )
+from cognite.client.utils._identifier import Identifier, IdentifierSequence
 
 
 class FilesAPI(APIClient):
     _RESOURCE_PATH = "/files"
-    _LIST_CLASS = FileMetadataList
 
     def __call__(
         self,
@@ -32,8 +31,6 @@ class FilesAPI(APIClient):
         metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
         asset_external_ids: List[str] = None,
-        root_asset_ids: List[int] = None,
-        root_asset_external_ids: List[str] = None,
         asset_subtree_ids: List[int] = None,
         asset_subtree_external_ids: List[str] = None,
         data_set_ids: List[int] = None,
@@ -50,7 +47,7 @@ class FilesAPI(APIClient):
         directory_prefix: str = None,
         uploaded: bool = None,
         limit: int = None,
-    ) -> Generator[Union[FileMetadata, FileMetadataList], None, None]:
+    ) -> Union[Iterator[FileMetadata], Iterator[FileMetadataList]]:
         """Iterate over files
 
         Fetches file metadata objects as they are iterated over, so you keep a limited number of metadata objects in memory.
@@ -62,7 +59,6 @@ class FilesAPI(APIClient):
             metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value
             asset_ids (List[int]): Only include files that reference these specific asset IDs.
             asset_subtree_external_ids (List[str]): Only include files that reference these specific asset external IDs.
-            root_asset_ids (List[int]): The IDs of the root assets that the related assets should be children of.
             root_asset_external_ids (List[str]): The external IDs of the root assets that the related assets should be children of.
             asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
             asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
@@ -84,12 +80,15 @@ class FilesAPI(APIClient):
         Yields:
             Union[FileMetadata, FileMetadataList]: yields FileMetadata one by one if chunk is not specified, else FileMetadataList objects.
         """
-        if root_asset_ids or root_asset_external_ids:
-            root_asset_ids = self._process_ids(root_asset_ids, root_asset_external_ids, wrap_ids=True)
+        asset_subtree_ids_processed = None
         if asset_subtree_ids or asset_subtree_external_ids:
-            asset_subtree_ids = self._process_ids(asset_subtree_ids, asset_subtree_external_ids, wrap_ids=True)
+            asset_subtree_ids_processed = IdentifierSequence.load(
+                asset_subtree_ids, asset_subtree_external_ids
+            ).as_dicts()
+
+        data_set_ids_processed = None
         if data_set_ids or data_set_external_ids:
-            data_set_ids = self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
+            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
 
         filter = FileMetadataFilter(
             name=name,
@@ -97,8 +96,7 @@ class FilesAPI(APIClient):
             metadata=metadata,
             asset_ids=asset_ids,
             asset_external_ids=asset_external_ids,
-            root_asset_ids=root_asset_ids,
-            asset_subtree_ids=asset_subtree_ids,
+            asset_subtree_ids=asset_subtree_ids_processed,
             labels=labels,
             geo_location=geo_location,
             source=source,
@@ -110,11 +108,18 @@ class FilesAPI(APIClient):
             external_id_prefix=external_id_prefix,
             directory_prefix=directory_prefix,
             uploaded=uploaded,
-            data_set_ids=data_set_ids,
+            data_set_ids=data_set_ids_processed,
         ).dump(camel_case=True)
-        return self._list_generator(method="POST", chunk_size=chunk_size, filter=filter, limit=limit)
+        return self._list_generator(
+            list_cls=FileMetadataList,
+            resource_cls=FileMetadata,
+            method="POST",
+            chunk_size=chunk_size,
+            filter=filter,
+            limit=limit,
+        )
 
-    def __iter__(self) -> Generator[FileMetadata, None, None]:
+    def __iter__(self) -> Iterator[FileMetadata]:
         """Iterate over files
 
         Fetches file metadata objects as they are iterated over, so you keep a limited number of metadata objects in memory.
@@ -122,7 +127,7 @@ class FilesAPI(APIClient):
         Yields:
             FileMetadata: yields Files one by one.
         """
-        return self.__call__()
+        return cast(Iterator[FileMetadata], self.__call__())
 
     def create(self, file_metadata: FileMetadata, overwrite: bool = False) -> Tuple[FileMetadata, str]:
         """Create file without uploading content.
@@ -182,17 +187,21 @@ class FilesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.files.retrieve(external_id="1")
         """
-        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
-        return self._retrieve_multiple(ids=id, external_ids=external_id, wrap_ids=True)
+        identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
+        return self._retrieve_multiple(list_cls=FileMetadataList, resource_cls=FileMetadata, identifiers=identifiers)
 
     def retrieve_multiple(
-        self, ids: Optional[List[int]] = None, external_ids: Optional[List[str]] = None
+        self,
+        ids: Optional[List[int]] = None,
+        external_ids: Optional[List[str]] = None,
+        ignore_unknown_ids: bool = False,
     ) -> FileMetadataList:
         """`Retrieve multiple file metadatas by id. <https://docs.cognite.com/api/v1/#operation/byIdsFiles>`_
 
         Args:
             ids (List[int], optional): IDs
             external_ids (List[str], optional): External IDs
+            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
             FileMetadataList: The requested file metadatas.
@@ -211,9 +220,13 @@ class FilesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.files.retrieve_multiple(external_ids=["abc", "def"])
         """
-        utils._auxiliary.assert_type(ids, "id", [List], allow_none=True)
-        utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=True)
-        return self._retrieve_multiple(ids=ids, external_ids=external_ids, wrap_ids=True)
+        identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
+        return self._retrieve_multiple(
+            list_cls=FileMetadataList,
+            resource_cls=FileMetadata,
+            identifiers=identifiers,
+            ignore_unknown_ids=ignore_unknown_ids,
+        )
 
     def list(
         self,
@@ -222,8 +235,6 @@ class FilesAPI(APIClient):
         metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
         asset_external_ids: List[str] = None,
-        root_asset_ids: List[int] = None,
-        root_asset_external_ids: List[str] = None,
         asset_subtree_ids: List[int] = None,
         asset_subtree_external_ids: List[str] = None,
         data_set_ids: List[int] = None,
@@ -249,8 +260,6 @@ class FilesAPI(APIClient):
             metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value
             asset_ids (List[int]): Only include files that reference these specific asset IDs.
             asset_subtree_external_ids (List[str]): Only include files that reference these specific asset external IDs.
-            root_asset_ids (List[int]): The IDs of the root assets that the related assets should be children of.
-            root_asset_external_ids (List[str]): The external IDs of the root assets that the related assets should be children of.
             asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
             asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
             data_set_ids (List[int]): Return only files in the specified data sets with these ids.
@@ -310,12 +319,15 @@ class FilesAPI(APIClient):
                 >>> my_geo_location_filter = GeoLocationFilter(relation="intersects", shape=GeometryFilter(type="Point", coordinates=[35,10]))
                 >>> file_list = c.files.list(geo_location=my_geo_location_filter)
         """
-        if root_asset_ids or root_asset_external_ids:
-            root_asset_ids = self._process_ids(root_asset_ids, root_asset_external_ids, wrap_ids=True)
+        asset_subtree_ids_processed = None
         if asset_subtree_ids or asset_subtree_external_ids:
-            asset_subtree_ids = self._process_ids(asset_subtree_ids, asset_subtree_external_ids, wrap_ids=True)
+            asset_subtree_ids_processed = IdentifierSequence.load(
+                asset_subtree_ids, asset_subtree_external_ids
+            ).as_dicts()
+
+        data_set_ids_processed = None
         if data_set_ids or data_set_external_ids:
-            data_set_ids = self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
+            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
 
         filter = FileMetadataFilter(
             name=name,
@@ -323,8 +335,7 @@ class FilesAPI(APIClient):
             metadata=metadata,
             asset_ids=asset_ids,
             asset_external_ids=asset_external_ids,
-            root_asset_ids=root_asset_ids,
-            asset_subtree_ids=asset_subtree_ids,
+            asset_subtree_ids=asset_subtree_ids_processed,
             labels=labels,
             geo_location=geo_location,
             source=source,
@@ -336,10 +347,12 @@ class FilesAPI(APIClient):
             external_id_prefix=external_id_prefix,
             directory_prefix=directory_prefix,
             uploaded=uploaded,
-            data_set_ids=data_set_ids,
+            data_set_ids=data_set_ids_processed,
         ).dump(camel_case=True)
 
-        return self._list(method="POST", limit=limit, filter=filter)
+        return self._list(
+            list_cls=FileMetadataList, resource_cls=FileMetadata, method="POST", limit=limit, filter=filter
+        )
 
     def aggregate(self, filter: Union[FileMetadataFilter, Dict] = None) -> List[FileAggregate]:
         """`Aggregate files <https://docs.cognite.com/api/v1/#operation/aggregateFiles>`_
@@ -379,7 +392,15 @@ class FilesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.files.delete(id=[1,2,3], external_id="3")
         """
-        self._delete_multiple(wrap_ids=True, ids=id, external_ids=external_id)
+        self._delete_multiple(identifiers=IdentifierSequence.load(ids=id, external_ids=external_id), wrap_ids=True)
+
+    @overload
+    def update(self, item: Union[FileMetadata, FileMetadataUpdate]) -> FileMetadata:
+        ...
+
+    @overload
+    def update(self, item: List[Union[FileMetadata, FileMetadataUpdate]]) -> FileMetadataList:
+        ...
 
     def update(
         self, item: Union[FileMetadata, FileMetadataUpdate, List[Union[FileMetadata, FileMetadataUpdate]]]
@@ -427,10 +448,16 @@ class FilesAPI(APIClient):
                 >>> my_update = FileMetadataUpdate(id=1).labels.remove("PUMP")
                 >>> res = c.files.update(my_update)
         """
-        return self._update_multiple(cls=FileMetadataList, resource_path=self._RESOURCE_PATH, items=item)
+        return self._update_multiple(
+            list_cls=FileMetadataList,
+            resource_cls=FileMetadata,
+            update_cls=FileMetadataUpdate,
+            resource_path=self._RESOURCE_PATH,
+            items=item,
+        )
 
     def search(
-        self, name: str = None, filter: Union[FileMetadataFilter, dict] = None, limit: int = 100
+        self, name: str = None, filter: Optional[Union[FileMetadataFilter, dict]] = None, limit: int = 100
     ) -> FileMetadataList:
         """`Search for files. <https://docs.cognite.com/api/v1/#operation/searchFiles>`_
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
@@ -458,7 +485,7 @@ class FilesAPI(APIClient):
                 >>> my_label_filter = LabelFilter(contains_all=["WELL LOG"])
                 >>> res = c.assets.search(name="xyz",filter=FileMetadataFilter(labels=my_label_filter))
         """
-        return self._search(search={"name": name}, filter=filter, limit=limit)
+        return self._search(list_cls=FileMetadataList, search={"name": name}, filter=filter or {}, limit=limit)
 
     def upload(
         self,
@@ -586,7 +613,7 @@ class FilesAPI(APIClient):
             return FileMetadataList(tasks_summary.results)
         raise ValueError("path '{}' does not exist".format(path))
 
-    def _upload_file_from_path(self, file: FileMetadata, file_path: str, overwrite: bool):
+    def _upload_file_from_path(self, file: FileMetadata, file_path: str, overwrite: bool) -> FileMetadata:
         with open(file_path, "rb") as fh:
             file_metadata = self.upload_bytes(fh, overwrite=overwrite, **file.dump())
         return file_metadata
@@ -608,7 +635,7 @@ class FilesAPI(APIClient):
         source_modified_time: int = None,
         security_categories: List[int] = None,
         overwrite: bool = False,
-    ):
+    ) -> FileMetadata:
         """Upload bytes or string.
 
         You can also pass a file handle to content.
@@ -685,9 +712,8 @@ class FilesAPI(APIClient):
             Dict[Union[str, int], str]: Dictionary containing download urls.
         """
         batch_size = 100
-        identifiers = self._process_ids(id, external_id, wrap_ids=True)
-        identifier_batches = [identifiers[n : n + batch_size] for n in range(0, len(identifiers), batch_size)]
-        tasks = [dict(url_path="/files/downloadlink", json={"items": id_batch}) for id_batch in identifier_batches]
+        id_batches = [seq.as_dicts() for seq in IdentifierSequence.load(id, external_id).chunked(batch_size)]
+        tasks = [dict(url_path="/files/downloadlink", json={"items": id_batch}) for id_batch in id_batches]
         tasks_summary = utils._concurrency.execute_tasks_concurrently(
             self._post, tasks, max_workers=self._config.max_workers
         )
@@ -722,7 +748,7 @@ class FilesAPI(APIClient):
         """
         if isinstance(directory, str):
             directory = Path(directory)
-        all_ids = self._process_ids(ids=id, external_ids=external_id, wrap_ids=True)
+        all_ids = IdentifierSequence.load(id, external_id).as_dicts()
         id_to_metadata = self._get_id_to_metadata_map(all_ids)
         assert directory.is_dir(), "{} is not a directory".format(directory)
         self._download_files_to_directory(directory, all_ids, id_to_metadata)
@@ -765,17 +791,17 @@ class FilesAPI(APIClient):
         directory: Path,
         identifier: Dict[str, Union[int, str]],
         id_to_metadata: Dict[Union[str, int], FileMetadata],
-    ):
+    ) -> None:
         id = utils._auxiliary.unwrap_identifer(identifier)
         file_metadata = id_to_metadata[id]
-        file_path = (directory / file_metadata.name).resolve()
+        file_path = (directory / cast(str, file_metadata.name)).resolve()
         file_is_in_download_directory = directory.resolve() in file_path.parents
         if not file_is_in_download_directory:
             raise RuntimeError(f"Resolved file path '{file_path}' is not inside download directory")
         download_link = self._get_download_link(identifier)
         self._download_file_to_path(download_link, file_path)
 
-    def _download_file_to_path(self, download_link: str, path: Path, chunk_size: int = 2**21):
+    def _download_file_to_path(self, download_link: str, path: Path, chunk_size: int = 2**21) -> None:
         with self._http_client_with_retry.request(
             "GET", download_link, stream=True, timeout=self._config.file_transfer_timeout
         ) as r:
@@ -784,7 +810,7 @@ class FilesAPI(APIClient):
                     if chunk:  # filter out keep-alive new chunks
                         f.write(chunk)
 
-    def download_to_path(self, path: Union[Path, str], id: int = None, external_id: str = None):
+    def download_to_path(self, path: Union[Path, str], id: int = None, external_id: str = None) -> None:
         """Download a file to a specific target.
 
         Args:
@@ -804,9 +830,8 @@ class FilesAPI(APIClient):
         """
         if isinstance(path, str):
             path = Path(path)
-        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
         assert path.parent.is_dir(), "{} is not a directory".format(path.parent)
-        identifier = self._process_ids(ids=id, external_ids=external_id, wrap_ids=True)[0]
+        identifier = Identifier.of_either(id, external_id).as_dict()
         download_link = self._get_download_link(identifier)
         self._download_file_to_path(download_link, path)
 
@@ -825,8 +850,7 @@ class FilesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> file_content = c.files.download_bytes(id=1)
         """
-        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
-        identifier = self._process_ids(ids=id, external_ids=external_id, wrap_ids=True)[0]
+        identifier = Identifier.of_either(id, external_id).as_dict()
         download_link = self._get_download_link(identifier)
         return self._download_file(download_link)
 

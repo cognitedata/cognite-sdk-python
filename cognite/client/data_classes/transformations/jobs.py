@@ -1,10 +1,15 @@
 import asyncio
 import time
 from enum import Enum
+from typing import TYPE_CHECKING, Dict, Optional, Union, cast
 
-from cognite.client.data_classes._base import *
+from cognite.client import utils
+from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteResourceList
 from cognite.client.data_classes.transformations._alphatypes import AlphaDataModelInstances
 from cognite.client.data_classes.transformations.common import RawTable, SequenceRows, TransformationDestination
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 class TransformationJobStatus(str, Enum):
@@ -24,21 +29,27 @@ class TransformationJobMetric(CogniteResource):
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
-    def __init__(self, id: int = None, timestamp: int = None, name: str = None, count: int = None, cognite_client=None):
+    def __init__(
+        self,
+        id: int = None,
+        timestamp: int = None,
+        name: str = None,
+        count: int = None,
+        cognite_client: "CogniteClient" = None,
+    ):
         self.timestamp = timestamp
         self.name = name
         self.count = count
-        self._cognite_client = cognite_client
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client=None):
+    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> "TransformationJobMetric":
         instance = super(TransformationJobMetric, cls)._load(resource, cognite_client)
         return instance
 
 
 class TransformationJobMetricList(CogniteResourceList):
     _RESOURCE = TransformationJobMetric
-    _ASSERT_CLASSES = False
 
 
 class TransformationJob(CogniteResource):
@@ -82,7 +93,7 @@ class TransformationJob(CogniteResource):
         started_time: int = None,
         finished_time: int = None,
         last_seen_time: int = None,
-        cognite_client=None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.id = id
         self.status = status
@@ -99,9 +110,9 @@ class TransformationJob(CogniteResource):
         self.started_time = started_time
         self.finished_time = finished_time
         self.last_seen_time = last_seen_time
-        self._cognite_client = cognite_client
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
-    def update(self):
+    def update(self) -> None:
         """`Get updated job status.`"""
         updated = self._cognite_client.transformations.jobs.retrieve(id=self.id)
         self.status = updated.status
@@ -110,14 +121,15 @@ class TransformationJob(CogniteResource):
         self.finished_time = updated.finished_time
         self.last_seen_time = updated.last_seen_time
 
-    def cancel(self):
+    def cancel(self) -> None:
         if self.transformation_id is None:
             self._cognite_client.transformations.cancel(transformation_external_id=self.transformation_external_id)
         else:
             self._cognite_client.transformations.cancel(transformation_id=self.transformation_id)
 
-    def metrics(self):
+    def metrics(self) -> TransformationJobMetricList:
         """`Get job metrics.`"""
+        assert self.id is not None
         return self._cognite_client.transformations.jobs.list_metrics(self.id)
 
     def wait(self, polling_interval: float = 1, timeout: Optional[float] = None) -> "TransformationJob":
@@ -173,7 +185,7 @@ class TransformationJob(CogniteResource):
         return self
 
     async def wait_async(self, polling_interval: float = 1, timeout: Optional[float] = None) -> "TransformationJob":
-        """`Asyncio coroutine, waits for the job to finish asynchronously.`_
+        """Asyncio coroutine, waits for the job to finish asynchronously.
 
         Args:
             polling_interval (float): time (s) to wait between job status updates, default is one second.
@@ -190,7 +202,7 @@ class TransformationJob(CogniteResource):
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>>
-                >>> async def run_succesive_transformations():
+                >>> async def run_successive_transformations():
                 >>>     job1 = c.transformations.run(id = 1, wait = False)
                 >>>     job2 = c.transformations.run(id = 2, wait = False)
                 >>>     await job1.wait_async()
@@ -198,7 +210,7 @@ class TransformationJob(CogniteResource):
                 >>>     if TransformationJobStatus.FAILED not in [job1.status, job2.status]:
                 >>>         c.transformations.run(id = 3, wait = False)
                 >>>
-                >>> ensure_future(run_succesive_transformations())
+                >>> ensure_future(run_successive_transformations())
 
             wait transformation for 5 minutes and do something if still running:
 
@@ -206,7 +218,7 @@ class TransformationJob(CogniteResource):
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>>
-                >>> async def run_succesive_transformations():
+                >>> async def run_successive_transformations():
                 >>>     job = c.transformations.run(id = 1, wait = False)
                 >>>     await job.wait_async(timeout = 5.0*60)
                 >>>     if job.status == TransformationJobStatus.FAILED:
@@ -216,7 +228,7 @@ class TransformationJob(CogniteResource):
                 >>>     else:
                 >>>         # do something if job is still running
                 >>>
-                >>> ensure_future(run_succesive_transformations())
+                >>> ensure_future(run_successive_transformations())
         """
         self.update()
         if timeout is None:
@@ -234,14 +246,14 @@ class TransformationJob(CogniteResource):
         return self
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client=None):
+    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> "TransformationJob":
         instance = super(TransformationJob, cls)._load(resource, cognite_client)
         if isinstance(instance.destination, Dict):
             snake_dict = {utils._auxiliary.to_snake_case(key): value for (key, value) in instance.destination.items()}
             if instance.destination.get("type") == "raw":
                 snake_dict.pop("type")
                 instance.destination = RawTable(**snake_dict)
-            elif instance.destination.get("type") == "data_model_instances":
+            elif instance.destination.get("type") == "alpha_data_model_instances":
                 snake_dict.pop("type")
                 instance.destination = AlphaDataModelInstances(**snake_dict)
             elif instance.destination.get("type") == "sequence_rows":
@@ -251,13 +263,12 @@ class TransformationJob(CogniteResource):
                 instance.destination = TransformationDestination(**snake_dict)
         return instance
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.id)
 
 
 class TransformationJobList(CogniteResourceList):
     _RESOURCE = TransformationJob
-    _ASSERT_CLASSES = False
 
 
 class TransformationJobFilter(CogniteFilter):

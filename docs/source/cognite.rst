@@ -189,7 +189,7 @@ You can set default configurations with these environment variables:
 
 .. code:: bash
 
-    # Can be overrided by Client Configuration
+    # Can be overridden by Client Configuration
     $ export COGNITE_API_KEY = <your-api-key>
     $ export COGNITE_PROJECT = <your-default-project>
     $ export COGNITE_BASE_URL = http://<host>:<port>
@@ -216,8 +216,8 @@ to the API, you can either pass the :code:`max_workers` attribute when you insta
 If you are working with multiple instances of :code:`CogniteClient`, all instances will share the same connection pool.
 If you have several instances, you can increase the max connection pool size to reuse connections if you are performing a large amount of concurrent requests. You can increase the max connection pool size by setting the :code:`COGNITE_MAX_CONNECTION_POOL_SIZE` environment variable.
 
-Extensions and core library
-============================
+Extensions and optional dependencies
+====================================
 Pandas integration
 ------------------
 The SDK is tightly integrated with the `pandas <https://pandas.pydata.org/pandas-docs/stable/>`_ library.
@@ -237,15 +237,29 @@ You need to install the matplotlib package manually:
 
     $ pip install matplotlib
 
-:code:`cognite-sdk` vs. :code:`cognite-sdk-core`
-------------------------------------------------
-If your application doesn't require the functionality from the :code:`pandas`
-or :code:`numpy` dependencies, you should install the :code:`cognite-sdk-core` library.
+How to install extra dependencies
+---------------------------------
+If your application requires the functionality from e.g. the :code:`pandas`, :code:`numpy`, or :code:`geopandas` dependencies,
+you should install the sdk along with its optional dependencies. The available extras are:
 
-The two libraries are exactly the same, except that :code:`cognite-sdk-core` does not specify :code:`pandas`
-or :code:`numpy` as dependencies. This means that :code:`cognite-sdk-core` only has a subset
-of the features available through the :code:`cognite-sdk` package. If you attempt to use functionality
-that :code:`cognite-sdk-core` does not support, a :code:`CogniteImportError` is raised.
+- pandas
+- geo
+- sympy
+- all (will install dependencies for all the above)
+
+These can be installed with the following command:
+
+pip
+
+.. code:: bash
+
+    $ pip install cognite-sdk[pandas, geo]
+
+poetry
+
+.. code:: bash
+
+    $ poetry add cognite-sdk -E pandas -E geo
 
 API
 ===
@@ -487,64 +501,64 @@ Functions
 
 Create function
 ^^^^^^^^^^^^^^^
-.. automethod:: cognite.experimental._api.functions.FunctionsAPI.create
+.. automethod:: cognite.client._api.functions.FunctionsAPI.create
 
 Delete function
 ^^^^^^^^^^^^^^^
-.. automethod:: cognite.experimental._api.functions.FunctionsAPI.delete
+.. automethod:: cognite.client._api.functions.FunctionsAPI.delete
 
 List functions
 ^^^^^^^^^^^^^^
-.. automethod:: cognite.experimental._api.functions.FunctionsAPI.list
+.. automethod:: cognite.client._api.functions.FunctionsAPI.list
 
 Retrieve function
 ^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.experimental._api.functions.FunctionsAPI.retrieve
+.. automethod:: cognite.client._api.functions.FunctionsAPI.retrieve
 
 Retrieve multiple functions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.experimental._api.functions.FunctionsAPI.retrieve_multiple
+.. automethod:: cognite.client._api.functions.FunctionsAPI.retrieve_multiple
 
 Call function
 ^^^^^^^^^^^^^
-.. automethod:: cognite.experimental._api.functions.FunctionsAPI.call
+.. automethod:: cognite.client._api.functions.FunctionsAPI.call
 
 
 Function calls
 ^^^^^^^^^^^^^^
 List function calls
 ~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.experimental._api.functions.FunctionCallsAPI.list
+.. automethod:: cognite.client._api.functions.FunctionCallsAPI.list
 
 Retrieve function call
 ~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.experimental._api.functions.FunctionCallsAPI.retrieve
+.. automethod:: cognite.client._api.functions.FunctionCallsAPI.retrieve
 
 Retrieve function call response
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.experimental._api.functions.FunctionCallsAPI.get_response
+.. automethod:: cognite.client._api.functions.FunctionCallsAPI.get_response
 
 Retrieve function call logs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.experimental._api.functions.FunctionCallsAPI.get_logs
+.. automethod:: cognite.client._api.functions.FunctionCallsAPI.get_logs
 
 Function schedules
 ^^^^^^^^^^^^^^^^^^
 List function schedules
 ~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.experimental._api.functions.FunctionSchedulesAPI.list
+.. automethod:: cognite.client._api.functions.FunctionSchedulesAPI.list
 
 Create function schedule
 ~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.experimental._api.functions.FunctionSchedulesAPI.create
+.. automethod:: cognite.client._api.functions.FunctionSchedulesAPI.create
 
 Delete function schedule
 ~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.experimental._api.functions.FunctionSchedulesAPI.delete
+.. automethod:: cognite.client._api.functions.FunctionSchedulesAPI.delete
 
 Data classes
 ^^^^^^^^^^^^
-.. automodule:: cognite.experimental.data_classes.functions
+.. automodule:: cognite.client.data_classes.functions
     :members:
     :show-inheritance:
 
@@ -752,21 +766,22 @@ List rows in a table
 ~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.raw.RawRowsAPI.list
 
-Retrieve pandas dataframe
-^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.raw.RawRowsAPI.retrieve_dataframe
-
 Insert rows into a table
 ~~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.raw.RawRowsAPI.insert
 
-Insert pandas dataframe
-^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.raw.RawRowsAPI.insert_dataframe
-
 Delete rows from a table
 ~~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.raw.RawRowsAPI.delete
+
+Retrieve pandas dataframe
+~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.raw.RawRowsAPI.retrieve_dataframe
+
+Insert pandas dataframe
+~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.raw.RawRowsAPI.insert_dataframe
+
 
 Data classes
 ^^^^^^^^^^^^
@@ -989,7 +1004,7 @@ Data classes
 
 Contextualization
 -----------------
-These APIs will return as soon as possible, defering a blocking wait until the last moment. Nevertheless, they can block for a long time awaiting results.
+These APIs will return as soon as possible, deferring a blocking wait until the last moment. Nevertheless, they can block for a long time awaiting results.
 
 Fit Entity Matching Model
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1019,11 +1034,11 @@ Predict Using an Entity Matching Model
 
 Detect entities in Engineering Diagrams
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.pnid_parsing.DiagramsAPI.detect
+.. automethod:: cognite.client._api.diagrams.DiagramsAPI.detect
 
 Convert to an interactive SVG where the provided annotations are highlighted
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.pnid_parsing.DiagramsAPI.convert
+.. automethod:: cognite.client._api.diagrams.DiagramsAPI.convert
 
 Contextualization Data Classes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1238,6 +1253,21 @@ Delete security categories
 .. automethod:: cognite.client._api.iam.SecurityCategoriesAPI.delete
 
 
+Sessions
+^^^^^^^^^^^^^^^^^^^
+List sessions
+~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.iam.SessionsAPI.list
+
+Create a session
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.iam.SessionsAPI.create
+
+Revoke a session
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.iam.SessionsAPI.revoke
+
+
 Data classes
 ^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.iam
@@ -1286,10 +1316,6 @@ Report new runs
 Data classes
 ^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.extractionpipelines
-    :members:
-    :show-inheritance:
-
-.. automodule:: cognite.client.data_classes.extractionpipelineruns
     :members:
     :show-inheritance:
 
@@ -1488,8 +1514,3 @@ Object to use as a mock for CogniteClient
 Use a context manager to monkeypatch CogniteClient
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. autofunction:: cognite.client.testing.monkeypatch_cognite_client
-
-Experimental features
-=====================
-.. WARNING::
-    These features are subject to breaking changes and should not be used in production code.

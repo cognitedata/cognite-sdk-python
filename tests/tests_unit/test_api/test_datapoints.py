@@ -712,7 +712,7 @@ class TestDeleteDatapoints:
 
     @pytest.mark.parametrize(
         "id, external_id, exception",
-        [(None, None, AssertionError), (1, "1", AssertionError), ("1", None, TypeError), (None, 1, TypeError)],
+        [(None, None, ValueError), (1, "1", ValueError)],
     )
     def test_delete_range_invalid_id(self, cognite_client, id, external_id, exception):
         with pytest.raises(exception):
@@ -737,7 +737,7 @@ class TestDeleteDatapoints:
         with pytest.raises(AssertionError, match="Invalid key 'idz'"):
             cognite_client.datapoints.delete_ranges(ranges)
         ranges = [{"start": 0, "end": 1}]
-        with pytest.raises(AssertionError, match="Exactly one of id and external id must be specified"):
+        with pytest.raises(ValueError, match="Exactly one of id or external id must be specified"):
             cognite_client.datapoints.delete_ranges(ranges)
 
 
@@ -934,7 +934,7 @@ class TestPandasIntegration:
             },
             index=[utils._time.ms_to_datetime(ms) for ms in [1, 2, 3]],
         )
-        pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas())
+        pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas(), check_freq=False)
 
     def test_datapoints_list_names(self, cognite_client):
         import pandas as pd
@@ -945,9 +945,9 @@ class TestPandasIntegration:
         expected_df = pd.DataFrame(
             {"2|max": [2, 3, 4], "3|average": [1, None, 3]}, index=[utils._time.ms_to_datetime(ms) for ms in [1, 2, 3]]
         )
-        pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas())
+        pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas(), check_freq=False)
         expected_df.columns = [c[:1] for c in expected_df.columns]
-        pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas(include_aggregate_name=False))
+        pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas(include_aggregate_name=False), check_freq=False)
 
     def test_datapoints_list_names_dup(self, cognite_client):
         import pandas as pd
@@ -960,7 +960,7 @@ class TestPandasIntegration:
             index=[utils._time.ms_to_datetime(ms) for ms in [1, 2, 3]],
             columns=["2|max", "2|average"],
         )
-        pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas())
+        pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas(), check_freq=False)
         with pytest.raises(CogniteDuplicateColumnsError):
             dps_list.to_pandas(include_aggregate_name=False)
 
@@ -976,7 +976,7 @@ class TestPandasIntegration:
             {"1": [1, 2, 3, None, None], "2": [None, None, 3, 4, 5]},
             index=[utils._time.ms_to_datetime(ms) for ms in [1, 2, 3, 4, 5]],
         )
-        pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas())
+        pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas(), check_freq=False)
 
     def test_datapoints_list_empty(self, cognite_client):
         dps_list = DatapointsList([])

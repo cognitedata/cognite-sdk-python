@@ -57,7 +57,6 @@ class TestDatapointsAPI:
         assert 1 == len(dps)
 
     def test_retrieve_all_unknown(self, cognite_client, test_time_series):
-        ts = test_time_series[0]
         dps = cognite_client.datapoints.retrieve(
             id=[42], external_id="missing", start="1d-ago", end="now", ignore_unknown_ids=True
         )
@@ -65,7 +64,6 @@ class TestDatapointsAPI:
         assert 0 == len(dps)
 
     def test_retrieve_all_unknown_single(self, cognite_client, test_time_series):
-        ts = test_time_series[0]
         dps = cognite_client.datapoints.retrieve(
             external_id="missing", start="1d-ago", end="now", ignore_unknown_ids=True
         )

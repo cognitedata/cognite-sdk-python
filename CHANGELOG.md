@@ -14,9 +14,74 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [2.XX.0] - 2002-XX-XX
+## [3.XX.X] - 2002-XX-XX
 ### Added
 - Moved Cognite Functions from Experimental SDK to Main SDK.
+
+## [3.8.0] - 2022-08-11
+### Added
+- Add ignore_unknown_ids parameter to sequences.retrieve_multiple
+
+## [3.7.0] - 2022-08-10
+### Changed
+- Changed grouping of Sequence rows on insert. Each group now contains at most 100k values and at most 10k rows.
+
+## [3.6.1] - 2022-08-10
+### Fixed
+- Fixed a minor casing error for the geo_location field on files
+
+## [3.6.0] - 2022-08-10
+### Added
+- Add ignore_unknown_ids parameter to files.retrieve_multiple
+
+## [3.5.0] - 2022-08-10
+### Changed
+- Improve type annotations. Use overloads in more places to help static type checkers.
+
+## [3.4.3] - 2022-08-10
+### Changed
+- Cache result from pypi version check so it's not executed for every client instantiation.
+
+## [3.4.2] - 2022-07-28
+### Fixed
+- Fix the wrong destination name in transformations.
+
+## [3.4.1] - 2022-07-27
+### Fixed
+- fixed exception when printing exceptions generated on transformations creation/update.
+
+## [3.4.0] - 2022-07-21
+### Added
+- added support for nonce authentication on transformations
+
+### Changed
+- if no source or destination credentials are provided on transformation create, an attempt will be made to create a session with the CogniteClient credentials, if it succeeds the aquired nonce will be used.
+- if OIDC credentials are provided on transformation create/update, an attempt will be made to create a session with the given credentials, if it succeeds the aquired nonce credentials will replace the given client credentials before sending the request.
+
+## [3.3.0] - 2022-07-21
+### Added
+- added the sessions API
+
+## [3.2.0] - 2022-07-15
+### Removed
+- Unused cognite.client.experimental module
+
+## [3.1.0] - 2022-07-13
+### Changed
+- Helper functions for conversion to/from datetime now warns on naive datetimes and their interpretation.
+### Fixed
+- Helper function `datetime_to_ms` now accepts timezone aware datetimes.
+
+## [3.0.1] - 2022-07-13
+### Fixed
+- fixed missing README.md in package
+
+## [3.0.0] - 2022-07-12
+### Changed
+- Poetry build, one single package "cognite-sdk"
+- Require python 3.8 or greater (used to be 3.5 or greater)
+### Removed
+- support for root_asset_id and root_asset_external_id filters. use asset subtree filters instead.
 
 ## [2.56.1] - 2022-06-22
 ### Added

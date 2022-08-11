@@ -183,7 +183,8 @@ class TestSequencesDataAPI:
             column_external_ids=new_seq_long.column_external_ids, rows=data, id=new_seq_long.id
         )
         cognite_client.sequences.data.delete_range(start=4, end=15, id=new_seq_long.id)
-        dps = cognite_client.sequences.data.retrieve(start=0, end=None, id=new_seq_long.id)
+
         # potential delay, so can't assert, but tested in notebook
+        # dps = cognite_client.sequences.data.retrieve(start=0, end=None, id=new_seq_long.id)
         # assert [10, 20, 30, 210, 340] == [d[0] for d in dps.values]
         # assert [1, 2, 3, 21, 34] == dps.row_numbers

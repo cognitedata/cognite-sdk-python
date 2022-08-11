@@ -1,6 +1,15 @@
-from typing import List
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, cast
 
-from cognite.client.data_classes._base import *
+from cognite.client import utils
+from cognite.client.data_classes._base import (
+    CogniteFilter,
+    CognitePropertyClassUtil,
+    CogniteResource,
+    CogniteResourceList,
+)
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 class LabelDefinition(CogniteResource):
@@ -22,14 +31,14 @@ class LabelDefinition(CogniteResource):
         description: str = None,
         created_time: int = None,
         data_set_id: int = None,
-        cognite_client=None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.external_id = external_id
         self.name = name
         self.description = description
         self.created_time = created_time
         self.data_set_id = data_set_id
-        self._cognite_client = cognite_client
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class LabelDefinitionFilter(CogniteFilter):
@@ -47,18 +56,16 @@ class LabelDefinitionFilter(CogniteFilter):
         name: str = None,
         external_id_prefix: str = None,
         data_set_ids: List[Dict[str, Any]] = None,
-        cognite_client=None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.name = name
         self.external_id_prefix = external_id_prefix
         self.data_set_ids = data_set_ids
-        self._cognite_client = cognite_client
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class LabelDefinitionList(CogniteResourceList):
     _RESOURCE = LabelDefinition
-    _UPDATE = None
-    _ASSERT_CLASSES = False  # because no Update
 
 
 class Label(dict):
@@ -68,15 +75,17 @@ class Label(dict):
         external_id (str): The external id to the attached label.
     """
 
-    def __init__(self, external_id: str = None, **kwargs):
+    def __init__(self, external_id: str = None, **kwargs: Any):
         self.external_id = external_id
         self.update(kwargs)
 
     external_id = CognitePropertyClassUtil.declare_property("externalId")
 
     @classmethod
-    def _load_list(cls, labels: List[Union[str, dict, LabelDefinition]]):
-        def convert_label(label):
+    def _load_list(
+        cls, labels: Optional[Sequence[Union[str, dict, LabelDefinition, "Label"]]]
+    ) -> Optional[List["Label"]]:
+        def convert_label(label: Union[Label, str, LabelDefinition, dict]) -> Label:
             if isinstance(label, Label):
                 return label
             elif isinstance(label, str):
@@ -90,20 +99,18 @@ class Label(dict):
 
         if labels is None:
             return None
-        if not isinstance(labels, list):
-            labels = [labels]
         return [convert_label(label) for label in labels]
 
     @classmethod
-    def _load(self, raw_label: Dict[str, Any]):
+    def _load(self, raw_label: Dict[str, Any]) -> "Label":
         return Label(external_id=raw_label["externalId"])
 
-    def dump(self, camel_case: bool = False):
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         dump_key = lambda key: key if not camel_case else utils._auxiliary.to_camel_case(key)
         return {dump_key(key): value for key, value in self.items()}
 
 
-class LabelFilter(dict):
+class LabelFilter(dict, CogniteFilter):
     """Return only the resource matching the specified label constraints.
 
     Args:
@@ -124,12 +131,14 @@ class LabelFilter(dict):
                 >>> my_label_filter = LabelFilter(contains_any=["PUMP", "VALVE"])
     """
 
-    def __init__(self, contains_any: List[str] = None, contains_all: List[str] = None, cognite_client=None):
+    def __init__(
+        self, contains_any: List[str] = None, contains_all: List[str] = None, cognite_client: "CogniteClient" = None
+    ):
         self.contains_any = contains_any
         self.contains_all = contains_all
-        self._cognite_client = cognite_client
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
-    def dump(self, camel_case: bool = False):
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         dump_key = lambda key: key if not camel_case else utils._auxiliary.to_camel_case(key)
         wrap = lambda values: None if values is None else [{"externalId": value} for value in values]
         return {dump_key(key): wrap(value) for key, value in self.items()}

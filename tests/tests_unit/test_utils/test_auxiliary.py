@@ -44,7 +44,7 @@ class TestLocalImport:
 
     @pytest.mark.coredeps
     def test_dsl_deps_not_installed(self):
-        for dep in ["numpy", "pandas"]:
+        for dep in ["geopandas", "pandas", "shapely", "sympy"]:
             with pytest.raises(CogniteImportError, match=dep):
                 utils._auxiliary.local_import(dep)
 
@@ -130,9 +130,3 @@ class TestAssertions:
     def test_assert_type_fail(self, var, var_name, types):
         with pytest.raises(TypeError, match=str(types)):
             utils._auxiliary.assert_type(var, var_name, types)
-
-    def test_assert_exactly_one_of_id_and_external_id(self):
-        with pytest.raises(AssertionError):
-            utils._auxiliary.assert_exactly_one_of_id_or_external_id(1, "1")
-        utils._auxiliary.assert_exactly_one_of_id_or_external_id(1, None)
-        utils._auxiliary.assert_exactly_one_of_id_or_external_id(None, "1")
