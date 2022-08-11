@@ -140,6 +140,7 @@ class SequencesAPI(APIClient):
         Args:
             ids (List[int], optional): IDs
             external_ids (List[str], optional): External IDs
+            ignore_unknown_ids (bool, optional): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
             SequenceList: The requested sequences.
