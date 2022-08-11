@@ -31,7 +31,7 @@ from cognite.client.data_classes import (
 from cognite.client.data_classes.files import FileMetadata
 from cognite.client.data_classes.functions import FunctionsStatus
 from cognite.client.exceptions import CogniteAPIError
-from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils._identifier import IdentifierSequence, SingletonIdentifierSequence
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -44,21 +44,26 @@ REQUIREMENTS_REG = re.compile(r"(\[\/?requirements\]){1}$", flags=re.M)  # Match
 UNCOMMENTED_LINE_REG = re.compile(r"^[^\#]]*.*")
 
 
-def _get_function_id_from_external_id(
-    _cognite_client: "CogniteClient",
-    function_id: Optional[int],
-    function_external_id: Optional[str],
-) -> int:
-    if function_id:
-        return function_id
-    if function_external_id:
-        function = _cognite_client.functions.retrieve(external_id=function_external_id)
-        if function:
-            function_id = function.id
+def _get_function_internal_id(_cognite_client: "CogniteClient", identifier: SingletonIdentifierSequence) -> int:
+    id_object = identifier[0]
+    id_dict = id_object.as_dict()
 
-    if not function_id:
-        raise ValueError("Function with this external ID is not found")
-    return function_id
+    if "id" in id_dict:
+        return id_object.as_primitive()
+
+    if "externalId" in id_dict:
+        function = _cognite_client.functions.retrieve(external_id=id_object.as_primitive())
+        if function:
+            return function.id
+
+    raise ValueError("Function with this external ID is not found")
+
+
+def _get_function_identifier(id: Optional[int], external_id: Optional[str]) -> SingletonIdentifierSequence:
+    try:
+        return IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
+    except ValueError:
+        raise AssertionError("Exactly one of function_id and function_external_id must be specified")
 
 
 class FunctionsAPI(APIClient):
@@ -378,9 +383,8 @@ class FunctionsAPI(APIClient):
                 >>> func = c.functions.retrieve(id=1)
                 >>> call = func.call()
         """
-        IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
-        if external_id:
-            id = _get_function_id_from_external_id(self._cognite_client, id, external_id)
+        identifier = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
+        id = _get_function_internal_id(self._cognite_client, identifier)
 
         # Case 1: Client credentials inferred from the instantiated client.
         # Case 2: Token on behalf of the user. We use token exchange.
@@ -656,19 +660,6 @@ def _validate_function_handle(function_handle: Callable[..., Any]) -> None:
         )
 
 
-def _assert_exactly_one_of_function_id_and_function_external_id(
-    function_id: Optional[int], function_external_id: Optional[str]
-) -> None:
-    utils._auxiliary.assert_type(function_id, "function_id", [Integral], allow_none=True)
-    utils._auxiliary.assert_type(function_external_id, "function_external_id", [str], allow_none=True)
-    has_function_id = function_id is not None
-    has_function_external_id = function_external_id is not None
-
-    assert (has_function_id or has_function_external_id) and not (
-        has_function_id and has_function_external_id
-    ), "Exactly one of function_id and function_external_id must be specified"
-
-
 def _assert_at_most_one_of_function_id_and_function_external_id(
     function_id: Optional[int], function_external_id: Optional[str]
 ) -> None:
@@ -821,8 +812,8 @@ class FunctionCallsAPI(APIClient):
                 >>> calls = func.list_calls()
 
         """
-        _assert_exactly_one_of_function_id_and_function_external_id(function_id, function_external_id)
-        function_id = _get_function_id_from_external_id(self._cognite_client, function_id, function_external_id)
+        identifier = _get_function_identifier(function_id, function_external_id)
+        function_id = _get_function_internal_id(self._cognite_client, identifier)
         filter = {"status": status, "scheduleId": schedule_id, "startTime": start_time, "endTime": end_time}
         resource_path = f"/functions/{function_id}/calls"
 
@@ -864,8 +855,8 @@ class FunctionCallsAPI(APIClient):
                 >>> call = func.retrieve_call(id=2)
 
         """
-        _assert_exactly_one_of_function_id_and_function_external_id(function_id, function_external_id)
-        function_id = _get_function_id_from_external_id(self._cognite_client, function_id, function_external_id)
+        identifier = _get_function_identifier(function_id, function_external_id)
+        function_id = _get_function_internal_id(self._cognite_client, identifier)
 
         resource_path = f"/functions/{function_id}/calls"
         identifiers = IdentifierSequence.load(ids=call_id).as_singleton()
@@ -906,8 +897,8 @@ class FunctionCallsAPI(APIClient):
                 >>> response = call.get_response()
 
         """
-        _assert_exactly_one_of_function_id_and_function_external_id(function_id, function_external_id)
-        function_id = _get_function_id_from_external_id(self._cognite_client, function_id, function_external_id)
+        identifier = _get_function_identifier(function_id, function_external_id)
+        function_id = _get_function_internal_id(self._cognite_client, identifier)
         url = f"/functions/{function_id}/calls/{call_id}/response"
         res = self._get(url)
         return res.json().get("response")
@@ -941,8 +932,8 @@ class FunctionCallsAPI(APIClient):
                 >>> logs = call.get_logs()
 
         """
-        _assert_exactly_one_of_function_id_and_function_external_id(function_id, function_external_id)
-        function_id = _get_function_id_from_external_id(self._cognite_client, function_id, function_external_id)
+        identifier = _get_function_identifier(function_id, function_external_id)
+        function_id = _get_function_internal_id(self._cognite_client, identifier)
 
         url = f"/functions/{function_id}/calls/{call_id}/logs"
         res = self._get(url)
@@ -1018,7 +1009,11 @@ class FunctionSchedulesAPI(APIClient):
                 >>> schedules = func.list_schedules(limit=None)
 
         """
-        _assert_at_most_one_of_function_id_and_function_external_id(function_id, function_external_id)
+        if function_id or function_external_id:
+            try:
+                IdentifierSequence.load(ids=function_id, external_ids=function_external_id).assert_singleton()
+            except ValueError:
+                raise AssertionError("Only function_id or function_external_id allowed when listing schedules.")
 
         if limit in [float("inf"), -1, None]:
             limit = LIST_LIMIT_CEILING
@@ -1074,7 +1069,7 @@ class FunctionSchedulesAPI(APIClient):
                     description="This schedule does magic stuff.")
 
         """
-        _assert_exactly_one_of_function_id_and_function_external_id(function_id, function_external_id)
+        _get_function_identifier(function_id, function_external_id)
 
         nonce = None
         if client_credentials:
