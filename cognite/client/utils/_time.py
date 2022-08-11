@@ -1,26 +1,14 @@
-import math
 import numbers
 import re
 import time
-import warnings
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Tuple, Union
 
-from cognite.client._api.datapoint_constants import DPS_LIMIT
-
-_unit_in_ms_without_week = {"s": 1000, "m": 60000, "h": 3600000, "d": 86400000}
-_unit_in_ms = {**_unit_in_ms_without_week, "w": 604800000}
+UNIT_IN_MS_WITHOUT_WEEK = {"s": 1000, "m": 60000, "h": 3600000, "d": 86400000}
+UNIT_IN_MS = {**UNIT_IN_MS_WITHOUT_WEEK, "w": 604800000}
 
 
 def datetime_to_ms(dt: datetime) -> int:
-    if dt.tzinfo is None:
-        warnings.warn(
-            "Interpreting given naive datetime as UTC instead of local time (against Python default behaviour). "
-            "This will change in the next major release (4.0.0). Please use (timezone) aware datetimes "
-            "or convert it yourself to integer (number of milliseconds since epoch, leap seconds excluded).",
-            FutureWarning,
-        )
-        dt = dt.replace(tzinfo=timezone.utc)
     return int(1000 * dt.timestamp())
 
 
@@ -28,22 +16,16 @@ def ms_to_datetime(ms: Union[int, float]) -> datetime:
     """Converts milliseconds since epoch to datetime object.
 
     Args:
-        ms (Union[int, float]): Milliseconds since epoch
+        ms (Union[int, float]): Milliseconds since epoch, must be non-negative.
 
     Returns:
-        datetime: Naive datetime object in UTC.
+        datetime: Aware datetime object in UTC.
 
     """
     if ms < 0:
         raise ValueError("ms must be greater than or equal to zero.")
 
-    warnings.warn(
-        "This function, `ms_to_datetime` returns a naive datetime object in UTC. This is against "
-        "the default interpretation of naive datetimes in Python (i.e. local time). This behaviour will "
-        "change to returning timezone-aware datetimes in UTC in the next major release (4.0.0).",
-        FutureWarning,
-    )
-    return datetime.utcfromtimestamp(ms / 1000)
+    return datetime.utcfromtimestamp(ms / 1000).replace(tzinfo=timezone.utc)
 
 
 def time_string_to_ms(pattern: str, string: str, unit_in_ms: Dict[str, int]) -> Optional[int]:
@@ -57,7 +39,7 @@ def time_string_to_ms(pattern: str, string: str, unit_in_ms: Dict[str, int]) -> 
 
 
 def granularity_to_ms(granularity: str) -> int:
-    ms = time_string_to_ms(r"(\d+)({})", granularity, _unit_in_ms_without_week)
+    ms = time_string_to_ms(r"(\d+)({})", granularity, UNIT_IN_MS_WITHOUT_WEEK)
     if ms is None:
         raise ValueError(
             "Invalid granularity format: `{}`. Must be on format <integer>(s|m|h|d). E.g. '5m', '3h' or '1d'.".format(
@@ -76,7 +58,7 @@ def time_ago_to_ms(time_ago_string: str) -> int:
     """Returns millisecond representation of time-ago string"""
     if time_ago_string == "now":
         return 0
-    ms = time_string_to_ms(r"(\d+)({})-ago", time_ago_string, _unit_in_ms)
+    ms = time_string_to_ms(r"(\d+)({})-ago", time_ago_string, UNIT_IN_MS)
     if ms is None:
         raise ValueError(
             "Invalid time-ago format: `{}`. Must be on format <integer>(s|m|h|d|w)-ago or 'now'. E.g. '3d-ago' or '1w-ago'.".format(
@@ -159,27 +141,3 @@ def align_start_and_end_for_granularity(start: int, end: int, granularity: str) 
         # Ceil `end` when not exactly at boundary decided by `start + N * granularity`
         end += gms - remainder
     return start, end
-
-
-def compute_granularity_for_count_agg_query(start: int, end: int, max_windows: int = 200) -> Tuple[int, str]:
-    tot_ms = end - start
-    n_windows_estimate = min(max_windows, math.ceil(tot_ms / DPS_LIMIT))
-    gran_ms = tot_ms / n_windows_estimate
-
-    if gran_ms < 40 * (min_ms := _unit_in_ms_without_week["m"]):
-        n = math.ceil(gran_ms / min_ms)
-        n_windows = math.ceil(tot_ms / (n * min_ms))
-        return n_windows, f"{n}m"
-
-    # Although the API support up to 100k hour granularity, we'd much rather send "7d" than "168h"
-    elif gran_ms < 20 * (hour_ms := _unit_in_ms_without_week["h"]):
-        n = math.ceil(gran_ms / hour_ms)
-        n_windows = math.ceil(tot_ms / (n * hour_ms))
-        return n_windows, f"{n}h"
-
-    elif gran_ms < 100_000 * (day_ms := _unit_in_ms_without_week["d"]):
-        n = math.ceil(gran_ms / day_ms)
-        n_windows = math.ceil(tot_ms / (n * day_ms))
-        return n_windows, f"{n}d"
-
-    raise RuntimeError(f"Unable to find count granularity for {start=}, {end=} and {max_windows=}")

@@ -43,8 +43,9 @@ from cognite.client.data_classes._base import CogniteResource, CogniteResourceLi
 from cognite.client.exceptions import CogniteDuplicateColumnsError
 from cognite.client.utils._auxiliary import to_camel_case, to_snake_case
 from cognite.client.utils._time import (
+    UNIT_IN_MS,
     align_start_and_end_for_granularity,
-    compute_granularity_for_count_agg_query,
+    granularity_to_ms,
     timestamp_to_ms,
 )
 
@@ -184,14 +185,18 @@ class DatapointsArray(CogniteResource):
             return 0
         return len(self.timestamp)
 
+    def _repr_html_(self) -> str:
+        return self.to_pandas()._repr_html_()
+
     def to_pandas(
         self, column_names: Literal["id", "external_id"] = "external_id", include_aggregate_name: bool = True
     ) -> "pandas.DataFrame":
         pd = utils._auxiliary.local_import("pandas")
-        if column_names not in {"id", "external_id"}:
+        identifier_dct = {"id": str(self.id), "external_id": self.external_id}
+        if column_names not in identifier_dct:
             raise ValueError("Argument `column_names` must be either 'external_id' or 'id'")
-        identifier = {"id": str(self.id), "external_id": self.external_id}[column_names]
-        if identifier is None:
+        identifier = identifier_dct[column_names]
+        if identifier is None:  # Time series are not required to have an external_id unfortunately...
             identifier = self.id
             warnings.warn(
                 f"Time series does not have an external ID, so its ID ({self.id}) was used instead as "
@@ -460,18 +465,21 @@ class DatapointsArrayList(CogniteResourceList):
         # item = utils._time.convert_time_attributes_to_datetime(self.dump())
         # return json.dumps(item, default=utils._auxiliary.json_dump_default, indent=4)
 
+    def _repr_html_(self) -> str:
+        return self.to_pandas()._repr_html_()
+
     def to_pandas(
         self, column_names: Literal["id", "external_id"] = "external_id", include_aggregate_name: bool = True
     ) -> "pandas.DataFrame":
         pd = cast(Any, utils._auxiliary.local_import("pandas"))
         dfs = [dps_arr.to_pandas(column_names=column_names) for dps_arr in self.data]
-        if dfs:
-            df = pd.concat(dfs, axis="columns")
-            if not include_aggregate_name:  # do not pass in to_pandas above, so we check for duplicate columns
-                df = Datapoints._strip_aggregate_names(df)
-            return df
+        if not dfs:
+            return pd.DataFrame()
 
-        return pd.DataFrame()
+        df = pd.concat(dfs, axis="columns")
+        if not include_aggregate_name:  # do not pass in to_pandas above, so we check for duplicate columns
+            df = Datapoints._strip_aggregate_names(df)
+        return df
 
 
 class DatapointsList(CogniteResourceList):
@@ -647,11 +655,11 @@ class DatapointsQueryNew(CogniteResource):
     @staticmethod
     def _validate_ts_query_dct(dct, arg_name, exp_type) -> Union[DatapointsQueryId, DatapointsQueryExternalId]:
         if arg_name not in dct:
-            if to_camel_case(arg_name) not in dct:
+            if (arg_name_cc := to_camel_case(arg_name)) not in dct:
                 raise KeyError(f"Missing key `{arg_name}` in dict passed as, or part of argument `{arg_name}`")
             # For backwards compatability we accept identifier in camel case:
             dct = dct.copy()  # Avoid side effects for user's input. Also means we need to return it.
-            dct[arg_name] = dct.pop(to_camel_case(arg_name))
+            dct[arg_name] = dct.pop(arg_name_cc)
 
         ts_identifier = dct[arg_name]
         if not isinstance(ts_identifier, exp_type):
@@ -700,27 +708,63 @@ class SingleTSQuery:
             )
 
     def to_payload(self) -> Union[DatapointsQueryId, DatapointsQueryExternalId]:
-        payload = {**dataclasses.asdict(self), **self.identifier_dct}
-        for k in ("id", "external_id", "ignore_unknown_ids"):
-            # `ignore_unknown_ids` is only allowed as top-level parameter, not as part of `items`
-            del payload[k]
+        payload = dataclasses.asdict(self)
+        payload["limit"] = self.capped_limit
+        # `ignore_unknown_ids` is only allowed as top-level parameter, not as part of `items`:
+        del payload["ignore_unknown_ids"]
+        if self.id is None:
+            del payload["id"]
+        else:
+            del payload["external_id"]
         if not self.is_raw_query:
             payload["aggregates"] = self.aggregates_cc
         return dict(zip(map(to_camel_case, payload.keys()), payload.values()))
 
-    def to_count_agg_payload(self, max_windows) -> Optional[Dict]:
+    def to_count_agg_payload(self, max_workers: int, max_windows: int) -> Optional[Dict]:
         # Returns payload to get count aggs when useful, else None
         if not self.is_raw_query:
             return None
         if self.limit and self.limit < 2 * DPS_LIMIT + 1:
-            return None
-        limit, granularity = compute_granularity_for_count_agg_query(self.start, self.end, max_windows)
+            return None  # This cut-off is just @haakonvt sticking a finger in the air
+        limit, granularity = self._compute_granularity_for_count_agg_query(max_windows)
+        if limit < max(5, max_workers):
+            return None  # See comment 3 lines above ;)
         return {
             **self.identifier_dct,
+            "start": self.start,
+            "end": self.end,
             "aggregates": ["count"],
             "granularity": granularity,
             "limit": limit,
         }
+
+    def _compute_granularity_for_count_agg_query(self, max_windows: int) -> Tuple[int, str]:
+        assert self.is_raw_query  # TODO: remove
+        limit = math.inf if self.limit is None else self.limit
+        tot_ms = self.end - self.start
+        n_max_dps = min(tot_ms, limit)
+        n_windows_estimate = min(max_windows, math.ceil(n_max_dps / DPS_LIMIT))
+        window_gran_ms = tot_ms / n_windows_estimate
+
+        if window_gran_ms < 40 * (min_ms := UNIT_IN_MS["m"]):
+            n = math.ceil(window_gran_ms / min_ms)
+            n_windows = math.ceil(tot_ms / (n * min_ms))
+            return n_windows, f"{n}m"
+
+        # Although the API support up to 100k hour granularity, we'd much rather send "7d" than "168h"
+        elif window_gran_ms < 40 * (hour_ms := UNIT_IN_MS["h"]):
+            n = math.ceil(window_gran_ms / hour_ms)
+            n_windows = math.ceil(tot_ms / (n * hour_ms))
+            return n_windows, f"{n}h"
+
+        elif window_gran_ms < 100_000 * (day_ms := UNIT_IN_MS["d"]):
+            n = math.ceil(window_gran_ms / day_ms)
+            n_windows = math.ceil(tot_ms / (n * day_ms))
+            return n_windows, f"{n}d"
+
+        raise RuntimeError(
+            f"Unable to find count granularity for start={self.start}, end={self.end} and {max_windows=}"
+        )
 
     @classmethod
     def from_dict_with_validation(cls, ts_dct, defaults) -> SingleTSQuery:
@@ -759,18 +803,14 @@ class SingleTSQuery:
             self.identifier = str(self.external_id)
         else:
             raise ValueError("Pass exactly one of `id` or `external_id`. Got neither.")
-        # Shortcuts for hashing and API queries:
-        self.identifier_tpl = (self.identifier_type, self.identifier)
-        self.identifier_dct = {self.identifier_type: self.identifier}
-        self.identifier_dct_sc = {to_snake_case(self.identifier_type): self.identifier}
 
     def _verify_limit(self):
         if self.limit in {None, -1, math.inf}:
             self.limit = None
-        elif isinstance(self.limit, numbers.Integral):  # limit=0 is accepted by the API
+        elif isinstance(self.limit, numbers.Integral) and self.limit >= 0:  # limit=0 is accepted by the API
             self.limit = int(self.limit)  # We don't want weird stuff like numpy dtypes etc.
         else:
-            raise TypeError(f"Limit must be an integer or one of [None, -1, inf], got {type(self.limit)}")
+            raise TypeError(f"Limit must be a non-negative integer -or- one of [None, -1, inf], got {type(self.limit)}")
 
     def _verify_time_range(self):
         if self.start is None:
@@ -785,9 +825,20 @@ class SingleTSQuery:
             raise ValueError(
                 f"Invalid time range, `end` must be later than `start` (from query: {self.identifier_dct_sc})"
             )
-
         if not self.is_raw_query:  # API rounds aggregate queries in a very particular fashion
             self.start, self.end = align_start_and_end_for_granularity(self.start, self.end, self.granularity)
+
+    @property
+    def identifier_tpl(self):
+        return (self.identifier_type, self.identifier)
+
+    @property
+    def identifier_dct(self):
+        return {self.identifier_type: self.identifier}
+
+    @property
+    def identifier_dct_sc(self):
+        return {to_snake_case(self.identifier_type): self.identifier}
 
     @property
     def is_missing(self):
@@ -820,9 +871,14 @@ class SingleTSQuery:
 
     @cached_property
     def aggregates_cc(self):
-        if self.is_raw_query:
-            return self.aggregates
-        return list(map(to_camel_case, self.aggregates))
+        if not self.is_raw_query:
+            return list(map(to_camel_case, self.aggregates))
+
+    @cached_property
+    def capped_limit(self):
+        if self.limit is None:
+            return self.max_query_limit
+        return min(self.limit, self.max_query_limit)
 
     @property
     def max_query_limit(self):

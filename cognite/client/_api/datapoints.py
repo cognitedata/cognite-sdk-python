@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import copy
 import functools
-import itertools
 import math
 import re as regexp
+import threading
 from concurrent.futures import CancelledError, as_completed
 from datetime import datetime
+from itertools import chain
 from pprint import pprint
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Set, Tuple, Union, cast
+
+import pandas as pd
 
 import cognite.client.utils._time
 from cognite.client import utils
@@ -22,7 +25,7 @@ from cognite.client._api.datapoint_constants import (
     DatapointsFromAPI,
     DatapointsIdTypes,
 )
-from cognite.client._api.datapoint_tasks import BaseConcurrentTask, dps_task_type_selector
+from cognite.client._api.datapoint_tasks import BaseConcurrentTask, select_dps_fetching_task_type
 from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import (
@@ -41,11 +44,15 @@ from cognite.client.data_classes.datapoints import (
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import split_into_n_parts
 from cognite.client.utils._priority_tpe import PriorityThreadPoolExecutor
+from cognite.client.utils._time import granularity_to_ms, timestamp_to_ms
 
 if TYPE_CHECKING:
     import pandas
 
 pprint("RUNNING REPOS/COG-SDK, NOT FROM PIP")
+
+LOCK = threading.Lock()
+COUNTER = 1
 
 
 class DpsFetchOrchestrator:
@@ -55,11 +62,14 @@ class DpsFetchOrchestrator:
         assert self.max_workers >= 1, "Invalid option for `max_workers`. Must be at least 1"
         self.all_queries, (self.agg_queries, self.raw_queries) = self._validate_and_split_user_queries(user_queries)
 
-        # Store query->granularity mapping for queries were we ask for count aggregates:
-        self.count_agg_grans = {}
+        # Store query->payload mapping for queries where we ask for count aggregates:
+        self.count_agg_payloads = {}
 
         # Set flag for fastpath used for small queries:
-        self.eager_fetching = self._decide_run_mode()  # Must be done last in __init__
+        self.eager_fetching = self._decide_run_mode()
+
+    def request_datapoints(self, payload) -> DatapointsFromAPI:
+        return self.dps_client._post(self.dps_client._RESOURCE_PATH + "/list", json=payload).json()["items"]
 
     def fetch_all_datapoints(self):
         with PriorityThreadPoolExecutor(max_workers=self.max_workers) as pool:
@@ -74,11 +84,10 @@ class DpsFetchOrchestrator:
             ordered_results = fetch_fn(pool, initial_futures_dct)
         return self._finalize_tasks(ordered_results)
 
-    def _requeue_ts_query_without_count_agg(self, q, pool):
-        limit = min(q.max_query_limit, q.max_query_limit if q.limit is None else q.limit)
+    def _requeue_ts_query_without_count_agg(self, query, pool):
         return pool.submit(
-            self._request_datapoints,
-            {"ignoreUnknownIds": True, "items": [{**q.to_payload(), "limit": limit}]},
+            self.request_datapoints,
+            {"ignoreUnknownIds": True, "items": [query.to_payload()]},
             priority=0,
         )
 
@@ -90,9 +99,9 @@ class DpsFetchOrchestrator:
             try:
                 res = future.result()
             except CogniteAPIError as err:
-                # This optimization assumes most queries ask for numeric data. Thus we ask for
-                # count aggregate in the same initial query to save one API-request, but this fails
-                # for string time series, so they need a retry (who needs those anyway!!):
+                # One of our optimizations is to assume most queries ask for numeric data and thus we ask
+                # for count aggregates in the same initial query to save one API-request. This however fails
+                # for string time series, so we need to retry those (we don't know up front which are string):
                 if query.is_raw_query and query not in failed_queries and err.code == 400:
                     failed_queries.add(query)  # Break ∞ retries (retry exactly once)
                     future = self._requeue_ts_query_without_count_agg(query, pool)
@@ -106,16 +115,13 @@ class DpsFetchOrchestrator:
             if ts_task.is_done:
                 continue
             # Thanks to `as_completed` we are able to schedule new work asap:
-            split_args = ()
-            if query.is_raw_query:
-                count_aggs = res[1:2] or None
-                count_agg_gran = self.count_agg_grans.get(query)
-                split_args = (count_aggs, count_agg_gran)
-            subtasks = ts_task.split_into_subtasks(self.max_workers, *split_args)
+            count_aggs = res[1:2] or None
+            count_agg_gran = self.count_agg_payloads.get(query)
+            subtasks = ts_task.split_into_subtasks(self.max_workers, count_aggs, count_agg_gran)
             payloads = [task.get_next_payload() for task in subtasks]
             future_dct.update(
                 {
-                    pool.submit(self._request_datapoints, {"items": [item]}, priority=task.priority): task
+                    pool.submit(self.request_datapoints, {"items": [item]}, priority=task.priority): task
                     for task, item in zip(subtasks, payloads)
                 }
             )
@@ -139,7 +145,7 @@ class DpsFetchOrchestrator:
             elif subtask.is_done:
                 continue
             payload = {"items": [subtask.get_next_payload()]}
-            new_future = pool.submit(self._request_datapoints, payload, priority=subtask.priority)
+            new_future = pool.submit(self.request_datapoints, payload, priority=subtask.priority)
             future_dct[new_future] = subtask
         # Return only actual tasks in correct order given by `all_queries`:
         return list(filter(None, map(parent_task_lookup.get, self.all_queries)))
@@ -161,9 +167,6 @@ class DpsFetchOrchestrator:
         #     new_t.extend(new_tasks)
         raise NotImplementedError
 
-    def _request_datapoints(self, payload) -> DatapointsFromAPI:
-        return self.dps_client._post(self.dps_client._RESOURCE_PATH + "/list", json=payload).json()["items"]
-
     def _decide_run_mode(self):
         # If we have a worker for each single dps query, we run with `eager_fetching=True` as we
         # don't have to group/chunk requests together.
@@ -178,16 +181,16 @@ class DpsFetchOrchestrator:
 
     def _validate_and_split_user_queries(self, user_queries):
         split_qs = [], []
-        all_queries = list(itertools.chain.from_iterable([uq.validate_and_create_queries() for uq in user_queries]))
+        all_queries = list(chain.from_iterable(uq.validate_and_create_queries() for uq in user_queries))
         for q in all_queries:
             split_qs[q.is_raw_query].append(q)
         return all_queries, split_qs
 
     def _create_initial_tasks(self, pool, init_create_fn):
         futures_dct = {}
-        queries_lst, items_lst = init_create_fn()
-        for queries, items in zip(queries_lst, items_lst):
-            future = pool.submit(self._request_datapoints, {"ignoreUnknownIds": True, "items": items}, priority=0)
+        items_lst = init_create_fn()
+        for queries, items in zip(self.all_queries, items_lst):
+            future = pool.submit(self.request_datapoints, {"ignoreUnknownIds": True, "items": items}, priority=0)
             futures_dct[future] = queries
         return futures_dct
 
@@ -205,8 +208,8 @@ class DpsFetchOrchestrator:
         self._update_queries_is_string(results, raw_queries)
         # Align initial results with corresponding queries and create tasks:
         return [
-            dps_task_type_selector(q)(q, res, self.eager_fetching)
-            for res, q in zip(results, itertools.chain(agg_queries, raw_queries))
+            select_dps_fetching_task_type(q)(q, res, self.eager_fetching)
+            for res, q in zip(results, chain(agg_queries, raw_queries))
         ]
 
     @staticmethod
@@ -221,7 +224,7 @@ class DpsFetchOrchestrator:
     def _handle_missing_ts(res, agg_queries, raw_queries):
         missing = set()
         not_missing = {("id", r["id"]) for r in res}.union(("externalId", r["externalId"]) for r in res)
-        for q in itertools.chain(agg_queries, raw_queries):
+        for q in chain(agg_queries, raw_queries):
             # Update SingleTSQuery objects with `is_missing` status:
             q.is_missing = q.identifier_tpl not in not_missing
             if q.is_missing:
@@ -235,30 +238,23 @@ class DpsFetchOrchestrator:
 
     def _create_single_queries_for_initial_request(self):
         assert self.eager_fetching is True  # TODO: remove
-
         items = []
-        for q in self.agg_queries:
-            limit = min(q.max_query_limit, q.max_query_limit if q.limit is None else q.limit)
-            items.append([{**q.to_payload(), "limit": limit}])
-
-        for q in self.raw_queries:
-            limit = min(q.max_query_limit, q.max_query_limit if q.limit is None else q.limit)
-            items.append([{**q.to_payload(), "limit": limit}])
-            agg_payload = q.to_count_agg_payload(max_windows=1000)
-            if agg_payload:  # Only larger queries warrant fetching count aggs
-                self.count_agg_grans[q] = agg_payload["granularity"]
-                items[-1].append(agg_payload)
-        return self.all_queries, items
+        for query in self.all_queries:
+            items.append([query.to_payload()])
+            if query.is_raw_query:
+                # Only larger/longer queries warrant fetching count aggs
+                if agg_payload := query.to_count_agg_payload(self.max_workers, max_windows=10_000):
+                    self.count_agg_payloads[query] = agg_payload
+                    items[-1].append(agg_payload)
+        return items
 
     def _chunk_queries_for_initial_request(self):
         assert self.eager_fetching is False  # TODO: remove
+        raise NotImplementedError
 
-        n_agg, n_raw = len(self.agg_queries), len(self.raw_queries)
         # Optimal queries uses the entire worker pool. We may be forced to use more (queue) when we
         # can't fit all individual time series (maxes out at `FETCH_TS_LIMIT * max_workers`):
-        n_queries = max(self.max_workers, (n_agg + n_raw) / FETCH_TS_LIMIT)
-        # TODO: can n_queries be float?
-        breakpoint()
+        n_queries = max(self.max_workers, math.ceil(len(self.all_queries) / FETCH_TS_LIMIT))
         query_lst, items_lst = [], []
         splitter = functools.partial(split_into_n_parts, n=n_queries)
         for chunks in zip(splitter(self.agg_queries), splitter(self.raw_queries)):
@@ -269,7 +265,7 @@ class DpsFetchOrchestrator:
                 maxed_limits = self._find_initial_query_limits([q.limit for q in queries], max_lim)
                 items.extend([{**q.to_payload(), "limit": lim} for q, lim in zip(queries, maxed_limits)])
             items_lst.append(items)
-        return query_lst, items_lst
+        return query_lst, items_lst  # TODO: only return one????
 
         @staticmethod
         def _find_initial_query_limits(limits, max_limit):
@@ -482,7 +478,7 @@ class DatapointsAPI(APIClient):
                 >>> latest_abc = res[0][0]
                 >>> latest_def = res[1][0]
         """
-        before = cognite.client.utils._time.timestamp_to_ms(before) if before else None
+        before = timestamp_to_ms(before) if before else None
         all_ids = cast(List[Dict[str, Union[str, int]]], self._process_ids(id, external_id, wrap_ids=True))
         is_single_id = self._is_single_identifier(id, external_id)
         if before:
@@ -848,7 +844,7 @@ class DatapointsAPI(APIClient):
             np.arange(
                 df.index[0],
                 df.index[-1] + pd.Timedelta(microseconds=1),
-                pd.Timedelta(microseconds=cognite.client.utils._time.granularity_to_ms(granularity) * 1000),
+                pd.Timedelta(microseconds=granularity_to_ms(granularity) * 1000),
             ),
             copy=False,
         )
@@ -1056,13 +1052,13 @@ class DatapointsPoster:
 
         valid_datapoints = []
         if isinstance(datapoints[0], tuple):
-            valid_datapoints = [(cognite.client.utils._time.timestamp_to_ms(t), v) for t, v in datapoints]
+            valid_datapoints = [(timestamp_to_ms(t), v) for t, v in datapoints]
         elif isinstance(datapoints[0], dict):
             for dp in datapoints:
                 dp = cast(Dict[str, Any], dp)
                 assert "timestamp" in dp, "A datapoint is missing the 'timestamp' key"
                 assert "value" in dp, "A datapoint is missing the 'value' key"
-                valid_datapoints.append((cognite.client.utils._time.timestamp_to_ms(dp["timestamp"]), dp["value"]))
+                valid_datapoints.append((timestamp_to_ms(dp["timestamp"]), dp["value"]))
         return valid_datapoints
 
     def _bin_datapoints(self, dps_object_list: List[Dict[str, Any]]) -> List[List[Dict[str, Any]]]:
@@ -1113,6 +1109,9 @@ class _DPWindow:
     def __eq__(self, other: Any) -> bool:
         return [self.start, self.end, self.limit] == [other.start, other.end, other.limit]
 
+    def __repr__(self):  # TODO: Remove
+        return f"DPWindow({pd.Timestamp(self.start, unit='ms')}, {pd.Timestamp(self.end, unit='ms')}, {self.limit})"
+
 
 class _DPTask:
     def __init__(
@@ -1127,8 +1126,8 @@ class _DPTask:
         limit: Optional[int],
         ignore_unknown_ids: Optional[bool],
     ):
-        self.start = cognite.client.utils._time.timestamp_to_ms(start)
-        self.end = cognite.client.utils._time.timestamp_to_ms(end)
+        self.start = timestamp_to_ms(start)
+        self.end = timestamp_to_ms(end)
         self.aggregates = ts_item.get("aggregates") or aggregates
         self.ts_item = {k: v for k, v in ts_item.items() if k in ["id", "externalId"]}
         self.granularity = granularity
@@ -1144,7 +1143,7 @@ class _DPTask:
         self.point_after = Datapoints()
 
     def next_start_offset(self) -> int:
-        return cognite.client.utils._time.granularity_to_ms(self.granularity) if self.granularity else 1
+        return granularity_to_ms(self.granularity) if self.granularity else 1
 
     def store_partial_result(self, raw_data: Dict[str, Any], start: int, end: int) -> Tuple[int, Optional[int]]:
         expected_fields = self.aggregates or ["value"]
@@ -1248,8 +1247,8 @@ class DatapointsFetcher:
 
     def _preprocess_tasks(self, tasks: List[_DPTask]) -> None:
         for t in tasks:
-            new_start = cognite.client.utils._time.timestamp_to_ms(t.start)
-            new_end = cognite.client.utils._time.timestamp_to_ms(t.end)
+            new_start = timestamp_to_ms(t.start)
+            new_end = timestamp_to_ms(t.end)
             if t.aggregates:
                 assert t.granularity
                 new_start = self._align_with_granularity_unit(new_start, t.granularity)
@@ -1312,9 +1311,7 @@ class DatapointsFetcher:
         if task.start >= task.end:
             return []
         count_granularity = "1d"
-        if task.granularity and cognite.client.utils._time.granularity_to_ms(
-            "1d"
-        ) < cognite.client.utils._time.granularity_to_ms(task.granularity):
+        if task.granularity and granularity_to_ms("1d") < granularity_to_ms(task.granularity):
             count_granularity = task.granularity
         try:
             count_task = _DPTask(
@@ -1332,16 +1329,18 @@ class DatapointsFetcher:
         total_count = 0
         current_window_count = 0
         window_start = task.start
-        granularity_ms = cognite.client.utils._time.granularity_to_ms(task.granularity) if task.granularity else None
-        agg_count = lambda count: int(
-            min(
-                math.ceil(cognite.client.utils._time.granularity_to_ms(count_granularity) / cast(int, granularity_ms)),
-                count,
-            )
-        )
+        if task.granularity:
+            granularity_ms = granularity_to_ms(task.granularity)
+        else:
+            granularity_ms = None
+        agg_count = lambda count: min(math.ceil(granularity_to_ms(count_granularity) / granularity_ms), count)
         for i, (ts, count) in enumerate(counts):
             if ts < task.start:  # API rounds time stamps down, so some of the first day may have been retrieved already
                 count = 0
+
+            current_count = count if task.granularity is None else agg_count(count)
+            total_count += current_count
+            current_window_count += current_count
 
             if i < len(counts) - 1:
                 next_timestamp = counts[i + 1][0]
@@ -1350,9 +1349,6 @@ class DatapointsFetcher:
             else:
                 next_timestamp = task.end
                 next_count = 0
-            current_count = count if task.granularity is None else agg_count(count)
-            total_count += current_count
-            current_window_count += current_count
             if current_window_count + next_count > task.request_limit or i == len(counts) - 1:
                 window_end = int(next_timestamp)
                 if task.granularity:
@@ -1361,12 +1357,13 @@ class DatapointsFetcher:
                 window_start = window_end
                 current_window_count = 0
                 if total_count >= remaining_user_limit:
+                    # BUG: This fails in almost all cases for aggregate queries since the counts are just an upper bound
                     break
         return windows
 
     @staticmethod
     def _align_window_end(start: int, end: int, granularity: str) -> int:
-        gms = cognite.client.utils._time.granularity_to_ms(granularity)
+        gms = granularity_to_ms(granularity)
         diff = end - start
         end -= diff % gms
         return end

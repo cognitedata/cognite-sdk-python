@@ -43,7 +43,7 @@ class DpsUnpackFns:
         return op.itemgetter(*map(to_camel_case, lst))
 
 
-def dps_task_type_selector(query):
+def select_dps_fetching_task_type(query):
     # Note: We could add "include-outside-points" to our conditions, but since
     # the "initial query" already includes all of these (when True) we don't need to!
     conditions = (query.is_string, query.is_raw_query, query.limit is None)
@@ -65,6 +65,9 @@ class BaseDpsTask:
     query: SingleTSQuery
 
 
+# TODO: Split into:
+#       - Unlimited SerialFetchSubtask
+#       - Limited SerialFetchSubtask (this can quit if sum of dps of tasks prior >= limit)
 @dataclass(eq=False)
 class SerialFetchSubtask(BaseDpsTask):
     # Just fetches serially until complete, nice and simple. Stores data in parent
@@ -178,16 +181,29 @@ class BaseConcurrentTask(BaseDpsTask):
                 if len(dps) < self.query.max_query_limit:
                     self._is_done = True
 
+    def split_into_subtasks(
+        self,
+        max_workers: int,
+        count_agg: Optional[DatapointsFromAPI],
+        count_agg_payloads: Optional[Dict],
+    ) -> List[SerialFetchSubtask]:
+        if self.query.is_raw_query and count_agg is not None:
+            if dps := count_agg[0]["datapoints"]:
+                return self._split_raw_task_into_subtasks_from_counts(dps, count_agg_payloads)
+        # Main mode for string ts -and- fallback for numeric ts missing count aggregate (for any reason)
+        # and all queries asking for aggregates:
+        return self._split_into_subtasks_uniformly(max_workers)
+
     @abstractmethod
     def _find_number_of_subtasks_uniform_split(self, tot_ms: int, max_workers: int) -> int:
         ...
 
-    def split_into_subtasks_uniformly(self, max_workers: int) -> List[SerialFetchSubtask]:
+    def _split_into_subtasks_uniformly(self, max_workers: int) -> List[SerialFetchSubtask]:
         start, end = self.first_start, self.query.end
         tot_ms = end - start
         n_periods = self._find_number_of_subtasks_uniform_split(tot_ms, max_workers)
         # Find a `delta_ms` thats a multiple of granularity in ms (trivial for raw queries).
-        # ...then ceil result to make sure we "overshoot" `end`:
+        # ...we use `ceil` instead of `round` to make sure we "overshoot" `end`:
         delta_ms = self.offset_next * math.ceil(tot_ms / n_periods / self.offset_next)
         boundaries = [min(end, start + delta_ms * i) for i in range(n_periods + 1)]
         # Make a separate dps bucket for each subtask:
@@ -274,47 +290,34 @@ class BaseConcurrentRawTask(BaseConcurrentTask):
             }
         )
 
-    def split_into_subtasks(self, max_workers, count_agg, count_agg_gran):
-        if count_agg is not None:  # Main mode for numeric ts
-            dps = count_agg[0]["datapoints"]
-            if dps:
-                return self.split_into_subtasks_from_count_aggs(dps, count_agg_gran)
-        # Main mode for string ts -and- fallback for numeric ts missing count aggregate (for any reason)
-        return self.split_into_subtasks_uniformly(max_workers)
-
-    def split_into_subtasks_from_count_aggs(self, count_dps, count_agg_gran):
+    def _split_raw_task_into_subtasks_from_counts(self, count_dps, count_agg_payloads):
         if self.has_limit:
             raise NotImplementedError("Can't split limited queries into tasks based on counts - yet")
 
-        # TODO: How tf can we not have any dps from first batch and still want to split??
-        if self.n_dps_first_batch:
-            arr = self.ts_lst[0][0]
-        else:
-            arr = np.array([], dtype=np.int64)
+        arr = self.ts_lst[0][0]
         count_ts, counts = map(list, zip(*map(DpsUnpackFns.ts_count_tpl, count_dps)))
         if count_ts[-1] < self.query.end:
             # Equal when end is aligned with the dynamically chosen gran of the count agg request
             count_ts.append(self.query.end)
 
-        # Find first count interval we are to start from:
+        # Find first count interval, i, we are to start from:
         latest = arr[-1]
         for i, (start, end) in enumerate(zip(count_ts[:-1], count_ts[1:])):
             if start >= latest < end:
                 break
 
-        # How many points already fetched in first window?
+        # How many points are already fetched in the first window?
         n_arr_dps = np.logical_and(count_ts[i] <= arr, arr < count_ts[i + 1]).sum()  # Sums number of True
         counts[i] -= n_arr_dps  # ...subtract this amount!
         count_ts[i] = query_start = self.first_start  # ...and move start
 
-        count_gran_in_ms = granularity_to_ms(count_agg_gran)
+        count_gran_in_ms = granularity_to_ms(count_agg_payloads["granularity"])
         current_count, subqueries = 0, []
         for start, end, count in zip(count_ts[i:-1], count_ts[i + 1 :], counts[i:]):
             if count <= DPS_LIMIT:
                 if current_count + count > DPS_LIMIT:
                     subqueries.append((query_start, end))
-                    current_count = count
-                    query_start = end
+                    current_count, query_start = count, end
                 else:
                     current_count += count
                 continue
@@ -342,8 +345,8 @@ class BaseConcurrentRawTask(BaseConcurrentTask):
             subqueries.append((query_start, self.query.end))
 
         # Make room for subquery results:
-        self.ts_lst.extend([[] for _ in range(len(subqueries))])
-        self.dps_lst.extend([[] for _ in range(len(subqueries))])
+        self.ts_lst.extend([] for _ in range(len(subqueries)))
+        self.dps_lst.extend([] for _ in range(len(subqueries)))
         for i, (period_start, period_end) in enumerate(subqueries, 1):
             query = SingleTSQuery(**self.query.identifier_dct_sc, start=period_start, end=period_end, limit=None)
             priority = i - 1 if self.has_limit else 0
@@ -383,12 +386,12 @@ class BaseConcurrentRawTask(BaseConcurrentTask):
             self.dps_lst.insert(0, [start_dp])
         if self.dp_outside_end:
             end_ts, end_dp = self.dp_outside_end
-            self.dp_outside_end
             self.ts_lst.append([end_ts])
             self.dps_lst.append([end_dp])
 
     def _unpack_and_store(self, idx, dps):
         # Faster than feeding listcomp to np.array:
+        print(f"Stored {len(dps)=} from {idx=}")
         self.ts_lst[idx].append(np.fromiter(map(DpsUnpackFns.ts, dps), dtype=np.int64, count=len(dps)))
         self.dps_lst[idx].append(np.fromiter(map(DpsUnpackFns.raw_dp, dps), dtype=np.object_, count=len(dps)))
 
@@ -416,7 +419,7 @@ ParallelUnlimitedRawNumericTask = ConcurrentUnlimitedRawTask
 class ConcurrentLimitedRawTask(ConcurrentLimitedMixin, BaseConcurrentRawTask):
     def _find_number_of_subtasks_uniform_split(self, tot_ms: int, max_workers: int) -> int:
         # We make the guess that the time series has ~1 dp/sec and use this in combination with the given
-        # limit to not split into too many queries (highest throughput when each request close to max limit)
+        # limit to not split into too many queries (highest throughput when each request is close to max limit)
         n_estimate_periods = math.ceil((tot_ms / 1000) / self.query.max_query_limit)
         remaining_limit = self.query.limit - self.n_dps_first_batch
         n_periods = math.ceil(remaining_limit / self.query.max_query_limit)
@@ -461,9 +464,10 @@ class BaseConcurrentAggTask(BaseConcurrentTask):
         n_max_dps = tot_ms // self.offset_next  # evenly divides
         return min(max_workers, math.ceil(n_max_dps / DPS_LIMIT_AGG))
 
-    def split_into_subtasks(self, max_workers: int) -> List[SerialFetchSubtask]:
-        subtasks = self.split_into_subtasks_uniformly(max_workers)
-        self.count_dps_lst.extend([] for _ in range(len(self.ts_lst) - 1))
+    def split_into_subtasks(self, *args, **kwargs) -> List[SerialFetchSubtask]:
+        subtasks = super().split_into_subtasks(*args, **kwargs)
+        if self.is_count_query:
+            self.count_dps_lst.extend([] for _ in subtasks)
         return subtasks
 
     def _create_empty_result(self) -> DatapointsArray:
@@ -480,14 +484,14 @@ class BaseConcurrentAggTask(BaseConcurrentTask):
                 return self._create_empty_result()
             self._cap_dps_at_limit()
 
-        arr_dct = {}
+        breakpoint()
+        arr_dct = {"timestamp": np.hstack(list(chain.from_iterable(self.ts_lst)))}
         if self.is_count_query:
             arr_dct["count"] = np.hstack(list(chain.from_iterable(self.count_dps_lst)))
         if self.has_non_count_aggs:
-            aggs_arr = np.vstack(list(chain.from_iterable(self.dps_lst)))
-            arr_dct.update({agg: aggs_arr[:, i] for i, agg in enumerate(self.float_aggs)})
-        ts_arr = np.hstack(list(chain.from_iterable(self.ts_lst)))
-        return DatapointsArray._load({**self.ts_info, "timestamp": ts_arr, **arr_dct})
+            arr_lst = np.hsplit(np.vstack(list(chain.from_iterable(self.dps_lst))), len(self.float_aggs))
+            arr_dct.update(dict(zip(self.float_aggs, map(np.squeeze, arr_lst))))
+        return DatapointsArray._load({**self.ts_info, **arr_dct})
 
     def _cap_dps_at_limit(self):
         count, data_lsts = 0, [self.ts_lst]

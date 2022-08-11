@@ -5,11 +5,11 @@ import pandas as pd
 
 from local_cog_client import setup_local_cog_client
 
-START = 0
-END = "now"  # 112548548397  # 31569600000
+# START = 0
+# END = "now"  # 112548548397  # 31569600000
 START = pd.Timestamp("1990-01-01 00:00:00").value // int(1e6)
-END = pd.Timestamp("1990-01-12 13:46:39").value // int(1e6) + 1
-LIMIT = 100_001
+END = pd.Timestamp("2020-01-01 00:00:00").value // int(1e6)
+LIMIT = None
 AGGREGATES = None
 # AGGREGATES = ["sum"]
 # AGGREGATES = [
@@ -30,8 +30,8 @@ ID = [
 EXTERNAL_ID = [
     # {"external_id": "ts-test-#01-daily-111/650"},
     # {"external_id": "ts-test-#01-daily-222/650"},
-    # {"external_id": "ts-test-#04-ten-mill-dps-1/1"},
-    {"external_id": "benchmark:11-1mill-blob-sec-after-1990-#1/10"},
+    {"external_id": "ts-test-#04-ten-mill-dps-1/1"},
+    # {"external_id": "benchmark:11-1mill-blob-sec-after-1990-#1/10"},
     # {"external_id": "benchmark:11-1mill-blob-sec-after-1990-#2/10"},
     # {"external_id": "benchmark:11-1mill-blob-sec-after-1990-#3/10"},
     # {"external_id": "benchmark:11-1mill-blob-sec-after-1990-#4/10"},

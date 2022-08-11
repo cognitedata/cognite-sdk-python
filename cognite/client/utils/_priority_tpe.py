@@ -36,7 +36,7 @@ import sys
 import threading
 import weakref
 from concurrent.futures.thread import ThreadPoolExecutor, _base, _python_exit, _threads_queues, _WorkItem
-from random import random
+from time import monotonic_ns
 
 NULL_ENTRY = (sys.maxsize, None, _WorkItem(None, None, (), {}))
 _SHUTDOWN = False
@@ -61,7 +61,7 @@ def _worker(executor_reference, work_queue):
         while True:
             priority, _, work_item = work_queue.get(block=True)
             if priority != sys.maxsize:
-                print(f"Running task with priority {priority}")  # TODO(haakonvt): remove
+                # print(f"Running task with priority {priority}")  # TODO(haakonvt): remove
                 work_item.run()
                 del work_item
                 continue
@@ -92,12 +92,12 @@ class PriorityThreadPoolExecutor(ThreadPoolExecutor):
             priority = kwargs.pop("priority", None)
             assert isinstance(priority, int), "`priority` has to be an integer"
 
-            # print(f"Submitted task with: {args[0]}")
+            # print(f"Submitted task with: {args[0]}")  # TODO: remove
 
             f = _base.Future()
             w = _WorkItem(f, fn, args, kwargs)
 
-            self._work_queue.put((priority, random(), w))  # random() to break ties
+            self._work_queue.put((priority, monotonic_ns(), w))  # monotonic_ns() to break ties, but keep order
             self._adjust_thread_count()
             return f
 

@@ -4,8 +4,10 @@ import logging
 import numbers
 import os
 import re
+import threading
 from collections import UserList
 from json.decoder import JSONDecodeError
+from pprint import pprint  # noqa
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -48,6 +50,10 @@ if TYPE_CHECKING:
 log = logging.getLogger("cognite-sdk")
 
 T = TypeVar("T")
+
+
+LOCK = threading.Lock()
+COUNTER = 0
 
 
 class APIClient:
@@ -149,6 +155,20 @@ class APIClient:
         params: Optional[Dict[str, Any]] = None,
         headers: Optional[Dict[str, Any]] = None,
     ) -> requests.Response:
+        # with LOCK:  # TODO: remove
+        #     js2 = deepcopy(json)
+        #     if "start" in js2:
+        #         js2["start"] = str(pd.Timestamp(js2["start"], unit="ms"))
+        #         js2["end"] = str(pd.Timestamp(js2["end"], unit="ms"))
+        #     else:
+        #         for it in js2["items"]:
+        #             it["start"] = str(pd.Timestamp(it["start"], unit="ms"))
+        #             it["end"] = str(pd.Timestamp(it["end"], unit="ms"))
+        #     pprint(js2, sort_dicts=False)
+        # global COUNTER
+        # with LOCK:
+        #     COUNTER += 1
+        #     print(f"{COUNTER=}")
         return self._do_request(
             "POST", url_path, json=json, headers=headers, params=params, timeout=self._config.timeout
         )
