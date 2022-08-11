@@ -3,6 +3,7 @@ from unittest import mock
 import pytest
 
 from cognite.client.data_classes import Sequence, SequenceColumnUpdate, SequenceFilter, SequenceUpdate
+from cognite.client.exceptions import CogniteNotFoundError
 from tests.utils import set_request_limit
 
 
@@ -43,6 +44,21 @@ class TestSequencesAPI:
         for listed_asset, retrieved_asset in zip(res, retrieved_assets):
             retrieved_asset.external_id = listed_asset.external_id
         assert res == retrieved_assets
+
+    @pytest.mark.parametrize("ignore_unknown_ids", [False, True])
+    def test_retrieve_multiple_ignore_unknown_ids(self, cognite_client, ignore_unknown_ids):
+        res = cognite_client.sequences.list(limit=2)
+        invalid_id = 1
+        try:
+            retrieved_assets = cognite_client.sequences.retrieve_multiple(
+                [s.id for s in res] + [invalid_id], ignore_unknown_ids=ignore_unknown_ids
+            )
+            failed = False
+            assert set(s.id for s in retrieved_assets) == set(s.id for s in res)
+        except CogniteNotFoundError:
+            failed = True
+
+        assert failed ^ ignore_unknown_ids
 
     def test_call(self, cognite_client, post_spy):
         with set_request_limit(cognite_client.sequences, 10):

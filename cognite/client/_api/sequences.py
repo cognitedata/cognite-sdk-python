@@ -130,13 +130,17 @@ class SequencesAPI(APIClient):
         return self._retrieve_multiple(list_cls=SequenceList, resource_cls=Sequence, identifiers=identifiers)
 
     def retrieve_multiple(
-        self, ids: Optional[List[int]] = None, external_ids: Optional[List[str]] = None
+        self,
+        ids: Optional[List[int]] = None,
+        external_ids: Optional[List[str]] = None,
+        ignore_unknown_ids: bool = False,
     ) -> SequenceList:
         """`Retrieve multiple sequences by id. <https://docs.cognite.com/api/v1/#operation/getSequenceById>`_
 
         Args:
             ids (List[int], optional): IDs
             external_ids (List[str], optional): External IDs
+            ignore_unknown_ids (bool, optional): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
             SequenceList: The requested sequences.
@@ -156,7 +160,9 @@ class SequencesAPI(APIClient):
                 >>> res = c.sequences.retrieve_multiple(external_ids=["abc", "def"])
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
-        return self._retrieve_multiple(list_cls=SequenceList, resource_cls=Sequence, identifiers=identifiers)
+        return self._retrieve_multiple(
+            list_cls=SequenceList, resource_cls=Sequence, identifiers=identifiers, ignore_unknown_ids=ignore_unknown_ids
+        )
 
     def list(
         self,

@@ -15,6 +15,10 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 
+## [3.8.0] - 2022-08-11
+### Added
+- Add ignore_unknown_ids parameter to sequences.retrieve_multiple
+
 ## [3.7.0] - 2022-08-10
 ### Changed
 - Changed grouping of Sequence rows on insert. Each group now contains at most 100k values and at most 10k rows.
