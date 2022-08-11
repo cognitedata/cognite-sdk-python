@@ -1,6 +1,5 @@
 import random
 import re
-import sys
 import time
 import uuid
 
@@ -20,8 +19,7 @@ from cognite.client.data_classes.geospatial import (
 )
 from cognite.client.exceptions import CogniteAPIError
 
-# sdk integration tests run concurrently on 3 python versions so this makes the CI builds independent from each other
-FIXED_SRID = 121111 + sys.version_info.minor
+FIXED_SRID = 121111 + random.randint(0, 1_000)
 
 
 @pytest.fixture()
