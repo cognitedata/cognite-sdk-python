@@ -249,12 +249,10 @@ class FunctionSchedulesFilter(CogniteFilter):
 
 class FunctionSchedulesList(CogniteResourceList):
     _RESOURCE = FunctionSchedule
-    _ASSERT_CLASSES = False
 
 
 class FunctionList(CogniteResourceList):
     _RESOURCE = Function
-    _ASSERT_CLASSES = False
 
 
 class FunctionCall(CogniteResource):
@@ -328,7 +326,6 @@ class FunctionCall(CogniteResource):
 
 class FunctionCallList(CogniteResourceList):
     _RESOURCE = FunctionCall
-    _ASSERT_CLASSES = False
 
 
 class FunctionCallLogEntry(CogniteResource):
@@ -352,7 +349,6 @@ class FunctionCallLogEntry(CogniteResource):
 
 class FunctionCallLog(CogniteResourceList):
     _RESOURCE = FunctionCallLogEntry
-    _ASSERT_CLASSES = False
 
 
 class FunctionsLimits(CogniteResponse):

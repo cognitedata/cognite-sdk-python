@@ -1,27 +1,20 @@
 import importlib.util
 import os
+import re
 import sys
 import time
 from inspect import getdoc, getsource
 from numbers import Integral, Number
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Union, cast
 from zipfile import ZipFile
 
 from pip._internal.req.constructors import install_req_from_line
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client._constants import (
-    HANDLER_FILE_NAME,
-    LIST_LIMIT_CEILING,
-    LIST_LIMIT_DEFAULT,
-    MAX_RETRIES,
-    REQUIREMENTS_FILE_NAME,
-    REQUIREMENTS_REG,
-    UNCOMMENTED_LINE_REG,
-)
+from cognite.client._constants import LIST_LIMIT_CEILING, LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import (
     Function,
     FunctionCall,
@@ -42,6 +35,13 @@ from cognite.client.utils._identifier import IdentifierSequence
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
+
+
+HANDLER_FILE_NAME = "handler.py"
+MAX_RETRIES = 5
+REQUIREMENTS_FILE_NAME = "requirements.txt"
+REQUIREMENTS_REG = re.compile(r"(\[\/?requirements\]){1}$", flags=re.M)  # Matches [requirements] and [/requirements]
+UNCOMMENTED_LINE_REG = re.compile(r"^[^\#]]*.*")
 
 
 def _get_function_id_from_external_id(
@@ -215,12 +215,12 @@ class FunctionsAPI(APIClient):
         res = self._post(url, json=body)
         return Function._load(res.json()["items"][0], cognite_client=self._cognite_client)
 
-    def delete(self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None) -> None:
+    def delete(self, id: Union[int, Sequence[int]] = None, external_id: Union[str, Sequence[str]] = None) -> None:
         """`Delete one or more functions. <https://docs.cognite.com/api/v1/#operation/deleteFunctions>`_
 
         Args:
-            id (Union[int, List[int]): Id or list of ids.
-            external_id (Union[str, List[str]]): External ID or list of external ids.
+            id (Union[int, Sequence[int]): Id or list of ids.
+            external_id (Union[str, Sequence[str]]): External ID or list of external ids.
 
         Returns:
             None
@@ -312,13 +312,13 @@ class FunctionsAPI(APIClient):
         return self._retrieve_multiple(identifiers=identifiers, resource_cls=Function, list_cls=FunctionList)
 
     def retrieve_multiple(
-        self, ids: Optional[List[int]] = None, external_ids: Optional[List[str]] = None
+        self, ids: Optional[Sequence[int]] = None, external_ids: Optional[Sequence[str]] = None
     ) -> Union[FunctionList, Function, None]:
         """`Retrieve multiple functions by id. <https://docs.cognite.com/api/v1/#operation/byIdsFunctions>`_
 
         Args:
-            ids (List[int], optional): IDs
-            external_ids (List[str], optional): External IDs
+            ids (Sequence[int], optional): IDs
+            external_ids (Sequence[str], optional): External IDs
 
         Returns:
             FunctionList: The requested functions.
@@ -337,8 +337,8 @@ class FunctionsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.functions.retrieve_multiple(external_ids=["func1", "func2"])
         """
-        utils._auxiliary.assert_type(ids, "id", [List], allow_none=True)
-        utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=True)
+        utils._auxiliary.assert_type(ids, "id", [Sequence], allow_none=True)
+        utils._auxiliary.assert_type(external_ids, "external_id", [Sequence], allow_none=True)
         return self._retrieve_multiple(
             identifiers=IdentifierSequence.load(ids=ids, external_ids=external_ids),
             resource_cls=Function,
@@ -438,9 +438,9 @@ class FunctionsAPI(APIClient):
                     if root == "." and REQUIREMENTS_FILE_NAME in files:
                         # Remove requirement from file list
                         path = files.pop(files.index(REQUIREMENTS_FILE_NAME))
-                        reqs = extract_requirements_from_file(path)
+                        reqs = _extract_requirements_from_file(path)
                         # Validate and format requirements
-                        req_path = validate_requirements(reqs)
+                        req_path = _validate_requirements(reqs)
 
                         # NOTE: the actual file is not written.
                         # A temporary formatted file is used instead
@@ -477,7 +477,7 @@ class FunctionsAPI(APIClient):
                 f.write(source)
 
             # Read and validate requirements
-            req_path = get_requirements_handle(fn=function_handle)
+            req_path = _get_requirements_handle(fn=function_handle)
 
             zip_path = os.path.join(tmpdir, "function.zip")
             zf = ZipFile(zip_path, "w")
@@ -681,7 +681,7 @@ def _assert_at_most_one_of_function_id_and_function_external_id(
     ), "Only function_id or function_external_id allowed when listing schedules."
 
 
-def extract_requirements_from_file(file_name: str) -> List[str]:
+def _extract_requirements_from_file(file_name: str) -> List[str]:
     """Extracts a list of library requirements from a file. Comments, lines starting with '#', are ignored.
 
     Args:
@@ -699,7 +699,7 @@ def extract_requirements_from_file(file_name: str) -> List[str]:
     return requirements
 
 
-def extract_requirements_from_doc_string(docstr: str) -> Optional[List[str]]:
+def _extract_requirements_from_doc_string(docstr: str) -> Optional[List[str]]:
     """Extracts a list of library requirements defined between [requirements] and [/requirements] in a functions docstring.
 
     Args:
@@ -724,7 +724,7 @@ def extract_requirements_from_doc_string(docstr: str) -> Optional[List[str]]:
     return None
 
 
-def validate_requirements(requirements: List[str]) -> str:
+def _validate_requirements(requirements: List[str]) -> str:
     """Validates the requirement specifications
 
     Args:
@@ -755,7 +755,7 @@ def validate_requirements(requirements: List[str]) -> str:
     return tmp.name
 
 
-def get_requirements_handle(fn: Callable) -> Optional[str]:
+def _get_requirements_handle(fn: Callable) -> Optional[str]:
     """Read requirements from a function docstring, and validate them
 
     Args:
@@ -767,9 +767,9 @@ def get_requirements_handle(fn: Callable) -> Optional[str]:
     docstr = getdoc(fn)
 
     if docstr:
-        reqs = extract_requirements_from_doc_string(docstr)
+        reqs = _extract_requirements_from_doc_string(docstr)
         if reqs:
-            return validate_requirements(reqs)
+            return _validate_requirements(reqs)
 
     return None
 

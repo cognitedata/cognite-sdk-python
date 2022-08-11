@@ -6,12 +6,12 @@ from requests import PreparedRequest
 
 from cognite.client import CogniteClient
 from cognite.client._api.functions import (
+    _extract_requirements_from_doc_string,
+    _extract_requirements_from_file,
+    _get_requirements_handle,
     _using_client_credential_flow,
-    extract_requirements_from_doc_string,
-    extract_requirements_from_file,
-    get_requirements_handle,
+    _validate_requirements,
     validate_function_folder,
-    validate_requirements,
 )
 from cognite.client.data_classes import (
     Function,
@@ -639,7 +639,7 @@ class TestRequirementsParser:
     """Test extraction of requirements.txt from docstring in handle-function"""
 
     def test_validate_requirements(self):
-        out_path = validate_requirements(["asyncio==3.4.3", "numpy==1.23.0", "pandas==1.4.3"])
+        out_path = _validate_requirements(["asyncio==3.4.3", "numpy==1.23.0", "pandas==1.4.3"])
         assert os.path.exists(out_path)
         os.remove(out_path)
 
@@ -647,7 +647,7 @@ class TestRequirementsParser:
         reqs = [["asyncio=3.4.3"], ["num py==1.23.0"], ["pandas==1.4.3 python_version=='3.8'"]]
         for req in reqs:
             with pytest.raises(Exception):
-                validate_requirements(req)
+                _validate_requirements(req)
 
     def test_get_requirements_handle(self):
         def fn():
@@ -658,7 +658,7 @@ class TestRequirementsParser:
             """
             return None
 
-        res = get_requirements_handle(fn=fn)
+        res = _get_requirements_handle(fn=fn)
         assert res is not None
         os.remove(res)
 
@@ -666,7 +666,7 @@ class TestRequirementsParser:
         def fn():
             return None
 
-        assert get_requirements_handle(fn=fn) is None
+        assert _get_requirements_handle(fn=fn) is None
 
     def test_get_requirements_handle_no_docstr(self):
         def fn():
@@ -678,7 +678,7 @@ class TestRequirementsParser:
             return None
 
         with pytest.raises(Exception):
-            get_requirements_handle(fn=fn) is None
+            _get_requirements_handle(fn=fn) is None
 
     def test_get_requirements_handle_no_reqs(self):
         def fn():
@@ -688,7 +688,7 @@ class TestRequirementsParser:
             """
             return None
 
-        assert get_requirements_handle(fn=fn) is None
+        assert _get_requirements_handle(fn=fn) is None
 
     def test_extract_requirements_from_file(self, tmpdir):
         req = "somepackage == 3.8.1"
@@ -696,7 +696,7 @@ class TestRequirementsParser:
         with open(file, "w+") as f:
             f.writelines("\n".join(["# this should not be included", "     " + req]))
             f.close()
-        reqs = extract_requirements_from_file(file_name=file)
+        reqs = _extract_requirements_from_file(file_name=file)
         assert type(reqs) == list
         assert len(reqs) == 1
         assert req in reqs
@@ -705,15 +705,15 @@ class TestRequirementsParser:
         req_mock = '[requirements]\nSomePackage==3.4.3, >3.4.1; python_version=="3.7"\nSomePackage==21.4.0; python_version=="3.7" and python_full_version<"3.0.0" or python_full_version>="3.5.0" and python_version>="3.7"\nSomePackage==2022.6.15; python_version>="3.8" and python_version<"4"\ncSomePackage==1.15.0; python_version>="3.6"\n[/requirements]\n'
         doc_string_mock = "this should not be included\n" + req_mock + "neither should this\n"
         expected = req_mock.splitlines()[1:-1]
-        assert extract_requirements_from_doc_string(doc_string_mock) == expected
+        assert _extract_requirements_from_doc_string(doc_string_mock) == expected
 
     def test_extract_requirements_from_doc_string_empty(self):
         doc_string = "[requirements]\n[/requirements]\n"
-        assert extract_requirements_from_doc_string(doc_string) == []
+        assert _extract_requirements_from_doc_string(doc_string) == []
 
     def test_extract_requirements_from_doc_string_no_defined(self):
         doc_string = "no requirements here"
-        assert extract_requirements_from_doc_string(doc_string) is None
+        assert _extract_requirements_from_doc_string(doc_string) is None
 
 
 @pytest.fixture
