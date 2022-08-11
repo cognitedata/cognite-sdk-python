@@ -1,10 +1,13 @@
 import time
 from numbers import Number
-from typing import Dict, List, Optional, Union, cast
+from typing import TYPE_CHECKING, Dict, List, Optional, Union, cast
 
 from cognite.client._constants import LIST_LIMIT_CEILING, LIST_LIMIT_DEFAULT
 from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteResourceList, CogniteResponse
 from cognite.client.data_classes.shared import TimestampRange
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 class Function(CogniteResource):
@@ -52,7 +55,7 @@ class Function(CogniteResource):
         runtime_version: str = None,
         metadata: Dict = None,
         error: Dict = None,
-        cognite_client: "CogniteClient" = None,  # type: ignore # noqa: F821 # Correct Fix casues Circular Import
+        cognite_client: "CogniteClient" = None,
     ) -> None:
         self.id = cast(int, id)
         self.name = cast(str, name)
@@ -72,9 +75,7 @@ class Function(CogniteResource):
         self.runtime_version = runtime_version
         self.metadata = metadata
         self.error = error
-        self._cognite_client = cast(
-            "CogniteClient", cognite_client  # type: ignore # noqa: F821 # Correct Fix casues Circular Import
-        )
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     def call(self, data: Optional[Dict] = None, wait: bool = True) -> "FunctionCall":
         """`Call this particular function. <https://docs.cognite.com/api/v1/#operation/postFunctionsCall>`_
@@ -207,7 +208,7 @@ class FunctionSchedule(CogniteResource):
         created_time: int = None,
         cron_expression: str = None,
         session_id: int = None,
-        cognite_client: "CogniteClient" = None,  # type: ignore # noqa: F821 # Correct Fix casues Circular Import
+        cognite_client: "CogniteClient" = None,
     ) -> None:
         self.id = id
         self.name = name
@@ -217,9 +218,7 @@ class FunctionSchedule(CogniteResource):
         self.cron_expression = cron_expression
         self.created_time = created_time
         self.session_id = session_id
-        self._cognite_client = cast(
-            "CogniteClient", cognite_client  # type: ignore # noqa: F821 # Correct Fix casues Circular Import
-        )
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     def get_input_data(self) -> dict:
         """
@@ -282,7 +281,7 @@ class FunctionCall(CogniteResource):
         schedule_id: int = None,
         error: dict = None,
         function_id: int = None,
-        cognite_client: "CogniteClient" = None,  # type: ignore # noqa: F821 # Correct Fix casues Circular Import
+        cognite_client: "CogniteClient" = None,
     ) -> None:
         self.id = id
         self.start_time = start_time
@@ -292,9 +291,7 @@ class FunctionCall(CogniteResource):
         self.schedule_id = schedule_id
         self.error = error
         self.function_id = function_id
-        self._cognite_client = cast(
-            "CogniteClient", cognite_client  # type: ignore # noqa: F821 # Correct Fix casues Circular Import
-        )
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     def get_response(self) -> Dict:
         """Retrieve the response from this function call.
@@ -346,13 +343,11 @@ class FunctionCallLogEntry(CogniteResource):
         self,
         timestamp: int = None,
         message: str = None,
-        cognite_client: "CogniteClient" = None,  # type: ignore # noqa: F821 # Correct Fix casues Circular Import
+        cognite_client: "CogniteClient" = None,
     ):
         self.timestamp = timestamp
         self.message = message
-        self._cognite_client = cast(
-            "CogniteClient", cognite_client  # type: ignore # noqa: F821 # Correct Fix casues Circular Import
-        )
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class FunctionCallLog(CogniteResourceList):

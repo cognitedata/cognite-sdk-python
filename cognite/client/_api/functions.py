@@ -6,7 +6,7 @@ from inspect import getdoc, getsource
 from numbers import Integral, Number
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
-from typing import Any, Callable, Dict, List, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union, cast
 from zipfile import ZipFile
 
 from pip._internal.req.constructors import install_req_from_line
@@ -40,12 +40,12 @@ from cognite.client.data_classes.functions import FunctionsStatus
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._identifier import IdentifierSequence
 
-# if TYPE_CHECKING:
-#     from cognite.client import CogniteClient
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 def _get_function_id_from_external_id(
-    _cognite_client: "CogniteClient",  # type: ignore # noqa: F821 # Correct Fix casues Circular Import
+    _cognite_client: "CogniteClient",
     function_id: Optional[int],
     function_external_id: Optional[str],
 ) -> int:
@@ -69,7 +69,7 @@ class FunctionsAPI(APIClient):
         super().__init__(*args, **kwargs)
         self.calls = FunctionCallsAPI(*args, **kwargs)
         self.schedules = FunctionSchedulesAPI(*args, **kwargs)
-        self._cognite_client: "CogniteClient" = cast("CogniteClient", self._cognite_client)  # type: ignore # noqa: F821 # Correct Fix casues Circular Import
+        self._cognite_client: "CogniteClient" = cast("CogniteClient", self._cognite_client)
 
     def create(
         self,
@@ -551,7 +551,7 @@ class FunctionsAPI(APIClient):
 
 
 def _use_client_credentials(
-    cognite_client: "CogniteClient",  # type: ignore # noqa: F821 # Correct Fix casues Circular Import
+    cognite_client: "CogniteClient",
     client_credentials: Optional[Dict] = None,
 ) -> str:
     """
@@ -585,7 +585,7 @@ def _use_client_credentials(
 
 
 def _use_token_exchange(
-    cognite_client: "CogniteClient",  # type: ignore # noqa: F821 # Correct Fix casues Circular Import
+    cognite_client: "CogniteClient",
 ) -> str:
     session_url = f"/api/v1/projects/{cognite_client.config.project}/sessions"
     payload = {"items": [{"tokenExchange": True}]}
@@ -598,17 +598,18 @@ def _use_token_exchange(
 
 
 def _using_client_credential_flow(
-    cognite_client: "CogniteClient",  # type: ignore # noqa: F821 # Correct Fix casues Circular Import
+    cognite_client: "CogniteClient",
 ) -> bool:
     """
     Determine whether the Cognite client is configured for client-credential flow.
     """
     client_config = cognite_client.config
-    return (
+    return cast(
+        bool,
         client_config.token_client_secret
         and client_config.token_client_id
         and client_config.token_url
-        and client_config.token_scopes
+        and client_config.token_scopes,
     )
 
 
@@ -775,6 +776,10 @@ def get_requirements_handle(fn: Callable) -> Optional[str]:
 
 class FunctionCallsAPI(APIClient):
     _LIST_CLASS = FunctionCallList
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self._cognite_client: "CogniteClient" = cast("CogniteClient", self._cognite_client)
 
     def list(
         self,
@@ -947,6 +952,10 @@ class FunctionCallsAPI(APIClient):
 class FunctionSchedulesAPI(APIClient):
     _RESOURCE_PATH = "/functions/schedules"
     _LIST_CLASS = FunctionSchedulesList
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self._cognite_client: "CogniteClient" = cast("CogniteClient", self._cognite_client)
 
     def retrieve(self, id: int) -> Union[FunctionSchedule, FunctionSchedulesList, None]:
         """`Retrieve a single function schedule by id. <https://docs.cognite.com/api/v1/#operation/byIdsFunctionSchedules>`_
