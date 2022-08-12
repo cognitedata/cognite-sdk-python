@@ -60,10 +60,10 @@ def _get_function_internal_id(_cognite_client: "CogniteClient", identifier: Sing
 
 
 def _get_function_identifier(id: Optional[int], external_id: Optional[str]) -> SingletonIdentifierSequence:
-    try:
-        return IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
-    except ValueError:
-        raise AssertionError("Exactly one of function_id and function_external_id must be specified")
+    identifier = IdentifierSequence.load(ids=id, external_ids=external_id)
+    if identifier.is_singleton():
+        return identifier.as_singleton()
+    raise AssertionError("Exactly one of function_id and function_external_id must be specified")
 
 
 class FunctionsAPI(APIClient):
