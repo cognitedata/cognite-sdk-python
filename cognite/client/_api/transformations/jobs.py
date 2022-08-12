@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional, Sequence
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -103,11 +103,11 @@ class TransformationJobsAPI(APIClient):
             resource_path=url_path,
         )
 
-    def retrieve_multiple(self, ids: List[int], ignore_unknown_ids: bool = False) -> TransformationJobList:
+    def retrieve_multiple(self, ids: Sequence[int], ignore_unknown_ids: bool = False) -> TransformationJobList:
         """`Retrieve multiple transformation jobs by id. <https://docs.cognite.com/api/v1/#operation/getTransformationJobsByIds>`_
 
         Args:
-            ids (List[int]): Job internal Ids
+            ids (Sequence[int]): Job internal Ids
             ignore_unknown_ids (bool): Ignore IDs that are not found rather than throw an exception.
 
         Returns:

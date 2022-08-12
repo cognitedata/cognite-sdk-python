@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterator, List, Optional, Union, cast, overload
+from typing import Any, Dict, Iterator, List, Optional, Sequence, Union, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import (
@@ -21,12 +21,12 @@ class TimeSeriesAPI(APIClient):
         unit: str = None,
         is_string: bool = None,
         is_step: bool = None,
-        asset_ids: List[int] = None,
-        asset_external_ids: List[str] = None,
-        asset_subtree_ids: List[int] = None,
-        asset_subtree_external_ids: List[str] = None,
-        data_set_ids: List[int] = None,
-        data_set_external_ids: List[str] = None,
+        asset_ids: Sequence[int] = None,
+        asset_external_ids: Sequence[str] = None,
+        asset_subtree_ids: Sequence[int] = None,
+        asset_subtree_external_ids: Sequence[str] = None,
+        data_set_ids: Sequence[int] = None,
+        data_set_external_ids: Sequence[str] = None,
         metadata: Dict[str, Any] = None,
         external_id_prefix: str = None,
         created_time: Dict[str, Any] = None,
@@ -44,12 +44,12 @@ class TimeSeriesAPI(APIClient):
             unit (str): Unit of the time series.
             is_string (bool): Whether the time series is an string time series.
             is_step (bool): Whether the time series is a step (piecewise constant) time series.
-            asset_ids (List[int], optional): List time series related to these assets.
-            asset_external_ids  (List[str], optional): List time series related to these assets.
-            asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
-            asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
-            data_set_ids (List[int]): Return only time series in the specified data sets with these ids.
-            data_set_external_ids (List[str]): Return only time series in the specified data sets with these external ids.
+            asset_ids (Sequence[int], optional): List time series related to these assets.
+            asset_external_ids  (Sequence[str], optional): List time series related to these assets.
+            asset_subtree_ids (Sequence[int]): List of asset subtrees ids to filter on.
+            asset_subtree_external_ids (Sequence[str]): List of asset subtrees external ids to filter on.
+            data_set_ids (Sequence[int]): Return only time series in the specified data sets with these ids.
+            data_set_external_ids (Sequence[str]): Return only time series in the specified data sets with these external ids.
             metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
             created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
@@ -132,15 +132,15 @@ class TimeSeriesAPI(APIClient):
 
     def retrieve_multiple(
         self,
-        ids: Optional[List[int]] = None,
-        external_ids: Optional[List[str]] = None,
+        ids: Optional[Sequence[int]] = None,
+        external_ids: Optional[Sequence[str]] = None,
         ignore_unknown_ids: bool = False,
     ) -> TimeSeriesList:
         """`Retrieve multiple time series by id. <https://docs.cognite.com/api/v1/#operation/getTimeSeriesByIds>`_
 
         Args:
-            ids (List[int], optional): IDs
-            external_ids (List[str], optional): External IDs
+            ids (Sequence[int], optional): IDs
+            external_ids (Sequence[str], optional): External IDs
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -174,12 +174,12 @@ class TimeSeriesAPI(APIClient):
         unit: str = None,
         is_string: bool = None,
         is_step: bool = None,
-        asset_ids: List[int] = None,
-        asset_external_ids: List[str] = None,
-        asset_subtree_ids: List[int] = None,
-        asset_subtree_external_ids: List[str] = None,
-        data_set_ids: List[int] = None,
-        data_set_external_ids: List[str] = None,
+        asset_ids: Sequence[int] = None,
+        asset_external_ids: Sequence[str] = None,
+        asset_subtree_ids: Sequence[int] = None,
+        asset_subtree_external_ids: Sequence[str] = None,
+        data_set_ids: Sequence[int] = None,
+        data_set_external_ids: Sequence[str] = None,
         metadata: Dict[str, Any] = None,
         external_id_prefix: str = None,
         created_time: Dict[str, Any] = None,
@@ -196,12 +196,12 @@ class TimeSeriesAPI(APIClient):
             unit (str): Unit of the time series.
             is_string (bool): Whether the time series is an string time series.
             is_step (bool): Whether the time series is a step (piecewise constant) time series.
-            asset_ids (List[int], optional): List time series related to these assets.
-            asset_external_ids (List[str], optional): List time series related to these assets.
-            asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
-            asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
-            data_set_ids (List[int]): Return only assets in the specified data sets with these ids.
-            data_set_external_ids (List[str]): Return only assets in the specified data sets with these external ids.
+            asset_ids (Sequence[int], optional): List time series related to these assets.
+            asset_external_ids (Sequence[str], optional): List time series related to these assets.
+            asset_subtree_ids (Sequence[int]): List of asset subtrees ids to filter on.
+            asset_subtree_external_ids (Sequence[str]): List of asset subtrees external ids to filter on.
+            data_set_ids (Sequence[int]): Return only assets in the specified data sets with these ids.
+            data_set_external_ids (Sequence[str]): Return only assets in the specified data sets with these external ids.
             metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
             created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
@@ -288,18 +288,18 @@ class TimeSeriesAPI(APIClient):
         return self._aggregate(filter=filter, cls=TimeSeriesAggregate)
 
     @overload
-    def create(self, time_series: List[TimeSeries]) -> TimeSeriesList:
+    def create(self, time_series: Sequence[TimeSeries]) -> TimeSeriesList:
         ...
 
     @overload
     def create(self, time_series: TimeSeries) -> TimeSeries:
         ...
 
-    def create(self, time_series: Union[TimeSeries, List[TimeSeries]]) -> Union[TimeSeries, TimeSeriesList]:
+    def create(self, time_series: Union[TimeSeries, Sequence[TimeSeries]]) -> Union[TimeSeries, TimeSeriesList]:
         """`Create one or more time series. <https://docs.cognite.com/api/v1/#operation/postTimeSeries>`_
 
         Args:
-            time_series (Union[TimeSeries, List[TimeSeries]]): TimeSeries or list of TimeSeries to create.
+            time_series (Union[TimeSeries, Sequence[TimeSeries]]): TimeSeries or list of TimeSeries to create.
 
         Returns:
             Union[TimeSeries, TimeSeriesList]: The created time series.
@@ -317,15 +317,15 @@ class TimeSeriesAPI(APIClient):
 
     def delete(
         self,
-        id: Union[int, List[int]] = None,
-        external_id: Union[str, List[str]] = None,
+        id: Union[int, Sequence[int]] = None,
+        external_id: Union[str, Sequence[str]] = None,
         ignore_unknown_ids: bool = False,
     ) -> None:
         """`Delete one or more time series. <https://docs.cognite.com/api/v1/#operation/deleteTimeSeries>`_
 
         Args:
-            id (Union[int, List[int]): Id or list of ids
-            external_id (Union[str, List[str]]): External ID or list of external ids
+            id (Union[int, Sequence[int]): Id or list of ids
+            external_id (Union[str, Sequence[str]]): External ID or list of external ids
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -346,7 +346,7 @@ class TimeSeriesAPI(APIClient):
         )
 
     @overload
-    def update(self, item: List[Union[TimeSeries, TimeSeriesUpdate]]) -> TimeSeriesList:
+    def update(self, item: Sequence[Union[TimeSeries, TimeSeriesUpdate]]) -> TimeSeriesList:
         ...
 
     @overload
@@ -354,12 +354,12 @@ class TimeSeriesAPI(APIClient):
         ...
 
     def update(
-        self, item: Union[TimeSeries, TimeSeriesUpdate, List[Union[TimeSeries, TimeSeriesUpdate]]]
+        self, item: Union[TimeSeries, TimeSeriesUpdate, Sequence[Union[TimeSeries, TimeSeriesUpdate]]]
     ) -> Union[TimeSeries, TimeSeriesList]:
         """`Update one or more time series. <https://docs.cognite.com/api/v1/#operation/alterTimeSeries>`_
 
         Args:
-            item (Union[TimeSeries, TimeSeriesUpdate, List[Union[TimeSeries, TimeSeriesUpdate]]]): Time series to update
+            item (Union[TimeSeries, TimeSeriesUpdate, Sequence[Union[TimeSeries, TimeSeriesUpdate]]]): Time series to update
 
         Returns:
             Union[TimeSeries, TimeSeriesList]: Updated time series.
