@@ -56,7 +56,7 @@ def _get_function_internal_id(_cognite_client: "CogniteClient", identifier: Sing
         if function:
             return function.id
 
-    raise ValueError("Function with this external ID is not found")
+    raise ValueError(f'Function with external ID "{id_object.as_primitive()}" is not found')
 
 
 def _get_function_identifier(id: Optional[int], external_id: Optional[str]) -> SingletonIdentifierSequence:
