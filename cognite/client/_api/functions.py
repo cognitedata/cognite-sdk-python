@@ -466,7 +466,8 @@ class FunctionsAPI(APIClient):
             file_id = cast(int, file.id)
 
             return file_id
-
+        except Exception as e:
+            raise e
         finally:
             os.chdir(current_dir)
 
