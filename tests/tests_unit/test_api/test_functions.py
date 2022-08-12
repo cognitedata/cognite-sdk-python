@@ -113,8 +113,8 @@ CALL_SCHEDULED = {
 
 
 @pytest.fixture
-def mock_sessions_with_client_credentials(rsps, cognite_client):
-    url = cognite_client.functions._get_base_url_with_base_path() + "/sessions"
+def mock_sessions_with_client_credentials(rsps, cognite_client_with_client_credentials_flow):
+    url = cognite_client_with_client_credentials_flow.functions._get_base_url_with_base_path() + "/sessions"
 
     rsps.add(
         rsps.POST,
@@ -126,8 +126,8 @@ def mock_sessions_with_client_credentials(rsps, cognite_client):
                 {
                     "items": [
                         {
-                            "clientId": cognite_client.config.token_client_id,
-                            "clientSecret": cognite_client.config.token_client_secret,
+                            "clientId": cognite_client_with_client_credentials_flow.config.token_client_id,
+                            "clientSecret": cognite_client_with_client_credentials_flow.config.token_client_secret,
                         }
                     ]
                 }
@@ -306,11 +306,14 @@ def mock_function_calls_filter_response(rsps, cognite_client):
 
 
 @pytest.fixture
+def cognite_client_with_client_credentials_flow():
+    client = CogniteClient(token_url="bla", token_scopes=["bla"], token_client_secret="bla", token_client_id="bla")
+    return client
+
+
+@pytest.fixture
 def cognite_client_with_api_key():
-    client = CogniteClient(
-        api_key="caner_was_here_but_not_for_long_because_api_keys_will_be_removed",
-        disable_pypi_version_check=True,
-    )
+    client = CogniteClient(api_key="caner_was_here_but_not_for_long_because_api_keys_will_be_removed")
     client.config.token_client_id = None  # Disables Client Credentials coming from the ENV
 
     return client
@@ -318,12 +321,8 @@ def cognite_client_with_api_key():
 
 @pytest.fixture
 def cognite_client_with_token():
-    client = CogniteClient(
-        token="aabbccddeeffgg",
-        disable_pypi_version_check=True,
-    )
+    client = CogniteClient(token="aabbccddeeffgg")
     client.config.token_client_id = None  # Disables Client Credentials coming from the ENV
-
     return client
 
 
@@ -571,19 +570,21 @@ class TestFunctionsAPI:
         assert mock_functions_call_timeout_response.calls[0].response.json() == res.dump(camel_case=True)
 
     @pytest.mark.usefixtures("mock_sessions_with_client_credentials")
-    def test_function_call_from_oidc_client_credentials_flow(self, mock_functions_call_responses, cognite_client):
-        assert _using_client_credential_flow(cognite_client)
-        res = cognite_client.functions.call(id=FUNCTION_ID)
+    def test_function_call_from_oidc_client_credentials_flow(
+        self, mock_functions_call_responses, cognite_client_with_client_credentials_flow
+    ):
+        assert _using_client_credential_flow(cognite_client_with_client_credentials_flow)
+        res = cognite_client_with_client_credentials_flow.functions.call(id=FUNCTION_ID)
 
         assert isinstance(res, FunctionCall)
         assert mock_functions_call_responses.calls[2].response.json()["items"][0] == res.dump(camel_case=True)
 
     @pytest.mark.usefixtures("mock_sessions_with_client_credentials")
     def test_function_call_by_external_id_from_oidc_client_credentials_flow(
-        self, mock_functions_call_by_external_id_responses, cognite_client
+        self, mock_functions_call_by_external_id_responses, cognite_client_with_client_credentials_flow
     ):
-        assert _using_client_credential_flow(cognite_client)
-        res = cognite_client.functions.call(external_id=f"func-no-{FUNCTION_ID}")
+        assert _using_client_credential_flow(cognite_client_with_client_credentials_flow)
+        res = cognite_client_with_client_credentials_flow.functions.call(external_id=f"func-no-{FUNCTION_ID}")
 
         assert isinstance(res, FunctionCall)
         assert mock_functions_call_by_external_id_responses.calls[3].response.json()["items"][0] == res.dump(
@@ -591,19 +592,19 @@ class TestFunctionsAPI:
         )
 
     @pytest.mark.usefixtures("mock_sessions_bad_request_response")
-    def test_function_call_with_failing_client_credentials_flow(self, cognite_client):
+    def test_function_call_with_failing_client_credentials_flow(self, cognite_client_with_client_credentials_flow):
         with pytest.raises(CogniteAPIError) as excinfo:
-            assert _using_client_credential_flow(cognite_client)
-            cognite_client.functions.call(id=FUNCTION_ID)
+            assert _using_client_credential_flow(cognite_client_with_client_credentials_flow)
+            cognite_client_with_client_credentials_flow.functions.call(id=FUNCTION_ID)
         assert "Failed to create session using client credentials flow." in str(excinfo.value)
 
     @pytest.mark.usefixtures("mock_sessions_with_client_credentials")
     def test_function_call_timeout_from_oidc_client_credentials_flow(
-        self, mock_functions_call_timeout_response, cognite_client
+        self, mock_functions_call_timeout_response, cognite_client_with_client_credentials_flow
     ):
-        assert _using_client_credential_flow(cognite_client)
+        assert _using_client_credential_flow(cognite_client_with_client_credentials_flow)
 
-        res = cognite_client.functions.call(id=FUNCTION_ID)
+        res = cognite_client_with_client_credentials_flow.functions.call(id=FUNCTION_ID)
         assert isinstance(res, FunctionCall)
         assert mock_functions_call_timeout_response.calls[1].response.json() == res.dump(camel_case=True)
 
@@ -724,7 +725,6 @@ class TestRequirementsParser:
         file = os.path.join(tmpdir, "requirements.txt")
         with open(file, "w+") as f:
             f.writelines("\n".join(["# this should not be included", "     " + req]))
-            f.close()
         reqs = _extract_requirements_from_file(file_name=file)
         assert type(reqs) == list
         assert len(reqs) == 1
@@ -1064,8 +1064,10 @@ class TestFunctionCallsAPI:
 
     @pytest.mark.usefixtures("mock_sessions_with_client_credentials")
     @pytest.mark.usefixtures("mock_functions_call_responses")
-    def test_get_logs_on_created_call_object(self, mock_function_call_logs_response, cognite_client):
-        call = cognite_client.functions.call(id=FUNCTION_ID)
+    def test_get_logs_on_created_call_object(
+        self, mock_function_call_logs_response, cognite_client_with_client_credentials_flow
+    ):
+        call = cognite_client_with_client_credentials_flow.functions.call(id=FUNCTION_ID)
         logs = call.get_logs()
         assert isinstance(logs, FunctionCallLog)
         assert mock_function_call_logs_response.calls[-1].response.json()["items"] == logs.dump(camel_case=True)
