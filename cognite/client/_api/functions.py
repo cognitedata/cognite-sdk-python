@@ -466,8 +466,6 @@ class FunctionsAPI(APIClient):
             file_id = cast(int, file.id)
 
             return file_id
-        except Exception as e:
-            raise e
         finally:
             os.chdir(current_dir)
 
@@ -602,19 +600,16 @@ def _use_token_exchange(
         raise CogniteAPIError("Failed to create session using token exchange flow.", 403) from e
 
 
-def _using_client_credential_flow(
-    cognite_client: "CogniteClient",
-) -> bool:
+def _using_client_credential_flow(cognite_client: "CogniteClient") -> bool:
     """
     Determine whether the Cognite client is configured for client-credential flow.
     """
     client_config = cognite_client.config
-    return cast(
-        bool,
-        client_config.token_client_secret
-        and client_config.token_client_id
-        and client_config.token_url
-        and client_config.token_scopes,
+    return (
+        client_config.token_client_secret is not None
+        and client_config.token_client_id is not None
+        and client_config.token_url is not None
+        and client_config.token_scopes is not None
     )
 
 
