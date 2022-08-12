@@ -199,7 +199,6 @@ def new_asset(cognite_client):
     asset = cognite_client.assets.create(Asset(name="any", description="haha", metadata={"a": "b"}))
     yield asset
     cognite_client.assets.delete(id=asset.id)
-    assert cognite_client.assets.retrieve(asset.id) is None
 
 
 class TestGeospatialAPI:
