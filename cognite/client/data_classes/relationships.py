@@ -1,5 +1,7 @@
 import copy
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import Sequence as SequenceType
+from typing import Type, Union, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -35,7 +37,7 @@ class Relationship(CogniteResource):
         end_time (int): Time, in milliseconds since Jan. 1, 1970, when the relationship became inactive. If there is no endTime, relationship is active from startTime until the present or any point in the future. If endTime and startTime are set, then endTime must be strictly greater than startTime.
         confidence (float): Confidence value of the existence of this relationship. Generated relationships should provide a realistic score on the likelihood of the existence of the relationship. Relationships without a confidence value can be interpreted at the discretion of each project.
         data_set_id (int): The id of the dataset this relationship belongs to.
-        labels (List[Label]): A list of the labels associated with this resource item.
+        labels (SequenceType[Label]): A list of the labels associated with this resource item.
         created_time (int): Time, in milliseconds since Jan. 1, 1970, when this relationship was created in CDF.
         last_updated_time (int): Time, in milliseconds since Jan. 1, 1970, when this relationship was last updated in CDF.
         cognite_client (CogniteClient): The client to associate with this object.
@@ -54,7 +56,7 @@ class Relationship(CogniteResource):
         end_time: int = None,
         confidence: float = None,
         data_set_id: int = None,
-        labels: List[Union[Label, str, LabelDefinition, dict]] = None,
+        labels: SequenceType[Union[Label, str, LabelDefinition, dict]] = None,
         created_time: int = None,
         last_updated_time: int = None,
         cognite_client: "CogniteClient" = None,
@@ -116,11 +118,11 @@ class RelationshipFilter(CogniteFilter):
     """Filter on relationships with exact match. Multiple filter elements in one property, e.g. `sourceExternalIds: [ "a", "b" ]`, will return all relationships where the `sourceExternalId` field is either `a` or `b`. Filters in multiple properties will return the relationships that match all criteria. If the filter is not specified it default to an empty filter.
 
     Args:
-        source_external_ids (List[str]): Include relationships that have any of these values in their `sourceExternalId` field
-        source_types (List[str]): Include relationships that have any of these values in their `sourceType` field
-        target_external_ids (List[str]): Include relationships that have any of these values in their `targetExternalId` field
-        target_types (List[str]): Include relationships that have any of these values in their `targetType` field
-        data_set_ids (List[Dict[str, Any]]): Either one of `internalId` (int) or `externalId` (str)
+        source_external_ids (Sequence[str]): Include relationships that have any of these values in their `sourceExternalId` field
+        source_types (Sequence[str]): Include relationships that have any of these values in their `sourceType` field
+        target_external_ids (Sequence[str]): Include relationships that have any of these values in their `targetExternalId` field
+        target_types (Sequence[str]): Include relationships that have any of these values in their `targetType` field
+        data_set_ids (Sequence[Dict[str, Any]]): Either one of `internalId` (int) or `externalId` (str)
         start_time (Dict[str, int]): Range between two timestamps, minimum and maximum milliseconds (inclusive)
         end_time (Dict[str, int]): Range between two timestamps, minimum and maximum milliseconds (inclusive)
         confidence (Dict[str, int]): Range to filter the field for. (inclusive)
@@ -133,11 +135,11 @@ class RelationshipFilter(CogniteFilter):
 
     def __init__(
         self,
-        source_external_ids: List[str] = None,
-        source_types: List[str] = None,
-        target_external_ids: List[str] = None,
-        target_types: List[str] = None,
-        data_set_ids: List[Dict[str, Any]] = None,
+        source_external_ids: SequenceType[str] = None,
+        source_types: SequenceType[str] = None,
+        target_external_ids: SequenceType[str] = None,
+        target_types: SequenceType[str] = None,
+        data_set_ids: SequenceType[Dict[str, Any]] = None,
         start_time: Dict[str, int] = None,
         end_time: Dict[str, int] = None,
         confidence: Dict[str, int] = None,

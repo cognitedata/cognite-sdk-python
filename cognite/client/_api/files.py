@@ -1,7 +1,7 @@
 import copy
 import os
 from pathlib import Path
-from typing import Any, BinaryIO, Dict, Iterator, List, Optional, TextIO, Tuple, Union, cast, overload
+from typing import Any, BinaryIO, Dict, Iterator, List, Optional, Sequence, TextIO, Tuple, Union, cast, overload
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -29,12 +29,12 @@ class FilesAPI(APIClient):
         name: str = None,
         mime_type: str = None,
         metadata: Dict[str, str] = None,
-        asset_ids: List[int] = None,
-        asset_external_ids: List[str] = None,
-        asset_subtree_ids: List[int] = None,
-        asset_subtree_external_ids: List[str] = None,
-        data_set_ids: List[int] = None,
-        data_set_external_ids: List[str] = None,
+        asset_ids: Sequence[int] = None,
+        asset_external_ids: Sequence[str] = None,
+        asset_subtree_ids: Sequence[int] = None,
+        asset_subtree_external_ids: Sequence[str] = None,
+        data_set_ids: Sequence[int] = None,
+        data_set_external_ids: Sequence[str] = None,
         labels: LabelFilter = None,
         geo_location: GeoLocationFilter = None,
         source: str = None,
@@ -57,13 +57,13 @@ class FilesAPI(APIClient):
             name (str): Name of the file.
             mime_type (str): File type. E.g. text/plain, application/pdf, ..
             metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value
-            asset_ids (List[int]): Only include files that reference these specific asset IDs.
-            asset_subtree_external_ids (List[str]): Only include files that reference these specific asset external IDs.
-            root_asset_external_ids (List[str]): The external IDs of the root assets that the related assets should be children of.
-            asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
-            asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
-            data_set_ids (List[int]): Return only files in the specified data sets with these ids.
-            data_set_external_ids (List[str]): Return only files in the specified data sets with these external ids.
+            asset_ids (Sequence[int]): Only include files that reference these specific asset IDs.
+            asset_subtree_external_ids (Sequence[str]): Only include files that reference these specific asset external IDs.
+            root_asset_external_ids (Sequence[str]): The external IDs of the root assets that the related assets should be children of.
+            asset_subtree_ids (Sequence[int]): List of asset subtrees ids to filter on.
+            asset_subtree_external_ids (Sequence[str]): List of asset subtrees external ids to filter on.
+            data_set_ids (Sequence[int]): Return only files in the specified data sets with these ids.
+            data_set_external_ids (Sequence[str]): Return only files in the specified data sets with these external ids.
             labels (LabelFilter): Return only the files matching the specified label(s).
             geo_location (GeoLocationFilter): Only include files matching the specified geographic relation.
             source (str): The source of this event.
@@ -192,15 +192,15 @@ class FilesAPI(APIClient):
 
     def retrieve_multiple(
         self,
-        ids: Optional[List[int]] = None,
-        external_ids: Optional[List[str]] = None,
+        ids: Optional[Sequence[int]] = None,
+        external_ids: Optional[Sequence[str]] = None,
         ignore_unknown_ids: bool = False,
     ) -> FileMetadataList:
         """`Retrieve multiple file metadatas by id. <https://docs.cognite.com/api/v1/#operation/byIdsFiles>`_
 
         Args:
-            ids (List[int], optional): IDs
-            external_ids (List[str], optional): External IDs
+            ids (Sequence[int], optional): IDs
+            external_ids (Sequence[str], optional): External IDs
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -233,12 +233,12 @@ class FilesAPI(APIClient):
         name: str = None,
         mime_type: str = None,
         metadata: Dict[str, str] = None,
-        asset_ids: List[int] = None,
-        asset_external_ids: List[str] = None,
-        asset_subtree_ids: List[int] = None,
-        asset_subtree_external_ids: List[str] = None,
-        data_set_ids: List[int] = None,
-        data_set_external_ids: List[str] = None,
+        asset_ids: Sequence[int] = None,
+        asset_external_ids: Sequence[str] = None,
+        asset_subtree_ids: Sequence[int] = None,
+        asset_subtree_external_ids: Sequence[str] = None,
+        data_set_ids: Sequence[int] = None,
+        data_set_external_ids: Sequence[str] = None,
         labels: LabelFilter = None,
         geo_location: GeoLocationFilter = None,
         source: str = None,
@@ -258,12 +258,12 @@ class FilesAPI(APIClient):
             name (str): Name of the file.
             mime_type (str): File type. E.g. text/plain, application/pdf, ..
             metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value
-            asset_ids (List[int]): Only include files that reference these specific asset IDs.
-            asset_subtree_external_ids (List[str]): Only include files that reference these specific asset external IDs.
-            asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
-            asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
-            data_set_ids (List[int]): Return only files in the specified data sets with these ids.
-            data_set_external_ids (List[str]): Return only files in the specified data sets with these external ids.
+            asset_ids (Sequence[int]): Only include files that reference these specific asset IDs.
+            asset_subtree_external_ids (Sequence[str]): Only include files that reference these specific asset external IDs.
+            asset_subtree_ids (Sequence[int]): List of asset subtrees ids to filter on.
+            asset_subtree_external_ids (Sequence[str]): List of asset subtrees external ids to filter on.
+            data_set_ids (Sequence[int]): Return only files in the specified data sets with these ids.
+            data_set_external_ids (Sequence[str]): Return only files in the specified data sets with these external ids.
             labels (LabelFilter): Return only the files matching the specified label filter(s).
             geo_location (GeoLocationFilter): Only include files matching the specified geographic relation.
             source (str): The source of this event.
@@ -374,12 +374,12 @@ class FilesAPI(APIClient):
 
         return self._aggregate(filter=filter, cls=FileAggregate)
 
-    def delete(self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None) -> None:
+    def delete(self, id: Union[int, Sequence[int]] = None, external_id: Union[str, Sequence[str]] = None) -> None:
         """`Delete files <https://docs.cognite.com/api/v1/#operation/deleteFiles>`_
 
         Args:
-            id (Union[int, List[int]]): Id or list of ids
-            external_id (Union[str, List[str]]): str or list of str
+            id (Union[int, Sequence[int]]): Id or list of ids
+            external_id (Union[str, Sequence[str]]): str or list of str
 
         Returns:
             None
@@ -399,17 +399,17 @@ class FilesAPI(APIClient):
         ...
 
     @overload
-    def update(self, item: List[Union[FileMetadata, FileMetadataUpdate]]) -> FileMetadataList:
+    def update(self, item: Sequence[Union[FileMetadata, FileMetadataUpdate]]) -> FileMetadataList:
         ...
 
     def update(
-        self, item: Union[FileMetadata, FileMetadataUpdate, List[Union[FileMetadata, FileMetadataUpdate]]]
+        self, item: Union[FileMetadata, FileMetadataUpdate, Sequence[Union[FileMetadata, FileMetadataUpdate]]]
     ) -> Union[FileMetadata, FileMetadataList]:
         """`Update files <https://docs.cognite.com/api/v1/#operation/updateFiles>`_
         Currently, a full replacement of labels on a file is not supported (only partial add/remove updates). See the example below on how to perform partial labels update.
 
         Args:
-            item (Union[FileMetadata, FileMetadataUpdate, List[Union[FileMetadata, FileMetadataUpdate]]]): file(s) to update.
+            item (Union[FileMetadata, FileMetadataUpdate, Sequence[Union[FileMetadata, FileMetadataUpdate]]]): file(s) to update.
 
         Returns:
             Union[FileMetadata, FileMetadataList]: The updated files.
@@ -496,13 +496,13 @@ class FilesAPI(APIClient):
         mime_type: str = None,
         metadata: Dict[str, str] = None,
         directory: str = None,
-        asset_ids: List[int] = None,
+        asset_ids: Sequence[int] = None,
         source_created_time: int = None,
         source_modified_time: int = None,
         data_set_id: int = None,
-        labels: List[Label] = None,
+        labels: Sequence[Label] = None,
         geo_location: GeoLocation = None,
-        security_categories: List[int] = None,
+        security_categories: Sequence[int] = None,
         recursive: bool = False,
         overwrite: bool = False,
     ) -> Union[FileMetadata, FileMetadataList]:
@@ -516,11 +516,11 @@ class FilesAPI(APIClient):
             mime_type (str): File type. E.g. text/plain, application/pdf, ...
             metadata (Dict[str, str]): Customizable extra data about the file. String key -> String value.
             directory (str): The directory to be associated with this file. Must be an absolute, unix-style path.
-            asset_ids (List[int]): No description.
+            asset_ids (Sequence[int]): No description.
             data_set_id (int): ID of the data set.
-            labels (List[Label]): A list of the labels associated with this resource item.
+            labels (Sequence[Label]): A list of the labels associated with this resource item.
             geo_location (GeoLocation): The geographic metadata of the file.
-            security_categories (List[int]): Security categories to attach to this file.
+            security_categories (Sequence[int]): Security categories to attach to this file.
             source_created_time (int): The timestamp for when the file was originally created in the source system.
             source_modified_time (int): The timestamp for when the file was last modified in the source system.
             recursive (bool): If path is a directory, upload all contained files recursively.
@@ -627,13 +627,13 @@ class FilesAPI(APIClient):
         mime_type: str = None,
         metadata: Dict[str, str] = None,
         directory: str = None,
-        asset_ids: List[int] = None,
+        asset_ids: Sequence[int] = None,
         data_set_id: int = None,
-        labels: List[Label] = None,
+        labels: Sequence[Label] = None,
         geo_location: GeoLocation = None,
         source_created_time: int = None,
         source_modified_time: int = None,
-        security_categories: List[int] = None,
+        security_categories: Sequence[int] = None,
         overwrite: bool = False,
     ) -> FileMetadata:
         """Upload bytes or string.
@@ -648,13 +648,13 @@ class FilesAPI(APIClient):
             mime_type (str): File type. E.g. text/plain, application/pdf,...
             metadata (Dict[str, str]): Customizable extra data about the file. String key -> String value.
             directory (str): The directory to be associated with this file. Must be an absolute, unix-style path.
-            asset_ids (List[int]): No description.
+            asset_ids (Sequence[int]): No description.
             data_set_id (int): Id of the data set.
-            labels (List[Label]): A list of the labels associated with this resource item.
+            labels (Sequence[Label]): A list of the labels associated with this resource item.
             geo_location (GeoLocation): The geographic metadata of the file.
             source_created_time (int): The timestamp for when the file was originally created in the source system.
             source_modified_time (int): The timestamp for when the file was last modified in the source system.
-            security_categories (List[int]): Security categories to attach to this file.
+            security_categories (Sequence[int]): Security categories to attach to this file.
             overwrite (bool): If 'overwrite' is set to true, and the POST body content specifies a 'externalId' field,
                 fields for the file found for externalId can be overwritten. The default setting is false.
                 If metadata is included in the request body, all of the original metadata will be overwritten.
@@ -700,13 +700,13 @@ class FilesAPI(APIClient):
         return FileMetadata._load(returned_file_metadata)
 
     def retrieve_download_urls(
-        self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None
+        self, id: Union[int, Sequence[int]] = None, external_id: Union[str, Sequence[str]] = None
     ) -> Dict[Union[int, str], str]:
         """Get download links by id or external id
 
         Args:
-            id (Union[int, List[int]]: Id or list of ids.
-            external_id (Union[str, List[str]]: External id or list of external ids.
+            id (Union[int, Sequence[int]]: Id or list of ids.
+            external_id (Union[str, Sequence[str]]: External id or list of external ids.
 
         Returns:
             Dict[Union[str, int], str]: Dictionary containing download urls.
@@ -722,7 +722,10 @@ class FilesAPI(APIClient):
         return {result.get("id") or result["externalId"]: result["downloadUrl"] for result in results}
 
     def download(
-        self, directory: Union[str, Path], id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None
+        self,
+        directory: Union[str, Path],
+        id: Union[int, Sequence[int]] = None,
+        external_id: Union[str, Sequence[str]] = None,
     ) -> None:
         """`Download files by id or external id. <https://docs.cognite.com/api/v1/#operation/downloadLinks>`_
 
@@ -732,8 +735,8 @@ class FilesAPI(APIClient):
 
         Args:
             directory (str): Directory to download the file(s) to.
-            id (Union[int, List[int]], optional): Id or list of ids
-            external_id (Union[str, List[str]), optional): External ID or list of external ids.
+            id (Union[int, Sequence[int]], optional): Id or list of ids
+            external_id (Union[str, Sequence[str]), optional): External ID or list of external ids.
 
         Returns:
             None
@@ -753,7 +756,7 @@ class FilesAPI(APIClient):
         assert directory.is_dir(), "{} is not a directory".format(directory)
         self._download_files_to_directory(directory, all_ids, id_to_metadata)
 
-    def _get_id_to_metadata_map(self, all_ids: List[Dict]) -> Dict[Union[str, int], FileMetadata]:
+    def _get_id_to_metadata_map(self, all_ids: Sequence[Dict]) -> Dict[Union[str, int], FileMetadata]:
         ids = [id["id"] for id in all_ids if "id" in id]
         external_ids = [id["externalId"] for id in all_ids if "externalId" in id]
 
@@ -769,7 +772,7 @@ class FilesAPI(APIClient):
     def _download_files_to_directory(
         self,
         directory: Path,
-        all_ids: List[Dict[str, Union[int, str]]],
+        all_ids: Sequence[Dict[str, Union[int, str]]],
         id_to_metadata: Dict[Union[str, int], FileMetadata],
     ) -> None:
         tasks = [(directory, id, id_to_metadata) for id in all_ids]

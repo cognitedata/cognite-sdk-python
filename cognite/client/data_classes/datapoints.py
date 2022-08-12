@@ -356,10 +356,10 @@ class DatapointsList(CogniteResourceList):
 
 
 DatapointsIdMaybeAggregate = Union[
-    int, List[int], Dict[str, Union[int, List[str]]], List[Dict[str, Union[int, List[str]]]]
+    int, List[int], Dict[str, Union[int, List[int]]], List[Dict[str, Union[int, List[int]]]]
 ]
 DatapointsExternalIdMaybeAggregate = Union[
-    str, List[str], Dict[str, Union[int, List[str]]], List[Dict[str, Union[int, List[str]]]]
+    str, List[str], Dict[str, Union[str, List[str]]], List[Dict[str, Union[str, List[str]]]]
 ]
 
 

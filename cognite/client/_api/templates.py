@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, Dict, List, Optional, Sequence, Union, cast
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -77,12 +77,12 @@ class TemplateGroupsAPI(APIClient):
         super().__init__(*args, **kwargs)
 
     def create(
-        self, template_groups: Union[TemplateGroup, List[TemplateGroup]]
+        self, template_groups: Union[TemplateGroup, Sequence[TemplateGroup]]
     ) -> Union[TemplateGroup, TemplateGroupList]:
         """`Create one or more template groups.`
 
         Args:
-            template_groups (Union[TemplateGroup, List[TemplateGroup]])
+            template_groups (Union[TemplateGroup, Sequence[TemplateGroup]])
 
         Returns:
             Union[TemplateGroup, TemplateGroupList]: Created template group(s)
@@ -100,13 +100,13 @@ class TemplateGroupsAPI(APIClient):
         return self._create_multiple(list_cls=TemplateGroupList, resource_cls=TemplateGroup, items=template_groups)
 
     def upsert(
-        self, template_groups: Union[TemplateGroup, List[TemplateGroup]]
+        self, template_groups: Union[TemplateGroup, Sequence[TemplateGroup]]
     ) -> Union[TemplateGroup, TemplateGroupList]:
         """`Upsert one or more template groups.`
         Will overwrite existing template group(s) with the same external id(s).
 
         Args:
-            template_groups (Union[TemplateGroup, List[TemplateGroup]])
+            template_groups (Union[TemplateGroup, Sequence[TemplateGroup]])
 
         Returns:
             Union[TemplateGroup, TemplateGroupList]: Created template group(s)
@@ -135,11 +135,11 @@ class TemplateGroupsAPI(APIClient):
             return res[0]
         return res
 
-    def retrieve_multiple(self, external_ids: List[str], ignore_unknown_ids: bool = False) -> TemplateGroupList:
+    def retrieve_multiple(self, external_ids: Sequence[str], ignore_unknown_ids: bool = False) -> TemplateGroupList:
         """`Retrieve multiple template groups by external id.`
 
         Args:
-            external_ids (List[str]): External IDs
+            external_ids (Sequence[str]): External IDs
             ignore_unknown_ids (bool): Ignore external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -160,12 +160,12 @@ class TemplateGroupsAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
-    def list(self, limit: int = 25, owners: List[str] = None) -> TemplateGroupList:
+    def list(self, limit: int = 25, owners: Sequence[str] = None) -> TemplateGroupList:
         """`Lists template groups stored in the project based on a query filter given in the payload of this request.`
         Up to 1000 template groups can be retrieved in one operation.
 
         Args:
-            owners (List[str]): Include template groups that have any of these values in their `owner` field.
+            owners (Sequence[str]): Include template groups that have any of these values in their `owner` field.
             limit (int): Maximum number of template groups to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all items.
 
@@ -192,11 +192,11 @@ class TemplateGroupsAPI(APIClient):
             sort=None,
         )
 
-    def delete(self, external_ids: Union[str, List[str]], ignore_unknown_ids: bool = False) -> None:
+    def delete(self, external_ids: Union[str, Sequence[str]], ignore_unknown_ids: bool = False) -> None:
         """`Delete one or more template groups.`
 
         Args:
-            external_ids (Union[str, List[str]]): External ID or list of external ids
+            external_ids (Union[str, Sequence[str]]): External ID or list of external ids
             ignore_unknown_ids (bool): Ignore external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -308,7 +308,7 @@ class TemplateGroupVersionsAPI(APIClient):
         """`Delete a template group version.`
 
         Args:
-            external_id (Union[str, List[str]]): External ID of the template group.
+            external_id (str): External ID of the template group.
             version (int): The version of the template group to delete.
 
         Returns:
@@ -330,14 +330,14 @@ class TemplateInstancesAPI(APIClient):
     _LIST_CLASS = TemplateInstanceList
 
     def create(
-        self, external_id: str, version: int, instances: Union[TemplateInstance, List[TemplateInstance]]
+        self, external_id: str, version: int, instances: Union[TemplateInstance, Sequence[TemplateInstance]]
     ) -> Union[TemplateInstance, TemplateInstanceList]:
         """`Create one or more template instances.`
 
         Args:
             external_id (str): The external id of the template group.
             version (int): The version of the template group to create instances for.
-            instances (Union[TemplateInstance, List[TemplateInstance]]): The instances to create.
+            instances (Union[TemplateInstance, Sequence[TemplateInstance]]): The instances to create.
 
         Returns:
             Union[TemplateInstance, TemplateInstanceList]: Created template instance(s).
@@ -372,7 +372,7 @@ class TemplateInstancesAPI(APIClient):
         )
 
     def upsert(
-        self, external_id: str, version: int, instances: Union[TemplateInstance, List[TemplateInstance]]
+        self, external_id: str, version: int, instances: Union[TemplateInstance, Sequence[TemplateInstance]]
     ) -> Union[TemplateInstance, TemplateInstanceList]:
         """`Upsert one or more template instances.`
         Will overwrite existing instances.
@@ -380,7 +380,7 @@ class TemplateInstancesAPI(APIClient):
         Args:
          external_id (str): The external id of the template group.
          version (int): The version of the template group to create instances for.
-         instances (Union[TemplateInstance, List[TemplateInstance]]): The instances to create.
+         instances (Union[TemplateInstance, Sequence[TemplateInstance]]): The instances to create.
 
         Returns:
          Union[TemplateInstance, TemplateInstanceList]: Created template instance(s).
@@ -423,14 +423,14 @@ class TemplateInstancesAPI(APIClient):
         return res
 
     def update(
-        self, external_id: str, version: int, item: Union[TemplateInstanceUpdate, List[TemplateInstanceUpdate]]
+        self, external_id: str, version: int, item: Union[TemplateInstanceUpdate, Sequence[TemplateInstanceUpdate]]
     ) -> Union[TemplateInstance, TemplateInstanceList]:
         """`Update one or more template instances`
         Args:
-            item (Union[TemplateInstanceUpdate, List[TemplateInstanceUpdate]]): Templates instance(s) to update
+            item (Union[TemplateInstanceUpdate, Sequence[TemplateInstanceUpdate]]): Templates instance(s) to update
 
         Returns:
-            Union[TemplateInstance, List[TemplateInstance]]: Updated template instance(s)
+            Union[TemplateInstance, TemplateInstanceList]: Updated template instance(s)
 
         Examples:
             Perform a partial update on a template instance::
@@ -451,14 +451,14 @@ class TemplateInstancesAPI(APIClient):
         )
 
     def retrieve_multiple(
-        self, external_id: str, version: int, external_ids: List[str], ignore_unknown_ids: bool = False
+        self, external_id: str, version: int, external_ids: Sequence[str], ignore_unknown_ids: bool = False
     ) -> TemplateInstanceList:
         """`Retrieve multiple template instances by external id.`
 
         Args:
             external_id (str): The template group to retrieve instances from.
             version (int): The version of the template group.
-            external_ids (List[str]): External IDs of the instances.
+            external_ids (Sequence[str]): External IDs of the instances.
             ignore_unknown_ids (bool): Ignore external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -486,8 +486,8 @@ class TemplateInstancesAPI(APIClient):
         external_id: str,
         version: int,
         limit: int = 25,
-        data_set_ids: Optional[List[int]] = None,
-        template_names: Optional[List[str]] = None,
+        data_set_ids: Optional[Sequence[int]] = None,
+        template_names: Optional[Sequence[str]] = None,
     ) -> TemplateInstanceList:
         """`Lists instances in a template group.`
         Up to 1000 template instances can be retrieved in one operation.
@@ -497,8 +497,8 @@ class TemplateInstancesAPI(APIClient):
             version (int): The version of the template group.
             limit (int): Maximum number of template group versions to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all items.
-            data_set_ids: (Optional[List[int]]): Only include instances which has one of these values in their `data_set_id` field.
-            template_names: (Optional[List[str]]): Only include instances which has one of these values in their `template_name` field.
+            data_set_ids: (Optional[Sequence[int]]): Only include instances which has one of these values in their `data_set_id` field.
+            template_names: (Optional[Sequence[str]]): Only include instances which has one of these values in their `template_name` field.
 
         Returns:
             TemplateInstanceList: List of requested template instances
@@ -525,13 +525,15 @@ class TemplateInstancesAPI(APIClient):
             filter=filter,
         )
 
-    def delete(self, external_id: str, version: int, external_ids: List[str], ignore_unknown_ids: bool = False) -> None:
+    def delete(
+        self, external_id: str, version: int, external_ids: Sequence[str], ignore_unknown_ids: bool = False
+    ) -> None:
         """`Delete one or more template instances.`
 
         Args:
-            external_id (Union[str, List[str]]): External ID of the template group.
+            external_id (str): External ID of the template group.
             version (int): The version of the template group.
-            external_ids (List[str]): The external ids of the template instances to delete
+            external_ids (Sequence[str]): The external ids of the template instances to delete
             ignore_unknown_ids (bool): Ignore external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -556,13 +558,13 @@ class TemplateInstancesAPI(APIClient):
 class TemplateViewsAPI(APIClient):
     _RESOURCE_PATH = "/templategroups/{}/versions/{}/views"
 
-    def create(self, external_id: str, version: int, views: Union[View, List[View]]) -> Union[View, ViewList]:
+    def create(self, external_id: str, version: int, views: Union[View, Sequence[View]]) -> Union[View, ViewList]:
         """`Create one or more template views.`
 
         Args:
             external_id (str): The external id of the template group.
             version (int): The version of the template group to create views for.
-            views (Union[View, List[View]]): The views to create.
+            views (Union[View, Sequence[View]]): The views to create.
 
         Returns:
             Union[View, ViewList]: Created view(s).
@@ -592,13 +594,13 @@ class TemplateViewsAPI(APIClient):
         resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
         return self._create_multiple(list_cls=ViewList, resource_cls=View, resource_path=resource_path, items=views)
 
-    def upsert(self, external_id: str, version: int, views: Union[View, List[View]]) -> Union[View, ViewList]:
+    def upsert(self, external_id: str, version: int, views: Union[View, Sequence[View]]) -> Union[View, ViewList]:
         """`Upsert one or more template views.`
 
         Args:
             external_id (str): The external id of the template group.
             version (int): The version of the template group to create views for.
-            views (Union[View, List[View]]): The views to create.
+            views (Union[View, Sequence[View]]): The views to create.
 
         Returns:
             Union[View, ViewList]: Created view(s).
@@ -693,14 +695,18 @@ class TemplateViewsAPI(APIClient):
         return self._list(list_cls=ViewList, resource_cls=View, resource_path=resource_path, method="POST", limit=limit)
 
     def delete(
-        self, external_id: str, version: int, view_external_id: Union[List[str], str], ignore_unknown_ids: bool = False
+        self,
+        external_id: str,
+        version: int,
+        view_external_id: Union[Sequence[str], str],
+        ignore_unknown_ids: bool = False,
     ) -> None:
         """`Delete one or more views.`
 
         Args:
-            external_id (Union[str, List[str]]): External ID of the template group.
+            external_id (str): External ID of the template group.
             version (int): The version of the template group.
-            view_external_id (Union[List[str], str]): The external ids of the views to delete
+            view_external_id (Union[Sequence[str], str]): The external ids of the views to delete
             ignore_unknown_ids (bool): Ignore external IDs that are not found rather than throw an exception.
 
         Returns:
