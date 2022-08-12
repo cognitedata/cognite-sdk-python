@@ -434,26 +434,24 @@ class FunctionsAPI(APIClient):
         try:
             with TemporaryDirectory() as tmpdir:
                 zip_path = os.path.join(tmpdir, "function.zip")
-                zf = ZipFile(zip_path, "w")
-                for root, dirs, files in os.walk("."):
-                    zf.write(root)
+                with ZipFile(zip_path, "w") as zf:
+                    for root, dirs, files in os.walk("."):
+                        zf.write(root)
 
-                    # Validate requirements.txt in root-dir only
-                    if root == "." and REQUIREMENTS_FILE_NAME in files:
-                        # Remove requirement from file list
-                        path = files.pop(files.index(REQUIREMENTS_FILE_NAME))
-                        reqs = _extract_requirements_from_file(path)
-                        # Validate and format requirements
-                        req_path = _validate_requirements(reqs)
+                        # Validate requirements.txt in root-dir only
+                        if root == "." and REQUIREMENTS_FILE_NAME in files:
+                            # Remove requirement from file list
+                            path = files.pop(files.index(REQUIREMENTS_FILE_NAME))
+                            reqs = _extract_requirements_from_file(path)
+                            # Validate and format requirements
+                            req_path = _validate_requirements(reqs)
 
-                        # NOTE: the actual file is not written.
-                        # A temporary formatted file is used instead
-                        zf.write(req_path, arcname=REQUIREMENTS_FILE_NAME)
+                            # NOTE: the actual file is not written.
+                            # A temporary formatted file is used instead
+                            zf.write(req_path, arcname=REQUIREMENTS_FILE_NAME)
 
-                    for filename in files:
-                        zf.write(os.path.join(root, filename))
-
-                zf.close()
+                        for filename in files:
+                            zf.write(os.path.join(root, filename))
 
                 overwrite = True if external_id else False
                 file = cast(
@@ -483,13 +481,12 @@ class FunctionsAPI(APIClient):
             req_path = _get_requirements_handle(fn=function_handle)
 
             zip_path = os.path.join(tmpdir, "function.zip")
-            zf = ZipFile(zip_path, "w")
-            zf.write(handle_path, arcname=HANDLER_FILE_NAME)
+            with ZipFile(zip_path, "w") as zf:
+                zf.write(handle_path, arcname=HANDLER_FILE_NAME)
 
-            # Zip requirements.txt
-            if req_path:
-                zf.write(req_path, arcname=REQUIREMENTS_FILE_NAME)
-            zf.close()
+                # Zip requirements.txt
+                if req_path:
+                    zf.write(req_path, arcname=REQUIREMENTS_FILE_NAME)
 
             overwrite = True if external_id else False
             file = cast(
