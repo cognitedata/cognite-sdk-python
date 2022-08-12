@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterator, List, Optional, Union, cast
+from typing import Any, Dict, Iterator, List, Optional, Sequence, Union, cast
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import (
@@ -66,11 +66,11 @@ class DataSetsAPI(APIClient):
         """
         return cast(Iterator[DataSet], self.__call__())
 
-    def create(self, data_set: Union[DataSet, List[DataSet]]) -> Union[DataSet, DataSetList]:
+    def create(self, data_set: Union[DataSet, Sequence[DataSet]]) -> Union[DataSet, DataSetList]:
         """`Create one or more data sets. <https://docs.cognite.com/api/v1/#operation/createDataSets>`_
 
         Args:
-            data_set: Union[DataSet, List[DataSet]]: Data set or list of data sets to create.
+            data_set: Union[DataSet, Sequence[DataSet]]: Data set or list of data sets to create.
 
         Returns:
             Union[DataSet, DataSetList]: Created data set(s)
@@ -116,15 +116,15 @@ class DataSetsAPI(APIClient):
 
     def retrieve_multiple(
         self,
-        ids: Optional[List[int]] = None,
-        external_ids: Optional[List[str]] = None,
+        ids: Optional[Sequence[int]] = None,
+        external_ids: Optional[Sequence[str]] = None,
         ignore_unknown_ids: bool = False,
     ) -> DataSetList:
         """`Retrieve multiple data sets by id. <https://docs.cognite.com/api/v1/#operation/getDataSets>`_
 
         Args:
-            ids (List[int], optional): IDs
-            external_ids (List[str], optional): External IDs
+            ids (Sequence[int], optional): IDs
+            external_ids (Sequence[str], optional): External IDs
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -225,12 +225,12 @@ class DataSetsAPI(APIClient):
         return self._aggregate(filter=filter, cls=DataSetAggregate)
 
     def update(
-        self, item: Union[DataSet, DataSetUpdate, List[Union[DataSet, DataSetUpdate]]]
+        self, item: Union[DataSet, DataSetUpdate, Sequence[Union[DataSet, DataSetUpdate]]]
     ) -> Union[DataSet, DataSetList]:
         """`Update one or more data sets <https://docs.cognite.com/api/v1/#operation/updateDataSets>`_
 
         Args:
-            item: Union[DataSet, DataSetUpdate, List[Union[DataSet, DataSetUpdate]]]: Data set(s) to update
+            item: Union[DataSet, DataSetUpdate, Sequence[Union[DataSet, DataSetUpdate]]]: Data set(s) to update
 
         Returns:
             Union[DataSet, DataSetList]: Updated data set(s)

@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union, overload
+from typing import Any, Dict, Optional, Sequence, Union, overload
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -50,15 +50,15 @@ class ExtractionPipelinesAPI(APIClient):
 
     def retrieve_multiple(
         self,
-        ids: Optional[List[int]] = None,
-        external_ids: Optional[List[str]] = None,
+        ids: Optional[Sequence[int]] = None,
+        external_ids: Optional[Sequence[str]] = None,
         ignore_unknown_ids: bool = False,
     ) -> ExtractionPipelineList:
         """`Retrieve multiple extraction pipelines by ids and external ids. <https://docs.cognite.com/api/v1/#operation/byidsExtPipes>`_
 
         Args:
-            ids (List[int], optional): IDs
-            external_ids (List[str], optional): External IDs
+            ids (Sequence[int], optional): IDs
+            external_ids (Sequence[str], optional): External IDs
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -112,11 +112,11 @@ class ExtractionPipelinesAPI(APIClient):
         ...
 
     @overload
-    def create(self, extractionPipeline: List[ExtractionPipeline]) -> ExtractionPipelineList:
+    def create(self, extractionPipeline: Sequence[ExtractionPipeline]) -> ExtractionPipelineList:
         ...
 
     def create(
-        self, extractionPipeline: Union[ExtractionPipeline, List[ExtractionPipeline]]
+        self, extractionPipeline: Union[ExtractionPipeline, Sequence[ExtractionPipeline]]
     ) -> Union[ExtractionPipeline, ExtractionPipelineList]:
         """`Create one or more extraction pipelines. <https://docs.cognite.com/api/v1/#operation/createExtPipes>`_
 
@@ -138,17 +138,17 @@ class ExtractionPipelinesAPI(APIClient):
                 >>> extpipes = [ExtractionPipeline(name="extPipe1",...), ExtractionPipeline(name="extPipe2",...)]
                 >>> res = c.extraction_pipelines.create(extpipes)
         """
-        utils._auxiliary.assert_type(extractionPipeline, "extraction_pipeline", [ExtractionPipeline, list])
+        utils._auxiliary.assert_type(extractionPipeline, "extraction_pipeline", [ExtractionPipeline, Sequence])
         return self._create_multiple(
             list_cls=ExtractionPipelineList, resource_cls=ExtractionPipeline, items=extractionPipeline
         )
 
-    def delete(self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None) -> None:
+    def delete(self, id: Union[int, Sequence[int]] = None, external_id: Union[str, Sequence[str]] = None) -> None:
         """`Delete one or more extraction pipelines <https://docs.cognite.com/api/v1/#operation/deleteExtPipes>`_
 
         Args:
-            id (Union[int, List[int]): Id or list of ids
-            external_id (Union[str, List[str]]): External ID or list of external ids
+            id (Union[int, Sequence[int]): Id or list of ids
+            external_id (Union[str, Sequence[str]]): External ID or list of external ids
 
         Returns:
             None
@@ -168,19 +168,19 @@ class ExtractionPipelinesAPI(APIClient):
         ...
 
     @overload
-    def update(self, item: List[Union[ExtractionPipeline, ExtractionPipelineUpdate]]) -> ExtractionPipelineList:
+    def update(self, item: Sequence[Union[ExtractionPipeline, ExtractionPipelineUpdate]]) -> ExtractionPipelineList:
         ...
 
     def update(
         self,
         item: Union[
-            ExtractionPipeline, ExtractionPipelineUpdate, List[Union[ExtractionPipeline, ExtractionPipelineUpdate]]
+            ExtractionPipeline, ExtractionPipelineUpdate, Sequence[Union[ExtractionPipeline, ExtractionPipelineUpdate]]
         ],
     ) -> Union[ExtractionPipeline, ExtractionPipelineList]:
         """`Update one or more extraction pipelines <https://docs.cognite.com/api/v1/#operation/updateExtPipes>`_
 
         Args:
-            item (Union[ExtractionPipeline, ExtractionPipelineUpdate, List[Union[ExtractionPipeline, ExtractionPipelineUpdate]]]): Extraction pipeline(s) to update
+            item (Union[ExtractionPipeline, ExtractionPipelineUpdate, Sequence[Union[ExtractionPipeline, ExtractionPipelineUpdate]]]): Extraction pipeline(s) to update
 
         Returns:
             Union[ExtractionPipeline, ExtractionPipelineList]: Updated extraction pipeline(s)
@@ -210,7 +210,7 @@ class ExtractionPipelineRunsAPI(APIClient):
     def list(
         self,
         external_id: str,
-        statuses: List[str] = None,
+        statuses: Sequence[str] = None,
         message_substring: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         limit: int = 25,
@@ -219,7 +219,7 @@ class ExtractionPipelineRunsAPI(APIClient):
 
         Args:
             external_id (str): Extraction pipeline external Id.
-            statuses (List[str]): One or more among "success" / "failure" / "seen".
+            statuses (Sequence[str]): One or more among "success" / "failure" / "seen".
             message_substring (str): Failure message part.
             created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
             limit (int, optional): Maximum number of ExtractionPipelines to return. Defaults to 25. Set to -1, float("inf") or None
@@ -271,18 +271,18 @@ class ExtractionPipelineRunsAPI(APIClient):
         ...
 
     @overload
-    def create(self, run: List[ExtractionPipelineRun]) -> ExtractionPipelineRunList:
+    def create(self, run: Sequence[ExtractionPipelineRun]) -> ExtractionPipelineRunList:
         ...
 
     def create(
-        self, run: Union[ExtractionPipelineRun, List[ExtractionPipelineRun]]
+        self, run: Union[ExtractionPipelineRun, Sequence[ExtractionPipelineRun]]
     ) -> Union[ExtractionPipelineRun, ExtractionPipelineRunList]:
         """`Create one or more extraction pipeline runs. <https://docs.cognite.com/api/v1/#operation/createRuns>`_
 
         You can create an arbitrary number of extraction pipeline runs, and the SDK will split the request into multiple requests.
 
         Args:
-            run (Union[ExtractionPipelineRun, List[ExtractionPipelineRun]]): Extraction pipeline or list of extraction pipeline runs to create.
+            run (Union[ExtractionPipelineRun, Sequence[ExtractionPipelineRun]]): Extraction pipeline or list of extraction pipeline runs to create.
 
         Returns:
             Union[ExtractionPipelineRun, ExtractionPipelineRunList]: Created extraction pipeline run(s)
@@ -296,5 +296,5 @@ class ExtractionPipelineRunsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.extraction_pipeline_runs.create(ExtractionPipelineRun(status="success", external_id="extId"))
         """
-        utils._auxiliary.assert_type(run, "run", [ExtractionPipelineRun, list])
+        utils._auxiliary.assert_type(run, "run", [ExtractionPipelineRun, Sequence])
         return self._create_multiple(list_cls=ExtractionPipelineRunList, resource_cls=ExtractionPipelineRun, items=run)

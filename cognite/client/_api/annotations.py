@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import Any, Collection, Dict, List, Optional, Union, overload
+from typing import Any, Collection, Dict, List, Optional, Sequence, Union, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Annotation, AnnotationFilter, AnnotationList, AnnotationUpdate
@@ -19,19 +19,19 @@ class AnnotationsAPI(APIClient):
         ...
 
     @overload
-    def create(self, annotations: List[Annotation]) -> AnnotationList:
+    def create(self, annotations: Sequence[Annotation]) -> AnnotationList:
         ...
 
-    def create(self, annotations: Union[Annotation, List[Annotation]]) -> Union[Annotation, AnnotationList]:
+    def create(self, annotations: Union[Annotation, Sequence[Annotation]]) -> Union[Annotation, AnnotationList]:
         """Create annotations
 
         Args:
-            annotations (Union[Annotation, List[Annotation]]): annotation(s) to create
+            annotations (Union[Annotation, Sequence[Annotation]]): annotation(s) to create
 
         Returns:
             Union[Annotation, AnnotationList]: created annotation(s)
         """
-        assert_type(annotations, "annotations", [Annotation, list])
+        assert_type(annotations, "annotations", [Annotation, Sequence])
         return self._create_multiple(
             list_cls=AnnotationList, resource_cls=Annotation, resource_path=self._RESOURCE_PATH + "/", items=annotations
         )
@@ -41,23 +41,23 @@ class AnnotationsAPI(APIClient):
         ...
 
     @overload
-    def suggest(self, annotations: List[Annotation]) -> AnnotationList:
+    def suggest(self, annotations: Sequence[Annotation]) -> AnnotationList:
         ...
 
-    def suggest(self, annotations: Union[Annotation, List[Annotation]]) -> Union[Annotation, AnnotationList]:
+    def suggest(self, annotations: Union[Annotation, Sequence[Annotation]]) -> Union[Annotation, AnnotationList]:
         """Suggest annotations
 
         Args:
-            annotations (Union[Annotation, List[Annotation]]): annotation(s) to suggest. They must have status set to "suggested".
+            annotations (Union[Annotation, Sequence[Annotation]]): annotation(s) to suggest. They must have status set to "suggested".
 
         Returns:
             Union[Annotation, AnnotationList]: suggested annotation(s)
         """
-        assert_type(annotations, "annotations", [Annotation, list])
+        assert_type(annotations, "annotations", [Annotation, Sequence])
         # Deal with status fields in both cases: Single item and list of items
         items: Union[List[Dict[str, Any]], Dict[str, Any]] = (
             [self._sanitize_suggest_item(ann) for ann in annotations]
-            if isinstance(annotations, list)
+            if isinstance(annotations, Sequence)
             else self._sanitize_suggest_item(annotations)
         )
         return self._create_multiple(
@@ -122,34 +122,34 @@ class AnnotationsAPI(APIClient):
         ...
 
     @overload
-    def update(self, item: List[Union[Annotation, AnnotationUpdate]]) -> AnnotationList:
+    def update(self, item: Sequence[Union[Annotation, AnnotationUpdate]]) -> AnnotationList:
         ...
 
     def update(
-        self, item: Union[Annotation, AnnotationUpdate, List[Union[Annotation, AnnotationUpdate]]]
+        self, item: Union[Annotation, AnnotationUpdate, Sequence[Union[Annotation, AnnotationUpdate]]]
     ) -> Union[Annotation, AnnotationList]:
         """Update annotations
 
         Args:
-            id (Union[int, List[int]]): ID or list of IDs to be deleted
+            id (Union[int, Sequence[int]]): ID or list of IDs to be deleted
         """
         return self._update_multiple(
             list_cls=AnnotationList, resource_cls=Annotation, update_cls=AnnotationUpdate, items=item
         )
 
-    def delete(self, id: Union[int, List[int]]) -> None:
+    def delete(self, id: Union[int, Sequence[int]]) -> None:
         """Delete annotations
 
         Args:
-            id (Union[int, List[int]]): ID or list of IDs to be deleted
+            id (Union[int, Sequence[int]]): ID or list of IDs to be deleted
         """
         self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=True)
 
-    def retrieve_multiple(self, ids: List[int]) -> AnnotationList:
+    def retrieve_multiple(self, ids: Sequence[int]) -> AnnotationList:
         """Retrieve annotations by IDs
 
         Args:
-            ids (List[int]]: list of IDs to be retrieved
+            ids (Sequence[int]]: list of IDs to be retrieved
 
         Returns:
             AnnotationList: list of annotations

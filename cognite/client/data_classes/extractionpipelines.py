@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Dict, List, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Union, cast
 
 from cognite.client import utils
 from cognite.client.data_classes._base import (
@@ -248,7 +248,7 @@ class ExtractionPipelineRunFilter(CogniteFilter):
 
     Args:
         external_id (str): The external ID of related ExtractionPipeline provided by the client. Must be unique for the resource type.
-        statuses (List[str]): success/failure/seen.
+        statuses (Sequence[str]): success/failure/seen.
         message (StringFilter): message filter.
         created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
         cognite_client (CogniteClient): The client to associate with this object.
@@ -257,7 +257,7 @@ class ExtractionPipelineRunFilter(CogniteFilter):
     def __init__(
         self,
         external_id: str = None,
-        statuses: List[str] = None,
+        statuses: Sequence[str] = None,
         message: StringFilter = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         cognite_client: "CogniteClient" = None,

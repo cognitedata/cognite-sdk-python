@@ -87,8 +87,8 @@ class IdentifierSequence:
         ...
 
     @classmethod
-    def of(cls, *ids: Union[int, str, List[Union[int, str]]]) -> "IdentifierSequence":
-        if len(ids) == 1 and isinstance(ids[0], list):
+    def of(cls, *ids: Union[int, str, Sequence[Union[int, str]]]) -> "IdentifierSequence":
+        if len(ids) == 1 and isinstance(ids[0], Sequence) and not isinstance(ids[0], str):
             return cls([Identifier(val) for val in ids[0]], is_singleton=False)
         else:
             return cls([Identifier(val) for val in ids], is_singleton=len(ids) == 1)
@@ -104,19 +104,19 @@ class IdentifierSequence:
             if isinstance(ids, (int, numbers.Integral)):
                 value_passed_as_primitive = True
                 all_identifiers.append(ids)
-            elif isinstance(ids, list):
+            elif isinstance(ids, Sequence):
                 all_identifiers.extend([int(id_) for id_ in ids])
             else:
-                raise TypeError(f"ids must be of type int or list[int]. Found {type(ids)}")
+                raise TypeError(f"ids must be of type int or Sequence[int]. Found {type(ids)}")
 
         if external_ids is not None:
             if isinstance(external_ids, (str,)):
                 value_passed_as_primitive = True
                 all_identifiers.append(external_ids)
-            elif isinstance(external_ids, list):
+            elif isinstance(external_ids, Sequence):
                 all_identifiers.extend([str(extid) for extid in external_ids])
             else:
-                raise TypeError(f"ids must be of type str or list[str]. Found {type(external_ids)}")
+                raise TypeError(f"ids must be of type str or Sequence[str]. Found {type(external_ids)}")
 
         is_singleton = value_passed_as_primitive and len(all_identifiers) == 1
         return cls(identifiers=[Identifier(val) for val in all_identifiers], is_singleton=is_singleton)
