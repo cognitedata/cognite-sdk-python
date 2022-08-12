@@ -1,6 +1,5 @@
-from typing import Any, Awaitable, Dict, List, Optional, Union
+from typing import Any, Awaitable, Dict, List, Optional, Sequence, Union
 
-from cognite.client import utils
 from cognite.client._api.transformations.jobs import TransformationJobsAPI
 from cognite.client._api.transformations.notifications import TransformationNotificationsAPI
 from cognite.client._api.transformations.schedules import TransformationSchedulesAPI
@@ -29,7 +28,7 @@ class TransformationsAPI(APIClient):
         self.notifications = TransformationNotificationsAPI(*args, **kwargs)
 
     def create(
-        self, transformation: Union[Transformation, List[Transformation]]
+        self, transformation: Union[Transformation, Sequence[Transformation]]
     ) -> Union[Transformation, TransformationList]:
         """`Create one or more transformations. <https://docs.cognite.com/api/v1/#operation/createTransformations>`_
 
@@ -58,9 +57,7 @@ class TransformationsAPI(APIClient):
                 >>> ]
                 >>> res = c.transformations.create(transformations)
         """
-        utils._auxiliary.assert_type(transformation, "transformation", [Transformation, list])
-
-        if isinstance(transformation, list):
+        if isinstance(transformation, Sequence):
             sessions: Dict[str, NonceCredentials] = {}
             transformation = [t.copy() for t in transformation]
             for t in transformation:
@@ -70,13 +67,15 @@ class TransformationsAPI(APIClient):
             transformation = transformation.copy()
             transformation._cognite_client = self._cognite_client
             transformation._process_credentials()
+        else:
+            raise TypeError("transformation must be Sequence[Transformation] or Transformation")
 
         return self._create_multiple(list_cls=TransformationList, resource_cls=Transformation, items=transformation)
 
     def delete(
         self,
-        id: Union[int, List[int]] = None,
-        external_id: Union[str, List[str]] = None,
+        id: Union[int, Sequence[int]] = None,
+        external_id: Union[str, Sequence[str]] = None,
         ignore_unknown_ids: bool = False,
     ) -> None:
         """`Delete one or more transformations. <https://docs.cognite.com/api/v1/#operation/deleteTransformations>`_
@@ -206,7 +205,7 @@ class TransformationsAPI(APIClient):
         )
 
     def retrieve_multiple(
-        self, ids: List[int] = None, external_ids: List[str] = None, ignore_unknown_ids: bool = False
+        self, ids: Sequence[int] = None, external_ids: Sequence[str] = None, ignore_unknown_ids: bool = False
     ) -> TransformationList:
         """`Retrieve multiple transformations. <https://docs.cognite.com/api/v1/#operation/getTransformationsByIds>`_
 
@@ -235,7 +234,7 @@ class TransformationsAPI(APIClient):
         )
 
     def update(
-        self, item: Union[Transformation, TransformationUpdate, List[Union[Transformation, TransformationUpdate]]]
+        self, item: Union[Transformation, TransformationUpdate, Sequence[Union[Transformation, TransformationUpdate]]]
     ) -> Union[Transformation, TransformationList]:
         """`Update one or more transformations <https://docs.cognite.com/api/v1/#operation/updateTransformations>`_
 
@@ -264,8 +263,8 @@ class TransformationsAPI(APIClient):
                 >>> res = c.transformations.update(my_update)
         """
 
-        if isinstance(item, list):
-            item = item.copy()
+        if isinstance(item, Sequence):
+            item = list(item).copy()
             sessions: Dict[str, NonceCredentials] = {}
             for (i, t) in enumerate(item):
                 if isinstance(t, Transformation):
@@ -277,6 +276,8 @@ class TransformationsAPI(APIClient):
             item = item.copy()
             item._cognite_client = self._cognite_client
             item._process_credentials(keep_none=True)
+        else:
+            raise TypeError("item must be Sequence[Transformation] or Transformation")
 
         return self._update_multiple(
             list_cls=TransformationList, resource_cls=Transformation, update_cls=TransformationUpdate, items=item
