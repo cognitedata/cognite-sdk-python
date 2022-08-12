@@ -1,4 +1,5 @@
 import os
+from tempfile import NamedTemporaryFile
 from unittest.mock import patch
 
 import pytest
@@ -8,9 +9,9 @@ from cognite.client import CogniteClient
 from cognite.client._api.functions import (
     _extract_requirements_from_doc_string,
     _extract_requirements_from_file,
-    _get_requirements_handle,
     _using_client_credential_flow,
-    _validate_requirements,
+    _validate_and_parse_requirements,
+    _write_fn_docstring_requirements_to_file,
     validate_function_folder,
 )
 from cognite.client.data_classes import (
@@ -25,7 +26,7 @@ from cognite.client.data_classes import (
 )
 from cognite.client.data_classes.functions import FunctionsStatus
 from cognite.client.exceptions import CogniteAPIError
-from tests.utils import jsgz_load
+from tests.utils import jsgz_load, set_env_var
 
 
 def post_body_matcher(params):
@@ -307,7 +308,8 @@ def mock_function_calls_filter_response(rsps, cognite_client):
 
 @pytest.fixture
 def cognite_client_with_client_credentials_flow():
-    client = CogniteClient(token_url="bla", token_scopes=["bla"], token_client_secret="bla", token_client_id="bla")
+    with set_env_var("COGNITE_API_KEY", "bla"):
+        client = CogniteClient(token_url="bla", token_scopes=["bla"], token_client_secret="bla", token_client_id="bla")
     return client
 
 
@@ -669,15 +671,14 @@ class TestRequirementsParser:
     """Test extraction of requirements.txt from docstring in handle-function"""
 
     def test_validate_requirements(self):
-        out_path = _validate_requirements(["asyncio==3.4.3", "numpy==1.23.0", "pandas==1.4.3"])
-        assert os.path.exists(out_path)
-        os.remove(out_path)
+        parsed = _validate_and_parse_requirements(["asyncio==3.4.3", "numpy==1.23.0", "pandas==1.4.3"])
+        assert parsed == ["asyncio==3.4.3", "numpy==1.23.0", "pandas==1.4.3"]
 
     def test_validate_requirements_error(self):
         reqs = [["asyncio=3.4.3"], ["num py==1.23.0"], ["pandas==1.4.3 python_version=='3.8'"]]
         for req in reqs:
             with pytest.raises(Exception):
-                _validate_requirements(req)
+                _validate_and_parse_requirements(req)
 
     def test_get_requirements_handle(self):
         def fn():
@@ -688,15 +689,15 @@ class TestRequirementsParser:
             """
             return None
 
-        res = _get_requirements_handle(fn=fn)
-        assert res is not None
-        os.remove(res)
+        with NamedTemporaryFile() as ntf:
+            assert _write_fn_docstring_requirements_to_file(fn, ntf.name) is True
 
     def test_get_requirements_handle_error(self):
         def fn():
             return None
 
-        assert _get_requirements_handle(fn=fn) is None
+        with NamedTemporaryFile() as ntf:
+            assert _write_fn_docstring_requirements_to_file(fn, ntf.name) is False
 
     def test_get_requirements_handle_no_docstr(self):
         def fn():
@@ -708,7 +709,8 @@ class TestRequirementsParser:
             return None
 
         with pytest.raises(Exception):
-            _get_requirements_handle(fn=fn) is None
+            with NamedTemporaryFile() as ntf:
+                assert _write_fn_docstring_requirements_to_file(fn, ntf.name) is False
 
     def test_get_requirements_handle_no_reqs(self):
         def fn():
@@ -718,7 +720,8 @@ class TestRequirementsParser:
             """
             return None
 
-        assert _get_requirements_handle(fn=fn) is None
+        with NamedTemporaryFile() as ntf:
+            assert _write_fn_docstring_requirements_to_file(fn, ntf.name) is False
 
     def test_extract_requirements_from_file(self, tmpdir):
         req = "somepackage == 3.8.1"
