@@ -244,7 +244,7 @@ class TestRelationships:
 
     def test_delete_multiple_ignore_unknown_ids(self, cognite_client, mock_rel_response):
         res = cognite_client.relationships.delete(external_id=[1], ignore_unknown_ids=True)
-        assert {"items": [{"externalId": 1}], "ignoreUnknownIds": True} == jsgz_load(
+        assert {"items": [{"externalId": "1"}], "ignoreUnknownIds": True} == jsgz_load(
             mock_rel_response.calls[0].request.body
         )
         assert res is None

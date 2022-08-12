@@ -1,8 +1,23 @@
-from typing import *
-from typing import List
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
 
-from cognite.client.data_classes._base import *
+from cognite.client import utils
+from cognite.client.data_classes._base import (
+    CogniteFilter,
+    CogniteLabelUpdate,
+    CogniteListUpdate,
+    CogniteObjectUpdate,
+    CognitePrimitiveUpdate,
+    CognitePropertyClassUtil,
+    CogniteResource,
+    CogniteResourceList,
+    CogniteUpdate,
+)
 from cognite.client.data_classes.shared import TimestampRange
+from cognite.client.utils._identifier import Identifier
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
+    from cognite.client.data_classes import Asset, Datapoint, DatapointsList
 
 
 class TimeSeries(CogniteResource):
@@ -42,7 +57,7 @@ class TimeSeries(CogniteResource):
         created_time: int = None,
         last_updated_time: int = None,
         legacy_name: str = None,
-        cognite_client=None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.id = id
         self.external_id = external_id
@@ -58,25 +73,33 @@ class TimeSeries(CogniteResource):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.legacy_name = legacy_name
-        self._cognite_client = cognite_client
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     def plot(
-        self, start="1d-ago", end="now", aggregates=None, granularity=None, id_labels: bool = False, *args, **kwargs
-    ):
+        self,
+        start: str = "1d-ago",
+        end: str = "now",
+        aggregates: List[str] = None,
+        granularity: str = None,
+        id_labels: bool = False,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
         plt = utils._auxiliary.local_import("matplotlib.pyplot")
-        identifier = utils._auxiliary.assert_at_least_one_of_id_or_external_id(self.id, self.external_id)
+        identifier = Identifier.load(self.id, self.external_id).as_dict()
         dps = self._cognite_client.datapoints.retrieve(
             start=start, end=end, aggregates=aggregates, granularity=granularity, **identifier
         )
         if id_labels:
             dps.plot(*args, **kwargs)
         else:
-            columns = {self.id: self.name}
+            assert self.id is not None
+            columns: Dict[Union[int, str], Any] = {self.id: self.name}
             for agg in aggregates or []:
                 columns["{}|{}".format(self.id, agg)] = "{}|{}".format(self.name, agg)
             df = dps.to_pandas().rename(columns=columns)
             df.plot(*args, **kwargs)
-            plt.show()
+            plt.show()  # type: ignore
 
     def count(self) -> int:
         """Returns the number of datapoints in this time series.
@@ -86,37 +109,37 @@ class TimeSeries(CogniteResource):
         Returns:
             int: The number of datapoints in this time series.
         """
-        identifier = utils._auxiliary.assert_at_least_one_of_id_or_external_id(self.id, self.external_id)
+        identifier = Identifier.load(self.id, self.external_id).as_dict()
         dps = self._cognite_client.datapoints.retrieve(
             start=0, end="now", aggregates=["count"], granularity="10d", **identifier
         )
         return sum(dps.count)
 
-    def latest(self) -> Optional["Datapoint"]:
+    def latest(self) -> Optional["Datapoint"]:  # noqa: F821
         """Returns the latest datapoint in this time series
 
         Returns:
             Datapoint: A datapoint object containing the value and timestamp of the latest datapoint.
         """
-        identifier = utils._auxiliary.assert_at_least_one_of_id_or_external_id(self.id, self.external_id)
+        identifier = Identifier.load(self.id, self.external_id).as_dict()
         dps = self._cognite_client.datapoints.retrieve_latest(**identifier)
         if len(dps) > 0:
             return list(dps)[0]
         return None
 
-    def first(self) -> Optional["Datapoint"]:
+    def first(self) -> Optional["Datapoint"]:  # noqa: F821
         """Returns the first datapoint in this time series.
 
         Returns:
             Datapoint: A datapoint object containing the value and timestamp of the first datapoint.
         """
-        identifier = utils._auxiliary.assert_at_least_one_of_id_or_external_id(self.id, self.external_id)
+        identifier = Identifier.load(self.id, self.external_id).as_dict()
         dps = self._cognite_client.datapoints.retrieve(**identifier, start=0, end="now", limit=1)
         if len(dps) > 0:
             return list(dps)[0]
         return None
 
-    def asset(self) -> "Asset":
+    def asset(self) -> "Asset":  # noqa: F821
         """Returns the asset this time series belongs to.
 
         Returns:
@@ -138,7 +161,6 @@ class TimeSeriesFilter(CogniteFilter):
         metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         asset_ids (List[int]): Only include time series that reference these specific asset IDs.
         asset_external_ids (List[str]): Asset External IDs of related equipment that this time series relates to.
-        root_asset_ids (List[int]): Only include time series that have a related asset in a tree rooted at any of these root assetIds.
         asset_subtree_ids (List[Dict[str, Any]]): Only include time series that are related to an asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
         data_set_ids (List[Dict[str, Any]]): No description.
         external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
@@ -156,13 +178,12 @@ class TimeSeriesFilter(CogniteFilter):
         metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
         asset_external_ids: List[str] = None,
-        root_asset_ids: List[int] = None,
         asset_subtree_ids: List[Dict[str, Any]] = None,
         data_set_ids: List[Dict[str, Any]] = None,
         external_id_prefix: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
-        cognite_client=None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.name = name
         self.unit = unit
@@ -171,17 +192,16 @@ class TimeSeriesFilter(CogniteFilter):
         self.metadata = metadata
         self.asset_ids = asset_ids
         self.asset_external_ids = asset_external_ids
-        self.root_asset_ids = root_asset_ids
         self.asset_subtree_ids = asset_subtree_ids
         self.data_set_ids = data_set_ids
         self.external_id_prefix = external_id_prefix
         self.created_time = created_time
         self.last_updated_time = last_updated_time
-        self._cognite_client = cognite_client
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client=None):
-        instance = super(TimeSeriesFilter, cls)._load(resource, cognite_client)
+    def _load(cls, resource: Union[Dict, str]) -> "TimeSeriesFilter":
+        instance = super(TimeSeriesFilter, cls)._load(resource)
         if isinstance(resource, Dict):
             if instance.created_time is not None:
                 instance.created_time = TimestampRange(**instance.created_time)
@@ -230,35 +250,39 @@ class TimeSeriesUpdate(CogniteUpdate):
             return self._remove(value)
 
     @property
-    def external_id(self):
+    def external_id(self) -> _PrimitiveTimeSeriesUpdate:
         return TimeSeriesUpdate._PrimitiveTimeSeriesUpdate(self, "externalId")
 
     @property
-    def name(self):
+    def name(self) -> _PrimitiveTimeSeriesUpdate:
         return TimeSeriesUpdate._PrimitiveTimeSeriesUpdate(self, "name")
 
     @property
-    def metadata(self):
+    def metadata(self) -> _ObjectTimeSeriesUpdate:
         return TimeSeriesUpdate._ObjectTimeSeriesUpdate(self, "metadata")
 
     @property
-    def unit(self):
+    def unit(self) -> _PrimitiveTimeSeriesUpdate:
         return TimeSeriesUpdate._PrimitiveTimeSeriesUpdate(self, "unit")
 
     @property
-    def asset_id(self):
+    def asset_id(self) -> _PrimitiveTimeSeriesUpdate:
         return TimeSeriesUpdate._PrimitiveTimeSeriesUpdate(self, "assetId")
 
     @property
-    def description(self):
+    def description(self) -> _PrimitiveTimeSeriesUpdate:
         return TimeSeriesUpdate._PrimitiveTimeSeriesUpdate(self, "description")
 
     @property
-    def security_categories(self):
+    def is_step(self) -> _PrimitiveTimeSeriesUpdate:
+        return TimeSeriesUpdate._PrimitiveTimeSeriesUpdate(self, "isStep")
+
+    @property
+    def security_categories(self) -> _ListTimeSeriesUpdate:
         return TimeSeriesUpdate._ListTimeSeriesUpdate(self, "securityCategories")
 
     @property
-    def data_set_id(self):
+    def data_set_id(self) -> _PrimitiveTimeSeriesUpdate:
         return TimeSeriesUpdate._PrimitiveTimeSeriesUpdate(self, "dataSetId")
 
 
@@ -269,7 +293,7 @@ class TimeSeriesAggregate(dict):
         count (int): No description.
     """
 
-    def __init__(self, count: int = None, **kwargs):
+    def __init__(self, count: int = None, **kwargs: Any) -> None:
         self.count = count
         self.update(kwargs)
 
@@ -278,14 +302,23 @@ class TimeSeriesAggregate(dict):
 
 class TimeSeriesList(CogniteResourceList):
     _RESOURCE = TimeSeries
-    _UPDATE = TimeSeriesUpdate
 
     def plot(
-        self, start="1d-ago", end="now", aggregates=None, granularity=None, id_labels: bool = False, *args, **kwargs
-    ):
+        self,
+        start: str = "1d-ago",
+        end: str = "now",
+        aggregates: List[str] = None,
+        granularity: str = None,
+        id_labels: bool = False,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
         plt = utils._auxiliary.local_import("matplotlib.pyplot")
-        dps = self._cognite_client.datapoints.retrieve(
-            id=[ts.id for ts in self.data], start=start, end=end, aggregates=aggregates, granularity=granularity
+        dps = cast(
+            "DatapointsList",
+            self._cognite_client.datapoints.retrieve(
+                id=[ts.id for ts in self.data], start=start, end=end, aggregates=aggregates, granularity=granularity
+            ),
         )
         if id_labels:
             dps.plot(*args, **kwargs)
@@ -297,4 +330,4 @@ class TimeSeriesList(CogniteResourceList):
                     columns["{}|{}".format(ts.id, agg)] = "{}|{}".format(ts.name, agg)
             df = dps.to_pandas().rename(columns=columns)
             df.plot(*args, **kwargs)
-            plt.show()
+            plt.show()  # type: ignore

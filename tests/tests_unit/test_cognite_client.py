@@ -1,7 +1,6 @@
 import datetime
 import logging
 import os
-from unittest.mock import patch
 
 import pytest
 
@@ -14,7 +13,6 @@ from cognite.client.exceptions import CogniteAPIKeyError
 from cognite.client.utils._logging import DebugLogFormatter
 from tests.utils import BASE_URL, set_env_var, unset_env_var
 
-_PYPI_ADDRESS = "https://pypi.python.org/simple/cognite-sdk/#history"
 TOKEN_URL = "https://test.com/token"
 
 
@@ -101,7 +99,6 @@ class TestCogniteClient:
         assert c.config.token == "abc"
 
     def test_token_gen_no_api_key(self, rsps, environment_client_config):
-        rsps.add(rsps.GET, "https://pypi.python.org/simple/cognite-sdk/#history", status=200, body="")
         rsps.add(
             rsps.POST,
             TOKEN_URL,
@@ -119,7 +116,7 @@ class TestCogniteClient:
         assert c.config.project == "test"
 
     def test_invalid_api_key(self, rsps):
-        rsps.add(rsps.GET, _PYPI_ADDRESS, status=200, body="")
+        # rsps.add(rsps.GET, _PYPI_ADDRESS, status=200, body="")
         rsps.add(
             rsps.GET,
             BASE_URL + "/login/status",
@@ -242,7 +239,7 @@ class TestCogniteClient:
         with set_env_var("COGNITE_API_KEY", "bla"):
             c = CogniteClient()
         c.login.status()
-        assert rsps_with_login_mock.calls[1].request.headers["cdf-version"] == c.config.api_subversion
+        assert rsps_with_login_mock.calls[0].request.headers["cdf-version"] == c.config.api_subversion
 
     def test_beta_header_for_beta_client(self, rsps_with_login_mock, default_client_config):
         from cognite.client.beta import CogniteClient as BetaClient
@@ -250,30 +247,23 @@ class TestCogniteClient:
         with set_env_var("COGNITE_API_KEY", "bla"):
             c = BetaClient()
         c.login.status()
-        assert rsps_with_login_mock.calls[1].request.headers["cdf-version"] == "beta"
+        assert rsps_with_login_mock.calls[0].request.headers["cdf-version"] == "beta"
 
     def test_version_check_enabled(self, rsps_with_login_mock):
-        with unset_env_var("COGNITE_PROJECT"), set_env_var("COGNITE_API_KEY", "bla"):
+        with unset_env_var("COGNITE_PROJECT", "COGNITE_DISABLE_PYPI_VERSION_CHECK"), set_env_var(
+            "COGNITE_API_KEY", "bla"
+        ):
             CogniteClient()
         assert len(rsps_with_login_mock.calls) == 2
 
-    @patch("cognite.client.utils._version_checker.re.findall")
-    @patch("cognite.client.utils._version_checker.requests")
-    def test_verify_ssl_enabled_by_default(self, mock_requests, mock_findall):
+    def test_verify_ssl_enabled_by_default(self, rsps_with_login_mock):
         with set_env_var("COGNITE_API_KEY", "bla"):
             c = CogniteClient()
+        c.login.status()
 
-        mock_requests.get.assert_called_with(_PYPI_ADDRESS, verify=True, timeout=5)
+        assert rsps_with_login_mock.calls[0][0].req_kwargs["verify"] is True
         assert c._api_client._http_client_with_retry.session.verify is True
         assert c._api_client._http_client.session.verify is True
-
-    @patch("cognite.client.utils._version_checker.re.findall")
-    @patch("cognite.client.utils._version_checker.requests")
-    def test_verify_ssl_disabled(self, mock_requests, mock_findall):
-        with set_env_var("COGNITE_DISABLE_SSL", "1"):
-            with set_env_var("COGNITE_API_KEY", "bla"):
-                CogniteClient()
-            mock_requests.get.assert_called_with(_PYPI_ADDRESS, verify=False, timeout=5)
 
 
 class TestInstantiateWithClient:

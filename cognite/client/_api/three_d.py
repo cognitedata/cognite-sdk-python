@@ -1,4 +1,4 @@
-from typing import *
+from typing import Any, Dict, Iterator, List, Optional, Sequence, Union, cast
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -11,12 +11,14 @@ from cognite.client.data_classes import (
     ThreeDModelRevisionList,
     ThreeDModelRevisionUpdate,
     ThreeDModelUpdate,
+    ThreeDNode,
     ThreeDNodeList,
 )
+from cognite.client.utils._identifier import IdentifierSequence, InternalId
 
 
 class ThreeDAPI(APIClient):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.models = ThreeDModelsAPI(*args, **kwargs)
         self.revisions = ThreeDRevisionsAPI(*args, **kwargs)
@@ -26,11 +28,10 @@ class ThreeDAPI(APIClient):
 
 class ThreeDModelsAPI(APIClient):
     _RESOURCE_PATH = "/3d/models"
-    _LIST_CLASS = ThreeDModelList
 
     def __call__(
         self, chunk_size: int = None, published: bool = None, limit: int = None
-    ) -> Generator[Union[ThreeDModel, ThreeDModelList], None, None]:
+    ) -> Union[Iterator[ThreeDModel], Iterator[ThreeDModelList]]:
         """Iterate over 3d models
 
         Fetches 3d models as they are iterated over, so you keep a limited number of 3d models in memory.
@@ -43,9 +44,16 @@ class ThreeDModelsAPI(APIClient):
         Yields:
             Union[ThreeDModel, ThreeDModelList]: yields ThreeDModel one by one if chunk is not specified, else ThreeDModelList objects.
         """
-        return self._list_generator(method="GET", chunk_size=chunk_size, filter={"published": published}, limit=limit)
+        return self._list_generator(
+            list_cls=ThreeDModelList,
+            resource_cls=ThreeDModel,
+            method="GET",
+            chunk_size=chunk_size,
+            filter={"published": published},
+            limit=limit,
+        )
 
-    def __iter__(self) -> Generator[ThreeDModel, None, None]:
+    def __iter__(self) -> Iterator[ThreeDModel]:
         """Iterate over 3d models
 
         Fetches models as they are iterated over, so you keep a limited number of models in memory.
@@ -53,9 +61,9 @@ class ThreeDModelsAPI(APIClient):
         Yields:
             ThreeDModel: yields models one by one.
         """
-        return self.__call__()
+        return cast(Iterator[ThreeDModel], self.__call__())
 
-    def retrieve(self, id: int) -> ThreeDModel:
+    def retrieve(self, id: int) -> Optional[ThreeDModel]:
         """`Retrieve a 3d model by id <https://docs.cognite.com/api/v1/#operation/get3DModel>`_
 
         Args:
@@ -72,7 +80,7 @@ class ThreeDModelsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.three_d.models.retrieve(id=1)
         """
-        return self._retrieve(id)
+        return self._retrieve(cls=ThreeDModel, identifier=InternalId(id))
 
     def list(self, published: bool = None, limit: int = 25) -> ThreeDModelList:
         """`List 3d models. <https://docs.cognite.com/api/v1/#operation/get3DModels>`_
@@ -107,7 +115,13 @@ class ThreeDModelsAPI(APIClient):
                 >>> for three_d_model in c.three_d.models(chunk_size=50):
                 ...     three_d_model # do something with the 3d model
         """
-        return self._list(method="GET", filter={"published": published}, limit=limit)
+        return self._list(
+            list_cls=ThreeDModelList,
+            resource_cls=ThreeDModel,
+            method="GET",
+            filter={"published": published},
+            limit=limit,
+        )
 
     def create(self, name: Union[str, List[str]]) -> Union[ThreeDModel, ThreeDModelList]:
         """`Create new 3d models. <https://docs.cognite.com/api/v1/#operation/create3DModels>`_
@@ -128,13 +142,13 @@ class ThreeDModelsAPI(APIClient):
         """
         utils._auxiliary.assert_type(name, "name", [str, list])
         if isinstance(name, str):
-            name = {"name": name}
+            name_processed: Union[Dict[str, Any], Sequence[Dict[str, Any]]] = {"name": name}
         else:
-            name = [{"name": n} for n in name]
-        return self._create_multiple(items=name)
+            name_processed = [{"name": n} for n in name]
+        return self._create_multiple(list_cls=ThreeDModelList, resource_cls=ThreeDModel, items=name_processed)
 
     def update(
-        self, item: Union[ThreeDModel, ThreeDModelUpdate, List[Union[ThreeDModel, ThreeDModelList]]]
+        self, item: Union[ThreeDModel, ThreeDModelUpdate, List[Union[ThreeDModel, ThreeDModelUpdate]]]
     ) -> Union[ThreeDModel, ThreeDModelList]:
         """`Update 3d models. <https://docs.cognite.com/api/v1/#operation/update3DModels>`_
 
@@ -163,7 +177,9 @@ class ThreeDModelsAPI(APIClient):
                 >>> res = c.three_d.models.update(my_update)
 
         """
-        return self._update_multiple(items=item)
+        return self._update_multiple(
+            list_cls=ThreeDModelList, resource_cls=ThreeDModel, update_cls=ThreeDModelUpdate, items=item
+        )
 
     def delete(self, id: Union[int, List[int]]) -> None:
         """`Delete 3d models. <https://docs.cognite.com/api/v1/#operation/delete3DModels>`_
@@ -182,16 +198,15 @@ class ThreeDModelsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.three_d.models.delete(id=1)
         """
-        self._delete_multiple(ids=id, wrap_ids=True)
+        self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=True)
 
 
 class ThreeDRevisionsAPI(APIClient):
     _RESOURCE_PATH = "/3d/models/{}/revisions"
-    _LIST_CLASS = ThreeDModelRevisionList
 
     def __call__(
         self, model_id: int, chunk_size: int = None, published: bool = False, limit: int = None
-    ) -> Generator[Union[ThreeDModelRevision, ThreeDModelRevisionList], None, None]:
+    ) -> Union[Iterator[ThreeDModelRevision], Iterator[ThreeDModelRevisionList]]:
         """Iterate over 3d model revisions
 
         Fetches 3d model revisions as they are iterated over, so you keep a limited number of 3d model revisions in memory.
@@ -207,6 +222,8 @@ class ThreeDRevisionsAPI(APIClient):
                 specified, else ThreeDModelRevisionList objects.
         """
         return self._list_generator(
+            list_cls=ThreeDModelRevisionList,
+            resource_cls=ThreeDModelRevision,
             resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
             method="GET",
             chunk_size=chunk_size,
@@ -214,7 +231,7 @@ class ThreeDRevisionsAPI(APIClient):
             limit=limit,
         )
 
-    def retrieve(self, model_id: int, id: int) -> ThreeDModelRevision:
+    def retrieve(self, model_id: int, id: int) -> Optional[ThreeDModelRevision]:
         """`Retrieve a 3d model revision by id <https://docs.cognite.com/api/v1/#operation/get3DRevision>`_
 
         Args:
@@ -222,7 +239,7 @@ class ThreeDRevisionsAPI(APIClient):
             id (int): Get the model revision with this id.
 
         Returns:
-            ThreeDModelRevision: The requested 3d model revision.
+            Optional[ThreeDModelRevision]: The requested 3d model revision.
 
         Example:
 
@@ -233,7 +250,9 @@ class ThreeDRevisionsAPI(APIClient):
                 >>> res = c.three_d.revisions.retrieve(model_id=1, id=1)
         """
         return self._retrieve(
-            resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id), id=id
+            cls=ThreeDModelRevision,
+            resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
+            identifier=InternalId(id),
         )
 
     def create(
@@ -259,7 +278,10 @@ class ThreeDRevisionsAPI(APIClient):
                 >>> res = c.three_d.revisions.create(model_id=1, revision=my_revision)
         """
         return self._create_multiple(
-            resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id), items=revision
+            list_cls=ThreeDModelRevisionList,
+            resource_cls=ThreeDModelRevision,
+            resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
+            items=revision,
         )
 
     def list(self, model_id: int, published: bool = False, limit: int = 25) -> ThreeDModelRevisionList:
@@ -283,6 +305,8 @@ class ThreeDRevisionsAPI(APIClient):
                 >>> res = c.three_d.revisions.list(model_id=1, published=True, limit=100)
         """
         return self._list(
+            list_cls=ThreeDModelRevisionList,
+            resource_cls=ThreeDModelRevision,
             resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
             method="GET",
             filter={"published": published},
@@ -293,7 +317,7 @@ class ThreeDRevisionsAPI(APIClient):
         self,
         model_id: int,
         item: Union[
-            ThreeDModelRevision, ThreeDModelRevisionUpdate, List[Union[ThreeDModelRevision, ThreeDModelRevisionList]]
+            ThreeDModelRevision, ThreeDModelRevisionUpdate, List[Union[ThreeDModelRevision, ThreeDModelRevisionUpdate]]
         ],
     ) -> Union[ThreeDModelRevision, ThreeDModelRevisionList]:
         """`Update 3d model revisions. <https://docs.cognite.com/api/v1/#operation/update3DRevisions>`_
@@ -325,7 +349,11 @@ class ThreeDRevisionsAPI(APIClient):
                 >>> res = c.three_d.revisions.update(model_id=1, item=my_update)
         """
         return self._update_multiple(
-            resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id), items=item
+            list_cls=ThreeDModelRevisionList,
+            resource_cls=ThreeDModelRevision,
+            update_cls=ThreeDModelRevisionUpdate,
+            resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
+            items=item,
         )
 
     def delete(self, model_id: int, id: Union[int, List[int]]) -> None:
@@ -348,7 +376,7 @@ class ThreeDRevisionsAPI(APIClient):
         """
         self._delete_multiple(
             resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
-            ids=id,
+            identifiers=IdentifierSequence.load(ids=id),
             wrap_ids=True,
         )
 
@@ -417,7 +445,8 @@ class ThreeDRevisionsAPI(APIClient):
             self._RESOURCE_PATH + "/{}/nodes", model_id, revision_id
         )
         return self._list(
-            cls=ThreeDNodeList,
+            list_cls=ThreeDNodeList,
+            resource_cls=ThreeDNode,
             resource_path=resource_path,
             method="GET",
             limit=limit,
@@ -459,7 +488,8 @@ class ThreeDRevisionsAPI(APIClient):
             self._RESOURCE_PATH + "/{}/nodes", model_id, revision_id
         )
         return self._list(
-            cls=ThreeDNodeList,
+            list_cls=ThreeDNodeList,
+            resource_cls=ThreeDNode,
             resource_path=resource_path,
             method="POST",
             limit=limit,
@@ -494,7 +524,12 @@ class ThreeDRevisionsAPI(APIClient):
             self._RESOURCE_PATH + "/{}/nodes", model_id, revision_id
         )
         return self._list(
-            cls=ThreeDNodeList, resource_path=resource_path, method="GET", limit=limit, filter={"nodeId": node_id}
+            list_cls=ThreeDNodeList,
+            resource_cls=ThreeDNode,
+            resource_path=resource_path,
+            method="GET",
+            limit=limit,
+            filter={"nodeId": node_id},
         )
 
 
@@ -552,7 +587,12 @@ class ThreeDAssetMappingAPI(APIClient):
         """
         path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id, revision_id)
         return self._list(
-            resource_path=path, method="GET", filter={"nodeId": node_id, "assetId": asset_id}, limit=limit
+            list_cls=ThreeDAssetMappingList,
+            resource_cls=ThreeDAssetMapping,
+            resource_path=path,
+            method="GET",
+            filter={"nodeId": node_id, "assetId": asset_id},
+            limit=limit,
         )
 
     def create(
@@ -579,7 +619,9 @@ class ThreeDAssetMappingAPI(APIClient):
                 >>> res = c.three_d.asset_mappings.create(model_id=1, revision_id=1, asset_mapping=my_mapping)
         """
         path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id, revision_id)
-        return self._create_multiple(resource_path=path, items=asset_mapping)
+        return self._create_multiple(
+            list_cls=ThreeDAssetMappingList, resource_cls=ThreeDAssetMapping, resource_path=path, items=asset_mapping
+        )
 
     def delete(
         self, model_id: int, revision_id: int, asset_mapping: Union[ThreeDAssetMapping, List[ThreeDAssetMapping]]

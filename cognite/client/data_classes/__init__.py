@@ -1,3 +1,9 @@
+from cognite.client.data_classes.annotations import (  # isort: skip
+    Annotation,
+    AnnotationFilter,
+    AnnotationList,
+    AnnotationUpdate,
+)
 from cognite.client.data_classes.assets import (
     AggregateResultItem,
     Asset,
@@ -31,20 +37,21 @@ from cognite.client.data_classes.files import (
     FileMetadataFilter,
     FileMetadataList,
     FileMetadataUpdate,
-    GeoLocation,
-    GeoLocationFilter,
-    Geometry,
-    GeometryFilter,
 )
 from cognite.client.data_classes.iam import (
     APIKey,
     APIKeyList,
+    ClientCredentials,
+    CreatedSession,
+    CreatedSessionList,
     Group,
     GroupList,
     SecurityCategory,
     SecurityCategoryList,
     ServiceAccount,
     ServiceAccountList,
+    Session,
+    SessionList,
 )
 from cognite.client.data_classes.labels import (
     Label,
@@ -78,6 +85,7 @@ from cognite.client.data_classes.templates import (
     TemplateGroupVersionList,
     TemplateInstance,
     TemplateInstanceList,
+    TemplateInstanceUpdate,
     View,
     ViewResolver,
 )
@@ -143,10 +151,13 @@ from cognite.client.data_classes.data_sets import (  # isort: skip
     DataSetUpdate,
 )
 
-
 from cognite.client.data_classes.shared import (  # isort: skip
     AggregateResult,
     AggregateUniqueValuesResult,
+    GeoLocation,
+    GeoLocationFilter,
+    Geometry,
+    GeometryFilter,
     TimestampRange,
 )
 

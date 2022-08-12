@@ -1,12 +1,23 @@
 import copy
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union, cast
 
-from cognite.client.data_classes._base import *
+from cognite.client.data_classes._base import (
+    CogniteFilter,
+    CogniteLabelUpdate,
+    CognitePrimitiveUpdate,
+    CogniteResource,
+    CogniteResourceList,
+    CogniteUpdate,
+)
 from cognite.client.data_classes.assets import Asset
 from cognite.client.data_classes.events import Event
 from cognite.client.data_classes.files import FileMetadata
 from cognite.client.data_classes.labels import Label, LabelDefinition, LabelFilter
 from cognite.client.data_classes.sequences import Sequence
 from cognite.client.data_classes.time_series import TimeSeries
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 class Relationship(CogniteResource):
@@ -43,10 +54,10 @@ class Relationship(CogniteResource):
         end_time: int = None,
         confidence: float = None,
         data_set_id: int = None,
-        labels: List[Union[Label, str, LabelDefinition]] = None,
+        labels: List[Union[Label, str, LabelDefinition, dict]] = None,
         created_time: int = None,
         last_updated_time: int = None,
-        cognite_client=None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.external_id = external_id
         self.source_external_id = source_external_id
@@ -62,9 +73,9 @@ class Relationship(CogniteResource):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.labels = Label._load_list(labels)
-        self._cognite_client = cognite_client
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
-    def _validate_resource_types(self):
+    def _validate_resource_types(self) -> "Relationship":
         rel = copy.copy(self)
         self._validate_resource_type(rel.source_type)
         self._validate_resource_type(rel.target_type)
@@ -73,21 +84,23 @@ class Relationship(CogniteResource):
     @staticmethod
     def _validate_resource_type(resource_type):
         _RESOURCE_TYPES = {"asset", "timeseries", "file", "event", "sequence"}
-        if resource_type.lower() not in _RESOURCE_TYPES:
+        if resource_type is None or resource_type.lower() not in _RESOURCE_TYPES:
             raise TypeError("Invalid source or target '{}' in relationship".format(resource_type))
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client=None):
+    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> "Relationship":
         instance = super(Relationship, cls)._load(resource, cognite_client)
         if instance.source is not None:
-            instance.source = instance._convert_resource(instance.source, instance.source_type)
+            instance.source = instance._convert_resource(instance.source, instance.source_type)  # type: ignore
         if instance.target is not None:
-            instance.target = instance._convert_resource(instance.target, instance.target_type)
+            instance.target = instance._convert_resource(instance.target, instance.target_type)  # type: ignore
         instance.labels = Label._load_list(instance.labels)
         return instance
 
-    def _convert_resource(self, resource: Dict, resource_type: str):
-        resource_map = {
+    def _convert_resource(
+        self, resource: Dict[str, Any], resource_type: Optional[str]
+    ) -> Union[Dict[str, Any], CogniteResource]:
+        resource_map: Dict[str, Type[CogniteResource]] = {
             "timeSeries": TimeSeries,
             "asset": Asset,
             "sequence": Sequence,
@@ -100,7 +113,7 @@ class Relationship(CogniteResource):
 
 
 class RelationshipFilter(CogniteFilter):
-    """Filter on relationships with exact match. Multiple filter elments in one property, e.g. `sourceExternalIds: [ "a", "b" ]`, will return all relationships where the `sourceExternalId` field is either `a` or `b`. Filters in multiple properties will return the relationships that match all criteria. If the filter is not specified it default to an empty filter.
+    """Filter on relationships with exact match. Multiple filter elements in one property, e.g. `sourceExternalIds: [ "a", "b" ]`, will return all relationships where the `sourceExternalId` field is either `a` or `b`. Filters in multiple properties will return the relationships that match all criteria. If the filter is not specified it default to an empty filter.
 
     Args:
         source_external_ids (List[str]): Include relationships that have any of these values in their `sourceExternalId` field
@@ -108,8 +121,8 @@ class RelationshipFilter(CogniteFilter):
         target_external_ids (List[str]): Include relationships that have any of these values in their `targetExternalId` field
         target_types (List[str]): Include relationships that have any of these values in their `targetType` field
         data_set_ids (List[Dict[str, Any]]): Either one of `internalId` (int) or `externalId` (str)
-        start_time (Dict[str, int]): Range between two timestamps, minimum and maximum milli seconds (inclusive)
-        end_time (Dict[str, int]): Range between two timestamps, minimum and maximum milli seconds (inclusive)
+        start_time (Dict[str, int]): Range between two timestamps, minimum and maximum milliseconds (inclusive)
+        end_time (Dict[str, int]): Range between two timestamps, minimum and maximum milliseconds (inclusive)
         confidence (Dict[str, int]): Range to filter the field for. (inclusive)
         last_updated_time (Dict[str, Any]): Range to filter the field for. (inclusive)
         created_time (Dict[str, int]): Range to filter the field for. (inclusive)
@@ -132,7 +145,7 @@ class RelationshipFilter(CogniteFilter):
         created_time: Dict[str, int] = None,
         active_at_time: Dict[str, int] = None,
         labels: LabelFilter = None,
-        cognite_client=None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.source_external_ids = source_external_ids
         self.source_types = source_types
@@ -146,9 +159,9 @@ class RelationshipFilter(CogniteFilter):
         self.created_time = created_time
         self.active_at_time = active_at_time
         self.labels = labels
-        self._cognite_client = cognite_client
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
-    def dump(self, camel_case: bool = False):
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         result = super(RelationshipFilter, self).dump(camel_case)
         if isinstance(self.labels, LabelFilter):
             result["labels"] = self.labels.dump(camel_case)
@@ -181,42 +194,41 @@ class RelationshipUpdate(CogniteUpdate):
             return self._remove(value)
 
     @property
-    def source_external_id(self):
+    def source_external_id(self) -> _PrimitiveRelationshipUpdate:
         return RelationshipUpdate._PrimitiveRelationshipUpdate(self, "sourceExternalId")
 
     @property
-    def source_type(self):
+    def source_type(self) -> _PrimitiveRelationshipUpdate:
         return RelationshipUpdate._PrimitiveRelationshipUpdate(self, "sourceType")
 
     @property
-    def target_external_id(self):
+    def target_external_id(self) -> _PrimitiveRelationshipUpdate:
         return RelationshipUpdate._PrimitiveRelationshipUpdate(self, "targetExternalId")
 
     @property
-    def target_type(self):
+    def target_type(self) -> _PrimitiveRelationshipUpdate:
         return RelationshipUpdate._PrimitiveRelationshipUpdate(self, "targetType")
 
     @property
-    def start_time(self):
+    def start_time(self) -> _PrimitiveRelationshipUpdate:
         return RelationshipUpdate._PrimitiveRelationshipUpdate(self, "startTime")
 
     @property
-    def end_time(self):
+    def end_time(self) -> _PrimitiveRelationshipUpdate:
         return RelationshipUpdate._PrimitiveRelationshipUpdate(self, "endTime")
 
     @property
-    def data_set_id(self):
+    def data_set_id(self) -> _PrimitiveRelationshipUpdate:
         return RelationshipUpdate._PrimitiveRelationshipUpdate(self, "dataSetId")
 
     @property
-    def confidence(self):
+    def confidence(self) -> _PrimitiveRelationshipUpdate:
         return RelationshipUpdate._PrimitiveRelationshipUpdate(self, "confidence")
 
     @property
-    def labels(self):
+    def labels(self) -> _LabelRelationshipUpdate:
         return RelationshipUpdate._LabelRelationshipUpdate(self, "labels")
 
 
 class RelationshipList(CogniteResourceList):
     _RESOURCE = Relationship
-    _UPDATE = RelationshipUpdate

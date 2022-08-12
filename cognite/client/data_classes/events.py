@@ -1,7 +1,20 @@
-from typing import *
+from typing import TYPE_CHECKING, Any, Dict, List, Union, cast
 
-from cognite.client.data_classes._base import *
+from cognite.client.data_classes._base import (
+    CogniteFilter,
+    CogniteLabelUpdate,
+    CogniteListUpdate,
+    CogniteObjectUpdate,
+    CognitePrimitiveUpdate,
+    CognitePropertyClassUtil,
+    CogniteResource,
+    CogniteResourceList,
+    CogniteUpdate,
+)
 from cognite.client.data_classes.shared import TimestampRange
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 class EndTimeFilter(dict):
@@ -13,7 +26,7 @@ class EndTimeFilter(dict):
         is_null (bool): Set to true if you want to search for data with field value not set, false to search for cases where some value is present.
     """
 
-    def __init__(self, max: int = None, min: int = None, is_null: bool = None, **kwargs):
+    def __init__(self, max: int = None, min: int = None, is_null: bool = None, **kwargs: Any) -> None:
         self.max = max
         self.min = min
         self.is_null = is_null
@@ -59,7 +72,7 @@ class Event(CogniteResource):
         id: int = None,
         last_updated_time: int = None,
         created_time: int = None,
-        cognite_client=None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.external_id = external_id
         self.data_set_id = data_set_id
@@ -74,7 +87,7 @@ class Event(CogniteResource):
         self.id = id
         self.last_updated_time = last_updated_time
         self.created_time = created_time
-        self._cognite_client = cognite_client
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class EventFilter(CogniteFilter):
@@ -87,7 +100,6 @@ class EventFilter(CogniteFilter):
         metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 128000 bytes, up to 256 key-value pairs, of total size at most 200000.
         asset_ids (List[int]): Asset IDs of equipment that this event relates to.
         asset_external_ids (List[str]): Asset External IDs of equipment that this event relates to.
-        root_asset_ids (List[Dict[str, Any]]): This parameter is deprecated. Use assetSubtreeIds instead. Only include events that have a related asset in a tree rooted at any of these root assetIds.
         asset_subtree_ids (List[Dict[str, Any]]): Only include events that have a related asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
         data_set_ids (List[Dict[str, Any]]): Only include events that belong to these datasets.
         source (str): The source of this event.
@@ -107,7 +119,6 @@ class EventFilter(CogniteFilter):
         metadata: Dict[str, str] = None,
         asset_ids: List[int] = None,
         asset_external_ids: List[str] = None,
-        root_asset_ids: List[Dict[str, Any]] = None,
         asset_subtree_ids: List[Dict[str, Any]] = None,
         data_set_ids: List[Dict[str, Any]] = None,
         source: str = None,
@@ -116,7 +127,7 @@ class EventFilter(CogniteFilter):
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
         external_id_prefix: str = None,
-        cognite_client=None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.start_time = start_time
         self.end_time = end_time
@@ -124,7 +135,6 @@ class EventFilter(CogniteFilter):
         self.metadata = metadata
         self.asset_ids = asset_ids
         self.asset_external_ids = asset_external_ids
-        self.root_asset_ids = root_asset_ids
         self.asset_subtree_ids = asset_subtree_ids
         self.data_set_ids = data_set_ids
         self.source = source
@@ -133,11 +143,11 @@ class EventFilter(CogniteFilter):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.external_id_prefix = external_id_prefix
-        self._cognite_client = cognite_client
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client=None):
-        instance = super(EventFilter, cls)._load(resource, cognite_client)
+    def _load(cls, resource: Union[Dict, str]) -> "EventFilter":
+        instance = super(EventFilter, cls)._load(resource)
         if isinstance(resource, Dict):
             if instance.start_time is not None:
                 instance.start_time = TimestampRange(**instance.start_time)
@@ -192,46 +202,45 @@ class EventUpdate(CogniteUpdate):
             return self._remove(value)
 
     @property
-    def external_id(self):
+    def external_id(self) -> "_PrimitiveEventUpdate":
         return EventUpdate._PrimitiveEventUpdate(self, "externalId")
 
     @property
-    def data_set_id(self):
+    def data_set_id(self) -> "_PrimitiveEventUpdate":
         return EventUpdate._PrimitiveEventUpdate(self, "dataSetId")
 
     @property
-    def start_time(self):
+    def start_time(self) -> "_PrimitiveEventUpdate":
         return EventUpdate._PrimitiveEventUpdate(self, "startTime")
 
     @property
-    def end_time(self):
+    def end_time(self) -> "_PrimitiveEventUpdate":
         return EventUpdate._PrimitiveEventUpdate(self, "endTime")
 
     @property
-    def description(self):
+    def description(self) -> "_PrimitiveEventUpdate":
         return EventUpdate._PrimitiveEventUpdate(self, "description")
 
     @property
-    def metadata(self):
+    def metadata(self) -> "_ObjectEventUpdate":
         return EventUpdate._ObjectEventUpdate(self, "metadata")
 
     @property
-    def asset_ids(self):
+    def asset_ids(self) -> "_ListEventUpdate":
         return EventUpdate._ListEventUpdate(self, "assetIds")
 
     @property
-    def source(self):
+    def source(self) -> "_PrimitiveEventUpdate":
         return EventUpdate._PrimitiveEventUpdate(self, "source")
 
     @property
-    def type(self):
+    def type(self) -> "_PrimitiveEventUpdate":
         return EventUpdate._PrimitiveEventUpdate(self, "type")
 
     @property
-    def subtype(self):
+    def subtype(self) -> "_PrimitiveEventUpdate":
         return EventUpdate._PrimitiveEventUpdate(self, "subtype")
 
 
 class EventList(CogniteResourceList):
     _RESOURCE = Event
-    _UPDATE = EventUpdate

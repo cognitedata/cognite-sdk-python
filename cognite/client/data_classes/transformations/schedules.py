@@ -1,4 +1,14 @@
-from cognite.client.data_classes._base import *
+from typing import TYPE_CHECKING, Any, Dict, Union, cast
+
+from cognite.client.data_classes._base import (
+    CognitePrimitiveUpdate,
+    CogniteResource,
+    CogniteResourceList,
+    CogniteUpdate,
+)
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 class TransformationSchedule(CogniteResource):
@@ -22,7 +32,7 @@ class TransformationSchedule(CogniteResource):
         last_updated_time: int = None,
         interval: str = None,
         is_paused: bool = False,
-        cognite_client=None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.id = id
         self.external_id = external_id
@@ -30,14 +40,14 @@ class TransformationSchedule(CogniteResource):
         self.last_updated_time = last_updated_time
         self.interval = interval
         self.is_paused = is_paused
-        self._cognite_client = cognite_client
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client=None):
+    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> "TransformationSchedule":
         instance = super(TransformationSchedule, cls)._load(resource, cognite_client)
         return instance
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.id)
 
 
@@ -54,14 +64,13 @@ class TransformationScheduleUpdate(CogniteUpdate):
             return self._set(value)
 
     @property
-    def interval(self):
+    def interval(self) -> _PrimitiveTransformationScheduleUpdate:
         return TransformationScheduleUpdate._PrimitiveTransformationScheduleUpdate(self, "interval")
 
     @property
-    def is_paused(self):
+    def is_paused(self) -> _PrimitiveTransformationScheduleUpdate:
         return TransformationScheduleUpdate._PrimitiveTransformationScheduleUpdate(self, "isPaused")
 
 
 class TransformationScheduleList(CogniteResourceList):
     _RESOURCE = TransformationSchedule
-    _UPDATE = TransformationScheduleUpdate

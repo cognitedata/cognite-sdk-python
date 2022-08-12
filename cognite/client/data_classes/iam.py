@@ -1,4 +1,10 @@
-from cognite.client.data_classes._base import *
+from typing import TYPE_CHECKING, Any, Dict, List, cast
+
+from cognite.client import utils
+from cognite.client.data_classes._base import CogniteResource, CogniteResourceList, CogniteResponse
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 class ServiceAccount(CogniteResource):
@@ -20,19 +26,18 @@ class ServiceAccount(CogniteResource):
         id: int = None,
         is_deleted: bool = None,
         deleted_time: int = None,
-        cognite_client=None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.name = name
         self.groups = groups
         self.id = id
         self.is_deleted = is_deleted
         self.deleted_time = deleted_time
-        self._cognite_client = cognite_client
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class ServiceAccountList(CogniteResourceList):
     _RESOURCE = ServiceAccount
-    _ASSERT_CLASSES = False
 
 
 class APIKey(CogniteResource):
@@ -54,19 +59,18 @@ class APIKey(CogniteResource):
         created_time: int = None,
         status: str = None,
         value: str = None,
-        cognite_client=None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.id = id
         self.service_account_id = service_account_id
         self.created_time = created_time
         self.status = status
         self.value = value
-        self._cognite_client = cognite_client
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class APIKeyList(CogniteResourceList):
     _RESOURCE = APIKey
-    _ASSERT_CLASSES = False
 
 
 class Group(CogniteResource):
@@ -90,7 +94,7 @@ class Group(CogniteResource):
         id: int = None,
         is_deleted: bool = None,
         deleted_time: int = None,
-        cognite_client=None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.name = name
         self.source_id = source_id
@@ -98,12 +102,11 @@ class Group(CogniteResource):
         self.id = id
         self.is_deleted = is_deleted
         self.deleted_time = deleted_time
-        self._cognite_client = cognite_client
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class GroupList(CogniteResourceList):
     _RESOURCE = Group
-    _ASSERT_CLASSES = False
 
 
 class SecurityCategory(CogniteResource):
@@ -115,15 +118,14 @@ class SecurityCategory(CogniteResource):
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
-    def __init__(self, name: str = None, id: int = None, cognite_client=None):
+    def __init__(self, name: str = None, id: int = None, cognite_client: "CogniteClient" = None):
         self.name = name
         self.id = id
-        self._cognite_client = cognite_client
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class SecurityCategoryList(CogniteResourceList):
     _RESOURCE = SecurityCategory
-    _ASSERT_CLASSES = False
 
 
 class ProjectSpec(CogniteResponse):
@@ -138,7 +140,7 @@ class ProjectSpec(CogniteResponse):
         self.groups = groups
 
     @classmethod
-    def _load(cls, api_response):
+    def _load(cls, api_response: Dict[str, Any]) -> "ProjectSpec":
         return cls(url_name=api_response["projectUrlName"], groups=api_response["groups"])
 
 
@@ -157,7 +159,7 @@ class TokenInspection(CogniteResponse):
         self.capabilities = capabilities
 
     @classmethod
-    def _load(cls, api_response):
+    def _load(cls, api_response: Dict[str, Any]) -> "TokenInspection":
         return cls(
             subject=api_response["subject"],
             projects=[ProjectSpec._load(p) for p in api_response["projects"]],
@@ -173,3 +175,83 @@ class TokenInspection(CogniteResponse):
         if camel_case:
             dumped = {utils._auxiliary.to_camel_case(key): value for key, value in dumped.items()}
         return dumped
+
+
+class CreatedSession(CogniteResource):
+    """session creation related information
+
+    Args:
+        id (int): ID of the created session.
+        type (str): Credentials kind used to create the session.
+        status (str): Current status of the session.
+        nonce (str): Nonce to be passed to the internal service that will bind the session
+        client_id (str): Client ID in identity provider. Returned only if the session was created using client credentials
+    """
+
+    def __init__(
+        self,
+        id: int = None,
+        type: str = None,
+        status: str = None,
+        nonce: str = None,
+        client_id: str = None,
+        cognite_client: "CogniteClient" = None,
+    ):
+        self.id = id
+        self.type = type
+        self.status = status
+        self.nonce = nonce
+        self.client_id = client_id
+
+
+class CreatedSessionList(CogniteResourceList):
+    _RESOURCE = CreatedSession
+    _ASSERT_CLASSES = False
+
+
+class Session(CogniteResource):
+    """Session status
+
+    Args:
+        id (int): ID of the session.
+        type (str): Credentials kind used to create the session.
+        status (str): Current status of the session.
+        creation_time (int): Session creation time, in milliseconds since 1970
+        expiration_time (int): Session expiry time, in milliseconds since 1970. This value is updated on refreshing a token
+        client_id (str): Client ID in identity provider. Returned only if the session was created using client credentials
+    """
+
+    def __init__(
+        self,
+        id: int = None,
+        type: str = None,
+        status: str = None,
+        creation_time: int = None,
+        expiration_time: int = None,
+        client_id: str = None,
+        cognite_client: "CogniteClient" = None,
+    ):
+        self.id = id
+        self.type = type
+        self.status = status
+        self.creation_time = creation_time
+        self.expiration_time = expiration_time
+        self.client_id = client_id
+
+
+class SessionList(CogniteResourceList):
+    _RESOURCE = Session
+    _ASSERT_CLASSES = False
+
+
+class ClientCredentials(CogniteResource):
+    """Client credentials for session creation
+
+    Args:
+        client_id (str): Client ID from identity provider.
+        client_secret (str): Client secret from identity provider.
+    """
+
+    def __init__(self, client_id: str, client_secret: str):
+        self.client_id = client_id
+        self.client_secret = client_secret

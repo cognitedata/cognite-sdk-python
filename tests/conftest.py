@@ -1,6 +1,7 @@
 import os
 from unittest import mock
 
+import dotenv
 import pytest
 import responses
 
@@ -26,11 +27,12 @@ from cognite.client._api.three_d import (
 from cognite.client._api.time_series import TimeSeriesAPI
 from tests.utils import BASE_URL
 
+dotenv.load_dotenv()
+
 
 @pytest.fixture
 def rsps_with_login_mock():
     with responses.RequestsMock() as rsps:
-        rsps.add(rsps.GET, "https://pypi.python.org/simple/cognite-sdk/#history", status=200, body="")
         rsps.add(
             rsps.GET,
             BASE_URL + "/login/status",

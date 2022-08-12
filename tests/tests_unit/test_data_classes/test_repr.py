@@ -1,6 +1,19 @@
 import pytest
 
-from cognite.client.data_classes import *
+from cognite.client.data_classes import (
+    Asset,
+    AssetList,
+    Datapoint,
+    Datapoints,
+    DatapointsList,
+    FileMetadata,
+    Row,
+    RowList,
+    Sequence,
+    Table,
+    TableList,
+    ThreeDModel,
+)
 
 
 @pytest.mark.dsl

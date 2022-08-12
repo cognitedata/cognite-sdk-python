@@ -1,6 +1,5 @@
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar, Union
 
-from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes._base import CogniteResource
 from cognite.client.data_classes.contextualization import (
@@ -11,16 +10,22 @@ from cognite.client.data_classes.contextualization import (
     EntityMatchingModelUpdate,
 )
 from cognite.client.utils._auxiliary import convert_true_match
+from cognite.client.utils._identifier import IdentifierSequence
+
+T_ContextualizationJob = TypeVar("T_ContextualizationJob", bound=ContextualizationJob)
 
 
 class EntityMatchingAPI(APIClient):
     _RESOURCE_PATH = EntityMatchingModel._RESOURCE_PATH
-    _LIST_CLASS = EntityMatchingModelList
 
     def _run_job(
-        self, job_path: str, json, status_path: Optional[str] = None, headers: Dict = None, job_cls: type = None
-    ) -> ContextualizationJob:
-        job_cls = job_cls or ContextualizationJob
+        self,
+        job_path: str,
+        job_cls: Type[T_ContextualizationJob],
+        json: Dict[str, Any],
+        status_path: Optional[str] = None,
+        headers: Dict = None,
+    ) -> T_ContextualizationJob:
         if status_path is None:
             status_path = job_path + "/"
         return job_cls._load_with_status(
@@ -38,8 +43,10 @@ class EntityMatchingAPI(APIClient):
 
         Returns:
             EntityMatchingModel: Model requested."""
-        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
-        return self._retrieve_multiple(ids=id, external_ids=external_id, wrap_ids=True)
+        identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
+        return self._retrieve_multiple(
+            list_cls=EntityMatchingModelList, resource_cls=EntityMatchingModel, identifiers=identifiers
+        )
 
     def retrieve_multiple(
         self, ids: Optional[List[int]] = None, external_ids: Optional[List[str]] = None
@@ -52,22 +59,28 @@ class EntityMatchingAPI(APIClient):
 
         Returns:
             EntityMatchingModelList: Models requested."""
-        utils._auxiliary.assert_type(ids, "id", [List], allow_none=True)
-        utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=True)
-        return self._retrieve_multiple(ids=ids, external_ids=external_ids, wrap_ids=True)
+        identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
+        return self._retrieve_multiple(
+            list_cls=EntityMatchingModelList, resource_cls=EntityMatchingModel, identifiers=identifiers
+        )
 
     def update(
         self,
         item: Union[
             EntityMatchingModel, EntityMatchingModelUpdate, List[Union[EntityMatchingModel, EntityMatchingModelUpdate]]
         ],
-    ) -> Union[EntityMatchingModel, List[EntityMatchingModel]]:
+    ) -> Union[EntityMatchingModelList, EntityMatchingModel]:
         """Update model
 
         Args:
             item (Union[EntityMatchingModel,EntityMatchingModelUpdate,List[Union[EntityMatchingModel,EntityMatchingModelUpdate]]) : Model(s) to update
         """
-        return self._update_multiple(items=item)
+        return self._update_multiple(
+            list_cls=EntityMatchingModelList,
+            resource_cls=EntityMatchingModel,
+            update_cls=EntityMatchingModelUpdate,
+            items=item,
+        )
 
     def list(
         self,
@@ -76,7 +89,7 @@ class EntityMatchingAPI(APIClient):
         original_id: int = None,
         feature_type: str = None,
         classifier: str = None,
-        limit=100,
+        limit: int = 100,
     ) -> EntityMatchingModelList:
         """List models
 
@@ -103,7 +116,7 @@ class EntityMatchingAPI(APIClient):
         # NB no pagination support yet
         models = self._post(self._RESOURCE_PATH + "/list", json={"filter": filter, "limit": limit}).json()["items"]
         return EntityMatchingModelList(
-            [self._LIST_CLASS._RESOURCE._load(model, cognite_client=self._cognite_client) for model in models]
+            [EntityMatchingModel._load(model, cognite_client=self._cognite_client) for model in models]
         )
 
     def list_jobs(self) -> ContextualizationJobList:
@@ -121,7 +134,8 @@ class EntityMatchingAPI(APIClient):
         Args:
             id (Union[int, List[int]): Id or list of ids
             external_id (Union[str, List[str]]): External ID or list of external ids"""
-        self._delete_multiple(ids=id, external_ids=external_id, wrap_ids=True)
+
+        self._delete_multiple(identifiers=IdentifierSequence.load(ids=id, external_ids=external_id), wrap_ids=True)
 
     def fit(
         self,
@@ -143,7 +157,7 @@ class EntityMatchingAPI(APIClient):
         Args:
             sources: entities to match from, should have an 'id' field. Tolerant to passing more than is needed or used (e.g. json dump of time series list). Metadata fields are automatically flattened to "metadata.key" entries, such that they can be used in match_fields.
             targets: entities to match to, should have an 'id' field.  Tolerant to passing more than is needed or used.
-            true_matches: Known valid matches given as a list of dicts with keys 'sourceId', 'sourceExternalId', 'sourceId', 'sourceExternalId'). If omitted, uses an unsupervised model.
+            true_matches: Known valid matches given as a list of dicts with keys 'sourceId', 'sourceExternalId', 'targetId', 'targetExternalId'). If omitted, uses an unsupervised model.
              A tuple can be used instead of the dictionary for convenience, interpreted as id/externalId based on type.
             match_fields: List of (from,to) keys to use in matching. Default in the API is [('name','name')]. Also accepts {"source": .., "target": ..}.
             feature_type (str): feature type that defines the combination of features used, see API docs for details.
@@ -156,7 +170,11 @@ class EntityMatchingAPI(APIClient):
             EntityMatchingModel: Resulting queued model."""
 
         if match_fields:
-            match_fields = [ft if isinstance(ft, dict) else {"source": ft[0], "target": ft[1]} for ft in match_fields]
+            match_fields_processed = [
+                ft if isinstance(ft, dict) else {"source": ft[0], "target": ft[1]} for ft in match_fields
+            ]
+        else:
+            match_fields_processed = None
         if true_matches:
             true_matches = [convert_true_match(true_match) for true_match in true_matches]
         response = self._post(
@@ -168,20 +186,20 @@ class EntityMatchingAPI(APIClient):
                 "sources": EntityMatchingModel._dump_entities(sources),
                 "targets": EntityMatchingModel._dump_entities(targets),
                 "trueMatches": true_matches,
-                "matchFields": match_fields,
+                "matchFields": match_fields_processed,
                 "featureType": feature_type,
                 "classifier": classifier,
                 "ignoreMissingFields": ignore_missing_fields,
             },
         )
-        return self._LIST_CLASS._RESOURCE._load(response.json(), cognite_client=self._cognite_client)
+        return EntityMatchingModel._load(response.json(), cognite_client=self._cognite_client)
 
     def predict(
         self,
         sources: Optional[List[Dict]] = None,
         targets: Optional[List[Dict]] = None,
-        num_matches=1,
-        score_threshold=None,
+        num_matches: int = 1,
+        score_threshold: float = None,
         id: Optional[int] = None,
         external_id: Optional[str] = None,
     ) -> ContextualizationJob:
@@ -199,9 +217,9 @@ class EntityMatchingAPI(APIClient):
             external_id: external ids of the model to use.
         Returns:
             ContextualizationJob: object which can be used to wait for and retrieve results."""
-        return self.retrieve(
-            id=id, external_id=external_id
-        ).predict(  # could call predict directly but this is friendlier
+        model = self.retrieve(id=id, external_id=external_id)
+        assert model
+        return model.predict(  # could call predict directly but this is friendlier
             sources=EntityMatchingModel._dump_entities(sources),
             targets=EntityMatchingModel._dump_entities(targets),
             num_matches=num_matches,
@@ -213,7 +231,7 @@ class EntityMatchingAPI(APIClient):
         true_matches: List[Union[Dict, Tuple[Union[int, str], Union[int, str]]]],
         id: Optional[int] = None,
         external_id: Optional[str] = None,
-    ) -> "EntityMatchingModel":
+    ) -> EntityMatchingModel:
         """Re-fits an entity matching model, using the combination of the old and new true matches.
         Note: All users on this CDF subscription with assets read-all and entitymatching read-all and write-all
         capabilities in the project, are able to access the data sent to this endpoint.
@@ -225,4 +243,6 @@ class EntityMatchingAPI(APIClient):
             external_id: external ids of the model to use.
         Returns:
             EntityMatchingModel: new model refitted to true_matches."""
-        return self.retrieve(id=id, external_id=external_id).refit(true_matches=true_matches)
+        model = self.retrieve(id=id, external_id=external_id)
+        assert model
+        return model.refit(true_matches=true_matches)

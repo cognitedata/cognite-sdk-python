@@ -1,7 +1,13 @@
 from collections import OrderedDict
-from typing import *
+from typing import TYPE_CHECKING, Any, Dict, Optional, Union, cast
 
-from cognite.client.data_classes._base import *
+from cognite.client import utils
+from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
+
+if TYPE_CHECKING:
+    import pandas
+
+    from cognite.client import CogniteClient
 
 
 class Row(CogniteResource):
@@ -15,40 +21,43 @@ class Row(CogniteResource):
     """
 
     def __init__(
-        self, key: str = None, columns: Dict[str, Any] = None, last_updated_time: int = None, cognite_client=None
+        self,
+        key: str = None,
+        columns: Dict[str, Any] = None,
+        last_updated_time: int = None,
+        cognite_client: "CogniteClient" = None,
     ):
         self.key = key
         self.columns = columns
         self.last_updated_time = last_updated_time
-        self._cognite_client = cognite_client
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
-    def to_pandas(self):
+    def to_pandas(self) -> "pandas.DataFrame":  # type: ignore[override]
         """Convert the instance into a pandas DataFrame.
 
         Returns:
             pandas.DataFrame: The pandas DataFrame representing this instance.
         """
-        pd = utils._auxiliary.local_import("pandas")
+        pd = cast(Any, utils._auxiliary.local_import("pandas"))
         return pd.DataFrame([self.columns], [self.key])
 
-    def _repr_html_(self):
+    def _repr_html_(self) -> str:
         return self.to_pandas()._repr_html_()
 
 
 class RowList(CogniteResourceList):
     _RESOURCE = Row
-    _ASSERT_CLASSES = False
 
-    def to_pandas(self):
+    def to_pandas(self) -> "pandas.DataFrame":  # type: ignore[override]
         """Convert the instance into a pandas DataFrame.
 
         Returns:
             pandas.DataFrame: The pandas DataFrame representing this instance.
         """
-        pd = utils._auxiliary.local_import("pandas")
+        pd = cast(Any, utils._auxiliary.local_import("pandas"))
         return pd.DataFrame.from_dict(OrderedDict(((d.key, d.columns) for d in self.data)), orient="index")
 
-    def _repr_html_(self):
+    def _repr_html_(self) -> str:
         return self.to_pandas()._repr_html_()
 
 
@@ -61,12 +70,12 @@ class Table(CogniteResource):
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
-    def __init__(self, name: str = None, created_time: int = None, cognite_client=None):
+    def __init__(self, name: str = None, created_time: int = None, cognite_client: "CogniteClient" = None):
         self.name = name
         self.created_time = created_time
-        self._cognite_client = cognite_client
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
-        self._db_name = None
+        self._db_name: Optional[str] = None
 
     def rows(self, key: str = None, limit: int = None) -> Union[Row, RowList]:
         """Get the rows in this table.
@@ -85,7 +94,6 @@ class Table(CogniteResource):
 
 class TableList(CogniteResourceList):
     _RESOURCE = Table
-    _ASSERT_CLASSES = False
 
 
 class Database(CogniteResource):
@@ -97,10 +105,10 @@ class Database(CogniteResource):
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
-    def __init__(self, name: str = None, created_time: int = None, cognite_client=None):
+    def __init__(self, name: str = None, created_time: int = None, cognite_client: "CogniteClient" = None):
         self.name = name
         self.created_time = created_time
-        self._cognite_client = cognite_client
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     def tables(self, limit: int = None) -> TableList:
         """Get the tables in this database.
@@ -116,4 +124,3 @@ class Database(CogniteResource):
 
 class DatabaseList(CogniteResourceList):
     _RESOURCE = Database
-    _ASSERT_CLASSES = False

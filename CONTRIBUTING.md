@@ -10,12 +10,13 @@ cd cognite-sdk-python
 ```
 
 Install dependencies and initialize a shell within the virtual environment.
+To get the virtual environment, install [poetry](https://pypi.org/project/poetry/).
 
-To get the virtual environment, install [pipenv](https://pypi.org/project/pipenv/). Then execute:
+Then execute:
 
 ```bash
-pipenv shell
-pipenv sync -d
+poetry shell
+poetry install
 ```
 
 Install pre-commit hooks
@@ -36,6 +37,7 @@ Set the following environment variables in a .env file:
 ```bash
 COGNITE_CLIENT_NAME=python-sdk-integration-tests-<your-name>
 COGNITE_MAX_RETRIES=20
+COGNITE_DISABLE_PYPI_VERSION_CHECK=1
 
 # Only necessary for running integration tests
 LOGIN_FLOW=interactive
@@ -61,7 +63,7 @@ Initiate unit tests by running the following command from the root directory:
 
 `pytest tests/tests_unit`
 
-If you have an appropriate API key, you can run the integratino tests like this:
+If you have an appropriate API key, you can run the integration tests like this:
 
 `pytest tests/tests_integration`
 
@@ -74,6 +76,12 @@ pytest tests/tests_unit --cov-report html \
 ```
 
 Open `htmlcov/index.html` in the browser to navigate through the report.
+
+To speed up test runs pass the following arguments (this will parallelize across 4 processes):
+
+```
+pytest -n4 --dist loadscope tests
+```
 
 ### Documentation
 

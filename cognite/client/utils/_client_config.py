@@ -1,6 +1,6 @@
 import os
 import pprint
-from typing import *
+from typing import Any, Callable, Dict, List, Optional, Set, Union
 
 from cognite.client import utils
 from cognite.client._version import __api_subversion__
@@ -10,7 +10,7 @@ _DEFAULT_API_SUBVERSION = __api_subversion__
 
 
 class _DefaultConfig:
-    def __init__(self):
+    def __init__(self) -> None:
         # Per client
         self.api_key = os.getenv("COGNITE_API_KEY")
         self.api_subversion = os.getenv("COGNITE_API_VERSION") or _DEFAULT_API_SUBVERSION
@@ -18,14 +18,14 @@ class _DefaultConfig:
         self.client_name = os.getenv("COGNITE_CLIENT_NAME")
         self.base_url = os.getenv("COGNITE_BASE_URL", "https://api.cognitedata.com")
         self.max_workers = int(os.getenv("COGNITE_MAX_WORKERS", 10))
-        self.headers = {}
+        self.headers: Dict[str, Any] = {}
         self.timeout = int(os.getenv("COGNITE_TIMEOUT", 30))
         self.file_transfer_timeout = int(os.getenv("COGNITE_FILE_TRANSFER_TIMEOUT", 600))
         self.token_client_id = os.getenv("COGNITE_CLIENT_ID")
         self.token_client_secret = os.getenv("COGNITE_CLIENT_SECRET")
         self.token_url = os.getenv("COGNITE_TOKEN_URL")
         self.token_scopes = os.getenv("COGNITE_TOKEN_SCOPES", "").split(",")
-        self.token_custom_args = {}
+        self.token_custom_args: Dict[str, Any] = {}
 
         # Global
         self.disable_gzip = os.getenv("COGNITE_DISABLE_GZIP", False)
@@ -37,11 +37,11 @@ class _DefaultConfig:
         self.disable_ssl = os.getenv("COGNITE_DISABLE_SSL", False)
 
     @staticmethod
-    def _get_status_forcelist():
+    def _get_status_forcelist() -> Set[int]:
         env_forcelist = os.getenv("COGNITE_STATUS_FORCELIST")
         if env_forcelist is None:
-            return [429, 502, 503, 504]
-        return [int(c) for c in env_forcelist.split(",")]
+            return {429, 502, 503, 504}
+        return {int(c) for c in env_forcelist.split(",")}
 
 
 class ClientConfig(_DefaultConfig):
@@ -62,7 +62,7 @@ class ClientConfig(_DefaultConfig):
         token_client_id: Optional[str] = None,
         token_client_secret: Optional[str] = None,
         token_scopes: Optional[List[str]] = None,
-        token_custom_args: Optional[Dict[str, str]] = None,
+        token_custom_args: Optional[Dict[str, Any]] = None,
         disable_pypi_version_check: Optional[bool] = None,
         debug: bool = False,
     ):
@@ -121,8 +121,8 @@ class ClientConfig(_DefaultConfig):
                 # PyPI is for some reason not reachable, skip version check
                 pass
 
-    def __str__(self):
+    def __str__(self) -> str:
         return pprint.pformat(self.__dict__, indent=4)
 
-    def _repr_html_(self):
+    def _repr_html_(self) -> str:
         return self.__str__()

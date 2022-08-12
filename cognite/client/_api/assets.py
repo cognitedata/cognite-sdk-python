@@ -1,7 +1,7 @@
 import queue
 import threading
 from collections import OrderedDict
-from typing import *
+from typing import Any, Dict, Iterator, List, Optional, Set, Union, cast, overload
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -11,15 +11,16 @@ from cognite.client.data_classes import (
     AssetFilter,
     AssetList,
     AssetUpdate,
+    GeoLocationFilter,
     LabelFilter,
     TimestampRange,
 )
 from cognite.client.exceptions import CogniteAPIError
+from cognite.client.utils._identifier import IdentifierSequence
 
 
 class AssetsAPI(APIClient):
     _RESOURCE_PATH = "/assets"
-    _LIST_CLASS = AssetList
 
     def __call__(
         self,
@@ -27,14 +28,13 @@ class AssetsAPI(APIClient):
         name: str = None,
         parent_ids: List[int] = None,
         parent_external_ids: List[str] = None,
-        root_ids: List[int] = None,
-        root_external_ids: List[str] = None,
         asset_subtree_ids: List[int] = None,
         asset_subtree_external_ids: List[str] = None,
         metadata: Dict[str, str] = None,
         data_set_ids: List[int] = None,
         data_set_external_ids: List[str] = None,
         labels: LabelFilter = None,
+        geo_location: GeoLocationFilter = None,
         source: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
@@ -43,7 +43,7 @@ class AssetsAPI(APIClient):
         aggregated_properties: List[str] = None,
         limit: int = None,
         partitions: int = None,
-    ) -> Generator[Union[Asset, AssetList], None, None]:
+    ) -> Union[Iterator[Asset], Iterator[AssetList]]:
         """Iterate over assets
 
         Fetches assets as they are iterated over, so you keep a limited number of assets in memory.
@@ -53,14 +53,13 @@ class AssetsAPI(APIClient):
             name (str): Name of asset. Often referred to as tag.
             parent_ids (List[int]): Return only the direct descendants of the specified assets.
             parent_external_ids (List[str]): Return only the direct descendants of the specified assets.
-            root_ids (List[int], optional): List of root ids ids to filter on.
-            root_external_ids (List[str], optional): List of root external ids to filter on.
             asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
             asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
             metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value
             data_set_ids (List[int]): Return only assets in the specified data sets with these ids.
             data_set_external_ids (List[str]): Return only assets in the specified data sets with these external ids.
             labels (LabelFilter): Return only the assets matching the specified label.
+            geo_location (GeoLocationFilter): Only include files matching the specified geographic relation.
             source (str): The source of this asset
             created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
@@ -75,22 +74,25 @@ class AssetsAPI(APIClient):
         """
         if aggregated_properties:
             aggregated_properties = [utils._auxiliary.to_camel_case(s) for s in aggregated_properties]
-        # dict option for backward compatibility
-        if (root_ids and not isinstance(root_ids[0], dict)) or root_external_ids:
-            root_ids = self._process_ids(root_ids, root_external_ids, wrap_ids=True)
+
+        asset_subtree_ids_processed = None
         if asset_subtree_ids or asset_subtree_external_ids:
-            asset_subtree_ids = self._process_ids(asset_subtree_ids, asset_subtree_external_ids, wrap_ids=True)
+            asset_subtree_ids_processed = IdentifierSequence.load(
+                asset_subtree_ids, asset_subtree_external_ids
+            ).as_dicts()
+
+        data_set_ids_processed = None
         if data_set_ids or data_set_external_ids:
-            data_set_ids = self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
+            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
 
         filter = AssetFilter(
             name=name,
             parent_ids=parent_ids,
             parent_external_ids=parent_external_ids,
-            root_ids=root_ids,
-            asset_subtree_ids=asset_subtree_ids,
-            data_set_ids=data_set_ids,
+            asset_subtree_ids=asset_subtree_ids_processed,
+            data_set_ids=data_set_ids_processed,
             labels=labels,
+            geo_location=geo_location,
             metadata=metadata,
             source=source,
             created_time=created_time,
@@ -100,6 +102,8 @@ class AssetsAPI(APIClient):
         ).dump(camel_case=True)
 
         return self._list_generator(
+            list_cls=AssetList,
+            resource_cls=Asset,
             method="POST",
             chunk_size=chunk_size,
             filter=filter,
@@ -108,7 +112,7 @@ class AssetsAPI(APIClient):
             other_params={"aggregatedProperties": aggregated_properties} if aggregated_properties else {},
         )
 
-    def __iter__(self) -> Generator[Asset, None, None]:
+    def __iter__(self) -> Iterator[Asset]:
         """Iterate over assets
 
         Fetches assets as they are iterated over, so you keep a limited number of assets in memory.
@@ -116,7 +120,7 @@ class AssetsAPI(APIClient):
         Yields:
             Asset: yields Assets one by one.
         """
-        return self.__call__()
+        return cast(Iterator[Asset], self.__call__())
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[Asset]:
         """`Retrieve a single asset by id. <https://docs.cognite.com/api/v1/#operation/getAsset>`_
@@ -142,8 +146,8 @@ class AssetsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.assets.retrieve(external_id="1")
         """
-        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
-        return self._retrieve_multiple(ids=id, external_ids=external_id, wrap_ids=True)
+        identifier = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
+        return self._retrieve_multiple(list_cls=AssetList, resource_cls=Asset, identifiers=identifier)
 
     def retrieve_multiple(
         self,
@@ -175,10 +179,9 @@ class AssetsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.assets.retrieve_multiple(external_ids=["abc", "def"], ignore_unknown_ids=True)
         """
-        utils._auxiliary.assert_type(ids, "id", [List], allow_none=True)
-        utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=True)
+        identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
         return self._retrieve_multiple(
-            ids=ids, external_ids=external_ids, ignore_unknown_ids=ignore_unknown_ids, wrap_ids=True
+            list_cls=AssetList, resource_cls=Asset, identifiers=identifiers, ignore_unknown_ids=ignore_unknown_ids
         )
 
     def list(
@@ -186,13 +189,12 @@ class AssetsAPI(APIClient):
         name: str = None,
         parent_ids: List[int] = None,
         parent_external_ids: List[str] = None,
-        root_ids: List[int] = None,
-        root_external_ids: List[str] = None,
         asset_subtree_ids: List[int] = None,
         asset_subtree_external_ids: List[str] = None,
         data_set_ids: List[int] = None,
         data_set_external_ids: List[str] = None,
         labels: LabelFilter = None,
+        geo_location: GeoLocationFilter = None,
         metadata: Dict[str, str] = None,
         source: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
@@ -209,13 +211,12 @@ class AssetsAPI(APIClient):
             name (str): Name of asset. Often referred to as tag.
             parent_ids (List[int]): Return only the direct descendants of the specified assets.
             parent_external_ids (List[str]): Return only the direct descendants of the specified assets.
-            root_ids (List[int], optional): List of root ids ids to filter on.
-            root_external_ids (List[str], optional): List of root external ids to filter on.
             asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
             asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
             data_set_ids (List[int]): Return only assets in the specified data sets with these ids.
             data_set_external_ids (List[str]): Return only assets in the specified data sets with these external ids.
             labels (LabelFilter): Return only the assets matching the specified label filter.
+            geo_location (GeoLocationFilter): Only include files matching the specified geographic relation.
             metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value.
             source (str): The source of this asset.
             created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
@@ -263,22 +264,24 @@ class AssetsAPI(APIClient):
         if aggregated_properties:
             aggregated_properties = [utils._auxiliary.to_camel_case(s) for s in aggregated_properties]
 
-        # dict option for backward compatibility
-        if (root_ids and not isinstance(root_ids[0], dict)) or root_external_ids:
-            root_ids = self._process_ids(root_ids, root_external_ids, wrap_ids=True)
+        asset_subtree_ids_processed = None
         if asset_subtree_ids or asset_subtree_external_ids:
-            asset_subtree_ids = self._process_ids(asset_subtree_ids, asset_subtree_external_ids, wrap_ids=True)
+            asset_subtree_ids_processed = IdentifierSequence.load(
+                asset_subtree_ids, asset_subtree_external_ids
+            ).as_dicts()
+
+        data_set_ids_processed = None
         if data_set_ids or data_set_external_ids:
-            data_set_ids = self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
+            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
 
         filter = AssetFilter(
             name=name,
             parent_ids=parent_ids,
             parent_external_ids=parent_external_ids,
-            root_ids=root_ids,
-            asset_subtree_ids=asset_subtree_ids,
-            data_set_ids=data_set_ids,
+            asset_subtree_ids=asset_subtree_ids_processed,
+            data_set_ids=data_set_ids_processed,
             labels=labels,
+            geo_location=geo_location,
             metadata=metadata,
             source=source,
             created_time=created_time,
@@ -287,6 +290,8 @@ class AssetsAPI(APIClient):
             external_id_prefix=external_id_prefix,
         ).dump(camel_case=True)
         return self._list(
+            list_cls=AssetList,
+            resource_cls=Asset,
             method="POST",
             limit=limit,
             filter=filter,
@@ -312,6 +317,14 @@ class AssetsAPI(APIClient):
                 >>> aggregate_by_prefix = c.assets.aggregate(filter={"external_id_prefix": "prefix"})
         """
         return self._aggregate(filter=filter, cls=AssetAggregate)
+
+    @overload
+    def create(self, asset: List[Asset]) -> AssetList:
+        ...
+
+    @overload
+    def create(self, asset: Asset) -> Asset:
+        ...
 
     def create(self, asset: Union[Asset, List[Asset]]) -> Union[Asset, AssetList]:
         """`Create one or more assets. <https://docs.cognite.com/api/v1/#operation/createAssets>`_
@@ -344,7 +357,7 @@ class AssetsAPI(APIClient):
                 >>> res = c.assets.create(asset)
         """
         utils._auxiliary.assert_type(asset, "asset", [Asset, list])
-        return self._create_multiple(asset)
+        return self._create_multiple(list_cls=AssetList, resource_cls=Asset, items=asset)
 
     def create_hierarchy(self, assets: List[Asset]) -> AssetList:
         """Create asset hierarchy. Like the create() method, when posting a large number of assets, the IDE will split the request into smaller requests.
@@ -398,11 +411,18 @@ class AssetsAPI(APIClient):
                 >>> c.assets.delete(id=[1,2,3], external_id="3")
         """
         self._delete_multiple(
-            ids=id,
-            external_ids=external_id,
+            identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
             wrap_ids=True,
             extra_body_fields={"recursive": recursive, "ignoreUnknownIds": ignore_unknown_ids},
         )
+
+    @overload
+    def update(self, item: List[Union[Asset, AssetUpdate]]) -> AssetList:
+        ...
+
+    @overload
+    def update(self, item: Union[Asset, AssetUpdate]) -> Asset:
+        ...
 
     def update(self, item: Union[Asset, AssetUpdate, List[Union[Asset, AssetUpdate]]]) -> Union[Asset, AssetList]:
         """`Update one or more assets <https://docs.cognite.com/api/v1/#operation/updateAssets>`_
@@ -462,7 +482,7 @@ class AssetsAPI(APIClient):
                 >>> my_update = AssetUpdate(id=1).labels.set("PUMP")
                 >>> res = c.assets.update(my_update)
         """
-        return self._update_multiple(items=item)
+        return self._update_multiple(list_cls=AssetList, resource_cls=Asset, update_cls=AssetUpdate, items=item)
 
     def search(
         self,
@@ -519,7 +539,10 @@ class AssetsAPI(APIClient):
                 >>> res = c.assets.search(name="xyz",filter=AssetFilter(labels=my_label_filter))
         """
         return self._search(
-            search={"name": name, "description": description, "query": query}, filter=filter, limit=limit
+            list_cls=AssetList,
+            search={"name": name, "description": description, "query": query},
+            filter=filter or {},
+            limit=limit,
         )
 
     def retrieve_subtree(self, id: int = None, external_id: str = None, depth: int = None) -> AssetList:
@@ -534,7 +557,6 @@ class AssetsAPI(APIClient):
         Returns:
             AssetList: The requested assets or empty AssetList if asset does not exist.
         """
-        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
         asset = self.retrieve(id=id, external_id=external_id)
         if asset is None:
             return AssetList([], self._cognite_client)
@@ -573,22 +595,27 @@ class _AssetsFailedToPost:
 
 
 class _AssetPosterWorker(threading.Thread):
-    def __init__(self, client: AssetsAPI, request_queue: queue.Queue, response_queue: queue.Queue):
+    def __init__(
+        self,
+        client: AssetsAPI,
+        request_queue: queue.Queue,
+        response_queue: queue.Queue,
+    ):
         self.client = client
         self.request_queue = request_queue
         self.response_queue = response_queue
         self.stop = False
         super().__init__(daemon=True)
 
-    def run(self):
-        request = None
+    def run(self) -> None:
+        request: List[Asset] = []
         try:
             while not self.stop:
                 try:
-                    request = self.request_queue.get(timeout=0.1)
+                    request = cast(List[Asset], self.request_queue.get(timeout=0.1))
                 except queue.Empty:
                     continue
-                assets = self.client.create(request)
+                assets = cast(AssetList, self.client.create(request))
                 self.response_queue.put(assets)
         except Exception as e:
             self.response_queue.put(_AssetsFailedToPost(e, request))
@@ -597,39 +624,41 @@ class _AssetPosterWorker(threading.Thread):
 class _AssetPoster:
     def __init__(self, assets: List[Asset], client: AssetsAPI):
         self._validate_asset_hierarchy(assets)
-        self.remaining_external_ids = OrderedDict()
+        self.remaining_external_ids: OrderedDict[str, Optional[str]] = OrderedDict()
         self.remaining_external_ids_set = set()
         self.external_id_to_asset = {}
 
         for asset in assets:
-            self.remaining_external_ids[asset.external_id] = None
+            self.remaining_external_ids[cast(str, asset.external_id)] = None
             self.remaining_external_ids_set.add(asset.external_id)
             self.external_id_to_asset[asset.external_id] = asset
 
         self.client = client
 
         self.num_of_assets = len(self.remaining_external_ids)
-        self.external_ids_without_circular_deps = set()
-        self.external_id_to_children = {external_id: set() for external_id in self.remaining_external_ids}
+        self.external_ids_without_circular_deps: Set[str] = set()
+        self.external_id_to_children: Dict[str, Set[Asset]] = {
+            external_id: set() for external_id in self.remaining_external_ids
+        }
         self.external_id_to_descendent_count = {external_id: 0 for external_id in self.remaining_external_ids}
-        self.successfully_posted_external_ids = set()
-        self.posted_assets = set()
-        self.may_have_been_posted_assets = set()
-        self.not_posted_assets = set()
-        self.exception = None
+        self.successfully_posted_external_ids: Set[str] = set()
+        self.posted_assets: Set[Asset] = set()
+        self.may_have_been_posted_assets: Set[Asset] = set()
+        self.not_posted_assets: Set[Asset] = set()
+        self.exception: Optional[Exception] = None
 
         self.assets_remaining = (
             lambda: len(self.posted_assets) + len(self.may_have_been_posted_assets) + len(self.not_posted_assets)
             < self.num_of_assets
         )
 
-        self.request_queue = queue.Queue()
-        self.response_queue = queue.Queue()
+        self.request_queue: queue.Queue[List[Asset]] = queue.Queue()
+        self.response_queue: queue.Queue[Union[AssetList, _AssetsFailedToPost]] = queue.Queue()
 
         self._initialize()
 
     @staticmethod
-    def _validate_asset_hierarchy(assets) -> None:
+    def _validate_asset_hierarchy(assets: List[Asset]) -> None:
         external_ids_seen = set()
         for asset in assets:
             if asset.external_id is None:
@@ -647,7 +676,7 @@ class _AssetPoster:
                         )
                     )
 
-    def _initialize(self):
+    def _initialize(self) -> None:
         root_assets = set()
         for external_id in self.remaining_external_ids:
             asset = self.external_id_to_asset[external_id]
@@ -662,31 +691,31 @@ class _AssetPoster:
 
         self.remaining_external_ids = self._sort_external_ids_by_descendant_count(self.remaining_external_ids)
 
-    def _initialize_asset_to_descendant_count(self, asset):
-        for child in self.external_id_to_children[asset.external_id]:
-            self.external_id_to_descendent_count[asset.external_id] += 1 + self._initialize_asset_to_descendant_count(
-                child
-            )
-        return self.external_id_to_descendent_count[asset.external_id]
+    def _initialize_asset_to_descendant_count(self, asset: Asset) -> int:
+        for child in self.external_id_to_children[cast(str, asset.external_id)]:
+            self.external_id_to_descendent_count[
+                cast(str, asset.external_id)
+            ] += 1 + self._initialize_asset_to_descendant_count(child)
+        return self.external_id_to_descendent_count[cast(str, asset.external_id)]
 
-    def _get_descendants(self, asset):
+    def _get_descendants(self, asset: Asset) -> List[Asset]:
         descendants = []
-        for child in self.external_id_to_children[asset.external_id]:
+        for child in self.external_id_to_children[cast(str, asset.external_id)]:
             descendants.append(child)
             descendants.extend(self._get_descendants(child))
         return descendants
 
-    def _verify_asset_is_not_part_of_tree_with_circular_deps(self, asset: Asset):
-        next_asset = asset
-        seen = {asset.external_id}
-        while next_asset.parent_external_id is not None:
+    def _verify_asset_is_not_part_of_tree_with_circular_deps(self, asset: Asset) -> None:
+        next_asset: Optional[Asset] = asset
+        seen = {cast(str, asset.external_id)}
+        while next_asset is not None and next_asset.parent_external_id is not None:
             next_asset = self.external_id_to_asset.get(next_asset.parent_external_id)
             if next_asset is None:
                 break
             if next_asset.external_id in self.external_ids_without_circular_deps:
                 break
             if next_asset.external_id not in seen:
-                seen.add(next_asset.external_id)
+                seen.add(cast(str, next_asset.external_id))
             else:
                 raise AssertionError("The asset hierarchy has circular dependencies")
         self.external_ids_without_circular_deps.update(seen)
@@ -695,24 +724,24 @@ class _AssetPoster:
         sorted_external_ids = sorted(external_ids, key=lambda x: self.external_id_to_descendent_count[x], reverse=True)
         return OrderedDict({external_id: None for external_id in sorted_external_ids})
 
-    def _get_assets_unblocked_locally(self, asset: Asset, limit):
+    def _get_assets_unblocked_locally(self, asset: Asset, limit: int) -> Set[Asset]:
         pq = utils._auxiliary.PriorityQueue()
-        pq.add(asset, self.external_id_to_descendent_count[asset.external_id])
-        unblocked_descendents = set()
+        pq.add(asset, self.external_id_to_descendent_count[cast(str, asset.external_id)])
+        unblocked_descendents: Set[Asset] = set()
         while pq:
             if len(unblocked_descendents) == limit:
                 break
             asset = pq.get()
             unblocked_descendents.add(asset)
             self.remaining_external_ids_set.remove(asset.external_id)
-            for child in self.external_id_to_children[asset.external_id]:
-                pq.add(child, self.external_id_to_descendent_count[child.external_id])
+            for child in self.external_id_to_children[cast(str, asset.external_id)]:
+                pq.add(child, self.external_id_to_descendent_count[cast(str, child.external_id)])
         return unblocked_descendents
 
     def _get_unblocked_assets(self) -> List[Set[Asset]]:
         limit = self.client._CREATE_LIMIT
         unblocked_assets_lists = []
-        unblocked_assets_chunk = set()
+        unblocked_assets_chunk: Set[Asset] = set()
         for external_id in self.remaining_external_ids:
             asset = self.external_id_to_asset[external_id]
             parent_external_id = asset.parent_external_id
@@ -733,11 +762,11 @@ class _AssetPoster:
 
         for unblocked_assets_chunk in unblocked_assets_lists:
             for unblocked_asset in unblocked_assets_chunk:
-                del self.remaining_external_ids[unblocked_asset.external_id]
+                del self.remaining_external_ids[cast(str, unblocked_asset.external_id)]
 
         return unblocked_assets_lists
 
-    def run(self):
+    def run(self) -> None:
         unblocked_assets_lists = self._get_unblocked_assets()
         for unblocked_assets in unblocked_assets_lists:
             self.request_queue.put(list(unblocked_assets))
@@ -758,7 +787,7 @@ class _AssetPoster:
             else:
                 for asset in res:
                     self.posted_assets.add(asset)
-                    self.successfully_posted_external_ids.add(asset.external_id)
+                    self.successfully_posted_external_ids.add(cast(str, asset.external_id))
                 unblocked_assets_lists = self._get_unblocked_assets()
                 for unblocked_assets in unblocked_assets_lists:
                     self.request_queue.put(list(unblocked_assets))
@@ -775,9 +804,9 @@ class _AssetPoster:
                     failed=AssetList(list(self.not_posted_assets)),
                     unwrap_fn=lambda a: a.external_id,
                 )
-            raise self.exception
+            raise cast(Exception, self.exception)
 
-    def post(self):
+    def post(self) -> AssetList:
         workers = []
         for _ in range(self.client._config.max_workers):
             worker = _AssetPosterWorker(self.client, self.request_queue, self.response_queue)
