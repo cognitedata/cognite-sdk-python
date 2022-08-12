@@ -9,7 +9,7 @@ from local_cog_client import setup_local_cog_client
 # END = "now"  # 112548548397  # 31569600000
 START = pd.Timestamp("1990-01-01 00:00:00").value // int(1e6)
 END = pd.Timestamp("2020-01-01 00:00:00").value // int(1e6)
-LIMIT = None
+LIMIT = 400_000
 AGGREGATES = None
 # AGGREGATES = ["sum"]
 # AGGREGATES = [

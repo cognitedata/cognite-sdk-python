@@ -720,15 +720,13 @@ class SingleTSQuery:
             payload["aggregates"] = self.aggregates_cc
         return dict(zip(map(to_camel_case, payload.keys()), payload.values()))
 
-    def to_count_agg_payload(self, max_workers: int, max_windows: int) -> Optional[Dict]:
+    def to_count_agg_payload(self, max_windows: int) -> Optional[Dict]:
         # Returns payload to get count aggs when useful, else None
         if not self.is_raw_query:
             return None
-        if self.limit and self.limit < 2 * DPS_LIMIT + 1:
+        if self.limit and self.limit < 3 * DPS_LIMIT + 1:
             return None  # This cut-off is just @haakonvt sticking a finger in the air
         limit, granularity = self._compute_granularity_for_count_agg_query(max_windows)
-        if limit < max(5, max_workers):
-            return None  # See comment 3 lines above ;)
         return {
             **self.identifier_dct,
             "start": self.start,
@@ -739,10 +737,10 @@ class SingleTSQuery:
         }
 
     def _compute_granularity_for_count_agg_query(self, max_windows: int) -> Tuple[int, str]:
-        assert self.is_raw_query  # TODO: remove
-        limit = math.inf if self.limit is None else self.limit
-        tot_ms = self.end - self.start
-        n_max_dps = min(tot_ms, limit)
+        # For the sake of fetching count aggregates, we ignore the `limit` parameter, as getting
+        # a more coarse resolution of the point density is detrimental: In order to use the counts
+        # to create "perfect requests" we need the full resolution.
+        n_max_dps = tot_ms = self.end - self.start
         n_windows_estimate = min(max_windows, math.ceil(n_max_dps / DPS_LIMIT))
         window_gran_ms = tot_ms / n_windows_estimate
 

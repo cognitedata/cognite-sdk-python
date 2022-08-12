@@ -13,7 +13,6 @@ from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Set, Tupl
 
 import pandas as pd
 
-import cognite.client.utils._time
 from cognite.client import utils
 from cognite.client._api.datapoint_constants import (
     DPS_LIMIT,
@@ -44,7 +43,7 @@ from cognite.client.data_classes.datapoints import (
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import split_into_n_parts
 from cognite.client.utils._priority_tpe import PriorityThreadPoolExecutor
-from cognite.client.utils._time import granularity_to_ms, timestamp_to_ms
+from cognite.client.utils._time import granularity_to_ms, granularity_unit_to_ms, timestamp_to_ms
 
 if TYPE_CHECKING:
     import pandas
@@ -243,7 +242,7 @@ class DpsFetchOrchestrator:
             items.append([query.to_payload()])
             if query.is_raw_query:
                 # Only larger/longer queries warrant fetching count aggs
-                if agg_payload := query.to_count_agg_payload(self.max_workers, max_windows=10_000):
+                if agg_payload := query.to_count_agg_payload(max_windows=10_000):
                     self.count_agg_payloads[query] = agg_payload
                     items[-1].append(agg_payload)
         return items
@@ -1294,7 +1293,7 @@ class DatapointsFetcher:
 
     @staticmethod
     def _align_with_granularity_unit(ts: int, granularity: str) -> int:
-        gms = cognite.client.utils._time.granularity_unit_to_ms(granularity)
+        gms = granularity_unit_to_ms(granularity)
         if ts % gms == 0:
             return ts
         return ts - (ts % gms) + gms
