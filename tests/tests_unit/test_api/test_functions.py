@@ -1068,7 +1068,7 @@ class TestFunctionCallsAPI:
         call = cognite_client.functions.call(id=FUNCTION_ID)
         logs = call.get_logs()
         assert isinstance(logs, FunctionCallLog)
-        assert mock_function_call_logs_response.calls[3].response.json()["items"] == logs.dump(camel_case=True)
+        assert mock_function_call_logs_response.calls[-1].response.json()["items"] == logs.dump(camel_case=True)
 
     def test_function_call_response_by_function_id(self, mock_function_call_response_response, cognite_client):
         res = cognite_client.functions.calls.get_response(call_id=CALL_ID, function_id=FUNCTION_ID)
