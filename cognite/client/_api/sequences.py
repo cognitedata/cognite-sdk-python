@@ -673,7 +673,7 @@ class SequencesDataAPI(APIClient):
             column_external_ids (Optional[SequenceType[str]]): List of external id for the columns of the sequence. If 'None' is passed, all columns will be retrieved.
             id (int): Id of sequence.
             external_id (str): External id of sequence.
-            limit (int): Maximum number of rows to return per sequence.
+            limit (int): Maximum number of rows to return per sequence. 10000 is the maximum limit per request.
 
 
         Returns:
