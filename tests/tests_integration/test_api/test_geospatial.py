@@ -1,5 +1,5 @@
 import random
-import sys
+import re
 import time
 import uuid
 
@@ -11,14 +11,15 @@ from cognite.client.data_classes.geospatial import (
     Feature,
     FeatureList,
     FeatureType,
+    FeatureTypePatch,
     FeatureTypeUpdate,
     OrderSpec,
+    Patches,
     PropertyAndSearchSpec,
 )
 from cognite.client.exceptions import CogniteAPIError
 
-# sdk integration tests run concurrently on 3 python versions so this makes the CI builds independent from each other
-FIXED_SRID = 121111 + sys.version_info.minor
+FIXED_SRID = 121111 + random.randint(0, 1_000)
 
 
 @pytest.fixture()
@@ -130,9 +131,13 @@ def test_features(cognite_client, test_feature_type):
             pressure=2121.0,
         ),
     ]
-    feature = cognite_client.geospatial.create_features(test_feature_type.external_id, features)
+    feature = cognite_client.geospatial.create_features(
+        feature_type_external_id=test_feature_type.external_id, feature=features, chunk_size=2
+    )
     yield feature
-    cognite_client.geospatial.delete_features(test_feature_type.external_id, external_id=external_ids)
+    cognite_client.geospatial.delete_features(
+        feature_type_external_id=test_feature_type.external_id, external_id=external_ids
+    )
 
 
 @pytest.fixture
@@ -170,7 +175,7 @@ def clean_old_feature_types(cognite_client):
             if feature_type_age_in_milliseconds > one_hour_in_milliseconds:
                 print(f"Deleting old feature type {ft.external_id}")
                 cognite_client.geospatial.delete_feature_types(external_id=ft.external_id, recursive=True)
-    except:
+    except Exception:
         pass
 
 
@@ -179,11 +184,11 @@ def clean_old_feature_types(cognite_client):
 def clean_old_custom_crs(cognite_client):
     try:
         cognite_client.geospatial.delete_coordinate_reference_systems(srids=[121111])  # clean up
-    except:
+    except Exception:
         pass
     try:
         cognite_client.geospatial.delete_coordinate_reference_systems(srids=[FIXED_SRID])  # clean up
-    except:
+    except Exception:
         pass
 
 
@@ -227,6 +232,20 @@ class TestGeospatialAPI:
         )
         assert res.external_id == test_feature.external_id
         assert res.temperature == 6.237
+
+    def test_update_multiple_features(self, cognite_client, allow_crs_transformation, test_feature_type, test_features):
+        res = cognite_client.geospatial.update_features(
+            feature_type_external_id=test_feature_type.external_id,
+            feature=[
+                Feature(external_id=test_features[idx].external_id, temperature=6.237, pressure=12.21, volume=34.43)
+                for idx in range(0, len(test_features))
+            ],
+            allow_crs_transformation=allow_crs_transformation,
+            chunk_size=2,
+        )
+        for idx in range(0, len(test_features)):
+            assert res[idx].external_id == test_features[idx].external_id
+            assert res[idx].temperature == 6.237
 
     def test_search_single_feature(self, cognite_client, test_feature_type, test_feature):
         res = cognite_client.geospatial.search_features(
@@ -333,7 +352,6 @@ class TestGeospatialAPI:
     def test_search_with_output_selection(self, cognite_client, test_feature_type, test_feature, another_test_feature):
         res = cognite_client.geospatial.search_features(
             feature_type_external_id=test_feature_type.external_id,
-            filter={},
             properties={"temperature": {}, "volume": {}},
         )
         assert len(res) == 2
@@ -345,20 +363,18 @@ class TestGeospatialAPI:
     ):
         res = cognite_client.geospatial.search_features(
             feature_type_external_id=test_feature_type.external_id,
-            filter={},
             properties={"position": {"srid": "3857"}},
             allow_crs_transformation=allow_crs_transformation,
         )
         assert len(res) == 2
         assert hasattr(res[0], "position")
-        assert res[0].position["wkt"] == "POINT(253457.6156334287 6250962.062720415)"
+        assert re.compile(r"^POINT\(253457.61[0-9]+ 6250962.06[0-9]+\)$").match(res[0].position["wkt"])
         assert not hasattr(res[0], "pressure")
         assert not hasattr(res[0], "volume")
 
     def test_search_with_order_by(self, cognite_client, test_feature_type, test_feature, another_test_feature):
         res = cognite_client.geospatial.search_features(
             feature_type_external_id=test_feature_type.external_id,
-            filter={},
             order_by=[OrderSpec(property="temperature", direction="ASC")],
         )
         assert res[0].temperature == -10.8
@@ -366,7 +382,6 @@ class TestGeospatialAPI:
 
         res = cognite_client.geospatial.search_features(
             feature_type_external_id=test_feature_type.external_id,
-            filter={},
             order_by=[OrderSpec(property="temperature", direction="DESC")],
         )
         assert res[0].temperature == 12.4
@@ -387,12 +402,30 @@ class TestGeospatialAPI:
             )
         )
         assert len(res) == 1
-        assert len(res[0].properties) == 7
-        assert len(res[0].search_spec) == 5
+        assert len(res[0].properties) == len(test_feature_type.properties)
+        assert len(res[0].search_spec) == len(test_feature_type.search_spec) + 1
+
+    def test_patch_feature_types(self, cognite_client, test_feature_type):
+        res = cognite_client.geospatial.patch_feature_types(
+            patch=FeatureTypePatch(
+                external_id=test_feature_type.external_id,
+                property_patches=Patches(add={"altitude": {"type": "DOUBLE", "optional": True}}, remove=["volume"]),
+                search_spec_patches=Patches(
+                    add={
+                        "altitude_idx": {"properties": ["altitude"]},
+                        "pos_alt_idx": {"properties": ["position", "altitude"]},
+                    },
+                    remove=["vol_press_idx"],
+                ),
+            )
+        )
+        assert len(res) == 1
+        assert len(res[0].properties) == len(test_feature_type.properties)
+        assert len(res[0].search_spec) == len(test_feature_type.search_spec) + 1
 
     def test_stream_features(self, cognite_client, large_feature_type, many_features):
         features = cognite_client.geospatial.stream_features(
-            feature_type_external_id=large_feature_type.external_id, filter={}
+            feature_type_external_id=large_feature_type.external_id,
         )
         feature_list = FeatureList(list(features))
         assert len(feature_list) == len(many_features)
@@ -484,7 +517,6 @@ class TestGeospatialAPI:
     def test_aggregate(self, cognite_client, test_feature_type, test_features):
         res = cognite_client.geospatial.aggregate_features(
             feature_type_external_id=test_feature_type.external_id,
-            filter={},
             property="temperature",
             aggregates=["min", "max"],
         )
@@ -501,7 +533,6 @@ class TestGeospatialAPI:
 
         res = cognite_client.geospatial.aggregate_features(
             feature_type_external_id=test_feature_type.external_id,
-            filter={},
             property="temperature",
             aggregates=["min", "max"],
             group_by=["externalId"],

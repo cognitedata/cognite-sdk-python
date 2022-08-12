@@ -1,16 +1,19 @@
 import argparse
+import functools
 import os
 import re
+from typing import List, Optional, Tuple
 
 import requests
 
 
-def check_if_version_exists(package_name: str, version: str):
+def check_if_version_exists(package_name: str, version: str) -> bool:
     versions = get_all_versions(package_name=package_name)
     return version in versions
 
 
-def get_newest_version_in_major_release(package_name: str, version: str):
+@functools.lru_cache(maxsize=1)
+def get_newest_version_in_major_release(package_name: str, version: str) -> str:
     major, minor, micro, pr_cycle, pr_version = _parse_version(version)
     versions = get_all_versions(package_name)
     for v in versions:
@@ -19,15 +22,15 @@ def get_newest_version_in_major_release(package_name: str, version: str):
     return _format_version(major, minor, micro, pr_cycle, pr_version)
 
 
-def get_all_versions(package_name: str):
+def get_all_versions(package_name: str) -> List[str]:
     disable_ssl = os.getenv("COGNITE_DISABLE_SSL", False)
     verify_ssl = not disable_ssl
     res = requests.get("https://pypi.python.org/simple/{}/#history".format(package_name), verify=verify_ssl, timeout=5)
-    versions = re.findall("cognite-sdk-(\d+\.\d+.[\dabrc]+)", res.content.decode())
+    versions = re.findall(r"cognite-sdk-(\d+\.\d+.[\dabrc]+)", res.content.decode())
     return versions
 
 
-def _is_newer_major(version_a, version_b):
+def _is_newer_major(version_a: str, version_b: str) -> bool:
     major_a, minor_a, micro_a, pr_cycle_a, pr_version_a = _parse_version(version_a)
     major_b, minor_b, micro_b, pr_cycle_b, pr_version_b = _parse_version(version_b)
     is_newer = False
@@ -42,7 +45,9 @@ def _is_newer_major(version_a, version_b):
     return is_newer
 
 
-def _is_newer_pre_release(pr_cycle_a, pr_v_a, pr_cycle_b, pr_v_b):
+def _is_newer_pre_release(
+    pr_cycle_a: Optional[str], pr_v_a: Optional[int], pr_cycle_b: Optional[str], pr_v_b: Optional[int]
+) -> bool:
     cycles = ["a", "b", "rc", None]
     assert pr_cycle_a in cycles, "pr_cycle_a must be one of '{}', not '{}'.".format(pr_cycle_a, cycles)
     assert pr_cycle_b in cycles, "pr_cycle_a must be one of '{}', not '{}'.".format(pr_cycle_b, cycles)
@@ -55,8 +60,8 @@ def _is_newer_pre_release(pr_cycle_a, pr_v_a, pr_cycle_b, pr_v_b):
     return is_newer
 
 
-def _parse_version(version: str):
-    pattern = "(\d+)\.(\d+)\.(\d+)(?:([abrc]+)(\d+))?"
+def _parse_version(version: str) -> Tuple[int, int, int, str, Optional[int]]:
+    pattern = r"(\d+)\.(\d+)\.(\d+)(?:([abrc]+)(\d+))?"
     match = re.match(pattern, version)
     if not match:
         raise ValueError("Could not parse version {}".format(version))
@@ -64,10 +69,8 @@ def _parse_version(version: str):
     return int(major), int(minor), int(micro), pr_cycle, int(pr_version) if pr_version else None
 
 
-def _format_version(major, minor, micro, pr_cycle, pr_version):
-    pr_cycle = pr_cycle or ""
-    pr_version = pr_version or ""
-    return "{}.{}.{}{}{}".format(major, minor, micro, pr_cycle, pr_version)
+def _format_version(major: int, minor: int, micro: int, pr_cycle: Optional[str], pr_version: Optional[int]) -> str:
+    return "{}.{}.{}{}{}".format(major, minor, micro, pr_cycle or "", pr_version or "")
 
 
 if __name__ == "__main__":

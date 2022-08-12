@@ -1,25 +1,33 @@
 import json
 from collections import UserList
-from typing import *
+from typing import TYPE_CHECKING, Any, Collection, Dict, Generic, List, Optional, Sequence, Type, TypeVar, Union, cast
 
 from cognite.client import utils
 from cognite.client.exceptions import CogniteMissingClientError
+from cognite.client.utils._identifier import IdentifierSequence
+
+if TYPE_CHECKING:
+    import pandas
+
+    from cognite.client import CogniteClient
 
 EXCLUDE_VALUE = [None]
 
+T_CogniteResponse = TypeVar("T_CogniteResponse", bound="CogniteResponse")
+
 
 class CogniteResponse:
-    def __str__(self):
+    def __str__(self) -> str:
         item = utils._time.convert_time_attributes_to_datetime(self.dump())
         return json.dumps(item, default=utils._auxiliary.json_dump_default, indent=4)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__str__()
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         return type(other) == type(self) and other.dump() == self.dump()
 
-    def __getattribute__(self, item):
+    def __getattribute__(self, item: Any) -> Any:
         attr = super().__getattribute__(item)
         if item == "_cognite_client":
             if attr is None:
@@ -43,29 +51,34 @@ class CogniteResponse:
         return dumped
 
     @classmethod
-    def _load(cls, api_response):
+    def _load(cls, api_response: Dict[str, Any]) -> "CogniteResponse":
         raise NotImplementedError
 
-    def to_pandas(self):
+    def to_pandas(self) -> "pandas.DataFrame":
         raise NotImplementedError
+
+
+T_CogniteResource = TypeVar("T_CogniteResource", bound="CogniteResource")
 
 
 class CogniteResource:
-    def __new__(cls, *args, **kwargs):
+    _cognite_client: Any
+
+    def __new__(cls, *args: Any, **kwargs: Any) -> "CogniteResource":
         obj = super().__new__(cls)
         obj._cognite_client = None
         if "cognite_client" in kwargs:
             obj._cognite_client = kwargs["cognite_client"]
         return obj
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         return type(self) == type(other) and self.dump() == other.dump()
 
-    def __str__(self):
+    def __str__(self) -> str:
         item = utils._time.convert_time_attributes_to_datetime(self.dump())
         return json.dumps(item, default=utils._auxiliary.json_dump_default, indent=4)
 
-    def __getattribute__(self, item):
+    def __getattribute__(self, item: Any) -> Any:
         attr = super().__getattribute__(item)
         if item == "_cognite_client":
             if attr is None:
@@ -92,7 +105,9 @@ class CogniteResource:
         }
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client=None):
+    def _load(
+        cls: Type[T_CogniteResource], resource: Union[Dict, str], cognite_client: "CogniteClient" = None
+    ) -> T_CogniteResource:
         if isinstance(resource, str):
             return cls._load(json.loads(resource), cognite_client=cognite_client)
         elif isinstance(resource, Dict):
@@ -104,7 +119,9 @@ class CogniteResource:
             return instance
         raise TypeError("Resource must be json str or Dict, not {}".format(type(resource)))
 
-    def to_pandas(self, expand: List[str] = ("metadata",), ignore: List[str] = None, camel_case: bool = True):
+    def to_pandas(
+        self, expand: Sequence[str] = ("metadata",), ignore: List[str] = None, camel_case: bool = True
+    ) -> "pandas.DataFrame":
         """Convert the instance into a pandas DataFrame.
 
         Args:
@@ -117,7 +134,7 @@ class CogniteResource:
             pandas.DataFrame: The dataframe.
         """
         ignore = [] if ignore is None else ignore
-        pd = utils._auxiliary.local_import("pandas")
+        pd = cast(Any, utils._auxiliary.local_import("pandas"))
         dumped = self.dump(camel_case=camel_case)
 
         for element in ignore:
@@ -134,13 +151,13 @@ class CogniteResource:
             df.loc[name] = [value]
         return df
 
-    def _repr_html_(self):
+    def _repr_html_(self) -> str:
         return self.to_pandas(camel_case=False)._repr_html_()
 
 
 class CognitePropertyClassUtil:
     @staticmethod
-    def declare_property(schema_name):
+    def declare_property(schema_name: str) -> property:
         return (
             property(lambda s: s[schema_name] if schema_name in s else None)
             .setter(lambda s, v: CognitePropertyClassUtil._property_setter(s, schema_name, v))
@@ -148,22 +165,20 @@ class CognitePropertyClassUtil:
         )
 
     @staticmethod
-    def _property_setter(self, schema_name, value):
+    def _property_setter(self: Any, schema_name: str, value: Any) -> None:
         if value is None:
             self.pop(schema_name, None)
         else:
             self[schema_name] = value
 
 
-class CogniteResourceList(UserList):
-    _RESOURCE = None
-    _UPDATE = None
-    _ASSERT_CLASSES = True
+T_CogniteResourceList = TypeVar("T_CogniteResourceList", bound="CogniteResourceList")
 
-    def __init__(self, resources: List[Any], cognite_client=None):
-        if self._ASSERT_CLASSES:
-            assert self._RESOURCE is not None, "{} does not have _RESOURCE set".format(self.__class__.__name__)
-            assert self._UPDATE is not None, "{} does not have _UPDATE set".format(self.__class__.__name__)
+
+class CogniteResourceList(UserList):
+    _RESOURCE: Type[CogniteResource]
+
+    def __init__(self, resources: Collection[Any], cognite_client: "CogniteClient" = None):
         for resource in resources:
             if not isinstance(resource, self._RESOURCE):
                 raise TypeError(
@@ -171,7 +186,7 @@ class CogniteResourceList(UserList):
                         self.__class__.__name__, self._RESOURCE.__name__, type(resource)
                     )
                 )
-        self._cognite_client = cognite_client
+        self._cognite_client = cast("CogniteClient", cognite_client)
         super().__init__(resources)
         if self.data:
             if hasattr(self.data[0], "external_id"):
@@ -181,13 +196,13 @@ class CogniteResourceList(UserList):
             if hasattr(self.data[0], "id"):
                 self._id_to_item = {item.id: item for item in self.data if item.id is not None}
 
-    def __getattribute__(self, item):
+    def __getattribute__(self, item: Any) -> Any:
         attr = super().__getattribute__(item)
         if item == "_cognite_client" and attr is None:
             raise CogniteMissingClientError
         return attr
 
-    def __getitem__(self, item):
+    def __getitem__(self, item: Any) -> Any:
         value = super().__getitem__(item)
         if isinstance(item, slice):
             c = None
@@ -196,7 +211,7 @@ class CogniteResourceList(UserList):
             return self.__class__(value, cognite_client=c)
         return value
 
-    def __str__(self):
+    def __str__(self) -> str:
         item = utils._time.convert_time_attributes_to_datetime(self.dump())
         return json.dumps(item, default=utils._auxiliary.json_dump_default, indent=4)
 
@@ -221,18 +236,18 @@ class CogniteResourceList(UserList):
         Returns:
             Optional[CogniteResource]: The requested item
         """
-        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
+        IdentifierSequence.load(id, external_id).assert_singleton()
         if id:
             return self._id_to_item.get(id)
         return self._external_id_to_item.get(external_id)
 
-    def to_pandas(self, camel_case=True) -> "pandas.DataFrame":
+    def to_pandas(self, camel_case: bool = True) -> "pandas.DataFrame":
         """Convert the instance into a pandas DataFrame.
 
         Returns:
             pandas.DataFrame: The dataframe.
         """
-        pd = utils._auxiliary.local_import("pandas")
+        pd = cast(Any, utils._auxiliary.local_import("pandas"))
         df = pd.DataFrame(self.dump(camel_case=camel_case))
         nullable_int_fields = ["startTime", "endTime", "assetId", "parentId", "dataSetId"]
         if not camel_case:
@@ -245,11 +260,13 @@ class CogniteResourceList(UserList):
             pass
         return df
 
-    def _repr_html_(self):
+    def _repr_html_(self) -> str:
         return self.to_pandas(camel_case=False)._repr_html_()
 
     @classmethod
-    def _load(cls, resource_list: Union[List, str], cognite_client=None):
+    def _load(
+        cls: Type[T_CogniteResourceList], resource_list: Union[List, str], cognite_client: "CogniteClient" = None
+    ) -> T_CogniteResourceList:
         if isinstance(resource_list, str):
             return cls._load(json.loads(resource_list), cognite_client=cognite_client)
         elif isinstance(resource_list, List):
@@ -257,32 +274,35 @@ class CogniteResourceList(UserList):
             return cls(resources, cognite_client=cognite_client)
 
 
+T_CogniteUpdate = TypeVar("T_CogniteUpdate", bound="CogniteUpdate")
+
+
 class CogniteUpdate:
     def __init__(self, id: int = None, external_id: str = None):
         self._id = id
         self._external_id = external_id
-        self._update_object = {}
+        self._update_object: Dict[str, Any] = {}
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         return type(self) == type(other) and self.dump() == other.dump()
 
-    def __str__(self):
+    def __str__(self) -> str:
         return json.dumps(self.dump(), default=utils._auxiliary.json_dump_default, indent=4)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__str__()
 
-    def _set(self, name, value):
+    def _set(self, name: str, value: Any) -> None:
         update_obj = self._update_object.get(name, {})
         assert (
             "remove" not in update_obj and "add" not in update_obj
         ), "Can not call set after adding or removing fields from an update object."
         self._update_object[name] = {"set": value}
 
-    def _set_null(self, name):
+    def _set_null(self, name: str) -> None:
         self._update_object[name] = {"setNull": True}
 
-    def _add(self, name, value):
+    def _add(self, name: str, value: Any) -> None:
         update_obj = self._update_object.get(name, {})
         assert "set" not in update_obj, "Can not call remove or add fields after calling set on an update object."
         assert (
@@ -291,7 +311,7 @@ class CogniteUpdate:
         update_obj["add"] = value
         self._update_object[name] = update_obj
 
-    def _remove(self, name, value):
+    def _remove(self, name: str, value: Any) -> None:
         update_obj = self._update_object.get(name, {})
         assert "set" not in update_obj, "Can not call remove or add fields after calling set on an update object."
         assert (
@@ -300,7 +320,7 @@ class CogniteUpdate:
         update_obj["remove"] = value
         self._update_object[name] = update_obj
 
-    def _modify(self, name, value):
+    def _modify(self, name: str, value: Any) -> None:
         update_obj = self._update_object.get(name, {})
         assert "set" not in update_obj, "Can not call remove or add fields after calling set on an update object."
         assert (
@@ -309,13 +329,13 @@ class CogniteUpdate:
         update_obj["modify"] = value
         self._update_object[name] = update_obj
 
-    def dump(self):
+    def dump(self) -> Dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
         Returns:
             Dict[str, Any]: A dictionary representation of the instance.
         """
-        dumped = {"update": self._update_object}
+        dumped: Dict[str, Any] = {"update": self._update_object}
         if self._id is not None:
             dumped["id"] = self._id
         elif self._external_id is not None:
@@ -323,16 +343,16 @@ class CogniteUpdate:
         return dumped
 
     @classmethod
-    def _get_update_properties(cls):
-        return [key for key in cls.__dict__.keys() if (not key.startswith("_")) and (not key in ["labels", "columns"])]
+    def _get_update_properties(cls) -> List[str]:
+        return [key for key in cls.__dict__.keys() if (not key.startswith("_")) and (key not in ["labels", "columns"])]
 
 
-class CognitePrimitiveUpdate:
-    def __init__(self, update_object, name: str):
+class CognitePrimitiveUpdate(Generic[T_CogniteUpdate]):
+    def __init__(self, update_object: T_CogniteUpdate, name: str):
         self._update_object = update_object
         self._name = name
 
-    def _set(self, value: Union[None, str, int, bool]):
+    def _set(self, value: Union[None, str, int, bool]) -> T_CogniteUpdate:
         if value is None:
             self._update_object._set_null(self._name)
         else:
@@ -340,89 +360,105 @@ class CognitePrimitiveUpdate:
         return self._update_object
 
 
-class CogniteObjectUpdate:
-    def __init__(self, update_object, name: str):
+class CogniteObjectUpdate(Generic[T_CogniteUpdate]):
+    def __init__(self, update_object: T_CogniteUpdate, name: str) -> None:
         self._update_object = update_object
         self._name = name
 
-    def _set(self, value: Dict):
+    def _set(self, value: Dict) -> T_CogniteUpdate:
         self._update_object._set(self._name, value)
         return self._update_object
 
-    def _add(self, value: Dict):
+    def _add(self, value: Dict) -> T_CogniteUpdate:
         self._update_object._add(self._name, value)
         return self._update_object
 
-    def _remove(self, value: List):
+    def _remove(self, value: List) -> T_CogniteUpdate:
         self._update_object._remove(self._name, value)
         return self._update_object
 
 
-class CogniteListUpdate:
-    def __init__(self, update_object, name: str):
+class CogniteListUpdate(Generic[T_CogniteUpdate]):
+    def __init__(self, update_object: T_CogniteUpdate, name: str):
         self._update_object = update_object
         self._name = name
 
-    def _set(self, value: List):
+    def _set(self, value: List) -> T_CogniteUpdate:
         self._update_object._set(self._name, value)
         return self._update_object
 
-    def _add(self, value: List):
+    def _add(self, value: List) -> T_CogniteUpdate:
         self._update_object._add(self._name, value)
         return self._update_object
 
-    def _remove(self, value: List):
+    def _remove(self, value: List) -> T_CogniteUpdate:
         self._update_object._remove(self._name, value)
         return self._update_object
 
-    def _modify(self, value: List):
+    def _modify(self, value: List) -> T_CogniteUpdate:
         self._update_object._modify(self._name, value)
         return self._update_object
 
 
-class CogniteLabelUpdate:
-    def __init__(self, update_object, name: str):
+class CogniteLabelUpdate(Generic[T_CogniteUpdate]):
+    def __init__(self, update_object: T_CogniteUpdate, name: str) -> None:
         self._update_object = update_object
         self._name = name
 
-    def _set(self, external_ids: Union[str, List[str]]):
+    def _set(self, external_ids: Union[str, List[str]]) -> T_CogniteUpdate:
         self._update_object._set(self._name, self._wrap_ids(self._wrap_in_list(external_ids)))
         return self._update_object
 
-    def _add(self, external_ids: Union[str, List[str]]):
+    def _add(self, external_ids: Union[str, List[str]]) -> T_CogniteUpdate:
         self._update_object._add(self._name, self._wrap_ids(self._wrap_in_list(external_ids)))
         return self._update_object
 
-    def _remove(self, external_ids: Union[str, List[str]]):
+    def _remove(self, external_ids: Union[str, List[str]]) -> T_CogniteUpdate:
         self._update_object._remove(self._name, self._wrap_ids(self._wrap_in_list(external_ids)))
         return self._update_object
 
-    def _wrap_ids(self, external_ids: List[str]):
+    def _wrap_ids(self, external_ids: List[str]) -> List[Dict[str, str]]:
         return [{"externalId": external_id} for external_id in external_ids]
 
-    def _wrap_in_list(self, external_ids: Union[str, List[str]]):
+    def _wrap_in_list(self, external_ids: Union[str, List[str]]) -> List[str]:
         return external_ids if isinstance(external_ids, list) else [external_ids]
 
 
+T_CogniteFilter = TypeVar("T_CogniteFilter", bound="CogniteFilter")
+
+
 class CogniteFilter:
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         return type(self) == type(other) and self.dump() == other.dump()
 
-    def __str__(self):
+    def __str__(self) -> str:
         item = utils._time.convert_time_attributes_to_datetime(self.dump())
         return json.dumps(item, default=utils._auxiliary.json_dump_default, indent=4)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__str__()
 
-    def __getattribute__(self, item):
+    def __getattribute__(self, item: Any) -> Any:
         attr = super().__getattribute__(item)
         if item == "_cognite_client":
             if attr is None:
                 raise CogniteMissingClientError
         return attr
 
-    def dump(self, camel_case: bool = False):
+    @classmethod
+    def _load(cls: Type[T_CogniteFilter], resource: Union[Dict, str]) -> T_CogniteFilter:
+        if isinstance(resource, str):
+            return cls._load(json.loads(resource))
+        elif isinstance(resource, Dict):
+            instance = cls()
+            for key, value in resource.items():
+                snake_case_key = utils._auxiliary.to_snake_case(key)
+                if hasattr(instance, snake_case_key):
+                    setattr(instance, snake_case_key, value)
+            return instance
+        raise TypeError("Resource must be json str or Dict, not {}".format(type(resource)))
+
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
         Returns:

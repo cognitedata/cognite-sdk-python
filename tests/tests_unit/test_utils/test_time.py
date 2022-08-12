@@ -14,8 +14,20 @@ class TestDatetimeToMs:
         assert utils._time.datetime_to_ms(datetime(2018, 1, 31)) == 1517356800000
         assert utils._time.datetime_to_ms(datetime(2018, 1, 31, 11, 11, 11)) == 1517397071000
         assert utils._time.datetime_to_ms(datetime(100, 1, 31)) == -59008867200000
-        with pytest.raises(TypeError):
+        with pytest.raises(AttributeError):
             utils._time.datetime_to_ms(None)
+
+    def test_aware_datetime_to_ms(self):
+        from datetime import datetime, timezone
+
+        # TODO: Starting from PY39 we should also add tests using:
+        # from zoneinfo import ZoneInfo
+        # datetime(2020, 10, 31, 12, tzinfo=ZoneInfo("America/Los_Angeles"))
+
+        utc = timezone.utc
+        assert utils._time.datetime_to_ms(datetime(2018, 1, 31, tzinfo=utc)) == 1517356800000
+        assert utils._time.datetime_to_ms(datetime(2018, 1, 31, 11, 11, 11, tzinfo=utc)) == 1517397071000
+        assert utils._time.datetime_to_ms(datetime(100, 1, 31, tzinfo=utc)) == -59008867200000
 
     def test_ms_to_datetime(self):
         from datetime import datetime
@@ -50,21 +62,21 @@ class TestTimestampToMs:
     @pytest.mark.parametrize(
         "time_ago_string, expected_timestamp",
         [
-            ("now", 10 ** 12),
-            ("1s-ago", 10 ** 12 - 1 * 1000),
-            ("13s-ago", 10 ** 12 - 13 * 1000),
-            ("1m-ago", 10 ** 12 - 1 * 60 * 1000),
-            ("13m-ago", 10 ** 12 - 13 * 60 * 1000),
-            ("1h-ago", 10 ** 12 - 1 * 60 * 60 * 1000),
-            ("13h-ago", 10 ** 12 - 13 * 60 * 60 * 1000),
-            ("1d-ago", 10 ** 12 - 1 * 24 * 60 * 60 * 1000),
-            ("13d-ago", 10 ** 12 - 13 * 24 * 60 * 60 * 1000),
-            ("1w-ago", 10 ** 12 - 1 * 7 * 24 * 60 * 60 * 1000),
-            ("13w-ago", 10 ** 12 - 13 * 7 * 24 * 60 * 60 * 1000),
+            ("now", 10**12),
+            ("1s-ago", 10**12 - 1 * 1000),
+            ("13s-ago", 10**12 - 13 * 1000),
+            ("1m-ago", 10**12 - 1 * 60 * 1000),
+            ("13m-ago", 10**12 - 13 * 60 * 1000),
+            ("1h-ago", 10**12 - 1 * 60 * 60 * 1000),
+            ("13h-ago", 10**12 - 13 * 60 * 60 * 1000),
+            ("1d-ago", 10**12 - 1 * 24 * 60 * 60 * 1000),
+            ("13d-ago", 10**12 - 13 * 24 * 60 * 60 * 1000),
+            ("1w-ago", 10**12 - 1 * 7 * 24 * 60 * 60 * 1000),
+            ("13w-ago", 10**12 - 13 * 7 * 24 * 60 * 60 * 1000),
         ],
     )
     def test_time_ago(self, time_mock, time_ago_string, expected_timestamp):
-        time_mock.return_value = 10 ** 9
+        time_mock.return_value = 10**9
 
         assert utils._time.timestamp_to_ms(time_ago_string) == expected_timestamp
 

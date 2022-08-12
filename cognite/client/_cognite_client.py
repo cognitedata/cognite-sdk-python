@@ -1,10 +1,14 @@
 import warnings
 from typing import Any, Callable, Dict, List, Optional, Union
 
+from requests import Response
+
 from cognite.client import utils
+from cognite.client._api.annotations import AnnotationsAPI
 from cognite.client._api.assets import AssetsAPI
 from cognite.client._api.data_sets import DataSetsAPI
 from cognite.client._api.datapoints import DatapointsAPI
+from cognite.client._api.diagrams import DiagramsAPI
 from cognite.client._api.entity_matching import EntityMatchingAPI
 from cognite.client._api.events import EventsAPI
 from cognite.client._api.extractionpipelines import ExtractionPipelineRunsAPI, ExtractionPipelinesAPI
@@ -79,7 +83,7 @@ class CogniteClient:
         token_custom_args: Optional[Dict[str, str]] = None,
         disable_pypi_version_check: Optional[bool] = None,
         debug: bool = False,
-    ):
+    ) -> None:
         self._config = ClientConfig(
             api_key=api_key,
             api_subversion=api_subversion,
@@ -123,22 +127,26 @@ class CogniteClient:
             self._config, api_version="playground", cognite_client=self
         )
         self.transformations = TransformationsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
+        self.diagrams = DiagramsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
+        self.annotations = AnnotationsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
 
         self._api_client = APIClient(self._config, cognite_client=self)
 
-    def get(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
+    def get(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None) -> Response:
         """Perform a GET request to an arbitrary path in the API."""
         return self._api_client._get(url, params=params, headers=headers)
 
-    def post(self, url: str, json: Dict[str, Any], params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
+    def post(
+        self, url: str, json: Dict[str, Any], params: Dict[str, Any] = None, headers: Dict[str, Any] = None
+    ) -> Response:
         """Perform a POST request to an arbitrary path in the API."""
         return self._api_client._post(url, json=json, params=params, headers=headers)
 
-    def put(self, url: str, json: Dict[str, Any] = None, headers: Dict[str, Any] = None):
+    def put(self, url: str, json: Dict[str, Any] = None, headers: Dict[str, Any] = None) -> Response:
         """Perform a PUT request to an arbitrary path in the API."""
         return self._api_client._put(url, json=json, headers=headers)
 
-    def delete(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None):
+    def delete(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None) -> Response:
         """Perform a DELETE request to an arbitrary path in the API."""
         return self._api_client._delete(url, params=params, headers=headers)
 
@@ -160,7 +168,7 @@ class CogniteClient:
         """
         return self._config
 
-    def _infer_project(self):
+    def _infer_project(self) -> str:
         login_status = self.login.status()
         if login_status.logged_in:
             warnings.warn(

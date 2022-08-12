@@ -1,13 +1,19 @@
-from typing import *
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union, cast, overload
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Database, DatabaseList, Row, RowList, Table, TableList
 from cognite.client.utils._auxiliary import local_import
+from cognite.client.utils._identifier import Identifier
+
+if TYPE_CHECKING:
+    import pandas
+
+    from cognite.client import CogniteClient
 
 
 class RawAPI(APIClient):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.databases = RawDatabasesAPI(*args, **kwargs)
         self.tables = RawTablesAPI(*args, **kwargs)
@@ -16,11 +22,8 @@ class RawAPI(APIClient):
 
 class RawDatabasesAPI(APIClient):
     _RESOURCE_PATH = "/raw/dbs"
-    _LIST_CLASS = DatabaseList
 
-    def __call__(
-        self, chunk_size: int = None, limit: int = None
-    ) -> Generator[Union[Database, DatabaseList], None, None]:
+    def __call__(self, chunk_size: int = None, limit: int = None) -> Union[Iterator[Database], Iterator[DatabaseList]]:
         """Iterate over databases
 
         Fetches dbs as they are iterated over, so you keep a limited number of dbs in memory.
@@ -29,10 +32,20 @@ class RawDatabasesAPI(APIClient):
             chunk_size (int, optional): Number of dbs to return in each chunk. Defaults to yielding one db a time.
             limit (int, optional): Maximum number of dbs to return. Defaults to return all items.
         """
-        return self._list_generator(chunk_size=chunk_size, method="GET", limit=limit)
+        return self._list_generator(
+            list_cls=DatabaseList, resource_cls=Database, chunk_size=chunk_size, method="GET", limit=limit
+        )
 
-    def __iter__(self) -> Generator[Database, None, None]:
-        return self.__call__()
+    def __iter__(self) -> Iterator[Database]:
+        return cast(Iterator[Database], self.__call__())
+
+    @overload
+    def create(self, name: str) -> Database:
+        ...
+
+    @overload
+    def create(self, name: List[str]) -> DatabaseList:
+        ...
 
     def create(self, name: Union[str, List[str]]) -> Union[Database, DatabaseList]:
         """`Create one or more databases. <https://docs.cognite.com/api/v1/#operation/createDBs>`_
@@ -53,10 +66,10 @@ class RawDatabasesAPI(APIClient):
         """
         utils._auxiliary.assert_type(name, "name", [str, list])
         if isinstance(name, str):
-            items = {"name": name}
+            items: Union[Dict[str, Any], List[Dict[str, Any]]] = {"name": name}
         else:
             items = [{"name": n} for n in name]
-        return self._create_multiple(items=items)
+        return self._create_multiple(list_cls=DatabaseList, resource_cls=Database, items=items)
 
     def delete(self, name: Union[str, List[str]], recursive: bool = False) -> None:
         """`Delete one or more databases. <https://docs.cognite.com/api/v1/#operation/deleteDBs>`_
@@ -122,16 +135,15 @@ class RawDatabasesAPI(APIClient):
                 >>> for db_list in c.raw.databases(chunk_size=2500):
                 ...     db_list # do something with the dbs
         """
-        return self._list(method="GET", limit=limit)
+        return self._list(list_cls=DatabaseList, resource_cls=Database, method="GET", limit=limit)
 
 
 class RawTablesAPI(APIClient):
     _RESOURCE_PATH = "/raw/dbs/{}/tables"
-    _LIST_CLASS = TableList
 
     def __call__(
         self, db_name: str, chunk_size: int = None, limit: int = None
-    ) -> Generator[Union[Table, TableList], None, None]:
+    ) -> Union[Iterator[Table], Iterator[TableList]]:
         """Iterate over tables
 
         Fetches tables as they are iterated over, so you keep a limited number of tables in memory.
@@ -142,12 +154,22 @@ class RawTablesAPI(APIClient):
             limit (int, optional): Maximum number of tables to return. Defaults to return all items.
         """
         for tb in self._list_generator(
+            list_cls=TableList,
+            resource_cls=Table,
             resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, db_name),
             chunk_size=chunk_size,
             method="GET",
             limit=limit,
         ):
             yield self._set_db_name_on_tables(tb, db_name)
+
+    @overload
+    def create(self, db_name: str, name: str) -> Table:
+        ...
+
+    @overload
+    def create(self, db_name: str, name: List[str]) -> TableList:
+        ...
 
     def create(self, db_name: str, name: Union[str, List[str]]) -> Union[Table, TableList]:
         """`Create one or more tables. <https://docs.cognite.com/api/v1/#operation/createTables>`_
@@ -169,11 +191,14 @@ class RawTablesAPI(APIClient):
         """
         utils._auxiliary.assert_type(name, "name", [str, list])
         if isinstance(name, str):
-            items = {"name": name}
+            items: Union[Dict[str, Any], List[Dict[str, Any]]] = {"name": name}
         else:
             items = [{"name": n} for n in name]
         tb = self._create_multiple(
-            resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, db_name), items=items
+            list_cls=TableList,
+            resource_cls=Table,
+            resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, db_name),
+            items=items,
         )
         return self._set_db_name_on_tables(tb, db_name)
 
@@ -246,11 +271,13 @@ class RawTablesAPI(APIClient):
                 ...     table_list # do something with the tables
         """
         tb = self._list(
+            list_cls=TableList,
+            resource_cls=Table,
             resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, db_name),
             method="GET",
             limit=limit,
         )
-        return self._set_db_name_on_tables(tb, db_name)
+        return cast(TableList, self._set_db_name_on_tables(tb, db_name))
 
     def _set_db_name_on_tables(self, tb: Union[Table, TableList], db_name: str) -> Union[Table, TableList]:
         if isinstance(tb, Table):
@@ -265,9 +292,13 @@ class RawTablesAPI(APIClient):
 
 class RawRowsAPI(APIClient):
     _RESOURCE_PATH = "/raw/dbs/{}/tables/{}/rows"
-    _LIST_CLASS = RowList
 
-    def __init__(self, config: utils._client_config.ClientConfig, api_version: str = None, cognite_client=None):
+    def __init__(
+        self,
+        config: utils._client_config.ClientConfig,
+        api_version: Optional[str] = None,
+        cognite_client: "CogniteClient" = None,
+    ) -> None:
         super().__init__(config, api_version, cognite_client)
         self._CREATE_LIMIT = 10000
         self._LIST_LIMIT = 10000
@@ -281,7 +312,7 @@ class RawRowsAPI(APIClient):
         min_last_updated_time: int = None,
         max_last_updated_time: int = None,
         columns: List[str] = None,
-    ) -> Generator[Union[Row, RowList], None, None]:
+    ) -> Union[Iterator[Row], Iterator[RowList]]:
         """Iterate over rows.
 
         Fetches rows as they are iterated over, so you keep a limited number of rows in memory.
@@ -296,6 +327,8 @@ class RawRowsAPI(APIClient):
             columns (List[str]): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
         """
         return self._list_generator(
+            list_cls=RowList,
+            resource_cls=Row,
             resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
             chunk_size=chunk_size,
             method="GET",
@@ -374,7 +407,7 @@ class RawRowsAPI(APIClient):
         rows = [Row(key=key, columns=cols) for key, cols in df_dict.items()]
         self.insert(db_name, table_name, rows)
 
-    def _process_row_input(self, row: List[Union[List, Dict, Row]]):
+    def _process_row_input(self, row: Union[List[Row], Row, Dict]) -> List[Union[List, Dict]]:
         utils._auxiliary.assert_type(row, "row", [list, dict, Row])
         rows = []
         if isinstance(row, dict):
@@ -450,7 +483,9 @@ class RawRowsAPI(APIClient):
                 >>> row = c.raw.rows.retrieve("db1", "t1", "k1")
         """
         return self._retrieve(
-            resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name), id=key
+            cls=Row,
+            resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
+            identifier=Identifier(key),
         )
 
     def list(
@@ -512,6 +547,8 @@ class RawRowsAPI(APIClient):
             cursors = [None]
         tasks = [
             dict(
+                list_cls=RowList,
+                resource_cls=Row,
                 resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
                 method="GET",
                 filter={
@@ -529,16 +566,15 @@ class RawRowsAPI(APIClient):
             raise summary.exceptions[0]
         return RowList(summary.joined_results())
 
-    def _make_columns_param(self, columns: List[str]) -> Optional[str]:
+    def _make_columns_param(self, columns: Optional[List[str]]) -> Optional[str]:
         if columns is None:
             return None
         if not isinstance(columns, List):
             raise ValueError("Expected a list for argument columns")
         if len(columns) == 0:
-            columns = ","
+            return ","
         else:
-            columns = ",".join([str(x) for x in columns])
-        return columns
+            return ",".join([str(x) for x in columns])
 
     def retrieve_dataframe(
         self,
@@ -572,7 +608,7 @@ class RawRowsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> df = c.raw.rows.retrieve_dataframe("db1", "t1", limit=5)
         """
-        pd = local_import("pandas")
+        pd = cast(Any, local_import("pandas"))
         rows = self.list(db_name, table_name, min_last_updated_time, max_last_updated_time, columns, limit)
         idx = [r.key for r in rows]
         cols = [r.columns for r in rows]

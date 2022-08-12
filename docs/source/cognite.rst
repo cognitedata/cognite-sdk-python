@@ -55,7 +55,7 @@ For the next examples, you will need to supply ids for the time series that you 
     >>> from cognite.client import CogniteClient
     >>> c = CogniteClient()
     >>> ts_list = c.time_series.list(include_metadata=False)
-    
+
 Plot time series
 ----------------
 There are several ways of plotting a time series you have fetched from the API. The easiest is to call
@@ -189,7 +189,7 @@ You can set default configurations with these environment variables:
 
 .. code:: bash
 
-    # Can be overrided by Client Configuration
+    # Can be overridden by Client Configuration
     $ export COGNITE_API_KEY = <your-api-key>
     $ export COGNITE_PROJECT = <your-default-project>
     $ export COGNITE_BASE_URL = http://<host>:<port>
@@ -216,8 +216,8 @@ to the API, you can either pass the :code:`max_workers` attribute when you insta
 If you are working with multiple instances of :code:`CogniteClient`, all instances will share the same connection pool.
 If you have several instances, you can increase the max connection pool size to reuse connections if you are performing a large amount of concurrent requests. You can increase the max connection pool size by setting the :code:`COGNITE_MAX_CONNECTION_POOL_SIZE` environment variable.
 
-Extensions and core library
-============================
+Extensions and optional dependencies
+====================================
 Pandas integration
 ------------------
 The SDK is tightly integrated with the `pandas <https://pandas.pydata.org/pandas-docs/stable/>`_ library.
@@ -237,15 +237,29 @@ You need to install the matplotlib package manually:
 
     $ pip install matplotlib
 
-:code:`cognite-sdk` vs. :code:`cognite-sdk-core`
-------------------------------------------------
-If your application doesn't require the functionality from the :code:`pandas`
-or :code:`numpy` dependencies, you should install the :code:`cognite-sdk-core` library.
+How to install extra dependencies
+---------------------------------
+If your application requires the functionality from e.g. the :code:`pandas`, :code:`numpy`, or :code:`geopandas` dependencies,
+you should install the sdk along with its optional dependencies. The available extras are:
 
-The two libraries are exactly the same, except that :code:`cognite-sdk-core` does not specify :code:`pandas`
-or :code:`numpy` as dependencies. This means that :code:`cognite-sdk-core` only has a subset
-of the features available through the :code:`cognite-sdk` package. If you attempt to use functionality
-that :code:`cognite-sdk-core` does not support, a :code:`CogniteImportError` is raised.
+- pandas
+- geo
+- sympy
+- all (will install dependencies for all the above)
+
+These can be installed with the following command:
+
+pip
+
+.. code:: bash
+
+    $ pip install cognite-sdk[pandas, geo]
+
+poetry
+
+.. code:: bash
+
+    $ poetry add cognite-sdk -E pandas -E geo
 
 API
 ===
@@ -695,6 +709,15 @@ Delete rows from a table
 ~~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.raw.RawRowsAPI.delete
 
+Retrieve pandas dataframe
+~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.raw.RawRowsAPI.retrieve_dataframe
+
+Insert pandas dataframe
+~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.raw.RawRowsAPI.insert_dataframe
+
+
 Data classes
 ^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.raw
@@ -756,7 +779,7 @@ Retrieve feature types
 
 Update feature types
 ^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.geospatial.GeospatialAPI.update_feature_types
+.. automethod:: cognite.client._api.geospatial.GeospatialAPI.patch_feature_types
 
 Create features
 ^^^^^^^^^^^^^^^
@@ -916,7 +939,7 @@ Data classes
 
 Contextualization
 -----------------
-These APIs will return as soon as possible, defering a blocking wait until the last moment. Nevertheless, they can block for a long time awaiting results.
+These APIs will return as soon as possible, deferring a blocking wait until the last moment. Nevertheless, they can block for a long time awaiting results.
 
 Fit Entity Matching Model
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -943,6 +966,14 @@ Update Entity Matching Models
 Predict Using an Entity Matching Model
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.entity_matching.EntityMatchingAPI.predict
+
+Detect entities in Engineering Diagrams
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.diagrams.DiagramsAPI.detect
+
+Convert to an interactive SVG where the provided annotations are highlighted
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.diagrams.DiagramsAPI.convert
 
 Contextualization Data Classes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1040,6 +1071,43 @@ Data classes
     :members:
     :show-inheritance:
 
+Annotations
+-----------
+
+Retrieve an annotation by id
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.annotations.AnnotationsAPI.retrieve
+
+Retrieve multiple annotations by id
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.annotations.AnnotationsAPI.retrieve_multiple
+
+List annotation
+^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.annotations.AnnotationsAPI.list
+
+Create an annotation
+^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.annotations.AnnotationsAPI.create
+
+Suggest an annotation
+^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.annotations.AnnotationsAPI.suggest
+
+Update annotations
+^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.annotations.AnnotationsAPI.update
+
+Delete annotations
+^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.annotations.AnnotationsAPI.delete
+
+Data classes
+^^^^^^^^^^^^
+.. automodule:: cognite.client.data_classes.annotations
+    :members:
+    :show-inheritance:
+
 Identity and access management
 ------------------------------
 Tokens
@@ -1120,6 +1188,21 @@ Delete security categories
 .. automethod:: cognite.client._api.iam.SecurityCategoriesAPI.delete
 
 
+Sessions
+^^^^^^^^^^^^^^^^^^^
+List sessions
+~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.iam.SessionsAPI.list
+
+Create a session
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.iam.SessionsAPI.create
+
+Revoke a session
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.iam.SessionsAPI.revoke
+
+
 Data classes
 ^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.iam
@@ -1171,10 +1254,6 @@ Data classes
     :members:
     :show-inheritance:
 
-.. automodule:: cognite.client.data_classes.extractionpipelineruns
-    :members:
-    :show-inheritance:
-
 
 Transformations
 ------------------------
@@ -1192,6 +1271,11 @@ Retrieve transformations by id
 Run transformations by id
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.transformations.TransformationsAPI.run
+.. automethod:: cognite.client._api.transformations.TransformationsAPI.run_async
+    
+Preview transformations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.transformations.TransformationsAPI.preview
 
 Cancel transformation run by id
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1370,8 +1454,3 @@ Object to use as a mock for CogniteClient
 Use a context manager to monkeypatch CogniteClient
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. autofunction:: cognite.client.testing.monkeypatch_cognite_client
-
-Experimental features
-=====================
-.. WARNING::
-    These features are subject to breaking changes and should not be used in production code.

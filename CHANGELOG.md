@@ -14,13 +14,136 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+
+## [3.8.0] - 2022-08-11
+### Added
+- Add ignore_unknown_ids parameter to sequences.retrieve_multiple
+
+## [3.7.0] - 2022-08-10
+### Changed
+- Changed grouping of Sequence rows on insert. Each group now contains at most 100k values and at most 10k rows.
+
+## [3.6.1] - 2022-08-10
+### Fixed
+- Fixed a minor casing error for the geo_location field on files
+
+## [3.6.0] - 2022-08-10
+### Added
+- Add ignore_unknown_ids parameter to files.retrieve_multiple
+
+## [3.5.0] - 2022-08-10
+### Changed
+- Improve type annotations. Use overloads in more places to help static type checkers.
+
+## [3.4.3] - 2022-08-10
+### Changed
+- Cache result from pypi version check so it's not executed for every client instantiation.
+
+## [3.4.2] - 2022-07-28
+### Fixed
+- Fix the wrong destination name in transformations.
+
+## [3.4.1] - 2022-07-27
+### Fixed
+- fixed exception when printing exceptions generated on transformations creation/update.
+
+## [3.4.0] - 2022-07-21
+### Added
+- added support for nonce authentication on transformations
+
+### Changed
+- if no source or destination credentials are provided on transformation create, an attempt will be made to create a session with the CogniteClient credentials, if it succeeds the aquired nonce will be used.
+- if OIDC credentials are provided on transformation create/update, an attempt will be made to create a session with the given credentials, if it succeeds the aquired nonce credentials will replace the given client credentials before sending the request.
+
+## [3.3.0] - 2022-07-21
+### Added
+- added the sessions API
+
+## [3.2.0] - 2022-07-15
+### Removed
+- Unused cognite.client.experimental module
+
+## [3.1.0] - 2022-07-13
+### Changed
+- Helper functions for conversion to/from datetime now warns on naive datetimes and their interpretation.
+### Fixed
+- Helper function `datetime_to_ms` now accepts timezone aware datetimes.
+
+## [3.0.1] - 2022-07-13
+### Fixed
+- fixed missing README.md in package
+
+## [3.0.0] - 2022-07-12
+### Changed
+- Poetry build, one single package "cognite-sdk"
+- Require python 3.8 or greater (used to be 3.5 or greater)
+### Removed
+- support for root_asset_id and root_asset_external_id filters. use asset subtree filters instead.
+
+## [2.56.1] - 2022-06-22
+### Added
+- Time series property `is_step` can now be updated.
+
+## [2.56.0] - 2022-06-21
+### Added
+- added the diagrams API
+
+## [2.55.0] - 2022-06-20
+
+### Fixed
+- Improve geospatial documentation and implement better parameter resilience for filter and feature type update
+
+## [2.54.0] - 2022-06-17
+
+### Added
+- Allow to set the chunk size when creating or updating geospatial features
+
+## [2.53.1] - 2022-06-17
+
+### Fixed
+- Fixed destination type decoding of `transformation.destination`
+
+## [2.53.0] - 2022-06-16
+
+### Added
+- Annotations implementation, providing access to the corresponding [Annotations API](https://docs.cognite.com/api/v1/#tag/Annotations).
+    - Added `Annotation`, `AnnotationFilter`, `AnnotationUpdate` dataclasses to `cognite.client.data_classes`
+    - Added `annotations` API to `cognite.client.CogniteClient`
+    - **Create** annotations with `client.annotations.create` passing `Annotation` instance(s)
+    - **Suggest** annotations with `client.annotations.suggest` passing `Annotation` instance(s)
+    - **Delete** annotations with `client.annotations.delete` passing the id(s) of annotation(s) to delete
+    - **Filter** annotations with `client.annotations.list` passing a `AnnotationFilter `dataclass instance or a filter `dict`
+    - **Update** annotations with `client.annotations.update` passing updated `Annotation` or `AnnotationUpdate` instance(s)
+    - **Get single** annotation with `client.annotations.retrieve` passing the id
+    - **Get multiple** annotations with `client.annotations.retrieve_multiple` passing the ids
+
+## [2.52.0] - 2022-06-10
+### Changed
+- Reverted the optimizations introduced to datapoints fetching in 2.47.0 due to buggy implementation.
+
+## [2.51.0] - 2022-06-10
+### Added
+- added the new geo_location field to the Asset resource
+
+## [2.50.2] - 2022-06-09
+### Fixed
+- Geospatial: fix FeatureList.from_geopandas issue with optional properties
+
+## [2.50.1] - 2022-06-07
+### Fixed
+- Geospatial: keep feature properties as is
+
+## [2.50.0] - 2022-05-27
+### Changed
+- Geospatial: deprecate update_feature_types and add patch_feature_types
+
 ## [2.49.1] - 2022-05-19
 ### Changed
 - Geospatial: Support dataset
 
 ## [2.49.0] - 2022-05-09
 ### Changed
-- Geospatial: Support output selection for getting features by ids 
+- Geospatial: Support output selection for getting features by ids
 
 ## [2.48.0] - 2022-05-09
 ### Removed
@@ -52,8 +175,8 @@ Changes are grouped as follows
 
 ## [2.43.1] - 2022-03-24
 ### Added
-- update pillow dependency 9.0.0 -> 9.0.1 
- 
+- update pillow dependency 9.0.0 -> 9.0.1
+
 ## [2.43.0] - 2022-03-21
 ### Added
 - new list parameters added to `transformations.list`.
@@ -124,7 +247,7 @@ Changes are grouped as follows
 
 ## [2.37.0] - 2021-11-30
 ### Added
-- Added support for retrieving file download urls 
+- Added support for retrieving file download urls
 
 ## [2.36.0] - 2021-11-30
 ### Fixed

@@ -37,9 +37,7 @@ class TestEventsAPI:
         assert res[0] == cognite_client.events.retrieve(res[0].id)
 
     def test_retrieve_multiple(self, cognite_client, root_test_asset):
-        res_listed_ids = [
-            e.id for e in cognite_client.events.list(limit=2, root_asset_ids=[{"id": root_test_asset.id}])
-        ]
+        res_listed_ids = [e.id for e in cognite_client.events.list(limit=2, type="test-data-populator")]
         res_lookup_ids = [e.id for e in cognite_client.events.retrieve_multiple(res_listed_ids)]
         for listed_id in res_listed_ids:
             assert listed_id in res_lookup_ids

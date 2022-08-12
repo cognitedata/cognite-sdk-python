@@ -81,7 +81,7 @@ def new_view(cognite_client, new_template_group_version):
         events.append(Event(external_id="test_evt_templates_1_" + str(i), type="test_templates_1", start_time=i * 1000))
     try:
         cognite_client.events.create(events)
-    except:
+    except Exception:
         # We only generate this data once for a given project, to prevent issues with eventual consistency etc.
         None
 
@@ -98,7 +98,7 @@ def new_view(cognite_client, new_template_group_version):
     yield new_group, ext_id, new_version, view
     try:
         cognite_client.templates.views.delete(ext_id, new_version.version, view.external_id)
-    except:
+    except Exception:
         None
 
 

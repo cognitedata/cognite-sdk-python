@@ -154,5 +154,5 @@ class TestPandasIntegration:
         df = cognite_client.data_sets.retrieve(id=1).to_pandas()
         assert isinstance(df, pd.DataFrame)
         assert "metadata" not in df.columns
-        assert False == df.loc["writeProtected"].bool()
+        assert df.loc["writeProtected"].bool() is False
         assert "metadata-value" == df.loc["metadata-key"][0]

@@ -44,6 +44,20 @@ other_transformation = new_transformation
 
 
 class TestTransformationsAPI:
+    def test_create_transformation_error(self, cognite_client):
+        prefix = "".join(random.choice(string.ascii_letters) for i in range(6))
+        transform_without_name = Transformation(
+            external_id=f"{prefix}-transformation", destination=TransformationDestination.assets()
+        )
+        try:
+            ts = cognite_client.transformations.create(transform_without_name)
+            failed = False
+            cognite_client.transformations.delete(id=ts.id)
+        except Exception as ex:
+            failed = True
+            str(ex)
+        assert failed
+
     def test_create_asset_transformation(self, cognite_client):
         prefix = "".join(random.choice(string.ascii_letters) for i in range(6))
         transform = Transformation(
@@ -81,15 +95,25 @@ class TestTransformationsAPI:
         ts = cognite_client.transformations.create(transform)
         cognite_client.transformations.delete(id=ts.id)
 
+    @pytest.mark.skip
     def test_create_alpha_dmi_transformation(self, cognite_client):
         prefix = "".join(random.choice(string.ascii_letters) for i in range(6))
         transform = Transformation(
             name="any",
             external_id=f"{prefix}-transformation",
-            destination=AlphaDataModelInstances(model_external_id="testInstance"),
+            destination=AlphaDataModelInstances(
+                model_external_id="testInstance",
+                space_external_id="test-space",
+                instance_space_external_id="test-space",
+            ),
         )
         ts = cognite_client.transformations.create(transform)
-        assert ts.destination.type == "data_model_instances" and ts.destination.model_external_id == "testInstance"
+        assert (
+            ts.destination.type == "alpha_data_model_instances"
+            and ts.destination.model_external_id == "testInstance"
+            and ts.destination.space_external_id == "test-space"
+            and ts.destination.instance_space_external_id == "test-space"
+        )
         cognite_client.transformations.delete(id=ts.id)
 
     def test_create_sequence_rows_transformation(self, cognite_client):
@@ -188,17 +212,19 @@ class TestTransformationsAPI:
 
     def test_preview_to_string(self, cognite_client):
         query_result = cognite_client.transformations.preview(query="select 1 as id, 'asd' as name", limit=100)
-        dumped = str(query_result)
+        # just make sure it doesnt raise exceptions
+        str(query_result)
 
+    @pytest.mark.skip
     def test_update_dmi_alpha(self, cognite_client, new_transformation):
-        new_transformation.destination = AlphaDataModelInstances("myTest")
+        new_transformation.destination = AlphaDataModelInstances("myTest", "test-space", "test-space")
         partial_update = TransformationUpdate(id=new_transformation.id).destination.set(
-            AlphaDataModelInstances("myTest2")
+            AlphaDataModelInstances("myTest2", "test-space", "test-space")
         )
         updated_transformation = cognite_client.transformations.update(new_transformation)
-        assert updated_transformation.destination == AlphaDataModelInstances("myTest")
+        assert updated_transformation.destination == AlphaDataModelInstances("myTest", "test-space", "test-space")
         partial_updated = cognite_client.transformations.update(partial_update)
-        assert partial_updated.destination == AlphaDataModelInstances("myTest2")
+        assert partial_updated.destination == AlphaDataModelInstances("myTest2", "test-space", "test-space")
 
     def test_update_sequence_rows_update(self, cognite_client, new_transformation):
         new_transformation.destination = SequenceRows("myTest")
