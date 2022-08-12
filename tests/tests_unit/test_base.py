@@ -5,7 +5,7 @@ from unittest import mock
 
 import pytest
 
-from cognite.client import CogniteClient
+from cognite.client import ClientConfig, CogniteClient
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteLabelUpdate,
@@ -18,7 +18,6 @@ from cognite.client.data_classes._base import (
     CogniteUpdate,
 )
 from cognite.client.exceptions import CogniteMissingClientError
-from tests.utils import set_env_var
 
 
 class MyResource(CogniteResource):
@@ -186,8 +185,7 @@ class TestCogniteResource:
         pd.testing.assert_frame_equal(expected_df, actual_df, check_like=True)
 
     def test_resource_client_correct(self):
-        with set_env_var("COGNITE_API_KEY", "BLA"):
-            c = CogniteClient()
+        c = CogniteClient(ClientConfig(client_name="bla", project="bla", api_key="bla"))
         with pytest.raises(CogniteMissingClientError):
             MyResource(1)._cognite_client
         assert MyResource(1, cognite_client=c)._cognite_client == c
@@ -291,8 +289,7 @@ class TestCogniteResourceList:
             MyResourceList([1, 2, 3])
 
     def test_resource_list_client_correct(self):
-        with set_env_var("COGNITE_API_KEY", "bla"):
-            c = CogniteClient()
+        c = CogniteClient(ClientConfig(client_name="bla", project="bla", api_key="bla"))
         with pytest.raises(CogniteMissingClientError):
             MyResource(1)._cognite_client
         assert MyResource(1, cognite_client=c)._cognite_client == c
@@ -433,8 +430,7 @@ class TestCogniteResponse:
         assert MyResponse(1) != MyResponse()
 
     def test_response_client_correct(self):
-        with set_env_var("COGNITE_API_KEY", "BLA"):
-            c = CogniteClient()
+        c = CogniteClient(ClientConfig(client_name="bla", project="bla", api_key="bla"))
         with pytest.raises(CogniteMissingClientError):
             MyResource(1)._cognite_client
         assert MyResource(1, cognite_client=c)._cognite_client == c

@@ -2,14 +2,13 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from cognite.client import CogniteClient
+from cognite.client import ClientConfig, CogniteClient
 from cognite.client.testing import CogniteClientMock, monkeypatch_cognite_client
-from tests.utils import set_env_var
 
 
 def test_mock_cognite_client():
     with monkeypatch_cognite_client() as c_mock:
-        c = CogniteClient()
+        c = CogniteClient(ClientConfig(client_name="bla", project="bla", api_key="bla"))
         assert isinstance(c_mock, MagicMock)
         assert c_mock == c
 
@@ -34,9 +33,8 @@ def test_mock_cognite_client():
 
 def test_cognite_client_accepts_arguments_during_and_after_mock():
     with monkeypatch_cognite_client():
-        CogniteClient(api_key=None)
-    with set_env_var("COGNITE_API_KEY", "BLA"):
-        CogniteClient(api_key=None)
+        CogniteClient(ClientConfig(client_name="bla", project="bla", api_key="bla"))
+    CogniteClient(ClientConfig(client_name="bla", project="bla", api_key="bla"))
 
 
 def test_client_mock_can_access_attributes_not_explicitly_defined_on_children():

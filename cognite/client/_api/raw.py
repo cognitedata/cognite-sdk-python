@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Sequence,
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
+from cognite.client.config import ClientConfig
 from cognite.client.data_classes import Database, DatabaseList, Row, RowList, Table, TableList
 from cognite.client.utils._auxiliary import local_import
 from cognite.client.utils._identifier import Identifier
@@ -295,7 +296,7 @@ class RawRowsAPI(APIClient):
 
     def __init__(
         self,
-        config: utils._client_config.ClientConfig,
+        config: ClientConfig,
         api_version: Optional[str] = None,
         cognite_client: "CogniteClient" = None,
     ) -> None:

@@ -1,6 +1,5 @@
 import json
 import math
-import os
 from collections import namedtuple
 from typing import Any
 
@@ -9,6 +8,7 @@ from requests import Response
 
 from cognite.client import CogniteClient, utils
 from cognite.client._api_client import APIClient
+from cognite.client.config import ClientConfig
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CognitePrimitiveUpdate,
@@ -17,9 +17,8 @@ from cognite.client.data_classes._base import (
     CogniteUpdate,
 )
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
-from cognite.client.utils._client_config import ClientConfig
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
-from tests.utils import jsgz_load, set_env_var, set_request_limit
+from tests.utils import jsgz_load, set_request_limit
 
 BASE_URL = "http://localtest.com/api/1.0/projects/test-project"
 URL_PATH = "/someurl"
@@ -31,6 +30,7 @@ RESPONSE = {"any": "ok"}
 def api_client_with_api_key(cognite_client):
     return APIClient(
         ClientConfig(
+            client_name="python-sdk-unit-tester",
             project="test-project",
             api_key="abc",
             base_url=BASE_URL,
@@ -45,6 +45,7 @@ def api_client_with_api_key(cognite_client):
 def api_client_with_token_factory(cognite_client):
     return APIClient(
         ClientConfig(
+            client_name="any",
             project="test-project",
             base_url=BASE_URL,
             max_workers=1,
@@ -59,6 +60,7 @@ def api_client_with_token_factory(cognite_client):
 def api_client_with_token(cognite_client):
     return APIClient(
         ClientConfig(
+            client_name="any",
             project="test-project",
             base_url=BASE_URL,
             max_workers=1,
@@ -389,7 +391,8 @@ class TestStandardRetrieveMultiple:
                     resource_path=URL_PATH,
                     identifiers=IdentifierSequence.of(1, 2),
                 )
-        assert [{"id": 1}, {"id": 2}] == e.value.not_found
+        assert {"id": 1} in e.value.not_found
+        assert {"id": 2} in e.value.not_found
 
     def test_cognite_client_is_set(self, cognite_client, api_client_with_api_key, mock_by_ids):
         assert (
@@ -1177,11 +1180,6 @@ class TestHelpers:
             is False
         )
 
-    def test_get_status_codes_to_retry(self):
-        os.environ["COGNITE_STATUS_FORCELIST"] = "1,2, 3,4"
-        assert {1, 2, 3, 4} == utils._client_config._DefaultConfig().status_forcelist
-        del os.environ["COGNITE_STATUS_FORCELIST"]
-
     @pytest.mark.parametrize(
         "before, after",
         [
@@ -1206,9 +1204,9 @@ class TestHelpers:
 
 class TestConnectionPooling:
     def test_connection_pool_is_shared_between_clients(self):
-        with set_env_var("COGNITE_API_KEY", "bla"):
-            c1 = CogniteClient()
-            c2 = CogniteClient()
+        cnf = ClientConfig(client_name="bla", api_key="bla", project="bla")
+        c1 = CogniteClient(cnf)
+        c2 = CogniteClient(cnf)
         assert (
             c1._api_client._http_client.session
             == c2._api_client._http_client.session

@@ -4,7 +4,7 @@ from typing import Dict, List, Optional
 from oauthlib.oauth2 import BackendApplicationClient, OAuth2Error
 from requests_oauthlib import OAuth2Session
 
-from cognite.client.exceptions import CogniteAPIKeyError
+from cognite.client.exceptions import CogniteAuthError
 
 
 class TokenGenerator:
@@ -21,20 +21,21 @@ class TokenGenerator:
         self.client_secret = client_secret
         self.scopes = scopes
         self.custom_args = custom_args
-
-        if self.token_params_set():
-            self._generate_access_token()
-        else:
-            self._access_token = None
-            self._access_token_expires_at = None
+        self._access_token = None
+        self._access_token_expires_at = None
 
     def return_access_token(self) -> str:
-        if not self.token_params_set():
-            raise CogniteAPIKeyError("Could not generate access token - missing token generation arguments")
-        elif self._access_token is None:
-            raise CogniteAPIKeyError("Could not generate access token from provided token generation arguments")
+        just_generated = False
+        if self.token_params_set() and self._access_token is None:
+            self._generate_access_token()
+            just_generated = True
 
-        if self._access_token_expires_at < datetime.datetime.now().timestamp():
+        if not self.token_params_set():
+            raise CogniteAuthError("Could not generate access token - missing token generation arguments")
+        elif self._access_token is None:
+            raise CogniteAuthError("Could not generate access token from provided token generation arguments")
+
+        if not just_generated and self._access_token_expires_at < datetime.datetime.now().timestamp():
             self._generate_access_token()
 
         return self._access_token
@@ -51,7 +52,7 @@ class TokenGenerator:
                 **self.custom_args,
             )
         except OAuth2Error as oauth_error:
-            raise CogniteAPIKeyError(
+            raise CogniteAuthError(
                 "Error generating access token: {0}, {1}, {2}".format(
                     oauth_error.error, oauth_error.status_code, oauth_error.description
                 )

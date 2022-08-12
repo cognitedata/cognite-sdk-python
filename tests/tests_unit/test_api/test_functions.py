@@ -5,7 +5,7 @@ from unittest.mock import patch
 import pytest
 from requests import PreparedRequest
 
-from cognite.client import CogniteClient
+from cognite.client import ClientConfig, CogniteClient
 from cognite.client._api.functions import (
     _extract_requirements_from_doc_string,
     _extract_requirements_from_file,
@@ -26,7 +26,7 @@ from cognite.client.data_classes import (
 )
 from cognite.client.data_classes.functions import FunctionsStatus
 from cognite.client.exceptions import CogniteAPIError
-from tests.utils import jsgz_load, set_env_var
+from tests.utils import jsgz_load
 
 
 def post_body_matcher(params):
@@ -308,24 +308,27 @@ def mock_function_calls_filter_response(rsps, cognite_client):
 
 @pytest.fixture
 def cognite_client_with_client_credentials_flow():
-    with set_env_var("COGNITE_API_KEY", "bla"):
-        client = CogniteClient(token_url="bla", token_scopes=["bla"], token_client_secret="bla", token_client_id="bla")
-    return client
+    return CogniteClient(
+        ClientConfig(
+            client_name="any",
+            project="dummy",
+            api_key="bla",
+            token_url="bla",
+            token_scopes=["bla"],
+            token_client_secret="bla",
+            token_client_id="bla",
+        )
+    )
 
 
 @pytest.fixture
 def cognite_client_with_api_key():
-    client = CogniteClient(api_key="caner_was_here_but_not_for_long_because_api_keys_will_be_removed")
-    client.config.token_client_id = None  # Disables Client Credentials coming from the ENV
-
-    return client
+    return CogniteClient(ClientConfig(client_name="any", project="dummy", api_key="bla"))
 
 
 @pytest.fixture
 def cognite_client_with_token():
-    client = CogniteClient(token="aabbccddeeffgg")
-    client.config.token_client_id = None  # Disables Client Credentials coming from the ENV
-    return client
+    return CogniteClient(ClientConfig(client_name="any", project="dummy", token="aabbccddeeffgg"))
 
 
 @pytest.fixture
@@ -540,9 +543,7 @@ class TestFunctionsAPI:
         assert isinstance(res, FunctionList)
         assert mock_functions_retrieve_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
-    def test_function_call_from_api_key_flow(
-        self, mock_functions_call_responses, cognite_client_with_api_key, cognite_client
-    ):
+    def test_function_call_from_api_key_flow(self, mock_functions_call_responses, cognite_client_with_api_key):
         res = cognite_client_with_api_key.functions.call(id=FUNCTION_ID)
         assert isinstance(res, FunctionCall)
         assert mock_functions_call_responses.calls[1].response.json()["items"][0] == res.dump(camel_case=True)
