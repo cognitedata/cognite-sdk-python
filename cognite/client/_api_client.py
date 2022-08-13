@@ -169,9 +169,14 @@ class APIClient:
         # with LOCK:
         #     COUNTER += 1
         #     print(f"{COUNTER=}")
-        return self._do_request(
+        res = self._do_request(
             "POST", url_path, json=json, headers=headers, params=params, timeout=self._config.timeout
         )
+        # sec = res.elapsed / timedelta(seconds=1)
+        # n_dps = sum(len(x["datapoints"]) for x in res.json()["items"])
+        # dps_ps = round(n_dps / sec, 2)
+        # print(f"Req. time: {sec=}, {n_dps=}, dps/s={dps_ps}")
+        return res
 
     def _put(
         self, url_path: str, json: Optional[Dict[str, Any]] = None, headers: Optional[Dict[str, Any]] = None

@@ -7,17 +7,17 @@ from local_cog_client import setup_local_cog_client
 
 # START = 0
 # END = "now"  # 112548548397  # 31569600000
-START = pd.Timestamp("1990-01-01 00:00:00").value // int(1e6)
-END = pd.Timestamp("2020-01-01 00:00:00").value // int(1e6)
-LIMIT = 400_000
+START = pd.Timestamp("1975-01-01 00:00:00").value // int(1e6)
+END = pd.Timestamp("1982-01-01 00:00:00").value // int(1e6)
+LIMIT = None
 AGGREGATES = None
-# AGGREGATES = ["sum"]
+AGGREGATES = ["count"]
 # AGGREGATES = [
 #     "average", "max", "min", "count", "sum", "interpolation", "stepInterpolation",
 #     "continuousVariance", "discreteVariance", "totalVariation"
 # ]
 GRANULARITY = None
-# GRANULARITY = "1s"
+GRANULARITY = "1m"
 INCLUDE_OUTSIDE_POINTS = False
 IGNORE_UNKNOWN_IDS = False
 # ID = None
@@ -28,9 +28,9 @@ ID = [
     # {"id": 2546012653669, "aggregates": ["max", "average"], "granularity": "1d"},  # string
 ]
 EXTERNAL_ID = [
+    {"external_id": "ts-test-#04-ten-mill-dps-1/1"},
     # {"external_id": "ts-test-#01-daily-111/650"},
     # {"external_id": "ts-test-#01-daily-222/650"},
-    {"external_id": "ts-test-#04-ten-mill-dps-1/1"},
     # {"external_id": "benchmark:11-1mill-blob-sec-after-1990-#1/10"},
     # {"external_id": "benchmark:11-1mill-blob-sec-after-1990-#2/10"},
     # {"external_id": "benchmark:11-1mill-blob-sec-after-1990-#3/10"},
