@@ -711,7 +711,7 @@ def _extract_requirements_from_doc_string(docstr: str) -> Optional[List[str]]:
 
 
 def _validate_and_parse_requirements(requirements: List[str]) -> List[str]:
-    """Validates the requirement specifications and writes contents to the provided file path
+    """Validates the requirement specifications
 
     Args:
         requirements (list[str]): list of requirement specifications
@@ -737,7 +737,7 @@ def _write_requirements_to_file(file_path: str, requirements: List[str]) -> None
 
 
 def _write_fn_docstring_requirements_to_file(fn: Callable, file_path: str) -> bool:
-    """Read requirements from a function docstring, and validate them
+    """Read requirements from a function docstring, validate them, and write contents to the provided file path
 
     Args:
         fn (Callable): the function to read requirements from
