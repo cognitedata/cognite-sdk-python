@@ -203,14 +203,8 @@ class APIClient:
     def _configure_headers(self, additional_headers: Dict[str, str]) -> MutableMapping[str, Any]:
         headers: MutableMapping[str, Any] = CaseInsensitiveDict()
         headers.update(requests.utils.default_headers())
-        if self._config.token is None:
-            headers["api-key"] = self._config.api_key
-        elif isinstance(self._config.token, str):
-            headers["Authorization"] = "Bearer {}".format(self._config.token)
-        elif callable(self._config.token):
-            headers["Authorization"] = "Bearer {}".format(self._config.token())
-        else:
-            raise TypeError("'token' must be str, Callable, or None.")
+        auth_header_name, auth_header_value = self._config.credentials.authorization_header()
+        headers[auth_header_name] = auth_header_value
         headers["content-type"] = "application/json"
         headers["accept"] = "application/json"
         headers["x-cdp-sdk"] = "CognitePythonSDK:{}".format(utils._auxiliary.get_current_sdk_version())

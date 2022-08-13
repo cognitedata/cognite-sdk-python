@@ -15,6 +15,7 @@ from pip._internal.req.constructors import install_req_from_line
 from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client._constants import LIST_LIMIT_CEILING, LIST_LIMIT_DEFAULT
+from cognite.client.credentials import OAuthClientCredentials, Token
 from cognite.client.data_classes import (
     Function,
     FunctionCall,
@@ -391,8 +392,7 @@ class FunctionsAPI(APIClient):
         nonce = None
         if _using_client_credential_flow(self._cognite_client):
             nonce = _use_client_credentials(self._cognite_client, client_credentials=None)
-
-        elif self._cognite_client.config.token is not None:
+        elif _using_token_exchange_flow(self._cognite_client):
             nonce = _use_token_exchange(self._cognite_client)
 
         if data is None:
@@ -573,8 +573,9 @@ def _use_client_credentials(
         client_id = client_credentials["client_id"]
         client_secret = client_credentials["client_secret"]
     else:
-        client_id = cognite_client.config.token_client_id
-        client_secret = cognite_client.config.token_client_secret
+        assert isinstance(cognite_client.config.credentials, OAuthClientCredentials)
+        client_id = cognite_client.config.credentials.client_id
+        client_secret = cognite_client.config.credentials.client_secret
 
     session_url = f"/api/v1/projects/{cognite_client.config.project}/sessions"
     payload = {"items": [{"clientId": client_id, "clientSecret": client_secret}]}
@@ -599,17 +600,14 @@ def _use_token_exchange(
         raise CogniteAPIError("Failed to create session using token exchange flow.", 403) from e
 
 
+def _using_token_exchange_flow(cognite_client: "CogniteClient") -> bool:
+    """Determine whether the Cognite client is configured with a token or token factory."""
+    return isinstance(cognite_client.config.credentials, Token)
+
+
 def _using_client_credential_flow(cognite_client: "CogniteClient") -> bool:
-    """
-    Determine whether the Cognite client is configured for client-credential flow.
-    """
-    client_config = cognite_client.config
-    return (
-        client_config.token_client_secret is not None
-        and client_config.token_client_id is not None
-        and client_config.token_url is not None
-        and client_config.token_scopes is not None
-    )
+    """Determine whether the Cognite client is configured for client-credential flow."""
+    return isinstance(cognite_client.config.credentials, OAuthClientCredentials)
 
 
 def convert_file_path_to_module_path(file_path: str) -> str:
@@ -1055,11 +1053,12 @@ class FunctionSchedulesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> schedule = c.functions.schedules.create(
-                    name= "My schedule",
-                    function_id=123,
-                    cron_expression="*/5 * * * *",
-                    client_credentials={"client_id": "...", "client_secret": "..."},
-                    description="This schedule does magic stuff.")
+                ...     name= "My schedule",
+                ...     function_id=123,
+                ...     cron_expression="*/5 * * * *",
+                ...     client_credentials={"client_id": "...", "client_secret": "..."},
+                ...     description="This schedule does magic stuff."
+                ... )
 
         """
         _get_function_identifier(function_id, function_external_id)

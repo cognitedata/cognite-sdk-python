@@ -9,6 +9,7 @@ from requests import Response
 from cognite.client import CogniteClient, utils
 from cognite.client._api_client import APIClient
 from cognite.client.config import ClientConfig
+from cognite.client.credentials import APIKey, Token
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CognitePrimitiveUpdate,
@@ -32,7 +33,7 @@ def api_client_with_api_key(cognite_client):
         ClientConfig(
             client_name="python-sdk-unit-tester",
             project="test-project",
-            api_key="abc",
+            credentials=APIKey("abc"),
             base_url=BASE_URL,
             max_workers=1,
             headers={"x-cdp-app": "python-sdk-integration-tests"},
@@ -50,7 +51,7 @@ def api_client_with_token_factory(cognite_client):
             base_url=BASE_URL,
             max_workers=1,
             headers={"x-cdp-app": "python-sdk-integration-tests"},
-            token=lambda: "abc",
+            credentials=Token(lambda: "abc"),
         ),
         cognite_client=cognite_client,
     )
@@ -65,7 +66,7 @@ def api_client_with_token(cognite_client):
             base_url=BASE_URL,
             max_workers=1,
             headers={"x-cdp-app": "python-sdk-integration-tests"},
-            token="abc",
+            credentials=Token("abc"),
         ),
         cognite_client=cognite_client,
     )
@@ -112,7 +113,7 @@ class TestBasicRequests:
         request_headers = mock_all_requests_ok.calls[0].request.headers
         assert "application/json" == request_headers["content-type"]
         assert "application/json" == request_headers["accept"]
-        assert api_client_with_api_key._config.api_key == request_headers["api-key"]
+        assert api_client_with_api_key._config.credentials.authorization_header()[1] == request_headers["api-key"]
         assert "python-sdk-integration-tests" == request_headers["x-cdp-app"]
         assert "User-Agent" in request_headers
 
@@ -177,14 +178,14 @@ class TestBasicRequests:
         headers = mock_all_requests_ok.calls[0].request.headers
 
         assert "api-key" not in headers
-        assert "Bearer {}".format(api_client_with_token_factory._config.token()) == headers["Authorization"]
+        assert api_client_with_token_factory._config.credentials.authorization_header()[1] == headers["Authorization"]
 
     def test_headers_correct_with_token(self, mock_all_requests_ok, api_client_with_token):
         api_client_with_token._post(URL_PATH, {"any": "OK"})
         headers = mock_all_requests_ok.calls[0].request.headers
 
         assert "api-key" not in headers
-        assert "Bearer {}".format(api_client_with_token._config.token) == headers["Authorization"]
+        assert api_client_with_token._config.credentials.authorization_header()[1] == headers["Authorization"]
 
     @pytest.mark.parametrize("payload", [math.nan, math.inf, -math.inf, {"foo": {"bar": {"baz": [[[math.nan]]]}}}])
     def test__do_request_raises_more_verbose_exception(self, api_client_with_token, payload):
@@ -1204,7 +1205,7 @@ class TestHelpers:
 
 class TestConnectionPooling:
     def test_connection_pool_is_shared_between_clients(self):
-        cnf = ClientConfig(client_name="bla", api_key="bla", project="bla")
+        cnf = ClientConfig(client_name="bla", credentials=APIKey("bla"), project="bla")
         c1 = CogniteClient(cnf)
         c2 = CogniteClient(cnf)
         assert (

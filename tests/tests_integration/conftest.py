@@ -5,6 +5,7 @@ import pytest
 from msal import PublicClientApplication
 
 from cognite.client import ClientConfig, CogniteClient
+from cognite.client.credentials import OAuthClientCredentials, Token
 
 
 def make_cognite_client_with_interactive_flow() -> CogniteClient:
@@ -18,7 +19,7 @@ def make_cognite_client_with_interactive_flow() -> CogniteClient:
         client_name=os.environ["COGNITE_CLIENT_NAME"],
         project=os.environ["COGNITE_PROJECT"],
         base_url=os.environ["COGNITE_BASE_URL"],
-        token=creds["access_token"],
+        credentials=Token(creds["access_token"]),
     )
     return CogniteClient(cnf)
 
@@ -31,10 +32,12 @@ def cognite_client() -> CogniteClient:
             client_name=os.environ["COGNITE_CLIENT_NAME"],
             project=os.environ["COGNITE_PROJECT"],
             base_url=os.environ["COGNITE_BASE_URL"],
-            token_url=os.environ["COGNITE_TOKEN_URL"],
-            token_scopes=os.environ["COGNITE_TOKEN_SCOPES"].split(","),
-            token_client_id=os.environ["COGNITE_CLIENT_ID"],
-            token_client_secret=os.environ["COGNITE_CLIENT_SECRET"],
+            credentials=OAuthClientCredentials(
+                token_url=os.environ["COGNITE_TOKEN_URL"],
+                client_id=os.environ["COGNITE_CLIENT_ID"],
+                client_secret=os.environ["COGNITE_CLIENT_SECRET"],
+                scopes=os.environ["COGNITE_TOKEN_SCOPES"].split(","),
+            ),
         )
         return CogniteClient(cnf)
     elif login_flow == "interactive":
