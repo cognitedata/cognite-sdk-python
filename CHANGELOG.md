@@ -14,6 +14,25 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [4.0.0] - 2022-08-15
+### Changed
+- Client configuration no longer respects any environment variables. There are other libraries better 
+suited for loading configuration from the environment (such as builtin `os` or `pydantic`). There have also
+been several reports of ennvar name clash issues in tools built on top the SDK. We therefore 
+consider this something that should be handled by the application consuming the SDK. All configuration of 
+`cognite.client.CogniteClient` now happens using a `cognite.client.ClientConfig` object. Global configuration such as 
+`max_connection_pool_size` and other options which apply to all client instances are now configured through 
+the `cognite.client.global_config` object which is an instance of `cognite.client.GlobalConfig`. Examples 
+have been added to the docs.
+- Auth has been reworked. The client configuration no longer accepts the `api_key` and `token_...` arguments. 
+It accepts only a single `credentials` argument which must be a `CredentialProvider` object. A few 
+implementations have been provided (`APIKey`, `Token`, `OAuthClientCredentials`). Example usage has 
+been added to the docs. More credential provider implementations will be added in the future to accommodate 
+other OAuth flows.
+
+### Fixed
+- A bug in the Functions SDK where the lifecycle of temporary files was not properly managed.  
+
 ## [3.9.0] - 2022-08-11
 ### Added
 - Moved Cognite Functions from Experimental SDK to Main SDK.
