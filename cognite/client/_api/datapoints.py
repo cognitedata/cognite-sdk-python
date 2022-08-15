@@ -42,6 +42,7 @@ from cognite.client.data_classes.datapoints import (
 )
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import split_into_n_parts
+from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._priority_tpe import PriorityThreadPoolExecutor
 from cognite.client.utils._time import granularity_to_ms, granularity_unit_to_ms, timestamp_to_ms
 
@@ -354,10 +355,8 @@ class DatapointsAPI(APIClient):
         self,
         start: Union[int, str, datetime],
         end: Union[int, str, datetime],
-        id: Union[int, List[int], Dict[str, Union[int, List[str]]], List[Dict[str, Union[int, List[str]]]]] = None,
-        external_id: Union[
-            str, List[str], Dict[str, Union[int, List[str]]], List[Dict[str, Union[int, List[str]]]]
-        ] = None,
+        id: DatapointsIdMaybeAggregate = None,
+        external_id: DatapointsExternalIdMaybeAggregate = None,
         aggregates: List[str] = None,
         granularity: str = None,
         include_outside_points: bool = None,
@@ -371,9 +370,9 @@ class DatapointsAPI(APIClient):
         Args:
             start (Union[int, str, datetime]): Inclusive start.
             end (Union[int, str, datetime]): Exclusive end.
-            id (Union[int, List[int], Dict[str, Any], List[Dict[str, Any]]]): Id or list of ids. Can also be object
+            id (DatapointsIdMaybeAggregate): Id or list of ids. Can also be object
                 specifying aggregates. See example below.
-            external_id (Union[str, List[str], Dict[str, Any], List[Dict[str, Any]]]): External id or list of external
+            external_id (DatapointsExternalIdMaybeAggregate): External id or list of external
                 ids. Can also be object specifying aggregates. See example below.
             aggregates (List[str]): List of aggregate functions to apply.
             granularity (str): The granularity to fetch aggregates at. e.g. '1s', '2h', '10d'.
@@ -478,8 +477,8 @@ class DatapointsAPI(APIClient):
                 >>> latest_def = res[1][0]
         """
         before = timestamp_to_ms(before) if before else None
-        all_ids = cast(List[Dict[str, Union[str, int]]], self._process_ids(id, external_id, wrap_ids=True))
-        is_single_id = self._is_single_identifier(id, external_id)
+        id_seq = IdentifierSequence.load(id, external_id)
+        all_ids = id_seq.as_dicts()
         if before:
             for id_ in all_ids:
                 id_.update({"before": before})
@@ -497,7 +496,7 @@ class DatapointsAPI(APIClient):
         if tasks_summary.exceptions:
             raise tasks_summary.exceptions[0]
         res = tasks_summary.joined_results(lambda res: res.json()["items"])
-        if is_single_id:
+        if id_seq.is_singleton():
             return Datapoints._load(res[0], cognite_client=self._cognite_client)
         return DatapointsList._load(res, cognite_client=self._cognite_client)
 
@@ -593,8 +592,7 @@ class DatapointsAPI(APIClient):
                 >>> data = c.datapoints.retrieve(external_id="abc",start=datetime(2018,1,1),end=datetime(2018,2,2))
                 >>> c.datapoints.insert(data, external_id="def")
         """
-        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
-        post_dps_object = cast(Dict[str, Any], self._process_ids(id, external_id, wrap_ids=True)[0])
+        post_dps_object = Identifier.of_either(id, external_id).as_dict()
         if isinstance(datapoints, Datapoints):
             datapoints = [(t, v) for t, v in zip(datapoints.timestamp, datapoints.value)]
         post_dps_object.update({"datapoints": datapoints})
@@ -667,12 +665,11 @@ class DatapointsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.datapoints.delete_range(start="1w-ago", end="now", id=1)
         """
-        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
         start = utils._time.timestamp_to_ms(start)
         end = utils._time.timestamp_to_ms(end)
         assert end > start, "end must be larger than start"
 
-        delete_dps_object = cast(Dict[str, Any], self._process_ids(id, external_id, wrap_ids=True)[0])
+        delete_dps_object = Identifier.of_either(id, external_id).as_dict()
         delete_dps_object.update({"inclusiveBegin": start, "exclusiveEnd": end})
         self._delete_datapoints_ranges([delete_dps_object])
 
@@ -704,8 +701,7 @@ class DatapointsAPI(APIClient):
                     )
             id = range.get("id")
             external_id = range.get("externalId")
-            utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
-            valid_range = cast(Dict[str, Any], self._process_ids(id, external_id, wrap_ids=True)[0])
+            valid_range = Identifier.of_either(id, external_id).as_dict()
             start = utils._time.timestamp_to_ms(range["start"])
             end = utils._time.timestamp_to_ms(range["end"])
             valid_range.update({"inclusiveBegin": start, "exclusiveEnd": end})

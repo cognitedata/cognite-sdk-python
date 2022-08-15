@@ -37,6 +37,7 @@ Set the following environment variables in a .env file:
 ```bash
 COGNITE_CLIENT_NAME=python-sdk-integration-tests-<your-name>
 COGNITE_MAX_RETRIES=20
+COGNITE_DISABLE_PYPI_VERSION_CHECK=1
 
 # Only necessary for running integration tests
 LOGIN_FLOW=interactive

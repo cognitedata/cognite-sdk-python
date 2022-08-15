@@ -24,6 +24,38 @@ Changes are grouped as follows
 - Aggregates returned now include the time period(s) (given by `granularity` unit) that start and end are part of (as opposed to only "fully in-between" points).
 - Aggregates now work properly with the `limit` parameter (used to only return first few batches).
 
+## [3.9.0] - 2002-08-11
+### Added
+- Moved Cognite Functions from Experimental SDK to Main SDK.
+
+## [3.8.0] - 2022-08-11
+### Added
+- Add ignore_unknown_ids parameter to sequences.retrieve_multiple
+
+## [3.7.0] - 2022-08-10
+### Changed
+- Changed grouping of Sequence rows on insert. Each group now contains at most 100k values and at most 10k rows.
+
+## [3.6.1] - 2022-08-10
+### Fixed
+- Fixed a minor casing error for the geo_location field on files
+
+## [3.6.0] - 2022-08-10
+### Added
+- Add ignore_unknown_ids parameter to files.retrieve_multiple
+
+## [3.5.0] - 2022-08-10
+### Changed
+- Improve type annotations. Use overloads in more places to help static type checkers.
+
+## [3.4.3] - 2022-08-10
+### Changed
+- Cache result from pypi version check so it's not executed for every client instantiation.
+
+## [3.4.2] - 2022-07-28
+### Fixed
+- Fix the wrong destination name in transformations.
+
 ## [3.4.1] - 2022-07-27
 ### Fixed
 - fixed exception when printing exceptions generated on transformations creation/update.

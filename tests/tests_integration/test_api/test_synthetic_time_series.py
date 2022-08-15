@@ -82,6 +82,7 @@ class TestSyntheticDatapointsAPI:
         assert isinstance(dps1, Datapoints)
         assert isinstance(dps2, DatapointsList)
 
+    @pytest.mark.skip("flaky")
     @pytest.mark.dsl
     def test_expression_builder_complex(self, cognite_client, test_time_series):
         from sympy import cos, log, pi, sin, sqrt, symbols

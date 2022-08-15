@@ -1,4 +1,5 @@
 import argparse
+import functools
 import os
 import re
 from typing import List, Optional, Tuple
@@ -11,6 +12,7 @@ def check_if_version_exists(package_name: str, version: str) -> bool:
     return version in versions
 
 
+@functools.lru_cache(maxsize=1)
 def get_newest_version_in_major_release(package_name: str, version: str) -> str:
     major, minor, micro, pr_cycle, pr_version = _parse_version(version)
     versions = get_all_versions(package_name)
@@ -24,7 +26,7 @@ def get_all_versions(package_name: str) -> List[str]:
     disable_ssl = os.getenv("COGNITE_DISABLE_SSL", False)
     verify_ssl = not disable_ssl
     res = requests.get("https://pypi.python.org/simple/{}/#history".format(package_name), verify=verify_ssl, timeout=5)
-    versions = re.findall("cognite-sdk-(\d+\.\d+.[\dabrc]+)", res.content.decode())
+    versions = re.findall(r"cognite-sdk-(\d+\.\d+.[\dabrc]+)", res.content.decode())
     return versions
 
 
@@ -59,7 +61,7 @@ def _is_newer_pre_release(
 
 
 def _parse_version(version: str) -> Tuple[int, int, int, str, Optional[int]]:
-    pattern = "(\d+)\.(\d+)\.(\d+)(?:([abrc]+)(\d+))?"
+    pattern = r"(\d+)\.(\d+)\.(\d+)(?:([abrc]+)(\d+))?"
     match = re.match(pattern, version)
     if not match:
         raise ValueError("Could not parse version {}".format(version))

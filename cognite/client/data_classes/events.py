@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Dict, List, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Union, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -49,7 +49,7 @@ class Event(CogniteResource):
         subtype (str): SubType of the event, e.g 'electrical'.
         description (str): Textual description of the event.
         metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 128000 bytes, up to 256 key-value pairs, of total size at most 200000.
-        asset_ids (List[int]): Asset IDs of equipment that this event relates to.
+        asset_ids (Sequence[int]): Asset IDs of equipment that this event relates to.
         source (str): The source of this event.
         id (int): A server-generated ID for the object.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -67,7 +67,7 @@ class Event(CogniteResource):
         subtype: str = None,
         description: str = None,
         metadata: Dict[str, str] = None,
-        asset_ids: List[int] = None,
+        asset_ids: Sequence[int] = None,
         source: str = None,
         id: int = None,
         last_updated_time: int = None,
@@ -98,10 +98,10 @@ class EventFilter(CogniteFilter):
         end_time (Union[Dict[str, Any], EndTimeFilter]): Either range between two timestamps or isNull filter condition.
         active_at_time (Union[Dict[str, Any], TimestampRange]): Event is considered active from its startTime to endTime inclusive. If startTime is null, event is never active. If endTime is null, event is active from startTime onwards. activeAtTime filter will match all events that are active at some point from min to max, from min, or to max, depending on which of min and max parameters are specified.
         metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 128000 bytes, up to 256 key-value pairs, of total size at most 200000.
-        asset_ids (List[int]): Asset IDs of equipment that this event relates to.
-        asset_external_ids (List[str]): Asset External IDs of equipment that this event relates to.
-        asset_subtree_ids (List[Dict[str, Any]]): Only include events that have a related asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
-        data_set_ids (List[Dict[str, Any]]): Only include events that belong to these datasets.
+        asset_ids (Sequence[int]): Asset IDs of equipment that this event relates to.
+        asset_external_ids (Sequence[str]): Asset External IDs of equipment that this event relates to.
+        asset_subtree_ids (Sequence[Dict[str, Any]]): Only include events that have a related asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+        data_set_ids (Sequence[Dict[str, Any]]): Only include events that belong to these datasets.
         source (str): The source of this event.
         type (str): Type of the event, e.g 'failure'.
         subtype (str): SubType of the event, e.g 'electrical'.
@@ -117,10 +117,10 @@ class EventFilter(CogniteFilter):
         end_time: Union[Dict[str, Any], EndTimeFilter] = None,
         active_at_time: Union[Dict[str, Any], TimestampRange] = None,
         metadata: Dict[str, str] = None,
-        asset_ids: List[int] = None,
-        asset_external_ids: List[str] = None,
-        asset_subtree_ids: List[Dict[str, Any]] = None,
-        data_set_ids: List[Dict[str, Any]] = None,
+        asset_ids: Sequence[int] = None,
+        asset_external_ids: Sequence[str] = None,
+        asset_subtree_ids: Sequence[Dict[str, Any]] = None,
+        data_set_ids: Sequence[Dict[str, Any]] = None,
         source: str = None,
         type: str = None,
         subtype: str = None,

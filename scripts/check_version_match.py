@@ -4,7 +4,7 @@ import toml
 
 from cognite.client._version import __version__
 
-with (Path(__file__).parent / "pyproject.toml").open() as fh:
+with (Path(__file__).parent.parent / "pyproject.toml").open() as fh:
     pyproject_toml = toml.load(fh)
 
 version_in_pyproject_toml = pyproject_toml["tool"]["poetry"]["version"]

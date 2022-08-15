@@ -496,6 +496,71 @@ Data classes
     :members:
     :show-inheritance:
 
+Functions
+---------
+
+Create function
+^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.functions.FunctionsAPI.create
+
+Delete function
+^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.functions.FunctionsAPI.delete
+
+List functions
+^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.functions.FunctionsAPI.list
+
+Retrieve function
+^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.functions.FunctionsAPI.retrieve
+
+Retrieve multiple functions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.functions.FunctionsAPI.retrieve_multiple
+
+Call function
+^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.functions.FunctionsAPI.call
+
+
+Function calls
+^^^^^^^^^^^^^^
+List function calls
+~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.functions.FunctionCallsAPI.list
+
+Retrieve function call
+~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.functions.FunctionCallsAPI.retrieve
+
+Retrieve function call response
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.functions.FunctionCallsAPI.get_response
+
+Retrieve function call logs
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.functions.FunctionCallsAPI.get_logs
+
+Function schedules
+^^^^^^^^^^^^^^^^^^
+List function schedules
+~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.functions.FunctionSchedulesAPI.list
+
+Create function schedule
+~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.functions.FunctionSchedulesAPI.create
+
+Delete function schedule
+~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.functions.FunctionSchedulesAPI.delete
+
+Data classes
+^^^^^^^^^^^^
+.. automodule:: cognite.client.data_classes.functions
+    :members:
+    :show-inheritance:
 
 Time series
 -----------
@@ -969,11 +1034,11 @@ Predict Using an Entity Matching Model
 
 Detect entities in Engineering Diagrams
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.pnid_parsing.DiagramsAPI.detect
+.. automethod:: cognite.client._api.diagrams.DiagramsAPI.detect
 
 Convert to an interactive SVG where the provided annotations are highlighted
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.pnid_parsing.DiagramsAPI.convert
+.. automethod:: cognite.client._api.diagrams.DiagramsAPI.convert
 
 Contextualization Data Classes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1200,7 +1265,7 @@ Create a session
 
 Revoke a session
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.SessionsAPI.delete
+.. automethod:: cognite.client._api.iam.SessionsAPI.revoke
 
 
 Data classes
@@ -1254,10 +1319,6 @@ Data classes
     :members:
     :show-inheritance:
 
-.. automodule:: cognite.client.data_classes.extractionpipelineruns
-    :members:
-    :show-inheritance:
-
 
 Transformations
 ------------------------
@@ -1275,6 +1336,11 @@ Retrieve transformations by id
 Run transformations by id
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.transformations.TransformationsAPI.run
+.. automethod:: cognite.client._api.transformations.TransformationsAPI.run_async
+    
+Preview transformations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.transformations.TransformationsAPI.preview
 
 Cancel transformation run by id
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
