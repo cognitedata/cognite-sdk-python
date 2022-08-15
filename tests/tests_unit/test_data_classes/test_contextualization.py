@@ -2,14 +2,15 @@ from unittest.mock import patch
 
 import pytest
 
+from cognite.client import CogniteClient
 from cognite.client.data_classes import ContextualizationJob
 from tests.utils import set_env_var
 
 
 @pytest.fixture()
-def job(cognite_client):
+def job():
     with set_env_var("COGNITE_API_KEY", "BLA"):
-        return ContextualizationJob(job_id=123, status="Queued", cognite_client=cognite_client)
+        return ContextualizationJob(job_id=123, status="Queued", cognite_client=CogniteClient())
 
 
 def mock_update_status_running(self):
