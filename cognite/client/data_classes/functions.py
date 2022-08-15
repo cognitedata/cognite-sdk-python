@@ -377,7 +377,7 @@ class FunctionsLimits(CogniteResponse):
         self.response_size_mb = response_size_mb
 
     @classmethod
-    def _load(cls, api_response: Dict):  # type: ignore # Should be fixed by Self class but it will be available on 3.11
+    def _load(cls, api_response: Dict) -> "FunctionsLimits":
         return cls(
             timeout_minutes=api_response["timeoutMinutes"],
             cpu_cores=api_response["cpuCores"],
@@ -401,7 +401,7 @@ class FunctionsStatus(CogniteResponse):
         self.status = status
 
     @classmethod
-    def _load(cls, api_response: Dict):  # type: ignore # Should be fixed by Self class but it will be available on 3.11
+    def _load(cls, api_response: Dict) -> "FunctionsStatus":
         return cls(
             status=api_response["status"],
         )

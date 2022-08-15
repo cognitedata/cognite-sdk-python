@@ -85,7 +85,7 @@ class Relationship(CogniteResource):
 
     @staticmethod
     def _validate_resource_type(resource_type: Optional[str]) -> None:
-        _RESOURCE_TYPES = {"asset", "timeseries", "file", "event", "sequence", "geospatial"}
+        _RESOURCE_TYPES = {"asset", "timeseries", "file", "event", "sequence"}
         if resource_type is None or resource_type.lower() not in _RESOURCE_TYPES:
             raise TypeError("Invalid source or target '{}' in relationship".format(resource_type))
 

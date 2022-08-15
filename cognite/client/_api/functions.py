@@ -434,26 +434,25 @@ class FunctionsAPI(APIClient):
         try:
             with TemporaryDirectory() as tmpdir:
                 zip_path = os.path.join(tmpdir, "function.zip")
-                zf = ZipFile(zip_path, "w")
-                for root, dirs, files in os.walk("."):
-                    zf.write(root)
+                with ZipFile(zip_path, "w") as zf:
+                    for root, dirs, files in os.walk("."):
+                        zf.write(root)
 
-                    # Validate requirements.txt in root-dir only
-                    if root == "." and REQUIREMENTS_FILE_NAME in files:
-                        # Remove requirement from file list
-                        path = files.pop(files.index(REQUIREMENTS_FILE_NAME))
-                        reqs = _extract_requirements_from_file(path)
-                        # Validate and format requirements
-                        req_path = _validate_requirements(reqs)
+                        # Validate requirements.txt in root-dir only
+                        if root == "." and REQUIREMENTS_FILE_NAME in files:
+                            # Remove requirement from file list
+                            path = files.pop(files.index(REQUIREMENTS_FILE_NAME))
+                            reqs = _extract_requirements_from_file(path)
+                            # Validate and format requirements
+                            parsed_reqs = _validate_and_parse_requirements(reqs)
+                            with NamedTemporaryFile() as nth:
+                                _write_requirements_to_file(nth.name, parsed_reqs)
+                                # NOTE: the actual file is not written.
+                                # A temporary formatted file is used instead
+                                zf.write(nth.name, arcname=REQUIREMENTS_FILE_NAME)
 
-                        # NOTE: the actual file is not written.
-                        # A temporary formatted file is used instead
-                        zf.write(req_path, arcname=REQUIREMENTS_FILE_NAME)
-
-                    for filename in files:
-                        zf.write(os.path.join(root, filename))
-
-                zf.close()
+                        for filename in files:
+                            zf.write(os.path.join(root, filename))
 
                 overwrite = True if external_id else False
                 file = cast(
@@ -466,8 +465,6 @@ class FunctionsAPI(APIClient):
             file_id = cast(int, file.id)
 
             return file_id
-        except Exception as e:
-            raise e
         finally:
             os.chdir(current_dir)
 
@@ -482,16 +479,16 @@ class FunctionsAPI(APIClient):
                 f.write(source)
 
             # Read and validate requirements
-            req_path = _get_requirements_handle(fn=function_handle)
+            with NamedTemporaryFile() as named_temp_file:
+                requirements_written = _write_fn_docstring_requirements_to_file(function_handle, named_temp_file.name)
 
-            zip_path = os.path.join(tmpdir, "function.zip")
-            zf = ZipFile(zip_path, "w")
-            zf.write(handle_path, arcname=HANDLER_FILE_NAME)
+                zip_path = os.path.join(tmpdir, "function.zip")
+                with ZipFile(zip_path, "w") as zf:
+                    zf.write(handle_path, arcname=HANDLER_FILE_NAME)
 
-            # Zip requirements.txt
-            if req_path:
-                zf.write(req_path, arcname=REQUIREMENTS_FILE_NAME)
-            zf.close()
+                    # Zip requirements.txt
+                    if requirements_written:
+                        zf.write(named_temp_file.name, arcname=REQUIREMENTS_FILE_NAME)
 
             overwrite = True if external_id else False
             file = cast(
@@ -602,19 +599,16 @@ def _use_token_exchange(
         raise CogniteAPIError("Failed to create session using token exchange flow.", 403) from e
 
 
-def _using_client_credential_flow(
-    cognite_client: "CogniteClient",
-) -> bool:
+def _using_client_credential_flow(cognite_client: "CogniteClient") -> bool:
     """
     Determine whether the Cognite client is configured for client-credential flow.
     """
     client_config = cognite_client.config
-    return cast(
-        bool,
-        client_config.token_client_secret
-        and client_config.token_client_id
-        and client_config.token_url
-        and client_config.token_scopes,
+    return (
+        client_config.token_client_secret is not None
+        and client_config.token_client_id is not None
+        and client_config.token_url is not None
+        and client_config.token_scopes is not None
     )
 
 
@@ -716,17 +710,15 @@ def _extract_requirements_from_doc_string(docstr: str) -> Optional[List[str]]:
     return None
 
 
-def _validate_requirements(requirements: List[str]) -> str:
+def _validate_and_parse_requirements(requirements: List[str]) -> List[str]:
     """Validates the requirement specifications
 
     Args:
         requirements (list[str]): list of requirement specifications
-
     Raises:
         ValueError: if validation of requirements fails
-
     Returns:
-        str: output path of the requirements file
+        List[str]: The parsed requirements
     """
     parsed_reqs: List[str] = []
     for req in requirements:
@@ -736,34 +728,34 @@ def _validate_requirements(requirements: List[str]) -> str:
             raise ValueError(str(e))
 
         parsed_reqs.append(str(parsed).strip())
-
-    tmp = NamedTemporaryFile()
-
-    # Write requirements to temporary file
-    with open(tmp.name, "w+") as f:
-        f.write("\n".join(parsed_reqs))
-        f.close()
-
-    return tmp.name
+    return parsed_reqs
 
 
-def _get_requirements_handle(fn: Callable) -> Optional[str]:
-    """Read requirements from a function docstring, and validate them
+def _write_requirements_to_file(file_path: str, requirements: List[str]) -> None:
+    with open(file_path, "w+") as f:
+        f.write("\n".join(requirements))
+
+
+def _write_fn_docstring_requirements_to_file(fn: Callable, file_path: str) -> bool:
+    """Read requirements from a function docstring, validate them, and write contents to the provided file path
 
     Args:
         fn (Callable): the function to read requirements from
+        file_path (str): Path of file to write requirements to
 
     Returns:
-        str: output path of the requirements file, or None if no requirements are specified
+        bool: whether or not anything was written to the file
     """
     docstr = getdoc(fn)
 
     if docstr:
         reqs = _extract_requirements_from_doc_string(docstr)
         if reqs:
-            return _validate_requirements(reqs)
+            parsed_reqs = _validate_and_parse_requirements(reqs)
+            _write_requirements_to_file(file_path, parsed_reqs)
+            return True
 
-    return None
+    return False
 
 
 class FunctionCallsAPI(APIClient):
