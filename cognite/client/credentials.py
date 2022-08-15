@@ -16,6 +16,19 @@ class CredentialProvider(ABC):
 
 
 class APIKey(CredentialProvider):
+    """API key credential provider
+
+    Args:
+        api_key (str): The api key
+
+    Examples:
+        We recommend loading the API key from an environment variable. e.g.
+
+            >>> from cognite.client.credentials import APIKey
+            >>> import os
+            >>> api_key_provider = APIKey(os.environ["MY_SECRET_CDF_API_KEY"])
+    """
+
     def __init__(self, api_key: str) -> None:
         self.__api_key = api_key
 
@@ -24,6 +37,18 @@ class APIKey(CredentialProvider):
 
 
 class Token(CredentialProvider):
+    """Token credential provider
+
+    Args:
+        token (Union[str, Callable[[], str]): A token or a token factory.
+
+    Examples:
+
+            >>> from cognite.client.credentials import Token
+            >>> token_provider = Token("my secret token")
+            >>> token_factory_provider = Token(lambda: "my secret token")
+    """
+
     def __init__(self, token: Union[str, Callable[[], str]]) -> None:
         if isinstance(token, str):
             self.__token_factory = lambda: token
@@ -35,6 +60,27 @@ class Token(CredentialProvider):
 
 
 class OAuthClientCredentials(CredentialProvider):
+    """OAuth credential provider for the "Client Credentials" flow.
+
+    Args:
+        token_url (str): OAuth token url
+        client_id (str): Your application's client id.
+        client_secret (str): Your application's client secret
+        scopes (List[str]): A list of scopes.
+
+    Examples:
+
+            >>> from cognite.client.credentials import OAuthClientCredentials
+            >>> import os
+            >>> oauth_provider = OAuthClientCredentials(
+            ...     token_url="https://login.microsoftonline.com/xyz/oauth2/v2.0/token",
+            ...     client_id="abcd",
+            ...     client_secret=os.environ["OAUTH_CLIENT_SECRET"],
+            ...     scopes=["https://greenfield.cognitedata.com/.default"],
+            ... )
+            >>> token_factory_provider = Token(lambda: "my secret token")
+    """
+
     # This ensures we don't return a token which expires immediately, but within minimum 3 seconds.
     __TOKEN_EXPIRY_LEEWAY_SECONDS = 3
 

@@ -10,6 +10,18 @@ class GlobalConfig:
     """Global configuration object
 
     Attributes:
+        default_client_config (Optional[ClientConfig]): A default instance of a client configuration. This will be used
+            by the CogniteClient constructor if no config is passed directly. Defaults to None.
+        disable_gzip (bool): Whether or not to disable gzipping of json bodies. Defaults to False.
+        disable_pypi_version_check (bool): Whether or not to check for newer SDK versions when instantiating a new client.
+            Defaults to False.
+        status_forcelist (Set[int]): HTTP status codes to retry. Defaults to {429, 502, 503, 504}
+        max_retries (int): Max number of retries on a given http request. Defaults to 10.
+        max_retry_backoff (int): Retry strategy employs exponential backoff. This parameter sets a max on the amount of
+            backoff after any request failure. Defaults to 30.
+        max_connection_pool_size (int): The maximum number of connections which will be kept in the SDKs connection pool.
+            Defaults to 50.
+        disable_ssl (bool): Whether or not to disable SSL. Defaults to False
         proxies (Dict[str, str]): Dictionary mapping from protocol to url. e.g. {"https": "http://10.10.1.10:1080"}
     """
 
